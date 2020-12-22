@@ -3092,6 +3092,8 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
                             }
                         }
                         (*ptr)->tp = LookupTypeFromExpression((*ptr)->exp, nullptr, false);
+                        if ((*ptr)->tp == nullptr)
+                            (*ptr)->tp = arguments->tp;
                         if ((*ptr)->exp->type == en_func)
                         {
                             TEMPLATEPARAMLIST* tpl = exp->v.func->templateParams;
@@ -6497,7 +6499,8 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                         if (forward && !templateNestingCount)
                         {
                             (*p)->p->byClass.val = GetForwardType((*p)->p->byClass.val, symArgs->exp);
-                            basetype((*p)->p->byClass.val)->rref = false;
+                            if (isref((*p)->p->byClass.val))
+                                basetype(basetype((*p)->p->byClass.val)->btp)->rref = false;
                         }
                         p = &(*p)->next;
                         symArgs = symArgs->next;

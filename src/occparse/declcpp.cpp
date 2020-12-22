@@ -4155,8 +4155,6 @@ bool MatchesConstFunction(SYMBOL* sym)
 }
 LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
 {
-    if (lex->errline == 38)
-        printf("hi");
     bool hasAmpersand = false;
     bool hasAuto = false;
     EXPRESSION *exp, *exp2;

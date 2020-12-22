@@ -420,7 +420,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                     {
                         if (args->exp)
                         {
-                            *buf++ = 'f';
+                            *buf++ = 'F';
                             buf = mangleExpressionInternal(buf, args->exp);
                         }
                         args = args->next;

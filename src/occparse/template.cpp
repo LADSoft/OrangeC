@@ -10720,7 +10720,7 @@ static bool ParseTypeAliasDefaults(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLATE
                         tpl1 = tpl1->next;
                     }
                 }
-                else if ((*tplp1)->p->byClass.val)
+                else if (*tplp1 && (*tplp1)->p->byClass.val)
                 {
                     tpl->p->byClass.dflt = (*tplp1)->p->byClass.val;
                 }

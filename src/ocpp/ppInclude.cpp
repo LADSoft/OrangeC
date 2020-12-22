@@ -306,6 +306,7 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 		else
 		{
 			path = RetrievePath(buf, path);
+			filesSkipped++;
 		}
 		if (path == nullptr && skipUntilDepth && (buf != nullptr && *buf == '\0'))
 		{

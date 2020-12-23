@@ -1149,7 +1149,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
         TYPE* tp1 = nullptr;
         lex = getsym();
         lex = getBasicType(lex, funcsp, &tp1, nullptr, false, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd,
-                           nullptr, nullptr, false, true, false);
+                           nullptr, nullptr, false, true, false, false);
         if (!tp1)
         {
             error(ERR_TYPE_NAME_EXPECTED);
@@ -1188,7 +1188,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
             bool notype = false;
             TYPE* tp1 = nullptr;
             lex = getBasicType(lex, funcsp, &tp1, nullptr, false, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype,
-                               &defd, nullptr, nullptr, false, true, false);
+                               &defd, nullptr, nullptr, false, true, false, false);
             if (!tp1)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -1213,7 +1213,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                     lex = getsym();
                     tp1 = nullptr;
                     lex = getBasicType(lex, funcsp, &tp1, nullptr, false, sc_auto, &linkage, &linkage2, &linkage3, ac_public,
-                                       &notype, &defd, nullptr, nullptr, false, true, false);
+                                       &notype, &defd, nullptr, nullptr, false, true, false, false);
                     if (!tp1)
                     {
                         error(ERR_TYPE_NAME_EXPECTED);

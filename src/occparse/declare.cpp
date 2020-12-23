@@ -414,7 +414,7 @@ LEXEME* get_type_id(LEXEME* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_cl
 
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, nullptr);
     lex = getBasicType(lex, funcsp, tp, nullptr, false, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public,
-                       &notype, &defd, nullptr, nullptr, false, false, inUsing);
+                       &notype, &defd, nullptr, nullptr, false, false, inUsing, false);
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, nullptr);
     lex = getBeforeType(lex, funcsp, tp, &sp, nullptr, nullptr, false, storage_class, &linkage, &linkage2, &linkage3, false, false,
                         beforeOnly, false); /* fixme at file scope init */
@@ -1154,7 +1154,7 @@ static unsigned char* ParseUUID(LEXEME** lex)
     }
     return nullptr;
 }
-static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplate, enum e_sc storage_class, enum e_ac access,
+static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplate, bool asfriend, enum e_sc storage_class, enum e_ac access,
                           bool* defd)
 {
     bool isfinal = false;
@@ -1222,7 +1222,30 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
     strcpy(newName, tagname);
     if (inTemplate)
         inTemplateSpecialization++;
-    lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
+
+    SYMBOL* ssp;
+    if (!asfriend && ISID(lex) && Optimizer::cparams.prm_cplusplus && (ssp = getStructureDeclaration()))
+    {
+        strSym = ssp;
+        table = ssp->tp->tags;
+        if (!ssp->sb->parentClass)
+        {
+            if (theCurrentFunc)
+                nsv = localNameSpace;
+            else
+                nsv = globalNameSpace;
+        }
+        else
+        {
+            nsv = nullptr;
+        }
+        sp = search(newName, table);
+        lex = getsym();
+    }
+    else
+    {
+        lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
+    }
     if (inTemplate)
         inTemplateSpecialization--;
 
@@ -1275,7 +1298,7 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
         sp->sb->declfile = sp->sb->origdeclfile = lex->errfile;
         sp->sb->declfilenum = lex->linedata->fileindex;
         if ((storage_class == sc_member || storage_class == sc_mutable) &&
-            (MATCHKW(lex, begin) || MATCHKW(lex, colon) || MATCHKW(lex, kw_try) || MATCHKW(lex, semicolon)))
+            (Optimizer::cparams.prm_cplusplus || (lex, begin) || MATCHKW(lex, colon) || MATCHKW(lex, kw_try) || MATCHKW(lex, semicolon)))
             sp->sb->parentClass = getStructureDeclaration();
         if (nsv)
             sp->sb->parentNameSpace = nsv->valueData->name;
@@ -2209,7 +2232,7 @@ static bool isPointer(LEXEME* lex)
 }
 LEXEME* getBasicType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out, bool inTemplate, enum e_sc storage_class,
                      enum e_lk* linkage_in, enum e_lk* linkage2_in, enum e_lk* linkage3_in, enum e_ac access, bool* notype,
-                     bool* defd, int* consdest, bool* templateArg, bool isTypedef, bool templateErr, bool inUsing)
+                     bool* defd, int* consdest, bool* templateArg, bool isTypedef, bool templateErr, bool inUsing, bool asfriend)
 {
     enum e_bt type = bt_none;
     TYPE* tn = nullptr;
@@ -2533,7 +2556,7 @@ LEXEME* getBasicType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out
                 inTemplateType = false;
                 if (foundsigned || foundunsigned || type != bt_none)
                     flagerror = true;
-                lex = declstruct(lex, funcsp, &tn, inTemplate, storage_class, access, defd);
+                lex = declstruct(lex, funcsp, &tn, inTemplate, asfriend, storage_class, access, defd);
                 goto exit;
             case kw_enum:
                 if (foundsigned || foundunsigned || type != bt_none)
@@ -5272,7 +5295,7 @@ static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, b
             {
                 foundType = true;
                 lex = getBasicType(lex, funcsp, tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access,
-                                   notype, defd, consdest, templateArg, *storage_class == sc_typedef, true, false);
+                                   notype, defd, consdest, templateArg, *storage_class == sc_typedef, true, false, asFriend ? *asFriend : false);
             }
             if (*linkage3 == lk_threadlocal && *storage_class == sc_member)
                 *storage_class = sc_static;
@@ -5285,7 +5308,7 @@ static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, b
         {
             foundType = true;
             lex = getBasicType(lex, funcsp, tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access, notype,
-                               defd, consdest, templateArg, *storage_class == sc_typedef, true, false);
+                               defd, consdest, templateArg, *storage_class == sc_typedef, true, false, asFriend ? *asFriend : false);
             if (*linkage3 == lk_threadlocal && *storage_class == sc_member)
                 *storage_class = sc_static;
         }

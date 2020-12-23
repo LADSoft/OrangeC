@@ -69,7 +69,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                       bool asFriend, int consdest, bool beforeOnly, bool funcptr);
 LEXEME* getBasicType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out, bool inTemplate, enum e_sc storage_class,
                      enum e_lk* linkage_in, enum e_lk* linkage2_in, enum e_lk* linkage3_in, enum e_ac access, bool* notype,
-                     bool* defd, int* consdest, bool* templateArg, bool isTypedef, bool templateErr, bool inUsing);
+                     bool* defd, int* consdest, bool* templateArg, bool isTypedef, bool templateErr, bool inUsing, bool asfriend);
 void injectThisPtr(SYMBOL* sp, HASHTABLE* syms);
 bool intcmp(TYPE* t1, TYPE* t2);
 LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp, bool inTemplate, enum e_sc storage_class);

@@ -6,7 +6,10 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-#include <stdatomic.h> // ORANGEC
+#ifdef __ORANGEC__
+#include <stdatomic.h>
+#endif
+
 namespace std {
 
 _LIBCPP_SAFE_STATIC static std::new_handler __new_handler;
@@ -14,15 +17,21 @@ _LIBCPP_SAFE_STATIC static std::new_handler __new_handler;
 new_handler
 set_new_handler(new_handler handler) _NOEXCEPT
 {
-//    return __libcpp_atomic_exchange(&__new_handler, handler);
+#ifdef __ORANGEC__
     return atomic_exchange(&__new_handler, handler);
+#else
+    return __libcpp_atomic_exchange(&__new_handler, handler);
+#endif
 }
 
 new_handler
 get_new_handler() _NOEXCEPT
 {
-//    return __libcpp_atomic_load(&__new_handler);
+#ifdef __ORANGEC__
     return atomic_load(&__new_handler);
+#else
+    return __libcpp_atomic_load(&__new_handler);
+#endif
 }
 
 } // namespace std

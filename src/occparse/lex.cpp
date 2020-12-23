@@ -139,7 +139,7 @@ KEYWORD keywords[] = {
     */
     {"_Alignas", 8, kw_alignas, KW_C1X, TT_CONTROL},
     {"_Alignof", 8, kw_alignof, KW_C1X, TT_UNARY | TT_OPERATOR},
-    {"_Atomic", 7, kw_atomic, KW_C1X, TT_POINTERQUAL | TT_TYPEQUAL | TT_BASETYPE},
+    {"_Atomic", 7, kw_atomic, KW_C1X | KW_CPLUSPLUS, TT_POINTERQUAL | TT_TYPEQUAL | TT_BASETYPE},
     {"_Bool", 5, kw_bool, 0, TT_BASETYPE | TT_BOOL},
     {"_CR0", 4, kw_cr0, KW_NONANSI | KW_386, TT_VAR},
     {"_CR1", 4, kw_cr1, KW_NONANSI | KW_386, TT_VAR},

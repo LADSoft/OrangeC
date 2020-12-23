@@ -6163,7 +6163,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                     noTypeNameError++;
                     lex = get_type_id(lex, &dest->p->byClass.val, nullptr, sc_cast, false, true, false);
                     noTypeNameError--;
-                    if (!dest->p->byClass.val || dest->p->byClass.val->type == bt_any)
+                    if (!dest->p->byClass.val || dest->p->byClass.val->type == bt_any || (!templateNestingCount && dest->p->byClass.val->type == bt_templateselector))
                     {
                         SwapDefaultNames(enclosing, src->p->byClass.txtargs);
                         while (pushCount--)

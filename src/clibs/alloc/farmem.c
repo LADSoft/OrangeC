@@ -68,7 +68,7 @@ void _RTL_FUNC farfree(void far* ptr)
 {
     SELECTOR seg = FP_SEG(ptr);
     ULONG base;
-    if (seg == _CS || seg == _DS || seg == _SS)
+    if (seg == __CS || seg == __DS || seg == __SS)
         return;
     if (!dpmi_get_sel_base(&base, seg))
     {

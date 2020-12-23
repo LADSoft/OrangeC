@@ -47,3 +47,7 @@ long _RTL_FUNC ftell(FILE* stream)
         return -1;
     return rv;
 }
+off_t _RTL_FUNC ftello(FILE* stream)
+{
+    return (off_t)ftell(stream);
+}

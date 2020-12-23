@@ -67,7 +67,10 @@ typedef short mode_t;
 typedef int nlink_t;
 typedef short uid_t;
 typedef short gid_t;
+#ifndef _OFFT_DEFINED
+#define _OFFT_DEFINED
 typedef long off_t;
+#endif
 typedef long pid_t;
 typedef long pthread_t;
 typedef long pthread_attr_t;

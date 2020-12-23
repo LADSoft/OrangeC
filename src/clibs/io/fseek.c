@@ -44,6 +44,10 @@
 #include <stdio.h>
 #include "libp.h"
 
+int _RTL_FUNC fseeko(FILE* stream, off_t offset, int origin)
+{
+    return fseek(stream, (long)offset, origin);
+}
 int _RTL_FUNC fseek(FILE* stream, long offset, int origin)
 {
     flockfile(stream);

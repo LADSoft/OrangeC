@@ -133,6 +133,10 @@ extern "C"
 
 #ifndef RC_INVOKED
     typedef long fpos_t;
+#ifndef _OFFT_DEFINED
+#define _OFFT_DEFINED
+    typedef long off_t;
+#endif
 #endif
 
 #define FILTOK 0x444c
@@ -226,8 +230,10 @@ extern "C"
     FILE* _RTL_FUNC _IMPORT freopen(const char* ZSTR __path, const char* ZSTR __mode, FILE* restrict __stream);
     int _RTL_FUNC _IMPORT fscanf(FILE* restrict __stream, const char* ZSTR restrict __format, ...);
     int _RTL_FUNC _IMPORT fseek(FILE* __stream, long __offset, int __whence);
+    int _RTL_FUNC _IMPORT fseeko(FILE* __stream, off_t __offset, int __whence);
     int _RTL_FUNC _IMPORT fsetpos(FILE* __stream, const fpos_t* __pos);
     long _RTL_FUNC _IMPORT ftell(FILE* __stream);
+    off_t _RTL_FUNC _IMPORT ftello(FILE* __stream);
     size_t _RTL_FUNC _IMPORT fwrite(const void* __ptr, size_t __size, size_t __n, FILE* __stream);
     FILE* _RTL_FUNC popen(const char* ZSTR name, const char* ZSTR restrict mode);
     FILE* _RTL_FUNC _popen(const char* ZSTR name, const char* ZSTR restrict mode);

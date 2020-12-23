@@ -105,7 +105,8 @@ CmdSwitchCombineString prm_tool(switchParser, 'p', ';');
 CmdSwitchCombineString prm_library(switchParser, 'l', ';');
 
 CmdSwitchCombineString prm_cinclude(switchParser, 'I', ';');
-CmdSwitchCombineString prm_sysinclude(switchParser, 'z', ';');
+CmdSwitchCombineString prm_Csysinclude(switchParser, 'z', ';');
+CmdSwitchCombineString prm_CPPsysinclude(switchParser, 'Z', ';');
 CmdSwitchCombineString prm_libpath(switchParser, 'L', ';');
 CmdSwitchString prm_pipe(switchParser, 'P', ';');
 CmdSwitchCombineString prm_output_def_file(switchParser, 0, 0, "output-def");

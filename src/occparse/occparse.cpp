@@ -469,7 +469,8 @@ int main(int argc, char* argv[])
         if (Optimizer::cparams.prm_cplusplus && (Optimizer::architecture == ARCHITECTURE_MSIL))
             Utils::fatal("MSIL compiler does not compile C++ files at this time");
         preProcessor =
-            new PreProcessor(buffer, prm_cinclude.GetValue(), prm_sysinclude.GetValue(), true, Optimizer::cparams.prm_trigraph, '#',
+            new PreProcessor(buffer, prm_cinclude.GetValue(), Optimizer::cparams.prm_cplusplus ? prm_CPPsysinclude.GetValue() : prm_Csysinclude.GetValue(), 
+                             true, Optimizer::cparams.prm_trigraph, '#',
                              Optimizer::cparams.prm_charisunsigned,
                              !Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_c1x && !Optimizer::cparams.prm_cplusplus,
                              !Optimizer::cparams.prm_ansi, prm_pipe.GetValue() != "+" ? prm_pipe.GetValue() : "");

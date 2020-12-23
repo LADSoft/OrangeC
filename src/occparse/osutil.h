@@ -122,7 +122,8 @@ extern CmdSwitchCombineString prm_tool;
 extern CmdSwitchCombineString prm_library;
 
 extern CmdSwitchCombineString prm_cinclude;
-extern CmdSwitchCombineString prm_sysinclude;
+extern CmdSwitchCombineString prm_Csysinclude;
+extern CmdSwitchCombineString prm_CPPsysinclude;
 extern CmdSwitchCombineString prm_libpath;
 extern CmdSwitchString prm_pipe;
 extern CmdSwitchCombineString prm_output_def_file;

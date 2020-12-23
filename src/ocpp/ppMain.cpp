@@ -46,7 +46,8 @@ CmdSwitchBool ppMain::trigraphs(SwitchParser, 'T', false);
 CmdSwitchDefine ppMain::defines(SwitchParser, 'D');
 CmdSwitchDefine ppMain::undefines(SwitchParser, 'U');
 CmdSwitchString ppMain::includePath(SwitchParser, 'I', ';');
-CmdSwitchString ppMain::sysIncludePath(SwitchParser, 'z', ';');
+CmdSwitchString ppMain::CsysIncludePath(SwitchParser, 'z', ';');
+CmdSwitchString ppMain::CPPsysIncludePath(SwitchParser, 'Z', ';');
 CmdSwitchString ppMain::errorMax(SwitchParser, 'E');
 CmdSwitchFile ppMain::File(SwitchParser, '@');
 CmdSwitchString ppMain::outputPath(SwitchParser, 'o');
@@ -54,12 +55,12 @@ CmdSwitchString ppMain::outputPath(SwitchParser, 'o');
 const char* ppMain::usageText =
     "[options] files\n"
     "\n"
-    "/9             - C99 mode                  /a      - Assembler mode\n"
-    "/A             - Disable extensions        /Dxxx   - Define something\n"
-    "/E[+]nn        - Max number of errors      /Ipath  - Specify include path\n"
-    "/T             - translate trigraphs       /Uxxx   - Undefine something\n"
+    "/9             - C99 mode                  /a          - Assembler mode\n"
+    "/A             - Disable extensions        /Dxxx       - Define something\n"
+    "/E[+]nn        - Max number of errors      /Ipath      - Specify include path\n"
+    "/T             - translate trigraphs       /Uxxx       - Undefine something\n"
     "/V, --version  - Show version and date     /!,--nologo - No logo\n"
-    "/oxxx          - set output file           /zxxx   - set system path\n"
+    "/oxxx          - set output file           /zxxx,/Zxxx - set system path\n"
     "Time: " __TIME__ "  Date: " __DATE__;
 
 int main(int argc, char* argv[])
@@ -143,21 +144,22 @@ int ppMain::Run(int argc, char* argv[])
     if (File.GetValue())
         files.Add(File.GetValue() + 1);
 
-    std::string sysSrchPth;
-    std::string srchPth;
-    if (!includePath.GetValue().empty())
-    {
-        srchPth = includePath.GetValue();
-    }
-    if (!sysIncludePath.GetValue().empty())
-    {
-        sysSrchPth = sysIncludePath.GetValue();
-    }
     Tokenizer::SetAnsi(disableExtensions.GetValue());
     Tokenizer::SetC99(c99Mode.GetValue());
     for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
-        PreProcessor pp((*it), srchPth, sysSrchPth, false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false,
+        bool cplusplus = false;
+        static const std::list<std::string> cppExtensions = {".h", ".hh", ".hpp", ".hxx", ".hm", ".cpp", ".cxx", ".cc", ".c++"};
+        for (auto& str : cppExtensions)
+        {
+            if (Utils::HasExt((*it).c_str(), str.c_str()))
+            {
+                cplusplus = true;
+                break;
+            }
+        }
+        PreProcessor pp((*it), includePath.GetValue(), cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(), 
+                        false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false,
                         !c99Mode.GetValue(), !disableExtensions.GetValue(), "");
         if (c99Mode.GetValue())
         {
@@ -174,14 +176,11 @@ int ppMain::Run(int argc, char* argv[])
         pp.Define("__need_FILE", "1");
         pp.Define("__need_wint_t", "1");
         pp.Define("__need_malloc_and_calloc", "1");
-        static const std::list<std::string> cppExtensions = {".h", ".hh", ".hpp", ".hxx", ".hm", ".cpp", ".cxx", ".cc", ".c++"};
-        for (auto& str : cppExtensions)
+ 
+        if (cplusplus)
         {
-            if (Utils::HasExt((*it).c_str(), str.c_str()))
-            {
-                pp.Define("__cplusplus", "201402");
-                break;
-            }
+            pp.Define("__cplusplus", "201402");
+            break;
         }
 
         int n = defines.GetCount();

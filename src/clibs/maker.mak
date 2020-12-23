@@ -69,19 +69,19 @@ CFLAGS := $(CCFLAGS)
 CXXFLAGS := $(CCFLAGS)
 
 %.o: %.cpp
-	$(CC) /c $(CXXFLAGS) $(BUILDING_DLL) /D_LIBCPP_BUILDING_SYSTEM_ERROR /D_LIBCPP_BUILDING_LIBRARY $(STDINCLUDE) -I$(ORANGEC)\src\sqlite3 -o$(OBJECT)\$@ $^
-#	$(CC) /S $(CXXFLAGS) $(BUILDING_DLL) $(STDINCLUDE) $^
+	$(CC) /c $(CXXFLAGS) $(BUILDING_DLL) /D_LIBCPP_BUILDING_SYSTEM_ERROR /D_LIBCPP_BUILDING_LIBRARY -I$(ORANGEC)\src\sqlite3 -o$(OBJECT)\$@ $^
+#	$(CC) /S $(CXXFLAGS) $(BUILDING_DLL) $^
 #	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@ $*
 
 %.o: %.c
-	$(CC) /1 /c $(CFLAGS) $(BUILDING_DLL) $(STDINCLUDE) -I$(ORANGEC)\src\sqlite3 -o$(OBJECT)\$@ $^
-#	$(CC) /S $(CFLAGS) $(BUILDING_DLL) $(STDINCLUDE) $^
+	$(CC) /1 /c $(CFLAGS) $(BUILDING_DLL) -I$(ORANGEC)\src\sqlite3 -o$(OBJECT)\$@ $^
+#	$(CC) /S $(CFLAGS) $(BUILDING_DLL) $^
 #	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@ $*
 %.o: %.nas
 	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@ $(subst /,\,$^)
 
 %.ilo: %.c
-	occil -N$(OCCIL_CLASS) /1 /c /WcMn $(CILCFLAGS) $(STDINCLUDE) -o$(CILOBJECT)\$@ $(subst /,\,$^)
+	occil -N$(OCCIL_CLASS) /1 /c /WcMn $(CILCFLAGS) -o$(CILOBJECT)\$@ $(subst /,\,$^)
 
 %.xcppf: %.cpp
 	clang-format -style=file $< > $@

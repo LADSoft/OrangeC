@@ -66,16 +66,6 @@ DOSOBJECT:=$(THISPATH)object\dos
 export DOSOBJECT
 WINOBJECT:=$(THISPATH)object\windows
 export WINOBJECT
-ifdef OLDSGL
-STDINCLUDE:=-I$(subst /,\,$(realpath cpp\stdinc)) -I$(subst /,\,$(realpath stdinc))
-else
-ifdef STLPORT
-STDINCLUDE:=-I$(subst /,\,$(realpath cpp\stlport\stl)) -I$(subst /,\,$(realpath cpp\stdinc)) -I$(subst /,\,$(realpath stdinc))
-else
-STDINCLUDE:=-I$(subst /,\,$(realpath cpp\stdinc_libcxx)) -I$(subst /,\,$(realpath cpp\libcxx\include)) -I$(subst /,\,$(realpath stdinc)) -I$(subst /,\,$(realpath platform\win32\wininc)) -I$(subst /,\,$(realpath platform\win32\wininc\win32))
-endif
-endif
-export STDINCLUDE
 
 SYSOBJECT:=$(THISPATH)object\startup
 export SYSOBJECT
@@ -107,7 +97,19 @@ mkdir:
 	-mkdir object\cil 2> NUL
 	-mkdir object\clib 2> NUL
 
-$(C_DLLS) : %.dlls : mkdir
+copyfiles: mkdir
+	-mkdir ..\..\include 2> NUL
+	-mkdir ..\..\include\c 2> NUL
+	-mkdir ..\..\include\c\sys 2> NUL
+	-mkdir ..\..\include\c\win32 2> NUL
+	-copy  cpp\libcxx\include ..\..\include 2>NUL
+	-copy  cpp\stdinc_libcxx ..\..\include 2>NUL
+	-copy  stdinc ..\..\include\c 2>NUL
+	-copy  stdinc\sys ..\..\include\c\sys 2>NUL
+	-copy  platform\win32\wininc ..\..\include\c 2>NUL
+	-copy  platform\win32\wininc\win32 ..\..\include\c\win32 2>NUL
+
+$(C_DLLS) : %.dlls : copyfiles
 	$(MAKE) -C$* --eval="OBJECT=$(DLLOBJECT)" --eval="$(BUILDING_DLL)"
 
 $(C_CLIBS) : %.clibs : $(C_DLLS)
@@ -164,9 +166,9 @@ else
 endif
 endif
 	$(COPYDIR) stdinc\%.h $(DISTINC)\c
-	$(COPYDIR) stdinc\sys\%.h $(DISTINC)\sys
-	$(COPYDIR) platform\win32\wininc\%.h $(DISTINC)
-	$(COPYDIR) platform\win32\wininc\win32\%.h $(DISTINC)\win32
+	$(COPYDIR) stdinc\sys\%.h $(DISTINC)\c\sys
+	$(COPYDIR) platform\win32\wininc\%.h $(DISTINC)\c
+	$(COPYDIR) platform\win32\wininc\win32\%.h $(DISTINC)\c\win32
 ifndef BUILDENV
 	$(COPYDIR) object\startup\%.l $(DISTLIB)
 	$(COPYDIR) object\startup\%.o $(DISTLIB)

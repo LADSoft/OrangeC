@@ -695,9 +695,12 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                         i = 0;
                         while (temp)
                         {
+                            bool rref = basetype(temp->tp)->type == bt_rref;
+                            if (isref(temp->tp))
+                                temp->tp = basetype(temp->tp)->btp;
                             holdl[i] = temp->tp->lref;
                             holdr[i] = temp->tp->rref;
-                            if (!temp->tp->rref && basetype(temp->tp)->type != bt_rref)  // DAL FIXED
+                            if (!temp->tp->rref && !rref)  // DAL FIXED
                             {
                                 temp->tp->lref = true;
                             }

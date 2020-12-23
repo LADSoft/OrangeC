@@ -3809,7 +3809,7 @@ static void getInitListConversion(TYPE* tp, INITLIST* list, TYPE* tpp, int* n, e
                 funcparams.arguments = a;
                 exp.type = en_c_i;
                 thistp.type = bt_pointer;
-                thistp.btp = tp;
+                thistp.btp = basetype(tp);
                 thistp.rootType = &thistp;
                 thistp.size = getSize(bt_pointer);
                 funcparams.thistp = &thistp;

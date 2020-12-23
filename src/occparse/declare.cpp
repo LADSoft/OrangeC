@@ -1223,32 +1223,20 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
     if (inTemplate)
         inTemplateSpecialization++;
 
-    SYMBOL* ssp;
-    if (!asfriend && ISID(lex) && Optimizer::cparams.prm_cplusplus && (ssp = getStructureDeclaration()))
-    {
-        strSym = ssp;
-        table = ssp->tp->tags;
-        if (!ssp->sb->parentClass)
-        {
-            if (theCurrentFunc)
-                nsv = localNameSpace;
-            else
-                nsv = globalNameSpace;
-        }
-        else
-        {
-            nsv = nullptr;
-        }
-        sp = search(newName, table);
-        lex = getsym();
-    }
-    else
-    {
-        lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
-    }
+    lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
+
     if (inTemplate)
         inTemplateSpecialization--;
 
+
+    if (!asfriend && charindex != -1 && Optimizer::cparams.prm_cplusplus && openStructs && MATCHKW(lex, semicolon))
+    {
+        // forward declaration within class...   erase anything found outside the class
+        if (!sp || sp->sb->parentClass != (SYMBOL*)openStructs->data)
+        {
+            sp = nullptr;
+        }
+    }
     if (charindex != -1 && Optimizer::cparams.prm_cplusplus && ISID(lex) && !strcmp(lex->value.s.a, "final"))
     {
         isfinal = true;
@@ -1298,7 +1286,7 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
         sp->sb->declfile = sp->sb->origdeclfile = lex->errfile;
         sp->sb->declfilenum = lex->linedata->fileindex;
         if ((storage_class == sc_member || storage_class == sc_mutable) &&
-            (Optimizer::cparams.prm_cplusplus || (lex, begin) || MATCHKW(lex, colon) || MATCHKW(lex, kw_try) || MATCHKW(lex, semicolon)))
+            (MATCHKW(lex, begin) || MATCHKW(lex, colon) || MATCHKW(lex, kw_try) || MATCHKW(lex, semicolon)))
             sp->sb->parentClass = getStructureDeclaration();
         if (nsv)
             sp->sb->parentNameSpace = nsv->valueData->name;

@@ -29,6 +29,10 @@
 namespace std
 {
 
+#ifdef __ORANGEC__
+nothrow_t::nothrow_t() = default;
+#endif
+
 #ifndef __GLIBCXX__
 const nothrow_t nothrow{};
 #endif

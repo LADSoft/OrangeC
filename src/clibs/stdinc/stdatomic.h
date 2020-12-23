@@ -37,7 +37,8 @@
 #ifndef __STDATOMIC_H
 #define __STDATOMIC_H
 
-#ifdef __cplusplus
+
+#if defined(__cplusplus) && !defined(_LIBCPP_BUILDING_LIBRARY)
 #    pragma error \
         "This header uses C11 and greater constructs at this time, this error is to inform you of this so you understand why it breaks instantly"
 #endif

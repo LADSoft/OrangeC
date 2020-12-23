@@ -24,13 +24,6 @@ const char *bad_alloc::what() const _NOEXCEPT
 {
     return "bad_alloc";
 }
-void
-__throw_bad_alloc()
-{
-#ifndef _LIBCPP_NO_EXCEPTIONS
-    throw bad_alloc();
-#endif
-}
 
 bad_array_new_length::bad_array_new_length() : bad_alloc()
 {

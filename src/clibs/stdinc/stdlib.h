@@ -129,6 +129,7 @@ extern "C"
     void _RTL_FUNC _IMPORT _NORETURN exit(int __status);
     void _RTL_FUNC _IMPORT _NORETURN _Exit(int __status);
     void _RTL_FUNC _IMPORT _MSIL_RTL free(void* __block);
+    void _RTL_FUNC _IMPORT _aligned_free(void* __block);
     char* ZSTR _RTL_FUNC _IMPORT getenv(const char* ZSTR __name);
     void* _RTL_FUNC _IMPORT lfind(const void* __key, const void* __base, size_t* __num, size_t __width,
                                   int (*fcmp)(const void*, const void*));
@@ -139,6 +140,7 @@ extern "C"
     void* _RTL_FUNC _IMPORT _lsearch(const void* __key, void* __base, size_t* __num, size_t __width,
                                      int (*fcmp)(const void*, const void*));
     void* _RTL_FUNC _IMPORT aligned_alloc(size_t __align, size_t __size);
+    void* _RTL_FUNC _IMPORT _aligned_malloc(size_t __align, size_t __size);
     void* _RTL_FUNC _IMPORT _MSIL_RTL malloc(size_t __size);
     int _RTL_FUNC _IMPORT mblen(const char* ZSTR __s, size_t __n);
     size_t _RTL_FUNC _IMPORT mbstowcs(wchar_t* restrict __pwcs, const char* ZSTR restrict __s, size_t __n);

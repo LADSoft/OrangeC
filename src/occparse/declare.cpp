@@ -3791,7 +3791,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                                 if (spi->sb->init->exp->type == en_thisref)
                                 {
                                     EXPRESSION** expr = &spi->sb->init->exp->left->v.func->thisptr;
-                                    if ((*expr)->type == en_add && isconstzero(&stdint, (*expr)->right))
+                                    if (*expr && (*expr)->type == en_add && isconstzero(&stdint, (*expr)->right))
                                         spi->sb->init->exp->v.t.thisptr = (*expr) = (*expr)->left;
                                 }
                             }
@@ -4284,6 +4284,15 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                                             foundland = true;
                                             lex = getsym();
                                             break;
+                                        case kw_throw:
+                                        case kw_noexcept:
+                                            if (Optimizer::cparams.prm_cplusplus && *sp)
+                                            {
+                                                funcLevel++;
+                                                lex = getExceptionSpecifiers(lex, funcsp, *sp, storage_class);
+                                                funcLevel--;
+                                            }
+                                            break;
                                         default:
                                             done = true;
                                             break;
@@ -4326,12 +4335,6 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                                 tp1->btp = *tp;
                                 tp1->rootType = (*tp)->rootType;
                                 *tp = tp1;
-                            }
-                            if (Optimizer::cparams.prm_cplusplus && *sp)
-                            {
-                                funcLevel++;
-                                lex = getExceptionSpecifiers(lex, funcsp, *sp, storage_class);
-                                funcLevel--;
                             }
                             ParseAttributeSpecifiers(&lex, funcsp, true);
                             if (MATCHKW(lex, pointsto))

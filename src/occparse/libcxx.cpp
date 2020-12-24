@@ -559,6 +559,12 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
     }
     if (funcparams.arguments)
     {
+        TYPE *tp3 = funcparams.arguments->tp;
+        if (isref(tp3))
+            tp3 = basetype(tp3)->btp;
+        if (isstructured(tp3))
+            if (!strcmp(basetype(tp3)->sp->name, "allocator"))
+                printf("hi");
         TYPE* tp2 = funcparams.arguments->tp;
         if (isarray(tp2))
         {
@@ -589,6 +595,22 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                             *tp = &stdint;
                             return true;
                         }
+                    }
+                    if (isstructured(tp2))
+                    {                        
+                        if (isstructured(tpy))
+                        {
+                            SYMBOL* sp2 = basetype(tp2)->sp;
+                            SYMBOL* spy = basetype(tpy)->sp;
+                            if (sp2->sb->mainsym)
+                                sp2 = sp2->sb->mainsym;
+                            if (spy->sb->mainsym)
+                                spy = spy->sb->mainsym;
+                            rv = sp2 == spy || sameTemplate(sp2->tp, spy->tp);
+                        }
+                        *exp = intNode(en_c_i, rv);
+                        *tp = &stdint;
+                        return true;
                     }
                 }
             }

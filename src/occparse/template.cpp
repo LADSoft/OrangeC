@@ -7785,11 +7785,6 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             Optimizer::SymbolManager::Get(sym)->xc = false;
             templateHeaderCount = oldHeaderCount;
             lex = sym->sb->deferredCompile;
-            while (lex)
-            {
-                lex->registered = false;
-                lex = lex->next;
-            }
             SetAlternateLex(nullptr);
             PopTemplateNamespace(nsl);
             noTypeNameError = oldTypeNameError;

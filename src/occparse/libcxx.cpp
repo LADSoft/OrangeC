@@ -559,12 +559,6 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
     }
     if (funcparams.arguments)
     {
-        TYPE *tp3 = funcparams.arguments->tp;
-        if (isref(tp3))
-            tp3 = basetype(tp3)->btp;
-        if (isstructured(tp3))
-            if (!strcmp(basetype(tp3)->sp->name, "allocator"))
-                printf("hi");
         TYPE* tp2 = funcparams.arguments->tp;
         if (isarray(tp2))
         {

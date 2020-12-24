@@ -2187,6 +2187,8 @@ static LEXEME* getInitInternal(LEXEME* lex, SYMBOL* funcsp, INITLIST** lptr, enu
             if (p->tp && isvoid(p->tp) && finish != closepa)
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             optimize_for_constants(&p->exp);
+            if ((!templateNestingCount || instantiatingTemplate) && p->tp->type == bt_templateselector)
+                p->tp = LookupTypeFromExpression(p->exp, nullptr, false);
             if (finish != closepa)
                 assignmentUsages(p->exp, false);
             if (p->tp)

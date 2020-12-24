@@ -34,7 +34,7 @@ extern HASHTABLE* CreateHashTable(int size);
 #define F_CONVERSION 32
 
 Optimizer::LIST* tablesearchone(const char* name, NAMESPACEVALUELIST* ns, bool tagsOnly);
-Optimizer::LIST* tablesearchinline(const char* name, NAMESPACEVALUELIST* ns, bool tagsOnly);
+Optimizer::LIST* tablesearchinline(const char* name, NAMESPACEVALUELIST* ns, bool tagsOnly, bool allowUsing = false);
 SYMBOL* namespacesearch(const char* name, NAMESPACEVALUELIST* ns, bool qualified, bool tagsOnly);
 LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* throughClass, bool tagsOnly, enum e_sc storage_class,
                    bool isType);

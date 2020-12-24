@@ -77,7 +77,9 @@ Optimizer::LIST* tablesearchone(const char* name, NAMESPACEVALUELIST* ns, bool t
     }
     return nullptr;
 }
-Optimizer::LIST* tablesearchinline(const char* name, NAMESPACEVALUELIST* ns, bool tagsOnly)
+static Optimizer::LIST* namespacesearchone(const char* name, NAMESPACEVALUELIST* ns, Optimizer::LIST* gather, bool tagsOnly,
+                                           bool allowUsing);
+Optimizer::LIST* tablesearchinline(const char* name, NAMESPACEVALUELIST* ns, bool tagsOnly, bool allowUsing)
 {
     // main namespace
     Optimizer::LIST* rv = tablesearchone(name, ns, tagsOnly);
@@ -90,7 +92,7 @@ Optimizer::LIST* tablesearchinline(const char* name, NAMESPACEVALUELIST* ns, boo
         {
             Optimizer::LIST* rv1;
             x->sb->visited = true;
-            rv1 = tablesearchinline(name, x->sb->nameSpaceValues, tagsOnly);
+            rv1 = tablesearchinline(name, x->sb->nameSpaceValues, tagsOnly, allowUsing);
             if (rv1)
             {
                 while (rv1->next)
@@ -101,13 +103,28 @@ Optimizer::LIST* tablesearchinline(const char* name, NAMESPACEVALUELIST* ns, boo
         }
         lst = lst->next;
     }
+    // any using definitions in this inline namespace
+    if (allowUsing)
+    {
+        Optimizer::LIST* lst = ns->valueData->usingDirectives;
+        while (lst)
+        {
+            SYMBOL* x = (SYMBOL*)lst->data;
+            if (!x->sb->visited)
+            {
+                x->sb->visited = true;
+                rv = namespacesearchone(name, x->sb->nameSpaceValues, rv, tagsOnly, allowUsing);
+            }
+            lst = lst->next;
+        }
+    }
     // enclosing ns if this one is inline
     if (ns->valueData->name && !ns->valueData->name->sb->visited &&
         ns->valueData->name->sb->attribs.inheritable.linkage == lk_inline)
     {
         Optimizer::LIST* rv1;
         ns->valueData->name->sb->visited = true;
-        rv1 = tablesearchinline(name, ns->valueData->name->sb->nameSpaceValues, tagsOnly);
+        rv1 = tablesearchinline(name, ns->valueData->name->sb->nameSpaceValues, tagsOnly, allowUsing);
         if (rv1)
         {
             while (rv1->next)
@@ -121,7 +138,7 @@ Optimizer::LIST* tablesearchinline(const char* name, NAMESPACEVALUELIST* ns, boo
 static Optimizer::LIST* namespacesearchone(const char* name, NAMESPACEVALUELIST* ns, Optimizer::LIST* gather, bool tagsOnly,
                                            bool allowUsing)
 {
-    Optimizer::LIST* rv = tablesearchinline(name, ns, tagsOnly);
+    Optimizer::LIST* rv = tablesearchinline(name, ns, tagsOnly, allowUsing);
     if (rv)
     {
         Optimizer::LIST* rv1 = rv;

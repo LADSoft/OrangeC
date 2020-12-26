@@ -289,7 +289,7 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
 std::string ppInclude::SrchPath(bool system, const std::string& name, const std::string& searchPath, bool skipUntilDepth, int& filesSkipped)
 {
 	const char* path = searchPath.c_str();
-	if (path != nullptr && *path == '\0' && !system && !skipUntilDepth)
+	if (path != nullptr && *path == '\0' && !system && skipUntilDepth)
 	{
 		filesSkipped++;
 	}
@@ -298,9 +298,9 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 	do
 	{
 		bool reachedEndOfBuf = false;
-		if (skipUntilDepth && (filesSkipped <= totalNumberofSkipsNeeded))
+		if (skipUntilDepth && (filesSkipped <= totalNumberofSkipsNeeded + 1))
 		{
-			while (filesSkipped <= totalNumberofSkipsNeeded)
+			while (filesSkipped <= totalNumberofSkipsNeeded + 1)
 			{
 				// Prevent nullptr exceptions and clear out the value of buf
 				// TODO: find a fix that's faster than this, if compiled with any compiler that has vectorization this should be faster than strlen

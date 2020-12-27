@@ -36,7 +36,6 @@ extern bool inTemplateType;
 extern int inTemplateHeader;
 extern int noTypeNameError;
 extern SYMBOL* instantiatingMemberFuncClass;
-extern bool reflectUsingType;
 extern struct templateListData* currents;
 extern int instantiatingFunction;
 

@@ -68,7 +68,6 @@ int inTemplateSpecialization = 0;
 int inDeduceArgs;
 bool parsingSpecializationDeclaration;
 bool inTemplateType;
-bool reflectUsingType;
 int noTypeNameError;
 int inTemplateHeader;
 SYMBOL* instantiatingMemberFuncClass;
@@ -10152,85 +10151,106 @@ void SearchAlias(const char *name, TEMPLATEPARAMLIST *x, SYMBOL* sym, TEMPLATEPA
 static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEPARAMLIST* orig, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing);
 void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool expression, SYMBOL* sym, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing)
 {
-        while (old)
+    bool first = true;
+    while (old)
         {
             (*rvs) = Allocate<TEMPLATESELECTOR>();
             *(*rvs) = *old;
             if (old->isDeclType)
             {
+                first = false;
                 if (!templateNestingCount)
                 {
                     TYPE* basetp = old->tp;
                     (*rvs)->tp = SpecifyArgType(basetp->sp, basetp, nullptr, nullptr, args, origTemplate, origUsing);
                 }
             }
-            else if (old->isTemplate)
+            else
             {
-                TEMPLATEPARAMLIST *tpl = nullptr;
-                TEMPLATEPARAMLIST **x = nullptr;
-                if (old->templateParams)
+                if (first && old->sp)
                 {
-                    tpl = (*rvs)->templateParams;
-                    (*rvs)->templateParams = nullptr;
-                    x = &(*rvs)->templateParams;
-
-                }
-                else
-                {
-                    (*rvs)->sp = clonesym((*rvs)->sp);
-                    tpl = (*rvs)->sp->templateParams;
-                    (*rvs)->sp->templateParams = nullptr;
-                    x = &(*rvs)->sp->templateParams;
-                }
-                while (tpl)
-                {
-                    *x = Allocate<TEMPLATEPARAMLIST>();
-                    **x = *tpl;
-                    if (tpl->p->type != kw_new)
+                    first = false;
+                    if (old->sp->tp->type == bt_templateparam)
                     {
-                        bool replaced = false;
-                        (*x)->p = Allocate<TEMPLATEPARAM>();
-                        *(*x)->p = *tpl->p;
-                        if (!expression && tpl->p->type == kw_int && tpl->p->byNonType.dflt)
+                        TEMPLATEPARAMLIST* rv = TypeAliasSearch(old->sp->name);
+                        if (rv && rv->p->type == kw_typename)
                         {
-                            (*x)->p->byNonType.dflt = copy_expression((*x)->p->byNonType.dflt);
-                            replaced = ReplaceIntAliasParams(&(*x)->p->byNonType.dflt, sym, args, origTemplate, origUsing);
-                        }
-                        if (!replaced && tpl->argsym && (expression || (tpl->p->type == kw_int || !tpl->p->byClass.dflt)))
-                        {
-                            const char *name = tpl->argsym->name;
-                            if (!expression && tpl->p->type == kw_int && tpl->p->byNonType.dflt && tpl->p->byNonType.dflt->type == en_templateparam)
-                            {
-                                name = tpl->p->byNonType.dflt->v.sp->name;
-                                SearchAlias(name, *x, sym, args, origTemplate, origUsing);
-                            }
-                            else if (expression && tpl->p->type == kw_int && (*x)->p->byNonType.dflt)
-                            {
-                                if (!IsConstantExpression((*x)->p->byNonType.dflt, false, false))
-                                    SearchAlias(name, *x, sym, args, origTemplate, origUsing);
-                            }
-                            else if ((*x)->p->type == kw_typename && (*x)->p->byClass.dflt)
-                            {
-                                // this is because a 'default' can either be from
-                                // a really defaulted value, or it can be from a previous
-                                // replacement.   We keep track of when a previous replacement
-                                // occurs and check it here.
-                                // it would be better if we set this up during the declaration phase,
-                                // however I don't want to duplicate the massive amounts of code that
-                                // go through the type & expression trees to locate such things...
-                                if ((*x)->p->replaced)
-                                    SearchAlias(name, *x, sym, args, origTemplate, origUsing);
-                                else
-                                    SpecifyOneArg(sym, *x, args, origTemplate, origUsing);
-                            }
-                            else
-                            {
-                                SearchAlias(name, *x, sym, args, origTemplate, origUsing);
-                            }
+                            TYPE *tp = rv->p->byClass.val ? rv->p->byClass.val : rv->p->byClass.dflt;
+                            if (tp && isstructured(tp))
+                                (*rvs)->sp = basetype(tp)->sp;
                         }
                     }
-                    tpl = tpl->next;
-                    x = &(*x)->next;
+                }
+                if (old->isTemplate)
+                {
+                    TEMPLATEPARAMLIST *tpl = nullptr;
+                    TEMPLATEPARAMLIST **x = nullptr;
+                    if (old->templateParams)
+                    {
+                        tpl = (*rvs)->templateParams;
+                        (*rvs)->templateParams = nullptr;
+                        x = &(*rvs)->templateParams;
+
+                    }
+                    else
+                    {
+                        (*rvs)->sp = clonesym((*rvs)->sp);
+                        tpl = (*rvs)->sp->templateParams;
+                        (*rvs)->sp->templateParams = nullptr;
+                        x = &(*rvs)->sp->templateParams;
+                    }
+                    while (tpl)
+                    {
+                        *x = Allocate<TEMPLATEPARAMLIST>();
+                        **x = *tpl;
+                        if (tpl->p->type != kw_new)
+                        {
+                            bool replaced = false;
+                            (*x)->p = Allocate<TEMPLATEPARAM>();
+                            *(*x)->p = *tpl->p;
+                            if (!expression && tpl->p->type == kw_int && tpl->p->byNonType.dflt)
+                            {
+                                (*x)->p->byNonType.dflt = copy_expression((*x)->p->byNonType.dflt);
+                                replaced = ReplaceIntAliasParams(&(*x)->p->byNonType.dflt, sym, args, origTemplate, origUsing);
+                                if (replaced)
+                                    optimize_for_constants(&(*x)->p->byNonType.dflt);
+                            }
+                            if (!replaced && tpl->argsym && (expression || (tpl->p->type == kw_int || !tpl->p->byClass.dflt)))
+                            {
+                                const char *name = tpl->argsym->name;
+                                if (!expression && tpl->p->type == kw_int && tpl->p->byNonType.dflt && tpl->p->byNonType.dflt->type == en_templateparam)
+                                {
+                                    name = tpl->p->byNonType.dflt->v.sp->name;
+                                    SearchAlias(name, *x, sym, args, origTemplate, origUsing);
+                                }
+                                else if (expression && tpl->p->type == kw_int && (*x)->p->byNonType.dflt)
+                                {
+                                    if (!IsConstantExpression((*x)->p->byNonType.dflt, false, false))
+                                        SearchAlias(name, *x, sym, args, origTemplate, origUsing);
+                                }
+                                else if ((*x)->p->type == kw_typename && (*x)->p->byClass.dflt)
+                                {
+                                    // this is because a 'default' can either be from
+                                    // a really defaulted value, or it can be from a previous
+                                    // replacement.   We keep track of when a previous replacement
+                                    // occurs and check it here.
+                                    // it would be better if we set this up during the declaration phase,
+                                    // however I don't want to duplicate the massive amounts of code that
+                                    // go through the type & expression trees to locate such things...
+                                    if ((*x)->p->replaced)
+                                        SearchAlias(name, *x, sym, args, origTemplate, origUsing);
+                                    else
+                                        SpecifyOneArg(sym, *x, args, origTemplate, origUsing);
+                                }
+                                else
+                                {
+                                    SearchAlias(name, *x, sym, args, origTemplate, origUsing);
+                                }
+                            }
+                        }
+                        tpl = tpl->next;
+                        x = &(*x)->next;
+                    }
                 }
             }
             old = old->next;
@@ -10935,10 +10955,54 @@ TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLAT
     args1 = ResolveTemplateSelectors(sp, args1, false);
     return args1;
 }
+static TEMPLATEPARAMLIST* TypeAliasAdjustArgs(TEMPLATEPARAMLIST* tpl, TEMPLATEPARAMLIST* args)
+{
+    auto argsin = args;
+    TEMPLATEPARAMLIST* t;
+    for (t = tpl; t && argsin; t = t->next, argsin = argsin->next);
+    if (t)
+    {
+        TEMPLATEPARAMLIST **last = &args;
+        for (t = tpl; t && *last; t = t->next, last = &(*last)->next)
+        {
+            if ((*last)->p->packed)
+                break;
+        }
+        if (*last && t)
+        {
+            auto packed = *last;
+            auto tpn = &(*last)->p->byPack.pack;
+            while (!t->p->packed && t->p->type == packed->p->type)
+            {
+                TEMPLATEPARAMLIST* tpx = Allocate<TEMPLATEPARAMLIST>();
+                if (*tpn)
+                {
+                    tpx->p = (*tpn)->p;
+                    *tpn = (*tpn)->next;
+                }
+                else
+                {
+                    tpx->p = Allocate<TEMPLATEPARAM>();
+                    tpx->p->type = packed->p->type;
+                }
+                tpx->argsym = t->argsym;
+                *last = tpx;
+                last = &(*last)->next;
+                t = t->next;
+            }
+            *last = packed;
+        }
+    }
+    argsin = args;
+    for (auto t = tpl; t && argsin; t = t->next, argsin = argsin->next)
+    {
+//        if (!argsin->argsym)
+            argsin->argsym = t->argsym;
+    }
+    return args;
+}
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
-    if (reflectUsingType)
-        return sp;
     SYMBOL* rv;
     // if we get here we have a templated typedef
     STRUCTSYM t1;
@@ -10946,9 +11010,9 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
     {
         t1.tmpl = sp->sb->parentClass->templateParams;
         addTemplateDeclaration(&t1);
-    }
+    }   
     STRUCTSYM t;
-    t.tmpl = args;
+    t.tmpl = args = TypeAliasAdjustArgs(sp->templateParams->next, args);
     addTemplateDeclaration(&t);
     TYPE* basetp = sp->tp->btp;
     if (basetp->type == bt_templatedecltype)

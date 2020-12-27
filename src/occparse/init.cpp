@@ -2051,7 +2051,7 @@ static LEXEME* initialize_reference_type(LEXEME* lex, SYMBOL* funcsp, int offset
         {
             exp = ConvertInitToRef(exp, itype, tp, sc);
         }
-        else if (itype->type == bt_rref && isstructured(itype->btp) && exp->type != en_lvalue)
+        else if (itype->type == bt_rref && isstructured(itype->btp) && exp->type != en_lvalue && exp->type != en_l_ref)
         {
             EXPRESSION* expx = exp;
             bool lref = false;

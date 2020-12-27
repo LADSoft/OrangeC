@@ -705,8 +705,7 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                         funcparams.thistp->rootType = funcparams.thistp;
                         funcparams.thistp->size = getSize(bt_pointer);
                         funcparams.ascall = true;
-                        if (funcparams.arguments->next)
-                            funcparams.arguments = funcparams.arguments->next;
+                        funcparams.arguments = funcparams.arguments->next;
                         temp = funcparams.arguments;
                         i = 0;
                         while (temp)

@@ -4942,18 +4942,17 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                         error(ERR_NO_REF_POINTER_REF);
                     }
                     TYPE* tp2;
-                    if (!*tp || !isref(*tp))
-                    {
-                        ptype = Allocate<TYPE>();
-                        if (MATCHKW(lex, andx))
-                            ptype->type = bt_lref;
-                        else
-                            ptype->type = bt_rref;
-                        ptype->size = getSize(bt_pointer);
-                        ptype->btp = *tp;
-                        ptype->rootType = ptype;
-                        *tp = ptype;
-                    }
+                    ptype = Allocate<TYPE>();
+                    if (MATCHKW(lex, andx))
+                        ptype->type = bt_lref;
+                    else
+                        ptype->type = bt_rref;
+                    ptype->size = getSize(bt_pointer);
+                    ptype->btp = *tp;
+                    ptype->rootType = ptype;
+                    *tp = ptype;
+                    if (instantiatingTemplate)
+                        CollapseReferences(*tp);
                     lex = getsym();
                     ParseAttributeSpecifiers(&lex, funcsp, true);
                     lex = getQualifiers(lex, tp, linkage, linkage2, linkage3, nullptr);

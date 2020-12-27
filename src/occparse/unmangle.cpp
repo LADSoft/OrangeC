@@ -682,6 +682,7 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
             strcat(buf, tn_const);
         if (cvol)
             strcat(buf, tn_volatile);
+        buf += strlen(buf);
     }
 
     if (isdigit(*name))

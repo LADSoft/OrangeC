@@ -108,5 +108,7 @@ void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, NAMESPACEVALUELIST* ns
                                    TEMPLATEPARAMLIST* templateParams, bool isExtern);
 bool TemplateFullySpecialized(SYMBOL* sp);
 void propagateTemplateDefinition(SYMBOL* sym);
+bool inCurrentTemplate(const char* name);
+bool definedInTemplate(const char* name);
 LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum e_sc storage_class, bool isExtern);
 }  // namespace Parser

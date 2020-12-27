@@ -3531,7 +3531,7 @@ LEXEME* getDeferredData(LEXEME* lex, LEXEME** savePos, bool braces)
     }
     return lex;
 }
-LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp, bool inTemplate, enum e_sc storage_class)
+LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp, bool inTemplate, enum e_sc storage_class, bool funcptr)
 {
     (void)storage_class;
     SYMBOL* sp = *spin;
@@ -3663,7 +3663,9 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                 if (spi->packed)
                 {
                     checkPackedType(spi);
-                    if (!templateNestingCount)
+                    if (tp2->type == bt_templateparam && !strcmp(tp2->templateParam->argsym->name, "Params"))
+                        printf("hi");
+                    if (!templateNestingCount || (!funcptr && tp2->type == bt_templateparam && tp2->templateParam->argsym && !inCurrentTemplate(tp2->templateParam->argsym->name) && definedInTemplate(tp2->templateParam->argsym->name)))
                     {
                         if (tp2->templateParam && tp2->templateParam->p->packed)
                         {
@@ -4200,7 +4202,7 @@ LEXEME* getExceptionSpecifiers(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_s
     return lex;
 }
 static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp, bool inTemplate, enum e_sc storage_class,
-                            int consdest)
+                            int consdest, bool funcptr)
 {
     bool isvla = false;
     TYPE* quals = nullptr;
@@ -4213,12 +4215,12 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
             case openpa:
                 if (*sp)
                 {
-                    lex = getFunctionParams(lex, funcsp, sp, tp, inTemplate, storage_class);
+                    lex = getFunctionParams(lex, funcsp, sp, tp, inTemplate, storage_class, funcptr);
                     tp1 = *tp;
                     if (tp1->type == bt_func)
                     {
                         *tp = (*tp)->btp;
-                        lex = getAfterType(lex, funcsp, tp, sp, inTemplate, storage_class, consdest);
+                        lex = getAfterType(lex, funcsp, tp, sp, inTemplate, storage_class, consdest, false);
                         tp1->btp = *tp;
                         *tp = tp1;
                         if (Optimizer::cparams.prm_cplusplus)
@@ -4455,14 +4457,14 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                 {
                     TEMPLATEPARAMLIST* templateParams = TemplateGetParams(*sp);
                     lex = GetTemplateArguments(lex, funcsp, *sp, &templateParams->p->bySpecialization.types);
-                    lex = getAfterType(lex, funcsp, tp, sp, inTemplate, storage_class, consdest);
+                    lex = getAfterType(lex, funcsp, tp, sp, inTemplate, storage_class, consdest, false);
                 }
                 else
                 {
                     TEMPLATEPARAM* templateParam = Allocate<TEMPLATEPARAM>();
                     templateParam->type = kw_new;
                     lex = GetTemplateArguments(lex, funcsp, *sp, &templateParam->bySpecialization.types);
-                    lex = getAfterType(lex, funcsp, tp, sp, inTemplate, storage_class, consdest);
+                    lex = getAfterType(lex, funcsp, tp, sp, inTemplate, storage_class, consdest, false);
                     if (*tp && isfunction(*tp))
                     {
                         TEMPLATEPARAMLIST* lst = Allocate<TEMPLATEPARAMLIST>();
@@ -4703,7 +4705,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
         }
         ParseAttributeSpecifiers(&lex, funcsp, true);
         if (!doneAfter)
-            lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);
+            lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, false);
         if (nsvX)
         {
             nameSpaceList = nameSpaceList->next;
@@ -4738,10 +4740,10 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                     }
                     *tp = (*spi)->tp;
                     lex = prevsym(start);
-                    lex = getFunctionParams(lex, funcsp, spi, tp, inTemplate, storage_class);
+                    lex = getFunctionParams(lex, funcsp, spi, tp, inTemplate, storage_class, false);
                     tp1 = *tp;
                     *tp = (*tp)->btp;
-                    lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);
+                    lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, false);
                     tp1->btp = *tp;
                     *tp = tp1;
                     UpdateRootTypes(tp1);
@@ -4776,7 +4778,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                         addStructureDeclaration(&s);
                     }
                     lex = prevsym(start);
-                    lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);
+                    lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, false);
                     if (*strSym)
                     {
                         dropStructureDeclaration();
@@ -4784,7 +4786,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                 }
                 else if (MATCHKW(lex, openbr))
                 {
-                    lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);
+                    lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, false);
                     needkw(&lex, closepa);
                 }
                 else
@@ -4826,7 +4828,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                         errskim(&lex, skim_closepa);
                         skip(&lex, closepa);
                     }
-                    lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);
+                    lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, true);
                     if (ptype)
                     {
                         // pointer to func or pointer to memberfunc
@@ -4977,7 +4979,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                 *spi = makeID(storage_class, *tp, *spi, NewUnnamedID());
                 SetLinkerNames(*spi, lk_none);
                 (*spi)->sb->anonymous = true;
-                lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);
+                lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, false);
                 break;
             case gt:
             case comma:
@@ -4987,7 +4989,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                     return lex;
                 if (*tp && (isstructured(*tp) || (*tp)->type == bt_enum) && KW(lex) == semicolon)
                 {
-                    lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);
+                    lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, false);
                     *spi = nullptr;
                     return lex;
                 }
@@ -5006,7 +5008,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                 *spi = makeID(storage_class, *tp, *spi, NewUnnamedID());
                 SetLinkerNames(*spi, lk_none);
                 (*spi)->sb->anonymous = true;
-                lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);
+                lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, false);
                 break;
         }
     if (*tp && (ptype = basetype(*tp)))

@@ -1045,7 +1045,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     {
         TYPE* tpx = &stdvoid;
         SYMLIST* hr;
-        lex = getFunctionParams(lex, NULL, &self->func, &tpx, false, sc_auto);
+        lex = getFunctionParams(lex, NULL, &self->func, &tpx, false, sc_auto, false);
         if (!self->func->tp->syms)
         {
             errorstr(ERR_MISSING_TYPE_FOR_PARAMETER, "undefined");

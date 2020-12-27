@@ -11629,6 +11629,45 @@ static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, TYPE* tp, NAMESPACEVALUEL
         dropStructureDeclaration();
     }
 }
+bool inCurrentTemplate(const char* name)
+{
+    for (auto t = *currents->ptail; t; t = t->next)
+        if (t->argsym && !strcmp(name, t->argsym->name))
+            return true;
+    return false;
+}
+bool definedInTemplate(const char* name)
+{
+    auto s = structSyms;
+    while (s)
+    {
+        if (s->str)
+            for (auto t = s->str->templateParams; t; t = t->next)
+                if (t->argsym && !strcmp(t->argsym->name, name))
+                    if (t->p->packed)
+                    {
+                        if (s->str->sb->instantiated && !t->p->byPack.pack)
+                            return true;
+                        bool rv = true;
+                        for (auto r = t->p->byPack.pack; r; r = r->next)
+                            if (!r->p->byClass.val)
+                            {
+                                rv = false;
+                                break;
+                            }
+                        if (rv)
+                            return true;                           
+                    }
+                    else
+                    {
+                        if (t->p->byClass.val)
+                            return true;
+                    }
+        s = s->next;
+    }
+    return false;
+}
+
 LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum e_sc storage_class, bool isExtern)
 {
     HASHTABLE* oldSyms = localNameSpace->valueData->syms;

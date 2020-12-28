@@ -5095,6 +5095,9 @@ static bool DeduceTemplateParam(TEMPLATEPARAMLIST* Pt, TYPE* P, TYPE* A, bool ch
             if (P)
             {
                 TYPE* q = A;
+                // functions are never const...
+                if (isfunction(A) && (isconst(P) || isvolatile(P)))
+                    return false;
                 while (q)
                 {
                     if (isconst(q))

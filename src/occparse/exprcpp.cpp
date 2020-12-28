@@ -1315,7 +1315,7 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
         funcparams->thistp = Allocate<TYPE>();
         funcparams->thistp->type = bt_pointer;
         funcparams->thistp->size = getSize(bt_pointer);
-        funcparams->thistp->btp = *tp;
+        funcparams->thistp->btp = basetype(*tp);
         funcparams->thistp->rootType = funcparams->thistp;
         funcparams->thisptr = *exp;
     }

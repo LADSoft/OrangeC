@@ -3133,53 +3133,6 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
     {
         rv = exp->v.func->arguments;
     }
-    /*
-    while (arguments)
-    {
-        if (arguments->exp->type == en_func)
-        {
-            FUNCTIONCALL* call = arguments->exp->v.func;
-            INITLIST* args2 = call->arguments;
-            if (args2->tp->type == bt_templateparam && args2->tp->templateParam->p->packed)
-            {
-                INITLIST* rv = nullptr;
-                INITLIST** ptr = &rv;
-                TEMPLATEPARAMLIST* scan = args2->tp->templateParam->p->byPack.pack;
-                *ptr = nullptr;
-                TEMPLATEPARAMLIST* old1 = call->templateParams;
-                INITLIST* old2 = call->arguments;
-                TEMPLATEPARAMLIST tpl = { 0 };
-                TEMPLATEPARAM pm = { kw_typename };
-                tpl.p = &pm;
-                pm.type = kw_typename;
-                call->templateParams = &tpl;
-                while (scan)
-                {
-                    INITLIST* rv1 = Allocate<INITLIST>();
-                    rv1->exp = intNode(en_c_i, 0);
-                    rv1->tp = scan->p->byClass.val;
-                    call->arguments = rv1;
-                    call->templateParams->p->byClass.val = call->templateParams->p->byClass.dflt = rv1->tp;
-                    rv1->tp = LookupTypeFromExpression(arguments->exp, nullptr, false);
-                    if (rv1->tp == nullptr)
-                        rv1->tp = &stdany;
-                    rv1->exp = arguments->exp;
-                    *ptr = rv1;
-                    ptr = &(*ptr)->next;
-                    scan = scan->next;
-                }
-                call->arguments = old2;  // DAL
-                call->templateParams = old1;
-                return rv;
-            }
-            else
-            {
-                args2->tp = LookupTypeFromExpression(args2->exp, nullptr, false);
-            }
-        }
-        arguments = arguments->next;
-    }
-    */
     return rv;
 }
 static void PushPopDefaults(std::deque<TYPE*>& defaults, TEMPLATEPARAMLIST* tpl, bool dflt, bool push)
@@ -5095,7 +5048,7 @@ static bool DeduceTemplateParam(TEMPLATEPARAMLIST* Pt, TYPE* P, TYPE* A, bool ch
             if (P)
             {
                 TYPE* q = A;
-                // functions are never const...
+                // functions are never const...   this supports the methodology for 'std::is_function'
                 if (isfunction(A) && (isconst(P) || isvolatile(P)))
                     return false;
                 while (q)
@@ -10991,7 +10944,7 @@ static TEMPLATEPARAMLIST* TypeAliasAdjustArgs(TEMPLATEPARAMLIST* tpl, TEMPLATEPA
         {
             auto packed = *last;
             auto tpn = &(*last)->p->byPack.pack;
-            while (!t->p->packed && t->p->type == packed->p->type)
+            while (t && !t->p->packed && t->p->type == packed->p->type)
             {
                 TEMPLATEPARAMLIST* tpx = Allocate<TEMPLATEPARAMLIST>();
                 if (*tpn)
@@ -11022,8 +10975,6 @@ static TEMPLATEPARAMLIST* TypeAliasAdjustArgs(TEMPLATEPARAMLIST* tpl, TEMPLATEPA
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
-    if (!strcmp(sp->name, "_EnableIfMoveConvertible") && !sp->sb->parentClass)
-        printf("hi");
     SYMBOL* rv;
     // if we get here we have a templated typedef
     STRUCTSYM t1;

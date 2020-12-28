@@ -3777,9 +3777,9 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc)
                     case en_labcon:
                     case en_absolute:
                     case en_threadlocal:
-                        return node->left->v.sp->sb->constexpression ||
-                               (node->left->v.sp->sb->init &&
-                                IsConstantExpression(node->left->v.sp->sb->init->exp, allowParams, allowFunc));
+                        return node->left->v.sp->sb->constexpression;// ||
+//                               (node->left->v.sp->sb->init &&
+//                                IsConstantExpression(node->left->v.sp->sb->init->exp, allowParams, allowFunc));
                     default:
                         break;
                 }

@@ -3562,7 +3562,8 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
         }
         // we may get here with the overload resolution already done, e.g.
         // for operator or cast function calls...
-        if (funcparams->sp->sb->storage_class == sc_overloads)
+        // also if in a trailing return we want to defer the lookup until later if there are going to be multiple choices...
+        if (funcparams->sp->sb->storage_class == sc_overloads && (!parsingTrailingReturnOrUsing || funcparams->sp->tp->type != bt_aggregate || !funcparams->sp->tp->syms->table[0]->next))
         {
             TYPE* tp1;
             // note at this pointer the arglist does NOT have the this pointer,

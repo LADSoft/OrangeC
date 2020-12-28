@@ -10619,12 +10619,14 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEP
         TEMPLATESELECTOR **rvs = &basetype(tp)->sp->sb->templateSelector;
         TEMPLATESELECTOR* old = *rvs;
         *rvs = nullptr;
+        bool first = true;
         while (old)
         {
             *rvs = Allocate<TEMPLATESELECTOR>();
             **rvs = *old;
             if (old->isDeclType)
             {
+                first = false;
                 (*rvs)->tp = Allocate<TYPE>();
                 *(*rvs)->tp = *old->tp;
                 (*rvs)->tp->templateDeclType = SpecifyArgInt(sym, (*rvs)->tp->templateDeclType, orig, args, origTemplate, origUsing);
@@ -10634,6 +10636,20 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEP
             }
             else
             {
+                if (first && old->sp)
+                {
+                    first = false;
+                    if (old->sp->tp->type == bt_templateparam)
+                    {
+                        TEMPLATEPARAMLIST* rv = TypeAliasSearch(old->sp->name);
+                        if (rv && rv->p->type == kw_typename)
+                        {
+                            TYPE *tp = rv->p->byClass.val ? rv->p->byClass.val : rv->p->byClass.dflt;
+                            if (tp && isstructured(tp))
+                                (*rvs)->sp = basetype(tp)->sp;
+                        }
+                    }
+                }
                 auto tpr = &(*rvs)->templateParams;
                 auto temp = old->templateParams;
                 while (temp)
@@ -11003,6 +11019,8 @@ static TEMPLATEPARAMLIST* TypeAliasAdjustArgs(TEMPLATEPARAMLIST* tpl, TEMPLATEPA
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
+    if (!strcmp(sp->name, "_EnableIfMoveConvertible") && !sp->sb->parentClass)
+        printf("hi");
     SYMBOL* rv;
     // if we get here we have a templated typedef
     STRUCTSYM t1;

@@ -840,6 +840,21 @@ static bool usesClass(SYMBOL* cls, SYMBOL* internal)
     }
     return false;
 }
+static void makeFastTable(SYMBOL* sp)
+{
+    int n = 0;
+    SYMLIST* hr = sp->tp->syms->table[0];
+    for (; hr; hr = hr->next, n++)
+        ;
+    n /= 5;
+    if (n > 1)
+    {
+        sp->tp->syms->fast = CreateHashTable(n + 1);
+        hr = sp->tp->syms->table[0];
+        for (; hr; hr = hr->next)
+            insert(hr->p, sp->tp->syms->fast);
+    }
+}
 static void baseFinishDeclareStruct(SYMBOL* funcsp)
 {
     (void)funcsp;
@@ -900,6 +915,9 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                 }
             }
             resolveAnonymousUnions(sp);
+            makeFastTable(sp);
+            if (Optimizer::cparams.prm_cplusplus)
+                deferredInitializeStructMembers(sp);
         }
     }
     for (i = 0; i < n; i++)
@@ -924,21 +942,6 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                 }
             }
         }
-    }
-}
-static void makeFastTable(SYMBOL* sp)
-{
-    int n = 0;
-    SYMLIST* hr = sp->tp->syms->table[0];
-    for (; hr; hr = hr->next, n++)
-        ;
-    n /= 5;
-    if (n > 1)
-    {
-        sp->tp->syms->fast = CreateHashTable(n + 1);
-        hr = sp->tp->syms->table[0];
-        for (; hr; hr = hr->next)
-            insert(hr->p, sp->tp->syms->fast);
     }
 }
 static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac currentAccess)
@@ -1018,10 +1021,10 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
     {
         resolveAnonymousUnions(sp);
         sp->sb->trivialCons = true;
+        makeFastTable(sp);
+        if (Optimizer::cparams.prm_cplusplus)
+            deferredInitializeStructMembers(sp);
     }
-    makeFastTable(sp);
-    if (Optimizer::cparams.prm_cplusplus)
-        deferredInitializeStructMembers(sp);
     if (!Optimizer::cparams.prm_cplusplus || structLevel == 1)
     {
         structLevel--;
@@ -3663,8 +3666,6 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                 if (spi->packed)
                 {
                     checkPackedType(spi);
-                    if (tp2->type == bt_templateparam && !strcmp(tp2->templateParam->argsym->name, "Params"))
-                        printf("hi");
                     if (!templateNestingCount || (!funcptr && tp2->type == bt_templateparam && tp2->templateParam->argsym && !inCurrentTemplate(tp2->templateParam->argsym->name) && definedInTemplate(tp2->templateParam->argsym->name)))
                     {
                         if (tp2->templateParam && tp2->templateParam->p->packed)

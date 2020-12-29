@@ -585,6 +585,7 @@ static struct
     {"'typename' only used for dependent types", WARNING },
     {"Function '%s' already has a body", ERROR },
     {"static_assert generated: %s", ERROR },
+    {"Unknown type in template argument", ERROR },
 };
 void EnterInstantiation(LEXEME* lex, SYMBOL *sym)
 {

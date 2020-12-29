@@ -1206,6 +1206,10 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                 noTypeNameError--;
                 if (!tp)
                     tp = &stdint;
+                if (!templateNestingCount && tp->type == bt_any)
+                {
+                    error(ERR_UNKNOWN_TYPE_TEMPLATE_ARG);
+                }
                 else if (tp && !templateNestingCount)
                 {
                     tp = PerformDeferredInitialization(tp, nullptr);
@@ -6052,7 +6056,7 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
                 A = basetype(A)->btp;
         }
     }
-    if (ispointer(P) && isint(A) && isconstzero(A, exp))
+    if (ispointer(P) && (isint(A) || (ispointer(A) && A->nullptrType)) && isconstzero(A, exp))
     {
         // might get in here with a non-template argument that needs to be matched
         // usually the two types would just match and it would be fine
@@ -10358,7 +10362,21 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, TEMPLATEPARAMLIST
 {
     if (exp)
     {
-        if (exp->type == en_templateparam || exp->type == en_auto && exp->v.sp->packed)
+        if (exp->left || exp->right)
+        {
+            EXPRESSION* exp1 = Allocate<EXPRESSION>();
+            *exp1 = *exp;
+            exp = exp1;
+            if (exp->left)
+            {
+                exp->left = SpecifyArgInt(sym, exp->left, orig, args, origTemplate, origUsing);
+            }
+            if (exp->right)
+            {
+                exp->right = SpecifyArgInt(sym, exp->right, orig, args, origTemplate, origUsing);
+            }
+        }
+        else if (exp->type == en_templateparam || exp->type == en_auto && exp->v.sp->packed)
         {
             TEMPLATEPARAMLIST* rv;
             if (exp->type == en_templateparam)
@@ -10523,20 +10541,6 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, TEMPLATEPARAMLIST
             if (found)
             {
                 exp->v.templateParam->p = found->p;
-            }
-        }
-        else if (exp->left || exp->right)
-        {
-            EXPRESSION* exp1 = Allocate<EXPRESSION>();
-            *exp1 = *exp;
-            exp = exp1;
-            if (exp->left)
-            {
-                exp->left = SpecifyArgInt(sym, exp->left, orig, args, origTemplate, origUsing);
-            }
-            if (exp->right)
-            {
-                exp->right = SpecifyArgInt(sym, exp->right, orig, args, origTemplate, origUsing);
             }
         }
     }
@@ -11116,6 +11120,8 @@ static TEMPLATEPARAMLIST* TypeAliasAdjustArgs(TEMPLATEPARAMLIST* tpl, TEMPLATEPA
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
+    if (!templateNestingCount && !strcmp(sp->name, "__check_hash_requirements"))
+        printf("hi");
     SYMBOL* rv;
     // if we get here we have a templated typedef
     STRUCTSYM t1;

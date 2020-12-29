@@ -1708,6 +1708,7 @@ LEXEME* getsym(void)
             const unsigned char* start = linePointer;
             const unsigned char* end = linePointer;
             enum e_lexType tp;
+            lex->suffix = nullptr;
             if ((unsigned)(tp = getNumber(&linePointer, &end, suffix, &rval, &ival)) != (unsigned)INT_MIN)
             {
                 if (tp < l_f)

@@ -534,6 +534,7 @@
 #define ERR_NO_TYPENAME_HERE 508
 #define ERR_FUNCTION_HAS_BODY 509
 #define ERR_STATIC_ASSERT 510
+#define ERR_UNKNOWN_TYPE_TEMPLATE_ARG 511
 
 void diag(const char* fmt, ...);
 

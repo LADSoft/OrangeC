@@ -3749,7 +3749,11 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
         case en_uge:
         case en_ule:
         case en_ult:
-            return &stdbool;
+        {
+            TYPE* tp1 = LookupTypeFromExpression(exp->left, enclosing, alt);
+            TYPE* tp2 = LookupTypeFromExpression(exp->right, enclosing, alt);
+            return tp1 && tp2 && tp1->type != bt_any && tp2->type != bt_any ? &stdbool : nullptr;
+        }
         case en_uminus:
         case en_not:
         case en_compl:
@@ -5279,7 +5283,9 @@ static bool Deduce(TYPE* P, TYPE* A, bool change, bool byClass, bool allowSelect
                 return DeduceFromBaseTemplates(P, basetype(Ab)->sp, change, byClass);
         }
         if (Pb->type == bt_memberptr)
+        {
             return DeduceFromMemberPointer(P, Ab, change, byClass);
+        }
         Ab = basetype(A);
         Pb = basetype(P);
         if (Pb->type == bt_enum)
@@ -6351,7 +6357,19 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                             dropStructureDeclaration();
                             instantiatingMemberFuncClass = oldMemberClass;
                             return false;
-                        }
+                        }  
+                    }
+                    TYPE* tp2 = LookupTypeFromExpression(exp1, nullptr, false);
+                    if (!tp2 || tp2->type == bt_any)
+                    {
+                        SwapDefaultNames(enclosing, src->p->byClass.txtargs);
+                        while (pushCount--)
+                            dropStructureDeclaration();
+                        PopTemplateNamespace(n);
+                        SetAlternateLex(nullptr);
+                        dropStructureDeclaration();
+                        instantiatingMemberFuncClass = oldMemberClass;
+                        return false;
                     }
                 }
                 break;
@@ -9739,6 +9757,9 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
+    // quick check for non-template
+    if (!sp->sb->templateLevel)
+        return sp;
     int n = 1, i = 0;
     TEMPLATEPARAMLIST* unspecialized = sp->templateParams->next;
     SYMBOL *found1 = nullptr, *found2 = nullptr;

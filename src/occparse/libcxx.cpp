@@ -671,6 +671,55 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                     rv = true;
                 }
             }
+            else if (basetype(tp2)->type == bt_memberptr)
+            {
+                if (funcparams.arguments->next && !funcparams.arguments->next->next)
+                {
+                    TYPE* tp3 = funcparams.arguments->next->tp;
+                    if (isref(tp3))
+                        tp3 = basetype(basetype(tp3)->btp);
+                    if (tp3->type == bt_memberptr)
+                    {
+                        tp2 = basetype(tp2);
+                        SYMBOL* s1 = tp2->sp;
+                        SYMBOL* s2 = tp3->sp;
+                        if (s1->sb->mainsym)
+                            s1 = s1->sb->mainsym;
+                        if (s2->sb->mainsym)
+                            s2 = s2->sb->mainsym;
+                        if (s1 == s2 || sameTemplate(s1->tp, s2->tp))
+                        {
+                            rv = comparetypes(tp2->btp, tp3->btp, true);
+                        }
+                    }
+                    else if (isfunction(tp3))
+                    {
+                        tp2 = basetype(tp2);
+                        SYMBOL* s1 = tp2->sp;
+                        SYMBOL* s2 = tp3->sp;
+                        if (s2)
+                        {
+                            SYMLIST* hr = s2->tp->syms->table[0];
+                            if (hr && hr->p->sb->thisPtr)
+                            {
+                                s2 = basetype(basetype(hr->p->tp)->btp)->sp;
+                                if (s1->sb->mainsym)
+                                    s1 = s1->sb->mainsym;
+                                if (s2->sb->mainsym)
+                                    s2 = s2->sb->mainsym;
+                                if (s1 == s2 || sameTemplate(s1->tp, s2->tp))
+                                {
+                                    rv = comparetypes(tp2->btp, tp3, true);
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    rv = true;
+                }
+            }
             else if (isarithmetic(tp2) || ispointer(tp2) || basetype(tp2)->type == bt_enum)
             {
                 if (!funcparams.arguments->next)

@@ -1730,6 +1730,19 @@ static LEXEME* initialize_memberptr(LEXEME* lex, SYMBOL* funcsp, int offset, enu
                 {
                     castToPointer(&tp, &exp, (enum e_kw) - 1, itype);
                 }
+                TYPE tp4;
+                if (isfunction(tp))
+                {
+                    SYMLIST* hr = basetype(tp)->syms->table[0];
+                    if (hr && hr->p->sb->thisPtr)
+                    {
+                        tp4 = {};
+                        tp4.type = bt_memberptr;
+                        tp4.btp = tp;
+                        tp4.sp = basetype(basetype(hr->p->tp)->btp)->sp;
+                        tp = &tp4;
+                    }
+                }
                 if (!comparetypes(itype, tp, true))
                 {
                     errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);

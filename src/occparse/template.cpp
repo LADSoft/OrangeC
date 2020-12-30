@@ -11165,8 +11165,6 @@ static TEMPLATEPARAMLIST* TypeAliasAdjustArgs(TEMPLATEPARAMLIST* tpl, TEMPLATEPA
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
-    if (!templateNestingCount && !strcmp(sp->name, "__check_hash_requirements"))
-        printf("hi");
     SYMBOL* rv;
     // if we get here we have a templated typedef
     STRUCTSYM t1;

@@ -1242,6 +1242,51 @@ static bool isMoveAssignmentDeleted(SYMBOL* sp)
     }
     return false;
 }
+static bool isDestructorDeleted(SYMBOL* sp)
+{
+    SYMLIST* hr;
+    BASECLASS* base;
+    VBASEENTRY* vbase;
+    if (basetype(sp->tp)->type == bt_union)
+    {
+        return false;
+    }
+    hr = basetype(sp->tp)->syms->table[0];
+    while (hr)
+    {
+        SYMBOL* sp1 = hr->p;
+        TYPE* m;
+        if (sp1->sb->storage_class == sc_member || sp1->sb->storage_class == sc_mutable)
+        {
+            if (isstructured(sp1->tp))
+            {
+                TYPE* tp = basetype(sp1->tp);
+                if (checkDest(sp, basetype(tp->sp->tp)->syms, ac_public))
+                    return true;
+            }
+        }
+        hr = hr->next;
+    }
+
+    base = sp->sb->baseClasses;
+    while (base)
+    {
+        if (checkDest(sp, basetype(base->cls->tp)->syms, ac_protected))
+            return true;
+        base = base->next;
+    }
+    vbase = sp->sb->vbaseEntries;
+    while (vbase)
+    {
+        if (vbase->alloc)
+        {
+            if (checkDest(sp, basetype(vbase->cls->tp)->syms, ac_protected))
+                return true;
+        }
+        vbase = vbase->next;
+    }
+    return false;
+}
 static void conditionallyDeleteDefaultConstructor(SYMBOL* func)
 {
     SYMLIST* hr = basetype(func->tp)->syms->table[0];
@@ -1289,6 +1334,14 @@ static bool conditionallyDeleteCopyAssignment(SYMBOL* func, bool move)
                 sp->sb->deleted = true;
         }
         hr = hr->next;
+    }
+    return false;
+}
+static bool conditionallyDeleteDestructor(SYMBOL* sp)
+{
+    if (isDestructorDeleted(sp->sb->parentClass))
+    {
+        sp->sb->deleted = true;
     }
     return false;
 }
@@ -1406,9 +1459,13 @@ void createDefaultConstructors(SYMBOL* sp)
     SYMBOL* asgn = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
     SYMBOL* newcons = nullptr;
     if (!dest)
+    {
         declareDestructor(sp);
+    }
     else
+    {
         sp->sb->hasDest = true;
+    }
     if (cons)
     {
         sp->sb->hasUserCons = true;
@@ -1521,6 +1578,8 @@ void createDefaultConstructors(SYMBOL* sp)
         conditionallyDeleteCopyConstructor(cons, true);
         conditionallyDeleteCopyAssignment(asgn, true);
     }
+    dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
+    conditionallyDeleteDestructor(dest->tp->syms->table[0]->p);
 }
 EXPRESSION* destructLocal(EXPRESSION* exp)
 {

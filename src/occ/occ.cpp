@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "be.h"
 #include "winmode.h"
 #include "Utils.h"
@@ -375,6 +376,7 @@ int main(int argc, char* argv[])
     using namespace occx86;
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
+    unsigned startTime, stopTime;
 
     if (!Utils::HasLocalExe("occopt") || !Utils::HasLocalExe("occparse"))
     {
@@ -414,6 +416,10 @@ int main(int argc, char* argv[])
         {
             Utils::fatal("internal error: could not load intermediate file");
         }
+        if (Optimizer::cparams.prm_displaytiming)
+        {
+            startTime = clock();
+        }
         for (auto v : Optimizer::toolArgs)
         {
             InsertOption(v.c_str());
@@ -437,6 +443,11 @@ int main(int argc, char* argv[])
                 Utils::fatal("File I/O error");
             if (!SaveFile(p.c_str()))
                 Utils::fatal("Cannot open '%s' for write", outFile);
+        }
+        if (Optimizer::cparams.prm_displaytiming)
+        {
+            stopTime = clock();
+            printf("occ timing: %d.%03d\n", (stopTime - startTime)/1000, (stopTime - startTime)% 1000); 
         }
         rv = RunExternalFiles();
     }

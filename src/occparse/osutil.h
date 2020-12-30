@@ -107,6 +107,7 @@ extern CmdSwitchBool prm_compileonly;
 extern CmdSwitchString prm_assemble;
 extern CmdSwitchBool prm_xcept;
 extern CmdSwitchBool prm_viaassembly;
+extern CmdSwitchBool displayTiming;
 extern CmdSwitchInt prm_stackaligns;
 extern CmdSwitchString prm_error;
 extern CmdSwitchString prm_define;

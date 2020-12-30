@@ -95,6 +95,7 @@ typedef struct
     bool no_default_libs;        /* occil: don't load default assemlies and libraries*/
     bool replacePInvoke;         /* occil */
     bool msilAllowExtensions;    /* occil: allow extensions*/
+    bool prm_displaytiming;      /* display timing info */
 } COMPILER_PARAMS;
 
 /* Sizing and alignment info uses this structure */

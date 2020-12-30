@@ -27,6 +27,7 @@
 #include "Utils.h"
 #include "CmdSwitch.h"
 #include <setjmp.h>
+#include <time.h>
 #include "../version.h"
 #include "winmode.h"
 #include "InstructionParser.h"
@@ -371,7 +372,7 @@ int main(int argc, char* argv[])
     bool multipleFiles = false;
     int rv;
     bool compileToFile = false;
-
+    unsigned startTime, stopTime;
     /*   signal(SIGSEGV,internalError) ;*/
     /*   signal(SIGFPE, internalError) ;*/
 
@@ -390,6 +391,10 @@ int main(int argc, char* argv[])
     /* parse environment variables, command lines, and config files  */
     ccinit(argc, argv);
 
+    if (Optimizer::cparams.prm_displaytiming)
+    {
+        startTime = clock();
+    }
     /* loop through and preprocess all the files on the file list */
     if (clist && clist->next)
         multipleFiles = true;
@@ -602,6 +607,11 @@ int main(int argc, char* argv[])
         fclose(fil);
     }
     delete parserMem;
+    if (Optimizer::cparams.prm_displaytiming)
+    {
+        stopTime = clock();
+        printf("occparse timing: %d.%03d\n", (stopTime - startTime)/1000, (stopTime - startTime)% 1000); 
+    }
 #endif
     rv = !!stoponerr;
 #ifdef PARSER_ONLY

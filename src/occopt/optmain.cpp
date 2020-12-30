@@ -24,6 +24,7 @@
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include <stdio.h>
+#include <time.h>
 #include "CmdSwitch.h"
 #include "Utils.h"
 #include "config.h"
@@ -402,12 +403,17 @@ void SaveFile(std::string& name, SharedMemory* optimizerMem)
 int main(int argc, char* argv[])
 {
     using namespace Optimizer;
+    unsigned startTime, stopTime;
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
 
     if (!SwitchParser.Parse(&argc, argv) || argc < 2 || argc > 3)
     {
         Utils::usage(argv[0], usageText);
+    }
+    if (Optimizer::cparams.prm_displaytiming)
+    {
+        startTime = clock();
     }
     bool fileMode = false;
     if (argc == 2)
@@ -487,5 +493,10 @@ int main(int argc, char* argv[])
     }
     delete parserMem;
     delete optimizerMem;
+    if (Optimizer::cparams.prm_displaytiming)
+    {
+        stopTime = clock();
+        printf("occopt timing: %d.%03d\n", (stopTime - startTime)/1000, (stopTime - startTime)% 1000); 
+    }
     return 0;
 }

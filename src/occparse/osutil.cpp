@@ -90,6 +90,7 @@ CmdSwitchBool prm_compileonly(switchParser, 'c');
 CmdSwitchString prm_assemble(switchParser, 'S');
 CmdSwitchBool prm_xcept(switchParser, 'x');
 CmdSwitchBool prm_viaassembly(switchParser, '#');
+CmdSwitchBool displayTiming(switchParser, 't');
 CmdSwitchInt prm_stackalign(switchParser, 's', 16, 0, 2048);
 CmdSwitchString prm_error(switchParser, 'E');
 CmdSwitchString prm_define(switchParser, 'D', ';');
@@ -399,6 +400,9 @@ void ParamTransfer()
         Optimizer::cparams.prm_assemble = true;
         Optimizer::cparams.prm_asmfile = false;
     }
+    if (displayTiming.GetExists())
+        Optimizer::cparams.prm_displaytiming = true;
+
     if (prm_debug.GetExists() || prm_debug2.GetExists())
     {
         Optimizer::cparams.prm_debug = prm_debug.GetValue() || prm_debug2.GetValue();

@@ -10250,6 +10250,34 @@ void SearchAlias(const char *name, TEMPLATEPARAMLIST *x, SYMBOL* sym, TEMPLATEPA
         x->p->replaced = true;
     }
 }
+static TYPE* ReplaceTemplateParam(TYPE* in)
+{
+    TYPE *find = in;
+    while (find && find->type != bt_templateparam)
+        find = find->btp;
+    if (find)
+    {
+        if (!find->templateParam->p->packed && find->templateParam->argsym)
+        {
+            TEMPLATEPARAMLIST* rv = TypeAliasSearch(find->templateParam->argsym->name);
+            if (rv && rv->p->byClass.dflt)
+            {
+                TYPE **last = &find;
+                while (in && in->type != bt_templateparam)
+                {
+                    *last = Allocate<TYPE>();
+                    **last = *in;
+                    last = &(*last)->btp;
+                    in = in->btp;
+                }
+                *last = rv->p->byClass.dflt;
+                UpdateRootTypes(find);
+                return find;
+            }
+        }
+    }
+    return in;
+}
 static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEPARAMLIST* orig, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing);
 void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool expression, SYMBOL* sym, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing)
 {
@@ -10301,8 +10329,14 @@ void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool
                         (*rvs)->sp->templateParams = nullptr;
                         x = &(*rvs)->sp->templateParams;
                     }
+                    std::stack<TEMPLATEPARAMLIST*> stk;
                     while (tpl)
                     {
+                        if (tpl->p->packed && tpl->p->byPack.pack)
+                        {
+                            stk.push(tpl->next);
+                            tpl = tpl->p->byPack.pack;
+                        }
                         *x = Allocate<TEMPLATEPARAMLIST>();
                         **x = *tpl;
                         if (tpl->p->type != kw_new)
@@ -10349,8 +10383,15 @@ void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool
                                     SearchAlias(name, *x, sym, args, origTemplate, origUsing);
                                 }
                             }
+                            if ((*x)->p->type == kw_typename)
+                                (*x)->p->byClass.dflt = ReplaceTemplateParam((*x)->p->byClass.dflt);
                         }
                         tpl = tpl->next;
+                        if (!tpl && !stk.empty())
+                        {
+                            tpl = stk.top();
+                            stk.pop();
+                        }
                         x = &(*x)->next;
                     }
                 }
@@ -11121,8 +11162,6 @@ static TEMPLATEPARAMLIST* TypeAliasAdjustArgs(TEMPLATEPARAMLIST* tpl, TEMPLATEPA
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
-//    if (!templateNestingCount && !strcmp(sp->name, "__check_hash_requirements"))
-//        printf("hi");
     SYMBOL* rv;
     // if we get here we have a templated typedef
     STRUCTSYM t1;

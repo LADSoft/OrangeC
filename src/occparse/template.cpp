@@ -10484,6 +10484,9 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, TEMPLATEPARAMLIST
         }
         else if (exp->type == en_templateselector)
         {
+            EXPRESSION* exp1 = Allocate<EXPRESSION>();
+            *exp1 = *exp;
+            exp = exp1;
             SpecifyTemplateSelector(&exp->v.templateSelector, exp->v.templateSelector, true, sym, args, origTemplate, origUsing);
             optimize_for_constants(&exp);
         }
@@ -11162,6 +11165,8 @@ static TEMPLATEPARAMLIST* TypeAliasAdjustArgs(TEMPLATEPARAMLIST* tpl, TEMPLATEPA
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
+    if (!templateNestingCount && !strcmp(sp->name, "__check_hash_requirements"))
+        printf("hi");
     SYMBOL* rv;
     // if we get here we have a templated typedef
     STRUCTSYM t1;

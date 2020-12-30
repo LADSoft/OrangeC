@@ -821,7 +821,16 @@ TEMPLATEPARAMLIST** expandArgs(TEMPLATEPARAMLIST** lst, LEXEME* start, SYMBOL* f
             }
         }
         *lst = Allocate<TEMPLATEPARAMLIST>();
-        (*lst)->p = select->p;
+        if (select->p->ellipsis)
+        {
+            (*lst)->p = Allocate<TEMPLATEPARAM>();
+            *(*lst)->p = *select->p;
+            (*lst)->p->ellipsis = false;
+        }
+        else
+        {
+            (*lst)->p = select->p;
+        }
         (*lst)->argsym = select->argsym;
         lst = &(*lst)->next;
         return lst;

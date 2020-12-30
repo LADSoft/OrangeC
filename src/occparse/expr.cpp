@@ -3497,7 +3497,7 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
         TEMPLATEPARAMLIST* tl = funcparams->templateParams;
         while (tl)
         {
-            if (tl->p->packed)
+            if (tl->p->packed && !tl->p->ellipsis)
             {
                 return lex;
             }

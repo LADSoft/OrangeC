@@ -959,14 +959,6 @@ void deferredInitializeStructMembers(SYMBOL* cur)
         }
         hr = hr->next;
     }
-    staticAssert = cur->sb->staticAsserts;
-    while (staticAssert)
-    {
-        lex = SetAlternateLex((LEXEME*)staticAssert->data);
-        lex = handleStaticAssert(lex);
-        SetAlternateLex(nullptr);
-        staticAssert = staticAssert->next;
-    }
     dontRegisterTemplate--;
     while (count--)
     {

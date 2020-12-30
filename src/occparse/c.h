@@ -711,7 +711,6 @@ typedef struct sym
         struct lexeme* deferredCompile;
         struct lexeme* deferredNoexcept;
         Optimizer::LIST* templateNameSpace;
-        Optimizer::LIST* staticAsserts;
         short templateLevel;
         struct _templateParamList *typeAlias;
         struct _symlist_* specializations;

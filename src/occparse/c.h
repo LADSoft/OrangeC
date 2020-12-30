@@ -669,7 +669,6 @@ typedef struct sym
         unsigned pushedTemplateSpecializationDefinition : 1;  // set to true if the current body for the template
                                                          // specialization was pushed from the generalized version of the template
         unsigned destructed : 1;                         // the c++ class instance has had a destructor generated
-        unsigned initializer_list : 1;                   // constructor with initializer_list parameter
         unsigned va_typeof : 1;                          // MSIL: a va_typeof symbol
         unsigned has_property_setter : 1;                // a property has a setter
         unsigned nonConstVariableUsed : 1;               // a non-const variable was used or assigned to in this function's body
@@ -913,6 +912,7 @@ typedef struct initlist
     int packed : 1;
     int vararg : 1;
     int valist : 1;
+    int initializer_list : 1;
 } INITLIST;
 
 typedef struct functioncall

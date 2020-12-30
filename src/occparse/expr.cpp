@@ -2760,7 +2760,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         sp->sb->label = Optimizer::nextLabel++;
                         insertInitSym(sp);
                     }
-                    if (stype->sp->sb->trivialCons)
+                    if (basetype(stype)->sp->sb->trivialCons)
                     {
                         INITIALIZER *init = nullptr, **it = &init;
                         SYMLIST* hr = stype->syms->table[0];

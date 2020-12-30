@@ -3708,13 +3708,19 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                 }
                 else if (isstructured(rve))
                 {
+                    INITLIST* old = nullptr;
                     if (exp->v.func)
                     {
+                        old = exp->v.func->arguments;
                         exp->v.func->arguments = ExpandArguments(exp);
                     }
                     rv = rve;
                     if (!exp->v.func || !insertOperatorParams(nullptr, &rv, &exp1, exp->v.func, 0))
                         rv = &stdvoid;
+                    if (exp->v.func)
+                    {
+                        exp->v.func->arguments = old;
+                    }
                     if (isconst(rve))
                     {
                         // to make LIBCXX happy

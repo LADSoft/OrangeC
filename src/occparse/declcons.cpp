@@ -2965,6 +2965,8 @@ void makeArrayConsDest(TYPE** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, 
 }
 void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* arrayElms, bool top, bool pointer, bool skipAccess, bool novtab)
 {
+    if (!sp)
+        return;
     SYMBOL* dest;
     SYMBOL* dest1;
     TYPE *tp = nullptr, *stp;

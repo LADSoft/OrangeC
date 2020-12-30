@@ -2086,7 +2086,7 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
                 }
             }
             // various rules for the comparison of two pairs of structures
-            if (ispointer(ta) && ispointer(tr) && ispointer(tl))
+            if (ta && ispointer(ta) && ispointer(tr) && ispointer(tl))
             {
                 ta = basetype(ta)->btp;
                 tl = basetype(tl)->btp;
@@ -2415,21 +2415,6 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
     {
         for (j = i + 1; j < funcCount && spList[i]; j++)
         {
-            if (spList[i] && spList[j])
-            {
-                if (spList[i]->sb->initializer_list != spList[j]->sb->initializer_list)
-                {
-                    if (spList[i]->sb->initializer_list)
-                    {
-                        spList[i] = nullptr;
-                        break;
-                    }
-                    else
-                    {
-                        spList[j] = nullptr;
-                    }
-                }
-            }
             if (spList[j])
             {
                 bool leftPacked = false;
@@ -4079,13 +4064,12 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                     tp = basetype(tp)->btp;
                 if (isstructured(tp))
                 {
-                    SYMBOL* sym = (basetype(tp)->sp);
-                    if (sym->sb->parentNameSpace && !strcmp(sym->sb->parentNameSpace->name, "std"))
+                    SYMBOL* sym1 = (basetype(tp)->sp);
+                    if (sym1->sb->parentNameSpace && !strcmp(sym1->sb->parentNameSpace->name, "std"))
                     {
-                        if (!strcmp(sym->name, "initializer_list") && sym->sb->templateLevel)
+                        if (!strcmp(sym1->name, "initializer_list") && sym1->sb->templateLevel)
                         {
-                            initializerListType = sym->templateParams->next->p->byClass.val;
-                            sym->sb->initializer_list = true;
+                            initializerListType = sym1->templateParams->next->p->byClass.val;
                         }
                     }
                 }
@@ -4116,20 +4100,25 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                 m = 0;
                 if (initializerListType)
                 {
-                    seq[m++] = CV_QUALS;  // have to make a distinction between an initializer list and the same func without one...
                     if (a && a->nested)
                     {
                         getInitListConversion(initializerListType, a->nested, nullptr, &m, seq, sym,
                                               userFunc ? &userFunc[n] : nullptr);
                     }
-                    else
+                    else if (a->initializer_list)
                     {
                         getSingleConversion(initializerListType, a ? a->tp : ((SYMBOL*)(*hrt)->p)->tp, a ? a->exp : nullptr, &m,
                                             seq, sym, userFunc ? &userFunc[n] : nullptr, true);
                     }
+                    else
+                    {
+                        seq[m++] = CV_NONE;
+
+                    }
                 }
                 else if (a && (a->nested || (!a->tp && ! a->exp)))
                 {
+                    seq[m++] = CV_QUALS;  // have to make a distinction between an initializer list and the same func without one...
                     getInitListConversion(basetype(tp), a->nested, nullptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr);
                 }
                 else
@@ -4188,7 +4177,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
         return a == nullptr;
     }
 }
-SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, TYPE* atp)
+    SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, TYPE* atp)
 {
     inDeduceArgs++;
     if (sym->sb->templateLevel)
@@ -4569,6 +4558,8 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 icsList = Allocate<e_cvsrn*>(n);
                 lenList = Allocate<int*>(n);
                 funcList = Allocate<SYMBOL**>(n);
+                if (!strcmp(sp->name, "$bctr") && !strcmp(sp->sb->parentClass->name, "map"))
+                    printf("hi");
                 n = insertFuncs(spList, spFilterList, gather, args, atp);
                 if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor && !spList[0]->sb->specialized2))
                 {

@@ -2842,6 +2842,8 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                     if (MATCHKW(lex, begin))
                     {
                         lex = getArgs(lex, funcsp, funcparams, end, true, 0);
+                        for ( auto a = funcparams->arguments; a; a = a->next)
+                            a->initializer_list = true;
                         maybeConversion = false;
                     }
                     else
@@ -2874,8 +2876,14 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
             }
             else if (MATCHKW(lex, openpa) || MATCHKW(lex, begin))
             {
+                bool isbegin = MATCHKW(lex, begin);
                 // conversion constructor params
                 lex = getArgs(lex, funcsp, funcparams, MATCHKW(lex, openpa) ? closepa : end, true, 0);
+                if (isbegin)
+                {
+                    for (auto a = funcparams->arguments; a; a = a->next)
+                        a->initializer_list = true;
+                }
             }
             else if (flags & _F_NESTEDINIT)
             {

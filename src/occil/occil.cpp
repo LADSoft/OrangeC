@@ -27,6 +27,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include "be.h"
 #include "beinterfdefs.h"
 #include "Utils.h"
@@ -388,6 +389,7 @@ int main(int argc, char* argv[])
     using namespace occmsil;
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
+    unsigned startTime, stopTime;
 
     if (!Utils::HasLocalExe("occopt") || !Utils::HasLocalExe("occparse"))
     {
@@ -429,6 +431,10 @@ int main(int argc, char* argv[])
         {
             Utils::fatal("internal error: could not load intermediate file");
         }
+        if (Optimizer::cparams.prm_displaytiming)
+        {
+            startTime = clock();
+        }
         for (auto f : Optimizer::backendFiles)
         {
             InsertExternalFile(f.c_str(), false);
@@ -451,6 +457,11 @@ int main(int argc, char* argv[])
                 if (!SaveFile(p.c_str()))
                     Utils::fatal("Cannot open '%s' for write", outFile);
             }
+        }
+        if (Optimizer::cparams.prm_displaytiming)
+        {
+            stopTime = clock();
+            printf("occ timing: %d.%03d\n", (stopTime - startTime)/1000, (stopTime - startTime)% 1000); 
         }
         if (!Optimizer::cparams.prm_compileonly)
         {

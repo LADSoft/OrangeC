@@ -1181,6 +1181,10 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
     EXPRESSION* exp = nullptr;
     if (templ)
     {
+        if (!strcmp(templ->name, "__check_hash_requirements"))
+            printf("hi");
+        if (!strcmp(templ->name, "__invokable_r"))
+            printf("hi");
         auto templ1 = templ;
         if (templ1->tp->type == bt_aggregate)
             templ1 = templ1->tp->syms->table[0]->p;
@@ -1369,6 +1373,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                             (*lst)->p->type = kw_typename;
                             (*lst)->p->packed = true;
                         }
+                        (*lst)->argsym = orig->argsym;
                         first = false;
                     }
                     p = &(*lst)->p->byPack.pack;

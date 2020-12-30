@@ -1181,10 +1181,6 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
     EXPRESSION* exp = nullptr;
     if (templ)
     {
-        if (!strcmp(templ->name, "__check_hash_requirements"))
-            printf("hi");
-        if (!strcmp(templ->name, "__invokable_r"))
-            printf("hi");
         auto templ1 = templ;
         if (templ1->tp->type == bt_aggregate)
             templ1 = templ1->tp->syms->table[0]->p;
@@ -11125,8 +11121,8 @@ static TEMPLATEPARAMLIST* TypeAliasAdjustArgs(TEMPLATEPARAMLIST* tpl, TEMPLATEPA
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
-    if (!templateNestingCount && !strcmp(sp->name, "__check_hash_requirements"))
-        printf("hi");
+//    if (!templateNestingCount && !strcmp(sp->name, "__check_hash_requirements"))
+//        printf("hi");
     SYMBOL* rv;
     // if we get here we have a templated typedef
     STRUCTSYM t1;

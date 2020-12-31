@@ -461,28 +461,75 @@ static bool isPOD(TYPE* tp)
     }
     return false;
 }
-static bool nothrowConstructible(TYPE* tp)
+static bool nothrowConstructible(TYPE* tp, INITLIST* args)
 {
     if (isstructured(tp))
     {
         SYMBOL* ovl;
         // recursion will have been taken care of elsewhere...
         ovl = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp)->syms);
+        int i = 0;
+        char holdl[100], holdr[100];
+        INITLIST* temp;
+        EXPRESSION* cexp = nullptr;
         if (ovl)
         {
-            SYMLIST* hr = ovl->tp->syms->table[0];
-            hr = basetype(ovl->tp)->syms->table[0];
-            while (hr)
+            FUNCTIONCALL funcparams = {};
+            funcparams.thisptr = intNode(en_c_i, 0);
+            funcparams.thistp = Allocate<TYPE>();
+            funcparams.thistp->type = bt_pointer;
+            funcparams.thistp->btp = basetype(tp);
+            funcparams.thistp->rootType = funcparams.thistp;
+            funcparams.thistp->size = getSize(bt_pointer);
+            funcparams.ascall = true;
+            funcparams.arguments = args;
+            temp = funcparams.arguments;
+            i = 0;
+            while (temp)
             {
-                SYMBOL* sym = hr->p;
-                SYMLIST* hr1 = basetype(sym->tp)->syms->table[0];
-                if (matchesCopy(sym, false) || matchesCopy(sym, true) || !hr1->next || !hr1->next->next ||
-                    (hr1->next->next->p)->tp->type == bt_void)
+                bool rref = basetype(temp->tp)->type == bt_rref;
+                if (isref(temp->tp))
+                    temp->tp = basetype(temp->tp)->btp;
+                holdl[i] = temp->tp->lref;
+                holdr[i] = temp->tp->rref;
+                if (!temp->tp->rref && !rref)
                 {
-                    if (sym->sb->xcMode != xc_none)
-                        return false;
+                    temp->tp->lref = true;
                 }
-                hr = hr->next;
+                else if (rref)
+                {
+                    temp->tp->rref = true;
+                }
+                i++;
+                temp = temp->next;
+            }
+            std::stack<SYMBOL*> stk;
+            for (auto spl = ovl->tp->syms->table[0]; spl; spl = spl->next)
+            {
+                if (spl->p->templateParams)
+                {
+                    stk.push(spl->p);
+                    PushPopTemplateArgs(spl->p, true);
+                }
+            }
+            SYMBOL *sp = GetOverloadedFunction(&tp, &funcparams.fcall, ovl, &funcparams, nullptr, false, false, false, _F_SIZEOF);
+            while (stk.size())
+            {
+                PushPopTemplateArgs(stk.top(), false);
+                stk.pop();
+            }
+            temp = funcparams.arguments;
+            i = 0;
+            while (temp)
+            {
+                temp->tp->lref = holdl[i];
+                temp->tp->rref = holdr[i];
+                temp = temp->next;
+                i++;
+            }
+            if (sp)
+            {
+                return sp->sb->xcMode == xc_none;
             }
         }
     }
@@ -969,7 +1016,7 @@ static bool is_nothrow_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, 
         lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
         lst = lst->next;
     }
-    if (funcparams.arguments && !funcparams.arguments->next)
+    if (funcparams.arguments)
     {
         TYPE* tp = funcparams.arguments->tp;
         if (isref(tp))
@@ -977,7 +1024,9 @@ static bool is_nothrow_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, 
         if (isstructured(tp))
         {
             if (!basetype(tp)->sp->sb->trivialCons)
-                rv = nothrowConstructible(funcparams.arguments->tp);
+                rv = nothrowConstructible(funcparams.arguments->tp, funcparams.arguments->next);
+            else
+                rv = true;
         }
         else
         {

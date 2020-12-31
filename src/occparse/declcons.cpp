@@ -598,7 +598,7 @@ static bool hasCopy(SYMBOL* func, bool move)
     }
     return false;
 }
-static bool checkDest(SYMBOL* sp, HASHTABLE* syms, enum e_ac access)
+static bool checkDest(SYMBOL* sp, SYMBOL* parent, HASHTABLE* syms, enum e_ac access)
 {
     SYMBOL* dest = search(overloadNameTab[CI_DESTRUCTOR], syms);
 
@@ -607,7 +607,7 @@ static bool checkDest(SYMBOL* sp, HASHTABLE* syms, enum e_ac access)
         dest = (SYMBOL*)basetype(dest->tp)->syms->table[0]->p;
         if (dest->sb->deleted)
             return true;
-        if (!isAccessible(sp, dest->sb->parentClass, dest, nullptr, access, false))
+        if (!isAccessible(sp, parent, dest, nullptr, access, false))
             return true;
     }
     return false;
@@ -919,7 +919,7 @@ static bool isDefaultDeleted(SYMBOL* sp)
             if (isstructured(sp1->tp))
             {
                 TYPE* tp = basetype(sp1->tp);
-                if (checkDest(sp, basetype(tp->sp->tp)->syms, ac_public))
+                if (checkDest(sp, tp->sp, basetype(tp->sp->tp)->syms, ac_public))
                     return true;
             }
             m = sp1->tp;
@@ -938,7 +938,7 @@ static bool isDefaultDeleted(SYMBOL* sp)
     base = sp->sb->baseClasses;
     while (base)
     {
-        if (checkDest(sp, basetype(base->cls->tp)->syms, ac_protected))
+        if (checkDest(sp, base->cls, basetype(base->cls->tp)->syms, ac_protected))
             return true;
         if (checkDefaultCons(sp, basetype(base->cls->tp)->syms, ac_protected))
             return true;
@@ -949,7 +949,7 @@ static bool isDefaultDeleted(SYMBOL* sp)
     {
         if (vbase->alloc)
         {
-            if (checkDest(sp, basetype(vbase->cls->tp)->syms, ac_protected))
+            if (checkDest(sp, vbase->cls, basetype(vbase->cls->tp)->syms, ac_protected))
                 return true;
             if (checkDefaultCons(sp, basetype(vbase->cls->tp)->syms, ac_protected))
                 return true;
@@ -997,7 +997,7 @@ static bool isCopyConstructorDeleted(SYMBOL* sp)
             if (isstructured(sp1->tp))
             {
                 TYPE* tp = basetype(sp1->tp);
-                if (checkDest(sp, basetype(tp->sp->tp)->syms, ac_public))
+                if (checkDest(sp, tp->sp, basetype(tp->sp->tp)->syms, ac_public))
                     return true;
             }
             m = sp1->tp;
@@ -1015,7 +1015,7 @@ static bool isCopyConstructorDeleted(SYMBOL* sp)
     base = sp->sb->baseClasses;
     while (base)
     {
-        if (checkDest(sp, basetype(base->cls->tp)->syms, ac_protected))
+        if (checkDest(sp, base->cls, basetype(base->cls->tp)->syms, ac_protected))
             return true;
         if (checkCopyCons(sp, base->cls, ac_protected))
             return true;
@@ -1026,7 +1026,7 @@ static bool isCopyConstructorDeleted(SYMBOL* sp)
     {
         if (vbase->alloc)
         {
-            if (checkDest(sp, basetype(vbase->cls->tp)->syms, ac_protected))
+            if (checkDest(sp, vbase->cls, basetype(vbase->cls->tp)->syms, ac_protected))
                 return true;
             if (checkCopyCons(sp, vbase->cls, ac_protected))
                 return true;
@@ -1138,7 +1138,7 @@ static bool isMoveConstructorDeleted(SYMBOL* sp)
             if (isstructured(sp1->tp))
             {
                 TYPE* tp = basetype(sp1->tp);
-                if (checkDest(sp, basetype(tp->sp->tp)->syms, ac_public))
+                if (checkDest(sp, tp->sp, basetype(tp->sp->tp)->syms, ac_public))
                     return true;
             }
             m = sp1->tp;
@@ -1156,7 +1156,7 @@ static bool isMoveConstructorDeleted(SYMBOL* sp)
     base = sp->sb->baseClasses;
     while (base)
     {
-        if (checkDest(sp, basetype(base->cls->tp)->syms, ac_protected))
+        if (checkDest(sp, base->cls, basetype(base->cls->tp)->syms, ac_protected))
             return true;
         if (checkMoveCons(sp, base->cls, ac_protected))
             return true;
@@ -1167,7 +1167,7 @@ static bool isMoveConstructorDeleted(SYMBOL* sp)
     {
         if (vbase->alloc)
         {
-            if (checkDest(sp, basetype(vbase->cls->tp)->syms, ac_protected))
+            if (checkDest(sp, vbase->cls, basetype(vbase->cls->tp)->syms, ac_protected))
                 return true;
             if (checkMoveCons(sp, vbase->cls, ac_protected))
                 return true;
@@ -1261,7 +1261,7 @@ static bool isDestructorDeleted(SYMBOL* sp)
             if (isstructured(sp1->tp))
             {
                 TYPE* tp = basetype(sp1->tp);
-                if (checkDest(sp, basetype(tp->sp->tp)->syms, ac_public))
+                if (checkDest(sp, tp->sp, basetype(tp->sp->tp)->syms, ac_public))
                     return true;
             }
         }
@@ -1271,7 +1271,7 @@ static bool isDestructorDeleted(SYMBOL* sp)
     base = sp->sb->baseClasses;
     while (base)
     {
-        if (checkDest(sp, basetype(base->cls->tp)->syms, ac_protected))
+        if (checkDest(sp, base->cls, basetype(base->cls->tp)->syms, ac_protected))
             return true;
         base = base->next;
     }
@@ -1280,7 +1280,7 @@ static bool isDestructorDeleted(SYMBOL* sp)
     {
         if (vbase->alloc)
         {
-            if (checkDest(sp, basetype(vbase->cls->tp)->syms, ac_protected))
+            if (checkDest(sp, vbase->cls, basetype(vbase->cls->tp)->syms, ac_protected))
                 return true;
         }
         vbase = vbase->next;
@@ -1341,6 +1341,8 @@ static bool conditionallyDeleteDestructor(SYMBOL* sp)
 {
     if (isDestructorDeleted(sp->sb->parentClass))
     {
+        if (!strcmp(sp->sb->parentClass->name, "numpunct_byname"))
+            printf("hi");
         sp->sb->deleted = true;
     }
     return false;

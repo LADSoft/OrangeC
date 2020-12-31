@@ -269,7 +269,7 @@ static bool vfMatch(SYMBOL* sym, SYMBOL* oldFunc, SYMBOL* newFunc)
 {
     bool rv = false;
     rv = !strcmp(oldFunc->name, newFunc->name) && matchOverload(oldFunc->tp, newFunc->tp, false);
-    if (rv)
+    if (rv && !oldFunc->sb->isDestructor)
     {
         TYPE *tp1 = basetype(oldFunc->tp)->btp, *tp2 = basetype(newFunc->tp)->btp;
         if (!comparetypes(tp1, tp2, true) && !sameTemplate(tp1, tp2) &&
@@ -1390,7 +1390,7 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                         else
                         {
                             bcsym = GetClassTemplate(bcsym, lst, true);
-                            if (bcsym && bcsym->sb->instantiated && allTemplateArgsSpecified(bcsym, bcsym->templateParams->next))
+                            if (bcsym && allTemplateArgsSpecified(bcsym, bcsym->templateParams->next))
                                 bcsym = TemplateClassInstantiateInternal(bcsym, bcsym->templateParams->next, false);
                         }
                     }

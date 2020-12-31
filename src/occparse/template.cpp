@@ -7589,13 +7589,6 @@ void SwapMainTemplateArgs(SYMBOL* cls)
 }
 SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, bool isExtern)
 {
-    if (strstr(sym->name, "is_nothrow_default_constructible"))
-    {
-        TYPE* tp = sym->templateParams->next->p->byClass.val;
-        if (tp && isstructured(tp) && !strcmp(basetype(tp)->sp->name, "allocator"))
-            if (strstr(basetype(tp)->sp->sb->decoratedName, "allocator$c"))
-                printf("hi");
-    }
     (void)args;
     LEXEME* lex = nullptr;
     SYMBOL* cls = sym;
@@ -9773,13 +9766,6 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
-    if (strstr(sp->name, "is_nothrow_default_constructible"))
-    {
-        TYPE* tp = args->p->byClass.val;
-        if (tp && isstructured(tp) && !strcmp(basetype(tp)->sp->name, "allocator"))
-            if (strstr(basetype(tp)->sp->sb->decoratedName, "allocator$c"))
-                printf("hi");
-    }
     // quick check for non-template
     if (!sp->sb->templateLevel)
         return sp;

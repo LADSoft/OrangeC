@@ -1341,8 +1341,6 @@ static bool conditionallyDeleteDestructor(SYMBOL* sp)
 {
     if (isDestructorDeleted(sp->sb->parentClass))
     {
-        if (!strcmp(sp->sb->parentClass->name, "numpunct_byname"))
-            printf("hi");
         sp->sb->deleted = true;
     }
     return false;

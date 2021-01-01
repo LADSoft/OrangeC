@@ -374,35 +374,38 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
         while (hr)
         {
             SYMBOL* member = hr->p;
-            TYPE* tp = member->tp;
-            int flags = XD_CL_ENCLOSED;
-            if (isref(tp))
+            if (member->sb->storage_class == sc_member || member->sb->storage_class == sc_mutable)
             {
-                tp = basetype(tp)->btp;
-                flags |= XD_CL_BYREF;
-            }
-            if (isconst(tp))
-                flags |= XD_CL_CONST;
-            tp = basetype(tp);
-            if (isstructured(tp))
-            {
-                tp = PerformDeferredInitialization(tp, nullptr);
-                if (genXT)
+                TYPE* tp = member->tp;
+                int flags = XD_CL_ENCLOSED;
+                if (isref(tp))
                 {
-                    RTTIDumpType(tp);
+                    tp = basetype(tp)->btp;
+                    flags |= XD_CL_BYREF;
                 }
-                /*
-                else
+                if (isconst(tp))
+                    flags |= XD_CL_CONST;
+                tp = basetype(tp);
+                if (isstructured(tp))
                 {
-                    SYMBOL*xtSym;
-                    char name[4096];
-                    RTTIGetName(name, tp);
-                    xtSym = search(name, rttiSyms);
-                    Optimizer::genint(flags);
-                    Optimizer::genref(xtSym , 0);
-                    genint(member->sb->offset);
+                    tp = PerformDeferredInitialization(tp, nullptr);
+                    if (genXT)
+                    {
+                        RTTIDumpType(tp);
+                    }
+                    /*
+                    else
+                    {
+                        SYMBOL*xtSym;
+                        char name[4096];
+                        RTTIGetName(name, tp);
+                        xtSym = search(name, rttiSyms);
+                        Optimizer::genint(flags);
+                        Optimizer::genref(xtSym , 0);
+                        genint(member->sb->offset);
+                    }
+                    */
                 }
-                */
             }
             hr = hr->next;
         }

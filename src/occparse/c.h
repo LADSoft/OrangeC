@@ -679,6 +679,7 @@ typedef struct sym
         unsigned delegated : 1;                          // construct is delegated to another constructor
         unsigned hasBody : 1;                            // function has a body
         unsigned forcedefault : 1;                       // defaulted internal function needs instantiation
+        unsigned instantiationError : 1;                 // error while instantiating...
         int __func__label;                               /* label number for the __func__ keyword */
         int labelCount;                                  /* number of code labels within a function body */
         int offset;                                      /* address offset of data in the given seg, or optimize register */

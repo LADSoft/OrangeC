@@ -2290,28 +2290,38 @@ int opt0(EXPRESSION** node)
                 if (sym)
                 {
                     sym = basetype(PerformDeferredInitialization(sym->tp, nullptr))->sp;
-                    while (find && sym)
+                    if (sym && sym->sb->instantiationError)
                     {
-                        SYMBOL* spo = sym;
-                        if (!isstructured(spo->tp))
-                            break;
-
-                        sym = search(find->name, spo->tp->syms);
-                        if (!sym)
+                        if (strstr(sym->name, "ref"))
                         {
-                            sym = classdata(find->name, spo, nullptr, false, false);
-                            if (sym == (SYMBOL*)-1)
-                                sym = nullptr;
+                            printf("hi");
                         }
-                        find = find->next;
                     }
-                    if (!find && sym)
+                    if (sym && !sym->sb->instantiationError)
                     {
-                        if (sym->sb->storage_class == sc_constant)
+                        while (find && sym)
                         {
-                            optimize_for_constants(&sym->sb->init->exp);
-                            *node = sym->sb->init->exp;
-                            return true;
+                            SYMBOL* spo = sym;
+                            if (!isstructured(spo->tp))
+                                break;
+
+                            sym = search(find->name, spo->tp->syms);
+                            if (!sym)
+                            {
+                                sym = classdata(find->name, spo, nullptr, false, false);
+                                if (sym == (SYMBOL*)-1)
+                                    sym = nullptr;
+                            }
+                            find = find->next;
+                        }
+                        if (!find && sym)
+                        {
+                            if (sym->sb->storage_class == sc_constant)
+                            {
+                                optimize_for_constants(&sym->sb->init->exp);
+                                *node = sym->sb->init->exp;
+                                return true;
+                            }
                         }
                     }
                 }

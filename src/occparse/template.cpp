@@ -73,6 +73,7 @@ int inTemplateHeader;
 SYMBOL* instantiatingMemberFuncClass;
 int instantiatingFunction;
 static int inTemplateArgs;
+static int instantiatingClass;
 
 struct templateListData* currents;
 
@@ -91,6 +92,7 @@ void templateInit(void)
     templateNestingCount = 0;
     templateHeaderCount = 0;
     instantiatingTemplate = 0;
+    instantiatingClass = 0;
     currents = nullptr;
     inTemplateArgs = 0;
     inTemplateType = false;
@@ -3940,6 +3942,22 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
             return nullptr;
     }
 }
+static bool HasUnevaluatedTemplateSelectors(EXPRESSION* exp)
+{
+    if (exp)
+    {
+        if (exp->left && HasUnevaluatedTemplateSelectors(exp->left))
+            return true;
+        if (exp->left && HasUnevaluatedTemplateSelectors(exp->right))
+            return true;
+        if (exp->type == en_templateselector)
+        {
+            optimize_for_constants(&exp);
+            return exp->type == en_templateselector;
+        }
+    }
+    return false;
+}
 TYPE* TemplateLookupTypeFromDeclType(TYPE* tp)
 {
     EXPRESSION* exp = tp->templateDeclType;
@@ -4034,11 +4052,21 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                                     if (current->p->byNonType.dflt)
                                     {
                                         current->p->byNonType.dflt = copy_expression(current->p->byNonType.dflt);
+                                        if (HasUnevaluatedTemplateSelectors(current->p->byNonType.dflt))
+                                        {
+                                            failed = true;
+                                            break;
+                                        }
                                         optimize_for_constants(&current->p->byNonType.dflt);
                                     }
                                     else if (current->p->byNonType.val)
                                     {
                                         current->p->byNonType.dflt = copy_expression(current->p->byNonType.val);
+                                        if (HasUnevaluatedTemplateSelectors(current->p->byNonType.val))
+                                        {
+                                            failed = true;
+                                            break;
+                                        }
                                         optimize_for_constants(&current->p->byNonType.dflt);
                                     }
                                 }
@@ -7623,6 +7651,8 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             lex = sym->sb->parentTemplate->sb->deferredCompile;
         if (lex)
         {
+            if (!instantiatingClass++)
+                templateInstantiationError = 0;
             EnterInstantiation(lex, sym);
             int oldHeaderCount = templateHeaderCount;
             Optimizer::LIST* oldDeferred = deferred;
@@ -7728,6 +7758,9 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
                 dropStructureDeclaration();
             SwapMainTemplateArgs(cls);
             LeaveInstantiation();
+            if (templateInstantiationError)
+                cls->sb->instantiationError = true;
+            instantiatingClass--;
         }
     }
     return cls;

@@ -735,7 +735,7 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                     *exp = funcParams.arguments->exp;
                     if (throwaway && isautotype(*tp))
                         *tp = throwaway;
-                    if ((*exp)->type == en_func)
+                    if (isfuncptr(*tp) && (*exp)->type == en_func)
                     {
                         *exp = (*exp)->v.func->fcall;
                         if (!*exp)

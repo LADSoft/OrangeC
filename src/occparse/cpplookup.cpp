@@ -4558,8 +4558,6 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 icsList = Allocate<e_cvsrn*>(n);
                 lenList = Allocate<int*>(n);
                 funcList = Allocate<SYMBOL**>(n);
-                if (!strcmp(sp->name, "qq"))
-                    printf("hi");
                 n = insertFuncs(spList, spFilterList, gather, args, atp);
                 if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor && !spList[0]->sb->specialized2))
                 {
@@ -4586,6 +4584,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     if (toErr && (!found1 || (found1 && found2)) && !templateNestingCount)
                     {
                         memset(spFilterList, 0, sizeof(SYMBOL*) * n);
+
                         n = insertFuncs(spList, spFilterList, gather, args, atp);
                         if (atp || args->ascall)
                         {

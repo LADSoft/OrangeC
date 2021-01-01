@@ -72,8 +72,9 @@ int noTypeNameError;
 int inTemplateHeader;
 SYMBOL* instantiatingMemberFuncClass;
 int instantiatingFunction;
+int instantiatingClass;
 static int inTemplateArgs;
-static int instantiatingClass;
+static std::deque<SYMBOL*> nestedInstantiations;
 
 struct templateListData* currents;
 
@@ -6267,12 +6268,17 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
     {
         if (!dest->p->byClass.val && !dest->p->packed && (!primaryList || !primaryList->p->packed))
         {
+            int oldErrors = templateInstantiationError;
+            templateInstantiationError = 0;
+            nestedInstantiations.push_back(nullptr);
             LEXEME* lex;
             int n, pushCount;
             if (!src->p->byClass.txtdflt)
             {
                 dropStructureDeclaration();
                 instantiatingMemberFuncClass = oldMemberClass;
+                nestedInstantiations.pop_back();
+                templateInstantiationError = oldErrors;
                 return false;
             }
             SwapDefaultNames(enclosing, src->p->byClass.txtargs);
@@ -6322,6 +6328,8 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                         SetAlternateLex(nullptr);
                         dropStructureDeclaration();
                         instantiatingMemberFuncClass = oldMemberClass;
+                        nestedInstantiations.pop_back();
+                        templateInstantiationError = oldErrors;
                         return false;
                     }
                     break;
@@ -6341,6 +6349,8 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                         SetAlternateLex(nullptr);
                         dropStructureDeclaration();
                         instantiatingMemberFuncClass = oldMemberClass;
+                        nestedInstantiations.pop_back();
+                        templateInstantiationError = oldErrors;
                         return false;
                     }
                 }
@@ -6371,6 +6381,8 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                             SetAlternateLex(nullptr);
                             dropStructureDeclaration();
                             instantiatingMemberFuncClass = oldMemberClass;
+                            nestedInstantiations.pop_back();
+                            templateInstantiationError = oldErrors;
                             return false;
                         }
                         dest->p->byNonType.tp = tp1;
@@ -6393,6 +6405,8 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                             SetAlternateLex(nullptr);
                             dropStructureDeclaration();
                             instantiatingMemberFuncClass = oldMemberClass;
+                            nestedInstantiations.pop_back();
+                            templateInstantiationError = oldErrors;
                             return false;
                         }  
                     }
@@ -6406,6 +6420,8 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                         SetAlternateLex(nullptr);
                         dropStructureDeclaration();
                         instantiatingMemberFuncClass = oldMemberClass;
+                        nestedInstantiations.pop_back();
+                        templateInstantiationError = oldErrors;
                         return false;
                     }
                 }
@@ -6418,6 +6434,8 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                 dropStructureDeclaration();
             PopTemplateNamespace(n);
             SetAlternateLex(nullptr);
+            nestedInstantiations.pop_back();
+            templateInstantiationError = oldErrors;
         }
         if (primaryList)
             primaryList = primaryList->next;
@@ -7651,8 +7669,6 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             lex = sym->sb->parentTemplate->sb->deferredCompile;
         if (lex)
         {
-            if (!instantiatingClass++)
-                templateInstantiationError = 0;
             EnterInstantiation(lex, sym);
             int oldHeaderCount = templateHeaderCount;
             Optimizer::LIST* oldDeferred = deferred;
@@ -7673,6 +7689,10 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             int oldFuncLevel = funcLevel;
             int oldintypedef = inTypedef;
             int oldTypeNameError = noTypeNameError;
+            instantiatingClass++;
+            nestedInstantiations.push_back(cls);
+            templateInstantiationError = 0;
+            
             noTypeNameError = 0;
             inTypedef = 0;
             funcLevel = 0;
@@ -7725,6 +7745,16 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             lex = SetAlternateLex(lex);
             lex = innerDeclStruct(lex, nullptr, cls, false, cls->tp->type == bt_class ? ac_private : ac_public, cls->sb->isfinal,
                                   &defd);
+            if (templateInstantiationError)
+            {
+                for (auto sym : nestedInstantiations)
+                {
+                    if (!sym)
+                        break;
+                    sym->sb->instantiationError = true;
+                }
+            }
+            nestedInstantiations.pop_back();
             SetAlternateLex(nullptr);
             SwapMainTemplateArgs(cls);
             lex = reinstateLex;
@@ -7758,9 +7788,6 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
                 dropStructureDeclaration();
             SwapMainTemplateArgs(cls);
             LeaveInstantiation();
-            if (templateInstantiationError)
-                cls->sb->instantiationError = true;
-            instantiatingClass--;
         }
     }
     return cls;
@@ -7915,6 +7942,8 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             int oldArgumentNesting = argument_nesting;
             int oldintypedef = inTypedef;
             int oldTypeNameError = noTypeNameError;
+            int oldClass = instantiatingClass;
+            instantiatingClass = 0;
             noTypeNameError = 0;
             inTypedef = 0;
             expandingParams = 0;
@@ -7965,6 +7994,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             instantiatingFunction--;
             expandingParams = oldExpandingParams;
             LeaveInstantiation();
+            instantiatingClass = oldClass;
         }
         else
         {

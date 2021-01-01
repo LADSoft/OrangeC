@@ -812,7 +812,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     if (Optimizer::cparams.prm_makestubs || inDeduceArgs || (templateNestingCount && ignoreErrtemplateNestingCount(err)))
         if (err != ERR_STATIC_ASSERT && !(errors[err].level & NOTE))
         {
-            if ((!templateNestingCount || instantiatingTemplate) && (errors[err].level & ERROR))
+            if (!templateNestingCount && instantiatingClass && (errors[err].level & ERROR))
                 templateInstantiationError++;
             return false;
         }

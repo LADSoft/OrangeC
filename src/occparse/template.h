@@ -38,6 +38,7 @@ extern int noTypeNameError;
 extern SYMBOL* instantiatingMemberFuncClass;
 extern struct templateListData* currents;
 extern int instantiatingFunction;
+extern int instantiatingClass;
 
 void templateInit(void);
 EXPRESSION* GetSymRef(EXPRESSION* n);

@@ -34,6 +34,9 @@
 #include "xml.h"
 #include "Utils.h"
 #include "LinkerMain.h"
+#include "LinkPartition.h"
+#include "LinkOverlay.h"
+#include "LinkLibrary.h"
 #include <fstream>
 #include <cstdio>
 #include <cstring>

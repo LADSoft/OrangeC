@@ -830,7 +830,7 @@ static void HandleOCP(QUAD* after, int tn)
             QUAD *beforea, *beforel = nullptr;
             after = after->back;
             beforea = nullptr;
-            while (!after->OCP && !beforel && !after->ignoreMe && after->dc.opcode != i_label &&
+            while (!after->OCP && !beforel && after->dc.opcode != i_label &&	
                    (!after->dc.left || !after->dc.left->retval) && after->dc.opcode != i_block)
             {
                 if (after->temps & TEMP_ANS)
@@ -848,7 +848,7 @@ static void HandleOCP(QUAD* after, int tn)
         }
         else
         {
-            while (after->fwd->ignoreMe || after->fwd->dc.opcode == i_label || after->fwd->OCPInserted)
+            while (!after->ignoreMe || after->fwd->dc.opcode == i_label || after->fwd->OCPInserted)
                 after = after->fwd;
         }
         *ins = *p;

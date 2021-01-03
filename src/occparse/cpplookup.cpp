@@ -3447,6 +3447,13 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
             else
                 seq[(*n)++] = CV_POINTERCONVERSION;
         }
+        else if (ispointer(tpp) && basetype(tpp)->nullptrType)
+        {
+            if ((ispointer(tpa) && basetype(tpa)->nullptrType) || (expa && isconstzero(tpa, expa)))
+                seq[(*n)++] = CV_IDENTITY;
+            else
+                seq[(*n)++] = CV_NONE;
+        }
         else if (isstructured(tpa))
         {
             if (isstructured(tpp))

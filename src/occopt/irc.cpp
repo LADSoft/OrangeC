@@ -44,6 +44,7 @@
 #include "irewrite.h"
 #include "iconfl.h"
 #include "ilocal.h"
+
 #define MAX_INTERNAL_REGS 256
 
 #define REG_MAX (chosenAssembler->arch->registerCount)
@@ -492,7 +493,16 @@ static void GetSpillVar(int i)
 {
     SPILL* spill;
     SimpleExpression* exp;
-    exp = spillVar(scc_auto, tempInfo[i]->enode->sp->tp);
+    SimpleType* tp = tempInfo[i]->enode->sp->tp;
+    if (tp->type == st_pointer && tp->isarray)
+    {
+        // if we get here with an array type, it is a pointer to an array which was in an argument
+        tp = Allocate<SimpleType>();
+        tp->type = st_pointer;
+        tp->sizeFromType = ISZ_ADDR;
+        tp->size = sizeFromISZ(ISZ_ADDR);
+    }
+    exp = spillVar(scc_auto, tp);
     spill = tAllocate<SPILL>();
     tempInfo[i]->spillVar = spill->imode = make_ioffset(exp);
     spill->imode->offset->sp->spillVar = true;

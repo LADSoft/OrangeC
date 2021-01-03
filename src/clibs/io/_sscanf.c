@@ -329,26 +329,20 @@ char* __strtoone(FILE* restrict fil, const char* restrict format, void* restrict
                         *((wchar_t*)arg)++ = fbuf[0];
                     }
                     (*chars)++;
-                    if (width)
-                        *ch = fgetc_unlocked(fil);
-                    else
-                        *ch = EOF;
+                    *ch = fgetc_unlocked(fil);
                 }
             }
             else
             {
                 if (width == INT_MAX)
-                    width = 1;
+                    width = 1; 
                 while (width-- && *ch != EOF)
                 {
                     if (!ignore)
                     {
                         *((char*)arg)++ = (char)*ch;
                     }
-                    if (width)
-                        *ch = fgetc_unlocked(fil);
-                    else
-                        *ch = EOF;
+                    *ch = fgetc_unlocked(fil);
                     (*chars)++;
                 }
             }

@@ -51,6 +51,8 @@
 #include "beinterf.h"
 #include "exprcpp.h"
 #include "lex.h"
+#include "dsw.h"
+
 namespace Parser
 {
 unsigned long long reint(EXPRESSION* node);
@@ -3447,99 +3449,17 @@ int typedconsts(EXPRESSION* node1)
     }
     return rv;
 }
-static int depth(EXPRESSION* ep)
+bool toConsider(EXPRESSION* exp1, EXPRESSION* exp2)
 {
-    if (ep == 0)
-        return 0;
-    switch (ep->type)
+    switch( exp2->type)
     {
-        case en_c_bool:
-        case en_c_c:
-        case en_c_uc:
-        case en_c_wc:
-        case en_c_u16:
-        case en_c_u32:
-        case en_c_i:
-        case en_c_ui:
-        case en_c_l:
-        case en_c_ul:
-        case en_c_ll:
-        case en_c_ull:
-        case en_c_f:
-        case en_c_d:
-        case en_c_ld:
-        case en_c_fc:
-        case en_c_dc:
-        case en_c_ldc:
-        case en_c_fi:
-        case en_c_di:
-        case en_c_ldi:
-        case en_c_string:
-        case en_global:
-        case en_auto:
-        case en_pc:
-        case en_threadlocal:
-        case en_labcon:
-        case en_absolute:
-        case en_nullptr:
-        case en_atomic:
-        case en_structelem:
-
-            return 1;
-        case en_funcret:
-            return depth(ep->left);
-        case en_func:
-
-            return 10 + imax(depth(ep->left), depth(ep->right));
-        case en_cond:
-            return 1 + imax(depth(ep->left), imax(depth(ep->right->left), depth(ep->right->right)));
-        default:
-            return 1 + imax(depth(ep->left), depth(ep->right));
-    }
-}
-static void rebalance(EXPRESSION* ep)
-{
-    if (ep == 0)
-        return;
-    switch (ep->type)
-    {
-        case en_c_bool:
-        case en_c_c:
-        case en_c_uc:
-        case en_c_wc:
-        case en_c_u16:
-        case en_c_u32:
-        case en_c_i:
-        case en_c_ui:
-        case en_c_l:
-        case en_c_ul:
-        case en_c_ll:
-        case en_c_ull:
-        case en_c_f:
-        case en_c_d:
-        case en_c_ld:
-        case en_c_fc:
-        case en_c_dc:
-        case en_c_ldc:
-        case en_c_fi:
-        case en_c_di:
-        case en_c_ldi:
-        case en_c_string:
-        case en_global:
-        case en_auto:
-        case en_pc:
-        case en_threadlocal:
-        case en_labcon:
-        case en_absolute:
-        case en_nullptr:
-        case en_structelem:
-            break;
         case en_add:
             // fixme : without the (architecture == ARCHITECTURE_MSIL) some complex expressions inside loops
             // get optimized wrong see x264::analyse.c around line 849
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
-                if (!isarithmeticconst(ep->left) || !isarithmeticconst(ep->right))
-                    break;
+                if (!isarithmeticconst(exp2->left) || !isarithmeticconst(exp2->right))
+                    return false;
+            return true;
         case en_mul:
         case en_umul:
         case en_arraymul:
@@ -3548,45 +3468,18 @@ static void rebalance(EXPRESSION* ep)
         case en_xor:
         case en_eq:
         case en_ne:
-            rebalance(ep->left);
-            rebalance(ep->right);
-            if (depth(ep->left) < depth(ep->right))
-            {
-                EXPRESSION* p = ep->left;
-                ep->left = ep->right;
-                ep->right = p;
-            }
-            break;
-        case en_sub:
-            rebalance(ep->left);
-            rebalance(ep->right);
-            if (depth(ep->left) < depth(ep->right))
-            {
-                EXPRESSION* p = ep->left;
-                ep->left = ep->right;
-                ep->right = p;
-                ep->type = en_add;
-                ep->left = exprNode(en_uminus, ep->left, 0);
-            }
-            break;
-        case en_cond:
-            rebalance(ep->left);
-            rebalance(ep->right->left);
-            rebalance(ep->right->right);
-            break;
-        case en_atomic:
-            rebalance(ep->v.ad->flg);
-            rebalance(ep->v.ad->memoryOrder1);
-            rebalance(ep->v.ad->memoryOrder1);
-            rebalance(ep->v.ad->address);
-            rebalance(ep->v.ad->value);
-            rebalance(ep->v.ad->third);
-            break;
-        default:
-            rebalance(ep->left);
-            rebalance(ep->right);
-            break;
+            return true;
+        default: 
+            return false;
     }
+}
+int count3 = 0;
+static std::function<bool(EXPRESSION*, EXPRESSION*)> ToConsider = toConsider;
+void rebalance(EXPRESSION** exp)
+{
+    if (++count3 >= 0x166a)
+        printf("hi");
+    *exp = Rebalance(*exp, ToConsider);
 }
 bool msilConstant(EXPRESSION *exp)
 {
@@ -3652,7 +3545,7 @@ void optimize_for_constants(EXPRESSION** expr)
     asidetail = oldasidetail;
     if (Optimizer::architecture != ARCHITECTURE_MSIL)
     {
-        rebalance(*expr);
+        rebalance(expr);
     }
 }
 LEXEME* optimized_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed)

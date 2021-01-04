@@ -829,7 +829,7 @@ static EXPRESSION* createLambda(bool noinline)
         }
         hr = hr->next;
     }
-    *cur = clsThs;  // this expression will be used in copy constructors, or discarded if unneeded
+    *cur = copy_expression(clsThs);  // this expression will be used in copy constructors, or discarded if unneeded
     return rv;
 }
 LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, int flags)

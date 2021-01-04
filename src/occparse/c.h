@@ -338,6 +338,7 @@ typedef struct expr
     int r, s, t, q;
     char bits;
     char startbit;
+    short treesize;
     int isvolatile : 1;
     int isrestrict : 1;
     int isatomic : 1;

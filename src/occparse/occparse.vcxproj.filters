@@ -458,5 +458,8 @@
     <ClInclude Include="browse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="dsw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

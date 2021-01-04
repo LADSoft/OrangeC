@@ -1891,7 +1891,7 @@ EXPRESSION* createTemporary(TYPE* tp, EXPRESSION* val)
     rv = anonymousVar(sc_auto, tp);
     if (val)
     {
-        EXPRESSION* rv1 = rv;
+        EXPRESSION* rv1 = copy_expression(rv);
         deref(tp, &rv);
         cast(tp, &val);
         rv = exprNode(en_void, exprNode(en_assign, rv, val), rv1);
@@ -1904,7 +1904,7 @@ EXPRESSION* msilCreateTemporary(TYPE* tp, EXPRESSION* val)
     EXPRESSION* rv = anonymousVar(sc_auto, tp);
     if (val)
     {
-        EXPRESSION* rv1 = rv;
+        EXPRESSION* rv1 = copy_expression(rv);
         deref(tp, &rv);
         cast(tp, &val);
         rv = exprNode(en_void, exprNode(en_assign, rv, val), rv1);

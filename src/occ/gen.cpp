@@ -2590,6 +2590,7 @@ void asm_parmblock(Optimizer::QUAD* q) /* push a block of memory */
         si->liveRegs = q->liveRegs;
         di->liveRegs = q->liveRegs;
         gen_codes(op_sub, ISZ_UINT, sp, aimmed(n));
+        pushlevel += n;
         gen_codes(op_push, ISZ_UINT, di, 0);
         gen_codes(op_push, ISZ_UINT, si, 0);
         gen_codes(op_push, ISZ_UINT, cx, 0);
@@ -2605,7 +2606,6 @@ void asm_parmblock(Optimizer::QUAD* q) /* push a block of memory */
         gen_codes(op_pop, ISZ_UINT, si, 0);
         gen_codes(op_pop, ISZ_UINT, di, 0);
         pushlevel -= 12;
-        pushlevel += n;
     }
 }
 void asm_parmadj(Optimizer::QUAD* q) /* adjust stack after function call */

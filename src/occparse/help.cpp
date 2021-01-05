@@ -1376,8 +1376,8 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 if (thisptr && exp->type == en_func)
                 {
                     EXPRESSION* exp1 = init->offset || (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)
-                                           ? exprNode(en_add, expsym, intNode(en_c_i, init->offset))
-                                           : expsym;
+                                           ? exprNode(en_add, copy_expression(expsym), intNode(en_c_i, init->offset))
+                                           : copy_expression(expsym);
                     if (isarray(tp))
                     {
                         exp->v.func->arguments->exp = exp1;
@@ -1392,7 +1392,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             else if (!init->exp)
             {
                 // usually empty braces, coudl be an error though
-                exp = exprNode(en_blockclear, expsym, nullptr);
+                exp = exprNode(en_blockclear, copy_expression(expsym), nullptr);
                 exp->size = init->offset;
             }
             else if (isstructured(init->basetp) || isarray(init->basetp))
@@ -1406,14 +1406,14 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     if (exp2->type == en_func && exp2->v.func->returnSP)
                     {
                         exp2->v.func->returnSP->sb->allocate = false;
-                        exp2->v.func->returnEXP = expsym;
+                        exp2->v.func->returnEXP = copy_expression(expsym);
                         exp = exp2;
                         noClear = true;
                     }
                     else if (exp2->type == en_thisref && exp2->left->v.func->returnSP)
                     {
                         exp2->left->v.func->returnSP->sb->allocate = false;
-                        exp2->left->v.func->returnEXP = expsym;
+                        exp2->left->v.func->returnEXP = copy_expression(expsym);
                         exp = exp2;
                         noClear = true;
                     }
@@ -1425,7 +1425,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     }
                     else
                     {
-                        exp = exprNode(en_blockassign, expsym, exp2);
+                        exp = exprNode(en_blockassign, copy_expression(expsym), exp2);
                         exp->size = init->basetp->size;
                         exp->altdata = (void*)(init->basetp);
                         noClear = true;
@@ -1456,7 +1456,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         }
                         if (!isstructured(btp) || btp->sp->sb->trivialCons)
                         {
-                            exp = exprNode(en_blockclear, expsym, nullptr);
+                            exp = exprNode(en_blockclear, copy_expression(expsym), nullptr);
                             exp->size = init->basetp->size;
                             exp = exprNode(en_void, exp, nullptr);
                             expp = &exp->right;
@@ -1479,7 +1479,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                                 }
                                 else
                                 {
-                                     asn = exprNode(en_add, expsym, intNode(en_c_i, init->offset));
+                                     asn = exprNode(en_add, copy_expression(expsym), intNode(en_c_i, init->offset));
                                 }
                                 deref(init->basetp, &asn);
                                 cast(init->basetp, &right);
@@ -1513,7 +1513,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                             }
                             else
                             {
-                                exp = exprNode(en_blockassign, expsym, exp);
+                                exp = exprNode(en_blockassign, copy_expression(expsym), exp);
                                 exp->size = init->basetp->size;
                                 exp->altdata = (void*)(init->basetp);
                             }
@@ -1530,7 +1530,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 if (exp2->type == en_func && exp2->v.func->returnSP)
                 {
                     exp2->v.func->returnSP->sb->allocate = false;
-                    exp2->v.func->returnEXP = expsym;
+                    exp2->v.func->returnEXP = copy_expression(expsym);
                     exp = exp2;
                 }
                 else
@@ -1540,14 +1540,14 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         int lab = dumpMemberPtr(exp2->v.sp, init->basetp, true);
                         exp2 = intNode(en_labcon, lab);
                     }
-                    exp = exprNode(en_blockassign, expsym, exp2);
+                    exp = exprNode(en_blockassign, copy_expression(expsym), exp2);
                     exp->size = init->basetp->size;
                     exp->altdata = (void*)(init->basetp);
                 }
             }
             else
             {
-                EXPRESSION* exps = expsym;
+                EXPRESSION* exps = copy_expression(expsym);
                 if (isarray(tp) && tp->msil)
                 {
                     TYPE* btp = tp;
@@ -1562,7 +1562,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     exps->v.msilArray = (MSIL_ARRAY*)Alloc(sizeof(MSIL_ARRAY) + count * sizeof(EXPRESSION*));
                     exps->v.msilArray->max = count;
                     exps->v.msilArray->count = count;
-                    exps->v.msilArray->base = expsym;
+                    exps->v.msilArray->base = copy_expression(expsym);
                     exps->v.msilArray->tp = tp;
                     btp = tp->btp;
                     for (i = 0; i < count; i++)

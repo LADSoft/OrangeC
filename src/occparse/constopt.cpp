@@ -3473,12 +3473,9 @@ bool toConsider(EXPRESSION* exp1, EXPRESSION* exp2)
             return false;
     }
 }
-int count3 = 0;
 static std::function<bool(EXPRESSION*, EXPRESSION*)> ToConsider = toConsider;
 void rebalance(EXPRESSION** exp)
 {
-    if (++count3 >= 0x166a)
-        printf("hi");
     *exp = Rebalance(*exp, ToConsider);
 }
 bool msilConstant(EXPRESSION *exp)

@@ -28,14 +28,13 @@
 //
 
 #include <stack>	
-#include <functional>
-template <class T>
-void TreeToVineWrapper(T* root, std::function<bool(T*, T*)>& consider);
+template <class T, class F>
+void TreeToVineWrapper(T* root, F* consider);
 template <class T>
 void VineCompress(T* root, size_t count);
 
-template <class T>
-T* TreeToVine(T* nd, std::function<bool(T*, T*)>& consider)
+template <class T, class F>
+T* TreeToVine(T* nd, F* consider)
 { 
     T root = {};
     root.right = nd;
@@ -76,8 +75,8 @@ T* TreeToVine(T* nd, std::function<bool(T*, T*)>& consider)
     root.right->treesize = root.treesize;
     return root.right;
 }
-template <class T>
-void TreeToVineWrapper(T* root, std::function<bool(T*, T*)>& consider)
+template <class T, class F>
+void TreeToVineWrapper(T* root, F* consider)
 {
      T* tail = root;
      std::stack<T*> stk;
@@ -187,8 +186,8 @@ void VineToTreeWrapper(T* root)
          stk.pop();
     }
 }
-template <class T>
-T* Rebalance(T* nd, std::function<bool(T*, T*)>& consider)
+template <class T, class F>
+T* Rebalance(T* nd, F* consider)
 {
     T root = { };
     root.right = nd;

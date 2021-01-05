@@ -3473,10 +3473,9 @@ bool toConsider(EXPRESSION* exp1, EXPRESSION* exp2)
             return false;
     }
 }
-static std::function<bool(EXPRESSION*, EXPRESSION*)> ToConsider = toConsider;
 void rebalance(EXPRESSION** exp)
 {
-    *exp = Rebalance(*exp, ToConsider);
+    *exp = Rebalance(*exp, toConsider);
 }
 bool msilConstant(EXPRESSION *exp)
 {

@@ -3179,6 +3179,7 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
                     for (int i = 0; i < n; i++)
                     {
                         std::deque<TEMPLATEPARAM*> defaults;
+                        std::deque<std::pair<TYPE**, TYPE*>> types;
                         packIndex = i;
                         *ptr = Allocate<INITLIST>();
                         **ptr = *arguments;
@@ -3201,8 +3202,40 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
                                 }
                                 tpl = tpl->next;
                             }
+                            INITLIST* il = (*ptr)->exp->v.func->arguments;
+                            while (il)
+                            {
+                                TYPE **tp = &il->tp;
+                                while ((*tp)->btp)
+                                    tp = &(*tp)->btp;
+                                if ((*tp)->type == bt_templateparam)
+                                {
+                                    tpl = (*tp)->templateParam;
+                                    if (tpl->p->packed)
+                                    {
+                                        TEMPLATEPARAM p1 = *tpl->p;
+                                        TEMPLATEPARAMLIST *srch = p1.byPack.pack;
+                                        for (int j = 0; j < packIndex && srch; j++, srch = srch->next);
+                                        if (srch && srch->p->type == kw_typename && srch->p->byClass.val)
+                                        {
+                                            types.push_back(std::pair<TYPE**, TYPE*>(tp, *tp));
+                                            (*tp) = srch->p->byClass.val;
+                                        }
+                                    }
+                                }
+                                il = il->next;
+                            }
                         }
                         (*ptr)->tp = LookupTypeFromExpression((*ptr)->exp, nullptr, false);
+                        if (isref((*ptr)->tp))
+                        {
+                            bool rref = basetype((*ptr)->tp)->type == bt_rref;
+                            (*ptr)->tp = basetype((*ptr)->tp)->btp;
+                            if (rref)
+                                ((*ptr)->tp)->rref = true;
+                            else
+                                ((*ptr)->tp)->lref = true;
+                        }
                         if ((*ptr)->tp == nullptr)
                             (*ptr)->tp = arguments->tp;
                         if ((*ptr)->exp->type == en_func)
@@ -3217,6 +3250,11 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
                                 }
                                 tpl = tpl->next;
                             }
+                            for (auto&& t : types)
+                            {
+                                *(t.first) = t.second;
+                            }
+                            types.clear();
                         }
                         ptr = &(*ptr)->next;
                     }
@@ -3700,25 +3738,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                 exp = funcList[--count];
                 while (isref(rve))
                     rve = basetype(rve)->btp;
-                if (isfuncptr(rve))
-                {
-                    rv = basetype(basetype(rve)->btp)->btp;
-                    if (isconst(rve))
-                    {
-                        // to make LIBCXX happy
-                        rve = Allocate<TYPE>();
-                        rve->type = bt_const;
-                        rve->size = rv->size;
-                        rve->btp = rv;
-                        rve->rootType = rv->rootType;
-                        rv = rve;
-                    }
-                }
-                else if (isfunction(rve))
-                {
-                    rv = basetype(rve)->btp;
-                }
-                else if (isstructured(rve))
+                if (isfuncptr(rve) || isfunction(rve) || isstructured(rve))
                 {
                     INITLIST* old = nullptr;
                     if (exp->v.func)
@@ -3726,9 +3746,32 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                         old = exp->v.func->arguments;
                         exp->v.func->arguments = ExpandArguments(exp);
                     }
-                    rv = rve;
-                    if (!exp->v.func || !insertOperatorParams(nullptr, &rv, &exp1, exp->v.func, 0))
-                        rv = &stdvoid;
+                    if (isstructured(rve))
+                    {
+                        rv = rve;
+                        if (!exp->v.func || !insertOperatorParams(nullptr, &rv, &exp1, exp->v.func, 0))
+                            rv = &stdany;
+                    }
+                    else if (isfunction(rve))
+                    {
+                        bool ascall = exp->v.func->ascall;
+                        exp->v.func->ascall = true;
+                        TYPE* tp1 = nullptr;
+                        SYMBOL* sym = rve->sp;
+                        if (sym->tp->type != bt_aggregate)
+                            sym = sym->sb->overloadName;
+                        rv = basetype(rve)->btp;
+                        sym = GetOverloadedFunction(&tp1, &exp1, sym, exp->v.func, nullptr, false, false, false, 0);
+                        if (!sym)
+                            rv = &stdany;
+                        else
+                            rv = basetype(sym->tp)->btp;
+                        exp->v.func->ascall = ascall;
+                    }
+                    else
+                    {
+                        rv = basetype(basetype(rve)->btp)->btp;
+                    }
                     if (exp->v.func)
                     {
                         exp->v.func->arguments = old;
@@ -4005,7 +4048,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                 return rv;
             case bt_templatedecltype:
                 *last = LookupTypeFromExpression(tp->templateDeclType, enclosing, alt);
-                if (!*last)
+                if (!*last || (*last)->type == bt_any)
                 {
                     return &stdany;
                 }

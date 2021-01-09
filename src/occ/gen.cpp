@@ -3461,11 +3461,11 @@ void asm_or(Optimizer::QUAD* q) /* binary or */
     getAmodes(q, &opa, q->ans, &apal, &apah);
     if (q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG)
     {
-        if (equal_address(apal, apll))
+        if (equal_address(apal, apll) && equal_address(apah, aplh))
         {
             func_axdx(op_or, apal, apah, aprl, aprh);
         }
-        else if (equal_address(apal, aprl))
+        else if (equal_address(apal, aprl) && equal_address(apah, aprh))
         {
             func_axdx(op_or, apal, apah, apll, aplh);
         }

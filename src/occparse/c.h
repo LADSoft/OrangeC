@@ -570,6 +570,7 @@ typedef struct sym
     TYPE* tp;
     struct _templateParamList* templateParams;
     unsigned packed : 1;  // packed template param instance
+    unsigned synthesized : 1; // packed template param was synthesized during parsing
     struct _symbody
     {
         const char* decoratedName; /* symbol name with decorations, as used in output format */

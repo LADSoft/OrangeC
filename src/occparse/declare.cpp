@@ -3714,6 +3714,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                                     }
                                     else
                                     {
+                                        clone->synthesized = true;
                                         clone->tp->templateParam = tp1->templateParam;
                                     }
                                     *newPack = Allocate<TEMPLATEPARAMLIST>();

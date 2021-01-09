@@ -2423,13 +2423,13 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                 SYMLIST* hrright = basetype(spList[j]->tp)->syms->table[0];
                 while (hrleft)
                 {
-                    if (((SYMBOL*)hrleft->p)->packed)
+                    if (((SYMBOL*)hrleft->p)->packed && !((SYMBOL*)hrleft->p)->synthesized)
                         leftPacked = true;
                     hrleft = hrleft->next;
                 }
                 while (hrright)
                 {
-                    if (((SYMBOL*)hrright->p)->packed)
+                    if (((SYMBOL*)hrright->p)->packed && !((SYMBOL*)hrright->p)->synthesized)
                         rightPacked = true;
                     hrright = hrright->next;
                 }

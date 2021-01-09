@@ -3185,7 +3185,7 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
                         **ptr = *arguments;
                         if ((*ptr)->exp->type == en_func)
                         {
-                            TEMPLATEPARAMLIST* tpl = exp->v.func->templateParams;
+                            TEMPLATEPARAMLIST* tpl = (*ptr)->exp->v.func->templateParams;
                             while (tpl)
                             {
                                 if (tpl->p->type != kw_new)
@@ -3227,7 +3227,7 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
                             }
                         }
                         (*ptr)->tp = LookupTypeFromExpression((*ptr)->exp, nullptr, false);
-                        if (isref((*ptr)->tp))
+                        if ((*ptr)->tp && isref((*ptr)->tp))
                         {
                             bool rref = basetype((*ptr)->tp)->type == bt_rref;
                             (*ptr)->tp = basetype((*ptr)->tp)->btp;
@@ -3240,7 +3240,7 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
                             (*ptr)->tp = arguments->tp;
                         if ((*ptr)->exp->type == en_func)
                         {
-                            TEMPLATEPARAMLIST* tpl = exp->v.func->templateParams;
+                            TEMPLATEPARAMLIST* tpl = (*ptr)->exp->v.func->templateParams;
                             while (tpl)
                             {
                                 if (tpl->p->type != kw_new)
@@ -4318,7 +4318,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                 while (hr)
                 {
                     SYMBOL* sp = hr->p;
-                    if (sp->packed)
+                    if (sp->packed && !sp->synthesized)
                     {
                         NormalizePacked(sp->tp);
                         if (sp->tp->templateParam && sp->tp->templateParam->p->packed)

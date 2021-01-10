@@ -99,7 +99,6 @@ int ccDBOpen(const char* name);
 #endif
 namespace Parser
 {
-
 #ifdef _WIN32
 extern "C"
 {

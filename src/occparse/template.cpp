@@ -76,6 +76,7 @@ int instantiatingClass;
 static int inTemplateArgs;
 static std::deque<SYMBOL*> nestedInstantiations;
 static std::map<std::string, std::map<std::string, SYMBOL*>> instantiations;
+static std::map<std::string, SYMBOL*> emptyInstantiations;
 
 struct templateListData* currents;
 
@@ -86,6 +87,7 @@ TEMPLATEPARAMLIST* ResolveTemplateSelectors(SYMBOL* sp, TEMPLATEPARAMLIST* args,
 TEMPLATEPARAMLIST* ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMLIST* tpl);
 static TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing);
 static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* val, TEMPLATEPARAMLIST* params);
+
 
 void templateInit(void)
 {
@@ -105,6 +107,7 @@ void templateInit(void)
     instantiatingFunction = 0;
     inDeduceArgs = 0;
     instantiations.clear();
+    emptyInstantiations.clear();
 }
 EXPRESSION* GetSymRef(EXPRESSION* n)
 {
@@ -9897,9 +9900,6 @@ bool cacheCandidate(SYMBOL* sp, TEMPLATEPARAMLIST* args)
         sp1 = lst->p;
         lst = lst->next;
     }
-    for (auto a = args; a; a = a->next)
-        if (!a->p->byClass.dflt)
-            return false;
     return true;
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
@@ -9914,23 +9914,57 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
     TEMPLATEPARAMLIST* search = args;
     int count = 0;
     SYMLIST* l;
+    bool caching = false;
 
     noErr |= matchOverloadLevel;
     args = ResolveClassTemplateArgs(sp, args);
 
     char buf[8192];
     buf[0] = 0;
-    if ((!templateNestingCount || instantiatingTemplate) && cacheCandidate(sp, args))
+    if ((!templateNestingCount || instantiatingTemplate))
     {
-        // only do this if there weren't default arguments...
-        GetClassKey(buf, sp->sb->parentTemplate, args);
-        auto it = instantiations.find(sp->name);
-        if (it != instantiations.end())
+        GetClassKey(buf, sp->sb->parentTemplate ? sp->sb->parentTemplate : sp, args);
+        if (cacheCandidate(sp, args))
         {
-            auto it1 = it->second.find(buf);
-            if (it1 != it->second.end())
+            TEMPLATEPARAMLIST *a;
+            for (a = args; a; a = a->next)
             {
-                return it1->second;
+                if (!a->p->byClass.dflt)
+                {
+                    break;
+                }
+            }
+            if (!a)
+            {
+                caching = true;
+                // only do this if there weren't default arguments...
+                auto it = instantiations.find(sp->name);
+                if (it != instantiations.end())
+                {
+                    auto it1 = it->second.find(buf);
+                    if (it1 != it->second.end())
+                    {
+                        return it1->second;
+                    }
+                }
+            }
+            else
+            {
+                for (a = args; a; a = a->next)
+                {
+                    if (!a->p->byClass.val && !a->p->byClass.dflt)
+                    {
+                        break;
+                    }
+                }
+                if (a)
+                {
+                    auto it = emptyInstantiations.find(buf);
+                    if (it != emptyInstantiations.end())
+                    {
+                        return it->second;
+                    }
+                }
             }
         }
     }
@@ -10122,7 +10156,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
             }
             copySyms(found1, sym);
             SetLinkerNames(found1, lk_cdecl);
-            if (buf[0] && !strstr(buf, "initializer-list"))
+            if (caching && !strstr(buf, "initializer-list"))
             {
                 // didn't have default arguments, enter in global table
                 instantiations[sp->name][buf] = found1;
@@ -10161,6 +10195,17 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
             {
                 found1->templateParams->next = sym->templateParams->next;
             }
+            if (buf[0] && !strstr(buf, "initializer-list"))
+            {
+                emptyInstantiations[buf] = found1;
+            }
+        }
+    }
+    else
+    {
+        if (buf[0] && !strstr(buf, "initializer-list"))
+        {
+            emptyInstantiations[buf] = found1;
         }
     }
     restoreParams(origList, n);

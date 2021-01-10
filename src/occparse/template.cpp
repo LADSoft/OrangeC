@@ -75,6 +75,7 @@ int instantiatingFunction;
 int instantiatingClass;
 static int inTemplateArgs;
 static std::deque<SYMBOL*> nestedInstantiations;
+static std::map<std::string, std::map<std::string, SYMBOL*>> instantiations;
 
 struct templateListData* currents;
 
@@ -103,6 +104,7 @@ void templateInit(void)
     parsingSpecializationDeclaration = false;
     instantiatingFunction = 0;
     inDeduceArgs = 0;
+    instantiations.clear();
 }
 EXPRESSION* GetSymRef(EXPRESSION* n)
 {
@@ -9870,6 +9872,36 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
         src = src->next;
     }
 }
+bool cacheCandidate(SYMBOL* sp, TEMPLATEPARAMLIST* args)
+{
+    // a check to see if anything is defaulted in any of the specializations...
+    SYMBOL* sp1 = sp;
+    SYMLIST* lst = sp1->sb->specializations;
+    while (true)
+    {
+        TEMPLATEPARAMLIST* temp = sp->templateParams;
+        if (temp->p->bySpecialization.types)
+            temp = temp->p->bySpecialization.types;
+        else
+            temp = temp->next;
+        while (temp)
+        {
+            if (temp->p->byClass.txtdflt)
+                break;
+            temp = temp->next;
+        }
+        if (temp)
+            return false;
+        if (!lst)
+            break;
+        sp1 = lst->p;
+        lst = lst->next;
+    }
+    for (auto a = args; a; a = a->next)
+        if (!a->p->byClass.dflt)
+            return false;
+    return true;
+}
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
     // quick check for non-template
@@ -9885,6 +9917,23 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 
     noErr |= matchOverloadLevel;
     args = ResolveClassTemplateArgs(sp, args);
+
+    char buf[8192];
+    buf[0] = 0;
+    if ((!templateNestingCount || instantiatingTemplate) && cacheCandidate(sp, args))
+    {
+        // only do this if there weren't default arguments...
+        GetClassKey(buf, sp->sb->parentTemplate, args);
+        auto it = instantiations.find(sp->name);
+        if (it != instantiations.end())
+        {
+            auto it1 = it->second.find(buf);
+            if (it1 != it->second.end())
+            {
+                return it1->second;
+            }
+        }
+    }
 
     if (sp->sb->parentTemplate && sp)
         sp = sp->sb->parentTemplate;
@@ -10073,6 +10122,11 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
             }
             copySyms(found1, sym);
             SetLinkerNames(found1, lk_cdecl);
+            if (buf[0] && !strstr(buf, "initializer-list"))
+            {
+                // didn't have default arguments, enter in global table
+                instantiations[sp->name][buf] = found1;
+            }
             instants = Allocate<SYMLIST>();
             instants->p = found1;
             instants->next = parent->sb->instantiations;

@@ -105,6 +105,7 @@ int mangledNamesCount;
 
 static char* lookupName(char* in, const char* name);
 static int uniqueID;
+static bool inKeyCreation;
 
 void mangleInit()
 {
@@ -114,6 +115,7 @@ void mangleInit()
         memcpy(overloadNameTab, msiloverloadNameTab, sizeof(msiloverloadNameTab));
         memcpy(cpp_funcname_tab, msiloverloadNameTab, sizeof(msiloverloadNameTab));
     }
+    inKeyCreation = false;
 }
 char* mangleNameSpaces(char* in, SYMBOL* sym)
 {
@@ -852,7 +854,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     }
                     else
                     {
-                        if (first || !tp->array)
+                        if (!tp->array || first && !inKeyCreation)
                         {
                             *in++ = 'p';
                         }
@@ -930,6 +932,21 @@ char* mangleType(char* in, TYPE* tp, bool first)
     }
     *in = 0;
     return in;
+}
+void GetClassKey(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
+{
+    inKeyCreation = true;
+    mangledNamesCount = 0;
+    SYMBOL* lastParent = sym;
+    while (lastParent->sb->parentClass)
+        lastParent = lastParent->sb->parentClass;
+    char* p = buf;
+    p = mangleNameSpaces(p, lastParent->sb->parentNameSpace);
+    p = mangleClasses(p, sym->sb->parentClass);
+    *p++ = '@';
+    p = mangleTemplate(p, sym, params);
+    *p = 0;
+    inKeyCreation = false;
 }
 void SetLinkerNames(SYMBOL* sym, enum e_lk linkage, bool isTemplateDefinition)
 {
@@ -1013,7 +1030,7 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage, bool isTemplateDefinition)
             p = mangleNameSpaces(p, lastParent->sb->parentNameSpace);
             p = mangleClasses(p, sym->sb->parentClass);
             *p++ = '@';
-            if (sym->sb->templateLevel && sym->templateParams && sym->templateParams)
+            if (sym->sb->templateLevel && sym->templateParams)
             {
                 p = mangleTemplate(p, sym, sym->templateParams);
             }

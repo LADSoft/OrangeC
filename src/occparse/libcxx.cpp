@@ -627,15 +627,13 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                 {
                     TYPE* tpy = funcparams.arguments->next->tp;
                     if (isref(tpy))
-                    {
                         tpy = basetype(tpy)->btp;
-                        if (isconst(tpy) && !isconst(tp2) || isvolatile(tpy) && !isvolatile(tp2))
-                        {
-                            rv = false;
-                            *exp = intNode(en_c_i, rv);
-                            *tp = &stdint;
-                            return true;
-                        }
+                    if (isconst(tpy) && !isconst(tp2) || isvolatile(tpy) && !isvolatile(tp2))
+                    {
+                        rv = false;
+                        *exp = intNode(en_c_i, rv);
+                        *tp = &stdint;
+                        return true;
                     }
                     if (isstructured(tp2))
                     {                        
@@ -1016,21 +1014,33 @@ static bool is_nothrow_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, 
         lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
         lst = lst->next;
     }
-    if (funcparams.arguments)
+    if (funcparams.arguments && funcparams.arguments->next)
     {
-        TYPE* tp = funcparams.arguments->tp;
-        if (isref(tp))
-            tp = basetype(tp)->btp;
-        if (isstructured(tp))
+        TYPE* tp2 = funcparams.arguments->tp;
+        if (isref(tp2))
         {
-            if (!basetype(tp)->sp->sb->trivialCons)
+            tp2 = basetype(tp2)->btp;
+            TYPE* tpy = funcparams.arguments->next->tp;
+            if (isref(tpy))
+                tpy = basetype(tpy)->btp;
+            if (isconst(tpy) && !isconst(tp2) || isvolatile(tpy) && !isvolatile(tp2))
+            {
+                rv = false;
+                *exp = intNode(en_c_i, rv);
+                *tp = &stdint;
+                return true;
+            }
+        }
+        if (isstructured(tp2))
+        {
+            if (!basetype(tp2)->sp->sb->trivialCons)
                 rv = nothrowConstructible(funcparams.arguments->tp, funcparams.arguments->next);
             else
-                rv = true;
+	        rv = comparetypes(tp2, funcparams.arguments->next->tp, true);
         }
         else
         {
-            rv = true;
+            rv = comparetypes(tp2, funcparams.arguments->next->tp, true);
         }
     }
     *exp = intNode(en_c_i, rv);

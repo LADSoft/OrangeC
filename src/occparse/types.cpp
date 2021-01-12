@@ -75,8 +75,6 @@ bool comparetypes(TYPE* typ1, TYPE* typ2, int exact)
         typ1 = basetype(typ1);
     while (typ2->type == bt_typedef)
         typ2 = basetype(typ2);
-    typ1 = replaceTemplateSelector(typ1);
-    typ2 = replaceTemplateSelector(typ2);
     if (typ1->type == bt_derivedfromtemplate)
         typ1 = typ1->btp;
     if (typ2->type == bt_derivedfromtemplate)

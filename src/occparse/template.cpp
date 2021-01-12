@@ -11226,7 +11226,10 @@ static bool ParseTypeAliasDefaults(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLATE
             }
             else
             {
-                tpl->p->byClass.val = (*tplp)->p->byClass.dflt;
+                if (tpl->p->byClass.txtdflt)
+                    tpl->p->byClass.val = nullptr;
+                else
+                    tpl->p->byClass.val = (*tplp)->p->byClass.dflt;
             }
             tplp = &(*tplp)->next;
             tpl = tpl->next;
@@ -11237,6 +11240,8 @@ static bool ParseTypeAliasDefaults(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLATE
             (*tplp)->p = Allocate<TEMPLATEPARAM>();
             (*tplp)->argsym = tpl->argsym;
             *(*tplp)->p = *tpl->p;
+            if ((*tplp)->p->byClass.txtdflt)
+                (*tplp)->p->byClass.val = nullptr;
             tplp = &(*tplp)->next;
             tpl = tpl->next;
         }
@@ -11260,14 +11265,20 @@ static bool ParseTypeAliasDefaults(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLATE
                         tpl1 = tpl1->next;
                     }
                 }
-                else if (*tplp1 && (*tplp1)->p->byClass.val)
+                else
                 {
-                    tpl->p->byClass.dflt = (*tplp1)->p->byClass.val;
+                    if (*tplp1 && (*tplp1)->p->byClass.val)
+                    {
+                        tpl->p->byClass.dflt = (*tplp1)->p->byClass.val;
+                    }
                 }
             }
-            else if (tpl->p->byClass.val)
+            else
             {
-                (*tplp)->p->byClass.dflt = tpl->p->byClass.val;
+                if (tpl->p->byClass.val)
+                {
+                    (*tplp)->p->byClass.dflt = tpl->p->byClass.val;
+                }
             }
         }
     }

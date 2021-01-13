@@ -5683,7 +5683,7 @@ static bool ValidArg(TYPE* tp)
                     if (!tp)
                         return false;
                 }
-                if (isfunction(tp) || isarray(tp) || (isstructured(tp) && tp->sp->sb->isabstract))
+                if (isfunction(tp) || isarray(tp) || (isstructured(tp) && basetype(tp)->sp->sb->isabstract))
                     return false;
                 break;
             }

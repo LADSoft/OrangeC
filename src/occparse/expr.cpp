@@ -1630,15 +1630,31 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
     }
     return lex;
 }
-static void LookupSingleAggregate(TYPE* tp, EXPRESSION** exp)
+static TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr = false)
 {
     if (tp->type == bt_aggregate)
     {
         SYMLIST* hr = tp->syms->table[0];
-        *exp = varNode(en_pc, hr->p);
+        if (memberptr && hr->p->sb->parentClass && hr->p->sb->storage_class != sc_static && hr->p->sb->storage_class != sc_global && hr->p->sb->storage_class != sc_external)
+        {
+            EXPRESSION* rv;
+            TYPE* tpq = Allocate<TYPE>();
+            tpq->type = bt_memberptr;
+            tpq->btp = hr->p->tp;
+            tpq->rootType = tpq;
+            tpq->sp = hr->p->sb->parentClass;
+            tp = tpq;
+            *exp = varNode(en_memberptr, hr->p);
+            (*exp)->isfunc = true;
+        }
+        else
+        {
+            *exp = varNode(en_pc, hr->p);
+        }
         if (hr->next)
             errorsym(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, tp->sp);
     }
+    return tp;
 }
 static EXPRESSION* MsilRebalanceArray(EXPRESSION* in)
 {
@@ -5583,7 +5599,7 @@ static LEXEME* expression_ampersand(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE
             exp1 = exp1->left;
         symRef = (Optimizer::architecture == ARCHITECTURE_MSIL) ? GetSymRef(exp1) : nullptr;
         btp = basetype(*tp);
-        LookupSingleAggregate(btp, &exp1);  // DAL
+        tp1 = LookupSingleAggregate(btp, &exp1, true);
         if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
             insertOperatorFunc(ovcl_unary_any, and_unary, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
         {
@@ -5624,7 +5640,12 @@ static LEXEME* expression_ampersand(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 default:
                     break;
             }
-        if ((*exp)->type == en_const)
+        if (exp1->type == en_memberptr)
+        {
+            *tp = tp1;
+            *exp = exp1;
+        }
+        else if ((*exp)->type == en_const)
         {
             /* if a variable propagated silently to an inline constant
              * this will restore it as a static variable in the const section

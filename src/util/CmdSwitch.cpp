@@ -267,8 +267,9 @@ char* CmdSwitchFile::GetStr(char* data)
         else
             break;
     }
-    char* x = new char[strlen(buf) + 1];
-    Utils::StrCpy(x, strlen(buf) + 1, buf);
+    int len = strlen(buf) + 1;
+    char* x = new char[len];
+    Utils::StrCpy(x, len, buf);
     argv[argc++] = x;
     return data;
 }

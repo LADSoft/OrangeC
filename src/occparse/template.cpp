@@ -960,7 +960,7 @@ void UnrollTemplatePacks(TEMPLATEPARAMLIST* tpl)
 static TEMPLATEPARAMLIST *nextExpand(TEMPLATEPARAMLIST* in, int n)
 {
     bool packed = false;
-    for (auto t = in; t; t != t->next)
+    for (auto t = in; t; t = t->next)
     {
         if (t->p->packed)
         {
@@ -9087,6 +9087,7 @@ void TemplateArgsScan(TEMPLATEPARAMLIST* current, TEMPLATEPARAMLIST* base)
         else if (current->p->type == kw_typename)
         {
             if (current->p->byClass.val)
+            {
                 if (current->p->byClass.dflt && isstructured(current->p->byClass.dflt))
                 {
                     auto tpv = basetype(current->p->byClass.dflt)->sp->templateParams;
@@ -9107,6 +9108,7 @@ void TemplateArgsScan(TEMPLATEPARAMLIST* current, TEMPLATEPARAMLIST* base)
                 {
                     TemplateArgsScan(current->p->byClass.val->sp->sb->templateSelector->next->templateParams, base);
                 }
+            }
         }
         current = current->next;
     }
@@ -12058,6 +12060,7 @@ bool definedInTemplate(const char* name)
         if (s->str)
             for (auto t = s->str->templateParams; t; t = t->next)
                 if (t->argsym && !strcmp(t->argsym->name, name))
+                {
                     if (t->p->packed)
                     {
                         if (s->str->sb->instantiated && !t->p->byPack.pack)
@@ -12077,6 +12080,7 @@ bool definedInTemplate(const char* name)
                         if (t->p->byClass.val)
                             return true;
                     }
+                }
         s = s->next;
     }
     return false;

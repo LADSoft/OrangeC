@@ -1777,6 +1777,7 @@ void GatherTemplateParams(int *count, SYMBOL** arg, TEMPLATEPARAMLIST* tpl)
         else if (tpl->p->type == kw_int)
         {
             if (tpl->p->byNonType.dflt)
+            {
                 if (tpl->p->packed)
                 {
                     TEMPLATEPARAMLIST* tpl1 = tpl->p->byPack.pack;
@@ -1790,10 +1791,12 @@ void GatherTemplateParams(int *count, SYMBOL** arg, TEMPLATEPARAMLIST* tpl)
                 {
                     GatherPackedVars(count, arg, tpl->p->byNonType.dflt);
                 }
+            }
         }
         else if (tpl->p->type == kw_typename)
         {
             if (tpl->p->byClass.dflt)
+            {
                 if (tpl->p->packed)
                 {
                     TEMPLATEPARAMLIST* tpl1 = tpl->p->byPack.pack;
@@ -1807,6 +1810,7 @@ void GatherTemplateParams(int *count, SYMBOL** arg, TEMPLATEPARAMLIST* tpl)
                 {
                     GatherPackedTypes(count, arg, tpl->p->byClass.dflt);
                 }
+            }
         }
         tpl = tpl->next;
     }
@@ -3692,7 +3696,7 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
                                 basisAttribs.inheritable.linkage = lk_stdcall;
                                 break;
                             case 26: // always inline
-                                basisAttribs.inheritable.isInline = lk_stdcall;
+                                basisAttribs.inheritable.isInline = true;
                                 break;
                         }
                     }

@@ -297,7 +297,6 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 	const int totalNumberofSkipsNeeded = current->getDirsTravelled();
 	do
 	{
-		bool reachedEndOfBuf = false;
 		if (skipUntilDepth && (filesSkipped <= totalNumberofSkipsNeeded + 1))
 		{
 			while (filesSkipped <= totalNumberofSkipsNeeded + 1)
@@ -311,11 +310,6 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 					return "";
 				}
 				path = RetrievePath(buf, path);
-				if (!buf) // check if we haven't hit the end of all include paths yet, if we have, break and let FindFile handle the rest
-				{
-					reachedEndOfBuf = true;
-					break;
-				}
 				filesSkipped++;
 			}
 		}
@@ -324,13 +318,9 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 			path = RetrievePath(buf, path);
 			filesSkipped++;
 		}
-		if (path == nullptr && skipUntilDepth && (buf != nullptr && *buf == '\0'))
+		if (path == nullptr && skipUntilDepth && *buf == '\0')
 		{
 			return "";
-		}
-		if (reachedEndOfBuf)
-		{
-			break; // break out, I'm afraid of GOTOs breaking destructors somehow so...
 		}
 		AddName(buf, name);
 

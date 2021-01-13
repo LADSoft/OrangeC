@@ -855,7 +855,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         if (!disabledNote)
         {
             if (!Optimizer::cparams.prm_quiet)
-                printf("note:        ", err);
+                printf("note:        ");
             if (Optimizer::cparams.prm_errfile)
                 fprintf(errFile, "note:   ");
         }

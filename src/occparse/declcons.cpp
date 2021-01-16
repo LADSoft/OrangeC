@@ -332,7 +332,7 @@ static SYMBOL* declareDestructor(SYMBOL* sp)
     tp->btp->rootType = tp->btp;
     func = makeID(BaseWithVirtualDestructor(sp) ? sc_virtual : sc_member, tp, nullptr, overloadNameTab[CI_DESTRUCTOR]);
     func->sb->xcMode = xc_none;
-    func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
+//    func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
     tp->syms = CreateHashTable(1);
     sp1 = makeID(sc_parameter, tp->btp, nullptr, AnonymousName());
     insert(sp1, tp->syms);
@@ -455,7 +455,7 @@ static SYMBOL* declareConstructor(SYMBOL* sp, bool deflt, bool move)
     tp->btp->rootType = tp->btp;
     func = makeID(sc_member, tp, nullptr, overloadNameTab[CI_CONSTRUCTOR]);
     func->sb->isConstructor = true;
-    func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
+//    func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
     sp1 = makeID(sc_parameter, nullptr, nullptr, AnonymousName());
     tp->syms = CreateHashTable(1);
     tp->syms->table[0] = Allocate<SYMLIST>();
@@ -534,7 +534,7 @@ static SYMBOL* declareAssignmentOp(SYMBOL* sp, bool move)
     *(tpx) = *basetype(sp->tp);
     UpdateRootTypes(tp);
     func = makeID(sc_member, tp, nullptr, overloadNameTab[assign - kw_new + CI_NEW]);
-    func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
+//    func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
     sp1 = makeID(sc_parameter, nullptr, nullptr, AnonymousName());
     tp->syms = CreateHashTable(1);
     tp->syms->table[0] = Allocate<SYMLIST>();

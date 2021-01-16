@@ -44,6 +44,7 @@
 #include "istmt.h"
 #include "declcpp.h"
 #include "inline.h"
+#include "ioptimizer.h"
 
 namespace Parser
 {
@@ -213,6 +214,7 @@ void dumpInlines(void)
                     }
                     if (origsym && origsym->sb->storage_class == sc_global && !sym->sb->didinline && !sym->sb->dontinstantiate)
                     {
+                        Optimizer::SymbolManager::Get(sym)->noextern = true;
                         sym->sb->didinline = true;
                         sym->sb->noextern = true;
                         sym->sb->storage_class = sc_global;

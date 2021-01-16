@@ -26,13 +26,13 @@
 #define Token_h
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <memory>
 #include "Floating.h"
 
 enum class kw;
 
-typedef std::map<std::string, kw> KeywordHash;
+typedef std::unordered_map<std::string, kw> KeywordHash;
 
 class Token
 {

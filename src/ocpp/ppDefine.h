@@ -168,7 +168,7 @@ class ppDefine
     std::string date;
     std::string dateiso;
     std::string time;
-    std::map<std::string, std::stack<Definition*>> macroStacks;
+    std::unordered_map<std::string, std::stack<Definition*>> macroStacks;
     std::deque<TokenPos> tokenPositions;
     static KeywordHash defTokens;
     bool c89;

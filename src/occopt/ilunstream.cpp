@@ -36,6 +36,7 @@
 #include <deque>
 #include <functional>
 #include <map>
+#include <unordered_map>
 #include <stdexcept>
 #include "ildata.h"
 #include "iblock.h"
@@ -43,7 +44,7 @@
 namespace Optimizer
 {
 static std::list<std::string> textRegion;
-static std::map<std::string, int> cachedText;
+static std::unordered_map<std::string, int> cachedText;
 static size_t textOffset;
 static FunctionData *current, *lastFunction;
 static std::map<int, std::string> texts;

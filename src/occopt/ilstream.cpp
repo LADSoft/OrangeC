@@ -34,13 +34,14 @@
 #include "SharedMemory.h"
 #include <deque>
 #include <functional>
+#include <unordered_map>
 #include <map>
 #include <set>
 #include "ildata.h"
 namespace Optimizer
 {
 static std::list<std::string> textRegion;
-static std::map<std::string, int> cachedText;
+static std::unordered_map<std::string, int> cachedText;
 static size_t textOffset;
 static std::map<IMODE*, int> cachedImodes;
 static std::set<SimpleSymbol*> cachedAutos;

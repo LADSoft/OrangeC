@@ -73,6 +73,8 @@ int inTemplateHeader;
 SYMBOL* instantiatingMemberFuncClass;
 int instantiatingFunction;
 int instantiatingClass;
+int parsingDefaultTemplateArgs;
+
 static int inTemplateArgs;
 static std::deque<SYMBOL*> nestedInstantiations;
 static std::map<std::string, std::map<std::string, SYMBOL*>> instantiations;
@@ -105,6 +107,7 @@ void templateInit(void)
     instantiatingMemberFuncClass = nullptr;
     parsingSpecializationDeclaration = false;
     instantiatingFunction = 0;
+    parsingDefaultTemplateArgs = 0;
     inDeduceArgs = 0;
     instantiations.clear();
     emptyInstantiations.clear();
@@ -6312,6 +6315,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
     }
     s.tmpl = enclosing;
     addTemplateDeclaration(&s);
+    parsingDefaultTemplateArgs++;
     while (src && dest)
     {
         if (!dest->p->byClass.val && !dest->p->packed && (!primaryList || !primaryList->p->packed))
@@ -6323,6 +6327,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
             int n, pushCount;
             if (!src->p->byClass.txtdflt)
             {
+                parsingDefaultTemplateArgs--;
                 dropStructureDeclaration();
                 instantiatingMemberFuncClass = oldMemberClass;
                 nestedInstantiations.pop_back();
@@ -6369,6 +6374,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                     noTypeNameError--;
                     if (!dest->p->byClass.val || dest->p->byClass.val->type == bt_any || (!templateNestingCount && dest->p->byClass.val->type == bt_templateselector))
                     {
+                        parsingDefaultTemplateArgs--;
                         SwapDefaultNames(enclosing, src->p->byClass.txtargs);
                         while (pushCount--)
                             dropStructureDeclaration();
@@ -6390,6 +6396,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
 
                     if (!dest->p->byTemplate.val)
                     {
+                        parsingDefaultTemplateArgs--;
                         SwapDefaultNames(enclosing, src->p->byClass.txtargs);
                         while (pushCount--)
                             dropStructureDeclaration();
@@ -6422,6 +6429,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                         lex = start;
                         if (tp1->type == bt_any)
                         {
+                            parsingDefaultTemplateArgs--;
                             SwapDefaultNames(enclosing, src->p->byClass.txtargs);
                             while (pushCount--)
                                 dropStructureDeclaration();
@@ -6446,6 +6454,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                     {
                         if (!ispointer(tp1) && !isint(tp1) && !isconstzero(tp1, exp1))
                         {
+                            parsingDefaultTemplateArgs--;
                             SwapDefaultNames(enclosing, src->p->byClass.txtargs);
                             while (pushCount--)
                                 dropStructureDeclaration();
@@ -6461,6 +6470,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                     TYPE* tp2 = LookupTypeFromExpression(exp1, nullptr, false);
                     if (!tp2 || tp2->type == bt_any)
                     {
+                        parsingDefaultTemplateArgs--;
                         SwapDefaultNames(enclosing, src->p->byClass.txtargs);
                         while (pushCount--)
                             dropStructureDeclaration();
@@ -6495,6 +6505,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
         currents->bodyHead = head;
         currents->bodyTail = tail;
     }
+    parsingDefaultTemplateArgs--;
     dropStructureDeclaration();
     instantiatingMemberFuncClass = oldMemberClass;
     return true;

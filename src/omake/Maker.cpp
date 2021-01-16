@@ -35,9 +35,9 @@
 #include <stdlib.h>
 #include <iostream>
 #include <algorithm>
-std::map<std::string, Depends*> Depends::all;
+std::unordered_map<std::string, Depends*> Depends::all;
 std::string Maker::firstGoal;
-std::map<std::string, std::string> Maker::filePaths;
+std::unordered_map<std::string, std::string> Maker::filePaths;
 
 Maker::Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, OutputType Type, bool RebuildAll,
              bool KeepResponseFiles, std::string NewFiles, std::string OldFiles) :

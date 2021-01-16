@@ -251,6 +251,7 @@ KEYWORD keywords[] = {
     {"__string", 8, kw___string, KW_MSIL, TT_BASETYPE},
     {"__try", 5, kw___try, KW_MSIL, TT_CONTROL},
     {"__typeid", 8, kw___typeid, KW_NONANSI | KW_ALL, TT_VAR},
+    {"__underlying_type", 17, kw___underlying_type,  KW_CPLUSPLUS, TT_BASETYPE},
     {"__unmanaged", 11, kw__unmanaged, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__uuid", 6, kw__uuid, 0, TT_LINKAGE},
     {"__uuidof", 8, kw__uuidof, 0, TT_VAR},

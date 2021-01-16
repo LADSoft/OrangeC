@@ -65,6 +65,7 @@ static bool is_trivially_assignable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, T
 static bool is_trivially_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 static bool is_trivially_copyable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 static bool is_union(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+
 static struct _ihash
 {
     const char* name;
@@ -1219,6 +1220,26 @@ static bool is_union(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRE
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
+    return true;
+}
+bool underlying_type(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+{
+    INITLIST* lst;
+    bool rv = false;
+    FUNCTIONCALL funcparams;
+    memset(&funcparams, 0, sizeof(funcparams));
+    funcparams.sp = sym;
+    *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
+    if (funcparams.arguments && !funcparams.arguments->next)
+    {
+        *tp = funcparams.arguments->tp;
+        if (basetype(*tp)->type == bt_enum)
+            *tp = basetype(*tp)->btp;
+    }
+    else
+    {
+        *tp = &stdint;
+    }
     return true;
 }
 }  // namespace Parser

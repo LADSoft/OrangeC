@@ -353,54 +353,68 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                 }
                 else if (!qualified)
                 {
-                    sp = classsearch(buf, false, false);
-                    if (sp && sp->tp->type == bt_templateparam)
+                    sp = nullptr;
+                    if (parsingDefaultTemplateArgs)
                     {
-                        TEMPLATEPARAMLIST* params = sp->tp->templateParam;
-                        if (params->p->type == kw_typename)
+                        // if parsing default args, need to give precedence to the global namespace
+                        // instead of drawing immediately from open classes.
+                        sp = namespacesearch(buf, localNameSpace, qualified, tagsOnly);
+                        if (!sp && nssym)
                         {
-                            if (params->p->packed)
-                            {
-                                params = params->p->byPack.pack;
-                            }
-                            if (params && params->p->byClass.val)
-                            {
-                                sp = basetype(params->p->byClass.val)->sp;
-                                dependentType = params->p->byClass.val;
-                            }
+                            sp = namespacesearch(buf, nssym, qualified, tagsOnly);
                         }
-                        else if (params->p->type == kw_template)
+                    }
+                    if (!sp)
+                    {
+                        sp = classsearch(buf, false, false);
+                        if (sp && sp->tp->type == bt_templateparam)
                         {
-                            if (params->p->byTemplate.val)
+                            TEMPLATEPARAMLIST* params = sp->tp->templateParam;
+                            if (params->p->type == kw_typename)
                             {
-                                templateParamAsTemplate = params;
-                                sp = params->p->byTemplate.val;
+                                if (params->p->packed)
+                                {
+                                    params = params->p->byPack.pack;
+                                }
+                                if (params && params->p->byClass.val)
+                                {
+                                    sp = basetype(params->p->byClass.val)->sp;
+                                    dependentType = params->p->byClass.val;
+                                }
+                            }
+                            else if (params->p->type == kw_template)
+                            {
+                                if (params->p->byTemplate.val)
+                                {
+                                    templateParamAsTemplate = params;
+                                    sp = params->p->byTemplate.val;
+                                }
+                                else
+                                {
+                                    if (MATCHKW(lex, lt))
+                                    {
+                                        lex = GetTemplateArguments(lex, nullptr, sp, &current);
+                                    }
+                                    if (!MATCHKW(lex, classsel))
+                                        break;
+                                    lex = getsym();
+                                    finalPos = lex;
+                                    *last = Allocate<TEMPLATESELECTOR>();
+                                    (*last)->sp = sp;
+                                    last = &(*last)->next;
+                                    *last = Allocate<TEMPLATESELECTOR>();
+                                    (*last)->sp = sp;
+                                    (*last)->templateParams = current;
+                                    (*last)->isTemplate = true;
+                                    last = &(*last)->next;
+                                }
                             }
                             else
-                            {
-                                if (MATCHKW(lex, lt))
-                                {
-                                    lex = GetTemplateArguments(lex, nullptr, sp, &current);
-                                }
-                                if (!MATCHKW(lex, classsel))
-                                    break;
-                                lex = getsym();
-                                finalPos = lex;
-                                *last = Allocate<TEMPLATESELECTOR>();
-                                (*last)->sp = sp;
-                                last = &(*last)->next;
-                                *last = Allocate<TEMPLATESELECTOR>();
-                                (*last)->sp = sp;
-                                (*last)->templateParams = current;
-                                (*last)->isTemplate = true;
-                                last = &(*last)->next;
-                            }
+                                break;
                         }
-                        else
-                            break;
+                        if (sp && throughClass)
+                            *throughClass = true;
                     }
-                    if (sp && throughClass)
-                        *throughClass = true;
                 }
                 else
                 {
@@ -969,6 +983,10 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, NAMESPACEVALUELIST* ns,
             }
             if (!rv)
                 rv = namespacesearch(name, localNameSpace, false, tagsOnly);
+        }
+        if (!rv && parsingDefaultTemplateArgs)
+        {
+            rv = namespacesearch(name, globalNameSpace, false, tagsOnly);
         }
         if (!rv && enumSyms)
             rv = search(name, enumSyms->tp->syms);

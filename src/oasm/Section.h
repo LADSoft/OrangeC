@@ -27,6 +27,7 @@
 
 #include <vector>
 #include <string>
+#include <unordered_map>
 #include <map>
 #include <functional>
 
@@ -68,8 +69,8 @@ class Section
     std::string GetName() { return name; }
     int GetNext(Fixup& fixup, unsigned char* buf, int len);
     int beValues[10];
-    std::map<std::string, int>::iterator Lookup(std::string& name) { return labels.find(name); }
-    std::map<std::string, int>& GetLabels() { return labels; }
+    std::unordered_map<std::string, int>::iterator Lookup(std::string& name) { return labels.find(name); }
+    std::unordered_map<std::string, int>& GetLabels() { return labels; }
     int GetPC() { return pc; }
     bool HasInstructions() const { return instructions.size() != 0; }
 
@@ -103,7 +104,7 @@ class Section
     int instructionPos;
     ObjSection* objectSection;
     int pc;
-    std::map<std::string, int> labels;
+    std::unordered_map<std::string, int> labels;
     std::map<int, Section*> subsections;
 };
 #endif

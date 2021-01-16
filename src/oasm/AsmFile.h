@@ -26,7 +26,7 @@
 #define AsmFile_H
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <set>
 #include "PreProcessor.h"
@@ -194,11 +194,11 @@ class AsmFile
     Lexer lexer;
     AsmExpr asmexpr;
     InstructionParser* parser;
-    static std::map<ObjString, std::unique_ptr<Section>> sections;
+    static std::unordered_map<ObjString, std::unique_ptr<Section>> sections;
     static std::vector<Section*> numericSections;
-    std::map<ObjString, std::unique_ptr<Label>> labels;
-    std::map<ObjString, std::string> exports;
-    std::map<ObjString, std::unique_ptr<Import>> imports;
+    std::unordered_map<ObjString, std::unique_ptr<Label>> labels;
+    std::unordered_map<ObjString, std::string> exports;
+    std::unordered_map<ObjString, std::unique_ptr<Import>> imports;
     std::vector<Label*> numericLabels;
     std::vector<ObjSection*> objSections;
     std::set<std::string> globals;

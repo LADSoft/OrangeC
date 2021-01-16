@@ -102,7 +102,7 @@ class ppMacro
     PreProcessor* pp;
 
     std::vector<std::unique_ptr<MacroData>> stack;
-    std::map<std::string, MacroData*> macros;
+    std::unordered_map<std::string, MacroData*> macros;
     int nextMacro;
 };
 

@@ -58,6 +58,8 @@
 #include "Property.h"
 #include "ildata.h"
 #include "template.h"
+#include "libcxx.h"
+
 namespace Parser
 {
 
@@ -1068,6 +1070,9 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
 }
 LEXEME* innerDeclStruct(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, enum e_ac defaultAccess, bool isfinal, bool* defd)
 {
+    int oldParsingTemplateArgs;
+    oldParsingTemplateArgs = parsingDefaultTemplateArgs;
+    parsingDefaultTemplateArgs = 0;
     bool hasBody = (Optimizer::cparams.prm_cplusplus && KW(lex) == colon) || KW(lex) == begin;
     SYMBOL* injected = nullptr;
 
@@ -1117,6 +1122,7 @@ LEXEME* innerDeclStruct(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate
     }
     sp->sb->declaring = false;
     --structLevel;
+    parsingDefaultTemplateArgs = oldParsingTemplateArgs;
     return lex;
 }
 static unsigned char* ParseUUID(LEXEME** lex)
@@ -2635,6 +2641,13 @@ LEXEME* getBasicType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out
                 {
                     errskim(&lex, skim_closepa);
                     skip(&lex, closepa);
+                }
+                break;
+           case kw___underlying_type:
+                {
+                    lex = getsym();
+                    underlying_type(&lex, funcsp, nullptr, &tn, nullptr);
+                    lex = backupsym();
                 }
                 break;
             default:

@@ -44,7 +44,7 @@
 #endif
 
 std::string Eval::VPath;
-std::map<std::string, std::string> Eval::vpaths;
+std::unordered_map<std::string, std::string> Eval::vpaths;
 bool Eval::internalWarnings;
 int Eval::lineno;
 std::string Eval::file;
@@ -55,7 +55,8 @@ std::string Eval::GPath;
 int Eval::errcount;
 std::vector<std::string> Eval::callArgs;
 
-std::map<const std::string, Eval::StringFunc> Eval::builtins = {{"subst", &Eval::subst},
+std::unordered_map<std::string, Eval::StringFunc> Eval::builtins = {
+                                                                {"subst", &Eval::subst},
                                                                 {"patsubst", &Eval::patsubst},
                                                                 {"strip", &Eval::strip},
                                                                 {"findstring", &Eval::findstring},

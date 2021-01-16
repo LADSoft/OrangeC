@@ -39,6 +39,7 @@ extern SYMBOL* instantiatingMemberFuncClass;
 extern struct templateListData* currents;
 extern int instantiatingFunction;
 extern int instantiatingClass;
+extern int parsingDefaultTemplateArgs;
 
 void templateInit(void);
 EXPRESSION* GetSymRef(EXPRESSION* n);

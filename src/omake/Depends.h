@@ -26,7 +26,7 @@
 #define DEPENDS_H
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <list>
 #include <set>
 #include "Rule.h"
@@ -90,6 +90,6 @@ class Depends
     bool ordered;
     bool isSecondary;
     std::list<std::unique_ptr<Depends>> subgoals;
-    static std::map<std::string, Depends*> all;
+    static std::unordered_map<std::string, Depends*> all;
 };
 #endif

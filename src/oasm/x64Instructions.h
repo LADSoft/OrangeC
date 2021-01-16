@@ -1,4 +1,4 @@
-#include <map>
+#include <unordered_map>
 
 #include "InstructionParser.h"
 
@@ -755,7 +755,7 @@ enum e_tk
 
 extern const char* const opcodeTable[630];
 
-extern std::map<enum e_tk, const char*> tokenNames;
+extern std::unordered_map<enum e_tk, const char*> tokenNames;
 
 extern InputToken Tokenstar;
 extern InputToken Tokenplus;

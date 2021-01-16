@@ -26,7 +26,7 @@
 #define RUNNER_H
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <list>
 #include <set>
 #include "Spawner.h"
@@ -38,7 +38,7 @@ class Runner
 {
   public:
     Runner(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, OutputType Type, bool KeepResponseFiles,
-           std::string& FirstGoal, std::map<std::string, std::string>& FilePaths) :
+           std::string& FirstGoal, std::unordered_map<std::string, std::string>& FilePaths) :
         silent(Silent),
         displayOnly(DisplayOnly),
         ignoreResults(IgnoreResults),
@@ -61,6 +61,6 @@ class Runner
     bool touch;
     bool keepResponseFiles;
     std::string& firstGoal;
-    std::map<std::string, std::string>& filePaths;
+    std::unordered_map<std::string, std::string>& filePaths;
 };
 #endif

@@ -42,7 +42,7 @@
 #include <climits>
 #include <algorithm>
 
-std::map<ObjString, std::unique_ptr<Section>> AsmFile::sections;
+std::unordered_map<ObjString, std::unique_ptr<Section>> AsmFile::sections;
 std::vector<Section*> AsmFile::numericSections;
 
 AsmFile::~AsmFile()

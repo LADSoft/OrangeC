@@ -191,7 +191,7 @@ bool InstructionParser::MatchesOpcode(std::string opcode)
     }
     return false;
 }
-std::map<std::string, int>::iterator InstructionParser::GetOpcode(const std::string& opcode, int& size1, int& size2)
+std::unordered_map<std::string, int>::iterator InstructionParser::GetOpcode(const std::string& opcode, int& size1, int& size2)
 {
     size1 = size2 = 0;
     auto it = opcodeTable.find(opcode);

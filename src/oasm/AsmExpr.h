@@ -129,6 +129,7 @@ class AsmExpr
     static Section* GetSection() { return section; }
     static void SetEqu(std::string name, AsmExprNode* n) { equs[name] = n; }
     static AsmExprNode* ConvertToBased(AsmExprNode* n, int pc);
+
     static AsmExprNode* GetEqu(std::string& name)
     {
         auto it = equs.find(name);
@@ -163,6 +164,6 @@ class AsmExpr
     static KeywordHash hash;
     static std::string currentLabel;
     static Section* section;
-    static std::map<std::string, AsmExprNode*> equs;
+    static std::unordered_map<std::string, AsmExprNode*> equs;
 };
 #endif

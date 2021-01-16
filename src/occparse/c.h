@@ -107,7 +107,7 @@ namespace Parser
         kw___va_list__, kw___va_typeof__, kw__unmanaged, kw__uuid, kw__uuidof,
         kw___string, kw___object, kw_native, kw__cpblk, kw__initblk, kw__property, kw__entrypoint,
         kw___try, kw___catch, kw___finally, kw___fault, kw__declspec, kw__rtllinkage, kw__attribute,
-        kw___offsetof,
+        kw___offsetof, kw___underlying_type,
         /* These next are generic register names */
         kw_D0, kw_D1, kw_D2, kw_D3, kw_D4, kw_D5, kw_D6, kw_D7, kw_D8, kw_D9, kw_DA,
         kw_DB, kw_DC, kw_DD, kw_DE, kw_DF, kw_A0, kw_A1, kw_A2, kw_A3, kw_A4,

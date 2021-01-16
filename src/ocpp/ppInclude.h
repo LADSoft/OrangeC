@@ -149,7 +149,7 @@ private:
 	std::list<std::unique_ptr<ppFile>> files;
 	std::set<std::string> userIncludes;
 	std::unique_ptr<ppFile> current;
-	std::map<std::string, int> fileMap;
+	std::unordered_map<std::string, int> fileMap;
 	ppDefine* define;
 	bool unsignedchar;
 	bool c89;

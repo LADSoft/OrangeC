@@ -26,7 +26,7 @@
 #define EVAL_H
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <list>
 #include <set>
@@ -129,9 +129,9 @@ class Eval
 
   private:
     typedef std::string (Eval::*StringFunc)(const std::string& arglist);
-    static std::map<const std::string, StringFunc> builtins;
+    static std::unordered_map<std::string, StringFunc> builtins;
     static std::string VPath;
-    static std::map<std::string, std::string> vpaths;
+    static std::unordered_map<std::string, std::string> vpaths;
     static bool internalWarnings;
     static int lineno;
     static std::string file;

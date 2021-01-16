@@ -25,7 +25,7 @@
 #ifndef SymbolTable_h
 #define SymbolTable_h
 
-#include <map>
+#include <unordered_map>
 #include <deque>
 #include <string>
 #include <cctype>
@@ -95,7 +95,7 @@ class SymbolTable
     }
 
   private:
-    std::map<std::string, Symbol*> hashTable;
+    std::unordered_map<std::string, Symbol*> hashTable;
     std::deque<std::unique_ptr<Symbol>> symList;
 };
 #endif

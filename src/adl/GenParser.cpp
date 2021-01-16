@@ -97,7 +97,7 @@ bool GenParser::GenerateCompilerStubs()
 {
     std::string name = parser.processorName + "Instructions";
     file = new std::fstream(name + ".h", std::ios::out);
-    (*file) << "#include <map>" << std::endl << std::endl;
+    (*file) << "#include <unordered_map>" << std::endl << std::endl;
     (*file) << "#include \"InstructionParser.h\"" << std::endl << std::endl;
     (*file) << "enum e_opcode {" << std::endl;
     size_t i = 0;
@@ -136,7 +136,7 @@ bool GenParser::GenerateCompilerStubs()
     (*file) << "};" << std::endl << std::endl;
 
     (*file) << "extern const char * const opcodeTable[" << i << "];" << std::endl << std::endl;
-    (*file) << "extern std::map<enum e_tk, const char *> tokenNames;" << std::endl << std::endl;
+    (*file) << "extern std::unordered_map<enum e_tk, const char *> tokenNames;" << std::endl << std::endl;
 
     for (auto& m : TokenNode::tokenTable)
     {

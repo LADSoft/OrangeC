@@ -26,7 +26,7 @@
 #define MAKER_H
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <list>
 #include <set>
 #include "Spawner.h"
@@ -82,7 +82,7 @@ class Maker
     std::string newFiles;
     std::string oldFiles;
     std::set<std::string> ignoreFailedTargets;
-    static std::map<std::string, std::string> filePaths;
+    static std::unordered_map<std::string, std::string> filePaths;
     int dependsNesting;
 };
 #endif

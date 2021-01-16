@@ -26,7 +26,7 @@
 #define InstructionParser_h
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <list>
 #include <vector>
 #include <stdlib.h>
@@ -150,7 +150,7 @@ class InstructionParser
     void SetATT(bool att);
 
     bool MatchesOpcode(std::string opcode);
-    std::map<std::string, int>::iterator GetOpcode(const std::string& opcode, int& size1, int& size2);
+    std::unordered_map<std::string, int>::iterator GetOpcode(const std::string& opcode, int& size1, int& size2);
 
     Instruction* Parse(const std::string& args, int PC);
     virtual void Setup(Section* sect) = 0;
@@ -205,9 +205,9 @@ class InstructionParser
     AsmExprNode* val;
     int tokenPos;
     Numeric* numeric;
-    std::map<std::string, int> tokenTable;
-    std::map<std::string, int> opcodeTable;
-    std::map<std::string, int> prefixTable;
+    std::unordered_map<std::string, int> tokenTable;
+    std::unordered_map<std::string, int> opcodeTable;
+    std::unordered_map<std::string, int> prefixTable;
     std::list<Numeric*> operands;
     std::list<Coding*> CleanupValues;
     std::list<int> prefixes;

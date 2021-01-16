@@ -85,7 +85,7 @@ class PreProcessor
     int GetCppPrio() { return pragma.CppPrio(); }
     std::list<std::string>& GetIncludeLibs() { return pragma.IncludeLibs(); }
     std::set<std::string>& GetUserIncludes() { return include.GetUserIncludes(); }
-    std::map<std::string, std::unique_ptr<Startups::Properties>>& GetStartups() { return pragma.GetStartups(); }
+    std::unordered_map<std::string, std::unique_ptr<Startups::Properties>>& GetStartups() { return pragma.GetStartups(); }
     const char* LookupAlias(const char* name) const { return pragma.LookupAlias(name); }
     void IncludeFile(const std::string& name) { include.IncludeFile(name); }
     int GetCtxId() { return ctx.GetTopId(); }

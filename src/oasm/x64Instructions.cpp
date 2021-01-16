@@ -73,7 +73,7 @@ const char* const opcodeTable[630] = {
     "a32",        "lock",       "o16",        "o32",        "rep",        "repe",       "repne",     "repnz",     "repz",
 };
 
-std::map<enum e_tk, const char*> tokenNames = {
+std::unordered_map<enum e_tk, const char*> tokenNames = {
     {tk_star, "*"},      {tk_plus, "+"},      {tk_comma, ","},   {tk_colon, ":"},   {tk_openbr, "["},    {tk_closebr, "]"},
     {tk_byte, "byte"},   {tk_dword, "dword"}, {tk_far, "far"},   {tk_near, "near"}, {tk_qword, "qword"}, {tk_short, "short"},
     {tk_tword, "tword"}, {tk_word, "word"},   {tk_al, "al"},     {tk_ah, "ah"},     {tk_ax, "ax"},       {tk_eax, "eax"},

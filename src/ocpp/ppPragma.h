@@ -27,6 +27,7 @@
 
 #include <list>
 #include <string>
+#include <unordered_map>
 #include <map>
 #include <set>
 #include <ctime>
@@ -237,7 +238,7 @@ class Aliases
     }
 
     void Add(const std::string& item, const std::string& alias) { list[alias] = item; }
-    typedef std::map<std::string, std::string>::iterator AliasIterator;
+    typedef std::unordered_map<std::string, std::string>::iterator AliasIterator;
     AliasIterator begin() { return list.begin(); }
     AliasIterator end() { return list.end(); }
     std::string GetName(AliasIterator it) { return it->second; }
@@ -257,7 +258,7 @@ class Aliases
 
   private:
     static Aliases* instance;
-    std::map<std::string, std::string> list;
+    std::unordered_map<std::string, std::string> list;
 };
 class Startups
 {
@@ -278,13 +279,13 @@ class Startups
     ~Startups();
 
     void Add(std::string& item, int Priority, bool startup) { list[item] = std::make_unique<Properties>(Priority, startup); }
-    typedef std::map<std::string, std::unique_ptr<Properties>>::iterator StartupIterator;
+    typedef std::unordered_map<std::string, std::unique_ptr<Properties>>::iterator StartupIterator;
     StartupIterator begin() { return list.begin(); }
     StartupIterator end() { return list.end(); }
     std::string GetName(StartupIterator it) { return it->first; }
     int GetPriority(StartupIterator it) { return it->second->prio; }
     bool IsStartup(StartupIterator it) { return it->second->startup; }
-    std::map<std::string, std::unique_ptr<Properties>>& GetStartups() { return list; }
+    std::unordered_map<std::string, std::unique_ptr<Properties>>& GetStartups() { return list; }
     void Clear() { list.clear(); }
 
   protected:
@@ -292,7 +293,7 @@ class Startups
 
   private:
     static Startups* instance;
-    std::map<std::string, std::unique_ptr<Properties>> list;
+    std::unordered_map<std::string, std::unique_ptr<Properties>> list;
 };
 class Once
 {
@@ -401,7 +402,7 @@ class ppPragma
     int StdPragmas();
     int CppPrio() { return cppprio; }
     std::list<std::string>& IncludeLibs() { return Libraries::Instance()->Get(); }
-    std::map<std::string, std::unique_ptr<Startups::Properties>>& GetStartups() { return Startups::Instance()->GetStartups(); }
+    std::unordered_map<std::string, std::unique_ptr<Startups::Properties>>& GetStartups() { return Startups::Instance()->GetStartups(); }
     const char* LookupAlias(const char* name) const { return Aliases::Instance()->Lookup(name); }
 
     void SetPragmaCatchall(std::function<void(const std::string&, const std::string&)> callback) { catchAll = callback; }

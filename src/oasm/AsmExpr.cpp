@@ -53,7 +53,7 @@ KeywordHash AsmExpr::hash = {
 
 std::string AsmExpr::currentLabel;
 Section* AsmExpr::section;
-std::map<std::string, AsmExprNode*> AsmExpr::equs;
+std::unordered_map<std::string, AsmExprNode*> AsmExpr::equs;
 
 void AsmExpr::ReInit()
 {

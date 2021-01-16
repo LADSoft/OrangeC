@@ -40,6 +40,7 @@
 #include "ObjLineNo.h"
 #include "dbgtypes.h"
 #include <map>
+#include <unordered_map>
 #include <set>
 #include <deque>
 #include "config.h"
@@ -99,10 +100,10 @@ static std::map<int, Label*> labelMap;
 
 static std::vector<Optimizer::SimpleSymbol*> autotab;
 static std::vector<Label*> strlabs;
-static std::map<std::string, Label*> lblpubs;
-static std::map<std::string, Label*> lbllabs;
-static std::map<std::string, Label*> lblExterns;
-static std::map<std::string, Label*> lblvirt;
+static std::unordered_map<std::string, Label*> lblpubs;
+static std::unordered_map<std::string, Label*> lbllabs;
+static std::unordered_map<std::string, Label*> lblExterns;
+static std::unordered_map<std::string, Label*> lblvirt;
 static std::vector<Section*> virtuals;
 static std::map<Section*, Optimizer::SimpleSymbol*> virtualSyms;
 
@@ -128,7 +129,7 @@ static std::vector<Optimizer::SimpleSymbol*> impfuncs;
 static std::vector<Optimizer::SimpleSymbol*> expfuncs;
 static std::vector<std::string> includelibs;
 
-static std::map<std::string, ObjSection*> objSectionsByName;
+static std::unordered_map<std::string, ObjSection*> objSectionsByName;
 static std::map<int, ObjSection*> objSectionsByNumber;
 
 static std::map<int, ObjSourceFile*> sourceFiles;

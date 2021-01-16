@@ -649,6 +649,7 @@ typedef struct sym
         unsigned islambda : 1;         // lambda closure struct
         unsigned noinline : 1;         // don't inline an inline qualified function
         unsigned didinline : 1;        // already genned an inline func for this symbol
+        unsigned simpleFunc : 1;       // simple enough to override the max_nesting inline requirement
         unsigned hasTry : 1;           // function surrounded by try statement
         unsigned anyTry : 1;           // function has either external or internal try statement
                                        // or variable is used within a try statement

@@ -60,6 +60,9 @@
 #include "browse.h"
 #include "stmt.h"
 
+
+#define MAX_INLINE_EXPRESSIONS 3
+
 namespace Parser
 {
 void refreshBackendParams(SYMBOL* funcsp);
@@ -82,6 +85,9 @@ Optimizer::LINEDATA *linesHead, *linesTail;
 static int matchReturnTypes;
 static int endline;
 static int caseLevel = 0;
+static int controlSequences;
+static int expressions;
+
 static LEXEME* autodeclare(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, BLOCKDATA* parent, int asExpression);
 
 static BLOCKDATA* caseDestructBlock;
@@ -96,6 +102,8 @@ void statement_ini(bool global)
     caseLevel = 0;
     matchReturnTypes = false;
     tryLevel = 0;
+    controlSequences = 0;
+    expressions = 0;
 }
 bool msilManaged(SYMBOL* s)
 {
@@ -165,6 +173,19 @@ STATEMENT* stmtNode(LEXEME* lex, BLOCKDATA* parent, enum e_stmt stype)
             parent->tail = parent->tail->next = st;
         else
             parent->head = parent->tail = st;
+    }
+    switch (stype)
+    {
+        case st_return:
+        case st_expr:
+            expressions++;
+            break;
+        case st_select:
+        case st_notselect:
+        case st_goto:
+        case st_loopgoto:
+            controlSequences++;
+            break;
     }
     return st;
 }
@@ -3662,6 +3683,10 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
     int oldCodeLabel = codeLabel;
     int oldMatchReturnTypes = matchReturnTypes;
     bool oldHasFuncCall = hasFuncCall;
+    int oldExpressionCount = expressions;
+    int oldControlSequences = controlSequences;
+    expressions = 0;
+    controlSequences = 0;
     Optimizer::LIST* oldGlobal = globalNameSpace->valueData->usingDirectives;
     hasFuncCall = false;
     funcNesting++;
@@ -3718,6 +3743,10 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
             hasXCInfo = false;
         }
         funcsp->sb->canThrow = functionCanThrow;
+    }
+    if (expressions <= MAX_INLINE_EXPRESSIONS && !controlSequences)
+    {
+        funcsp->sb->simpleFunc = true;
     }
     funcsp->sb->labelCount = codeLabel - INT_MIN;
     n1 = codeLabel;
@@ -3785,7 +3814,8 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
         localFree();
 #endif
     handleInlines(funcsp);
-
+    controlSequences = oldControlSequences;
+    expressions = oldExpressionCount;
     globalNameSpace->valueData->usingDirectives = oldGlobal;
     hasFuncCall = oldHasFuncCall;
     declareAndInitialize = oldDeclareAndInitialize;

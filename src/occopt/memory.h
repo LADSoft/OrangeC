@@ -29,12 +29,10 @@ typedef struct _memblk_
     struct _memblk_* next;
     long size;
     long left;
+    void* handle;
     char m[1]; /* memory area */
 } MEMBLK;
-void memfunc(const char* a);
 void mem_summary(void);
-void* memAlloc(MEMBLK** arena, int size, bool clear = true);
-void memFree(MEMBLK** arena, int* peak);
 void* globalAlloc(int size);
 void globalFree(void);
 void* localAlloc(int size);

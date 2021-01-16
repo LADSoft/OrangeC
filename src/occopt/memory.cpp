@@ -26,20 +26,28 @@
 #include "Utils.h"
 #include <map>
 #include "memory.h"
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
-static MEMBLK* globals;
-static MEMBLK* locals;
-/*static*/ MEMBLK* opts;
-static MEMBLK* alias;
-static MEMBLK* temps;
-static MEMBLK* live;
-static MEMBLK* templates;
-static MEMBLK* conflicts;
+struct MEMORY
+{
+    MEMBLK* block;
+    unsigned used;
+};
+static MEMORY globals;
+static MEMORY locals;
+/*static*/ MEMORY opts;
+static MEMORY alias;
+static MEMORY temps;
+static MEMORY live;
+static MEMORY templates;
+static MEMORY conflicts;
 
 static bool globalFlag = true;
 static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak, templatePeak, conflictPeak;
 
-#define MINALLOC (16 * 1024)
+#define MINALLOC ((int)(256 * 1024 - sizeof(MEMBLK)))
 #define MALIGN (4)
 
 #ifdef __ORANGEC__
@@ -61,57 +69,63 @@ void mem_summary(void)
     printf("\tConflict peak %dK\n", (conflictPeak + 1023) / 1024);
     globalPeak = localPeak = optPeak = tempsPeak = aliasPeak = livePeak = conflictPeak = 0;
 }
-static MEMBLK* galloc(MEMBLK** arena, int size)
+static MEMBLK* galloc(MEMORY* arena, int size)
 {
     MEMBLK* selected;
     int allocsize = size <= MINALLOC ? MINALLOC : (size + (MINALLOC - 1)) & -MINALLOC;
+#ifdef _WIN32
+    selected = (MEMBLK*)VirtualAlloc(nullptr, allocsize + sizeof(MEMBLK) - 1, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+#else
     selected = (MEMBLK*)malloc(allocsize + sizeof(MEMBLK) - 1);
+#endif
     if (!selected)
     {
         Utils::fatal("out of memory");
     }
+    arena->used += allocsize + sizeof(MEMBLK) - 1;
     selected->size = allocsize;
     selected->left = selected->size;
-    selected->next = *arena;
-    *arena = selected;
+    selected->next = arena->block;
+    arena->block = selected;
     return selected;
 }
-void* memAlloc(MEMBLK** arena, int size, bool clear)
+static void* memAlloc(MEMORY* arena, int size, bool clear = true)
 {
-    MEMBLK* selected = *arena;
+    MEMBLK* selected = arena->block;
     void* rv;
     if (!selected || selected->left < size)
     {
         selected = galloc(arena, size);
     }
     rv = (void*)(selected->m + selected->size - selected->left);
+#ifndef _WIN32
     if (clear)
     {
-#ifdef __ORANGEC__
-        RtlZeroMemory(rv, size);
-#else
         memset(rv, 0, size);
-#endif
     }
+#endif
     selected->left = selected->left - ((size + MALIGN - 1) & -MALIGN);
     return rv;
 }
-void memFree(MEMBLK** arena, int* peak)
+static void memFree(MEMORY* arena, int* peak)
 {
-    MEMBLK* freefind = *arena;
-    long size = 0;
+    MEMBLK* freefind = arena->block;
     if (!freefind)
         return;
     while (freefind)
     {
         MEMBLK* next = freefind->next;
-        size += freefind->size;
+#ifdef _WIN32
+        VirtualFree(freefind, 0, MEM_RELEASE);
+#else
         free(freefind);
+#endif
         freefind = next;
     }
-    *arena = 0;
-    if (size > *peak)
-        *peak = size;
+    arena->block = 0;
+    if (arena->used > *peak)
+        *peak = arena->used;
+    arena->used = 0;
 }
 void* globalAlloc(int size) { return memAlloc(&globals, size); }
 void globalFree(void)

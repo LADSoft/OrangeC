@@ -44,11 +44,11 @@
 namespace Parser
 {
 int inlinesym_count;
-EXPRESSION* inlinesym_thisptr[MAX_INLINE_NESTING];
+EXPRESSION* inlinesym_thisptr[1000];
 #undef MAX_INLINE_NESTING
 #define MAX_INLINE_NESTING 3
 
-static SYMBOL* inlinesym_list[MAX_INLINE_NESTING];
+static SYMBOL* inlinesym_list[1000];
 static int inline_nesting;
 void iinlineInit(void)
 {
@@ -320,7 +320,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         return nullptr;
     }
     /* measure of complexity */
-    if (inlineTooComplex(f))
+    if (!f->sp->sb->simpleFunc && inlineTooComplex(f))
     {
         f->sp->sb->dumpInlineToFile = true;
         return nullptr;
@@ -365,7 +365,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
-    if (inlinesym_count >= MAX_INLINE_NESTING)
+    if (inlinesym_count >= MAX_INLINE_NESTING && ! f->sp->sb->simpleFunc)
     {
         f->sp->sb->dumpInlineToFile = true;
         return nullptr;

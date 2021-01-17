@@ -110,7 +110,7 @@
                   )
                   if "%TRAVIS_OS_NAME%" EQU "" (
                       cd ..\tests
-                      omake -B /DCOMPILER=OCC
+                      omake -B -j:%PARALLEL% /DCOMPILER=OCC
                       IF %ERRORLEVEL% NEQ 0 (
                           goto error;
                       )

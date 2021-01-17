@@ -411,10 +411,6 @@ int main(int argc, char* argv[])
     {
         Utils::usage(argv[0], usageText);
     }
-    if (Optimizer::cparams.prm_displaytiming)
-    {
-        startTime = clock();
-    }
     bool fileMode = false;
     if (argc == 2)
         fileMode = true;
@@ -462,6 +458,10 @@ int main(int argc, char* argv[])
     }
     if (!LoadFile(parserMem))
         Utils::fatal("internal error: could not load intermediate file");
+    if (Optimizer::cparams.prm_displaytiming)
+    {
+        startTime = clock();
+    }
     regInit();
     alloc_init();
     ProcessFunctions();

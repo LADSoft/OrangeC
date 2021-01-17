@@ -765,7 +765,7 @@ void calculateVirtualBaseOffsets(SYMBOL* sym)
 }
 void deferredCompileOne(SYMBOL* cur)
 {
-    LEXEME* lex;
+    LEXLIST* lex;
     STRUCTSYM l, n, x, q;
     int count = 0;
     LAMBDA* oldLambdas;
@@ -836,7 +836,7 @@ static void RecalcArraySize(TYPE* tp)
 void deferredInitializeStructFunctions(SYMBOL* cur)
 {
     SYMLIST* hr;
-    LEXEME* lex;
+    LEXLIST* lex;
     STRUCTSYM l, n;
     int count = 0;
     int tns = PushTemplateNamespace(cur);
@@ -924,7 +924,7 @@ void deferredInitializeStructMembers(SYMBOL* cur)
 {
     Optimizer::LIST* staticAssert;
     SYMLIST* hr;
-    LEXEME* lex;
+    LEXLIST* lex;
     STRUCTSYM l, n;
     int count = 0;
     int tns = PushTemplateNamespace(cur);
@@ -1137,7 +1137,7 @@ BASECLASS* innerBaseClass(SYMBOL* declsym, SYMBOL* bcsym, bool isvirtual, enum e
     }
     return bc;
 }
-LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defaultAccess)
+LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defaultAccess)
 {
     struct _baseClass **bc = &declsym->sb->baseClasses, *lst;
     enum e_ac currentAccess;
@@ -1181,7 +1181,7 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
             char name[512];
             name[0] = 0;
             if (ISID(lex))
-                strcpy(name, lex->value.s.a);
+                strcpy(name, lex->data->value.s.a);
             bcsym = nullptr;    
             lex = nestedSearch(lex, &bcsym, nullptr, nullptr, nullptr, nullptr, false, sc_global, false, false);
             if (bcsym && bcsym->sb && bcsym->sb->storage_class == sc_typedef)
@@ -2103,7 +2103,7 @@ int CountPacks(TEMPLATEPARAMLIST* packs)
     }
     return rv;
 }
-INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXEME* start, EXPRESSION* packedExp)
+INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXLIST* start, EXPRESSION* packedExp)
 {
     int oldPack = packIndex;
     int count = 0;
@@ -2157,7 +2157,7 @@ INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXEME* start, 
                 for (i = 0; i < n; i++)
                 {
                     INITLIST* p = Allocate<INITLIST>();
-                    LEXEME* lex = SetAlternateLex(start);
+                    LEXLIST* lex = SetAlternateLex(start);
                     packIndex = i;
                     expression_assign(lex, funcsp, nullptr, &p->tp, &p->exp, nullptr, _F_PACKABLE);
                     SetAlternateLex(nullptr);
@@ -2271,7 +2271,7 @@ MEMBERINITIALIZERS* expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, MEMBERI
     }
     else
     {
-        LEXEME* lex = SetAlternateLex(linit->initData);
+        LEXLIST* lex = SetAlternateLex(linit->initData);
         *init = (*init)->next;
         if (MATCHKW(lex, lt))
         {
@@ -2280,7 +2280,7 @@ MEMBERINITIALIZERS* expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, MEMBERI
             // and also count the number of packs to see if it matches the number of templates..
             int n = -1;
             TEMPLATEPARAMLIST *lst = nullptr, *pack;
-            LEXEME* arglex = GetTemplateArguments(lex, funcsp, linit->sp, &lst);
+            LEXLIST* arglex = GetTemplateArguments(lex, funcsp, linit->sp, &lst);
             SetAlternateLex(nullptr);
             pack = lst;
             while (pack)
@@ -2366,7 +2366,7 @@ MEMBERINITIALIZERS* expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, MEMBERI
     return *init;
 }
 void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, TEMPLATEPARAMLIST* templatePack, MEMBERINITIALIZERS** p,
-                                    LEXEME* start, INITLIST* list)
+                                    LEXLIST* start, INITLIST* list)
 {
     int n = CountPacks(templatePack);
     MEMBERINITIALIZERS* orig = *p;
@@ -2403,7 +2403,7 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, TEMPLATEPARAMLI
         oldPack = packIndex;
         for (i = 0; i < n; i++)
         {
-            LEXEME* lex = SetAlternateLex(start);
+            LEXLIST* lex = SetAlternateLex(start);
             MEMBERINITIALIZERS* mi = Allocate<MEMBERINITIALIZERS>();
             TYPE* tp = templatePack->p->byClass.val;
             BASECLASS* bc = cls->sb->baseClasses;
@@ -2858,7 +2858,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
         }
     }
 }
-LEXEME* handleStaticAssert(LEXEME* lex)
+LEXLIST* handleStaticAssert(LEXLIST* lex)
 {
     if (!needkw(&lex, openpa))
     {
@@ -2883,16 +2883,16 @@ LEXEME* handleStaticAssert(LEXEME* lex)
         if (MATCHKW(lex, comma))
         {
             lex = getsym();
-            if (lex->type != l_astr)
+            if (lex->data->type != l_astr)
             {
                 error(ERR_NEEDSTRING);
             }
             else
             {
                 int i, pos = 0;
-                while (lex->type == l_astr)
+                while (lex->data->type == l_astr)
                 {
-                    Optimizer::SLCHAR* ch = (Optimizer::SLCHAR*)lex->value.s.w;
+                    Optimizer::SLCHAR* ch = (Optimizer::SLCHAR*)lex->data->value.s.w;
                     lex = getsym();
                     for (i = 0; i < ch->count && i + pos < sizeof(buf) - 1; i++)
                         buf[i + pos] = ch->str[i];
@@ -2917,7 +2917,7 @@ LEXEME* handleStaticAssert(LEXEME* lex)
     }
     return lex;
 }
-LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class, bool* linked)
+LEXLIST* insertNamespace(LEXLIST* lex, enum e_lk linkage, enum e_sc storage_class, bool* linked)
 {
     bool anon = false;
     char buf[256], *p;
@@ -2927,7 +2927,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
     *linked = false;
     if (ISID(lex))
     {
-        strcpy(buf, lex->value.s.a);
+        strcpy(buf, lex->data->value.s.a);
         lex = getsym();
         if (MATCHKW(lex, assign))
         {
@@ -2935,7 +2935,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
             if (ISID(lex))
             {
                 char buf1[512];
-                strcpy(buf1, lex->value.s.a);
+                strcpy(buf1, lex->data->value.s.a);
                 lex = nestedSearch(lex, &sym, nullptr, nullptr, nullptr, nullptr, false, sc_global, true, false);
                 if (sym)
                 {
@@ -3133,7 +3133,7 @@ static void InsertTag(SYMBOL* sym, enum e_sc storage_class, bool allowDups)
     if (!allowDups || !sp1 || (sym != sp1 && sym->sb->mainsym && sym->sb->mainsym != sp1->sb->mainsym))
         insert(sym, table);
 }
-LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc storage_class, bool inTemplate, bool hasAttributes)
+LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc storage_class, bool inTemplate, bool hasAttributes)
 {
     SYMBOL* sp;
     if (MATCHKW(lex, kw_namespace))
@@ -3178,8 +3178,8 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                         }
 #ifdef PARSER_ONLY
                         if (lex)
-                            CompletionCompiler::ccInsertUsing(sp, nameSpaceList ? (SYMBOL*)nameSpaceList->data : nullptr, lex->errfile,
-                                                              lex->errline);
+                            CompletionCompiler::ccInsertUsing(sp, nameSpaceList ? (SYMBOL*)nameSpaceList->data : nullptr, lex->data->errfile,
+                                                              lex->data->errline);
 #endif
                     }
                 }
@@ -3204,7 +3204,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
             error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
         if (!isTypename && ISID(lex))
         {
-            LEXEME* idsym = lex;
+            LEXLIST* idsym = lex;
             lex = getsym();
             attributes oldAttribs = basisAttribs;
 
@@ -3268,7 +3268,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                     tp = &stdint;
                 }
                 checkauto(tp, ERR_AUTO_NOT_ALLOWED_IN_USING_STATEMENT);
-                sp = makeID(sc_typedef, tp, nullptr, litlate(idsym->value.s.a));
+                sp = makeID(sc_typedef, tp, nullptr, litlate(idsym->data->value.s.a));
                 sp->sb->attribs = basisAttribs;
                 TYPE* tp1 = Allocate<TYPE>();
                 tp1->type = bt_typedef;
@@ -3354,7 +3354,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
     }
     return lex;
 }
-static void balancedAttributeParameter(LEXEME** lex)
+static void balancedAttributeParameter(LEXLIST** lex)
 {
     enum e_kw start = KW(*lex);
     enum e_kw endp = (enum e_kw) - 1;
@@ -3433,7 +3433,7 @@ TYPE* AttributeFinish(SYMBOL* sym, TYPE* tp)
     }
     return tp;
 }
-void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
+void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
 {
     if (MATCHKW(*lex, kw__attribute))
     {
@@ -3479,9 +3479,9 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
                     };
                     std::string name;
                     if (ISID(*lex))
-                        name = (*lex)->value.s.a;
+                        name = (*lex)->data->value.s.a;
                     else
-                        name = (*lex)->kw->name;
+                        name = (*lex)->data->kw->name;
                     // get rid of leading and trailing "__" if they both exist
                     if (name.size() >= 5 && name.substr(0, 2) == "__" && name.substr(name.size() - 2, 2) == "__")
                         name = name.substr(2, name.size() - 4);
@@ -3499,11 +3499,11 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
                                 if (MATCHKW(*lex, openpa))
                                 {
                                     *lex = getsym();
-                                    if ((*lex)->type == l_astr)
+                                    if ((*lex)->data->type == l_astr)
                                     {
                                         char buf[1024];
                                         int i;
-                                        Optimizer::SLCHAR* xx = (Optimizer::SLCHAR*)(*lex)->value.s.w;
+                                        Optimizer::SLCHAR* xx = (Optimizer::SLCHAR*)(*lex)->data->value.s.w;
                                         for (i = 0; i < 1024 && i < xx->count; i++)
                                             buf[i] = (char)xx->str[i];
                                         buf[i] = 0;
@@ -3570,7 +3570,7 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
                                     *lex = getsym();
                                     if (ISID(*lex))
                                     {
-                                        SYMBOL* sym = gsearch((*lex)->value.s.a);
+                                        SYMBOL* sym = gsearch((*lex)->data->value.s.a);
                                         if (sym)
                                         {
                                             if (sym->tp->type == bt_aggregate)
@@ -3592,7 +3592,7 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
                                         }
                                         else
                                         {
-                                            errorstr(ERR_UNDEFINED_IDENTIFIER, (*lex)->value.s.a);
+                                            errorstr(ERR_UNDEFINED_IDENTIFIER, (*lex)->data->value.s.a);
                                         }
                                         *lex = getsym();
                                     }
@@ -3609,14 +3609,14 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
                                     *lex = getsym();
                                     if (ISID(*lex))
                                     {
-                                        SYMBOL* sym = gsearch((*lex)->value.s.a);
+                                        SYMBOL* sym = gsearch((*lex)->data->value.s.a);
                                         if (sym)
                                         {
                                             basisAttribs.uninheritable.copyFrom = sym;
                                         }
                                         else
                                         {
-                                            errorstr(ERR_UNDEFINED_IDENTIFIER, (*lex)->value.s.a);
+                                            errorstr(ERR_UNDEFINED_IDENTIFIER, (*lex)->data->value.s.a);
                                         }
                                         *lex = getsym();
                                     }
@@ -3632,11 +3632,11 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
                                 if (MATCHKW(*lex, openpa))
                                 {
                                     *lex = getsym();
-                                    if ((*lex)->type == l_astr)
+                                    if ((*lex)->data->type == l_astr)
                                     {
                                         char buf[1024];
                                         int i;
-                                        Optimizer::SLCHAR* xx = (Optimizer::SLCHAR*)(*lex)->value.s.w;
+                                        Optimizer::SLCHAR* xx = (Optimizer::SLCHAR*)(*lex)->data->value.s.w;
                                         for (i = 0; i < 1024 && i < xx->count; i++)
                                             buf[i] = (char)xx->str[i];
                                         buf[i] = 0;
@@ -3713,7 +3713,7 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
         }
     }
 }
-bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
+bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
 {
     (void)always;
     bool rv = false;
@@ -3838,7 +3838,7 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                                 *lex = getsym();
                                 error(ERR_IDENTIFIER_EXPECTED);
                             }
-                            else if (!strcmp((*lex)->value.s.a, occNamespace.c_str()))
+                            else if (!strcmp((*lex)->data->value.s.a, occNamespace.c_str()))
                             {
                                 *lex = getsym();
                                 if (MATCHKW(*lex, classsel))
@@ -3854,7 +3854,7 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                                         static const std::unordered_map<std::string, int> occCPPStyleAttribNames = {
                                             {"zstring", 23}  // non-gcc, added to support nonstring
                                         };
-                                        std::string name = (*lex)->value.s.a;
+                                        std::string name = (*lex)->data->value.s.a;
                                         auto searchedName = occCPPStyleAttribNames.find(name);
                                         if (searchedName != occCPPStyleAttribNames.end())
                                         {
@@ -3878,7 +3878,7 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                                     errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, occNamespace.c_str());
                                 }
                             }
-                            else if (!strcmp((*lex)->value.s.a, gccNamespace.c_str()))
+                            else if (!strcmp((*lex)->data->value.s.a, gccNamespace.c_str()))
                             {
                                 *lex = getsym();
                                 if (MATCHKW(*lex, classsel))
@@ -3908,7 +3908,7 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                                             {"dllexport", 25},
                                             {"dllimport", 26},
                                             {"stdcall", 27}};
-                                        std::string name = (*lex)->value.s.a;
+                                        std::string name = (*lex)->data->value.s.a;
                                         auto searchedName = gccCPPStyleAttribNames.find(name);
                                         if (searchedName != gccCPPStyleAttribNames.end())
                                         {
@@ -3945,7 +3945,7 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                             }
                             else
                             {
-                                if (!strcmp((*lex)->value.s.a, "noreturn"))
+                                if (!strcmp((*lex)->data->value.s.a, "noreturn"))
                                 {
                                     *lex = getsym();
                                     special = true;
@@ -3953,14 +3953,14 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                                         error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                                     basisAttribs.inheritable.linkage3 = lk_noreturn;
                                 }
-                                else if (!strcmp((*lex)->value.s.a, "carries_dependency"))
+                                else if (!strcmp((*lex)->data->value.s.a, "carries_dependency"))
                                 {
                                     *lex = getsym();
                                     special = true;
                                 }
                                 else
                                 {
-                                    if (!strcmp((*lex)->value.s.a, "deprecated"))
+                                    if (!strcmp((*lex)->data->value.s.a, "deprecated"))
                                         basisAttribs.uninheritable.deprecationText = (char*)-1;
                                     *lex = getsym();
                                     if (MATCHKW(*lex, classsel))
@@ -3979,11 +3979,11 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                                 *lex = getsym();
                                 if (basisAttribs.uninheritable.deprecationText)
                                 {
-                                    if ((*lex)->type == l_astr)
+                                    if ((*lex)->data->type == l_astr)
                                     {
                                         char buf[1024];
                                         int i;
-                                        Optimizer::SLCHAR* xx = (Optimizer::SLCHAR*)(*lex)->value.s.w;
+                                        Optimizer::SLCHAR* xx = (Optimizer::SLCHAR*)(*lex)->data->value.s.w;
                                         for (i = 0; i < 1024 && i < xx->count; i++)
                                             buf[i] = (char)xx->str[i];
                                         buf[i] = 0;
@@ -4149,7 +4149,7 @@ bool MatchesConstFunction(SYMBOL* sym)
     }
     return true;
 }
-LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
+LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
 {
     bool hasAmpersand = false;
     bool hasAuto = false;

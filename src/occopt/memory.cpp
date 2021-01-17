@@ -39,7 +39,7 @@ static MEMBLK* conflicts;
 static bool globalFlag = true;
 static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak, templatePeak, conflictPeak;
 
-#define MINALLOC (16 * 1024)
+#define MINALLOC (256 * 1024)
 #define MALIGN (4)
 
 #ifdef __ORANGEC__

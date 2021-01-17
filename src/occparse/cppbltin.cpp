@@ -82,7 +82,7 @@ static std::string cppbuiltin =
 TYPE stdXC = {bt_struct, XCTAB_SIZE, 0, &stdXC};
 void ParseBuiltins(void)
 {
-    LEXEME* lex;
+    LEXLIST* lex;
 
     if (Optimizer::cparams.prm_cplusplus)
     {

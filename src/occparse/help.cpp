@@ -85,18 +85,18 @@ bool istype(SYMBOL* sym)
     return (sym->tp->type != bt_templateselector && sym->sb->storage_class == sc_type) || sym->sb->storage_class == sc_typedef;
 }
 bool ismemberdata(SYMBOL* sym) { return !isfunction(sym->tp) && ismember(sym); }
-bool startOfType(LEXEME* lex, bool assumeType)
+bool startOfType(LEXLIST* lex, bool assumeType)
 {
     Optimizer::LINEDATA *oldHead = linesHead, *oldTail = linesTail;
     if (!lex)
         return false;
 
-    if (lex->type == l_id)
+    if (lex->data->type == l_id)
     {
-        TEMPLATEPARAMLIST* tparam = TemplateLookupSpecializationParam(lex->value.s.a);
+        TEMPLATEPARAMLIST* tparam = TemplateLookupSpecializationParam(lex->data->value.s.a);
         if (tparam)
         {
-            LEXEME* placeHolder = lex;
+            LEXLIST* placeHolder = lex;
             bool member;
             lex = getsym();
             member = MATCHKW(lex, classsel);
@@ -114,11 +114,11 @@ bool startOfType(LEXEME* lex, bool assumeType)
             }
         }
     }
-    if (lex->type == l_id || MATCHKW(lex, classsel) || MATCHKW(lex, kw_decltype))
+    if (lex->data->type == l_id || MATCHKW(lex, classsel) || MATCHKW(lex, kw_decltype))
     {
         bool isdecltype = MATCHKW(lex, kw_decltype);
         SYMBOL *sym, *strSym = nullptr;
-        LEXEME* placeholder = lex;
+        LEXLIST* placeholder = lex;
         bool dest = false;
         nestedSearch(lex, &sym, &strSym, nullptr, &dest, nullptr, false, sc_global, false, false);
         if (Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL))
@@ -646,7 +646,7 @@ SYMBOL* getFunctionSP(TYPE** tp)
     }
     return nullptr;
 }
-LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
+LEXLIST* concatStringsInternal(LEXLIST* lex, STRING** str, int* elems)
 {
     Optimizer::SLCHAR** list;
     char* suffix = nullptr;
@@ -656,26 +656,26 @@ LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
     STRING* string;
     list = Allocate<Optimizer::SLCHAR*>(count);
     while (lex &&
-           (lex->type == l_astr || lex->type == l_wstr || lex->type == l_ustr || lex->type == l_Ustr || lex->type == l_msilstr))
+           (lex->data->type == l_astr || lex->data->type == l_wstr || lex->data->type == l_ustr || lex->data->type == l_Ustr || lex->data->type == l_msilstr))
     {
-        if (lex->type == l_msilstr)
+        if (lex->data->type == l_msilstr)
             type = l_msilstr;
-        else if (lex->type == l_Ustr)
+        else if (lex->data->type == l_Ustr)
             type = l_Ustr;
-        else if (type != l_Ustr && type != l_msilstr && lex->type == l_ustr)
+        else if (type != l_Ustr && type != l_msilstr && lex->data->type == l_ustr)
             type = l_ustr;
-        else if (type != l_Ustr && type != l_ustr && type != l_msilstr && lex->type == l_wstr)
+        else if (type != l_Ustr && type != l_ustr && type != l_msilstr && lex->data->type == l_wstr)
             type = l_wstr;
-        if (lex->suffix)
+        if (lex->data->suffix)
         {
             if (suffix)
             {
-                if (strcmp(lex->suffix, suffix) != 0)
+                if (strcmp(lex->data->suffix, suffix) != 0)
                     error(ERR_LITERAL_SUFFIX_MISMATCH);
             }
             else
             {
-                suffix = lex->suffix;
+                suffix = lex->data->suffix;
             }
         }
         if (pos >= count)
@@ -686,8 +686,8 @@ LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
             count += 10;
         }
         if (elems)
-            *elems += ((Optimizer::SLCHAR*)lex->value.s.w)->count;
-        list[pos++] = (Optimizer::SLCHAR*)lex->value.s.w;
+            *elems += ((Optimizer::SLCHAR*)lex->data->value.s.w)->count;
+        list[pos++] = (Optimizer::SLCHAR*)lex->data->value.s.w;
         lex = getsym();
     }
     string = Allocate<STRING>();
@@ -699,7 +699,7 @@ LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
     *str = string;
     return lex;
 }
-LEXEME* concatStrings(LEXEME* lex, EXPRESSION** expr, enum e_lexType* tp, int* elems)
+LEXLIST* concatStrings(LEXLIST* lex, EXPRESSION** expr, enum e_lexType* tp, int* elems)
 {
     STRING* data;
     lex = concatStringsInternal(lex, &data, elems);

@@ -601,7 +601,7 @@ EXPRESSION* substitute_params_for_function(FUNCTIONCALL* funcparams, HASHTABLE* 
     exp->v.stmt = st;
     return exp;
 }
-LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
+LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     bool defd = false;
@@ -1155,7 +1155,7 @@ bool doReinterpretCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* 
     return false;
     // fixme nullptr conversion to nullptr
 }
-LEXEME* GetCastInfo(LEXEME* lex, SYMBOL* funcsp, TYPE** newType, TYPE** oldType, EXPRESSION** oldExp, bool packed)
+LEXLIST* GetCastInfo(LEXLIST* lex, SYMBOL* funcsp, TYPE** newType, TYPE** oldType, EXPRESSION** oldExp, bool packed)
 {
     lex = getsym();
     *oldExp = nullptr;
@@ -1215,7 +1215,7 @@ LEXEME* GetCastInfo(LEXEME* lex, SYMBOL* funcsp, TYPE** newType, TYPE** oldType,
         *oldType = &stdvoid;
     return lex;
 }
-LEXEME* expression_typeid(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
+LEXLIST* expression_typeid(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
     (void)flags;
     lex = getsym();
@@ -1611,7 +1611,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         dropStructureDeclaration();
     return false;
 }
-LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, bool global, int flags)
+LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, bool global, int flags)
 {
     FUNCTIONCALL* placement = Allocate<FUNCTIONCALL>();
     FUNCTIONCALL* initializers = nullptr;
@@ -1919,7 +1919,7 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
     }
     return lex;
 }
-LEXEME* expression_delete(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, bool global, int flags)
+LEXLIST* expression_delete(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, bool global, int flags)
 {
     bool byArray = false;
     SYMBOL* s1 = nullptr;
@@ -2285,7 +2285,7 @@ static bool noexceptStmt(STATEMENT* block)
     }
     return rv;
 }
-LEXEME* expression_noexcept(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp)
+LEXLIST* expression_noexcept(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp)
 {
     lex = getsym();
     if (needkw(&lex, openpa))

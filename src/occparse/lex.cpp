@@ -60,11 +60,10 @@ LEXCONTEXT* context;
 
 int charIndex;
 
-LEXEME* currentLex;
+LEXLIST* currentLex;
 Optimizer::LINEDATA nullLineData = { 0, 0, "", "", 0, 0 };
 
 static bool valid;
-static LEXEME* pool;
 static unsigned long long llminus1;
 static int nextFree;
 static const unsigned char* linePointer;
@@ -393,7 +392,6 @@ void lexini(void)
     llminus1--;
     context = Allocate<LEXCONTEXT>();
     nextFree = 0;
-    pool = Allocate<LEXEME>(MAX_LOOKBACK);
     currentLine = "";
     linePointer = (const unsigned char*)currentLine.c_str();
     while (parseStack.size())
@@ -1398,7 +1396,7 @@ int getId(const unsigned char** ptr, unsigned char* dest)
     *dest = 0;
     return 0;
 }
-LEXEME* SkipToNextLine(void)
+LEXLIST* SkipToNextLine(void)
 {
 
     if (!context->next)
@@ -1408,15 +1406,18 @@ LEXEME* SkipToNextLine(void)
     }
     return getsym();
 }
-LEXEME* getGTSym(LEXEME* in)
+LEXLIST* getGTSym(LEXLIST* in)
 {
-    static LEXEME lex;
+    static LEXLIST lex;
+    static LEXEME data;
     const unsigned char pgreater[2] = {'>', 0}, *ppgreater = pgreater;
     KEYWORD* kw;
     kw = searchkw(&ppgreater);
     lex = *in;
-    lex.type = l_kw;
-    lex.kw = kw;
+    lex.data = &data;
+    *lex.data = *in->data;
+    lex.data->type = l_kw;
+    lex.data->kw = kw;
     return &lex;
 }
 void SkipToEol() { linePointer = (const unsigned char*)currentLine.c_str() + currentLine.size(); }
@@ -1554,12 +1555,12 @@ static void DumpPreprocessedLine()
         fputc('\n', cppFile);
     }
 }
-LEXEME* getsym(void)
+LEXLIST* getsym(void)
 {
     static std::deque<std::pair<int, int>> annotations;
-    static LEXEME* last;
+    static LEXLIST* last;
     static const char* origLine = "";
-    LEXEME* lex;
+    LEXLIST* lex;
     KEYWORD* kw;
     enum e_lexType tp;
     bool contin;
@@ -1575,15 +1576,15 @@ LEXEME* getsym(void)
 
     if (context->cur)
     {
-        LEXEME* rv;
+        LEXLIST* rv;
         rv = context->cur;
         if (context->last == rv->prev)
             TemplateRegisterDeferred(context->last);
         context->last = rv;
         context->cur = context->cur->next;
-        if (rv->linedata && rv->linedata != &nullLineData)
+        if (rv->data->linedata && rv->data->linedata != &nullLineData)
         {
-            linesHead = rv->linedata;
+            linesHead = rv->data->linedata;
             linesTail = linesHead;
 //            while (linesTail && linesTail->next)
 //                linesTail = linesTail->next;
@@ -1595,18 +1596,19 @@ LEXEME* getsym(void)
     {
         return nullptr;
     }
-    lex = &pool[nextFree];
-    lex->linedata = nullptr;
+    lex = Allocate<LEXLIST>();
+    lex->data = Allocate<LEXEME>();
+    lex->data->linedata = nullptr;
     lex->prev = context->last;
     context->last = lex;
-    context->last->linedata = &nullLineData;
+    context->last->data->linedata = &nullLineData;
 
     lex->next = nullptr;
     if (lex->prev)
         lex->prev->next = lex;
     if (++nextFree >= MAX_LOOKBACK)
         nextFree = 0;
-    lex->registered = false;
+    lex->data->registered = false;
     if (!parsingPreprocessorConstant)
         TemplateRegisterDeferred(last);
     last = nullptr;
@@ -1651,9 +1653,9 @@ LEXEME* getsym(void)
                 }
             }
         } while (*linePointer == 0);
-        charIndex = lex->charindex = linePointer - (const unsigned char*)currentLine.c_str();
-        eofLine = lex->errline = preProcessor->GetErrLineNo();
-        eofFile = lex->errfile = preProcessor->GetErrFile().c_str();
+        charIndex = lex->data->charindex = linePointer - (const unsigned char*)currentLine.c_str();
+        eofLine = lex->data->errline = preProcessor->GetErrLineNo();
+        eofFile = lex->data->errfile = preProcessor->GetErrFile().c_str();
         int fileIndex = preProcessor->GetFileIndex();
         if (fileIndex != lastBrowseIndex)
         {
@@ -1668,12 +1670,12 @@ LEXEME* getsym(void)
                 cval = (e_lexType)(char)cval;
             if (tp == l_uchr && (cval & 0xffff0000))
                 error(ERR_INVALID_CHAR_CONSTANT);
-            lex->value.i = cval;
+            lex->data->value.i = cval;
             if (!Optimizer::cparams.prm_cplusplus)
-                lex->type = l_i;
+                lex->data->type = l_i;
             else
-                lex->type = tp;
-            lex->suffix = nullptr;
+                lex->data->type = tp;
+            lex->data->suffix = nullptr;
             if (isstartchar(*linePointer))
             {
                 char suffix[256], *p = suffix;
@@ -1683,14 +1685,14 @@ LEXEME* getsym(void)
                 if (!Optimizer::cparams.prm_cplusplus)
                     error(ERR_INVCONST);
                 else
-                    lex->suffix = litlate(suffix);
+                    lex->data->suffix = litlate(suffix);
             }
         }
         else if ((strptr = getString(&linePointer, &tp)) != nullptr)
         {
-            lex->value.s.w = (LCHAR*)strptr;
-            lex->type = tp == l_u8str ? l_astr : tp;
-            lex->suffix = nullptr;
+            lex->data->value.s.w = (LCHAR*)strptr;
+            lex->data->type = tp == l_u8str ? l_astr : tp;
+            lex->data->suffix = nullptr;
             if (isstartchar(*linePointer) && !isspace(*(linePointer - 1)))
             {
                 char suffix[256], *p = suffix;
@@ -1700,7 +1702,7 @@ LEXEME* getsym(void)
                 if (!Optimizer::cparams.prm_cplusplus)
                     error(ERR_INVCONST);
                 else
-                    lex->suffix = litlate(suffix);
+                    lex->data->suffix = litlate(suffix);
             }
         }
         else if (*linePointer != 0)
@@ -1709,26 +1711,26 @@ LEXEME* getsym(void)
             const unsigned char* start = linePointer;
             const unsigned char* end = linePointer;
             enum e_lexType tp;
-            lex->suffix = nullptr;
+            lex->data->suffix = nullptr;
             if ((unsigned)(tp = getNumber(&linePointer, &end, suffix, &rval, &ival)) != (unsigned)INT_MIN)
             {
                 if (tp < l_f)
                 {
-                    lex->value.i = ival;
+                    lex->data->value.i = ival;
                 }
                 else
                 {
-                    lex->value.f = Allocate<FPF>();
-                    *lex->value.f = rval;
+                    lex->data->value.f = Allocate<FPF>();
+                    *lex->data->value.f = rval;
                 }
                 if (suffix[0])
                 {
-                    lex->suffix = litlate((char*)suffix);
+                    lex->data->suffix = litlate((char*)suffix);
                     memcpy(suffix, start, end - start);
                     suffix[end - start] = 0;
-                    lex->litaslit = litlate((char*)suffix);
+                    lex->data->litaslit = litlate((char*)suffix);
                 }
-                lex->type = tp;
+                lex->data->type = tp;
             }
             else if ((kw = searchkw(&linePointer)) != nullptr)
             {
@@ -1740,14 +1742,14 @@ LEXEME* getsym(void)
                 }
                 else
                 {
-                    lex->type = l_kw;
-                    lex->kw = kw;
+                    lex->data->type = l_kw;
+                    lex->data->kw = kw;
                 }
             }
             else if (getId(&linePointer, buf + pos) != INT_MIN)
             {
-                lex->value.s.a = (char*)buf + pos;
-                lex->type = l_id;
+                lex->data->value.s.a = (char*)buf + pos;
+                lex->data->type = l_id;
                 pos += strlen((char*)buf + pos) + 1;
                 if (pos >= sizeof(buf) - 512)
                     pos = 0;
@@ -1788,8 +1790,8 @@ LEXEME* getsym(void)
                  start -= trailer;
                  end -= trailer;
             }
-            lex->charindex = start;
-            lex->charindexend = end;
+            lex->data->charindex = start;
+            lex->data->charindexend = end;
 #ifdef TESTANNOTATE
 //            printf("%d %d\n", start, end);
             annotations.push_back(std::pair<int, int>(start, end));
@@ -1798,16 +1800,16 @@ LEXEME* getsym(void)
     } while (contin);
     if (linesHead)
     {
-        lex->linedata = linesHead;
+        lex->data->linedata = linesHead;
     }
     else
     {
-        lex->linedata = &nullLineData;
+        lex->data->linedata = &nullLineData;
     }
     currentLex = lex;
     return last = lex;
 }
-LEXEME* prevsym(LEXEME* lex)
+LEXLIST* prevsym(LEXLIST* lex)
 {
     if (lex)
     {
@@ -1822,7 +1824,7 @@ LEXEME* prevsym(LEXEME* lex)
     }
     return lex;
 }
-LEXEME* backupsym(void)
+LEXLIST* backupsym(void)
 {
     if (context->cur)
     {
@@ -1836,7 +1838,7 @@ LEXEME* backupsym(void)
     }
     return context->cur->prev;
 }
-LEXEME* SetAlternateLex(LEXEME* lexList)
+LEXLIST* SetAlternateLex(LEXLIST* lexList)
 {
     if (lexList)
     {
@@ -1856,13 +1858,13 @@ LEXEME* SetAlternateLex(LEXEME* lexList)
         return nullptr;
     }
 }
-bool CompareLex(LEXEME* left, LEXEME* right)
+bool CompareLex(LEXLIST* left, LEXLIST* right)
 {
     while (left && right)
     {
-        if (left->type != right->type)
+        if (left->data->type != right->data->type)
             break;
-        switch (left->type)
+        switch (left->data->type)
         {
             case l_i:
             case l_ui:
@@ -1870,36 +1872,36 @@ bool CompareLex(LEXEME* left, LEXEME* right)
             case l_ul:
             case l_ll:
             case l_ull:
-                if (left->value.i != right->value.i)
+                if (left->data->value.i != right->data->value.i)
                     return false;
                 break;
             case l_f:
             case l_d:
             case l_ld:
-                if (left->value.f != right->value.f)
+                if (left->data->value.f != right->data->value.f)
                     return false;
                 break;
             case l_I:
                 break;
             case l_kw:
-                if (left->kw != right->kw)
+                if (left->data->kw != right->data->kw)
                     return false;
                 break;
             case l_id:
             case l_astr:
             case l_u8str:
             case l_msilstr:
-                if (strcmp(left->value.s.a, right->value.s.a))
+                if (strcmp(left->data->value.s.a, right->data->value.s.a))
                     return false;
                 break;
             case l_wstr:
             case l_ustr:
             case l_Ustr:
                 int i;
-                for (i = 0; left->value.s.w[i] && right->value.s.w[i]; i++)
-                    if (left->value.s.w[i] != right->value.s.w[i])
+                for (i = 0; left->data->value.s.w[i] && right->data->value.s.w[i]; i++)
+                    if (left->data->value.s.w[i] != right->data->value.s.w[i])
                         break;
-                if (left->value.s.w[i] || right->value.s.w[i])
+                if (left->data->value.s.w[i] || right->data->value.s.w[i])
                     return false;
                 break;
 
@@ -1907,7 +1909,7 @@ bool CompareLex(LEXEME* left, LEXEME* right)
             case l_wchr:
             case l_uchr:
             case l_Uchr:
-                if (left->value.i != right->value.i)
+                if (left->data->value.i != right->data->value.i)
                     return false;
             case l_qualifiedname:
             default:
@@ -1942,7 +1944,7 @@ long long ParseExpression(std::string& line)
     TYPE* tp = nullptr;
     EXPRESSION* exp = nullptr;
     SetAlternateParse(true, line);
-    LEXEME* lex = getsym();
+    LEXLIST* lex = getsym();
     parsingPreprocessorConstant = true;
     lex = expression_no_comma(lex, nullptr, nullptr, &tp, &exp, nullptr, 0);
     if (tp)

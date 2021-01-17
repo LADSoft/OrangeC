@@ -67,11 +67,11 @@ enum e_node referenceTypeError(TYPE* tp, EXPRESSION* exp);
 EXPRESSION* createTemporary(TYPE* tp, EXPRESSION* val);
 EXPRESSION* msilCreateTemporary(TYPE* tp, EXPRESSION* val);
 EXPRESSION* getThisNode(SYMBOL* sym);
-LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALIZER** init, INITIALIZER** dest, TYPE* itype,
+LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALIZER** init, INITIALIZER** dest, TYPE* itype,
                  SYMBOL* sym, bool arrayMember, int flags);
 bool checkconstexprfunc(EXPRESSION* node);
 bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc);
 bool InitVariableMatches(SYMBOL* left, SYMBOL* right);
 void RecalculateVariableTemplateInitializers(INITIALIZER** in, INITIALIZER*** out, TYPE* tp, int offset);
-LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, int flags);
+LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, int flags);
 }  // namespace Parser

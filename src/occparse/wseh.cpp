@@ -89,7 +89,7 @@ static void ReorderSEHRecords(STATEMENT** xtry, BLOCKDATA* parent)
     while (parent->tail->next)
         parent->tail = parent->tail->next;
 }
-static LEXEME* SEH_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* SEH_catch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT* st;
     TYPE* tp = nullptr;
@@ -134,7 +134,7 @@ static LEXEME* SEH_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     st->sp = sym;
     return lex;
 }
-static LEXEME* SEH_finally(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* SEH_finally(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT* st;
     BLOCKDATA* catchstmt = Allocate<BLOCKDATA>();
@@ -164,7 +164,7 @@ static LEXEME* SEH_finally(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     st->lower = catchstmt->head;
     return lex;
 }
-static LEXEME* SEH_fault(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* SEH_fault(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT* st;
     BLOCKDATA* catchstmt = Allocate<BLOCKDATA>();
@@ -194,7 +194,7 @@ static LEXEME* SEH_fault(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     st->lower = catchstmt->head;
     return lex;
 }
-static LEXEME* SEH_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* SEH_try(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT *st, **tail = parent->head ? &parent->tail->next : &parent->head;
     BLOCKDATA* trystmt = Allocate<BLOCKDATA>();
@@ -249,7 +249,7 @@ static LEXEME* SEH_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     return lex;
 }
 
-LEXEME* statement_SEH(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+LEXLIST* statement_SEH(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     switch (KW(lex))
     {

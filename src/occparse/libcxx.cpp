@@ -46,25 +46,25 @@ namespace Parser
 
 static HASHTABLE* intrinsicHash;
 
-typedef bool INTRINS_FUNC(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_abstract(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_base_of(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_class(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_convertible_to(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_empty(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_enum(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_final(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_literal(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_nothrow_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_pod(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_polymorphic(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_standard_layout(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_trivial(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_trivially_assignable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_trivially_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_trivially_copyable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static bool is_union(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+typedef bool INTRINS_FUNC(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_abstract(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_base_of(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_class(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_convertible_to(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_empty(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_enum(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_final(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_literal(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_nothrow_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_pod(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_polymorphic(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_standard_layout(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_trivial(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_trivially_assignable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_trivially_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_trivially_copyable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_union(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 
 static struct _ihash
 {
@@ -98,7 +98,7 @@ void libcxx_init(void)
     for (i = 0; i < sizeof(defaults) / sizeof(defaults[0]); i++)
         AddName((SYMBOL*)&defaults[i], intrinsicHash);
 }
-bool parseBuiltInTypelistFunc(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+bool parseBuiltInTypelistFunc(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     SYMLIST** hr = LookupName(sym->name, intrinsicHash);
     if (hr)
@@ -108,7 +108,7 @@ bool parseBuiltInTypelistFunc(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
     }
     return false;
 }
-static LEXEME* getTypeList(LEXEME* lex, SYMBOL* funcsp, INITLIST** lptr)
+static LEXLIST* getTypeList(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr)
 {
     *lptr = nullptr;
     do
@@ -536,7 +536,7 @@ static bool nothrowConstructible(TYPE* tp, INITLIST* args)
     }
     return true;
 }
-static bool is_abstract(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_abstract(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -552,7 +552,7 @@ static bool is_abstract(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EX
     *tp = &stdint;
     return true;
 }
-static bool is_base_of(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_base_of(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -575,7 +575,7 @@ static bool is_base_of(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXP
     *tp = &stdint;
     return true;
 }
-static bool is_class(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_class(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -591,7 +591,7 @@ static bool is_class(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRE
     *tp = &stdint;
     return true;
 }
-static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -855,7 +855,7 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
     *tp = &stdint;
     return true;
 }
-static bool is_convertible_to(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_convertible_to(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     bool rv = true;
     FUNCTIONCALL funcparams;
@@ -928,7 +928,7 @@ static bool is_convertible_to(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
     *tp = &stdint;
     return true;
 }
-static bool is_empty(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_empty(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -951,7 +951,7 @@ static bool is_empty(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRE
     *tp = &stdint;
     return true;
 }
-static bool is_enum(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_enum(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -967,7 +967,7 @@ static bool is_enum(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRES
     *tp = &stdint;
     return true;
 }
-static bool is_final(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_final(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -984,7 +984,7 @@ static bool is_final(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRE
     *tp = &stdint;
     return true;
 }
-static bool is_literal(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_literal(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -1001,7 +1001,7 @@ static bool is_literal(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXP
     *tp = &stdint;
     return true;
 }
-static bool is_nothrow_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_nothrow_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -1048,7 +1048,7 @@ static bool is_nothrow_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, 
     *tp = &stdint;
     return true;
 }
-static bool is_pod(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_pod(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -1070,7 +1070,7 @@ static bool is_pod(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESS
     *tp = &stdint;
     return true;
 }
-static bool is_polymorphic(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_polymorphic(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -1094,7 +1094,7 @@ static bool is_polymorphic(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp,
     *tp = &stdint;
     return true;
 }
-static bool is_standard_layout(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_standard_layout(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -1116,7 +1116,7 @@ static bool is_standard_layout(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE**
     *tp = &stdint;
     return true;
 }
-static bool is_trivial(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_trivial(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -1138,7 +1138,7 @@ static bool is_trivial(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXP
     *tp = &stdint;
     return true;
 }
-static bool is_trivially_assignable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_trivially_assignable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -1161,7 +1161,7 @@ static bool is_trivially_assignable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, T
     *tp = &stdint;
     return true;
 }
-static bool is_trivially_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_trivially_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -1183,7 +1183,7 @@ static bool is_trivially_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym
     *tp = &stdint;
     return true;
 }
-static bool is_trivially_copyable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_trivially_copyable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -1206,7 +1206,7 @@ static bool is_trivially_copyable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYP
     *tp = &stdint;
     return true;
 }
-static bool is_union(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_union(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -1222,7 +1222,7 @@ static bool is_union(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRE
     *tp = &stdint;
     return true;
 }
-bool underlying_type(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+bool underlying_type(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;

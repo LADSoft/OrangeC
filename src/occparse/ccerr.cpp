@@ -589,11 +589,11 @@ static struct
     {"static_assert generated: %s", ERROR },
     {"Unknown type in template argument", ERROR },
 };
-void EnterInstantiation(LEXEME* lex, SYMBOL *sym)
+void EnterInstantiation(LEXLIST* lex, SYMBOL *sym)
 {
     if (lex)
     {
-        instantiationList.push_front(std::tuple<const char *, int, SYMBOL*>(lex->errfile, lex->errline, sym));
+        instantiationList.push_front(std::tuple<const char *, int, SYMBOL*>(lex->data->errfile, lex->data->errline, sym));
     }
     else
     {
@@ -796,8 +796,8 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     {
         if (currentLex)
         {
-            file = currentLex->errfile;
-            line = currentLex->errline;
+            file = currentLex->data->errfile;
+            line = currentLex->data->errline;
         }
         else
         {
@@ -818,11 +818,11 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         }
     if (!file)
     {
-        if (context)
+        if (context && context->last->data->type != l_none)
         {
-            LEXEME* lex = context->cur ? context->cur->prev : context->last;
-            line = lex->errline;
-            file = lex->errfile;
+            LEXLIST* lex = context->cur ? context->cur->prev : context->last;
+            line = lex->data->errline;
+            file = lex->data->errfile;
         }
         else
         {
@@ -1124,7 +1124,7 @@ void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
     currentErrorLine = 0;
     printerr(err, nullptr, 0, argbuf, buf);
 }
-static BALANCE* newbalance(LEXEME* lex, BALANCE* bal)
+static BALANCE* newbalance(LEXLIST* lex, BALANCE* bal)
 {
     BALANCE* rv = Allocate<BALANCE>();
     rv->back = bal;
@@ -1139,7 +1139,7 @@ static BALANCE* newbalance(LEXEME* lex, BALANCE* bal)
         rv->type = BAL_BEGIN;
     return (rv);
 }
-static void setbalance(LEXEME* lex, BALANCE** bal, bool assumeTemplate)
+static void setbalance(LEXLIST* lex, BALANCE** bal, bool assumeTemplate)
 {
     switch (KW(lex))
     {
@@ -1209,7 +1209,7 @@ static void setbalance(LEXEME* lex, BALANCE** bal, bool assumeTemplate)
 
 /*-------------------------------------------------------------------------*/
 
-void errskim(LEXEME** lex, enum e_kw* skimlist, bool assumeTemplate)
+void errskim(LEXLIST** lex, enum e_kw* skimlist, bool assumeTemplate)
 {
     BALANCE* bal = 0;
     while (true)
@@ -1228,12 +1228,12 @@ void errskim(LEXEME** lex, enum e_kw* skimlist, bool assumeTemplate)
         *lex = getsym();
     }
 }
-void skip(LEXEME** lex, enum e_kw kw)
+void skip(LEXLIST** lex, enum e_kw kw)
 {
     if (MATCHKW(*lex, kw))
         *lex = getsym();
 }
-bool needkw(LEXEME** lex, enum e_kw kw)
+bool needkw(LEXLIST** lex, enum e_kw kw)
 {
     if (lex && MATCHKW(*lex, kw))
     {

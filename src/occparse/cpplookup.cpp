@@ -242,7 +242,7 @@ SYMBOL* namespacesearch(const char* name, NAMESPACEVALUELIST* ns, bool qualified
     }
     return nullptr;
 }
-LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* throughClass, bool tagsOnly, enum e_sc storage_class,
+LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* throughClass, bool tagsOnly, enum e_sc storage_class,
                    bool isType)
 {
     (void)tagsOnly;
@@ -252,7 +252,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
     SYMBOL* strSym = nullptr;
     bool qualified = false;
     TEMPLATESELECTOR *templateSelector = nullptr, **last = &templateSelector;
-    LEXEME *placeholder = lex, *finalPos;
+    LEXLIST *placeholder = lex, *finalPos;
     bool hasTemplate = false;
     TEMPLATEPARAMLIST* templateParamAsTemplate = nullptr;
     TYPE* dependentType = nullptr;
@@ -770,9 +770,9 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
             while (placeholder != finalPos->next)
             {
                 if (ISKW(placeholder))
-                    Optimizer::my_sprintf(buf + strlen(buf), "%s", placeholder->kw->name);
+                    Optimizer::my_sprintf(buf + strlen(buf), "%s", placeholder->data->kw->name);
                 else if (ISID(placeholder))
-                    Optimizer::my_sprintf(buf + strlen(buf), "%s", placeholder->value.s.a);
+                    Optimizer::my_sprintf(buf + strlen(buf), "%s", placeholder->data->value.s.a);
                 placeholder = placeholder->next;
             }
 
@@ -1051,13 +1051,13 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, NAMESPACEVALUELIST* ns,
     }
     return rv;
 }
-LEXEME* nestedSearch(LEXEME* lex, SYMBOL** sym, SYMBOL** strSym, NAMESPACEVALUELIST** nsv, bool* destructor, bool* isTemplate,
+LEXLIST* nestedSearch(LEXLIST* lex, SYMBOL** sym, SYMBOL** strSym, NAMESPACEVALUELIST** nsv, bool* destructor, bool* isTemplate,
                      bool tagsOnly, enum e_sc storage_class, bool errIfNotFound, bool isType)
 {
     SYMBOL* encloser = nullptr;
     NAMESPACEVALUELIST* ns = nullptr;
     bool throughClass = false;
-    LEXEME* placeholder = lex;
+    LEXLIST* placeholder = lex;
     bool hasTemplate = false;
     bool namespaceOnly = false;
     *sym = nullptr;
@@ -1068,9 +1068,9 @@ LEXEME* nestedSearch(LEXEME* lex, SYMBOL** sym, SYMBOL** strSym, NAMESPACEVALUEL
         if (ISID(lex))
         {
             if (tagsOnly)
-                *sym = tsearch(lex->value.s.a);
+                *sym = tsearch(lex->data->value.s.a);
             else
-                *sym = gsearch(lex->value.s.a);
+                *sym = gsearch(lex->data->value.s.a);
         }
         return lex;
     }
@@ -1132,19 +1132,19 @@ LEXEME* nestedSearch(LEXEME* lex, SYMBOL** sym, SYMBOL** strSym, NAMESPACEVALUEL
             }
             else
             {
-                TEMPLATEPARAMLIST* tparam = TemplateLookupSpecializationParam(lex->value.s.a);
+                TEMPLATEPARAMLIST* tparam = TemplateLookupSpecializationParam(lex->data->value.s.a);
                 if (tparam)
                 {
                     *sym = tparam->argsym;
                 }
                 else
                 {
-                    *sym = finishSearch(lex->value.s.a, encloser, ns, tagsOnly, throughClass, namespaceOnly);
+                    *sym = finishSearch(lex->data->value.s.a, encloser, ns, tagsOnly, throughClass, namespaceOnly);
                     if (!*sym)
                         encloser = nullptr;
                     if (errIfNotFound && !*sym)
                     {
-                        errorstr(ERR_UNDEFINED_IDENTIFIER, lex->value.s.a);
+                        errorstr(ERR_UNDEFINED_IDENTIFIER, lex->data->value.s.a);
                     }
                 }
             }
@@ -1191,19 +1191,19 @@ LEXEME* nestedSearch(LEXEME* lex, SYMBOL** sym, SYMBOL** strSym, NAMESPACEVALUEL
         lex = prevsym(placeholder);
     return lex;
 }
-LEXEME* getIdName(LEXEME* lex, SYMBOL* funcsp, char* buf, int* ov, TYPE** castType)
+LEXLIST* getIdName(LEXLIST* lex, SYMBOL* funcsp, char* buf, int* ov, TYPE** castType)
 {
     buf[0] = 0;
     if (ISID(lex))
     {
-        strcpy(buf, lex->value.s.a);
+        strcpy(buf, lex->data->value.s.a);
     }
     else if (MATCHKW(lex, kw_operator))
     {
         lex = getsym();
-        if (ISKW(lex) && lex->kw->key >= kw_new && lex->kw->key <= complx)
+        if (ISKW(lex) && lex->data->kw->key >= kw_new && lex->data->kw->key <= complx)
         {
-            enum e_kw kw = lex->kw->key;
+            enum e_kw kw = lex->data->kw->key;
             switch (kw)
             {
                 case openpa:
@@ -1262,15 +1262,15 @@ LEXEME* getIdName(LEXEME* lex, SYMBOL* funcsp, char* buf, int* ov, TYPE** castTy
             }
             strcpy(buf, overloadNameTab[* ov = CI_CAST]);
         }
-        else if (lex->type == l_astr)
+        else if (lex->data->type == l_astr)
         {
-            LEXEME* placeholder = lex;
-            Optimizer::SLCHAR* xx = (Optimizer::SLCHAR*)lex->value.s.w;
+            LEXLIST* placeholder = lex;
+            Optimizer::SLCHAR* xx = (Optimizer::SLCHAR*)lex->data->value.s.w;
             if (xx->count)
                 error(ERR_OPERATOR_LITERAL_EMPTY_STRING);
-            if (lex->suffix)
+            if (lex->data->suffix)
             {
-                Optimizer::my_sprintf(buf, "%s@%s", overloadNameTab[CI_LIT], lex->suffix);
+                Optimizer::my_sprintf(buf, "%s@%s", overloadNameTab[CI_LIT], lex->data->suffix);
                 *ov = CI_LIT;
             }
             else
@@ -1279,7 +1279,7 @@ LEXEME* getIdName(LEXEME* lex, SYMBOL* funcsp, char* buf, int* ov, TYPE** castTy
 
                 if (ISID(lex))
                 {
-                    Optimizer::my_sprintf(buf, "%s@%s", overloadNameTab[CI_LIT], lex->value.s.a);
+                    Optimizer::my_sprintf(buf, "%s@%s", overloadNameTab[CI_LIT], lex->data->value.s.a);
                     *ov = CI_LIT;
                 }
                 else
@@ -1292,7 +1292,7 @@ LEXEME* getIdName(LEXEME* lex, SYMBOL* funcsp, char* buf, int* ov, TYPE** castTy
         else
         {
             if (ISKW(lex))
-                errorstr(ERR_INVALID_AS_OPERATOR, lex->kw->name);
+                errorstr(ERR_INVALID_AS_OPERATOR, lex->data->kw->name);
             else
                 errorstr(ERR_INVALID_AS_OPERATOR, "");
             lex = backupsym();
@@ -1300,14 +1300,14 @@ LEXEME* getIdName(LEXEME* lex, SYMBOL* funcsp, char* buf, int* ov, TYPE** castTy
     }
     return lex;
 }
-LEXEME* id_expression(LEXEME* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, NAMESPACEVALUELIST** nsv, bool* isTemplate,
+LEXLIST* id_expression(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, NAMESPACEVALUELIST** nsv, bool* isTemplate,
                       bool tagsOnly, bool membersOnly, char* idname)
 {
     SYMBOL* encloser = nullptr;
     NAMESPACEVALUELIST* ns = nullptr;
     bool throughClass = false;
     TYPE* castType = nullptr;
-    LEXEME* placeholder = lex;
+    LEXLIST* placeholder = lex;
     char buf[512];
     int ov = 0;
     bool hasTemplate = false;
@@ -1322,18 +1322,18 @@ LEXEME* id_expression(LEXEME* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym
         if (ISID(lex))
         {
             if (idname)
-                strcpy(idname, lex->value.s.a);
+                strcpy(idname, lex->data->value.s.a);
             if (tagsOnly)
-                *sym = tsearch(lex->value.s.a);
+                *sym = tsearch(lex->data->value.s.a);
             else
             {
                 SYMBOL* ssp = getStructureDeclaration();
                 if (ssp)
                 {
-                    *sym = search(lex->value.s.a, ssp->tp->syms);
+                    *sym = search(lex->data->value.s.a, ssp->tp->syms);
                 }
                 if (*sym == nullptr)
-                    *sym = gsearch(lex->value.s.a);
+                    *sym = gsearch(lex->data->value.s.a);
             }
         }
         return lex;
@@ -1346,7 +1346,7 @@ LEXEME* id_expression(LEXEME* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym
         {
             if (encloser)
             {
-                if (strcmp(encloser->name, lex->value.s.a))
+                if (strcmp(encloser->name, lex->data->value.s.a))
                 {
                     error(ERR_DESTRUCTOR_MUST_MATCH_CLASS);
                 }

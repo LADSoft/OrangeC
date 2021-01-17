@@ -80,7 +80,7 @@ void ConsDestDeclarationErrors(SYMBOL* sp, bool notype)
         error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
     }
 }
-LEXEME* FindClass(LEXEME* lex, SYMBOL* funcsp, SYMBOL** sym)
+LEXLIST* FindClass(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sym)
 {
     SYMBOL* encloser = nullptr;
     NAMESPACEVALUELIST* ns = nullptr;
@@ -102,10 +102,10 @@ LEXEME* FindClass(LEXEME* lex, SYMBOL* funcsp, SYMBOL** sym)
     }
     return lex;
 }
-MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL* sym)
+MEMBERINITIALIZERS* GetMemberInitializers(LEXLIST** lex2, SYMBOL* funcsp, SYMBOL* sym)
 {
     (void)sym;
-    LEXEME *lex = *lex2, *last = nullptr;
+    LEXLIST *lex = *lex2, *last = nullptr;
     MEMBERINITIALIZERS *first = nullptr, **cur = &first;
     //    if (sym->name != overloadNameTab[CI_CONSTRUCTOR])
     //        error(ERR_INITIALIZER_LIST_REQUIRES_CONSTRUCTOR);
@@ -115,16 +115,16 @@ MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL*
         {
             SYMBOL* sym = nullptr;
             lex = FindClass(lex, funcsp, &sym);
-            LEXEME** mylex;
+            LEXLIST** mylex;
             char name[1024];
             *cur = Allocate<MEMBERINITIALIZERS>();
-            (*cur)->line = lex->errline;
-            (*cur)->file = lex->errfile;
+            (*cur)->line = lex->data->errline;
+            (*cur)->file = lex->data->errfile;
             mylex = &(*cur)->initData;
             name[0] = 0;
             if (ISID(lex))
             {
-                strcpy(name, lex->value.s.a);
+                strcpy(name, lex->data->value.s.a);
                 lex = getsym();
             }
             (*cur)->name = litlate(name);
@@ -133,7 +133,7 @@ MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL*
             if (MATCHKW(lex, lt))
             {
                 int paren = 0, tmpl = 0;
-                *mylex = Allocate<LEXEME>();
+                *mylex = Allocate<LEXLIST>();
                 **mylex = *lex;
                 (*mylex)->prev = last;
                 last = *mylex;
@@ -149,13 +149,15 @@ MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL*
                         tmpl++;
                     if (!paren && (MATCHKW(lex, gt) || MATCHKW(lex, rightshift)))
                         tmpl--;
-                    if (lex->type == l_id)
-                        lex->value.s.a = litlate(lex->value.s.a);
-                    *mylex = Allocate<LEXEME>();
+                    if (lex->data->type == l_id)
+                        lex->data->value.s.a = litlate(lex->data->value.s.a);
+                    *mylex = Allocate<LEXLIST>();
                     if (MATCHKW(lex, rightshift))
                     {
                         lex = getGTSym(lex);
                         **mylex = *lex;
+                        (*mylex)->data = Allocate<LEXEME>();
+                        *(*mylex)->data = *lex->data;
                     }
                     else
                     {
@@ -168,7 +170,7 @@ MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL*
                 }
                 if (MATCHKW(lex, gt))
                 {
-                    *mylex = Allocate<LEXEME>();
+                    *mylex = Allocate<LEXLIST>();
                     **mylex = *lex;
                     (*mylex)->prev = last;
                     last = *mylex;
@@ -180,7 +182,7 @@ MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL*
             {
                 enum e_kw open = KW(lex), close = open == openpa ? closepa : end;
                 int paren = 0;
-                *mylex = Allocate<LEXEME>();
+                *mylex = Allocate<LEXLIST>();
                 **mylex = *lex;
                 (*mylex)->prev = last;
                 last = *mylex;
@@ -192,9 +194,9 @@ MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL*
                         paren++;
                     if (MATCHKW(lex, close))
                         paren--;
-                    if (lex->type == l_id)
-                        lex->value.s.a = litlate(lex->value.s.a);
-                    *mylex = Allocate<LEXEME>();
+                    if (lex->data->type == l_id)
+                        lex->data->value.s.a = litlate(lex->data->value.s.a);
+                    *mylex = Allocate<LEXLIST>();
                     **mylex = *lex;
                     (*mylex)->prev = last;
                     last = *mylex;
@@ -203,7 +205,7 @@ MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL*
                 }
                 if (MATCHKW(lex, close))
                 {
-                    *mylex = Allocate<LEXEME>();
+                    *mylex = Allocate<LEXLIST>();
                     **mylex = *lex;
                     (*mylex)->prev = last;
                     last = *mylex;
@@ -2097,7 +2099,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
     bool hasDelegate = false;
     while (init)
     {
-        LEXEME* lex;
+        LEXLIST* lex;
         BASECLASS* bc = cls->sb->baseClasses;
         VBASEENTRY* vbase = cls->sb->vbaseEntries;
         if (!first && hasDelegate)

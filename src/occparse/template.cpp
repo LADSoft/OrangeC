@@ -82,7 +82,7 @@ static std::map<std::string, SYMBOL*> emptyInstantiations;
 
 struct templateListData* currents;
 
-static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, TEMPLATEPARAMLIST** lst);
+static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, TEMPLATEPARAMLIST** lst);
 TEMPLATEPARAMLIST* copyParams(TEMPLATEPARAMLIST* t, bool alsoSpecializations);
 static bool valFromDefault(TEMPLATEPARAMLIST* params, bool usesParams, INITLIST** args);
 TEMPLATEPARAMLIST* ResolveTemplateSelectors(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool byVal);
@@ -335,15 +335,15 @@ TEMPLATEPARAMLIST* TemplateGetParams(SYMBOL* sym)
     }
     return params;
 }
-void TemplateRegisterDeferred(LEXEME* lex)
+void TemplateRegisterDeferred(LEXLIST* lex)
 {
     if (lex && templateNestingCount && !dontRegisterTemplate)
     {
-        if (!lex->registered)
+        if (!lex->data->registered)
         {
-            LEXEME* cur = globalAllocate<LEXEME>();
-            if (lex->type == l_id)
-                lex->value.s.a = litlate(lex->value.s.a);
+            LEXLIST* cur = globalAllocate<LEXLIST>();
+            if (lex->data->type == l_id)
+                lex->data->value.s.a = litlate(lex->data->value.s.a);
             *cur = *lex;
             cur->next = nullptr;
             if (inTemplateBody)
@@ -372,7 +372,7 @@ void TemplateRegisterDeferred(LEXEME* lex)
                     currents->head = currents->tail = cur;
                 }
             }
-            lex->registered = true;
+            lex->data->registered = true;
         }
     }
 }
@@ -652,7 +652,7 @@ static void checkMultipleArgs(TEMPLATEPARAMLIST* sym)
         sym = sym->next;
     }
 }
-TEMPLATEPARAMLIST* TemplateMatching(LEXEME* lex, TEMPLATEPARAMLIST* old, TEMPLATEPARAMLIST* sym, SYMBOL* sp, bool definition)
+TEMPLATEPARAMLIST* TemplateMatching(LEXLIST* lex, TEMPLATEPARAMLIST* old, TEMPLATEPARAMLIST* sym, SYMBOL* sp, bool definition)
 {
     (void)lex;
     TEMPLATEPARAMLIST* rv = nullptr;
@@ -804,11 +804,11 @@ static void GetPackedTypes(TEMPLATEPARAMLIST** packs, int* count, TEMPLATEPARAML
         args = args->next;
     }
 }
-TEMPLATEPARAMLIST** expandArgs(TEMPLATEPARAMLIST** lst, LEXEME* start, SYMBOL* funcsp, TEMPLATEPARAMLIST* select, bool packable)
+TEMPLATEPARAMLIST** expandArgs(TEMPLATEPARAMLIST** lst, LEXLIST* start, SYMBOL* funcsp, TEMPLATEPARAMLIST* select, bool packable)
 {
     TEMPLATEPARAMLIST** beginning = lst;
     // this is going to presume that the expression involved
-    // is not too long to be cached by the LEXEME mechanism.
+    // is not too long to be cached by the LEXLIST mechanism.
     int oldPack = packIndex;
     int count = 0;
     TEMPLATEPARAMLIST* arg[500];
@@ -865,7 +865,7 @@ TEMPLATEPARAMLIST** expandArgs(TEMPLATEPARAMLIST** lst, LEXEME* start, SYMBOL* f
         }
         for (i = 0; i < n; i++)
         {
-            LEXEME* lex = SetAlternateLex(start);
+            LEXLIST* lex = SetAlternateLex(start);
             TYPE* tp;
             packIndex = i;
             lex = get_type_id(lex, &tp, funcsp, sc_parameter, false, true, false);
@@ -1145,12 +1145,12 @@ TEMPLATEPARAMLIST** expandTemplateSelector(TEMPLATEPARAMLIST** lst, TEMPLATEPARA
     return lst;
 }
 
-bool constructedInt(LEXEME* lex, SYMBOL* funcsp)
+bool constructedInt(LEXLIST* lex, SYMBOL* funcsp)
 {
     // depends on this starting a type
     bool rv = false;
     TYPE* tp;
-    LEXEME* placeholder = lex;
+    LEXLIST* placeholder = lex;
     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     bool defd = false;
     bool notype = false;
@@ -1158,10 +1158,10 @@ bool constructedInt(LEXEME* lex, SYMBOL* funcsp)
     tp = nullptr;
 
     lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
-    if (lex->type == l_id || MATCHKW(lex, classsel))
+    if (lex->data->type == l_id || MATCHKW(lex, classsel))
     {
         SYMBOL *sp, *strSym = nullptr;
-        LEXEME* placeholder = lex;
+        LEXLIST* placeholder = lex;
         bool dest = false;
         nestedSearch(lex, &sp, &strSym, nullptr, &dest, nullptr, false, sc_global, false, false);
         if (Optimizer::cparams.prm_cplusplus)
@@ -1190,7 +1190,7 @@ bool constructedInt(LEXEME* lex, SYMBOL* funcsp)
     lex = prevsym(placeholder);
     return rv;
 }
-LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLATEPARAMLIST** lst)
+LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLATEPARAMLIST** lst)
 {
     TEMPLATEPARAMLIST **start = lst;
     int oldnoTn = noTypeNameError;
@@ -1220,7 +1220,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
             if (MATCHKW(lex, kw_typename) || (((orig && orig->p->type != kw_int) ||
                 (!orig && startOfType(lex, true) && !constructedInt(lex, funcsp)))&& !MATCHKW(lex, kw_sizeof)))
             {
-                LEXEME* start = lex;
+                LEXLIST* start = lex;
                 noTypeNameError++;
                 lex = get_type_id(lex, &tp, funcsp, sc_parameter, false, true, false);
                 noTypeNameError--;
@@ -1438,10 +1438,10 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                 tp = nullptr;
                 if (inTemplateSpecialization)
                 {
-                    if (lex->type == l_id)
+                    if (lex->data->type == l_id)
                     {
                         SYMBOL* sp;
-                        LEXEME* last = lex;
+                        LEXLIST* last = lex;
                         lex = nestedSearch(lex, &sp, nullptr, nullptr, nullptr, nullptr, false, sc_global, false, false);
                         if (sp && sp->tp->templateParam)
                         {
@@ -1473,7 +1473,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                 {
                     STRUCTSYM* s;
                     SYMBOL* name;
-                    LEXEME* start;
+                    LEXLIST* start;
                     bool skip;
                 join:
                     skip = false;
@@ -1485,7 +1485,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                         while (s && !name)
                         {
                             if (s->tmpl)
-                                name = templatesearch(lex->value.s.a, s->tmpl);
+                                name = templatesearch(lex->data->value.s.a, s->tmpl);
                             s = s->next;
                         }
                     }
@@ -1652,7 +1652,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                             else if (exp->type != en_packedempty)
                             {
                                 // this is going to presume that the expression involved
-                                // is not too long to be cached by the LEXEME mechanism.
+                                // is not too long to be cached by the LEXLIST mechanism.
                                 int oldPack = packIndex;
                                 int count = 0;
                                 SYMBOL* arg[200];
@@ -1672,7 +1672,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                                     }
                                     for (i = 0; i < n; i++)
                                     {
-                                        LEXEME* lex = SetAlternateLex(start);
+                                        LEXLIST* lex = SetAlternateLex(start);
                                         packIndex = i;
                                         expression_assign(lex, funcsp, nullptr, &tp, &exp, nullptr, _F_PACKABLE);
                                         if (exp)
@@ -2160,10 +2160,10 @@ SYMBOL* LookupFunctionSpecialization(SYMBOL* overloads, SYMBOL* sp)
     restoreParams(&sd, 1);
     return found1;
 }
-LEXEME* TemplateArgGetDefault(LEXEME** lex, bool isExpression)
+LEXLIST* TemplateArgGetDefault(LEXLIST** lex, bool isExpression)
 {
-    LEXEME *rv = nullptr, **cur = &rv;
-    LEXEME *current = *lex, *end = current;
+    LEXLIST *rv = nullptr, **cur = &rv;
+    LEXLIST *current = *lex, *end = current;
     // this presumes that the template or expression is small enough to be cached...
     // may have to adjust it later
     // have to properly parse the default value, because it may have
@@ -2181,11 +2181,11 @@ LEXEME* TemplateArgGetDefault(LEXEME** lex, bool isExpression)
     }
     while (current && current != end)
     {
-        *cur = Allocate<LEXEME>();
+        *cur = Allocate<LEXLIST>();
         **cur = *current;
         (*cur)->next = nullptr;
         if (ISID(current))
-            (*cur)->value.s.a = litlate((*cur)->value.s.a);
+            (*cur)->data->value.s.a = litlate((*cur)->data->value.s.a);
         current = current->next;
         cur = &(*cur)->next;
     }
@@ -2199,7 +2199,7 @@ static SYMBOL* templateParamId(TYPE* tp, const char* name)
     rv->name = name;
     return rv;
 }
-static LEXEME* TemplateHeader(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST** args)
+static LEXLIST* TemplateHeader(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST** args)
 {
     inTemplateHeader++;
     TEMPLATEPARAMLIST **lst = args, **begin = args, *search;
@@ -2260,10 +2260,10 @@ static LEXEME* TemplateHeader(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST** a
     inTemplateHeader--;
     return lex;
 }
-static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, TEMPLATEPARAMLIST** lst)
+static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, TEMPLATEPARAMLIST** lst)
 {
-    LEXEME *current = lex;
-    LEXEME *txttype = nullptr;
+    LEXLIST *current = lex;
+    LEXLIST *txttype = nullptr;
     switch (KW(lex))
     {
         TYPE *tp, *tp1;
@@ -2304,7 +2304,7 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
                         tp = Allocate<TYPE>();
                         tp->rootType = tp;
                         tp->type = bt_templateselector;
-                        sp = sym = templateParamId(tp, litlate(lex->value.s.a));
+                        sp = sym = templateParamId(tp, litlate(lex->data->value.s.a));
                         tp->sp = sym;
                         last = &sym->sb->templateSelector;
                         *last = Allocate<TEMPLATESELECTOR>();
@@ -2319,7 +2319,7 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
                         }
                         last = &(*last)->next;
                         *last = Allocate<TEMPLATESELECTOR>();
-                        (*last)->name = litlate(lex->value.s.a);
+                        (*last)->name = litlate(lex->data->value.s.a);
                         last = &(*last)->next;
                         lex = getsym();
                         goto non_type_join;
@@ -2337,7 +2337,7 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
                     tp->rootType = tp;
                     tp->type = bt_templateparam;
                     tp->templateParam = arg;
-                    arg->argsym = templateParamId(tp, litlate(lex->value.s.a));
+                    arg->argsym = templateParamId(tp, litlate(lex->data->value.s.a));
                     lex = getsym();
                 }
                 else
@@ -2399,7 +2399,7 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
                 tp->type = bt_templateparam;
                 tp->rootType = tp;
                 tp->templateParam = arg;
-                arg->argsym = templateParamId(tp, litlate(lex->value.s.a));
+                arg->argsym = templateParamId(tp, litlate(lex->data->value.s.a));
                 lex = getsym();
             }
             else
@@ -2475,7 +2475,7 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
                             tp = (*lst)->argsym->tp;
                             if (ISID(lex))
                             {
-                                sp = templateParamId(tp, litlate(lex->value.s.a));
+                                sp = templateParamId(tp, litlate(lex->data->value.s.a));
                                 lex = getsym();
                             }
                             else
@@ -2522,16 +2522,16 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
                 arg->p->byNonType.tp = tp;
                 if (!isint(tp) && !ispointer(tp))
                 {
-                    LEXEME *end = lex;
-                    LEXEME **cur = &txttype;
+                    LEXLIST *end = lex;
+                    LEXLIST **cur = &txttype;
                     // if the type didn't resolve, we want to cache it then evaluate it later...
                     while (current && current != end)
                     {
-                        *cur = Allocate<LEXEME>();
+                        *cur = Allocate<LEXLIST>();
                         **cur = *current;
                         (*cur)->next = nullptr;
                         if (ISID(current))
-                            (*cur)->value.s.a = litlate((*cur)->value.s.a);
+                            (*cur)->data->value.s.a = litlate((*cur)->data->value.s.a);
                         current = current->next;
                         cur = &(*cur)->next;
                     }
@@ -2559,7 +2559,7 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
                         {
                             TYPE* tp = nullptr;
                             EXPRESSION *exp = nullptr;
-                            LEXEME* lex = SetAlternateLex(arg->p->byNonType.txtdflt);
+                            LEXLIST* lex = SetAlternateLex(arg->p->byNonType.txtdflt);
                             lex = expression_no_comma(lex, nullptr, nullptr, &tp, &exp, nullptr, 0);
                             SetAlternateLex(nullptr);
                             if (tp && isintconst(exp))
@@ -5969,7 +5969,7 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
             SYMBOL* sp = hr->p;
             if (sp->sb->deferredCompile)
             {
-                LEXEME* lex;
+                LEXLIST* lex;
                 dontRegisterTemplate += templateNestingCount != 0;
                 lex = SetAlternateLex(sp->sb->deferredCompile);
                 sp->sb->init = nullptr;
@@ -6297,8 +6297,8 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
     Optimizer::LIST* oldOpenStructs = openStructs;
     int oldStructLevel = structLevel;
     STRUCTSYM s, primary;
-    LEXEME* head = nullptr;
-    LEXEME* tail = nullptr;
+    LEXLIST* head = nullptr;
+    LEXLIST* tail = nullptr;
     SYMBOL* oldMemberClass = instantiatingMemberFuncClass;
     memset(&primary, 0, sizeof(primary));
     if (declareSym->sb->specialized && declareSym->sb->parentTemplate &&
@@ -6323,7 +6323,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
             int oldErrors = templateInstantiationError;
             templateInstantiationError = 0;
             nestedInstantiations.push_back(nullptr);
-            LEXEME* lex;
+            LEXLIST* lex;
             int n, pushCount;
             if (!src->p->byClass.txtdflt)
             {
@@ -6391,7 +6391,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                 case kw_template:
                 {
                     char buf[256];
-                    strcpy(buf, lex->value.s.a);
+                    strcpy(buf, lex->data->value.s.a);
                     lex = id_expression(lex, nullptr, &dest->p->byTemplate.val, nullptr, nullptr, nullptr, false, false, buf);
 
                     if (!dest->p->byTemplate.val)
@@ -6416,7 +6416,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                     EXPRESSION* exp1 = nullptr;
                     if (dest->p->byNonType.txttype)
                     {
-                        LEXEME* start = lex;
+                        LEXLIST* start = lex;
                         lex = SetAlternateLex(src->p->byNonType.txttype);
                         openStructs = nullptr;
                         structLevel = 0;
@@ -7695,7 +7695,7 @@ void SwapMainTemplateArgs(SYMBOL* cls)
 SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, bool isExtern)
 {
     (void)args;
-    LEXEME* lex = nullptr;
+    LEXLIST* lex = nullptr;
     SYMBOL* cls = sym;
     int pushCount;
     if (cls->sb->attribs.inheritable.linkage == lk_virtual)
@@ -7734,7 +7734,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             bool defd = false;
             SYMBOL old;
             int nsl = PushTemplateNamespace(sym);
-            LEXEME* reinstateLex = lex;
+            LEXLIST* reinstateLex = lex;
             bool oldTemplateType = inTemplateType;
             LAMBDA* oldLambdas = lambdas;
             int oldPackIndex = packIndex;
@@ -7819,7 +7819,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             lex = reinstateLex;
             while (lex)
             {
-                lex->registered = false;
+                lex->data->registered = false;
                 lex = lex->next;
             }
             SetAccessibleTemplateArgs(cls->templateParams, false);
@@ -7909,7 +7909,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
     SYMBOL* orig = sym;
     STRUCTSYM* old;
     SYMLIST* hr;
-    LEXEME* lex;
+    LEXLIST* lex;
     int pushCount;
     bool found = false;
     STRUCTSYM s;
@@ -12097,7 +12097,7 @@ bool definedInTemplate(const char* name)
     return false;
 }
 
-LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum e_sc storage_class, bool isExtern)
+LEXLIST* TemplateDeclaration(LEXLIST* lex, SYMBOL* funcsp, enum e_ac access, enum e_sc storage_class, bool isExtern)
 {
     HASHTABLE* oldSyms = localNameSpace->valueData->syms;
     lex = getsym();

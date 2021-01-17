@@ -26,8 +26,8 @@ namespace Parser
 {
 
 void ConsDestDeclarationErrors(SYMBOL* sp, bool notype);
-LEXEME* FindClass(LEXEME* lex, SYMBOL* funcsp, SYMBOL** sym);
-MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL* sym);
+LEXLIST* FindClass(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sym);
+MEMBERINITIALIZERS* GetMemberInitializers(LEXLIST** lex2, SYMBOL* funcsp, SYMBOL* sym);
 void SetParams(SYMBOL* cons);
 SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl);
 bool matchesCopy(SYMBOL* sp, bool move);

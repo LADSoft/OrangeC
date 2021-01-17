@@ -2833,7 +2833,7 @@ int fold_const(EXPRESSION* node)
         case en_construct:
         {
             node->v.construct.tp = SynthesizeType(node->v.construct.tp, nullptr, false);
-            LEXEME* lex = SetAlternateLex(node->v.construct.deferred);
+            LEXLIST* lex = SetAlternateLex(node->v.construct.deferred);
             if (isarithmetic(node->v.construct.tp))
             {
                 INITIALIZER* init = nullptr, *dest = nullptr;
@@ -3544,7 +3544,7 @@ void optimize_for_constants(EXPRESSION** expr)
         rebalance(expr);
     }
 }
-LEXEME* optimized_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed)
+LEXLIST* optimized_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed)
 {
 
     if (commaallowed)

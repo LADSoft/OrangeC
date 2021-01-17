@@ -262,7 +262,7 @@ void compile(bool global)
 {
     fileIndex++;
     SET_GLOBAL(true, 1);
-    LEXEME* lex = nullptr;
+    LEXLIST* lex = nullptr;
     Optimizer::SymbolManager::clear();
     helpinit();
     mangleInit();

@@ -46,7 +46,7 @@ typedef struct
 
 void inlineAsmInit(void);
 int inasm_enterauto(EXPRESSION* node, int* reg1, int* reg2);
-LEXEME* inlineAsm(LEXEME* inlex, BLOCKDATA* parent);
+LEXLIST* inlineAsm(LEXLIST* inlex, BLOCKDATA* parent);
 void adjust_codelab(void* select, int offset);
 void* inlineAsmStmt(void* param);
 }  // namespace Parser

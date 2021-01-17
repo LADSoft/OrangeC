@@ -25,48 +25,48 @@
 #include "compiler.h"
 namespace Parser
 {
-void displayLexeme(LEXEME* lex)
+void displayLexeme(LEXLIST* lex)
 {
     const LCHAR* w;
-    switch (lex->type)
+    switch (lex->data->type)
     {
         case l_i:
-            printf("int constant: " LLONG_FORMAT_SPECIFIER "\n", lex->value.i);
+            printf("int constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
             break;
         case l_ui:
-            printf("unsigned int constant: " LLONG_FORMAT_SPECIFIER "\n", lex->value.i);
+            printf("unsigned int constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
             break;
         case l_l:
-            printf("long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->value.i);
+            printf("long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
             break;
         case l_ul:
-            printf("unsigned long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->value.i);
+            printf("unsigned long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
             break;
         case l_ll:
-            printf("long long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->value.i);
+            printf("long long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
             break;
         case l_ull:
-            printf("unsigned long long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->value.i);
+            printf("unsigned long long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
             break;
         case l_f:
-            printf("float constant: %s\n", ((std::string)*lex->value.f).c_str());
+            printf("float constant: %s\n", ((std::string)*lex->data->value.f).c_str());
             break;
         case l_d:
-            printf("double constant: %s\n", ((std::string)*lex->value.f).c_str());
+            printf("double constant: %s\n", ((std::string)*lex->data->value.f).c_str());
             break;
         case l_ld:
-            printf("long double constant: %s\n", ((std::string)*lex->value.f).c_str());
+            printf("long double constant: %s\n", ((std::string)*lex->data->value.f).c_str());
             break;
         case l_astr:
             printf("ascii string: ");
         case l_msilstr:
 
         case l_wstr:
-            if (lex->type == l_wstr)
+            if (lex->data->type == l_wstr)
                 printf("wide string: ");
-            else if (lex->type == l_msilstr)
+            else if (lex->data->type == l_msilstr)
                 printf("msil string: ");
-            w = lex->value.s.w;
+            w = lex->data->value.s.w;
             while (*w)
                 fputc(*w++, stdout);
             fputc('\n', stdout);
@@ -74,15 +74,15 @@ void displayLexeme(LEXEME* lex)
         case l_achr:
             printf("ascii char: ");
         case l_wchr:
-            if (lex->type == l_wchr)
+            if (lex->data->type == l_wchr)
                 printf("wide char: ");
-            fputc((int)lex->value.i, stdout);
+            fputc((int)lex->data->value.i, stdout);
             break;
         case l_id:
-            printf("id: %s\n", lex->value.s.a);
+            printf("id: %s\n", lex->data->value.s.a);
             break;
         case l_kw:
-            printf("kw: %s\n", lex->kw->name);
+            printf("kw: %s\n", lex->data->kw->name);
             break;
         default:
             printf("***** unknown token\n");

@@ -473,7 +473,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
     func->sb->inlineFunc.syms = basetype(args)->syms;
     if (lambdas->templateFunctions)
     {
-        LEXEME* lex1;
+        LEXLIST* lex1;
         int l = 0;
         SYMLIST* hr = basetype(lambdas->func->tp)->syms->table[0];
         if (isautotype(lambdas->functp))
@@ -554,7 +554,7 @@ static void createConverter(SYMBOL* self)
     func->sb->inlineFunc.syms = CreateHashTable(1);
     if (lambdas->templateFunctions)
     {
-        LEXEME* lex1;
+        LEXLIST* lex1;
         TEMPLATEPARAMLIST *tpl, **tplp, **tplp2;
         FUNCTIONCALL* f = Allocate<FUNCTIONCALL>();
         INITLIST** args = &f->arguments;
@@ -832,7 +832,7 @@ static EXPRESSION* createLambda(bool noinline)
     *cur = copy_expression(clsThs);  // this expression will be used in copy constructors, or discarded if unneeded
     return rv;
 }
-LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, int flags)
+LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, int flags)
 {
     LAMBDA* self;
     SYMBOL *vpl, *ths;
@@ -953,7 +953,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                 }
                 if (ISID(lex))
                 {
-                    LEXEME* idlex = lex;
+                    LEXLIST* idlex = lex;
                     SYMBOL* sp;
                     LAMBDA* current;
                     lex = getsym();
@@ -969,7 +969,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                         }
                         else
                         {
-                            SYMBOL* sp = makeID(sc_auto, tp, NULL, idlex->value.s.a);
+                            SYMBOL* sp = makeID(sc_auto, tp, NULL, idlex->data->value.s.a);
                             initInsert(&sp->sb->init, tp, exp, 0, true);
                             lambda_capture(sp, cmExplicitValue, true);
                             if (localMode == cmRef)
@@ -980,11 +980,11 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                     }
                     else
                     {
-                        sp = search(idlex->value.s.a, localNameSpace->valueData->syms);
+                        sp = search(idlex->data->value.s.a, localNameSpace->valueData->syms);
                         current = lambdas;
                         while (current && !sp)
                         {
-                            sp = search(idlex->value.s.a, current->oldSyms);
+                            sp = search(idlex->data->value.s.a, current->oldSyms);
                             current = current->next;
                         }
                         if (sp)
@@ -1019,7 +1019,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                             }
                         }
                         else
-                            errorstr(ERR_UNDEFINED_IDENTIFIER, idlex->value.s.a);
+                            errorstr(ERR_UNDEFINED_IDENTIFIER, idlex->data->value.s.a);
                     }
                 }
                 else
@@ -1135,13 +1135,13 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
         lex = getDeferredData(lex, &self->func->sb->deferredCompile, true);
         if (!lambdas->templateFunctions)
         {
-            LEXEME* lex1 = SetAlternateLex(self->func->sb->deferredCompile);
+            LEXLIST* lex1 = SetAlternateLex(self->func->sb->deferredCompile);
             SetLinkerNames(self->func, lk_cdecl);
             body(lex1, self->func);
             lex1 = self->func->sb->deferredCompile;
             while (lex1)
             {
-                lex1->registered = false;
+                lex1->data->registered = false;
                 lex1 = lex1->next;
             }
             SetAlternateLex(NULL);

@@ -66,7 +66,7 @@ static Optimizer::LIST *symListHead, *symListTail;
 static int inittag = 0;
 static STRING* strtab;
 static SYMBOL *msilToString;
-LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALIZER** init, INITIALIZER** dest, TYPE* itype,
+LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALIZER** init, INITIALIZER** dest, TYPE* itype,
                  SYMBOL* sym, bool arrayMember, int flags);
 
 void init_init(void)
@@ -1284,9 +1284,9 @@ INITIALIZER* initInsert(INITIALIZER** pos, TYPE* tp, EXPRESSION* exp, int offset
     *pos = pos1;
     return pos1;
 }
-static LEXEME* init_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed)
+static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed)
 {
-    LEXEME* start = lex;
+    LEXLIST* start = lex;
     if (commaallowed)
         lex = expression(lex, funcsp, atp, tp, expr, 0);
     else
@@ -1321,7 +1321,7 @@ static LEXEME* init_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
                 INITLIST** lptr = &shim;
                 checkPackedExpression(*expr);
                 // this is going to presume that the expression involved
-                // is not too long to be cached by the LEXEME mechanism.
+                // is not too long to be cached by the LEXLIST mechanism.
                 lptr = expandPackedInitList(lptr, funcsp, start, *expr);
                 if (!shim)
                 {
@@ -1347,7 +1347,7 @@ static LEXEME* init_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
     return lex;
 }
 
-static LEXEME* initialize_bool_type(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
+static LEXLIST* initialize_bool_type(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
 {
     TYPE* tp;
     EXPRESSION* exp;
@@ -1399,7 +1399,7 @@ static LEXEME* initialize_bool_type(LEXEME* lex, SYMBOL* funcsp, int offset, enu
     }
     return lex;
 }
-static LEXEME* initialize_arithmetic_type(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
+static LEXLIST* initialize_arithmetic_type(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
 {
 
     TYPE* tp = nullptr;
@@ -1510,7 +1510,7 @@ static LEXEME* initialize_arithmetic_type(LEXEME* lex, SYMBOL* funcsp, int offse
     }
     return lex;
 }
-static LEXEME* initialize_string(LEXEME* lex, SYMBOL* funcsp, TYPE** rtype, EXPRESSION** exp)
+static LEXLIST* initialize_string(LEXLIST* lex, SYMBOL* funcsp, TYPE** rtype, EXPRESSION** exp)
 {
     enum e_lexType tp;
     (void)funcsp;
@@ -1535,7 +1535,7 @@ static LEXEME* initialize_string(LEXEME* lex, SYMBOL* funcsp, TYPE** rtype, EXPR
     }
     return lex;
 }
-static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
+static LEXLIST* initialize_pointer_type(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
 {
     TYPE* tp = nullptr;
     EXPRESSION* exp = nullptr;
@@ -1553,7 +1553,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
     else
     {
         if (!lex ||
-            (lex->type != l_astr && lex->type != l_wstr && lex->type != l_ustr && lex->type != l_Ustr && lex->type != l_msilstr))
+            (lex->data->type != l_astr && lex->data->type != l_wstr && lex->data->type != l_ustr && lex->data->type != l_Ustr && lex->data->type != l_msilstr))
         {
             lex = init_expression(lex, funcsp, itype, &tp, &exp, false);
             if (!tp)
@@ -1672,7 +1672,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
     }
     return lex;
 }
-static LEXEME* initialize_memberptr(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
+static LEXLIST* initialize_memberptr(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
 {
     TYPE* tp = nullptr;
     EXPRESSION* exp = nullptr;
@@ -1938,7 +1938,7 @@ static EXPRESSION* ConvertInitToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP, en
     }
     return exp;
 }
-static LEXEME* initialize_reference_type(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init,
+static LEXLIST* initialize_reference_type(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init,
                                          int flags, SYMBOL* sym)
 {
     TYPE* tp;
@@ -2202,14 +2202,14 @@ static void allocate_desc(TYPE* tp, int offset, AGGREGATE_DESCRIPTOR** descin, A
         }
     }
 }
-static enum e_bt str_candidate(LEXEME* lex, TYPE* tp)
+static enum e_bt str_candidate(LEXLIST* lex, TYPE* tp)
 {
     TYPE* bt;
     bt = basetype(tp);
     if (bt->type == bt___string)
         return bt->type;
     if (bt->type == bt_pointer)
-        if (lex->type == l_astr || lex->type == l_wstr || lex->type == l_ustr || lex->type == l_Ustr)
+        if (lex->data->type == l_astr || lex->data->type == l_wstr || lex->data->type == l_ustr || lex->data->type == l_Ustr)
         {
             bt = basetype(bt->btp);
             if (bt->type == bt_short || bt->type == bt_unsigned_short || bt->type == bt_wchar_t || bt->type == bt_char ||
@@ -2218,7 +2218,7 @@ static enum e_bt str_candidate(LEXEME* lex, TYPE* tp)
         }
     return (e_bt)0;
 }
-static bool designator(LEXEME** lex, SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** cache)
+static bool designator(LEXLIST** lex, SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** cache)
 {
 
     if (MATCHKW(*lex, openbr) || MATCHKW(*lex, dot))
@@ -2272,7 +2272,7 @@ static bool designator(LEXEME** lex, SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** desc
                     if (isstructured((*desc)->tp))
                     {
                         SYMLIST* hr2 = basetype((*desc)->tp)->syms->table[0];
-                        while (hr2 && strcmp(((SYMBOL*)(hr2->p))->name, (*lex)->value.s.a) != 0)
+                        while (hr2 && strcmp(((SYMBOL*)(hr2->p))->name, (*lex)->data->value.s.a) != 0)
                         {
                             hr2 = hr2->next;
                         }
@@ -2294,7 +2294,7 @@ static bool designator(LEXEME** lex, SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** desc
                     else
                     {
                         *lex = getsym();
-                        errorNotMember(basetype((*desc)->tp)->sp, nullptr, (*lex)->value.s.a);
+                        errorNotMember(basetype((*desc)->tp)->sp, nullptr, (*lex)->data->value.s.a);
                     }
                 }
                 else
@@ -2543,7 +2543,7 @@ static void set_array_sizes(AGGREGATE_DESCRIPTOR* cache)
         cache = cache->next;
     }
 }
-static LEXEME* read_strings(LEXEME* lex, INITIALIZER** next, AGGREGATE_DESCRIPTOR** desc)
+static LEXLIST* read_strings(LEXLIST* lex, INITIALIZER** next, AGGREGATE_DESCRIPTOR** desc)
 {
     bool nothingWritten = true;
     TYPE* tp = basetype((*desc)->tp);
@@ -2654,7 +2654,7 @@ static TYPE* nexttp(AGGREGATE_DESCRIPTOR* desc)
         rv = basetype(desc->tp)->btp;
     return rv;
 }
-static LEXEME* initialize___object(LEXEME* lex, SYMBOL* funcsp, int offset, TYPE* itype, INITIALIZER** init)
+static LEXLIST* initialize___object(LEXLIST* lex, SYMBOL* funcsp, int offset, TYPE* itype, INITIALIZER** init)
 {
     EXPRESSION* expr = nullptr;
     TYPE* tp = nullptr;
@@ -2670,7 +2670,7 @@ static LEXEME* initialize___object(LEXEME* lex, SYMBOL* funcsp, int offset, TYPE
     initInsert(init, itype, expr, offset, false);
     return lex;
 }
-static LEXEME* initialize___string(LEXEME* lex, SYMBOL* funcsp, int offset, TYPE* itype, INITIALIZER** init)
+static LEXLIST* initialize___string(LEXLIST* lex, SYMBOL* funcsp, int offset, TYPE* itype, INITIALIZER** init)
 {
     EXPRESSION* expr = nullptr;
     TYPE* tp = nullptr;
@@ -2689,7 +2689,7 @@ static LEXEME* initialize___string(LEXEME* lex, SYMBOL* funcsp, int offset, TYPE
     initInsert(init, itype, expr, offset, false);
     return lex;
 }
-static LEXEME* initialize_auto_struct(LEXEME* lex, SYMBOL* funcsp, int offset, TYPE* itype, INITIALIZER** init)
+static LEXLIST* initialize_auto_struct(LEXLIST* lex, SYMBOL* funcsp, int offset, TYPE* itype, INITIALIZER** init)
 {
     EXPRESSION* expr = nullptr;
     TYPE* tp = nullptr;
@@ -2755,7 +2755,7 @@ EXPRESSION* getThisNode(SYMBOL* sym)
     }
     return exp;
 }
-static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* base, int offset, enum e_sc sc, TYPE* itype,
+static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* base, int offset, enum e_sc sc, TYPE* itype,
                                          INITIALIZER** init, INITIALIZER** dest, bool arrayMember, int flags)
 {
 
@@ -3361,7 +3361,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
     }
     return lex;
 }
-static LEXEME* initialize_bit(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
+static LEXLIST* initialize_bit(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
 {
     (void)funcsp;
     (void)offset;
@@ -3372,7 +3372,7 @@ static LEXEME* initialize_bit(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc
     errskim(&lex, skim_comma);
     return lex;
 }
-static LEXEME* initialize_auto(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init,
+static LEXLIST* initialize_auto(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init,
                                INITIALIZER** dest, SYMBOL* sym)
 {
     TYPE* tp;
@@ -3486,7 +3486,7 @@ static LEXEME* initialize_auto(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_s
  * initialization...  for aggregate types it completely handles all initialization
  * for the aggregate and any sub-aggregates with a single call of the function
  */
-LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALIZER** init, INITIALIZER** dest, TYPE* itype,
+LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALIZER** init, INITIALIZER** dest, TYPE* itype,
                  SYMBOL* sym, bool arrayMember, int flags)
 {
     TYPE* tp;
@@ -4024,7 +4024,7 @@ void RecalculateVariableTemplateInitializers(INITIALIZER** in, INITIALIZER*** ou
         (*out) = &(**out)->next;
     }
 }
-LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, int flags)
+LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, int flags)
 {
     auto sp = basetype(sym->tp)->sp;
     if (sp && isstructured(sp->tp) && sp->sb && sp->sb->attribs.uninheritable.deprecationText)
@@ -4119,7 +4119,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
         {
             if (isautotype(sym->tp) && MATCHKW(lex, assign))
             {
-                LEXEME* placeholder = lex;
+                LEXLIST* placeholder = lex;
                 TYPE* tp1 = nullptr;
                 EXPRESSION* exp1;
                 lex = getsym();

@@ -161,7 +161,7 @@ static SYMBOL* CreateBackingGetter(SYMBOL* sym, SYMBOL* backing)
     p->sb->inlineFunc.syms = p->tp->syms;
     return p;
 }
-LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, int flags)
+LEXLIST* initialize_property(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, int flags)
 {
     if (isstructured(sym->tp))
         error(ERR_ONLY_SIMPLE_PROPERTIES_SUPPORTED);
@@ -177,7 +177,7 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc 
             while (ISID(lex))
             {
                 bool err = false;
-                if (!strcmp(lex->value.s.a, "get"))
+                if (!strcmp(lex->data->value.s.a, "get"))
                 {
                     if (get)
                     {
@@ -189,7 +189,7 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc 
                         get = prototype = CreateGetterPrototype(sym);
                     }
                 }
-                else if (!strcmp(lex->value.s.a, "set"))
+                else if (!strcmp(lex->data->value.s.a, "set"))
                 {
                     if (set)
                     {

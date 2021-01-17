@@ -222,7 +222,7 @@ void dumpInlines(void)
                         if (origsym->sb->deferredCompile)
                         {
                             STRUCTSYM s1, s;
-                            LEXEME* lex;
+                            LEXLIST* lex;
                             SYMBOL *pc = sym;
                             while (pc->sb->parentClass)
                                 pc = pc->sb->parentClass;

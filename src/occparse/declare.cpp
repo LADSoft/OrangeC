@@ -78,7 +78,7 @@ static int unnamed_tag_id, unnamed_id;
 static char* importFile;
 static unsigned symbolKey;
 
-static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType,
+static LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType,
                                  enum e_sc* storage_class, enum e_sc* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
                                  bool* isExplicit, bool* constexpression, TYPE** tp, enum e_lk* linkage, enum e_lk* linkage2,
                                  enum e_lk* linkage3, enum e_ac access, bool* notype, bool* defd, int* consdest, bool* templateArg,
@@ -158,7 +158,7 @@ SYMBOL* SymAlloc()
 SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
 {
     SYMBOL* sp = SymAlloc();
-    LEXEME* lex = context->cur ? context->cur->prev : context->last;
+    LEXLIST* lex = context->cur ? context->cur->prev : context->last;
     if (name && strstr(name, "++"))
         sp->sb->compilerDeclared = true;
     sp->name = name;
@@ -166,10 +166,10 @@ SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
     sp->tp = tp;
     if (lex)
     {
-        sp->sb->declfile = sp->sb->origdeclfile = lex->errfile;
-        sp->sb->declline = sp->sb->origdeclline = lex->errline;
-        sp->sb->realdeclline = lex->linedata->lineno;
-        sp->sb->declfilenum = lex->linedata->fileindex;
+        sp->sb->declfile = sp->sb->origdeclfile = lex->data->errfile;
+        sp->sb->declline = sp->sb->origdeclline = lex->data->errline;
+        sp->sb->realdeclline = lex->data->linedata->lineno;
+        sp->sb->declfilenum = lex->data->linedata->fileindex;
     }
     if (spi)
     {
@@ -302,7 +302,7 @@ void InsertSymbol(SYMBOL* sp, enum e_sc storage_class, enum e_lk linkage, bool a
         diag("InsertSymbol: cannot insert");
     }
 }
-LEXEME* tagsearch(LEXEME* lex, char* name, SYMBOL** rsp, HASHTABLE** table, SYMBOL** strSym_out, NAMESPACEVALUELIST** nsv_out,
+LEXLIST* tagsearch(LEXLIST* lex, char* name, SYMBOL** rsp, HASHTABLE** table, SYMBOL** strSym_out, NAMESPACEVALUELIST** nsv_out,
                   enum e_sc storage_class)
 {
     NAMESPACEVALUELIST* nsv = nullptr;
@@ -345,7 +345,7 @@ LEXEME* tagsearch(LEXEME* lex, char* name, SYMBOL** rsp, HASHTABLE** table, SYMB
         }
         else if (ISID(lex))
         {
-            strcpy(name, lex->value.s.a);
+            strcpy(name, lex->data->value.s.a);
             lex = getsym();
             if (MATCHKW(lex, begin))
             {
@@ -405,7 +405,7 @@ static void checkIncompleteArray(TYPE* tp, const char* errorfile, int errorline)
         hr = hr->next;
     }
 }
-LEXEME* get_type_id(LEXEME* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_class, bool beforeOnly, bool toErr, bool inUsing)
+LEXLIST* get_type_id(LEXLIST* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_class, bool beforeOnly, bool toErr, bool inUsing)
 {
     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     bool defd = false;
@@ -946,7 +946,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
         }
     }
 }
-static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac currentAccess)
+static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac currentAccess)
 {
     STRUCTSYM sl;
     (void)funcsp;
@@ -962,7 +962,7 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
     addStructureDeclaration(&sl);
     while (lex && KW(lex) != end)
     {
-        FlushLineData(lex->errfile, lex->linedata->lineno);
+        FlushLineData(lex->data->errfile, lex->data->linedata->lineno);
         switch (KW(lex))
         {
             case kw_private:
@@ -1068,7 +1068,7 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
     }
     return lex;
 }
-LEXEME* innerDeclStruct(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, enum e_ac defaultAccess, bool isfinal, bool* defd)
+LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, enum e_ac defaultAccess, bool isfinal, bool* defd)
 {
     int oldParsingTemplateArgs;
     oldParsingTemplateArgs = parsingDefaultTemplateArgs;
@@ -1125,7 +1125,7 @@ LEXEME* innerDeclStruct(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate
     parsingDefaultTemplateArgs = oldParsingTemplateArgs;
     return lex;
 }
-static unsigned char* ParseUUID(LEXEME** lex)
+static unsigned char* ParseUUID(LEXLIST** lex)
 {
     if (MATCHKW(*lex, kw__uuid))
     {
@@ -1133,11 +1133,11 @@ static unsigned char* ParseUUID(LEXEME** lex)
         unsigned char* rv = Allocate<unsigned char>(16);
         *lex = getsym();
         needkw(lex, openpa);
-        if ((*lex)->type == l_astr)
+        if ((*lex)->data->type == l_astr)
         {
             int i;
-            int count = ((Optimizer::SLCHAR*)(*lex)->value.s.w)->count;
-            LCHAR* str = ((Optimizer::SLCHAR*)(*lex)->value.s.w)->str;
+            int count = ((Optimizer::SLCHAR*)(*lex)->data->value.s.w)->count;
+            LCHAR* str = ((Optimizer::SLCHAR*)(*lex)->data->value.s.w)->str;
             wchar_t buf[200];
             for (i = 0; i < count; i++)
                 buf[i] = *str++;
@@ -1163,7 +1163,7 @@ static unsigned char* ParseUUID(LEXEME** lex)
     }
     return nullptr;
 }
-static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplate, bool asfriend, enum e_sc storage_class, enum e_ac access,
+static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplate, bool asfriend, enum e_sc storage_class, enum e_ac access,
                           bool* defd)
 {
     bool isfinal = false;
@@ -1177,8 +1177,8 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
     SYMBOL* strSym;
     enum e_ac defaultAccess;
     bool addedNew = false;
-    int declline = lex->errline;
-    int realdeclline = lex->linedata->lineno;
+    int declline = lex->data->errline;
+    int realdeclline = lex->data->linedata->lineno;
     bool anonymous = false;
     unsigned char* uuid;
     enum e_lk linkage1 = lk_none, linkage2 = lk_none, linkage3 = lk_none;
@@ -1216,8 +1216,8 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
     }
     if (ISID(lex))
     {
-        charindex = lex->charindex;
-        tagname = litlate(lex->value.s.a);
+        charindex = lex->data->charindex;
+        tagname = litlate(lex->data->value.s.a);
     }
     else
     {
@@ -1246,7 +1246,7 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
             sp = nullptr;
         }
     }
-    if (charindex != -1 && Optimizer::cparams.prm_cplusplus && ISID(lex) && !strcmp(lex->value.s.a, "final"))
+    if (charindex != -1 && Optimizer::cparams.prm_cplusplus && ISID(lex) && !strcmp(lex->data->value.s.a, "final"))
     {
         isfinal = true;
         lex = getsym();
@@ -1263,8 +1263,8 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
             error(ERR_TOO_MANY_IDENTIFIERS_IN_DECLARATION);
             while (ISID(lex))
             {
-                charindex = lex->charindex;
-                tagname = litlate(lex->value.s.a);
+                charindex = lex->data->charindex;
+                tagname = litlate(lex->data->value.s.a);
                 strcpy(newName, tagname);
                 lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
             }
@@ -1292,8 +1292,8 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
         sp->sb->declcharpos = charindex;
         sp->sb->declline = sp->sb->origdeclline = declline;
         sp->sb->realdeclline = realdeclline;
-        sp->sb->declfile = sp->sb->origdeclfile = lex->errfile;
-        sp->sb->declfilenum = lex->linedata->fileindex;
+        sp->sb->declfile = sp->sb->origdeclfile = lex->data->errfile;
+        sp->sb->declfilenum = lex->data->linedata->fileindex;
         if ((storage_class == sc_member || storage_class == sc_mutable) &&
             (MATCHKW(lex, begin) || MATCHKW(lex, colon) || MATCHKW(lex, kw_try) || MATCHKW(lex, semicolon)))
             sp->sb->parentClass = getStructureDeclaration();
@@ -1439,7 +1439,7 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
     basisAttribs = oldAttribs;
     return lex;
 }
-static LEXEME* enumbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* spi, enum e_sc storage_class, enum e_ac access, TYPE* fixedType,
+static LEXLIST* enumbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* spi, enum e_sc storage_class, enum e_ac access, TYPE* fixedType,
                         bool scoped)
 {
     long long enumval = 0;
@@ -1483,13 +1483,13 @@ static LEXEME* enumbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* spi, enum e_sc stor
                     tp->size = getSize(bt_int);
                     tp->rootType = tp;
                 }
-                sp = makeID(sc_enumconstant, tp, 0, litlate(lex->value.s.a));
-                sp->name = sp->sb->decoratedName = litlate(lex->value.s.a);
-                sp->sb->declcharpos = lex->charindex;
-                sp->sb->declline = sp->sb->origdeclline = lex->errline;
-                sp->sb->realdeclline = lex->linedata->lineno;
-                sp->sb->declfile = sp->sb->origdeclfile = lex->errfile;
-                sp->sb->declfilenum = lex->linedata->fileindex;
+                sp = makeID(sc_enumconstant, tp, 0, litlate(lex->data->value.s.a));
+                sp->name = sp->sb->decoratedName = litlate(lex->data->value.s.a);
+                sp->sb->declcharpos = lex->data->charindex;
+                sp->sb->declline = sp->sb->origdeclline = lex->data->errline;
+                sp->sb->realdeclline = lex->data->linedata->lineno;
+                sp->sb->declfile = sp->sb->origdeclfile = lex->data->errfile;
+                sp->sb->declfilenum = lex->data->linedata->fileindex;
                 sp->sb->parentClass = spi->sb->parentClass;
                 sp->sb->access = access;
                 browse_variable(sp);
@@ -1616,7 +1616,7 @@ static LEXEME* enumbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* spi, enum e_sc stor
     spi->sb->declaring = false;
     return lex;
 }
-static LEXEME* declenum(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storage_class, enum e_ac access, bool opaque, bool* defd)
+static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storage_class, enum e_ac access, bool opaque, bool* defd)
 {
     HASHTABLE* table;
     const char* tagname;
@@ -1628,8 +1628,8 @@ static LEXEME* declenum(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storag
     SYMBOL* sp;
     NAMESPACEVALUELIST* nsv;
     SYMBOL* strSym;
-    int declline = lex->errline;
-    int realdeclline = lex->linedata->lineno;
+    int declline = lex->data->errline;
+    int realdeclline = lex->data->linedata->lineno;
     bool anonymous = false;
     enum e_lk linkage1 = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     *defd = false;
@@ -1649,8 +1649,8 @@ static LEXEME* declenum(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storag
     }
     if (ISID(lex))
     {
-        charindex = lex->charindex;
-        tagname = litlate(lex->value.s.a);
+        charindex = lex->data->charindex;
+        tagname = litlate(lex->data->value.s.a);
     }
     else
     {
@@ -1717,8 +1717,8 @@ static LEXEME* declenum(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storag
         sp->sb->declcharpos = charindex;
         sp->sb->declline = sp->sb->origdeclline = declline;
         sp->sb->realdeclline = realdeclline;
-        sp->sb->declfile = sp->sb->origdeclfile = lex->errfile;
-        sp->sb->declfilenum = lex->linedata->fileindex;
+        sp->sb->declfile = sp->sb->origdeclfile = lex->data->errfile;
+        sp->sb->declfilenum = lex->data->linedata->fileindex;
         if (storage_class == sc_member || storage_class == sc_mutable)
             sp->sb->parentClass = getStructureDeclaration();
         if (nsv)
@@ -1757,7 +1757,7 @@ static LEXEME* declenum(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storag
     basisAttribs = oldAttribs;
     return lex;
 }
-static LEXEME* getStorageClass(LEXEME* lex, SYMBOL* funcsp, enum e_sc* storage_class, enum e_lk* linkage,
+static LEXLIST* getStorageClass(LEXLIST* lex, SYMBOL* funcsp, enum e_sc* storage_class, enum e_lk* linkage,
                                Optimizer::ADDRESS* address, bool* blocked, bool* isExplicit, enum e_ac access)
 {
     (void)access;
@@ -1770,15 +1770,15 @@ static LEXEME* getStorageClass(LEXEME* lex, SYMBOL* funcsp, enum e_sc* storage_c
             case kw_extern:
                 oldsc = *storage_class;
                 if (*storage_class == sc_parameter || *storage_class == sc_member || *storage_class == sc_mutable)
-                    errorstr(ERR_INVALID_STORAGE_CLASS, lex->kw->name);
+                    errorstr(ERR_INVALID_STORAGE_CLASS, lex->data->kw->name);
                 else
                     *storage_class = sc_external;
                 lex = getsym();
                 if (Optimizer::cparams.prm_cplusplus)
                 {
-                    if (lex->type == l_astr)
+                    if (lex->data->type == l_astr)
                     {
-                        Optimizer::SLCHAR* ch = (Optimizer::SLCHAR*)lex->value.s.w;
+                        Optimizer::SLCHAR* ch = (Optimizer::SLCHAR*)lex->data->value.s.w;
                         char buf[256];
                         int i;
                         enum e_lk next = lk_none;
@@ -1833,7 +1833,7 @@ static LEXEME* getStorageClass(LEXEME* lex, SYMBOL* funcsp, enum e_sc* storage_c
             case kw_virtual:
                 if (*storage_class != sc_member)
                 {
-                    errorstr(ERR_INVALID_STORAGE_CLASS, lex->kw->name);
+                    errorstr(ERR_INVALID_STORAGE_CLASS, lex->data->kw->name);
                 }
                 else
                 {
@@ -1869,7 +1869,7 @@ static LEXEME* getStorageClass(LEXEME* lex, SYMBOL* funcsp, enum e_sc* storage_c
             case kw_static:
                 if (*storage_class == sc_parameter ||
                     (!Optimizer::cparams.prm_cplusplus && (*storage_class == sc_member || *storage_class == sc_mutable)))
-                    errorstr(ERR_INVALID_STORAGE_CLASS, lex->kw->name);
+                    errorstr(ERR_INVALID_STORAGE_CLASS, lex->data->kw->name);
                 else if (*storage_class == sc_auto)
                     *storage_class = sc_localstatic;
                 else
@@ -1878,7 +1878,7 @@ static LEXEME* getStorageClass(LEXEME* lex, SYMBOL* funcsp, enum e_sc* storage_c
                 break;
             case kw__absolute:
                 if (*storage_class == sc_parameter || *storage_class == sc_member || *storage_class == sc_mutable)
-                    errorstr(ERR_INVALID_STORAGE_CLASS, lex->kw->name);
+                    errorstr(ERR_INVALID_STORAGE_CLASS, lex->data->kw->name);
                 else
                     *storage_class = sc_absolute;
                 lex = getsym();
@@ -1929,7 +1929,7 @@ static LEXEME* getStorageClass(LEXEME* lex, SYMBOL* funcsp, enum e_sc* storage_c
     }
     return lex;
 }
-static LEXEME* getPointerQualifiers(LEXEME* lex, TYPE** tp, bool allowstatic)
+static LEXLIST* getPointerQualifiers(LEXLIST* lex, TYPE** tp, bool allowstatic)
 {
     while (KWTYPE(lex, TT_TYPEQUAL) || (allowstatic && MATCHKW(lex, kw_static)))
     {
@@ -1985,7 +1985,7 @@ static LEXEME* getPointerQualifiers(LEXEME* lex, TYPE** tp, bool allowstatic)
                 while (tpl && tpl->type != bt_pointer)
                 {
                     if (tpl->type == tpn->type)
-                        errorstr(ERR_DUPLICATE_TYPE_QUALIFIER, lex->kw->name);
+                        errorstr(ERR_DUPLICATE_TYPE_QUALIFIER, lex->data->kw->name);
                     tpl = tpl->btp;
                 }
         */
@@ -1997,7 +1997,7 @@ static LEXEME* getPointerQualifiers(LEXEME* lex, TYPE** tp, bool allowstatic)
     }
     return lex;
 }
-LEXEME* parse_declspec(LEXEME* lex, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3)
+LEXLIST* parse_declspec(LEXLIST* lex, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3)
 {
     (void)linkage;
     if (needkw(&lex, openpa))
@@ -2006,13 +2006,13 @@ LEXEME* parse_declspec(LEXEME* lex, enum e_lk* linkage, enum e_lk* linkage2, enu
         {
             if (ISID(lex))
             {
-                if (!strcmp(lex->value.s.a, "noreturn"))
+                if (!strcmp(lex->data->value.s.a, "noreturn"))
                 {
                     if (*linkage3 != lk_none)
                         error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                     *linkage3 = lk_noreturn;
                 }
-                else if (!strcmp(lex->value.s.a, "align"))
+                else if (!strcmp(lex->data->value.s.a, "align"))
                 {
                     lex = getsym();
                     if (needkw(&lex, openpa))
@@ -2026,7 +2026,7 @@ LEXEME* parse_declspec(LEXEME* lex, enum e_lk* linkage, enum e_lk* linkage2, enu
                         else if (!isintconst(exp))
                             error(ERR_CONSTANT_VALUE_EXPECTED);
                         int align = exp->v.i;
-                        LEXEME* pos = lex;
+                        LEXLIST* pos = lex;
                         if (needkw(&lex, closepa))
                             lex = prevsym(pos);
                         basisAttribs.inheritable.structAlign = align;
@@ -2035,13 +2035,13 @@ LEXEME* parse_declspec(LEXEME* lex, enum e_lk* linkage, enum e_lk* linkage2, enu
                             error(ERR_INVALID_ALIGNMENT);
                     }
                 }
-                else if (!strcmp(lex->value.s.a, "dllimport") || !strcmp(lex->value.s.a, "__dllimport__"))
+                else if (!strcmp(lex->data->value.s.a, "dllimport") || !strcmp(lex->data->value.s.a, "__dllimport__"))
                 {
                     if (*linkage2 != lk_none)
                         error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                     *linkage2 = lk_import;
                 }
-                else if (!strcmp(lex->value.s.a, "dllexport") || !strcmp(lex->value.s.a, "__dllexport__"))
+                else if (!strcmp(lex->data->value.s.a, "dllexport") || !strcmp(lex->data->value.s.a, "__dllexport__"))
                 {
                     if (*linkage2 != lk_none)
                         error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
@@ -2076,7 +2076,7 @@ LEXEME* parse_declspec(LEXEME* lex, enum e_lk* linkage, enum e_lk* linkage2, enu
     }
     return lex;
 }
-static LEXEME* getLinkageQualifiers(LEXEME* lex, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3)
+static LEXLIST* getLinkageQualifiers(LEXLIST* lex, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3)
 {
     while (KWTYPE(lex, TT_LINKAGE))
     {
@@ -2164,12 +2164,12 @@ static LEXEME* getLinkageQualifiers(LEXEME* lex, enum e_lk* linkage, enum e_lk* 
                 if (MATCHKW(lex, openpa))
                 {
                     lex = getsym();
-                    if (lex->type == l_astr)
+                    if (lex->data->type == l_astr)
                     {
-                        int i, len = ((Optimizer::SLCHAR*)lex->value.s.w)->count;
+                        int i, len = ((Optimizer::SLCHAR*)lex->data->value.s.w)->count;
                         importFile = Allocate<char>(len + 1);
                         for (i = 0; i < len; i++)
-                            importFile[i] = (char)((Optimizer::SLCHAR*)lex->value.s.w)->str[i];
+                            importFile[i] = (char)((Optimizer::SLCHAR*)lex->data->value.s.w)->str[i];
                         lex = getsym();
                     }
                     needkw(&lex, closepa);
@@ -2181,7 +2181,7 @@ static LEXEME* getLinkageQualifiers(LEXEME* lex, enum e_lk* linkage, enum e_lk* 
     }
     return lex;
 }
-LEXEME* getQualifiers(LEXEME* lex, TYPE** tp, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3, bool* asFriend)
+LEXLIST* getQualifiers(LEXLIST* lex, TYPE** tp, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3, bool* asFriend)
 {
     while (KWTYPE(lex, (TT_TYPEQUAL | TT_LINKAGE)))
     {
@@ -2201,7 +2201,7 @@ LEXEME* getQualifiers(LEXEME* lex, TYPE** tp, enum e_lk* linkage, enum e_lk* lin
     ParseAttributeSpecifiers(&lex, theCurrentFunc, true);
     return lex;
 }
-static LEXEME* nestedTypeSearch(LEXEME* lex, SYMBOL** sym)
+static LEXLIST* nestedTypeSearch(LEXLIST* lex, SYMBOL** sym)
 {
     *sym = nullptr;
     lex = nestedSearch(lex, sym, nullptr, nullptr, nullptr, nullptr, false, sc_global, false, true);
@@ -2211,7 +2211,7 @@ static LEXEME* nestedTypeSearch(LEXEME* lex, SYMBOL** sym)
     }
     return lex;
 }
-static bool isPointer(LEXEME* lex)
+static bool isPointer(LEXLIST* lex)
 {
     while (KWTYPE(lex, (TT_TYPEQUAL | TT_LINKAGE)))
         lex = getsym();
@@ -2227,7 +2227,7 @@ static bool isPointer(LEXEME* lex)
         }
     return false;
 }
-LEXEME* getBasicType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out, bool inTemplate, enum e_sc storage_class,
+LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out, bool inTemplate, enum e_sc storage_class,
                      enum e_lk* linkage_in, enum e_lk* linkage2_in, enum e_lk* linkage3_in, enum e_ac access, bool* notype,
                      bool* defd, int* consdest, bool* templateArg, bool isTypedef, bool templateErr, bool inUsing, bool asfriend)
 {
@@ -2685,7 +2685,7 @@ founddecltype:
             SYMBOL* strSym = nullptr;
             SYMBOL* sp = nullptr;
             bool destructor = false;
-            LEXEME* placeholder = lex;
+            LEXLIST* placeholder = lex;
             bool inTemplate = false;  // hides function parameter
             lex = nestedSearch(lex, &sp, &strSym, &nsv, &destructor, &inTemplate, false, storage_class, false, true);
             if (sp && (istype(sp) || (sp->sb && ((sp->sb->storage_class == sc_type && inTemplate) ||
@@ -3046,7 +3046,7 @@ founddecltype:
                 tn = PerformDeferredInitialization(strSym->tp, funcsp);
                 s.str = tn->sp;
                 addStructureDeclaration(&s);
-                sp = classsearch(lex->value.s.a, false, true);
+                sp = classsearch(lex->data->value.s.a, false, true);
                 if (sp)
                 {
                     tn = sp->tp;
@@ -3082,9 +3082,9 @@ founddecltype:
                     tn->type = bt_any;
                     tn->rootType = tn;
                     tn->size = getSize(bt_int);
-                    if (lex->type == l_id)
+                    if (lex->data->type == l_id)
                     {
-                        SYMBOL* sp = makeID(sc_global, tn, nullptr, litlate(lex->value.s.a));
+                        SYMBOL* sp = makeID(sc_global, tn, nullptr, litlate(lex->data->value.s.a));
                         tn->sp = sp;
                     }
                     lex = getsym();
@@ -3196,7 +3196,7 @@ exit:
     sizeQualifiers(*tp);
     return lex;
 }
-static LEXEME* getArrayType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storage_class, bool* vla, TYPE** quals, bool first,
+static LEXLIST* getArrayType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storage_class, bool* vla, TYPE** quals, bool first,
                             bool msil)
 {
     EXPRESSION* constant = nullptr;
@@ -3306,7 +3306,7 @@ static LEXEME* getArrayType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc st
         }
         if (typein && isstructured(typein))
         {
-            checkIncompleteArray(typein, lex->errfile, lex->errline);
+            checkIncompleteArray(typein, lex->data->errfile, lex->data->errline);
         }
     }
     else
@@ -3338,7 +3338,7 @@ bool intcmp(TYPE* t1, TYPE* t2)
     }
     return t1->type == t2->type;
 }
-static void matchFunctionDeclaration(LEXEME* lex, SYMBOL* sp, SYMBOL* spo, bool checkReturn)
+static void matchFunctionDeclaration(LEXLIST* lex, SYMBOL* sp, SYMBOL* spo, bool checkReturn)
 {
     /* two oldstyle declarations aren't compared */
     if ((spo && !spo->sb->oldstyle && spo->sb->hasproto) || !sp->sb->oldstyle)
@@ -3467,9 +3467,9 @@ static void matchFunctionDeclaration(LEXEME* lex, SYMBOL* sp, SYMBOL* spo, bool 
         }
     }
 }
-LEXEME* getDeferredData(LEXEME* lex, LEXEME** savePos, bool braces)
+LEXLIST* getDeferredData(LEXLIST* lex, LEXLIST** savePos, bool braces)
 {
-    LEXEME **cur = savePos, *last = nullptr;
+    LEXLIST **cur = savePos, *last = nullptr;
     int paren = 0;
     int brack = 0;
     int ltgt = 0;
@@ -3484,7 +3484,7 @@ LEXEME* getDeferredData(LEXEME* lex, LEXEME** savePos, bool braces)
             }
             else if (kw == end && !--paren)
             {
-                *cur = Allocate<LEXEME>();
+                *cur = Allocate<LEXLIST>();
                 **cur = *lex;
                 (*cur)->prev = last;
                 last = *cur;
@@ -3531,14 +3531,14 @@ LEXEME* getDeferredData(LEXEME* lex, LEXEME** savePos, bool braces)
                 ltgt--;
             }
         }
-        *cur = Allocate<LEXEME>();
-        if (lex->type == l_id)
-            lex->value.s.a = litlate(lex->value.s.a);
+        *cur = Allocate<LEXLIST>();
+        if (lex->data->type == l_id)
+            lex->data->value.s.a = litlate(lex->data->value.s.a);
         **cur = *lex;
         (*cur)->prev = last;
         if (linesHead)
         {
-            (*cur)->linedata = linesHead;
+            (*cur)->data->linedata = linesHead;
             linesHead = linesTail = nullptr;
         }
         last = *cur;
@@ -3547,7 +3547,7 @@ LEXEME* getDeferredData(LEXEME* lex, LEXEME** savePos, bool braces)
     }
     return lex;
 }
-LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp, bool inTemplate, enum e_sc storage_class, bool funcptr)
+LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp, bool inTemplate, enum e_sc storage_class, bool funcptr)
 {
     (void)storage_class;
     SYMBOL* sp = *spin;
@@ -3559,7 +3559,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
     bool voiderror = false;
     bool hasellipse = false;
     HASHTABLE* locals = localNameSpace->valueData->syms;
-    LEXEME* placeholder = lex;
+    LEXLIST* placeholder = lex;
     STRUCTSYM s;
     s.tmpl = nullptr;
     lex = getsym();
@@ -3631,7 +3631,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                     error(ERR_AUTO_NOT_ALLOWED_IN_PARAMETER);
                 else if (Optimizer::cparams.prm_cplusplus && isstructured((*tp)->btp) && MATCHKW(lex, openpa))
                 {
-                    LEXEME* cur = lex;
+                    LEXLIST* cur = lex;
                     lex = getsym();
                     if (!MATCHKW(lex, star) && !MATCHKW(lex, andx) && !startOfType(lex, true))
                     {
@@ -3916,7 +3916,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
             }
             else
             {
-                spi = makeID(sc_parameter, 0, 0, litlate(lex->value.s.a));
+                spi = makeID(sc_parameter, 0, 0, litlate(lex->data->value.s.a));
                 SetLinkerNames(spi, lk_none);
                 insert(spi, (*tp)->syms);
             }
@@ -4133,7 +4133,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
         error(ERR_VOID_ONLY_PARAMETER);
     return lex;
 }
-LEXEME* getExceptionSpecifiers(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_class)
+LEXLIST* getExceptionSpecifiers(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_class)
 {
     (void)storage_class;
     switch (KW(lex))
@@ -4216,7 +4216,7 @@ LEXEME* getExceptionSpecifiers(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_s
 
     return lex;
 }
-static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp, bool inTemplate, enum e_sc storage_class,
+static LEXLIST* getAfterType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp, bool inTemplate, enum e_sc storage_class,
                             int consdest, bool funcptr)
 {
     bool isvla = false;
@@ -4251,7 +4251,7 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                             {
                                 if (ISID(lex))
                                 {
-                                    if (!strcmp(lex->value.s.a, "final"))
+                                    if (!strcmp(lex->data->value.s.a, "final"))
                                     {
                                         if (foundFinal)
                                             error(ERR_FUNCTION_CAN_HAVE_ONE_FINAL_OR_OVERRIDE);
@@ -4259,7 +4259,7 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                                         (*sp)->sb->isfinal = true;
                                         lex = getsym();
                                     }
-                                    else if (!strcmp(lex->value.s.a, "override"))
+                                    else if (!strcmp(lex->data->value.s.a, "override"))
                                     {
                                         if (foundOverride)
                                             error(ERR_FUNCTION_CAN_HAVE_ONE_FINAL_OR_OVERRIDE);
@@ -4518,14 +4518,14 @@ static void stripfarquals(TYPE** tp)
     (void)tp;
 #endif
 }
-LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMBOL** strSym, NAMESPACEVALUELIST** nsv,
+LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMBOL** strSym, NAMESPACEVALUELIST** nsv,
                       bool inTemplate, enum e_sc storage_class, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3,
                       bool asFriend, int consdest, bool beforeOnly, bool funcptr)
 {
     SYMBOL* sp;
     TYPE* ptype = nullptr;
     enum e_bt xtype = bt_none;
-    LEXEME* pos = lex;
+    LEXLIST* pos = lex;
     bool doneAfter = false;
 
     if ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions && MATCHKW(lex, openbr))
@@ -4626,7 +4626,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                 if (MATCHKW(lex, complx))
                 {
                     lex = getsym();
-                    if (!ISID(lex) || !*strSym || strcmp((*strSym)->name, lex->value.s.a))
+                    if (!ISID(lex) || !*strSym || strcmp((*strSym)->name, lex->data->value.s.a))
                     {
                         error(ERR_DESTRUCTOR_MUST_MATCH_CLASS);
                     }
@@ -4676,7 +4676,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                     }
                     sp->sb->operatorId = ov;
                     if (lex)
-                        sp->sb->declcharpos = lex->charindex;
+                        sp->sb->declcharpos = lex->data->charindex;
                     *spi = sp;
                 }
             }
@@ -4684,8 +4684,8 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
         else
         {
             inTemplateSpecialization = oldTemplateSpecialization;
-            sp = makeID(storage_class, *tp, *spi, litlate(lex->value.s.a));
-            sp->sb->declcharpos = lex->charindex;
+            sp = makeID(storage_class, *tp, *spi, litlate(lex->data->value.s.a));
+            sp->sb->declcharpos = lex->data->charindex;
             *spi = sp;
             lex = getsym();
         }
@@ -4734,7 +4734,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
     else
         switch (KW(lex))
         {
-            LEXEME* start;
+            LEXLIST* start;
             case openpa:
                 if (beforeOnly)
                     break;
@@ -4742,7 +4742,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                 lex = getsym();
                 /* in a parameter, open paren followed by a type is an  unnamed function */
                 if (storage_class == sc_parameter &&
-                    (MATCHKW(lex, closepa) || (startOfType(lex, false) && (!ISKW(lex) || !(lex->kw->tokenTypes & TT_LINKAGE)))))
+                    (MATCHKW(lex, closepa) || (startOfType(lex, false) && (!ISKW(lex) || !(lex->data->kw->tokenTypes & TT_LINKAGE)))))
                 {
                     TYPE* tp1;
                     if (!*spi)
@@ -4750,7 +4750,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                         sp = makeID(storage_class, *tp, *spi, NewUnnamedID());
                         SetLinkerNames(sp, lk_none);
                         sp->sb->anonymous = true;
-                        sp->sb->declcharpos = lex->charindex;
+                        sp->sb->declcharpos = lex->data->charindex;
                         *spi = sp;
                     }
                     *tp = (*spi)->tp;
@@ -4785,7 +4785,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                         name = overloadNameTab[CI_CONSTRUCTOR];
                     }
                     sp = makeID(storage_class, *tp, *spi, name);
-                    sp->sb->declcharpos = lex->charindex;
+                    sp->sb->declcharpos = lex->data->charindex;
                     *spi = sp;
                     if (*strSym)
                     {
@@ -5139,7 +5139,7 @@ static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
     initInsert(&sp->sb->dest, sp->tp, unloader, 0, false);
     return ep1;
 }
-static void allocateVLA(LEXEME* lex, SYMBOL* sp, SYMBOL* funcsp, BLOCKDATA* block, TYPE* btp, bool bypointer)
+static void allocateVLA(LEXLIST* lex, SYMBOL* sp, SYMBOL* funcsp, BLOCKDATA* block, TYPE* btp, bool bypointer)
 {
     EXPRESSION *result = nullptr, **rptr = &result;
     TYPE* tp1 = btp;
@@ -5257,7 +5257,7 @@ static bool sameQuals(SYMBOL* sp1, SYMBOL* sp2)
     }
     return true;
 }
-static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType,
+static LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType,
                                  enum e_sc* storage_class, enum e_sc* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
                                  bool* isExplicit, bool* constexpression, TYPE** tp, enum e_lk* linkage, enum e_lk* linkage2,
                                  enum e_lk* linkage3, enum e_ac access, bool* notype, bool* defd, int* consdest, bool* templateArg,
@@ -5414,7 +5414,7 @@ static bool sameNameSpace(SYMBOL* left, SYMBOL* right)
     }
     return false;
 }
-LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_class, enum e_lk defaultLinkage, BLOCKDATA* block,
+LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_class, enum e_lk defaultLinkage, BLOCKDATA* block,
                 bool needsemi, int asExpression, bool inTemplate, enum e_ac access)
 {
     bool isExtern = false;
@@ -5473,8 +5473,8 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
             bool linked;
 #ifdef PARSER_ONLY
             struct _ccNamespaceData nsData;
-            nsData.declfile = lex->errfile;
-            nsData.startline = lex->errline;
+            nsData.declfile = lex->data->errfile;
+            nsData.startline = lex->data->errline;
 #endif
             if (storage_class_in == sc_member || storage_class_in == sc_mutable)
                 error(ERR_NAMESPACE_NO_STRUCT);
@@ -5494,7 +5494,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                 }
 #ifdef PARSER_ONLY
                 if (lex)
-                    nsData.endline = lex->errline;
+                    nsData.endline = lex->data->errline;
 #endif
                 needkw(&lex, end);
                 if (linked)
@@ -6748,7 +6748,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                         }
                                         lex = getsym();
                                     }
-                                    else if (lex->type != l_i || lex->value.i != 0)
+                                    else if (lex->data->type != l_i || lex->data->value.i != 0)
                                     {
                                         error(ERR_PURE_SPECIFIER_CONST_ZERO);
                                     }
@@ -6772,7 +6772,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         }
                         else
                         {
-                            LEXEME* hold = lex;
+                            LEXLIST* hold = lex;
                             bool structuredArray = false;
                             if (notype)
                                 errorsym(ERR_UNDEFINED_IDENTIFIER_EXPECTING_TYPE, sp);

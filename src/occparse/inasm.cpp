@@ -51,7 +51,7 @@ namespace Parser
 {
 static Optimizer::ASMREG* regimage;
 static Optimizer::ASMNAME* insdata;
-static LEXEME* lex;
+static LEXLIST* lex;
 
 static SYMBOL* lastsym;
 static enum e_opcode op;
@@ -171,17 +171,17 @@ static void inasm_txsym(void)
 {
     if (lex && ISID(lex))
     {
-        ASM_HASH_ENTRY* e = (ASM_HASH_ENTRY*)search(lex->value.s.a, asmHash);
+        ASM_HASH_ENTRY* e = (ASM_HASH_ENTRY*)search(lex->data->value.s.a, asmHash);
         if (e)
         {
             if (e->instruction)
             {
-                lex->type = l_asminst;
+                lex->data->type = l_asminst;
                 insdata = (Optimizer::ASMNAME*)e->data;
             }
             else
             {
-                lex->type = l_asmreg;
+                lex->data->type = l_asmreg;
                 regimage = (Optimizer::ASMREG*)e->data;
             }
         }
@@ -192,7 +192,7 @@ static void inasm_getsym(void)
     lex = getsym();
     inasm_txsym();
 }
-static void inasm_needkw(LEXEME** lex, int Keyword)
+static void inasm_needkw(LEXLIST** lex, int Keyword)
 {
     needkw(lex, (e_kw)Keyword);
     inasm_txsym();
@@ -225,13 +225,13 @@ static EXPRESSION* inasm_ident(void)
 {
     EXPRESSION* node = 0;
 
-    if (lex->type != l_id)
+    if (lex->data->type != l_id)
         error(ERR_IDENTIFIER_EXPECTED);
     else
     {
         SYMBOL* sym;
         char nm[256];
-        strcpy(nm, lex->value.s.a);
+        strcpy(nm, lex->data->value.s.a);
         inasm_getsym();
         /* No such identifier */
         /* label, put it in the symbol table */
@@ -240,10 +240,10 @@ static EXPRESSION* inasm_ident(void)
             sym = SymAlloc();
             sym->sb->storage_class = sc_ulabel;
             sym->name = litlate(nm);
-            sym->sb->declfile = sym->sb->origdeclfile = lex->errfile;
-            sym->sb->declline = sym->sb->origdeclline = lex->errline;
-            sym->sb->realdeclline = lex->linedata->lineno;
-            sym->sb->declfilenum = lex->linedata->fileindex;
+            sym->sb->declfile = sym->sb->origdeclfile = lex->data->errfile;
+            sym->sb->declline = sym->sb->origdeclline = lex->data->errline;
+            sym->sb->realdeclline = lex->data->linedata->lineno;
+            sym->sb->declfilenum = lex->data->linedata->fileindex;
             sym->sb->attribs.inheritable.used = true;
             sym->tp = beLocalAllocate<TYPE>();
             sym->tp->type = bt_unsigned;
@@ -321,15 +321,15 @@ static EXPRESSION* inasm_label(void)
     }
     /* No such identifier */
     /* label, put it in the symbol table */
-    if ((sym = search(lex->value.s.a, labelSyms)) == 0)
+    if ((sym = search(lex->data->value.s.a, labelSyms)) == 0)
     {
         sym = SymAlloc();
         sym->sb->storage_class = sc_label;
-        sym->name = litlate(lex->value.s.a);
-        sym->sb->declfile = sym->sb->origdeclfile = lex->errfile;
-        sym->sb->declline = sym->sb->origdeclline = lex->errline;
-        sym->sb->realdeclline = lex->linedata->lineno;
-        sym->sb->declfilenum = lex->linedata->fileindex;
+        sym->name = litlate(lex->data->value.s.a);
+        sym->sb->declfile = sym->sb->origdeclfile = lex->data->errfile;
+        sym->sb->declline = sym->sb->origdeclline = lex->data->errline;
+        sym->sb->realdeclline = lex->data->linedata->lineno;
+        sym->sb->declfilenum = lex->data->linedata->fileindex;
         sym->tp = beLocalAllocate<TYPE>();
         sym->tp->type = bt_unsigned;
         sym->tp->bits = sym->tp->startbit = -1;
@@ -353,7 +353,7 @@ static EXPRESSION* inasm_label(void)
         sym->sb->storage_class = sc_label;
     }
     inasm_getsym();
-    if (lex->type == l_asminst)
+    if (lex->data->type == l_asminst)
     {
         if (insdata->atype == op_reserved)
         {
@@ -418,7 +418,7 @@ static int inasm_getsize(void)
             inasm_getsym();
         }
     }
-    if (!lex || (lex->type != l_asmreg && !ISID(lex) && !MATCHKW(lex, openbr)))
+    if (!lex || (lex->data->type != l_asmreg && !ISID(lex) && !MATCHKW(lex, openbr)))
     {
         inasm_err(ERR_ADDRESS_MODE_EXPECTED);
         return 0;
@@ -437,7 +437,7 @@ static int getscale(int* scale)
         {
             if ((MATCHTYPE(lex, l_i) || MATCHTYPE(lex, l_ui)) && !*scale)
             {
-                switch ((int)lex->value.i)
+                switch ((int)lex->data->value.i)
                 {
                     case 1:
                         *scale = 0;
@@ -558,7 +558,7 @@ static AMODE* inasm_mem(void)
             rg = regimage->regnum;
         if (lex)
         {
-            switch (lex->type)
+            switch (lex->data->type)
             {
                 case l_asmreg:
                     if (subtract)
@@ -627,11 +627,11 @@ static AMODE* inasm_mem(void)
                 case l_l:
                 case l_ul:
                     if (node)
-                        node = exprNode(subtract ? en_sub : en_add, node, intNode(en_c_i, lex->value.i));
+                        node = exprNode(subtract ? en_sub : en_add, node, intNode(en_c_i, lex->data->value.i));
                     else if (subtract)
-                        node = intNode(en_c_i, -lex->value.i);
+                        node = intNode(en_c_i, -lex->data->value.i);
                     else
-                        node = intNode(en_c_i, lex->value.i);
+                        node = intNode(en_c_i, lex->data->value.i);
                     inasm_getsym();
                     break;
                 case l_kw:
@@ -734,7 +734,7 @@ static AMODE* inasm_amode(int nosegreg)
     inasm_txsym();
     if (lex)
     {
-        switch (lex->type)
+        switch (lex->data->type)
         {
             case l_wchr:
             case l_achr:
@@ -774,7 +774,7 @@ static AMODE* inasm_amode(int nosegreg)
         done = true;
         if (lex)
         {
-            switch (lex->type)
+            switch (lex->data->type)
             {
                 case l_asmreg:
                     if (regimage->regtype == am_ext)
@@ -788,7 +788,7 @@ static AMODE* inasm_amode(int nosegreg)
                         if (MATCHKW(lex, openpa))
                         {
                             inasm_getsym();
-                            if (!lex || (lex->type != l_i && lex->type != l_ui) || lex->value.i < 0 || lex->value.i > 7)
+                            if (!lex || (lex->data->type != l_i && lex->data->type != l_ui) || lex->data->value.i < 0 || lex->data->value.i > 7)
                             {
                                 inasm_err(ERR_ILLEGAL_ADDRESS_MODE);
                                 return 0;
@@ -797,8 +797,8 @@ static AMODE* inasm_amode(int nosegreg)
                             inasm_needkw(&lex, closepa);
                         }
                         else
-                            lex->value.i = 0;
-                        rv->preg = lex->value.i;
+                            lex->data->value.i = 0;
+                        rv->preg = lex->data->value.i;
                         rv->mode = am_freg;
                         sz = ISZ_LDOUBLE;
                     }
@@ -905,7 +905,7 @@ static AMODE* inasm_immed(void)
 {
     AMODE* rv;
     if (lex)
-        switch (lex->type)
+        switch (lex->data->type)
         {
             case l_i:
             case l_ui:
@@ -913,7 +913,7 @@ static AMODE* inasm_immed(void)
             case l_ul:
             case l_wchr:
             case l_achr:
-                rv = aimmed(lex->value.i);
+                rv = aimmed(lex->data->value.i);
                 rv->length = ISZ_UINT;
                 inasm_getsym();
                 return rv;
@@ -947,7 +947,7 @@ AMODE* getimmed(void)
 {
     AMODE* rv;
     if (lex)
-        switch (lex->type)
+        switch (lex->data->type)
         {
             case l_i:
             case l_ui:
@@ -955,7 +955,7 @@ AMODE* getimmed(void)
             case l_ul:
             case l_wchr:
             case l_achr:
-                rv = aimmed(lex->value.i);
+                rv = aimmed(lex->data->value.i);
                 inasm_getsym();
                 return rv;
             default:
@@ -969,7 +969,7 @@ AMODE* getimmed(void)
 enum e_opcode inasm_op(void)
 {
     int op;
-    if (!lex || lex->type != l_asminst)
+    if (!lex || lex->data->type != l_asminst)
     {
         inasm_err(ERR_INVALID_OPCODE);
         return (e_opcode)-1;
@@ -1099,7 +1099,7 @@ static void AssembleInstruction(OCODE* ins)
 #endif
     }
 }
-LEXEME* inlineAsm(LEXEME* inlex, BLOCKDATA* parent)
+LEXLIST* inlineAsm(LEXLIST* inlex, BLOCKDATA* parent)
 {
     STATEMENT* snp;
     OCODE* rv;
@@ -1115,7 +1115,7 @@ LEXEME* inlineAsm(LEXEME* inlex, BLOCKDATA* parent)
             return lex;
         }
         bool atend;
-        if (lex->type != l_asminst)
+        if (lex->data->type != l_asminst)
         {
             if (MATCHKW(lex, kw_int))
             {

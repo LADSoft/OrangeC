@@ -325,7 +325,7 @@ typedef struct expr
             struct
             {
                 struct typ* tp;
-                struct lexeme *deferred;
+                struct lexlist *deferred;
             } construct;
         };
         struct _templateParamList* templateParam;
@@ -710,8 +710,8 @@ typedef struct sym
         struct _baseClass* baseClasses;
         struct _vbaseEntry* vbaseEntries;
         struct _vtabEntry* vtabEntries;
-        struct lexeme* deferredCompile;
-        struct lexeme* deferredNoexcept;
+        struct lexlist* deferredCompile;
+        struct lexlist* deferredNoexcept;
         Optimizer::LIST* templateNameSpace;
         short templateLevel;
         struct _templateParamList *typeAlias;
@@ -770,7 +770,7 @@ typedef struct _memberInitializers
     INITIALIZER* init;
     int line;
     const char* file;
-    struct lexeme* initData;
+    struct lexlist* initData;
     int packed : 1;
     int delegating : 1;
 } MEMBERINITIALIZERS;
@@ -837,7 +837,7 @@ typedef struct _templateParam
         {
             SYMBOL* dflt;
             SYMBOL* val;
-            struct lexeme* txtdflt;
+            struct lexlist* txtdflt;
             Optimizer::LIST* txtargs;
             SYMBOL* temp;
             struct _templateParamList* args;
@@ -847,7 +847,7 @@ typedef struct _templateParam
         {
             TYPE* dflt;
             TYPE* val;
-            struct lexeme* txtdflt;
+            struct lexlist* txtdflt;
             Optimizer::LIST* txtargs;
             TYPE* temp;
         } byClass;
@@ -855,10 +855,10 @@ typedef struct _templateParam
         {
             EXPRESSION* dflt;
             EXPRESSION* val;
-            struct lexeme* txtdflt;
+            struct lexlist* txtdflt;
             Optimizer::LIST* txtargs;
             EXPRESSION* temp;
-            struct lexeme* txttype;
+            struct lexlist* txttype;
             TYPE* tp;
         } byNonType;
         struct
@@ -1022,15 +1022,15 @@ typedef struct kwblk
     /*    ASMNAME *data; */
 } KEYWORD;
 
-#define MATCHTYPE(lex, tp) (lex && (lex)->type == (tp))
-#define ISID(lex) (lex && (lex)->type == l_id)
-#define ISKW(lex) (lex && (lex)->type == l_kw)
-#define MATCHKW(lex, keyWord) (ISKW(lex) && ((lex)->kw->key == keyWord))
+#define MATCHTYPE(lex, tp) (lex && (lex)->data->type == (tp))
+#define ISID(lex) (lex && (lex)->data->type == l_id)
+#define ISKW(lex) (lex && (lex)->data->type == l_kw)
+#define MATCHKW(lex, keyWord) (ISKW(lex) && ((lex)->data->kw->key == keyWord))
 #define KWTYPE(lex, types)                                                                                                        \
     (ISKW(lex) &&                                                                                                                 \
-     (((lex)->kw->key == kw_auto ? (Optimizer::cparams.prm_cplusplus ? TT_BASETYPE : TT_STORAGE_CLASS) : (lex)->kw->tokenTypes) & \
+     (((lex)->data->kw->key == kw_auto ? (Optimizer::cparams.prm_cplusplus ? TT_BASETYPE : TT_STORAGE_CLASS) : (lex)->data->kw->tokenTypes) & \
       (types)))
-#define KW(lex) (ISKW(lex) ? (lex)->kw->key : kw_none)
+#define KW(lex) (ISKW(lex) ? (lex)->data->kw->key : kw_none)
 
 enum e_lexType
 {
@@ -1075,7 +1075,6 @@ typedef struct _string
 
 typedef struct lexeme
 {
-    struct lexeme *next, *prev;
     // clang-format off
         enum e_lexType type;
     // clang-format on
@@ -1094,19 +1093,24 @@ typedef struct lexeme
     int registered : 1;
 } LEXEME;
 
+typedef struct lexlist
+{
+    struct lexlist *next, *prev;
+    struct lexeme *data;
+} LEXLIST;
 typedef struct lexContext
 {
     struct lexContext* next;
-    LEXEME* cur;
-    LEXEME* last;
+    LEXLIST* cur;
+    LEXLIST* last;
 } LEXCONTEXT;
 
 struct templateListData
 {
     TEMPLATEPARAMLIST* args;  // list of templateparam lists
     TEMPLATEPARAMLIST **ptail, **plast;
-    LEXEME *head, *tail;
-    LEXEME *bodyHead, *bodyTail;
+    LEXLIST *head, *tail;
+    LEXLIST *bodyHead, *bodyTail;
     SYMBOL* sp;
 };
 

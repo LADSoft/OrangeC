@@ -53,7 +53,7 @@ TYPE* PerformDeferredInitialization(TYPE* tp, SYMBOL* funcsp);
 void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings);
 bool usesVTab(SYMBOL* sym);
 BASECLASS* innerBaseClass(SYMBOL* declsym, SYMBOL* bcsym, bool isvirtual, enum e_ac currentAccess);
-LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defaultAccess);
+LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defaultAccess);
 void checkPackedType(SYMBOL* sym);
 std::stack<EXPRESSION*> iterateToPostOrder(EXPRESSION* exp);
 bool hasPackedExpression(EXPRESSION* exp, bool useAuto);
@@ -63,22 +63,22 @@ void GatherPackedTypes(int* count, SYMBOL** arg, TYPE* tp);
 void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp);
 void ReplicatePackedExpression(EXPRESSION* pattern, int count, SYMBOL** arg, TEMPLATEPARAMLIST** dest);
 int CountPacks(TEMPLATEPARAMLIST* packs);
-INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXEME* start, EXPRESSION* packedExp);
+INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXLIST* start, EXPRESSION* packedExp);
 MEMBERINITIALIZERS* expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, MEMBERINITIALIZERS** init, BASECLASS* bc,
                                             VBASEENTRY* vbase);
 void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, TEMPLATEPARAMLIST* templatePack, MEMBERINITIALIZERS** p,
-                                    LEXEME* start, INITLIST* list);
+                                    LEXLIST* start, INITLIST* list);
 void checkOperatorArgs(SYMBOL* sp, bool asFriend);
-LEXEME* handleStaticAssert(LEXEME* lex);
-LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class, bool* linked);
+LEXLIST* handleStaticAssert(LEXLIST* lex);
+LEXLIST* insertNamespace(LEXLIST* lex, enum e_lk linkage, enum e_sc storage_class, bool* linked);
 void unvisitUsingDirectives(NAMESPACEVALUELIST* v);
-LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc storage_class, bool inTemplate, bool hasAttributes);
+LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc storage_class, bool inTemplate, bool hasAttributes);
 TYPE* AttributeFinish(SYMBOL* sym, TYPE* tp);
-void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp);
-bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always);
+void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp);
+bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always);
 bool isConstexprConstructor(SYMBOL* sym);
 bool MatchesConstFunction(SYMBOL* sym);
-LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn);
+LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn);
 void CollapseReferences(TYPE* tp_in);
 
 }  // namespace Parser

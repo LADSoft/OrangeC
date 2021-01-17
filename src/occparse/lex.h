@@ -34,20 +34,20 @@ extern bool parsingPreprocessorConstant;
 extern LEXCONTEXT* context;
 extern int charIndex;
 extern HASHTABLE* kwhash;
-extern LEXEME* currentLex;
+extern LEXLIST* currentLex;
 
 void lexini(void);
 KEYWORD* searchkw(const unsigned char** p);
-LEXEME* SkipToNextLine(void);
-LEXEME* getGTSym(LEXEME* in);
+LEXLIST* SkipToNextLine(void);
+LEXLIST* getGTSym(LEXLIST* in);
 void SkipToEol();
 bool AtEol();
 void CompilePragma(const unsigned char** linePointer);
-LEXEME* getsym(void);
-LEXEME* prevsym(LEXEME* lex);
-LEXEME* backupsym(void);
-LEXEME* SetAlternateLex(LEXEME* lexList);
-bool CompareLex(LEXEME* left, LEXEME* right);
+LEXLIST* getsym(void);
+LEXLIST* prevsym(LEXLIST* lex);
+LEXLIST* backupsym(void);
+LEXLIST* SetAlternateLex(LEXLIST* lexList);
+bool CompareLex(LEXLIST* left, LEXLIST* right);
 void SetAlternateParse(bool set, const std::string& val);
 long long ParseExpression(std::string& line);
 }  // namespace Parser

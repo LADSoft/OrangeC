@@ -289,6 +289,8 @@ void TemplateGetDeferred(SYMBOL* sym)
         if (currents->bodyHead)
         {
             sym->sb->deferredCompile = currents->bodyHead;
+            for (auto v = currents->bodyHead; v; v = v->next)
+                v->data->registered = false;
         }
     }
 }
@@ -4109,7 +4111,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                                             failed = true;
                                             break;
                                         }
-                                        optimize_for_constants(&current->p->byNonType.dflt);
+//                                        optimize_for_constants(&current->p->byNonType.dflt);
                                     }
                                     else if (current->p->byNonType.val)
                                     {
@@ -4119,7 +4121,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                                             failed = true;
                                             break;
                                         }
-                                        optimize_for_constants(&current->p->byNonType.dflt);
+  //                                      optimize_for_constants(&current->p->byNonType.dflt);
                                     }
                                 }
                                 if (symtp)

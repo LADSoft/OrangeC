@@ -53,8 +53,6 @@ static std::string cppbuiltin =
     "void __rtllinkage _InitializeException(void *, void *); "
     "void __rtllinkage _RundownException(); "
     "void __rtllinkage __arrCall(void *, void *, void *, int, int); "
-    "int __rtllinkage __is_constructible(...); "
-    "int __rtllinkage __is_convertible_to(...); "
     "namespace std { "
     "class type_info; "
     "} "

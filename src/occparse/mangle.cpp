@@ -883,7 +883,10 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     *in++ = 'v';
                     break;
                 case bt_templateparam:
-                    in = getName(in, tp->templateParam->argsym);
+                    if (inKeyCreation && tp->templateParam->p->type == kw_typename && tp->templateParam->p->byClass.val && basetype(tp->templateParam->p->byClass.val)->type != bt_templateparam)
+                        in = mangleType(in, tp->templateParam->p->byClass.val, false);
+                    else
+                        in = getName(in, tp->templateParam->argsym);
                     break;
                 case bt_templateselector:
                 {

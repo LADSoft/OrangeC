@@ -9892,30 +9892,7 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
 }
 bool cacheCandidate(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
-    // a check to see if anything is defaulted in any of the specializations...
-    SYMBOL* sp1 = sp;
-    SYMLIST* lst = sp1->sb->specializations;
-    while (true)
-    {
-        TEMPLATEPARAMLIST* temp = sp->templateParams;
-        if (temp->p->bySpecialization.types)
-            temp = temp->p->bySpecialization.types;
-        else
-            temp = temp->next;
-        while (temp)
-        {
-            if (temp->p->byClass.txtdflt)
-                break;
-            temp = temp->next;
-        }
-        if (temp)
-            return false;
-        if (!lst)
-            break;
-        sp1 = lst->p;
-        lst = lst->next;
-    }
-    return true;
+    return allTemplateArgsSpecified(sp, args);
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {

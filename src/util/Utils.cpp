@@ -421,3 +421,12 @@ bool Utils::HasExt(const char* buffer, const char* ext)
     }
     return 0;
 }
+
+bool Utils::FileExists(const char* buffer)
+{
+#ifdef _WIN32
+    return GetFileAttributesA(buffer) != 0xffffffff;
+#else
+    return access(buffer, 0) == 0;
+#endif
+}

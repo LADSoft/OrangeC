@@ -328,8 +328,7 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 		{
 			*p = CmdFiles::DIR_SEP[0];
 		}
-		FILE* fil = fopen(buf, "rb");
-		if (fil)
+		if (Utils::FileExists(buf))
 		{
 			if (filesSkipped > 0) // we lie to ourselves about how many files we skip while searching so that we go past the current file's directory
 			{
@@ -344,7 +343,6 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 					userIncludes.insert(buf);
 				}
 			}
-			fclose(fil);
 			return buf;
 		}
 	} while (path);

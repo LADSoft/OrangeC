@@ -118,6 +118,7 @@ class Utils
     static void AddExt(char* buffer, const char* ext);
     static void StripExt(char* buffer);
     static bool HasExt(const char* buffer, const char* ext);
+    static bool FileExists(const char* buffer);
 
     static bool NamedPipe(int* fds, const std::string& name);
     static bool PipeWrite(int fileno, const std::string& data);

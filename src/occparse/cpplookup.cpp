@@ -2872,7 +2872,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                                     first = (SYMBOL*)args->p;
                                     if (args->next)
                                         next = (SYMBOL*)args->next->p;
-                                    if (!next || next->sb->init)
+                                    if (!next || next->sb->init || next->sb->deferredCompile)
                                     {
                                         if (first->tp->type != bt_ellipse)
                                         {

@@ -58,8 +58,9 @@ AssemblyDef* PELib::EmptyWorkingAssembly(const std::string& AssemblyName)
 bool PELib::DumpOutputFile(const std::string& file, OutputMode mode, bool gui)
 {
     bool rv;
-    outputStream_ = std::make_unique<std::fstream>(file.c_str(), std::ios::in | std::ios::out | std::ios::trunc |
-                                                       (mode == ilasm || mode == object ? std::ios::in : std::ios::binary));
+    outputStream_ = std::unique_ptr<std::iostream>( new std::fstream(file.c_str(), std::ios::in | std::ios::out | std::ios::trunc |
+                     (mode == ilasm || mode == object ? std::ios::in : std::ios::binary)) );
+ 
     switch (mode)
     {
         case ilasm:
@@ -701,7 +702,8 @@ bool PELib::DumpPEFile(std::string file, bool isexe, bool isgui)
     WorkingAssembly()->Number(n);  // give initial PE Indexes for field resolution..
 
     peWriter_ = new PEWriter(isexe, isgui, WorkingAssembly()->SNKFile());
-    size_t moduleIndex = peWriter_->HashString("Module");
+    // this next line needs '<Module>' rather than 'Module' to work on mono...
+    size_t moduleIndex = peWriter_->HashString("<Module>");
     TypeDefOrRef typeDef(TypeDefOrRef::TypeDef, 0);
     TableEntryBase* table = new TypeDefTableEntry(0, moduleIndex, 0, typeDef, 1, 1);
     peWriter_->AddTableEntry(table);

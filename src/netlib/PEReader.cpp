@@ -114,7 +114,7 @@ TableEntryBase* TableEntryFactory::GetEntry(size_t index)
 }
 PEReader::~PEReader()
 {
-    delete[] inputFile_;
+    delete inputFile_;
     delete[] objects_;
     delete[] stringData_;
     delete[] blobData_;

@@ -467,7 +467,7 @@ bool Class::Traverse(Callback& callback) const
 }
 std::string Class::AdornGenerics(PELib& peLib, bool names) const
 {
-    std::unique_ptr<std::iostream> hold = std::make_unique<std::stringstream>();
+    std::unique_ptr<std::iostream> hold(new std::stringstream());
     peLib.Swap(hold);
     if (generic_.size())
     {
@@ -518,4 +518,4 @@ bool Class::MatchesGeneric(std::deque<Type*>* generics) const
     }
     return false;
 }
-}  // namespace DotNetPELib
+} // namespace DotNetPELib

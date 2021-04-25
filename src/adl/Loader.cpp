@@ -239,7 +239,7 @@ bool Parser::CodingParamParser::VisitNode(xmlNode& node, xmlNode* child, void* u
 bool Parser::CodingNumberParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
     Number* number = (Number*)userData;
-    if (attrib->GetName() == "Name")
+    if (attrib->GetName() == "Class")
     {
         number->name = attrib->GetValue();
     }
@@ -328,7 +328,7 @@ bool Parser::CodingStateWhenParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib
     {
         p->name = attrib->GetValue();
     }
-    else if (attrib->GetName() == "Value")
+    else if (attrib->GetName() == "Coding")
     {
         p->value = attrib->GetValue();
     }

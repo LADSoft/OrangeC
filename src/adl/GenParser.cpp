@@ -170,7 +170,7 @@ bool GenParser::GenerateCompilerStubs()
 
     (*file) << "};" << std::endl << std::endl;
 
-    (*file) << "std::map<enum e_tk, const char *> tokenNames = {" << std::endl;
+    (*file) << "std::unordered_map<enum e_tk, const char *> tokenNames = {" << std::endl;
     for (auto& m : TokenNode::tokenTable)
     {
         if (m.first != "empty" && m.first != "")
@@ -329,7 +329,7 @@ bool GenParser::GenerateHeader()
     int be = 0;
     std::string bes = parser.parameters["Endian"];
     if (!bes.empty())
-        be = std::stoi(bes);
+        be = bes != "little";
     (*file) << "\tvirtual bool IsBigEndian() { return " << be << "; }" << std::endl;
     (*file) << std::endl;
     (*file) << "protected:" << std::endl;
@@ -425,7 +425,10 @@ bool GenParser::GenerateHeader()
             auto itm = registerTags.find(m.first);
             if (itm == registerTags.end())
             {
-                registerTags[m.first] = registerTags.size();
+                // this is split into two lines because otherwise what is on the first line
+                // might get evaluated AFTER a register tag is allocated.
+                int n = registerTags.size();
+                registerTags[m.first] = n;
             }
         }
     }
@@ -1286,7 +1289,7 @@ void GenParser::GenerateCoding(const std::string coding, const std::string name)
                         {
                             size_t size;
                             bits = std::stoul(temp.substr(1), &size, 0);
-                            temp = temp.substr(size);
+                            temp = temp.substr(size+1);
                         }
                     }
                 }

@@ -312,7 +312,7 @@ bool Parser::CodingStateParser ::VisitAttrib(xmlNode& node, xmlAttrib* attrib, v
 bool Parser::CodingStateParser ::VisitNode(xmlNode& node, xmlNode* child, void* userData)
 {
     State* s = (State*)userData;
-    if (child->GetName() == "When")
+    if (child->GetName() == "Value")
     {
         CodingStateWhenParser p;
         Param r;

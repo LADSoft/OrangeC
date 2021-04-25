@@ -78,37 +78,37 @@
       <Instance  Name="processorbits" Init="16"/>
     </StateVars>
     <State Name="addr16">
-      <When Cond="'processorbits'==16" Coding=""/>
-      <When Cond="'processorbits'!=16" Coding="0x67:8"/>
+      <Value Cond="'processorbits'==16" Coding=""/>
+      <Value Cond="'processorbits'!=16" Coding="0x67:8"/>
     </State>
     <State Name="addr32">
-      <When Cond="'processorbits'==32" Coding=""/>
-      <When Cond="'processorbits'!=32" Coding="0x67:8"/>
+      <Value Cond="'processorbits'==32" Coding=""/>
+      <Value Cond="'processorbits'!=32" Coding="0x67:8"/>
     </State>
     <State Name="addr64">
-      <When Cond="true" Coding=""/>
+      <Value Cond="true" Coding=""/>
     </State>
     <State Name="data16">
-      <When Cond="'processorbits'==16" Coding=""/>
-      <When Cond="'processorbits'!=16" Coding="0x66:8"/>
+      <Value Cond="'processorbits'==16" Coding=""/>
+      <Value Cond="'processorbits'!=16" Coding="0x66:8"/>
     </State>
     <State Name="data32">
-      <When Cond="'processorbits'==16" Coding="0x66:8"/>
-      <When Cond="'processorbits'!=16" Coding=""/>
+      <Value Cond="'processorbits'==16" Coding="0x66:8"/>
+      <Value Cond="'processorbits'!=16" Coding=""/>
     </State>
     <State Name="data64">
-      <When Cond="true" Coding=""/>
+      <Value Cond="true" Coding=""/>
     </State>
     <State Name="no64">
-      <When Cond="'processorbits'==64" Coding="illegal"/>
-      <When Cond="'processorbits'!=64" Coding=""/>
+      <Value Cond="'processorbits'==64" Coding="illegal"/>
+      <Value Cond="'processorbits'!=64" Coding=""/>
     </State>
     <State Name="only64">
-      <When Cond="'processorbits'!=64" Coding="illegal"/>
-      <When Cond="'processorbits'==64" Coding=""/>
+      <Value Cond="'processorbits'!=64" Coding="illegal"/>
+      <Value Cond="'processorbits'==64" Coding=""/>
     </State>
     <State Name="rex">
-      <When Cond="true" Coding="0x4:4"/>
+      <Value Cond="true" Coding="0x4:4"/>
     </State>
     <Register Class="general">
       <Instance Name="al" Ord="0" B="0" X="0" R="0" W="0" Class="reg8,low"/>

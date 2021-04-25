@@ -75,8 +75,8 @@ For example:
 		</StateVars>
         <!-- more state variables -->
 		<State Name="addr32">
-			<When Cond="'processorbits'==32" Coding=""/>
-			<When Cond="'processorbits'!=32" Coding="0x67:8"/>
+			<Value Cond="'processorbits'==32" Coding=""/>
+			<Value Cond="'processorbits'!=32" Coding="0x67:8"/>
 		</state>
 		<!-- More coding states -->
 		<Register Class="general">
@@ -130,8 +130,8 @@ The following `State` node encodes an x86 data size prefix into the coding seque
 
 ```xml
     <State Name="data16">
-      <When Cond="'processorbits'==16" Coding=""/>
-      <When Cond="'processorbits'!=16" Coding="0x66:8"/>
+      <Value Cond="'processorbits'==16" Coding=""/>
+      <Value Cond="'processorbits'!=16" Coding="0x66:8"/>
     </State>
 ```
 
@@ -299,8 +299,8 @@ For example in the state variable:
 
 ```xml
     <State Name="no64">
-      <When Cond="'processorbits'==64" Coding="illegal"/>
-      <When Cond="'processorbits'!=64" Coding=""/>
+      <Value Cond="'processorbits'==64" Coding="illegal"/>
+      <Value Cond="'processorbits'!=64" Coding=""/>
     </State>
 ```	
 
@@ -439,14 +439,14 @@ In the following example:
 
 ```xml
     <State Name="only64">
-      <When Cond="'processorbits'!=64" Coding="illegal"/>
-      <When Cond="'processorbits'==64" Coding=""/>
+      <Value Cond="'processorbits'!=64" Coding="illegal"/>
+      <Value Cond="'processorbits'==64" Coding=""/>
     </State>
 ```
 
 here the `Name` field of the `State` node gives the name of the state variable, to be used in a coding.
 
-The `When` nodes give a coding which is based on a condition.
+The `Value` nodes give a coding which is based on a condition.
 
 In this case if the state variable named  'processorbits' is equal to 64, then nothing is emitted.   Otherwise the 'illegal' coding is emitted, which results in an error.
 
@@ -454,7 +454,7 @@ In the following example:
 
 ```xml
     <State Name="rex">
-      <When Cond="true" Coding="0x4:4"/>
+      <Value Cond="true" Coding="0x4:4"/>
     </State>
 ```
 

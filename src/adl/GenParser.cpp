@@ -701,6 +701,7 @@ bool GenParser::GenerateTokenizer()
 {
     (*file) << "void " << className << "::Init()" << std::endl;
     (*file) << "{" << std::endl;
+    (*file) << "\tbits.SetBigEndian(IsBigEndian());" << std::endl;
     (*file) << "\tmemset(&stateVars, 0, sizeof(stateVars));" << std::endl;
     int i = 0;
     for (auto& m : parser.stateVars)

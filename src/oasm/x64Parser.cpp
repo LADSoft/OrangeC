@@ -585,6 +585,7 @@ int x64Parser::registerValues[][8] = {
 
 void x64Parser::Init()
 {
+	bits.SetBigEndian(IsBigEndian());
 	memset(&stateVars, 0, sizeof(stateVars));
 	stateVars[0] = 16;
 	tokenTable[""] = 0;

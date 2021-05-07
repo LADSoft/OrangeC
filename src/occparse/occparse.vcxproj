@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\oasm\AdlFunctions.cpp" />
     <ClCompile Include="..\oasm\AsmExpr.cpp" />
     <ClCompile Include="..\oasm\AsmFile.cpp" />
     <ClCompile Include="..\oasm\AsmLexer.cpp" />
@@ -99,6 +100,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\netlib\DotNetPELib.h" />
+    <ClInclude Include="..\oasm\AdlStructures.h" />
     <ClInclude Include="..\oasm\AsmLexer.h" />
     <ClInclude Include="..\occopt\beinterf.h" />
     <ClInclude Include="..\occopt\ildata.h" />

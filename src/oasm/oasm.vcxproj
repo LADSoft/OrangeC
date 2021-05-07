@@ -150,6 +150,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AdlFunctions.cpp" />
     <ClCompile Include="AsmExpr.cpp" />
     <ClCompile Include="AsmFile.cpp" />
     <ClCompile Include="AsmLexer.cpp" />
@@ -164,6 +165,7 @@
     <ClCompile Include="x64stub.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AdlStructures.h" />
     <ClInclude Include="AsmExpr.h" />
     <ClInclude Include="AsmFile.h" />
     <ClInclude Include="AsmLexer.h" />

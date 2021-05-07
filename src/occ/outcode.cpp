@@ -927,15 +927,15 @@ void AddFixup(Instruction* newIns, OCODE* ins, const std::list<Numeric*>& operan
         for (auto operand : operands)
         {
             if (operand->used && operand->size &&
-                (operand->node->GetType() == AsmExprNode::LABEL || operand->node->GetType() == AsmExprNode::SUB ||
-                 operand->node->GetType() == AsmExprNode::ADD))
+                (((AsmExprNode*)operand->node)->GetType() == AsmExprNode::LABEL || ((AsmExprNode*)operand->node)->GetType() == AsmExprNode::SUB ||
+                 ((AsmExprNode*)operand->node)->GetType() == AsmExprNode::ADD))
             {
                 if (newIns->Lost() && operand->pos)
                     operand->pos -= 8;
                 int n = operand->relOfs;
                 if (n < 0)
                     n = -n;
-                Fixup* f = new Fixup(operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
+                Fixup* f = new Fixup((AsmExprNode*)operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
                 f->SetInsOffs((operand->pos + 7) / 8);
                 newIns->Add(f);
             }

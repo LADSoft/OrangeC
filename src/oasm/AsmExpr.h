@@ -27,6 +27,7 @@
 
 #include <string>
 #include <memory>
+#include "AdlStructures.h"
 
 #include "Token.h"
 class ppDefine;
@@ -34,7 +35,7 @@ class Section;
 
 typedef long long PPINT;
 
-class AsmExprNode
+class AsmExprNode : public AdlExprNode
 {
   public:
     enum Type
@@ -70,22 +71,20 @@ class AsmExprNode
         BASED,
         REG
     };
-    AsmExprNode(Type xType, AsmExprNode* Left = nullptr, AsmExprNode* Right = nullptr) :
+    AsmExprNode(Type xType, AsmExprNode* Left = nullptr, AsmExprNode* Right = nullptr) : AdlExprNode(0),
         type(xType),
-        ival(0),
         left(Left),
         right(Right),
         sect(nullptr)
     {
     }
-    AsmExprNode(PPINT Ival, bool reg = false) : type(reg ? REG : IVAL), ival(Ival), sect(nullptr), left(nullptr), right(nullptr) {}
-    AsmExprNode(const FPF& Fval) : type(FVAL), ival(0), fval(Fval), sect(nullptr), left(nullptr), right(nullptr) {}
-    AsmExprNode(std::string lbl) : type(LABEL), ival(0), label(lbl), sect(nullptr), left(nullptr), right(nullptr) {}
-    AsmExprNode(Section* Sect, int offs) : type(BASED), ival(offs), sect(Sect), left(nullptr), right(nullptr) {}
-    AsmExprNode(AsmExprNode& old)
+    AsmExprNode(PPINT Ival, bool reg = false) : AdlExprNode(Ival), type(reg ? REG : IVAL), sect(nullptr), left(nullptr), right(nullptr) {}
+    AsmExprNode(const FPF& Fval) : AdlExprNode(0), type(FVAL), fval(Fval), sect(nullptr), left(nullptr), right(nullptr) {}
+    AsmExprNode(std::string lbl) : AdlExprNode(0), type(LABEL), label(lbl), sect(nullptr), left(nullptr), right(nullptr) {}
+    AsmExprNode(Section* Sect, int offs) : AdlExprNode(offs), type(BASED), sect(Sect), left(nullptr), right(nullptr) {}
+    AsmExprNode(const AsmExprNode& old) : AdlExprNode(old)
     {
         fval = old.fval;
-        ival = old.ival;
         label = old.label;
         type = old.type;
         left = old.left;
@@ -94,12 +93,11 @@ class AsmExprNode
     }
     ~AsmExprNode() {}
     FPF fval;
-    PPINT ival;
     std::string label;
     AsmExprNode* GetLeft() { return left; }
     void SetLeft(AsmExprNode* n) { left = n; }
     AsmExprNode* GetRight() { return right; }
-    void SetRight(AsmExprNode* n) { right = n; }
+    void SetRight(AsmExprNode* n) { right = n; };
     Section* GetSection() { return sect; }
     Type GetType() { return type; }
     void SetType(Type tType) { type = tType; }

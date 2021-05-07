@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\oasm\AdlStructures.h" />
     <ClInclude Include="..\occopt\beinterf.h" />
     <ClInclude Include="be.h" />
     <ClInclude Include="beIntrins.h" />
@@ -35,6 +36,7 @@
     <ClInclude Include="x86regs.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\oasm\AdlFunctions.cpp" />
     <ClCompile Include="..\oasm\AsmExpr.cpp" />
     <ClCompile Include="..\oasm\AsmFile.cpp" />
     <ClCompile Include="..\oasm\AsmLexer.cpp" />

@@ -69,6 +69,7 @@ class GenParser
     bool GenerateDispatcher();
     bool GenerateCompilerStubs();
     bool GenerateAdlHeader();
+    void GeneratedFile();
     std::string convertname(const std::string& name);
 
   private:

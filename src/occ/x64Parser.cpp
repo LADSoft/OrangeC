@@ -156,6 +156,7 @@ Coding *x64Parser::StateFunc9()
 	return stateCoding_eot;
 }
 x64Parser::StateFuncDispatchType x64Parser::stateFuncs[] = {
+	nullptr,
 	&x64Parser::StateFunc1,
 	&x64Parser::StateFunc2,
 	&x64Parser::StateFunc3,

@@ -7,7 +7,8 @@ class BitStream
   public:
     BitStream(bool BigEndian = false) : bigEndian(BigEndian) { Reset(); }
 
-    void SetBigEndian(bool BigEndian) { bigEndian = BigEndian; }
+
+void SetBigEndian(bool BigEndian) { bigEndian = BigEndian; }
     bool GetBigEndian() { return bigEndian; }
 
     void Reset()
@@ -33,6 +34,7 @@ enum asmError
     AERR_UNKNOWNOPCODE,
     AERR_INVALIDINSTRUCTIONUSE
 };
+
 
 class Coding
 {

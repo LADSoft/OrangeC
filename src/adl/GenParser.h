@@ -68,6 +68,7 @@ class GenParser
     bool GenerateCodingProcessor();
     bool GenerateDispatcher();
     bool GenerateCompilerStubs();
+    bool GenerateAdlHeader();
     std::string convertname(const std::string& name);
 
   private:

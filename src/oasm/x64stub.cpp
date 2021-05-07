@@ -1396,7 +1396,8 @@ bool x64Parser::ParseSection(AsmFile* fil, Section* sect)
     {
         sect->beValues[0] = 64;
         fil->NextToken();
-        rv = true;
+ 
+       rv = true;
     }
     return rv;
 }

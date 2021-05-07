@@ -48,9 +48,11 @@ bool GenParser::Generate()
             delete file;
             std::string fileName = className + ".h";
             file = new std::fstream(fileName, std::ios::out);
-            if (file->is_open())
+            if (file->is_open() && GenerateHeader())
             {
-                if (GenerateHeader())
+                std::string name = "AdlStructures";
+                file = new std::fstream(name + ".h", std::ios::out);
+                if (file->is_open() && GenerateAdlHeader())
                 {
                     delete file;
                     std::string fileName = className + ".cpp";
@@ -92,6 +94,106 @@ std::string GenParser::convertname(const std::string& name)
     if (name == ":")
         return "colon";
     return name;
+}
+bool GenParser::GenerateAdlHeader()
+{
+    (*file) << "#include <string.h>" << std::endl;
+    (*file) << std::endl;
+    (*file) << "class AsmExprNode;" << std::endl;
+    (*file) << std::endl;
+    (*file) << "class BitStream" << std::endl;
+    (*file) << "{" << std::endl;
+    (*file) << "  public:" << std::endl;
+    (*file) << "    BitStream(bool BigEndian = false) : bigEndian(BigEndian) { Reset(); }" << std::endl;
+    (*file) << std::endl;
+    (*file) << std::endl;
+    (*file) << "void SetBigEndian(bool BigEndian) { bigEndian = BigEndian; }" << std::endl;
+    (*file) << "    bool GetBigEndian() { return bigEndian; }" << std::endl;
+    (*file) << std::endl;
+    (*file) << "    void Reset()" << std::endl;
+    (*file) << "    {" << std::endl;
+    (*file) << "        bits = 0;" << std::endl;
+    (*file) << "        memset(bytes, 0, sizeof(bytes));" << std::endl;
+    (*file) << "    }" << std::endl;
+    (*file) << "    void Add(int val, int bits);" << std::endl;
+    (*file) << "    int GetBits() { return bits; }" << std::endl;
+    (*file) << "    void GetBytes(unsigned char* dest, int size) { memcpy(dest, bytes, size < (bits + 7) / 8 ? size : (bits + 7) / 8); }" << std::endl;
+    (*file) << std::endl;
+    (*file) << "  private:" << std::endl;
+    (*file) << "    int bits;" << std::endl;
+    (*file) << "    unsigned char bytes[64];" << std::endl;
+    (*file) << "    bool bigEndian;" << std::endl;
+    (*file) << "};" << std::endl;
+    (*file) << "enum asmError" << std::endl;
+    (*file) << "{" << std::endl;
+    (*file) << "    AERR_NONE," << std::endl;
+    (*file) << "    AERR_SYNTAX," << std::endl;
+    (*file) << "    AERR_OPERAND," << std::endl;
+    (*file) << "    AERR_BADCOMBINATIONOFOPERANDS," << std::endl;
+    (*file) << "    AERR_UNKNOWNOPCODE," << std::endl;
+    (*file) << "    AERR_INVALIDINSTRUCTIONUSE" << std::endl;
+    (*file) << "};" << std::endl;
+    (*file) << std::endl;
+    (*file) << std::endl;
+    (*file) << "class Coding" << std::endl;
+    (*file) << "{" << std::endl;
+    (*file) << "  public:" << std::endl;
+    (*file) << "#ifdef DEBUG" << std::endl;
+    (*file) << "    std::string name;" << std::endl;
+    (*file) << "#endif" << std::endl;
+    (*file) << "    enum Type" << std::endl;
+    (*file) << "    {" << std::endl;
+    (*file) << "        eot," << std::endl;
+    (*file) << "        bitSpecified = 1," << std::endl;
+    (*file) << "        valSpecified = 2," << std::endl;
+    (*file) << "        fieldSpecified = 4," << std::endl;
+    (*file) << "        indirect = 8," << std::endl;
+    (*file) << "        reg = 16," << std::endl;
+    (*file) << "        stateFunc = 32," << std::endl;
+    (*file) << "        stateVar = 64," << std::endl;
+    (*file) << "        number = 128," << std::endl;
+    (*file) << "        optional = 256," << std::endl;
+    (*file) << "        native = 512," << std::endl;
+    (*file) << "        illegal = 1024" << std::endl;
+    (*file) << "    } type;" << std::endl;
+    (*file) << "    int val;" << std::endl;
+    (*file) << "    unsigned char bits;" << std::endl;
+    (*file) << "    unsigned char field;" << std::endl;
+    (*file) << "    char unary;" << std::endl;
+    (*file) << "    char binary;" << std::endl;
+    (*file) << "};" << std::endl;
+    (*file) << "#ifdef DEBUG" << std::endl;
+    (*file) << "#    define CODING_NAME(x) x," << std::endl;
+    (*file) << "#else" << std::endl;
+    (*file) << "#    define CODING_NAME(x)" << std::endl;
+    (*file) << "#endif" << std::endl;
+    (*file) << std::endl;
+    (*file) << "class Numeric" << std::endl;
+    (*file) << "{" << std::endl;
+    (*file) << "  public:" << std::endl;
+    (*file) << "    Numeric(AsmExprNode* n) : node(n) {}" << std::endl;
+    (*file) << "    Numeric() : node(nullptr) {}" << std::endl;
+    (*file) << "    AsmExprNode* node;" << std::endl;
+    (*file) << "    int pos = 0;" << std::endl;
+    (*file) << "    int relOfs = 0;" << std::endl;
+    (*file) << "    int size = 0;" << std::endl;
+    (*file) << "    int used = 0;" << std::endl;
+    (*file) << "};" << std::endl;
+    (*file) << std::endl;
+    (*file) << "class InputToken" << std::endl;
+    (*file) << "{" << std::endl;
+    (*file) << "  public:" << std::endl;
+    (*file) << "    enum" << std::endl;
+    (*file) << "    {" << std::endl;
+    (*file) << "        TOKEN," << std::endl;
+    (*file) << "        REGISTER," << std::endl;
+    (*file) << "        NUMBER," << std::endl;
+    (*file) << "        LABEL" << std::endl;
+    (*file) << "    } type;" << std::endl;
+    (*file) << "    AsmExprNode* val;" << std::endl;
+    (*file) << "};" << std::endl;
+    file->close();
+    return true;
 }
 bool GenParser::GenerateCompilerStubs()
 {
@@ -272,7 +374,7 @@ bool GenParser::GenerateOperandHeader()
 
     (*file) << "class " << className << ";" << std::endl;
     (*file) << "class Coding;" << std::endl;
-    (*file) << "static const int OPARRAY_SIZE = " << valueTags.size() << ";" << std::endl;
+    (*file) << "static const int OPARRAY_SIZE = " << valueTags.size()+1 << ";" << std::endl;
     (*file) << "class " << operandClassName << std::endl;
     (*file) << "{ " << std::endl;
     (*file) << "public:" << std::endl;
@@ -568,6 +670,7 @@ bool GenParser::GenerateStateFuncs()
         ++i;
     }
     (*file) << className << "::StateFuncDispatchType " << className << "::stateFuncs[] = {" << std::endl;
+    (*file) << "\tnullptr," << std::endl;
     i = 1;
     for (auto x : parser.states)
     {

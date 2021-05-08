@@ -146,10 +146,19 @@ void VineCompress(T* root, size_t count)
         T* child = scanner->right;
         scanner->right = child->right;
         scanner = scanner->right;
-        child->right = scanner->left;
-        scanner->left = child;
+        if (scanner)
+        {
+            child->right = scanner->left;
+            scanner->left = child;
+        }
+        else
+        {
+            // this is to handle problems when errors are detected in the source
+            break;
+        }
     }
 }
+
 template <class T>
 void VineToTreeWrapper(T* root)
 {

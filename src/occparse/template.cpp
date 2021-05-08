@@ -7770,7 +7770,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             lambdas = nullptr;
             old = *cls;
 #ifdef PARSER_ONLY
-            cls->sb->parserSet = false;
+            cls->parserSet = false;
 #endif
             cls->sb->attribs.inheritable.linkage = lk_virtual;
             cls->sb->parentClass = SynthesizeParentClass(cls->sb->parentClass);
@@ -7952,7 +7952,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
     addTemplateDeclaration(&s);
     pushCount++;
 #ifdef PARSER_ONLY
-    sym->sb->parserSet = false;
+    sym->parserSet = false;
 #endif
     if (!found)
     {

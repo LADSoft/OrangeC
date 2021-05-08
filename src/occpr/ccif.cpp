@@ -128,7 +128,7 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
         }
         while (hr)
         {
-            SYMBOL* st = (SYMBOL*)hr->p->sb;
+            SYMBOL* st = (SYMBOL*)hr->p;
             if (st->sb->storage_class == sc_overloads)
             {
                 order = WriteStructMembers(st, parent, struct_id, file_id, order, base, access);
@@ -369,9 +369,9 @@ static void DumpSymbol(SYMBOL* sym)
             {
                 int order = 1;
                 SYMLIST* hr = sym->tp->syms->table[0];
-                while (hr && ((SYMBOL*)hr->p->sb)->sb->storage_class == sc_parameter)
+                while (hr && ((SYMBOL*)hr->p)->sb->storage_class == sc_parameter)
                 {
-                    SYMBOL* st = (SYMBOL*)hr->p->sb;
+                    SYMBOL* st = (SYMBOL*)hr->p;
                     const char* argName = GetSymName(st, st);
                     if (strstr(argName, "++"))
                         argName = " ";
@@ -485,7 +485,7 @@ void ccSetSymbol(SYMBOL* sp)
     if (!skipThisFile)
     {
         Optimizer::LIST* newItem = Allocate<Optimizer::LIST>();
-        if (sp->sb->decoratedName)
+        if (sp->sb && sp->sb->decoratedName)
         {
             newItem->next = symList;
             newItem->data = sp;

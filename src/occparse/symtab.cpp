@@ -204,9 +204,9 @@ SYMLIST* AddOverloadName(SYMBOL* item, HASHTABLE* table)
     SYMLIST** p = GetHashLink(table, item->sb->decoratedName);
     SYMLIST* newRec;
 #ifdef PARSER_ONLY
-    if (!item->sb->parserSet)
+    if (!item->parserSet)
     {
-        item->sb->parserSet = true;
+        item->parserSet = true;
         CompletionCompiler::ccSetSymbol(item);
     }
 #endif
@@ -649,9 +649,9 @@ void insert(SYMBOL* in, HASHTABLE* table)
     {
 #ifdef PARSER_ONLY
         if (table != kwhash && table != CompletionCompiler::ccHash)
-            if (!in->sb->parserSet)
+            if (!in->parserSet)
             {
-                in->sb->parserSet = true;
+                in->parserSet = true;
                 CompletionCompiler::ccSetSymbol(in);
             }
 #endif

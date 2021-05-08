@@ -571,6 +571,9 @@ typedef struct sym
     struct _templateParamList* templateParams;
     unsigned packed : 1;  // packed template param instance
     unsigned synthesized : 1; // packed template param was synthesized during parsing
+#ifdef PARSER_ONLY
+    int parserSet : 1;                        /* sent to parser already*/
+#endif
     struct _symbody
     {
         const char* decoratedName; /* symbol name with decorations, as used in output format */
@@ -597,7 +600,6 @@ typedef struct sym
         int ccEndLine;                            /* end line for code completion */
         unsigned long long ccStructId;            /* code completion struct id */
         struct _ccNamespaceData* ccNamespaceData; /* namespace data for code completion */
-        int parserSet : 1;                        /* sent to parser already*/
 #endif
         unsigned declaring : 1;             /* currently being declared */
         unsigned compilerDeclared : 1;      /* compiler declared this */

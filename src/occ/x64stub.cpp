@@ -153,6 +153,11 @@ const char* Lexer::preDataIntel =
 
 const char* Lexer::preDataGas = "";
 
+InstructionParser *InstructionParser::GetInstance()
+{
+	return static_cast<InstructionParser *>(new x64Parser());
+}
+
 void Instruction::Optimize(Section* sect, int pc, bool last)
 {
 

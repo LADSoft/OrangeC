@@ -696,6 +696,11 @@ int InstructionParser::processorMode = 32;
 
 bool IsSymbolCharRoutine(const char* data, bool startOnly);
 
+InstructionParser *InstructionParser::GetInstance()
+{
+	return static_cast<InstructionParser *>(new x64Parser());
+}
+
 void Instruction::RepRemoveCancellations(AsmExprNode* exp, bool commit, int& count, Section* sect[], bool sign[], bool plus)
 {
     if (exp->GetType() == AsmExprNode::LABEL)

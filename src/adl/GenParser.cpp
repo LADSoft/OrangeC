@@ -663,15 +663,12 @@ bool GenParser::GenerateHeader()
 bool GenParser::GenerateCPPHeader()
 {
     (*file) << "#include \"InstructionParser.h\"" << std::endl;
+    (*file) << "#include \"AdlStructures.h\"" << std::endl;
     (*file) << "#include \"" << operandClassName << ".h"
             << "\"" << std::endl;
     (*file) << "#include \"" << className << ".h"
             << "\"" << std::endl;
     (*file) << std::endl;
-    (*file) << "InstructionParser *InstructionParser::GetInstance()" << std::endl;
-    (*file) << "{" << std::endl;
-    (*file) << "\treturn static_cast<InstructionParser *>(new " << className << "());" << std::endl;
-    (*file) << "}" << std::endl;
     return true;
 }
 bool GenParser::GenerateStateFuncs()

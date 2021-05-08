@@ -1,4 +1,4 @@
-# Architecture Description Language
+# Architecture Description Language Version 1.0
 
 The architecture description language (ADL) is intended to form a high-level specification of architecture-specific data such as instruction codings.   Later, it may be used to generate compiler backends.   ADL files are xml files with specific nodes and attributes that are processed by a parser, which then generates useable C++ code to translate source code to a byte code sequence, to include in for example an assembler.   The codings could also be used for a disassembler and/or simulator at some future point.
 
@@ -57,7 +57,7 @@ These groups are
 * Double Registers           specifies which registers will be used as register pairs when selecting an integer size equal to twice the register width
 * Addressing Modes           specifies the relationship between addressing modes and coding sequences
 * Opcodes                    specifies the relationship between opcodes and their allowed operands, and expands upon the coding sequences
-
+* Prefixes                   specifies single-use opcodes that prefix other instructions, e.g. the `lock` and `rep` prefixes on the x86
 This information is specified free form in the confines of the `Coding` entity, without further grouping in the xml file.
 
 For example:
@@ -96,6 +96,8 @@ For example:
 		</Opcode>
 		<!-- more opcode definitions>
 	</Coding>
+    <Prefix Name="lock" Coding="0xf0:8"/>
+    <!-- more prefix definitions -->
 ```
 
 This is an incomplete example with some statements taken from the x64 ADL file.   There are a number of use cases not shown here.
@@ -657,6 +659,22 @@ In the following Operand node:
 
 the class rm8 already has a coding as an addressing mode.   The coding in this operand node overrides that encoding, but since we want to reuse the original coding after all we say 'native'.   Then for purposes of the referenced instruction we encode a constant value after the original encoding...
 
+#### Prefixes group
+
+Prefix nodes specify prefixes that can precede instructions.   For example on the x86 the `rep` prefix tells a string instruction to repeat until a counter reaches zero:
+
+```
+	rep movsb
+```
+		
+The rep prefix might be specified with the following in the ADL file.
+
+```xml
+	<Prefix Name="rep" Coding="0xf3:8"/>
+```
+
+It is still up to user code to parse out the token but the adl parse will at least stick it in a handy hash-table and also process discovered prefixes while creating coding sequences.
+
 #### Parsing order
 
 The operands nodes within an opcode node can be located uniquely by looking up the mnemonic, and then are processed sequentially within the list of operands.   The order they appear in is important, since the sequential processing means that if a match is found, subsequent operands will be ignored.   Some of the things to look out for when generating an opcode table are as follows:
@@ -685,6 +703,8 @@ It is split into two sections, `Support Code` details necessary code and headers
 
 ### Support code
 
+#### Generated files
+
 The Adl compiler generates the following files:
 
 * `AdlStructures.h`      - structures used for interfacing to the adl generated parser   
@@ -706,6 +726,9 @@ where `xxxx` is replaced by the processor name given at the beginning of the adl
 These don't form a complete parser; in particular there must be glue code to transform the opcodes and operands prior to passing them to the parser.  The parser defines a parsing structure called `xxxxParser` (x64Parser in our example) that inherits from a user-provided class `InstructionParser`.  The inheriting is performed in the manner to take care of the case where a single assembler program might use the same parsing infrastructure with different adl-generated parsers to successfully parse multiple assembly language.   
 
 The `InstructionParser` class is usually defined in the file pair InstructionParser.cpp and InstructionParser.h.   An additional user-prepared file `xxxxStub.cpp` can be used to hold miscellaneous functions that aren't directly related to parsing instructions.
+
+
+#### InstructionParser class
 
 A minimal implementation of `InstructionParser` might look something like this:
 
@@ -778,31 +801,31 @@ class InstructionParser
 	
 	// numeric operands returned from the parser
 	// generally used to figure out where to put things like fixups and how they relate to the input stream
-	// filled in by the call to Dispatch()
+	// filled in by the call to DispatchOpcode()
     std::list<Numeric*> operands;
 	// coding structures that have to be cleaned up at some point
-	// filled in by the call to Dispatch()	
+	// filled in by the call to DispatchOpcode()	
     std::list<Coding*> CleanupValues;
 	// prefix values parse out of the input stream.
 	// Dispatch will place them before the rest of the instruction when streaming the coding
     std::list<int> prefixes;
 	// input tokens.   Parsing the input stream results in this list.
 	// The SetNumber and ParseNumber routines, above, reference this list with the 'tokenPos' parameter
-	// must be filled in before the call to dispatch()
+	// must be filled in before the call to DispatchOpcode()
     std::vector<InputToken*> inputTokens;
 	// the coding values get streamed into this structure
-	// after the call to Dispatch(), this will hold the byte stream streamed by whichever coding was chosen
+	// after the call to DispatchOpcode(), this will hold the byte stream streamed by whichever coding was chosen
 	// the 'operands' variable will have more information about how to place fixups within this stream
     BitStream bits;
 	// tbe SetNumber and ParseNumber routines will leave a newly constructed 'Numeric' structure here,
 	// it will be put in the 'operands' array for use in handling fixups and so forth
     Numeric* numeric;
-	// Set to true by Dispatch(), if all the tokens in the inputTokens vector have been consumed.
+	// Set to true by DispatchOpcode(), if all the tokens in the inputTokens vector have been consumed.
     bool eol;
 };
 ```
 
-a further function defined in `x64Parser.h` needs to be defined as well:
+A further function defined in `x64Parser.h` needs to be defined as well:
 
 ```c++
 // Perform a math function, as used in a coding.   E.g unary or binary function with one or two operands.
@@ -810,6 +833,115 @@ a further function defined in `x64Parser.h` needs to be defined as well:
 int x64Parser::DoMath(char op, int left, int right);
 ```
 
+#### Auxilliary structures
+
+Several auxilliary structures are defined in `AdlStructures.h`.   They are as follows:
+
+`AdlExprNode`      - base class for user-defined expressions
+`BitStream`        - codings are streamed into an instance of this class.   After DispatchOpcode() returns will have the byte stream.
+`Coding`           - internal structure used to store pieces of codings, only used in generated code
+`Numeric`          - a description of a number.   Can be used e.g. to determine fixups
+`InputToken`       - one of the incoming tokens.   Set up prior to calling DispatchOpcode()
+
+`AdlStructures.h` also defines an enumeration `asmError` for return codes from the Dispatch function.
+
+AdlExprNode has one member of interest:
+
+```c++
+    // stores a register or token value.   Can also be used to store other things when used as a base class.
+    long long ival;
+```
+AdlExprNodes are stored in Numeric and InputToken instances, and can form the base class for some broader expression class.
+
+BitStream is the destination for codings and has three members of interest - 
+
+```c++
+    // Call to empty the stream, e.g. before DispatchOpcode();
+    void Reset();
+	// Call to get the number of bits that have been streamed.
+    int GetBits();
+	// call to get the streamed bytes into array dest with maximum length size
+    void GetBytes(unsigned char* dest, int size);
+```
+Numeric is filled in during parsing and has five members of interest:
+
+```c++
+    // the original expression, probably a derived class.
+	// can be used to determine labels and so forth for fixups.
+    AdlExprNode* node;
+	// position within the instruction that the operand appears (in bits)
+    int pos = 0;
+	// relative offset used for calculating constant values for relative branches
+	// specified in the adl file
+	// offset from the expressed position, in bytes
+    int relOfs = 0;
+	// size of the number in bits
+    int size = 0;
+	// true if the number was actually used by the parser.
+    int used = 0;
+
+```
+Coding is used internally, and isn't of general interest.
+
+InputToken is filled in before calling Dispatch and has two members of interest:
+
+```c++
+    // the token type.
+    enum
+    {
+        TOKEN,
+        REGISTER,
+        NUMBER,
+        LABEL
+    } type;
+	// an expression related to the token.   
+    AdlExprNode* val;
+```
 
 ### Calling interface
+
+To parse code, the function Dispatch is called:
+
+```c++
+    asmError DispatchOpcode(int opcode);
+```
+
+This function takes one of the opcode enumerations, and returns one of the asmError enumerations.   To get one of the opcode enumerations, one can parse out the opcode mnemonic then look it up in the opcodeTable.
+
+Before calling DispatchOpcode, the calling code must do some initialization to set up prefixes and tokens.
+
+1. call bits.Reset()
+2. Parse out any prefix tokens, look them up in the prefixTable then add them to the `prefixes` list.
+3. Parse out the operand tokens, look them up in the tokensTable, then add them to the `tokens` list.
+
+After the return from DispatchOpcode the first thing is to look at the return code.   
+
+If the return code is `AERR_NONE` then the bits array has a byte stream for the instruction, and you can retrieve it for use in generating the instruction with code like the following:
+
+```c++
+            unsigned char buf[32];
+            bits.GetBytes(buf, (bits.GetBits() + 7) / 8);
+            return new Instruction(buf, (bits.GetBits() + 7) / 8);
+```
+
+where Instruction is some item that caches instruction bytes.
+
+
+At the same time the 'operands' list will have numeric operands that can be processed to add fixup records.
+
+Otherwise if the return value is not `AERR_NONE` some error occurred that can be displayed.
+
+At some point the operands and cleanupValues arrays will have to have their members deleted to free up the memory.
+
+#### Populating the tokens array
+
+To come up with a token stream suitable for the parser to process, the basic idea is to look up each token string in the operands in the token table.   If it exists then an `InputToken` of either REGISTER or TOKEN may be created.   If the value associated with the token string is greater than or equal to 1000, it is a REGISTER token, otherwise it is a TOKEN token.  The ival of the AdlExprNode associated with the token must be set to the token value or the token value - 1000, depending on whether it is a TOKEN or a REGISTER type.   For these purposes it doesn't really matter if the AdlExprNode is derived from or not as only the ival is necessary.
+
+Numbers that aren't in the token table can also be parsed out at this point, they would result in an `InputToken` of type NUMBER.   Here the AdlExprNode would likely have been derived from to generate some type of expression node that allows determination of whether the value is a constant or a label.
+
+#### Interpreting the operand array
+
+After DispatchOpcode() returns, the byte stream is retrievable from the `bits` member.   But there still may be a need to generate fixup records, e.g. for labels in other sections that will be relocated later, or for external labels that aren't even visible at the time of the assembly.
+
+Here we iterate through the `operand` array.   IF the 'used' flag is set on an operand, and it has a non-zero size, and if examination of the associated AdlExprNode (which has probably been derived from) results in a non-constant value, then it would be reasonable to attach a fixup to the instruction bytes.   The `Numeric` structure has info about where to place the fixup, e.g. the pos field gives its position in bits and the size field gives its size in bits.   The relOfs field gives information for helping to resolve relative branches within the same section.
 

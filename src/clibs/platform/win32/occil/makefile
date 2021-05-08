@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -32,6 +32,7 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+
 H_FILES = $(wildcard *.h)
 C_DEPENDENCIES = $(wildcard *.c)
 

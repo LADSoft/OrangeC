@@ -1,6 +1,6 @@
 # Architecture Description Language
 
-The architecture description language (ADL) is intended to form a high-level specification of architecture-specific data such as instruction codings.   Later, it may be used to generate compiler backends.   ADL files are processed by a parser, which then generates useable C++ code to include in for example an assembler.   The codings could also be used for a disassembler and/or simulator at some future point.
+The architecture description language (ADL) is intended to form a high-level specification of architecture-specific data such as instruction codings.   Later, it may be used to generate compiler backends.   ADL files are xml files with specific nodes and attributes that are processed by a parser, which then generates useable C++ code to translate source code to a byte code sequence, to include in for example an assembler.   The codings could also be used for a disassembler and/or simulator at some future point.
 
 The ADL specifies a way of finding the correct sequence of byte codes, then streaming them out to a byte array.   The streaming is done with a resolution of as low as 1 bit, so arbitrary byte codes can be streamed out while still preserving individual entities such as a register or scale factor at the source level.
 
@@ -657,11 +657,159 @@ In the following Operand node:
 
 the class rm8 already has a coding as an addressing mode.   The coding in this operand node overrides that encoding, but since we want to reuse the original coding after all we say 'native'.   Then for purposes of the referenced instruction we encode a constant value after the original encoding...
 
+#### Parsing order
+
+The operands nodes within an opcode node can be located uniquely by looking up the mnemonic, and then are processed sequentially within the list of operands.   The order they appear in is important, since the sequential processing means that if a match is found, subsequent operands will be ignored.   Some of the things to look out for when generating an opcode table are as follows:
+
+* explicit registers
+* numbers of different widths
+* optional quantities
+
+If an explicit register is used, it should appear in the operand list before any usage of that register by class.   For example if there is a register class reg8 which encompasses all possible 8-bit registers, one would write an operand that uses that register class.   If one then wants to override that operand for a register with a specific name to use for example a more compact encoding, one should write a similar rule which encompasses only that register and place it before the original rule.
+
+For example, on the x86 there are registers al,cl,dl,bl which are part of a register class 'reg8'.   But sometimes it is possible to have a more compact representation for register 'al'.    A rule would be written for the register class 'reg8' and another rule would be written for register al, then the one for register al would appear before the rule for register class 'reg8'.
+
+If two operands differ only by numbers that have different widths, it is important that the number with the lesser width appear first.   This is because for small numbers, both operands will match the number but one would want the smaller instruction coding to take precedence for such numbers.
+
+When there is an optional quantity in an operand, the operand will be processed whether or not the optional quantity is present.   so if two operands only differ in an optional quantity, the one that is desired to be the default should come first.
+
 ### Compiling entity
 
-The `Compiling` entity isn't fully fleshed out or otherwise supported yet.   It won't be documented here, other than to say there may be multiple profiles for example one could use a different profile for different bit widths.
+The `Compiling` entity isn't fully fleshed out or otherwise supported yet.   It won'ts be documented here, other than to say there may be multiple profiles for example one could use a different profile for different bit widths.
 
 ## Code level interface
 
 The ADL compiler generates C++ code which can be interfaced to an external tool, e.g. a compiler or assembler.   This section describes the interface.
+
+It is split into two sections, `Support Code` details necessary code and headers that must be provided for the ADL-generated code to work, and `Calling Interface` specifies how to set up the arguments to successfully call the parser and get a byte-code sequence back.
+
+### Support code
+
+The Adl compiler generates the following files:
+
+* `AdlStructures.h`      - structures used for interfacing to the adl generated parser   
+* `AdlFunctions.cpp`     - generic functions used with the parser
+* `xxxxOperand.h`        - custom structure for storing operands
+* `xxxxParser.h`         - header for the parsing state machine and parsing related functions
+* `xxxxParser.cpp`       - the parsing state machine and parsing related functions
+* `xxxxInstructions.h`   - enumerations for opcodes and tokens
+* `xxxxInstructions.cpp` - text for opcodes and tokens, InputToken definitions for tokens
+
+where `xxxx` is replaced by the processor name given at the beginning of the adl file.  In our example these would be:
+
+`x64Operand.h`
+`x64Parser.h`
+`x64Parser.cpp`
+`x64Instructions.h`
+`x64Instructions.cpp`
+
+These don't form a complete parser; in particular there must be glue code to transform the opcodes and operands prior to passing them to the parser.  The parser defines a parsing structure called `xxxxParser` (x64Parser in our example) that inherits from a user-provided class `InstructionParser`.  The inheriting is performed in the manner to take care of the case where a single assembler program might use the same parsing infrastructure with different adl-generated parsers to successfully parse multiple assembly language.   
+
+The `InstructionParser` class is usually defined in the file pair InstructionParser.cpp and InstructionParser.h.   An additional user-prepared file `xxxxStub.cpp` can be used to hold miscellaneous functions that aren't directly related to parsing instructions.
+
+A minimal implementation of `InstructionParser` might look something like this:
+
+```c++
+// include various generated structures
+#include "AdlStructures.h"
+// include other stuff needed by this file
+
+
+// an assembler-specific definition of a section/segment, used in headers to provide data for processing
+class Section;
+// an assembler-specific definition of a file, used in headers to provide data for processing.   Maybe other things would be
+// accessible from here, such as a tokenizer to tokenize the input stream.
+class AsmFile;
+
+class InstructionParser
+{
+  public:
+    InstructionParser()
+    {
+    }
+
+	// instantiates the xxxxParser class.   
+	// usually defined in xxxxStub.cpp
+    static InstructionParser* GetInstance();
+
+    // set a default assembler state based on something like command line switches, e.g. processor bits or other state variables
+	// usually defined in xxxxStub.cpp
+    virtual void Setup(Section* sect) = 0;
+	
+	// Initialize the xxxxParser instance.   
+	// Defined by the code generator in xxxParser.cpp
+    virtual void Init() = 0;
+	// parse out the arguments for a section, e.g. bit size or other desired states that can be set in a section definition
+	// usually defined in xxxxStub.cpp
+    virtual bool ParseSection(AsmFile* fil, Section* sect) = 0;
+	// generic routine to parse out any directives that are related to state variables
+	// usually defined in xxxxStub.cpp
+    virtual bool ParseDirective(AsmFile* fil, Section* sect) = 0;
+	// can be used to parse attributes that come before an instruction, e.g. for gas compatibility
+	// usually defined in xxxxStub.cpp
+    virtual std::string ParsePreInstruction(const std::string& op, bool doParse);
+	// returns the big endian flag from the ADL file
+	// Defined by the code generator in xxxParser.h
+    virtual bool IsBigEndian() = 0;
+	
+	// replace the numeric token at tokenpos that has an integer value oldval (if it exists) with a numeric token holding newval
+	// usually defined in InstructionParser.cpp
+    bool SetNumber(int tokenPos, int oldVal, int newVal);
+
+  protected:
+    // check the numeric value at tokenpos against the parameters as specified in the number class definition from the ADL file.
+	// set up a structure in the 'numeric' slot below and return true if it matches
+	// otherwise return false.
+	// usually defined in InstructionParser.cpp
+	bool ParseNumber(int relOfs, int sign, int bits, int needConstant, int tokenPos);
+	
+	// main dispatcher for the parser.   Some fields below have to be set up properly for it to work.
+	// defined by the code generator in xParser.cpp
+    virtual asmError DispatchOpcode(int opcode) = 0;
+	// hash table, mapping between token names and token values
+	// defined by the code generator in xParser.cpp
+    std::unordered_map<std::string, int> tokenTable;
+	// hash table, mapping between opcode names and opcode values
+	// defined by the code generator in xParser.cpp
+    std::unordered_map<std::string, int> opcodeTable;
+	// hash table mapping for any instruction prefixes such as the 'rep' prefixes in the x86
+	// defined by the code generator in xParser.cpp
+    std::unordered_map<std::string, int> prefixTable;
+	
+	// numeric operands returned from the parser
+	// generally used to figure out where to put things like fixups and how they relate to the input stream
+	// filled in by the call to Dispatch()
+    std::list<Numeric*> operands;
+	// coding structures that have to be cleaned up at some point
+	// filled in by the call to Dispatch()	
+    std::list<Coding*> CleanupValues;
+	// prefix values parse out of the input stream.
+	// Dispatch will place them before the rest of the instruction when streaming the coding
+    std::list<int> prefixes;
+	// input tokens.   Parsing the input stream results in this list.
+	// The SetNumber and ParseNumber routines, above, reference this list with the 'tokenPos' parameter
+	// must be filled in before the call to dispatch()
+    std::vector<InputToken*> inputTokens;
+	// the coding values get streamed into this structure
+	// after the call to Dispatch(), this will hold the byte stream streamed by whichever coding was chosen
+	// the 'operands' variable will have more information about how to place fixups within this stream
+    BitStream bits;
+	// tbe SetNumber and ParseNumber routines will leave a newly constructed 'Numeric' structure here,
+	// it will be put in the 'operands' array for use in handling fixups and so forth
+    Numeric* numeric;
+	// Set to true by Dispatch(), if all the tokens in the inputTokens vector have been consumed.
+    bool eol;
+};
+```
+
+a further function defined in `x64Parser.h` needs to be defined as well:
+
+```c++
+// Perform a math function, as used in a coding.   E.g unary or binary function with one or two operands.
+// usually defined in x64Stub.cpp
+int x64Parser::DoMath(char op, int left, int right);
+```
+
+
+### Calling interface
 

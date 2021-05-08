@@ -277,8 +277,8 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
             asmError rv = DispatchOpcode(ins->opcode);
             if (rv == AERR_NONE)
             {
-                unsigned char buf[32];
-                bits.GetBytes(buf, 32);
+                unsigned char buf[64];
+                bits.GetBytes(buf, (bits.GetBits() + 7) / 8);
                 newIns = new Instruction(buf, (bits.GetBits() + 7) / 8);
                 operands = this->operands;
             }

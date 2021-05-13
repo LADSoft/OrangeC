@@ -1,8 +1,8 @@
 # Architecture Description Language Version 1.0
 
-The architecture description language (ADL) is intended to form a high-level specification of architecture-specific data such as instruction codings.   Later, it may be used to generate compiler backends.   ADL files are xml files with specific nodes and attributes that are processed by a parser, which then generates useable C++ code to translate source code to a byte code sequence, to include in for example an assembler.   The codings could also be used for a disassembler and/or simulator at some future point.
+The architecture description language (ADL) is intended to form a high-level specification of architecture-specific data such as instruction codings.   Later, it may be used to generate compiler backends.   ADL files are xml files with specific nodes and attributes that are processed by a parser, which then generates useable C++ code to translate source code to a byte code sequence.   This could be used for example an assembler.   With modifications to the ADL compiler, the codings could also be used for a disassembler and/or simulator at some future point.
 
-The ADL specifies a way of finding the correct sequence of byte codes, then streaming them out to a byte array.   The streaming is done with a resolution of as low as 1 bit, so arbitrary byte codes can be streamed out while still preserving individual entities such as a register or scale factor at the source level.
+The ADL specifies a way of parsing the input to find the correct sequence of byte codes, then streaming them out to a byte array.   The streaming is done with a resolution of as low as 1 bit, so arbitrary byte codes can be streamed out while still preserving individual entities such as a register or scale factor at the source level.
 
 This documentation has two major parts; a description of the ADL and a description of how to interface the generated code e.g. to an assembler.
 
@@ -14,7 +14,7 @@ The ADL file has three major top-level entities.
 
 The `Processor` entity gives the name of the architecture.   In the future it may give other architectually specific information.
 
-The `Coding` entity gives information for assemblers/dissassemblers.   It allows a translation to be performed between a source-code representation  and the byte sequence required by a CPU supporting the architecture.
+The `Coding` entity gives information for assemblers/dissassemblers.   It allows a translation to be performed between a source-code representation  and the coding sequence required by a CPU supporting the architecture.
 
 The 'Compiling' entity is not currently supported, in the future it will be used to specify instruction sequences for the compiler to use as well as things like peephole optimizations and register allocation information.
 
@@ -35,7 +35,7 @@ An example file is as follows:
 
 ### Processor entity
 
-The `Processor` entity simply gives the name of the architecture, in text format
+The `Processor` entity simply gives the name of the architecture, in text format.   This will be used in the generated code, and to select names for generated files.
 
 For example:
 
@@ -49,14 +49,16 @@ The `Coding` entity gives the correlation between a source code representation, 
 
 These groups are
 
-* Param                      specifies various parameters such as case sensitivity and endianness
-* Number                     specifies number formats or numeric constants
-* State Variables            specifies variables that can be for example to choose between different CPU modes
+* Param                      specifies various parameters such as for case sensitivity and processor endianness
+* Number Formats             specifies number formats or numeric constants
+* State Variables            specifies variables that can be used for example to choose between different CPU modes
 * Coding States              specifies parts of a coding sequence that depend on the assembler state
 * Register definitions       specifies registers in terms of ordinals and the address modes that can use them.
 * Double Registers           specifies which registers will be used as register pairs when selecting an integer size equal to twice the register width
 * Addressing Modes           specifies the relationship between addressing modes and coding sequences
 * Opcodes                    specifies the relationship between opcodes and their allowed operands, and expands upon the coding sequences
+
+Where coding sequences are streaming specifications for instructions.
 
 This information is specified free form in the confines of the `Coding` entity, without further grouping in the xml file.
 
@@ -66,6 +68,7 @@ For example:
 	<Coding>
 		<Param Name="Case Sensitive" Value="false"/>
 		<!-- more params -->
+
 		<Number Class="signed8">
 			<Instance Value="-#:8"/>
 		</Number>
@@ -109,7 +112,7 @@ There are a number of basic concepts which are used in various places within the
 * Conditionals       allows different uses of an entity depending on a specified condition
 * Classes            allows linkage of one entity to another
 * Variables          allows accessing a register, number, or address mode that is specified in the source code
-* Codings            allows specifying the bit stream that makes up the instruction bytes
+* Coding sequences   allows specifying the bit stream that makes up the instruction bytes
 * Address names      allows mapping a token sequence to an address mode
 
 Some of these can be seen in previous examples.   The next sections will elaborate on them.
@@ -126,18 +129,7 @@ For example in the x64 ADL file the following `Number` node is only matched if t
     </Number>
 ```
 
-this is because a Cond attribute exists and compares a processor bits variable with 16.   These conditional expression will be directly embedded in the C++ code so they can reference anything a C++ expression can reference.
-
-The following `State` node encodes an x86 data size prefix into the coding sequence, if the processor is not in 16-bit mode.
-
-```xml
-    <State Name="data16">
-      <Value Cond="'processorbits'==16" Coding=""/>
-      <Value Cond="'processorbits'!=16" Coding="0x66:8"/>
-    </State>
-```
-
-here processorbits was already defined as a state variable:
+here `processorbits` was already defined as a state variable:
 
 ```xml
 	<StateVars>
@@ -147,7 +139,16 @@ here processorbits was already defined as a state variable:
 
 and the quotes around `processorbits` indicate it should be looked up in the state variables table.
 
+The matching is only done because a Cond attribute exists and compares a processor bits variable with 16.   These conditional expression will be directly embedded in the C++ code so they can reference anything a C++ expression can reference.
 
+The following `State` node encodes an x64 data size prefix into the coding sequence, if the processor is not in 16-bit mode.
+
+```xml
+    <State Name="data16">
+      <Value Cond="'processorbits'==16" Coding=""/>
+      <Value Cond="'processorbits'!=16" Coding="0x66:8"/>
+    </State>
+```
 
 ##### Classes
 
@@ -155,11 +156,11 @@ Numbers, Registers, Address Modes, and Opcodes may have classes specified as an 
 
 Number classes are consumed by address modes or operands and are used to correlate a number in ASCII text to its coding sequence.
 
-Register classes are also consumed by address modes; they are generally used to generate a token sequence that can parse one of several register names and come up with a unique ordinal.
+Register classes are also consumed by address modes; they group various registers togther e.g. if their different ordinals are often used in the same contexts there might be a class linking them.   They are generally used to generate a token sequence that can parse one of several register names and come up with a unique ordinal.   The register classes can also be used to differentiate between different uses of the same ordinals.
 
 Address mode classes are consumed by opcodes and are used to group multiple address modes together.   Between a token sequence specified in the address mode and the class specification, a unique coding sequence can be derived.   Note that this means two Address specifications could differ only in class to allow different codings for the same input token sequence.
 
-Opcode classes are consumed by other opcodes, they are used to group different combinations of address modes together to find the coding sequence for the specified address mode.
+Opcode classes are consumed by other opcodes.  They are used to group different combinations of address mode groupings together to find the coding sequence for the various address mode groupings that could be accessed by a single mnemonic.
 
 for example in the number
 
@@ -169,7 +170,7 @@ for example in the number
     </Number>
 ```
 
-The class 'rel16' can be referenced as part of the source code representation in a way that will be defined in a subsequent section.   For example to link a numeric type in the source code to an Addressing mode.
+The class 'rel16' can be referenced as part of the source code representation in a way that will be defined in a subsequent section.  e.g. to link a numeric type in the source code to an Addressing mode.
 
 Registers have a similar specification:
 
@@ -180,7 +181,9 @@ Registers have a similar specification:
 	</Register>
 ```
 
-here the class on the 'register' node is ignored at present; it is the class on the 'instance' node that matters.  We see that things can have more than one class.   For example, different addressing modes might reference different groups of registers.
+here the class on the `register` node is ignored at present; it is the class on the `instance` node that matters.  
+
+We see that things can have more than one class.   For example, different addressing modes might reference different groups of registers.
 
 For addressing modes we might have something like:
 
@@ -188,7 +191,7 @@ For addressing modes we might have something like:
     <Address Name="['mem:address16']" Class="rmx,rm,frm,rm8,rm16,rm32,rm16it" Coding="'addr16' *'mand' 0x40:8 'op' 0:2 'mod':3 6:3 'mem':16"/>
 ```
 	
-Here we again have multiple classes associated with the addressing mode.   The reason for doing this is their may be variations on an addressing mode, for example on the x86 some instructions allow a full range of addressing modes, but other instructions allow only an abbreviated amount from the full set.   By assocating one class with the full range and another with a more restriced range, the abbreviation can be achieved without respecifying all the address modes in question, assuming the values that are there in the abbreviated set are encoded exactly the same as those in the full set, when present.
+Here we again have multiple classes associated with the addressing mode.   The reason for doing this is their may be variations on an addressing mode, for example on the x64 some instructions allow a full range of addressing modes, but other instructions allow only an abbreviated amount from the full set.   By assocating one class with the full range and another with a more restriced range, the abbreviation can be achieved without respecifying all the address modes in question.   That is, assuming the values that are there in the abbreviated set are encoded exactly the same as those in the full set.
 
 The addressing mode example also shows how classes are consumed.   Here the `Name` field specifies the source-code token sequence that results in the encoding.   'address16' was defined as a class on a `Number` like this:
 
@@ -208,7 +211,7 @@ More will be said about this in the next section.
 There are four types of variables.
 
 * State variables allow examination of assembly state
-* Coding State variables allow inserting some constant value in the output bit stream, usually based on some conditional value
+* Coding State variables allow inserting some constant value in a coding sequence, usually based on some conditional value which is based on a state variable
 * Attribute variables are constants that are selected based on the choice of opcode or register
 * Address-related variables hold things like register values or numbers that are parsed out of the address mode portion of the input stream.
 
@@ -225,11 +228,9 @@ Variables are typically accessed by enclosing their name in quotes.    For examp
 
 State variables are generally used with 'Cond' attributes.   State variables will be detailed further in a future section.
 
-Coding state variables are used in 'Coding' attributes.   They specify a constant value that may depend on the value of a state variable, which is streamed into the opcode byte sequence. These will also be detailed further in a future section.
+Coding state variables are used in 'Coding' attributes.   They specify a constant value that may depend on the value of a state variable, which is streamed into the opcode coding sequence. These will also be detailed further in a future section.
 
-Attribute variables are XML attributes with arbitrary names, that can be referenced from within a contained coding sequence.   For example a common group of addressing modes on the x86 processor always generates the same bit sequence for some interrelated instructions with the same operands.  The exception being that three bits in the middle of the sequence are related to the specific instruction being selected.   An attribute variable can specify those three bits.
-
-Another use for an attribute variable is to specify some parameter based on a selected register name.
+Attribute variables are XML attributes with arbitrary names, that can be referenced from within a contained coding sequence.   For example a common group of addressing modes on the x64 processor always generates roughly the same coding sequence for some interrelated instructions with the same operands.  The exception being that three bits in the middle of the sequence are related to the specific instruction being selected.   An attribute variable related to the mnemonic can specify those three bits. Another use for an attribute variable is to specify some parameter based on a selected register name.
 
 For example:
 
@@ -239,43 +240,45 @@ For example:
 		</Opcode>
 ```
 
-here 'op' is used to specified the first byte of the opcode sequence, and 'mod' is the middle three bits of the address mode.   'R' and 'W' are further attribute variables. A coding in an address mode associated with the 'rm' class will utilize this values to customize the output byte sequence.   Again, these names are arbitrary, they could just as well be 'tree' and 'moss'.
+here 'op' is used to specify the first byte of the coding sequence, and 'mod' is the middle three bits of the address mode.   'R' and 'W' are further attribute variables. A coding in an address mode associated with the 'rm' class will utilize these values to customize the output coding sequence.   Again, these names are arbitrary, they could just as well be 'tree' and 'moss'.
 
-Address-related variables appear in the `Name` field of an `Operand` or `Address` entity.  This field relates directly to source code, and is populated by specifics of what is parrsed.  Such variables are in two parts, the name of a variable to be used in coding, and a class to associate with the address mode.   The class can indicate either another address mode, or a register.
+Address-related variables appear in the `Name` field of an `Operand` or `Address` entity.  This field relates directly to source code, and is populated by specifics of what is parsed.  Such variables are in two parts, the name of a variable to be used in coding sequences, and a class to associate with the address mode.   The class can indicate either another address mode, or a register.
 
 In the above example 'rmval:rm' references a variable 'rmval' which has an address mode class of 'rm'.
 
 Variables defined at a higher scope bleed down into whichever coding sequence is selected.   For example an attribute variable can be selected in a coding attribute locally, in a coding attribute within either the opcode or operands of a class-based opcode, or a coding attribute within an address mode.
 
-##### Codings
+##### Coding sequencea
 
-Codings specify the bit sequence that will be generated for a given address mode.   They often depend on coding state variables, address-related variables, and attribute variables to fill in parts of the bit sequence which change based on assembler state, opcode, or operands.
+Coding sequences specify the sequence of bits that will be generated for a given address mode.   They often depend on coding state variables, address-related variables, and attribute variables to fill in parts of the coding sequence which change based on assembler state, opcode, or operands.
 
-A coding specification can be located in one of three places.   First, within the current operand node within the selected opcode node.   If there is no coding statement there, a coding specification might be found within a contained class-based opcode.   If there is no such opcode or there is no coding statement within it, a coding specification will be found in the associated address mode.
+A coding sequence can be located in one of three places.   First, within the current operand node within the selected opcode node.   If there is no coding sequence there, a coding sequence might be found within a contained class-based opcode.   If there is no such opcode or there is no coding sequence within it, a coding sequence will be found in the associated address mode.
 
-A coding may exist in an opcode node, but then reuse the encoding of an address mode as a sub-part of the actual encoding.   This is for the case where normal address modes are augmented in some way for some specific instructions.
+A coding sequence may exist in an opcode node, but then reuse the encoding of an address mode as a sub-part of the actual encoding.   This is for the case where normal address modes are augmented in some way for some specific instructions.
 
-A coding attribute is a sequence of codings.   For example:
+A coding attribute holds a coding sequence.   For example:
 
 ```xml
     <Address Name="['mem:address16' + 'reg:reg16']" Class="rmx,rm,frm,rm8,rm16,rm32,rm16it" Coding="'addr16' *'mand' 0x40:8 'op' ~3:2 'mod':3 'reg.Ord':3 'mem':16"/>
 ```
 
-Codings are in two parts, the value, and the number of bits to be encoded.   These parts are separated by a : character.
+Individual parts of the sequence or codings are in two parts, the value, and the number of bits to be encoded.   These parts are separated by a : character.
 
 The simplest of codings is a constant.   For example `0x40:8` specifies an encoded constant of 40 hex, encoded into 8 bits.   Constants can also be in decimal, remove the 0x.
 
-Another simple type of codings is a variable reference.   For example the coding 'mod':3  uses the variable `mod`, encoded into three bits.
+Another simple type of coding is a variable reference.   For example the coding 'mod':3  uses the variable `mod`, encoded into three bits.
 
-Codings may inherit a bit size from a variable definition.   For example for the coding 'op', the x86 ADL file usually specifies that op is an 8-bit constant, for example '0xd9:8'.
+Codings may inherit a bit size from a variable definition.   For example for the coding 'op', the x64 ADL file usually specifies that op is an 8-bit constant, for example '0xd9:8'.
 
 Preceding the name of variable codings by '\*' means the coding is optional.   For example the 'mand' variable is defined in a few opcodes but not in other opcodes; when it is not defined nothing will be emitted.
 
-The '.' operand access an attribute variable associated with a register.   In the above example assuming reg16 is the class associted with a register, the coding 'reg.Ord':3 takes the selected register and encodes the value of its 'Ord' attribute into 3 bits.
+The '.' operand accesses an attribute variable associated with a register.   In the above example assuming reg16 is the class associated with a register, the coding 'reg.Ord':3 takes the selected register and encodes the value of its 'Ord' attribute into 3 bits.
 
-codings may contain the following unary operands:
+Codings may contain the following unary operands:
 
 ! ~
+
+where ~is a unary complement and ~ is a unary minus,
 
 or the following binary operands:
 
@@ -308,7 +311,7 @@ For example in the state variable:
     </State>
 ```	
 
-any coding that references this state variable when processorbits == 64 becomes illegal because of the reference to 'illegal'.
+any Coding that references this state variable when processorbits == 64 becomes illegal because of the reference to 'illegal'.
 
 ##### Address Names
 
@@ -318,7 +321,9 @@ The `Name` attribute of an `Address` node indicates the mapping from text as fou
     <Address Name="[ds:bx+'index:index16' + 'signed:signed8offset']" Class="rmx,rm,frm,rm8,rm16,rm32,rm16it" Coding = "'addr16' *'mand' 0x40:8 'op' 1:2 'mod':3 0:2 'index.index':1 'signed':8"/>
 ```
 
-Here the mapping is "\[ds:bx+'index:index16' + 'signed:signed8offset'\]".   In this example everything outside the single quote sequences is taken literally, and must exist in the source code.   In this case the values between the quotes are address-related variables, e.g. `index` is a variable name and `index16` is a register class.   `signed` is a variable name and `signed8offset` is a number class.   Note that there is no requirement that a specific class type be used in a specific place, those just happen to be the class types specified in this example.
+Here the mapping is "\[ds:bx+'index:index16' + 'signed:signed8offset'\]".   In this example everything outside the single quote sequences is taken literally, and must exist in the source code.   In this case the values between the quotes are address-related variables, e.g. `index` is a variable name and `index16` is a register class.   `signed` is a variable name and `signed8offset` is a number class.   
+
+Note that there is no requirement that a specific class type be used in a specific place, those just happen to be the class types specified in this example.
 
 Name attributes can also have optional text.   For example we can modify the previous example slightly:
 
@@ -328,7 +333,7 @@ Name attributes can also have optional text.   For example we can modify the pre
 
 and now the braces indicate there may optionally be a word `dword` before the rest of the operand.   Note there is currently no way of escaping the brace...
 
-#### Param group
+#### Params
 
 There are three parameters at present.
 
@@ -342,12 +347,12 @@ The `Name` attribute is the name of the parameter, and the `Value` attribute is 
 
 The `CaseSensitive` parameter indicates whether the source code is case sensitive.   It is used for parsing.
 
-The `Endian` parameter indicates the endianness of the architecture.   E.G 'big' or 'little'.   It is used for streaming numbers.  
+The `Endian` parameter indicates the endianness of the architecture.   E.G 'big' or 'little'.   It is used for streaming numeric constants defined with 'number' into the coding sequence.  
 
 The `BitsPerMAU` parameter is the minimum number of bits that may be retrieved by the hardware.   Right now only 8 (byte) is supported.
 
 
-#### Number group
+#### Number formats
 
 There are several formats for numbers.   The first is a literal value; the second is a group of enumerations, the next is a signed or unsigned number, and the last one is a relative quantity (relative to the current code position)
 
@@ -388,6 +393,8 @@ Here we are mapping a scale factor into a compact form used in instructions.   T
     </Number>
 ```
 
+here the number 8 present in the source line at the location 'scale' is accessed, is converted to a binary 3.
+
 In the example given at the start of this section:
 
 ```xml
@@ -400,7 +407,7 @@ We are mapping a number with class 'addr16' to a mapping of $#:16.   Additionall
 
 The $#:16 tells several things about the number.   First, the '$' means it can match relocatable quantities (labels).   The # means parse out a number.  The :16 indicates the number of bits to stream for the coding.
 
-Note that the number matcher functions are not generated by the ADL compiler;   they is meant to be a hand-written addition to take into account the vagaries of numbers in whichever assembler is being developed.
+Note that the number matcher functions are not generated by the ADL compiler;   they are meant to be a hand-written addition to take into account the vagaries of numbers in whichever assembler is being developed.   The current number matcher in OASM only handles numbers up to 32 bits.
 
 The final example is a relative offset:
 
@@ -410,14 +417,13 @@ The final example is a relative offset:
     </Number>
 ```
 
-This calculates a relative offset between two points in the output stream.   This particular example is for 16-bit relative branches on the x86, where the program counter is two bytes before the end of the instruction when the calculation is performed, and the processor takes the relative offset from the end of the instruction.
+This calculates a relative offset between two points in the output stream.   This particular example is for 16-bit relative branches on the x64.   In this case the program counter is two bytes before the end of the instruction when the calculation is performed, and the processor takes the relative offset from the end of the instruction.
 
 The relative offset is calculated as follows:   
 
-> relative offset = targetvalue-programcounter-relofs;
+> relative offset valiue = targetvalue-(programcounter+relofs);
 
 so that the relOfs value of two specified in the number means calculate the relative offset from the position in the code that is immediately after the entire instruction coding, including the offset, rather than from the middle of the instruction.
-
 
 Here the '-' in the value attribute indicates this number is signed.   Leaving it out as in previous examples, means the number is signed.
 
@@ -453,7 +459,7 @@ In the following example:
 
 here the `Name` field of the `State` node gives the name of the state variable, to be used in a coding.
 
-The `Value` nodes give a coding which is based on a condition.
+The `Value` nodes give a coding which is based on a condition.   The name of the state would be used in a coding sequence to select this coding.
 
 In this case if the state variable named  'processorbits' is equal to 64, then nothing is emitted.   Otherwise the 'illegal' coding is emitted, which results in an error.
 
@@ -465,7 +471,7 @@ In the following example:
     </State>
 ```
 
-when the coding state variable 'rex' appears in a coding a value of four will be emitted as a four-bit sequence.
+when the coding state variable 'rex' appears in a coding a value of four will be emitted as a four-bit coding sequence.
 
 The use would be similar to:
 
@@ -478,7 +484,7 @@ where the coding state variables are as usual enclosed in single quotes.
 
 #### Register definitions group
 
-Register definitions map the relationship between a textual register name, and an ordinal value.   One or more class values may be used to distinguish between multiple register names with the same name.   For example in the following:
+Register definitions map the relationship between a textual register name, and an ordinal value.   One or more class values may be used to distinguish between multiple register names with the same ordinal.   For example in the following:
 
 ```xml
     <Register Class="general">
@@ -495,7 +501,7 @@ Register definitions map the relationship between a textual register name, and a
 
 there are various declarations of two different registers, rax and r8.    They differ in register width but have the same ordinal value.   The class specification of each gives class names that can be referenced from the `Name` attribute of an addressing mode or operand.
 
-The `Class` attribute within the Register is currently unused, but should be chosen to group registers in some way as it will eventually be used when the `Compiling` entity is supported.   On the x86 the grouping is done based on which segment register is related to the register, when it is used for indexing.
+The `Class` attribute within the Register is currently unused, but should be chosen to group registers in some way as it will eventually be used when the `Compiling` entity is supported.   On the x64 the grouping is done based on which segment register is related to the register, when it is used for indexing.
 
 In each `Instance` node, the required attributes are:
 
@@ -518,7 +524,8 @@ As another example,
       <Instance Name="r9" Ord="1" B="1" X="2" R="4" W="8" Class="base64, index64, reg64"/>
     </Register>
 ```
-this is pretty much the same as the original example, except it uses rcx and r9 instead of rax and r8.   The ordinal has changed correspondingly.
+this is pretty much the same as the original example, except it uses rcx and r9 instead of rax and r8.   The 
+ordinal has changed correspondingly.
 
 Note that the class name of 'general' is also the same as before, since these registers are in a related group.  A similar example for the stack pointer shows the `Class` name on the `Register` node changing:
 
@@ -535,7 +542,7 @@ Note that the class name of 'general' is also the same as before, since these re
     </Register>
 ```
 
-because we are basing the classes on how the indexing works on the x86, and there is a subtle difference between indexing based on a stack register and indexing based on a more general register.
+because we are basing the classes on how the indexing works on the x64, and there is a subtle difference between indexing based on a stack register and indexing based on a more general register.
 
 A register may be consumed by an addressing mode or operand, for example:
 
@@ -551,7 +558,7 @@ Double Registers are an experimental feature that isn't currently supported.   I
 
 #### Addressing Modes group
 
-Addressing modes are the core of the parser.   They correlate either the textual value for a register, or a combination of registers, numbers, and addressing modes, to a coding.
+Addressing modes are the core of the parser.   They correlate either the textual value for a register, or a combination of registers, numbers, and addressing modes, to a coding sequence.
 
 In this example:
 
@@ -559,7 +566,7 @@ In this example:
     <Address Name="'reg:reg8'" Class="rm8, reg8, reg8rm" Coding="*'mand' 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
 ```
 
-the `Name` attribute gives a rendition of the text that will match the input text.   Here it is an address related variable named 'reg' which has a class 'reg8'.   As in other examples, 'reg8' is the class onthe 8-bit register specifications.   So this matches the name of any 8-bit register.
+the `Name` attribute gives a rendition of the text that will match the input text.   Here it is an address related variable named 'reg' which has a class 'reg8'.   As in other examples, 'reg8' is the class on the 8-bit register specifications.   So in the x64 adl file this matches the name of an 8-bit register.
 
 The class names here could be used in any other `Address` specification.   For example:
 
@@ -567,9 +574,11 @@ The class names here could be used in any other `Address` specification.   For e
 	<Address Name="'rm:rm8'" Class="rm" Coding= ...
 ```
 
-can match any other address mode with a class 'rm8'.   Including the one in the first example.   If there are other address modes with a class 'rm8' they could potentially match the input as well.
+can match the token sequence for any address mode with a class 'rm8'.   Including the one in the first example.  The coding sequence on the matched mode will reference any variables found in the matched address mode or possibly coding state variables.
 
-the coding `Coding="*'mand' 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"` in the first example optionally encodes an attribute variable called 'mand' if it exists.   Then it takes the register variable and encodes the sum of its 'B' attribute with the 'R' and 'W' attributes given at an enclosing scope, e.g. an Opcode or Operand node is expected to specify these.   That is streamed as an 8-bit quantity.   Then the 'op' attribute is streamed (its size ias specified at a higher level)  followed by the number 3 in two bits, the mod attribute in 3 bits, and the Ord attribute on the register in 3 bits.   Note that the sum of the number of bits is a multiple of 8 because this processor has instructions that are byte-oriented.   On other processors including risc processors the number of bits may be a multiple of 16 or even 32, because instructions are a multiple of this size.   mand has a size attribute of 8 in this adl file, as does op.
+The coding sequence `Coding="*'mand' 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"` in the first example optionally encodes an attribute variable called 'mand' if it exists.   Then it takes the register variable and encodes the sum of its 'B' attribute with the 'R' and 'W' attributes given at an enclosing scope, e.g. an Opcode or Operand node is expected to specify these.   That is streamed as an 8-bit quantity.   Then the 'op' attribute is streamed (its size is also specified at a higher level)  followed by the number 3 in two bits, the mod attribute in 3 bits, and the Ord attribute on the register in 3 bits.   
+
+Note that the sum of the number of bits is expected to be a multiple of 8 because this processor has instructions that are byte-oriented.   So the codings in all address modes must be arranged to stream exactly a multiple of 8 bits.  On other processors including risc processors the titak number of bits in an instruction may need to be a multiple of 16 or even 32, because instructions are a multiple of this size.   mand has a size attribute of 8 bits in this adl file, as does op.
 
 In a final example:
 
@@ -577,16 +586,17 @@ In a final example:
     <Address Name="[ds:'base:base32'+'index:index32'*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'index.X'+'base.B':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 'base.Ord':3"/>
 ```
 
-we have a complex `Name` attribute.   Everything outside single quotes is literal text.   Then we have 'base:base32' which is an address-related variable that happens to be for a register specification, 'index:index32' which is another address-related variable for a register specification, and 'sc:scale' which happens to be an address-related variable for a number specification.   This might match an x86 addressing mode such as:
+we have a complex `Name` attribute.   Everything outside single quotes is literal text.   Then we have 'base:base32' which is an address-related variable that happens to be for a register specification, 'index:index32' which is another address-related variable for a register specification, and 'sc:scale' which happens to be an address-related variable for a number specification.   This might match an x64 addressing mode such as:
 
 \[ds:eax+esi\*4\] or \[ds:ebp + eax\*2\].
 
+If one wanted to leave out the scale factor instead of specifying \*1, they would have to write a separate address mode specification for it.
 
-#### Opcodes group
+#### Opcodes
 
 Opcode nodes are the primary method of associating an instruction mnemonic and a set of operands, to addressing modes and thus codings.
 
-There are two ways of writing opcode nodes; the class-based one associates a set of Operand nodes that form the primary addressing modes for a group of mnemonics.   In this case the referencing opcodes use the class name of the class-based opcode as kind of a 'subroutine', filling in some attribute-based variables for the opcode-specific parts.
+There are two ways of writing opcode nodes; the class-based one associates a set of Operand nodes that form the allowed addressing modes for a group of mnemonics.   In this case the referencing opcodes use the class name of the class-based opcode as kind of a 'subroutine' in each mnemonic specification, filling in some attribute-based variables for the parts which would be specific to the mnemonic.
 
 Otherwise in the case where an Opcode doesn't share operands with other instructions, the Opcode node can directly have Operand nodes that tell how to perform the translation.
 
@@ -600,9 +610,11 @@ For a simple example:
 
 Here we are defining an opcode with `Name="cmpxchg8b"`.   The `Name` gives the mnemonic of the opcode in text format.
 
-It has one operand combination which has a `Name` that is a variable named 'rm' with a class name of 'rm'.   In the source code, this will match any address mode with a class name of 'rm'.   It can also match registers or numbers, but in this case that would be useless because this operand definition does not specify a coding and there isn't an explicit usable coding associated with the operands.
+It has one operand combination which has a `Name` that is a variable named 'rm' with a class name of 'rm'.   In the source code, this will match any address mode with a class name of 'rm'.   
 
-This operand defines several attribute variables to be consumed by the 'coding' statement of the referenced address mode.   In particular, note that in this case the 'op' variable specifies a coding which is two bytes long.
+One could also match registers or numbers, but in this case that would be useless because this operand definition does not specify a coding and there isn't an explicit usable coding associated with the operands.  It might make sense though if the coding were specified directly in the operand.
+
+This operand defines several attribute variables to be consumed by the coding sequence of the referenced address mode.   In particular, note that in this case the 'op' variable specifies a coding which is two bytes long.
 
 This definition would not be directly shared by other mnemonics since it doesn't reference a class-based operand.
 
@@ -643,7 +655,7 @@ The fact that the opcode node has a class but no name means it can be used by mu
 
 here the presence of both a mnemonic and a class name means this is a mnemonic definition, that references the common operands found in the class 'single'.   But it specifies an attribute based variable `op` which is the specific opcode that getss coded in the class based operands.
 
-Either type of opcode may have multiple operands:
+Either type of opcode may have multiple allowed operands:
 
 ```xml
     <Opcode Name="cmpxchg" op1="0x0f:8 0xb0:8">
@@ -656,7 +668,7 @@ Either type of opcode may have multiple operands:
     </Opcode
 ```
 
-where again values enclosed in {} are optional literals and other values outside the '' pairs are literal.
+where again values enclosed in {} are optional literals and other characters outside the '' pairs are literal.
 
 In the following Operand node:
 
@@ -664,11 +676,11 @@ In the following Operand node:
       <Operands Name="byte 'rm:rm8',  {byte} 'omem:mem8'" op="0x80:8" R="0" W="0" Coding="native 'omem':8"/>
 ```
 
-the class rm8 already has a coding as an addressing mode.   The coding in this operand node overrides that encoding, but since we want to reuse the original coding after all we say 'native'.   Then for purposes of the referenced instruction we encode a constant value after the original encoding...
+the class rm8 already has a coding sequence as an addressing mode.   The coding sequence in this operand node overrides that encoding, but since we want to reuse the original coding after all we say 'native'.   Then for purposes of the referenced instruction we encode a constant value after the original encoding.
 
 #### Prefixes group
 
-Prefix nodes specify prefixes that can precede instructions.   For example on the x86 the `rep` prefix tells a string instruction to repeat until a counter reaches zero:
+Prefix nodes specify prefixes that can precede instructions.   For example on the x64 the `rep` prefix tells a string instruction to repeat until a counter reaches zero:
 
 ```
 	rep movsb
@@ -684,7 +696,9 @@ It is still up to user code to parse out the token but the generated code for th
 
 #### Parsing order
 
-The operands nodes within an opcode node can be located uniquely by looking up the mnemonic, and then are processed sequentially within the list of operands.   The order they appear in is important, since the sequential processing means that if a match is found, subsequent operands will be ignored.   Some of the things to look out for when generating an opcode table are as follows:
+The operands nodes within an opcode node can be located uniquely by looking up the mnemonic, and then are processed sequentially within the list of operands.   Internally, the operands are arranged in a tree and the leafs are traversed either until something is found or until the tree runs out of leaves.    There is special code to deal with the ambiguity involved in optional tokens.
+
+The order they appear in is important, since the sequential processing means that if a match is found, subsequent operands will be ignored.   Some of the things to look out for when generating an opcode table are as follows:
 
 * explicit registers
 * numbers of different widths
@@ -692,7 +706,7 @@ The operands nodes within an opcode node can be located uniquely by looking up t
 
 If an explicit register is used, it should appear in the operand list before any usage of that register by class.   For example if there is a register class reg8 which encompasses all possible 8-bit registers, one would write an operand that uses that register class.   If one then wants to override that operand for a register with a specific name to use for example a more compact encoding, one should write a similar rule which encompasses only that register and place it before the original rule.
 
-For example, on the x86 there are registers al,cl,dl,bl which are part of a register class 'reg8'.   But sometimes it is possible to have a more compact representation for register 'al'.    A rule would be written for the register class 'reg8' and another rule would be written for register al, then the one for register al would appear before the rule for register class 'reg8'.
+For example, on the x64 there are registers al,cl,dl,bl which are part of a register class 'reg8'.   But sometimes it is possible to have a more compact representation for register 'al' using some addressing modes.    A rule would be written for the register class 'reg8' and another rule would be written for register al, then the one for register al would appear before the rule for register class 'reg8' so that it would be matched first.
 
 If two operands differ only by numbers that have different widths, it is important that the number with the lesser width appear first.   This is because for small numbers, both operands will match the number but one would want the smaller instruction coding to take precedence for such numbers.
 
@@ -700,19 +714,21 @@ When there is an optional quantity in an operand, the operand will be processed 
 
 ### Compiling entity
 
-The `Compiling` entity isn't fully fleshed out or otherwise supported yet.   It won't be documented here, other than to say there may be multiple profiles for example one could use a different profile for different bit widths.
+The `Compiling` entity isn't fully fleshed out or otherwise supported yet.   As such it won't be documented here, other than to say there may be multiple profiles for example one could use a different profile for different bit widths.
 
 ## Code level interface
 
-The ADL compiler generates C++ code which can be interfaced to an external tool, e.g. a compiler or assembler.   This section describes the interface.
+The ADL compiler generates C++ code which can be interfaced to an external tool, e.g. a compiler or assembler.   There is some glue logic which is necessary to tie the generated code into whatever compiler or assembler is being used.   This section describes the interface.
 
-It is split into two sections, `Support Code` details necessary code and headers that must be provided for the ADL-generated code to work, and `Calling Interface` specifies how to set up the arguments to successfully call the parser and get a byte-code sequence back.
+Note that the OASM assembler with Orange C already implements this interface (as does the Orange C compiler), although there are some customizations that would have to be performed for 64 bit numbers or to stream big endian numbers properly.
+
+This section is split into two sections, `Support Code` details necessary code and headers that must be provided for the ADL-generated code to work, and `Calling Interface` specifies how to set up the arguments to successfully call the parser and get a byte-code sequence back.
 
 ### Support code
 
 #### Generated files
 
-The Adl compiler generates the following files:
+The ADL compiler generates the following files:
 
 * `AdlStructures.h`      - structures used for interfacing to the adl generated parser   
 * `AdlFunctions.cpp`     - generic functions used with the parser
@@ -730,7 +746,9 @@ where `xxxx` is replaced by the processor name given at the beginning of the adl
 `x64Instructions.h`
 `x64Instructions.cpp`
 
-These don't form a complete parser; in particular there must be glue code to transform the opcodes and operands prior to passing them to the parser.  The parser defines a parsing structure called `xxxxParser` (x64Parser in our example) that inherits from a user-provided class `InstructionParser`.  The inheriting is performed in the manner to take care of the case where a single assembler program might use the same parsing infrastructure with different adl-generated parsers to successfully parse multiple assembly language.   
+These don't form a complete parser; as indicated earlier there must be glue code to transform the opcodes and operands prior to passing them to the parser.  And then the output of the parser must be tied into the surrounding code.
+
+The parser defines a parsing structure called `xxxxParser` (x64Parser in our example) that inherits from a user-provided class `InstructionParser`.  The inheriting is performed in the manner to take care of the case where a single assembler program might use the same parsing infrastructure with different adl-generated parsers to successfully parse multiple assembly language.   
 
 The `InstructionParser` class is usually defined in the file pair InstructionParser.cpp and InstructionParser.h.   An additional user-prepared file `xxxxStub.cpp` can be used to hold miscellaneous functions that aren't directly related to parsing instructions.
 
@@ -802,7 +820,7 @@ class InstructionParser
 	// hash table, mapping between opcode names and opcode values
 	// defined by the code generator in xParser.cpp
     std::unordered_map<std::string, int> opcodeTable;
-	// hash table mapping for any instruction prefixes such as the 'rep' prefixes in the x86
+	// hash table mapping for any instruction prefixes such as the 'rep' prefixes in the x64
 	// defined by the code generator in xParser.cpp
     std::unordered_map<std::string, int> prefixTable;
 	
@@ -905,6 +923,17 @@ InputToken is filled in before calling Dispatch and has two members of interest:
     AdlExprNode* val;
 ```
 
+#### State variable setters and getters
+
+To ease the access of state variables, the adl compiler generates setters and getters for them in x64Parser.h.    They are named similarly to the statevariable with a 'Set' or 'Get' prefix and operate on integers.
+
+As an example consider the `processorbits` state variable we have been using throughout this text.   The setters and getter will be defined as follows:
+
+```c++
+	void Setprocessorbits(int v) { ...; }
+	int Getprocessorbits() { return ...; }
+```
+
 ### Calling interface
 
 To parse code, the function Dispatch is called:
@@ -922,7 +951,7 @@ Before calling DispatchOpcode, the calling code must do some initialization to s
 3. Parse out the operand tokens, look them up in the tokensTable, then add them to the `tokens` list.
 4. Parse out the mnemonic, look it up in the opcode table, then pass it as an argument
 
-After the return from DispatchOpcode the first thing is to look at the return code.   
+After the return from DispatchOpcode() the first thing is to look at the return code.   
 
 If the return code is `AERR_NONE` then the bits array has a byte stream for the instruction, and you can retrieve it for use in generating the instruction with code like the following:
 
@@ -934,18 +963,28 @@ If the return code is `AERR_NONE` then the bits array has a byte stream for the 
 
 where Instruction is some item that caches instruction bytes.
 
-
 At the same time the 'operands' list will have numeric operands that can be processed to add fixup records.
 
 Otherwise if the return value is not `AERR_NONE` some error occurred that can be displayed.
 
 At some point the operands and cleanupValues arrays will need to have their members deleted to free up the memory.
 
+#### Error codes returned from parser
+
+The following codes can be returned from the Dispatch() function:
+
+    AERR_NONE,                       - no error, coding sequence was generated
+    AERR_SYNTAX,                     - syntax error, bad token sequence
+    AERR_OPERAND,                    - operand error, this operand could not be used here
+    AERR_BADCOMBINATIONOFOPERANDS,   - operand error, the operands are used in an invalid combination
+    AERR_UNKNOWNOPCODE,              - invalid opcode, mnemonic is unknown
+    AERR_INVALIDINSTRUCTIONUSE       - invalid instruction, the 'invalid' keyword was detected in the generated coding sequence.
+
 #### Populating the input tokens array
 
 To come up with a token stream suitable for the parser to process, the basic idea is to look up each token string in the operands in the token table.   If it exists then an `InputToken` of either REGISTER or TOKEN may be created.   If the value associated with the token string is greater than or equal to 1000, it is a REGISTER token, otherwise it is a TOKEN token.  The ival of the AdlExprNode associated with the token must be set to the token value or the token value - 1000, depending on whether it is a TOKEN or a REGISTER type.   For these purposes it doesn't really matter if the AdlExprNode is derived from or not as only the ival is necessary.
 
-Numbers that aren't in the token table can also be parsed out at this point, they would result in an `InputToken` of type NUMBER.   Here the AdlExprNode would likely have been derived from to generate some type of expression node that allows determination of whether the value is a constant or a label.
+Numbers that aren't in the token table can also be parsed out at this point, they would result in an `InputToken` of type NUMBER.   Here the AdlExprNode would likely have been derived from to generate some type of expression node that allows determination of whether the value is a constant or a label for purposes of the ParseNumber and SetNumber callbacks.
 
 #### Interpreting the operand array
 

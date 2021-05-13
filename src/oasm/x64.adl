@@ -352,14 +352,7 @@
     <Register Class="tracereg">
       <Instance Name="tr7" Ord="7" />
     </Register>
-    <DoubleReg Name="edx:eax"/>
-    <DoubleReg Name="ecx:eax"/>
-    <DoubleReg Name="edx:ecx"/>
-    <DoubleReg Name="ebx:esi" Class="pushed"/>
-    <DoubleReg Name="ebx:edi" Class="pushed"/>
-    <DoubleReg Name="edi:esi" Class="pushed"/>
-
-    <Address Name="['mem:address16']" Class="rmx,rm,frm,rm8,rm16,rm32,rm16it" Coding="'addr16' *'mand' 0x40:8 'op' 0:2 'mod':3 6:3 'mem':16"/>
+     <Address Name="['mem:address16']" Class="rmx,rm,frm,rm8,rm16,rm32,rm16it" Coding="'addr16' *'mand' 0x40:8 'op' 0:2 'mod':3 6:3 'mem':16"/>
     <Address Name="[ds:'mem:address16']" Class="rmx,rm,frm,rm8,rm16,rm32,rm16it" Coding="*'mand' 0x3e:8 'addr16' *'mand' 0x40:8 'op' 0:2 'mod':3 6:3 'mem':16"/>
     <Address Name="[ss:'mem:address16']" Class="rmx,rm,frm,rm8,rm16,rm32,rm16it" Coding="*'mand' 0x36:8 'addr16' *'mand' 0x40:8 'op' 0:2 'mod':3 6:3 'mem':16"/>
     <Address Name="['seg:segment':'mem:address16']" Class="rmx,rm,frm,rm8,rm16,rm32,rm16it" Coding="*'mand' 'seg.Prefix':8 'addr16' *'mand' 0x40:8 'op' 0:2 'mod':3 6:3 'mem':16"/>
@@ -2669,6 +2662,13 @@
 			<Instance Name="double" min="-1022" bias="1022" max="1024" mantissa_bits="54"/>
 			<Instance Name="longdouble" min="-16382" bias="16382" max="16384" mantissa_bits="65"/>
 		</Floating>
+                <DoubleReg Name="edx:eax"/>
+                <DoubleReg Name="ecx:eax"/>
+                <DoubleReg Name="edx:ecx"/>
+                <DoubleReg Name="ebx:esi" Class="pushed"/>
+                <DoubleReg Name="ebx:edi" Class="pushed"/>
+                <DoubleReg Name="edi:esi" Class="pushed"/>
+
 		<Assembler Profile="nasm">
 			<Usage>
 			</Usage>

@@ -378,14 +378,6 @@ bool Parser::CodingRegisterInstanceParser::VisitAttrib(xmlNode& node, xmlAttrib*
     return true;
 }
 bool Parser::CodingRegisterInstanceParser::VisitNode(xmlNode& node, xmlNode* child, void* userData) { return true; }
-bool Parser::CodingDoubleRegParser ::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
-{
-    if (attrib->GetName() == "Name")
-    {
-    }
-    return true;
-}
-bool Parser::CodingDoubleRegParser ::VisitNode(xmlNode& node, xmlNode* child, void* userData) { return true; }
 bool Parser::CodingAddressParser ::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
     Address* r = (Address*)userData;

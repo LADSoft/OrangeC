@@ -224,12 +224,6 @@ class Parser : public xmlVisitor
         virtual bool VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData);
         virtual bool VisitNode(xmlNode& node, xmlNode* child, void* userData);
     };
-    class CodingDoubleRegParser : public xmlVisitor
-    {
-      public:
-        virtual bool VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData);
-        virtual bool VisitNode(xmlNode& node, xmlNode* child, void* userData);
-    };
     class CodingAddressParser : public xmlVisitor
     {
       public:

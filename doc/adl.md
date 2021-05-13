@@ -45,7 +45,7 @@ For example:
 
 ### Coding entity
 
-The `Coding` entity gives the correlation between a source code representation, and the corresponding instruction byte codes.   It has 8 groups of definitions, which together form the basis for translation.
+The `Coding` entity gives the correlation between a source code representation, and the corresponding instruction byte codes.   It has 7 groups of definitions, which together form the basis for translation.
 
 These groups are
 
@@ -54,7 +54,6 @@ These groups are
 * State Variables            specifies variables that can be used for example to choose between different CPU modes
 * Coding States              specifies parts of a coding sequence that depend on the assembler state
 * Register definitions       specifies registers in terms of ordinals and the address modes that can use them.
-* Double Registers           specifies which registers will be used as register pairs when selecting an integer size equal to twice the register width
 * Addressing Modes           specifies the relationship between addressing modes and coding sequences
 * Opcodes                    specifies the relationship between opcodes and their allowed operands, and expands upon the coding sequences
 
@@ -551,10 +550,6 @@ A register may be consumed by an addressing mode or operand, for example:
 ```
 
 Here the name field shows a reference to address-related variable class 'reg8'.   Since reg is of class type reg8 if the name is `cl` it would match the `Name` attribute.   Then in the coding, the statement 'reg.Ord':3 would take the 'Ord' attribute value from the `Instance` definition of `cl`, e.g. the result would be to encode the value 1 into 3 bits.
-
-#### Double Registers group
-
-Double Registers are an experimental feature that isn't currently supported.   It will probably be moved to the `Compiling` entity at some future time.    A current ADL file may omit them.
 
 #### Addressing Modes group
 

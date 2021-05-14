@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -4202,7 +4202,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
         return a == nullptr;
     }
 }
-    SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, TYPE* atp)
+SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, TYPE* atp)
 {
     inDeduceArgs++;
     if (sym->sb->templateLevel)

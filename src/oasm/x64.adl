@@ -1,10 +1,10 @@
   <ADL>
-	<Processor Name="x64">
-	</Processor>
-  <Coding>
+  <Processor Name="x64">
     <Param Name="CaseSensitive" Value="false"/>
     <Param Name="Endian" Value="little"/>
     <Param Name="BitsPerMAU" Value="8"/>
+  </Processor>
+  <Coding>
     <Number Class="signed8offset">
       <Instance Value="-#:8"/>
     </Number>

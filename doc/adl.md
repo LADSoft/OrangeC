@@ -40,16 +40,35 @@ The `Processor` entity simply gives the name of the architecture, in text format
 For example:
 
 ```xml
-	<Processor Name="x64"/>
+	<Processor Name="x64">
+	    <Param Name="Case Sensitive" Value="false"/>
+		<!-- more params -->
+    </Processor
 ```
+
+There are three parameters at present.
+
+```xml
+    <Param Name="CaseSensitive" Value="false"/>
+    <Param Name="Endian" Value="little"/>
+    <Param Name="BitsPerMAU" Value="8"/>
+```
+
+The `Name` attribute is the name of the parameter, and the `Value` attribute is the value of the parameter.
+
+The `CaseSensitive` parameter indicates whether the assembler source code is case sensitive.   It is used for parsing.
+
+The `Endian` parameter indicates the endianness of the architecture.   E.G 'big' or 'little'.   It is used for streaming numeric constants defined with 'number' into the coding sequence.  
+
+The `BitsPerMAU` parameter is the minimum number of bits that may be retrieved by the hardware.   Right now only 8 (byte) is supported.
+
 
 ### Coding entity
 
-The `Coding` entity gives the correlation between a source code representation, and the corresponding instruction byte codes.   It has 7 groups of definitions, which together form the basis for translation.
+The `Coding` entity gives the correlation between a source code representation, and the corresponding instruction byte codes.   It has 6 groups of definitions, which together form the basis for translation.
 
 These groups are
 
-* Param                      specifies various parameters such as for case sensitivity and processor endianness
 * Number Formats             specifies number formats or numeric constants
 * State Variables            specifies variables that can be used for example to choose between different CPU modes
 * Coding States              specifies parts of a coding sequence that depend on the assembler state
@@ -65,8 +84,6 @@ For example:
 
 ```xml
 	<Coding>
-		<Param Name="Case Sensitive" Value="false"/>
-		<!-- more params -->
 
 		<Number Class="signed8">
 			<Instance Value="-#:8"/>
@@ -229,7 +246,7 @@ State variables are generally used with 'Cond' attributes.   State variables wil
 
 Coding state variables are used in 'Coding' attributes.   They specify a constant value that may depend on the value of a state variable, which is streamed into the opcode coding sequence. These will also be detailed further in a future section.
 
-Attribute variables are XML attributes with arbitrary names, that can be referenced from within a contained coding sequence.   For example a common group of addressing modes on the x64 processor always generates roughly the same coding sequence for some interrelated instructions with the same operands.  The exception being that three bits in the middle of the sequence are related to the specific instruction being selected.   An attribute variable related to the mnemonic can specify those three bits. Another use for an attribute variable is to specify some parameter based on a selected register name.
+Attribute variables are XML attributes with arbitrary names, that can be referenced from within a contained coding sequence.   For example a common group of addressing modes on the x64 processor always generates roughly the same coding sequence for some interrelated instructions with the same operands.  The exception being that three bits in the middle of the sequence are related to the specific instruction being selected.   An attribute variable related to the mnemonic can specify those three bits.  Another use for an attribute variable is to specify some parameter based on a selected register name.
 
 For example:
 
@@ -331,25 +348,6 @@ Name attributes can also have optional text.   For example we can modify the pre
 ```
 
 and now the braces indicate there may optionally be a word `dword` before the rest of the operand.   Note there is currently no way of escaping the brace...
-
-#### Params
-
-There are three parameters at present.
-
-```xml
-    <Param Name="CaseSensitive" Value="false"/>
-    <Param Name="Endian" Value="little"/>
-    <Param Name="BitsPerMAU" Value="8"/>
-```
-
-The `Name` attribute is the name of the parameter, and the `Value` attribute is the value of the parameter.
-
-The `CaseSensitive` parameter indicates whether the source code is case sensitive.   It is used for parsing.
-
-The `Endian` parameter indicates the endianness of the architecture.   E.G 'big' or 'little'.   It is used for streaming numeric constants defined with 'number' into the coding sequence.  
-
-The `BitsPerMAU` parameter is the minimum number of bits that may be retrieved by the hardware.   Right now only 8 (byte) is supported.
-
 
 #### Number formats
 

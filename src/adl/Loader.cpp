@@ -147,10 +147,8 @@ bool Parser::ProcessorParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void
     }
     return true;
 }
-bool Parser::ProcessorParser::VisitNode(xmlNode& node, xmlNode* child, void* userData) { return true; }
-bool Parser::CodingParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData) { return true; }
-bool Parser::CodingParser::VisitNode(xmlNode& node, xmlNode* child, void* userData)
-{
+bool Parser::ProcessorParser::VisitNode(xmlNode& node, xmlNode* child, void* userData) 
+{ 
     Parser* parser = (Parser*)userData;
     if (child->GetName() == "Param")
     {
@@ -161,7 +159,13 @@ bool Parser::CodingParser::VisitNode(xmlNode& node, xmlNode* child, void* userDa
         child->Visit(p, &x);
         parser->parameters[x.name] = x.value;
     }
-    else if (child->GetName() == "Number")
+    return true; 
+}
+bool Parser::CodingParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData) { return true; }
+bool Parser::CodingParser::VisitNode(xmlNode& node, xmlNode* child, void* userData)
+{
+    Parser* parser = (Parser*)userData;
+    if (child->GetName() == "Number")
     {
         CodingNumberParser p;
         Number* number = new Number;

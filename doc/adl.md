@@ -22,7 +22,10 @@ An example file is as follows:
 
 ```xml
   <ADL>
-	<Processor Name="x64"/>
+    <Processor Name="x64">
+        <Param Name="Case Sensitive" Value="false"/>
+        <!-- more params -->
+    </Processor
     <Coding>
     <!-- coding data -->
     </Coding
@@ -40,9 +43,9 @@ The `Processor` entity simply gives the name of the architecture, in text format
 For example:
 
 ```xml
-	<Processor Name="x64">
-	    <Param Name="Case Sensitive" Value="false"/>
-		<!-- more params -->
+    <Processor Name="x64">
+        <Param Name="Case Sensitive" Value="false"/>
+        <!-- more params -->
     </Processor
 ```
 
@@ -83,38 +86,39 @@ This information is specified free form in the confines of the `Coding` entity, 
 For example:
 
 ```xml
-	<Coding>
+    <Coding>
 
-		<Number Class="signed8">
-			<Instance Value="-#:8"/>
-		</Number>
-		<!-- more number formats -->
-		<StateVars>
-			<Instance  Name="processorbits" Init="16"/>
-		</StateVars>
+        <Number Class="signed8">
+            <Instance Value="-#:8"/>
+        </Number>
+        <!-- more number formats -->
+        <StateVars>
+            <Instance  Name="processorbits" Init="16"/>
+        </StateVars>
         <!-- more state variables -->
-		<State Name="addr32">
-			<Value Cond="'processorbits'==32" Coding=""/>
-			<Value Cond="'processorbits'!=32" Coding="0x67:8"/>
-		</state>
-		<!-- More coding states -->
-		<Register Class="general">
-			<Instance Name="al" Ord="0" B="0" X="0" R="0" W="0" Class="reg8,low"/>
-			<Instance Name="ah" Ord="4" B="0" X="0" R="0" W="0" Class="reg8,high"/>
-			<Instance Name="ax" Ord="0" B="0" X="0" R="0" W="0" Class="reg16"/>
-			<Instance Name="eax" Ord="0" B="0" X="0" R="0" W="0" Class="base32, index32, reg32"/>
-			<Instance Name="rax" Ord="0" B="0" X="0" R="0" W="8" Class="base64, index64, reg64"/>
-		</Register>
-		<!-- more register definitions -->
-		<DoubleReg Name="edx:eax"/>
-		<!-- more double register definitions -->
-		<Address Name="['base:base32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 'base.Ord':3"/>
-		<!-- more addressing modes
-		<Opcode Name="fnstenv">
-			<Operands Name="'rm:rm'" op="0xd9:8" mod="6" R="0" W="0"/>
-		</Opcode>
-		<!-- more opcode definitions>
-	</Coding>
+        <State Name="addr32">
+            <Value Cond="'processorbits'==32" Coding=""/>
+            <Value Cond="'processorbits'!=32" Coding="0x67:8"/>
+        </state>
+        <!-- More coding states -->
+        <Register Class="general">
+            <Instance Name="al" Ord="0" B="0" X="0" R="0" W="0" Class="reg8,low"/>
+            <Instance Name="ah" Ord="4" B="0" X="0" R="0" W="0" Class="reg8,high"/>
+            <Instance Name="ax" Ord="0" B="0" X="0" R="0" W="0" Class="reg16"/>
+            <Instance Name="eax" Ord="0" B="0" X="0" R="0" W="0" Class="base32, index32, reg32"/>
+            <Instance Name="rax" Ord="0" B="0" X="0" R="0" W="8" Class="base64, index64, reg64"/>
+        </Register>
+        <!-- more register definitions -->
+        <DoubleReg Name="edx:eax"/>
+        <!-- more double register definitions -->
+        <Address Name="['base:base32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 'base.Ord':3"/>
+        c`<!-- more addressing modes
+        <Opcode Name="fnstenv">
+            <Operands Name="'rm:rm'" op="0xd9:8" mod="6" R="0" W="0"/>
+            <!-- more operand definitions>
+        </Opcode>
+        <!-- more opcode definitions>
+    </Coding>
     <Prefix Name="lock" Coding="0xf0:8"/>
     <!-- more prefix definitions -->
 ```
@@ -148,9 +152,9 @@ For example in the x64 ADL file the following `Number` node is only matched if t
 here `processorbits` was already defined as a state variable:
 
 ```xml
-	<StateVars>
-		<Instance  Name="processorbits" Init="16"/>
-	</StateVars>
+    <StateVars>
+        <Instance  Name="processorbits" Init="16"/>
+    </StateVars>
 ```
 
 and the quotes around `processorbits` indicate it should be looked up in the state variables table.
@@ -194,7 +198,7 @@ Registers have a similar specification:
     <Register Class="general">
       <Instance Name="al" Ord="0" B="0" X="0" R="0" W="0" Class="reg8,low"/>
       <!-- more aliases for this register -->
-	</Register>
+    </Register>
 ```
 
 here the class on the `register` node is ignored at present; it is the class on the `instance` node that matters.  
@@ -206,7 +210,7 @@ For addressing modes we might have something like:
 ```xml
     <Address Name="['mem:address16']" Class="rmx,rm,frm,rm8,rm16,rm32,rm16it" Coding="'addr16' *'mand' 0x40:8 'op' 0:2 'mod':3 6:3 'mem':16"/>
 ```
-	
+    
 Here we again have multiple classes associated with the addressing mode.   The reason for doing this is their may be variations on an addressing mode, for example on the x64 some instructions allow a full range of addressing modes, but other instructions allow only an abbreviated amount from the full set.   By assocating one class with the full range and another with a more restriced range, the abbreviation can be achieved without respecifying all the address modes in question.   That is, assuming the values that are there in the abbreviated set are encoded exactly the same as those in the full set.
 
 The addressing mode example also shows how classes are consumed.   Here the `Name` field specifies the source-code token sequence that results in the encoding.   'address16' was defined as a class on a `Number` like this:
@@ -234,9 +238,9 @@ There are four types of variables.
 Variables are typically accessed by enclosing their name in quotes.    For example to access a state variable called processorbits use 'processorbits'
 
 ```xml
-	<StateVars>
-		<Instance  Name="processorbits" Init="16"/>
-	</StateVars>
+    <StateVars>
+        <Instance  Name="processorbits" Init="16"/>
+    </StateVars>
     <Number Class="rel16" relOfs="2">
       <Instance Value="-$#:16" Cond="'processorbits'==16"/>
     </Number>
@@ -251,9 +255,9 @@ Attribute variables are XML attributes with arbitrary names, that can be referen
 For example:
 
 ```xml
-		<Opcode Name="fnstenv">
-			<Operands Name="'rmval:rm'" op="0xd9:8" mod="6" R="0" W="0"/>
-		</Opcode>
+        <Opcode Name="fnstenv">
+            <Operands Name="'rmval:rm'" op="0xd9:8" mod="6" R="0" W="0"/>
+        </Opcode>
 ```
 
 here 'op' is used to specify the first byte of the coding sequence, and 'mod' is the middle three bits of the address mode.   'R' and 'W' are further attribute variables. A coding in an address mode associated with the 'rm' class will utilize these values to customize the output coding sequence.   Again, these names are arbitrary, they could just as well be 'tree' and 'moss'.
@@ -309,9 +313,9 @@ Two keywords may be used within an encoding.
 The 'native' keyword indicates that a lower level coding should be applied.   For example:
 
 ```xml
-	<Opcode Name="add">
-		<Operands Name="rmval:rm" Coding = "0x22:8 native 0x22:8"
-	</Opcode>	
+    <Opcode Name="add">
+        <Operands Name="rmval:rm" Coding = "0x22:8 native 0x22:8"
+    </Opcode>   
 ```
 
 encodes the native encoding for the rm addressing mode between two 0x22 sentinels.
@@ -325,7 +329,7 @@ For example in the state variable:
       <Value Cond="'processorbits'==64" Coding="illegal"/>
       <Value Cond="'processorbits'!=64" Coding=""/>
     </State>
-```	
+``` 
 
 any Coding that references this state variable when processorbits == 64 becomes illegal because of the reference to 'illegal'.
 
@@ -364,7 +368,7 @@ The number tag gives a class name, which may be used in addressing modes to sele
 we might have an address field that references it as follows
 
 ```xml
-	<Address Name="'val:addr16'" Class="rm" Coding="0x40:8 'val':16"/>
+    <Address Name="'val:addr16'" Class="rm" Coding="0x40:8 'val':16"/>
 ```
 
 Here the address-related variable in the name field gives the class name of the number type to use.
@@ -432,9 +436,9 @@ State variables are variables that are visible to external code.   The assembler
 For example:
 
 ```xml
-		<StateVars>
-			<Instance  Name="processorbits" Init="16"/>
-		</StateVars>
+        <StateVars>
+            <Instance  Name="processorbits" Init="16"/>
+        </StateVars>
 ```
 
 Here the `Instance` node defines a state variable.   The `Name` attribute gives the name of the variable (for purposes of the ADL file) and the `Init` attribute gives it an initial value.   State variables are always 32 bit integers.
@@ -473,7 +477,7 @@ when the coding state variable 'rex' appears in a coding a value of four will be
 The use would be similar to:
 
 ```xml
-	<Address Name="eax" class="eax" Coding="'only64' 'rex' 'op':8"/>
+    <Address Name="eax" class="eax" Coding="'only64' 'rex' 'op':8"/>
 ```
 
 
@@ -564,7 +568,7 @@ the `Name` attribute gives a rendition of the text that will match the input tex
 The class names here could be used in any other `Address` specification.   For example:
 
 ```xml
-	<Address Name="'rm:rm8'" Class="rm" Coding= ...
+    <Address Name="'rm:rm8'" Class="rm" Coding= ...
 ```
 
 can match the token sequence for any address mode with a class 'rm8'.   Including the one in the first example.  The coding sequence on the matched mode will reference any variables found in the matched address mode or possibly coding state variables.
@@ -676,13 +680,13 @@ the class rm8 already has a coding sequence as an addressing mode.   The coding 
 Prefix nodes specify prefixes that can precede instructions.   For example on the x64 the `rep` prefix tells a string instruction to repeat until a counter reaches zero:
 
 ```
-	rep movsb
+    rep movsb
 ```
-		
+        
 The rep prefix might be specified with the following in the ADL file.
 
 ```xml
-	<Prefix Name="rep" Coding="0xf3:8"/>
+    <Prefix Name="rep" Coding="0xf3:8"/>
 ```
 
 It is still up to user code to parse out the token but the generated code for the parser will at least stick it in a handy hash-table and also process discovered prefixes while creating coding sequences.
@@ -769,76 +773,76 @@ class InstructionParser
     {
     }
 
-	// instantiates the xxxxParser class.   
-	// usually defined in xxxxStub.cpp
+    // instantiates the xxxxParser class.   
+    // usually defined in xxxxStub.cpp
     static InstructionParser* GetInstance();
 
     // set a default assembler state based on something like command line switches, e.g. processor bits or other state variables
-	// usually defined in xxxxStub.cpp
+    // usually defined in xxxxStub.cpp
     virtual void Setup(Section* sect) = 0;
-	
-	// Initialize the xxxxParser instance.   
-	// Defined by the code generator in xxxParser.cpp
+    
+    // Initialize the xxxxParser instance.   
+    // Defined by the code generator in xxxParser.cpp
     virtual void Init() = 0;
-	// parse out the arguments for a section, e.g. bit size or other desired states that can be set in a section definition
-	// usually defined in xxxxStub.cpp
+    // parse out the arguments for a section, e.g. bit size or other desired states that can be set in a section definition
+    // usually defined in xxxxStub.cpp
     virtual bool ParseSection(AsmFile* fil, Section* sect) = 0;
-	// generic routine to parse out any directives that are related to state variables
-	// usually defined in xxxxStub.cpp
+    // generic routine to parse out any directives that are related to state variables
+    // usually defined in xxxxStub.cpp
     virtual bool ParseDirective(AsmFile* fil, Section* sect) = 0;
-	// can be used to parse attributes that come before an instruction, e.g. for gas compatibility
-	// usually defined in xxxxStub.cpp
+    // can be used to parse attributes that come before an instruction, e.g. for gas compatibility
+    // usually defined in xxxxStub.cpp
     virtual std::string ParsePreInstruction(const std::string& op, bool doParse);
-	// returns the big endian flag from the ADL file
-	// Defined by the code generator in xxxParser.h
+    // returns the big endian flag from the ADL file
+    // Defined by the code generator in xxxParser.h
     virtual bool IsBigEndian() = 0;
-	
-	// replace the numeric token at tokenpos that has an integer value oldval (if it exists) with a numeric token holding newval
-	// usually defined in InstructionParser.cpp
+    
+    // replace the numeric token at tokenpos that has an integer value oldval (if it exists) with a numeric token holding newval
+    // usually defined in InstructionParser.cpp
     bool SetNumber(int tokenPos, int oldVal, int newVal);
 
   protected:
     // check the numeric value at tokenpos against the parameters as specified in the number class definition from the ADL file.
-	// set up a structure in the 'numeric' slot below and return true if it matches
-	// otherwise return false.
-	// usually defined in InstructionParser.cpp
-	bool ParseNumber(int relOfs, int sign, int bits, int needConstant, int tokenPos);
-	
-	// main dispatcher for the parser.   Some fields below have to be set up properly for it to work.
-	// defined by the code generator in xParser.cpp
+    // set up a structure in the 'numeric' slot below and return true if it matches
+    // otherwise return false.
+    // usually defined in InstructionParser.cpp
+    bool ParseNumber(int relOfs, int sign, int bits, int needConstant, int tokenPos);
+    
+    // main dispatcher for the parser.   Some fields below have to be set up properly for it to work.
+    // defined by the code generator in xParser.cpp
     virtual asmError DispatchOpcode(int opcode) = 0;
-	// hash table, mapping between token names and token values
-	// defined by the code generator in xParser.cpp
+    // hash table, mapping between token names and token values
+    // defined by the code generator in xParser.cpp
     std::unordered_map<std::string, int> tokenTable;
-	// hash table, mapping between opcode names and opcode values
-	// defined by the code generator in xParser.cpp
+    // hash table, mapping between opcode names and opcode values
+    // defined by the code generator in xParser.cpp
     std::unordered_map<std::string, int> opcodeTable;
-	// hash table mapping for any instruction prefixes such as the 'rep' prefixes in the x64
-	// defined by the code generator in xParser.cpp
+    // hash table mapping for any instruction prefixes such as the 'rep' prefixes in the x64
+    // defined by the code generator in xParser.cpp
     std::unordered_map<std::string, int> prefixTable;
-	
-	// numeric operands returned from the parser
-	// generally used to figure out where to put things like fixups and how they relate to the input stream
-	// filled in by the call to DispatchOpcode()
+    
+    // numeric operands returned from the parser
+    // generally used to figure out where to put things like fixups and how they relate to the input stream
+    // filled in by the call to DispatchOpcode()
     std::list<Numeric*> operands;
-	// coding structures that have to be cleaned up at some point
-	// filled in by the call to DispatchOpcode()	
+    // coding structures that have to be cleaned up at some point
+    // filled in by the call to DispatchOpcode()    
     std::list<Coding*> CleanupValues;
-	// prefix values parsed out of the input stream.
-	// Dispatch will place them before the rest of the instruction when streaming the coding
+    // prefix values parsed out of the input stream.
+    // Dispatch will place them before the rest of the instruction when streaming the coding
     std::list<int> prefixes;
-	// input tokens.   Parsing the input stream results in this list.
-	// The SetNumber and ParseNumber routines, above, reference this list with the 'tokenPos' parameter
-	// must be filled in before the call to DispatchOpcode()
+    // input tokens.   Parsing the input stream results in this list.
+    // The SetNumber and ParseNumber routines, above, reference this list with the 'tokenPos' parameter
+    // must be filled in before the call to DispatchOpcode()
     std::vector<InputToken*> inputTokens;
-	// the coding values get streamed into this structure
-	// after the call to DispatchOpcode(), this will hold the byte stream streamed by whichever coding was chosen
-	// the 'operands' variable will have more information about how to place fixups within this stream
+    // the coding values get streamed into this structure
+    // after the call to DispatchOpcode(), this will hold the byte stream streamed by whichever coding was chosen
+    // the 'operands' variable will have more information about how to place fixups within this stream
     BitStream bits;
-	// tbe SetNumber and ParseNumber routines will leave a newly constructed 'Numeric' structure here,
-	// it will be put in the 'operands' array for use in handling fixups and so forth
+    // tbe SetNumber and ParseNumber routines will leave a newly constructed 'Numeric' structure here,
+    // it will be put in the 'operands' array for use in handling fixups and so forth
     Numeric* numeric;
-	// Set to true by DispatchOpcode(), if all the tokens in the inputTokens vector have been consumed.
+    // Set to true by DispatchOpcode(), if all the tokens in the inputTokens vector have been consumed.
     bool eol;
 };
 ```
@@ -876,26 +880,26 @@ BitStream is the destination for codings and has three members of interest -
 ```c++
     // Call to empty the stream, e.g. before DispatchOpcode();
     void Reset();
-	// Call to get the number of bits that have been streamed.
+    // Call to get the number of bits that have been streamed.
     int GetBits();
-	// call to get the streamed bytes into array dest with maximum length size
+    // call to get the streamed bytes into array dest with maximum length size
     void GetBytes(unsigned char* dest, int size);
 ```
 Numeric is filled in during parsing and has five members of interest:
 
 ```c++
     // the original expression, probably a derived class.
-	// can be used to determine labels and so forth for fixups.
+    // can be used to determine labels and so forth for fixups.
     AdlExprNode* node;
-	// position within the instruction that the operand appears (in bits)
+    // position within the instruction that the operand appears (in bits)
     int pos = 0;
-	// relative offset used for calculating constant values for relative branches
-	// specified in the adl file
-	// offset from the expressed position, in bytes
+    // relative offset used for calculating constant values for relative branches
+    // specified in the adl file
+    // offset from the expressed position, in bytes
     int relOfs = 0;
-	// size of the number in bits
+    // size of the number in bits
     int size = 0;
-	// true if the number was actually used by the parser.
+    // true if the number was actually used by the parser.
     int used = 0;
 
 ```
@@ -912,7 +916,7 @@ InputToken is filled in before calling Dispatch and has two members of interest:
         NUMBER,
         LABEL
     } type;
-	// an expression related to the token.   
+    // an expression related to the token.   
     AdlExprNode* val;
 ```
 
@@ -923,8 +927,8 @@ To ease the access of state variables, the adl compiler generates setters and ge
 As an example consider the `processorbits` state variable we have been using throughout this text.   The setters and getter will be defined as follows:
 
 ```c++
-	void Setprocessorbits(int v) { ...; }
-	int Getprocessorbits() { return ...; }
+    void Setprocessorbits(int v) { ...; }
+    int Getprocessorbits() { return ...; }
 ```
 
 ### Calling interface

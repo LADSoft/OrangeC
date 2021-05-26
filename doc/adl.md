@@ -46,7 +46,7 @@ For example:
     <Processor Name="x64">
         <Param Name="Case Sensitive" Value="false"/>
         <!-- more params -->
-    </Processor
+    </Processor>
 ```
 
 There are three parameters at present.
@@ -551,7 +551,7 @@ A register may be consumed by an addressing mode or operand, for example:
     <Address Name="'reg:reg8'" Class="rm8, reg8, reg8rm" Coding="*'mand' 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
 ```
 
-Here the name field shows a reference to address-related variable class `reg8`.   Since reg is of class type reg8 if the name is `cl` it would match the `Name` attribute.   Then in the coding, the statement `'reg.Ord':3` would take the 'Ord' attribute value from the `Instance` definition of `cl`, e.g. the result would be to encode the value 1 into 3 bits.
+Here the name field shows a reference to address-related variable class `reg8`.   Since `reg` is of class type `reg8` if the name is `cl` it would match the `Name` attribute.   Then in the coding, the statement `'reg.Ord':3` would take the `Ord` attribute value from the `Instance` definition of `cl`, e.g. the result would be to encode the value 1 into 3 bits.
 
 #### Addressing Modes group
 
@@ -573,9 +573,9 @@ The class names here could be used in any other `Address` specification.   For e
 
 can match the token sequence for any address mode with a class `rm8`.   Including the one in the first example.  The coding sequence on the matched mode will reference any variables found in the matched address mode or possibly coding state variables.
 
-The coding sequence `Coding="*'mand' 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"` in the first example optionally encodes an attribute variable called `mand` if it exists.   Then it takes the register variable and encodes the sum of its `B` attribute with the `R` and `W` attributes given at an enclosing scope, e.g. an Opcode or Operand node is expected to specify these.   That is streamed as an 8-bit quantity.   Then the `op` attribute is streamed (its size is also specified at a higher level)  followed by the number 3 in two bits, the mod attribute in 3 bits, and the Ord attribute on the register in 3 bits.   
+The coding sequence `Coding="*'mand' 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"` in the first example optionally encodes an attribute variable called `mand` if it exists.   Then it takes the register variable and encodes the sum of its `B` attribute with the `R` and `W` attributes given at an enclosing scope, e.g. an Opcode or Operand node is expected to specify these.   That is streamed as an 8-bit quantity.   Then the `op` attribute is streamed (its size is also specified at a higher level)  followed by the number 3 in two bits, the mod attribute in 3 bits, and the `Ord` attribute on the register in 3 bits.   
 
-Note that the sum of the number of bits is expected to be a multiple of 8 because this processor has instructions that are byte-oriented.   So the codings in all address modes must be arranged to stream exactly a multiple of 8 bits.  On other processors including risc processors the titak number of bits in an instruction may need to be a multiple of 16 or even 32, because instructions are a multiple of this size.   mand has a size attribute of 8 bits in this adl file, as does op.
+Note that the sum of the number of bits is expected to be a multiple of 8 because this processor has instructions that are byte-oriented.   So the codings in all address modes must be arranged to stream exactly a multiple of 8 bits.  On other processors including risc processors the titak number of bits in an instruction may need to be a multiple of 16 or even 32, because instructions are a multiple of this size. In this adl file, `mand` has a size attribute of 8 bits, as does `op`.
 
 In a final example:
 
@@ -607,11 +607,11 @@ For a simple example:
 
 Here we are defining an opcode with `Name="cmpxchg8b"`.   The `Name` gives the mnemonic of the opcode in text format.
 
-It has one operand combination which has a `Name` that is a variable named 'rm' with a class name of `rm`.   In the source code, this will match any address mode with a class name of `rm`.   
+It has one operand combination which has a `Name` that is a variable named `rm` with a class name of `rm`.   In the source code, this will match any address mode with a class name of `rm`.   
 
 One could also match registers or numbers, but in this case that would be useless because this operand definition does not specify a coding and there isn't an explicit usable coding associated with the operands.  It might make sense though if the coding were specified directly in the operand.
 
-This operand defines several attribute variables to be consumed by the coding sequence of the referenced address mode.   In particular, note that in this case the 'op' variable specifies a coding which is two bytes long.
+This operand defines several attribute variables to be consumed by the coding sequence of the referenced address mode.   In particular, note that in this case the `op` variable specifies a coding which is two bytes long.
 
 This definition would not be directly shared by other mnemonics since it doesn't reference a class-based operand.
 
@@ -644,7 +644,7 @@ As a simple example of a class-based operand we might have:
 ```
 This again has the `empty` keyword as the operand name, meaning there are no operands for these kinds of mnemonics.   
 
-The fact that the opcode node has a class but no name means it can be used by multiple mnemonics.   Here the coding indicates that there will be an eight-bit prefix of 0x40, followed by the codings for the attribute variable 'op' which is specified in the original opcode.   It might 'called' as follows:
+The fact that the opcode node has a class but no name means it can be used by multiple mnemonics.   Here the coding indicates that there will be an eight-bit prefix of 0x40, followed by the codings for the attribute variable `op` which is specified in the original opcode.   It might "called" as follows:
 
 ```xml
     <Opcode Name="aaa" op="'no64' 0x37:8" Class="single"/>
@@ -746,7 +746,7 @@ These don't form a complete parser; as indicated earlier there must be glue code
 
 The parser defines a parsing structure called `xxxxParser` (x64Parser in our example) that inherits from a user-provided class `InstructionParser`.  The inheriting is performed in the manner to take care of the case where a single assembler program might use the same parsing infrastructure with different adl-generated parsers to successfully parse multiple assembly language.   
 
-The `InstructionParser` class is usually defined in the file pair InstructionParser.cpp and InstructionParser.h.   An additional user-prepared file `xxxxStub.cpp` can be used to hold miscellaneous functions that aren't directly related to parsing instructions.
+The `InstructionParser` class is usually defined in the file pair `InstructionParser.cpp` and `InstructionParser.h`.   An additional user-prepared file `xxxxStub.cpp` can be used to hold miscellaneous functions that aren't directly related to parsing instructions.
 
 
 #### InstructionParser class

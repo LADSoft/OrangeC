@@ -137,7 +137,7 @@
 
 #ifdef __ORANGEC__
 #include <float.h>
-
+#define NEW_ORANGEC_THREADING_BEHAVIOR
 #define __builtin_strlen(s) strlen(s)
 #define __has_feature(__x)   (has_##__x)
 #define __has_keyword(__x)   (has_##__x)
@@ -219,9 +219,6 @@
 #define _LIBCPP_HAS_NO_THREADS
 #define _LIBCPP_HAS_NO_MONOTONIC_CLOCK
 #else
-#define _LIBCPP_PUSH_MACROS
-#define _LIBCPP_POP_MACROS
-#define _LIBCPP_TEMPLATE_VIS _LIBCPP_TYPE_VIS
 #define _LIBCPP_EQUAL_DELETE = delete
 #define _LIBCPP_METHOD_TEMPLATE_IMPLICIT_INSTANTIATION_VIS
 #define _LIBCPP_HAS_THREAD_API_WIN32
@@ -610,9 +607,11 @@ typedef __char32_t char32_t;
     (defined(__apple_build_version__) && __apple_build_version__ < 10010000)
 #define _LIBCPP_HAS_NO_CXX20_CHRONO_LITERALS
 #endif
-
+#ifndef __ORANGEC__
 #define _LIBCPP_DISABLE_EXTENSION_WARNING __extension__
-
+#else
+#define _LIBCPP_DISABLE_EXTENSION_WARNING
+#endif
 #elif defined(_LIBCPP_COMPILER_GCC)
 
 #define _ALIGNAS(x) __attribute__((__aligned__(x)))
@@ -909,7 +908,7 @@ typedef __char32_t char32_t;
 // Just so we can migrate to the new macros gradually.
 # if defined(__ORANGEC__)
 #  define _LIBCPP_INLINE_VISIBILITY
-# elif
+# else
 #define _LIBCPP_INLINE_VISIBILITY _LIBCPP_HIDE_FROM_ABI
 # endif
 

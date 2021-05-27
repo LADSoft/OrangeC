@@ -243,8 +243,8 @@ static ARCH_SIZING locks = {
     1, /*char a_farptr; */
     1, /*char a_farseg; */
     1, /*char a_memberptr; */
-    1,
-    /*char a_struct; */ /* alignment only */
+    1, /*char a_struct; */ 
+    /* alignment only */
     1,                  /*char a_float; */
     1,                  /*char a_double; */
     1,                  /*char a_longdouble; */

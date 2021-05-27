@@ -30,8 +30,8 @@ int _RTL_FUNC timespec_get(struct timespec* xt, int base)
     {
         struct _timeb tb;
         __ll_xtime(&tb);
-        xt->nsec = tb.millitm * 1000000;
-        xt->sec = tb.time;
+        xt->tv_nsec = tb.millitm * 1000000;
+        xt->tv_sec = tb.time;
         return base;
     }
     return 0;  // error

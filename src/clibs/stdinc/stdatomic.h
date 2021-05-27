@@ -67,16 +67,6 @@ typedef enum memory_order
 } memory_order;
 #endif
 
-#define ATOMIC_BOOL_LOCK_FREE 1
-#define ATOMIC_CHAR_LOCK_FREE 1
-#define ATOMIC_CHAR16_T_LOCK_FREE 1
-#define ATOMIC_CHAR32_T_LOCK_FREE 1
-#define ATOMIC_WCHAR_T_LOCK_FREE 1
-#define ATOMIC_SHORT_LOCK_FREE 1
-#define ATOMIC_INT_LOCK_FREE 1
-#define ATOMIC_LONG_LOCK_FREE 1
-#define ATOMIC_LLONG_LOCK_FREE 1
-#define ATOMIC_POINTER_LOCK_FREE 1
 
 #ifndef RC_INVOKED
 typedef struct atomic_flag
@@ -88,8 +78,8 @@ typedef struct atomic_flag
     _Generic(A, \
     struct atomic_flag: 1, \
     bool: ATOMIC_BOOL_LOCK_FREE, \
-    char: ATOMIC_CHAR_LOCK_FREE,  \ 
-    signed char: ATOMIC_CHAR_LOCK_FREE,  \ 
+    char: ATOMIC_CHAR_LOCK_FREE,  \
+    signed char: ATOMIC_CHAR_LOCK_FREE,  \
     unsigned char: ATOMIC_CHAR_LOCK_FREE,   \
     short: ATOMIC_SHORT_LOCK_FREE,   \
     unsigned short: ATOMIC_SHORT_LOCK_FREE,   \
@@ -101,7 +91,7 @@ typedef struct atomic_flag
     unsigned long long: ATOMIC_LLONG_LOCK_FREE,   \
     __char16_t: ATOMIC_CHAR16_T_LOCK_FREE,\
     __char32_t: ATOMIC_CHAR32_T_LOCK_FREE,\
-    struct atomic_flag *: 1, \ 
+    struct atomic_flag *: 1, \
     char *: ATOMIC_POINTER_LOCK_FREE, \
     signed char *: ATOMIC_POINTER_LOCK_FREE, \
     unsigned char *: ATOMIC_POINTER_LOCK_FREE,   \

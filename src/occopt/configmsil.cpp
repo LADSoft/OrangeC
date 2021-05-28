@@ -116,6 +116,8 @@ static ARCH_SIZING sizes = {
     4,  /*char a_int;*/
     4,  /*char a_long;*/
     8,  /*char a_longlong;*/
+    2, /*char a_char16_t;*/
+    4, /*char a_char32_t;*/
     4,  /*char a_addr;*/
     8,  /*char a_farptr;*/
     2,  /*char a_farseg;*/
@@ -138,6 +140,8 @@ static ARCH_SIZING alignments = {
     4, /*char a_int;*/
     4, /*char a_long;*/
     8, /*char a_longlong;*/
+    2, /*char a_char16_t;*/
+    4, /*char a_char32_t;*/
     4, /*char a_addr;*/
     4, /*char a_farptr;*/
     2, /*char a_farseg;*/
@@ -157,6 +161,8 @@ static ARCH_SIZING locks = {
     0, /*char a_int; */
     0, /*char a_long; */
     1, /*char a_longlong; */
+    0, /*char a_char16_t;*/
+    0, /*char a_char32_t;*/
     0, /*char a_addr; */
     1, /*char a_farptr; */
     1, /*char a_farseg; */

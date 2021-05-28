@@ -1015,10 +1015,10 @@ static bool is_nothrow_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym,
         lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
         lst = lst->next;
     }
-    if (funcparams.arguments && funcparams.arguments->next)
+    if (funcparams.arguments)
     {
         TYPE* tp2 = funcparams.arguments->tp;
-        if (isref(tp2))
+        if (isref(tp2) && funcparams.arguments->next)
         {
             tp2 = basetype(tp2)->btp;
             TYPE* tpy = funcparams.arguments->next->tp;
@@ -1036,16 +1036,21 @@ static bool is_nothrow_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym,
         {
             if (!basetype(tp2)->sp->sb->trivialCons)
                 rv = nothrowConstructible(funcparams.arguments->tp, funcparams.arguments->next);
-            else
-	        rv = comparetypes(tp2, funcparams.arguments->next->tp, true);
+            else if (funcparams.arguments->next)
+    	        rv = comparetypes(tp2, funcparams.arguments->next->tp, true);
         }
-        else
+        else if (funcparams.arguments->next)
         {
             rv = comparetypes(tp2, funcparams.arguments->next->tp, true);
         }
+        else
+        {
+            rv = true;
+        }
     }
     *exp = intNode(en_c_i, rv);
-    *tp = &stdint;
+    *tp =
+        &stdint;
     return true;
 }
 static bool is_pod(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)

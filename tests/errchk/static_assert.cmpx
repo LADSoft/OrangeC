@@ -1,0 +1,3 @@
+Error(510)    static_assert.cpp(1):  static_assert generated: first failed
+Error(510)    static_assert.cpp(2):  static_assert generated: (unspecified)
+2 Errors

@@ -101,6 +101,13 @@ namespace Parser
         /* Extended */
         kw_atomic_flag_test_set, kw_atomic_flag_clear, kw_atomic_fence, kw_atomic_kill_dependency,
         kw_atomic_load, kw_atomic_store, kw_atomic_modify, kw_atomic_cmpswp, kw_atomic_var_init,
+        /* Clang compatibility for atomics */
+        kw_c11_atomic_init, kw_c11_atomic_thread_fence, kw_c11_atomic_signal_fence,
+        kw_c11_atomic_is_lock_free, kw_c11_atomic_store, kw_c11_atomic_load, // NOTE: clang's atomic_is_lock_free runs on the atomic's size, not the address
+        kw_c11_atomic_xchg, kw_c11_atomic_cmpxchg_strong, kw_c11_atomic_cmpxchg_weak,
+        kw_c11_atomic_ftchadd, kw_c11_atomic_ftchsub, kw_c11_atomic_ftchand,
+        kw_c11_atomic_ftchor, kw_c11_atomic_ftchxor,
+        /* Extended */
         kw__pascal, kw__stdcall, kw__fastcall, kw__cdecl, kw__intrinsic, kw_asm, kw__loadds,
         kw__far, kw_asmreg, kw_asminst, kw__indirect, kw__export, kw__import, kw___func__,
         kw__near, kw__seg, kw___typeid, kw___int64, kw_alloca, kw__msil_rtl,

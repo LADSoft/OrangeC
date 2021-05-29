@@ -9,6 +9,7 @@ makefile text
 *.mak text
 *.yml text
 *.cmpx binary
+*.ref binary
 *.bmp binary
 *.ico binary
 *.cur binary

@@ -374,19 +374,8 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     {
         if (f->thisptr->type == en_auto && f->thisptr->v.sp->sb->stackblock)
         {
-            if (f->sp->sb->trivialCons)
-            {
-                Optimizer::IMODE* ap;
-                Optimizer::gen_icode(Optimizer::i_parmstack, ap = Optimizer::tempreg(ISZ_ADDR, 0), Optimizer::make_immed(ISZ_UINT, f->thisptr->v.sp->tp->size),
-                    nullptr);
-                Optimizer::intermed_tail->alwayslive = true;
-                Optimizer::SymbolManager::Get(f->thisptr->v.sp)->imvalue = ap;
-            }
-            else
-            {
-                f->sp->sb->dumpInlineToFile = true;
-                return nullptr;
-            }
+            f->sp->sb->dumpInlineToFile = true;
+            return nullptr;
         }
     }
     if (f->returnEXP && !isref(basetype(f->sp->tp)->btp))

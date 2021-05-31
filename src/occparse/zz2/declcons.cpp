@@ -1469,14 +1469,7 @@ void createDefaultConstructors(SYMBOL* sp)
     }
     if (cons)
     {
-        bool defaulted = true;
-        for (auto hr = cons->tp->syms->table[0]; hr; hr = hr->next)
-            if (!hr->p->sb->defaulted)
-            {
-                defaulted = false;
-                break;
-            }
-        sp->sb->hasUserCons = !defaulted;
+        sp->sb->hasUserCons = true;
         shimDefaultConstructor(sp, cons);
     }
     else
@@ -3081,8 +3074,6 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     bool initializerRef = false;
     PerformDeferredInitialization(stp, nullptr);
     sp = basetype(*tp)->sp;
-    if (!strcmp(sp->name, "default_init_tag"))
-        printf("hi");
     against = theCurrentFunc ? theCurrentFunc->sb->parentClass : top ? sp : sp->sb->parentClass;
 
     if (isAssign)

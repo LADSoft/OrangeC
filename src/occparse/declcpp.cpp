@@ -66,10 +66,11 @@ attributes basisAttribs;
 
 Optimizer::LIST* nameSpaceList;
 char anonymousNameSpaceName[512];
+int noNeedToSpecialize;
 
 static bool MustSpecialize(const char *name)
 {
-    if (templateNestingCount && !instantiatingTemplate)
+    if (noNeedToSpecialize || (templateNestingCount && !instantiatingTemplate))
         return false;
     auto sst = structSyms;
     while (sst)
@@ -1243,7 +1244,6 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
                 {
                     if (MATCHKW(lex, lt))
                     {
-                        // throwaway
                         TEMPLATEPARAMLIST* lst = nullptr;
                         SYMBOL* sp1;
                         inTemplateSpecialization++;
@@ -3207,7 +3207,6 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
             LEXLIST* idsym = lex;
             lex = getsym();
             attributes oldAttribs = basisAttribs;
-
             basisAttribs = { 0 };
             ParseAttributeSpecifiers(&lex, nullptr, true);
             if (MATCHKW(lex, assign))

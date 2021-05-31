@@ -30,6 +30,7 @@ extern attributes basisAttribs;
 
 extern Optimizer::LIST* nameSpaceList;
 extern char anonymousNameSpaceName[512];
+extern int noNeedToSpecialize;
 
 typedef struct
 {

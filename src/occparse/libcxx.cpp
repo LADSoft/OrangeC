@@ -91,6 +91,9 @@ static struct _ihash
     {"__is_trivially_copyable", is_trivially_copyable},
     {"__is_union", is_union},
 };
+
+static std::unordered_map<std::string, std::unordered_map<unsigned, SYMBOL*>> integerSequences;
+
 void libcxx_init(void)
 {
     int i;
@@ -1246,5 +1249,159 @@ bool underlying_type(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPR
         *tp = &stdint;
     }
     return true;
+}
+static SYMBOL* MakeIntegerSeqType(SYMBOL* sp, TEMPLATEPARAMLIST* args)
+{
+    EXPRESSION* e = nullptr;
+    if (args->next && args->next->next)
+    {
+        e = args->next->next->p->byNonType.dflt;
+    }
+    if (e && isintconst(e))
+    {
+        SYMBOL *tpl = args->p->byTemplate.dflt;
+        if (tpl->sb->parentTemplate)
+            tpl = tpl->sb->parentTemplate;
+        int nt = basetype(args->next->p->byClass.dflt)->type + e->v.i;
+        const char *nm = args->p->byTemplate.dflt->name;
+        auto sym = integerSequences[nm][nt];
+        if (sym)
+            return sym;
+        int n = e->v.i;
+        decltype(args) args1;
+        args1 = Allocate<TEMPLATEPARAMLIST>();
+        args1->p = Allocate<TEMPLATEPARAM>();
+        args1->p->type = kw_new;
+        args1->next = Allocate<TEMPLATEPARAMLIST>();
+        args1->next->p = args->next->p;
+        args1->next->next = Allocate<TEMPLATEPARAMLIST>();
+        args1->next->next->p = Allocate<TEMPLATEPARAM>();
+        args1->next->next->p->type = kw_int;
+        args1->next->next->p->byNonType.tp = args1->next->p->byClass.dflt;
+        args1->next->next->p->packed = true;
+        auto last = &args1->next->next->p->byPack.pack;
+        for (int i=0; i < n; i++, last = &(*last)->next)
+        {
+            *last = Allocate<TEMPLATEPARAMLIST>();
+            (*last)->p = Allocate<TEMPLATEPARAM>();
+            (*last)->p->type = kw_int;
+            (*last)->p->byNonType.tp = args1->next->p->byClass.dflt;
+            (*last)->p->byNonType.val = intNode(en_c_i, i);
+        }
+        sym = GetClassTemplate(tpl, args1->next, false);
+        if (sym)
+        {
+            auto sym1 = TemplateClassInstantiateInternal(sym, args1, false);
+            if (sym1)
+            {
+                integerSequences[nm][nt] = sym1;
+                return sym1;
+            }
+            return sym;
+        }
+        return tpl;
+    }
+    return nullptr;
+}
+SYMBOL* MakeIntegerSeq(SYMBOL* sym, TEMPLATEPARAMLIST* args)
+{
+    SYMBOL* rv = clonesym(sym);
+    rv->sb->mainsym = sym;
+    auto rs = MakeIntegerSeqType(sym, args);
+    if (rs)
+        rv->tp = rs->tp;
+    return rv;
+
+}
+static TYPE* TypePackElementType(SYMBOL* sym, TEMPLATEPARAMLIST* args)
+{
+    auto tpl = args;
+    if (args->p->packed)
+    {
+        tpl = args->p->byPack.pack;
+        if (!tpl)
+        {
+            printf("try");
+            return &stdany;
+        }
+    }
+    auto e = tpl->p->byNonType.val;
+    if (!e)
+        e = tpl->p->byNonType.dflt;
+    if (e && isintconst(e))
+    {
+        int n = e->v.i;
+        TEMPLATEPARAMLIST* lst;
+        if (!args->next->p->packed)
+        {
+            if (n == 0)
+            {
+                lst = args->next;
+            }
+            else
+            {
+                lst = nullptr;
+            }
+        }
+        else
+        {
+            lst = args->next->p->byPack.pack;
+        }
+        for (; n && lst; n--)
+        {
+            lst = lst->next;
+        }
+        if (lst)
+        {
+            TYPE* tp = Allocate<TYPE>();
+            tp->type = bt_derivedfromtemplate;
+            if (lst->p->byClass.val)
+            {
+                tp->btp = lst->p->byClass.val;
+            }
+            else
+            {
+                tp->btp = lst->p->byClass.dflt;
+            }
+            tp->size = tp->btp->size;
+            tp->rootType = basetype(tp->btp);
+            return tp;
+        }
+        else
+        {
+            return &stdany;
+        }
+    }
+    else
+    {
+        return &stdany;
+    }
+
+}
+SYMBOL* TypePackElementCls(SYMBOL* sym, TEMPLATEPARAMLIST* args)
+{
+    SYMBOL* rv = clonesym(sym);
+    rv->sb->mainsym = sym;
+    rv->tp = Allocate<TYPE>();
+    *rv->tp = *sym->tp;
+    rv->tp->syms = CreateHashTable(1);
+    rv->tp->syms->table[0] = Allocate<SYMLIST>();
+    rv->tp->syms->table[0]->p = clonesym(rv);
+    rv->tp->syms->table[0]->next = Allocate<SYMLIST>();
+    auto tp1 = Allocate<TYPE>();
+    tp1->type = bt_typedef;
+    tp1->btp = TypePackElementType(sym, args);
+    tp1->size = tp1->btp->size;
+    tp1->rootType = basetype(tp1->btp);
+    auto sym1 = makeID(sc_typedef, tp1, nullptr, "type");
+    rv->tp->syms->table[0]->next->p = sym1;
+    return rv;
+}
+SYMBOL* TypePackElement(SYMBOL* sym, TEMPLATEPARAMLIST* args)
+{
+    SYMBOL* rv = clonesym(sym);
+    rv->sb->mainsym = sym;
+    rv->tp = TypePackElementType(sym, args);
+    return rv;
 }
 }  // namespace Parser

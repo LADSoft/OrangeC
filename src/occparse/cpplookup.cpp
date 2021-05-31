@@ -687,6 +687,10 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* t
                 finalPos = lex;
                 if (deferred)
                 {
+                    if (istypedef && sp->sb->mainsym && sp->sb->mainsym->sb->templateLevel)
+                    {
+                        sp->tp =  sp->sb->mainsym->tp;
+                    }
                     if (sp && sp->tp->type == bt_templateselector)
                     {
                         TEMPLATESELECTOR* s = basetype(sp->tp)->sp->sb->templateSelector;
@@ -2145,9 +2149,22 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
                 ta = basetype(ta);
                 tl = basetype(tl);
                 tr = basetype(tr);
+                int cmpl = comparetypes(tl, ta, true) && sameTemplate(tl, ta);
+                int cmpr = comparetypes(tr, ta, true) && sameTemplate(tr, ta);
                 if (fromUser)
                 {
-                    if (classRefCount(ta->sp, tl->sp) == 1 && classRefCount(ta->sp, tr->sp) == 1)
+                    if (cmpr || cmpl)
+                    {
+                        if (cmpr)
+                        {
+                            if (cmpl)
+                                return 0;
+                            return -1;
+                        }
+                        else
+                            return 1;
+                    }
+                    else if (classRefCount(ta->sp, tl->sp) == 1 && classRefCount(ta->sp, tr->sp) == 1)
                     {
                         if (classRefCount(tl->sp, tr->sp) == 1)
                         {
@@ -2170,7 +2187,18 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
                 }
                 else
                 {
-                    if (classRefCount(tl->sp, ta->sp) == 1 && classRefCount(tr->sp, ta->sp) == 1)
+                    if (cmpr || cmpl)
+                    {
+                        if (cmpr)
+                        {
+                            if (cmpl)
+                                return 0;
+                            return 1;
+                        }
+                        else
+                            return -1;
+                    }
+                    else if (classRefCount(tl->sp, ta->sp) == 1 && classRefCount(tr->sp, ta->sp) == 1)
                     {
                         if (classRefCount(tl->sp, tr->sp) == 1)
                         {
@@ -4398,6 +4426,7 @@ static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, Optimizer::LIST* 
                 {
                     spList[n] = sym;
                 }
+
                 spFilterList[n++] = sym;
             }
             hr = &(*hr)->next;
@@ -4412,6 +4441,7 @@ static void doNames(SYMBOL* sym)
         doNames(sym->sb->parentClass);
     SetLinkerNames(sym, lk_cdecl);
 }
+int count1;
 SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, bool toErr,
                               bool maybeConversion, bool toInstantiate, int flags)
 {

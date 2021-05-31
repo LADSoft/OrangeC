@@ -97,6 +97,7 @@ void declare_init(void)
     openStructs = nullptr;
     argument_nesting = 0;
     symbolKey = 0;
+    noNeedToSpecialize = 0;
 }
 
 void InsertGlobal(SYMBOL* sp) { Optimizer::globalCache.push_back(Optimizer::SymbolManager::Get(sp)); }
@@ -2724,7 +2725,10 @@ founddecltype:
                             *tp1 = *sp->tp;
                             sp->tp = tp1;
                             sp->tp->sp = sp;
-                            sp->templateParams = lst;
+                            sp->templateParams = Allocate<TEMPLATEPARAMLIST>();
+                            sp->templateParams->p = Allocate<TEMPLATEPARAM>();
+                            sp->templateParams->p->type = kw_new;
+                            sp->templateParams->next = lst;
                         }
 
                         tn = sp->tp;
@@ -4367,7 +4371,8 @@ static LEXLIST* getAfterType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** s
                                         tpn->rootType = tpn;
                                         if (isconst(tpx))
                                         {
-                                            TYPE* tpq = Allocate<TYPE>();
+                                            TYPE* tpq
+                                                = Allocate<TYPE>();
                                             tpq->size = tpn->size;
                                             tpq->type = bt_const;
                                             tpq->btp = tpn;

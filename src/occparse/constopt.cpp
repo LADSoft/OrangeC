@@ -2238,9 +2238,16 @@ int opt0(EXPRESSION** node)
             if (!templateNestingCount || instantiatingTemplate)
             {
                 int n = 0;
-                TEMPLATEPARAMLIST* tpl = (*node)->v.templateParam->p->byPack.pack;
-                while (tpl)
-                    n++, tpl = tpl->next;
+                if (!(*node)->v.templateParam->p->packed)
+                {
+                    n = 1;
+                }
+                else
+                {
+                    TEMPLATEPARAMLIST* tpl = (*node)->v.templateParam->p->byPack.pack;
+                    while (tpl)
+                        n++, tpl = tpl->next;
+                }
                 *node = intNode(en_c_i, n);
             }
             break;

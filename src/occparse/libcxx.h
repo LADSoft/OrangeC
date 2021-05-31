@@ -28,4 +28,7 @@ namespace Parser
 void libcxx_init(void);
 bool parseBuiltInTypelistFunc(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 bool underlying_type(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+SYMBOL* MakeIntegerSeq(SYMBOL* sp, TEMPLATEPARAMLIST* args);
+SYMBOL* TypePackElementCls(SYMBOL* sym, TEMPLATEPARAMLIST* args);
+SYMBOL* TypePackElement(SYMBOL* sym, TEMPLATEPARAMLIST* args);
 }  // namespace Parser

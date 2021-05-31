@@ -437,7 +437,8 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             default:
                 break;
         }
-        if (sym->sb && sym->sb->templateLevel && !isfunction(sym->tp) && sym->sb->storage_class != sc_type && !ismember(sym) &&
+        if (sym->sb && sym->sb->templateLevel && !isfunction(sym->tp) 
+            && sym->sb->storage_class != sc_type && !ismember(sym) &&
             MATCHKW(lex, lt))
         {
             lex = getsym();
@@ -448,6 +449,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                 lex = backupsym();
                 lex = GetTemplateArguments(lex, funcsp, sp1, &lst);
                 sp1 = GetVariableTemplate(sp1, lst);
+
                 if (sp1)
                 {
                     sym = sp1;
@@ -531,6 +533,31 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                             if (templateParam->p->type == kw_int && !templateParam->p->packsym)
                             {
                                 *tp = templateParam->p->byNonType.tp;
+                                if ((*tp)->type == bt_templateparam)
+                                {
+                                    if ((*tp)->templateParam->p->byClass.val)
+                                    {
+                                        *tp = (*tp)->templateParam->p->byClass.val;
+                                    }
+                                    else
+                                    {
+                                        *tp = sym->tp;
+                                        if ((*tp)->type == bt_templateparam)
+                                        {
+                                            if ((*tp)->templateParam->p->byNonType.tp)
+                                            {
+                                                *tp = (*tp)->templateParam->p->byNonType.tp;
+                                                if ((*tp)->type == bt_templateparam)
+                                                {
+                                                    if ((*tp)->templateParam->p->byClass.val)
+                                                    {
+                                                        *tp = (*tp)->templateParam->p->byClass.val;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                                 *exp = templateParam->p->byNonType.val;
                             }
                             else
@@ -2151,7 +2178,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
             if (list)
             {
                 bool ivararg = vararg;
-                if (list->exp->type == en_auto && list->exp->v.sp->sb->va_typeof)
+                if (list->exp->type == en_auto && list->exp->v.sp->sb && list->exp->v.sp->sb->va_typeof)
                     ivararg = false;
                 list->vararg = ivararg;
                 if (hr)
@@ -5059,12 +5086,68 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                     lex = expression_msilfunc(lex, funcsp, tp, exp, flags);
                     break;
                 case openpa:
+                {
                     lex = getsym();
+                    LEXLIST *start = lex;
                     lex = expression_comma(lex, funcsp, nullptr, tp, exp, ismutable, flags & ~(_F_INTEMPLATEPARAMS | _F_SELECTOR));
                     if (!*tp)
                         error(ERR_EXPRESSION_SYNTAX);
+                    if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, ellipse))
+                    {
+                        // lose p
+                        lex = getsym();
+                        if (!templateNestingCount && *exp && (*exp)->type != en_packedempty)
+                        {
+                            if (!isstructured(*tp) && !(*tp)->templateParam)
+                                checkPackedExpression(*exp);
+                            // this is going to presume that the expression involved
+                            // is not too long to be cached by the LEXLIST mechanism.
+                            int oldPack = packIndex;
+                            int count = 0;
+                            SYMBOL* arg[200];
+                            GatherPackedVars(&count, arg, *exp);
+                            expandingParams++;
+                            if (count)
+                            {
+                                *exp = nullptr;
+                                EXPRESSION** next = exp;
+                                int i;
+                                int n = CountPacks(arg[0]->tp->templateParam->p->byPack.pack);
+                                for (i = 0; i < n; i++)
+                                {
+                                    INITLIST* p = Allocate<INITLIST>();
+                                    LEXLIST* lex = SetAlternateLex(start);
+                                    TYPE* tp1;
+                                    EXPRESSION *exp1;
+                                    packIndex = i;
+                                    expression_comma(lex, funcsp, nullptr, &tp1, &exp1, nullptr, _F_PACKABLE);
+                                    SetAlternateLex(nullptr);
+                                    if (tp1)
+                                    {
+                                        if (!*next)
+                                        {
+                                            *next = exp1;
+                                        }
+                                        else
+                                        {
+                                            *next = exprNode(en_void, *next, exp1);
+                                            next = &(*next)->right;
+                                        }
+                                    }
+                                }
+                            }
+                            expandingParams--;
+                            packIndex = oldPack;
+                        }
+                    }
+                    else
+                    {
+                        if (argument_nesting <= 1)
+                            checkUnpackedExpression(*exp);
+                    }
                     needkw(&lex, closepa);
                     break;
+                }
                 case kw___func__:
                     *tp = &std__func__;
                     if (!funcsp->sb->__func__label || Optimizer::msilstrings)
@@ -8243,11 +8326,15 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                         else if (isarray(tp1) && (tp1)->msil)
                             error(ERR_MANAGED_OBJECT_NO_ADDRESS);
                     }
-                    if (isstructured(*tp) && (!isstructured(tp1) || !comparetypes(*tp, tp1, true)))
+                    if (isstructured(*tp) && (!isstructured(tp1) || (!comparetypes(*tp, tp1, true) && !sameTemplate(tp1, *tp))))
                     {
                         if (!((Optimizer::architecture == ARCHITECTURE_MSIL) && basetype(*tp)->sp->sb->msil &&
-                              (isconstzero(tp1, exp1) || basetype(tp1)->nullptrType)))
+                            (isconstzero(tp1, exp1) || basetype(tp1)->nullptrType)))
+                        {
+                            comparetypes(*tp, tp1, true);
+                            sameTemplate(*tp, tp1);
                             error(ERR_ILL_STRUCTURE_ASSIGNMENT);
+                        }
                     }
                     else if (isstructured(*tp) && !(*tp)->size)
                     {

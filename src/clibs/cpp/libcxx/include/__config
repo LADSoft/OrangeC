@@ -130,7 +130,7 @@
 #ifndef _LIBCPP_ABI_NAMESPACE
 # define _LIBCPP_ABI_NAMESPACE _LIBCPP_CONCAT(__,_LIBCPP_ABI_VERSION)
 #endif
-
+ 
 #if __cplusplus < 201103L
 #define _LIBCPP_CXX03_LANG
 #endif
@@ -141,6 +141,7 @@
 #define __builtin_strlen(s) strlen(s)
 #define __has_feature(__x)   (has_##__x)
 #define __has_keyword(__x)   (has_##__x)
+#define __has_builtin(__x)   (has##__x)
 #define address_sanitizer 0
 #define has_cxx_access_control_sfinae 0
 #define has_cxx_alias_templates 1
@@ -196,6 +197,17 @@
 #define has___nullptr 0
 #define has__Atomic 1
 #define has___is_aggregate 0
+#define has__builtin__isnan 0
+#define has__builtin__isinf 0
+#define has__builtin__isfinite 0
+#define has__atomic_load_n 0
+#define has__atomic_add_fetch 0
+#define has__builtin__operator_new 0
+#define has__builtin__operator_delete 0
+#define has__make_integer_seq 1
+#define has__type_pack_element 1
+#define has__builtin_launder 0
+#define has__builtin_addressof 0
 
 #define objc_arc 0
 #define objc_arc_weak 0

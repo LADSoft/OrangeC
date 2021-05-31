@@ -57,7 +57,6 @@
  * a limitation of this implementation is it does not handle block assignments
  * or structures passed by value.
  */
-
 namespace Optimizer
 {
 int cachedTempCount;
@@ -89,6 +88,9 @@ void AliasInit(void)
     parmList = nullptr;
     uivBytes = nullptr;
     cachedTempCount = tempCount;
+    processBits = nullptr;
+    processCount =0 ;
+    changed = false;
 }
 void AliasRundown(void) { aFree(); }
 static void PrintOffs(struct UIVOffset* offs)
@@ -1443,8 +1445,8 @@ void AliasPass2(void)
     MakeAliasLists();
     ScanUIVs();
     ScanMem();
-    //    if (icdFile)
-    //        DumpAliases();
+        if (icdFile)
+            DumpAliases();
     complementmap(uivBytes);
 }
 }  // namespace Optimizer

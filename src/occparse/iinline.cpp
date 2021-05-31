@@ -374,7 +374,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     {
         if (f->thisptr->type == en_auto && f->thisptr->v.sp->sb->stackblock)
         {
-            if (f->sp->sb->trivialCons)
+            if (f->sp->sb->parentClass->sb->trivialCons)
             {
                 Optimizer::IMODE* ap;
                 Optimizer::gen_icode(Optimizer::i_parmstack, ap = Optimizer::tempreg(ISZ_ADDR, 0), Optimizer::make_immed(ISZ_UINT, f->thisptr->v.sp->tp->size),

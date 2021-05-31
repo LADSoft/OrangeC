@@ -26,6 +26,7 @@
 namespace Parser
 {
 void libcxx_init(void);
+void libcxx_builtins(void);
 bool parseBuiltInTypelistFunc(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 bool underlying_type(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 SYMBOL* MakeIntegerSeq(SYMBOL* sp, TEMPLATEPARAMLIST* args);

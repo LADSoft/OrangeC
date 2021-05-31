@@ -31,6 +31,7 @@
 #include "lex.h"
 #include "symtab.h"
 #include "beinterf.h"
+#include "libcxx.h"
 
 namespace Parser
 {
@@ -88,6 +89,7 @@ void ParseBuiltins(void)
 
     if (Optimizer::cparams.prm_cplusplus)
     {
+        libcxx_builtins();
         SetAlternateParse(true, cppbuiltin);
         lex = getsym();
         if (lex)

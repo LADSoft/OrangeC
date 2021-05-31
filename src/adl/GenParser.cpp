@@ -1298,7 +1298,10 @@ void GenParser::GenerateCoding(const std::string coding, const std::string name)
                 temp = temp.substr(npos);
             switch (temp[0])
             {
-                case '!':
+                case '-':
+                    unary = '!';
+                    temp = temp.substr(1);
+                    break;
                 case '~':
                     unary = temp[0];
                     temp = temp.substr(1);

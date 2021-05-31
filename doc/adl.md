@@ -296,9 +296,9 @@ The `.` operand accesses an attribute variable associated with a register.   In 
 
 Codings may contain the following unary operands:
 
-`! ~`
+`- ~`
 
-where `~` is a unary complement and `!` is a unary minus,
+where `~` is a unary complement and `-` is a unary minus,
 
 or the following binary operands:
 

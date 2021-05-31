@@ -3778,6 +3778,11 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
                     {
                         seq[(*n)++] = CV_BOOLCONVERSION;
                     }
+                    // take char of converting wchar_t to char
+                    else if (basetype(tpa)->type == bt_wchar_t && basetype(tpp)->type == bt_char)
+                    {
+                         seq[(*n)++] = CV_IDENTITY;
+                    }
                     else if ((basetype(tpp)->type == bt_int || basetype(tpp)->type == bt_unsigned) &&
                              basetype(tpa)->type < basetype(tpp)->type)
                     {
@@ -3790,6 +3795,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
                         // two to a mapping between other integer types...
                         if (basetype(tpa)->type == bt_bool || isunsigned(tpa) != isunsigned(tpp) ||
                             getSize(basetype(tpa)->type) != getSize(basetype(tpp)->type))
+                            // take char of converting wchar_t to char
                             seq[(*n)++] = CV_INTEGRALCONVERSION;
                         else
                             seq[(*n)++] = CV_INTEGRALCONVERSIONWEAK;

@@ -88,12 +88,12 @@ std::string OS::QuoteCommand(std::string exe, std::string command)
     }
     else
     {
-        rv.push_back(L'"');
+        rv.push_back('"');
 
         for (auto it = command.begin(); it != command.end(); ++it)
         {
             unsigned slashcount = 0;
-            while (it != command.end() && *it == L'\\')
+            while (it != command.end() && *it == '\\')
             {
                 ++it;
                 ++slashcount;
@@ -102,23 +102,23 @@ std::string OS::QuoteCommand(std::string exe, std::string command)
             if (it == command.end())
             {
                 // escape all the backslashes
-                rv.append(slashcount * 2, L'\\');
+                rv.append(slashcount * 2, '\\');
                 break;
             }
-            else if (*it == L'"' && sh)
+            else if (*it == '"' && sh)
             {
                 // escape all the backslashes and add a \"
-                rv.append(slashcount * 2 + 1, L'\\');
+                rv.append(slashcount * 2 + 1, '\\');
                 rv.push_back('"');
             }
             else
             {
                 // no escape
-                rv.append(slashcount, L'\\');
+                rv.append(slashcount, '\\');
                 rv.push_back(*it);
             }
         }
-        rv.push_back(L'"');
+        rv.push_back('"');
     }
     return rv;
 }

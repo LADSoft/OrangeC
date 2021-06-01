@@ -2675,7 +2675,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                 {
                     errortype(ERR_OPERATOR_NONSTATIC, basetype(sp->tp)->btp, nullptr);
                 }
-                else
+                else if ((enum e_kw)(sp->sb->operatorId - CI_NEW) != kw_new && (enum e_kw)(sp->sb->operatorId - CI_NEW) != kw_delete) 
                 {
                     errorstr(ERR_OPERATOR_NONSTATIC, overloadXlateTab[sp->sb->operatorId]);
                 }

@@ -3656,6 +3656,8 @@ void parseNoexcept(SYMBOL* funcsp)
         else
         {
             funcsp->sb->xcMode = exp->v.i ? xc_none : xc_all;
+            if (exp->v.i)
+                funcsp->sb->noExcept = true;
         }
         SetAlternateLex(nullptr);
         if (funcsp->sb->parentClass)

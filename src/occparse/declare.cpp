@@ -4150,6 +4150,7 @@ LEXLIST* getExceptionSpecifiers(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e
                 if (MATCHKW(lex, closepa))
                 {
                     sp->sb->xcMode = xc_none;
+                    sp->sb->noExcept = true;
                     if (!sp->sb->xc)
                         sp->sb->xc = Allocate<xcept>();
                 }
@@ -4210,6 +4211,7 @@ LEXLIST* getExceptionSpecifiers(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e
             else
             {
                 sp->sb->xcMode = xc_none;
+                sp->sb->noExcept = true;
                 if (!sp->sb->xc)
                     sp->sb->xc = Allocate<xcept>();
             }
@@ -5856,7 +5858,10 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                             (!sp->templateParams || MATCHKW(lex, colon) || MATCHKW(lex, begin) || MATCHKW(lex, kw_try)))
                             sp->templateParams = TemplateGetParams(sp);
                         if (sp->sb->isDestructor && sp->sb->xcMode == xc_unspecified)
+                        {
+                            sp->sb->noExcept = true;
                             sp->sb->xcMode = xc_none;
+                        }
                         /* removed in C++ 2014*/
                         /*
                         if (sp->sb->constexpression && !sp->sb->isDestructor && !sp->sb->isConstructor)

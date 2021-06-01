@@ -25,6 +25,7 @@
 
 namespace Parser
 {
+extern int inNoExceptHandler;
 void libcxx_init(void);
 void libcxx_builtins(void);
 bool parseBuiltInTypelistFunc(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);

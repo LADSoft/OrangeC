@@ -44,6 +44,7 @@
 
 namespace Parser
 {
+int inNoExceptHandler;
 
 static HASHTABLE* intrinsicHash;
 
@@ -597,6 +598,12 @@ static bool nothrowConstructible(TYPE* tp, INITLIST* args)
                 PushPopTemplateArgs(stk.top(), false);
                 stk.pop();
             }
+            if (sp && sp->sb->defaulted && !sp->sb->inlineFunc.stmt)
+            {
+                inNoExceptHandler++;
+                createConstructor(sp->sb->parentClass, sp);
+                inNoExceptHandler--;
+            }
             temp = funcparams.arguments;
             i = 0;
             while (temp)
@@ -608,7 +615,7 @@ static bool nothrowConstructible(TYPE* tp, INITLIST* args)
             }
             if (sp)
             {
-                return sp->sb->xcMode == xc_none;
+                return sp->sb->noExcept;
             }
         }
     }
@@ -1115,7 +1122,9 @@ static bool is_nothrow_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym,
             if (!basetype(tp2)->sp->sb->trivialCons)
                 rv = nothrowConstructible(funcparams.arguments->tp, funcparams.arguments->next);
             else if (funcparams.arguments->next)
-    	        rv = comparetypes(tp2, funcparams.arguments->next->tp, true);
+                rv = comparetypes(tp2, funcparams.arguments->next->tp, true);
+            else
+                rv = true;
         }
         else if (funcparams.arguments->next)
         {

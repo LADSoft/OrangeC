@@ -3478,7 +3478,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
         if (cons1->sb->castoperator)
         {
             FUNCTIONCALL* oparams = Allocate<FUNCTIONCALL>();
-            if (!isAccessible(cons1->sb->parentClass, cons1->sb->parentClass, cons1, nullptr, ac_public, false))
+            if (!inNoExceptHandler && !isAccessible(cons1->sb->parentClass, cons1->sb->parentClass, cons1, nullptr, ac_public, false))
             {
                 errorsym(ERR_CANNOT_ACCESS, cons1);
             }
@@ -3505,7 +3505,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
         }
         else
         {
-            if (!isAccessible(against, sp, cons1, theCurrentFunc,
+            if (!inNoExceptHandler && !isAccessible(against, sp, cons1, theCurrentFunc,
                               top ? (theCurrentFunc && theCurrentFunc->sb->parentClass == sp ? ac_private : ac_public)
                                   : ac_private,
                               false))

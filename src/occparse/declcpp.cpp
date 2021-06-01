@@ -3513,8 +3513,9 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                 }
                                 break;
                             case 2:  // aligned
-                                if (needkw(lex, openpa))
+                                if (MATCHKW(*lex, openpa))
                                 {
+                                    *lex = getsym();
                                     TYPE* tp = nullptr;
                                     EXPRESSION* exp = nullptr;
 
@@ -3530,6 +3531,13 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                     if (basisAttribs.inheritable.structAlign > 0x10000 ||
                                         (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
                                         error(ERR_INVALID_ALIGNMENT);
+                                }
+                                else
+                                {
+                                    // no argument means use max meaningful size
+                                    basisAttribs.inheritable.structAlign = Optimizer::chosenAssembler->arch->type_align->a_alignedstruct	;
+                                    basisAttribs.inheritable.alignedAttribute = true;
+                                    
                                 }
                                 break;
                             case 3:  // warn_if_not_aligned

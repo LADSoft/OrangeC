@@ -2674,6 +2674,10 @@ EXPORTS
 	_RtlUnwind@16	RtlUnwind
 	__imp__RtlUnwind@16	RtlUnwind
 	RtlUnwind	RtlUnwind
+	RtlLookupFunctionEntry RtlLookupFunctionEntry
+	RtlUnwindEx RtlUnwindEx
+	RtlVirtualUnwind RtlVirtualUnwind
+	RtlRestoreContext RtlRestoreContext
 	_RtlZeroMemory@8	RtlZeroMemory
 	__imp__RtlZeroMemory@8	RtlZeroMemory
 	RtlZeroMemory	RtlZeroMemory

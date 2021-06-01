@@ -434,6 +434,7 @@ int ppDefine::LookupDefault(std::string& macro, int begin, int end, const std::s
     macro.replace(begin, end - begin, insert);
     return insert.size();
 }
+int count;
 std::string ppDefine::defid(const std::string& macroname, int& i, int& j)
 /*
  * Get an identifier during macro replacement
@@ -470,7 +471,7 @@ std::string ppDefine::defid(const std::string& macroname, int& i, int& j)
             if (quoted)
             {
                 if (macroname[j] != '}')
-                    Errors::Error("Macro substition: expected '}'");
+                    Errors::Error("Macro substition: expected '}'");    
                 else
                     j++;
             }
@@ -487,7 +488,7 @@ void ppDefine::Stringize(std::string& macro)
     int waiting = 0;
     int last = 0, pos;
 
-    for (pos = 0; pos < macro.size(); pos++)
+    for (pos = 0; pos < macro.size(); pos++)    
     {
         if (!waiting && (macro[pos] == '"' || macro[pos] == '\'') && NotSlashed(macro, pos))
         {
@@ -892,12 +893,19 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                         if (count == d->GetArgCount() && !c89 && d->HasVarArgs())
                         {
                             q1 = p;
-                            int nestedparen = 0;
-                            while (p < line.size() && line[p] != '\n' && (line[p] != ')' || nestedparen))
+                            int nestedparen = 0, nestedstring = 0;
+                            while (p < line.size() && line[p] != '\n' && (nestedstring || line[p] != ')' || nestedparen))
                             {
-                                if (line[p] == '(')
+                                if (nestedstring)
+                                {
+                                    if (line[p] == nestedstring && NotSlashed(line, p))
+                                        nestedstring = 0;
+                                }
+                                else if ((line[p] == '\'' || line[p] == '"') && NotSlashed(line, p))
+                                    nestedstring = line[p];
+                                else if (line[p] == '(')
                                     nestedparen++;
-                                if (line[p] == ')' && nestedparen)
+                                else if (line[p] == ')' && nestedparen)
                                     nestedparen--;
                                 p++;
                             }

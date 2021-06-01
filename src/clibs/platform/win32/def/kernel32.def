@@ -2677,7 +2677,7 @@ EXPORTS
 	RtlLookupFunctionEntry RtlLookupFunctionEntry
 	RtlUnwindEx RtlUnwindEx
 	RtlVirtualUnwind RtlVirtualUnwind
-	RtlRestoreContext RtlRestoreContext
+	_RtlRestoreContext RtlRestoreContext
 	_RtlZeroMemory@8	RtlZeroMemory
 	__imp__RtlZeroMemory@8	RtlZeroMemory
 	RtlZeroMemory	RtlZeroMemory

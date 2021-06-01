@@ -5569,6 +5569,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                     bool isTemplatedCast = false;
                     TYPE* tp1 = tp;
                     NAMESPACEVALUELIST* oldGlobals = nullptr;
+                    Optimizer::LIST* oldNameSpaceList = nullptr;
                     bool promotedToTemplate = false;
                     if (!tp1)
                     {
@@ -5630,7 +5631,14 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                     // to the original scope it lives in
                     if (nsv)
                     {
+                        oldNameSpaceList = nameSpaceList;
                         oldGlobals = globalNameSpace;
+                        nsv->valueData->name->sb->value.i++;
+
+                        auto list = Allocate<Optimizer::LIST>();
+                        list->next = nullptr;
+                        list->data = nsv->valueData->name;
+                        nameSpaceList = list;
                         globalNameSpace = nsv;
                     }
                     if (strSym)
@@ -5698,9 +5706,12 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         {
                             if (tp1->type == bt_enum)
                             {
-                                if (nsv)
+                                if (oldGlobals)
                                 {
+                                    ((SYMBOL*)nameSpaceList->data)->sb->value.i--;
+                                    nameSpaceList = oldNameSpaceList;
                                     globalNameSpace = oldGlobals;
+                                    oldGlobals = nullptr;
                                 }
                                 if (strSym && strSym->tp->type != bt_enum && strSym->tp->type != bt_templateselector &&
                                     strSym->tp->type != bt_templatedecltype)
@@ -5762,9 +5773,12 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                 l->next = sym->sb->friends;
                                 sym->sb->friends = l;
                             }
-                            if (nsv)
+                            if (oldGlobals)
                             {
+                                ((SYMBOL*)nameSpaceList->data)->sb->value.i--;
+                                nameSpaceList = oldNameSpaceList;
                                 globalNameSpace = oldGlobals;
+                                oldGlobals = nullptr;
                             }
                             if (strSym && strSym->tp->type != bt_enum && strSym->tp->type != bt_templateselector &&
                                 strSym->tp->type != bt_templatedecltype)
@@ -6952,9 +6966,12 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                     }
                     linkage = lk_none;
                     linkage2 = lk_none;
-                    if (nsv)
+                    if (oldGlobals)
                     {
+                        ((SYMBOL*)nameSpaceList->data)->sb->value.i--;
+                        nameSpaceList = oldNameSpaceList;
                         globalNameSpace = oldGlobals;
+                        oldGlobals = nullptr;
                     }
                     if (strSym && strSym->tp->type != bt_enum && strSym->tp->type != bt_templateselector)
                     {

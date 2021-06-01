@@ -291,7 +291,7 @@ void _RTL_FUNC _ThrowException(void* irecord, void* instance, int arraySize, voi
         __call_terminate();
 
     instantiate(record, record->baseinstance, instance);
-    RaiseException(OUR_CPP_EXC_CODE, EXCEPTION_CONTINUABLE, 1, (DWORD*)&params[0]);
+    RaiseException(OUR_CPP_EXC_CODE, EXCEPTION_CONTINUABLE, 1, (ULONG_PTR*)&params[0]);
 }
 
 void uninstantiate(XCTAB* record, void* instance)
@@ -317,7 +317,7 @@ void _RTL_FUNC _RethrowException(void* r)
         __call_terminate();
     uninstantiate(record, record->throwninstance);
     params[0] = (ULONG_PTR)record;
-    RaiseException(OUR_CPP_EXC_CODE, EXCEPTION_CONTINUABLE, 1, (DWORD*)&params[0]);
+    RaiseException(OUR_CPP_EXC_CODE, EXCEPTION_CONTINUABLE, 1, (ULONG_PTR*)&params[0]);
 }
 void _RTL_FUNC _CatchCleanup(void* r)
 {

@@ -1878,8 +1878,8 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         tp2 = basetype(tp2)->btp;
     tp1 = basetype(tp1);
     tp2 = basetype(tp2);
-    isctp1 = isarithmetic(tp1);
-    isctp2 = isarithmetic(tp2);
+    isctp1 = isarithmetic(tp1) || tp1->type == bt_enum;
+    isctp2 = isarithmetic(tp2) || tp2->type == bt_enum;
 
     /*    if (isctp1 && isctp2 && tp1->type == tp2->type)
             return tp1 ;

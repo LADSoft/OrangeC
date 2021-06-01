@@ -42,6 +42,7 @@
 #include "lex.h"
 #include "types.h"
 #include "help.h"
+#include "libcxx.h"
 #define ERROR 1
 #define WARNING 2
 #define TRIVIALWARNING 4
@@ -812,7 +813,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     if (Optimizer::cparams.prm_makestubs || inDeduceArgs || (templateNestingCount && ignoreErrtemplateNestingCount(err)))
         if (err != ERR_STATIC_ASSERT && !(errors[err].level & NOTE))
         {
-            if (!templateNestingCount && instantiatingClass && (errors[err].level & ERROR))
+            if (!templateNestingCount && instantiatingClass && !inNoExceptHandler && (errors[err].level & ERROR))
                 templateInstantiationError++;
             return false;
         }

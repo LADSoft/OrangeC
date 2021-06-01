@@ -46,7 +46,7 @@
 #include "exprcpp.h"
 #include "inline.h"
 #include "iexpr.h"
-
+#include "libcxx.h"
 namespace Parser
 {
 int inGetUserConversion;
@@ -4797,27 +4797,30 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         CollapseReferences(hr->p->tp);
                     }
                     CollapseReferences(basetype(found1->tp)->btp);
-                    if (found1->sb->templateLevel && !templateNestingCount && found1->templateParams)
+                    if (!inNoExceptHandler)
                     {
-                        found1 = TemplateFunctionInstantiate(found1, false, false);
-                    }
-                    else
-                    {
-                        if (toInstantiate && found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt)
+                        if (found1->sb->templateLevel && !templateNestingCount && found1->templateParams)
                         {
-                            if (found1->templateParams)
-                                instantiatingTemplate++;
-                            if (found1->sb->templateLevel || (found1->sb->parentClass && found1->sb->parentClass->sb->templateLevel))
-                                EnterInstantiation(nullptr, found1);
-                            deferredCompileOne(found1);
-                            if (found1->sb->templateLevel || (found1->sb->parentClass && found1->sb->parentClass->sb->templateLevel))
-                                LeaveInstantiation();
-                            if (found1->templateParams)
-                                instantiatingTemplate--;
+                            found1 = TemplateFunctionInstantiate(found1, false, false);
                         }
                         else
                         {
-                            InsertInline(found1);
+                            if (toInstantiate && found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt)
+                            {
+                                if (found1->templateParams)
+                                    instantiatingTemplate++;
+                                if (found1->sb->templateLevel || (found1->sb->parentClass && found1->sb->parentClass->sb->templateLevel))
+                                    EnterInstantiation(nullptr, found1);
+                                deferredCompileOne(found1);
+                                if (found1->sb->templateLevel || (found1->sb->parentClass && found1->sb->parentClass->sb->templateLevel))
+                                    LeaveInstantiation();
+                                if (found1->templateParams)
+                                    instantiatingTemplate--;
+                            }
+                            else
+                            {
+                                InsertInline(found1);
+                            }
                         }
                     }
                 }

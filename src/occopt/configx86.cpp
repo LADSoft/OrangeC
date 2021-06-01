@@ -183,6 +183,7 @@ static ARCH_DEFINES defines[] = {
     {"__CRTDLL_DLL", "1", false, true},
     {"__RAW_IMAGE__", "1", false, true},
     /* end ordered */
+    {"__SEH__", "1", true, true},
     {"__386__", "1", true, true},
     {"__i386__", "1", true, true},
     {"_i386_", "1", true, true},

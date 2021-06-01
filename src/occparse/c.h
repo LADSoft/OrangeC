@@ -379,7 +379,6 @@ struct u_val
     union
     {
         long long i;          /* int val */
-        unsigned long long u; /* unsigned val */
         union
         {
             const char* a; /* string val */

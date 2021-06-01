@@ -516,7 +516,7 @@ struct _basic_dag
         union
         {
             /* values for constant nodes */
-            long long i;
+            unsigned i;
             void* data; /* generic data, won't be filled in until after LCSE */
             PHIDATA* phi;
             long label;  // branches

@@ -2998,13 +2998,6 @@ int typedconsts(EXPRESSION* node1)
             rv = true;
             break;
         case en_const:
-            /* special trap to replace sc_constants */
-            //            if (basetype(node1->v.sp->tp)->type == bt_long_long || basetype(node1->v.sp->tp)->type ==
-            //            bt_unsigned_long_long)
-            //                node1->type = en_c_ll;
-            //            else
-            //                node1->type = en_c_i;
-            //            node1->v.i = node1->v.sp->sb->value.i;
             optimize_for_constants(&node1->v.sp->sb->init->exp);
             *node1 = *node1->v.sp->sb->init->exp;
             rv = true;

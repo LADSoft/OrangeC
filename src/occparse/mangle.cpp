@@ -121,8 +121,6 @@ char* mangleNameSpaces(char* in, SYMBOL* sym)
 {
     if (!sym)
         return in;
-    //    if (!sym || sym->sb->value.i > 1)
-    //        return in;
     in = mangleNameSpaces(in, sym->sb->parentNameSpace);
     Optimizer::my_sprintf(in, "@%s", sym->name);
     return in + strlen(in);

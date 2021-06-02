@@ -3500,8 +3500,8 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                         {"zstring", 23},  // non-gcc, added to support nonstring
                         {"noreturn", 24},
                         {"stdcall", 25},
-                        {"always_inline", 26} // we don't really force inline this is still just a suggestion.   in practice the types of functions that get flagged with this will likely always be inlined anyway
-
+                        {"always_inline", 26}, // we don't really force inline this is still just a suggestion.   in practice the types of functions that get flagged with this will likely always be inlined anyway
+                        {"format", 27}
                     };
                     std::string name;
                     if (ISID(*lex))
@@ -3732,6 +3732,13 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                             case 26: // always inline
                                 basisAttribs.inheritable.isInline = true;
                                 break;
+                            case 27: // format
+                                 needkw(lex, openpa);
+                                 while (*lex && !MATCHKW(*lex, closepa))
+                                     *lex = getsym();
+                                 if (lex)
+                                     *lex = getsym();
+                                 break;
                         }
                     }
                 }

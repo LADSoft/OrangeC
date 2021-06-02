@@ -366,7 +366,22 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* t
                     }
                     if (!sp)
                     {
-                        sp = classsearch(buf, false, false);
+                        if (lambdas)
+                        {
+                            for (auto t = lambdas; t && !sp; t = t->next)
+                            {
+                                if (t->lthis)
+                                {
+                                    STRUCTSYM s;
+                                    s.str = basetype(t->lthis->tp)->btp->sp;
+                                    addStructureDeclaration(&s);
+                                    sp = classsearch(buf, false, false);
+                                    dropStructureDeclaration();
+                                }
+                            }
+                        }
+                        if (!sp)
+                            sp = classsearch(buf, false, false);
                         if (sp && sp->tp->type == bt_templateparam)
                         {
                             TEMPLATEPARAMLIST* params = sp->tp->templateParam;

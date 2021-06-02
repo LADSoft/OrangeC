@@ -1744,6 +1744,11 @@ bool hasPackedExpression(EXPRESSION* exp, bool useAuto)
             if (exp1->v.func->thisptr && hasPackedExpression(exp1->v.func->thisptr, useAuto))
                 return true;
         }
+        if (exp1->type == en_templateparam)
+        {
+            if (exp1->v.sp->tp->templateParam->p->packed)
+                return true;
+        }
     }
     return false;
 }
@@ -1888,6 +1893,11 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
             }
             tsl = tsl->next;
         }
+    }
+    else if (packedExp->type == en_templateparam)
+    {
+        arg[(*count)++] = packedExp->v.sp;
+        NormalizePacked(packedExp->v.sp->tp);
     }
     else if (packedExp->type == en_construct)
     {
@@ -2105,73 +2115,90 @@ int CountPacks(TEMPLATEPARAMLIST* packs)
 }
 INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXLIST* start, EXPRESSION* packedExp)
 {
-    int oldPack = packIndex;
-    int count = 0;
-    SYMBOL* arg[200];
-    GatherPackedVars(&count, arg, packedExp);
-    expandingParams++;
-    if (count)
+    if (packedExp->type == en_templateparam)
     {
-        if (arg[0]->sb && arg[0]->packed && arg[0]->sb->parent)
+        if (packedExp->v.sp->tp->templateParam->p->packed)
         {
-            SYMLIST* hr = basetype(arg[0]->sb->parent->tp)->syms->table[0];
-            while (hr->p && hr->p != arg[0])
-                hr = hr->next;
-            if (hr)
+            for (auto t = packedExp->v.sp->tp->templateParam->p->byPack.pack; t; t = t->next)
             {
-                while (hr)
-                {
-                    SYMBOL* sym = hr->p;
-                    INITLIST* p = Allocate<INITLIST>();
-                    p->tp = sym->tp;
-                    p->exp = varNode(en_auto, sym);
-                    if (isref(p->tp))
-                    {
-                        p->exp = exprNode(en_l_p, p->exp, nullptr);
-                        p->tp = basetype(p->tp)->btp;
-                    }
-                    if (!isstructured(p->tp))
-                        deref(p->tp, &p->exp);
-                    *lptr = p;
-                    lptr = &(*lptr)->next;
-                    hr = hr->next;
-                }
+                *lptr = Allocate<INITLIST>();
+                (*lptr)->exp = t->p->byNonType.val;
+                (*lptr)->tp = t->p->byNonType.tp;
+                lptr = &(*lptr)->next;
             }
-        }
-        else
-        {
-            int i;
-            int n = CountPacks(arg[0]->tp->templateParam->p->byPack.pack);
-            /*
-            for (i=1; i < count; i++)
-            {
-                if (CountPacks(arg[i]->tp->templateParam->p->byPack.pack) != n)
-                {
-                    CountPacks(arg[i]->tp->templateParam->p->byPack.pack);
-                    error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
-                    break;
-                }
-            }
-            */
-            if (n > 1 || !packedExp->v.func->arguments || packedExp->v.func->arguments->tp->type != bt_void)
-                for (i = 0; i < n; i++)
-                {
-                    INITLIST* p = Allocate<INITLIST>();
-                    LEXLIST* lex = SetAlternateLex(start);
-                    packIndex = i;
-                    expression_assign(lex, funcsp, nullptr, &p->tp, &p->exp, nullptr, _F_PACKABLE);
-                    SetAlternateLex(nullptr);
-                    if (p->tp->type != bt_void)
-                        if (p->tp)
-                        {
-                            *lptr = p;
-                            lptr = &(*lptr)->next;
-                        }
-                }
+
         }
     }
-    expandingParams--;
-    packIndex = oldPack;
+    else
+    {
+        int oldPack = packIndex;
+        int count = 0;
+        SYMBOL* arg[200];
+        GatherPackedVars(&count, arg, packedExp);
+        expandingParams++;
+        if (count)
+        {
+            if (arg[0]->sb && arg[0]->packed && arg[0]->sb->parent)
+            {
+                SYMLIST* hr = basetype(arg[0]->sb->parent->tp)->syms->table[0];
+                while (hr->p && hr->p != arg[0])
+                    hr = hr->next;
+                if (hr)
+                {
+                    while (hr)
+                    {
+                        SYMBOL* sym = hr->p;
+                        INITLIST* p = Allocate<INITLIST>();
+                        p->tp = sym->tp;
+                        p->exp = varNode(en_auto, sym);
+                        if (isref(p->tp))
+                        {
+                            p->exp = exprNode(en_l_p, p->exp, nullptr);
+                            p->tp = basetype(p->tp)->btp;
+                        }
+                        if (!isstructured(p->tp))
+                            deref(p->tp, &p->exp);
+                        *lptr = p;
+                        lptr = &(*lptr)->next;
+                        hr = hr->next;
+                    }
+                }
+            }
+            else
+            {
+                int i;
+                int n = CountPacks(arg[0]->tp->templateParam->p->byPack.pack);
+                /*
+                for (i=1; i < count; i++)
+                {
+                    if (CountPacks(arg[i]->tp->templateParam->p->byPack.pack) != n)
+                    {
+                        CountPacks(arg[i]->tp->templateParam->p->byPack.pack);
+                        error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
+                        break;
+                    }
+                }
+                */
+                if (n > 1 || !packedExp->v.func->arguments || packedExp->v.func->arguments->tp->type != bt_void)
+                    for (i = 0; i < n; i++)
+                    {
+                        INITLIST* p = Allocate<INITLIST>();
+                        LEXLIST* lex = SetAlternateLex(start);
+                        packIndex = i;
+                        expression_assign(lex, funcsp, nullptr, &p->tp, &p->exp, nullptr, _F_PACKABLE);
+                        SetAlternateLex(nullptr);
+                        if (p->tp->type != bt_void)
+                            if (p->tp)
+                            {
+                                *lptr = p;
+                                lptr = &(*lptr)->next;
+                            }
+                    }
+            }
+        }
+        expandingParams--;
+        packIndex = oldPack;
+    }
     return lptr;
 }
 static int GetBaseClassList(const char* name, SYMBOL* cls, BASECLASS* bc, BASECLASS** result)

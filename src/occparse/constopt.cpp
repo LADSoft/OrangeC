@@ -2354,7 +2354,7 @@ int opt0(EXPRESSION** node)
                 }
                 if (found && found->p->type == kw_int)
                 {
-                    if (found->p->byNonType.val)
+                    if (found->p->byNonType.val && !found->p->packed)
                         *node = found->p->byNonType.val;
                 }
             }

@@ -1786,7 +1786,7 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPL
                             }
                             else
                             {
-                                checkUnpackedExpression(exp);
+//                                checkUnpackedExpression(exp);
                                 *lst = Allocate<TEMPLATEPARAMLIST>();
                                 (*lst)->p = Allocate<TEMPLATEPARAM>();
                                 if (parsingTrailingReturnOrUsing && exp->type == en_templateparam && exp->v.sp)
@@ -6644,6 +6644,8 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                     p = &(*p)->next;
                 nparam->p->type = params->p->type;
                 nparam->p->byClass.val = initial->p->byClass.dflt;
+                if (initial->p->type == kw_int)
+                    nparam->p->byNonType.tp = initial->p->byNonType.tp;
                 *p = nparam;
             }
             else

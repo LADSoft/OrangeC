@@ -484,7 +484,35 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                     }
                     return lex;
                 case kw_int:
-                    *exp = sym->tp->templateParam->p->byNonType.val;
+                    if (sym->tp->templateParam->p->packed)
+                    {
+                        if (packIndex >= 0)
+                        {
+                            TEMPLATEPARAMLIST* p = sym->tp->templateParam->p->byPack.pack;
+                            int n = packIndex;
+                            while (n && p)
+                            {
+                                p = p->next; n--;
+                            }
+                            if (p)
+                            {
+                                *exp = p->p->byNonType.val;
+                            }
+                            else
+                            {
+                                *exp = intNode(en_c_i, 0);
+                            }
+                        }
+                        else
+                        {
+                            *exp = exprNode(en_templateparam, nullptr, nullptr);
+                            (*exp)->v.sp = sym;
+                        }
+                    }
+                    else
+                    {
+                        *exp = sym->tp->templateParam->p->byNonType.val;
+                    }
                     *tp = sym->tp->templateParam->p->byNonType.tp;
                     if (!*exp)
                         *exp = intNode(en_c_i, 0);
@@ -2302,7 +2330,10 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
 }
 LEXLIST* getInitList(LEXLIST* lex, SYMBOL* funcsp, INITLIST** owner)
 {
-    return getInitInternal(lex, funcsp, owner, end, false, true, true, 0);
+    argument_nesting++;
+    auto rv = getInitInternal(lex, funcsp, owner, end, false, true, true, 0);
+    argument_nesting--;
+    return rv;
 }
 LEXLIST* getArgs(LEXLIST* lex, SYMBOL* funcsp, FUNCTIONCALL* funcparams, enum e_kw finish, bool allowPack, int flags)
 {

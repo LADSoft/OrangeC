@@ -1972,8 +1972,15 @@ static void MatchReturnTypes(SYMBOL* funcsp, TYPE* tp1, TYPE* tp2)
             //    err = true;
             tp1 = basetype(tp1);
             tp2 = basetype(tp2);
-            if (tp1->type != tp2->type)
+            if (isstructured(tp1) && isstructured(tp2))
+            {
+                if (!comparetypes(tp1, tp2, true) && classRefCount(tp1->sp, tp2->sp) != 1)
+                    err = true;
+            }
+            else if (tp1->type != tp2->type)
+            {
                 err = true;
+            }
             tp1 = tp1->btp;
             tp2 = tp2->btp;
         }

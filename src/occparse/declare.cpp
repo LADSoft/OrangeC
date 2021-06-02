@@ -1656,7 +1656,7 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc stor
     else
     {
         noname = true;
-        if (!MATCHKW(lex, begin) && !MATCHKW(lex, classsel))
+        if (!MATCHKW(lex, begin) && !MATCHKW(lex, classsel) && !MATCHKW(lex, colon))
             errorint(ERR_NEEDY, '{');
         tagname = AnonymousTypeName();
         charindex = -1;

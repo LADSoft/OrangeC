@@ -3329,50 +3329,56 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
             }
             basisAttribs = oldAttribs;
         }
-        lex = nestedSearch(lex, &sp, nullptr, nullptr, nullptr, nullptr, false, sc_global, true, false);
+        SYMBOL* strsym = nullptr;
+        lex = nestedSearch(lex, &sp, &strsym, nullptr, nullptr, nullptr, false, sc_global, true, false);
         if (sp)
         {
-            if (!templateNestingCount)
+            if (sp->sb->mainsym && sp->sb->mainsym == strsym)
+                sp = search(overloadNameTab[CI_CONSTRUCTOR], strsym->tp->syms);
+            if (sp)
             {
-                if (sp->sb->storage_class == sc_overloads)
+                if (!templateNestingCount)
                 {
-                    SYMLIST** hr = sp->tp->syms->table;
-                    while (*hr)
+                    if (sp->sb->storage_class == sc_overloads)
                     {
-                        SYMBOL *ssp = getStructureDeclaration(), *ssp1;
-                        SYMBOL* sp = (SYMBOL*)(*hr)->p;
+                        SYMLIST** hr = sp->tp->syms->table;
+                        while (*hr)
+                        {
+                            SYMBOL* ssp = getStructureDeclaration(), * ssp1;
+                            SYMBOL* sp = (SYMBOL*)(*hr)->p;
+                            SYMBOL* sp1 = clonesym(sp);
+                            sp1->sb->wasUsing = true;
+                            ssp1 = sp1->sb->parentClass;
+                            if (ssp && ismember(sp1))
+                                sp1->sb->parentClass = ssp;
+                            sp1->sb->mainsym = sp;
+                            sp1->sb->access = access;
+                            InsertSymbol(sp1, storage_class, sp1->sb->attribs.inheritable.linkage, true);
+                            InsertInline(sp1);
+                            sp1->sb->parentClass = ssp1;
+                            hr = &(*hr)->next;
+                        }
+                        if (isTypename)
+                            error(ERR_TYPE_NAME_EXPECTED);
+                    }
+                    else
+                    {
+                        SYMBOL* ssp = getStructureDeclaration(), * ssp1;
                         SYMBOL* sp1 = clonesym(sp);
                         sp1->sb->wasUsing = true;
+                        sp1->sb->mainsym = sp;
+                        sp1->sb->access = access;
                         ssp1 = sp1->sb->parentClass;
                         if (ssp && ismember(sp1))
                             sp1->sb->parentClass = ssp;
-                        sp1->sb->mainsym = sp;
-                        sp1->sb->access = access;
-                        InsertSymbol(sp1, storage_class, sp1->sb->attribs.inheritable.linkage, true);
-                        InsertInline(sp1);
+                        if (isTypename && !istype(sp))
+                            error(ERR_TYPE_NAME_EXPECTED);
+                        if (istype(sp))
+                            InsertTag(sp1, storage_class, true);
+                        else
+                            InsertSymbol(sp1, storage_class, lk_cdecl, true);
                         sp1->sb->parentClass = ssp1;
-                        hr = &(*hr)->next;
                     }
-                    if (isTypename)
-                        error(ERR_TYPE_NAME_EXPECTED);
-                }
-                else
-                {
-                    SYMBOL *ssp = getStructureDeclaration(), *ssp1;
-                    SYMBOL* sp1 = clonesym(sp);
-                    sp1->sb->wasUsing = true;
-                    sp1->sb->mainsym = sp;
-                    sp1->sb->access = access;
-                    ssp1 = sp1->sb->parentClass;
-                    if (ssp && ismember(sp1))
-                        sp1->sb->parentClass = ssp;
-                    if (isTypename && !istype(sp))
-                        error(ERR_TYPE_NAME_EXPECTED);
-                    if (istype(sp))
-                        InsertTag(sp1, storage_class, true);
-                    else
-                        InsertSymbol(sp1, storage_class, lk_cdecl, true);
-                    sp1->sb->parentClass = ssp1;
                 }
             }
             lex = getsym();

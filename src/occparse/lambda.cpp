@@ -173,7 +173,13 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
     {
         if (mode == cmThis)
         {
-            if (!sym || (lambdas->lthis && sym->sb->parentClass == basetype(lambdas->lthis->tp)->btp->sp))
+            SYMBOL* lthis = lambdas->lthis;
+            SYMBOL* base = basetype(lambdas->lthis->tp)->btp->sp;
+            if (lthis->sb->mainsym)
+                lthis = lthis->sb->mainsym;
+            if (base->sb->mainsym)
+                base = base->sb->mainsym;
+            if (!sym || (lambdas->lthis && lthis == base))
             {
                 if (lambdas->captureThis)
                 {

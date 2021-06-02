@@ -1656,8 +1656,6 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc stor
     else
     {
         noname = true;
-        if (!MATCHKW(lex, begin) && !MATCHKW(lex, classsel) && !MATCHKW(lex, colon))
-            errorint(ERR_NEEDY, '{');
         tagname = AnonymousTypeName();
         charindex = -1;
         anonymous = true;
@@ -1748,6 +1746,10 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc stor
         lex = enumbody(lex, funcsp, sp, storage_class, access, fixedType, scoped);
         enumSyms = nullptr;
         *defd = true;
+    }
+    else if (noname)
+    {
+        errorint(ERR_NEEDY, '{');
     }
     else if (!Optimizer::cparams.prm_cplusplus && Optimizer::cparams.prm_ansi && !sp->tp->syms)
     {

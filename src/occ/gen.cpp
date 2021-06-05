@@ -316,6 +316,7 @@ AMODE* setSymbol(const char* name)
         sym->tp = Allocate<Optimizer::SimpleType>();
         sym->tp->type = Optimizer::st_func;
         //        Optimizer::SymbolManager::Add(name, sym);
+        Optimizer::SymbolManager::Put(sym);
         Optimizer::externals.push_back(sym);
     }
     result = Allocate<AMODE>();

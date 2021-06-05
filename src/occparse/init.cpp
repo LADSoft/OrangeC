@@ -580,11 +580,11 @@ static void dumpTLSInitializers(void)
         codeLabel = INT_MIN;
         while (TLSInitializers)
         {
-            EXPRESSION* exp;
+            EXPRESSION* exp = varNode(en_threadlocal, TLSInitializers->sp);
             STATEMENT* stmt;
             stmt = stmtNode(nullptr, nullptr, st_expr);
             exp = convertInitToExpression(TLSInitializers->init->basetp, TLSInitializers->sp, nullptr, nullptr,
-                                          TLSInitializers->init, nullptr, false);
+                                          TLSInitializers->init, exp, false);
             optimize_for_constants(&exp);
             stmt->select = exp;
             stmt->next = st;
@@ -651,8 +651,9 @@ static void dumpTLSDestructors(void)
         codeLabel = INT_MIN;
         while (TLSDestructors)
         {
-            EXPRESSION* exp = convertInitToExpression(TLSDestructors->init->basetp, TLSDestructors->sp, nullptr, nullptr,
-                                                      TLSDestructors->init, nullptr, true);
+            EXPRESSION* exp = varNode(en_threadlocal, TLSDestructors->sp);
+            exp = convertInitToExpression(TLSDestructors->init->basetp, TLSDestructors->sp, nullptr, nullptr,
+                                                      TLSDestructors->init, exp, true);
             *stp = stmtNode(nullptr, nullptr, st_expr);
             optimize_for_constants(&exp);
             (*stp)->select = exp;

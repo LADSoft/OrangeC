@@ -335,6 +335,7 @@ struct SymbolManager
     static st_type Get(enum Parser::e_bt type);
     static void clear();
     static SimpleSymbol* Get(const char* name);
+    static void Put(SimpleSymbol* sym);
     static SimpleSymbol* Lookup(struct Parser::sym* old);
     static void Add(struct Parser::sym* old, SimpleSymbol* sym);
 

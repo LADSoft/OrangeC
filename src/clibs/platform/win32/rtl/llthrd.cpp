@@ -33,7 +33,6 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
-
 #include <windows.h>
 #include <errno.h>
 #include <process.h>
@@ -48,11 +47,11 @@
 #include <map>
 
 // note that some of the threading structures are dynamically added if thrd_create() isn't called directly
-// for example you use createthread or _beginthread
 // in the createthread case, such data will never get deallocated so there will be a memory leak.
-
+// for example you use createthread or _beginthread
 extern "C"
 {
+    extern char TLSINITSTART[], TLSINITEND[], TLSEXITSTART[], TLSEXITEND[];
     void __tss_run_dtors(thrd_t thrd);
     void __mtx_remove_thrd(thrd_t thrd);
     void __cnd_remove_thrd(thrd_t thrd);
@@ -61,9 +60,10 @@ extern "C"
     BOOL __stdcall GetModuleHandleExW(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule);
 #define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 4
     extern void* __hInstance;
+    void __srproc(char*, char *);
+    void __load_local_data(bool constructors);
 }
 
-extern "C" void __load_local_data(void);
 
 typedef std::map<HANDLE, std::pair<void*, void*>, std::less<HANDLE>,
                  LocalAllocAllocator<std::pair<const HANDLE, std::pair<void*, void*>>>>
@@ -78,14 +78,24 @@ static Handles* handles;
 
 #pragma startup thrd_init 254
 #pragma rundown thrd_end 2
+#pragma startup main_init 49
+#pragma rundown main_end 31
 
+static void main_init()
+{
+    __srproc(TLSINITSTART, TLSINITEND);
+}
+static void main_end()
+{
+    __srproc(TLSEXITSTART, TLSEXITEND);
+}
 static PASCAL unsigned char* __getTlsData(int eip, int thread)
 {
     struct __rtl_data* r = __getRtlData();
     if (!r->thread_local_data)
     {
         __ll_enter_critical();
-        __load_local_data();
+        __load_local_data(true);
         __ll_exit_critical();
     }
     HANDLE hModule;
@@ -161,6 +171,7 @@ static void RemoveLocalData(int thread)
     auto it = handles->find(thread);
     if (it != handles->end())
     {
+        __srproc(TLSEXITSTART, TLSEXITEND);
         for (auto&& h : it->second)
         {
             LocalFree(h.second);
@@ -168,13 +179,16 @@ static void RemoveLocalData(int thread)
         handles->erase(thread);
     }
 }
-extern "C" void __load_local_data(void)
+extern "C" void __load_local_data(bool constructors)
 {
     int tid;
     __asm mov eax,
         fs : [0x18]  // currentteb
              __asm mov[tid],
-             eax AddLocalData(tid);
+            eax 
+     AddLocalData(tid);
+     if (constructors)
+        __srproc(TLSINITSTART, TLSINITEND);
 }
 extern "C" void __unload_local_data(void)
 {
@@ -194,7 +208,7 @@ static void thrd_init(void)
     handles = HandlesAllocator.allocate(1);
     HandlesAllocator.construct(handles);
     __threadTlsAlloc(false);
-    __load_local_data();  // main thread
+    __load_local_data(false);  // main thread
 }
 
 static void thrd_end(void)

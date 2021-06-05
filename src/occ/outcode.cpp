@@ -64,7 +64,7 @@ namespace occx86
 static Section* currentSection;
 
 static const char* segnames[] = {0,         "code",     "data",     "bss",        "string",     "const",
-                                 "tls",     "cstartup", "crundown", "tlsstartup", "tlsrundown", "codefix",
+                                 "tls",     "cstartup", "crundown", "tstartup", "trundown", "codefix",
                                  "datafix", "lines",    "types",    "symbols",    "browse"};
 
 static int segAlignsDefault[] = {1, 2, 8, 8, 2, 8, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};

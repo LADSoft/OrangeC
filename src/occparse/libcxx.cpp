@@ -1405,7 +1405,6 @@ static TYPE* TypePackElementType(SYMBOL* sym, TEMPLATEPARAMLIST* args)
         tpl = args->p->byPack.pack;
         if (!tpl)
         {
-            printf("try");
             return &stdany;
         }
     }

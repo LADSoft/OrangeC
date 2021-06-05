@@ -1685,7 +1685,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
     }
     return lex;
 }
-static TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr = false)
+TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr)
 {
     if (tp->type == bt_aggregate)
     {
@@ -1704,10 +1704,34 @@ static TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr = 
         }
         else
         {
-            *exp = varNode(en_pc, hr->p);
+            SYMBOL* s = hr->p;
+            if ((*exp)->type == en_func && (*exp)->v.func->templateParams)
+            {
+                s = detemplate(s, (*exp)->v.func, nullptr);
+                if (!s)
+                {
+                    s = hr->p;
+                }
+                else
+                {
+                    if (s->sb->templateLevel && !templateNestingCount && s->templateParams)
+                    {
+                        s = TemplateFunctionInstantiate(s, false, false);
+                    }
+                }
+            }
+            *exp = varNode(en_pc, s);
         }
-        if (hr->next)
-            errorsym(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, tp->sp);
+        hr = hr->next;
+        while (hr)
+        {
+            if (!hr->p->sb->templateLevel || !hr->p->sb->mainsym)
+            {
+                errorsym(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, tp->sp);
+                break;
+            }
+            hr = hr->next;
+        }
     }
     return tp;
 }
@@ -7834,7 +7858,7 @@ LEXLIST* expression_throw(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** 
             if (isstructured(tp1))
             {
                 cons = getCopyCons(basetype(tp1)->sp, false);
-                if (!cons->sb->inlineFunc.stmt)
+                if (cons && !cons->sb->inlineFunc.stmt)
                 {
                     if (cons->sb->defaulted)
                         createConstructor(basetype(tp1)->sp, cons);

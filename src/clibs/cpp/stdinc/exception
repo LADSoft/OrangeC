@@ -2,12 +2,15 @@
 #define __STD_EXCEPTION
 
 #ifndef __DEFS_H__
-#include <_defs.h>
+#include <stddef.h>
 #endif
-
+#include <type_traits>
+#include <typeinfo>
 
 extern bool uncaught_exception();
 
+struct _xctab;
+struct _rtti;
 namespace __dls {
   extern const char _RTL_DATA *__dls_NoNamedException;
   extern const char _RTL_DATA *__dls_BadException;
@@ -21,6 +24,10 @@ extern void terminate( );
 typedef void (*unexpected_handler) ();
 extern unexpected_handler set_unexpected( unexpected_handler f)  __NOTHROW ;
 extern void unexpected();
+
+extern bool uncaught_exception();
+
+extern int uncaught_exceptions() noexcept;
 
   class _RTL_CLASS exception     
   {
@@ -55,6 +62,156 @@ extern void unexpected();
       return __dls::__dls_BadException;
     }
   };
-}
+  struct __exceptionInternal
+  {
+      void *obj;
+      void* baseinstance;
+      void* instance;
+      void* cons;
+      struct _rtti* thrownxt;
+      int elems;
+      bool inprocess;
+      int referenceCount;
+  };
+  class _RTL_CLASS exception_ptr
+  {
+  public:
+      exception_ptr() : exc(0) { }
+      inline exception_ptr(__exceptionInternal *exc)
+      {
+          this->exc = exc;
+          increment();   
+      }
+      inline exception_ptr(const exception_ptr &old) : exc(old.exc)
+      {
+          increment();
+      }
+      inline exception_ptr(exception_ptr &&old) : exc(old.exc)
+      {
+          old.exc = nullptr;
+      }
+      inline exception_ptr& operator=(const exception_ptr &old)
+      {
+          decrement();
+          exc = old.exc;
+          increment();
+          return *this;
+      }
+      inline exception_ptr& operator=(exception_ptr &&old)
+      {
+          exc = old.exc;
+          old.exc = nullptr;
+         return *this;
+      }
+      inline exception_ptr& operator=(nullptr_t)
+      {
+          decrement();
+          exc = nullptr;
+      }
+      inline bool operator==(const exception_ptr& old) const
+      {
+          return exc == old.exc;
+      }
+      inline bool operator!=(const exception_ptr& old) const
+      {
+          return !operator==(old);
+      }
+      inline bool operator!() const
+      {
+           return !exc;
+      }
+      ~exception_ptr()
+      {
+          decrement();
+          if (exc && !exc->referenceCount)
+          {
+              auto temp = exc;
+              exc = nullptr;
+              FreeExceptionObject(temp);
+          }
+      }
 
+      friend __exceptionInternal* __getxc(const exception_ptr& p);
+
+      private:
+          void FreeExceptionObject(__exceptionInternal *);
+          void increment() {if (exc) ++exc->referenceCount; }
+          void decrement() 
+          {
+              if (exc) 
+                 --exc->referenceCount; 
+          }
+       protected:
+          __exceptionInternal *exc = 0;
+  };
+
+   inline bool _RTL_FUNC operator!(const exception_ptr& e) { return e.operator!(); }
+   inline bool _RTL_FUNC operator==(const exception_ptr& left, const exception_ptr& right) { return left.operator==(right); }
+   inline bool _RTL_FUNC operator!=(const exception_ptr& left, const exception_ptr& right) { return left.operator!=(right); }
+
+   [[noreturn]] void _RTL_FUNC rethrow_exception(exception_ptr& arg);
+
+
+   __exceptionInternal* __make_exception_ptr(void*, int, void*, void*);
+
+   template <class T>
+   T __consptr(const T& t) { return T(t); }
+
+   // need an overload for arrays<
+   template <class E>
+   std::exception_ptr make_exception_ptr(E& e) 
+   {
+        return std::exception_ptr(__make_exception_ptr((void*)&e, 1, (void *)&__consptr<E>, (void*)typeid(E).tpp));
+   }
+
+   std::exception_ptr current_exception() noexcept;
+
+    class _RTL_CLASS nested_exception 
+    {
+       public:
+           inline nested_exception() noexcept : captured(current_exception()) { }
+           inline nested_exception(const nested_exception&) noexcept = default;
+           inline nested_exception& operator=(const nested_exception&) noexcept = default;
+           virtual ~nested_exception() {};
+           // access functions
+           [[noreturn]] void rethrow_nested() const;
+           inline exception_ptr nested_ptr() const noexcept
+           {
+               return captured;
+           }
+
+        private:
+           exception_ptr captured;
+     };
+
+     template <class T, class U = typename __uncvref<T>::type>
+     class __npbinder : public U, nested_exception
+     {
+        public:
+          __npbinder(T& t) : U(forward<T>(t)) { }
+     };
+
+     template<class T> 
+     [[noreturn]] void throw_with_nested(T&& t)
+     {
+         auto test = dynamic_cast(nested_exception&)(t);
+         if (test)
+         {
+              throw t;
+         }
+         else
+         {
+              __npbinder<T> bound(t);
+              throw bound;
+         }
+     }
+     template <class E> 
+     void rethrow_if_nested(const E& e)
+     {
+         auto* z = dynamic_cast<const nested_exception*>(&e);
+         if (z)
+             z->rethrow_nested();
+     }
+}
 #endif
+

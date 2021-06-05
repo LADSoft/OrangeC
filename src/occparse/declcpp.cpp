@@ -3507,7 +3507,7 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                         {"noreturn", 24},
                         {"stdcall", 25},
                         {"always_inline", 26}, // we don't really force inline this is still just a suggestion.   in practice the types of functions that get flagged with this will likely always be inlined anyway
-                        {"format", 27}
+                        {"format", 27},
                     };
                     std::string name;
                     if (ISID(*lex))
@@ -3899,7 +3899,7 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                                     else if (*lex)
                                     {
                                         static const std::unordered_map<std::string, int> occCPPStyleAttribNames = {
-                                            {"zstring", 23}  // non-gcc, added to support nonstring
+                                            {"zstring", 23},  // non-gcc, added to support nonstring
                                         };
                                         std::string name = (*lex)->data->value.s.a;
                                         auto searchedName = occCPPStyleAttribNames.find(name);

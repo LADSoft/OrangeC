@@ -32,6 +32,7 @@
 #include "compiler.h"
 #include "assert.h"
 #include "ppPragma.h"
+#include "rtti.h"
 
 /*
  *      this module contains all of the code generation routines
@@ -3471,6 +3472,10 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 node->v.t.thisptr->xcDest = ++consIndex;
                 xcexp->right->v.i = consIndex;
                 gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
+                __xclist* t = Allocate<__xclist>();;
+                t->byStmt = false;
+                t->exp = node;
+                rttiStatements[node->v.t.thisptr->xcInit][node->v.t.thisptr->xcDest] = t;
             }
             ap1 = gen_expr(funcsp, node->left, flags, size);
             if (!node->dest && xcexp)
@@ -3478,6 +3483,10 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 node->v.t.thisptr->xcInit = ++consIndex;
                 xcexp->right->v.i = consIndex;
                 gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
+                __xclist* t = Allocate<__xclist>();;
+                t->byStmt = false;
+                t->exp = node;
+                rttiStatements[node->v.t.thisptr->xcInit][node->v.t.thisptr->xcDest] = t;
             }
             if (node->left->type == en_stmt)
             {

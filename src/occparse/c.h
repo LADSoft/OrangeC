@@ -554,6 +554,7 @@ struct attributes
         unsigned nonstring : 1; /* value is not a zero terminated string */
         unsigned zstring : 1;   // (argument) was tagged as a zero terminated string
         unsigned isInline : 1;  /* function is inlined */
+        unsigned intrinsic : 1; /* function is intrinsic */
     } inheritable;
     struct
     {

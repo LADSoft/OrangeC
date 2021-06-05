@@ -47,6 +47,7 @@
 #include "lex.h"
 #include "declcons.h"
 #include "libcxx.h"
+
 namespace Parser
 {
     std::set<SYMBOL*> defaultRecursionMap;
@@ -1582,7 +1583,7 @@ void createDefaultConstructors(SYMBOL* sp)
         }
         newcons = declareAssignmentOp(sp, true);
         newcons->sb->trivialCons = hasTrivialAssign(sp, true);
-        newcons->sb->deleted = isMoveAssignmentDeleted(sp);
+        newcons->sb->deleted |= isMoveAssignmentDeleted(sp);
     }
     else
     {
@@ -2027,7 +2028,9 @@ static EXPRESSION* unshim(EXPRESSION* exp, EXPRESSION* ths)
     if (!exp)
         return exp;
     if (exp->type == en_thisshim)
+    {
         return ths;
+    }
     nw = Allocate<EXPRESSION>();
     *nw = *exp;
     nw->left = unshim(nw->left, ths);

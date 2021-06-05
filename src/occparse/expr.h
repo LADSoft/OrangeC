@@ -40,6 +40,7 @@ EXPRESSION* typeNode(TYPE* tp);
 EXPRESSION* intNode(enum e_node type, long long val);
 void checkauto(TYPE* tp1, int err);
 void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp);
+TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr = false);
 LEXLIST* getInitList(LEXLIST* lex, SYMBOL* funcsp, INITLIST** owner);
 LEXLIST* getArgs(LEXLIST* lex, SYMBOL* funcsp, FUNCTIONCALL* funcparams, enum e_kw finish, bool allowPack, int flags);
 LEXLIST* getMemberInitializers(LEXLIST* lex, SYMBOL* funcsp, FUNCTIONCALL* funcparams, enum e_kw finish, bool allowPack);

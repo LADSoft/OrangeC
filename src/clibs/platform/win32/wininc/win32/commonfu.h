@@ -229,10 +229,40 @@ extern "C"
     extern VOID PASCAL WINBASEAPI FatalExit(int ExitCode);
 
     extern VOID PASCAL WINBASEAPI RaiseException(DWORD dwExceptionCode, DWORD dwExceptionFlags, DWORD nNumberOfArguments,
-                                                 CONST DWORD* lpArguments);
+                                                 CONST ULONG_PTR* lpArguments);
 
     extern VOID PASCAL WINBASEAPI RtlUnwind(PVOID TargetFrame, PVOID TargetIp, PEXCEPTION_RECORD ExceptionRecord,
                                             PVOID ReturnValue);
+
+    extern PEXCEPTION_ROUTINE PASCAL WINBASEAPI RtlVirtualUnwind(
+     DWORD HandlerType,
+     DWORD ImageBase,
+     DWORD ControlPc,
+     PRUNTIME_FUNCTION FunctionEntry,
+     PCONTEXT ContextRecord,
+     PVOID* HandlerData,
+     PDWORD EstablisherFrame,
+     PKNONVOLATILE_CONTEXT_POINTERS ContextPointers
+    );
+    extern PRUNTIME_FUNCTION PASCAL WINBASEAPI RtlLookupFunctionEntry(
+     ULONG_PTR ControlPc,
+     PDWORD ImageBase,
+     PUNWIND_HISTORY_TABLE HistoryTable
+    );
+
+    extern VOID __cdecl WINBASEAPI RtlRestoreContext(
+     PCONTEXT ContextRecord,
+     struct _EXCEPTION_RECORD* ExceptionRecord
+    );
+
+    extern VOID PASCAL WINBASEAPI RtlUnwindEx(
+     PVOID TargetFrame,
+     PVOID TargetIp,
+     PEXCEPTION_RECORD ExceptionRecord,
+     PVOID ReturnValue,
+     PCONTEXT ContextRecord,
+     PUNWIND_HISTORY_TABLE HistoryTable
+    );
 
     extern LONG PASCAL WINBASEAPI UnhandledExceptionFilter(struct _EXCEPTION_POINTERS* ExceptionInfo);
 

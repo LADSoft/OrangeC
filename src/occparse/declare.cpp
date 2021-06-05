@@ -1656,8 +1656,6 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc stor
     else
     {
         noname = true;
-        if (!MATCHKW(lex, begin) && !MATCHKW(lex, classsel))
-            errorint(ERR_NEEDY, '{');
         tagname = AnonymousTypeName();
         charindex = -1;
         anonymous = true;
@@ -1748,6 +1746,10 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc stor
         lex = enumbody(lex, funcsp, sp, storage_class, access, fixedType, scoped);
         enumSyms = nullptr;
         *defd = true;
+    }
+    else if (noname)
+    {
+        errorint(ERR_NEEDY, '{');
     }
     else if (!Optimizer::cparams.prm_cplusplus && Optimizer::cparams.prm_ansi && !sp->tp->syms)
     {
@@ -3342,7 +3344,7 @@ bool intcmp(TYPE* t1, TYPE* t2)
     }
     return t1->type == t2->type;
 }
-static void matchFunctionDeclaration(LEXLIST* lex, SYMBOL* sp, SYMBOL* spo, bool checkReturn)
+static void matchFunctionDeclaration(LEXLIST* lex, SYMBOL* sp, SYMBOL* spo, bool checkReturn, bool asFriend)
 {
     /* two oldstyle declarations aren't compared */
     if ((spo && !spo->sb->oldstyle && spo->sb->hasproto) || !sp->sb->oldstyle)
@@ -3415,59 +3417,62 @@ static void matchFunctionDeclaration(LEXLIST* lex, SYMBOL* sp, SYMBOL* spo, bool
             }
         }
     }
-    if ((spo->sb->xc && spo->sb->xc->xcDynamic) || (sp->sb->xc && sp->sb->xc->xcDynamic))
+    if (!asFriend)
     {
-        if (!sp->sb->xc || !sp->sb->xc->xcDynamic)
+        if ((spo->sb->xc && spo->sb->xc->xcDynamic) || (sp->sb->xc && sp->sb->xc->xcDynamic))
         {
-            if (!MATCHKW(lex, begin))
-                errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
-        }
-        else if (!spo->sb->xc || !spo->sb->xc->xcDynamic || spo->sb->xcMode != sp->sb->xcMode)
-        {
-            errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
-        }
-        else
-        {
-            Optimizer::LIST* lo = spo->sb->xc->xcDynamic;
-            while (lo)
+            if (!sp->sb->xc || !sp->sb->xc->xcDynamic)
             {
-                Optimizer::LIST* li = sp->sb->xc->xcDynamic;
-                while (li)
-                {
-                    if (comparetypes((TYPE*)lo->data, (TYPE*)li->data, true) && intcmp((TYPE*)lo->data, (TYPE*)li->data))
-                    {
-                        break;
-                    }
-                    li = li->next;
-                }
-                if (!li)
-                {
+                if (!MATCHKW(lex, begin))
                     errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+            }
+            else if (!spo->sb->xc || !spo->sb->xc->xcDynamic || spo->sb->xcMode != sp->sb->xcMode)
+            {
+                errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+            }
+            else
+            {
+                Optimizer::LIST* lo = spo->sb->xc->xcDynamic;
+                while (lo)
+                {
+                    Optimizer::LIST* li = sp->sb->xc->xcDynamic;
+                    while (li)
+                    {
+                        if (comparetypes((TYPE*)lo->data, (TYPE*)li->data, true) && intcmp((TYPE*)lo->data, (TYPE*)li->data))
+                        {
+                            break;
+                        }
+                        li = li->next;
+                    }
+                    if (!li)
+                    {
+                        errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+                    }
+                    lo = lo->next;
                 }
-                lo = lo->next;
             }
         }
-    }
-    else if (!templateNestingCount && spo->sb->xcMode != sp->sb->xcMode)
-    {
-        if (spo->sb->xcMode == xc_none && sp->sb->xcMode == xc_dynamic)
+        else if (!templateNestingCount && spo->sb->xcMode != sp->sb->xcMode)
         {
-            if (sp->sb->xc->xcDynamic)
+            if (spo->sb->xcMode == xc_none && sp->sb->xcMode == xc_dynamic)
+            {
+                if (sp->sb->xc->xcDynamic)
+                    errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+            }
+            else if (sp->sb->xcMode == xc_none && spo->sb->xcMode == xc_dynamic)
+            {
+                if (spo->sb->xc->xcDynamic)
+                    errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+            }
+            else if (sp->sb->xcMode == xc_unspecified)
+            {
+                if (!MATCHKW(lex, begin))
+                    errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+            }
+            else
+            {
                 errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
-        }
-        else if (sp->sb->xcMode == xc_none && spo->sb->xcMode == xc_dynamic)
-        {
-            if (spo->sb->xc->xcDynamic)
-                errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
-        }
-        else if (sp->sb->xcMode == xc_unspecified)
-        {
-            if (!MATCHKW(lex, begin))
-                errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
-        }
-        else
-        {
-            errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+            }
         }
     }
 }
@@ -5569,6 +5574,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                     bool isTemplatedCast = false;
                     TYPE* tp1 = tp;
                     NAMESPACEVALUELIST* oldGlobals = nullptr;
+                    Optimizer::LIST* oldNameSpaceList = nullptr;
                     bool promotedToTemplate = false;
                     if (!tp1)
                     {
@@ -5630,7 +5636,14 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                     // to the original scope it lives in
                     if (nsv)
                     {
+                        oldNameSpaceList = nameSpaceList;
                         oldGlobals = globalNameSpace;
+                        nsv->valueData->name->sb->value.i++;
+
+                        auto list = Allocate<Optimizer::LIST>();
+                        list->next = nullptr;
+                        list->data = nsv->valueData->name;
+                        nameSpaceList = list;
                         globalNameSpace = nsv;
                     }
                     if (strSym)
@@ -5698,9 +5711,12 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         {
                             if (tp1->type == bt_enum)
                             {
-                                if (nsv)
+                                if (oldGlobals)
                                 {
+                                    ((SYMBOL*)nameSpaceList->data)->sb->value.i--;
+                                    nameSpaceList = oldNameSpaceList;
                                     globalNameSpace = oldGlobals;
+                                    oldGlobals = nullptr;
                                 }
                                 if (strSym && strSym->tp->type != bt_enum && strSym->tp->type != bt_templateselector &&
                                     strSym->tp->type != bt_templatedecltype)
@@ -5762,9 +5778,12 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                 l->next = sym->sb->friends;
                                 sym->sb->friends = l;
                             }
-                            if (nsv)
+                            if (oldGlobals)
                             {
+                                ((SYMBOL*)nameSpaceList->data)->sb->value.i--;
+                                nameSpaceList = oldNameSpaceList;
                                 globalNameSpace = oldGlobals;
+                                oldGlobals = nullptr;
                             }
                             if (strSym && strSym->tp->type != bt_enum && strSym->tp->type != bt_templateselector &&
                                 strSym->tp->type != bt_templatedecltype)
@@ -6203,7 +6222,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                             }
                             if (isfunction(spi->tp))
                             {
-                                matchFunctionDeclaration(lex, sp, spi, checkReturn);
+                                matchFunctionDeclaration(lex, sp, spi, checkReturn, asFriend);
                             }
                             if (sp->sb->parentClass)
                             {
@@ -6433,7 +6452,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                             }
                             if (isfunction(sp->tp))
                             {
-                                matchFunctionDeclaration(lex, sp, sp, checkReturn);
+                                matchFunctionDeclaration(lex, sp, sp, checkReturn, asFriend);
                                 if (inTemplate)
                                     sp->sb->parentTemplate = sp;
                             }
@@ -6952,9 +6971,12 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                     }
                     linkage = lk_none;
                     linkage2 = lk_none;
-                    if (nsv)
+                    if (oldGlobals)
                     {
+                        ((SYMBOL*)nameSpaceList->data)->sb->value.i--;
+                        nameSpaceList = oldNameSpaceList;
                         globalNameSpace = oldGlobals;
+                        oldGlobals = nullptr;
                     }
                     if (strSym && strSym->tp->type != bt_enum && strSym->tp->type != bt_templateselector)
                     {

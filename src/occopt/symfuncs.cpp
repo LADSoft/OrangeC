@@ -216,4 +216,8 @@ Optimizer::SimpleSymbol* SymbolManager::Get(const char* name)
         return nullptr;
     return it->second;
 }
+void SymbolManager::Put(Optimizer::SimpleSymbol* sym)
+{
+    globalSymbols[sym->name] = sym;
+}
 }  // namespace Optimizer

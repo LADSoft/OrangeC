@@ -26,6 +26,12 @@ partition {
 	_EXITSTART = $;
 	region {} crundown [ align = 2];
 	_EXITEND = $;
+        _TLSINITSTART = $;
+	region {} tstartup [ align = 2];
+        _TLSINITEND = $;
+        _TLSEXITSTART = $;
+	region {} trundown [ align = 2];
+        _TLSEXITEND = $;
     region {} string [ align = 2];
 	INITSIZE = $ - RAMBASE;
 	_BSSSTART = $;

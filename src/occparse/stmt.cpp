@@ -752,9 +752,155 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     declSP->sb->assigned = declSP->sb->attribs.inheritable.used = true;
                 }
                 lex = getsym();
+
                 if (MATCHKW(lex, begin))
                 {
-                    assert(0);
+                    TYPE* matchtp = &stdint;
+                    EXPRESSION* begin, * end;
+                    std::deque<std::pair<TYPE*, EXPRESSION*>> save;
+                    INITLIST* lst;
+                    lex = getInitList(lex, funcsp, &lst);
+                    int offset = 0;
+
+                    if (lst)
+                    {
+                        int n = 0;
+                        for (auto temp = lst; temp; temp = temp->next, n++);
+
+                        matchtp = lst->tp;
+                        if (isref(matchtp))
+                            matchtp = basetype(matchtp)->btp;
+
+                        TYPE* valueList = Allocate<TYPE>();
+                        valueList->type = bt_pointer;
+                        valueList->array = true;
+                        valueList->size = n * matchtp->size;
+                        valueList->btp = matchtp;
+
+                        EXPRESSION* val = anonymousVar(sc_auto, valueList);
+
+                        int sz = lst->tp->size;
+
+                        while (lst)
+                        {
+                            TYPE* ittp = lst->tp;
+                            EXPRESSION* base = exprNode(en_add, val, intNode(en_c_i, offset));
+                            offset += sz;
+                            if (isref(ittp))
+                                ittp = basetype(ittp)->btp;
+                            if (!comparetypes(matchtp, ittp, true))
+                            {
+                                if (!isstructured(matchtp))
+                                {
+                                    errortype(ERR_CANNOT_CONVERT_TYPE, ittp, matchtp);
+                                }
+                                else
+                                {
+                                    TYPE* ctype = matchtp;
+                                    EXPRESSION* newExp = base;
+                                    if (!callConstructorParam(&ctype, &newExp, ittp, lst->exp, true, false, true, false, true))
+                                    {
+                                        errortype(ERR_CANNOT_CONVERT_TYPE, ittp, matchtp);
+                                    }
+                                    else
+                                    {
+                                        st = stmtNode(lex, forstmt, st_expr);
+                                        st->select = newExp;
+                                        newExp = base;
+                                        callDestructor(matchtp->sp, matchtp->sp, &newExp, intNode(en_c_i, offset / sz), true, true, false, true);
+                                    }
+                                }
+                            }
+                            else if (isstructured(matchtp))
+                            {
+                                TYPE* ctype = matchtp;
+                                EXPRESSION* newExp = base;
+                                ittp->lref = true;
+                                if (lst->exp->type == en_thisref)
+                                {
+                                    lst->exp->left->v.func->thisptr->v.sp->sb->dest = nullptr;
+                                    lst->exp->left->v.func->thisptr = base;
+                                    st = stmtNode(lex, forstmt, st_expr);
+                                    st->select = lst->exp;
+                                }
+                                else if (!callConstructorParam(&ctype, &newExp, ittp, lst->exp, true, false, true, false, true))
+                                {
+                                    errortype(ERR_CANNOT_CONVERT_TYPE, ittp, matchtp);
+                                }
+                                else
+                                {
+                                    st = stmtNode(lex, forstmt, st_expr);
+                                    st->select = newExp;
+                                }
+                                newExp = base;
+                            }
+                            else
+                            {
+                                st = stmtNode(lex, forstmt, st_expr);
+                                deref(&stdpointer, &base);
+                                st->select = exprNode(en_assign, base, lst->exp);
+                        
+                            }
+                            lst = lst->next;
+                        }                        
+                        if (isstructured(matchtp))
+                        {
+                            auto newExp = val;
+                            callDestructor(matchtp->sp, matchtp->sp, &newExp, intNode(en_c_i, offset/sz), true, true, false, true);
+                            initInsert(&val->v.sp->sb->dest, matchtp, newExp, 0, false);
+                        }
+
+                        begin = val;
+                        end = exprNode(en_add, val, intNode(en_c_i, offset));
+
+                    }
+                    else
+                    {
+                        select = anonymousVar(sc_auto, &stdint);
+                        begin = end = select;
+                    }
+                    SYMBOL* sym = namespacesearch("std", globalNameSpace, false, false);
+                    if (sym && sym->sb->storage_class == sc_namespace)
+                    {
+                        sym = namespacesearch("initializer_list", sym->sb->nameSpaceValues, true, false);
+                        if (sym)
+                        {
+                            TEMPLATEPARAMLIST* tpl = Allocate<TEMPLATEPARAMLIST>();
+                            tpl->p = Allocate<TEMPLATEPARAM>();
+                            tpl->p->type = kw_typename;
+                            tpl->p->byClass.dflt = matchtp;
+                            auto sym1 = GetClassTemplate(sym, tpl, true);
+                            if (sym1)
+                            {
+                                sym1 = TemplateClassInstantiate(sym1, tpl,false, sc_auto);
+                                if (sym1)
+                                    sym = sym1;
+                            }
+                        }
+                    }
+                    if (sym)
+                    {
+                        selectTP = sym->tp;
+                    }
+                    else
+                    {
+                        selectTP = Allocate<TYPE>();
+                        selectTP->type = bt_struct;
+                        selectTP->sp = makeID(sc_type, selectTP, nullptr, "initializer_list");
+                    }
+                    INITIALIZER* init;
+                    initInsert(&init, &stdpointer, begin, 0, false);
+                    initInsert(&init->next, &stdpointer, end, stdpointer.size, false);
+                    TYPE* tp2 = Allocate<TYPE>();
+                    tp2->type = bt_pointer;
+                    tp2->size = 2 * stdpointer.size;
+                    tp2->array = true;
+                    tp2->btp = &stdpointer;
+                    EXPRESSION* val = anonymousVar(sc_auto, tp2);
+                    select = convertInitToExpression(tp2, nullptr, val, funcsp, init, nullptr, false);
+                    st = stmtNode(lex, forstmt, st_expr);
+                    st->select = select;
+                    select = val;
                 }
                 else
                 {
@@ -849,7 +995,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         fcb.returnSP = fcb.returnEXP->v.sp;
                                         exp = fcb.returnEXP;
                                         dest = nullptr;
-                                        callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, false, false, true);
+                                        callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, true, false, true);
                                         initInsert(&dest, iteratorType, exp, 0, true);
                                         fcb.returnSP->sb->dest = dest;
 
@@ -857,7 +1003,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         fce.returnSP = fcb.returnEXP->v.sp;
                                         exp = fce.returnEXP;
                                         dest = nullptr;
-                                        callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, false, false, true);
+                                        callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, true, false, true);
                                         initInsert(&dest, iteratorType, exp, 0, true);
                                         fce.returnSP->sb->dest = dest;
                                     }
@@ -947,7 +1093,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             fcb.returnSP = fcb.returnEXP->v.sp;
                                             exp = fcb.returnEXP;
                                             dest = nullptr;
-                                            callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, false, false, true);
+                                            callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, true, false, true);
                                             initInsert(&dest, iteratorType, exp, 0, true);
                                             fcb.returnSP->sb->dest = dest;
 
@@ -955,7 +1101,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             fce.returnSP = fcb.returnEXP->v.sp;
                                             exp = fce.returnEXP;
                                             dest = nullptr;
-                                            callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, false, false, true);
+                                            callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, true, false, true);
                                             initInsert(&dest, iteratorType, exp, 0, true);
                                             fce.returnSP->sb->dest = dest;
                                         }
@@ -1118,7 +1264,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 callConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false, true);
                                 st->select = decl;
                                 declDest = declExp;
-                                callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false, true);
+                                callDestructor(declSP, nullptr, &declDest, nullptr, true, true, false, true);
                             }
                             else if (isarray(selectTP))
                             {
@@ -1163,7 +1309,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     callConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false, true);
                                     st->select = decl;
                                     declDest = declExp;
-                                    callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false, true);
+                                    callDestructor(declSP, nullptr, &declDest, nullptr, true, true, false, true);
                                 }
                             }
                             else if (!insertOperatorFunc(ovcl_unary_prefix, star, funcsp, &starType, &st->select, nullptr, nullptr,
@@ -1196,6 +1342,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             st->select = st->select->left;
                                     }
                                     deref(declSP->tp, &decl);
+
                                     st->select = exprNode(en_assign, decl, st->select);
                                 }
                                 else
@@ -1210,7 +1357,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     callConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false, true);
                                     st->select = decl;
                                     declDest = declExp;
-                                    callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false, true);
+                                    callDestructor(declSP, nullptr, &declDest, nullptr, true, true, false, true);
                                 }
                             }
                         }
@@ -1260,7 +1407,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     st->select->v.func->returnEXP = anonymousVar(sc_auto, ppType);
                                     st->select->v.func->returnSP = st->select->v.func->returnEXP->v.sp;
                                     declDest = st->select->v.func->returnEXP;
-                                    callDestructor(st->select->v.func->returnSP, nullptr, &declDest, nullptr, true, false, false, true);
+                                    callDestructor(st->select->v.func->returnSP, nullptr, &declDest, nullptr, true, true, false, true);
                                     st = stmtNode(lex, forstmt, st_expr);
                                     st->select = declDest;
                                 }
@@ -1825,8 +1972,15 @@ static void MatchReturnTypes(SYMBOL* funcsp, TYPE* tp1, TYPE* tp2)
             //    err = true;
             tp1 = basetype(tp1);
             tp2 = basetype(tp2);
-            if (tp1->type != tp2->type)
+            if (isstructured(tp1) && isstructured(tp2))
+            {
+                if (!comparetypes(tp1, tp2, true) && classRefCount(tp1->sp, tp2->sp) != 1)
+                    err = true;
+            }
+            else if (tp1->type != tp2->type)
+            {
                 err = true;
+            }
             tp1 = tp1->btp;
             tp2 = tp2->btp;
         }

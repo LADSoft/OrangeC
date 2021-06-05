@@ -1744,6 +1744,11 @@ bool hasPackedExpression(EXPRESSION* exp, bool useAuto)
             if (exp1->v.func->thisptr && hasPackedExpression(exp1->v.func->thisptr, useAuto))
                 return true;
         }
+        if (exp1->type == en_templateparam)
+        {
+            if (exp1->v.sp->tp->templateParam->p->packed)
+                return true;
+        }
     }
     return false;
 }
@@ -1888,6 +1893,11 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
             }
             tsl = tsl->next;
         }
+    }
+    else if (packedExp->type == en_templateparam)
+    {
+        arg[(*count)++] = packedExp->v.sp;
+        NormalizePacked(packedExp->v.sp->tp);
     }
     else if (packedExp->type == en_construct)
     {
@@ -2105,73 +2115,90 @@ int CountPacks(TEMPLATEPARAMLIST* packs)
 }
 INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXLIST* start, EXPRESSION* packedExp)
 {
-    int oldPack = packIndex;
-    int count = 0;
-    SYMBOL* arg[200];
-    GatherPackedVars(&count, arg, packedExp);
-    expandingParams++;
-    if (count)
+    if (packedExp->type == en_templateparam)
     {
-        if (arg[0]->sb && arg[0]->packed && arg[0]->sb->parent)
+        if (packedExp->v.sp->tp->templateParam->p->packed)
         {
-            SYMLIST* hr = basetype(arg[0]->sb->parent->tp)->syms->table[0];
-            while (hr->p && hr->p != arg[0])
-                hr = hr->next;
-            if (hr)
+            for (auto t = packedExp->v.sp->tp->templateParam->p->byPack.pack; t; t = t->next)
             {
-                while (hr)
-                {
-                    SYMBOL* sym = hr->p;
-                    INITLIST* p = Allocate<INITLIST>();
-                    p->tp = sym->tp;
-                    p->exp = varNode(en_auto, sym);
-                    if (isref(p->tp))
-                    {
-                        p->exp = exprNode(en_l_p, p->exp, nullptr);
-                        p->tp = basetype(p->tp)->btp;
-                    }
-                    if (!isstructured(p->tp))
-                        deref(p->tp, &p->exp);
-                    *lptr = p;
-                    lptr = &(*lptr)->next;
-                    hr = hr->next;
-                }
+                *lptr = Allocate<INITLIST>();
+                (*lptr)->exp = t->p->byNonType.val;
+                (*lptr)->tp = t->p->byNonType.tp;
+                lptr = &(*lptr)->next;
             }
-        }
-        else
-        {
-            int i;
-            int n = CountPacks(arg[0]->tp->templateParam->p->byPack.pack);
-            /*
-            for (i=1; i < count; i++)
-            {
-                if (CountPacks(arg[i]->tp->templateParam->p->byPack.pack) != n)
-                {
-                    CountPacks(arg[i]->tp->templateParam->p->byPack.pack);
-                    error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
-                    break;
-                }
-            }
-            */
-            if (n > 1 || !packedExp->v.func->arguments || packedExp->v.func->arguments->tp->type != bt_void)
-                for (i = 0; i < n; i++)
-                {
-                    INITLIST* p = Allocate<INITLIST>();
-                    LEXLIST* lex = SetAlternateLex(start);
-                    packIndex = i;
-                    expression_assign(lex, funcsp, nullptr, &p->tp, &p->exp, nullptr, _F_PACKABLE);
-                    SetAlternateLex(nullptr);
-                    if (p->tp->type != bt_void)
-                        if (p->tp)
-                        {
-                            *lptr = p;
-                            lptr = &(*lptr)->next;
-                        }
-                }
+
         }
     }
-    expandingParams--;
-    packIndex = oldPack;
+    else
+    {
+        int oldPack = packIndex;
+        int count = 0;
+        SYMBOL* arg[200];
+        GatherPackedVars(&count, arg, packedExp);
+        expandingParams++;
+        if (count)
+        {
+            if (arg[0]->sb && arg[0]->packed && arg[0]->sb->parent)
+            {
+                SYMLIST* hr = basetype(arg[0]->sb->parent->tp)->syms->table[0];
+                while (hr->p && hr->p != arg[0])
+                    hr = hr->next;
+                if (hr)
+                {
+                    while (hr)
+                    {
+                        SYMBOL* sym = hr->p;
+                        INITLIST* p = Allocate<INITLIST>();
+                        p->tp = sym->tp;
+                        p->exp = varNode(en_auto, sym);
+                        if (isref(p->tp))
+                        {
+                            p->exp = exprNode(en_l_p, p->exp, nullptr);
+                            p->tp = basetype(p->tp)->btp;
+                        }
+                        if (!isstructured(p->tp))
+                            deref(p->tp, &p->exp);
+                        *lptr = p;
+                        lptr = &(*lptr)->next;
+                        hr = hr->next;
+                    }
+                }
+            }
+            else
+            {
+                int i;
+                int n = CountPacks(arg[0]->tp->templateParam->p->byPack.pack);
+                /*
+                for (i=1; i < count; i++)
+                {
+                    if (CountPacks(arg[i]->tp->templateParam->p->byPack.pack) != n)
+                    {
+                        CountPacks(arg[i]->tp->templateParam->p->byPack.pack);
+                        error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
+                        break;
+                    }
+                }
+                */
+                if (n > 1 || !packedExp->v.func->arguments || packedExp->v.func->arguments->tp->type != bt_void)
+                    for (i = 0; i < n; i++)
+                    {
+                        INITLIST* p = Allocate<INITLIST>();
+                        LEXLIST* lex = SetAlternateLex(start);
+                        packIndex = i;
+                        expression_assign(lex, funcsp, nullptr, &p->tp, &p->exp, nullptr, _F_PACKABLE);
+                        SetAlternateLex(nullptr);
+                        if (p->tp->type != bt_void)
+                            if (p->tp)
+                            {
+                                *lptr = p;
+                                lptr = &(*lptr)->next;
+                            }
+                    }
+            }
+        }
+        expandingParams--;
+        packIndex = oldPack;
+    }
     return lptr;
 }
 static int GetBaseClassList(const char* name, SYMBOL* cls, BASECLASS* bc, BASECLASS** result)
@@ -2675,7 +2702,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                 {
                     errortype(ERR_OPERATOR_NONSTATIC, basetype(sp->tp)->btp, nullptr);
                 }
-                else
+                else if ((enum e_kw)(sp->sb->operatorId - CI_NEW) != kw_new && (enum e_kw)(sp->sb->operatorId - CI_NEW) != kw_delete) 
                 {
                     errorstr(ERR_OPERATOR_NONSTATIC, overloadXlateTab[sp->sb->operatorId]);
                 }
@@ -3302,50 +3329,56 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
             }
             basisAttribs = oldAttribs;
         }
-        lex = nestedSearch(lex, &sp, nullptr, nullptr, nullptr, nullptr, false, sc_global, true, false);
+        SYMBOL* strsym = nullptr;
+        lex = nestedSearch(lex, &sp, &strsym, nullptr, nullptr, nullptr, false, sc_global, true, false);
         if (sp)
         {
-            if (!templateNestingCount)
+            if (sp->sb->mainsym && sp->sb->mainsym == strsym)
+                sp = search(overloadNameTab[CI_CONSTRUCTOR], strsym->tp->syms);
+            if (sp)
             {
-                if (sp->sb->storage_class == sc_overloads)
+                if (!templateNestingCount)
                 {
-                    SYMLIST** hr = sp->tp->syms->table;
-                    while (*hr)
+                    if (sp->sb->storage_class == sc_overloads)
                     {
-                        SYMBOL *ssp = getStructureDeclaration(), *ssp1;
-                        SYMBOL* sp = (SYMBOL*)(*hr)->p;
+                        SYMLIST** hr = sp->tp->syms->table;
+                        while (*hr)
+                        {
+                            SYMBOL* ssp = getStructureDeclaration(), * ssp1;
+                            SYMBOL* sp = (SYMBOL*)(*hr)->p;
+                            SYMBOL* sp1 = clonesym(sp);
+                            sp1->sb->wasUsing = true;
+                            ssp1 = sp1->sb->parentClass;
+                            if (ssp && ismember(sp1))
+                                sp1->sb->parentClass = ssp;
+                            sp1->sb->mainsym = sp;
+                            sp1->sb->access = access;
+                            InsertSymbol(sp1, storage_class, sp1->sb->attribs.inheritable.linkage, true);
+                            InsertInline(sp1);
+                            sp1->sb->parentClass = ssp1;
+                            hr = &(*hr)->next;
+                        }
+                        if (isTypename)
+                            error(ERR_TYPE_NAME_EXPECTED);
+                    }
+                    else
+                    {
+                        SYMBOL* ssp = getStructureDeclaration(), * ssp1;
                         SYMBOL* sp1 = clonesym(sp);
                         sp1->sb->wasUsing = true;
+                        sp1->sb->mainsym = sp;
+                        sp1->sb->access = access;
                         ssp1 = sp1->sb->parentClass;
                         if (ssp && ismember(sp1))
                             sp1->sb->parentClass = ssp;
-                        sp1->sb->mainsym = sp;
-                        sp1->sb->access = access;
-                        InsertSymbol(sp1, storage_class, sp1->sb->attribs.inheritable.linkage, true);
-                        InsertInline(sp1);
+                        if (isTypename && !istype(sp))
+                            error(ERR_TYPE_NAME_EXPECTED);
+                        if (istype(sp))
+                            InsertTag(sp1, storage_class, true);
+                        else
+                            InsertSymbol(sp1, storage_class, lk_cdecl, true);
                         sp1->sb->parentClass = ssp1;
-                        hr = &(*hr)->next;
                     }
-                    if (isTypename)
-                        error(ERR_TYPE_NAME_EXPECTED);
-                }
-                else
-                {
-                    SYMBOL *ssp = getStructureDeclaration(), *ssp1;
-                    SYMBOL* sp1 = clonesym(sp);
-                    sp1->sb->wasUsing = true;
-                    sp1->sb->mainsym = sp;
-                    sp1->sb->access = access;
-                    ssp1 = sp1->sb->parentClass;
-                    if (ssp && ismember(sp1))
-                        sp1->sb->parentClass = ssp;
-                    if (isTypename && !istype(sp))
-                        error(ERR_TYPE_NAME_EXPECTED);
-                    if (istype(sp))
-                        InsertTag(sp1, storage_class, true);
-                    else
-                        InsertSymbol(sp1, storage_class, lk_cdecl, true);
-                    sp1->sb->parentClass = ssp1;
                 }
             }
             lex = getsym();
@@ -3473,8 +3506,8 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                         {"zstring", 23},  // non-gcc, added to support nonstring
                         {"noreturn", 24},
                         {"stdcall", 25},
-                        {"always_inline", 26} // we don't really force inline this is still just a suggestion.   in practice the types of functions that get flagged with this will likely always be inlined anyway
-
+                        {"always_inline", 26}, // we don't really force inline this is still just a suggestion.   in practice the types of functions that get flagged with this will likely always be inlined anyway
+                        {"format", 27},
                     };
                     std::string name;
                     if (ISID(*lex))
@@ -3513,8 +3546,9 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                 }
                                 break;
                             case 2:  // aligned
-                                if (needkw(lex, openpa))
+                                if (MATCHKW(*lex, openpa))
                                 {
+                                    *lex = getsym();
                                     TYPE* tp = nullptr;
                                     EXPRESSION* exp = nullptr;
 
@@ -3530,6 +3564,13 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                     if (basisAttribs.inheritable.structAlign > 0x10000 ||
                                         (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
                                         error(ERR_INVALID_ALIGNMENT);
+                                }
+                                else
+                                {
+                                    // no argument means use max meaningful size
+                                    basisAttribs.inheritable.structAlign = Optimizer::chosenAssembler->arch->type_align->a_alignedstruct	;
+                                    basisAttribs.inheritable.alignedAttribute = true;
+                                    
                                 }
                                 break;
                             case 3:  // warn_if_not_aligned
@@ -3697,6 +3738,13 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                             case 26: // always inline
                                 basisAttribs.inheritable.isInline = true;
                                 break;
+                            case 27: // format
+                                 needkw(lex, openpa);
+                                 while (*lex && !MATCHKW(*lex, closepa))
+                                     *lex = getsym();
+                                 if (lex)
+                                     *lex = getsym();
+                                 break;
                         }
                     }
                 }
@@ -3851,7 +3899,7 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                                     else if (*lex)
                                     {
                                         static const std::unordered_map<std::string, int> occCPPStyleAttribNames = {
-                                            {"zstring", 23}  // non-gcc, added to support nonstring
+                                            {"zstring", 23},  // non-gcc, added to support nonstring
                                         };
                                         std::string name = (*lex)->data->value.s.a;
                                         auto searchedName = occCPPStyleAttribNames.find(name);

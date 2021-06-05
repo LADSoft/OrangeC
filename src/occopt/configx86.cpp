@@ -183,6 +183,7 @@ static ARCH_DEFINES defines[] = {
     {"__CRTDLL_DLL", "1", false, true},
     {"__RAW_IMAGE__", "1", false, true},
     /* end ordered */
+    {"__SEH__", "1", true, true},
     {"__386__", "1", true, true},
     {"__i386__", "1", true, true},
     {"_i386_", "1", true, true},
@@ -212,6 +213,7 @@ static ARCH_SIZING sizes = {
     0,                    /*char a_fcomplexpad;*/
     0,                    /*char a_rcomplexpad;*/
     0,                    /*char a_lrcomplexpad;*/
+    0,                    // char a_alignedstruct; // __attribute((__aligned__))
 };
 static ARCH_SIZING alignments = {
     1, /*char a_bool;*/
@@ -233,6 +235,7 @@ static ARCH_SIZING alignments = {
     4, /*char a_float;*/
     8, /*char a_double;*/
     8, /*char a_longdouble;*/
+    8,                    // char a_alignedstruct; // __attribute((__aligned__))
 };
 static ARCH_SIZING locks = {
     0, /*char a_bool; */
@@ -257,6 +260,7 @@ static ARCH_SIZING locks = {
     1,                  /*char a_fcomplexpad; */
     1,                  /*char a_rcomplexpad; */
     1,                  /*char a_lrcomplexpad; */
+    0,                    // char a_alignedstruct; // __attribute((__aligned__))
 };
 static ARCH_FLOAT aflt = {-126, 126, 128, 24};
 static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};

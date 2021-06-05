@@ -59,7 +59,6 @@ SECTION code CLASS=CODE USE32
     mov [eax+12], edx   ; pointer to ebp
     mov [eax+16], ecx   ; function xception block
     mov DWORD [eax + 20], 0 ; constructor progress
-    mov DWORD [eax + 24], 0 ; throw flags
     mov [fs:0],eax
     pop edx
     pop ecx

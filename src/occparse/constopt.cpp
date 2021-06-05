@@ -2354,7 +2354,7 @@ int opt0(EXPRESSION** node)
                 }
                 if (found && found->p->type == kw_int)
                 {
-                    if (found->p->byNonType.val)
+                    if (found->p->byNonType.val && !found->p->packed)
                         *node = found->p->byNonType.val;
                 }
             }
@@ -2998,13 +2998,6 @@ int typedconsts(EXPRESSION* node1)
             rv = true;
             break;
         case en_const:
-            /* special trap to replace sc_constants */
-            //            if (basetype(node1->v.sp->tp)->type == bt_long_long || basetype(node1->v.sp->tp)->type ==
-            //            bt_unsigned_long_long)
-            //                node1->type = en_c_ll;
-            //            else
-            //                node1->type = en_c_i;
-            //            node1->v.i = node1->v.sp->sb->value.i;
             optimize_for_constants(&node1->v.sp->sb->init->exp);
             *node1 = *node1->v.sp->sb->init->exp;
             rv = true;

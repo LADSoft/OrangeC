@@ -4587,6 +4587,87 @@ typedef struct tagPROCESSENTRY32
 typedef PROCESSENTRY32* PPROCESSENTRY32;
 typedef PROCESSENTRY32* LPPROCESSENTRY32;
 
+typedef enum
+{
+    ExceptionContinueExecution,
+    ExceptionContinueSearch,
+    ExceptionNestedException,
+    ExceptionCollidedUnwind
+} EXCEPTION_DISPOSITION;
+
+typedef
+__stdcall
+EXCEPTION_DISPOSITION
+EXCEPTION_ROUTINE (
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    PVOID EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    PVOID DispatcherContext
+    );
+
+typedef EXCEPTION_ROUTINE *PEXCEPTION_ROUTINE;
+
+
+typedef struct _IMAGE_RUNTIME_FUNCTION_ENTRY RUNTIME_FUNCTION, *PRUNTIME_FUNCTION;
+
+#define UNWIND_HISTORY_TABLE_SIZE 12
+
+typedef struct _UNWIND_HISTORY_TABLE_ENTRY {
+    DWORD64 ImageBase;
+    PRUNTIME_FUNCTION FunctionEntry;
+} UNWIND_HISTORY_TABLE_ENTRY, *PUNWIND_HISTORY_TABLE_ENTRY;
+
+typedef struct _UNWIND_HISTORY_TABLE {
+    DWORD Count;
+    BYTE  LocalHint;
+    BYTE  GlobalHint;
+    BYTE  Search;
+    BYTE  Once;
+    DWORD64 LowAddress;
+    DWORD64 HighAddress;
+    UNWIND_HISTORY_TABLE_ENTRY Entry[UNWIND_HISTORY_TABLE_SIZE];
+} UNWIND_HISTORY_TABLE, *PUNWIND_HISTORY_TABLE;
+
+
+typedef struct _RTL_SRWLOCK {                            
+        PVOID Ptr;                                       
+} RTL_SRWLOCK, *PRTL_SRWLOCK;                            
+#define RTL_SRWLOCK_INIT {0}                            
+
+#define SRWLOCK_INIT RTL_SRWLOCK_INIT
+
+typedef RTL_SRWLOCK SRWLOCK, *PSRWLOCK;
+
+typedef struct _DISPATCHER_CONTEXT {
+    DWORD ControlPc;
+    DWORD ImageBase;
+    PRUNTIME_FUNCTION FunctionEntry;
+    DWORD EstablisherFrame;
+    DWORD TargetPc;
+    PCONTEXT ContextRecord;
+    PEXCEPTION_ROUTINE LanguageHandler;
+    PVOID HandlerData;
+    PUNWIND_HISTORY_TABLE HistoryTable;
+    DWORD ScopeIndex;
+    BOOLEAN ControlPcIsUnwound;
+    PBYTE  NonVolatileRegisters;
+    DWORD Reserved;
+} DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
+
+
+typedef struct _KNONVOLATILE_CONTEXT_POINTERS {
+    DWORD   Dummy;
+} KNONVOLATILE_CONTEXT_POINTERS, *PKNONVOLATILE_CONTEXT_POINTERS;
+
+typedef struct _IMAGE_RUNTIME_FUNCTION_ENTRY {
+    DWORD BeginAddress;
+    DWORD EndAddress;
+    union {
+        DWORD UnwindInfoAddress;
+        DWORD UnwindData;
+    };
+} _IMAGE_RUNTIME_FUNCTION_ENTRY, *_PIMAGE_RUNTIME_FUNCTION_ENTRY;
+
 #    pragma pack()
 
 #endif /* RC_INVOKED */

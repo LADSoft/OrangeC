@@ -22,7 +22,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
-
+#include <map>
 #define XD_X_MASK 0x3f /* a count for extension bytes */
 #define XD_ARRAY 0x40
 #define XD_POINTER 0x80
@@ -106,38 +106,39 @@ typedef struct _xctab
 {
     struct _xctab* next;   /* link to next exception higher function */
     void* _xceptfunc;      /* windows exception handler */
-    int esp;               /* esp at start of try block; code gen generates for this, don't
-                      move*/
+    int esp;               /* esp at start of try block; code gen generates for this, don't move*/
     int ebp;               /* ebp of this function */
     XCEPTHEAD* xceptBlock; /* pointer to the function's xception block */
-    int funcIndex;         /* index of constructors/destructors, roughly follows EIP */
+    int funcIndex;         /* index of constructors/destructors, roughly follows EIP, code gen generates this */
+    void *throwninstance;  /* instance being caught, code gen generates this, don't move */
     // things beyond this are used by throw()
-    int flags;            /* reserved */
     int eip;              /* eip this function where the catch occurred */
-    void* instance;       /* instance pointer to thrown class or reference to a base class */
-    void* throwninstance; /* instance point to current thrown class */
-    void* baseinstance;   /* instance pointer to orig version of thrown class */
-    void* cons;           /* constructor */
-    int elems;            /* number of array elements thrown */
-    RTTI* thrownxt;       /* xt that was thrown */
-    XCEPT* thisxt;        /* pointer to this XT table list in case of throws
-               through nested tries */
+    XCEPT* thisxt;        /* pointer to this XT table list in case of throws */
 } XCTAB;
 
-static const int XCTAB_SIZE = 15 * 4;
-static const int XCTAB_INDEX_OFS = 5 * 4;
-static const int XCTAB_INSTANCE_OFS = 8 * 4;
-// FS:[4] - 4
-typedef struct _cppdata
+typedef struct __xclist
 {
-    void (*term)();
-    void (*unexpected)();
-} CPPDATA;
+    struct __xclist *next;
+    EXPRESSION* exp;
+    STATEMENT* stmt;
+    SYMBOL* xtSym;
+    char byStmt : 1;
+    char used : 1;
+} XCLIST;
+
+
+
+static const int XCTAB_SIZE = 9 * 4;
+static const int XCTAB_INDEX_OFS = 5 * 4;
+static const int XCTAB_INSTANCE_OFS = 6 * 4;
+
 
 extern HASHTABLE* rttiSyms;
+extern std::map<int, std::map<int, __xclist*>> rttiStatements;
 
 void rtti_init(void);
 bool equalnode(EXPRESSION* node1, EXPRESSION* node2);
+Optimizer::SimpleSymbol* evalsp(EXPRESSION* exp);
 SYMBOL* RTTIDumpType(TYPE* tp);
 void XTDumpTab(SYMBOL* funcsp);
 }  // namespace Parser

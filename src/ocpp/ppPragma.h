@@ -29,6 +29,7 @@
 #include <string>
 #include <unordered_map>
 #include <map>
+#include <map>
 #include <set>
 #include <ctime>
 #include <stack>
@@ -279,13 +280,13 @@ class Startups
     ~Startups();
 
     void Add(std::string& item, int Priority, bool startup) { list[item] = std::make_unique<Properties>(Priority, startup); }
-    typedef std::unordered_map<std::string, std::unique_ptr<Properties>>::iterator StartupIterator;
+    typedef std::map<std::string, std::unique_ptr<Properties>>::iterator StartupIterator;
     StartupIterator begin() { return list.begin(); }
     StartupIterator end() { return list.end(); }
     std::string GetName(StartupIterator it) { return it->first; }
     int GetPriority(StartupIterator it) { return it->second->prio; }
     bool IsStartup(StartupIterator it) { return it->second->startup; }
-    std::unordered_map<std::string, std::unique_ptr<Properties>>& GetStartups() { return list; }
+    std::map<std::string, std::unique_ptr<Properties>>& GetStartups() { return list; }
     void Clear() { list.clear(); }
 
   protected:
@@ -293,7 +294,7 @@ class Startups
 
   private:
     static Startups* instance;
-    std::unordered_map<std::string, std::unique_ptr<Properties>> list;
+    std::map<std::string, std::unique_ptr<Properties>> list;
 };
 class Once
 {
@@ -402,7 +403,7 @@ class ppPragma
     int StdPragmas();
     int CppPrio() { return cppprio; }
     std::list<std::string>& IncludeLibs() { return Libraries::Instance()->Get(); }
-    std::unordered_map<std::string, std::unique_ptr<Startups::Properties>>& GetStartups() { return Startups::Instance()->GetStartups(); }
+    std::map<std::string, std::unique_ptr<Startups::Properties>>& GetStartups() { return Startups::Instance()->GetStartups(); }
     const char* LookupAlias(const char* name) const { return Aliases::Instance()->Lookup(name); }
 
     void SetPragmaCatchall(std::function<void(const std::string&, const std::string&)> callback) { catchAll = callback; }

@@ -131,6 +131,7 @@ typedef struct
     char a_fcomplexpad;
     char a_rcomplexpad;
     char a_lrcomplexpad;
+    char a_alignedstruct; // __attribute((__aligned__))
 } ARCH_SIZING;
 
 /* floating point characteristics */

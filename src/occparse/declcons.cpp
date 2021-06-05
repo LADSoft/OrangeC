@@ -47,6 +47,7 @@
 #include "lex.h"
 #include "declcons.h"
 #include "libcxx.h"
+
 namespace Parser
 {
     std::set<SYMBOL*> defaultRecursionMap;
@@ -1582,7 +1583,7 @@ void createDefaultConstructors(SYMBOL* sp)
         }
         newcons = declareAssignmentOp(sp, true);
         newcons->sb->trivialCons = hasTrivialAssign(sp, true);
-        newcons->sb->deleted = isMoveAssignmentDeleted(sp);
+        newcons->sb->deleted |= isMoveAssignmentDeleted(sp);
     }
     else
     {
@@ -2027,7 +2028,9 @@ static EXPRESSION* unshim(EXPRESSION* exp, EXPRESSION* ths)
     if (!exp)
         return exp;
     if (exp->type == en_thisshim)
+    {
         return ths;
+    }
     nw = Allocate<EXPRESSION>();
     *nw = *exp;
     nw->left = unshim(nw->left, ths);
@@ -3478,7 +3481,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
         if (cons1->sb->castoperator)
         {
             FUNCTIONCALL* oparams = Allocate<FUNCTIONCALL>();
-            if (!isAccessible(cons1->sb->parentClass, cons1->sb->parentClass, cons1, nullptr, ac_public, false))
+            if (!inNoExceptHandler && !isAccessible(cons1->sb->parentClass, cons1->sb->parentClass, cons1, nullptr, ac_public, false))
             {
                 errorsym(ERR_CANNOT_ACCESS, cons1);
             }
@@ -3505,7 +3508,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
         }
         else
         {
-            if (!isAccessible(against, sp, cons1, theCurrentFunc,
+            if (!inNoExceptHandler && !isAccessible(against, sp, cons1, theCurrentFunc,
                               top ? (theCurrentFunc && theCurrentFunc->sb->parentClass == sp ? ac_private : ac_public)
                                   : ac_private,
                               false))

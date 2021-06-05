@@ -39,12 +39,6 @@
 #include <exception>
 #include "_rtti.h"
 
-extern int ___xcflags;
-
-static CPPDATA* dataCache;
-
-#pragma startup __init_cppdata 119
-#pragma rundown __rundown_cppdata 6
 
 namespace __dls
 {
@@ -56,23 +50,22 @@ const char _RTL_DATA* __dls_BadException = "Bad Exception";
 
 namespace std
 {
+    terminate_handler __term = std::terminate;
+    unexpected_handler __unexpected = std::unexpected;
 exception::~exception() throw() {}
 bad_exception::~bad_exception() throw() {}
 };  // namespace std
 
 void _RTL_FUNC std::terminate()
 {
-    ___xcflags = 0;
     abort();
 }
-static CPPDATA* getCPPData() { return dataCache; }
 extern "C" void _RTL_FUNC __call_terminate()
 {
     try
     {
         flushall();
-        CPPDATA* data = getCPPData();
-        (*data->term)();
+        std::__term();
     }
     catch (...)
     {
@@ -81,47 +74,35 @@ extern "C" void _RTL_FUNC __call_terminate()
 }
 void _RTL_FUNC std::unexpected()
 {
-    ___xcflags = 0;
     __call_terminate();
 }
 std::terminate_handler _RTL_FUNC std::set_terminate(std::terminate_handler __t)
 {
-    CPPDATA* data = getCPPData();
-    terminate_handler* rv = (terminate_handler)data->term;
+    terminate_handler rv = __term;
     if (__t)
     {
-        data->term = __t;
+        __term = __t;
     }
     return rv;
 }
 std::unexpected_handler _RTL_FUNC std::set_unexpected(std::unexpected_handler __u)
 {
-    CPPDATA* data = getCPPData();
-    unexpected_handler* rv = (unexpected_handler)data->unexpected;
+    unexpected_handler rv = (unexpected_handler)__unexpected;
     if (__u)
     {
-        CPPDATA* data = getCPPData();
-        data->unexpected = __u;
+        __unexpected = __u;
     }
     return rv;
 }
-extern "C" void _RTL_FUNC __call_unexpected()
+extern "C" void _RTL_FUNC __call_unexpected(std::exception_ptr *e)
 {
-    CPPDATA* data = getCPPData();
-    (*data->unexpected)();
-}
-extern "C" void _RTL_FUNC __init_cppdata()
-{
-    CPPDATA* block;
-    block = (CPPDATA*)malloc(sizeof(CPPDATA));
-    if (!block)
-        exit(1);
-    dataCache = block;
-    block->term = std::terminate;
-    block->unexpected = std::unexpected;
-}
-extern "C" void _RTL_FUNC __rundown_cppdata()
-{
-    CPPDATA* block = getCPPData();
-    free(block);
+    try
+    {
+        std::__unexpected();
+        __call_terminate();
+    }
+    catch (...)
+    {
+    }
+    *e = std::current_exception();
 }

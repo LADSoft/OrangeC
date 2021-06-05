@@ -936,6 +936,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
  */
 {
     retLabs.clear();
+    rttiStatements.clear();
     Optimizer::IMODE* oldReturnImode = returnImode;
     Optimizer::IMODE* allocaAP = nullptr;
     SYMBOL* oldCurrentFunc;
@@ -1055,27 +1056,22 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     genreturn(0, funcsp, 1, 0, allocaAP);
     gen_func(funcexp, 0);
     tFree();
+
     InsertParameterThunks(funcsp, Optimizer::blockArray[1]);
     FreeLocalContext(nullptr, funcsp, Optimizer::nextLabel++);
 
-    //    if (!(Optimizer::chosenAssembler->arch->denyopts & DO_NOREGALLOC))
-    //        AllocateStackSpace(funcsp);
-    //    FillInPrologue(Optimizer::intermed_head, funcsp);
     /* Code gen from icode */
-    //    rewrite_icode(); /* Translate to machine code & dump */
-    //    if (Optimizer::chosenAssembler->gen->post_function_gen)
-    //        Optimizer::chosenAssembler->gen->post_function_gen(Optimizer::SymbolManager::Get(funcsp), Optimizer::intermed_head);
-    //    post_function_gen(currentFunction, Optimizer::intermed_head);
     Optimizer::AddFunction();
+
     if (funcsp->sb->attribs.inheritable.linkage == lk_virtual || tmpl)
         Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(funcsp));
+
     AllocateLocalContext(nullptr, funcsp, Optimizer::nextLabel);
     funcsp->sb->retblockparamadjust = Optimizer::chosenAssembler->arch->retblockparamadjust;
     XTDumpTab(funcsp);
     FreeLocalContext(nullptr, funcsp, Optimizer::nextLabel);
+
     Optimizer::intermed_head = nullptr;
-    //    dag_rundown();
-    //    oFree();
     theCurrentFunc = oldCurrentFunc;
     currentFunction = oldCurrentFunction;
     returnImode = oldReturnImode;

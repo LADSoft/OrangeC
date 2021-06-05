@@ -36,6 +36,8 @@
 
 #include <windows.h>
 #include <stdlib.h>
+#include <exception>
+#include <deque>
 #include "_rtti.h"
 #include <stdio.h>
 #include <time.h>
@@ -46,16 +48,50 @@
 
 extern "C" void __global_unwind(void*, void*);
 extern "C" void __call_terminate();
-extern "C" void __call_unexpected();
+extern "C" void _RTL_FUNC __call_unexpected(std::exception_ptr *e);
 
 extern "C" LONG ___xceptionhandle(PEXCEPTION_RECORD p, void* record, PCONTEXT context, void* param);
 
-#define CAUGHT 1
-#define THROWN 2
+thread_local std::deque<std::exception_ptr> thrownExceptions;
+thread_local XCTAB* currentFrame;
 
-int ___xcflags;
+static void uninstantiate(std::__exceptionInternal* exc, bool base);
 
-bool _RTL_FUNC uncaught_exception() { return ___xcflags == THROWN; }
+static inline std::__exceptionInternal* std::__getxc(const std::exception_ptr& p)
+{
+    return p.exc;
+}
+// called when the reference count on an exception_ptr reaches zero...
+void std::exception_ptr::FreeExceptionObject(std::__exceptionInternal* exc)
+{
+     // the exception_ptr object will be deleted either on catch/rethrow
+     // or when a user exception_ptr object is destroyed
+     uninstantiate(exc, false);
+     uninstantiate(exc, true);
+     free(exc);
+}
+int  _RTL_FUNC std::uncaught_exceptions() noexcept
+{
+     int rv = 0;
+     for (auto&& e : thrownExceptions)
+         if (__getxc(e)->inprocess)
+             rv++;
+     return rv;
+}
+bool _RTL_FUNC std::uncaught_exception() 
+{
+     return uncaught_exceptions() != 0;
+}
+
+std::exception_ptr std::current_exception() noexcept
+{
+    if (thrownExceptions.size())
+    {
+       return thrownExceptions.back();
+    }
+    return nullptr;
+}
+
 
 // have to do the destroys in reverse order...
 static void destroyone(XCTAB* record, XCEPT* blk, XCEPT* catchBlock)
@@ -67,7 +103,7 @@ static void destroyone(XCTAB* record, XCEPT* blk, XCEPT* catchBlock)
         {
             if (blk->startOffs <= record->funcIndex && record->funcIndex < blk->endOffs)
             {
-                if (!catchBlock || (catchBlock->startOffs <= blk->endOffs && blk->endOffs < catchBlock->endOffs))
+                if (!catchBlock || (catchBlock->startOffs <= blk->startOffs && blk->endOffs < catchBlock->endOffs))
                 {
                     // call destructor
                     int elems = 1;
@@ -163,33 +199,32 @@ static BOOL canThrow(XCTAB* record, PEXCEPTION_RECORD p, PCONTEXT context)
     else
     {
         RTTI** list = &throwRec->thrownClasses;
+        auto xc = __getxc(thrownExceptions.back());
         while (*list)
         {
             size_t offs;
-            if (matchXT(*list, record->thrownxt, &offs, FALSE))
+            if (matchXT(*list, xc->thrownxt, &offs, FALSE))
                 return TRUE;
             list++;
         }
         return FALSE;
     }
 }
-static void instantiate(XCTAB* record, void* dest1, void* src1)
+static void instantiate(std:: __exceptionInternal* exc, BYTE* src, BYTE* dest)
 {
-    if (record->cons)
+    if (exc->cons)
     {
-        BYTE* src = (BYTE*)src1;
-        BYTE* dest = (BYTE*)dest1;
-        for (int i = 0; i < record->elems; i++)
+        for (int i = 0; i < exc->elems; i++)
         {
-            void (*xx)(void*, void*) = (void (*)(void*, void*))record->cons;
+            void (*xx)(void*, void*) = (void (*)(void*, void*))exc->cons;
             (*xx)(dest, src);
-            dest += record->thrownxt->size;
-            src += record->thrownxt->size;
+            dest += exc->thrownxt->size;
+            src += exc->thrownxt->size;
         }
     }
     else
     {
-        memcpy(dest1, src1, record->elems * record->thrownxt->size);
+        memcpy(dest, src, exc->elems * exc->thrownxt->size);
     }
 }
 static BOOL matchBlock(XCTAB* record, PEXCEPTION_RECORD p, PCONTEXT context)
@@ -199,6 +234,7 @@ static BOOL matchBlock(XCTAB* record, PEXCEPTION_RECORD p, PCONTEXT context)
     XCEPT* blk = (XCEPT*)(head + 1);
     THROWREC* throwRec = head->throwRecord;
     XCTAB* orig = (XCTAB*)p->ExceptionInformation[0];
+    auto xc = __getxc(thrownExceptions.back());
     size_t offs = 0;
     while (blk->flags)
     {
@@ -206,7 +242,7 @@ static BOOL matchBlock(XCTAB* record, PEXCEPTION_RECORD p, PCONTEXT context)
         {
             if (blk->startOffs <= record->funcIndex && record->funcIndex < blk->endOffs)
             {
-                if (matchXT(blk->xt, orig->thrownxt, &offs, TRUE))
+                if (matchXT(blk->xt, xc->thrownxt, &offs, TRUE))
                 {
                     if (candidate)
                     {
@@ -225,20 +261,17 @@ static BOOL matchBlock(XCTAB* record, PEXCEPTION_RECORD p, PCONTEXT context)
     }
     if (candidate)
     {
-        record->baseinstance = orig->baseinstance;
-        record->thrownxt = orig->thrownxt;
-        record->elems = orig->elems;
-        record->cons = orig->cons;
-        record->eip = candidate->trylabel;
-        ___xcflags = record->flags = CAUGHT;
-        record->throwninstance = malloc(record->thrownxt->size * record->elems);
-        record->instance = (char*)record->throwninstance + offs;
-        if (!record->instance)
-            __call_terminate();
-        instantiate(record, record->throwninstance, record->baseinstance);
         __global_unwind(0, record);
         destroy(record, candidate);
+        record->eip = candidate->trylabel;
         record->funcIndex = candidate->endOffs;
+        record->throwninstance = xc->obj = malloc(xc->thrownxt->size * xc->elems);
+        if (!xc->obj)
+            __call_terminate();
+        instantiate(xc, (BYTE*)xc->baseinstance, (BYTE*)xc->obj);
+        xc->instance = (char*)xc->obj + offs;
+        xc->inprocess = false;
+        currentFrame = record;
         context->Eip = (DWORD)candidate->trylabel;
         context->Ebp = record->ebp;
         context->Esp = record->esp;
@@ -267,67 +300,129 @@ extern "C" LONG __cppexceptionhandle(PEXCEPTION_RECORD p, void* record, PCONTEXT
         THROWREC* throwRec = head->throwRecord;
         // abort if can't throw
         if (throwRec->flags & XD_DYNAMICXC)
-            __call_unexpected();
-        else
-            __call_terminate();
+        {
+            void*hold;
+            std::exception_ptr* e = new(&hold) std::exception_ptr;
+            __call_unexpected(e);
+            if (canThrow((XCTAB*)record, p, context) || __getxc(*e)->thrownxt == typeid(std::bad_exception).tpp)
+            {
+                auto e1 = thrownExceptions.back();
+                thrownExceptions.pop_back();
+                std::__exceptionInternal* xc = __getxc(thrownExceptions.back());
+                uninstantiate(xc,false);
+                delete xc;
+                thrownExceptions.pop_back();
+                thrownExceptions.push_back(e1);
+            }
+        }
+        __call_terminate();
         return 0;
     }
     return ___xceptionhandle(p, record, context, param);
 }
+
 void _RTL_FUNC _ThrowException(void* irecord, void* instance, int arraySize, void* cons, void* xceptBlock_in)
 {
     XCTAB* record = (XCTAB*)irecord;
     RTTI* xceptBlock = (RTTI*)xceptBlock_in;
     ULONG_PTR params[1];
     params[0] = (ULONG_PTR)record;
-    if (record->flags & THROWN)  // in case of nested throws
+    std::__exceptionInternal* cls = (std::__exceptionInternal*)calloc(1, sizeof(std::__exceptionInternal));
+    cls->elems = arraySize;
+    cls->inprocess = true;
+    cls->thrownxt = xceptBlock;
+    cls->cons = cons;
+    cls->baseinstance = malloc(cls->thrownxt->size * cls->elems);
+    if (!cls->baseinstance)
         __call_terminate();
-    ___xcflags = record->flags = THROWN;
-    record->elems = arraySize;
-    record->baseinstance = malloc(xceptBlock->size * arraySize);
-    record->thrownxt = xceptBlock;
-    record->cons = cons;
-    if (!record->baseinstance)
-        __call_terminate();
-
-    instantiate(record, record->baseinstance, instance);
-    RaiseException(OUR_CPP_EXC_CODE, EXCEPTION_CONTINUABLE, 1, (DWORD*)&params[0]);
+  
+    instantiate(cls, (BYTE*)instance, (BYTE*)cls->baseinstance);
+    void * temp;
+    std::exception_ptr*p = new (&temp) std::exception_ptr(cls);
+    thrownExceptions.push_back(*p);
+    p->~p();	
+    RaiseException(OUR_CPP_EXC_CODE, EXCEPTION_CONTINUABLE, 1, (ULONG_PTR*)&params[0]);
 }
-
-void uninstantiate(XCTAB* record, void* instance)
+static void uninstantiate(std::__exceptionInternal* exc, bool base)
 {
-    if (record->thrownxt->destructor && !(record->thrownxt->flags & (XD_POINTER | XD_ARRAY | XD_REF)))
+    if (exc->obj && exc->thrownxt->destructor && !(exc->thrownxt->flags & (XD_POINTER | XD_ARRAY | XD_REF)))
     {
-        BYTE* ptr = (BYTE*)instance + record->thrownxt->size * (record->elems - 1);
-        for (int i = 0; i < record->elems; i++)
+        BYTE* baseptr = (BYTE *)(base ? exc->baseinstance : exc->obj);
+        if (baseptr)
         {
-            (*record->thrownxt->destructor)(ptr);
-            ptr -= record->thrownxt->size;
-        }
+            BYTE* ptr = baseptr + exc->thrownxt->size * (exc->elems - 1);
+            for (int i = 0; i < exc->elems; i++)
+            {
+                (exc->thrownxt->destructor)(ptr);
+                ptr -= exc->thrownxt->size;
+            }
+            free(baseptr);
+         }
     }
-    free(instance);
+    exc->obj = nullptr;
 }
 void _RTL_FUNC _RethrowException(void* r)
 {
+    if (thrownExceptions.size() == 0)
+        __call_terminate();
     XCTAB* record = (XCTAB*)r;
     ULONG_PTR params[1];
     __asm mov eax, [record];
     __asm mov [fs:0], eax;
-    if (!(record->flags & CAUGHT))
-        __call_terminate();
-    uninstantiate(record, record->throwninstance);
+    uninstantiate(__getxc(thrownExceptions.back()), false);
     params[0] = (ULONG_PTR)record;
-    RaiseException(OUR_CPP_EXC_CODE, EXCEPTION_CONTINUABLE, 1, (DWORD*)&params[0]);
+    RaiseException(OUR_CPP_EXC_CODE, EXCEPTION_CONTINUABLE, 1, (ULONG_PTR*)&params[0]);
 }
 void _RTL_FUNC _CatchCleanup(void* r)
 {
+    if (thrownExceptions.size() == 0)
+        __call_terminate();
     XCTAB* record = (XCTAB*)r;
     ULONG_PTR params[1];
     __asm mov eax, [record];
     __asm mov [fs:0], eax;
-    if (!(record->flags & CAUGHT))
+    thrownExceptions.pop_back();
+}
+
+[[noreturn]] void std::rethrow_exception(std::exception_ptr& arg)
+{
+    if (thrownExceptions.size() == 0)
         __call_terminate();
-    ___xcflags = record->flags = 0;
-    uninstantiate(record, record->throwninstance);
-    uninstantiate(record, record->baseinstance);
+    auto e1 = thrownExceptions.back();
+    thrownExceptions.pop_back();
+    thrownExceptions.push_back(arg);
+    XCTAB* record = currentFrame;
+    ULONG_PTR params[1];
+    __asm mov eax, [record];
+    __asm mov [fs:0], eax;
+    uninstantiate(__getxc(arg), false);
+    params[0] = (ULONG_PTR)currentFrame;
+    RaiseException(OUR_CPP_EXC_CODE, EXCEPTION_CONTINUABLE, 1, (ULONG_PTR*)&params[0]);
+}
+
+std::__exceptionInternal* _RTL_FUNC std::__make_exception_ptr(void* instance, int arraySize, void* cons, void* xceptBlock_in)
+{
+    std::__exceptionInternal* cls = (std::__exceptionInternal*)calloc(1, sizeof(std::__exceptionInternal));
+    cls->elems = arraySize;
+    cls->inprocess = false;
+    cls->thrownxt = (RTTI*) xceptBlock_in;
+    cls->cons = cons;
+    cls->baseinstance = malloc(cls->thrownxt->size * cls->elems);
+    if (!cls)
+        __call_terminate();
+    instantiate(cls, (BYTE*)instance, (BYTE*)cls->baseinstance);
+    return (void*) cls;
+}
+
+[[noreturn]] void std::nested_exception::rethrow_nested() const
+{
+    if (!captured || !thrownExceptions.size())
+        __call_terminate();
+    auto cls = __getxc(captured);
+    uninstantiate(cls, false);
+    thrownExceptions.pop_back();
+    thrownExceptions.push_back(captured);
+    ULONG_PTR params[1];
+    params[0] = (ULONG_PTR)currentFrame;
+    RaiseException(OUR_CPP_EXC_CODE, EXCEPTION_CONTINUABLE, 1, (ULONG_PTR*)&params[0]);
 }

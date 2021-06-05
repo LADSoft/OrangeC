@@ -1055,11 +1055,7 @@ bool doReinterpretCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* 
         {
             if ((*exp)->type == en_func)
             {
-                SYMLIST* hr = oldType->syms->table[0];
-                SYMBOL* sym = hr->p;
-                if (hr->next)
-                    errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, sym->name);
-                (*exp) = varNode(en_pc, sym);
+                LookupSingleAggregate(oldType, exp);
                 cast(*newType, exp);
                 return true;
             }

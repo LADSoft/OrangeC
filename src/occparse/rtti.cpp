@@ -39,9 +39,16 @@
 #include "ildata.h"
 #include "ccerr.h"
 #include "declcons.h"
+#include "cpplookup.h"
+#include "inline.h"
+
 namespace Parser
 {
 HASHTABLE* rttiSyms;
+
+static std::set<SYMBOL*> defaultRecursionMap;
+
+std::map<int, std::map<int, __xclist*>> rttiStatements;
 
 // in enum e_bt order
 static const char* typeNames[] = {"bit",
@@ -511,20 +518,8 @@ SYMBOL* RTTIDumpType(TYPE* tp)
     return xtSym;
 }
 #ifndef PARSER_ONLY
-typedef struct _xclist
-{
-    struct _xclist* next;
-    union
-    {
-        EXPRESSION* exp;
-        STATEMENT* stmt;
-    };
-    SYMBOL* xtSym;
-    char byStmt : 1;
-    char used : 1;
-} XCLIST;
-static void XCStmt(STATEMENT* block, XCLIST*** listPtr);
-static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
+static void XCStmt(STATEMENT* block, std::map<int, std::map<int, __xclist*>> & lst);
+static void XCExpression(EXPRESSION* node, std::map<int, std::map<int, __xclist*>> & lst)
 {
     FUNCTIONCALL* fp;
     if (node == 0)
@@ -601,7 +596,7 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
         case en_l_object:
         case en_literalclass:
         case en_l_wc:
-            XCExpression(node->left, listPtr);
+            XCExpression(node->left, lst);
             break;
         case en_uminus:
         case en_compl:
@@ -646,17 +641,17 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
         case en_savestack:
         case en__initobj:
         case en__sizeof:
-            XCExpression(node->left, listPtr);
+            XCExpression(node->left, lst);
             break;
         case en_assign:
         case en__initblk:
         case en__cpblk:
-            XCExpression(node->right, listPtr);
-            XCExpression(node->left, listPtr);
+            XCExpression(node->right, lst);
+            XCExpression(node->left, lst);
             break;
         case en_autoinc:
         case en_autodec:
-            XCExpression(node->left, listPtr);
+            XCExpression(node->left, lst);
             break;
         case en_add:
         case en_sub:
@@ -703,20 +698,17 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
         case en_void:
         case en_voidnz:
             /*		case en_array: */
-            XCExpression(node->right, listPtr);
+            XCExpression(node->right, lst);
         case en_mp_as_bool:
         case en_blockclear:
         case en_argnopush:
         case en_not_lvalue:
         case en_lvalue:
         case en_funcret:
-            XCExpression(node->left, listPtr);
+            XCExpression(node->left, lst);
             break;
         case en_thisref:
-            **listPtr = Allocate<XCLIST>();
-            (**listPtr)->exp = node;
-            (*listPtr) = &(**listPtr)->next;
-            XCExpression(node->left, listPtr);
+            XCExpression(node->left, lst);
             break;
         case en_atomic:
             break;
@@ -726,24 +718,24 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
                 INITLIST* args = fp->arguments;
                 while (args)
                 {
-                    XCExpression(args->exp, listPtr);
+                    XCExpression(args->exp, lst);
                     args = args->next;
                 }
                 if (fp->thisptr)
-                    XCExpression(fp->thisptr, listPtr);
+                    XCExpression(fp->thisptr, lst);
                 if (fp->returnEXP)
-                    XCExpression(fp->returnEXP, listPtr);
+                    XCExpression(fp->returnEXP, lst);
             }
             break;
         case en_stmt:
-            XCStmt(node->v.stmt, listPtr);
+            XCStmt(node->v.stmt, lst);
             break;
         default:
             diag("XCExpression");
             break;
     }
 }
-static void XCStmt(STATEMENT* block, XCLIST*** listPtr)
+static void XCStmt(STATEMENT* block, std::map<int, std::map<int, __xclist*>> & lst)
 {
     while (block != nullptr)
     {
@@ -755,33 +747,37 @@ static void XCStmt(STATEMENT* block, XCLIST*** listPtr)
             case st___catch:
             case st___finally:
             case st___fault:
-                **listPtr = Allocate<XCLIST>();
-                (**listPtr)->stmt = block;
-                (**listPtr)->byStmt = true;
-                (*listPtr) = &(**listPtr)->next;
+            {
+                __xclist* temp = Allocate<__xclist>();
+                temp->stmt = block;
+                temp->byStmt = true;
+                lst[block->tryStart][block->tryEnd] = temp;
+                XCStmt(block->lower, lst);
+                break;
+            }
             case st_try:
             case st___try:
-                XCStmt(block->lower, listPtr);
+                XCStmt(block->lower, lst);
                 break;
             case st_return:
             case st_expr:
             case st_declare:
-                XCExpression(block->select, listPtr);
+                XCExpression(block->select, lst);
                 break;
             case st_goto:
             case st_label:
                 break;
             case st_select:
             case st_notselect:
-                XCExpression(block->select, listPtr);
+                XCExpression(block->select, lst);
                 break;
             case st_switch:
-                XCExpression(block->select, listPtr);
-                XCStmt(block->lower, listPtr);
+                XCExpression(block->select, lst);
+                XCStmt(block->lower, lst);
                 break;
             case st_block:
-                XCStmt(block->lower, listPtr);
-                XCStmt(block->blockTail, listPtr);
+                XCStmt(block->lower, lst);
+                XCStmt(block->blockTail, lst);
                 break;
             case st_passthrough:
             case st_nop:
@@ -875,18 +871,21 @@ static bool allocatedXC(EXPRESSION* exp)
             return false;
     }
 }
-static Optimizer::SimpleSymbol* evalsp(EXPRESSION* exp)
+Optimizer::SimpleSymbol* evalsp(EXPRESSION* exp)
 {
     switch (exp->type)
     {
         Optimizer::SimpleSymbol* rv;
+        case en_l_p:
+            return evalsp(exp->left);
         case en_add:
             rv = evalsp(exp->left);
             if (rv)
                 return rv;
             return evalsp(exp->right);
         case en_auto:
-            return Optimizer::SymbolManager::Get(exp->v.sp);
+            rv = Optimizer::SymbolManager::Get(exp->v.sp);
+            return rv;
         default:
             return nullptr;
     }
@@ -895,6 +894,8 @@ static int evalofs(EXPRESSION* exp, SYMBOL* funcsp)
 {
     switch (exp->type)
     {
+        case en_l_p:
+            return evalofs(exp->left, funcsp);
         case en_add:
             return evalofs(exp->left, funcsp) + evalofs(exp->right, funcsp);
         case en_c_i:
@@ -927,9 +928,20 @@ void XTDumpTab(SYMBOL* funcsp)
 {
     if (funcsp->sb->xc && funcsp->sb->xc->xctab && Optimizer::cparams.prm_xcept)
     {
-        XCLIST *list = nullptr, **listPtr = &list, *p;
+        XCLIST* list = nullptr, * p, *last = nullptr;
         SYMBOL* throwSym;
-        XCStmt(funcsp->sb->inlineFunc.stmt, &listPtr);
+        XCStmt(funcsp->sb->inlineFunc.stmt, rttiStatements);
+        // this is done this way because the nested maps form a natural sorting mechanism...
+        for (auto& s : rttiStatements)
+            for (auto& e : s.second)
+            {
+                p = e.second;
+                if (last)
+                    last->next = p;
+                else 
+                    list = p;
+                last = p;
+            }
         p = list;
         while (p)
         {
@@ -981,7 +993,7 @@ void XTDumpTab(SYMBOL* funcsp)
             else
             {
                 if (p->xtSym && !p->exp->dest && allocatedXC(p->exp->v.t.thisptr))
-                {
+                {        
                     XCLIST* q = p;
                     while (q)
                     {
@@ -994,11 +1006,15 @@ void XTDumpTab(SYMBOL* funcsp)
                     }
                     if (q)
                         q->used = true;
-                    Optimizer::genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
-                    Optimizer::genref(Optimizer::SymbolManager::Get(p->xtSym), 0);
-                    Optimizer::gen_autoref(evalsp(p->exp->v.t.thisptr), evalofs(p->exp->v.t.thisptr, funcsp));
-                    Optimizer::genint(p->exp->v.t.thisptr->xcInit);
-                    Optimizer::genint(p->exp->v.t.thisptr->xcDest);
+                    auto thsym = evalsp(p->exp->v.t.thisptr);
+                    if (thsym && thsym->genreffed)
+                    {
+                        Optimizer::genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
+                        Optimizer::genref(Optimizer::SymbolManager::Get(p->xtSym), 0);
+                        Optimizer::gen_autoref(thsym, evalofs(p->exp->v.t.thisptr, funcsp));
+                        Optimizer::genint(p->exp->v.t.thisptr->xcInit);
+                        Optimizer::genint(p->exp->v.t.thisptr->xcDest);
+                    }
                 }
             }
             p = p->next;
@@ -1010,11 +1026,15 @@ void XTDumpTab(SYMBOL* funcsp)
             if (!p->byStmt && p->xtSym && p->exp->dest && !p->used)
             {
                 p->used = true;
-                Optimizer::genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
-                Optimizer::genref(Optimizer::SymbolManager::Get(p->xtSym), 0);
-                Optimizer::gen_autoref(evalsp(p->exp->v.t.thisptr), evalofs(p->exp->v.t.thisptr, funcsp));
-                Optimizer::genint(0);
-                Optimizer::genint(p->exp->v.t.thisptr->xcDest);
+                auto thsym = evalsp(p->exp->v.t.thisptr);
+                if (thsym && thsym->genreffed)
+                {
+                    Optimizer::genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
+                    Optimizer::genref(Optimizer::SymbolManager::Get(p->xtSym), 0);
+                    Optimizer::gen_autoref(thsym, evalofs(p->exp->v.t.thisptr, funcsp));
+                    Optimizer::genint(0);
+                    Optimizer::genint(p->exp->v.t.thisptr->xcDest);
+                }
             }
             p = p->next;
         }

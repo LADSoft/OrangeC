@@ -485,7 +485,35 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                     }
                     return lex;
                 case kw_int:
-                    *exp = sym->tp->templateParam->p->byNonType.val;
+                    if (sym->tp->templateParam->p->packed)
+                    {
+                        if (packIndex >= 0)
+                        {
+                            TEMPLATEPARAMLIST* p = sym->tp->templateParam->p->byPack.pack;
+                            int n = packIndex;
+                            while (n && p)
+                            {
+                                p = p->next; n--;
+                            }
+                            if (p)
+                            {
+                                *exp = p->p->byNonType.val;
+                            }
+                            else
+                            {
+                                *exp = intNode(en_c_i, 0);
+                            }
+                        }
+                        else
+                        {
+                            *exp = exprNode(en_templateparam, nullptr, nullptr);
+                            (*exp)->v.sp = sym;
+                        }
+                    }
+                    else
+                    {
+                        *exp = sym->tp->templateParam->p->byNonType.val;
+                    }
                     *tp = sym->tp->templateParam->p->byNonType.tp;
                     if (!*exp)
                         *exp = intNode(en_c_i, 0);
@@ -1660,7 +1688,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
     }
     return lex;
 }
-static TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr = false)
+TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr)
 {
     if (tp->type == bt_aggregate)
     {
@@ -1680,10 +1708,34 @@ static TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr = 
         }
         else
         {
-            *exp = varNode(en_pc, hr->p);
+            SYMBOL* s = hr->p;
+            if ((*exp)->type == en_func && (*exp)->v.func->templateParams)
+            {
+                s = detemplate(s, (*exp)->v.func, nullptr);
+                if (!s)
+                {
+                    s = hr->p;
+                }
+                else
+                {
+                    if (s->sb->templateLevel && !templateNestingCount && s->templateParams)
+                    {
+                        s = TemplateFunctionInstantiate(s, false, false);
+                    }
+                }
+            }
+            *exp = varNode(en_pc, s);
         }
-        if (hr->next)
-            errorsym(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, tp->sp);
+        hr = hr->next;
+        while (hr)
+        {
+            if (!hr->p->sb->templateLevel || !hr->p->sb->mainsym)
+            {
+                errorsym(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, tp->sp);
+                break;
+            }
+            hr = hr->next;
+        }
     }
     return tp;
 }
@@ -2307,7 +2359,10 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
 }
 LEXLIST* getInitList(LEXLIST* lex, SYMBOL* funcsp, INITLIST** owner)
 {
-    return getInitInternal(lex, funcsp, owner, end, false, true, true, 0);
+    argument_nesting++;
+    auto rv = getInitInternal(lex, funcsp, owner, end, false, true, true, 0);
+    argument_nesting--;
+    return rv;
 }
 LEXLIST* getArgs(LEXLIST* lex, SYMBOL* funcsp, FUNCTIONCALL* funcparams, enum e_kw finish, bool allowPack, int flags)
 {
@@ -7910,7 +7965,7 @@ LEXLIST* expression_throw(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** 
             if (isstructured(tp1))
             {
                 cons = getCopyCons(basetype(tp1)->sp, false);
-                if (!cons->sb->inlineFunc.stmt)
+                if (cons && !cons->sb->inlineFunc.stmt)
                 {
                     if (cons->sb->defaulted)
                         createConstructor(basetype(tp1)->sp, cons);

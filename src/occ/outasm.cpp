@@ -1215,14 +1215,14 @@ void oa_exitseg(enum Optimizer::e_sg seg)
             else if (seg == Optimizer::tlssuseg)
             {
                 ColumnPosition(8);
-                AsmOutput("tlsstartup");
+                AsmOutput("tstartup");
                 ColumnPosition(16);
                 AsmOutput("ENDS\n");
             }
             else if (seg == Optimizer::tlsrdseg)
             {
                 ColumnPosition(8);
-                AsmOutput("tlsrundown");
+                AsmOutput("trundown");
                 ColumnPosition(16);
                 AsmOutput("ENDS\n");
             }
@@ -1341,7 +1341,7 @@ void oa_enterseg(enum Optimizer::e_sg seg)
             if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
                 Optimizer::cparams.prm_assembler == pa_fasm)
                 if (!Optimizer::cparams.prm_nodos)
-                    AsmOutput("section tlsstartup\n");
+                    AsmOutput("section tstartup\n");
                 else
                 {
                     AsmOutput("section .data\n");
@@ -1360,7 +1360,7 @@ void oa_enterseg(enum Optimizer::e_sg seg)
             if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
                 Optimizer::cparams.prm_assembler == pa_fasm)
                 if (!Optimizer::cparams.prm_nodos)
-                    AsmOutput("section tlsrundown\n");
+                    AsmOutput("section trundown\n");
                 else
                 {
                     AsmOutput("section .data\n");
@@ -1709,6 +1709,10 @@ void oa_header(const char* filename, const char* compiler_version)
             AsmOutput("section cstartup align=2 use32\n");
             ColumnPosition(8);
             AsmOutput("section crundown align=2 use32\n");
+            ColumnPosition(8);
+            AsmOutput("section tstartup align=2 use32\n");
+            ColumnPosition(8);
+            AsmOutput("section trundown align=2 use32\n");
         }
         else
         {

@@ -46,7 +46,6 @@
 #include <locale.h>
 #include "libp.h"
 
-#define thread_local static
 extern "C" void __global_unwind(void*, void*);
 extern "C" void __call_terminate();
 extern "C" void _RTL_FUNC __call_unexpected(std::exception_ptr *e);

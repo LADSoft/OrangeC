@@ -54,6 +54,7 @@
 #include "Property.h"
 #include "browse.h"
 #include "ildata.h"
+#include "optmodules.h"
 
 namespace Parser
 {

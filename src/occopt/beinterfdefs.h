@@ -44,6 +44,8 @@ typedef struct
 {
     int prm_maxerr;     /* number of errors at which the compiler stops*/
     int prm_stackalign; /* stack alignment */
+    unsigned optimizer_modules; // optimizer module selection
+    unsigned verbosity; // verbosity level
     bool prm_optimize_for_speed;
     bool prm_optimize_for_size;
     bool prm_optimize_float_access;

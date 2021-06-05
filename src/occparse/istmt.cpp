@@ -56,6 +56,7 @@
 #include "help.h"
 #include "beinterf.h"
 #include "inasm.h"
+#include "optmodules.h"
 
 Optimizer::SimpleSymbol* currentFunction;
 

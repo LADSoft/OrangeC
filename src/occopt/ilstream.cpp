@@ -568,7 +568,6 @@ static void StreamXParams()
         StreamString(intermediateName);
         StreamString(backendName);
         StreamIndex(showBanner);
-        StreamIndex(verbosity);
         StreamIndex(assembling);
         StreamIndex(dataAlign);
         StreamIndex(bssAlign);

@@ -35,6 +35,7 @@
 #include "../occparse/winmode.h"
 #include "config.h"
 #include "irc.h"
+#include "optmodules.h"
 
 extern int usingEsp;
 namespace Optimizer
@@ -52,16 +53,17 @@ static char usage_text[] =
     "/1        - C1x mode                  /8        - c89 mode\n"
     "/9        - C99 mode                  /#        - compile then assemble then link\n"
     "/axxx     - set assembler extension   /c        - compile only\n"
-    "+e        - dump errors to file       +i        - dump preprocessed file\n"
-    "/lxxx     - include library           /oname    - specify output file name\n"
-    "/pxxx     - pass command to tool      /snn      - align stack\n"
-    "/t        - display timing info       +v or /g  - enable debug symbols\n"
-    "/wxxx     - warning control           /x-       - don't include RTTI info\n"
-    "/y[...]   - verbosity                 /z        - set SYSTEM include path\n"
+    "+e        - dump errors to file       /f{flags} - set flags\n"
+    "+i        - dump preprocessed file    /lxxx     - include library\n"
+    "/oname    - specify output file name  /pxxx     - pass command to tool\n"
+    "/snn      - align stack               /t        - display timing info\n"
+    "+v or /g  - enable debug symbols      /wxxx     - warning control\n"
+    "/x-       - don't include RTTI info   /y[...]   - verbosity\n"
+    "/z        - set SYSTEM include path\n"
     "+A        - disable extensions        /Dxxx     - define something\n"
     "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
     "/Lxxx     - set library path          /M        - generate make stubs\n"
-    "/O-       - disable optimizations     /P        - set pipe for retrieving input files\n"
+    "/Ox        - optimization control     /P        - set pipe for retrieving input files\n"
     "+Q        - quiet mode                /Sasm;dbg - make ASM source file\n"
     "/T        - translate trigraphs       /Uxxx     - undefine something\n"
     "/V,--version - show version and date  /Wxx      - set executable type\n"
@@ -90,6 +92,10 @@ static char usage_text[] =
     "    d - dll                             c = crtdll.dll\n"
     "    w - windowing                       m = msvcrtdll.dll\n"
     "\n"
+    "\nOptimization control:\n"
+    OPTIMIZATION_DESCRIPTION
+    "\nFlags:\n"
+    OPTMODULES_DESCRIPTION
     " --output-def-file filename      output a .def file instead of a .lib file for DLLs\n"
     " --export-all-symbols            reserved\n"
     " -link                           reserved\n"

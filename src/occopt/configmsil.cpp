@@ -35,6 +35,7 @@
 #include "../occparse/winmode.h"
 #include "config.h"
 #include "ildata.h"
+#include "optmodules.h"
 
 namespace Optimizer
 {

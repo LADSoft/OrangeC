@@ -79,7 +79,6 @@ Optimizer::SimpleExpression* fltexp;
 int exitBlock;
 COMPILER_PARAMS cparams;
 int showBanner = true;
-int verbosity;
 int nextLabel;
 bool assembling;
 int fastcallAlias;

@@ -301,8 +301,10 @@ extern "C" LONG __cppexceptionhandle(PEXCEPTION_RECORD p, void* record, PCONTEXT
         // abort if can't throw
         if (throwRec->flags & XD_DYNAMICXC)
         {
-            void*hold;
-            std::exception_ptr* e = new(&hold) std::exception_ptr;
+            // not using auto construction so that the exception block for this function
+            // won't have a reference to this is a destructor
+            char hold[sizeof(std::exception_ptr)];
+            std::exception_ptr* e = new(hold) std::exception_ptr;
             __call_unexpected(e);
             if (canThrow((XCTAB*)record, p, context) || __getxc(*e)->thrownxt == typeid(std::bad_exception).tpp)
             {
@@ -337,8 +339,10 @@ void _RTL_FUNC _ThrowException(void* irecord, void* instance, int arraySize, voi
         __call_terminate();
   
     instantiate(cls, (BYTE*)instance, (BYTE*)cls->baseinstance);
-    void * temp;
-    std::exception_ptr*p = new (&temp) std::exception_ptr(cls);
+    // not using auto construction so that the exception block for this function
+    // won't have a reference to this is a destructor
+    char hold[sizeof(std::exception_ptr)];
+    std::exception_ptr*p = new (hold) std::exception_ptr(cls);
     thrownExceptions.push_back(*p);
     p->~p();	
     RaiseException(OUR_CPP_EXC_CODE, EXCEPTION_CONTINUABLE, 1, (ULONG_PTR*)&params[0]);

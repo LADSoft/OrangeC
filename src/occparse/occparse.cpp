@@ -124,6 +124,8 @@ static int stoponerr = 0;
 Optimizer::COMPILER_PARAMS cparams_default = {
     25,    /* int  prm_maxerr;*/
     0,     /* prm_stackalign */
+    ~0,    /* optimizer modules */
+    0,     /* verbosity */
     true,  /* optimize_for_speed */
     false, /* optimize_for_size */
     false, /* optimize_for_float_access */

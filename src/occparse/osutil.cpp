@@ -47,6 +47,7 @@
 #include "OptUtils.h"
 #include "configmsil.h"
 #include "initbackend.h"
+#include "optmodules.h"
 
 namespace Optimizer
 {
@@ -111,6 +112,7 @@ CmdSwitchCombineString prm_CPPsysinclude(switchParser, 'Z', ';');
 CmdSwitchCombineString prm_libpath(switchParser, 'L', ';');
 CmdSwitchString prm_pipe(switchParser, 'P', ';');
 CmdSwitchCombineString prm_output_def_file(switchParser, 0, 0, "output-def");
+CmdSwitchCombineString prm_flags(switchParser, 'f', ';');
 CmdSwitchBool prm_export_all(switchParser, 0, false, "export-all-symbols");
 
 CmdSwitchBool prm_msil_noextensions(switchParser, 'd');
@@ -179,50 +181,6 @@ static const char* parsepath(const char* path, char* buffer)
     return (0);
 }
 
-static std::vector<std::string> split(std::string strToSplit, char delimeter = ';')
-{
-    std::stringstream ss(strToSplit);
-    std::string item;
-    std::vector<std::string> splittedStrings;
-    while (std::getline(ss, item, delimeter))
-    {
-        splittedStrings.push_back(item);
-    }
-    return splittedStrings;
-}
-void optimize_setup(char select, const char* string)
-{
-    (void)select;
-    if (!*string || (*string == '+' && string[1] == '\0'))
-    {
-        Optimizer::cparams.prm_optimize_for_speed = true;
-        Optimizer::cparams.prm_optimize_for_size = false;
-        Optimizer::cparams.prm_debug = false;
-    }
-    else if (*string == '-' && string[1] == '\0')
-        Optimizer::cparams.prm_optimize_for_speed = Optimizer::cparams.prm_optimize_for_size =
-            Optimizer::cparams.prm_optimize_float_access = false;
-    else
-    {
-        Optimizer::cparams.prm_debug = false;
-        if (*string == '0')
-        {
-            Optimizer::cparams.prm_optimize_for_speed = Optimizer::cparams.prm_optimize_for_size = 0;
-        }
-        else if (*string == 'f')
-            Optimizer::cparams.prm_optimize_float_access = true;
-        else if (*string == '2')
-        {
-            Optimizer::cparams.prm_optimize_for_speed = true;
-            Optimizer::cparams.prm_optimize_for_size = false;
-        }
-        else if (*string == '1')
-        {
-            Optimizer::cparams.prm_optimize_for_speed = false;
-            Optimizer::cparams.prm_optimize_for_size = true;
-        }
-    }
-}
 /*-------------------------------------------------------------------------*/
 static int parseCodegen(bool v, const char* string)
 {
@@ -362,12 +320,14 @@ static bool validatenamespaceAndClass(const char* str)
     }
     return true;
 }
-void ParamTransfer()
+void ParamTransfer(char* name)
 /*
  * activation routine (callback) for boolean command line arguments
  */
 {
-
+    Optimizer::cparams.optimizer_modules = ~0;
+    if (Optimizer::ParseOptimizerParams(prm_flags.GetValue()) != "")
+        Utils::usage(name, getUsageText());
     // booleans
     if (prm_c89.GetExists())
         Optimizer::cparams.prm_c99 = Optimizer::cparams.prm_c1x = !prm_c89.GetValue();
@@ -424,14 +384,14 @@ void ParamTransfer()
     // non-bools
     if (prm_verbose.GetExists())
     {
-        Optimizer::verbosity = 1 + prm_verbose.GetValue().size();
+        Optimizer::cparams.verbosity = 1 + prm_verbose.GetValue().size();
     }
-    std::vector<std::string> checks = split(prm_optimize.GetValue());
+    std::vector<std::string> checks = Utils::split(prm_optimize.GetValue());
     for (auto&& v : checks)
     {
         if (v.size() >= 1)
         {
-            optimize_setup('O', v.c_str());
+            Optimizer::optimize_setup('O', v.c_str());
         }
     }
     if (prm_assemble.GetExists())
@@ -468,27 +428,27 @@ void ParamTransfer()
             Optimizer::cparams.prm_maxerr = n;
         DisableTrivialWarnings();
     }
-    checks = split(prm_warning.GetValue());
+    checks = Utils::split(prm_warning.GetValue());
     for (auto&& v : checks)
     {
         warning_setup('w', v.c_str());
     }
-    checks = split(prm_tool.GetValue());
+    checks = Utils::split(prm_tool.GetValue());
     for (auto&& v : checks)
     {
         Optimizer::toolArgs.push_back(v);
     }
-    checks = split(prm_define.GetValue());
+    checks = Utils::split(prm_define.GetValue());
     for (auto&& v : checks)
     {
         defines.push_back(DefValue{v.c_str(), 0});
     }
-    checks = split(prm_undefine.GetValue());
+    checks = Utils::split(prm_undefine.GetValue());
     for (auto&& v : checks)
     {
         defines.push_back(DefValue{v.c_str(), 1});
     }
-    checks = split(prm_library.GetValue());
+    checks = Utils::split(prm_library.GetValue());
     for (auto&& v : checks)
     {
         char buf[260];
@@ -503,7 +463,7 @@ void ParamTransfer()
         {
             case ARCHITECTURE_MSIL:
             {
-                auto v = split(prm_libpath.GetValue());
+                auto v = Utils::split(prm_libpath.GetValue());
                 for (auto&& s : v)
                 {
                     Optimizer::prm_Using.push_back(s);
@@ -712,7 +672,7 @@ int insert_noncompile_file(const char* buf)
     const char* ext = Optimizer::chosenAssembler->beext;
     if (ext)
     {
-        auto splt = split(ext);
+        auto splt = Utils::split(ext);
         for (auto&& str : splt)
         {
             if (Utils::HasExt(buf, str.c_str()))
@@ -982,7 +942,7 @@ void ccinit(int argc, char* argv[])
     }
     if (prm_architecture.GetExists())
     {
-        auto splt = split(prm_architecture.GetValue(), ';');
+        auto splt = Utils::split(prm_architecture.GetValue(), ';');
         static std::map<std::string, int> architectures = {
             {"x86", ARCHITECTURE_X86},
             {"msil", ARCHITECTURE_MSIL},
@@ -1045,7 +1005,7 @@ void ccinit(int argc, char* argv[])
         }
     }
 
-    ParamTransfer();
+    ParamTransfer(argv[0]);
     /* tack the environment includes in */
     addinclude();
 

@@ -568,7 +568,6 @@ static void UnstreamXParams()
         UnstreamString(intermediateName);
         UnstreamString(backendName);
         showBanner = UnstreamIndex();
-        verbosity = UnstreamIndex();
         assembling = UnstreamIndex();
         dataAlign = UnstreamIndex();
         bssAlign = UnstreamIndex();

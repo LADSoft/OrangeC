@@ -123,6 +123,12 @@
     <ClCompile Include="ipinning.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="optmodules.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="optmodulerun.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="iopt.h">
@@ -237,6 +243,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="browsedefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="optmodules.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

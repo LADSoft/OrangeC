@@ -45,25 +45,6 @@ namespace Parser
 #define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_'))
 #define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_'))
 
-#define basetype(x) ((x) && (x)->rootType ? (x)->rootType : (x))
-
-#define __isref(x) ((x)->type == bt_lref || (x)->type == bt_rref)
-#define isref(x)             \
-    (__isref(basetype(x)) || \
-     (x)->type == bt_templateparam && (x)->templateParam->p->type == kw_int && __isref((x)->templateParam->p->byNonType.tp))
-
-#define __ispointer(x) ((x)->type == bt_pointer || (x)->type == bt_seg)
-#define ispointer(x)             \
-    (__ispointer(basetype(x)) || \
-     (x)->type == bt_templateparam && (x)->templateParam->p->type == kw_int && __ispointer((x)->templateParam->p->byNonType.tp))
-
-#define __isfunction(x) ((x)->type == bt_func || (x)->type == bt_ifunc)
-#define isfunction(x) (__isfunction(basetype(x)))
-
-#define isfuncptr(x) (ispointer(x) && basetype(x)->btp && isfunction(basetype(x)->btp))
-#define __isstructured(x) ((x)->type == bt_class || (x)->type == bt_struct || (x)->type == bt_union)
-#define isstructured(x) (__isstructured(basetype(x)))
-
 /* keywords and symbols */
 // clang-format off
     enum e_kw
@@ -1141,6 +1122,30 @@ typedef struct _atomicData
     EXPRESSION* third;
     TYPE* tp;
 } ATOMICDATA;
+
+constexpr inline TYPE* basetype(TYPE* x) { return ((x) && (x)->rootType ? (x)->rootType : (x)); }
+
+constexpr inline bool __isref(TYPE* x) { return (x)->type == bt_lref || (x)->type == bt_rref; }
+constexpr inline bool isref(TYPE* x)
+{
+    return (__isref(basetype(x)) ||
+        (x)->type == bt_templateparam && (x)->templateParam->p->type == kw_int && __isref((x)->templateParam->p->byNonType.tp));
+}
+constexpr inline bool __ispointer(TYPE* x) { return ((x)->type == bt_pointer || (x)->type == bt_seg); }
+constexpr inline bool ispointer(TYPE* x)
+{
+    return (__ispointer(basetype(x)) ||
+        (x)->type == bt_templateparam && (x)->templateParam->p->type == kw_int && __ispointer((x)->templateParam->p->byNonType.tp));
+}
+
+constexpr inline bool __isfunction(TYPE* x) { return ((x)->type == bt_func || (x)->type == bt_ifunc); }
+constexpr inline bool isfunction(TYPE* x) { return (__isfunction(basetype(x))); }
+
+constexpr inline bool isfuncptr(TYPE* x) { return (ispointer(x) && basetype(x)->btp && isfunction(basetype(x)->btp)); }
+constexpr inline bool __isstructured(TYPE* x) { return ((x)->type == bt_class || (x)->type == bt_struct || (x)->type == bt_union); }
+constexpr inline bool isstructured(TYPE* x) { return (__isstructured(basetype(x))); }
+
+
 }  // namespace Parser
 
 #define SET_GLOBAL(val, index) \
@@ -1151,3 +1156,4 @@ typedef struct _atomicData
 void SetGlobalFlag(bool flag, bool& old);
 void ReleaseGlobalFlag(bool old);
 bool GetGlobalFlag();
+

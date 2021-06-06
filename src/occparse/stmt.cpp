@@ -59,6 +59,7 @@
 #include "types.h"
 #include "browse.h"
 #include "stmt.h"
+#include "optmodules.h"
 
 
 #define MAX_INLINE_EXPRESSIONS 3

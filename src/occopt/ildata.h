@@ -216,7 +216,6 @@ extern Optimizer::SimpleExpression* fltexp;
 extern int exitBlock;
 extern COMPILER_PARAMS cparams;
 extern int showBanner;
-extern int verbosity;
 extern int nextLabel;
 extern bool assembling;
 extern int fastcallAlias;

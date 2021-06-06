@@ -50,6 +50,8 @@
     <ClCompile Include="istren.cpp" />
     <ClCompile Include="memory.cpp" />
     <ClCompile Include="optmain.cpp" />
+    <ClCompile Include="optmodulerun.cpp" />
+    <ClCompile Include="optmodules.cpp" />
     <ClCompile Include="OptUtils.cpp" />
     <ClCompile Include="output.cpp" />
     <ClCompile Include="rewritemsil.cpp" />
@@ -90,6 +92,7 @@
     <ClInclude Include="istren.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="optmain.h" />
+    <ClInclude Include="optmodules.h" />
     <ClInclude Include="OptUtils.h" />
     <ClInclude Include="output.h" />
     <ClInclude Include="rewritemsil.h" />

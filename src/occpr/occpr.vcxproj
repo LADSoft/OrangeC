@@ -25,6 +25,7 @@
     <ClCompile Include="..\occopt\ifloatconv.cpp" />
     <ClCompile Include="..\occopt\ildata.cpp" />
     <ClCompile Include="..\occopt\memory.cpp" />
+    <ClCompile Include="..\occopt\optmodules.cpp" />
     <ClCompile Include="..\occopt\OptUtils.cpp" />
     <ClCompile Include="..\occopt\output.cpp" />
     <ClCompile Include="..\occopt\symfuncs.cpp" />
@@ -85,6 +86,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\occopt\ildata.h" />
+    <ClInclude Include="..\occopt\optmodules.h" />
     <ClInclude Include="..\occparse\c.h" />
     <ClInclude Include="..\occparse\compiler.h" />
     <ClInclude Include="..\occparse\osutil.h" />

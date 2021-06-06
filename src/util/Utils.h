@@ -28,6 +28,7 @@
 #include <string>
 #include <stdlib.h>
 #include <string.h>
+#include <vector>
 
 #ifdef _WIN32
 #    include "io.h"
@@ -119,6 +120,7 @@ class Utils
     static void StripExt(char* buffer);
     static bool HasExt(const char* buffer, const char* ext);
     static bool FileExists(const char* buffer);
+    static std::vector<std::string> split(std::string strToSplit, char delimeter = ';');
 
     static bool NamedPipe(int* fds, const std::string& name);
     static bool PipeWrite(int fileno, const std::string& data);

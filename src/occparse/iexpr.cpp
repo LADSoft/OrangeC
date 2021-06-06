@@ -33,6 +33,7 @@
 #include "assert.h"
 #include "ppPragma.h"
 #include "rtti.h"
+#include "optmodules.h"
 
 /*
  *      this module contains all of the code generation routines

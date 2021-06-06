@@ -70,6 +70,11 @@ typedef unsigned size_t;
 typedef int ssize_t;
 #endif
 
+#ifndef __ERRNO_T_DEFINED
+#define __ERRNO_T_DEFINED
+typedef int errno_t;
+#endif
+
 #ifndef _WCHAR_T_DEFINED
 #    define _WCHAR_T_DEFINED
 #    ifndef __cplusplus

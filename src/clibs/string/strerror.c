@@ -38,22 +38,59 @@
 #include <errno.h>
 #include <string.h>
 
-static char* thunk(const char* string, int error)
+static errno_t thunk(char* buffer, size_t size, const char* string, errno_t error)
 {
-    static char strbuf[256];
+    if (size == 0)
+         return ENOSPC;
     char* str;
     if (error >= _sys_nerr)
         str = "Unknown error";
     else
         str = _sys_errlist[error];
-    strbuf[0] = 0;
+    int needed = strlen(str) + (string ? strlen(string) + 2 : 0);
+    int hasSpace = needed < size;
     if (string && *string)
     {
-        strcat(strbuf, string);
-        strcat(strbuf, ": ");
+        strncpy(buffer, string, size);
+        buffer[size-1] = 0;
+        if (size - strlen(buffer) > 2)
+        {
+           strcat(buffer, ": ");
+           char *p = buffer + strlen(buffer);
+           if ((int)(size - strlen(buffer) -1) > 0)
+           {
+               strncpy(p, str, size-strlen(buffer)-1);
+               size -= strlen(p);
+           }
+        }
     }
-    strcat(strbuf, str);
-    return strbuf;
+    else
+    {
+        strncpy(buffer, str, size);
+        buffer[size-1] = 0;
+    }
+    if (!hasSpace && strlen(buffer) > 3)
+       strcpy(buffer + strlen(buffer) -3, "...");
+
+    return hasSpace ? 0 : ENOSPC;
 }
-char* _RTL_FUNC strerror(int error) { return thunk(0, error); }
-char* _RTL_FUNC _strerror(const char* str) { return thunk(str, errno); }
+char* _RTL_FUNC strerror(int error) 
+{ 
+        static char buf[256];
+	thunk(buf, sizeof(buf),0, error); 
+        return buf;
+}
+char* _RTL_FUNC _strerror(const char* str) 
+{ 
+        static char buf[1024];
+	thunk(buf, sizeof(buf), str, errno); 
+        return buf;
+}
+errno_t _RTL_FUNC strerror_s(char *buf, size_t size, errno_t error)
+{
+	return thunk(buf, size, 0, (int)error);
+}
+errno_t _RTL_FUNC _strerror_s(char *buf, size_t size, char *str)
+{
+	return thunk(buf, size, str, errno);
+}

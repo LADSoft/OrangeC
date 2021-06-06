@@ -253,6 +253,8 @@ extern "C"
     int _RTL_FUNC _IMPORT asprintf(char** ZSTR restrict __buffer, const char* ZSTR restrict __format, ...);
     int _RTL_FUNC _IMPORT sscanf(const char* ZSTR restrict __buffer, const char* ZSTR restrict __format, ...);
     char* ZSTR _RTL_FUNC _IMPORT strerror(int __errnum);
+    errno_t _RTL_FUNC _IMPORT strerror_s(char* ZSTR buf, size_t size, errno_t __errnum);
+    errno_t _RTL_FUNC _IMPORT _strerror_s(char* ZSTR buf, size_t size, const char* ZSTR msg);
     char* ZSTR _RTL_FUNC _IMPORT tempnam(char* ZSTR __dir, char* ZSTR __prefix);
     char* ZSTR _RTL_FUNC _IMPORT _tempnam(char* ZSTR __dir, char* ZSTR __prefix);
     FILE* _RTL_FUNC _IMPORT tmpfile(void);

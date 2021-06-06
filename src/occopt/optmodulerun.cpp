@@ -44,8 +44,8 @@ struct OptimizerModule
 {
     void (*func)();
     const char* friendlyName;
-    unsigned optMask;
-    unsigned denyMask;
+    int optMask;
+    int denyMask;
     bool needsSpeed;
     bool needsSize;
 };

@@ -1382,6 +1382,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         ((!tp1 && !args) || (tp1 && !isstructured(tp1) && basetype(tp1)->type != bt_enum)))
         return false;
 
+    *tp = PerformDeferredInitialization (*tp, funcsp);
     // first find some occurrance either in the locals or in the extant global namespace
     // but only if it is binary or unary...
     switch (cls)

@@ -2030,7 +2030,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                 {
                     if (!decl)
                         toolong = true;
-                    else if (!list)
+                    else if (!list && !hr->p->sb->init && !hr->p->sb->deferredCompile)
                         tooshort = true;
                     else
                     {

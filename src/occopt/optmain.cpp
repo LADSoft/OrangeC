@@ -77,7 +77,7 @@ const char* usageText =
     "[options] inputfile\n"
     "\n"
     "-f{flag}     set or clear a flag\n"
-    "-ofile       set output file (in file mode)\n"
+    "-o{file}     set output file (in file mode)\n"
     "--single     don't open internal file list\n"
     "-t           display timing info\n"
     "-y[...]      set verbosity\n"

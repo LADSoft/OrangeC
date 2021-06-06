@@ -1,0 +1,2 @@
+all:
+	$(MAKE) -CWIN32

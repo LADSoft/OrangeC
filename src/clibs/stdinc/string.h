@@ -82,6 +82,9 @@ extern "C"
     size_t _RTL_FUNC _IMPORT strcspn(const char* ZSTR __s1, const char* ZSTR __s2);
     char* _RTL_FUNC _IMPORT strdup(const char* ZSTR __src);
     char* _RTL_FUNC _IMPORT strerror(int __errnum);
+    char* _RTL_FUNC _IMPORT _strerror(const char* ZSTR msg);
+    errno_t _RTL_FUNC _IMPORT strerror_s(char* ZSTR buf, size_t size, errno_t __errnum);
+    errno_t _RTL_FUNC _IMPORT _strerror_s(char* ZSTR buf, size_t size, const char* ZSTR msg);
     size_t _RTL_INTRINS _IMPORT strlen(const char* ZSTR __s);
     char* _RTL_INTRINS _IMPORT strncat(char* ZSTR restrict __dest, const char* ZSTR restrict __src, size_t __maxlen);
     int _RTL_INTRINS _IMPORT strncmp(const char* ZSTR __s1, const char* ZSTR __s2, size_t __maxlen);
@@ -127,6 +130,7 @@ extern "C"
     int _RTL_FUNC _IMPORT _strncmpi(const char* ZSTR, const char* ZSTR, size_t);
     char* _RTL_FUNC _IMPORT _strlwr(char* ZSTR);
     char* _RTL_FUNC _IMPORT _strupr(char* ZSTR);
+
 #endif
 #if defined(__USELOCALES__)
 #    define strupr _lstrupr

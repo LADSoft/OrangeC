@@ -1378,8 +1378,14 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
     STRUCTSYM l;
     if (!*tp)
         return false;
-    if (!isstructured(*tp) && basetype(*tp)->type != bt_enum &&
-        ((!tp1 && !args) || (tp1 && !isstructured(tp1) && basetype(tp1)->type != bt_enum)))
+    TYPE*tpClean = *tp;
+    if (isref(tpClean))
+       tpClean = basetype(tpClean)->btp;
+    TYPE*tp1Clean = tp1;
+    if (tp1Clean && isref(tp1Clean))
+       tp1Clean = basetype(tp1Clean)->btp;
+    if (!isstructured(tpClean) && basetype(tpClean)->type != bt_enum &&
+        ((!tp1Clean && !args) || (tp1Clean && !isstructured(tp1Clean) && basetype(tp1Clean)->type != bt_enum)))
         return false;
 
     *tp = PerformDeferredInitialization (*tp, funcsp);
@@ -1580,6 +1586,38 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
     {
         if (!isExpressionAccessible(nullptr, s3, funcsp, funcparams->thisptr, false))
             errorsym(ERR_CANNOT_ACCESS, s3);
+        // if both parameters are non-struct, we do a check that enums map to enums
+        // if they don't we want to select the builtin function
+        // which we do by returning false...
+        switch (cls)
+        {
+        case ovcl_unary_any:
+        case ovcl_unary_prefix:
+        case ovcl_unary_numeric:
+        case ovcl_unary_int:
+        case ovcl_unary_numericptr:
+        case ovcl_unary_postfix:
+        case ovcl_binary_any:
+        case ovcl_binary_numeric:
+        case ovcl_binary_int:
+        case ovcl_binary_numericptr:
+            if (!isstructured(tpClean) && (!tp1Clean || !isstructured(tp1Clean)))
+            {
+                SYMLIST* hr = basetype(s3->tp)->syms->table[0];
+                if (hr->p->sb->thisPtr)
+                    hr = hr->next;
+                TYPE* arg1 = hr->p->tp;
+                TYPE* arg2 = tp1 && hr->next ? hr->next->p->tp : nullptr;
+                if (arg1 && isref(arg1))
+                    arg1 = basetype(arg1)->btp;
+                if (arg2 && isref(arg2))
+                    arg2 = basetype(arg2)->btp;
+                if (((basetype(tpClean)->type == bt_enum) != (basetype(arg1)->type == bt_enum))
+                    || (tp1Clean && ((basetype(tp1Clean)->type == bt_enum) != (basetype(arg2)->type == bt_enum))))
+                    return false;
+                break;
+            }
+        }
         if (ismember(s3))
         {
             funcparams->arguments = funcparams->arguments->next;

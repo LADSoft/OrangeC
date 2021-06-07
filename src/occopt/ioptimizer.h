@@ -576,6 +576,7 @@ typedef struct quad
             int nullvararg : 1;
             int blockassign : 1;
             int atomic : 1; /* atomic instruction */
+            int atomicpostfetch : 1; /* fetch has result after operation... */
             int vararg : 1; // msil
         };
         unsigned flags;

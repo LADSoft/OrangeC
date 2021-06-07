@@ -2008,6 +2008,11 @@ static void llongatomicmath(e_opcode low, e_opcode high, Optimizer::QUAD* q)
     if (high != op_cmpxchg8b)
     {
         gen_code(op_jne, make_label(labno), NULL);
+        if (q->atomicpostfetch)
+        {
+            gen_codes(low, ISZ_UINT, makedreg(EAX), aprl);
+            gen_codes(high, ISZ_UINT, makedreg(EDX), aprh);
+        }
 
         if (reg1 != EAX || reg2 != EDX)
         {
@@ -2074,12 +2079,10 @@ static void addsubatomic(e_opcode op, Optimizer::QUAD* q)
         getAmodes(q, &opa, q->ans, &apal, &apah);
         if (apll->mode == am_indispscale || (apll->mode == am_indisp && apll->preg != ESP && apll->preg != EBP))
         {
-            //            if (apll->liveRegs & (1 << EBP))
-            {
-                pushbp = true;
-                gen_code(op_push, makedreg(EBP), NULL);
-                pushlevel += 4;
-            }
+            pushbp = true;
+            gen_code(op_push, makedreg(EBP), NULL);
+            pushlevel += 4;
+
             gen_code(op_lea, makedreg(EBP), apll);
             apll = makedreg(EBP);
             apll->mode = am_indisp;
@@ -2091,8 +2094,16 @@ static void addsubatomic(e_opcode op, Optimizer::QUAD* q)
             {
                 if (op == op_sub)
                     gen_codes(op_neg, q->ans->size, aprl, NULL);
+                if (q->atomicpostfetch)
+                {
+                    gen_codes(op_mov, q->ans->size, apal, aprl);
+                }
                 gen_code(op_lock, NULL, NULL);
                 gen_codes(op_xadd, q->ans->size, apll, aprl);
+                if (q->atomicpostfetch)
+                {
+                    gen_codes(op_add, q->ans->size, aprl, apal);
+                }
                 gen_codes(op_mov, q->ans->size, apal, aprl);
             }
             else
@@ -2100,8 +2111,17 @@ static void addsubatomic(e_opcode op, Optimizer::QUAD* q)
                 gen_codes(op_mov, q->ans->size, apal, aprl);
                 if (op == op_sub)
                     gen_codes(op_neg, q->ans->size, apal, NULL);
+                if (q->atomicpostfetch)
+                {
+                    gen_code(op_push, aprl, nullptr);
+                }
                 gen_code(op_lock, NULL, NULL);
                 gen_codes(op_xadd, q->ans->size, apll, apal);
+                if (q->atomicpostfetch)
+                {
+                    gen_codes(op, q->ans->size, apal, make_stack(0));
+                    gen_code(op_add, makedreg(ESP), aimmed(4));
+                }
             }
         }
         else
@@ -2146,12 +2166,10 @@ static void logicatomic(e_opcode op, Optimizer::QUAD* q)
         getAmodes(q, &opa, q->ans, &apal, &apah);
         if (apll->mode == am_indispscale || (apll->mode == am_indisp && apll->preg != ESP && apll->preg != EBP))
         {
-            //            if (apll->liveRegs & (1 << EBP))
-            {
-                pushbp = true;
-                gen_code(op_push, makedreg(EBP), NULL);
-                pushlevel += 4;
-            }
+            pushbp = true;
+            gen_code(op_push, makedreg(EBP), NULL);
+            pushlevel += 4;
+
             gen_code(op_lea, makedreg(EBP), apll);
             apll = makedreg(EBP);
             apll->mode = am_indisp;
@@ -2196,7 +2214,8 @@ static void logicatomic(e_opcode op, Optimizer::QUAD* q)
             gen_codes(op, q->ans->size, makedreg(ECX), aprl);
             gen_codes(op_cmpxchg, q->ans->size, apll, makedreg(ECX));
             gen_code(op_jne, make_label(lab), NULL);
-            gen_codes(op_mov, q->ans->size, apal, makedreg(EAX));
+            if (q->atomicpostfetch)
+                gen_codes(op, q->ans->size, apal, aprl);
             if (pushedax)
             {
                 gen_code(op_pop, makedreg(EAX), NULL);

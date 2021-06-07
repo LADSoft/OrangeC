@@ -2607,7 +2607,8 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                 rv = right;
             }
             break;
-        case Optimizer::ao_modify:
+        case Optimizer::ao_modify_fetch:
+        case Optimizer::ao_fetch_modify:
             if (isstructured(node->v.ad->tp))
             {
                 left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
@@ -2668,12 +2669,15 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                         Optimizer::gen_icode(Optimizer::i_assn, tv, rv, nullptr);
                         Optimizer::gen_icode(op, tv, tv, right);
                     }
+                    if (node->v.ad->atomicOp == Optimizer::ao_modify_fetch)
+                        Optimizer::gen_icode(Optimizer::i_assn, rv, tv, nullptr);
                     Optimizer::gen_icode(Optimizer::i_assn, left, tv, nullptr);
                 }
                 else
                 {
                     Optimizer::gen_icode(op, rv, left, right);
                     Optimizer::intermed_tail->atomic = true;
+                    Optimizer::intermed_tail->atomicpostfetch = node->v.ad->atomicOp == Optimizer::ao_modify_fetch;
                     Optimizer::intermed_tail->alwayslive = true;
                 }
                 gen_atomic_barrier(funcsp, node->v.ad, av, barrier);

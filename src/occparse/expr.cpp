@@ -4796,7 +4796,8 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                         d->memoryOrder2 = d->memoryOrder1;
                     d->memoryOrder1 = exprNode(en_add, d->memoryOrder1, intNode(en_c_i, 0x80));
                     break;
-                case kw_atomic_modify:
+                case kw_atomic_fetch_modify:
+                case kw_atomic_modify_fetch:
                     lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->address, nullptr, flags);
                     if (tpf)
                     {
@@ -4853,7 +4854,7 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                         tpf = &stdint;
                         d->memoryOrder1 = intNode(en_c_i, Optimizer::mo_seq_cst);
                     }
-                    d->atomicOp = Optimizer::ao_modify;
+                    d->atomicOp = kw == kw_atomic_fetch_modify ? Optimizer::ao_fetch_modify : Optimizer::ao_modify_fetch;
                     if (!d->memoryOrder2)
                         d->memoryOrder2 = d->memoryOrder1;
                     break;
@@ -5326,7 +5327,8 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 case kw_atomic_fence:
                 case kw_atomic_load:
                 case kw_atomic_store:
-                case kw_atomic_modify:
+                case kw_atomic_fetch_modify:
+                case kw_atomic_modify_fetch:
                 case kw_atomic_cmpswp:
                 case kw_atomic_kill_dependency:
                 case kw_atomic_var_init:

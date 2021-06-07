@@ -81,7 +81,7 @@ namespace Parser
         kw_rangefor,
         /* Extended */
         kw_atomic_flag_test_set, kw_atomic_flag_clear, kw_atomic_fence, kw_atomic_kill_dependency,
-        kw_atomic_load, kw_atomic_store, kw_atomic_modify, kw_atomic_cmpswp, kw_atomic_var_init,
+        kw_atomic_load, kw_atomic_store, kw_atomic_fetch_modify, kw_atomic_modify_fetch, kw_atomic_cmpswp, kw_atomic_var_init,
         kw__pascal, kw__stdcall, kw__fastcall, kw__cdecl, kw__intrinsic, kw_asm, kw__loadds,
         kw__far, kw_asmreg, kw_asminst, kw__indirect, kw__export, kw__import, kw___func__,
         kw__near, kw__seg, kw___typeid, kw___int64, kw_alloca, kw__msil_rtl,

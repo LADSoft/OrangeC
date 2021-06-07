@@ -65,7 +65,7 @@ typedef struct
 
 enum e_mo
 {
-    mo_relaxed = 1,
+    mo_relaxed,
     mo_consume,
     mo_acquire,
     mo_release,
@@ -81,7 +81,8 @@ enum e_ao
     ao_fence,
     ao_load,
     ao_store,
-    ao_modify,
+    ao_fetch_modify,
+    ao_modify_fetch,
     ao_cmpswp
 };
 

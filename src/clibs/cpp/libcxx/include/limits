@@ -107,7 +107,9 @@ template<> class numeric_limits<cv long double>;
 #if defined(_LIBCPP_COMPILER_MSVC)
 #include "support/win32/limits_msvc_win32.h"
 #endif // _LIBCPP_MSVCRT
-
+#if defined(_LIBCPP_COMPILER_ORANGEC)
+#include <float.h>
+#endif
 #if defined(__IBMCPP__)
 #include "support/ibm/limits.h"
 #endif // __IBMCPP__

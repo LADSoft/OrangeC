@@ -868,6 +868,7 @@ typedef struct _LIST_ENTRY
     struct _LIST_ENTRY* Blink;
 } LIST_ENTRY, *PLIST_ENTRY;
 
+#pragma PACK(4)
 typedef struct _CRITICAL_SECTION_DEBUG
 {
     WORD Type;
@@ -889,6 +890,7 @@ typedef struct _CRITICAL_SECTION
     HANDLE LockSemaphore;
     DWORD Reserved;
 } CRITICAL_SECTION, *PCRITICAL_SECTION, *LPCRITICAL_SECTION;
+#pragma pack()
 
 typedef struct _SECURITY_QUALITY_OF_SERVICE
 {
@@ -4632,7 +4634,7 @@ typedef struct _UNWIND_HISTORY_TABLE {
 #define RTL_RUN_ONCE_CTX_RESERVED_BITS 2
 typedef union _RTL_RUN_ONCE {       
     PVOID Ptr;                      
-} RTL_RUN_ONCE, *PRTL_RUN_ONCE, INITONCE, *PINIT_ONCE, *LPINIT_OCNE;     
+} RTL_RUN_ONCE, *PRTL_RUN_ONCE, INIT_ONCE, *PINIT_ONCE, *LPINIT_OCNE;     
 
 typedef struct _RTL_SRWLOCK {                            
         PVOID Ptr;                                       

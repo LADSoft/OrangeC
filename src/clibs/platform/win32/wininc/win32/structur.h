@@ -4628,15 +4628,23 @@ typedef struct _UNWIND_HISTORY_TABLE {
     UNWIND_HISTORY_TABLE_ENTRY Entry[UNWIND_HISTORY_TABLE_SIZE];
 } UNWIND_HISTORY_TABLE, *PUNWIND_HISTORY_TABLE;
 
+#define RTL_RUN_ONCE_CTX_RESERVED_BITS 2
+typedef union _RTL_RUN_ONCE {       
+    PVOID Ptr;                      
+} RTL_RUN_ONCE, *PRTL_RUN_ONCE, INITONCE, *PINIT_ONCE, *LPINIT_OCNE;     
 
 typedef struct _RTL_SRWLOCK {                            
         PVOID Ptr;                                       
-} RTL_SRWLOCK, *PRTL_SRWLOCK;                            
+} RTL_SRWLOCK, *PRTL_SRWLOCK, SRWLOCK, *PSRWLOCK;                            
 #define RTL_SRWLOCK_INIT {0}                            
 
 #define SRWLOCK_INIT RTL_SRWLOCK_INIT
 
-typedef RTL_SRWLOCK SRWLOCK, *PSRWLOCK;
+typedef struct _RTL_CONDITION_VARIABLE {                    
+        PVOID Ptr;                                       
+} RTL_CONDITION_VARIABLE, *PRTL_CONDITION_VARIABLE, CONDITION_VARIABLE, *PCONDITION_VARIABLE; 
+#define RTL_CONDITION_VARIABLE_INIT {0}                 
+#define RTL_CONDITION_VARIABLE_LOCKMODE_SHARED  0x1     
 
 typedef struct _DISPATCHER_CONTEXT {
     DWORD ControlPc;

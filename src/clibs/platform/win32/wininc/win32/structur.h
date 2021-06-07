@@ -4634,7 +4634,7 @@ typedef struct _UNWIND_HISTORY_TABLE {
 #define RTL_RUN_ONCE_CTX_RESERVED_BITS 2
 typedef union _RTL_RUN_ONCE {       
     PVOID Ptr;                      
-} RTL_RUN_ONCE, *PRTL_RUN_ONCE, INIT_ONCE, *PINIT_ONCE, *LPINIT_OCNE;     
+} RTL_RUN_ONCE, *PRTL_RUN_ONCE, INIT_ONCE, *PINIT_ONCE, *LPINIT_ONCE;     
 
 typedef struct _RTL_SRWLOCK {                            
         PVOID Ptr;                                       

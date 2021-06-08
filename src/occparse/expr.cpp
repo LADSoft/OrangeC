@@ -5519,6 +5519,12 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 case kw_generic:
                     lex = expression_generic(lex, funcsp, tp, exp, flags);
                     break;
+                case kw_atomic_addftch:
+                case kw_atomic_subftch:
+                case kw_atomic_andftch:
+                case kw_atomic_xorftch:
+                case kw_atomic_orftch:
+                case kw_atomic_cmpxchg_n:
                 case kw_atomic_flag_test_set:
                 case kw_atomic_flag_clear:
                 case kw_atomic_fence:

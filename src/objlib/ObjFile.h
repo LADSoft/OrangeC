@@ -104,6 +104,7 @@ class ObjFile : public ObjWrapper
     SymbolIterator RegEnd() { return regs.end(); }
     SymbolIterator ExportBegin() { return exports.begin(); }
     SymbolIterator ExportEnd() { return exports.end(); }
+    void ExportClear() { exports.clear(); }
     SymbolIterator ImportBegin() { return imports.begin(); }
     SymbolIterator ImportEnd() { return imports.end(); }
     SymbolIterator DefinitionBegin() { return definitions.begin(); }

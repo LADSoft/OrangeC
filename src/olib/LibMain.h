@@ -57,6 +57,7 @@ class LibMain
     static CmdSwitchBool caseSensitiveSwitch;
     static CmdSwitchOutput OutputFile;
     static CmdSwitchFile File;
+    static CmdSwitchBool noExport;
 
     static const char* usageText;
 };

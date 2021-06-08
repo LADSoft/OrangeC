@@ -242,6 +242,7 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
                         rv = false;
                         break;
                     }
+                    // leaving export records alone if they were added previosly without --noexport
                 }
                 else
                 {
@@ -257,6 +258,10 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
                             done = false;
                             rv = false;
                             break;
+                        }
+                        else if (noExport)
+                        {
+                            (*itn)->data->ExportClear();
                         }
                     }
                     else

@@ -42,7 +42,7 @@ class LibFiles
         ObjInt offset;
         ObjFile* data;
     };
-    LibFiles(bool CaseSensitive = true) { caseSensitive = CaseSensitive; }
+    LibFiles(bool CaseSensitive = true, bool noexport = false) : caseSensitive(CaseSensitive), noExport(noexport) { }
     virtual ~LibFiles() {}
 
     void Add(ObjFile& obj);
@@ -75,5 +75,6 @@ class LibFiles
     std::deque<std::unique_ptr<FileDescriptor>> files;
     std::deque<ObjFile*> objectFiles;
     bool caseSensitive;
+    bool noExport;
 };
 #endif

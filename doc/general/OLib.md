@@ -38,9 +38,12 @@
 ### Case Insensitivity
  
 
- 
- **OLib** will allow the creation of case insensitive libraries with the **/c-** switch.  In general you don't need to make a library case insensitive, as the linker will handle case insensitivity based on command line switches even if the library is case-sensitive.
+  **OLib** will allow the creation of case insensitive libraries with the **/c-** switch.  In general you don't need to make a library case insensitive, as the linker will handle case insensitivity based on command line switches even if the library is case-sensitive.
 
+### Removing export records
+
+
+  **OLib** will remove export records from the input files with the **--noexports** switch.   This switch does not affect records in the library that were previously added without the switch.
 
 ### Operating Modes
  

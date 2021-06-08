@@ -46,7 +46,7 @@ class LibManager
         CANNOT_WRITE = -3,
         SUCCESS = 0
     };
-    LibManager(const ObjString& Name, bool CaseSensitive = true) : dictionary(CaseSensitive), name(Name), files(CaseSensitive)
+    LibManager(const ObjString& Name, bool noexport, bool CaseSensitive = true) : dictionary(CaseSensitive), name(Name), files(CaseSensitive, noexport)
     {
         stream = fopen(Name.c_str(), "rb");
         InitHeader();

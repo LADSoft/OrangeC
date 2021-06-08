@@ -340,7 +340,7 @@ int ImpLibMain::HandleObjFile(const std::string& outputFile, int argc, char** ar
 int ImpLibMain::HandleLibrary(const std::string& outputFile, int argc, char** argv)
 {
     // only get here if it is a library
-    LibManager librarian(outputFile, caseSensitiveSwitch.GetValue());
+    LibManager librarian(outputFile, false, caseSensitiveSwitch.GetValue());
     if (librarian.IsOpen())
         if (!librarian.LoadLibrary())
         {

@@ -58,7 +58,7 @@
 #ifndef RC_INVOKED
 typedef enum memory_order
 {
-    memory_order_relaxed = 1,
+    memory_order_relaxed,
     memory_order_consume,
     memory_order_acquire,
     memory_order_release,
@@ -193,9 +193,9 @@ __ATOMIC_TYPE__(uintmax_t, atomic_uintmax_t);
 
 #define atomic_store_explicit(__a__, __m__, __x__) __atomic_store(__a__, __m__, __x__)
 
-#define atomic_exchange(__a__, __m__) __atomic_modify(__a__, =, __m__, memory_order_seq_cst)
+#define atomic_exchange(__a__, __m__) __atomic_fetch_modify(__a__, =, __m__, memory_order_seq_cst)
 
-#define atomic_exchange_explicit(__a__, __m__, __x__) __atomic_modify(__a__, =, __m__, __x__)
+#define atomic_exchange_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, =, __m__, __x__)
 
 #define atomic_compare_exchange_strong(__a__, __e__, __m__) \
     __atomic_cmpswp(__a__, __e__, __m__, memory_order_seq_cst, memory_order_seq_cst)
@@ -208,24 +208,24 @@ __ATOMIC_TYPE__(uintmax_t, atomic_uintmax_t);
 
 #define atomic_compare_exchange_weak_explicit(__a__, __e__, __m__, __x__, __y__) __atomic_cmpswp(__a__, __e__, __m__, __x__, __y__)
 
-#define atomic_fetch_add_explicit(__a__, __m__, __x__) __atomic_modify(__a__, +=, __m__, __x__)
+#define atomic_fetch_add_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, +=, __m__, __x__)
 
-#define atomic_fetch_add(__a__, __m__) __atomic_modify(__a__, +=, __m__, memory_order_seq_cst)
+#define atomic_fetch_add(__a__, __m__) __atomic_fetch_modify(__a__, +=, __m__, memory_order_seq_cst)
 
-#define atomic_fetch_sub_explicit(__a__, __m__, __x__) __atomic_modify(__a__, -=, __m__, __x__)
+#define atomic_fetch_sub_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, -=, __m__, __x__)
 
-#define atomic_fetch_sub(__a__, __m__) __atomic_modify(__a__, -=, __m__, memory_order_seq_cst)
+#define atomic_fetch_sub(__a__, __m__) __atomic_fetch_modify(__a__, -=, __m__, memory_order_seq_cst)
 
-#define atomic_fetch_or_explicit(__a__, __m__, __x__) __atomic_modify(__a__, |=, __m__, __x__)
+#define atomic_fetch_or_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, |=, __m__, __x__)
 
-#define atomic_fetch_or(__a__, __m__) __atomic_modify(__a__, |=, __m__, memory_order_seq_cst)
+#define atomic_fetch_or(__a__, __m__) __atomic_fetch_modify(__a__, |=, __m__, memory_order_seq_cst)
 
-#define atomic_fetch_and_explicit(__a__, __m__, __x__) __atomic_modify(__a__, &=, __m__, __x__)
+#define atomic_fetch_and_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, &=, __m__, __x__)
 
-#define atomic_fetch_and(__a__, __m__) __atomic_modify(__a__, &=, __m__, memory_order_seq_cst)
+#define atomic_fetch_and(__a__, __m__) __atomic_fetch_modify(__a__, &=, __m__, memory_order_seq_cst)
 
-#define atomic_fetch_xor_explicit(__a__, __m__, __x__) __atomic_modify(__a__, ^=, __m__, __x__)
+#define atomic_fetch_xor_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, ^=, __m__, __x__)
 
-#define atomic_fetch_xor(__a__, __m__) __atomic_modify(__a__, ^=, __m__, memory_order_seq_cst)
+#define atomic_fetch_xor(__a__, __m__) __atomic_fetch_modify(__a__, ^=, __m__, memory_order_seq_cst)
 
 #endif

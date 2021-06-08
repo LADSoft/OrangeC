@@ -28,8 +28,6 @@
  * some floating point conversions will have a more limited integer portion.
  */
 
-#define ISPARSER  // this is temporary
-
 #include "ctypes.h"
 
 #include <stdio.h>

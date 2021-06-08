@@ -405,11 +405,6 @@ int main(int argc, char* argv[])
     outputfile(realOutFile, buffer, ".ods");
     if (!CompletionCompiler::ccDBOpen(realOutFile))
         Utils::fatal("Cannot open database file %s", realOutFile);
-#else
-#    ifndef ISPARSER
-    BitInit();
-    regInit();
-#    endif
 #endif
 #ifndef PARSER_ONLY
     const char* firstFile = clist ? (const char*)clist->data : "temp";

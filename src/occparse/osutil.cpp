@@ -594,6 +594,12 @@ void setglbdefs(void)
 
         preProcessor->Define("ATOMIC_CHAR16_T_LOCK_FREE", std::to_string((local_store_of_locks->a_char16_t == 0) ? 2 : 0)); // temporary since this is how it's done internally, will fix when sizing is fixed
         preProcessor->Define("ATOMIC_CHAR32_T_LOCK_FREE", std::to_string((local_store_of_locks->a_char32_t == 0) ? 2 : 0));
+        preProcessor->Define("__ATOMIC_RELAXED", std::to_string(Optimizer::e_mo::mo_relaxed));
+        preProcessor->Define("__ATOMIC_CONSUME", std::to_string(Optimizer::e_mo::mo_consume));
+        preProcessor->Define("__ATOMIC_ACQUIRE", std::to_string(Optimizer::e_mo::mo_acquire));
+        preProcessor->Define("__ATOMIC_RELEASE", std::to_string(Optimizer::e_mo::mo_release));
+        preProcessor->Define("__ATOMIC_ACQ_REL", std::to_string(Optimizer::e_mo::mo_acq_rel));
+        preProcessor->Define("__ATOMIC_SEQ_CST", std::to_string(Optimizer::e_mo::mo_seq_cst));
     }
     preProcessor->Define("__STDC__", "1");
 
@@ -623,6 +629,13 @@ void setglbdefs(void)
 
         preProcessor->Define("ATOMIC_CHAR16_T_LOCK_FREE", std::to_string((local_store_of_locks->a_char16_t == 0) ? 2 : 0)); // temporary since this is how it's done internally, will fix when sizing is fixed
         preProcessor->Define("ATOMIC_CHAR32_T_LOCK_FREE", std::to_string((local_store_of_locks->a_char32_t == 0) ? 2 : 0));
+
+        preProcessor->Define("__ATOMIC_RELAXED", std::to_string(Optimizer::e_mo::mo_relaxed));
+        preProcessor->Define("__ATOMIC_CONSUME", std::to_string(Optimizer::e_mo::mo_consume));
+        preProcessor->Define("__ATOMIC_ACQUIRE", std::to_string(Optimizer::e_mo::mo_acquire));
+        preProcessor->Define("__ATOMIC_RELEASE", std::to_string(Optimizer::e_mo::mo_release));
+        preProcessor->Define("__ATOMIC_ACQ_REL", std::to_string(Optimizer::e_mo::mo_acq_rel));
+        preProcessor->Define("__ATOMIC_SEQ_CST", std::to_string(Optimizer::e_mo::mo_seq_cst));
     }
     else if (Optimizer::cparams.prm_c99)
     {

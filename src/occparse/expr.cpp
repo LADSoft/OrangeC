@@ -4612,7 +4612,7 @@ static bool getSuffixedNumber(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
     return false;
 }
 static Parser::LEXLIST* atomic_modify_specific_op(Parser::LEXLIST* lex, Parser::SYMBOL* funcsp, Parser::TYPE** tp,
-                                                  Parser::TYPE** typf, Parser::ATOMICDATA* d, int flags, Parser::e_kw function)
+                                                  Parser::TYPE** typf, Parser::ATOMICDATA* d, int flags, Parser::e_kw function, bool fetch_first)
 {
     Parser::TYPE* tpf = *typf;
     lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->address, nullptr, flags);
@@ -4651,7 +4651,7 @@ static Parser::LEXLIST* atomic_modify_specific_op(Parser::LEXLIST* lex, Parser::
         tpf = &stdint;
         d->memoryOrder1 = intNode(en_c_i, Optimizer::mo_seq_cst);
     }
-    d->atomicOp = Optimizer::e_ao::ao_modify;
+    d->atomicOp = fetch_first ? Optimizer::e_ao::ao_fetch_modify : Optimizer::e_ao::ao_modify_fetch;
     if (!d->memoryOrder2)
         d->memoryOrder2 = d->memoryOrder1;
     return lex;
@@ -4932,23 +4932,123 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                     if (!d->memoryOrder2)
                         d->memoryOrder2 = d->memoryOrder1;
                     break;
+// there's extremely likely a better way to do this, maybe a lookup table for these and using that...
                 case kw_c11_atomic_xchg:
-                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, assign);
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, assign, true);
                     break;
                 case kw_c11_atomic_ftchadd:
-                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asplus);
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asplus, true);
                     break;
                 case kw_c11_atomic_ftchsub:
-                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asminus);
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asminus, true);
                     break;
                 case kw_c11_atomic_ftchand:
-                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asand);
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asand, true);
                     break;
                 case kw_c11_atomic_ftchor:
-                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asor);
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asor, true);
                     break;
                 case kw_c11_atomic_ftchxor:
-                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asxor);
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asxor, true);
+                    break;
+                case kw_atomic_addftch:
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asplus, false);
+                    break;
+                case kw_atomic_subftch:
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asminus, false);
+                    break;
+                case kw_atomic_andftch:
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asand, false);
+                    break;
+                case kw_atomic_orftch:
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asor, false);
+                    break;
+                case kw_atomic_xorftch:
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asxor, false);
+                    break;
+                case kw_atomic_cmpxchg_n:
+                    lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->address, nullptr, flags);
+                    if(tpf)
+                    {
+                        if(!ispointer(tpf))
+                        {
+                            error(ERR_DEREF);
+                            d->tp = *tp = &stdint;
+                        }
+                        else
+                        {
+                            d->tp = *tp = basetype(tpf)->btp;
+                        }
+                    }
+                    if(needkw(&lex, comma))
+                    {
+                        lex = expression_assign(lex, funcsp, nullptr, &tpf1, &d->third, nullptr, flags);
+                        if(!comparetypes(tpf, tpf1, false))
+                        {
+                            error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                        }
+                    }
+                    else
+                    {
+                        *tp = &stdint;
+                        d->third = intNode(en_c_i, 0);
+                    }
+                    if (needkw(&lex, comma))
+                    {
+                        lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->value, nullptr, flags);
+                        if(!comparetypes(tpf, *tp, false))
+                        {
+                            error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                        }
+                        if(!isstructured(*tp))
+                        {
+                            cast(*tp, &d->value);
+                        }
+                    }
+                    else
+                    {
+                        *tp = &stdint;
+                        d->value = intNode(en_c_i, 0);
+                    }
+                    // MUSTFIX: need to get the bool value here for weak/strong check!!!
+                    // THIS MATTERS FOR ARM PLATFORMS AND OTHERS WITH WEAK/STRONG SEMANTICS
+                    if (needkw(&lex, comma))
+                    {
+                        // FIXME: unsure if this is correct, get this reviewed
+                        TYPE* weak_type = nullptr;
+                        EXPRESSION* weak_expr = nullptr;
+                    
+                        lex = optimized_expression(lex, funcsp, nullptr, &weak_type, &weak_expr, false);
+                        if (!isintconst(weak_expr))
+                        {
+                            error(ERR_NEED_INTEGER_TYPE);
+                        }
+                        bool weak = (bool)weak_expr->v.i; // MSVC complains if weak is declared outside of this if statement
+                    }
+                    if (needkw(&lex, comma))
+                    {
+                        lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->memoryOrder1, nullptr, flags);
+                    }
+                    else
+                    {
+                        tpf = &stdint;
+                        d->memoryOrder1 = intNode(en_c_i, Optimizer::mo_seq_cst);
+                    }
+                    if (needkw(&lex, comma))
+                    {
+                        lex = expression_assign(lex, funcsp, nullptr, &tpf1, &d->memoryOrder2, nullptr, flags);
+                    }
+                    else
+                    {
+                        tpf1 = &stdint;
+                        d->memoryOrder2 = intNode(en_c_i, Optimizer::mo_seq_cst);
+                    }
+                    d->atomicOp = Optimizer::ao_cmpswp;
+                    if (!d->memoryOrder2)
+                    {
+                        d->memoryOrder2 = d->memoryOrder1;
+                    }
+                    *tp = &stdint;
                     break;
                 case kw_c11_atomic_cmpxchg_weak:  // keep these two c11 types separate for weak and strong cuz cmpswp is ? of either
                                                   // and this is highly platform specific, needs future works

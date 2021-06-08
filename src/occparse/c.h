@@ -88,6 +88,11 @@ namespace Parser
         kw_c11_atomic_xchg, kw_c11_atomic_cmpxchg_strong, kw_c11_atomic_cmpxchg_weak,
         kw_c11_atomic_ftchadd, kw_c11_atomic_ftchsub, kw_c11_atomic_ftchand,
         kw_c11_atomic_ftchor, kw_c11_atomic_ftchxor,
+        /* GNU atomic support, incomplete but works */
+        /* NOTE: __atomic_*_n are able to be mapped to our existing structure without issue except compare_exchange*/
+        /* NOTE: __atomic_fetch_* are supported by the same mapping structure __atomic_*_n has */
+        kw_atomic_addftch, kw_atomic_subftch, kw_atomic_andftch, kw_atomic_xorftch,
+        kw_atomic_orftch, kw_atomic_cmpxchg_n,
         /* Extended */
         kw__pascal, kw__stdcall, kw__fastcall, kw__cdecl, kw__intrinsic, kw_asm, kw__loadds,
         kw__far, kw_asmreg, kw_asminst, kw__indirect, kw__export, kw__import, kw___func__,

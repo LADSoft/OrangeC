@@ -1295,6 +1295,7 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
         sp->sb->realdeclline = realdeclline;
         sp->sb->declfile = sp->sb->origdeclfile = lex->data->errfile;
         sp->sb->declfilenum = lex->data->linedata->fileindex;
+        sp->sb->attribs = basisAttribs;
         if ((storage_class == sc_member || storage_class == sc_mutable) &&
             (MATCHKW(lex, begin) || MATCHKW(lex, colon) || MATCHKW(lex, kw_try) || MATCHKW(lex, semicolon)))
             sp->sb->parentClass = getStructureDeclaration();
@@ -1305,7 +1306,8 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
         sp->sb->anonymous = charindex == -1;
         sp->sb->access = access;
         sp->sb->uuid = uuid;
-        sp->sb->attribs.inheritable.linkage2 = linkage2;
+        if (sp->sb->attribs.inheritable.linkage2 == lk_none)
+            sp->sb->attribs.inheritable.linkage2 = linkage2;
         SetLinkerNames(sp, lk_cdecl);
         if (inTemplate && templateNestingCount)
         {
@@ -5897,6 +5899,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                             sp->tp = tp1;
                         if (!sp->sb->instantiated)
                             sp->sb->attribs.inheritable.linkage = linkage;
+                        if (!strcmp(sp->name, "r"))
+                            printf("hi");
                         if (ssp && ssp->sb->attribs.inheritable.linkage2 != lk_none && sp->sb->storage_class != sc_localstatic)
                         {
                             if (linkage2 != lk_none && !asFriend)

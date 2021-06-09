@@ -212,7 +212,7 @@ typedef struct
     enum e_lk : int {
         lk_none, lk_cdecl, lk_pascal, lk_stdcall, lk_fastcall, lk_c, lk_cpp,
         lk_interrupt, lk_fault, lk_inline, lk_virtual, lk_noreturn, lk_threadlocal,
-        lk_import, lk_export, lk_auto, lk_msil_rtl, lk_unmanaged, lk_property, lk_entrypoint
+        lk_import, lk_export, lk_internal, lk_auto, lk_msil_rtl, lk_unmanaged, lk_property, lk_entrypoint
     };
 // clang-format on
 

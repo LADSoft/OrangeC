@@ -11941,6 +11941,7 @@ static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
             sp->sb->attribs.inheritable.linkage2 = linkage;
             Optimizer::SymbolManager::Get(sp)->isexport = linkage == lk_export;
             Optimizer::SymbolManager::Get(sp)->isimport = linkage == lk_import;
+            Optimizer::SymbolManager::Get(sp)->isinternal = linkage == lk_internal;
             if (sp->sb->vtabsp)
             {
                 sp->sb->vtabsp->sb->attribs.inheritable.linkage2 = linkage;
@@ -11948,6 +11949,7 @@ static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
                 {
                     Optimizer::SymbolManager::Get(sp->sb->vtabsp)->isexport = linkage == lk_export;
                     Optimizer::SymbolManager::Get(sp->sb->vtabsp)->isimport = linkage == lk_import;
+                    Optimizer::SymbolManager::Get(sp->sb->vtabsp)->isinternal = linkage == lk_internal;
                 }
                 if (sp->sb->vtabsp->sb->attribs.inheritable.linkage2 == lk_import)
                 {
@@ -11972,6 +11974,7 @@ static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
                                 (hr2->p)->sb->attribs.inheritable.isInline = false;
                                 Optimizer::SymbolManager::Get(hr2->p)->isexport = linkage == lk_export;
                                 Optimizer::SymbolManager::Get(hr2->p)->isimport = linkage == lk_import;
+                                Optimizer::SymbolManager::Get(hr2->p)->isinternal = linkage == lk_internal;
                             }
                             hr2 = hr2->next;
                         }
@@ -11981,7 +11984,8 @@ static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
                         sym->sb->attribs.inheritable.linkage2 = linkage;
                         Optimizer::SymbolManager::Get(sym)->isexport = linkage == lk_export;
                         Optimizer::SymbolManager::Get(sym)->isimport = linkage == lk_import;
-                    }
+                        Optimizer::SymbolManager::Get(sym)->isinternal = linkage == lk_internal;
+                   }
                     hr = hr->next;
                 }
             }

@@ -3508,6 +3508,7 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                         {"stdcall", 25},
                         {"always_inline", 26}, // we don't really force inline this is still just a suggestion.   in practice the types of functions that get flagged with this will likely always be inlined anyway
                         {"format", 27},
+                        {"internal_linkage", 28},
                     };
                     std::string name;
                     if (ISID(*lex))
@@ -3745,6 +3746,9 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                  if (lex)
                                      *lex = getsym();
                                  break;
+                             case 28:
+                                 basisAttribs.inheritable.linkage2 = lk_internal;
+                                 break;
                         }
                     }
                 }
@@ -3909,6 +3913,46 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                                             {
                                                 case 23:
                                                     basisAttribs.inheritable.zstring = true;
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
+                                                      occNamespace.c_str());
+                                        }
+                                        *lex = getsym();
+                                    }
+                                }
+                                else
+                                {
+                                    errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, occNamespace.c_str());
+                                }
+                            }
+                            else if (!strcmp((*lex)->data->value.s.a, clangNamespace.c_str()))
+                            {
+                                *lex = getsym();
+                                if (MATCHKW(*lex, classsel))
+                                {
+                                    *lex = getsym();
+                                    if (!ISID(*lex))
+                                    {
+                                        *lex = getsym();
+                                        error(ERR_IDENTIFIER_EXPECTED);
+                                    }
+                                    else if (*lex)
+                                    {
+                                        static const std::unordered_map<std::string, int> occCPPStyleAttribNames = {
+                                             {"internal_linkage", 28},
+                                        };
+                                        std::string name = (*lex)->data->value.s.a;
+                                        auto searchedName = occCPPStyleAttribNames.find(name);
+                                        if (searchedName != occCPPStyleAttribNames.end())
+                                        {
+                                            switch (searchedName->second)
+                                            {
+                                                case 28:
+                                                    basisAttribs.inheritable.linkage2 = lk_internal;
                                                     break;
                                             }
                                         }

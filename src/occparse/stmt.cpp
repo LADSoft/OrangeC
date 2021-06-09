@@ -3963,7 +3963,7 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
         }
 
     }
-    if (IsCompiler && funcNesting == 1)  // top level function
+    if (IsCompiler() && funcNesting == 1)  // top level function
         localFree();
     handleInlines(funcsp);
     controlSequences = oldControlSequences;

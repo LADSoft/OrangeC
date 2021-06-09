@@ -3205,7 +3205,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                             l->next = globalNameSpace->valueData->usingDirectives;
                             globalNameSpace->valueData->usingDirectives = l;
                         }
-                        if (!IsCompiler && lex)
+                        if (!IsCompiler() && lex)
                             CompletionCompiler::ccInsertUsing(sp, nameSpaceList ? (SYMBOL*)nameSpaceList->data : nullptr, lex->data->errfile,
                                                               lex->data->errline);
                     }

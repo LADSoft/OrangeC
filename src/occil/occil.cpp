@@ -381,7 +381,7 @@ int InvokeParser(int argc, char** argv, SharedMemory* parserMem)
 }
 int InvokeOptimizer(SharedMemory* parserMem, SharedMemory* optimizerMem)
 {
-    return Utils::ToolInvoke("occopt", occil_verbosity, "-! %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
+    return Utils::ToolInvoke("occopt", occil_verbosity, "-! -S %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
 }
 }  // namespace occmsil
 int main(int argc, char* argv[])

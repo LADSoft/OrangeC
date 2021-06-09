@@ -174,7 +174,6 @@ int alignFromISZ(int isz)
             return 1;
     }
 }
-#ifndef PARSER_ONLY
 int needsAtomicLockFromISZ(int isz)
 {
     ARCH_SIZING* p = Optimizer::chosenAssembler->arch->type_needsLock;
@@ -580,7 +579,6 @@ Optimizer::IMODE* indnode(Optimizer::IMODE* ap1, int size)
     }
     return ap;
 }
-#endif
 int pwrof2(long long i)
 /*
  *      return which power of two i is or -1.

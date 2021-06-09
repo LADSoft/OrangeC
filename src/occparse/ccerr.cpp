@@ -919,11 +919,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     if (TotalErrors() >= Optimizer::cparams.prm_maxerr)
     {
         error(ERR_TOO_MANY_ERRORS);
-#ifdef PARSER_ONLY
-        exit(0);
-#else
-        exit(1);
-#endif
+        exit(IsCompiler() ? 1 : 0);
     }
     if (!(errors[err].level & NOTE))
     {

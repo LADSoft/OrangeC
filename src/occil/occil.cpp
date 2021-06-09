@@ -53,6 +53,16 @@ int usingEsp;
 void regInit() {}
 void diag(const char* fmt, ...) {}
 void Import() {}
+namespace Parser
+{
+    bool IsCompiler() {
+        return true;
+    }
+}
+
+using namespace DotNetPELib;
+PELib* peLib;
+
 namespace occmsil
 {
 CmdSwitchParser SwitchParser;

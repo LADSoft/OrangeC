@@ -43,9 +43,9 @@
 
 namespace Parser
 {
-#ifndef PARSER_ONLY
 void msilCreateProperty(SYMBOL* s1, SYMBOL* s2, SYMBOL* s3)
 {
+
     Optimizer::MsilProperty prop{Optimizer::SymbolManager::Get(s1), Optimizer::SymbolManager::Get(s2),
                                  Optimizer::SymbolManager::Get(s3)};
     Optimizer::msilProperties.push_back(prop);
@@ -265,7 +265,6 @@ LEXLIST* initialize_property(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_s
     }
     return lex;
 }
-#endif
 TYPE* find_boxed_type(TYPE* in)
 {
     static const char* typeNames[] = {"int8",   "Bool",  "Int8",   "Int8",   "UInt8",  "Int16",  "Int16",   "UInt16",

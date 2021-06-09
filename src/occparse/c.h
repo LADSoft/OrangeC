@@ -45,6 +45,8 @@ namespace Parser
 #define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_'))
 #define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_'))
 
+bool IsCompiler();
+
 /* keywords and symbols */
 // clang-format off
     enum e_kw
@@ -491,7 +493,6 @@ typedef struct __nsv
     NAMESPACEVALUEDATA* valueData;
 } NAMESPACEVALUELIST;
 
-#ifdef PARSER_ONLY
 struct _ccNamespaceData
 {
     struct _ccNamespaceData* next;
@@ -499,7 +500,6 @@ struct _ccNamespaceData
     int startline;
     int endline;
 };
-#endif
 // clang-format off
     enum e_cm { cmNone, cmValue, cmRef, cmThis, cmExplicitValue };
 // clang-format on
@@ -552,9 +552,7 @@ typedef struct sym
     struct _templateParamList* templateParams;
     unsigned packed : 1;  // packed template param instance
     unsigned synthesized : 1; // packed template param was synthesized during parsing
-#ifdef PARSER_ONLY
     int parserSet : 1;                        /* sent to parser already*/
-#endif
     struct _symbody
     {
         const char* decoratedName; /* symbol name with decorations, as used in output format */
@@ -577,11 +575,9 @@ typedef struct sym
         enum e_cm lambdaMode;
         INLINEFUNC inlineFunc;
         int overlayIndex; /* differentiating index when function differs only in return type from similar functions */
-#ifdef PARSER_ONLY
         int ccEndLine;                            /* end line for code completion */
         unsigned long long ccStructId;            /* code completion struct id */
         struct _ccNamespaceData* ccNamespaceData; /* namespace data for code completion */
-#endif
         unsigned declaring : 1;             /* currently being declared */
         unsigned compilerDeclared : 1;      /* compiler declared this */
         unsigned hasproto : 1;              /* C/90 language prototype was encountered */

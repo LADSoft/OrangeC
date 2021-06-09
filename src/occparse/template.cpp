@@ -482,11 +482,9 @@ bool exactMatchOnTemplateArgs(TEMPLATEPARAMLIST* old, TEMPLATEPARAMLIST* sym)
                     return false;
                 if (!!old->p->byNonType.dflt != !!sym->p->byNonType.dflt)
                     return false;
-                //#ifndef PARSER_ONLY
                 if (old->p->byNonType.dflt && sym->p->byNonType.dflt &&
                     !templatecompareexpressions(old->p->byNonType.dflt, sym->p->byNonType.dflt))
                     return false;
-                //#endif
                 break;
             default:
                 break;
@@ -499,7 +497,6 @@ bool exactMatchOnTemplateArgs(TEMPLATEPARAMLIST* old, TEMPLATEPARAMLIST* sym)
 static TEMPLATEPARAMLIST* mergeTemplateDefaults(TEMPLATEPARAMLIST* old, TEMPLATEPARAMLIST* sym, bool definition)
 {
     TEMPLATEPARAMLIST* rv = sym;
-    //#ifndef PARSER_ONLY
     while (old && sym)
     {
         if (!definition && old->argsym)
@@ -555,7 +552,6 @@ static TEMPLATEPARAMLIST* mergeTemplateDefaults(TEMPLATEPARAMLIST* old, TEMPLATE
         old = old->next;
         sym = sym->next;
     }
-    //#endif
     return rv;
 }
 static void checkTemplateDefaults(TEMPLATEPARAMLIST* args)
@@ -1897,10 +1893,8 @@ static bool sameTemplateSpecialization(TYPE* P, TYPE* A)
                 {
                     if (!templatecomparetypes(PL->p->byNonType.tp, PA->p->byNonType.tp, true))
                         break;
-                    //#ifndef PARSER_ONLY
                     if (PL->p->byNonType.dflt && !equalTemplateIntNode(PL->p->byNonType.dflt, PA->p->byNonType.val))
                         break;
-                    //#endif
                 }
             }
             PL = PL->next;
@@ -1934,10 +1928,8 @@ bool exactMatchOnTemplateSpecialization(TEMPLATEPARAMLIST* old, TEMPLATEPARAMLIS
             case kw_int:
                 if (!templatecomparetypes(old->p->byNonType.tp, sym->p->byNonType.tp, true))
                     return false;
-                //#ifndef PARSER_ONLY
                 if (old->p->byNonType.dflt && !equalTemplateIntNode(old->p->byNonType.dflt, sym->p->byNonType.val))
                     return false;
-                //#endif
                 break;
             default:
                 break;
@@ -7365,10 +7357,8 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                             EXPRESSION* tsym = (EXPRESSION*)packsym->p->byClass.val;
                             if (!templatecomparetypes(packorig->p->byNonType.tp, packsym->p->byNonType.tp, true))
                                 return false;
-                            //#ifndef PARSER_ONLY
                             if (tsym && !equalTemplateIntNode((EXPRESSION*)torig, (EXPRESSION*)tsym))
                                 return false;
-                            //#endif
                             packorig = packorig->next;
                             packsym = packsym->next;
                         }
@@ -7379,10 +7369,8 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                     {
                         if (!templatecomparetypes(porig->p->byNonType.tp, psym->p->byNonType.tp, true))
                             return false;
-                        //#ifndef PARSER_ONLY
                         if (xsym && xorig && !equalTemplateIntNode((EXPRESSION*)xorig, (EXPRESSION*)xsym))
                             return false;
-                        //#endif
                     }
                     break;
                 default:
@@ -7666,14 +7654,12 @@ static void SetAccessibleTemplateArgs(TEMPLATEPARAMLIST* args, bool accessible)
                 case kw_int:
                 {
                     EXPRESSION* exp = args->p->byNonType.val;
-                    //#ifndef PARSER_ONLY
                     if (exp)
                         exp = GetSymRef(exp);
                     if (exp)
                     {
                         SetTemplateArgAccess(exp->v.sp, accessible);
                     }
-                    //#endif
                     break;
                 }
                 case kw_template:
@@ -7799,9 +7785,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             templateHeaderCount = 0;
             lambdas = nullptr;
             old = *cls;
-#ifdef PARSER_ONLY
             cls->parserSet = false;
-#endif
             cls->sb->attribs.inheritable.linkage = lk_virtual;
             cls->sb->parentClass = SynthesizeParentClass(cls->sb->parentClass);
             /*            if (cls->sb->parentTemplate)
@@ -7981,9 +7965,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
     s.tmpl = sym->templateParams;
     addTemplateDeclaration(&s);
     pushCount++;
-#ifdef PARSER_ONLY
     sym->parserSet = false;
-#endif
     if (!found)
     {
         bool ok = true;
@@ -8659,14 +8641,12 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                                     rv = nullptr;
                                 break;
                             case kw_int:
-                                //#ifndef PARSER_ONLY
                                 {
                                     EXPRESSION* exp = copy_expression(params->p->byNonType.val);
                                     optimize_for_constants(&exp);
                                     if (params->p->byNonType.val && !equalTemplateIntNode(exp, (EXPRESSION*)dflt))
                                         rv = nullptr;
                                 }
-                                //#endif
                                 break;
                             default:
                                 break;
@@ -8799,14 +8779,12 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                                     rv = nullptr;
                                 break;
                             case kw_int:
-                                //#ifndef PARSER_ONLY
                                 {
                                     EXPRESSION* exp = copy_expression(params->p->byNonType.val);
                                     optimize_for_constants(&exp);
                                     if (params->p->byNonType.dflt && !equalTemplateIntNode(exp, params->p->byNonType.dflt))
                                         rv = nullptr;
                                 }
-                                //#endif
                                 break;
                             default:
                                 break;
@@ -8854,14 +8832,12 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                             rv = nullptr;
                         break;
                     case kw_int:
-                        //#ifndef PARSER_ONLY
                         {
                             if (params->p->byNonType.dflt &&
                                 (!args->p->byNonType.dflt ||
                                  !templatecomparetypes(params->p->byNonType.tp, args->p->byNonType.tp, true)))
                                 rv = nullptr;
                         }
-                        //#endif
                         break;
                     default:
                         break;

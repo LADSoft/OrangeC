@@ -102,175 +102,144 @@ added->next = *hr;
 static void UndoPreviousCodegen(SYMBOL* sym) {}
 void dumpInlines(void)
 {
-#ifndef PARSER_ONLY
-    if (!TotalErrors())
+    if (IsCompiler())
     {
-        bool done;
-        Optimizer::LIST* vtabList;
-        Optimizer::LIST* dataList;
-        Optimizer::cseg();
-        do
+        if (!TotalErrors())
         {
-            Optimizer::LIST* funcList = inlineHead;
-            done = true;
-            while (funcList)
+            bool done;
+            Optimizer::LIST* vtabList;
+            Optimizer::LIST* dataList;
+            Optimizer::cseg();
+            do
             {
-                SYMBOL* sym = (SYMBOL*)funcList->data;
-                if (((sym->sb->attribs.inheritable.isInline && sym->sb->dumpInlineToFile) ||
-                     (Optimizer::SymbolManager::Test(sym) && Optimizer::SymbolManager::Test(sym)->genreffed)))
+                Optimizer::LIST* funcList = inlineHead;
+                done = true;
+                while (funcList)
                 {
-                    if ((sym->sb->parentClass && sym->sb->parentClass->sb->dontinstantiate && !sym->sb->templateLevel) ||
-                        sym->sb->attribs.inheritable.linkage2 == lk_import)
+                    SYMBOL* sym = (SYMBOL*)funcList->data;
+                    if (((sym->sb->attribs.inheritable.isInline && sym->sb->dumpInlineToFile) ||
+                        (Optimizer::SymbolManager::Test(sym) && Optimizer::SymbolManager::Test(sym)->genreffed)))
                     {
-                        sym->sb->dontinstantiate = true;
-                    }
-                    if (!sym->sb->didinline && !sym->sb->dontinstantiate)
-                    {
-                        if (inSearch(sym))
+                        if ((sym->sb->parentClass && sym->sb->parentClass->sb->dontinstantiate && !sym->sb->templateLevel) ||
+                            sym->sb->attribs.inheritable.linkage2 == lk_import)
                         {
-                            sym->sb->didinline = true;
+                            sym->sb->dontinstantiate = true;
                         }
-                        else
+                        if (!sym->sb->didinline && !sym->sb->dontinstantiate)
                         {
-                            if (isfunction(sym->tp) && !sym->sb->inlineFunc.stmt && Optimizer::cparams.prm_cplusplus)
+                            if (inSearch(sym))
                             {
-                                propagateTemplateDefinition(sym);
-                            }
-                            if ((sym->sb->attribs.inheritable.isInline || sym->sb->attribs.inheritable.linkage == lk_virtual
-                                || sym->sb->forcedefault) &&
-                                sym->sb->inlineFunc.stmt)
-                            {
-                                inInsert(sym);
-                                sym->sb->noextern = true;
-                                UndoPreviousCodegen(sym);
-                                startlab = Optimizer::nextLabel++;
-                                retlab = Optimizer::nextLabel++;
-                                genfunc(sym, true);
-                                done = false;
                                 sym->sb->didinline = true;
-                            }
-                        }
-                    }
-                }
-                funcList = funcList->next;
-            }
-            startlab = retlab = 0;
-            vtabList = inlineVTabHead;
-            while (vtabList)
-            {
-                SYMBOL* sym = (SYMBOL*)vtabList->data;
-                if (Optimizer::SymbolManager::Test(sym->sb->vtabsp) && hasVTab(sym) && !sym->sb->vtabsp->sb->didinline)
-                {
-                    if (sym->sb->dontinstantiate || sym->sb->vtabsp->sb->dontinstantiate)
-                    {
-                        Optimizer::SymbolManager::Get(sym->sb->vtabsp)->dontinstantiate = true;
-                        sym->sb->vtabsp->sb->storage_class = sc_external;
-                        sym->sb->vtabsp->sb->attribs.inheritable.linkage = lk_c;
-                    }
-                    else
-                    {
-                        sym->sb->vtabsp->sb->didinline = true;
-                        sym->sb->vtabsp->sb->noextern = true;
-                        dumpVTab(sym);
-                        done = false;
-                    }
-                }
-                vtabList = vtabList->next;
-            }
-        } while (!done);
-        dataList = inlineDataHead;
-        Optimizer::dseg();
-        while (dataList)
-        {
-            SYMBOL* sym = (SYMBOL*)dataList->data;
-            if (sym->sb->attribs.inheritable.linkage2 != lk_import)
-            {
-                if (sym->sb->parentClass && sym->sb->parentClass->sb->parentTemplate)
-                {
-                    SYMBOL* parentTemplate = sym->sb->parentClass->sb->parentTemplate;
-                    SYMBOL* origsym;
-                    SYMLIST* instants = parentTemplate->sb->instantiations;
-                    while (instants)
-                    {
-                        if (TemplateInstantiationMatch(instants->p, sym->sb->parentClass))
-                        {
-                            parentTemplate = instants->p;
-                            break;
-                        }
-                        instants = instants->next;
-                    }
-                    origsym = search(sym->name, parentTemplate->tp->syms);
-                    //            printf("%s\n", origsym->sb->decoratedName);
-
-                    if (!origsym || origsym->sb->storage_class != sc_global)
-                    {
-                        parentTemplate = sym->sb->parentClass->sb->parentTemplate;
-                        origsym = search(sym->name, parentTemplate->tp->syms);
-                    }
-
-                    if (sym->sb->parentClass && sym->sb->parentClass->sb->dontinstantiate)
-                    {
-                        sym->sb->dontinstantiate = true;
-                    }
-                    if (origsym && origsym->sb->storage_class == sc_global && !sym->sb->didinline && !sym->sb->dontinstantiate)
-                    {
-                        Optimizer::SymbolManager::Get(sym)->noextern = true;
-                        sym->sb->didinline = true;
-                        sym->sb->noextern = true;
-                        sym->sb->storage_class = sc_global;
-                        sym->sb->attribs.inheritable.linkage = lk_virtual;
-                        if (origsym->sb->deferredCompile)
-                        {
-                            STRUCTSYM s1, s;
-                            LEXLIST* lex;
-                            SYMBOL *pc = sym;
-                            while (pc->sb->parentClass)
-                                pc = pc->sb->parentClass;
-                            s1.str = sym->sb->parentClass;
-                            addStructureDeclaration(&s1);
-                            s.tmpl = sym->templateParams;
-                            addTemplateDeclaration(&s);
-                            int n = PushTemplateNamespace(pc);
-                            lex = SetAlternateLex(origsym->sb->deferredCompile);
-                            sym->sb->init = nullptr;
-                            lex = initialize(lex, nullptr, sym, sc_global, true, 0);
-                            SetAlternateLex(nullptr);
-                            PopTemplateNamespace(n);
-                            dropStructureDeclaration();
-                            dropStructureDeclaration();
-                        }
-                        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), true);
-                        if (sym->sb->init)
-                        {
-                            if (isstructured(sym->tp) || isarray(sym->tp))
-                            {
-                                dumpInitGroup(sym, sym->tp);
                             }
                             else
                             {
-                                int s = dumpInit(sym, sym->sb->init);
-                                if (s < sym->tp->size)
-                                    Optimizer::genstorage(sym->tp->size - s);
+                                if (isfunction(sym->tp) && !sym->sb->inlineFunc.stmt && Optimizer::cparams.prm_cplusplus)
+                                {
+                                    propagateTemplateDefinition(sym);
+                                }
+                                if ((sym->sb->attribs.inheritable.isInline || sym->sb->attribs.inheritable.linkage == lk_virtual
+                                    || sym->sb->forcedefault) &&
+                                    sym->sb->inlineFunc.stmt)
+                                {
+                                    inInsert(sym);
+                                    sym->sb->noextern = true;
+                                    UndoPreviousCodegen(sym);
+                                    startlab = Optimizer::nextLabel++;
+                                    retlab = Optimizer::nextLabel++;
+                                    genfunc(sym, true);
+                                    done = false;
+                                    sym->sb->didinline = true;
+                                }
                             }
                         }
-                        else
-                        {
-                            Optimizer::genstorage(basetype(sym->tp)->size);
-                        }
-                        Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
                     }
+                    funcList = funcList->next;
                 }
-                else
+                startlab = retlab = 0;
+                vtabList = inlineVTabHead;
+                while (vtabList)
                 {
-                    if (!sym->sb->didinline)
+                    SYMBOL* sym = (SYMBOL*)vtabList->data;
+                    if (Optimizer::SymbolManager::Test(sym->sb->vtabsp) && hasVTab(sym) && !sym->sb->vtabsp->sb->didinline)
                     {
-                        if (inSearch(sym))
+                        if (sym->sb->dontinstantiate || sym->sb->vtabsp->sb->dontinstantiate)
                         {
-                            sym->sb->didinline = true;
+                            Optimizer::SymbolManager::Get(sym->sb->vtabsp)->dontinstantiate = true;
+                            sym->sb->vtabsp->sb->storage_class = sc_external;
+                            sym->sb->vtabsp->sb->attribs.inheritable.linkage = lk_c;
                         }
                         else
                         {
-                            inInsert(sym);
+                            sym->sb->vtabsp->sb->didinline = true;
+                            sym->sb->vtabsp->sb->noextern = true;
+                            dumpVTab(sym);
+                            done = false;
+                        }
+                    }
+                    vtabList = vtabList->next;
+                }
+            } while (!done);
+            dataList = inlineDataHead;
+            Optimizer::dseg();
+            while (dataList)
+            {
+                SYMBOL* sym = (SYMBOL*)dataList->data;
+                if (sym->sb->attribs.inheritable.linkage2 != lk_import)
+                {
+                    if (sym->sb->parentClass && sym->sb->parentClass->sb->parentTemplate)
+                    {
+                        SYMBOL* parentTemplate = sym->sb->parentClass->sb->parentTemplate;
+                        SYMBOL* origsym;
+                        SYMLIST* instants = parentTemplate->sb->instantiations;
+                        while (instants)
+                        {
+                            if (TemplateInstantiationMatch(instants->p, sym->sb->parentClass))
+                            {
+                                parentTemplate = instants->p;
+                                break;
+                            }
+                            instants = instants->next;
+                        }
+                        origsym = search(sym->name, parentTemplate->tp->syms);
+                        //            printf("%s\n", origsym->sb->decoratedName);
+
+                        if (!origsym || origsym->sb->storage_class != sc_global)
+                        {
+                            parentTemplate = sym->sb->parentClass->sb->parentTemplate;
+                            origsym = search(sym->name, parentTemplate->tp->syms);
+                        }
+
+                        if (sym->sb->parentClass && sym->sb->parentClass->sb->dontinstantiate)
+                        {
+                            sym->sb->dontinstantiate = true;
+                        }
+                        if (origsym && origsym->sb->storage_class == sc_global && !sym->sb->didinline && !sym->sb->dontinstantiate)
+                        {
+                            Optimizer::SymbolManager::Get(sym)->noextern = true;
+                            sym->sb->didinline = true;
+                            sym->sb->noextern = true;
+                            sym->sb->storage_class = sc_global;
+                            sym->sb->attribs.inheritable.linkage = lk_virtual;
+                            if (origsym->sb->deferredCompile)
+                            {
+                                STRUCTSYM s1, s;
+                                LEXLIST* lex;
+                                SYMBOL* pc = sym;
+                                while (pc->sb->parentClass)
+                                    pc = pc->sb->parentClass;
+                                s1.str = sym->sb->parentClass;
+                                addStructureDeclaration(&s1);
+                                s.tmpl = sym->templateParams;
+                                addTemplateDeclaration(&s);
+                                int n = PushTemplateNamespace(pc);
+                                lex = SetAlternateLex(origsym->sb->deferredCompile);
+                                sym->sb->init = nullptr;
+                                lex = initialize(lex, nullptr, sym, sc_global, true, 0);
+                                SetAlternateLex(nullptr);
+                                PopTemplateNamespace(n);
+                                dropStructureDeclaration();
+                                dropStructureDeclaration();
+                            }
                             Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), true);
                             if (sym->sb->init)
                             {
@@ -286,44 +255,78 @@ void dumpInlines(void)
                                 }
                             }
                             else
+                            {
                                 Optimizer::genstorage(basetype(sym->tp)->size);
+                            }
                             Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
                         }
                     }
+                    else
+                    {
+                        if (!sym->sb->didinline)
+                        {
+                            if (inSearch(sym))
+                            {
+                                sym->sb->didinline = true;
+                            }
+                            else
+                            {
+                                inInsert(sym);
+                                Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), true);
+                                if (sym->sb->init)
+                                {
+                                    if (isstructured(sym->tp) || isarray(sym->tp))
+                                    {
+                                        dumpInitGroup(sym, sym->tp);
+                                    }
+                                    else
+                                    {
+                                        int s = dumpInit(sym, sym->sb->init);
+                                        if (s < sym->tp->size)
+                                            Optimizer::genstorage(sym->tp->size - s);
+                                    }
+                                }
+                                else
+                                    Optimizer::genstorage(basetype(sym->tp)->size);
+                                Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
+                            }
+                        }
+                    }
                 }
+                dataList = dataList->next;
             }
-            dataList = dataList->next;
         }
     }
-#endif
 }
 void dumpImportThunks(void)
 {
-#ifndef PARSER_ONLY
-    Optimizer::LIST* l = importThunks;
-    while (l)
+    if (IsCompiler())
     {
-        Optimizer::gen_virtual(Optimizer::SymbolManager::Get((SYMBOL*)l->data), false);
-        Optimizer::gen_importThunk(Optimizer::SymbolManager::Get(((SYMBOL*)l->data)->sb->mainsym));
-        Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get((SYMBOL*)l->data));
-        l = l->next;
+        Optimizer::LIST* l = importThunks;
+        while (l)
+        {
+            Optimizer::gen_virtual(Optimizer::SymbolManager::Get((SYMBOL*)l->data), false);
+            Optimizer::gen_importThunk(Optimizer::SymbolManager::Get(((SYMBOL*)l->data)->sb->mainsym));
+            Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get((SYMBOL*)l->data));
+            l = l->next;
+        }
     }
-#endif
 }
 void dumpvc1Thunks(void)
 {
-#ifndef PARSER_ONLY
-    SYMLIST* hr;
-    Optimizer::cseg();
-    hr = vc1Thunks->table[0];
-    while (hr)
+    if (IsCompiler())
     {
-        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(hr->p), false);
-        Optimizer::gen_vc1(Optimizer::SymbolManager::Get(hr->p));
-        Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(hr->p));
-        hr = hr->next;
+        SYMLIST* hr;
+        Optimizer::cseg();
+        hr = vc1Thunks->table[0];
+        while (hr)
+        {
+            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(hr->p), false);
+            Optimizer::gen_vc1(Optimizer::SymbolManager::Get(hr->p));
+            Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(hr->p));
+            hr = hr->next;
+        }
     }
-#endif
 }
 SYMBOL* getvc1Thunk(int offset)
 {

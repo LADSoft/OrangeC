@@ -141,7 +141,6 @@ bool equalnode(EXPRESSION* node1, EXPRESSION* node2)
     }
 }
 
-#ifndef PARSER_ONLY
 static char* addNameSpace(char* buf, SYMBOL* sym)
 {
     if (!sym)
@@ -447,35 +446,35 @@ static void RTTIDumpArithmetic(SYMBOL* xtSym, TYPE* tp)
     RTTIDumpHeader(xtSym, tp, 0);
     Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
 }
-#endif
 SYMBOL* RTTIDumpType(TYPE* tp)
 {
     SYMBOL* xtSym = nullptr;
-#ifndef PARSER_ONLY
-    if (Optimizer::cparams.prm_xcept)
+    if (IsCompiler())
     {
-        char name[4096];
-        RTTIGetName(name, tp);
-        xtSym = search(name, rttiSyms);
-        if (!xtSym)
+        if (Optimizer::cparams.prm_xcept)
         {
-            xtSym = makeID(sc_global, tp, nullptr, litlate(name));
-            xtSym->sb->attribs.inheritable.linkage = lk_virtual;
-            if (isstructured(tp))
-                xtSym->sb->attribs.inheritable.linkage2 = basetype(tp)->sp->sb->attribs.inheritable.linkage2;
-            xtSym->sb->decoratedName = xtSym->name;
-            xtSym->sb->xtEntry = true;
-            insert(xtSym, rttiSyms);
-            if (isstructured(tp) && basetype(tp)->sp->sb->dontinstantiate &&
-                basetype(tp)->sp->sb->attribs.inheritable.linkage2 != lk_import)
+            char name[4096];
+            RTTIGetName(name, tp);
+            xtSym = search(name, rttiSyms);
+            if (!xtSym)
             {
-                xtSym->sb->dontinstantiate = true;
-                Optimizer::SymbolManager::Get(xtSym);
-            }
-            else
-            {
-                switch (basetype(tp)->type)
+                xtSym = makeID(sc_global, tp, nullptr, litlate(name));
+                xtSym->sb->attribs.inheritable.linkage = lk_virtual;
+                if (isstructured(tp))
+                    xtSym->sb->attribs.inheritable.linkage2 = basetype(tp)->sp->sb->attribs.inheritable.linkage2;
+                xtSym->sb->decoratedName = xtSym->name;
+                xtSym->sb->xtEntry = true;
+                insert(xtSym, rttiSyms);
+                if (isstructured(tp) && basetype(tp)->sp->sb->dontinstantiate &&
+                    basetype(tp)->sp->sb->attribs.inheritable.linkage2 != lk_import)
                 {
+                    xtSym->sb->dontinstantiate = true;
+                    Optimizer::SymbolManager::Get(xtSym);
+                }
+                else
+                {
+                    switch (basetype(tp)->type)
+                    {
                     case bt_lref:
                     case bt_rref:
                         RTTIDumpRef(xtSym, tp);
@@ -493,31 +492,30 @@ SYMBOL* RTTIDumpType(TYPE* tp)
                     default:
                         RTTIDumpArithmetic(xtSym, tp);
                         break;
+                    }
                 }
             }
-        }
-        else
-        {
-            while (ispointer(tp) || isref(tp))
-                tp = basetype(tp)->btp;
-            if (isstructured(tp) && !basetype(tp)->sp->sb->dontinstantiate)
+            else
             {
-                SYMBOL* xtSym2;
-                // xtSym *should* be there.
-                RTTIGetName(name, basetype(tp));
-                xtSym2 = search(name, rttiSyms);
-                if (xtSym2 && xtSym2->sb->dontinstantiate)
+                while (ispointer(tp) || isref(tp))
+                    tp = basetype(tp)->btp;
+                if (isstructured(tp) && !basetype(tp)->sp->sb->dontinstantiate)
                 {
-                    xtSym2->sb->dontinstantiate = false;
-                    RTTIDumpStruct(xtSym2, tp);
+                    SYMBOL* xtSym2;
+                    // xtSym *should* be there.
+                    RTTIGetName(name, basetype(tp));
+                    xtSym2 = search(name, rttiSyms);
+                    if (xtSym2 && xtSym2->sb->dontinstantiate)
+                    {
+                        xtSym2->sb->dontinstantiate = false;
+                        RTTIDumpStruct(xtSym2, tp);
+                    }
                 }
             }
         }
     }
-#endif
     return xtSym;
 }
-#ifndef PARSER_ONLY
 static void XCStmt(STATEMENT* block, std::map<int, std::map<int, __xclist*>> & lst);
 static void XCExpression(EXPRESSION* node, std::map<int, std::map<int, __xclist*>> & lst)
 {
@@ -1042,5 +1040,4 @@ void XTDumpTab(SYMBOL* funcsp)
         Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(funcsp->sb->xc->xclab));
     }
 }
-#endif
 }  // namespace Parser

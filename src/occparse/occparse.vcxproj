@@ -88,6 +88,7 @@
     <ClCompile Include="lex.cpp" />
     <ClCompile Include="libcxx.cpp" />
     <ClCompile Include="mangle.cpp" />
+    <ClCompile Include="occprstub.cpp" />
     <ClCompile Include="osutil.cpp" />
     <ClCompile Include="property.cpp" />
     <ClCompile Include="rtti.cpp" />

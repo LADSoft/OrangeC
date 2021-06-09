@@ -5483,11 +5483,12 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
         else if (!asExpression && MATCHKW(lex, kw_namespace))
         {
             bool linked;
-#ifdef PARSER_ONLY
             struct _ccNamespaceData nsData;
-            nsData.declfile = lex->data->errfile;
-            nsData.startline = lex->data->errline;
-#endif
+            if (!IsCompiler())
+            {
+                nsData.declfile = lex->data->errfile;
+                nsData.startline = lex->data->errline;
+            }
             if (storage_class_in == sc_member || storage_class_in == sc_mutable)
                 error(ERR_NAMESPACE_NO_STRUCT);
 
@@ -5504,10 +5505,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         lex = declare(lex, nullptr, nullptr, storage_class, defaultLinkage, nullptr, true, false, false, access);
                     }
                 }
-#ifdef PARSER_ONLY
-                if (lex)
+                if (!IsCompiler() && lex)
                     nsData.endline = lex->data->errline;
-#endif
                 needkw(&lex, end);
                 if (linked)
                 {
@@ -5515,11 +5514,12 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                     sp->sb->value.i--;
                     nameSpaceList = nameSpaceList->next;
                     globalNameSpace = globalNameSpace->next;
-#ifdef PARSER_ONLY
-                    nsData.next = sp->sb->ccNamespaceData;
-                    sp->sb->ccNamespaceData = Allocate<_ccNamespaceData>();
-                    *sp->sb->ccNamespaceData = nsData;
-#endif
+                    if (!IsCompiler())
+                    {
+                        nsData.next = sp->sb->ccNamespaceData;
+                        sp->sb->ccNamespaceData = Allocate<_ccNamespaceData>();
+                        *sp->sb->ccNamespaceData = nsData;
+                    }
                 }
                 needsemi = false;
             }

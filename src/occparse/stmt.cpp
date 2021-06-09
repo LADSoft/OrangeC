@@ -108,11 +108,9 @@ void statement_ini(bool global)
 }
 bool msilManaged(SYMBOL* s)
 {
-#ifdef PARSER_ONLY
+    if (IsCompiler())
+        return occmsil::msil_managed(Optimizer::SymbolManager::Get(s));
     return false;
-#else
-    return occmsil::msil_managed(Optimizer::SymbolManager::Get(s));
-#endif
 }
 
 void InsertLineData(int lineno, int fileindex, const char* fname, char* line)
@@ -3937,8 +3935,7 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
             if (!Optimizer::cparams.prm_cplusplus && funcsp->sb->storage_class != sc_static)
                 Optimizer::SymbolManager::Get(funcsp);
         }
-#ifndef PARSER_ONLY
-        else
+        else if (IsCompiler())
         {
             bool isTemplate = false;
             SYMBOL* spt = funcsp;
@@ -3964,12 +3961,10 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
                 }
             }
         }
-#endif
+
     }
-#ifndef PARSER_ONLY
-    if (funcNesting == 1)  // top level function
+    if (IsCompiler && funcNesting == 1)  // top level function
         localFree();
-#endif
     handleInlines(funcsp);
     controlSequences = oldControlSequences;
     expressions = oldExpressionCount;

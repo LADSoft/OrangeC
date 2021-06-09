@@ -60,6 +60,12 @@
 int usingEsp;
 
 Optimizer::SimpleSymbol* currentFunction;
+namespace Parser
+{
+    bool IsCompiler() {
+        return true;
+    }
+}
 
 namespace Optimizer
 {

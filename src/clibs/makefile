@@ -73,9 +73,6 @@ export SYSOBJECT
 LSCRTLOBJECT:=$(THISPATH)object\startup
 export LSCRTLOBJECT
 
-DLLOBJECT:=$(THISPATH)object\dll
-export DLLOBJECT
-
 CLIBOBJECT:=$(THISPATH)object\clib
 export CLIBOBJECT
 
@@ -93,7 +90,6 @@ mkdir:
 	-mkdir object\dos 2> NUL
 	-mkdir object\windows 2> NUL
 	-mkdir object\startup 2> NUL
-	-mkdir object\dll 2> NUL
 	-mkdir object\cil 2> NUL
 	-mkdir object\clib 2> NUL
 
@@ -112,11 +108,8 @@ copyfiles: mkdir
 	-copy  platform\win32\wininc ..\..\include\c 2>NUL
 	-copy  platform\win32\wininc\win32 ..\..\include\c\win32 2>NUL
 
-$(C_DLLS) : %.dlls : copyfiles
-	$(MAKE) -C$* --eval="OBJECT=$(DLLOBJECT)" --eval="$(BUILDING_DLL)"
-
-$(C_CLIBS) : %.clibs : $(C_DLLS)
-	$(MAKE) -C$* --eval="OBJECT=$(CLIBOBJECT)"
+$(C_CLIBS) : %.clibs : copyfiles
+	$(MAKE) -C$* --eval="OBJECT=$(CLIBOBJECT)" --eval="$(BUILDING_DLL)"
 
 $(C_FORMAT) : %.formats :
 	$(MAKE) -C$* format
@@ -185,7 +178,6 @@ clean:
 	-del /Q $(DOSOBJECT) 2> NUL
 	-del /Q $(WINOBJECT) 2> NUL
 	-del /Q $(SYSOBJECT) 2> NUL
-	-del /Q $(DLLOBJECT) 2> NUL
 	-del /Q $(CILOBJECT) 2> NUL
 	-del /Q $(CLIBOBJECT) 2> NUL
 	-del /Q platform\win32\crtdmain\*.o 2>NUL
@@ -205,7 +197,6 @@ clean:
 	-rmdir $(DOSOBJECT) 2> NUL
 	-rmdir $(WINOBJECT) 2> NUL
 	-rmdir $(SYSOBJECT) 2> NUL
-	-rmdir $(DLLOBJECT) 2> NUL
 	-rmdir $(CILOBJECT) 2> NUL
 	-rmdir $(CLIBOBJECT) 2> NUL
 	-rmdir object 2> NUL

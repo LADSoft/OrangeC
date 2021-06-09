@@ -56,6 +56,7 @@ CmdSwitchParser LibMain::SwitchParser;
 CmdSwitchBool LibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
 CmdSwitchOutput LibMain::OutputFile(SwitchParser, 'o', ".a");
 CmdSwitchFile LibMain::File(SwitchParser, '@');
+CmdSwitchBool LibMain::noExport(SwitchParser, 0, false, "noexports");
 const char* LibMain::usageText =
     "[options] libfile [+ files] [- files] [* files]\n"
     "\n"
@@ -64,6 +65,8 @@ const char* LibMain::usageText =
     "/V, --version  Show version and date\n"
     "/!, --nologo   No logo\n"
     "@xxx           Read commands from file\n"
+    "\n"
+    "--noexports    Remove export records\n"
     "\n"
     "Time: " __TIME__ "  Date: " __DATE__;
 
@@ -176,7 +179,7 @@ int LibMain::Run(int argc, char** argv)
             outputFile += ".l";
     }
 
-    LibManager librarian(outputFile, caseSensitiveSwitch.GetValue());
+    LibManager librarian(outputFile, noExport.GetValue(), caseSensitiveSwitch.GetValue());
     if (librarian.IsOpen())
         if (!librarian.LoadLibrary())
         {

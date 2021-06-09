@@ -42,9 +42,8 @@ all: alldirs
 
 
 lscrtl_objs:
-	$(MAKE) -Crtl --eval="OBJECT=$(DLLOBJECT)" --eval="$(BUILDING_DLL)"
+	$(MAKE) -Crtl --eval="$(BUILDING_DLL)"
 rtl_objs: lscrtl_objs
-	$(MAKE) -Crtl
 
 alldirs: rtl_objs
 ifdef FINAL

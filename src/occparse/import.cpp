@@ -115,8 +115,6 @@ class Importer : public Callback
 #ifdef VSIDE
 void AddType(Optimizer::SimpleSymbol* sym, Type* type)
 {
-#    ifdef ISPARSER
-#    endif
 }
 #endif
 }  // namespace Parser

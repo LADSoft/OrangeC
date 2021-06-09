@@ -45,7 +45,7 @@
 #include <vector>
 #include <string>
 using namespace DotNetPELib;
-PELib* peLib;
+extern PELib* peLib;
 
 namespace occmsil
 {

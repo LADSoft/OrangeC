@@ -53,12 +53,10 @@
 #include "types.h"
 #include "declare.h"
 
-#ifdef PARSER_ONLY
 namespace CompletionCompiler
 {
 void ccInsertUsing(Parser::SYMBOL* ns, Parser::SYMBOL* parentns, const char* file, int line);
 }
-#endif
 namespace Parser
 {
 
@@ -95,130 +93,134 @@ void SpecializationError(SYMBOL* sym)
 }
 static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* entry)
 {
-#ifndef PARSER_ONLY
-    while (entry)
+    if (IsCompiler())
     {
-        if (!entry->isdead)
+        while (entry)
         {
-            VIRTUALFUNC* vf = entry->virtuals;
-            Optimizer::genaddress(entry->dataOffset);
-            Optimizer::genaddress(entry->vtabOffset);
-            while (vf)
+            if (!entry->isdead)
             {
-                if (vf->func->sb->deferredCompile && (!vf->func->sb->templateLevel || vf->func->sb->instantiated))
+                VIRTUALFUNC* vf = entry->virtuals;
+                Optimizer::genaddress(entry->dataOffset);
+                Optimizer::genaddress(entry->vtabOffset);
+                while (vf)
                 {
-                    FUNCTIONCALL fcall;
-                    TYPE* tp = nullptr;
-                    EXPRESSION* exp = intNode(en_c_i, 0);
-                    SYMBOL* sp = vf->func->sb->overloadName;
-                    INITLIST** args = &fcall.arguments;
-                    SYMLIST* hr = basetype(vf->func->tp)->syms->table[0];
-                    memset(&fcall, 0, sizeof(fcall));
-                    while (hr)
+                    if (vf->func->sb->deferredCompile && (!vf->func->sb->templateLevel || vf->func->sb->instantiated))
                     {
-                        SYMBOL* sym = hr->p;
-                        if (sym->sb->thisPtr)
+                        FUNCTIONCALL fcall;
+                        TYPE* tp = nullptr;
+                        EXPRESSION* exp = intNode(en_c_i, 0);
+                        SYMBOL* sp = vf->func->sb->overloadName;
+                        INITLIST** args = &fcall.arguments;
+                        SYMLIST* hr = basetype(vf->func->tp)->syms->table[0];
+                        memset(&fcall, 0, sizeof(fcall));
+                        while (hr)
                         {
-                            fcall.thistp = sym->tp;
-                            fcall.thisptr = exp;
+                            SYMBOL* sym = hr->p;
+                            if (sym->sb->thisPtr)
+                            {
+                                fcall.thistp = sym->tp;
+                                fcall.thisptr = exp;
+                            }
+                            else if (sym->tp->type != bt_void)
+                            {
+                                *args = Allocate<INITLIST>();
+                                (*args)->tp = sym->tp;
+                                (*args)->exp = exp;
+                                args = &(*args)->next;
+                            }
+                            hr = hr->next;
                         }
-                        else if (sym->tp->type != bt_void)
-                        {
-                            *args = Allocate<INITLIST>();
-                            (*args)->tp = sym->tp;
-                            (*args)->exp = exp;
-                            args = &(*args)->next;
-                        }
-                        hr = hr->next;
+                        fcall.ascall = true;
+                        sp = GetOverloadedFunction(&tp, &exp, sp, &fcall, nullptr, true, false, true, 0);
+                        if (sp)
+                            vf->func = sp;
                     }
-                    fcall.ascall = true;
-                    sp = GetOverloadedFunction(&tp, &exp, sp, &fcall, nullptr, true, false, true, 0);
-                    if (sp)
-                        vf->func = sp;
-                }
-                InsertInline(vf->func);
-                if (vf->func->sb->ispure)
-                {
-                    Optimizer::genaddress(0);
-                }
-                else if (sym == vf->func->sb->parentClass && entry->vtabOffset)
-                {
-                    char buf[512];
-                    SYMBOL* localsp;
-                    strcpy(buf, sym->sb->decoratedName);
-                    Optimizer::my_sprintf(buf + strlen(buf), "_$%c%d", count % 26 + 'A', count / 26);
+                    InsertInline(vf->func);
+                    if (vf->func->sb->ispure)
+                    {
+                        Optimizer::genaddress(0);
+                    }
+                    else if (sym == vf->func->sb->parentClass && entry->vtabOffset)
+                    {
+                        char buf[512];
+                        SYMBOL* localsp;
+                        strcpy(buf, sym->sb->decoratedName);
+                        Optimizer::my_sprintf(buf + strlen(buf), "_$%c%d", count % 26 + 'A', count / 26);
 
-                    thunks[count].entry = entry;
-                    if (vf->func->sb->attribs.inheritable.linkage2 == lk_import)
-                    {
-                        EXPRESSION* exp = varNode(en_pc, vf->func);
-                        thunkForImportTable(&exp);
-                        thunks[count].func = exp->v.sp;
+                        thunks[count].entry = entry;
+                        if (vf->func->sb->attribs.inheritable.linkage2 == lk_import)
+                        {
+                            EXPRESSION* exp = varNode(en_pc, vf->func);
+                            thunkForImportTable(&exp);
+                            thunks[count].func = exp->v.sp;
+                        }
+                        else
+                        {
+                            thunks[count].func = vf->func;
+                        }
+                        thunks[count].name = localsp = makeID(sc_static, &stdfunc, nullptr, litlate(buf));
+                        localsp->sb->decoratedName = localsp->name;
+                        localsp->sb->attribs.inheritable.linkage = lk_virtual;
+                        Optimizer::genref(Optimizer::SymbolManager::Get(localsp), 0);
+                        InsertInline(localsp);
+                        count++;
                     }
                     else
                     {
-                        thunks[count].func = vf->func;
+                        if (vf->func->sb->attribs.inheritable.linkage2 == lk_import)
+                        {
+                            EXPRESSION* exp = varNode(en_pc, vf->func);
+                            thunkForImportTable(&exp);
+                            Optimizer::genref(Optimizer::SymbolManager::Get(exp->v.sp), 0);
+                        }
+                        else
+                        {
+                            Optimizer::genref(Optimizer::SymbolManager::Get(vf->func), 0);
+                        }
                     }
-                    thunks[count].name = localsp = makeID(sc_static, &stdfunc, nullptr, litlate(buf));
-                    localsp->sb->decoratedName = localsp->name;
-                    localsp->sb->attribs.inheritable.linkage = lk_virtual;
-                    Optimizer::genref(Optimizer::SymbolManager::Get(localsp), 0);
-                    InsertInline(localsp);
-                    count++;
+                    vf = vf->next;
                 }
-                else
-                {
-                    if (vf->func->sb->attribs.inheritable.linkage2 == lk_import)
-                    {
-                        EXPRESSION* exp = varNode(en_pc, vf->func);
-                        thunkForImportTable(&exp);
-                        Optimizer::genref(Optimizer::SymbolManager::Get(exp->v.sp), 0);
-                    }
-                    else
-                    {
-                        Optimizer::genref(Optimizer::SymbolManager::Get(vf->func), 0);
-                    }
-                }
-                vf = vf->next;
             }
+            count = dumpVTabEntries(count, thunks, sym, entry->children);
+            entry = entry->next;
         }
-        count = dumpVTabEntries(count, thunks, sym, entry->children);
-        entry = entry->next;
     }
-#else
-    count = 0;
-#endif
+    else
+    {
+        count = 0;
+    }
     return count;
 }
 void dumpVTab(SYMBOL* sym)
 {
-#ifndef PARSER_ONLY
-    THUNK thunks[1000];
-    SYMBOL* xtSym = RTTIDumpType(basetype(sym->tp));
-    int count = 0;
-
-    Optimizer::dseg();
-    Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym->sb->vtabsp), true);
-    if (xtSym)
-        Optimizer::genref(Optimizer::SymbolManager::Get(xtSym), 0);
-    else
-        Optimizer::genaddress(0);
-    count = dumpVTabEntries(count, thunks, sym, sym->sb->vtabEntries);
-    Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym->sb->vtabsp));
-
-    if (count)
+    if (IsCompiler())
     {
-        int i;
-        Optimizer::cseg();
-        for (i = 0; i < count; i++)
+        THUNK thunks[1000];
+        SYMBOL* xtSym = RTTIDumpType(basetype(sym->tp));
+        int count = 0;
+
+        Optimizer::dseg();
+        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym->sb->vtabsp), true);
+        if (xtSym)
+            Optimizer::genref(Optimizer::SymbolManager::Get(xtSym), 0);
+        else
+            Optimizer::genaddress(0);
+        count = dumpVTabEntries(count, thunks, sym, sym->sb->vtabEntries);
+        Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym->sb->vtabsp));
+
+        if (count)
         {
-            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(thunks[i].name), false);
-            Optimizer::gen_vtt(-(int)thunks[i].entry->dataOffset, Optimizer::SymbolManager::Get(thunks[i].func),
-                               Optimizer::SymbolManager::Get(thunks[i].name));
-            Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(thunks[i].name));
+            int i;
+            Optimizer::cseg();
+            for (i = 0; i < count; i++)
+            {
+                Optimizer::gen_virtual(Optimizer::SymbolManager::Get(thunks[i].name), false);
+                Optimizer::gen_vtt(-(int)thunks[i].entry->dataOffset, Optimizer::SymbolManager::Get(thunks[i].func),
+                    Optimizer::SymbolManager::Get(thunks[i].name));
+                Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(thunks[i].name));
+            }
         }
     }
-#endif
 }
 void internalClassRefCount(SYMBOL* base, SYMBOL* derived, int* vcount, int* ccount, bool isVirtual)
 {
@@ -3203,11 +3205,9 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                             l->next = globalNameSpace->valueData->usingDirectives;
                             globalNameSpace->valueData->usingDirectives = l;
                         }
-#ifdef PARSER_ONLY
-                        if (lex)
+                        if (!IsCompiler() && lex)
                             CompletionCompiler::ccInsertUsing(sp, nameSpaceList ? (SYMBOL*)nameSpaceList->data : nullptr, lex->data->errfile,
                                                               lex->data->errline);
-#endif
                     }
                 }
                 lex = getsym();

@@ -3238,10 +3238,8 @@ bool sameTemplate(TYPE* P, TYPE* A)
                     EXPRESSION* pat = PA->p->byNonType.val && !PA->p->byNonType.dflt ? PA->p->byNonType.val : PA->p->byNonType.dflt;
                     if (!templatecomparetypes(PL->p->byNonType.tp, PA->p->byNonType.tp, true))
                         break;
-                    //#ifndef PARSER_ONLY
                     if ((!plt || !pat) || !equalTemplateIntNode(plt, pat))
                         break;
-                    //#endif
                 }
             }
             PL = PL->next;

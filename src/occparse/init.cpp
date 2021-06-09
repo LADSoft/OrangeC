@@ -273,94 +273,96 @@ void dumpLits(void)
 
 void dumpStartups(void)
 {
-#ifndef PARSER_ONLY
-    SYMBOL* s;
-    bool started = false;
-    for (auto&& starts : preProcessor->GetStartups())
+    if (IsCompiler())
     {
-        if (starts.second->startup)
+        SYMBOL* s;
+        bool started = false;
+        for (auto&& starts : preProcessor->GetStartups())
         {
-            if (!started)
+            if (starts.second->startup)
             {
-                started = true;
-                Optimizer::startupseg();
+                if (!started)
+                {
+                    started = true;
+                    Optimizer::startupseg();
+                }
+                s = search(starts.first.c_str(), globalNameSpace->valueData->syms);
+                if (!s || s->sb->storage_class != sc_overloads)
+                    errorstr(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
+                else
+                {
+                    s = search(starts.first.c_str(), s->tp->syms);
+                    Optimizer::gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_STARTUP);
+                    s->sb->attribs.inheritable.used = true;
+                }
             }
-            s = search(starts.first.c_str(), globalNameSpace->valueData->syms);
-            if (!s || s->sb->storage_class != sc_overloads)
-                errorstr(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
-            else
+        }
+        started = false;
+        for (auto&& starts : preProcessor->GetStartups())
+        {
+            if (!starts.second->startup)
             {
-                s = search(starts.first.c_str(), s->tp->syms);
-                Optimizer::gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_STARTUP);
-                s->sb->attribs.inheritable.used = true;
+                if (!started)
+                {
+                    started = true;
+                    Optimizer::rundownseg();
+                }
+                s = search(starts.first.c_str(), globalNameSpace->valueData->syms);
+                if (!s || s->sb->storage_class != sc_overloads)
+                    errorstr(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
+                else
+                {
+                    s = search(starts.first.c_str(), s->tp->syms);
+                    Optimizer::gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_RUNDOWN);
+                    s->sb->attribs.inheritable.used = true;
+                }
             }
         }
     }
-    started = false;
-    for (auto&& starts : preProcessor->GetStartups())
-    {
-        if (!starts.second->startup)
-        {
-            if (!started)
-            {
-                started = true;
-                Optimizer::rundownseg();
-            }
-            s = search(starts.first.c_str(), globalNameSpace->valueData->syms);
-            if (!s || s->sb->storage_class != sc_overloads)
-                errorstr(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
-            else
-            {
-                s = search(starts.first.c_str(), s->tp->syms);
-                Optimizer::gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_RUNDOWN);
-                s->sb->attribs.inheritable.used = true;
-            }
-        }
-    }
-#endif
 }
 static int dumpBits(INITIALIZER** init)
 {
-#ifndef PARSER_ONLY
-    int offset = (*init)->offset;
-    long long resolver = 0;
-    TYPE* base = basetype((*init)->basetp);
-    do
+    if (IsCompiler())
     {
-        long long i = 0;
-        TYPE* tp = basetype((*init)->basetp);
-        if (tp->anonymousbits)
+        int offset = (*init)->offset;
+        long long resolver = 0;
+        TYPE* base = basetype((*init)->basetp);
+        do
         {
-            *init = (*init)->next;
-            continue;
-        }
-        if (isfloatconst((*init)->exp))
-        {
-            i = (long long)((*init)->exp->v.f);
-        }
-        else if (isintconst((*init)->exp))
-        {
-            i = (*init)->exp->v.i;
-        }
-        else if (isimaginaryconst((*init)->exp))
-        {
-            i = 0;
-        }
-        else if (iscomplexconst((*init)->exp))
-        {
-            i = (long long)((*init)->exp->v.c->r);
-        }
-        else
-            diag("dump-bits: non-constant");
+            long long i = 0;
+            TYPE* tp = basetype((*init)->basetp);
+            if (tp->anonymousbits)
+            {
+                *init = (*init)->next;
+                continue;
+            }
+            if (isfloatconst((*init)->exp))
+            {
+                i = (long long)((*init)->exp->v.f);
+            }
+            else if (isintconst((*init)->exp))
+            {
+                i = (*init)->exp->v.i;
+            }
+            else if (isimaginaryconst((*init)->exp))
+            {
+                i = 0;
+            }
+            else if (iscomplexconst((*init)->exp))
+            {
+                i = (long long)((*init)->exp->v.c->r);
+            }
+            else
+                diag("dump-bits: non-constant");
 #    ifdef ERROR
 #        error REVERSE BITS
 #    endif
-        i &= Optimizer::mod_mask(tp->bits);
-        resolver |= i << tp->startbit;
-        *init = (*init)->next;
-    } while ((*init) && (*init)->offset == offset);
-    switch (base->type)
-    {
+            i &= Optimizer::mod_mask(tp->bits);
+            resolver |= i << tp->startbit;
+            *init = (*init)->next;
+        } while ((*init) && (*init)->offset == offset);
+        switch (base->type)
+        {
         case bt_char:
         case bt_unsigned_char:
         case bt_signed_char:
@@ -393,13 +395,12 @@ static int dumpBits(INITIALIZER** init)
         default:
             diag("dumpBits: unknown bit size");
             break;
+        }
+        if (isatomic((*init)->basetp) && needsAtomicLockFromType((*init)->basetp))
+            Optimizer::genstorage(ATOMIC_FLAG_SPACE);
+        return base->size;
     }
-    if (isatomic((*init)->basetp) && needsAtomicLockFromType((*init)->basetp))
-        Optimizer::genstorage(ATOMIC_FLAG_SPACE);
-    return base->size;
-#else
     return 4;
-#endif
 }
 void insertDynamicInitializer(SYMBOL* sym, INITIALIZER* init)
 {
@@ -450,333 +451,339 @@ void insertDynamicDestructor(SYMBOL* sym, INITIALIZER* init)
 }
 static void callDynamic(const char* name, int startupType, int index, STATEMENT* st)
 {
-#ifndef PARSER_ONLY
-    if (st)
+    if (IsCompiler())
     {
-        STATEMENT* stbegin = stmtNode(nullptr, nullptr, st_dbgblock);
-        stbegin->label = 1;
-        STATEMENT* stend = stmtNode(nullptr, nullptr, st_dbgblock);
-        stend->label = 0;
-        stbegin->next = st;
-        st = stbegin;
-        while (stbegin->next)
-            stbegin = stbegin->next;
-        stbegin->next = stend;
-        char fullName[512];
-        Optimizer::my_sprintf(fullName, "%s_%d", name, index);
-        SYMBOL* funcsp;
-        TYPE* tp = Allocate<TYPE>();
-        tp->type = bt_ifunc;
-        tp->btp = Allocate<TYPE>();
-        tp->btp->type = bt_void;
-        tp->rootType = tp;
-        tp->btp->rootType = tp->btp;
-        tp->syms = CreateHashTable(1);
-        funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr, fullName);
-        funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-        funcsp->sb->inlineFunc.stmt->lower = st;
-        tp->sp = funcsp;
-        SetLinkerNames(funcsp, lk_none);
-        startlab = Optimizer::nextLabel++;
-        retlab = Optimizer::nextLabel++;
-        genfunc(funcsp, !(Optimizer::architecture == ARCHITECTURE_MSIL));
-        startlab = retlab = 0;
-
-        if (!(Optimizer::chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
+        if (st)
         {
-            if (startupType == STARTUP_TYPE_STARTUP)
-                Optimizer::startupseg();
-            else
-                Optimizer::rundownseg();
-            Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32 + preProcessor->GetCppPrio(), startupType);
+            STATEMENT* stbegin = stmtNode(nullptr, nullptr, st_dbgblock);
+            stbegin->label = 1;
+            STATEMENT* stend = stmtNode(nullptr, nullptr, st_dbgblock);
+            stend->label = 0;
+            stbegin->next = st;
+            st = stbegin;
+            while (stbegin->next)
+                stbegin = stbegin->next;
+            stbegin->next = stend;
+            char fullName[512];
+            Optimizer::my_sprintf(fullName, "%s_%d", name, index);
+            SYMBOL* funcsp;
+            TYPE* tp = Allocate<TYPE>();
+            tp->type = bt_ifunc;
+            tp->btp = Allocate<TYPE>();
+            tp->btp->type = bt_void;
+            tp->rootType = tp;
+            tp->btp->rootType = tp->btp;
+            tp->syms = CreateHashTable(1);
+            funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr, fullName);
+            funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+            funcsp->sb->inlineFunc.stmt->lower = st;
+            tp->sp = funcsp;
+            SetLinkerNames(funcsp, lk_none);
+            startlab = Optimizer::nextLabel++;
+            retlab = Optimizer::nextLabel++;
+            genfunc(funcsp, !(Optimizer::architecture == ARCHITECTURE_MSIL));
+            startlab = retlab = 0;
+
+            if (!(Optimizer::chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
+            {
+                if (startupType == STARTUP_TYPE_STARTUP)
+                    Optimizer::startupseg();
+                else
+                    Optimizer::rundownseg();
+                Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32 + preProcessor->GetCppPrio(), startupType);
+            }
         }
     }
-#endif
 }
 static void dumpDynamicInitializers(void)
 {
-#ifndef PARSER_ONLY
-    int index = 0;
-    int counter = 0;
-    STATEMENT *st = nullptr, **stp = &st;
-    codeLabel = INT_MIN;
-    while (dynamicInitializers)
+    if (IsCompiler())
     {
-        EXPRESSION *exp = nullptr, **next = &exp, *exp1;
-        STATEMENT *stmt = nullptr, **stmtp = &stmt;
-        int i = 0;
-        exp = convertInitToExpression(dynamicInitializers->init ? dynamicInitializers->init->basetp : dynamicInitializers->sp->tp,
-                                      dynamicInitializers->sp, nullptr, nullptr, dynamicInitializers->init, nullptr, false);
-
-        while (*next && (*next)->type == en_void)
+        int index = 0;
+        int counter = 0;
+        STATEMENT* st = nullptr, ** stp = &st;
+        codeLabel = INT_MIN;
+        while (dynamicInitializers)
         {
-            counter++;
-            if (++i == 10)
+            EXPRESSION* exp = nullptr, ** next = &exp, * exp1;
+            STATEMENT* stmt = nullptr, ** stmtp = &stmt;
+            int i = 0;
+            exp = convertInitToExpression(dynamicInitializers->init ? dynamicInitializers->init->basetp : dynamicInitializers->sp->tp,
+                dynamicInitializers->sp, nullptr, nullptr, dynamicInitializers->init, nullptr, false);
+
+            while (*next && (*next)->type == en_void)
             {
-                exp1 = *next;
-                *next = intNode(en_c_i, 0);  // fill in the final right with a value
+                counter++;
+                if (++i == 10)
+                {
+                    exp1 = *next;
+                    *next = intNode(en_c_i, 0);  // fill in the final right with a value
+                    (*stmtp) = stmtNode(nullptr, nullptr, st_expr);
+                    (*stmtp)->select = exp;
+                    stmtp = &(*stmtp)->next;
+
+                    next = &exp1;
+                    exp = exp1;
+                    i = 0;
+                }
+                else
+                {
+                    next = &(*next)->right;
+                }
+            }
+            if (exp)
+            {
                 (*stmtp) = stmtNode(nullptr, nullptr, st_expr);
                 (*stmtp)->select = exp;
                 stmtp = &(*stmtp)->next;
-
-                next = &exp1;
-                exp = exp1;
-                i = 0;
             }
-            else
+            if (stmt)
             {
-                next = &(*next)->right;
+                STATEMENT* opt = stmt;
+                while (opt)
+                {
+                    optimize_for_constants(&opt->select);  // DAL fix
+                    opt = opt->next;
+                }
+                *stmtp = st;
+                st = stmt;
             }
-        }
-        if (exp)
-        {
-            (*stmtp) = stmtNode(nullptr, nullptr, st_expr);
-            (*stmtp)->select = exp;
-            stmtp = &(*stmtp)->next;
-        }
-        if (stmt)
-        {
-            STATEMENT* opt = stmt;
-            while (opt)
+            if (++counter >= 1500)
             {
-                optimize_for_constants(&opt->select);  // DAL fix
-                opt = opt->next;
+                counter = 0;
+                callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_STARTUP, index++, st);
+                st = nullptr;
+                stp = &st;
             }
-            *stmtp = st;
-            st = stmt;
+            dynamicInitializers = dynamicInitializers->next;
         }
-        if (++counter >= 1500)
-        {
-            counter = 0;
-            callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_STARTUP, index++, st);
-            st = nullptr;
-            stp = &st;
-        }
-        dynamicInitializers = dynamicInitializers->next;
+        callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_STARTUP, index++, st);
     }
-    callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_STARTUP, index++, st);
-#endif
 }
 static void dumpTLSInitializers(void)
 {
-#ifndef PARSER_ONLY
-    if (TLSInitializers)
+    if (IsCompiler())
     {
-        STATEMENT *st = nullptr, **stp = &st;
-        SYMBOL* funcsp;
-        TYPE* tp = Allocate<TYPE>();
-        tp->type = bt_ifunc;
-        tp->btp = Allocate<TYPE>();
-        tp->btp->type = bt_void;
-        tp->rootType = tp;
-        tp->btp->rootType = tp->btp;
-        tp->syms = CreateHashTable(1);
-        funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr,
-                              "__TLS_DYNAMIC_STARTUP__");
-        funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-        funcsp->sb->inlineFunc.stmt->lower = st;
-        tp->sp = funcsp;
-        SetLinkerNames(funcsp, lk_none);
-        codeLabel = INT_MIN;
-        while (TLSInitializers)
+        if (TLSInitializers)
         {
-            EXPRESSION* exp = varNode(en_threadlocal, TLSInitializers->sp);
-            STATEMENT* stmt;
-            stmt = stmtNode(nullptr, nullptr, st_expr);
-            exp = convertInitToExpression(TLSInitializers->init->basetp, TLSInitializers->sp, nullptr, nullptr,
-                                          TLSInitializers->init, exp, false);
-            optimize_for_constants(&exp);
-            stmt->select = exp;
-            stmt->next = st;
-            st = stmt;
-            TLSInitializers = TLSInitializers->next;
+            STATEMENT* st = nullptr, ** stp = &st;
+            SYMBOL* funcsp;
+            TYPE* tp = Allocate<TYPE>();
+            tp->type = bt_ifunc;
+            tp->btp = Allocate<TYPE>();
+            tp->btp->type = bt_void;
+            tp->rootType = tp;
+            tp->btp->rootType = tp->btp;
+            tp->syms = CreateHashTable(1);
+            funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr,
+                "__TLS_DYNAMIC_STARTUP__");
+            funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+            funcsp->sb->inlineFunc.stmt->lower = st;
+            tp->sp = funcsp;
+            SetLinkerNames(funcsp, lk_none);
+            codeLabel = INT_MIN;
+            while (TLSInitializers)
+            {
+                EXPRESSION* exp = varNode(en_threadlocal, TLSInitializers->sp);
+                STATEMENT* stmt;
+                stmt = stmtNode(nullptr, nullptr, st_expr);
+                exp = convertInitToExpression(TLSInitializers->init->basetp, TLSInitializers->sp, nullptr, nullptr,
+                    TLSInitializers->init, exp, false);
+                optimize_for_constants(&exp);
+                stmt->select = exp;
+                stmt->next = st;
+                st = stmt;
+                TLSInitializers = TLSInitializers->next;
+            }
+            funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+            funcsp->sb->inlineFunc.stmt->lower = st;
+            startlab = Optimizer::nextLabel++;
+            retlab = Optimizer::nextLabel++;
+            genfunc(funcsp, true);
+            startlab = retlab = 0;
+            Optimizer::tlsstartupseg();
+            Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_STARTUP);
         }
-        funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-        funcsp->sb->inlineFunc.stmt->lower = st;
-        startlab = Optimizer::nextLabel++;
-        retlab = Optimizer::nextLabel++;
-        genfunc(funcsp, true);
-        startlab = retlab = 0;
-        Optimizer::tlsstartupseg();
-        Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_STARTUP);
     }
-#endif
 }
 static void dumpDynamicDestructors(void)
 {
-#ifndef PARSER_ONLY
-    int index = 0;
-    int counter = 0;
-    STATEMENT *st = nullptr, **stp = &st;
-    codeLabel = INT_MIN;
-    while (dynamicDestructors)
+    if (IsCompiler())
     {
-        EXPRESSION* exp = convertInitToExpression(dynamicDestructors->init->basetp, dynamicDestructors->sp, nullptr, nullptr,
-                                                  dynamicDestructors->init, nullptr, true);
-        *stp = stmtNode(nullptr, nullptr, st_expr);
-        optimize_for_constants(&exp);
-        (*stp)->select = exp;
-        stp = &(*stp)->next;
-        dynamicDestructors = dynamicDestructors->next;
-        if (++counter % 1500 == 0)
-        {
-            callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_RUNDOWN, index++, st);
-            st = nullptr;
-            stp = &st;
-        }
-    }
-    callDynamic("__DYNAMIC_RUNDOWN__", STARTUP_TYPE_RUNDOWN, index++, st);
-#endif
-}
-static void dumpTLSDestructors(void)
-{
-#ifndef PARSER_ONLY
-    if (TLSDestructors)
-    {
-        STATEMENT *st = nullptr, **stp = &st;
-        SYMBOL* funcsp;
-        TYPE* tp = Allocate<TYPE>();
-        tp->type = bt_ifunc;
-        tp->btp = Allocate<TYPE>();
-        tp->btp->type = bt_void;
-        tp->rootType = tp;
-        tp->btp->rootType = tp->btp;
-        tp->syms = CreateHashTable(1);
-        funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr,
-                              "__TLS_DYNAMIC_RUNDOWN__");
-        funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-        funcsp->sb->inlineFunc.stmt->lower = st;
-        tp->sp = funcsp;
-        SetLinkerNames(funcsp, lk_none);
+        int index = 0;
+        int counter = 0;
+        STATEMENT* st = nullptr, ** stp = &st;
         codeLabel = INT_MIN;
-        while (TLSDestructors)
+        while (dynamicDestructors)
         {
-            EXPRESSION* exp = varNode(en_threadlocal, TLSDestructors->sp);
-            exp = convertInitToExpression(TLSDestructors->init->basetp, TLSDestructors->sp, nullptr, nullptr,
-                                                      TLSDestructors->init, exp, true);
+            EXPRESSION* exp = convertInitToExpression(dynamicDestructors->init->basetp, dynamicDestructors->sp, nullptr, nullptr,
+                dynamicDestructors->init, nullptr, true);
             *stp = stmtNode(nullptr, nullptr, st_expr);
             optimize_for_constants(&exp);
             (*stp)->select = exp;
             stp = &(*stp)->next;
-            TLSDestructors = TLSDestructors->next;
+            dynamicDestructors = dynamicDestructors->next;
+            if (++counter % 1500 == 0)
+            {
+                callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_RUNDOWN, index++, st);
+                st = nullptr;
+                stp = &st;
+            }
         }
-
-        funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-        funcsp->sb->inlineFunc.stmt->lower = st;
-        startlab = Optimizer::nextLabel++;
-        retlab = Optimizer::nextLabel++;
-        genfunc(funcsp, true);
-        startlab = retlab = 0;
-        Optimizer::tlsrundownseg();
-        Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_RUNDOWN);
+        callDynamic("__DYNAMIC_RUNDOWN__", STARTUP_TYPE_RUNDOWN, index++, st);
     }
-#endif
+}
+static void dumpTLSDestructors(void)
+{
+    if (IsCompiler())
+    {
+        if (TLSDestructors)
+        {
+            STATEMENT* st = nullptr, ** stp = &st;
+            SYMBOL* funcsp;
+            TYPE* tp = Allocate<TYPE>();
+            tp->type = bt_ifunc;
+            tp->btp = Allocate<TYPE>();
+            tp->btp->type = bt_void;
+            tp->rootType = tp;
+            tp->btp->rootType = tp->btp;
+            tp->syms = CreateHashTable(1);
+            funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr,
+                "__TLS_DYNAMIC_RUNDOWN__");
+            funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+            funcsp->sb->inlineFunc.stmt->lower = st;
+            tp->sp = funcsp;
+            SetLinkerNames(funcsp, lk_none);
+            codeLabel = INT_MIN;
+            while (TLSDestructors)
+            {
+                EXPRESSION* exp = varNode(en_threadlocal, TLSDestructors->sp);
+                exp = convertInitToExpression(TLSDestructors->init->basetp, TLSDestructors->sp, nullptr, nullptr,
+                    TLSDestructors->init, exp, true);
+                *stp = stmtNode(nullptr, nullptr, st_expr);
+                optimize_for_constants(&exp);
+                (*stp)->select = exp;
+                stp = &(*stp)->next;
+                TLSDestructors = TLSDestructors->next;
+            }
+
+            funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+            funcsp->sb->inlineFunc.stmt->lower = st;
+            startlab = Optimizer::nextLabel++;
+            retlab = Optimizer::nextLabel++;
+            genfunc(funcsp, true);
+            startlab = retlab = 0;
+            Optimizer::tlsrundownseg();
+            Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_RUNDOWN);
+        }
+    }
 }
 int dumpMemberPtr(SYMBOL* sym, TYPE* membertp, bool make_label)
 {
     int lbl = 0;
-#ifndef PARSER_ONLY
-    int vbase = 0, ofs;
-    EXPRESSION expx, *exp = &expx;
-    if (make_label)
+    if (IsCompiler())
     {
-        // well if we wanted we could reuse existing structures, but,
-        // it doesn't seem like the amount of duplicates there might be is
-        // really worth the work.  Borland didn't think so anyway...
-        Optimizer::cseg();
-        lbl = Optimizer::nextLabel++;
-        if (sym)
-            sym->sb->label = lbl;
-        Optimizer::put_label(lbl);
-    }
-    if (!sym)
-    {
-        // null...
-        if (isfunction(membertp->btp))
+        int vbase = 0, ofs;
+        EXPRESSION expx, * exp = &expx;
+        if (make_label)
         {
-            Optimizer::genaddress(0);
-            Optimizer::genint(0);
-            Optimizer::genint(0);
+            // well if we wanted we could reuse existing structures, but,
+            // it doesn't seem like the amount of duplicates there might be is
+            // really worth the work.  Borland didn't think so anyway...
+            Optimizer::cseg();
+            lbl = Optimizer::nextLabel++;
+            if (sym)
+                sym->sb->label = lbl;
+            Optimizer::put_label(lbl);
         }
-        else
+        if (!sym)
         {
-            Optimizer::genint(0);
-            Optimizer::genint(0);
-        }
-    }
-    else
-    {
-        if (sym->sb->storage_class != sc_member && sym->sb->storage_class != sc_mutable && sym->sb->storage_class != sc_virtual)
-            errortype(ERR_CANNOT_CONVERT_TYPE, sym->tp, membertp);
-        memset(&expx, 0, sizeof(expx));
-        expx.type = en_c_i;
-        exp = baseClassOffset(sym->sb->parentClass, basetype(membertp)->sp, &expx);
-        optimize_for_constants(&exp);
-        if (isfunction(sym->tp))
-        {
-            SYMBOL* genned;
-            if (sym->sb->storage_class == sc_virtual)
-                genned = getvc1Thunk(sym->sb->vtaboffset);
-            else
-                genned = sym;
-            Optimizer::genref(Optimizer::SymbolManager::Get(genned), 0);
-            if (exp->type == en_add)
+            // null...
+            if (isfunction(membertp->btp))
             {
-                if (exp->left->type == en_l_p)
-                {
-                    Optimizer::genint(exp->right->v.i + 1);
-                    Optimizer::genint(exp->left->left->v.i + 1);
-                }
-                else
-                {
-                    Optimizer::genint(exp->left->v.i);
-                    Optimizer::genint(exp->right->left->v.i + 1);
-                }
-            }
-            else if (exp->type == en_l_p)
-            {
+                Optimizer::genaddress(0);
                 Optimizer::genint(0);
-                Optimizer::genint(exp->left->v.i + 1);
+                Optimizer::genint(0);
             }
             else
             {
-                Optimizer::genint(exp->v.i);
                 Optimizer::genint(0);
-            }
-            if (genned->sb->deferredCompile && !genned->sb->inlineFunc.stmt)
-            {
-                deferredCompileOne(genned);
+                Optimizer::genint(0);
             }
         }
         else
         {
-            if (exp->type == en_add)
+            if (sym->sb->storage_class != sc_member && sym->sb->storage_class != sc_mutable && sym->sb->storage_class != sc_virtual)
+                errortype(ERR_CANNOT_CONVERT_TYPE, sym->tp, membertp);
+            memset(&expx, 0, sizeof(expx));
+            expx.type = en_c_i;
+            exp = baseClassOffset(sym->sb->parentClass, basetype(membertp)->sp, &expx);
+            optimize_for_constants(&exp);
+            if (isfunction(sym->tp))
             {
-                if (exp->left->type == en_l_p)
+                SYMBOL* genned;
+                if (sym->sb->storage_class == sc_virtual)
+                    genned = getvc1Thunk(sym->sb->vtaboffset);
+                else
+                    genned = sym;
+                Optimizer::genref(Optimizer::SymbolManager::Get(genned), 0);
+                if (exp->type == en_add)
                 {
-                    Optimizer::genint(exp->right->v.i + sym->sb->offset + 1);
-                    Optimizer::genint(exp->left->left->v.i + 1);
+                    if (exp->left->type == en_l_p)
+                    {
+                        Optimizer::genint(exp->right->v.i + 1);
+                        Optimizer::genint(exp->left->left->v.i + 1);
+                    }
+                    else
+                    {
+                        Optimizer::genint(exp->left->v.i);
+                        Optimizer::genint(exp->right->left->v.i + 1);
+                    }
+                }
+                else if (exp->type == en_l_p)
+                {
+                    Optimizer::genint(0);
+                    Optimizer::genint(exp->left->v.i + 1);
                 }
                 else
                 {
-                    Optimizer::genint(exp->left->v.i + sym->sb->offset + 1);
-                    Optimizer::genint(exp->right->left->v.i + 1);
+                    Optimizer::genint(exp->v.i);
+                    Optimizer::genint(0);
                 }
-            }
-            else if (exp->type == en_l_p)
-            {
-                Optimizer::genint(1 + sym->sb->offset);
-                Optimizer::genint(exp->left->v.i + 1);
+                if (genned->sb->deferredCompile && !genned->sb->inlineFunc.stmt)
+                {
+                    deferredCompileOne(genned);
+                }
             }
             else
             {
-                Optimizer::genint(exp->v.i + sym->sb->offset + 1);
-                Optimizer::genint(0);
+                if (exp->type == en_add)
+                {
+                    if (exp->left->type == en_l_p)
+                    {
+                        Optimizer::genint(exp->right->v.i + sym->sb->offset + 1);
+                        Optimizer::genint(exp->left->left->v.i + 1);
+                    }
+                    else
+                    {
+                        Optimizer::genint(exp->left->v.i + sym->sb->offset + 1);
+                        Optimizer::genint(exp->right->left->v.i + 1);
+                    }
+                }
+                else if (exp->type == en_l_p)
+                {
+                    Optimizer::genint(1 + sym->sb->offset);
+                    Optimizer::genint(exp->left->v.i + 1);
+                }
+                else
+                {
+                    Optimizer::genint(exp->v.i + sym->sb->offset + 1);
+                    Optimizer::genint(0);
+                }
+                Optimizer::genint(0);  // padding
             }
-            Optimizer::genint(0);  // padding
         }
     }
-#endif
     return lbl;
 }
 static void GetStructData(EXPRESSION* in, EXPRESSION** exp, int* ofs)
@@ -807,71 +814,72 @@ static void GetStructData(EXPRESSION* in, EXPRESSION** exp, int* ofs)
 }
 int dumpInit(SYMBOL* sym, INITIALIZER* init)
 {
-#ifndef PARSER_ONLY
-    TYPE* tp = basetype(init->basetp);
-    int rv;
-    long long i;
-    FPF f, im;
-    if (tp->type == bt_templateparam)
-        tp = tp->templateParam->p->byClass.val;
-    if (isstructured(tp))
+    if (IsCompiler())
     {
-        rv = tp->size + tp->sp->sb->attribs.inheritable.structAlign;
-    }
-    else
-    {
-        rv = getSize(tp->type);
-    }
-    if (isfloatconst(init->exp))
-    {
-        f = *init->exp->v.f;
-        i = (long long)f;
-        im.SetZero(0);
-    }
-    else if (isintconst(init->exp))
-    {
-        i = init->exp->v.i;
-        f = (long long)i;
-        im.SetZero(0);
-    }
-    else if (isimaginaryconst(init->exp))
-    {
-        i = 0;
-        f.SetZero(0);
-        im = *init->exp->v.f;
-    }
-    else if (iscomplexconst(init->exp))
-    {
-        f = init->exp->v.c->r;
-        im = init->exp->v.c->i;
-        i = (long long)(f);
-    }
-    else
-    {
-        EXPRESSION* exp = init->exp;
-        while (castvalue(exp))
-            exp = exp->left;
-        while (exp->type == en_void && exp->right)
-            exp = exp->right;
-        if (exp->type == en_func && !exp->v.func->ascall)
-            exp = exp->v.func->fcall;
-        if (!IsConstantExpression(exp, false, false))
+        TYPE* tp = basetype(init->basetp);
+        int rv;
+        long long i;
+        FPF f, im;
+        if (tp->type == bt_templateparam)
+            tp = tp->templateParam->p->byClass.val;
+        if (isstructured(tp))
         {
-            if (Optimizer::cparams.prm_cplusplus)
-            {
-                if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
-                    insertTLSInitializer(sym, init);
-                else if (sym->sb->storage_class != sc_localstatic)
-                    insertDynamicInitializer(sym, init);
-                return 0;
-            }
-            else
-                diag("dumpsym: unknown constant type");
+            rv = tp->size + tp->sp->sb->attribs.inheritable.structAlign;
         }
-        else if (Optimizer::chosenAssembler->arch->denyopts & DO_NOADDRESSINIT)
+        else
         {
-            switch (exp->type)
+            rv = getSize(tp->type);
+        }
+        if (isfloatconst(init->exp))
+        {
+            f = *init->exp->v.f;
+            i = (long long)f;
+            im.SetZero(0);
+        }
+        else if (isintconst(init->exp))
+        {
+            i = init->exp->v.i;
+            f = (long long)i;
+            im.SetZero(0);
+        }
+        else if (isimaginaryconst(init->exp))
+        {
+            i = 0;
+            f.SetZero(0);
+            im = *init->exp->v.f;
+        }
+        else if (iscomplexconst(init->exp))
+        {
+            f = init->exp->v.c->r;
+            im = init->exp->v.c->i;
+            i = (long long)(f);
+        }
+        else
+        {
+            EXPRESSION* exp = init->exp;
+            while (castvalue(exp))
+                exp = exp->left;
+            while (exp->type == en_void && exp->right)
+                exp = exp->right;
+            if (exp->type == en_func && !exp->v.func->ascall)
+                exp = exp->v.func->fcall;
+            if (!IsConstantExpression(exp, false, false))
             {
+                if (Optimizer::cparams.prm_cplusplus)
+                {
+                    if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
+                        insertTLSInitializer(sym, init);
+                    else if (sym->sb->storage_class != sc_localstatic)
+                        insertDynamicInitializer(sym, init);
+                    return 0;
+                }
+                else
+                    diag("dumpsym: unknown constant type");
+            }
+            else if (Optimizer::chosenAssembler->arch->denyopts & DO_NOADDRESSINIT)
+            {
+                switch (exp->type)
+                {
                 case en_memberptr:
                     dumpMemberPtr(nullptr, tp, false);
                     // fall through
@@ -891,7 +899,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
                         insertDynamicInitializer(sym, shim);
                     }
                     break;
-                /* fall through */
+                    /* fall through */
                 default:
                     if (isintconst(exp))
                     {
@@ -914,13 +922,13 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
                         Optimizer::genaddress(0);
                     }
                     break;
+                }
+                return rv;
             }
-            return rv;
-        }
-        else
-        {
-            switch (exp->type)
+            else
             {
+                switch (exp->type)
+                {
                 case en_pc:
                     Optimizer::genpcref(Optimizer::SymbolManager::Get(exp->v.sp), 0);
                     break;
@@ -971,22 +979,22 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
                         Optimizer::genaddress(0);
                     }
                     break;
+                }
             }
+            /* we are reserving enough space for the entire pointer
+             * even if the type has less space.  On an x86 the resulting linker
+             * conversion will work, except for example in the case of
+             * arrays of characters initialized to pointers.  On a big endian processor
+             * the conversion will not leave the expected results...
+             */
+            if (rv < getSize(bt_pointer))
+                return getSize(bt_pointer);
+            else
+                return rv;
         }
-        /* we are reserving enough space for the entire pointer
-         * even if the type has less space.  On an x86 the resulting linker
-         * conversion will work, except for example in the case of
-         * arrays of characters initialized to pointers.  On a big endian processor
-         * the conversion will not leave the expected results...
-         */
-        if (rv < getSize(bt_pointer))
-            return getSize(bt_pointer);
-        else
-            return rv;
-    }
 
-    switch (tp->type == bt_enum ? tp->btp->type : tp->type)
-    {
+        switch (tp->type == bt_enum ? tp->btp->type : tp->type)
+        {
         case bt_bool:
             Optimizer::genbool(i);
             break;
@@ -1062,11 +1070,10 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
         default:
             diag("dumpInit: unknown type");
             break;
+        }
+        return rv;
     }
-#else
-    int rv = 4;
-#endif
-    return rv;
+    return 4;
 }
 bool IsConstWithArr(TYPE* tp)
 {
@@ -1083,182 +1090,185 @@ bool IsConstWithArr(TYPE* tp)
 }
 void dumpInitGroup(SYMBOL* sym, TYPE* tp)
 {
-#ifndef PARSER_ONLY
-
-    if (sym->sb->init || (isarray(sym->tp) && sym->tp->msil))
+    if (IsCompiler())
     {
-        if (Optimizer::architecture == ARCHITECTURE_MSIL)
-        {
-            insertDynamicInitializer(sym, sym->sb->init);
-        }
-        else
-        {
-            if (basetype(sym->tp)->array || isstructured(tp))
-            {
-                INITIALIZER* init = sym->sb->init;
-                int pos = 0;
-                while (init)
-                {
-                    if (pos != init->offset)
-                    {
-                        if (pos > init->offset)
-                            diag("position error in dumpInitializers");
-                        else
-                            Optimizer::genstorage(init->offset - pos);
-                        pos = init->offset;
-                    }
-                    if (init->basetp && basetype(init->basetp)->hasbits)
-                    {
-                        pos += dumpBits(&init);
-                    }
-                    else
-                    {
-                        INITIALIZER* next = init->next;
-                        if (init->basetp && init->exp)
-                        {
-                            int s;
-                            init->next = nullptr;
-                            s = dumpInit(sym, init);
-                            if (s < init->basetp->size)
-                            {
 
-                                Optimizer::genstorage(init->basetp->size - s);
-                                s = init->basetp->size;
-                            }
-                            pos += s;
-                        }
-                        init = init->next = next;
-                    }
-                }
+        if (sym->sb->init || (isarray(sym->tp) && sym->tp->msil))
+        {
+            if (Optimizer::architecture == ARCHITECTURE_MSIL)
+            {
+                insertDynamicInitializer(sym, sym->sb->init);
             }
             else
             {
-                int s = dumpInit(sym, sym->sb->init);
-                if (s < sym->sb->init->basetp->size)
+                if (basetype(sym->tp)->array || isstructured(tp))
                 {
+                    INITIALIZER* init = sym->sb->init;
+                    int pos = 0;
+                    while (init)
+                    {
+                        if (pos != init->offset)
+                        {
+                            if (pos > init->offset)
+                                diag("position error in dumpInitializers");
+                            else
+                                Optimizer::genstorage(init->offset - pos);
+                            pos = init->offset;
+                        }
+                        if (init->basetp && basetype(init->basetp)->hasbits)
+                        {
+                            pos += dumpBits(&init);
+                        }
+                        else
+                        {
+                            INITIALIZER* next = init->next;
+                            if (init->basetp && init->exp)
+                            {
+                                int s;
+                                init->next = nullptr;
+                                s = dumpInit(sym, init);
+                                if (s < init->basetp->size)
+                                {
 
-                    Optimizer::genstorage(sym->sb->init->basetp->size - s);
+                                    Optimizer::genstorage(init->basetp->size - s);
+                                    s = init->basetp->size;
+                                }
+                                pos += s;
+                            }
+                            init = init->next = next;
+                        }
+                    }
+                }
+                else
+                {
+                    int s = dumpInit(sym, sym->sb->init);
+                    if (s < sym->sb->init->basetp->size)
+                    {
+
+                        Optimizer::genstorage(sym->sb->init->basetp->size - s);
+                    }
                 }
             }
         }
+        else
+            Optimizer::genstorage(basetype(tp)->size);
+        if (isatomic(tp) && needsAtomicLockFromType(tp))
+        {
+            Optimizer::genstorage(ATOMIC_FLAG_SPACE);
+        }
     }
-    else
-        Optimizer::genstorage(basetype(tp)->size);
-    if (isatomic(tp) && needsAtomicLockFromType(tp))
-    {
-        Optimizer::genstorage(ATOMIC_FLAG_SPACE);
-    }
-#endif
 }
 static void dumpStaticInitializers(void)
 {
-#ifndef PARSER_ONLY
-    int abss = 0;
-    int adata = 0;
-    int aconst = 0;
-    int anull = 0;
-    int sconst = 0;
-    int bss = 0;
-    int data = 0;
-    int thread = 0;
-    int *sizep, *alignp;
-    symListTail = symListHead;
-    while (symListTail)
+    if (IsCompiler())
     {
-        SYMBOL* sym = (SYMBOL*)symListTail->data;
-        if (sym->sb->storage_class == sc_global || sym->sb->storage_class == sc_static ||
-            sym->sb->storage_class == sc_localstatic || sym->sb->storage_class == sc_constant)
+        int abss = 0;
+        int adata = 0;
+        int aconst = 0;
+        int anull = 0;
+        int sconst = 0;
+        int bss = 0;
+        int data = 0;
+        int thread = 0;
+        int* sizep, * alignp;
+        symListTail = symListHead;
+        while (symListTail)
         {
-            TYPE* tp = sym->tp;
-            TYPE* stp = tp;
-            int al;
-            while (isarray(stp))
-                stp = basetype(stp)->btp;
-            if ((IsConstWithArr(sym->tp) && !isvolatile(sym->tp)) || sym->sb->storage_class == sc_constant)
+            SYMBOL* sym = (SYMBOL*)symListTail->data;
+            if (sym->sb->storage_class == sc_global || sym->sb->storage_class == sc_static ||
+                sym->sb->storage_class == sc_localstatic || sym->sb->storage_class == sc_constant)
             {
-                Optimizer::xconstseg();
-                sizep = &sconst;
-                alignp = &aconst;
-            }
-            else if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
-            {
-                Optimizer::tseg();
-                sizep = &thread;
-                alignp = &anull;
-            }
-            else if (sym->sb->init || !Optimizer::cparams.prm_bss)
-            {
-                Optimizer::dseg();
-                sizep = &data;
-                alignp = &adata;
-            }
-            else
-            {
-                Optimizer::bssseg();
-                sizep = &bss;
-                alignp = &abss;
-            }
-            if (sym->sb->attribs.inheritable.structAlign)
-                al = sym->sb->attribs.inheritable.structAlign;
-            else
-                al = getAlign(sc_global, basetype(tp));
-
-            if (*alignp < al)
-                *alignp = al;
-            if (*sizep % al)
-            {
-                int n = al - *sizep % al;
-                if (!(Optimizer::architecture == ARCHITECTURE_MSIL))
+                TYPE* tp = sym->tp;
+                TYPE* stp = tp;
+                int al;
+                while (isarray(stp))
+                    stp = basetype(stp)->btp;
+                if ((IsConstWithArr(sym->tp) && !isvolatile(sym->tp)) || sym->sb->storage_class == sc_constant)
                 {
-                    Optimizer::genstorage(n);
+                    Optimizer::xconstseg();
+                    sizep = &sconst;
+                    alignp = &aconst;
                 }
-                *sizep += n;
-            }
-            //  have to thunk in a size for __arrCall
-            if (Optimizer::cparams.prm_cplusplus)
-            {
-                if (isarray(tp))
+                else if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
                 {
-                    TYPE* tp1 = tp;
-                    while (isarray(tp1))
-                        tp1 = basetype(tp1)->btp;
-                    tp1 = basetype(tp1);
-                    if (isstructured(tp1) && !tp1->sp->sb->trivialCons)
+                    Optimizer::tseg();
+                    sizep = &thread;
+                    alignp = &anull;
+                }
+                else if (sym->sb->init || !Optimizer::cparams.prm_bss)
+                {
+                    Optimizer::dseg();
+                    sizep = &data;
+                    alignp = &adata;
+                }
+                else
+                {
+                    Optimizer::bssseg();
+                    sizep = &bss;
+                    alignp = &abss;
+                }
+                if (sym->sb->attribs.inheritable.structAlign)
+                    al = sym->sb->attribs.inheritable.structAlign;
+                else
+                    al = getAlign(sc_global, basetype(tp));
+
+                if (*alignp < al)
+                    *alignp = al;
+                if (*sizep % al)
+                {
+                    int n = al - *sizep % al;
+                    if (!(Optimizer::architecture == ARCHITECTURE_MSIL))
                     {
-                        Optimizer::genint(basetype(tp)->size);
-                        *sizep += getSize(bt_int);
+                        Optimizer::genstorage(n);
+                    }
+                    *sizep += n;
+                }
+                //  have to thunk in a size for __arrCall
+                if (Optimizer::cparams.prm_cplusplus)
+                {
+                    if (isarray(tp))
+                    {
+                        TYPE* tp1 = tp;
+                        while (isarray(tp1))
+                            tp1 = basetype(tp1)->btp;
+                        tp1 = basetype(tp1);
+                        if (isstructured(tp1) && !tp1->sp->sb->trivialCons)
+                        {
+                            Optimizer::genint(basetype(tp)->size);
+                            *sizep += getSize(bt_int);
+                        }
                     }
                 }
+                sym->sb->offset = *sizep;
+                *sizep += basetype(tp)->size;
+                Optimizer::gen_strlab(Optimizer::SymbolManager::Get(sym));
+                if (sym->sb->storage_class == sc_constant)
+                    Optimizer::put_label(sym->sb->label);
+                dumpInitGroup(sym, tp);
             }
-            sym->sb->offset = *sizep;
-            *sizep += basetype(tp)->size;
-            Optimizer::gen_strlab(Optimizer::SymbolManager::Get(sym));
-            if (sym->sb->storage_class == sc_constant)
-                Optimizer::put_label(sym->sb->label);
-            dumpInitGroup(sym, tp);
+            symListTail = symListTail->next;
         }
-        symListTail = symListTail->next;
+        symListHead = nullptr;
+        Optimizer::dataAlign = adata;
+        Optimizer::bssAlign = abss;
+        Optimizer::constAlign = aconst;
     }
-    symListHead = nullptr;
-    Optimizer::dataAlign = adata;
-    Optimizer::bssAlign = abss;
-    Optimizer::constAlign = aconst;
-#endif
 }
 void dumpInitializers(void)
 {
-#ifndef PARSER_ONLY
-    if (!TotalErrors())
+    if (IsCompiler())
     {
-        dumpStaticInitializers();
-        dumpDynamicInitializers();
-        dumpTLSInitializers();
-        dumpDynamicDestructors();
-        dumpTLSDestructors();
-        dumpvc1Thunks();
-        dumpStaticInitializers();
+        if (!TotalErrors())
+        {
+            dumpStaticInitializers();
+            dumpDynamicInitializers();
+            dumpTLSInitializers();
+            dumpDynamicDestructors();
+            dumpTLSDestructors();
+            dumpvc1Thunks();
+            dumpStaticInitializers();
+        }
     }
-#endif
 }
 void insertInitSym(SYMBOL* sym)
 {
@@ -4035,10 +4045,11 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
     inittag = 0;
     browse_variable(sym);
     // MSIL property
-#ifndef PARSER_ONLY
-    if (sym->sb->attribs.inheritable.linkage2 == lk_property)
-        return initialize_property(lex, funcsp, sym, storage_class_in, asExpression, flags);
-#endif
+    if (IsCompiler())
+    {
+        if (sym->sb->attribs.inheritable.linkage2 == lk_property)
+            return initialize_property(lex, funcsp, sym, storage_class_in, asExpression, flags);
+    }
     switch (sym->sb->storage_class)
     {
         case sc_parameter:

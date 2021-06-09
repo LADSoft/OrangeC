@@ -30,6 +30,10 @@
 #include <Windows.h>
 #endif
 
+namespace Parser
+{
+    bool IsCompiler();
+}
 struct MEMORY
 {
     MEMBLK* block;
@@ -137,18 +141,14 @@ void* localAlloc(int size) { return memAlloc(&locals, size); }
 void localFree(void) { memFree(&locals, &localPeak); }
 void* Alloc(int size)
 {
-#ifndef PARSER_ONLY
-    if (!globalFlag)
+    if (!globalFlag && Parser::IsCompiler())
         return memAlloc(&locals, size);
-#endif
     return memAlloc(&globals, size);
 }
 void* nzAlloc(int size)
 {
-#ifndef PARSER_ONLY
-    if (!globalFlag)
+    if (!globalFlag && Parser::IsCompiler())
         return memAlloc(&locals, size, false);
-#endif
     return memAlloc(&globals, size, false);
 }
 void* oAlloc(int size) { return memAlloc(&opts, size); }

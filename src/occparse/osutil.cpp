@@ -467,9 +467,10 @@ void ParamTransfer(char* name)
                 for (auto&& s : v)
                 {
                     Optimizer::prm_Using.push_back(s);
-#ifndef PARSER_ONLY
-                    occmsil::_add_global_using(s.c_str());
-#endif
+                    if (IsCompiler())
+                    {
+                        occmsil::_add_global_using(s.c_str());
+                    }
                 }
                 break;
             }
@@ -1037,31 +1038,34 @@ void ccinit(int argc, char* argv[])
         }
     }
 
-#ifndef PARSER_ONLY
+    if (IsCompiler())
+    {
 
-    if (prm_output.GetExists())
-    {
-        Optimizer::outputFileName = prm_output.GetValue();
-        if (!Optimizer::cparams.prm_compileonly)
+        if (prm_output.GetExists())
         {
-            prm_output.SetExists(false);
-        }
-        else
-        {
-            if (clist && clist->next && prm_output.GetValue()[prm_output.GetValue().size() - 1] != '\\')
-                Utils::fatal("Cannot specify output file for multiple input files\n");
-        }
-    }
-#else
-    {
-        Optimizer::LIST* t = clist;
-        while (t)
-        {
-            t->data = strdup(Utils::FullQualify((char*)t->data));
-            t = t->next;
+            Optimizer::outputFileName = prm_output.GetValue();
+            if (!Optimizer::cparams.prm_compileonly)
+            {
+                prm_output.SetExists(false);
+            }
+            else
+            {
+                if (clist && clist->next && prm_output.GetValue()[prm_output.GetValue().size() - 1] != '\\')
+                    Utils::fatal("Cannot specify output file for multiple input files\n");
+            }
         }
     }
-#endif
+    else
+    {
+        {
+            Optimizer::LIST* t = clist;
+            while (t)
+            {
+                t->data = strdup(Utils::FullQualify((char*)t->data));
+                t = t->next;
+            }
+        }
+    }
 
     /* Set up a ctrl-C handler so we can exit the prog with cleanup */
     //    signal(SIGINT, ctrlchandler);

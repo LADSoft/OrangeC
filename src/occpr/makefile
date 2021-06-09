@@ -26,43 +26,9 @@ include ../pathext2.mak
 NAME=occpr
 MAIN_FILE=occparse.cpp
 INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occparse ..$(PATHEXT2)occopt ..$(PATHEXT2)occil ..$(PATHEXT2)objlib ..$(PATHEXT2)netlib ..$(PATHEXT2)oasm
-CPP_DEPENDENCIES=$(wildcard *.cpp) \
-     beinterf.cpp \
-     browse.cpp \
-     ccerr.cpp \
-     constopt.cpp \
-     cppbltin.cpp \
-     cpplookup.cpp \
-     crc32.cpp \
-     debug.cpp \
-     declare.cpp \
-     declcons.cpp \
-     declcpp.cpp \
-     expr.cpp \
-     exprcpp.cpp \
-     floatconv.cpp \
-     help.cpp \
-     import.cpp \
-     inasm.cpp \
-     init.cpp \
-     initbackend.cpp \
-     inline.cpp \
-     lambda.cpp \
-     lex.cpp \
-     libcxx.cpp \
-     mangle.cpp \
-     osutil.cpp \
-     property.cpp \
-     rtti.cpp \
-     stmt.cpp \
-     SymbolManager.cpp \
-     symtab.cpp \
-     template.cpp \
-     types.cpp \
-     unmangle.cpp \
-     wseh.cpp
+CPP_DEPENDENCIES=$(wildcard *.cpp)
 
-LIB_DEPENDENCIES=ocpplib objlib occopt util netlib oasm sqlite3
+LIB_DEPENDENCIES=occil occparse occ ocpplib oasm occopt util objlib netlib sqlite3
 DEFINES=x64 PARSER_ONLY
 H_FILES=$(wildcard *.h)
 

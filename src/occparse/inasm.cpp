@@ -129,22 +129,23 @@ void inlineAsmInit(void)
         r++;
     }
     int i = 0;
-#ifndef PARSER_ONLY
-    for (auto v : opcodeTable)
+    if (IsCompiler())
     {
-        if (v[0] != 0)
+        for (auto v : opcodeTable)
         {
-            s = Allocate<ASM_HASH_ENTRY>();
-            s->name = v;
-            s->data = Allocate<Optimizer::ASMNAME>();
-            ((Optimizer::ASMNAME*)s->data)->name = v;
-            ((Optimizer::ASMNAME*)s->data)->atype = i;
-            s->instruction = true;
-            insert((SYMBOL*)s, asmHash);
+            if (v[0] != 0)
+            {
+                s = Allocate<ASM_HASH_ENTRY>();
+                s->name = v;
+                s->data = Allocate<Optimizer::ASMNAME>();
+                ((Optimizer::ASMNAME*)s->data)->name = v;
+                ((Optimizer::ASMNAME*)s->data)->atype = i;
+                s->instruction = true;
+                insert((SYMBOL*)s, asmHash);
+            }
+            i++;
         }
-        i++;
     }
-#endif
     if (Optimizer::cparams.prm_assemble)
     {
         Optimizer::ASMNAME* o = directiveLst;
@@ -1063,19 +1064,20 @@ static void AssembleInstruction(OCODE* ins)
 {
     if (ins->opcode >= op_aaa)
     {
-#ifndef PARSER_ONLY
-        OCODE ins1 = *ins;
-        AMODE oper1;
-        AMODE oper2;
-        AMODE oper3;
-        Instruction* newIns = nullptr;
-        std::list<Numeric*> operands;
-        Optimizer::assembling = true;
-        asmError err = instructionParser->GetInstruction(&ins1, newIns, operands);
-        Optimizer::assembling = false;
-        delete newIns;
-        switch (err)
+        if (IsCompiler())
         {
+            OCODE ins1 = *ins;
+            AMODE oper1;
+            AMODE oper2;
+            AMODE oper3;
+            Instruction* newIns = nullptr;
+            std::list<Numeric*> operands;
+            Optimizer::assembling = true;
+            asmError err = instructionParser->GetInstruction(&ins1, newIns, operands);
+            Optimizer::assembling = false;
+            delete newIns;
+            switch (err)
+            {
             case AERR_NONE:
                 break;
             case AERR_SYNTAX:
@@ -1095,8 +1097,8 @@ static void AssembleInstruction(OCODE* ins)
                 break;
             default:
                 break;
+            }
         }
-#endif
     }
 }
 LEXLIST* inlineAsm(LEXLIST* inlex, BLOCKDATA* parent)

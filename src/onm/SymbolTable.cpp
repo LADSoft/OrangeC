@@ -144,7 +144,7 @@ void SymbolTable::Load(CmdFiles& files)
 {
     for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
-        LibManager librarian((*it), true);
+        LibManager librarian((*it), false, true);
         if (librarian.IsOpen())
         {
             if (!librarian.LoadLibrary())

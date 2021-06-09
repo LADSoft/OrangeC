@@ -52,7 +52,7 @@ ASM=oasm
 ASMFLAGS= -!
 
 LIB=olib
-LIBFLAGS= -!
+LIBFLAGS= -! --noexports
 
 IMPLIB=oimplib
 IMPLIBFLAGS= -!

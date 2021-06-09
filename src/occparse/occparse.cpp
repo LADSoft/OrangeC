@@ -33,10 +33,8 @@
 #include "InstructionParser.h"
 #include "SharedMemory.h"
 
-#ifndef PARSER_ONLY
 #    include "x64Operand.h"
 #    include "x64Parser.h"
-#endif
 #include "ccerr.h"
 #include "config.h"
 #include "declare.h"
@@ -67,13 +65,16 @@
 #include "OptUtils.h"
 #include "istmt.h"
 #include "irc.h"
+#include "DotNetPELib.h"
+
+using namespace DotNetPELib;
+PELib* peLib;
 
 void regInit() {}
 int usingEsp;
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #endif
-
 namespace occmsil
 {
 int msil_main_preprocess(char* fileName);
@@ -84,11 +85,7 @@ namespace DotNetPELib
 {
 class PELib;
 }
-#ifdef PARSER_ONLY
-DotNetPELib::PELib* peLib;
-#endif
 
-#ifdef PARSER_ONLY
 namespace CompletionCompiler
 {
 void ccDumpSymbols(void);
@@ -96,7 +93,6 @@ std::string ccNewFile(char* fileName, bool main);
 void ccCloseFile(FILE* handle);
 int ccDBOpen(const char* name);
 }  // namespace CompletionCompiler
-#endif
 namespace Parser
 {
 #ifdef _WIN32
@@ -208,10 +204,6 @@ void doPragma(const char *key, const char *tag)
 
 int usingEsp;
 
-#ifdef PARSER_ONLY
-int natural_size(EXPRESSION* exp) { return ISZ_UINT; }
-#endif
-
 static void debug_dumptypedefs(NAMESPACEVALUELIST* nameSpace)
 {
     int i;
@@ -286,11 +278,9 @@ void compile(bool global)
     {
         Optimizer::nextLabel = 1;
     }
-#ifndef PARSER_ONLY
     iexpr_init();
     iinlineInit();
     genstmtini();
-#endif
     ParseBuiltins();
     //    intrinsicInit();
     inlineAsmInit();
@@ -299,15 +289,16 @@ void compile(bool global)
     //    browsdataInit();
     browse_init();
     browse_startfile(infile, 0);
-#ifndef PARSER_ONLY
-    static bool first = true;
-    if (Optimizer::architecture == ARCHITECTURE_MSIL)
-        if (first || (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile))
-        {
-            occmsil::msil_compile_start((char*)clist->data);
-        }
-    first = false;
-#endif
+    if (IsCompiler())
+    {
+        static bool first = true;
+        if (Optimizer::architecture == ARCHITECTURE_MSIL)
+            if (first || (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile))
+            {
+                occmsil::msil_compile_start((char*)clist->data);
+            }
+        first = false;
+    }
     if (Optimizer::cparams.prm_assemble)
     {
         lex = getsym();
@@ -318,9 +309,10 @@ void compile(bool global)
             block.type = begin;
             while ((lex = statement_asm(lex, nullptr, &block)) != nullptr)
                 ;
-#ifndef PARSER_ONLY
-            genASM(block.head);
-#endif
+            if (IsCompiler())
+            {
+                genASM(block.head);
+            }
         }
     }
     else
@@ -332,9 +324,10 @@ void compile(bool global)
                 ;
         }
     }
-#ifdef PARSER_ONLY
-    CompletionCompiler::ccDumpSymbols();
-#endif
+    if (!IsCompiler())
+    {
+        CompletionCompiler::ccDumpSymbols();
+    }
     if (!TotalErrors())
     {
         dumpInlines();
@@ -342,10 +335,11 @@ void compile(bool global)
         dumpInlines();
         dumpImportThunks();
         dumpStartups();
-#ifndef PARSER_ONLY
-        dumpLits();
-        WeedExterns();
-#endif
+        if (IsCompiler())
+        {
+            dumpLits();
+            WeedExterns();
+        }
         /*        rewrite_icode(); */
         //        if (Optimizer::chosenAssembler->gen->finalGen)
         //            Optimizer::chosenAssembler->gen->finalGen();
@@ -399,40 +393,36 @@ int main(int argc, char* argv[])
     /* loop through and preprocess all the files on the file list */
     if (clist && clist->next)
         multipleFiles = true;
-#ifdef PARSER_ONLY
-    strcpy(buffer, (char*)clist->data);
-    strcpy(realOutFile, prm_output.GetValue().c_str());
-    outputfile(realOutFile, buffer, ".ods");
-    if (!CompletionCompiler::ccDBOpen(realOutFile))
-        Utils::fatal("Cannot open database file %s", realOutFile);
-#else
-#    ifndef ISPARSER
-    BitInit();
-    regInit();
-#    endif
-#endif
-#ifndef PARSER_ONLY
     const char* firstFile = clist ? (const char*)clist->data : "temp";
-    Parser::instructionParser = new x64Parser();
     SharedMemory* parserMem = nullptr;
-    if (bePostFile.size())
+    if (!IsCompiler())
     {
-        parserMem = new SharedMemory(0, bePostFile.c_str());
-        if (!parserMem->Open() || !parserMem->GetMapping())
-            Utils::fatal("internal error: invalid shared memory region");
-        if (!clist)
+        strcpy(buffer, (char*)clist->data);
+        strcpy(realOutFile, prm_output.GetValue().c_str());
+        outputfile(realOutFile, buffer, ".ods");
+        if (!CompletionCompiler::ccDBOpen(realOutFile))
+            Utils::fatal("Cannot open database file %s", realOutFile);
+    }
+    else
+    {
+        Parser::instructionParser = new x64Parser();
+        if (bePostFile.size())
         {
-            Optimizer::OutputIntermediate(parserMem);
+            parserMem = new SharedMemory(0, bePostFile.c_str());
+            if (!parserMem->Open() || !parserMem->GetMapping())
+                Utils::fatal("internal error: invalid shared memory region");
+            if (!clist)
+            {
+                Optimizer::OutputIntermediate(parserMem);
+            }
+        }
+        else  // so we can do compiles without the output going anywhere...
+        {
+            parserMem = new SharedMemory(240 * 1024 * 1024);
+            parserMem->Create();
+            compileToFile = true;
         }
     }
-    else  // so we can do compiles without the output going anywhere...
-    {
-        parserMem = new SharedMemory(240 * 1024 * 1024);
-        parserMem->Create();
-        compileToFile = true;
-    }
-
-#endif
     for (auto c = clist; c; c = c->next)
     {
         enter_filename((const char*)c->data);
@@ -442,25 +432,29 @@ int main(int argc, char* argv[])
     while (clist)
     {
         identityValue = Utils::CRC32((const unsigned char*)clist->data, strlen((char*)clist->data));
-#ifndef PARSER_ONLY
-        if (Optimizer::architecture == ARCHITECTURE_MSIL)
+        if (IsCompiler())
         {
-            if (first || (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile))
-                occmsil::msil_main_preprocess((char*)clist->data);
+            if (Optimizer::architecture == ARCHITECTURE_MSIL)
+            {
+                if (first || (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile))
+                    occmsil::msil_main_preprocess((char*)clist->data);
+            }
         }
-#endif
         first = false;
         Errors::Reset();
         Optimizer::cparams.prm_cplusplus = false;
         strcpy(buffer, (char*)clist->data);
-#ifndef PARSER_ONLY
-        if (buffer[0] == '-')
-            strcpy(buffer, "a.c");
-        strcpy(realOutFile, prm_output.GetValue().c_str());
-        outputfile(realOutFile, buffer, ".icf");
-#else
-        CompletionCompiler::ccNewFile(buffer, true);
-#endif
+        if (IsCompiler())
+        {
+            if (buffer[0] == '-')
+                strcpy(buffer, "a.c");
+            strcpy(realOutFile, prm_output.GetValue().c_str());
+            outputfile(realOutFile, buffer, ".icf");
+        }
+        else
+        {
+            CompletionCompiler::ccNewFile(buffer, true);
+        }
         Utils::AddExt(buffer, ".C");
         static const std::list<std::string> cppExtensions = {".h", ".hh", ".hpp", ".hxx", ".hm", ".cpp", ".cxx", ".cc", ".c++"};
         for (auto& str : cppExtensions)
@@ -537,22 +531,23 @@ int main(int argc, char* argv[])
                 printf("%s\n", (char*)clist->data);
 
             compile(false);
-#ifndef PARSER_ONLY
-
-            if (Optimizer::architecture != ARCHITECTURE_MSIL ||
-                (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile))
+            if (IsCompiler())
             {
-                Optimizer::OutputIntermediate(parserMem);
-                oFree();
+                if (Optimizer::architecture != ARCHITECTURE_MSIL ||
+                    (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile))
+                {
+                    Optimizer::OutputIntermediate(parserMem);
+                    oFree();
+                }
+                if (Optimizer::cparams.prm_icdfile)
+                    Optimizer::OutputIcdFile();
+                Optimizer::InitIntermediate();
             }
-            if (Optimizer::cparams.prm_icdfile)
-                Optimizer::OutputIcdFile();
-            Optimizer::InitIntermediate();
-#endif
         }
-#ifdef PARSER_ONLY
-        localFree();
-#endif
+        if (!IsCompiler())
+        {
+            localFree();
+        }
         if (Optimizer::architecture != ARCHITECTURE_MSIL || (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile))
             globalFree();
         if (Optimizer::cparams.prm_diag)
@@ -574,21 +569,24 @@ int main(int argc, char* argv[])
 
         /* Flag to stop if there are any errors */
         stoponerr |= TotalErrors();
-#ifndef PARSER_ONLY
-        if (Optimizer::architecture == ARCHITECTURE_MSIL)
+        if (IsCompiler())
+        {
+            if (Optimizer::architecture == ARCHITECTURE_MSIL)
             if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
                 occmsil::msil_end_generation(nullptr);
-#endif
+        }
         clist = clist->next;
     }
 
-#ifndef PARSER_ONLY
-    if (Optimizer::architecture == ARCHITECTURE_MSIL)
-        if (!Optimizer::cparams.prm_compileonly || Optimizer::cparams.prm_asmfile)
-        {
-            occmsil::msil_end_generation(nullptr);
-            Optimizer::OutputIntermediate(parserMem);
-        }
+    if (IsCompiler())
+    {
+        if (Optimizer::architecture == ARCHITECTURE_MSIL)
+            if (!Optimizer::cparams.prm_compileonly || Optimizer::cparams.prm_asmfile)
+            {
+                occmsil::msil_end_generation(nullptr);
+                Optimizer::OutputIntermediate(parserMem);
+            }
+    }
     oFree();
     globalFree();
     if (compileToFile)
@@ -613,11 +611,5 @@ int main(int argc, char* argv[])
         stopTime = clock();
         printf("occparse timing: %d.%03d\n", (stopTime - startTime)/1000, (stopTime - startTime)% 1000); 
     }
-#endif
-    rv = !!stoponerr;
-#ifdef PARSER_ONLY
-    // to make testing of error cases possible
-    rv = 0;
-#endif
-    return rv;
+    rv = IsCompiler() ? !!stoponerr : 0;
 }

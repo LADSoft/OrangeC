@@ -36,13 +36,18 @@
 
 using namespace Parser;
 
-Optimizer::SimpleSymbol* currentFunction;
-
 namespace Parser
 {
-extern PreProcessor* preProcessor;
+    extern PreProcessor* preProcessor;
+    bool IsCompiler() { return false; }
 }
 
+#ifdef VSIDE
+namespace occmsil
+{
+    void CreateStringFunction() { }
+};
+#endif
 namespace CompletionCompiler
 {
 

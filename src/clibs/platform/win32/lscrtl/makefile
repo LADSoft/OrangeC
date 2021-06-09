@@ -48,13 +48,13 @@ B = /b
 endif
 
 WINOBJS = $(shell dir $(B) $(WINOBJECT)\\*.o)
-DLLOBJS = $(shell dir $(B) $(DLLOBJECT)\\*.o)
+DLLOBJS = $(shell dir $(B) $(CLIBOBJECT)\\*.o)
 
 .\lscrtl.dll: .\lscrtl.o .\c0dll.o $(RCFILE).res
 	-del $@
-	$(LINK) $(LINKFLAGS) /mx /T:DLL32 -o.\lscrtl .\lscrtl.o .\c0dll.o $(CLIBOBJECT)\srproc.o $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(DLLOBJECT)\$(dir)) $(SYSOBJECT)\climp.l $(RCFILE).res
+	$(LINK) $(LINKFLAGS) /mx /T:DLL32 -o.\lscrtl .\lscrtl.o .\c0dll.o $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(WINOBJS)), $(WINOBJECT)\$(dir)) $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(CLIBOBJECT)\$(dir)) $(SYSOBJECT)\climp.l $(RCFILE).res
 	move lscrtl.dll $(LSCRTLOBJECT)
-	olib lscrtl.l + $(DLLOBJECT)\shlguid.o + $(DLLOBJECT)\xmluuid.o
+	olib lscrtl.l + $(WINOBJECT)\shlguid.o + $(WINOBJECT)\xmluuid.o
 	move lscrtl.l $(LSCRTLOBJECT)
 
 .\lscrtl.o: lscrtl.nas

@@ -52,6 +52,8 @@
 #    include <unistd.h>
 #endif
 
+
+
 extern bool IsSymbolCharRoutine(const char*, bool);
 bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
 
@@ -60,6 +62,14 @@ Optimizer::SimpleSymbol* currentFunction;
 
 void diag(const char*, ...) {}
 void regInit() {}
+
+
+namespace Parser
+{
+    bool IsCompiler() {
+        return true;
+    }
+}
 
 namespace occx86
 {

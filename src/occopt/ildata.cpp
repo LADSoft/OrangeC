@@ -34,6 +34,11 @@
 #include "ilocal.h"
 #include "output.h"
 
+namespace Parser
+{
+    bool IsCompiler();
+}
+
 namespace Optimizer
 {
 bool pinning;
@@ -123,36 +128,40 @@ void InitIntermediate()
 
 static BaseData* AddData(DataType dt)
 {
-#ifndef PARSER_ONLY
-    BaseData* rv = Allocate<BaseData>();
-    rv->type = dt;
-    baseData.push_back(rv);
-    return rv;
-#else
-    static BaseData* rv = (BaseData*)malloc(sizeof(BaseData));
-    return rv;
-#endif
+    if (Parser::IsCompiler())
+    {
+        BaseData* rv = Allocate<BaseData>();
+        rv->type = dt;
+        baseData.push_back(rv);
+        return rv;
+    }
+    else
+    {
+        static BaseData* rv = (BaseData*)malloc(sizeof(BaseData));
+        return rv;
+    }
 }
 
 void AddFunction()
 {
     auto val = AddData(DT_FUNC);
-#ifndef PARSER_ONLY
-    FunctionData* data = new FunctionData;
-    data->name = currentFunction;
-    data->fltexp = fltexp;
-    data->temporarySymbols = temporarySymbols;
-    data->variables = functionVariables;
-    data->loadHash = loadHash;
-    data->instructionList = intermed_head;
-    data->setjmp_used = setjmp_used;
-    data->hasAssembly = functionHasAssembly;
-    data->exitBlock = exitBlock;
-    data->tempCount = tempCount;
-    data->blockCount = blockCount;
-    data->fastcallAlias = fastcallAlias;
-    val->funcData = data;
-#endif
+    if (Parser::IsCompiler())
+    {
+        FunctionData* data = new FunctionData;
+        data->name = currentFunction;
+        data->fltexp = fltexp;
+        data->temporarySymbols = temporarySymbols;
+        data->variables = functionVariables;
+        data->loadHash = loadHash;
+        data->instructionList = intermed_head;
+        data->setjmp_used = setjmp_used;
+        data->hasAssembly = functionHasAssembly;
+        data->exitBlock = exitBlock;
+        data->tempCount = tempCount;
+        data->blockCount = blockCount;
+        data->fastcallAlias = fastcallAlias;
+        val->funcData = data;
+    }
 }
 
 void gen_vtt(int dataOffset, Optimizer::SimpleSymbol* func, Optimizer::SimpleSymbol* name)

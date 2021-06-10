@@ -11671,10 +11671,6 @@ static void referenceInstanceMembers(SYMBOL* cls, bool excludeFromExplicitInstan
                             InsertInline(sym);
                             Optimizer::SymbolManager::Get(sym)->genreffed = true;
                         }
-                        else
-                        {
-                            sym->sb->dontinstantiate = true;
-                        }
                     }
                     hr2 = hr2->next;
                 }

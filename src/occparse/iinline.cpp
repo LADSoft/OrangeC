@@ -365,6 +365,10 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
+    if (f->sp->sb->dontinstantiate)
+    {
+        return nullptr;
+    }
     if (inlinesym_count >= MAX_INLINE_NESTING && ! f->sp->sb->simpleFunc)
     {
         f->sp->sb->dumpInlineToFile = true;

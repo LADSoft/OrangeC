@@ -120,7 +120,9 @@ void dumpInlines(void)
                     if (((sym->sb->attribs.inheritable.isInline && sym->sb->dumpInlineToFile) ||
                         (Optimizer::SymbolManager::Test(sym) && Optimizer::SymbolManager::Test(sym)->genreffed)))
                     {
-                        if ((sym->sb->parentClass && sym->sb->parentClass->sb->dontinstantiate && !sym->sb->templateLevel) ||
+                        if ((sym->sb->parentClass && sym->sb->parentClass->sb->dontinstantiate && 
+                               !sym->sb->attribs.inheritable.excludeFromExplicitInstantiation && 
+                               !sym->sb->templateLevel) ||
                             sym->sb->attribs.inheritable.linkage2 == lk_import)
                         {
                             sym->sb->dontinstantiate = true;

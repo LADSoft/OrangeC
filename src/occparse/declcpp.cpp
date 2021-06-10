@@ -3509,6 +3509,7 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                         {"always_inline", 26}, // we don't really force inline this is still just a suggestion.   in practice the types of functions that get flagged with this will likely always be inlined anyway
                         {"format", 27},
                         {"internal_linkage", 28},
+                        {"exclude_from_explicit_instantiation", 29 },
                     };
                     std::string name;
                     if (ISID(*lex))
@@ -3746,8 +3747,11 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                  if (lex)
                                      *lex = getsym();
                                  break;
-                             case 28:
+                             case 28: // internal_linkage 
                                  basisAttribs.inheritable.linkage2 = lk_internal;
+                                 break;
+                             case 29: // exclude_from_explicit_instantiation
+                                 basisAttribs.inheritable.excludeFromExplicitInstantiation = true;
                                  break;
                         }
                     }
@@ -3942,31 +3946,35 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                                     }
                                     else if (*lex)
                                     {
-                                        static const std::unordered_map<std::string, int> occCPPStyleAttribNames = {
+                                        static const std::unordered_map<std::string, int> clangCPPStyleAttribNames = {
                                              {"internal_linkage", 28},
+                                             {"exclude_from_explicit_instantiation", 29 },
                                         };
                                         std::string name = (*lex)->data->value.s.a;
-                                        auto searchedName = occCPPStyleAttribNames.find(name);
-                                        if (searchedName != occCPPStyleAttribNames.end())
+                                        auto searchedName = clangCPPStyleAttribNames.find(name);
+                                        if (searchedName != clangCPPStyleAttribNames.end())
                                         {
                                             switch (searchedName->second)
                                             {
                                                 case 28:
                                                     basisAttribs.inheritable.linkage2 = lk_internal;
                                                     break;
+                                                case 29:
+                                                    basisAttribs.inheritable.excludeFromExplicitInstantiation = true;
+                                                    break;
                                             }
                                         }
                                         else
                                         {
                                             errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
-                                                      occNamespace.c_str());
+                                                      clangNamespace.c_str());
                                         }
                                         *lex = getsym();
                                     }
                                 }
                                 else
                                 {
-                                    errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, occNamespace.c_str());
+                                    errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, clangNamespace.c_str());
                                 }
                             }
                             else if (!strcmp((*lex)->data->value.s.a, gccNamespace.c_str()))

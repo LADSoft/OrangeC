@@ -11639,7 +11639,7 @@ void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, NAMESPACEVALUELIST* ns
         }
     }
 }
-static void referenceInstanceMembers(SYMBOL* cls)
+static void referenceInstanceMembers(SYMBOL* cls, bool excludeFromExplicitInstantiation)
 {
     if (Optimizer::cparams.prm_xcept)
         RTTIDumpType(cls->tp);
@@ -11662,12 +11662,19 @@ static void referenceInstanceMembers(SYMBOL* cls)
                     sym = (SYMBOL*)hr2->p;
                     if (sym->sb->templateLevel <= cls->sb->templateLevel)
                     {
-                        if (sym->sb->deferredCompile && !sym->sb->inlineFunc.stmt)
+                        if (!excludeFromExplicitInstantiation && !sym->sb->attribs.inheritable.excludeFromExplicitInstantiation)
                         {
-                            deferredCompileOne(sym);
+                            if (sym->sb->deferredCompile && !sym->sb->inlineFunc.stmt)
+                            {
+                                deferredCompileOne(sym);
+                            }
+                            InsertInline(sym);
+                            Optimizer::SymbolManager::Get(sym)->genreffed = true;
                         }
-                        InsertInline(sym);
-                        Optimizer::SymbolManager::Get(sym)->genreffed = true;
+                        else
+                        {
+                            sym->sb->dontinstantiate = true;
+                        }
                     }
                     hr2 = hr2->next;
                 }
@@ -11685,7 +11692,7 @@ static void referenceInstanceMembers(SYMBOL* cls)
         {
             SYMBOL* sym = hr->p;
             if (isstructured(sym->tp))
-                referenceInstanceMembers(sym);
+                referenceInstanceMembers(sym, excludeFromExplicitInstantiation || sym->sb->attribs.inheritable.excludeFromExplicitInstantiation);
             hr = hr->next;
         }
         lst = cls->sb->baseClasses;
@@ -11693,7 +11700,55 @@ static void referenceInstanceMembers(SYMBOL* cls)
         {
             if (lst->cls->sb->templateLevel)
             {
-                referenceInstanceMembers(lst->cls);
+               if (isstructured(lst->cls->tp))
+                    referenceInstanceMembers(lst->cls, excludeFromExplicitInstantiation || lst->cls->sb->attribs.inheritable.excludeFromExplicitInstantiation);
+            }
+            lst = lst->next;
+        }
+    }
+}
+static void dontInstantiateInstanceMembers(SYMBOL* cls, bool excludeFromExplicitInstantiation)
+{
+    if (cls->tp->syms)
+    {
+        SYMLIST* hr = cls->tp->syms->table[0];
+        BASECLASS* lst;
+        while (hr)
+        {
+            SYMBOL* sym = hr->p;
+            if (sym->sb->storage_class == sc_overloads)
+            {
+                SYMLIST* hr2 = sym->tp->syms->table[0];
+                while (hr2)
+                {
+                    sym = (SYMBOL*)hr2->p;
+                    if (sym->sb->templateLevel <= cls->sb->templateLevel)
+                    {
+                        if (!excludeFromExplicitInstantiation && !sym->sb->attribs.inheritable.excludeFromExplicitInstantiation)
+                        {
+                            sym->sb->dontinstantiate = true;
+                         }
+                    }
+                    hr2 = hr2->next;
+                }
+            }
+            hr = hr->next;
+        }
+        hr = cls->tp->tags->table[0]->next;  // past the definition of self
+        while (hr)
+        {
+            SYMBOL* sym = hr->p;
+            if (isstructured(sym->tp))
+                dontInstantiateInstanceMembers(sym, excludeFromExplicitInstantiation || sym->sb->attribs.inheritable.excludeFromExplicitInstantiation);
+            hr = hr->next;
+        }
+        lst = cls->sb->baseClasses;
+        while (lst)
+        {
+            if (lst->cls->sb->templateLevel)
+            {
+               if (isstructured(lst->cls->tp))
+                    dontInstantiateInstanceMembers(lst->cls, excludeFromExplicitInstantiation || lst->cls->sb->attribs.inheritable.excludeFromExplicitInstantiation);
             }
             lst = lst->next;
         }
@@ -12268,11 +12323,13 @@ LEXLIST* TemplateDeclaration(LEXLIST* lex, SYMBOL* funcsp, enum e_ac access, enu
                         {
                             instance->sb->dontinstantiate = false;
                             instance = TemplateClassInstantiate(instance, templateParams, false, sc_global);
-                            referenceInstanceMembers(instance);
+                            referenceInstanceMembers(instance, false);
                         }
                         else
                         {
                             instance->sb->dontinstantiate = true;
+                            instance = TemplateClassInstantiate(instance, templateParams, false, sc_global);
+                            dontInstantiateInstanceMembers(instance, false);
                         }
                     }
                     else

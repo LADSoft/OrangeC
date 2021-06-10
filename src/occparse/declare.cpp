@@ -5899,8 +5899,6 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                             sp->tp = tp1;
                         if (!sp->sb->instantiated)
                             sp->sb->attribs.inheritable.linkage = linkage;
-                        if (!strcmp(sp->name, "r"))
-                            printf("hi");
                         if (ssp && ssp->sb->attribs.inheritable.linkage2 != lk_none && sp->sb->storage_class != sc_localstatic)
                         {
                             if (linkage2 != lk_none && !asFriend)

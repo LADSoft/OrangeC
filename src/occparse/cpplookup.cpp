@@ -3756,7 +3756,22 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         }
         else if (basetype(tpp)->type == bt_enum)
         {
-            if (isint(tpa))
+            if (tpa->enumConst && tpa->btp)
+            {
+                tpa = tpa->btp;
+                if (basetype(tpa)->sp != basetype(tpp)->sp)
+                {
+                    seq[(*n)++] = CV_NONE;
+                }
+                else
+                {
+                    if ((isconst(tpax) != isconst(tppx)) || (isvolatile(tpax) != isvolatile(tppx)))
+                        seq[(*n)++] = CV_QUALS;
+                    seq[(*n)++] = CV_IDENTITY;
+                }
+
+            }
+            else if (isint(tpa))
             {
                 if (tpa->enumConst)
                 {
@@ -3778,13 +3793,15 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         }
         else
         {
+            bool isenumconst = false;
             if ((isconst(tpax) != isconst(tppx)) || (isvolatile(tpax) != isvolatile(tppx)))
                 seq[(*n)++] = CV_QUALS;
             if (tpa->enumConst)
             {
                 seq[(*n)++] = CV_ENUMINTEGRALCONVERSION;
+                isenumconst = true;
             }
-            else if (basetype(tpp)->type != basetype(tpa)->type)
+            if (basetype(tpp)->type != basetype(tpa)->type)
             {
                 if (isint(tpa))
                     if (basetype(tpp)->type == bt_bool)
@@ -3828,7 +3845,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
                 else
                     seq[(*n)++] = CV_FLOATINGINTEGRALCONVERSION;
             }
-            else
+            else if (!isenumconst)
             {
                 seq[(*n)++] = CV_IDENTITY;
             }

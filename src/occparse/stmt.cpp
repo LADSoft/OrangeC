@@ -3935,7 +3935,7 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
             if (!Optimizer::cparams.prm_cplusplus && funcsp->sb->storage_class != sc_static)
                 Optimizer::SymbolManager::Get(funcsp);
         }
-        else if (IsCompiler())
+        else if (!funcsp->sb->constexpression && IsCompiler())
         {
             bool isTemplate = false;
             SYMBOL* spt = funcsp;

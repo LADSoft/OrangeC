@@ -1173,16 +1173,19 @@ static void PutData(BaseData* data)
             nl();
             break;
         case DT_DEFINITION:
-            nl();
-            if (data->symbol.i & BaseData::DF_GLOBAL)
+            if (!data->symbol.sym->isinternal)
             {
-                oprintf(icdFile, "\nglobal %s", data->symbol.sym->outputName);
                 nl();
-            }
-            if (data->symbol.i & BaseData::DF_EXPORT)
-            {
-                oprintf(icdFile, "\nexport %s", data->symbol.sym->outputName);
-                nl();
+                if (data->symbol.i & BaseData::DF_GLOBAL)
+                {
+                    oprintf(icdFile, "\nglobal %s", data->symbol.sym->outputName);
+                    nl();
+                }
+                if (data->symbol.i & BaseData::DF_EXPORT)
+                {
+                    oprintf(icdFile, "\nexport %s", data->symbol.sym->outputName);
+                    nl();
+                }
             }
             oprintf(icdFile, "%s:", data->symbol.sym->outputName);
             nl();
@@ -1209,15 +1212,18 @@ static void PutData(BaseData* data)
             nl();
             break;
         case DT_FUNCREF:
-            if (data->symbol.i & BaseData::DF_GLOBAL)
+            if (!data->symbol.sym->isinternal)
             {
-                oprintf(icdFile, "\nglobal %s", data->symbol.sym->outputName);
-                nl();
-            }
-            if (data->symbol.i & BaseData::DF_EXPORT)
-            {
-                oprintf(icdFile, "\nexport %s", data->symbol.sym->outputName);
-                nl();
+                if (data->symbol.i & BaseData::DF_GLOBAL)
+                {
+                    oprintf(icdFile, "\nglobal %s", data->symbol.sym->outputName);
+                    nl();
+                }
+                if (data->symbol.i & BaseData::DF_EXPORT)
+                {
+                    oprintf(icdFile, "\nexport %s", data->symbol.sym->outputName);
+                    nl();
+                }
             }
             break;
         case DT_LABEL:

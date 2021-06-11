@@ -530,6 +530,9 @@ void InstructionParser::SetSize(int sz)
             case ISZ_ILDOUBLE:
                 inputTokens.push_back(&Tokenqword);
                 break;
+            case ISZ_FARPTR:
+                inputTokens.push_back(&Tokenfar);
+                break;
             default:
                 diag("SetSize: unknown enum");
                 break;

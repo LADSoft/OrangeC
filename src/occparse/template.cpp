@@ -11639,7 +11639,7 @@ void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, NAMESPACEVALUELIST* ns
         }
     }
 }
-static void referenceInstanceMembers(SYMBOL* cls)
+static void referenceInstanceMembers(SYMBOL* cls, bool excludeFromExplicitInstantiation)
 {
     if (Optimizer::cparams.prm_xcept)
         RTTIDumpType(cls->tp);
@@ -11660,14 +11660,26 @@ static void referenceInstanceMembers(SYMBOL* cls)
                 while (hr2)
                 {
                     sym = (SYMBOL*)hr2->p;
-                    if (sym->sb->templateLevel <= cls->sb->templateLevel)
+                    if (sym->sb->templateLevel <= cls->sb->templateLevel && !sym->templateParams)
                     {
-                        if (sym->sb->deferredCompile && !sym->sb->inlineFunc.stmt)
+                        sym->sb->dontinstantiate = false;
+                        Optimizer::SymbolManager::Get(sym)->dontinstantiate = false;
+                        if (!excludeFromExplicitInstantiation && !sym->sb->attribs.inheritable.excludeFromExplicitInstantiation)
                         {
-                            deferredCompileOne(sym);
+                            if (sym->sb->defaulted && !sym->sb->deleted && !sym->sb->inlineFunc.stmt)
+                            {
+                                createConstructor(cls, sym);
+                            }
+                            else if (sym->sb->deferredCompile && !sym->sb->inlineFunc.stmt)
+                            {
+                                deferredCompileOne(sym);
+                            }
+                            if (sym->sb->inlineFunc.stmt && !sym->sb->deleted)
+                            {
+                                InsertInline(sym);
+                                Optimizer::SymbolManager::Get(sym)->genreffed = true;
+                            }
                         }
-                        InsertInline(sym);
-                        Optimizer::SymbolManager::Get(sym)->genreffed = true;
                     }
                     hr2 = hr2->next;
                 }
@@ -11680,22 +11692,65 @@ static void referenceInstanceMembers(SYMBOL* cls)
             }
             hr = hr->next;
         }
-        hr = cls->tp->tags->table[0]->next;  // past the definition of self
+
+        if (cls->tp->tags)
+        {
+            hr = cls->tp->tags->table[0]->next;  // past the definition of self
+            while (hr)
+            {
+                SYMBOL* sym = hr->p;
+                if (isstructured(sym->tp))
+                {
+                    sym = basetype(sym->tp)->sp;
+                    if (sym->sb->parentClass == cls && !sym->templateParams)
+                        referenceInstanceMembers(sym, excludeFromExplicitInstantiation || sym->sb->attribs.inheritable.excludeFromExplicitInstantiation);
+                }
+                hr = hr->next;
+            }
+        }
+    }
+}
+static void dontInstantiateInstanceMembers(SYMBOL* cls, bool excludeFromExplicitInstantiation)
+{
+    if (cls->tp->syms)
+    {
+        SYMLIST* hr = cls->tp->syms->table[0];
+        BASECLASS* lst;
         while (hr)
         {
             SYMBOL* sym = hr->p;
-            if (isstructured(sym->tp))
-                referenceInstanceMembers(sym);
+            if (sym->sb->storage_class == sc_overloads)
+            {
+                SYMLIST* hr2 = sym->tp->syms->table[0];
+                while (hr2)
+                {
+                    sym = (SYMBOL*)hr2->p;
+                    if (sym->sb->templateLevel <= cls->sb->templateLevel && !sym->templateParams)
+                    {
+                        if (!excludeFromExplicitInstantiation && !sym->sb->attribs.inheritable.excludeFromExplicitInstantiation)
+                        {
+                            sym->sb->dontinstantiate = true;
+                        }
+                    }
+                    hr2 = hr2->next;
+                }
+            }
             hr = hr->next;
         }
-        lst = cls->sb->baseClasses;
-        while (lst)
+        if (cls->tp->tags)
         {
-            if (lst->cls->sb->templateLevel)
+            hr = cls->tp->tags->table[0]->next;  // past the definition of self
+            while (hr)
             {
-                referenceInstanceMembers(lst->cls);
+                SYMBOL* sym = hr->p;
+                if (isstructured(sym->tp))
+                {
+                    sym = basetype(sym->tp)->sp;
+                    if (sym->sb->parentClass == cls && !sym->templateParams)
+                        dontInstantiateInstanceMembers(sym, excludeFromExplicitInstantiation || sym->sb->attribs.inheritable.excludeFromExplicitInstantiation);
+                }
+                hr = hr->next;
             }
-            lst = lst->next;
         }
     }
 }
@@ -11941,6 +11996,7 @@ static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
             sp->sb->attribs.inheritable.linkage2 = linkage;
             Optimizer::SymbolManager::Get(sp)->isexport = linkage == lk_export;
             Optimizer::SymbolManager::Get(sp)->isimport = linkage == lk_import;
+            Optimizer::SymbolManager::Get(sp)->isinternal = linkage == lk_internal;
             if (sp->sb->vtabsp)
             {
                 sp->sb->vtabsp->sb->attribs.inheritable.linkage2 = linkage;
@@ -11948,6 +12004,7 @@ static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
                 {
                     Optimizer::SymbolManager::Get(sp->sb->vtabsp)->isexport = linkage == lk_export;
                     Optimizer::SymbolManager::Get(sp->sb->vtabsp)->isimport = linkage == lk_import;
+                    Optimizer::SymbolManager::Get(sp->sb->vtabsp)->isinternal = linkage == lk_internal;
                 }
                 if (sp->sb->vtabsp->sb->attribs.inheritable.linkage2 == lk_import)
                 {
@@ -11972,6 +12029,7 @@ static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
                                 (hr2->p)->sb->attribs.inheritable.isInline = false;
                                 Optimizer::SymbolManager::Get(hr2->p)->isexport = linkage == lk_export;
                                 Optimizer::SymbolManager::Get(hr2->p)->isimport = linkage == lk_import;
+                                Optimizer::SymbolManager::Get(hr2->p)->isinternal = linkage == lk_internal;
                             }
                             hr2 = hr2->next;
                         }
@@ -11981,6 +12039,22 @@ static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
                         sym->sb->attribs.inheritable.linkage2 = linkage;
                         Optimizer::SymbolManager::Get(sym)->isexport = linkage == lk_export;
                         Optimizer::SymbolManager::Get(sym)->isimport = linkage == lk_import;
+                        Optimizer::SymbolManager::Get(sym)->isinternal = linkage == lk_internal;
+                   }
+                    hr = hr->next;
+                }
+            }
+            if (sp->tp->tags)
+            {
+                SYMLIST* hr = sp->tp->tags->table[0]->next;  // past the definition of self
+                while (hr)
+                {
+                    SYMBOL* sym = hr->p;
+                    if (isstructured(sym->tp))
+                    {
+                        sym = basetype(sym->tp)->sp;
+                        if (sym->sb->parentClass == sp && !sym->templateParams)
+                            MarkDllLinkage(sym, linkage);
                     }
                     hr = hr->next;
                 }
@@ -12262,13 +12336,16 @@ LEXLIST* TemplateDeclaration(LEXLIST* lex, SYMBOL* funcsp, enum e_ac access, enu
                         MarkDllLinkage(instance, linkage2);
                         if (!isExtern)
                         {
+                            instance->sb->explicitlyInstantiated = true;
                             instance->sb->dontinstantiate = false;
                             instance = TemplateClassInstantiate(instance, templateParams, false, sc_global);
-                            referenceInstanceMembers(instance);
+                            referenceInstanceMembers(instance, false);
                         }
-                        else
+                        else if (!instance->sb->explicitlyInstantiated)
                         {
                             instance->sb->dontinstantiate = true;
+                            instance = TemplateClassInstantiate(instance, templateParams, false, sc_global);
+                            dontInstantiateInstanceMembers(instance, false);
                         }
                     }
                     else

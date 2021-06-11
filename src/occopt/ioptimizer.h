@@ -192,6 +192,7 @@ struct SimpleSymbol
             unsigned isimport : 1;
             unsigned isexport : 1;
             unsigned isvirtual : 1;
+            unsigned isinternal : 1;
             unsigned msil_rtl : 1;
             unsigned isproperty : 1;
             unsigned unmanaged : 1;

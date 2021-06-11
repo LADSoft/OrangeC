@@ -108,11 +108,11 @@ void WeedExterns()
         Optimizer::SimpleSymbol* sym = *it;
         if (!sym->ispure &&
             ((sym->dontinstantiate && sym->genreffed) ||
-             (!sym->initialized &&
-              (sym->tp->type == Optimizer::st_func ||
-               (sym->tp->type != Optimizer::st_func && sym->storage_class != Optimizer::scc_global &&
-                sym->storage_class != Optimizer::scc_static && sym->storage_class != Optimizer::scc_localstatic)) &&
-              (sym->genreffed && (sym->parentClass || sym->storage_class == Optimizer::scc_external)))) &&
+                (!sym->initialized &&
+                    (sym->tp->type == Optimizer::st_func ||
+                        (sym->tp->type != Optimizer::st_func && sym->storage_class != Optimizer::scc_global &&
+                            sym->storage_class != Optimizer::scc_static && sym->storage_class != Optimizer::scc_localstatic)) &&
+                    (sym->genreffed && (sym->parentClass || sym->storage_class == Optimizer::scc_external)))) &&
             !sym->noextern)
         {
             ++it;
@@ -123,7 +123,6 @@ void WeedExterns()
         }
     }
 }
-
 static const char* NewTagName(void)
 {
     char buf[256];
@@ -1295,6 +1294,7 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
         sp->sb->realdeclline = realdeclline;
         sp->sb->declfile = sp->sb->origdeclfile = lex->data->errfile;
         sp->sb->declfilenum = lex->data->linedata->fileindex;
+        sp->sb->attribs = basisAttribs;
         if ((storage_class == sc_member || storage_class == sc_mutable) &&
             (MATCHKW(lex, begin) || MATCHKW(lex, colon) || MATCHKW(lex, kw_try) || MATCHKW(lex, semicolon)))
             sp->sb->parentClass = getStructureDeclaration();
@@ -1305,7 +1305,8 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
         sp->sb->anonymous = charindex == -1;
         sp->sb->access = access;
         sp->sb->uuid = uuid;
-        sp->sb->attribs.inheritable.linkage2 = linkage2;
+        if (sp->sb->attribs.inheritable.linkage2 == lk_none)
+            sp->sb->attribs.inheritable.linkage2 = linkage2;
         SetLinkerNames(sp, lk_cdecl);
         if (inTemplate && templateNestingCount)
         {

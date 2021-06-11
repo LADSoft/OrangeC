@@ -120,15 +120,19 @@ void outputfile(char* buf, const char* name, const char* ext, bool obj)
 
 void global(Optimizer::SimpleSymbol* sym, int flags)
 {
-    omf_globaldef(sym);
-    if (Optimizer::cparams.prm_asmfile)
+    if (!sym->isinternal)
     {
-        if (sym->storage_class != Optimizer::scc_localstatic && sym->storage_class != Optimizer::scc_static)
-            Optimizer::bePrintf("[global %s]\n", sym->outputName);
-    }
-    if (flags & Optimizer::BaseData::DF_EXPORT)
-    {
-        oa_put_expfunc(sym);
+        omf_globaldef(sym);
+        if (Optimizer::cparams.prm_asmfile)
+        {
+            if (sym->storage_class != Optimizer::scc_localstatic && sym->storage_class != Optimizer::scc_static)
+                Optimizer::bePrintf("[global %s]\n", sym->outputName);
+        }
+
+        if (flags & Optimizer::BaseData::DF_EXPORT)
+        {
+            oa_put_expfunc(sym);
+        }
     }
 }
 void ProcessData(Optimizer::BaseData* v)

@@ -824,7 +824,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
             tp = tp->templateParam->p->byClass.val;
         if (isstructured(tp))
         {
-            rv = tp->size + tp->sp->sb->attribs.inheritable.structAlign;
+            rv = tp->size;// +tp->sp->sb->attribs.inheritable.structAlign;
         }
         else
         {
@@ -4056,7 +4056,6 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
             sym->sb->assigned = true;
             break;
         case sc_global:
-            Optimizer::SymbolManager::Get(sym)->storage_class = Optimizer::SymbolManager::Get(sym->sb->storage_class);
             initializingGlobalVar = true;
             sym->sb->assigned = true;
             sym->sb->attribs.inheritable.used = true;
@@ -4068,7 +4067,6 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
             break;
         case sc_static:
         case sc_localstatic:
-            Optimizer::SymbolManager::Get(sym)->storage_class = Optimizer::SymbolManager::Get(sym->sb->storage_class);
             initializingGlobalVar = true;
             sym->sb->assigned = true;
             break;
@@ -4336,7 +4334,61 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
                 }
             }
         }
+    }    switch (sym->sb->storage_class)
+    {
+        case sc_parameter:
+            sym->sb->assigned = true;
+            break;
+        case sc_global:
+            Optimizer::SymbolManager::Get(sym)->storage_class = Optimizer::SymbolManager::Get(sym->sb->storage_class);
+            initializingGlobalVar = true;
+            sym->sb->assigned = true;
+            sym->sb->attribs.inheritable.used = true;
+            break;
+        case sc_external:
+            initializingGlobalVar = true;
+            sym->sb->assigned = true;
+            sym->sb->attribs.inheritable.used = true;
+            break;
+        case sc_static:
+        case sc_localstatic:
+            Optimizer::SymbolManager::Get(sym)->storage_class = Optimizer::SymbolManager::Get(sym->sb->storage_class);
+            initializingGlobalVar = true;
+            sym->sb->assigned = true;
+            break;
+        case sc_auto:
+        case sc_register:
+            sym->sb->allocate = true;
+            break;
+        case sc_type:
+        case sc_typedef:
+            break;
+        default:
+            break;
     }
+    switch (sym->sb->storage_class)
+    {
+    case sc_parameter:
+        break;
+    case sc_global:
+        Optimizer::SymbolManager::Get(sym)->storage_class = Optimizer::SymbolManager::Get(sym->sb->storage_class);
+        break;
+    case sc_external:
+        break;
+    case sc_static:
+    case sc_localstatic:
+        Optimizer::SymbolManager::Get(sym)->storage_class = Optimizer::SymbolManager::Get(sym->sb->storage_class);
+        break;
+    case sc_auto:
+    case sc_register:
+        break;
+    case sc_type:
+    case sc_typedef:
+        break;
+    default:
+        break;
+    }
+
     if (Optimizer::initializeScalars && !sym->sb->anonymous && !sym->sb->init && (isarithmetic(sym->tp) || (ispointer(sym->tp) && !isarray(sym->tp))) && sym->sb->storage_class == sc_auto)
     {
         EXPRESSION* exp = intNode(en_c_i, 0);

@@ -81,6 +81,7 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym* sym)
 {
     if (sym && sym->sb)
     {
+
         Optimizer::SimpleSymbol* rv;
         rv = Lookup(sym);
         if (!rv)
@@ -429,6 +430,7 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     rv->isimport = sym->sb->attribs.inheritable.linkage2 == lk_import;
     rv->isexport = sym->sb->attribs.inheritable.linkage2 == lk_export;
     rv->isvirtual = sym->sb->attribs.inheritable.linkage == lk_virtual;
+    rv->isinternal = sym->sb->attribs.inheritable.linkage2 == lk_internal;
     rv->msil_rtl = sym->sb->attribs.inheritable.linkage2 == lk_msil_rtl;
     rv->isproperty = sym->sb->attribs.inheritable.linkage2 == lk_property;
     rv->unmanaged = sym->sb->attribs.inheritable.linkage2 == lk_unmanaged;

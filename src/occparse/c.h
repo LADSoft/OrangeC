@@ -224,7 +224,7 @@ typedef struct
     enum e_lk : int {
         lk_none, lk_cdecl, lk_pascal, lk_stdcall, lk_fastcall, lk_c, lk_cpp,
         lk_interrupt, lk_fault, lk_inline, lk_virtual, lk_noreturn, lk_threadlocal,
-        lk_import, lk_export, lk_auto, lk_msil_rtl, lk_unmanaged, lk_property, lk_entrypoint
+        lk_import, lk_export, lk_internal, lk_auto, lk_msil_rtl, lk_unmanaged, lk_property, lk_entrypoint
     };
 // clang-format on
 
@@ -547,7 +547,7 @@ struct attributes
         unsigned nonstring : 1; /* value is not a zero terminated string */
         unsigned zstring : 1;   // (argument) was tagged as a zero terminated string
         unsigned isInline : 1;  /* function is inlined */
-        unsigned intrinsic : 1; /* function is intrinsic */
+        unsigned excludeFromExplicitInstantiation : 1; // template member should be instantiated implicitly
     } inheritable;
     struct
     {
@@ -675,6 +675,7 @@ typedef struct sym
         unsigned forcedefault : 1;                       // defaulted internal function needs instantiation
         unsigned instantiationError : 1;                 // error while instantiating...
         unsigned noExcept : 1;                           // tagged as noexcept or default determined as noexcept
+        unsigned explicitlyInstantiated : 1;              // explicitly instantiated
         int __func__label;                               /* label number for the __func__ keyword */
         int labelCount;                                  /* number of code labels within a function body */
         int offset;                                      /* address offset of data in the given seg, or optimize register */

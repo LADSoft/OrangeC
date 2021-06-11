@@ -558,7 +558,7 @@ static struct
     {"Use of __catch or __fault or __finally must be preceded by __try", ERROR},
     {"Expected __catch or __fault or __finally", ERROR},
     {"__fault or __finally can appear only once per __try block", ERROR},
-    {"static function '%s' is undefined", TRIVIALWARNING},
+    {"static or internally attributed function '%s' is undefined", TRIVIALWARNING},
     {"Missing type specifier for identifier '%s'", WARNING},
     {"Cannot deduce auto type '%s' from '%s'", ERROR},
     {"%s: dll interface member may not be declared in dll interface class", ERROR},
@@ -1788,12 +1788,13 @@ void findUnusedStatics(NAMESPACEVALUELIST* nameSpace)
                             {
                                 errorsym(ERR_UNDEFINED_IDENTIFIER, sp1);
                             }
-                            else if (sp1->sb->storage_class == sc_static && !sp1->sb->inlineFunc.stmt &&
-                                     !(sp1->sb->templateLevel || sp1->sb->instantiated))
+                            else if (sp1->sb->attribs.inheritable.linkage2 == lk_internal ||
+                                    (sp1->sb->storage_class == sc_static && !sp1->sb->inlineFunc.stmt &&
+                                     !(sp1->sb->templateLevel || sp1->sb->instantiated)))
                             {
                                 if (sp1->sb->attribs.inheritable.used)
                                     errorsym(ERR_UNDEFINED_STATIC_FUNCTION, sp1, eofLine, eofFile);
-                                else
+                                else if (sp1->sb->attribs.inheritable.linkage2 != lk_internal)
                                     errorsym(ERR_STATIC_FUNCTION_USED_BUT_NOT_DEFINED, sp1, eofLine, eofFile);
                             }
                             hr1 = hr1->next;

@@ -1469,7 +1469,7 @@ void oa_gen_virtual(Optimizer::SimpleSymbol* sym, int data)
         }
         ColumnPosition(8);
         AsmOutput("[bits 32]\n");
-        if (Optimizer::cparams.prm_assembler != pa_oasm)
+        if (Optimizer::cparams.prm_assembler != pa_oasm && !sym->isinternal)
         {
             oa_globaldef(sym);
         }

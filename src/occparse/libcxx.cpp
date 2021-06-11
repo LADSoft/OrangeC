@@ -173,6 +173,19 @@ void libcxx_builtins(void)
         preProcessor->Define("__has__type_pack_element","1");
         preProcessor->Define("__has__builtin_launder","0");
         preProcessor->Define("__has__builtin_addressof","0");
+        preProcessor->Define("__has____no_sanitize__","0");
+        preProcessor->Define("__has____type_visibility__","0");
+        preProcessor->Define("__has__internal_linkage","1");
+        preProcessor->Define("__has__exclude_from_explicit_instantiation","1");
+        preProcessor->Define("__has____enable_if__","0");
+        preProcessor->Define("__has__deprecated","1");
+        preProcessor->Define("__has__no_destroy","0");
+        preProcessor->Define("__has__aquire_capability","0");
+        preProcessor->Define("__has__require_constant_initialization","0");
+        preProcessor->Define("__has__diagnose_if","0");
+        preProcessor->Define("__has__fallthrough","0");
+        preProcessor->Define("__has____nodebug__","0");
+        preProcessor->Define("__has__no_thread_safety_analysis","0");
     }
 }
 

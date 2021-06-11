@@ -108,11 +108,11 @@ void WeedExterns()
         Optimizer::SimpleSymbol* sym = *it;
         if (!sym->ispure &&
             ((sym->dontinstantiate && sym->genreffed) ||
-             (!sym->initialized &&
-              (sym->tp->type == Optimizer::st_func ||
-               (sym->tp->type != Optimizer::st_func && sym->storage_class != Optimizer::scc_global &&
-                sym->storage_class != Optimizer::scc_static && sym->storage_class != Optimizer::scc_localstatic)) &&
-              (sym->genreffed && (sym->parentClass || sym->storage_class == Optimizer::scc_external)))) &&
+                (!sym->initialized &&
+                    (sym->tp->type == Optimizer::st_func ||
+                        (sym->tp->type != Optimizer::st_func && sym->storage_class != Optimizer::scc_global &&
+                            sym->storage_class != Optimizer::scc_static && sym->storage_class != Optimizer::scc_localstatic)) &&
+                    (sym->genreffed && (sym->parentClass || sym->storage_class == Optimizer::scc_external)))) &&
             !sym->noextern)
         {
             ++it;
@@ -123,7 +123,6 @@ void WeedExterns()
         }
     }
 }
-
 static const char* NewTagName(void)
 {
     char buf[256];

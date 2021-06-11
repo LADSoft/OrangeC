@@ -81,6 +81,7 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym* sym)
 {
     if (sym && sym->sb)
     {
+
         Optimizer::SimpleSymbol* rv;
         rv = Lookup(sym);
         if (!rv)

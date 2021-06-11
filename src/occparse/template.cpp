@@ -11660,16 +11660,25 @@ static void referenceInstanceMembers(SYMBOL* cls, bool excludeFromExplicitInstan
                 while (hr2)
                 {
                     sym = (SYMBOL*)hr2->p;
-                    if (sym->sb->templateLevel <= cls->sb->templateLevel)
+                    if (sym->sb->templateLevel <= cls->sb->templateLevel && !sym->templateParams)
                     {
+                        sym->sb->dontinstantiate = false;
+                        Optimizer::SymbolManager::Get(sym)->dontinstantiate = false;
                         if (!excludeFromExplicitInstantiation && !sym->sb->attribs.inheritable.excludeFromExplicitInstantiation)
                         {
-                            if (sym->sb->deferredCompile && !sym->sb->inlineFunc.stmt)
+                            if (sym->sb->defaulted && !sym->sb->deleted && !sym->sb->inlineFunc.stmt)
+                            {
+                                createConstructor(cls, sym);
+                            }
+                            else if (sym->sb->deferredCompile && !sym->sb->inlineFunc.stmt)
                             {
                                 deferredCompileOne(sym);
                             }
-                            InsertInline(sym);
-                            Optimizer::SymbolManager::Get(sym)->genreffed = true;
+                            if (sym->sb->inlineFunc.stmt && !sym->sb->deleted)
+                            {
+                                InsertInline(sym);
+                                Optimizer::SymbolManager::Get(sym)->genreffed = true;
+                            }
                         }
                     }
                     hr2 = hr2->next;
@@ -11683,23 +11692,21 @@ static void referenceInstanceMembers(SYMBOL* cls, bool excludeFromExplicitInstan
             }
             hr = hr->next;
         }
-        hr = cls->tp->tags->table[0]->next;  // past the definition of self
-        while (hr)
+
+        if (cls->tp->tags)
         {
-            SYMBOL* sym = hr->p;
-            if (isstructured(sym->tp))
-                referenceInstanceMembers(sym, excludeFromExplicitInstantiation || sym->sb->attribs.inheritable.excludeFromExplicitInstantiation);
-            hr = hr->next;
-        }
-        lst = cls->sb->baseClasses;
-        while (lst)
-        {
-            if (lst->cls->sb->templateLevel)
+            hr = cls->tp->tags->table[0]->next;  // past the definition of self
+            while (hr)
             {
-               if (isstructured(lst->cls->tp))
-                    referenceInstanceMembers(lst->cls, excludeFromExplicitInstantiation || lst->cls->sb->attribs.inheritable.excludeFromExplicitInstantiation);
+                SYMBOL* sym = hr->p;
+                if (isstructured(sym->tp))
+                {
+                    sym = basetype(sym->tp)->sp;
+                    if (sym->sb->parentClass == cls && !sym->templateParams)
+                        referenceInstanceMembers(sym, excludeFromExplicitInstantiation || sym->sb->attribs.inheritable.excludeFromExplicitInstantiation);
+                }
+                hr = hr->next;
             }
-            lst = lst->next;
         }
     }
 }
@@ -11718,35 +11725,32 @@ static void dontInstantiateInstanceMembers(SYMBOL* cls, bool excludeFromExplicit
                 while (hr2)
                 {
                     sym = (SYMBOL*)hr2->p;
-                    if (sym->sb->templateLevel <= cls->sb->templateLevel)
+                    if (sym->sb->templateLevel <= cls->sb->templateLevel && !sym->templateParams)
                     {
                         if (!excludeFromExplicitInstantiation && !sym->sb->attribs.inheritable.excludeFromExplicitInstantiation)
                         {
                             sym->sb->dontinstantiate = true;
-                         }
+                        }
                     }
                     hr2 = hr2->next;
                 }
             }
             hr = hr->next;
         }
-        hr = cls->tp->tags->table[0]->next;  // past the definition of self
-        while (hr)
+        if (cls->tp->tags)
         {
-            SYMBOL* sym = hr->p;
-            if (isstructured(sym->tp))
-                dontInstantiateInstanceMembers(sym, excludeFromExplicitInstantiation || sym->sb->attribs.inheritable.excludeFromExplicitInstantiation);
-            hr = hr->next;
-        }
-        lst = cls->sb->baseClasses;
-        while (lst)
-        {
-            if (lst->cls->sb->templateLevel)
+            hr = cls->tp->tags->table[0]->next;  // past the definition of self
+            while (hr)
             {
-               if (isstructured(lst->cls->tp))
-                    dontInstantiateInstanceMembers(lst->cls, excludeFromExplicitInstantiation || lst->cls->sb->attribs.inheritable.excludeFromExplicitInstantiation);
+                SYMBOL* sym = hr->p;
+                if (isstructured(sym->tp))
+                {
+                    sym = basetype(sym->tp)->sp;
+                    if (sym->sb->parentClass == cls && !sym->templateParams)
+                        dontInstantiateInstanceMembers(sym, excludeFromExplicitInstantiation || sym->sb->attribs.inheritable.excludeFromExplicitInstantiation);
+                }
+                hr = hr->next;
             }
-            lst = lst->next;
         }
     }
 }
@@ -12040,6 +12044,21 @@ static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
                     hr = hr->next;
                 }
             }
+            if (sp->tp->tags)
+            {
+                SYMLIST* hr = sp->tp->tags->table[0]->next;  // past the definition of self
+                while (hr)
+                {
+                    SYMBOL* sym = hr->p;
+                    if (isstructured(sym->tp))
+                    {
+                        sym = basetype(sym->tp)->sp;
+                        if (sym->sb->parentClass == sp && !sym->templateParams)
+                            MarkDllLinkage(sym, linkage);
+                    }
+                    hr = hr->next;
+                }
+            }
         }
     }
 }
@@ -12317,11 +12336,12 @@ LEXLIST* TemplateDeclaration(LEXLIST* lex, SYMBOL* funcsp, enum e_ac access, enu
                         MarkDllLinkage(instance, linkage2);
                         if (!isExtern)
                         {
+                            instance->sb->explicitlyInstantiated = true;
                             instance->sb->dontinstantiate = false;
                             instance = TemplateClassInstantiate(instance, templateParams, false, sc_global);
                             referenceInstanceMembers(instance, false);
                         }
-                        else
+                        else if (!instance->sb->explicitlyInstantiated)
                         {
                             instance->sb->dontinstantiate = true;
                             instance = TemplateClassInstantiate(instance, templateParams, false, sc_global);

@@ -993,9 +993,10 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     Optimizer::cseg();
     Optimizer::gen_line(funcsp->sb->linedata);
     gen_func(funcexp, 1);
+
     /* in C99 inlines can clash if declared 'extern' in multiple modules */
     /* in C++ we introduce virtual functions that get coalesced at link time */
-    if (funcsp->sb->attribs.inheritable.linkage == lk_virtual || tmpl)
+    if (!currentFunction->isinternal && (funcsp->sb->attribs.inheritable.linkage == lk_virtual || tmpl))
     {
         funcsp->sb->attribs.inheritable.linkage = lk_virtual;
         Optimizer::gen_virtual(Optimizer::SymbolManager::Get(funcsp), false);
@@ -1064,7 +1065,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     /* Code gen from icode */
     Optimizer::AddFunction();
 
-    if (funcsp->sb->attribs.inheritable.linkage == lk_virtual || tmpl)
+    if (!currentFunction->isinternal && (funcsp->sb->attribs.inheritable.linkage == lk_virtual || tmpl))
         Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(funcsp));
 
     AllocateLocalContext(nullptr, funcsp, Optimizer::nextLabel);

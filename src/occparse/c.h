@@ -663,6 +663,7 @@ typedef struct sym
         unsigned forcedefault : 1;                       // defaulted internal function needs instantiation
         unsigned instantiationError : 1;                 // error while instantiating...
         unsigned noExcept : 1;                           // tagged as noexcept or default determined as noexcept
+        unsigned explicitlyInstantiated : 1;              // explicitly instantiated
         int __func__label;                               /* label number for the __func__ keyword */
         int labelCount;                                  /* number of code labels within a function body */
         int offset;                                      /* address offset of data in the given seg, or optimize register */

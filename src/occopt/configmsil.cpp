@@ -201,7 +201,7 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     0,                                                                            /* register list for regs used in fastcall */
 
     OPT_REVERSESTORE | OPT_REVERSEPARAM | OPT_ARGSTRUCTREF | OPT_EXPANDSWITCH | OPT_THUNKRETVAL, /* preferred optimizations */
-    DO_NOGLOBAL | DO_NOLOCAL | DO_NOREGALLOC | DO_NOADDRESSINIT | DO_NOPARMADJSIZE | DO_NOLOADSTACK | DO_NOENTRYIF |
+    DO_NOGLOBAL | DO_NOLOCAL | DO_NOREGALLOC | DO_NOADDRESSINIT | DO_NOPARMADJSIZE | DO_NOLOADSTACK | DO_NOENTRYIF | DO_NOALIAS |
         DO_NOOPTCONVERSION | DO_NOINLINE | DO_UNIQUEIND | DO_NOFASTDIV | DO_NODEADPUSHTOTEMP | DO_MIDDLEBITS | DO_NOBRANCHTOBRANCH | DO_NOMULTOSHIFT,
     /* optimizations we don't want */
     EO_RETURNASERR,    /* error options */

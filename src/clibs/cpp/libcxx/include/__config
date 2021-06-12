@@ -139,6 +139,7 @@
 #define __has_feature(__x) (__has_##__x)
 #define __has_keyword(__x) (__has_##__x)
 #define __has_builtin(__x) (__has##__x)
+#define __has_attribute(__x) (__has##__x)
 #endif
 
 #ifndef __has_attribute

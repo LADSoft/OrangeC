@@ -1444,7 +1444,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
             consfunc->sb->inlineFunc.stmt->lower = b.head;
             consfunc->sb->inlineFunc.syms = basetype(consfunc->tp)->syms;
             consfunc->sb->retcount = 1;
-            consfunc->sb->attribs.inheritable.isInline = consfunc->sb->attribs.inheritable.linkage2 != lk_export;
+            consfunc->sb->attribs.inheritable.isInline = true;
             InsertInline(consfunc);
             // now get rid of the first default arg
             // leave others so the old constructor can be considered
@@ -2940,7 +2940,7 @@ void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
         consfunc->sb->inlineFunc.stmt->lower = b.head;
         consfunc->sb->inlineFunc.syms = basetype(consfunc->tp)->syms;
         consfunc->sb->retcount = 1;
-        consfunc->sb->attribs.inheritable.isInline = consfunc->sb->attribs.inheritable.linkage2 != lk_export;
+        consfunc->sb->attribs.inheritable.isInline = true;
         //    consfunc->sb->inlineFunc.stmt->blockTail = b.tail;
         InsertInline(consfunc);
         defaultRecursionMap.clear();

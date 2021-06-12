@@ -661,7 +661,11 @@ typedef __char32_t char32_t;
 #  define _LIBCPP_OVERRIDABLE_FUNC_VIS _LIBCPP_DLL_VIS
 #  define _LIBCPP_EXPORTED_FROM_ABI __declspec(dllexport)
 #else
+#if defined(_LIBCPP_COMPILER_ORANGEC) && !defined(__LSCRTL_DLL)
+#  define _LIBCPP_DLL_VIS
+#else
 #  define _LIBCPP_DLL_VIS __declspec(dllimport)
+#endif
 #  define _LIBCPP_EXTERN_TEMPLATE_TYPE_VIS _LIBCPP_DLL_VIS
 #  define _LIBCPP_CLASS_TEMPLATE_INSTANTIATION_VIS
 #  define _LIBCPP_OVERRIDABLE_FUNC_VIS

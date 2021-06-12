@@ -4829,7 +4829,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     CollapseReferences(basetype(found1->tp)->btp);
                     if (!inNoExceptHandler)
                     {
-                        if (found1->sb->templateLevel && !templateNestingCount && found1->templateParams)
+                        if (found1->sb->templateLevel && (!templateNestingCount || instatiatingTemplate) && found1->templateParams)
                         {
                             found1 = TemplateFunctionInstantiate(found1, false, false);
                         }

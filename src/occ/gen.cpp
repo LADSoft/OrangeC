@@ -2090,7 +2090,7 @@ static void addsubatomic(e_opcode op, Optimizer::QUAD* q)
         }
         if (apal->liveRegs & (1 << apal->preg))
         {
-            if (aprl->mode == am_dreg)
+            if (aprl->mode == am_dreg && aprl->preg != apal->preg)
             {
                 if (op == op_sub)
                     gen_codes(op_neg, q->ans->size, aprl, NULL);

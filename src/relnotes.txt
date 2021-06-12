@@ -22,6 +22,10 @@ version 6.0.46:
     occ: elide copy constructor references in certain initializations
     occ: fix formatting on assembly language output files
     occ: fix bug that prevented occ from working when compiled with CLANG version 10 or greater
+    occ: clean up errors (remove function reference)
+    occ: add 'referenced from' for references from higher templates
+    occ: clean up errors (fix mangling and unmangling)
+    occ: fix bug where packed arguments to a function wouldn't be fully expanded with qualifiers
     occil: various improvements to allow generated code to be decompiled
     occil: add runtime support for function pointer via delegate
     ieeeconvert: new project for converting binary object files to more readable ascii format

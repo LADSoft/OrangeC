@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "compiler.h"
@@ -41,15 +41,26 @@ static TYPE* replaceTemplateSelector(TYPE* tp)
     if (!templateNestingCount && tp->type == bt_templateselector && tp->sp->sb->templateSelector->next->isTemplate)
     {
         SYMBOL* sp2 = tp->sp->sb->templateSelector->next->sp;
-        if (sp2)
+        if (tp->sp->sb->templateSelector->next->isDeclType)
         {
-            SYMBOL* sp1 = GetClassTemplate(sp2, tp->sp->sb->templateSelector->next->templateParams, true);
-            if (sp1)
+            TYPE* tp1 = TemplateLookupTypeFromDeclType(tp->sp->sb->templateSelector->next->tp);
+            if (tp1 && isstructured(tp1))
+                sp2 = basetype(tp1)->sp;
+            else
+                sp2 = nullptr;
+        }
+        else
+        {
+            if (sp2)
             {
-                sp1 = search(tp->sp->sb->templateSelector->next->next->name, sp1->tp->syms);
+                SYMBOL* sp1 = GetClassTemplate(sp2, tp->sp->sb->templateSelector->next->templateParams, true);
                 if (sp1)
                 {
-                    tp = sp1->tp;
+                    sp1 = search(tp->sp->sb->templateSelector->next->next->name, sp1->tp->syms);
+                    if (sp1)
+                    {
+                        tp = sp1->tp;
+                    }
                 }
             }
         }
@@ -64,8 +75,6 @@ bool comparetypes(TYPE* typ1, TYPE* typ2, int exact)
         typ1 = basetype(typ1);
     while (typ2->type == bt_typedef)
         typ2 = basetype(typ2);
-    typ1 = replaceTemplateSelector(typ1);
-    typ2 = replaceTemplateSelector(typ2);
     if (typ1->type == bt_derivedfromtemplate)
         typ1 = typ1->btp;
     if (typ2->type == bt_derivedfromtemplate)

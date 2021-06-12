@@ -1,22 +1,22 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *
+ *     
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #ifndef __SIGNAL_H
@@ -53,9 +53,11 @@ extern "C"
 {
 #endif
 
+#ifndef RC_INVOKED
     typedef int sig_atomic_t; /* Atomic entity type (ANSI) */
 
     typedef void (*sighandler_t)(int);
+#endif
 
 #define SIG_DFL ((sighandler_t)0)  /* Default action   */
 #define SIG_IGN ((sighandler_t)1)  /* Ignore action    */
@@ -73,8 +75,10 @@ extern "C"
 #define SIGUSR3 20  /* User-defined signal 3 */
 #define SIGBREAK 21 /* Control-Break interrupt */
 
+#ifndef RC_INVOKED
     int _RTL_FUNC _IMPORT raise(int __sig);
     sighandler_t _RTL_FUNC _IMPORT signal(int __sig, sighandler_t __func);
+#endif
 
 #define NSIG 23 /* highest defined signal no. + 1 */
 
@@ -135,6 +139,7 @@ extern "C"
 #define POLL_PRI 4
 #define POLL_HUP 5
 
+#ifndef RC_INVOKED
     typedef unsigned sigval_t;
     typedef unsigned sigset_t;  // there are a max of 23 signals in this implementation
 
@@ -191,11 +196,13 @@ extern "C"
         int sa_flags;
         void (*sa_restorer)(void);
     };
+#endif
 
 #define SIGEV_NONE 0
 #define SIGEV_SIGNAL 1
 #define SIGEV_THREAD 2
 
+#ifndef RC_INVOKED
     struct sigevent
     {
         int segev_notify;
@@ -251,6 +258,7 @@ extern "C"
     int    sigwait(const sigset_t *restrict, int *restrict);
     int    sigwaitinfo(const sigset_t *restrict, siginfo_t *restrict);
     */
+#endif
 
 #ifdef __cplusplus
 };

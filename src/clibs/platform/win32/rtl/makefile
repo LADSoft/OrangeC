@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -56,6 +56,6 @@ vsconio.o: vsconio.c
 	$(CC) /! /c $(STDINCLUDE) $(CFLAGS) /DVSDLL -o$(OBJECT)\$@ $^
 
 llthrd.o: llthrd.cpp
-	$(CC) /! /c /C+E $(STDINCLUDE) $(BUILDING_DLL) /9 -o$(OBJECT)\$@ $^
+	$(CC) /! /c /C+E $(STDINCLUDE) $(BUILDING_DLL) /D_LIBCPP_BUILDING_LIBRARY /9 -o$(OBJECT)\$@ $^
 
 DISTRIBUTE:

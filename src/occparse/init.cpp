@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "compiler.h"
@@ -66,7 +66,7 @@ static Optimizer::LIST *symListHead, *symListTail;
 static int inittag = 0;
 static STRING* strtab;
 static SYMBOL *msilToString;
-LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALIZER** init, INITIALIZER** dest, TYPE* itype,
+LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALIZER** init, INITIALIZER** dest, TYPE* itype,
                  SYMBOL* sym, bool arrayMember, int flags);
 
 void init_init(void)
@@ -115,11 +115,11 @@ EXPRESSION *ConvertToMSILString(EXPRESSION *val)
     val->type = en_c_string;
     SYMBOL *var = LookupMsilToString();
     
-    FUNCTIONCALL *fp = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+    FUNCTIONCALL *fp = Allocate<FUNCTIONCALL>();
     fp->functp = var->tp;
     fp->sp = var;
     fp->fcall = varNode(en_global, var);
-    fp->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
+    fp->arguments = Allocate<INITLIST>();
     fp->arguments->exp = val;
     fp->arguments->tp = &std__string;
     fp->ascall = true;
@@ -273,94 +273,96 @@ void dumpLits(void)
 
 void dumpStartups(void)
 {
-#ifndef PARSER_ONLY
-    SYMBOL* s;
-    bool started = false;
-    for (auto&& starts : preProcessor->GetStartups())
+    if (IsCompiler())
     {
-        if (starts.second->startup)
+        SYMBOL* s;
+        bool started = false;
+        for (auto&& starts : preProcessor->GetStartups())
         {
-            if (!started)
+            if (starts.second->startup)
             {
-                started = true;
-                Optimizer::startupseg();
+                if (!started)
+                {
+                    started = true;
+                    Optimizer::startupseg();
+                }
+                s = search(starts.first.c_str(), globalNameSpace->valueData->syms);
+                if (!s || s->sb->storage_class != sc_overloads)
+                    errorstr(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
+                else
+                {
+                    s = search(starts.first.c_str(), s->tp->syms);
+                    Optimizer::gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_STARTUP);
+                    s->sb->attribs.inheritable.used = true;
+                }
             }
-            s = search(starts.first.c_str(), globalNameSpace->valueData->syms);
-            if (!s || s->sb->storage_class != sc_overloads)
-                errorstr(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
-            else
+        }
+        started = false;
+        for (auto&& starts : preProcessor->GetStartups())
+        {
+            if (!starts.second->startup)
             {
-                s = search(starts.first.c_str(), s->tp->syms);
-                Optimizer::gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_STARTUP);
-                s->sb->attribs.inheritable.used = true;
+                if (!started)
+                {
+                    started = true;
+                    Optimizer::rundownseg();
+                }
+                s = search(starts.first.c_str(), globalNameSpace->valueData->syms);
+                if (!s || s->sb->storage_class != sc_overloads)
+                    errorstr(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
+                else
+                {
+                    s = search(starts.first.c_str(), s->tp->syms);
+                    Optimizer::gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_RUNDOWN);
+                    s->sb->attribs.inheritable.used = true;
+                }
             }
         }
     }
-    started = false;
-    for (auto&& starts : preProcessor->GetStartups())
-    {
-        if (!starts.second->startup)
-        {
-            if (!started)
-            {
-                started = true;
-                Optimizer::rundownseg();
-            }
-            s = search(starts.first.c_str(), globalNameSpace->valueData->syms);
-            if (!s || s->sb->storage_class != sc_overloads)
-                errorstr(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
-            else
-            {
-                s = search(starts.first.c_str(), s->tp->syms);
-                Optimizer::gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_RUNDOWN);
-                s->sb->attribs.inheritable.used = true;
-            }
-        }
-    }
-#endif
 }
 static int dumpBits(INITIALIZER** init)
 {
-#ifndef PARSER_ONLY
-    int offset = (*init)->offset;
-    long long resolver = 0;
-    TYPE* base = basetype((*init)->basetp);
-    do
+    if (IsCompiler())
     {
-        long long i = 0;
-        TYPE* tp = basetype((*init)->basetp);
-        if (tp->anonymousbits)
+        int offset = (*init)->offset;
+        long long resolver = 0;
+        TYPE* base = basetype((*init)->basetp);
+        do
         {
-            *init = (*init)->next;
-            continue;
-        }
-        if (isfloatconst((*init)->exp))
-        {
-            i = (long long)((*init)->exp->v.f);
-        }
-        else if (isintconst((*init)->exp))
-        {
-            i = (*init)->exp->v.i;
-        }
-        else if (isimaginaryconst((*init)->exp))
-        {
-            i = 0;
-        }
-        else if (iscomplexconst((*init)->exp))
-        {
-            i = (long long)((*init)->exp->v.c->r);
-        }
-        else
-            diag("dump-bits: non-constant");
+            long long i = 0;
+            TYPE* tp = basetype((*init)->basetp);
+            if (tp->anonymousbits)
+            {
+                *init = (*init)->next;
+                continue;
+            }
+            if (isfloatconst((*init)->exp))
+            {
+                i = (long long)((*init)->exp->v.f);
+            }
+            else if (isintconst((*init)->exp))
+            {
+                i = (*init)->exp->v.i;
+            }
+            else if (isimaginaryconst((*init)->exp))
+            {
+                i = 0;
+            }
+            else if (iscomplexconst((*init)->exp))
+            {
+                i = (long long)((*init)->exp->v.c->r);
+            }
+            else
+                diag("dump-bits: non-constant");
 #    ifdef ERROR
 #        error REVERSE BITS
 #    endif
-        i &= Optimizer::mod_mask(tp->bits);
-        resolver |= i << tp->startbit;
-        *init = (*init)->next;
-    } while ((*init) && (*init)->offset == offset);
-    switch (base->type)
-    {
+            i &= Optimizer::mod_mask(tp->bits);
+            resolver |= i << tp->startbit;
+            *init = (*init)->next;
+        } while ((*init) && (*init)->offset == offset);
+        switch (base->type)
+        {
         case bt_char:
         case bt_unsigned_char:
         case bt_signed_char:
@@ -393,19 +395,18 @@ static int dumpBits(INITIALIZER** init)
         default:
             diag("dumpBits: unknown bit size");
             break;
+        }
+        if (isatomic((*init)->basetp) && needsAtomicLockFromType((*init)->basetp))
+            Optimizer::genstorage(ATOMIC_FLAG_SPACE);
+        return base->size;
     }
-    if (isatomic((*init)->basetp) && needsAtomicLockFromType((*init)->basetp))
-        Optimizer::genstorage(ATOMIC_FLAG_SPACE);
-    return base->size;
-#else
     return 4;
-#endif
 }
 void insertDynamicInitializer(SYMBOL* sym, INITIALIZER* init)
 {
     if (!ignore_global_init && !templateNestingCount)
     {
-        DYNAMIC_INITIALIZER* di = (DYNAMIC_INITIALIZER*)Alloc(sizeof(DYNAMIC_INITIALIZER));
+        DYNAMIC_INITIALIZER* di = Allocate<DYNAMIC_INITIALIZER>();
         di->sp = sym;
         di->init = init;
         if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
@@ -422,7 +423,7 @@ void insertDynamicInitializer(SYMBOL* sym, INITIALIZER* init)
 }
 static void insertTLSInitializer(SYMBOL* sym, INITIALIZER* init)
 {
-    DYNAMIC_INITIALIZER* di = (DYNAMIC_INITIALIZER*)Alloc(sizeof(DYNAMIC_INITIALIZER));
+    DYNAMIC_INITIALIZER* di = Allocate<DYNAMIC_INITIALIZER>();
     di->sp = sym;
     di->init = init;
     di->next = TLSInitializers;
@@ -433,7 +434,7 @@ void insertDynamicDestructor(SYMBOL* sym, INITIALIZER* init)
 {
     if (!ignore_global_init && !templateNestingCount)
     {
-        DYNAMIC_INITIALIZER* di = (DYNAMIC_INITIALIZER*)Alloc(sizeof(DYNAMIC_INITIALIZER));
+        DYNAMIC_INITIALIZER* di = Allocate<DYNAMIC_INITIALIZER>();
         di->sp = sym;
         di->init = init;
         if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
@@ -450,332 +451,339 @@ void insertDynamicDestructor(SYMBOL* sym, INITIALIZER* init)
 }
 static void callDynamic(const char* name, int startupType, int index, STATEMENT* st)
 {
-#ifndef PARSER_ONLY
-    if (st)
+    if (IsCompiler())
     {
-        STATEMENT* stbegin = stmtNode(nullptr, nullptr, st_dbgblock);
-        stbegin->label = 1;
-        STATEMENT* stend = stmtNode(nullptr, nullptr, st_dbgblock);
-        stend->label = 0;
-        stbegin->next = st;
-        st = stbegin;
-        while (stbegin->next)
-            stbegin = stbegin->next;
-        stbegin->next = stend;
-        char fullName[512];
-        Optimizer::my_sprintf(fullName, "%s_%d", name, index);
-        SYMBOL* funcsp;
-        TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
-        tp->type = bt_ifunc;
-        tp->btp = (TYPE*)Alloc(sizeof(TYPE));
-        tp->btp->type = bt_void;
-        tp->rootType = tp;
-        tp->btp->rootType = tp->btp;
-        tp->syms = CreateHashTable(1);
-        funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr, fullName);
-        funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-        funcsp->sb->inlineFunc.stmt->lower = st;
-        tp->sp = funcsp;
-        SetLinkerNames(funcsp, lk_none);
-        startlab = Optimizer::nextLabel++;
-        retlab = Optimizer::nextLabel++;
-        genfunc(funcsp, !(Optimizer::architecture == ARCHITECTURE_MSIL));
-        startlab = retlab = 0;
-
-        if (!(Optimizer::chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
+        if (st)
         {
-            if (startupType == STARTUP_TYPE_STARTUP)
-                Optimizer::startupseg();
-            else
-                Optimizer::rundownseg();
-            Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32 + preProcessor->GetCppPrio(), startupType);
+            STATEMENT* stbegin = stmtNode(nullptr, nullptr, st_dbgblock);
+            stbegin->label = 1;
+            STATEMENT* stend = stmtNode(nullptr, nullptr, st_dbgblock);
+            stend->label = 0;
+            stbegin->next = st;
+            st = stbegin;
+            while (stbegin->next)
+                stbegin = stbegin->next;
+            stbegin->next = stend;
+            char fullName[512];
+            Optimizer::my_sprintf(fullName, "%s_%d", name, index);
+            SYMBOL* funcsp;
+            TYPE* tp = Allocate<TYPE>();
+            tp->type = bt_ifunc;
+            tp->btp = Allocate<TYPE>();
+            tp->btp->type = bt_void;
+            tp->rootType = tp;
+            tp->btp->rootType = tp->btp;
+            tp->syms = CreateHashTable(1);
+            funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr, fullName);
+            funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+            funcsp->sb->inlineFunc.stmt->lower = st;
+            tp->sp = funcsp;
+            SetLinkerNames(funcsp, lk_none);
+            startlab = Optimizer::nextLabel++;
+            retlab = Optimizer::nextLabel++;
+            genfunc(funcsp, !(Optimizer::architecture == ARCHITECTURE_MSIL));
+            startlab = retlab = 0;
+
+            if (!(Optimizer::chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
+            {
+                if (startupType == STARTUP_TYPE_STARTUP)
+                    Optimizer::startupseg();
+                else
+                    Optimizer::rundownseg();
+                Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32 + preProcessor->GetCppPrio(), startupType);
+            }
         }
     }
-#endif
 }
 static void dumpDynamicInitializers(void)
 {
-#ifndef PARSER_ONLY
-    int index = 0;
-    int counter = 0;
-    STATEMENT *st = nullptr, **stp = &st;
-    codeLabel = INT_MIN;
-    while (dynamicInitializers)
+    if (IsCompiler())
     {
-        EXPRESSION *exp = nullptr, **next = &exp, *exp1;
-        STATEMENT *stmt = nullptr, **stmtp = &stmt;
-        int i = 0;
-        exp = convertInitToExpression(dynamicInitializers->init ? dynamicInitializers->init->basetp : dynamicInitializers->sp->tp,
-                                      dynamicInitializers->sp, nullptr, nullptr, dynamicInitializers->init, nullptr, false);
-
-        while (*next && (*next)->type == en_void)
+        int index = 0;
+        int counter = 0;
+        STATEMENT* st = nullptr, ** stp = &st;
+        codeLabel = INT_MIN;
+        while (dynamicInitializers)
         {
-            counter++;
-            if (++i == 10)
+            EXPRESSION* exp = nullptr, ** next = &exp, * exp1;
+            STATEMENT* stmt = nullptr, ** stmtp = &stmt;
+            int i = 0;
+            exp = convertInitToExpression(dynamicInitializers->init ? dynamicInitializers->init->basetp : dynamicInitializers->sp->tp,
+                dynamicInitializers->sp, nullptr, nullptr, dynamicInitializers->init, nullptr, false);
+
+            while (*next && (*next)->type == en_void)
             {
-                exp1 = *next;
-                *next = intNode(en_c_i, 0);  // fill in the final right with a value
+                counter++;
+                if (++i == 10)
+                {
+                    exp1 = *next;
+                    *next = intNode(en_c_i, 0);  // fill in the final right with a value
+                    (*stmtp) = stmtNode(nullptr, nullptr, st_expr);
+                    (*stmtp)->select = exp;
+                    stmtp = &(*stmtp)->next;
+
+                    next = &exp1;
+                    exp = exp1;
+                    i = 0;
+                }
+                else
+                {
+                    next = &(*next)->right;
+                }
+            }
+            if (exp)
+            {
                 (*stmtp) = stmtNode(nullptr, nullptr, st_expr);
                 (*stmtp)->select = exp;
                 stmtp = &(*stmtp)->next;
-
-                next = &exp1;
-                exp = exp1;
-                i = 0;
             }
-            else
+            if (stmt)
             {
-                next = &(*next)->right;
+                STATEMENT* opt = stmt;
+                while (opt)
+                {
+                    optimize_for_constants(&opt->select);  // DAL fix
+                    opt = opt->next;
+                }
+                *stmtp = st;
+                st = stmt;
             }
-        }
-        if (exp)
-        {
-            (*stmtp) = stmtNode(nullptr, nullptr, st_expr);
-            (*stmtp)->select = exp;
-            stmtp = &(*stmtp)->next;
-        }
-        if (stmt)
-        {
-            STATEMENT* opt = stmt;
-            while (opt)
+            if (++counter >= 1500)
             {
-                optimize_for_constants(&opt->select);  // DAL fix
-                opt = opt->next;
+                counter = 0;
+                callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_STARTUP, index++, st);
+                st = nullptr;
+                stp = &st;
             }
-            *stmtp = st;
-            st = stmt;
+            dynamicInitializers = dynamicInitializers->next;
         }
-        if (++counter >= 1500)
-        {
-            counter = 0;
-            callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_STARTUP, index++, st);
-            st = nullptr;
-            stp = &st;
-        }
-        dynamicInitializers = dynamicInitializers->next;
+        callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_STARTUP, index++, st);
     }
-    callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_STARTUP, index++, st);
-#endif
 }
 static void dumpTLSInitializers(void)
 {
-#ifndef PARSER_ONLY
-    if (TLSInitializers)
+    if (IsCompiler())
     {
-        STATEMENT *st = nullptr, **stp = &st;
-        SYMBOL* funcsp;
-        TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
-        tp->type = bt_ifunc;
-        tp->btp = (TYPE*)Alloc(sizeof(TYPE));
-        tp->btp->type = bt_void;
-        tp->rootType = tp;
-        tp->btp->rootType = tp->btp;
-        tp->syms = CreateHashTable(1);
-        funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr,
-                              "__TLS_DYNAMIC_STARTUP__");
-        funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-        funcsp->sb->inlineFunc.stmt->lower = st;
-        tp->sp = funcsp;
-        SetLinkerNames(funcsp, lk_none);
-        codeLabel = INT_MIN;
-        while (TLSInitializers)
+        if (TLSInitializers)
         {
-            EXPRESSION* exp;
-            STATEMENT* stmt;
-            stmt = stmtNode(nullptr, nullptr, st_expr);
-            exp = convertInitToExpression(TLSInitializers->init->basetp, TLSInitializers->sp, nullptr, nullptr,
-                                          TLSInitializers->init, nullptr, false);
-            optimize_for_constants(&exp);
-            stmt->select = exp;
-            stmt->next = st;
-            st = stmt;
-            TLSInitializers = TLSInitializers->next;
+            STATEMENT* st = nullptr, ** stp = &st;
+            SYMBOL* funcsp;
+            TYPE* tp = Allocate<TYPE>();
+            tp->type = bt_ifunc;
+            tp->btp = Allocate<TYPE>();
+            tp->btp->type = bt_void;
+            tp->rootType = tp;
+            tp->btp->rootType = tp->btp;
+            tp->syms = CreateHashTable(1);
+            funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr,
+                "__TLS_DYNAMIC_STARTUP__");
+            funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+            funcsp->sb->inlineFunc.stmt->lower = st;
+            tp->sp = funcsp;
+            SetLinkerNames(funcsp, lk_none);
+            codeLabel = INT_MIN;
+            while (TLSInitializers)
+            {
+                EXPRESSION* exp = varNode(en_threadlocal, TLSInitializers->sp);
+                STATEMENT* stmt;
+                stmt = stmtNode(nullptr, nullptr, st_expr);
+                exp = convertInitToExpression(TLSInitializers->init->basetp, TLSInitializers->sp, nullptr, nullptr,
+                    TLSInitializers->init, exp, false);
+                optimize_for_constants(&exp);
+                stmt->select = exp;
+                stmt->next = st;
+                st = stmt;
+                TLSInitializers = TLSInitializers->next;
+            }
+            funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+            funcsp->sb->inlineFunc.stmt->lower = st;
+            startlab = Optimizer::nextLabel++;
+            retlab = Optimizer::nextLabel++;
+            genfunc(funcsp, true);
+            startlab = retlab = 0;
+            Optimizer::tlsstartupseg();
+            Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_STARTUP);
         }
-        funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-        funcsp->sb->inlineFunc.stmt->lower = st;
-        startlab = Optimizer::nextLabel++;
-        retlab = Optimizer::nextLabel++;
-        genfunc(funcsp, true);
-        startlab = retlab = 0;
-        Optimizer::tlsstartupseg();
-        Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_STARTUP);
     }
-#endif
 }
 static void dumpDynamicDestructors(void)
 {
-#ifndef PARSER_ONLY
-    int index = 0;
-    int counter = 0;
-    STATEMENT *st = nullptr, **stp = &st;
-    codeLabel = INT_MIN;
-    while (dynamicDestructors)
+    if (IsCompiler())
     {
-        EXPRESSION* exp = convertInitToExpression(dynamicDestructors->init->basetp, dynamicDestructors->sp, nullptr, nullptr,
-                                                  dynamicDestructors->init, nullptr, true);
-        *stp = stmtNode(nullptr, nullptr, st_expr);
-        optimize_for_constants(&exp);
-        (*stp)->select = exp;
-        stp = &(*stp)->next;
-        dynamicDestructors = dynamicDestructors->next;
-        if (++counter % 1500 == 0)
-        {
-            callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_RUNDOWN, index++, st);
-            st = nullptr;
-            stp = &st;
-        }
-    }
-    callDynamic("__DYNAMIC_RUNDOWN__", STARTUP_TYPE_RUNDOWN, index++, st);
-#endif
-}
-static void dumpTLSDestructors(void)
-{
-#ifndef PARSER_ONLY
-    if (TLSDestructors)
-    {
-        STATEMENT *st = nullptr, **stp = &st;
-        SYMBOL* funcsp;
-        TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
-        tp->type = bt_ifunc;
-        tp->btp = (TYPE*)Alloc(sizeof(TYPE));
-        tp->btp->type = bt_void;
-        tp->rootType = tp;
-        tp->btp->rootType = tp->btp;
-        tp->syms = CreateHashTable(1);
-        funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr,
-                              "__TLS_DYNAMIC_RUNDOWN__");
-        funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-        funcsp->sb->inlineFunc.stmt->lower = st;
-        tp->sp = funcsp;
-        SetLinkerNames(funcsp, lk_none);
+        int index = 0;
+        int counter = 0;
+        STATEMENT* st = nullptr, ** stp = &st;
         codeLabel = INT_MIN;
-        while (TLSDestructors)
+        while (dynamicDestructors)
         {
-            EXPRESSION* exp = convertInitToExpression(TLSDestructors->init->basetp, TLSDestructors->sp, nullptr, nullptr,
-                                                      TLSDestructors->init, nullptr, true);
+            EXPRESSION* exp = convertInitToExpression(dynamicDestructors->init->basetp, dynamicDestructors->sp, nullptr, nullptr,
+                dynamicDestructors->init, nullptr, true);
             *stp = stmtNode(nullptr, nullptr, st_expr);
             optimize_for_constants(&exp);
             (*stp)->select = exp;
             stp = &(*stp)->next;
-            TLSDestructors = TLSDestructors->next;
+            dynamicDestructors = dynamicDestructors->next;
+            if (++counter % 1500 == 0)
+            {
+                callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_RUNDOWN, index++, st);
+                st = nullptr;
+                stp = &st;
+            }
         }
-
-        funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-        funcsp->sb->inlineFunc.stmt->lower = st;
-        startlab = Optimizer::nextLabel++;
-        retlab = Optimizer::nextLabel++;
-        genfunc(funcsp, true);
-        startlab = retlab = 0;
-        Optimizer::tlsrundownseg();
-        Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_RUNDOWN);
+        callDynamic("__DYNAMIC_RUNDOWN__", STARTUP_TYPE_RUNDOWN, index++, st);
     }
-#endif
+}
+static void dumpTLSDestructors(void)
+{
+    if (IsCompiler())
+    {
+        if (TLSDestructors)
+        {
+            STATEMENT* st = nullptr, ** stp = &st;
+            SYMBOL* funcsp;
+            TYPE* tp = Allocate<TYPE>();
+            tp->type = bt_ifunc;
+            tp->btp = Allocate<TYPE>();
+            tp->btp->type = bt_void;
+            tp->rootType = tp;
+            tp->btp->rootType = tp->btp;
+            tp->syms = CreateHashTable(1);
+            funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr,
+                "__TLS_DYNAMIC_RUNDOWN__");
+            funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+            funcsp->sb->inlineFunc.stmt->lower = st;
+            tp->sp = funcsp;
+            SetLinkerNames(funcsp, lk_none);
+            codeLabel = INT_MIN;
+            while (TLSDestructors)
+            {
+                EXPRESSION* exp = varNode(en_threadlocal, TLSDestructors->sp);
+                exp = convertInitToExpression(TLSDestructors->init->basetp, TLSDestructors->sp, nullptr, nullptr,
+                    TLSDestructors->init, exp, true);
+                *stp = stmtNode(nullptr, nullptr, st_expr);
+                optimize_for_constants(&exp);
+                (*stp)->select = exp;
+                stp = &(*stp)->next;
+                TLSDestructors = TLSDestructors->next;
+            }
+
+            funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+            funcsp->sb->inlineFunc.stmt->lower = st;
+            startlab = Optimizer::nextLabel++;
+            retlab = Optimizer::nextLabel++;
+            genfunc(funcsp, true);
+            startlab = retlab = 0;
+            Optimizer::tlsrundownseg();
+            Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_RUNDOWN);
+        }
+    }
 }
 int dumpMemberPtr(SYMBOL* sym, TYPE* membertp, bool make_label)
 {
     int lbl = 0;
-#ifndef PARSER_ONLY
-    int vbase = 0, ofs;
-    EXPRESSION expx, *exp = &expx;
-    if (make_label)
+    if (IsCompiler())
     {
-        // well if we wanted we could reuse existing structures, but,
-        // it doesn't seem like the amount of duplicates there might be is
-        // really worth the work.  Borland didn't think so anyway...
-        Optimizer::cseg();
-        lbl = Optimizer::nextLabel++;
-        if (sym)
-            sym->sb->label = lbl;
-        Optimizer::put_label(lbl);
-    }
-    if (!sym)
-    {
-        // null...
-        if (isfunction(membertp->btp))
+        int vbase = 0, ofs;
+        EXPRESSION expx, * exp = &expx;
+        if (make_label)
         {
-            Optimizer::genaddress(0);
-            Optimizer::genint(0);
-            Optimizer::genint(0);
+            // well if we wanted we could reuse existing structures, but,
+            // it doesn't seem like the amount of duplicates there might be is
+            // really worth the work.  Borland didn't think so anyway...
+            Optimizer::cseg();
+            lbl = Optimizer::nextLabel++;
+            if (sym)
+                sym->sb->label = lbl;
+            Optimizer::put_label(lbl);
         }
-        else
+        if (!sym)
         {
-            Optimizer::genint(0);
-            Optimizer::genint(0);
-        }
-    }
-    else
-    {
-        if (sym->sb->storage_class != sc_member && sym->sb->storage_class != sc_mutable && sym->sb->storage_class != sc_virtual)
-            errortype(ERR_CANNOT_CONVERT_TYPE, sym->tp, membertp);
-        memset(&expx, 0, sizeof(expx));
-        expx.type = en_c_i;
-        exp = baseClassOffset(sym->sb->parentClass, basetype(membertp)->sp, &expx);
-        optimize_for_constants(&exp);
-        if (isfunction(sym->tp))
-        {
-            SYMBOL* genned;
-            if (sym->sb->storage_class == sc_virtual)
-                genned = getvc1Thunk(sym->sb->vtaboffset);
-            else
-                genned = sym;
-            Optimizer::genref(Optimizer::SymbolManager::Get(genned), 0);
-            if (exp->type == en_add)
+            // null...
+            if (isfunction(membertp->btp))
             {
-                if (exp->left->type == en_l_p)
-                {
-                    Optimizer::genint(exp->right->v.i + 1);
-                    Optimizer::genint(exp->left->left->v.i + 1);
-                }
-                else
-                {
-                    Optimizer::genint(exp->left->v.i);
-                    Optimizer::genint(exp->right->left->v.i + 1);
-                }
-            }
-            else if (exp->type == en_l_p)
-            {
+                Optimizer::genaddress(0);
                 Optimizer::genint(0);
-                Optimizer::genint(exp->left->v.i + 1);
+                Optimizer::genint(0);
             }
             else
             {
-                Optimizer::genint(exp->v.i);
                 Optimizer::genint(0);
-            }
-            if (genned->sb->deferredCompile && !genned->sb->inlineFunc.stmt)
-            {
-                deferredCompileOne(genned);
+                Optimizer::genint(0);
             }
         }
         else
         {
-            if (exp->type == en_add)
+            if (sym->sb->storage_class != sc_member && sym->sb->storage_class != sc_mutable && sym->sb->storage_class != sc_virtual)
+                errortype(ERR_CANNOT_CONVERT_TYPE, sym->tp, membertp);
+            memset(&expx, 0, sizeof(expx));
+            expx.type = en_c_i;
+            exp = baseClassOffset(sym->sb->parentClass, basetype(membertp)->sp, &expx);
+            optimize_for_constants(&exp);
+            if (isfunction(sym->tp))
             {
-                if (exp->left->type == en_l_p)
+                SYMBOL* genned;
+                if (sym->sb->storage_class == sc_virtual)
+                    genned = getvc1Thunk(sym->sb->vtaboffset);
+                else
+                    genned = sym;
+                Optimizer::genref(Optimizer::SymbolManager::Get(genned), 0);
+                if (exp->type == en_add)
                 {
-                    Optimizer::genint(exp->right->v.i + sym->sb->offset + 1);
-                    Optimizer::genint(exp->left->left->v.i + 1);
+                    if (exp->left->type == en_l_p)
+                    {
+                        Optimizer::genint(exp->right->v.i + 1);
+                        Optimizer::genint(exp->left->left->v.i + 1);
+                    }
+                    else
+                    {
+                        Optimizer::genint(exp->left->v.i);
+                        Optimizer::genint(exp->right->left->v.i + 1);
+                    }
+                }
+                else if (exp->type == en_l_p)
+                {
+                    Optimizer::genint(0);
+                    Optimizer::genint(exp->left->v.i + 1);
                 }
                 else
                 {
-                    Optimizer::genint(exp->left->v.i + sym->sb->offset + 1);
-                    Optimizer::genint(exp->right->left->v.i + 1);
+                    Optimizer::genint(exp->v.i);
+                    Optimizer::genint(0);
                 }
-            }
-            else if (exp->type == en_l_p)
-            {
-                Optimizer::genint(1 + sym->sb->offset);
-                Optimizer::genint(exp->left->v.i + 1);
+                if (genned->sb->deferredCompile && !genned->sb->inlineFunc.stmt)
+                {
+                    deferredCompileOne(genned);
+                }
             }
             else
             {
-                Optimizer::genint(exp->v.i + sym->sb->offset + 1);
-                Optimizer::genint(0);
+                if (exp->type == en_add)
+                {
+                    if (exp->left->type == en_l_p)
+                    {
+                        Optimizer::genint(exp->right->v.i + sym->sb->offset + 1);
+                        Optimizer::genint(exp->left->left->v.i + 1);
+                    }
+                    else
+                    {
+                        Optimizer::genint(exp->left->v.i + sym->sb->offset + 1);
+                        Optimizer::genint(exp->right->left->v.i + 1);
+                    }
+                }
+                else if (exp->type == en_l_p)
+                {
+                    Optimizer::genint(1 + sym->sb->offset);
+                    Optimizer::genint(exp->left->v.i + 1);
+                }
+                else
+                {
+                    Optimizer::genint(exp->v.i + sym->sb->offset + 1);
+                    Optimizer::genint(0);
+                }
+                Optimizer::genint(0);  // padding
             }
-            Optimizer::genint(0);  // padding
         }
     }
-#endif
     return lbl;
 }
 static void GetStructData(EXPRESSION* in, EXPRESSION** exp, int* ofs)
@@ -806,71 +814,72 @@ static void GetStructData(EXPRESSION* in, EXPRESSION** exp, int* ofs)
 }
 int dumpInit(SYMBOL* sym, INITIALIZER* init)
 {
-#ifndef PARSER_ONLY
-    TYPE* tp = basetype(init->basetp);
-    int rv;
-    long long i;
-    FPF f, im;
-    if (tp->type == bt_templateparam)
-        tp = tp->templateParam->p->byClass.val;
-    if (isstructured(tp))
+    if (IsCompiler())
     {
-        rv = tp->size + tp->sp->sb->attribs.inheritable.structAlign;
-    }
-    else
-    {
-        rv = getSize(tp->type);
-    }
-    if (isfloatconst(init->exp))
-    {
-        f = *init->exp->v.f;
-        i = (long long)f;
-        im.SetZero(0);
-    }
-    else if (isintconst(init->exp))
-    {
-        i = init->exp->v.i;
-        f = (long long)i;
-        im.SetZero(0);
-    }
-    else if (isimaginaryconst(init->exp))
-    {
-        i = 0;
-        f.SetZero(0);
-        im = *init->exp->v.f;
-    }
-    else if (iscomplexconst(init->exp))
-    {
-        f = init->exp->v.c->r;
-        im = init->exp->v.c->i;
-        i = (long long)(f);
-    }
-    else
-    {
-        EXPRESSION* exp = init->exp;
-        while (castvalue(exp))
-            exp = exp->left;
-        while (exp->type == en_void && exp->right)
-            exp = exp->right;
-        if (exp->type == en_func && !exp->v.func->ascall)
-            exp = exp->v.func->fcall;
-        if (!IsConstantExpression(exp, false, false))
+        TYPE* tp = basetype(init->basetp);
+        int rv;
+        long long i;
+        FPF f, im;
+        if (tp->type == bt_templateparam)
+            tp = tp->templateParam->p->byClass.val;
+        if (isstructured(tp))
         {
-            if (Optimizer::cparams.prm_cplusplus)
-            {
-                if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
-                    insertTLSInitializer(sym, init);
-                else if (sym->sb->storage_class != sc_localstatic)
-                    insertDynamicInitializer(sym, init);
-                return 0;
-            }
-            else
-                diag("dumpsym: unknown constant type");
+            rv = tp->size;// +tp->sp->sb->attribs.inheritable.structAlign;
         }
-        else if (Optimizer::chosenAssembler->arch->denyopts & DO_NOADDRESSINIT)
+        else
         {
-            switch (exp->type)
+            rv = getSize(tp->type);
+        }
+        if (isfloatconst(init->exp))
+        {
+            f = *init->exp->v.f;
+            i = (long long)f;
+            im.SetZero(0);
+        }
+        else if (isintconst(init->exp))
+        {
+            i = init->exp->v.i;
+            f = (long long)i;
+            im.SetZero(0);
+        }
+        else if (isimaginaryconst(init->exp))
+        {
+            i = 0;
+            f.SetZero(0);
+            im = *init->exp->v.f;
+        }
+        else if (iscomplexconst(init->exp))
+        {
+            f = init->exp->v.c->r;
+            im = init->exp->v.c->i;
+            i = (long long)(f);
+        }
+        else
+        {
+            EXPRESSION* exp = init->exp;
+            while (castvalue(exp))
+                exp = exp->left;
+            while (exp->type == en_void && exp->right)
+                exp = exp->right;
+            if (exp->type == en_func && !exp->v.func->ascall)
+                exp = exp->v.func->fcall;
+            if (!IsConstantExpression(exp, false, false))
             {
+                if (Optimizer::cparams.prm_cplusplus)
+                {
+                    if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
+                        insertTLSInitializer(sym, init);
+                    else if (sym->sb->storage_class != sc_localstatic)
+                        insertDynamicInitializer(sym, init);
+                    return 0;
+                }
+                else
+                    diag("dumpsym: unknown constant type");
+            }
+            else if (Optimizer::chosenAssembler->arch->denyopts & DO_NOADDRESSINIT)
+            {
+                switch (exp->type)
+                {
                 case en_memberptr:
                     dumpMemberPtr(nullptr, tp, false);
                     // fall through
@@ -884,13 +893,13 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
                         Optimizer::genaddress(0);
                     if (!Optimizer::cparams.prm_cplusplus || sym->sb->storage_class != sc_localstatic)
                     {
-                        INITIALIZER* shim = (INITIALIZER*)Alloc(sizeof(INITIALIZER));
+                        INITIALIZER* shim = Allocate<INITIALIZER>();
                         *shim = *init;
                         shim->next = nullptr;
                         insertDynamicInitializer(sym, shim);
                     }
                     break;
-                /* fall through */
+                    /* fall through */
                 default:
                     if (isintconst(exp))
                     {
@@ -900,7 +909,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
                     {
                         if (sym->sb->storage_class != sc_localstatic)
                         {
-                            INITIALIZER* shim = (INITIALIZER*)Alloc(sizeof(INITIALIZER));
+                            INITIALIZER* shim = Allocate<INITIALIZER>();
                             *shim = *init;
                             shim->next = nullptr;
                             insertDynamicInitializer(sym, shim);
@@ -913,13 +922,13 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
                         Optimizer::genaddress(0);
                     }
                     break;
+                }
+                return rv;
             }
-            return rv;
-        }
-        else
-        {
-            switch (exp->type)
+            else
             {
+                switch (exp->type)
+                {
                 case en_pc:
                     Optimizer::genpcref(Optimizer::SymbolManager::Get(exp->v.sp), 0);
                     break;
@@ -970,22 +979,22 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
                         Optimizer::genaddress(0);
                     }
                     break;
+                }
             }
+            /* we are reserving enough space for the entire pointer
+             * even if the type has less space.  On an x86 the resulting linker
+             * conversion will work, except for example in the case of
+             * arrays of characters initialized to pointers.  On a big endian processor
+             * the conversion will not leave the expected results...
+             */
+            if (rv < getSize(bt_pointer))
+                return getSize(bt_pointer);
+            else
+                return rv;
         }
-        /* we are reserving enough space for the entire pointer
-         * even if the type has less space.  On an x86 the resulting linker
-         * conversion will work, except for example in the case of
-         * arrays of characters initialized to pointers.  On a big endian processor
-         * the conversion will not leave the expected results...
-         */
-        if (rv < getSize(bt_pointer))
-            return getSize(bt_pointer);
-        else
-            return rv;
-    }
 
-    switch (tp->type == bt_enum ? tp->btp->type : tp->type)
-    {
+        switch (tp->type == bt_enum ? tp->btp->type : tp->type)
+        {
         case bt_bool:
             Optimizer::genbool(i);
             break;
@@ -1061,11 +1070,10 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
         default:
             diag("dumpInit: unknown type");
             break;
+        }
+        return rv;
     }
-#else
-    int rv = 4;
-#endif
-    return rv;
+    return 4;
 }
 bool IsConstWithArr(TYPE* tp)
 {
@@ -1082,188 +1090,191 @@ bool IsConstWithArr(TYPE* tp)
 }
 void dumpInitGroup(SYMBOL* sym, TYPE* tp)
 {
-#ifndef PARSER_ONLY
-
-    if (sym->sb->init || (isarray(sym->tp) && sym->tp->msil))
+    if (IsCompiler())
     {
-        if (Optimizer::architecture == ARCHITECTURE_MSIL)
-        {
-            insertDynamicInitializer(sym, sym->sb->init);
-        }
-        else
-        {
-            if (basetype(sym->tp)->array || isstructured(tp))
-            {
-                INITIALIZER* init = sym->sb->init;
-                int pos = 0;
-                while (init)
-                {
-                    if (pos != init->offset)
-                    {
-                        if (pos > init->offset)
-                            diag("position error in dumpInitializers");
-                        else
-                            Optimizer::genstorage(init->offset - pos);
-                        pos = init->offset;
-                    }
-                    if (init->basetp && basetype(init->basetp)->hasbits)
-                    {
-                        pos += dumpBits(&init);
-                    }
-                    else
-                    {
-                        INITIALIZER* next = init->next;
-                        if (init->basetp && init->exp)
-                        {
-                            int s;
-                            init->next = nullptr;
-                            s = dumpInit(sym, init);
-                            if (s < init->basetp->size)
-                            {
 
-                                Optimizer::genstorage(init->basetp->size - s);
-                                s = init->basetp->size;
-                            }
-                            pos += s;
-                        }
-                        init = init->next = next;
-                    }
-                }
+        if (sym->sb->init || (isarray(sym->tp) && sym->tp->msil))
+        {
+            if (Optimizer::architecture == ARCHITECTURE_MSIL)
+            {
+                insertDynamicInitializer(sym, sym->sb->init);
             }
             else
             {
-                int s = dumpInit(sym, sym->sb->init);
-                if (s < sym->sb->init->basetp->size)
+                if (basetype(sym->tp)->array || isstructured(tp))
                 {
+                    INITIALIZER* init = sym->sb->init;
+                    int pos = 0;
+                    while (init)
+                    {
+                        if (pos != init->offset)
+                        {
+                            if (pos > init->offset)
+                                diag("position error in dumpInitializers");
+                            else
+                                Optimizer::genstorage(init->offset - pos);
+                            pos = init->offset;
+                        }
+                        if (init->basetp && basetype(init->basetp)->hasbits)
+                        {
+                            pos += dumpBits(&init);
+                        }
+                        else
+                        {
+                            INITIALIZER* next = init->next;
+                            if (init->basetp && init->exp)
+                            {
+                                int s;
+                                init->next = nullptr;
+                                s = dumpInit(sym, init);
+                                if (s < init->basetp->size)
+                                {
 
-                    Optimizer::genstorage(sym->sb->init->basetp->size - s);
+                                    Optimizer::genstorage(init->basetp->size - s);
+                                    s = init->basetp->size;
+                                }
+                                pos += s;
+                            }
+                            init = init->next = next;
+                        }
+                    }
+                }
+                else
+                {
+                    int s = dumpInit(sym, sym->sb->init);
+                    if (s < sym->sb->init->basetp->size)
+                    {
+
+                        Optimizer::genstorage(sym->sb->init->basetp->size - s);
+                    }
                 }
             }
         }
+        else
+            Optimizer::genstorage(basetype(tp)->size);
+        if (isatomic(tp) && needsAtomicLockFromType(tp))
+        {
+            Optimizer::genstorage(ATOMIC_FLAG_SPACE);
+        }
     }
-    else
-        Optimizer::genstorage(basetype(tp)->size);
-    if (isatomic(tp) && needsAtomicLockFromType(tp))
-    {
-        Optimizer::genstorage(ATOMIC_FLAG_SPACE);
-    }
-#endif
 }
 static void dumpStaticInitializers(void)
 {
-#ifndef PARSER_ONLY
-    int abss = 0;
-    int adata = 0;
-    int aconst = 0;
-    int anull = 0;
-    int sconst = 0;
-    int bss = 0;
-    int data = 0;
-    int thread = 0;
-    int *sizep, *alignp;
-    symListTail = symListHead;
-    while (symListTail)
+    if (IsCompiler())
     {
-        SYMBOL* sym = (SYMBOL*)symListTail->data;
-        if (sym->sb->storage_class == sc_global || sym->sb->storage_class == sc_static ||
-            sym->sb->storage_class == sc_localstatic || sym->sb->storage_class == sc_constant)
+        int abss = 0;
+        int adata = 0;
+        int aconst = 0;
+        int anull = 0;
+        int sconst = 0;
+        int bss = 0;
+        int data = 0;
+        int thread = 0;
+        int* sizep, * alignp;
+        symListTail = symListHead;
+        while (symListTail)
         {
-            TYPE* tp = sym->tp;
-            TYPE* stp = tp;
-            int al;
-            while (isarray(stp))
-                stp = basetype(stp)->btp;
-            if ((IsConstWithArr(sym->tp) && !isvolatile(sym->tp)) || sym->sb->storage_class == sc_constant)
+            SYMBOL* sym = (SYMBOL*)symListTail->data;
+            if (sym->sb->storage_class == sc_global || sym->sb->storage_class == sc_static ||
+                sym->sb->storage_class == sc_localstatic || sym->sb->storage_class == sc_constant)
             {
-                Optimizer::xconstseg();
-                sizep = &sconst;
-                alignp = &aconst;
-            }
-            else if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
-            {
-                Optimizer::tseg();
-                sizep = &thread;
-                alignp = &anull;
-            }
-            else if (sym->sb->init || !Optimizer::cparams.prm_bss)
-            {
-                Optimizer::dseg();
-                sizep = &data;
-                alignp = &adata;
-            }
-            else
-            {
-                Optimizer::bssseg();
-                sizep = &bss;
-                alignp = &abss;
-            }
-            if (sym->sb->attribs.inheritable.structAlign)
-                al = sym->sb->attribs.inheritable.structAlign;
-            else
-                al = getAlign(sc_global, basetype(tp));
-
-            if (*alignp < al)
-                *alignp = al;
-            if (*sizep % al)
-            {
-                int n = al - *sizep % al;
-                if (!(Optimizer::architecture == ARCHITECTURE_MSIL))
+                TYPE* tp = sym->tp;
+                TYPE* stp = tp;
+                int al;
+                while (isarray(stp))
+                    stp = basetype(stp)->btp;
+                if ((IsConstWithArr(sym->tp) && !isvolatile(sym->tp)) || sym->sb->storage_class == sc_constant)
                 {
-                    Optimizer::genstorage(n);
+                    Optimizer::xconstseg();
+                    sizep = &sconst;
+                    alignp = &aconst;
                 }
-                *sizep += n;
-            }
-            //  have to thunk in a size for __arrCall
-            if (Optimizer::cparams.prm_cplusplus)
-            {
-                if (isarray(tp))
+                else if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
                 {
-                    TYPE* tp1 = tp;
-                    while (isarray(tp1))
-                        tp1 = basetype(tp1)->btp;
-                    tp1 = basetype(tp1);
-                    if (isstructured(tp1) && !tp1->sp->sb->trivialCons)
+                    Optimizer::tseg();
+                    sizep = &thread;
+                    alignp = &anull;
+                }
+                else if (sym->sb->init || !Optimizer::cparams.prm_bss)
+                {
+                    Optimizer::dseg();
+                    sizep = &data;
+                    alignp = &adata;
+                }
+                else
+                {
+                    Optimizer::bssseg();
+                    sizep = &bss;
+                    alignp = &abss;
+                }
+                if (sym->sb->attribs.inheritable.structAlign)
+                    al = sym->sb->attribs.inheritable.structAlign;
+                else
+                    al = getAlign(sc_global, basetype(tp));
+
+                if (*alignp < al)
+                    *alignp = al;
+                if (*sizep % al)
+                {
+                    int n = al - *sizep % al;
+                    if (!(Optimizer::architecture == ARCHITECTURE_MSIL))
                     {
-                        Optimizer::genint(basetype(tp)->size);
-                        *sizep += getSize(bt_int);
+                        Optimizer::genstorage(n);
+                    }
+                    *sizep += n;
+                }
+                //  have to thunk in a size for __arrCall
+                if (Optimizer::cparams.prm_cplusplus)
+                {
+                    if (isarray(tp))
+                    {
+                        TYPE* tp1 = tp;
+                        while (isarray(tp1))
+                            tp1 = basetype(tp1)->btp;
+                        tp1 = basetype(tp1);
+                        if (isstructured(tp1) && !tp1->sp->sb->trivialCons)
+                        {
+                            Optimizer::genint(basetype(tp)->size);
+                            *sizep += getSize(bt_int);
+                        }
                     }
                 }
+                sym->sb->offset = *sizep;
+                *sizep += basetype(tp)->size;
+                Optimizer::gen_strlab(Optimizer::SymbolManager::Get(sym));
+                if (sym->sb->storage_class == sc_constant)
+                    Optimizer::put_label(sym->sb->label);
+                dumpInitGroup(sym, tp);
             }
-            sym->sb->offset = *sizep;
-            *sizep += basetype(tp)->size;
-            Optimizer::gen_strlab(Optimizer::SymbolManager::Get(sym));
-            if (sym->sb->storage_class == sc_constant)
-                Optimizer::put_label(sym->sb->label);
-            dumpInitGroup(sym, tp);
+            symListTail = symListTail->next;
         }
-        symListTail = symListTail->next;
+        symListHead = nullptr;
+        Optimizer::dataAlign = adata;
+        Optimizer::bssAlign = abss;
+        Optimizer::constAlign = aconst;
     }
-    symListHead = nullptr;
-    Optimizer::dataAlign = adata;
-    Optimizer::bssAlign = abss;
-    Optimizer::constAlign = aconst;
-#endif
 }
 void dumpInitializers(void)
 {
-#ifndef PARSER_ONLY
-    if (!TotalErrors())
+    if (IsCompiler())
     {
-        dumpStaticInitializers();
-        dumpDynamicInitializers();
-        dumpTLSInitializers();
-        dumpDynamicDestructors();
-        dumpTLSDestructors();
-        dumpvc1Thunks();
-        dumpStaticInitializers();
+        if (!TotalErrors())
+        {
+            dumpStaticInitializers();
+            dumpDynamicInitializers();
+            dumpTLSInitializers();
+            dumpDynamicDestructors();
+            dumpTLSDestructors();
+            dumpvc1Thunks();
+            dumpStaticInitializers();
+        }
     }
-#endif
 }
 void insertInitSym(SYMBOL* sym)
 {
     if (!sym->sb->indecltable)
     {
-        Optimizer::LIST* lst = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+        Optimizer::LIST* lst = Allocate<Optimizer::LIST>();
         lst->data = sym;
         if (symListHead)
             symListTail = symListTail->next = lst;
@@ -1274,7 +1285,7 @@ void insertInitSym(SYMBOL* sym)
 }
 INITIALIZER* initInsert(INITIALIZER** pos, TYPE* tp, EXPRESSION* exp, int offset, bool noassign)
 {
-    INITIALIZER* pos1 = (INITIALIZER*)Alloc(sizeof(INITIALIZER));
+    INITIALIZER* pos1 = Allocate<INITIALIZER>();
 
     pos1->basetp = tp;
     pos1->exp = exp;
@@ -1284,9 +1295,9 @@ INITIALIZER* initInsert(INITIALIZER** pos, TYPE* tp, EXPRESSION* exp, int offset
     *pos = pos1;
     return pos1;
 }
-static LEXEME* init_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed)
+static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed)
 {
-    LEXEME* start = lex;
+    LEXLIST* start = lex;
     if (commaallowed)
         lex = expression(lex, funcsp, atp, tp, expr, 0);
     else
@@ -1321,11 +1332,12 @@ static LEXEME* init_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
                 INITLIST** lptr = &shim;
                 checkPackedExpression(*expr);
                 // this is going to presume that the expression involved
-                // is not too long to be cached by the LEXEME mechanism.
+                // is not too long to be cached by the LEXLIST mechanism.
                 lptr = expandPackedInitList(lptr, funcsp, start, *expr);
                 if (!shim)
                 {
                     *expr = intNode(en_c_i, 0);
+                    *tp = &stdint;
                 }
                 else
                 {
@@ -1346,7 +1358,7 @@ static LEXEME* init_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
     return lex;
 }
 
-static LEXEME* initialize_bool_type(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
+static LEXLIST* initialize_bool_type(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
 {
     TYPE* tp;
     EXPRESSION* exp;
@@ -1367,17 +1379,16 @@ static LEXEME* initialize_bool_type(LEXEME* lex, SYMBOL* funcsp, int offset, enu
         {
             error(ERR_EXPRESSION_SYNTAX);
         }
-        else
+        else if (itype->type != bt_templateparam && !templateNestingCount)
         {
             ResolveTemplateVariable(&tp, &exp, itype, nullptr);
             castToArithmetic(false, &tp, &exp, (enum e_kw) - 1, itype, true);
-            if (sc != sc_auto && sc != sc_register && !Optimizer::cparams.prm_cplusplus)
-            {
-                if (isstructured(tp))
-                    error(ERR_ILL_STRUCTURE_ASSIGNMENT);
-                else if (!isarithmeticconst(exp) && !msilConstant(exp))
+            if (isstructured(tp))
+                error(ERR_ILL_STRUCTURE_ASSIGNMENT);
+            else if ((!isarithmetic(tp) && basetype(tp)->type != bt_enum) ||
+                (sc != sc_auto && sc != sc_register && !isarithmeticconst(exp) && !msilConstant(exp) && !Optimizer::cparams.prm_cplusplus))
                     error(ERR_CONSTANT_VALUE_EXPECTED);
-            }
+            
             /*	exp = exprNode(en_not, exp, nullptr);
                 exp = exprNode(en_not, exp, nullptr);
                 */
@@ -1399,8 +1410,9 @@ static LEXEME* initialize_bool_type(LEXEME* lex, SYMBOL* funcsp, int offset, enu
     }
     return lex;
 }
-static LEXEME* initialize_arithmetic_type(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
+static LEXLIST* initialize_arithmetic_type(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
 {
+
     TYPE* tp = nullptr;
     EXPRESSION* exp = nullptr;
     bool needend = false;
@@ -1442,6 +1454,8 @@ static LEXEME* initialize_arithmetic_type(LEXEME* lex, SYMBOL* funcsp, int offse
                 {
                     castToArithmetic(false, &tp, &exp, (enum e_kw) - 1, itype, true);
                 }
+                if (isfunction(tp))
+                    tp = basetype(tp)->btp;
                 if (isstructured(tp))
                 {
                     error(ERR_ILL_STRUCTURE_ASSIGNMENT);
@@ -1507,7 +1521,7 @@ static LEXEME* initialize_arithmetic_type(LEXEME* lex, SYMBOL* funcsp, int offse
     }
     return lex;
 }
-static LEXEME* initialize_string(LEXEME* lex, SYMBOL* funcsp, TYPE** rtype, EXPRESSION** exp)
+static LEXLIST* initialize_string(LEXLIST* lex, SYMBOL* funcsp, TYPE** rtype, EXPRESSION** exp)
 {
     enum e_lexType tp;
     (void)funcsp;
@@ -1532,7 +1546,7 @@ static LEXEME* initialize_string(LEXEME* lex, SYMBOL* funcsp, TYPE** rtype, EXPR
     }
     return lex;
 }
-static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
+static LEXLIST* initialize_pointer_type(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
 {
     TYPE* tp = nullptr;
     EXPRESSION* exp = nullptr;
@@ -1550,7 +1564,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
     else
     {
         if (!lex ||
-            (lex->type != l_astr && lex->type != l_wstr && lex->type != l_ustr && lex->type != l_Ustr && lex->type != l_msilstr))
+            (lex->data->type != l_astr && lex->data->type != l_wstr && lex->data->type != l_ustr && lex->data->type != l_Ustr && lex->data->type != l_msilstr))
         {
             lex = init_expression(lex, funcsp, itype, &tp, &exp, false);
             if (!tp)
@@ -1569,7 +1583,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
             string = true;
         }
         castToPointer(&tp, &exp, (enum e_kw) - 1, itype);
-        DeduceAuto(&itype, tp);
+        DeduceAuto(&itype, tp, exp);
         if (sc != sc_auto && sc != sc_register)
         {
             EXPRESSION* exp2 = exp;
@@ -1669,7 +1683,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
     }
     return lex;
 }
-static LEXEME* initialize_memberptr(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
+static LEXLIST* initialize_memberptr(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
 {
     TYPE* tp = nullptr;
     EXPRESSION* exp = nullptr;
@@ -1726,6 +1740,19 @@ static LEXEME* initialize_memberptr(LEXEME* lex, SYMBOL* funcsp, int offset, enu
                 if (Optimizer::cparams.prm_cplusplus && isstructured(tp))
                 {
                     castToPointer(&tp, &exp, (enum e_kw) - 1, itype);
+                }
+                TYPE tp4;
+                if (isfunction(tp))
+                {
+                    SYMLIST* hr = basetype(tp)->syms->table[0];
+                    if (hr && hr->p->sb->thisPtr)
+                    {
+                        tp4 = {};
+                        tp4.type = bt_memberptr;
+                        tp4.btp = tp;
+                        tp4.sp = basetype(basetype(hr->p->tp)->btp)->sp;
+                        tp = &tp4;
+                    }
                 }
                 if (!comparetypes(itype, tp, true))
                 {
@@ -1875,7 +1902,7 @@ EXPRESSION* createTemporary(TYPE* tp, EXPRESSION* val)
     rv = anonymousVar(sc_auto, tp);
     if (val)
     {
-        EXPRESSION* rv1 = rv;
+        EXPRESSION* rv1 = copy_expression(rv);
         deref(tp, &rv);
         cast(tp, &val);
         rv = exprNode(en_void, exprNode(en_assign, rv, val), rv1);
@@ -1888,7 +1915,7 @@ EXPRESSION* msilCreateTemporary(TYPE* tp, EXPRESSION* val)
     EXPRESSION* rv = anonymousVar(sc_auto, tp);
     if (val)
     {
-        EXPRESSION* rv1 = rv;
+        EXPRESSION* rv1 = copy_expression(rv);
         deref(tp, &rv);
         cast(tp, &val);
         rv = exprNode(en_void, exprNode(en_assign, rv, val), rv1);
@@ -1910,9 +1937,9 @@ static EXPRESSION* ConvertInitToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP, en
             (!isstructured(basetype(tp)->btp) || exp->type != en_lvalue) && (!ispointer(basetype(tp)->btp) || exp->type != en_l_p))
         {
             if (!isarithmeticconst(exp) && exp->type != en_thisref && exp->type != en_func &&
-                basetype(basetype(tp)->btp)->type != bt_memberptr && !boundTP->rref)
+                basetype(basetype(tp)->btp)->type != bt_memberptr && !boundTP->rref && !boundTP->lref   )
                 errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
-            if (sc != sc_parameter)
+            if (sc != sc_parameter && !boundTP->rref && !boundTP->lref)
                 exp = createTemporary(tp, exp);
         }
         while (castvalue(exp))
@@ -1922,7 +1949,7 @@ static EXPRESSION* ConvertInitToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP, en
     }
     return exp;
 }
-static LEXEME* initialize_reference_type(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init,
+static LEXLIST* initialize_reference_type(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init,
                                          int flags, SYMBOL* sym)
 {
     TYPE* tp;
@@ -1946,8 +1973,8 @@ static LEXEME* initialize_reference_type(LEXEME* lex, SYMBOL* funcsp, int offset
     if (tp)
     {
         ResolveTemplateVariable(&tp, &exp, basetype(itype)->btp, nullptr);
-        DeduceAuto(&itype, tp);
-        DeduceAuto(&sym->tp, tp);
+        DeduceAuto(&itype, tp, exp);
+        DeduceAuto(&sym->tp, tp, exp);
         UpdateRootTypes(itype);
         UpdateRootTypes(sym->tp);
         if (!isref(tp) &&
@@ -2037,7 +2064,7 @@ static LEXEME* initialize_reference_type(LEXEME* lex, SYMBOL* funcsp, int offset
                 EXPRESSION* paramexp = exp;
                 TYPE* ctype = basetype(itype->btp);
                 exp = ths;
-                callConstructorParam(&ctype, &exp, tp, paramexp, true, false, false, false);
+                callConstructorParam(&ctype, &exp, tp, paramexp, true, false, false, false, true);
             }
             else
             {
@@ -2048,7 +2075,7 @@ static LEXEME* initialize_reference_type(LEXEME* lex, SYMBOL* funcsp, int offset
         {
             exp = ConvertInitToRef(exp, itype, tp, sc);
         }
-        else if (itype->type == bt_rref && isstructured(itype->btp) && exp->type != en_lvalue)
+        else if (itype->type == bt_rref && isstructured(itype->btp) && exp->type != en_lvalue && exp->type != en_l_ref)
         {
             EXPRESSION* expx = exp;
             bool lref = false;
@@ -2165,7 +2192,7 @@ static void allocate_desc(TYPE* tp, int offset, AGGREGATE_DESCRIPTOR** descin, A
     }
     if (!desc)
     {
-        desc = (AGGREGATE_DESCRIPTOR*)Alloc(sizeof(AGGREGATE_DESCRIPTOR));
+        desc = Allocate<AGGREGATE_DESCRIPTOR>();
         desc->tp = tp;
         desc->offset = offset;
     }
@@ -2186,14 +2213,14 @@ static void allocate_desc(TYPE* tp, int offset, AGGREGATE_DESCRIPTOR** descin, A
         }
     }
 }
-static enum e_bt str_candidate(LEXEME* lex, TYPE* tp)
+static enum e_bt str_candidate(LEXLIST* lex, TYPE* tp)
 {
     TYPE* bt;
     bt = basetype(tp);
     if (bt->type == bt___string)
         return bt->type;
     if (bt->type == bt_pointer)
-        if (lex->type == l_astr || lex->type == l_wstr || lex->type == l_ustr || lex->type == l_Ustr)
+        if (lex->data->type == l_astr || lex->data->type == l_wstr || lex->data->type == l_ustr || lex->data->type == l_Ustr)
         {
             bt = basetype(bt->btp);
             if (bt->type == bt_short || bt->type == bt_unsigned_short || bt->type == bt_wchar_t || bt->type == bt_char ||
@@ -2202,7 +2229,7 @@ static enum e_bt str_candidate(LEXEME* lex, TYPE* tp)
         }
     return (e_bt)0;
 }
-static bool designator(LEXEME** lex, SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** cache)
+static bool designator(LEXLIST** lex, SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** cache)
 {
 
     if (MATCHKW(*lex, openbr) || MATCHKW(*lex, dot))
@@ -2256,7 +2283,7 @@ static bool designator(LEXEME** lex, SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** desc
                     if (isstructured((*desc)->tp))
                     {
                         SYMLIST* hr2 = basetype((*desc)->tp)->syms->table[0];
-                        while (hr2 && strcmp(((SYMBOL*)(hr2->p))->name, (*lex)->value.s.a) != 0)
+                        while (hr2 && strcmp(((SYMBOL*)(hr2->p))->name, (*lex)->data->value.s.a) != 0)
                         {
                             hr2 = hr2->next;
                         }
@@ -2278,7 +2305,7 @@ static bool designator(LEXEME** lex, SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** desc
                     else
                     {
                         *lex = getsym();
-                        errorNotMember(basetype((*desc)->tp)->sp, nullptr, (*lex)->value.s.a);
+                        errorNotMember(basetype((*desc)->tp)->sp, nullptr, (*lex)->data->value.s.a);
                     }
                 }
                 else
@@ -2460,7 +2487,7 @@ static INITIALIZER* sort_aggregate_initializers(INITIALIZER* data)
         // embedded in the compiler since it is non-standard.
         // a lot of this code does runup and rundown to get things in the
         // right format for qxsort...
-        INITIALIZER** base = (INITIALIZER**)localAlloc(sizeof(INITIALIZER*) * items);
+        INITIALIZER** base = localAllocate<INITIALIZER*>(items);
         INITIALIZER* find = data;
         INITIALIZER** rv = &data;
 
@@ -2527,7 +2554,7 @@ static void set_array_sizes(AGGREGATE_DESCRIPTOR* cache)
         cache = cache->next;
     }
 }
-static LEXEME* read_strings(LEXEME* lex, INITIALIZER** next, AGGREGATE_DESCRIPTOR** desc)
+static LEXLIST* read_strings(LEXLIST* lex, INITIALIZER** next, AGGREGATE_DESCRIPTOR** desc)
 {
     bool nothingWritten = true;
     TYPE* tp = basetype((*desc)->tp);
@@ -2638,7 +2665,7 @@ static TYPE* nexttp(AGGREGATE_DESCRIPTOR* desc)
         rv = basetype(desc->tp)->btp;
     return rv;
 }
-static LEXEME* initialize___object(LEXEME* lex, SYMBOL* funcsp, int offset, TYPE* itype, INITIALIZER** init)
+static LEXLIST* initialize___object(LEXLIST* lex, SYMBOL* funcsp, int offset, TYPE* itype, INITIALIZER** init)
 {
     EXPRESSION* expr = nullptr;
     TYPE* tp = nullptr;
@@ -2654,7 +2681,7 @@ static LEXEME* initialize___object(LEXEME* lex, SYMBOL* funcsp, int offset, TYPE
     initInsert(init, itype, expr, offset, false);
     return lex;
 }
-static LEXEME* initialize___string(LEXEME* lex, SYMBOL* funcsp, int offset, TYPE* itype, INITIALIZER** init)
+static LEXLIST* initialize___string(LEXLIST* lex, SYMBOL* funcsp, int offset, TYPE* itype, INITIALIZER** init)
 {
     EXPRESSION* expr = nullptr;
     TYPE* tp = nullptr;
@@ -2673,7 +2700,7 @@ static LEXEME* initialize___string(LEXEME* lex, SYMBOL* funcsp, int offset, TYPE
     initInsert(init, itype, expr, offset, false);
     return lex;
 }
-static LEXEME* initialize_auto_struct(LEXEME* lex, SYMBOL* funcsp, int offset, TYPE* itype, INITIALIZER** init)
+static LEXLIST* initialize_auto_struct(LEXLIST* lex, SYMBOL* funcsp, int offset, TYPE* itype, INITIALIZER** init)
 {
     EXPRESSION* expr = nullptr;
     TYPE* tp = nullptr;
@@ -2739,7 +2766,7 @@ EXPRESSION* getThisNode(SYMBOL* sym)
     }
     return exp;
 }
-static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* base, int offset, enum e_sc sc, TYPE* itype,
+static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* base, int offset, enum e_sc sc, TYPE* itype,
                                          INITIALIZER** init, INITIALIZER** dest, bool arrayMember, int flags)
 {
 
@@ -2765,7 +2792,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
         if (base->sb->storage_class != sc_member || MATCHKW(lex, openpa) || assn || MATCHKW(lex, begin))
         {
             // initialization via constructor
-            FUNCTIONCALL* funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+            FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
             EXPRESSION* exp;
             TYPE* ctype = itype;
             INITIALIZER* it = nullptr;
@@ -2839,6 +2866,8 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                     if (MATCHKW(lex, begin))
                     {
                         lex = getArgs(lex, funcsp, funcparams, end, true, 0);
+                        for ( auto a = funcparams->arguments; a; a = a->next)
+                            a->initializer_list = true;
                         maybeConversion = false;
                     }
                     else
@@ -2847,7 +2876,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                         EXPRESSION* exp1 = nullptr;
                         TYPE* tp1 = nullptr;
                         lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, false);
-                        funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
+                        funcparams->arguments = Allocate<INITLIST>();
                         funcparams->arguments->tp = tp1;
                         funcparams->arguments->exp = exp1;
                         if (exp1->type == en_thisref && exp1->left->type == en_func)
@@ -2871,8 +2900,14 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
             }
             else if (MATCHKW(lex, openpa) || MATCHKW(lex, begin))
             {
+                bool isbegin = MATCHKW(lex, begin);
                 // conversion constructor params
                 lex = getArgs(lex, funcsp, funcparams, MATCHKW(lex, openpa) ? closepa : end, true, 0);
+                if (isbegin)
+                {
+                    for (auto a = funcparams->arguments; a; a = a->next)
+                        a->initializer_list = true;
+                }
             }
             else if (flags & _F_NESTEDINIT)
             {
@@ -2880,7 +2915,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                 EXPRESSION* exp1 = nullptr;
                 TYPE* tp1 = nullptr;
                 lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, false);
-                funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
+                funcparams->arguments = Allocate<INITLIST>();
                 funcparams->arguments->tp = tp1;
                 funcparams->arguments->exp = exp1;
             }
@@ -2894,11 +2929,11 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                 if (flags & _F_ASSIGNINIT)
                 {
                     toContinue = !callConstructor(&ctype, &exp, funcparams, false, nullptr, false, maybeConversion, false, false,
-                                                  isList ? _F_INITLIST : 0, true);
+                                                  isList ? _F_INITLIST : 0, true, true);
                 }
                 if (toContinue)
                     callConstructor(&ctype, &exp, funcparams, false, nullptr, true, maybeConversion, false, false,
-                                    isList ? _F_INITLIST : 0, false);
+                                    isList ? _F_INITLIST : 0, false, true);
                 if (funcparams->sp)  // may be an error
                     PromoteConstructorArgs(funcparams->sp, funcparams);
             }
@@ -2995,7 +3030,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
             if (Optimizer::cparams.prm_cplusplus && isstructured(itype) && MATCHKW(lex, openpa))
             {
                 // conversion constructor params
-                FUNCTIONCALL* funcparams = (FUNCTIONCALL*)(FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+                FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
                 INITIALIZER* it = nullptr;
                 lex = getArgs(lex, funcsp, funcparams, closepa, true, 0);
                 if (funcparams->arguments && funcparams->arguments->next)
@@ -3004,7 +3039,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                     error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
                 else
                 {
-                    TYPE *ttp = (TYPE*)Alloc(sizeof(TYPE)), **ttp1 = &ttp;
+                    TYPE *ttp = Allocate<TYPE>(), **ttp1 = &ttp;
                     if (isconst(itype))
                     {
                         (*ttp1)->type = bt_const;
@@ -3022,12 +3057,15 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                     tp1 = itype;
                     if (funcparams->arguments && !isref(funcparams->arguments->tp))
                     {
+                        TYPE *tpx = Allocate<TYPE>();
+                        *tpx = *funcparams->arguments->tp;
+                        funcparams->arguments->tp = tpx;
                         funcparams->arguments->tp->lref = true;
                         funcparams->arguments->tp->rref = false;
                     }
                     funcparams->thistp = ttp;
                     exp1 = baseexp;
-                    callConstructor(&tp1, &exp1, funcparams, false, nullptr, true, false, false, false, 0, false);
+                    callConstructor(&tp1, &exp1, funcparams, false, nullptr, true, false, false, false, 0, false, true);
                     PromoteConstructorArgs(funcparams->sp, funcparams);
                     initInsert(&it, itype, exp1, offset, true);
                 }
@@ -3267,7 +3305,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                     if (n > 1)
                     {
                         sz = intNode(en_c_i, n);
-                        tn = (TYPE*)Alloc(sizeof(TYPE));
+                        tn = Allocate<TYPE>();
                         tn->array = true;
                         tn->type = bt_pointer;
                         tn->size = n * s;
@@ -3275,7 +3313,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                         tn->rootType = tn;
                         tn->esize = sz;
                     }
-                    callConstructor(&ctype, &exp, nullptr, true, sz, true, false, false, false, false, false);
+                    callConstructor(&ctype, &exp, nullptr, true, sz, true, false, false, false, false, false, true);
                     initInsert(push, tn, exp, last, true);
                     push = &(*push)->next;
                     last += n * s;
@@ -3308,7 +3346,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                 if (n > 1)
                 {
                     sz = intNode(en_c_i, n);
-                    tn = (TYPE*)Alloc(sizeof(TYPE));
+                    tn = Allocate<TYPE>();
                     tn->array = true;
                     tn->type = bt_pointer;
                     tn->size = n * s;
@@ -3334,7 +3372,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
     }
     return lex;
 }
-static LEXEME* initialize_bit(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
+static LEXLIST* initialize_bit(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
 {
     (void)funcsp;
     (void)offset;
@@ -3345,7 +3383,7 @@ static LEXEME* initialize_bit(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc
     errskim(&lex, skim_comma);
     return lex;
 }
-static LEXEME* initialize_auto(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init,
+static LEXLIST* initialize_auto(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init,
                                INITIALIZER** dest, SYMBOL* sym)
 {
     TYPE* tp;
@@ -3373,14 +3411,14 @@ static LEXEME* initialize_auto(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_s
         {
             if (isarray(tp))
             {
-                TYPE* itp = (TYPE*)Alloc(sizeof(TYPE));
+                TYPE* itp = Allocate<TYPE>();
                 itp->type = bt_pointer;
                 itp->size = getSize(bt_pointer);
                 itp->btp = basetype(tp)->btp;
                 itp->rootType = itp;
                 if (isconst(itp))
                 {
-                    TYPE* itp1 = (TYPE*)Alloc(sizeof(TYPE));
+                    TYPE* itp1 = Allocate<TYPE>();
                     itp1->type = bt_const;
                     itp1->size = itp->size;
                     itp1->btp = itp;
@@ -3389,7 +3427,7 @@ static LEXEME* initialize_auto(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_s
                 }
                 if (isvolatile(itp))
                 {
-                    TYPE* itp1 = (TYPE*)Alloc(sizeof(TYPE));
+                    TYPE* itp1 = Allocate<TYPE>();
                     itp1->type = bt_volatile;
                     itp1->size = itp->size;
                     itp1->btp = itp;
@@ -3400,7 +3438,7 @@ static LEXEME* initialize_auto(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_s
             }
             if (isconst(sym->tp) && !isconst(tp))
             {
-                TYPE* itp = (TYPE*)Alloc(sizeof(TYPE));
+                TYPE* itp = Allocate<TYPE>();
                 itp->type = bt_const;
                 itp->size = tp->size;
                 itp->btp = tp;
@@ -3409,7 +3447,7 @@ static LEXEME* initialize_auto(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_s
             }
             if (isvolatile(sym->tp) && !isvolatile(tp))
             {
-                TYPE* itp = (TYPE*)Alloc(sizeof(TYPE));
+                TYPE* itp = Allocate<TYPE>();
                 itp->type = bt_volatile;
                 itp->size = tp->size;
                 itp->btp = tp;
@@ -3459,7 +3497,7 @@ static LEXEME* initialize_auto(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_s
  * initialization...  for aggregate types it completely handles all initialization
  * for the aggregate and any sub-aggregates with a single call of the function
  */
-LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALIZER** init, INITIALIZER** dest, TYPE* itype,
+LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALIZER** init, INITIALIZER** dest, TYPE* itype,
                  SYMBOL* sym, bool arrayMember, int flags)
 {
     TYPE* tp;
@@ -3469,7 +3507,13 @@ LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALI
         SYMBOL* ts = tp->sp->sb->templateSelector->next->sp;
         SYMBOL* sym = nullptr;
         TEMPLATESELECTOR* find = tp->sp->sb->templateSelector->next->next;
-        if (tp->sp->sb->templateSelector->next->isTemplate)
+        if (tp->sp->sb->templateSelector->next->isDeclType)
+        {
+            TYPE *tp1 = TemplateLookupTypeFromDeclType(tp->sp->sb->templateSelector->next->tp);
+            if (tp1 && isstructured(tp1))
+                sym = basetype(tp1)->sp;
+        }
+        else if (tp->sp->sb->templateSelector->next->isTemplate)
         {
             if (ts->tp->type == bt_templateparam && ts->tp->templateParam->p->byTemplate.val == nullptr)
             {
@@ -3478,15 +3522,29 @@ LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALI
                 needkw(&lex, end);
                 return lex;
             }
-            TEMPLATEPARAMLIST* current = tp->sp->sb->templateSelector->next->templateParams;
-            sym = GetClassTemplate(ts, current, false);
+            if (!tp->sp->sb->templateSelector->next->sp->sb->instantiated && !tp->sp->sb->templateSelector->next->templateParams)
+            {
+                TEMPLATEPARAMLIST* current = tp->sp->sb->templateSelector->next->templateParams;
+                sym = GetClassTemplate(ts, current, false);
+            }
+            else
+            {
+                sym = tp->sp->sb->templateSelector->next->sp;
+            }
             tp = nullptr;
         }
         else if (basetype(ts->tp)->templateParam->p->type == kw_typename)
         {
             tp = basetype(ts->tp)->templateParam->p->byClass.val;
             if (!tp)
-                return nullptr;
+            {
+                if (templateNestingCount)
+                {
+                    lex = getsym();
+                    errskim(&lex, skim_closepa);
+                }
+                return lex;
+            }
             sym = tp->sp;
         }
         else if (basetype(ts->tp)->templateParam->p->type == kw_delete)
@@ -3629,7 +3687,8 @@ LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALI
             }
             else
             {
-                errskim(&lex, skim_comma);
+                // this assumes that any '<' is related to a template rather than an expression
+                errskim(&lex, skim_comma, true);
             }
             break;
     }
@@ -3656,6 +3715,10 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc)
         return rv;
     switch (node->type)
     {
+        case en_dot:
+        case en_pointsto:
+            rv = false;
+            break;
         case en_const:
             rv = true;
             break;
@@ -3700,6 +3763,7 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc)
             rv = true;
             break;
         case en_auto:
+        case en_construct:
             rv = false;
             break;
         case en_l_sp:
@@ -3745,9 +3809,9 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc)
                     case en_labcon:
                     case en_absolute:
                     case en_threadlocal:
-                        return node->left->v.sp->sb->constexpression ||
-                               (node->left->v.sp->sb->init &&
-                                IsConstantExpression(node->left->v.sp->sb->init->exp, allowParams, allowFunc));
+                        return node->left->v.sp->sb->constexpression;// ||
+//                               (node->left->v.sp->sb->init &&
+//                                IsConstantExpression(node->left->v.sp->sb->init->exp, allowParams, allowFunc));
                     default:
                         break;
                 }
@@ -3929,7 +3993,7 @@ void RecalculateVariableTemplateInitializers(INITIALIZER** in, INITIALIZER*** ou
         }
         if ((*in)->basetp == 0)
         {
-            **out = (INITIALIZER*)(INITIALIZER*)Alloc(sizeof(INITIALIZER));
+            **out = Allocate<INITIALIZER>();
             ***out = **in;
             (**out)->offset = tp->size;
             *out = &(**out)->next;
@@ -3955,7 +4019,7 @@ void RecalculateVariableTemplateInitializers(INITIALIZER** in, INITIALIZER*** ou
         }
         if ((*in)->basetp == 0)
         {
-            **out = (INITIALIZER*)(INITIALIZER*)Alloc(sizeof(INITIALIZER));
+            **out = Allocate<INITIALIZER>();
             ***out = **in;
             (**out)->offset = tp->size;
             *out = &(**out)->next;
@@ -3963,7 +4027,7 @@ void RecalculateVariableTemplateInitializers(INITIALIZER** in, INITIALIZER*** ou
     }
     else
     {
-        **out = (INITIALIZER*)(INITIALIZER*)Alloc(sizeof(INITIALIZER));
+        **out = Allocate<INITIALIZER>();
         ***out = **in;
         *in = (*in)->next;
         (**out)->basetp = tp;
@@ -3971,24 +4035,27 @@ void RecalculateVariableTemplateInitializers(INITIALIZER** in, INITIALIZER*** ou
         (*out) = &(**out)->next;
     }
 }
-LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, int flags)
+LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, int flags)
 {
+    auto sp = basetype(sym->tp)->sp;
+    if (sp && isstructured(sp->tp) && sp->sb && sp->sb->attribs.uninheritable.deprecationText)
+        deprecateMessage(basetype(sym->tp)->sp);
     TYPE* tp;
     bool initialized = MATCHKW(lex, assign) || MATCHKW(lex, begin) || MATCHKW(lex, openpa);
     inittag = 0;
     browse_variable(sym);
     // MSIL property
-#ifndef PARSER_ONLY
-    if (sym->sb->attribs.inheritable.linkage2 == lk_property)
-        return initialize_property(lex, funcsp, sym, storage_class_in, asExpression, flags);
-#endif
+    if (IsCompiler())
+    {
+        if (sym->sb->attribs.inheritable.linkage2 == lk_property)
+            return initialize_property(lex, funcsp, sym, storage_class_in, asExpression, flags);
+    }
     switch (sym->sb->storage_class)
     {
         case sc_parameter:
             sym->sb->assigned = true;
             break;
         case sc_global:
-            Optimizer::SymbolManager::Get(sym)->storage_class = Optimizer::SymbolManager::Get(sym->sb->storage_class);
             initializingGlobalVar = true;
             sym->sb->assigned = true;
             sym->sb->attribs.inheritable.used = true;
@@ -4000,7 +4067,6 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
             break;
         case sc_static:
         case sc_localstatic:
-            Optimizer::SymbolManager::Get(sym)->storage_class = Optimizer::SymbolManager::Get(sym->sb->storage_class);
             initializingGlobalVar = true;
             sym->sb->assigned = true;
             break;
@@ -4014,11 +4080,11 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
         default:
             break;
     }
-    if (funcsp && funcsp->sb->isInline && sym->sb->storage_class == sc_static)
+    if (funcsp && funcsp->sb->attribs.inheritable.isInline && sym->sb->storage_class == sc_static)
     {
         if (Optimizer::cparams.prm_cplusplus)
         {
-            sym->sb->isInline = true;
+            sym->sb->attribs.inheritable.isInline = true;
         }
         else
         {
@@ -4063,7 +4129,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
         {
             if (isautotype(sym->tp) && MATCHKW(lex, assign))
             {
-                LEXEME* placeholder = lex;
+                LEXLIST* placeholder = lex;
                 TYPE* tp1 = nullptr;
                 EXPRESSION* exp1;
                 lex = getsym();
@@ -4072,10 +4138,10 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                     lex = expression_no_check(lex, funcsp, nullptr, &tp1, &exp1, _F_TYPETEST);
                     if (tp1 && tp1->stringconst)
                     {
-                        TYPE* itp = (TYPE*)Alloc(sizeof(TYPE));
+                        TYPE* itp = Allocate<TYPE>();
                         itp->type = bt_pointer;
                         itp->size = getSize(bt_pointer);
-                        itp->btp = (TYPE*)Alloc(sizeof(TYPE));
+                        itp->btp = Allocate<TYPE>();
                         itp->btp->type = bt_const;
                         itp->btp->size = tp1->btp->size;
                         itp->btp->btp = tp1->btp;
@@ -4087,14 +4153,14 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                     {
                         if (isarray(tp1))
                         {
-                            TYPE* itp = (TYPE*)Alloc(sizeof(TYPE));
+                            TYPE* itp = Allocate<TYPE>();
                             itp->type = bt_pointer;
                             itp->size = getSize(bt_pointer);
                             itp->btp = basetype(tp1)->btp;
                             itp->rootType = itp;
                             if (isconst(tp1))
                             {
-                                TYPE* itp1 = (TYPE*)Alloc(sizeof(TYPE));
+                                TYPE* itp1 = Allocate<TYPE>();
                                 itp1->type = bt_const;
                                 itp1->size = itp->size;
                                 itp1->btp = itp;
@@ -4103,7 +4169,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                             }
                             if (isvolatile(tp1))
                             {
-                                TYPE* itp1 = (TYPE*)Alloc(sizeof(TYPE));
+                                TYPE* itp1 = Allocate<TYPE>();
                                 itp1->type = bt_volatile;
                                 itp1->size = itp->size;
                                 itp1->btp = itp;
@@ -4111,11 +4177,12 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                                 itp = itp1;
                             }
                             tp1 = itp;
-                        }
+                        } 
+                        DeduceAuto(&sym->tp, tp1, exp1);
                         TYPE** tp2 = &sym->tp;
                         while (ispointer(*tp2) || isref(*tp2))
                             tp2 = &basetype(*tp2)->btp;
-                        *tp2 = tp1;
+//                        *tp2 = tp1;
                         if (isstructured(*tp2))
                             *tp2 = basetype(*tp2)->sp->tp;
 
@@ -4230,7 +4297,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                 EXPRESSION* sz = n > 1 ? intNode(en_c_i, n) : nullptr;
                 EXPRESSION* baseexp = getThisNode(sym);
                 EXPRESSION* exp = baseexp;
-                callConstructor(&ctype, &exp, nullptr, true, sz, true, false, false, false, false, false);
+                callConstructor(&ctype, &exp, nullptr, true, sz, true, false, false, false, false, false, true);
                 initInsert(&it, z, exp, 0, true);
                 if (storage_class_in != sc_auto && storage_class_in != sc_localstatic && storage_class_in != sc_parameter &&
                     storage_class_in != sc_member && storage_class_in != sc_mutable)
@@ -4267,7 +4334,61 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                 }
             }
         }
+    }    switch (sym->sb->storage_class)
+    {
+        case sc_parameter:
+            sym->sb->assigned = true;
+            break;
+        case sc_global:
+            Optimizer::SymbolManager::Get(sym)->storage_class = Optimizer::SymbolManager::Get(sym->sb->storage_class);
+            initializingGlobalVar = true;
+            sym->sb->assigned = true;
+            sym->sb->attribs.inheritable.used = true;
+            break;
+        case sc_external:
+            initializingGlobalVar = true;
+            sym->sb->assigned = true;
+            sym->sb->attribs.inheritable.used = true;
+            break;
+        case sc_static:
+        case sc_localstatic:
+            Optimizer::SymbolManager::Get(sym)->storage_class = Optimizer::SymbolManager::Get(sym->sb->storage_class);
+            initializingGlobalVar = true;
+            sym->sb->assigned = true;
+            break;
+        case sc_auto:
+        case sc_register:
+            sym->sb->allocate = true;
+            break;
+        case sc_type:
+        case sc_typedef:
+            break;
+        default:
+            break;
     }
+    switch (sym->sb->storage_class)
+    {
+    case sc_parameter:
+        break;
+    case sc_global:
+        Optimizer::SymbolManager::Get(sym)->storage_class = Optimizer::SymbolManager::Get(sym->sb->storage_class);
+        break;
+    case sc_external:
+        break;
+    case sc_static:
+    case sc_localstatic:
+        Optimizer::SymbolManager::Get(sym)->storage_class = Optimizer::SymbolManager::Get(sym->sb->storage_class);
+        break;
+    case sc_auto:
+    case sc_register:
+        break;
+    case sc_type:
+    case sc_typedef:
+        break;
+    default:
+        break;
+    }
+
     if (Optimizer::initializeScalars && !sym->sb->anonymous && !sym->sb->init && (isarithmetic(sym->tp) || (ispointer(sym->tp) && !isarray(sym->tp))) && sym->sb->storage_class == sc_auto)
     {
         EXPRESSION* exp = intNode(en_c_i, 0);
@@ -4301,7 +4422,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
         }
         else if (!sym->sb->init)
         {
-            if (sym->sb->storage_class != sc_external && !initialized)
+            if (sym->sb->storage_class != sc_external && !initialized && !isstructured(sp->tp))
                 error(ERR_CONSTEXPR_REQUIRES_INITIALIZER);
         }
         else if (isstructured(tp))
@@ -4320,7 +4441,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
         }
         else if (!isfunction(tp))
         {
-            TYPE* t = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+            TYPE* t = Allocate<TYPE>();
             t->btp = tp;
             t->type = bt_const;
             t->size = tp->size;
@@ -4362,7 +4483,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
             }
             else
             {
-                if (sym->sb->init->exp && isintconst(sym->sb->init->exp) && (isint(sym->tp) || basetype(sym->tp)->type == bt_enum))
+                if ((sym->sb->init->exp && isintconst(sym->sb->init->exp) && (isint(sym->tp) || basetype(sym->tp)->type == bt_enum)))
                 {
                     if (sym->sb->storage_class != sc_static && !Optimizer::cparams.prm_cplusplus && !funcsp)
                         insertInitSym(sym);
@@ -4373,7 +4494,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                 }
             }
         }
-        else if (sym->sb->init && sym->sb->init->exp && (isint(sym->tp) || basetype(sym->tp)->type == bt_enum))
+        else if (sym->sb->init && sym->sb->init->exp && (sym->sb->constexpression || isint(sym->tp) || basetype(sym->tp)->type == bt_enum))
         {
             if (sym->sb->storage_class != sc_static && !Optimizer::cparams.prm_cplusplus && !funcsp)
                 insertInitSym(sym);
@@ -4387,7 +4508,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
         if (sym->sb->init == nullptr && needsAtomicLockFromType(sym->tp))
         {
             // sets the atomic_flag portion of a locked type to zero
-            sym->sb->init = (INITIALIZER*)Alloc(sizeof(INITIALIZER));
+            sym->sb->init = Allocate<INITIALIZER>();
             sym->sb->init->offset = sym->tp->size - ATOMIC_FLAG_SPACE;
             sym->sb->init->basetp = &stdint;
             sym->sb->init->exp = intNode(en_c_i, 0);

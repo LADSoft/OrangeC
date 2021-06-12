@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -434,6 +434,7 @@ int ppDefine::LookupDefault(std::string& macro, int begin, int end, const std::s
     macro.replace(begin, end - begin, insert);
     return insert.size();
 }
+int count;
 std::string ppDefine::defid(const std::string& macroname, int& i, int& j)
 /*
  * Get an identifier during macro replacement
@@ -470,7 +471,7 @@ std::string ppDefine::defid(const std::string& macroname, int& i, int& j)
             if (quoted)
             {
                 if (macroname[j] != '}')
-                    Errors::Error("Macro substition: expected '}'");
+                    Errors::Error("Macro substition: expected '}'");    
                 else
                     j++;
             }
@@ -487,7 +488,7 @@ void ppDefine::Stringize(std::string& macro)
     int waiting = 0;
     int last = 0, pos;
 
-    for (pos = 0; pos < macro.size(); pos++)
+    for (pos = 0; pos < macro.size(); pos++)    
     {
         if (!waiting && (macro[pos] == '"' || macro[pos] == '\'') && NotSlashed(macro, pos))
         {
@@ -892,12 +893,19 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                         if (count == d->GetArgCount() && !c89 && d->HasVarArgs())
                         {
                             q1 = p;
-                            int nestedparen = 0;
-                            while (p < line.size() && line[p] != '\n' && (line[p] != ')' || nestedparen))
+                            int nestedparen = 0, nestedstring = 0;
+                            while (p < line.size() && line[p] != '\n' && (nestedstring || line[p] != ')' || nestedparen))
                             {
-                                if (line[p] == '(')
+                                if (nestedstring)
+                                {
+                                    if (line[p] == nestedstring && NotSlashed(line, p))
+                                        nestedstring = 0;
+                                }
+                                else if ((line[p] == '\'' || line[p] == '"') && NotSlashed(line, p))
+                                    nestedstring = line[p];
+                                else if (line[p] == '(')
                                     nestedparen++;
-                                if (line[p] == ')' && nestedparen)
+                                else if (line[p] == ')' && nestedparen)
                                     nestedparen--;
                                 p++;
                             }

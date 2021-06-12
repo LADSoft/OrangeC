@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -132,7 +132,7 @@ DISTHELP=$(DISTROOT)$(PATHEXT2)help
 export DISTHELP
 DISTINC=$(DISTROOT)$(PATHEXT2)include
 export DISTINC
-DISTINCWIN=$(DISTINC)$(PATHEXT2)win32
+DISTINCWIN=$(DISTINC)$(PATHEXT2)c$(PATHEXT2)win32
 export DISTINCWIN
 DISTINCSTL=$(DISTINC)$(PATHEXT2)stlport
 export DISTINCSTL
@@ -198,7 +198,14 @@ ifndef NOMAKEDIR
 	-del /Q $(DISTHELP) 2> $(NULLDEV)
 	-$(MKDIR) $(DISTINC) 2> $(NULLDEV)
 	-del /Q $(DISTINC) 2> $(NULLDEV)
-	-$(MKDIR) $(DISTINC)$(PATHEXT2)sys 2> $(NULLDEV)
+	-$(MKDIR) $(DISTINC)$(PATHEXT2)c 2> $(NULLDEV)
+	-del /Q $(DISTINC)$(PATHEXT2)c 2> $(NULLDEV)
+	-$(MKDIR) $(DISTINC)$(PATHEXT2)support 2> $(NULLDEV)
+	-del /Q $(DISTINC)$(PATHEXT2)support 2> $(NULLDEV)
+	-$(MKDIR) $(DISTINC)$(PATHEXT2)support$(PATHEXT2)win32 2> $(NULLDEV)
+	-del /Q $(DISTINC)$(PATHEXT2)support$(PATHEXT2)win32 2> $(NULLDEV)
+	-$(MKDIR) $(DISTINC)$(PATHEXT2)c$(PATHEXT2)sys 2> $(NULLDEV)
+	-del /Q $(DISTINC)$(PATHEXT2)c$(PATHEXT2)sys 2> $(NULLDEV)
 	-del /Q $(DISTINC)$(PATHEXT2)sys 2> $(NULLDEV)
 	-$(MKDIR) $(DISTINCWIN) 2> $(NULLDEV)
 	-del /Q $(DISTINCWIN) 2> $(NULLDEV)
@@ -231,7 +238,8 @@ ifndef NOMAKEDIR
 	-del /Q $(DISTEXAM)$(PATHEXT2)msdos 2> $(NULLDEV)
 	-$(MKDIR) $(DISTEXAM)$(PATHEXT2)system 2> $(NULLDEV)
 	-del /Q $(DISTEXAM)$(PATHEXT2)system 2> $(NULLDEV)
-	-$(MKDIR) $(DISTEXAM)$(PATHEXT2)win32 2> $(NULLDEV)
+	-$(MKDIR) $(DISTEXAM)$(PATHEXT2)c$(PATHEXT2)win32 2> $(NULLDEV)
+	-del /Q $(DISTEXAM)$(PATHEXT2)c$(PATHEXT2)win32 2> $(NULLDEV)
 	-del /Q $(DISTEXAM)$(PATHEXT2)win32 2> $(NULLDEV)
 	-$(MKDIR) $(DISTEXAM)$(PATHEXT2)win32$(PATHEXT2)atc 2> $(NULLDEV)
 	-del /Q $(DISTEXAM)$(PATHEXT2)win32$(PATHEXT2)atc 2> $(NULLDEV)

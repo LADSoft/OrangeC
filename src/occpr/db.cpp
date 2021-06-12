@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "compiler.h"
@@ -370,7 +370,7 @@ void ccLoadIdsFromNameTable(const char* tabname, HASHTABLE* table)
                     done = true;
                     break;
                 case SQLITE_ROW:
-                    v = (SYMID*)Alloc(sizeof(SYMID));
+                    v = Allocate<SYMID>();
                     v->name = litlate((const char*)sqlite3_column_text(handle, 0));
                     v->id = sqlite3_column_int64(handle, 1);
                     AddName((SYMBOL*)v, table);
@@ -420,7 +420,7 @@ static int ccSelectIdFromNameTable(sqlite3_stmt** shndl, const char* name, const
                     done = true;
                     break;
                 case SQLITE_ROW:
-                    v = (SYMID *)Alloc(sizeof(SYMID));
+                    v = Allocate<SYMID>();
                     v->name = name;
                     *id = sqlite3_column_int64(*shndl, 0);
                     v->id = *id;
@@ -477,7 +477,7 @@ static int ccWriteNameInTable(sqlite3_stmt** whndl, sqlite3_stmt** shndl, const 
         }
         if (rc == SQLITE_OK)
         {
-            SYMID* v = (SYMID*)Alloc(sizeof(SYMID));
+            SYMID* v = Allocate<SYMID>();
             v->name = name;
             *id = sqlite3_last_insert_rowid(dbPointer);
             v->id = *id;
@@ -499,7 +499,7 @@ static int ccWriteMap(sqlite_int64 smpl_id, sqlite_int64 cplx_id, sqlite_int64 m
     if (!LookupName(id, map))
     {
         int done = false;
-        SYMID* v = (SYMID*)Alloc(sizeof(SYMID));
+        SYMID* v = Allocate<SYMID>();
         v->name = litlate(id);
         AddName((SYMBOL*)v, map);
         rc = SQLITE_DONE;

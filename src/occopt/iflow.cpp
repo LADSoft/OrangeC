@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /*
@@ -115,7 +115,7 @@ static void basicFlowInfo(void)
 {
     QUAD *head = intermed_head, *block;
     int low = INT_MAX, high = 0;
-    blockArray = (BLOCK**)oAlloc(sizeof(BLOCK*) * (blockCount + 1000));
+    blockArray = oAllocate<BLOCK*>(blockCount + 1000);
     while (head)
     {
         criticalThunks = intermed_head;
@@ -133,7 +133,7 @@ static void basicFlowInfo(void)
         }
         head = head->fwd;
     }
-    labels = (BLOCK**)oAlloc(sizeof(BLOCK*) * (high - low));
+    labels = oAllocate<BLOCK*>(high - low);
     firstLabel = low;
     head = intermed_head;
     block = nullptr;
@@ -156,7 +156,7 @@ static BLOCK* findlab(int labnum) { return labels[labnum - firstLabel]; }
 /* insert on a flowgraph node */
 static void flowinsert(BLOCKLIST** pos, BLOCK* valuesource)
 {
-    BLOCKLIST* nblock = (BLOCKLIST*)oAlloc(sizeof(BLOCKLIST));
+    BLOCKLIST* nblock = oAllocate<BLOCKLIST>();
     nblock->next = (*pos);
     (*pos) = nblock;
     nblock->block = valuesource;
@@ -541,13 +541,13 @@ static int RemoveCriticalEdges(enum e_fgtype type, BLOCK* parent, BLOCK* in)
                     /* note : the following does NOT insert jmps for the
                      * newly added block
                      */
-                    *criticalThunkPtr = quad = (QUAD*)Alloc(sizeof(QUAD));
+                    *criticalThunkPtr = quad = Allocate<QUAD>();
                     criticalThunkPtr = &quad->fwd;
                     quad->dc.opcode = i_block;
                     quad->block = m->block;
                     quad->dc.v.label = m->block->blocknum;
 
-                    *criticalThunkPtr = quad2 = (QUAD*)Alloc(sizeof(QUAD));
+                    *criticalThunkPtr = quad2 = Allocate<QUAD>();
                     criticalThunkPtr = &quad2->fwd;
                     quad2->back = quad;
                     quad2->dc.opcode = i_blockend;
@@ -557,10 +557,10 @@ static int RemoveCriticalEdges(enum e_fgtype type, BLOCK* parent, BLOCK* in)
                     m->block->head = quad;
                     m->block->tail = quad2;
 
-                    q = (BLOCKLIST*)oAlloc(sizeof(BLOCKLIST));
+                    q = oAllocate<BLOCKLIST>();
                     q->block = in;
                     m->block->pred = q;
-                    q = (BLOCKLIST*)oAlloc(sizeof(BLOCKLIST));
+                    q = oAllocate<BLOCKLIST>();
                     q->block = f->block;
                     m->block->succ = q;
 
@@ -670,10 +670,10 @@ static void PostDominators(void)
         if (blockArray[i])
             blockArray[i]->dfstOrder = 0;
     WalkFlowgraph(blockArray[exitBlock], domNumber, false);
-    vectorData = (_tarjan**)tAlloc(sizeof(struct _tarjan*) * (domCount + 1));
+    vectorData = tAllocate<_tarjan*>(domCount + 1);
     for (i = 0; i <= domCount; i++)
     {
-        vectorData[i] = (_tarjan*)tAlloc(sizeof(struct _tarjan));
+        vectorData[i] = tAllocate<_tarjan>();
         vectorData[i]->bucket = briggsAlloct(domCount + 1);
     }
     WalkFlowgraph(blockArray[exitBlock], domInit, false);
@@ -723,10 +723,10 @@ static void Dominators(void)
         if (blockArray[i])
             blockArray[i]->dfstOrder = 0;
     WalkFlowgraph(blockArray[0], domNumber, true);
-    vectorData = (_tarjan**)tAlloc(sizeof(struct _tarjan*) * (domCount + 1));
+    vectorData = tAllocate<_tarjan*>(domCount + 1);
     for (i = 0; i <= domCount; i++)
     {
-        vectorData[i] = (_tarjan*)tAlloc(sizeof(struct _tarjan));
+        vectorData[i] = tAllocate<_tarjan>();
         vectorData[i]->bucket = briggsAlloct(domCount + 1);
     }
     WalkFlowgraph(blockArray[0], domInit, true);
@@ -774,7 +774,7 @@ static void Dominators(void)
         {
             int w = blockArray[i]->idom;
             BLOCK* ub = blockArray[w];
-            BLOCKLIST* bl = (BLOCKLIST*)oAlloc(sizeof(BLOCKLIST));
+            BLOCKLIST* bl = oAllocate<BLOCKLIST>();
             bl->block = blockArray[i];
             bl->next = ub->dominates;
             ub->dominates = bl;
@@ -810,7 +810,7 @@ static void DominanceFrontier(BLOCK* b, int* count)
     {
         if (s->block->idom != b->blocknum)
         {
-            BLOCKLIST* t = (BLOCKLIST*)oAlloc(sizeof(BLOCKLIST));
+            BLOCKLIST* t = oAllocate<BLOCKLIST>();
             t->next = b->dominanceFrontier;
             t->block = s->block;
             b->dominanceFrontier = t;
@@ -826,7 +826,7 @@ static void DominanceFrontier(BLOCK* b, int* count)
         {
             if (!dominatedby(bl->block, b))
             {
-                BLOCKLIST* t = (BLOCKLIST*)oAlloc(sizeof(BLOCKLIST));
+                BLOCKLIST* t = oAllocate<BLOCKLIST>();
                 t->next = b->dominanceFrontier;
                 t->block = bl->block;
                 b->dominanceFrontier = t;
@@ -841,7 +841,7 @@ static int gatherEdges(enum e_fgtype type, BLOCK* parent, BLOCK* in)
 {
     if (parent)
     {
-        EDGE* edge = (EDGE*)oAlloc(sizeof(EDGE));
+        EDGE* edge = oAllocate<EDGE>();
         int bucket = hashfunc(parent->blocknum, in->blocknum);
         edge->first = parent->blocknum;
         edge->second = in->blocknum;
@@ -904,7 +904,7 @@ static void InsertLabel(BLOCK* b, int label)
 {
     // insert a label in the target block
     QUAD* head = b->head;
-    QUAD* lbl = (QUAD*)Alloc(sizeof(QUAD));
+    QUAD* lbl = Allocate<QUAD>();
     lbl->dc.opcode = i_label;
     lbl->dc.v.label = label;
     while (head->ignoreMe || head->dc.opcode == i_block)
@@ -924,7 +924,7 @@ static void MoveBlockTo(BLOCK* b)
     BLOCK* succ = b->succ->block;
     QUAD* head;
     QUAD* tail = prev->tail;
-    QUAD* jmp = (QUAD*)Alloc(sizeof(QUAD));
+    QUAD* jmp = Allocate<QUAD>();
     QUAD* insert = b->tail;
     int label = nextLabel++;
     if (b->tail->dc.opcode == i_blockend)
@@ -1177,7 +1177,7 @@ void doms_only(bool always)
     if (blockCount != n)
     {
         QUAD* head = intermed_head;
-        blockArray = (BLOCK**)oAlloc(sizeof(BLOCK*) * (blockCount + 1000));  // fixme...
+        blockArray = oAllocate<BLOCK*>(blockCount + 1000);  // fixme...
         while (head)
         {
             if (head->dc.opcode == i_block)
@@ -1195,7 +1195,7 @@ void doms_only(bool always)
             }
             head = head->fwd;
         }
-        *criticalThunkPtr = (QUAD*)Alloc(sizeof(QUAD));
+        *criticalThunkPtr = Allocate<QUAD>();
         (*criticalThunkPtr)->dc.opcode = i_label;
         (*criticalThunkPtr)->dc.v.label = -1;
         criticalThunkPtr = (QUAD**)*criticalThunkPtr;

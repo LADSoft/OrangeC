@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -219,12 +219,6 @@ class Parser : public xmlVisitor
         virtual bool VisitNode(xmlNode& node, xmlNode* child, void* userData);
     };
     class CodingRegisterInstanceParser : public xmlVisitor
-    {
-      public:
-        virtual bool VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData);
-        virtual bool VisitNode(xmlNode& node, xmlNode* child, void* userData);
-    };
-    class CodingDoubleRegParser : public xmlVisitor
     {
       public:
         virtual bool VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData);

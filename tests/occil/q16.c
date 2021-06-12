@@ -1,9 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-extern char *ss()
-{
-}
+extern char *ss();
 main()
 {
 	printf("%s\n", ss());

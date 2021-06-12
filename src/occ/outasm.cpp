@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include <stdio.h>
@@ -1215,14 +1215,14 @@ void oa_exitseg(enum Optimizer::e_sg seg)
             else if (seg == Optimizer::tlssuseg)
             {
                 ColumnPosition(8);
-                AsmOutput("tlsstartup");
+                AsmOutput("tstartup");
                 ColumnPosition(16);
                 AsmOutput("ENDS\n");
             }
             else if (seg == Optimizer::tlsrdseg)
             {
                 ColumnPosition(8);
-                AsmOutput("tlsrundown");
+                AsmOutput("trundown");
                 ColumnPosition(16);
                 AsmOutput("ENDS\n");
             }
@@ -1341,7 +1341,7 @@ void oa_enterseg(enum Optimizer::e_sg seg)
             if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
                 Optimizer::cparams.prm_assembler == pa_fasm)
                 if (!Optimizer::cparams.prm_nodos)
-                    AsmOutput("section tlsstartup\n");
+                    AsmOutput("section tstartup\n");
                 else
                 {
                     AsmOutput("section .data\n");
@@ -1360,7 +1360,7 @@ void oa_enterseg(enum Optimizer::e_sg seg)
             if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
                 Optimizer::cparams.prm_assembler == pa_fasm)
                 if (!Optimizer::cparams.prm_nodos)
-                    AsmOutput("section tlsrundown\n");
+                    AsmOutput("section trundown\n");
                 else
                 {
                     AsmOutput("section .data\n");
@@ -1469,7 +1469,7 @@ void oa_gen_virtual(Optimizer::SimpleSymbol* sym, int data)
         }
         ColumnPosition(8);
         AsmOutput("[bits 32]\n");
-        if (Optimizer::cparams.prm_assembler != pa_oasm)
+        if (Optimizer::cparams.prm_assembler != pa_oasm && !sym->isinternal)
         {
             oa_globaldef(sym);
         }
@@ -1560,7 +1560,7 @@ long queue_muldivval(long number)
             p = p->next;
         }
     }
-    p = (MULDIV*)beGlobalAlloc(sizeof(MULDIV));
+    p = beGlobalAllocate<MULDIV>();
     p->next = 0;
     p->value = number;
     p->size = 0;
@@ -1579,7 +1579,7 @@ long queue_large_const(unsigned constant[], int count)
         q = &(*q)->next;
     for (int i = 0; i < count; i++, q = &(*q)->next)
     {
-        p = (MULDIV*)beGlobalAlloc(sizeof(MULDIV));
+        p = beGlobalAllocate<MULDIV>();
         p->value = constant[i];
         if (i == 0)
             p->label = lbl;
@@ -1600,7 +1600,7 @@ long queue_floatval(FPF* number, int size)
             p = p->next;
         }
     }
-    p = (MULDIV*)beGlobalAlloc(sizeof(MULDIV));
+    p = beGlobalAllocate<MULDIV>();
     p->next = 0;
     p->floatvalue = *number;
     p->size = size;
@@ -1709,6 +1709,10 @@ void oa_header(const char* filename, const char* compiler_version)
             AsmOutput("section cstartup align=2 use32\n");
             ColumnPosition(8);
             AsmOutput("section crundown align=2 use32\n");
+            ColumnPosition(8);
+            AsmOutput("section tstartup align=2 use32\n");
+            ColumnPosition(8);
+            AsmOutput("section trundown align=2 use32\n");
         }
         else
         {

@@ -868,6 +868,7 @@ typedef struct _LIST_ENTRY
     struct _LIST_ENTRY* Blink;
 } LIST_ENTRY, *PLIST_ENTRY;
 
+#pragma PACK(4)
 typedef struct _CRITICAL_SECTION_DEBUG
 {
     WORD Type;
@@ -889,6 +890,7 @@ typedef struct _CRITICAL_SECTION
     HANDLE LockSemaphore;
     DWORD Reserved;
 } CRITICAL_SECTION, *PCRITICAL_SECTION, *LPCRITICAL_SECTION;
+#pragma pack()
 
 typedef struct _SECURITY_QUALITY_OF_SERVICE
 {
@@ -4586,6 +4588,96 @@ typedef struct tagPROCESSENTRY32
 } PROCESSENTRY32;
 typedef PROCESSENTRY32* PPROCESSENTRY32;
 typedef PROCESSENTRY32* LPPROCESSENTRY32;
+
+typedef enum
+{
+    ExceptionContinueExecution,
+    ExceptionContinueSearch,
+    ExceptionNestedException,
+    ExceptionCollidedUnwind
+} EXCEPTION_DISPOSITION;
+
+typedef
+__stdcall
+EXCEPTION_DISPOSITION
+EXCEPTION_ROUTINE (
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    PVOID EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    PVOID DispatcherContext
+    );
+
+typedef EXCEPTION_ROUTINE *PEXCEPTION_ROUTINE;
+
+
+typedef struct _IMAGE_RUNTIME_FUNCTION_ENTRY RUNTIME_FUNCTION, *PRUNTIME_FUNCTION;
+
+#define UNWIND_HISTORY_TABLE_SIZE 12
+
+typedef struct _UNWIND_HISTORY_TABLE_ENTRY {
+    DWORD64 ImageBase;
+    PRUNTIME_FUNCTION FunctionEntry;
+} UNWIND_HISTORY_TABLE_ENTRY, *PUNWIND_HISTORY_TABLE_ENTRY;
+
+typedef struct _UNWIND_HISTORY_TABLE {
+    DWORD Count;
+    BYTE  LocalHint;
+    BYTE  GlobalHint;
+    BYTE  Search;
+    BYTE  Once;
+    DWORD64 LowAddress;
+    DWORD64 HighAddress;
+    UNWIND_HISTORY_TABLE_ENTRY Entry[UNWIND_HISTORY_TABLE_SIZE];
+} UNWIND_HISTORY_TABLE, *PUNWIND_HISTORY_TABLE;
+
+#pragma pack(4)
+#define RTL_RUN_ONCE_CTX_RESERVED_BITS 2
+typedef union _RTL_RUN_ONCE {       
+    PVOID Ptr;                      
+} RTL_RUN_ONCE, *PRTL_RUN_ONCE, INIT_ONCE, *PINIT_ONCE, *LPINIT_ONCE;     
+
+typedef struct _RTL_SRWLOCK {                            
+        PVOID Ptr;                                       
+} RTL_SRWLOCK, *PRTL_SRWLOCK, SRWLOCK, *PSRWLOCK;                            
+#define RTL_SRWLOCK_INIT {0}                            
+
+#define SRWLOCK_INIT RTL_SRWLOCK_INIT
+
+typedef struct _RTL_CONDITION_VARIABLE {                    
+        PVOID Ptr;                                       
+} RTL_CONDITION_VARIABLE, *PRTL_CONDITION_VARIABLE, CONDITION_VARIABLE, *PCONDITION_VARIABLE; 
+#define RTL_CONDITION_VARIABLE_INIT {0}                 
+#define RTL_CONDITION_VARIABLE_LOCKMODE_SHARED  0x1     
+#pragma pack()
+typedef struct _DISPATCHER_CONTEXT {
+    DWORD ControlPc;
+    DWORD ImageBase;
+    PRUNTIME_FUNCTION FunctionEntry;
+    DWORD EstablisherFrame;
+    DWORD TargetPc;
+    PCONTEXT ContextRecord;
+    PEXCEPTION_ROUTINE LanguageHandler;
+    PVOID HandlerData;
+    PUNWIND_HISTORY_TABLE HistoryTable;
+    DWORD ScopeIndex;
+    BOOLEAN ControlPcIsUnwound;
+    PBYTE  NonVolatileRegisters;
+    DWORD Reserved;
+} DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
+
+
+typedef struct _KNONVOLATILE_CONTEXT_POINTERS {
+    DWORD   Dummy;
+} KNONVOLATILE_CONTEXT_POINTERS, *PKNONVOLATILE_CONTEXT_POINTERS;
+
+typedef struct _IMAGE_RUNTIME_FUNCTION_ENTRY {
+    DWORD BeginAddress;
+    DWORD EndAddress;
+    union {
+        DWORD UnwindInfoAddress;
+        DWORD UnwindData;
+    };
+} _IMAGE_RUNTIME_FUNCTION_ENTRY, *_PIMAGE_RUNTIME_FUNCTION_ENTRY;
 
 #    pragma pack()
 

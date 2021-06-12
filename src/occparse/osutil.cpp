@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "compiler.h"
@@ -47,6 +47,7 @@
 #include "OptUtils.h"
 #include "configmsil.h"
 #include "initbackend.h"
+#include "optmodules.h"
 
 namespace Optimizer
 {
@@ -90,6 +91,7 @@ CmdSwitchBool prm_compileonly(switchParser, 'c');
 CmdSwitchString prm_assemble(switchParser, 'S');
 CmdSwitchBool prm_xcept(switchParser, 'x');
 CmdSwitchBool prm_viaassembly(switchParser, '#');
+CmdSwitchBool displayTiming(switchParser, 't');
 CmdSwitchInt prm_stackalign(switchParser, 's', 16, 0, 2048);
 CmdSwitchString prm_error(switchParser, 'E');
 CmdSwitchString prm_define(switchParser, 'D', ';');
@@ -105,10 +107,12 @@ CmdSwitchCombineString prm_tool(switchParser, 'p', ';');
 CmdSwitchCombineString prm_library(switchParser, 'l', ';');
 
 CmdSwitchCombineString prm_cinclude(switchParser, 'I', ';');
-CmdSwitchCombineString prm_sysinclude(switchParser, 'z', ';');
+CmdSwitchCombineString prm_Csysinclude(switchParser, 'z', ';');
+CmdSwitchCombineString prm_CPPsysinclude(switchParser, 'Z', ';');
 CmdSwitchCombineString prm_libpath(switchParser, 'L', ';');
 CmdSwitchString prm_pipe(switchParser, 'P', ';');
 CmdSwitchCombineString prm_output_def_file(switchParser, 0, 0, "output-def");
+CmdSwitchCombineString prm_flags(switchParser, 'f', ';');
 CmdSwitchBool prm_export_all(switchParser, 0, false, "export-all-symbols");
 
 CmdSwitchBool prm_msil_noextensions(switchParser, 'd');
@@ -177,50 +181,6 @@ static const char* parsepath(const char* path, char* buffer)
     return (0);
 }
 
-static std::vector<std::string> split(std::string strToSplit, char delimeter = ';')
-{
-    std::stringstream ss(strToSplit);
-    std::string item;
-    std::vector<std::string> splittedStrings;
-    while (std::getline(ss, item, delimeter))
-    {
-        splittedStrings.push_back(item);
-    }
-    return splittedStrings;
-}
-void optimize_setup(char select, const char* string)
-{
-    (void)select;
-    if (!*string || (*string == '+' && string[1] == '\0'))
-    {
-        Optimizer::cparams.prm_optimize_for_speed = true;
-        Optimizer::cparams.prm_optimize_for_size = false;
-        Optimizer::cparams.prm_debug = false;
-    }
-    else if (*string == '-' && string[1] == '\0')
-        Optimizer::cparams.prm_optimize_for_speed = Optimizer::cparams.prm_optimize_for_size =
-            Optimizer::cparams.prm_optimize_float_access = false;
-    else
-    {
-        Optimizer::cparams.prm_debug = false;
-        if (*string == '0')
-        {
-            Optimizer::cparams.prm_optimize_for_speed = Optimizer::cparams.prm_optimize_for_size = 0;
-        }
-        else if (*string == 'f')
-            Optimizer::cparams.prm_optimize_float_access = true;
-        else if (*string == '2')
-        {
-            Optimizer::cparams.prm_optimize_for_speed = true;
-            Optimizer::cparams.prm_optimize_for_size = false;
-        }
-        else if (*string == '1')
-        {
-            Optimizer::cparams.prm_optimize_for_speed = false;
-            Optimizer::cparams.prm_optimize_for_size = true;
-        }
-    }
-}
 /*-------------------------------------------------------------------------*/
 static int parseCodegen(bool v, const char* string)
 {
@@ -360,12 +320,14 @@ static bool validatenamespaceAndClass(const char* str)
     }
     return true;
 }
-void ParamTransfer()
+void ParamTransfer(char* name)
 /*
  * activation routine (callback) for boolean command line arguments
  */
 {
-
+    Optimizer::cparams.optimizer_modules = ~0;
+    if (Optimizer::ParseOptimizerParams(prm_flags.GetValue()) != "")
+        Utils::usage(name, getUsageText());
     // booleans
     if (prm_c89.GetExists())
         Optimizer::cparams.prm_c99 = Optimizer::cparams.prm_c1x = !prm_c89.GetValue();
@@ -398,6 +360,9 @@ void ParamTransfer()
         Optimizer::cparams.prm_assemble = true;
         Optimizer::cparams.prm_asmfile = false;
     }
+    if (displayTiming.GetExists())
+        Optimizer::cparams.prm_displaytiming = true;
+
     if (prm_debug.GetExists() || prm_debug2.GetExists())
     {
         Optimizer::cparams.prm_debug = prm_debug.GetValue() || prm_debug2.GetValue();
@@ -419,14 +384,14 @@ void ParamTransfer()
     // non-bools
     if (prm_verbose.GetExists())
     {
-        Optimizer::verbosity = 1 + prm_verbose.GetValue().size();
+        Optimizer::cparams.verbosity = 1 + prm_verbose.GetValue().size();
     }
-    std::vector<std::string> checks = split(prm_optimize.GetValue());
+    std::vector<std::string> checks = Utils::split(prm_optimize.GetValue());
     for (auto&& v : checks)
     {
         if (v.size() >= 1)
         {
-            optimize_setup('O', v.c_str());
+            Optimizer::optimize_setup('O', v.c_str());
         }
     }
     if (prm_assemble.GetExists())
@@ -463,27 +428,27 @@ void ParamTransfer()
             Optimizer::cparams.prm_maxerr = n;
         DisableTrivialWarnings();
     }
-    checks = split(prm_warning.GetValue());
+    checks = Utils::split(prm_warning.GetValue());
     for (auto&& v : checks)
     {
         warning_setup('w', v.c_str());
     }
-    checks = split(prm_tool.GetValue());
+    checks = Utils::split(prm_tool.GetValue());
     for (auto&& v : checks)
     {
         Optimizer::toolArgs.push_back(v);
     }
-    checks = split(prm_define.GetValue());
+    checks = Utils::split(prm_define.GetValue());
     for (auto&& v : checks)
     {
         defines.push_back(DefValue{v.c_str(), 0});
     }
-    checks = split(prm_undefine.GetValue());
+    checks = Utils::split(prm_undefine.GetValue());
     for (auto&& v : checks)
     {
         defines.push_back(DefValue{v.c_str(), 1});
     }
-    checks = split(prm_library.GetValue());
+    checks = Utils::split(prm_library.GetValue());
     for (auto&& v : checks)
     {
         char buf[260];
@@ -498,13 +463,14 @@ void ParamTransfer()
         {
             case ARCHITECTURE_MSIL:
             {
-                auto v = split(prm_libpath.GetValue());
+                auto v = Utils::split(prm_libpath.GetValue());
                 for (auto&& s : v)
                 {
                     Optimizer::prm_Using.push_back(s);
-#ifndef PARSER_ONLY
-                    occmsil::_add_global_using(s.c_str());
-#endif
+                    if (IsCompiler())
+                    {
+                        occmsil::_add_global_using(s.c_str());
+                    }
                 }
                 break;
             }
@@ -619,6 +585,12 @@ void setglbdefs(void)
     }
     preProcessor->Define("__STDC__", "1");
 
+    // for libcxx 10
+    preProcessor->Define("__need_size_t", "1");
+    preProcessor->Define("__need_FILE", "1");
+    preProcessor->Define("__need_wint_t", "1");
+    preProcessor->Define("__need_malloc_and_calloc", "1");
+
     if (Optimizer::cparams.prm_c99 || Optimizer::cparams.prm_c1x)
     {
         preProcessor->Define("__STDC_HOSTED__", Optimizer::chosenAssembler->hosted);  // hosted compiler, not embedded
@@ -675,7 +647,7 @@ int insert_noncompile_file(const char* buf)
     const char* ext = Optimizer::chosenAssembler->beext;
     if (ext)
     {
-        auto splt = split(ext);
+        auto splt = Utils::split(ext);
         for (auto&& str : splt)
         {
             if (Utils::HasExt(buf, str.c_str()))
@@ -945,7 +917,7 @@ void ccinit(int argc, char* argv[])
     }
     if (prm_architecture.GetExists())
     {
-        auto splt = split(prm_architecture.GetValue(), ';');
+        auto splt = Utils::split(prm_architecture.GetValue(), ';');
         static std::map<std::string, int> architectures = {
             {"x86", ARCHITECTURE_X86},
             {"msil", ARCHITECTURE_MSIL},
@@ -1008,7 +980,7 @@ void ccinit(int argc, char* argv[])
         }
     }
 
-    ParamTransfer();
+    ParamTransfer(argv[0]);
     /* tack the environment includes in */
     addinclude();
 
@@ -1027,31 +999,34 @@ void ccinit(int argc, char* argv[])
         }
     }
 
-#ifndef PARSER_ONLY
+    if (IsCompiler())
+    {
 
-    if (prm_output.GetExists())
-    {
-        Optimizer::outputFileName = prm_output.GetValue();
-        if (!Optimizer::cparams.prm_compileonly)
+        if (prm_output.GetExists())
         {
-            prm_output.SetExists(false);
-        }
-        else
-        {
-            if (clist && clist->next && prm_output.GetValue()[prm_output.GetValue().size() - 1] != '\\')
-                Utils::fatal("Cannot specify output file for multiple input files\n");
-        }
-    }
-#else
-    {
-        Optimizer::LIST* t = clist;
-        while (t)
-        {
-            t->data = strdup(Utils::FullQualify((char*)t->data));
-            t = t->next;
+            Optimizer::outputFileName = prm_output.GetValue();
+            if (!Optimizer::cparams.prm_compileonly)
+            {
+                prm_output.SetExists(false);
+            }
+            else
+            {
+                if (clist && clist->next && prm_output.GetValue()[prm_output.GetValue().size() - 1] != '\\')
+                    Utils::fatal("Cannot specify output file for multiple input files\n");
+            }
         }
     }
-#endif
+    else
+    {
+        {
+            Optimizer::LIST* t = clist;
+            while (t)
+            {
+                t->data = strdup(Utils::FullQualify((char*)t->data));
+                t = t->next;
+            }
+        }
+    }
 
     /* Set up a ctrl-C handler so we can exit the prog with cleanup */
     //    signal(SIGINT, ctrlchandler);

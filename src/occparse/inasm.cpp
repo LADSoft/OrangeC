@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /*
@@ -51,7 +51,7 @@ namespace Parser
 {
 static Optimizer::ASMREG* regimage;
 static Optimizer::ASMNAME* insdata;
-static LEXEME* lex;
+static LEXLIST* lex;
 
 static SYMBOL* lastsym;
 static enum e_opcode op;
@@ -121,7 +121,7 @@ void inlineAsmInit(void)
     asmHash = CreateHashTable(1021);
     while (r->name)
     {
-        s = (ASM_HASH_ENTRY*)Alloc(sizeof(ASM_HASH_ENTRY));
+        s = Allocate<ASM_HASH_ENTRY>();
         s->data = r;
         s->name = r->name;
         s->instruction = false;
@@ -129,28 +129,29 @@ void inlineAsmInit(void)
         r++;
     }
     int i = 0;
-#ifndef PARSER_ONLY
-    for (auto v : opcodeTable)
+    if (IsCompiler())
     {
-        if (v[0] != 0)
+        for (auto v : opcodeTable)
         {
-            s = (ASM_HASH_ENTRY*)Alloc(sizeof(ASM_HASH_ENTRY));
-            s->name = v;
-            s->data = (Optimizer::ASMNAME*)Alloc(sizeof(Optimizer::ASMNAME));
-            ((Optimizer::ASMNAME*)s->data)->name = v;
-            ((Optimizer::ASMNAME*)s->data)->atype = i;
-            s->instruction = true;
-            insert((SYMBOL*)s, asmHash);
+            if (v[0] != 0)
+            {
+                s = Allocate<ASM_HASH_ENTRY>();
+                s->name = v;
+                s->data = Allocate<Optimizer::ASMNAME>();
+                ((Optimizer::ASMNAME*)s->data)->name = v;
+                ((Optimizer::ASMNAME*)s->data)->atype = i;
+                s->instruction = true;
+                insert((SYMBOL*)s, asmHash);
+            }
+            i++;
         }
-        i++;
     }
-#endif
     if (Optimizer::cparams.prm_assemble)
     {
         Optimizer::ASMNAME* o = directiveLst;
         while (o->name)
         {
-            s = (ASM_HASH_ENTRY*)Alloc(sizeof(ASM_HASH_ENTRY));
+            s = Allocate<ASM_HASH_ENTRY>();
             s->data = o;
             s->name = o->name;
             s->instruction = true;
@@ -171,17 +172,17 @@ static void inasm_txsym(void)
 {
     if (lex && ISID(lex))
     {
-        ASM_HASH_ENTRY* e = (ASM_HASH_ENTRY*)search(lex->value.s.a, asmHash);
+        ASM_HASH_ENTRY* e = (ASM_HASH_ENTRY*)search(lex->data->value.s.a, asmHash);
         if (e)
         {
             if (e->instruction)
             {
-                lex->type = l_asminst;
+                lex->data->type = l_asminst;
                 insdata = (Optimizer::ASMNAME*)e->data;
             }
             else
             {
-                lex->type = l_asmreg;
+                lex->data->type = l_asmreg;
                 regimage = (Optimizer::ASMREG*)e->data;
             }
         }
@@ -192,7 +193,7 @@ static void inasm_getsym(void)
     lex = getsym();
     inasm_txsym();
 }
-static void inasm_needkw(LEXEME** lex, int Keyword)
+static void inasm_needkw(LEXLIST** lex, int Keyword)
 {
     needkw(lex, (e_kw)Keyword);
     inasm_txsym();
@@ -213,7 +214,7 @@ static AMODE* inasm_const(void)
     }
     else
     {
-        rv = (AMODE*)Alloc(sizeof(AMODE));
+        rv = Allocate<AMODE>();
         rv->mode = am_immed;
         rv->offset = Optimizer::SymbolManager::Get(exp);
     }
@@ -225,13 +226,13 @@ static EXPRESSION* inasm_ident(void)
 {
     EXPRESSION* node = 0;
 
-    if (lex->type != l_id)
+    if (lex->data->type != l_id)
         error(ERR_IDENTIFIER_EXPECTED);
     else
     {
         SYMBOL* sym;
         char nm[256];
-        strcpy(nm, lex->value.s.a);
+        strcpy(nm, lex->data->value.s.a);
         inasm_getsym();
         /* No such identifier */
         /* label, put it in the symbol table */
@@ -240,12 +241,12 @@ static EXPRESSION* inasm_ident(void)
             sym = SymAlloc();
             sym->sb->storage_class = sc_ulabel;
             sym->name = litlate(nm);
-            sym->sb->declfile = sym->sb->origdeclfile = lex->errfile;
-            sym->sb->declline = sym->sb->origdeclline = lex->errline;
-            sym->sb->realdeclline = lex->linedata->lineno;
-            sym->sb->declfilenum = lex->linedata->fileindex;
+            sym->sb->declfile = sym->sb->origdeclfile = lex->data->errfile;
+            sym->sb->declline = sym->sb->origdeclline = lex->data->errline;
+            sym->sb->realdeclline = lex->data->linedata->lineno;
+            sym->sb->declfilenum = lex->data->linedata->fileindex;
             sym->sb->attribs.inheritable.used = true;
-            sym->tp = (TYPE*)(TYPE*)beLocalAlloc(sizeof(TYPE));
+            sym->tp = beLocalAllocate<TYPE>();
             sym->tp->type = bt_unsigned;
             sym->tp->bits = sym->tp->startbit = -1;
             sym->sb->offset = codeLabel++;
@@ -321,16 +322,16 @@ static EXPRESSION* inasm_label(void)
     }
     /* No such identifier */
     /* label, put it in the symbol table */
-    if ((sym = search(lex->value.s.a, labelSyms)) == 0)
+    if ((sym = search(lex->data->value.s.a, labelSyms)) == 0)
     {
         sym = SymAlloc();
         sym->sb->storage_class = sc_label;
-        sym->name = litlate(lex->value.s.a);
-        sym->sb->declfile = sym->sb->origdeclfile = lex->errfile;
-        sym->sb->declline = sym->sb->origdeclline = lex->errline;
-        sym->sb->realdeclline = lex->linedata->lineno;
-        sym->sb->declfilenum = lex->linedata->fileindex;
-        sym->tp = (TYPE*)(TYPE*)beLocalAlloc(sizeof(TYPE));
+        sym->name = litlate(lex->data->value.s.a);
+        sym->sb->declfile = sym->sb->origdeclfile = lex->data->errfile;
+        sym->sb->declline = sym->sb->origdeclline = lex->data->errline;
+        sym->sb->realdeclline = lex->data->linedata->lineno;
+        sym->sb->declfilenum = lex->data->linedata->fileindex;
+        sym->tp = beLocalAllocate<TYPE>();
         sym->tp->type = bt_unsigned;
         sym->tp->bits = sym->tp->startbit = -1;
         sym->sb->offset = codeLabel++;
@@ -353,7 +354,7 @@ static EXPRESSION* inasm_label(void)
         sym->sb->storage_class = sc_label;
     }
     inasm_getsym();
-    if (lex->type == l_asminst)
+    if (lex->data->type == l_asminst)
     {
         if (insdata->atype == op_reserved)
         {
@@ -418,7 +419,7 @@ static int inasm_getsize(void)
             inasm_getsym();
         }
     }
-    if (!lex || (lex->type != l_asmreg && !ISID(lex) && !MATCHKW(lex, openbr)))
+    if (!lex || (lex->data->type != l_asmreg && !ISID(lex) && !MATCHKW(lex, openbr)))
     {
         inasm_err(ERR_ADDRESS_MODE_EXPECTED);
         return 0;
@@ -437,7 +438,7 @@ static int getscale(int* scale)
         {
             if ((MATCHTYPE(lex, l_i) || MATCHTYPE(lex, l_ui)) && !*scale)
             {
-                switch ((int)lex->value.i)
+                switch ((int)lex->data->value.i)
                 {
                     case 1:
                         *scale = 0;
@@ -558,7 +559,7 @@ static AMODE* inasm_mem(void)
             rg = regimage->regnum;
         if (lex)
         {
-            switch (lex->type)
+            switch (lex->data->type)
             {
                 case l_asmreg:
                     if (subtract)
@@ -627,11 +628,11 @@ static AMODE* inasm_mem(void)
                 case l_l:
                 case l_ul:
                     if (node)
-                        node = exprNode(subtract ? en_sub : en_add, node, intNode(en_c_i, lex->value.i));
+                        node = exprNode(subtract ? en_sub : en_add, node, intNode(en_c_i, lex->data->value.i));
                     else if (subtract)
-                        node = intNode(en_c_i, -lex->value.i);
+                        node = intNode(en_c_i, -lex->data->value.i);
                     else
-                        node = intNode(en_c_i, lex->value.i);
+                        node = intNode(en_c_i, lex->data->value.i);
                     inasm_getsym();
                     break;
                 case l_kw:
@@ -691,7 +692,7 @@ static AMODE* inasm_mem(void)
         inasm_err(ERR_INVALID_INDEX_MODE);
         return 0;
     }
-    rv = (AMODE*)beLocalAlloc(sizeof(AMODE));
+    rv = beLocalAllocate<AMODE>();
     if (node)
     {
         rv->offset = Optimizer::SymbolManager::Get(node);
@@ -727,14 +728,14 @@ static AMODE* inasm_mem(void)
 
 static AMODE* inasm_amode(int nosegreg)
 {
-    AMODE* rv = (AMODE*)beLocalAlloc(sizeof(AMODE));
+    AMODE* rv = beLocalAllocate<AMODE>();
     int sz = 0, seg = 0;
     bool done = false;
     lastsym = 0;
     inasm_txsym();
     if (lex)
     {
-        switch (lex->type)
+        switch (lex->data->type)
         {
             case l_wchr:
             case l_achr:
@@ -774,7 +775,7 @@ static AMODE* inasm_amode(int nosegreg)
         done = true;
         if (lex)
         {
-            switch (lex->type)
+            switch (lex->data->type)
             {
                 case l_asmreg:
                     if (regimage->regtype == am_ext)
@@ -788,7 +789,7 @@ static AMODE* inasm_amode(int nosegreg)
                         if (MATCHKW(lex, openpa))
                         {
                             inasm_getsym();
-                            if (!lex || (lex->type != l_i && lex->type != l_ui) || lex->value.i < 0 || lex->value.i > 7)
+                            if (!lex || (lex->data->type != l_i && lex->data->type != l_ui) || lex->data->value.i < 0 || lex->data->value.i > 7)
                             {
                                 inasm_err(ERR_ILLEGAL_ADDRESS_MODE);
                                 return 0;
@@ -797,8 +798,8 @@ static AMODE* inasm_amode(int nosegreg)
                             inasm_needkw(&lex, closepa);
                         }
                         else
-                            lex->value.i = 0;
-                        rv->preg = lex->value.i;
+                            lex->data->value.i = 0;
+                        rv->preg = lex->data->value.i;
                         rv->mode = am_freg;
                         sz = ISZ_LDOUBLE;
                     }
@@ -896,7 +897,7 @@ static AMODE* inasm_amode(int nosegreg)
 
 static AMODE* aimmed(long long i)
 {
-    AMODE* rv = (AMODE*)Alloc(sizeof(AMODE));
+    AMODE* rv = Allocate<AMODE>();
     rv->mode = am_immed;
     rv->offset = (Optimizer::SimpleExpression*)intNode(en_c_i, i);
     return rv;
@@ -905,7 +906,7 @@ static AMODE* inasm_immed(void)
 {
     AMODE* rv;
     if (lex)
-        switch (lex->type)
+        switch (lex->data->type)
         {
             case l_i:
             case l_ui:
@@ -913,7 +914,7 @@ static AMODE* inasm_immed(void)
             case l_ul:
             case l_wchr:
             case l_achr:
-                rv = aimmed(lex->value.i);
+                rv = aimmed(lex->data->value.i);
                 rv->length = ISZ_UINT;
                 inasm_getsym();
                 return rv;
@@ -947,7 +948,7 @@ AMODE* getimmed(void)
 {
     AMODE* rv;
     if (lex)
-        switch (lex->type)
+        switch (lex->data->type)
         {
             case l_i:
             case l_ui:
@@ -955,7 +956,7 @@ AMODE* getimmed(void)
             case l_ul:
             case l_wchr:
             case l_achr:
-                rv = aimmed(lex->value.i);
+                rv = aimmed(lex->data->value.i);
                 inasm_getsym();
                 return rv;
             default:
@@ -969,7 +970,7 @@ AMODE* getimmed(void)
 enum e_opcode inasm_op(void)
 {
     int op;
-    if (!lex || lex->type != l_asminst)
+    if (!lex || lex->data->type != l_asminst)
     {
         inasm_err(ERR_INVALID_OPCODE);
         return (e_opcode)-1;
@@ -984,7 +985,7 @@ enum e_opcode inasm_op(void)
 
 static OCODE* make_ocode(AMODE* ap1, AMODE* ap2, AMODE* ap3)
 {
-    OCODE* o = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    OCODE* o = beLocalAllocate<OCODE>();
     if (ap1 && (ap1->length == ISZ_UCHAR || ap1->length == -ISZ_UCHAR))
         if (ap2 && ap2->mode == am_immed)
             ap2->length = ap1->length;
@@ -1023,7 +1024,7 @@ static int getData(STATEMENT* snp)
                     }
                     else
                     {
-                        expr->v.f = (FPF*)Alloc(sizeof(FPF));
+                        expr->v.f = Allocate<FPF>();
                         *expr->v.f = refloat(expr);
                         expr->type = en_c_f;
                     }
@@ -1036,13 +1037,13 @@ static int getData(STATEMENT* snp)
                     }
                     else
                     {
-                        expr->v.f = (FPF*)Alloc(sizeof(FPF));
+                        expr->v.f = Allocate<FPF>();
                         *expr->v.f = refloat(expr);
                         expr->type = en_c_d;
                     }
                     break;
                 case ISZ_LDOUBLE:
-                    expr->v.f = (FPF*)Alloc(sizeof(FPF));
+                    expr->v.f = Allocate<FPF>();
                     *expr->v.f = refloat(expr);
                     expr->type = en_c_ld;
                     break;
@@ -1063,19 +1064,20 @@ static void AssembleInstruction(OCODE* ins)
 {
     if (ins->opcode >= op_aaa)
     {
-#ifndef PARSER_ONLY
-        OCODE ins1 = *ins;
-        AMODE oper1;
-        AMODE oper2;
-        AMODE oper3;
-        Instruction* newIns = nullptr;
-        std::list<Numeric*> operands;
-        Optimizer::assembling = true;
-        asmError err = instructionParser->GetInstruction(&ins1, newIns, operands);
-        Optimizer::assembling = false;
-        delete newIns;
-        switch (err)
+        if (IsCompiler())
         {
+            OCODE ins1 = *ins;
+            AMODE oper1;
+            AMODE oper2;
+            AMODE oper3;
+            Instruction* newIns = nullptr;
+            std::list<Numeric*> operands;
+            Optimizer::assembling = true;
+            asmError err = instructionParser->GetInstruction(&ins1, newIns, operands);
+            Optimizer::assembling = false;
+            delete newIns;
+            switch (err)
+            {
             case AERR_NONE:
                 break;
             case AERR_SYNTAX:
@@ -1095,11 +1097,11 @@ static void AssembleInstruction(OCODE* ins)
                 break;
             default:
                 break;
+            }
         }
-#endif
     }
 }
-LEXEME* inlineAsm(LEXEME* inlex, BLOCKDATA* parent)
+LEXLIST* inlineAsm(LEXLIST* inlex, BLOCKDATA* parent)
 {
     STATEMENT* snp;
     OCODE* rv;
@@ -1115,13 +1117,13 @@ LEXEME* inlineAsm(LEXEME* inlex, BLOCKDATA* parent)
             return lex;
         }
         bool atend;
-        if (lex->type != l_asminst)
+        if (lex->data->type != l_asminst)
         {
             if (MATCHKW(lex, kw_int))
             {
                 inasm_getsym();
                 op = op_int;
-                rv = (OCODE*)beLocalAlloc(sizeof(OCODE));
+                rv = beLocalAllocate<OCODE>();
                 rv->oper1 = inasm_amode(true);
                 goto join;
             }
@@ -1148,7 +1150,7 @@ LEXEME* inlineAsm(LEXEME* inlex, BLOCKDATA* parent)
             return lex;
         }
         {
-            rv = (OCODE*)beLocalAlloc(sizeof(OCODE));
+            rv = beLocalAllocate<OCODE>();
             if (!(op == op_rep || op == op_repnz || op == op_repz || op == op_repe || op == op_repne || op == op_lock))
             {
                 if (!atend && !MATCHKW(lex, semicolon))
@@ -1212,7 +1214,7 @@ void adjust_codelab(void* select, int offset)
 }
 void* inlineAsmStmt(void* param)
 {
-    OCODE* rv = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    OCODE* rv = beLocalAllocate<OCODE>();
     memcpy(rv, param, sizeof(*rv));
     if ((e_op)rv->opcode != op_label && (e_op)rv->opcode != op_line)
     {

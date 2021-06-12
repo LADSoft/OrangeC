@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include <stdio.h>
@@ -822,7 +822,7 @@ static void HandleOCP(QUAD* after, int tn)
     {
         QUAD* p = (QUAD*)(tempInfo[tn]->idefines->data);
         QUAD* tail = after;
-        QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
+        QUAD* ins = Allocate<QUAD>();
         QUAD* bans;
         bool a = false, l = false;
         if (after->dc.opcode != i_block && after->dc.opcode != i_label)
@@ -830,7 +830,7 @@ static void HandleOCP(QUAD* after, int tn)
             QUAD *beforea, *beforel = nullptr;
             after = after->back;
             beforea = nullptr;
-            while (!after->OCP && !beforel && !after->ignoreMe && after->dc.opcode != i_label &&
+            while (!after->OCP && !beforel && after->dc.opcode != i_label &&	
                    (!after->dc.left || !after->dc.left->retval) && after->dc.opcode != i_block)
             {
                 if (after->temps & TEMP_ANS)
@@ -848,7 +848,7 @@ static void HandleOCP(QUAD* after, int tn)
         }
         else
         {
-            while (after->fwd->ignoreMe || after->fwd->dc.opcode == i_label || after->fwd->OCPInserted)
+            while (!after->ignoreMe || after->fwd->dc.opcode == i_label || after->fwd->OCPInserted)
                 after = after->fwd;
         }
         *ins = *p;
@@ -870,7 +870,7 @@ static void HandleOCP(QUAD* after, int tn)
         ins->block = after->block;
         if (after == after->block->tail)
             after->block->tail = ins;
-        bans = (QUAD*)Alloc(sizeof(QUAD));
+        bans = Allocate<QUAD>();
         bans->ans = tempInfo[tn]->copy;
         bans->dc.left = ins->ans;
         bans->dc.opcode = i_assn;
@@ -902,8 +902,8 @@ static IMODE* GetROVar(IMODE* oldvar, IMODE* newvar, bool mov)
         }
         if (!iml)
         {
-            IMODELIST* iml2 = (IMODELIST*)Alloc(sizeof(IMODELIST));
-            im = (IMODE*)Alloc(sizeof(IMODE));
+            IMODELIST* iml2 = Allocate<IMODELIST>();
+            im = Allocate<IMODE>();
             *im = *newvar;
             im->mode = i_ind;
             im->size = oldvar->size;
@@ -1030,7 +1030,7 @@ void RearrangePrecolors(void)
     {
         if ((head->precolored & TEMP_ANS) && !head->ans->retval)
         {
-            QUAD* newIns = (QUAD*)Alloc(sizeof(QUAD));
+            QUAD* newIns = Allocate<QUAD>();
             i = head->ans->offset->sp->i;
             if (tempInfo[i]->temp < 0)
             {
@@ -1049,7 +1049,7 @@ void RearrangePrecolors(void)
         }
         if ((head->precolored & TEMP_LEFT) && !head->dc.left->retval)
         {
-            QUAD* newIns = (QUAD*)Alloc(sizeof(QUAD));
+            QUAD* newIns = Allocate<QUAD>();
             i = head->dc.left->offset->sp->i;
             if (tempInfo[i]->temp < 0)
             {
@@ -1068,7 +1068,7 @@ void RearrangePrecolors(void)
         }
         if ((head->precolored & TEMP_RIGHT) && !head->dc.right->retval)
         {
-            QUAD* newIns = (QUAD*)Alloc(sizeof(QUAD));
+            QUAD* newIns = Allocate<QUAD>();
             i = head->dc.right->offset->sp->i;
             if (tempInfo[i]->temp < 0)
             {
@@ -1097,7 +1097,7 @@ static void PadBlocks(void)
         BLOCK* b = blockArray[i];
         if (b && b->head == b->tail)
         {
-            QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
+            QUAD* ins = Allocate<QUAD>();
             ins->dc.opcode = i_blockend;
             InsertInstruction(b->head, ins);
         }
@@ -1111,8 +1111,8 @@ void SetGlobalTerms(void)
     for (i = 0; i < tempCount; i++)
         if (tempInfo[i]->inUse)
             termCount++;
-    termMap = (unsigned short*)Alloc(sizeof(unsigned short) * tempCount);
-    termMapUp = (unsigned short*)Alloc(sizeof(unsigned short) * termCount);
+    termMap = Allocate<unsigned short>(tempCount);
+    termMapUp = Allocate<unsigned short>(termCount);
     for (i = 0, j = 0; i < tempCount; i++)
         if (tempInfo[i]->inUse)
         {
@@ -1126,7 +1126,7 @@ void GlobalOptimization(void)
     QUAD *head = intermed_head;
     int i;
     PadBlocks();
-    forwardOrder = (BLOCK**)oAlloc(sizeof(BLOCK*) * blockCount);
+    forwardOrder = oAllocate<BLOCK*>(blockCount);
     blocks = 0;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
@@ -1146,7 +1146,7 @@ void GlobalOptimization(void)
             bl = bl->next;
         }
     }
-    reverseOrder = (BLOCK**)oAlloc(sizeof(BLOCK*) * blockCount);
+    reverseOrder = oAllocate<BLOCK*>(blockCount);
     blocks = 0;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])

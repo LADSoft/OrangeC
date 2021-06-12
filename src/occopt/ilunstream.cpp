@@ -1,26 +1,27 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
+
 #include <cstdint>
 #include <stdio.h>
 #include <malloc.h>
@@ -36,6 +37,7 @@
 #include <deque>
 #include <functional>
 #include <map>
+#include <unordered_map>
 #include <stdexcept>
 #include "ildata.h"
 #include "iblock.h"
@@ -43,7 +45,7 @@
 namespace Optimizer
 {
 static std::list<std::string> textRegion;
-static std::map<std::string, int> cachedText;
+static std::unordered_map<std::string, int> cachedText;
 static size_t textOffset;
 static FunctionData *current, *lastFunction;
 static std::map<int, std::string> texts;
@@ -149,7 +151,7 @@ static LIST* UnstreamSymbolTable()
     LIST** p = &syms;
     for (; i > 0; i--)
     {
-        *p = (LIST*)Alloc(sizeof(LIST));
+        *p = Allocate<LIST>();
         (*p)->data = (Optimizer::SimpleSymbol*)UnstreamIndex();
         p = &(*p)->next;
     }
@@ -162,7 +164,7 @@ static BaseList* UnstreamBases()
     BaseList** p = &bases;
     for (; i > 0; i--)
     {
-        *p = (BaseList*)Alloc(sizeof(BaseList));
+        *p = Allocate<BaseList>();
         UnstreamBlock(STT_BASE, [p]() {
             (*p)->sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
             (*p)->offset = UnstreamIndex();
@@ -178,7 +180,7 @@ static Optimizer::SimpleType* UnstreamType()
         st_type type = (st_type)UnstreamIndex();
         if (type != st_none)
         {
-            rv = (Optimizer::SimpleType*)Alloc(sizeof(Optimizer::SimpleType));
+            rv = Allocate<Optimizer::SimpleType>();
             rv->type = type;
             rv->size = UnstreamIndex();
             UnstreamIntValue(&rv->sizeFromType, sizeof(int));
@@ -198,7 +200,7 @@ static Optimizer::SimpleSymbol* UnstreamSymbol()
         int storage_class = UnstreamIndex();
         if (storage_class != scc_none)
         {
-            rv = (Optimizer::SimpleSymbol*)Alloc(sizeof(Optimizer::SimpleSymbol));
+            rv = Allocate<Optimizer::SimpleSymbol>();
             rv->storage_class = (e_scc_type)storage_class;
             rv->name = (const char*)UnstreamTextIndex();
             rv->outputName = (const char*)UnstreamTextIndex();
@@ -226,7 +228,7 @@ static Optimizer::SimpleSymbol* GetTempref(int n)
 {
     if (!temps[n])
     {
-        Optimizer::SimpleSymbol* sym = temps[n] = (Optimizer::SimpleSymbol*)Alloc(sizeof(Optimizer::SimpleSymbol));
+        Optimizer::SimpleSymbol* sym = temps[n] = Allocate<Optimizer::SimpleSymbol>();
         char buf[256];
         sym->storage_class = scc_temp;
         sprintf(buf, "$$t%d", n);
@@ -242,7 +244,7 @@ static Optimizer::SimpleExpression* UnstreamExpression()
         int type = UnstreamIndex();
         if (type != se_none)
         {
-            rv = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+            rv = Allocate<Optimizer::SimpleExpression>();
             rv->type = (se_type)type;
             rv->flags = UnstreamIndex();
             UnstreamIntValue(&rv->sizeFromType, sizeof(int));
@@ -316,7 +318,7 @@ static Optimizer::SimpleExpression* UnstreamExpression()
 }
 static BROWSEFILE* UnstreamBrowseFile()
 {
-    BROWSEFILE* rv = (BROWSEFILE*)Alloc(sizeof(BROWSEFILE));
+    BROWSEFILE* rv = Allocate<BROWSEFILE>();
     UnstreamBlock(STT_BROWSEFILE, [&rv]() {
         rv->name = (const char*)UnstreamTextIndex();
         rv->filenum = UnstreamIndex();
@@ -325,7 +327,7 @@ static BROWSEFILE* UnstreamBrowseFile()
 }
 static BROWSEINFO* UnstreamBrowseInfo()
 {
-    BROWSEINFO* rv = (BROWSEINFO*)Alloc(sizeof(BROWSEINFO));
+    BROWSEINFO* rv = Allocate<BROWSEINFO>();
     UnstreamBlock(STT_BROWSEINFO, [&rv]() {
         rv->name = (const char*)UnstreamTextIndex();
         rv->filenum = UnstreamIndex();
@@ -343,7 +345,7 @@ static AMODE* UnstreamAssemblyOperand()
     int mode = UnstreamIndex();
     if (mode != am_none)
     {
-        rv = (AMODE*)Alloc(sizeof(AMODE));
+        rv = Allocate<AMODE>();
         rv->mode = (e_am)mode;
         rv->preg = UnstreamIndex();
         rv->sreg = UnstreamIndex();
@@ -360,7 +362,7 @@ static AMODE* UnstreamAssemblyOperand()
 }
 static OCODE* UnstreamAssemblyInstruction()
 {
-    OCODE* rv = (OCODE*)Alloc(sizeof(OCODE));
+    OCODE* rv = Allocate<OCODE>();
     rv->opcode = (e_opcode)UnstreamIndex();
     rv->diag = UnstreamIndex();
     rv->noopt = UnstreamIndex();
@@ -373,7 +375,7 @@ static OCODE* UnstreamAssemblyInstruction()
 }
 static Optimizer::IMODE* UnstreamOperand()
 {
-    Optimizer::IMODE* rv = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+    Optimizer::IMODE* rv = Allocate<Optimizer::IMODE>();
     UnstreamBlock(STT_OPERAND, [&rv]() {
         rv->mode = (i_adr)UnstreamIndex();
         rv->scale = UnstreamIndex();
@@ -398,7 +400,7 @@ static Optimizer::IMODE* UnstreamOperand()
 
 static Optimizer::QUAD* UnstreamInstruction(FunctionData& fd)
 {
-    Optimizer::QUAD* rv = (Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    Optimizer::QUAD* rv = Allocate<Optimizer::QUAD>();
     UnstreamBlock(STT_INSTRUCTION, [&rv, &fd]() {
         rv->dc.opcode = (i_ops)UnstreamIndex();
         rv->block = currentBlock;
@@ -440,7 +442,7 @@ static Optimizer::QUAD* UnstreamInstruction(FunctionData& fd)
                     LINEDATA *ld = nullptr, **p = &ld;
                     for (; i; i--)
                     {
-                        *p = (LINEDATA*)Alloc(sizeof(LINEDATA));
+                        *p = Allocate<LINEDATA>();
                         (*p)->lineno = UnstreamIndex();
                         (*p)->line = (const char*)UnstreamTextIndex();
                         p = &(*p)->next;
@@ -449,7 +451,7 @@ static Optimizer::QUAD* UnstreamInstruction(FunctionData& fd)
                 }
                 break;
                 case i_block:
-                    currentBlock = (BLOCK*)Alloc(sizeof(BLOCK));
+                    currentBlock = Allocate<BLOCK>();
                     rv->dc.v.label = currentBlock->blocknum = UnstreamIndex();
                     currentBlock->head = currentBlock->tail = rv;
                     rv->block = currentBlock;
@@ -503,7 +505,7 @@ static Optimizer::QUAD* UnstreamInstruction(FunctionData& fd)
             ArgList** p = (ArgList**)&rv->altargs;
             for (; i; i--)
             {
-                *p = (ArgList*)Alloc(sizeof(ArgList));
+                *p = Allocate<ArgList>();
                 (*p)->tp = UnstreamType();
                 if (UnstreamByte())
                     (*p)->exp = UnstreamExpression();
@@ -566,7 +568,6 @@ static void UnstreamXParams()
         UnstreamString(intermediateName);
         UnstreamString(backendName);
         showBanner = UnstreamIndex();
-        verbosity = UnstreamIndex();
         assembling = UnstreamIndex();
         dataAlign = UnstreamIndex();
         bssAlign = UnstreamIndex();
@@ -750,7 +751,7 @@ static void UnstreamData()
         int len = UnstreamIndex();
         for (int i = 0; i < len; i++)
         {
-            BaseData* data = (BaseData*)Alloc(sizeof(BaseData));
+            BaseData* data = Allocate<BaseData>();
             baseData.push_back(data);
             data->type = (DataType)UnstreamIndex();
             UnstreamBlock(data->type, [data]() {

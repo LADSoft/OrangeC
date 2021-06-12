@@ -7,4 +7,8 @@ comp.tst: comp.exe
 	fc /b decode.tst szip.c
 
 comp.exe:
+	-copy \orangec\bin\lsmsilcrtl.dll *.*
 	occil comp.c /DMY_UNSIGNED_TYPES /oszip.exe /C+f	
+
+clean:
+	del *.exe

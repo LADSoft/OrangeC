@@ -1,22 +1,22 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *
+ *     
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /*  io.h
@@ -66,10 +66,13 @@ extern "C"
 {
 #endif
 
+#ifndef RC_INVOKED
     extern unsigned _RTL_DATA _nfile;
+#endif
 
 #define HANDLE_MAX (_NFILE_)
 
+#ifndef RC_INVOKED
     struct ftime
     {
         unsigned ft_tsec : 5;  /* Two second interval */
@@ -79,7 +82,7 @@ extern "C"
         unsigned ft_month : 4; /* Months */
         unsigned ft_year : 7;  /* Year */
     };
-
+#endif
 #define _A_NORMAL 0x00 /* Normal file, no attributes */
 #define _A_RDONLY 0x01 /* Read only attribute */
 #define _A_HIDDEN 0x02 /* Hidden file */
@@ -88,6 +91,7 @@ extern "C"
 #define _A_SUBDIR 0x10 /* Directory */
 #define _A_ARCH 0x20   /* Archive */
 
+#ifndef RC_INVOKED
     struct _finddata_t
     {
         unsigned attrib; /* Attributes, see constants above. */
@@ -97,7 +101,7 @@ extern "C"
         unsigned long size;
         char name[FILENAME_MAX]; /* may include spaces. */
     };
-
+#endif
 #define SEEK_CUR 1
 #define SEEK_END 2
 #define SEEK_SET 0
@@ -106,6 +110,7 @@ extern "C"
 #define X_OK 1
 #define W_OK 2
 #define R_OK 4
+#ifndef RC_INVOKED
 
     int _RTL_FUNC _IMPORT access(const char* ZSTR __path, int __amode);
     int _RTL_FUNC _IMPORT chsize(int __handle, long __size);
@@ -165,6 +170,7 @@ extern "C"
     int _RTL_FUNC _IMPORT _umask(int perm);
     int _RTL_FUNC _IMPORT _unlink(const char* ZSTR);
     int _RTL_FUNC _IMPORT _write(int, const void*, unsigned int);
+#endif
 
 #ifdef __cplusplus
 };

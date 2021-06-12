@@ -1,10 +1,9 @@
 // -*- C++ -*-
 //===---------------------------- ios -------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -114,9 +113,9 @@ class basic_ios
 public:
     // types:
     typedef charT char_type;
-    typedef typename traits::int_type int_type;
-    typedef typename traits::pos_type pos_type;
-    typedef typename traits::off_type off_type;
+    typedef typename traits::int_type int_type;  // removed in C++17
+    typedef typename traits::pos_type pos_type;  // removed in C++17
+    typedef typename traits::off_type off_type;  // removed in C++17
     typedef traits traits_type;
 
     operator unspecified-bool-type() const;
@@ -203,8 +202,8 @@ enum class io_errc
 };
 
 concept_map ErrorCodeEnum<io_errc> { };
-error_code make_error_code(io_errc e) noexcept; 
-error_condition make_error_condition(io_errc e) noexcept; 
+error_code make_error_code(io_errc e) noexcept;
+error_condition make_error_condition(io_errc e) noexcept;
 storage-class-specifier const error_category& iostream_category() noexcept;
 
 }  // std
@@ -216,7 +215,7 @@ storage-class-specifier const error_category& iostream_category() noexcept;
 #include <__locale>
 #include <system_error>
 
-#if __has_feature(cxx_atomic) && !defined(_LIBCPP_HAS_NO_THREADS)
+#if !defined(_LIBCPP_HAS_NO_ATOMIC_HEADER)
 #include <atomic>     // for __xindex_
 #endif
 
@@ -231,7 +230,7 @@ typedef ptrdiff_t streamsize;
 class _LIBCPP_TYPE_VIS ios_base
 {
 public:
-    class _LIBCPP_TYPE_VIS failure;
+    class _LIBCPP_EXCEPTION_ABI failure;
 
     typedef unsigned int fmtflags;
     static const fmtflags boolalpha   = 0x0001;
@@ -254,14 +253,12 @@ public:
     static const fmtflags floatfield  = scientific | fixed;
 
     typedef unsigned int iostate;
-    typedef iostate      io_state;
     static const iostate badbit  = 0x1;
     static const iostate eofbit  = 0x2;
     static const iostate failbit = 0x4;
     static const iostate goodbit = 0x0;
 
     typedef unsigned int openmode;
-    typedef openmode     open_mode;
     static const openmode app    = 0x01;
     static const openmode ate    = 0x02;
     static const openmode binary = 0x04;
@@ -270,10 +267,15 @@ public:
     static const openmode trunc  = 0x20;
 
     enum seekdir {beg, cur, end};
-    typedef seekdir seek_dir;
+
+#if _LIBCPP_STD_VER <= 14
+    typedef iostate      io_state;
+    typedef openmode     open_mode;
+    typedef seekdir      seek_dir;
 
     typedef _VSTD::streamoff streamoff;
     typedef _VSTD::streampos streampos;
+#endif
 
     class _LIBCPP_TYPE_VIS Init;
 
@@ -328,15 +330,24 @@ public:
     void __set_badbit_and_consider_rethrow();
     void __set_failbit_and_consider_rethrow();
 
+    _LIBCPP_INLINE_VISIBILITY
+    void __setstate_nothrow(iostate __state)
+    {
+        if (__rdbuf_)
+            __rdstate_ |= __state;
+        else
+            __rdstate_ |= __state | ios_base::badbit;
+    }
+
 protected:
     _LIBCPP_INLINE_VISIBILITY
     ios_base() {// purposefully does no initialization
                }
 
     void init(void* __sb);
-    _LIBCPP_ALWAYS_INLINE void* rdbuf() const {return __rdbuf_;}
+    _LIBCPP_INLINE_VISIBILITY void* rdbuf() const {return __rdbuf_;}
 
-    _LIBCPP_ALWAYS_INLINE
+    _LIBCPP_INLINE_VISIBILITY
     void rdbuf(void* __sb)
     {
         __rdbuf_ = __sb;
@@ -348,7 +359,7 @@ protected:
     void move(ios_base&);
     void swap(ios_base&) _NOEXCEPT;
 
-    _LIBCPP_ALWAYS_INLINE
+    _LIBCPP_INLINE_VISIBILITY
     void set_rdbuf(void* __sb)
     {
         __rdbuf_ = __sb;
@@ -362,18 +373,14 @@ private:
     iostate         __rdstate_;
     iostate         __exceptions_;
     void*           __rdbuf_;
-#ifdef __ORANGEC__
-    // this is a terrible hack to get around a bug in the lib that caused my progs to crash
-    char            __loc_[36];
-#else
-    // original line of code...
     void*           __loc_;
-#endif
     event_callback* __fn_;
     int*            __index_;
     size_t          __event_size_;
     size_t          __event_cap_;
-#if __has_feature(cxx_atomic) && !defined(_LIBCPP_HAS_NO_THREADS)
+// TODO(EricWF): Enable this for both Clang and GCC. Currently it is only
+// enabled with clang.
+#if defined(_LIBCPP_HAS_C_ATOMIC_IMP) && !defined(_LIBCPP_HAS_NO_THREADS)
     static atomic<int> __xindex_;
 #else
     static int      __xindex_;
@@ -394,11 +401,11 @@ _LIBCPP_DECLARE_STRONG_ENUM(io_errc)
 _LIBCPP_DECLARE_STRONG_ENUM_EPILOG(io_errc)
 
 template <>
-struct _LIBCPP_TYPE_VIS_ONLY is_error_code_enum<io_errc> : public true_type { };
+struct _LIBCPP_TEMPLATE_VIS is_error_code_enum<io_errc> : public true_type { };
 
 #ifdef _LIBCPP_HAS_NO_STRONG_ENUMS
 template <>
-struct _LIBCPP_TYPE_VIS_ONLY is_error_code_enum<io_errc::__lx> : public true_type { };
+struct _LIBCPP_TEMPLATE_VIS is_error_code_enum<io_errc::__lx> : public true_type { };
 #endif
 
 _LIBCPP_FUNC_VIS
@@ -426,6 +433,16 @@ public:
     explicit failure(const char* __msg, const error_code& __ec = io_errc::stream);
     virtual ~failure() throw();
 };
+
+_LIBCPP_NORETURN inline _LIBCPP_INLINE_VISIBILITY
+void __throw_failure(char const* __msg) {
+#ifndef _LIBCPP_NO_EXCEPTIONS
+    throw ios_base::failure(__msg);
+#else
+    ((void)__msg);
+    _VSTD::abort();
+#endif
+}
 
 class _LIBCPP_TYPE_VIS ios_base::Init
 {
@@ -573,8 +590,15 @@ ios_base::exceptions(iostate __iostate)
     clear(__rdstate_);
 }
 
+#if defined(_LIBCPP_CXX03_LANG)
+struct _LIBCPP_TYPE_VIS __cxx03_bool {
+  typedef void (__cxx03_bool::*__bool_type)();
+  void __true_value() {}
+};
+#endif
+
 template <class _CharT, class _Traits>
-class _LIBCPP_TYPE_VIS_ONLY basic_ios
+class _LIBCPP_TEMPLATE_VIS basic_ios
     : public ios_base
 {
 public:
@@ -586,20 +610,33 @@ public:
     typedef typename traits_type::pos_type pos_type;
     typedef typename traits_type::off_type off_type;
 
-    _LIBCPP_ALWAYS_INLINE
-        _LIBCPP_EXPLICIT
-        operator bool() const {return !fail();}
-    _LIBCPP_ALWAYS_INLINE bool operator!() const    {return  fail();}
-    _LIBCPP_ALWAYS_INLINE iostate rdstate() const   {return ios_base::rdstate();}
-    _LIBCPP_ALWAYS_INLINE void clear(iostate __state = goodbit) {ios_base::clear(__state);}
-    _LIBCPP_ALWAYS_INLINE void setstate(iostate __state) {ios_base::setstate(__state);}
-    _LIBCPP_ALWAYS_INLINE bool good() const {return ios_base::good();}
-    _LIBCPP_ALWAYS_INLINE bool eof() const  {return ios_base::eof();}
-    _LIBCPP_ALWAYS_INLINE bool fail() const {return ios_base::fail();}
-    _LIBCPP_ALWAYS_INLINE bool bad() const  {return ios_base::bad();}
+    static_assert((is_same<_CharT, typename traits_type::char_type>::value),
+                  "traits_type::char_type must be the same type as CharT");
 
-    _LIBCPP_ALWAYS_INLINE iostate exceptions() const {return ios_base::exceptions();}
-    _LIBCPP_ALWAYS_INLINE void exceptions(iostate __iostate) {ios_base::exceptions(__iostate);}
+  // __true_value will generate undefined references when linking unless
+  // we give it internal linkage.
+
+#if defined(_LIBCPP_CXX03_LANG)
+    _LIBCPP_INLINE_VISIBILITY
+    operator __cxx03_bool::__bool_type() const {
+        return !fail() ? &__cxx03_bool::__true_value : nullptr;
+    }
+#else
+    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_EXPLICIT operator bool() const {return !fail();}
+#endif
+
+    _LIBCPP_INLINE_VISIBILITY bool operator!() const    {return  fail();}
+    _LIBCPP_INLINE_VISIBILITY iostate rdstate() const   {return ios_base::rdstate();}
+    _LIBCPP_INLINE_VISIBILITY void clear(iostate __state = goodbit) {ios_base::clear(__state);}
+    _LIBCPP_INLINE_VISIBILITY void setstate(iostate __state) {ios_base::setstate(__state);}
+    _LIBCPP_INLINE_VISIBILITY bool good() const {return ios_base::good();}
+    _LIBCPP_INLINE_VISIBILITY bool eof() const  {return ios_base::eof();}
+    _LIBCPP_INLINE_VISIBILITY bool fail() const {return ios_base::fail();}
+    _LIBCPP_INLINE_VISIBILITY bool bad() const  {return ios_base::bad();}
+
+    _LIBCPP_INLINE_VISIBILITY iostate exceptions() const {return ios_base::exceptions();}
+    _LIBCPP_INLINE_VISIBILITY void exceptions(iostate __iostate) {ios_base::exceptions(__iostate);}
 
     // 27.5.4.1 Constructor/destructor:
     _LIBCPP_INLINE_VISIBILITY
@@ -607,51 +644,51 @@ public:
     virtual ~basic_ios();
 
     // 27.5.4.2 Members:
-    _LIBCPP_INLINE_VISIBILITY 
+    _LIBCPP_INLINE_VISIBILITY
     basic_ostream<char_type, traits_type>* tie() const;
-    _LIBCPP_INLINE_VISIBILITY 
+    _LIBCPP_INLINE_VISIBILITY
     basic_ostream<char_type, traits_type>* tie(basic_ostream<char_type, traits_type>* __tiestr);
 
-    _LIBCPP_INLINE_VISIBILITY 
+    _LIBCPP_INLINE_VISIBILITY
     basic_streambuf<char_type, traits_type>* rdbuf() const;
-    _LIBCPP_INLINE_VISIBILITY 
+    _LIBCPP_INLINE_VISIBILITY
     basic_streambuf<char_type, traits_type>* rdbuf(basic_streambuf<char_type, traits_type>* __sb);
 
     basic_ios& copyfmt(const basic_ios& __rhs);
 
-    _LIBCPP_INLINE_VISIBILITY 
+    _LIBCPP_INLINE_VISIBILITY
     char_type fill() const;
-    _LIBCPP_INLINE_VISIBILITY 
+    _LIBCPP_INLINE_VISIBILITY
     char_type fill(char_type __ch);
 
-    _LIBCPP_INLINE_VISIBILITY 
+    _LIBCPP_INLINE_VISIBILITY
     locale imbue(const locale& __loc);
 
-    _LIBCPP_INLINE_VISIBILITY 
+    _LIBCPP_INLINE_VISIBILITY
     char narrow(char_type __c, char __dfault) const;
-    _LIBCPP_INLINE_VISIBILITY 
+    _LIBCPP_INLINE_VISIBILITY
     char_type widen(char __c) const;
 
 protected:
-    _LIBCPP_ALWAYS_INLINE
+    _LIBCPP_INLINE_VISIBILITY
     basic_ios() {// purposefully does no initialization
                 }
-    _LIBCPP_INLINE_VISIBILITY 
+    _LIBCPP_INLINE_VISIBILITY
     void init(basic_streambuf<char_type, traits_type>* __sb);
 
-    _LIBCPP_INLINE_VISIBILITY 
+    _LIBCPP_INLINE_VISIBILITY
     void move(basic_ios& __rhs);
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
-    _LIBCPP_ALWAYS_INLINE
+#ifndef _LIBCPP_CXX03_LANG
+    _LIBCPP_INLINE_VISIBILITY
     void move(basic_ios&& __rhs) {move(__rhs);}
 #endif
-    _LIBCPP_INLINE_VISIBILITY 
+    _LIBCPP_INLINE_VISIBILITY
     void swap(basic_ios& __rhs) _NOEXCEPT;
-    _LIBCPP_INLINE_VISIBILITY 
+    _LIBCPP_INLINE_VISIBILITY
     void set_rdbuf(basic_streambuf<char_type, traits_type>* __sb);
 private:
     basic_ostream<char_type, traits_type>* __tie_;
-     mutable int_type __fill_;
+    mutable int_type __fill_;
 };
 
 template <class _CharT, class _Traits>

@@ -1,22 +1,22 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *
+ *     
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #ifndef __WCHAR_H
@@ -60,15 +60,18 @@
  *
  * already declared in stddef.h, declared here for reference
  */
+#ifndef RC_INVOKED
 #ifndef _WINT_T_DEFINED
 #    define _WINT_T_DEFINED
 typedef unsigned int wint_t;
 #endif
-
+#endif
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+#ifndef RC_INVOKED
 
 #ifndef _MBSTATE_T_DEFINED
 #    define _MBSTATE_T_DEFINED
@@ -80,7 +83,7 @@ extern "C"
 #endif
 
     struct tm;
-
+#endif
 #define WCHAR_MIN ((wchar_t)0)
 #define WCHAR_MAX ((wchar_t)(~WCHAR_MIN))
 
@@ -88,6 +91,7 @@ extern "C"
 #    define WEOF (wint_t)(-1)
 #endif
 
+#ifndef RC_INVOKED
     wchar_t* _RTL_FUNC wcscpy(wchar_t* restrict __dest, const wchar_t* restrict __src);
     wchar_t* _RTL_FUNC wcsncpy(wchar_t* restrict __dest, const wchar_t* restrict __src, size_t __n);
 
@@ -214,6 +218,7 @@ int _RTL_FUNC vswprintf(wchar_t* restrict s, size_t n, const wchar_t* restrict _
     wint_t _RTL_FUNC putwchar_unlocked(wchar_t wc);
     wchar_t* _RTL_FUNC fgetws_unlocked(wchar_t* ws, int n, FILE* stream);
     int _RTL_FUNC fputws_unlocked(const wchar_t* ws, FILE* stream);
+#endif
 
 #ifdef __cplusplus
 };

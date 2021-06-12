@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "DotNetPELib.h"
@@ -58,8 +58,9 @@ AssemblyDef* PELib::EmptyWorkingAssembly(const std::string& AssemblyName)
 bool PELib::DumpOutputFile(const std::string& file, OutputMode mode, bool gui)
 {
     bool rv;
-    outputStream_ = std::make_unique<std::fstream>(file.c_str(), std::ios::in | std::ios::out | std::ios::trunc |
-                                                       (mode == ilasm || mode == object ? std::ios::in : std::ios::binary));
+    outputStream_ = std::unique_ptr<std::iostream>( new std::fstream(file.c_str(), std::ios::in | std::ios::out | std::ios::trunc |
+                     (mode == ilasm || mode == object ? std::ios::in : std::ios::binary)) );
+ 
     switch (mode)
     {
         case ilasm:
@@ -179,7 +180,7 @@ PELib::eFindType PELib::Find(std::string path, void **result, std::deque<Type*>*
 {
     if (path.size() && path[0] == '[')
     {
-        int npos = path.find(']');
+        size_t npos = path.find(']');
         if (npos != std::string::npos)
         {
             std::string assemblyName = path.substr(1, npos - 1);
@@ -335,7 +336,7 @@ PELib::eFindType PELib::Find(std::string path, Method **result, std::vector<Type
 {
     if (path.size() && path[0] == '[')
     {
-        int npos = path.find(']');
+        size_t npos = path.find(']');
         if (npos != std::string::npos)
         {
             std::string assemblyName = path.substr(1, npos - 1);
@@ -701,7 +702,8 @@ bool PELib::DumpPEFile(std::string file, bool isexe, bool isgui)
     WorkingAssembly()->Number(n);  // give initial PE Indexes for field resolution..
 
     peWriter_ = new PEWriter(isexe, isgui, WorkingAssembly()->SNKFile());
-    size_t moduleIndex = peWriter_->HashString("Module");
+    // this next line needs '<Module>' rather than 'Module' to work on mono...
+    size_t moduleIndex = peWriter_->HashString("<Module>");
     TypeDefOrRef typeDef(TypeDefOrRef::TypeDef, 0);
     TableEntryBase* table = new TypeDefTableEntry(0, moduleIndex, 0, typeDef, 1, 1);
     peWriter_->AddTableEntry(table);
@@ -825,7 +827,7 @@ int PELib::LoadUnmanaged(const std::string& name)
     if (reader.Read())
     {
         std::string unmanagedDllName = reader.Name();
-        unsigned npos = unmanagedDllName.find_last_of(DIR_SEP);
+        size_t npos = unmanagedDllName.find_last_of(DIR_SEP);
         if (npos != std::string::npos && npos != unmanagedDllName.size() - 1)
         {
             unmanagedDllName = unmanagedDllName.substr(npos + 1);

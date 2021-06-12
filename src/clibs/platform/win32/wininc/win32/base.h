@@ -63,6 +63,10 @@ extern "C"
 /* Skip if invoked by resource compiler */
 #ifndef RC_INVOKED
 
+#    ifndef _WIN32_WINNT_WIN8
+#        define _WIN32_WINNT_WIN8 0x602
+#    endif
+
 #    ifndef _WIN32_WINNT
 #        define _WIN32_WINNT 0x501 /*win xp*/
 #    endif

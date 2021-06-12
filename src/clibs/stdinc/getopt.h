@@ -37,6 +37,7 @@ extern "C" {
 #define required_argument 2
 #define optional_argument 3
 
+#ifndef RC_INVOKED
 extern char* optarg;
 extern int optind, opterr, optopt;
 
@@ -51,6 +52,8 @@ int getopt(int argc, char* const argv[], const char* optstring);
 
 int getopt_long(int argc, char* const argv[],
   const char* optstring, const struct option* longopts, int* longindex);
+
+#endif
 
 #if defined(__cplusplus)
 }

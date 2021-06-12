@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "InstructionParser.h"
@@ -36,46 +36,13 @@
 #include <iostream>
 #include "Token.h"
 
-static const unsigned mask[32] = {
-    0x1,      0x3,      0x7,       0xf,       0x1f,      0x3f,      0x7f,       0xff,       0x1ff,      0x3ff,      0x7ff,
-    0xfff,    0x1fff,   0x3fff,    0x7fff,    0xffff,    0x1ffff,   0x3ffff,    0x7ffff,    0xfffff,    0x1fffff,   0x3fffff,
-    0x7fffff, 0xffffff, 0x1ffffff, 0x3ffffff, 0x7ffffff, 0xfffffff, 0x1fffffff, 0x3fffffff, 0x7fffffff, 0xffffffff,
-};
-void BitStream::Add(int val, int cnt)
-{
-    val &= mask[cnt - 1];
-    int v = 8 - (bits & 7);
-    //	std::cout << val << ";" << cnt << std::endl;
-    if (cnt > v)
-    {
-        if (v != 8)
-        {
-            // assumes won't cross byte boundary
-            bytes[bits >> 3] |= (val >> (cnt - v));
-            cnt -= v;
-            bits += v;
-        }
-        while (cnt > 0)
-        {
-            // endianness assumed...
-            bytes[bits >> 3] = (val & 0xff);
-            val >>= 8;
-            bits += 8;
-            cnt -= 8;
-        }
-    }
-    else
-    {
-        bytes[bits >> 3] |= val << (v - cnt);
-        bits += (cnt);
-    }
-}
+extern const unsigned BitMasks[32];
+
 bool InstructionParser::ParseNumber(int relOfs, int sign, int bits, int needConstant, int tokenPos)
 {
-
     if (inputTokens[tokenPos]->type == InputToken::NUMBER)
     {
-        val = inputTokens[tokenPos]->val;
+        val = (AsmExprNode*)inputTokens[tokenPos]->val;
         bool isConst = val->IsAbsolute();
         if (isConst || !needConstant)
         {
@@ -85,15 +52,15 @@ bool InstructionParser::ParseNumber(int relOfs, int sign, int bits, int needCons
                     return false;
                 if (sign)
                 {
-                    if (bits == 8 && (val->ival & ~mask[bits - 2]) != 0)
-                        if ((val->ival & ~mask[bits - 2]) != (~mask[bits - 2]))
-                            if ((val->ival & ~mask[bits - 2]) != 0)
+                    if (bits == 8 && (val->ival & ~BitMasks[bits - 2]) != 0)
+                        if ((val->ival & ~BitMasks[bits - 2]) != (~BitMasks[bits - 2]))
+                            if ((val->ival & ~BitMasks[bits - 2]) != 0)
                                 return false;
                 }
                 else
                 {
-                    if (bits == 8 && (val->ival & ~mask[bits - 1]) != 0)
-                        if ((val->ival & ~mask[bits - 2]) != (~mask[bits - 2]))
+                    if (bits == 8 && (val->ival & ~BitMasks[bits - 1]) != 0)
+                        if ((val->ival & ~BitMasks[bits - 2]) != (~BitMasks[bits - 2]))
                             return false;
                 }
             }
@@ -113,7 +80,7 @@ bool InstructionParser::SetNumber(int tokenPos, int oldVal, int newVal)
     bool rv = false;
     if (tokenPos < inputTokens.size() && inputTokens[tokenPos]->type == InputToken::NUMBER)
     {
-        val = inputTokens[tokenPos]->val;
+        val = (AsmExprNode*)inputTokens[tokenPos]->val;
         bool isConst = val->IsAbsolute();
         if (isConst)
         {
@@ -129,6 +96,7 @@ bool InstructionParser::SetNumber(int tokenPos, int oldVal, int newVal)
     }
     return rv;
 }
+
 void InstructionParser::SetATT(bool att)
 {
     attSyntax = att;
@@ -191,7 +159,7 @@ bool InstructionParser::MatchesOpcode(std::string opcode)
     }
     return false;
 }
-std::map<std::string, int>::iterator InstructionParser::GetOpcode(const std::string& opcode, int& size1, int& size2)
+std::unordered_map<std::string, int>::iterator InstructionParser::GetOpcode(const std::string& opcode, int& size1, int& size2)
 {
     size1 = size2 = 0;
     auto it = opcodeTable.find(opcode);
@@ -322,8 +290,8 @@ Instruction* InstructionParser::Parse(const std::string& args, int PC)
         auto rv = DispatchOpcode(-1);
         if (rv == AERR_NONE)
         {
-            unsigned char buf[32];
-            bits.GetBytes(buf, 32);
+            unsigned char buf[64];
+            bits.GetBytes(buf, (bits.GetBits() + 7) / 8);
             return new Instruction(buf, (bits.GetBits() + 7) / 8);
         }
     }
@@ -362,7 +330,7 @@ Instruction* InstructionParser::Parse(const std::string& args, int PC)
                     {
                         if (operand->used && operand->size)
                         {
-                            if (operand->node->GetType() != AsmExprNode::IVAL && operand->node->GetType() != AsmExprNode::FVAL)
+                            if (((AsmExprNode*)operand->node)->GetType() != AsmExprNode::IVAL && ((AsmExprNode*)operand->node)->GetType() != AsmExprNode::FVAL)
                             {
                                 if (s->Lost() && operand->pos)
                                     operand->pos -= 8;
@@ -370,7 +338,7 @@ Instruction* InstructionParser::Parse(const std::string& args, int PC)
                                 if (n < 0)
                                     n = -n;
                                 Fixup* f =
-                                    new Fixup(operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
+                                    new Fixup((AsmExprNode*)operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
                                 f->SetInsOffs((operand->pos + 7) / 8);
                                 f->SetFileName(errName);
                                 f->SetErrorLine(errLine);

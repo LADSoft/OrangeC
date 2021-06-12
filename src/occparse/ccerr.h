@@ -1,27 +1,28 @@
 #pragma once
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
+
 #define ERR_UNKNOWN 0
 #define ERR_TOO_MANY_ERRORS 1
 #define ERR_CONSTTOOLARGE 2
@@ -437,7 +438,7 @@
 #define ERR_INCORRECT_ARGS_PASSED_TO_TEMPLATE 411
 #define ERR_TEMPLATE_CANT_INSTANTIATE_NOT_DEFINED 412
 #define ERR_NO_TEMPLATE_MATCHES 413
-#define ERR_NEED_SPECIALIZATION_PARAMETERS 414
+#define ERR_NEED_TEMPLATE_ARGUMENTS 414
 #define ERR_INVALID_TEMPLATE_PARAMETER 415
 #define ERR_BODY_ALREADY_DEFINED_FOR_FUNCTION 416
 #define ERR_INVALID_EXPLICIT_SPECIALIZATION 417
@@ -528,6 +529,14 @@
 #define ERR_ATTRIBUTE_DOES_NOT_EXIST 502
 #define ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE 503
 #define ERR_STATIC_FUNCTION_USED_BUT_NOT_DEFINED 504
+#define ERR_REFERENCED_IN_INSTANTIATION 505
+#define ERR_TYPEDEFS_CANNOT_BE_TEMPLATES 506
+#define ERR_DEPENDENT_TYPE_NEEDS_TYPENAME 507
+#define ERR_NO_TYPENAME_HERE 508
+#define ERR_FUNCTION_HAS_BODY 509
+#define ERR_STATIC_ASSERT 510
+#define ERR_UNKNOWN_TYPE_TEMPLATE_ARG 511
+
 void diag(const char* fmt, ...);
 
 namespace Parser
@@ -563,6 +572,8 @@ typedef struct vlaShim
 
 extern int diagcount;
 extern int currentErrorLine;
+extern int templateInstantiationError;
+
 extern SYMBOL* theCurrentFunc;
 extern enum e_kw skim_end[];
 extern enum e_kw skim_closepa[];
@@ -572,6 +583,7 @@ extern enum e_kw skim_closebr[];
 extern enum e_kw skim_comma[];
 extern enum e_kw skim_colon[];
 extern enum e_kw skim_templateend[];
+extern std::deque<std::tuple<const char*, int, SYMBOL*>> instantiationList;
 
 void DisableWarning(int num);
 void EnableWarning(int num);
@@ -608,9 +620,9 @@ void errorstringtype(int err, char* str, TYPE* tp1);
 void errortype(int err, TYPE* tp1, TYPE* tp2);
 void errorabstract(int error, SYMBOL* sp);
 void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp);
-void errskim(LEXEME** lex, enum e_kw* skimlist);
-void skip(LEXEME** lex, enum e_kw kw);
-bool needkw(LEXEME** lex, enum e_kw kw);
+void errskim(LEXLIST** lex, enum e_kw* skimlist, bool assumeTemplate = false);
+void skip(LEXLIST** lex, enum e_kw kw);
+bool needkw(LEXLIST** lex, enum e_kw kw);
 void specerror(int err, const char* name, const char* file, int line);
 void unmarkGotos(VLASHIM* shim);
 void checkGotoPastVLA(STATEMENT* stmt, bool first);
@@ -619,4 +631,6 @@ void checkUnused(HASHTABLE* syms);
 void findUnusedStatics(NAMESPACEVALUELIST* nameSpace);
 void assignmentUsages(EXPRESSION* node, bool first);
 void checkDefaultArguments(SYMBOL* spi);
+void EnterInstantiation(LEXLIST* lex, SYMBOL *sp);
+void LeaveInstantiation();
 }  // namespace Parser

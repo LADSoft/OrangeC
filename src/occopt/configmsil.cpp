@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /*
@@ -35,6 +35,7 @@
 #include "../occparse/winmode.h"
 #include "config.h"
 #include "ildata.h"
+#include "optmodules.h"
 
 namespace Optimizer
 {
@@ -128,6 +129,7 @@ static ARCH_SIZING sizes = {
     0,                    /*char a_fcomplexpad;*/
     0,                    /*char a_rcomplexpad;*/
     2,                    /*char a_lrcomplexpad;*/
+    0,                    // char a_alignedstruct; // __attribute((__aligned__))
 };
 static ARCH_SIZING alignments = {
     1, /*char a_bool;*/
@@ -147,6 +149,7 @@ static ARCH_SIZING alignments = {
     4, /*char a_float;*/
     8, /*char a_double;*/
     8, /*char a_longdouble;*/
+    8,                    // char a_alignedstruct; // __attribute((__aligned__))
 };
 static ARCH_SIZING locks = {
     0, /*char a_bool; */
@@ -169,6 +172,7 @@ static ARCH_SIZING locks = {
     1,                  /*char a_fcomplexpad; */
     1,                  /*char a_rcomplexpad; */
     1,                  /*char a_lrcomplexpad; */
+    0,                    // char a_alignedstruct; // __attribute((__aligned__))
 };
 static ARCH_FLOAT aflt = {-126, 126, 128, 24};
 static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};
@@ -197,7 +201,7 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     0,                                                                            /* register list for regs used in fastcall */
 
     OPT_REVERSESTORE | OPT_REVERSEPARAM | OPT_ARGSTRUCTREF | OPT_EXPANDSWITCH | OPT_THUNKRETVAL, /* preferred optimizations */
-    DO_NOGLOBAL | DO_NOLOCAL | DO_NOREGALLOC | DO_NOADDRESSINIT | DO_NOPARMADJSIZE | DO_NOLOADSTACK | DO_NOENTRYIF |
+    DO_NOGLOBAL | DO_NOLOCAL | DO_NOREGALLOC | DO_NOADDRESSINIT | DO_NOPARMADJSIZE | DO_NOLOADSTACK | DO_NOENTRYIF | DO_NOALIAS |
         DO_NOOPTCONVERSION | DO_NOINLINE | DO_UNIQUEIND | DO_NOFASTDIV | DO_NODEADPUSHTOTEMP | DO_MIDDLEBITS | DO_NOBRANCHTOBRANCH | DO_NOMULTOSHIFT,
     /* optimizations we don't want */
     EO_RETURNASERR,    /* error options */

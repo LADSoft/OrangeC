@@ -67,3 +67,7 @@ cc386.exe: $(list)
 	netlink /occ386.exe @&&|
 $(list)
 |
+
+clean:
+	del *.ilo
+	del *.exe

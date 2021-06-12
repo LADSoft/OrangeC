@@ -1,22 +1,22 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,20 +24,21 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *
+ *     
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #ifndef __STDATOMIC_H
 #define __STDATOMIC_H
 
-#ifdef __cplusplus
+
+#if defined(__cplusplus) && !defined(_LIBCPP_BUILDING_LIBRARY)
 #    pragma error \
         "This header uses C11 and greater constructs at this time, this error is to inform you of this so you understand why it breaks instantly"
 #endif
@@ -54,15 +55,17 @@
 #    include <stdint.h>
 #endif
 
+#ifndef RC_INVOKED
 typedef enum memory_order
 {
-    memory_order_relaxed = 1,
+    memory_order_relaxed,
     memory_order_consume,
     memory_order_acquire,
     memory_order_release,
     memory_order_acq_rel,
     memory_order_seq_cst
 } memory_order;
+#endif
 
 #define ATOMIC_BOOL_LOCK_FREE 1
 #define ATOMIC_CHAR_LOCK_FREE 1
@@ -75,11 +78,12 @@ typedef enum memory_order
 #define ATOMIC_LLONG_LOCK_FREE 1
 #define ATOMIC_POINTER_LOCK_FREE 1
 
+#ifndef RC_INVOKED
 typedef struct atomic_flag
 {
     unsigned char __f__;
 } atomic_flag;
-
+#endif
 #define atomic_is_lock_free(A) \
     _Generic(A, \
     struct atomic_flag: 1, \
@@ -119,6 +123,8 @@ typedef struct atomic_flag
     }
 #define ATOMIC_VAR_INIT(x) __atomic_var_init(x)
 
+#ifndef RC_INVOKED
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -130,7 +136,7 @@ extern "C"
     unsigned char _RTL_FUNC atomic_flag_test_and_set_explicit(atomic_flag*, int);
     void _RTL_FUNC atomic_flag_clear(atomic_flag*);
     void _RTL_FUNC atomic_flag_clear_explicit(atomic_flag*, int);
-
+#endif
 #ifdef __cplusplus
 }
 #endif
@@ -145,6 +151,7 @@ extern "C"
 
 #define __ATOMIC_TYPE__(__x__, __y__) typedef _Atomic(__x__) __y__;
 
+#ifndef RC_INVOKED
 __ATOMIC_TYPE__(unsigned char, atomic_bool);
 __ATOMIC_TYPE__(void*, atomic_address);
 __ATOMIC_TYPE__(char, atomic_char);
@@ -183,7 +190,7 @@ __ATOMIC_TYPE__(size_t, atomic_size_t);
 __ATOMIC_TYPE__(ptrdiff_t, atomic_ptrdiff_t);
 __ATOMIC_TYPE__(intmax_t, atomic_intmax_t);
 __ATOMIC_TYPE__(uintmax_t, atomic_uintmax_t);
-
+#endif
 #define kill_dependency(y) __kill_dependency(y)
 
 #define atomic_init(__a__, __v__) __atomic_var_init(__v__, __a__)
@@ -196,9 +203,9 @@ __ATOMIC_TYPE__(uintmax_t, atomic_uintmax_t);
 
 #define atomic_store_explicit(__a__, __m__, __x__) __atomic_store(__a__, __m__, __x__)
 
-#define atomic_exchange(__a__, __m__) __atomic_modify(__a__, =, __m__, memory_order_seq_cst)
+#define atomic_exchange(__a__, __m__) __atomic_fetch_modify(__a__, =, __m__, memory_order_seq_cst)
 
-#define atomic_exchange_explicit(__a__, __m__, __x__) __atomic_modify(__a__, =, __m__, __x__)
+#define atomic_exchange_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, =, __m__, __x__)
 
 #define atomic_compare_exchange_strong(__a__, __e__, __m__) \
     __atomic_cmpswp(__a__, __e__, __m__, memory_order_seq_cst, memory_order_seq_cst)
@@ -211,24 +218,24 @@ __ATOMIC_TYPE__(uintmax_t, atomic_uintmax_t);
 
 #define atomic_compare_exchange_weak_explicit(__a__, __e__, __m__, __x__, __y__) __atomic_cmpswp(__a__, __e__, __m__, __x__, __y__)
 
-#define atomic_fetch_add_explicit(__a__, __m__, __x__) __atomic_modify(__a__, +=, __m__, __x__)
+#define atomic_fetch_add_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, +=, __m__, __x__)
 
-#define atomic_fetch_add(__a__, __m__) __atomic_modify(__a__, +=, __m__, memory_order_seq_cst)
+#define atomic_fetch_add(__a__, __m__) __atomic_fetch_modify(__a__, +=, __m__, memory_order_seq_cst)
 
-#define atomic_fetch_sub_explicit(__a__, __m__, __x__) __atomic_modify(__a__, -=, __m__, __x__)
+#define atomic_fetch_sub_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, -=, __m__, __x__)
 
-#define atomic_fetch_sub(__a__, __m__) __atomic_modify(__a__, -=, __m__, memory_order_seq_cst)
+#define atomic_fetch_sub(__a__, __m__) __atomic_fetch_modify(__a__, -=, __m__, memory_order_seq_cst)
 
-#define atomic_fetch_or_explicit(__a__, __m__, __x__) __atomic_modify(__a__, |=, __m__, __x__)
+#define atomic_fetch_or_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, |=, __m__, __x__)
 
-#define atomic_fetch_or(__a__, __m__) __atomic_modify(__a__, |=, __m__, memory_order_seq_cst)
+#define atomic_fetch_or(__a__, __m__) __atomic_fetch_modify(__a__, |=, __m__, memory_order_seq_cst)
 
-#define atomic_fetch_and_explicit(__a__, __m__, __x__) __atomic_modify(__a__, &=, __m__, __x__)
+#define atomic_fetch_and_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, &=, __m__, __x__)
 
-#define atomic_fetch_and(__a__, __m__) __atomic_modify(__a__, &=, __m__, memory_order_seq_cst)
+#define atomic_fetch_and(__a__, __m__) __atomic_fetch_modify(__a__, &=, __m__, memory_order_seq_cst)
 
-#define atomic_fetch_xor_explicit(__a__, __m__, __x__) __atomic_modify(__a__, ^=, __m__, __x__)
+#define atomic_fetch_xor_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, ^=, __m__, __x__)
 
-#define atomic_fetch_xor(__a__, __m__) __atomic_modify(__a__, ^=, __m__, memory_order_seq_cst)
+#define atomic_fetch_xor(__a__, __m__) __atomic_fetch_modify(__a__, ^=, __m__, memory_order_seq_cst)
 
 #endif

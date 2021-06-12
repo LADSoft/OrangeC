@@ -100,6 +100,8 @@
 #define POSIX_MADV_WILLNEED 3   /* [MC1] will need these pages */
 #define POSIX_MADV_DONTNEED 4   /* [MC1] dont need these pages */
 
+#ifndef RC_INVOKED
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -130,6 +132,7 @@ extern "C"
 
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif /* !_SYS_MMAN_H_ */

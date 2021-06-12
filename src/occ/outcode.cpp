@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include <stdio.h>
@@ -40,6 +40,7 @@
 #include "ObjLineNo.h"
 #include "dbgtypes.h"
 #include <map>
+#include <unordered_map>
 #include <set>
 #include <deque>
 #include "config.h"
@@ -54,17 +55,6 @@
 #include "memory.h"
 #include "outcode.h"
 
-#if 0
-#    include <new>
-void * operator new(std::size_t n) throw(std::bad_alloc)
-{
-    return (void *)Alloc(n);
-}
-void operator delete(void * p) throw()
-{
-    // noop
-}
-#endif
 #define FULLVERSION
 
 extern void adjustUsesESP();
@@ -74,7 +64,7 @@ namespace occx86
 static Section* currentSection;
 
 static const char* segnames[] = {0,         "code",     "data",     "bss",        "string",     "const",
-                                 "tls",     "cstartup", "crundown", "tlsstartup", "tlsrundown", "codefix",
+                                 "tls",     "cstartup", "crundown", "tstartup", "trundown", "codefix",
                                  "datafix", "lines",    "types",    "symbols",    "browse"};
 
 static int segAlignsDefault[] = {1, 2, 8, 8, 2, 8, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
@@ -110,10 +100,10 @@ static std::map<int, Label*> labelMap;
 
 static std::vector<Optimizer::SimpleSymbol*> autotab;
 static std::vector<Label*> strlabs;
-static std::map<std::string, Label*> lblpubs;
-static std::map<std::string, Label*> lbllabs;
-static std::map<std::string, Label*> lblExterns;
-static std::map<std::string, Label*> lblvirt;
+static std::unordered_map<std::string, Label*> lblpubs;
+static std::unordered_map<std::string, Label*> lbllabs;
+static std::unordered_map<std::string, Label*> lblExterns;
+static std::unordered_map<std::string, Label*> lblvirt;
 static std::vector<Section*> virtuals;
 static std::map<Section*, Optimizer::SimpleSymbol*> virtualSyms;
 
@@ -139,7 +129,7 @@ static std::vector<Optimizer::SimpleSymbol*> impfuncs;
 static std::vector<Optimizer::SimpleSymbol*> expfuncs;
 static std::vector<std::string> includelibs;
 
-static std::map<std::string, ObjSection*> objSectionsByName;
+static std::unordered_map<std::string, ObjSection*> objSectionsByName;
 static std::map<int, ObjSection*> objSectionsByNumber;
 
 static std::map<int, ObjSourceFile*> sourceFiles;
@@ -439,7 +429,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                 if (Optimizer::cparams.prm_debug)
                     s1->SetBaseType(types.Put(e->tp));
                 int resolved = 0;
-                Optimizer::SimpleExpression* exp = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+                Optimizer::SimpleExpression* exp = Allocate<Optimizer::SimpleExpression>();
                 exp->type = Optimizer::se_auto;
                 exp->sp = e;
                 s1->SetOffset(new ObjExpression(resolveoffset(exp, &resolved)));
@@ -560,8 +550,8 @@ void output_obj_file(void)
 
 void compile_start(char* name)
 {
-    Optimizer::LIST* newItem = (Optimizer::LIST*)(Optimizer::LIST*)beGlobalAlloc(sizeof(Optimizer::LIST));
-    newItem->data = beGlobalAlloc(strlen(name) + 1);
+    Optimizer::LIST* newItem = beGlobalAllocate<Optimizer::LIST>();
+    newItem->data = beGlobalAllocate<char>(strlen(name) + 1);
     strcpy((char*)newItem->data, name);
 
     oa_ini();
@@ -873,7 +863,7 @@ void outcode_end_virtual_seg(Optimizer::SimpleSymbol* sym) { outcode_enterseg(oa
 void InsertAttrib(ATTRIBDATA* ad) { InsertInstruction(new Instruction(ad)); }
 void InsertLine(Optimizer::LINEDATA* linedata)
 {
-    ATTRIBDATA* attrib = (ATTRIBDATA*)Alloc(sizeof(ATTRIBDATA));
+    ATTRIBDATA* attrib = Allocate<ATTRIBDATA>();
     attrib->type = e_ad_linedata;
     attrib->v.ld = linedata;
     InsertAttrib(attrib);
@@ -882,7 +872,7 @@ void InsertVarStart(Optimizer::SimpleSymbol* sym)
 {
     if (!strstr(sym->name, "++"))
     {
-        ATTRIBDATA* attrib = (ATTRIBDATA*)Alloc(sizeof(ATTRIBDATA));
+        ATTRIBDATA* attrib = Allocate<ATTRIBDATA>();
         attrib->type = e_ad_vardata;
         attrib->v.sp = sym;
 
@@ -895,7 +885,7 @@ void InsertFunc(Optimizer::SimpleSymbol* sym, int start)
 {
     if (oa_currentSeg == Optimizer::virtseg)
     {
-        ATTRIBDATA* attrib = (ATTRIBDATA*)Alloc(sizeof(ATTRIBDATA));
+        ATTRIBDATA* attrib = Allocate<ATTRIBDATA>();
         attrib->type = e_ad_vfuncdata;
         attrib->v.section = currentSection;
         attrib->start = !!start;
@@ -903,7 +893,7 @@ void InsertFunc(Optimizer::SimpleSymbol* sym, int start)
     }
     else
     {
-        ATTRIBDATA* attrib = (ATTRIBDATA*)Alloc(sizeof(ATTRIBDATA));
+        ATTRIBDATA* attrib = Allocate<ATTRIBDATA>();
         attrib->type = e_ad_funcdata;
         attrib->v.sp = sym;
         attrib->start = !!start;
@@ -912,7 +902,7 @@ void InsertFunc(Optimizer::SimpleSymbol* sym, int start)
 }
 void InsertBlock(int start)
 {
-    ATTRIBDATA* attrib = (ATTRIBDATA*)Alloc(sizeof(ATTRIBDATA));
+    ATTRIBDATA* attrib = Allocate<ATTRIBDATA>();
     attrib->type = e_ad_blockdata;
     attrib->start = !!start;
     InsertAttrib(attrib);
@@ -937,15 +927,15 @@ void AddFixup(Instruction* newIns, OCODE* ins, const std::list<Numeric*>& operan
         for (auto operand : operands)
         {
             if (operand->used && operand->size &&
-                (operand->node->GetType() == AsmExprNode::LABEL || operand->node->GetType() == AsmExprNode::SUB ||
-                 operand->node->GetType() == AsmExprNode::ADD))
+                (((AsmExprNode*)operand->node)->GetType() == AsmExprNode::LABEL || ((AsmExprNode*)operand->node)->GetType() == AsmExprNode::SUB ||
+                 ((AsmExprNode*)operand->node)->GetType() == AsmExprNode::ADD))
             {
                 if (newIns->Lost() && operand->pos)
                     operand->pos -= 8;
                 int n = operand->relOfs;
                 if (n < 0)
                     n = -n;
-                Fixup* f = new Fixup(operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
+                Fixup* f = new Fixup((AsmExprNode*)operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
                 f->SetInsOffs((operand->pos + 7) / 8);
                 newIns->Add(f);
             }

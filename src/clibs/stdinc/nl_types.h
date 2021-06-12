@@ -12,6 +12,7 @@
 
 #define MB_CUR_MAX_L(a) MB_CUR_MAX
 
+#ifndef RC_INVOKED
 #ifdef __cplusplus
 extern "C"
 {
@@ -146,7 +147,7 @@ extern "C"
         return mbsnrtowcs(__dst, __src, nms, __len, __ps);
     }
 
-    inline size_t strftime_l(char* ZSTR restrict __s, size_t __maxsize, char* ZSTR restrict __fmt, const struct tm* restrict __t,
+    inline size_t strftime_l(char* ZSTR restrict __s, size_t __maxsize, const char* ZSTR restrict __fmt, const struct tm* restrict __t,
                              locale_t larg)
     {
         return strftime(__s, __maxsize, __fmt, __t);
@@ -154,6 +155,8 @@ extern "C"
     inline struct lconv* localeconv_l(locale_t larg) { return localeconv(); }
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 #endif

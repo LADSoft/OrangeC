@@ -1,22 +1,22 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *
+ *     
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /*  string.h
@@ -52,6 +52,7 @@ extern "C"
 {
 #endif
 
+#ifndef RC_INVOKED
     int _RTL_INTRINS _IMPORT bcmp(const void*, const void*, size_t);
 
     void _RTL_INTRINS _IMPORT bcopy(const void*, void*, size_t);
@@ -81,6 +82,9 @@ extern "C"
     size_t _RTL_FUNC _IMPORT strcspn(const char* ZSTR __s1, const char* ZSTR __s2);
     char* _RTL_FUNC _IMPORT strdup(const char* ZSTR __src);
     char* _RTL_FUNC _IMPORT strerror(int __errnum);
+    char* _RTL_FUNC _IMPORT _strerror(const char* ZSTR msg);
+    errno_t _RTL_FUNC _IMPORT strerror_s(char* ZSTR buf, size_t size, errno_t __errnum);
+    errno_t _RTL_FUNC _IMPORT _strerror_s(char* ZSTR buf, size_t size, const char* ZSTR msg);
     size_t _RTL_INTRINS _IMPORT strlen(const char* ZSTR __s);
     char* _RTL_INTRINS _IMPORT strncat(char* ZSTR restrict __dest, const char* ZSTR restrict __src, size_t __maxlen);
     int _RTL_INTRINS _IMPORT strncmp(const char* ZSTR __s1, const char* ZSTR __s2, size_t __maxlen);
@@ -127,6 +131,7 @@ extern "C"
     char* _RTL_FUNC _IMPORT _strlwr(char* ZSTR);
     char* _RTL_FUNC _IMPORT _strupr(char* ZSTR);
 
+#endif
 #if defined(__USELOCALES__)
 #    define strupr _lstrupr
 #    define strlwr _lstrlwr

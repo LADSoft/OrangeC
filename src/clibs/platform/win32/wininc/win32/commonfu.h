@@ -16,7 +16,7 @@
    modify it under the terms of the GNU Library General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+   
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -229,10 +229,40 @@ extern "C"
     extern VOID PASCAL WINBASEAPI FatalExit(int ExitCode);
 
     extern VOID PASCAL WINBASEAPI RaiseException(DWORD dwExceptionCode, DWORD dwExceptionFlags, DWORD nNumberOfArguments,
-                                                 CONST DWORD* lpArguments);
+                                                 CONST ULONG_PTR* lpArguments);
 
     extern VOID PASCAL WINBASEAPI RtlUnwind(PVOID TargetFrame, PVOID TargetIp, PEXCEPTION_RECORD ExceptionRecord,
                                             PVOID ReturnValue);
+
+    extern PEXCEPTION_ROUTINE PASCAL WINBASEAPI RtlVirtualUnwind(
+     DWORD HandlerType,
+     DWORD ImageBase,
+     DWORD ControlPc,
+     PRUNTIME_FUNCTION FunctionEntry,
+     PCONTEXT ContextRecord,
+     PVOID* HandlerData,
+     PDWORD EstablisherFrame,
+     PKNONVOLATILE_CONTEXT_POINTERS ContextPointers
+    );
+    extern PRUNTIME_FUNCTION PASCAL WINBASEAPI RtlLookupFunctionEntry(
+     ULONG_PTR ControlPc,
+     PDWORD ImageBase,
+     PUNWIND_HISTORY_TABLE HistoryTable
+    );
+
+    extern VOID __cdecl WINBASEAPI RtlRestoreContext(
+     PCONTEXT ContextRecord,
+     struct _EXCEPTION_RECORD* ExceptionRecord
+    );
+
+    extern VOID PASCAL WINBASEAPI RtlUnwindEx(
+     PVOID TargetFrame,
+     PVOID TargetIp,
+     PEXCEPTION_RECORD ExceptionRecord,
+     PVOID ReturnValue,
+     PCONTEXT ContextRecord,
+     PUNWIND_HISTORY_TABLE HistoryTable
+    );
 
     extern LONG PASCAL WINBASEAPI UnhandledExceptionFilter(struct _EXCEPTION_POINTERS* ExceptionInfo);
 
@@ -2134,6 +2164,115 @@ extern WINBOOL PASCAL WINBASEAPI ActivateKeyboardLayout(HKL hkl, UINT Flags);
 
     extern WINBOOL PASCAL WINBASEAPI GetFileAttributesExA(LPCSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId,
                                                           LPVOID lpFileInformation);
+
+
+typedef
+BOOL
+(WINAPI *PINIT_ONCE_FN) (
+    PINIT_ONCE InitOnce,
+    PVOID Parameter,
+    PVOID *Context
+    );
+
+typedef
+void
+(WINAPI *PFLS_CALLBACK_FUNCTION) (
+    PVOID lpFlsData
+    );
+
+WINAPI PASCAL void AcquireSRWLockExclusive(
+  PSRWLOCK SRWLock
+);
+
+WINAPI PASCAL void AcquireSRWLockShared(
+  PSRWLOCK SRWLock
+);
+
+
+WINAPI PASCAL void InitializeSRWLock(
+  PSRWLOCK SRWLock
+);
+
+
+WINAPI PASCAL void ReleaseSRWLockExclusive(
+  PSRWLOCK SRWLock
+);
+
+
+WINAPI PASCAL void ReleaseSRWLockShared(
+  PSRWLOCK SRWLock
+);
+
+
+
+WINAPI PASCAL BOOL SleepConditionVariableSRW(
+  PCONDITION_VARIABLE ConditionVariable,
+  PSRWLOCK            SRWLock,
+  DWORD               dwMilliseconds,
+  ULONG               Flags
+);
+
+
+WINAPI PASCAL BOOLEAN TryAcquireSRWLockExclusive(
+  PSRWLOCK SRWLock
+);
+
+
+WINAPI PASCAL BOOLEAN TryAcquireSRWLockShared(
+  PSRWLOCK SRWLock
+);
+
+WINAPI PASCAL void InitializeConditionVariable(
+  PCONDITION_VARIABLE ConditionVariable
+);
+WINAPI PASCAL BOOL SleepConditionVariableCS(
+  PCONDITION_VARIABLE ConditionVariable,
+  PCRITICAL_SECTION   CriticalSection,
+  DWORD               dwMilliseconds
+);
+WINAPI PASCAL BOOL SleepConditionVariableSRW(
+  PCONDITION_VARIABLE ConditionVariable,
+  PSRWLOCK            SRWLock,
+  DWORD               dwMilliseconds,
+  ULONG               Flags
+);
+WINAPI PASCAL void WakeAllConditionVariable(
+  PCONDITION_VARIABLE ConditionVariable
+);
+WINAPI PASCAL void WakeConditionVariable(
+  PCONDITION_VARIABLE ConditionVariable
+);
+WINAPI PASCAL BOOL InitOnceExecuteOnce(
+  PINIT_ONCE    InitOnce,
+  PINIT_ONCE_FN InitFn,
+  PVOID         Parameter,
+  LPVOID        *Context
+);
+
+WINAPI PASCAL DWORD GetThreadId(
+  HANDLE Thread
+);
+WINAPI PASCAL BOOL SwitchToThread();
+
+WINAPI PASCAL DWORD FlsAlloc(
+  PFLS_CALLBACK_FUNCTION lpCallback
+);
+
+WINAPI PASCAL BOOL FlsFree(
+  DWORD dwFlsIndex
+);
+
+WINAPI PASCAL PVOID FlsGetValue(
+  DWORD dwFlsIndex
+);
+
+WINAPI PASCAL BOOL FlsSetValue(
+  DWORD dwFlsIndex,
+  PVOID lpFlsData
+);
+
+WINAPI PASCAL BOOL IsThreadAFiber();
+
 
 #    ifdef __cplusplus
 }

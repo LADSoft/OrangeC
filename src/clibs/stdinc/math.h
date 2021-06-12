@@ -1,22 +1,22 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *
+ *     
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /*  math.h
@@ -54,12 +54,56 @@
 #endif
 
 #ifdef __cplusplus
+#include <limits>
+#ifdef __cplusplus
+    bool _RTL_FUNC _IMPORTMM fpclassify(float x);
+
+    bool _RTL_FUNC _IMPORTMM isfinite(float x);
+    bool _RTL_FUNC _IMPORTMM isinf(float x);
+    bool _RTL_FUNC _IMPORTMM isnan(float x);
+    bool _RTL_FUNC _IMPORTMM isnormal(float x);
+
+    bool _RTL_FUNC _IMPORTMM isgreater(float x, float y);
+    bool _RTL_FUNC _IMPORTMM isgreaterequal(float x, float y);
+    bool _RTL_FUNC _IMPORTMM isless(float x, float y);
+    bool _RTL_FUNC _IMPORTMM islessequal(float x, float y);
+    bool _RTL_FUNC _IMPORTMM islessgreater(float x, float y);
+    bool _RTL_FUNC _IMPORTMM isunordered(float x, float y);
+    bool _RTL_FUNC _IMPORTMM fpclassify(double x);
+
+    bool _RTL_FUNC _IMPORTMM isfinite(double x);
+    bool _RTL_FUNC _IMPORTMM isinf(double x);
+    bool _RTL_FUNC _IMPORTMM isnan(double x);
+    bool _RTL_FUNC _IMPORTMM isnormal(double x);
+
+    bool _RTL_FUNC _IMPORTMM isgreater(double x, double y);
+    bool _RTL_FUNC _IMPORTMM isgreaterequal(double x, double y);
+    bool _RTL_FUNC _IMPORTMM isless(double x, double y);
+    bool _RTL_FUNC _IMPORTMM islessequal(double x, double y);
+    bool _RTL_FUNC _IMPORTMM islessgreater(double x, double y);
+    bool _RTL_FUNC _IMPORTMM isunordered(double x, double y);
+    bool _RTL_FUNC _IMPORTMM fpclassify(long double x);
+
+    bool _RTL_FUNC _IMPORTMM isfinite(long double x);
+    bool _RTL_FUNC _IMPORTMM isinf(long double x);
+    bool _RTL_FUNC _IMPORTMM isnan(long double x);
+    bool _RTL_FUNC _IMPORTMM isnormal(long double x);
+
+    bool _RTL_FUNC _IMPORTMM isgreater(long double x, long double y);
+    bool _RTL_FUNC _IMPORTMM isgreaterequal(long double x, long double y);
+    bool _RTL_FUNC _IMPORTMM isless(long double x, long double y);
+    bool _RTL_FUNC _IMPORTMM islessequal(long double x, long double y);
+    bool _RTL_FUNC _IMPORTMM islessgreater(long double x, long double y);
+    bool _RTL_FUNC _IMPORTMM isunordered(long double x, long double y);
+#endif
 extern "C"
 {
 #endif
 
 #if __STDC_VERSION__ >= 199901L
+#ifndef RC_INVOKED
     int* _RTL_FUNC _IMPORT __GetSignGam(void);
+#endif
 
 #    define signgam (*__GetSignGam())
 
@@ -67,6 +111,7 @@ extern "C"
 
 #ifndef __cplusplus
 #    if defined(__STDC_VERSION__) && __STDC_VERSION__ < 199901L
+#ifndef RC_INVOKED
     struct complex /* as used by "_cabs" function */
     {
         double x, y;
@@ -76,7 +121,7 @@ extern "C"
     {
         long double x, y;
     };
-
+#endif
 #        define cabs(z) (hypot((z).x, (z).y))
 #        define cabsl(z) (hypotl((z).x, (z).y))
 #        define _cabsl cabsl
@@ -84,6 +129,7 @@ extern "C"
 
 #    endif
 #endif
+#ifndef RC_INVOKED
     typedef enum
     {
         DOMAIN = 1, /* argument domain error -- log (-1)        */
@@ -94,6 +140,7 @@ extern "C"
         PLOSS,      /* partial loss of signif. -- not used      */
         STACKFAULT  /* floating point unit stack overflow       */
     } _mexcep;
+#endif
 
 /* Constants rounded for 21 decimals. */
 #define M_E 2.71828182845904523536
@@ -127,6 +174,8 @@ extern "C"
 #define EDOM 33   /* Math argument */
 #define ERANGE 34 /* Result too large */
 
+#ifndef RC_INVOKED
+
     typedef float float_t;
     typedef double double_t;
 
@@ -143,6 +192,7 @@ extern "C"
         char* name;
         long double arg1, arg2, retval;
     };
+#endif
 
 /* positive infinities (x86) */
 #define HUGE_VAL 0x1P+1024
@@ -150,6 +200,7 @@ extern "C"
 #define HUGE_VALL 0x1P+16384L
 #define _LHUGE_VAL HUGE_VALL
 
+#ifndef RC_INVOKED
     int _RTL_FUNC _IMPORTMM __fpclassifyf(float __x);
     int _RTL_FUNC _IMPORTMM __fpclassify(double __x);
     int _RTL_FUNC _IMPORTMM __fpclassifyl(long double __x);
@@ -163,6 +214,9 @@ extern "C"
     int _RTL_FUNC _IMPORTMM signbit(double __x);
     int _RTL_FUNC _IMPORTMM signbitl(long double __x);
     int _RTL_FUNC _IMPORTMM __nancompare(long double __x, long double __y, int type);
+
+
+#endif
 
 #    define fpclassify(x) \
         ((sizeof(x) == sizeof(float)) ? __fpclassifyf(x) : (sizeof(x) == sizeof(double)) ? __fpclassify(x) : __fpclassifyl(x))
@@ -182,6 +236,7 @@ extern "C"
 #    define isunordered(x, y) __nancompare((x), (y), 0)
 
 #endif
+#ifndef RC_INVOKED
     int _RTL_FUNC finitef(float x);
     int _RTL_FUNC finite(double x);
     int _RTL_FUNC finitel(long double x);
@@ -401,6 +456,7 @@ extern "C"
     int _matherrl(struct _exceptionl* __e);
 
     long double _RTL_FUNC _IMPORT _atold(const char* ZSTR __s);
+#endif
 #ifdef __cplusplus
 };
 #endif

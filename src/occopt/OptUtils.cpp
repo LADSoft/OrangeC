@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include <stdio.h>
@@ -174,7 +174,6 @@ int alignFromISZ(int isz)
             return 1;
     }
 }
-#ifndef PARSER_ONLY
 int needsAtomicLockFromISZ(int isz)
 {
     ARCH_SIZING* p = Optimizer::chosenAssembler->arch->type_needsLock;
@@ -271,13 +270,13 @@ Optimizer::IMODE* make_immed(int size, long long i)
             return ap;
         a = a->next;
     }
-    ap = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+    ap = Allocate<Optimizer::IMODE>();
     ap->mode = i_immed;
-    ap->offset = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    ap->offset = Allocate<Optimizer::SimpleExpression>();
     ap->offset->type = Optimizer::se_i;
     ap->offset->i = i;
     ap->size = size;
-    a = (LIST*)(LIST*)Alloc(sizeof(LIST));
+    a = Allocate<LIST>();
     a->data = ap;
     a->next = immed_list[index];
     immed_list[index] = a;
@@ -292,9 +291,9 @@ Optimizer::IMODE* make_fimmed(int size, FPF f)
  */
 
 {
-    Optimizer::IMODE* ap = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+    Optimizer::IMODE* ap = Allocate<Optimizer::IMODE>();
     ap->mode = i_immed;
-    ap->offset = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    ap->offset = Allocate<Optimizer::SimpleExpression>();
     ap->offset->type = Optimizer::se_f;
     ap->offset->f = f;
     ap->offset->sizeFromType = size;
@@ -309,9 +308,9 @@ Optimizer::IMODE* make_parmadj(long i)
  *			make a direct immediate, e.g. for parmadj
  */
 {
-    Optimizer::IMODE* ap = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+    Optimizer::IMODE* ap = Allocate<Optimizer::IMODE>();
     ap->mode = i_immed;
-    ap->offset = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    ap->offset = Allocate<Optimizer::SimpleExpression>();
     ap->offset->type = Optimizer::se_i;
     ap->offset->i = i;
     return ap;
@@ -323,13 +322,13 @@ Optimizer::SimpleExpression* tempenode(void)
 {
     Optimizer::SimpleSymbol* sym;
     char buf[256];
-    sym = (Optimizer::SimpleSymbol*)Alloc(sizeof(Optimizer::SimpleSymbol));
+    sym = Allocate<Optimizer::SimpleSymbol>();
 
     sym->storage_class = scc_temp;
     sprintf(buf, "$$t%d", tempCount);
     sym->name = sym->outputName = litlate(buf);
     sym->i = tempCount++;
-    Optimizer::SimpleExpression* rv = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    Optimizer::SimpleExpression* rv = Allocate<Optimizer::SimpleExpression>();
     rv->type = Optimizer::se_tempref;
     rv->sp = sym;
     return rv;
@@ -340,9 +339,9 @@ Optimizer::IMODE* tempreg(int size, int mode)
  */
 {
     Optimizer::IMODE* ap;
-    ap = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+    ap = Allocate<Optimizer::IMODE>();
     ap->offset = tempenode();
-    ap->offset->sp->tp = (Optimizer::SimpleType*)Alloc(sizeof(Optimizer::SimpleType));
+    ap->offset->sp->tp = Allocate<Optimizer::SimpleType>();
     ap->offset->sp->tp->type = st_i;
     ap->offset->sp->tp->size = sizeFromISZ(size);
     ap->size = size;
@@ -420,7 +419,7 @@ Optimizer::IMODE* LookupCastTemp(Optimizer::IMODE* im, int size)
         }
         if (!sh)
         {
-            sh = (CASTTEMPHASH*)Alloc(sizeof(ch));
+            sh = Allocate<CASTTEMPHASH>();
             memcpy(&sh->sf, &ch.sf, sizeof(ch.sf));
             sh->rv = tempreg(size, 0);
             sh->next = castHash[hash];
@@ -436,7 +435,7 @@ Optimizer::IMODE* LookupCastTemp(Optimizer::IMODE* im, int size)
 Optimizer::SimpleExpression* simpleExpressionNode(enum Optimizer::se_type type, Optimizer::SimpleExpression* left,
                                                   Optimizer::SimpleExpression* right)
 {
-    Optimizer::SimpleExpression* rv = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    Optimizer::SimpleExpression* rv = Allocate<Optimizer::SimpleExpression>();
     rv->type = type;
     rv->left = left;
     rv->right = right;
@@ -444,7 +443,7 @@ Optimizer::SimpleExpression* simpleExpressionNode(enum Optimizer::se_type type, 
 }
 Optimizer::SimpleExpression* simpleIntNode(enum Optimizer::se_type type, unsigned long long i)
 {
-    Optimizer::SimpleExpression* rv = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    Optimizer::SimpleExpression* rv = Allocate<Optimizer::SimpleExpression>();
     rv->type = type;
     rv->i = i;
     return rv;
@@ -468,7 +467,7 @@ Optimizer::IMODE* indnode(Optimizer::IMODE* ap1, int size)
     }
     if (ap1->bits)
     {
-        Optimizer::IMODE* ap2 = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+        Optimizer::IMODE* ap2 = Allocate<Optimizer::IMODE>();
         *ap2 = *ap1;
 
         if (ap1->mode == i_immed)
@@ -487,7 +486,7 @@ Optimizer::IMODE* indnode(Optimizer::IMODE* ap1, int size)
     {
         Optimizer::IMODE* ap2 = tempreg(ap1->size, 0);
         gen_icode(i_assn, ap2, ap1, nullptr);
-        ap1 = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+        ap1 = Allocate<Optimizer::IMODE>();
         *ap1 = *ap2;
         ap1->mode = i_ind;
         ap1->ptrsize = ap1->size;
@@ -540,14 +539,14 @@ Optimizer::IMODE* indnode(Optimizer::IMODE* ap1, int size)
             if (sym)
             {
                 Optimizer::SimpleExpression* node1 = ap1->offset;
-                ap = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+                ap = Allocate<Optimizer::IMODE>();
                 *ap = *ap1;
                 ap->offset = node1;
                 ap->retval = false;
             }
             else
             {
-                ap = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+                ap = Allocate<Optimizer::IMODE>();
                 *ap = *ap1;
                 ap->retval = false;
             }
@@ -570,7 +569,7 @@ Optimizer::IMODE* indnode(Optimizer::IMODE* ap1, int size)
                 if (sym)
                 {
                     Optimizer::IMODELIST* iml;
-                    iml = (Optimizer::IMODELIST*)Alloc(sizeof(Optimizer::IMODELIST));
+                    iml = Allocate<Optimizer::IMODELIST>();
                     iml->next = sym->imind;
                     sym->imind = iml;
                     iml->im = ap;
@@ -580,7 +579,6 @@ Optimizer::IMODE* indnode(Optimizer::IMODE* ap1, int size)
     }
     return ap;
 }
-#endif
 int pwrof2(long long i)
 /*
  *      return which power of two i is or -1.

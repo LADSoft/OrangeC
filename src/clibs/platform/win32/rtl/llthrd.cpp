@@ -1,22 +1,22 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,16 +24,15 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *
+ *     
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
-
 #include <windows.h>
 #include <errno.h>
 #include <process.h>
@@ -48,11 +47,11 @@
 #include <map>
 
 // note that some of the threading structures are dynamically added if thrd_create() isn't called directly
-// for example you use createthread or _beginthread
 // in the createthread case, such data will never get deallocated so there will be a memory leak.
-
+// for example you use createthread or _beginthread
 extern "C"
 {
+    extern char TLSINITSTART[], TLSINITEND[], TLSEXITSTART[], TLSEXITEND[];
     void __tss_run_dtors(thrd_t thrd);
     void __mtx_remove_thrd(thrd_t thrd);
     void __cnd_remove_thrd(thrd_t thrd);
@@ -61,31 +60,42 @@ extern "C"
     BOOL __stdcall GetModuleHandleExW(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule);
 #define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 4
     extern void* __hInstance;
+    void __srproc(char*, char *);
+    void __load_local_data(bool constructors);
 }
 
-extern "C" void __load_local_data(void);
 
 typedef std::map<HANDLE, std::pair<void*, void*>, std::less<HANDLE>,
-                 LocalAllocAllocator<std::pair<HANDLE, std::pair<void*, void*>>>>
+                 LocalAllocAllocator<std::pair<const HANDLE, std::pair<void*, void*>>>>
     Registered;
 
-typedef std::map<HANDLE, void*, std::less<HANDLE>, LocalAllocAllocator<std::pair<HANDLE, void*>>> HandleMap;
+typedef std::map<HANDLE, void*, std::less<HANDLE>, LocalAllocAllocator<std::pair<const HANDLE, void*>>> HandleMap;
 
-typedef std::map<int, HandleMap, std::less<int>, LocalAllocAllocator<std::pair<int, HandleMap>>> Handles;
+typedef std::map<int, HandleMap, std::less<int>, LocalAllocAllocator<std::pair<const int, HandleMap>>> Handles;
 
 static Registered* registered;
 static Handles* handles;
 
 #pragma startup thrd_init 254
 #pragma rundown thrd_end 2
+#pragma startup main_init 49
+#pragma rundown main_end 31
 
+static void main_init()
+{
+    __srproc(TLSINITSTART, TLSINITEND);
+}
+static void main_end()
+{
+    __srproc(TLSEXITSTART, TLSEXITEND);
+}
 static PASCAL unsigned char* __getTlsData(int eip, int thread)
 {
     struct __rtl_data* r = __getRtlData();
     if (!r->thread_local_data)
     {
         __ll_enter_critical();
-        __load_local_data();
+        __load_local_data(true);
         __ll_exit_critical();
     }
     HANDLE hModule;
@@ -161,6 +171,7 @@ static void RemoveLocalData(int thread)
     auto it = handles->find(thread);
     if (it != handles->end())
     {
+        __srproc(TLSEXITSTART, TLSEXITEND);
         for (auto&& h : it->second)
         {
             LocalFree(h.second);
@@ -168,13 +179,16 @@ static void RemoveLocalData(int thread)
         handles->erase(thread);
     }
 }
-extern "C" void __load_local_data(void)
+extern "C" void __load_local_data(bool constructors)
 {
     int tid;
     __asm mov eax,
         fs : [0x18]  // currentteb
              __asm mov[tid],
-             eax AddLocalData(tid);
+            eax 
+     AddLocalData(tid);
+     if (constructors)
+        __srproc(TLSINITSTART, TLSINITEND);
 }
 extern "C" void __unload_local_data(void)
 {
@@ -194,7 +208,7 @@ static void thrd_init(void)
     handles = HandlesAllocator.allocate(1);
     HandlesAllocator.construct(handles);
     __threadTlsAlloc(false);
-    __load_local_data();  // main thread
+    __load_local_data(false);  // main thread
 }
 
 static void thrd_end(void)

@@ -1,5 +1,5 @@
 @echo off
-     set PARALLEL=2
+     set PARALLEL=4
      if "%TRAVIS_OS_NAME%" NEQ "" (
         call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
      )
@@ -23,7 +23,12 @@
      if "%ORANGEC_HOME%" EQU "" (
               call c:\orangec\appveyorversion.bat
      )
-              IF "%BUILD_PROFILE%" EQU "OCCIL" (
+              IF "%BUILD_PROFILE%" EQU "OCCIL" goto occil
+              IF "%BUILD_PROFILE%" EQU "MSDEBUGBUILD" goto msdebugbuild
+              IF "%BUILD_PROFILE%" EQU "CODEANALYZER" goto codeanalyzer
+              IF "%BUILD_PROFILE%" NEQ "TEST" goto normal
+              goto error
+:occil
                   REM  alternate build with OCCIL
                   c:\orangec\temp\omake /DCOMPILER=CLANG fullbuild -j:%PARALLEL%
                   IF %ERRORLEVEL% NEQ 0 (
@@ -44,8 +49,7 @@
                   cd ..\src
                   echo succeeded
                   goto done
-              )
-              IF "%BUILD_PROFILE%" EQU "MSDEBUGBUILD" (
+:msdebugbuild
                   REM  Build with Microsoft PDB files
                   c:\orangec\temp\omake /DCOMPILER=MS /DMSPDB=%MSPDB% fullbuild
                   IF %ERRORLEVEL% NEQ 0 (
@@ -54,8 +58,7 @@
                   cd ..\src
                   echo succeeded
                   goto done
-              )
-              IF "%BUILD_PROFILE%" EQU "CODEANALYZER" (
+:codeanalyzer
                   REM  Build to test code analyzer
                   c:\orangec\temp\omake /DCOMPILER=MS fullbuild
                   IF %ERRORLEVEL% NEQ 0 (
@@ -75,8 +78,7 @@
                   cd ..\..\src
                   echo succeeded
                   goto done
-              )
-              IF "%BUILD_PROFILE%" NEQ "TEST" (
+:normal
                   REM  Primary build for Orange C
                   c:\orangec\temp\omake /DCOMPILER=%BUILD_PROFILE% /DORANGEC_ONLY=YES fullbuild -j:%PARALLEL%
                   IF %ERRORLEVEL% NEQ 0 (
@@ -110,7 +112,7 @@
                   )
                   if "%TRAVIS_OS_NAME%" EQU "" (
                       cd ..\tests
-                      omake -B /DCOMPILER=OCC
+                      omake -B -j:%PARALLEL% /DCOMPILER=OCC
                       IF %ERRORLEVEL% NEQ 0 (
                           goto error;
                       )
@@ -122,7 +124,6 @@
                   )
                   echo succeeded
                   goto done
-             )
 :error
      echo failed
      goto done

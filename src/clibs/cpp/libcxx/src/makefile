@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -33,8 +33,8 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
-ASM_DEPENDENCIES = $(wildcard 386/*.nas)
 CPP_DEPENDENCIES = $(wildcard *.cpp)
-EXCLUDE = optional.o
-all: $(DEPENDENCIES)
+H_FILES=$(wildcard *.h)
 
+all: $(DEPENDENCIES)
+$(eval $(FORMATTER))

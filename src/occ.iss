@@ -66,8 +66,10 @@ Source: "C:\orangec\bin\lsmsilcrtl.dll"; DestDir: "{app}\bin\"; Flags: IgnoreVer
 Source: "C:\orangec\help\*.*"; DestDir: "{app}\help\"; Flags: IgnoreVersion; Components: main
 ;Source: "C:\orangec\rule\*.rul"; DestDir: "{app}\rule\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\include\*.*"; DestDir: "{app}\include\"; Flags: IgnoreVersion; Components: main
-Source: "C:\orangec\include\sys\*.*"; DestDir: "{app}\include\sys"; Flags: IgnoreVersion; Components: main
-Source: "C:\orangec\include\win32\*.*"; DestDir: "{app}\include\win32\"; Flags: IgnoreVersion; Components: main
+Source: "C:\orangec\include\c\sys\*.*"; DestDir: "{app}\include\c\sys"; Flags: IgnoreVersion; Components: main
+Source: "C:\orangec\include\c\*.*"; DestDir: "{app}\include\c"; Flags: IgnoreVersion; Components: main
+Source: "C:\orangec\include\c\win32\*.*"; DestDir: "{app}\include\c\win32\"; Flags: IgnoreVersion; Components: main
+Source: "C:\orangec\include\support\win32\*.*"; DestDir: "{app}\include\support\win32\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\lib\*.*"; DestDir: "{app}\lib\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\lib\startup\*.*"; DestDir: "{app}\lib\startup\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\doc\*.*"; DestDir: "{app}\doc\"; Flags: IgnoreVersion; Components: main

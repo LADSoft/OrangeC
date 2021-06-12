@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -147,10 +147,8 @@ bool Parser::ProcessorParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void
     }
     return true;
 }
-bool Parser::ProcessorParser::VisitNode(xmlNode& node, xmlNode* child, void* userData) { return true; }
-bool Parser::CodingParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData) { return true; }
-bool Parser::CodingParser::VisitNode(xmlNode& node, xmlNode* child, void* userData)
-{
+bool Parser::ProcessorParser::VisitNode(xmlNode& node, xmlNode* child, void* userData) 
+{ 
     Parser* parser = (Parser*)userData;
     if (child->GetName() == "Param")
     {
@@ -161,7 +159,13 @@ bool Parser::CodingParser::VisitNode(xmlNode& node, xmlNode* child, void* userDa
         child->Visit(p, &x);
         parser->parameters[x.name] = x.value;
     }
-    else if (child->GetName() == "Number")
+    return true; 
+}
+bool Parser::CodingParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData) { return true; }
+bool Parser::CodingParser::VisitNode(xmlNode& node, xmlNode* child, void* userData)
+{
+    Parser* parser = (Parser*)userData;
+    if (child->GetName() == "Number")
     {
         CodingNumberParser p;
         Number* number = new Number;
@@ -239,7 +243,7 @@ bool Parser::CodingParamParser::VisitNode(xmlNode& node, xmlNode* child, void* u
 bool Parser::CodingNumberParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
     Number* number = (Number*)userData;
-    if (attrib->GetName() == "Name")
+    if (attrib->GetName() == "Class")
     {
         number->name = attrib->GetValue();
     }
@@ -312,7 +316,7 @@ bool Parser::CodingStateParser ::VisitAttrib(xmlNode& node, xmlAttrib* attrib, v
 bool Parser::CodingStateParser ::VisitNode(xmlNode& node, xmlNode* child, void* userData)
 {
     State* s = (State*)userData;
-    if (child->GetName() == "When")
+    if (child->GetName() == "Value")
     {
         CodingStateWhenParser p;
         Param r;
@@ -328,7 +332,7 @@ bool Parser::CodingStateWhenParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib
     {
         p->name = attrib->GetValue();
     }
-    else if (attrib->GetName() == "Value")
+    else if (attrib->GetName() == "Coding")
     {
         p->value = attrib->GetValue();
     }
@@ -378,14 +382,6 @@ bool Parser::CodingRegisterInstanceParser::VisitAttrib(xmlNode& node, xmlAttrib*
     return true;
 }
 bool Parser::CodingRegisterInstanceParser::VisitNode(xmlNode& node, xmlNode* child, void* userData) { return true; }
-bool Parser::CodingDoubleRegParser ::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
-{
-    if (attrib->GetName() == "Name")
-    {
-    }
-    return true;
-}
-bool Parser::CodingDoubleRegParser ::VisitNode(xmlNode& node, xmlNode* child, void* userData) { return true; }
 bool Parser::CodingAddressParser ::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
     Address* r = (Address*)userData;

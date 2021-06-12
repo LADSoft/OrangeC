@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -66,25 +66,12 @@ DOSOBJECT:=$(THISPATH)object\dos
 export DOSOBJECT
 WINOBJECT:=$(THISPATH)object\windows
 export WINOBJECT
-ifdef OLDSGL
-STDINCLUDE:=-I$(subst /,\,$(realpath cpp\stdinc)) -I$(subst /,\,$(realpath stdinc))
-else
-ifdef STLPORT
-STDINCLUDE:=-I$(subst /,\,$(realpath cpp\stlport\stl)) -I$(subst /,\,$(realpath cpp\stdinc)) -I$(subst /,\,$(realpath stdinc))
-else
-STDINCLUDE:=-I$(subst /,\,$(realpath cpp\stdinc_libcxx)) -I$(subst /,\,$(realpath stdinc)) -I$(subst /,\,$(realpath cpp\libcxx\include)) -I$(subst /,\,$(realpath platform\win32\wininc)) -I$(subst /,\,$(realpath platform\win32\wininc\win32))
-endif
-endif
-export STDINCLUDE
 
 SYSOBJECT:=$(THISPATH)object\startup
 export SYSOBJECT
 
 LSCRTLOBJECT:=$(THISPATH)object\startup
 export LSCRTLOBJECT
-
-DLLOBJECT:=$(THISPATH)object\dll
-export DLLOBJECT
 
 CLIBOBJECT:=$(THISPATH)object\clib
 export CLIBOBJECT
@@ -103,15 +90,26 @@ mkdir:
 	-mkdir object\dos 2> NUL
 	-mkdir object\windows 2> NUL
 	-mkdir object\startup 2> NUL
-	-mkdir object\dll 2> NUL
 	-mkdir object\cil 2> NUL
 	-mkdir object\clib 2> NUL
 
-$(C_DLLS) : %.dlls : mkdir
-	$(MAKE) -C$* --eval="OBJECT=$(DLLOBJECT)" --eval="$(BUILDING_DLL)"
+copyfiles: mkdir
+	-mkdir ..\..\include 2> NUL
+	-mkdir ..\..\include\c 2> NUL
+	-mkdir ..\..\include\c\sys 2> NUL
+	-mkdir ..\..\include\c\win32 2> NUL
+	-mkdir ..\..\include\support 2> NUL
+	-mkdir ..\..\include\support\win32 2> NUL
+	-copy  cpp\libcxx\include ..\..\include 2>NUL
+	-copy  cpp\libcxx\include\support\win32 ..\..\include\support\win32 2>NUL
+	-copy  cpp\stdinc_libcxx ..\..\include 2>NUL
+	-copy  stdinc ..\..\include\c 2>NUL
+	-copy  stdinc\sys ..\..\include\c\sys 2>NUL
+	-copy  platform\win32\wininc ..\..\include\c 2>NUL
+	-copy  platform\win32\wininc\win32 ..\..\include\c\win32 2>NUL
 
-$(C_CLIBS) : %.clibs : $(C_DLLS)
-	$(MAKE) -C$* --eval="OBJECT=$(CLIBOBJECT)"
+$(C_CLIBS) : %.clibs : copyfiles
+	$(MAKE) -C$* --eval="OBJECT=$(CLIBOBJECT)" --eval="$(BUILDING_DLL)"
 
 $(C_FORMAT) : %.formats :
 	$(MAKE) -C$* format
@@ -157,14 +155,16 @@ ifdef STLPORT
 else
 	$(COPYDIR) cpp\libcxx\include\%. $(DISTINC)
 	$(COPYDIR) cpp\libcxx\include\%.h $(DISTINC)
+	$(COPYDIR) cpp\libcxx\include\support\win32\%. $(DISTINC)\support\win32
+	$(COPYDIR) cpp\libcxx\include\support\win32\%.h $(DISTINC)\support\win32
 	$(COPYDIR) cpp\stdinc_libcxx\%. $(DISTINC)
 	$(COPYDIR) cpp\stdinc_libcxx\%.h $(DISTINC)
 endif
 endif
-	$(COPYDIR) stdinc\%.h $(DISTINC)
-	$(COPYDIR) stdinc\sys\%.h $(DISTINC)\sys
-	$(COPYDIR) platform\win32\wininc\%.h $(DISTINC)
-	$(COPYDIR) platform\win32\wininc\win32\%.h $(DISTINC)\win32
+	$(COPYDIR) stdinc\%.h $(DISTINC)\c
+	$(COPYDIR) stdinc\sys\%.h $(DISTINC)\c\sys
+	$(COPYDIR) platform\win32\wininc\%.h $(DISTINC)\c
+	$(COPYDIR) platform\win32\wininc\win32\%.h $(DISTINC)\c\win32
 ifndef BUILDENV
 	$(COPYDIR) object\startup\%.l $(DISTLIB)
 	$(COPYDIR) object\startup\%.o $(DISTLIB)
@@ -178,25 +178,25 @@ clean:
 	-del /Q $(DOSOBJECT) 2> NUL
 	-del /Q $(WINOBJECT) 2> NUL
 	-del /Q $(SYSOBJECT) 2> NUL
-	-del /Q $(DLLOBJECT) 2> NUL
 	-del /Q $(CILOBJECT) 2> NUL
 	-del /Q $(CLIBOBJECT) 2> NUL
-	-del /Q platform\win32\crtdmain\*.o 2>NULL
-	-del /Q platform\win32\lscrtl\*.o 2>NULL
-	-del /Q platform\win32\lsdbghelper\*.o 2>NULL
-	-del /Q platform\win32\msvcrdm\*.o 2>NULL
-	-del /Q platform\win32\occil\*.o 2>NULL
-	-del /Q platform\win32\pe\*.o 2>NULL
-	-del /Q platform\win32\pels\*.o 2>NULL
-	-del /Q platform\win32\rtl\*.o 2>NULL
-	-del /Q platform\dos32\debug\*.o 2>NULL
-	-del /Q platform\dos32\le\*.o 2>NULL
-	-del /Q platform\dos32\pm\*.o 2>NULL
-	-del /Q platform\dos32\rtl\*.o 2>NULL
+	-del /Q platform\win32\crtdmain\*.o 2>NUL
+	-del /Q platform\win32\lscrtl\*.o 2>NUL
+	-del /Q platform\win32\lscrtl\*.dll 2>NUL
+	-del /Q platform\win32\lsdbghelper\*.o 2>NUL
+	-del /Q platform\win32\msvcrdm\*.o 2>NUL
+	-del /Q platform\win32\occil\*.o 2>NUL
+	-del /Q platform\win32\occil\*.dll 2>NUL
+	-del /Q platform\win32\pe\*.o 2>NUL
+	-del /Q platform\win32\pels\*.o 2>NUL
+	-del /Q platform\win32\rtl\*.o 2>NUL
+	-del /Q platform\dos32\debug\*.o 2>NUL
+	-del /Q platform\dos32\le\*.o 2>NUL
+	-del /Q platform\dos32\pm\*.o 2>NUL
+	-del /Q platform\dos32\rtl\*.o 2>NUL
 	-rmdir $(DOSOBJECT) 2> NUL
 	-rmdir $(WINOBJECT) 2> NUL
 	-rmdir $(SYSOBJECT) 2> NUL
-	-rmdir $(DLLOBJECT) 2> NUL
 	-rmdir $(CILOBJECT) 2> NUL
 	-rmdir $(CLIBOBJECT) 2> NUL
 	-rmdir object 2> NUL

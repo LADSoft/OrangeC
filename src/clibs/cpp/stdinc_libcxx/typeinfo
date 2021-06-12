@@ -41,6 +41,11 @@ protected:
 class _RTL_CLASS   bad_cast{};
 class _RTL_CLASS   bad_typeid{};
 
+inline void _RTL_FUNC __throw_bad_cast()
+{
+    throw bad_cast();
+}
+
 } // std
 
 #endif

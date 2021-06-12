@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "compiler.h"
@@ -36,13 +36,18 @@
 
 using namespace Parser;
 
-Optimizer::SimpleSymbol* currentFunction;
-
 namespace Parser
 {
-extern PreProcessor* preProcessor;
+    extern PreProcessor* preProcessor;
+    bool IsCompiler() { return false; }
 }
 
+#ifdef VSIDE
+namespace occmsil
+{
+    void CreateStringFunction() { }
+};
+#endif
 namespace CompletionCompiler
 {
 
@@ -128,7 +133,7 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
         }
         while (hr)
         {
-            SYMBOL* st = (SYMBOL*)hr->p->sb;
+            SYMBOL* st = (SYMBOL*)hr->p;
             if (st->sb->storage_class == sc_overloads)
             {
                 order = WriteStructMembers(st, parent, struct_id, file_id, order, base, access);
@@ -369,9 +374,9 @@ static void DumpSymbol(SYMBOL* sym)
             {
                 int order = 1;
                 SYMLIST* hr = sym->tp->syms->table[0];
-                while (hr && ((SYMBOL*)hr->p->sb)->sb->storage_class == sc_parameter)
+                while (hr && ((SYMBOL*)hr->p)->sb->storage_class == sc_parameter)
                 {
-                    SYMBOL* st = (SYMBOL*)hr->p->sb;
+                    SYMBOL* st = (SYMBOL*)hr->p;
                     const char* argName = GetSymName(st, st);
                     if (strstr(argName, "++"))
                         argName = " ";
@@ -471,7 +476,7 @@ void ccInsertUsing(SYMBOL* ns, SYMBOL* parentns, const char* file, int line)
 {
     if (!skipThisFile)
     {
-        USING* susing = (USING*)Alloc(sizeof(USING));
+        USING* susing = Allocate<USING>();
         susing->line = line;
         susing->file = file;
         susing->sym = ns;
@@ -484,8 +489,8 @@ void ccSetSymbol(SYMBOL* sp)
 {
     if (!skipThisFile)
     {
-        Optimizer::LIST* newItem = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
-        if (sp->sb->decoratedName)
+        Optimizer::LIST* newItem = Allocate<Optimizer::LIST>();
+        if (sp->sb && sp->sb->decoratedName)
         {
             newItem->next = symList;
             newItem->data = sp;
@@ -512,7 +517,7 @@ std::string ccNewFile(char* fileName, bool main)
     skipThisFile = !!LookupName(s, ccHash);
     if (!skipThisFile)
     {
-        l = (LINEINCLUDES*)Alloc(sizeof(LINEINCLUDES));
+        l = Allocate<LINEINCLUDES>();
         l->name = litlate(s);
         lastFile = l;
         l->fileId = 0;

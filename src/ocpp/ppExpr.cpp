@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "ppExpr.h"
@@ -27,6 +27,7 @@
 #include "Errors.h"
 #include "ppInclude.h"
 #include "ppkw.h"
+#include <iostream>
 
 KeywordHash ppExpr::hash = {
     {"(", kw::openpa},      {")", kw::closepa}, {"+", kw::plus},   {"-", kw::minus}, {"!", kw::lnot},
@@ -148,10 +149,53 @@ PPINT ppExpr::primary(std::string& line, bool& isunsigned)
                 }
             }
         }
+        else if (token->GetId() == "__has_include_next")
+        {
+            token = tokenizer->Next();
+            if (!token->IsEnd())
+            {
+                if (token->GetKeyword() == kw::openpa)
+                {
+                    std::string line = tokenizer->GetString();
+                    int n = line.find(")");
+                    if (n == std::string::npos)
+                    {
+                        Errors::Error("Expected ')'");
+                    }
+                    else
+                    {
+                        std::string arg = line.substr(0, n);
+                        define->Process(arg);
+
+                        rv = include->has_include_next(arg);
+                        tokenizer->SetString(line.substr(n + 1));
+                        token = tokenizer->Next();
+                    }
+                }
+                else
+                {
+                    Errors::Error("Expected '('");
+                }
+            }
+        }
         else
         {
             rv = 0;
+            int count = 0;
             token = tokenizer->Next();
+            if (token->GetKeyword() == kw::openpa)
+            {
+                token = tokenizer->Next();        
+                count++;
+                while (count && !token->IsEnd())
+                {
+                    if (token->GetKeyword() == kw::openpa)
+                        count++;
+                    if (token->GetKeyword() == kw::closepa)
+                        count--;
+                    token = tokenizer->Next();
+                }
+            }
         }
     }
     else if (token->IsNumeric())

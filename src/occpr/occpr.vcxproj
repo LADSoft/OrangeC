@@ -19,50 +19,31 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\oasm\AdlFunctions.cpp" />
+    <ClCompile Include="..\oasm\AsmExpr.cpp" />
+    <ClCompile Include="..\oasm\AsmFile.cpp" />
+    <ClCompile Include="..\oasm\AsmLexer.cpp" />
+    <ClCompile Include="..\oasm\Instruction.cpp" />
+    <ClCompile Include="..\oasm\Section.cpp" />
+    <ClCompile Include="..\oasm\x64Instructions.cpp" />
+    <ClCompile Include="..\occil\msilInit.cpp" />
+    <ClCompile Include="..\occil\using.cpp" />
     <ClCompile Include="..\occopt\config.cpp" />
     <ClCompile Include="..\occopt\configmsil.cpp" />
     <ClCompile Include="..\occopt\configx86.cpp" />
+    <ClCompile Include="..\occopt\iblock.cpp" />
     <ClCompile Include="..\occopt\ifloatconv.cpp" />
     <ClCompile Include="..\occopt\ildata.cpp" />
+    <ClCompile Include="..\occopt\ilstream.cpp" />
+    <ClCompile Include="..\occopt\iout.cpp" />
     <ClCompile Include="..\occopt\memory.cpp" />
+    <ClCompile Include="..\occopt\optmodules.cpp" />
     <ClCompile Include="..\occopt\OptUtils.cpp" />
     <ClCompile Include="..\occopt\output.cpp" />
     <ClCompile Include="..\occopt\symfuncs.cpp" />
-    <ClCompile Include="..\occparse\beinterf.cpp" />
-    <ClCompile Include="..\occparse\browse.cpp" />
-    <ClCompile Include="..\occparse\ccerr.cpp" />
-    <ClCompile Include="..\occparse\constopt.cpp" />
-    <ClCompile Include="..\occparse\cppbltin.cpp" />
-    <ClCompile Include="..\occparse\cpplookup.cpp" />
-    <ClCompile Include="..\occparse\crc32.cpp" />
-    <ClCompile Include="..\occparse\debug.cpp" />
-    <ClCompile Include="..\occparse\declare.cpp" />
-    <ClCompile Include="..\occparse\declcons.cpp" />
-    <ClCompile Include="..\occparse\declcpp.cpp" />
-    <ClCompile Include="..\occparse\expr.cpp" />
-    <ClCompile Include="..\occparse\exprcpp.cpp" />
-    <ClCompile Include="..\occparse\floatconv.cpp" />
-    <ClCompile Include="..\occparse\help.cpp" />
-    <ClCompile Include="..\occparse\import.cpp" />
-    <ClCompile Include="..\occparse\inasm.cpp" />
-    <ClCompile Include="..\occparse\init.cpp" />
-    <ClCompile Include="..\occparse\initbackend.cpp" />
-    <ClCompile Include="..\occparse\inline.cpp" />
-    <ClCompile Include="..\occparse\lambda.cpp" />
-    <ClCompile Include="..\occparse\lex.cpp" />
-    <ClCompile Include="..\occparse\libcxx.cpp" />
-    <ClCompile Include="..\occparse\mangle.cpp" />
-    <ClCompile Include="..\occparse\occparse.cpp" />
-    <ClCompile Include="..\occparse\osutil.cpp" />
-    <ClCompile Include="..\occparse\property.cpp" />
-    <ClCompile Include="..\occparse\rtti.cpp" />
-    <ClCompile Include="..\occparse\stmt.cpp" />
-    <ClCompile Include="..\occparse\SymbolManager.cpp" />
-    <ClCompile Include="..\occparse\symtab.cpp" />
-    <ClCompile Include="..\occparse\template.cpp" />
-    <ClCompile Include="..\occparse\types.cpp" />
-    <ClCompile Include="..\occparse\unmangle.cpp" />
-    <ClCompile Include="..\occparse\wseh.cpp" />
+    <ClCompile Include="..\occ\InstructionParser.cpp" />
+    <ClCompile Include="..\occ\x64Parser.cpp" />
+    <ClCompile Include="..\occ\x64stub.cpp" />
     <ClCompile Include="..\ocpp\Errors.cpp" />
     <ClCompile Include="..\ocpp\Floating.cpp" />
     <ClCompile Include="..\ocpp\InputFile.cpp" />
@@ -79,19 +60,123 @@
     <ClCompile Include="..\ocpp\PreProcessor.cpp" />
     <ClCompile Include="..\ocpp\SymbolTable.cpp" />
     <ClCompile Include="..\ocpp\Token.cpp" />
+    <ClCompile Include="..\occparse\beinterf.cpp" />
+    <ClCompile Include="..\occparse\browse.cpp" />
+    <ClCompile Include="..\occparse\ccerr.cpp" />
+    <ClCompile Include="..\occparse\occparse.cpp" />
+    <ClCompile Include="..\occparse\constopt.cpp" />
+    <ClCompile Include="..\occparse\cppbltin.cpp" />
+    <ClCompile Include="..\occparse\cpplookup.cpp" />
+    <ClCompile Include="..\occparse\crc32.cpp" />
+    <ClCompile Include="..\occparse\debug.cpp" />
+    <ClCompile Include="..\occparse\declare.cpp" />
+    <ClCompile Include="..\occparse\declcons.cpp" />
+    <ClCompile Include="..\occparse\declcpp.cpp" />
+    <ClCompile Include="..\occparse\expr.cpp" />
+    <ClCompile Include="..\occparse\exprcpp.cpp" />
+    <ClCompile Include="..\occparse\floatconv.cpp" />
+    <ClCompile Include="..\occparse\help.cpp" />
+    <ClCompile Include="..\occparse\iexpr.cpp" />
+    <ClCompile Include="..\occparse\iinline.cpp" />
+    <ClCompile Include="..\occparse\import.cpp" />
+    <ClCompile Include="..\occparse\inasm.cpp" />
+    <ClCompile Include="..\occparse\init.cpp" />
+    <ClCompile Include="..\occparse\initbackend.cpp" />
+    <ClCompile Include="..\occparse\inline.cpp" />
+    <ClCompile Include="..\occparse\istmt.cpp" />
+    <ClCompile Include="..\occparse\lambda.cpp" />
+    <ClCompile Include="..\occparse\lex.cpp" />
+    <ClCompile Include="..\occparse\libcxx.cpp" />
+    <ClCompile Include="..\occparse\mangle.cpp" />
+    <ClCompile Include="..\occparse\osutil.cpp" />
+    <ClCompile Include="..\occparse\property.cpp" />
+    <ClCompile Include="..\occparse\rtti.cpp" />
+    <ClCompile Include="..\occparse\stmt.cpp" />
+    <ClCompile Include="..\occparse\SymbolManager.cpp" />
+    <ClCompile Include="..\occparse\symtab.cpp" />
+    <ClCompile Include="..\occparse\template.cpp" />
+    <ClCompile Include="..\occparse\types.cpp" />
+    <ClCompile Include="..\occparse\unmangle.cpp" />
+    <ClCompile Include="..\occparse\wseh.cpp" />
     <ClCompile Include="..\sqlite3\sqlite3.c" />
     <ClCompile Include="ccif.cpp" />
     <ClCompile Include="db.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\netlib\DotNetPELib.h" />
+    <ClInclude Include="..\oasm\AdlStructures.h" />
+    <ClInclude Include="..\oasm\AsmLexer.h" />
+    <ClInclude Include="..\occopt\beinterf.h" />
     <ClInclude Include="..\occopt\ildata.h" />
+    <ClInclude Include="..\occopt\ioptimizer.h" />
+    <ClInclude Include="..\occopt\optmodules.h" />
+    <ClInclude Include="..\ocpp\Errors.h" />
+    <ClInclude Include="..\ocpp\Floating.h" />
+    <ClInclude Include="..\ocpp\InputFile.h" />
+    <ClInclude Include="..\ocpp\PipeArbitrator.h" />
+    <ClInclude Include="..\ocpp\ppCond.h" />
+    <ClInclude Include="..\ocpp\ppCtx.h" />
+    <ClInclude Include="..\ocpp\ppDefine.h" />
+    <ClInclude Include="..\ocpp\ppError.h" />
+    <ClInclude Include="..\ocpp\ppExpr.h" />
+    <ClInclude Include="..\ocpp\ppFile.h" />
+    <ClInclude Include="..\ocpp\ppInclude.h" />
+    <ClInclude Include="..\ocpp\ppkw.h" />
+    <ClInclude Include="..\ocpp\ppMacro.h" />
+    <ClInclude Include="..\ocpp\ppPragma.h" />
+    <ClInclude Include="..\ocpp\pragma.h" />
+    <ClInclude Include="..\ocpp\PreProcessor.h" />
+    <ClInclude Include="..\ocpp\SymbolTable.h" />
+    <ClInclude Include="..\ocpp\Token.h" />
+    <ClInclude Include="..\occopt\iopt.h" />
+    <ClInclude Include="..\occparse\AsmExpr.h" />
+    <ClInclude Include="..\occparse\browse.h" />
     <ClInclude Include="..\occparse\c.h" />
+    <ClInclude Include="..\occparse\ccerr.h" />
     <ClInclude Include="..\occparse\compiler.h" />
+    <ClInclude Include="..\occparse\config.h" />
+    <ClInclude Include="..\occparse\configmsil.h" />
+    <ClInclude Include="..\occparse\configx86.h" />
+    <ClInclude Include="..\occparse\constopt.h" />
+    <ClInclude Include="..\occparse\cppbltin.h" />
+    <ClInclude Include="..\occparse\cpplookup.h" />
+    <ClInclude Include="..\occparse\crc32.h" />
+    <ClInclude Include="..\occparse\debug.h" />
+    <ClInclude Include="..\occparse\declare.h" />
+    <ClInclude Include="..\occparse\declcons.h" />
+    <ClInclude Include="..\occparse\declcpp.h" />
+    <ClInclude Include="..\occparse\dsw.h" />
+    <ClInclude Include="..\occparse\expr.h" />
+    <ClInclude Include="..\occparse\exprcpp.h" />
+    <ClInclude Include="..\occparse\floatconv.h" />
+    <ClInclude Include="..\occparse\help.h" />
+    <ClInclude Include="..\occparse\iexpr.h" />
+    <ClInclude Include="..\occparse\iinline.h" />
+    <ClInclude Include="..\occparse\import.h" />
+    <ClInclude Include="..\occparse\inasm.h" />
+    <ClInclude Include="..\occparse\init.h" />
+    <ClInclude Include="..\occparse\initbackend.h" />
+    <ClInclude Include="..\occparse\inline.h" />
+    <ClInclude Include="..\occparse\istmt.h" />
+    <ClInclude Include="..\occparse\lambda.h" />
+    <ClInclude Include="..\occparse\lex.h" />
+    <ClInclude Include="..\occparse\libcxx.h" />
+    <ClInclude Include="..\occparse\mangle.h" />
+    <ClInclude Include="..\occparse\memory.h" />
+    <ClInclude Include="..\occparse\occparse.h" />
     <ClInclude Include="..\occparse\osutil.h" />
     <ClInclude Include="..\occparse\peheader.h" />
+    <ClInclude Include="..\occparse\Property.h" />
     <ClInclude Include="..\occparse\rtti.h" />
+    <ClInclude Include="..\occparse\stmt.h" />
     <ClInclude Include="..\occparse\SymbolManager.h" />
+    <ClInclude Include="..\occparse\symtab.h" />
+    <ClInclude Include="..\occparse\template.h" />
+    <ClInclude Include="..\occparse\types.h" />
+    <ClInclude Include="..\occparse\unmangle.h" />
     <ClInclude Include="..\occparse\winmode.h" />
+    <ClInclude Include="..\occparse\wseh.h" />
+    <ClInclude Include="..\sqlite3\sqlite3.h" />
     <ClInclude Include="db.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="symtypes.h" />
@@ -99,6 +184,9 @@
   <ItemGroup>
     <ProjectReference Include="..\netlib\DotNetPELib.vcxproj">
       <Project>{9e09e239-7370-4cbc-a82e-40dbcc0947f3}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\objlib\obj.vcxproj">
+      <Project>{22e147d5-e684-4b10-9cb4-d6cd8ef02118}</Project>
     </ProjectReference>
     <ProjectReference Include="..\util\util.vcxproj">
       <Project>{72430015-06c0-42a2-b9ec-d0e5e2eae83d}</Project>
@@ -109,32 +197,32 @@
     <ProjectGuid>{1DBC2695-3B1E-4461-9C74-128327A37B7B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>occpr</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -189,7 +277,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;VSIDE;_CONSOLE;PARSER_ONLY;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;VSIDE;_CONSOLE;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -208,7 +296,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;VSIDE;PARSER_ONLY;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;VSIDE;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>

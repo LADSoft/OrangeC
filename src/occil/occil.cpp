@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /*
@@ -27,6 +27,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include "be.h"
 #include "beinterfdefs.h"
 #include "Utils.h"
@@ -52,6 +53,16 @@ int usingEsp;
 void regInit() {}
 void diag(const char* fmt, ...) {}
 void Import() {}
+namespace Parser
+{
+    bool IsCompiler() {
+        return true;
+    }
+}
+
+using namespace DotNetPELib;
+PELib* peLib;
+
 namespace occmsil
 {
 CmdSwitchParser SwitchParser;
@@ -380,7 +391,7 @@ int InvokeParser(int argc, char** argv, SharedMemory* parserMem)
 }
 int InvokeOptimizer(SharedMemory* parserMem, SharedMemory* optimizerMem)
 {
-    return Utils::ToolInvoke("occopt", occil_verbosity, "-! %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
+    return Utils::ToolInvoke("occopt", occil_verbosity, "-! -S %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
 }
 }  // namespace occmsil
 int main(int argc, char* argv[])
@@ -388,6 +399,7 @@ int main(int argc, char* argv[])
     using namespace occmsil;
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
+    unsigned startTime, stopTime;
 
     if (!Utils::HasLocalExe("occopt") || !Utils::HasLocalExe("occparse"))
     {
@@ -429,6 +441,10 @@ int main(int argc, char* argv[])
         {
             Utils::fatal("internal error: could not load intermediate file");
         }
+        if (Optimizer::cparams.prm_displaytiming)
+        {
+            startTime = clock();
+        }
         for (auto f : Optimizer::backendFiles)
         {
             InsertExternalFile(f.c_str(), false);
@@ -451,6 +467,11 @@ int main(int argc, char* argv[])
                 if (!SaveFile(p.c_str()))
                     Utils::fatal("Cannot open '%s' for write", outFile);
             }
+        }
+        if (Optimizer::cparams.prm_displaytiming)
+        {
+            stopTime = clock();
+            printf("occ timing: %d.%03d\n", (stopTime - startTime)/1000, (stopTime - startTime)% 1000); 
         }
         if (!Optimizer::cparams.prm_compileonly)
         {

@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "compiler.h"
@@ -39,9 +39,16 @@
 #include "ildata.h"
 #include "ccerr.h"
 #include "declcons.h"
+#include "cpplookup.h"
+#include "inline.h"
+
 namespace Parser
 {
 HASHTABLE* rttiSyms;
+
+static std::set<SYMBOL*> defaultRecursionMap;
+
+std::map<int, std::map<int, __xclist*>> rttiStatements;
 
 // in enum e_bt order
 static const char* typeNames[] = {"bit",
@@ -134,7 +141,6 @@ bool equalnode(EXPRESSION* node1, EXPRESSION* node2)
     }
 }
 
-#ifndef PARSER_ONLY
 static char* addNameSpace(char* buf, SYMBOL* sym)
 {
     if (!sym)
@@ -263,17 +269,26 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
         {
             if (!sym->sb->inlineFunc.stmt && !sym->sb->deferredCompile)
             {
-                EXPRESSION* exp = intNode(en_c_i, 0);
-                callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, true, true);
-                if (exp && exp->left)
-                    sym = exp->left->v.func->sp;
+                // if it is deleted we just won't call it...
+                // still need the xt table entry though...
+                if (basetype(sym->tp)->syms->table[0]->p && basetype(sym->tp)->syms->table[0]->p->sb->deleted)
+                {
+                    sym = nullptr;
+                }
+                else
+                {
+                    EXPRESSION* exp = intNode(en_c_i, 0);
+                    callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, true, true);
+                    if (exp && exp->left)
+                        sym = exp->left->v.func->sp;
+                }
             }
             else
             {
                 sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
             }
             Optimizer::SymbolManager::Get(sym);
-            if (sym->sb->attribs.inheritable.linkage2 == lk_import)
+            if (sym && sym->sb->attribs.inheritable.linkage2 == lk_import)
             {
                 EXPRESSION* exp = varNode(en_pc, sym);
                 thunkForImportTable(&exp);
@@ -365,35 +380,38 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
         while (hr)
         {
             SYMBOL* member = hr->p;
-            TYPE* tp = member->tp;
-            int flags = XD_CL_ENCLOSED;
-            if (isref(tp))
+            if (member->sb->storage_class == sc_member || member->sb->storage_class == sc_mutable)
             {
-                tp = basetype(tp)->btp;
-                flags |= XD_CL_BYREF;
-            }
-            if (isconst(tp))
-                flags |= XD_CL_CONST;
-            tp = basetype(tp);
-            if (isstructured(tp))
-            {
-                tp = PerformDeferredInitialization(tp, nullptr);
-                if (genXT)
+                TYPE* tp = member->tp;
+                int flags = XD_CL_ENCLOSED;
+                if (isref(tp))
                 {
-                    RTTIDumpType(tp);
+                    tp = basetype(tp)->btp;
+                    flags |= XD_CL_BYREF;
                 }
-                /*
-                else
+                if (isconst(tp))
+                    flags |= XD_CL_CONST;
+                tp = basetype(tp);
+                if (isstructured(tp))
                 {
-                    SYMBOL*xtSym;
-                    char name[4096];
-                    RTTIGetName(name, tp);
-                    xtSym = search(name, rttiSyms);
-                    Optimizer::genint(flags);
-                    Optimizer::genref(xtSym , 0);
-                    genint(member->sb->offset);
+                    tp = PerformDeferredInitialization(tp, nullptr);
+                    if (genXT)
+                    {
+                        RTTIDumpType(tp);
+                    }
+                    /*
+                    else
+                    {
+                        SYMBOL*xtSym;
+                        char name[4096];
+                        RTTIGetName(name, tp);
+                        xtSym = search(name, rttiSyms);
+                        Optimizer::genint(flags);
+                        Optimizer::genref(xtSym , 0);
+                        genint(member->sb->offset);
+                    }
+                    */
                 }
-                */
             }
             hr = hr->next;
         }
@@ -428,35 +446,35 @@ static void RTTIDumpArithmetic(SYMBOL* xtSym, TYPE* tp)
     RTTIDumpHeader(xtSym, tp, 0);
     Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
 }
-#endif
 SYMBOL* RTTIDumpType(TYPE* tp)
 {
     SYMBOL* xtSym = nullptr;
-#ifndef PARSER_ONLY
-    if (Optimizer::cparams.prm_xcept)
+    if (IsCompiler())
     {
-        char name[4096];
-        RTTIGetName(name, tp);
-        xtSym = search(name, rttiSyms);
-        if (!xtSym)
+        if (Optimizer::cparams.prm_xcept)
         {
-            xtSym = makeID(sc_global, tp, nullptr, litlate(name));
-            xtSym->sb->attribs.inheritable.linkage = lk_virtual;
-            if (isstructured(tp))
-                xtSym->sb->attribs.inheritable.linkage2 = basetype(tp)->sp->sb->attribs.inheritable.linkage2;
-            xtSym->sb->decoratedName = xtSym->name;
-            xtSym->sb->xtEntry = true;
-            insert(xtSym, rttiSyms);
-            if (isstructured(tp) && basetype(tp)->sp->sb->dontinstantiate &&
-                basetype(tp)->sp->sb->attribs.inheritable.linkage2 != lk_import)
+            char name[4096];
+            RTTIGetName(name, tp);
+            xtSym = search(name, rttiSyms);
+            if (!xtSym)
             {
-                xtSym->sb->dontinstantiate = true;
-                Optimizer::SymbolManager::Get(xtSym);
-            }
-            else
-            {
-                switch (basetype(tp)->type)
+                xtSym = makeID(sc_global, tp, nullptr, litlate(name));
+                xtSym->sb->attribs.inheritable.linkage = lk_virtual;
+                if (isstructured(tp))
+                    xtSym->sb->attribs.inheritable.linkage2 = basetype(tp)->sp->sb->attribs.inheritable.linkage2;
+                xtSym->sb->decoratedName = xtSym->name;
+                xtSym->sb->xtEntry = true;
+                insert(xtSym, rttiSyms);
+                if (isstructured(tp) && basetype(tp)->sp->sb->dontinstantiate &&
+                    basetype(tp)->sp->sb->attribs.inheritable.linkage2 != lk_import)
                 {
+                    xtSym->sb->dontinstantiate = true;
+                    Optimizer::SymbolManager::Get(xtSym);
+                }
+                else
+                {
+                    switch (basetype(tp)->type)
+                    {
                     case bt_lref:
                     case bt_rref:
                         RTTIDumpRef(xtSym, tp);
@@ -474,45 +492,32 @@ SYMBOL* RTTIDumpType(TYPE* tp)
                     default:
                         RTTIDumpArithmetic(xtSym, tp);
                         break;
+                    }
                 }
             }
-        }
-        else
-        {
-            while (ispointer(tp) || isref(tp))
-                tp = basetype(tp)->btp;
-            if (isstructured(tp) && !basetype(tp)->sp->sb->dontinstantiate)
+            else
             {
-                SYMBOL* xtSym2;
-                // xtSym *should* be there.
-                RTTIGetName(name, basetype(tp));
-                xtSym2 = search(name, rttiSyms);
-                if (xtSym2 && xtSym2->sb->dontinstantiate)
+                while (ispointer(tp) || isref(tp))
+                    tp = basetype(tp)->btp;
+                if (isstructured(tp) && !basetype(tp)->sp->sb->dontinstantiate)
                 {
-                    xtSym2->sb->dontinstantiate = false;
-                    RTTIDumpStruct(xtSym2, tp);
+                    SYMBOL* xtSym2;
+                    // xtSym *should* be there.
+                    RTTIGetName(name, basetype(tp));
+                    xtSym2 = search(name, rttiSyms);
+                    if (xtSym2 && xtSym2->sb->dontinstantiate)
+                    {
+                        xtSym2->sb->dontinstantiate = false;
+                        RTTIDumpStruct(xtSym2, tp);
+                    }
                 }
             }
         }
     }
-#endif
     return xtSym;
 }
-#ifndef PARSER_ONLY
-typedef struct _xclist
-{
-    struct _xclist* next;
-    union
-    {
-        EXPRESSION* exp;
-        STATEMENT* stmt;
-    };
-    SYMBOL* xtSym;
-    char byStmt : 1;
-    char used : 1;
-} XCLIST;
-static void XCStmt(STATEMENT* block, XCLIST*** listPtr);
-static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
+static void XCStmt(STATEMENT* block, std::map<int, std::map<int, __xclist*>> & lst);
+static void XCExpression(EXPRESSION* node, std::map<int, std::map<int, __xclist*>> & lst)
 {
     FUNCTIONCALL* fp;
     if (node == 0)
@@ -589,7 +594,7 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
         case en_l_object:
         case en_literalclass:
         case en_l_wc:
-            XCExpression(node->left, listPtr);
+            XCExpression(node->left, lst);
             break;
         case en_uminus:
         case en_compl:
@@ -634,17 +639,17 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
         case en_savestack:
         case en__initobj:
         case en__sizeof:
-            XCExpression(node->left, listPtr);
+            XCExpression(node->left, lst);
             break;
         case en_assign:
         case en__initblk:
         case en__cpblk:
-            XCExpression(node->right, listPtr);
-            XCExpression(node->left, listPtr);
+            XCExpression(node->right, lst);
+            XCExpression(node->left, lst);
             break;
         case en_autoinc:
         case en_autodec:
-            XCExpression(node->left, listPtr);
+            XCExpression(node->left, lst);
             break;
         case en_add:
         case en_sub:
@@ -653,8 +658,6 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
         case en_arraylsh:
         case en_rsh:
         case en_rshd:
-        case en_void:
-        case en_voidnz:
             /*        case en_dvoid: */
         case en_arraymul:
         case en_arrayadd:
@@ -687,21 +690,23 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
         case en_stackblock:
         case en_blockassign:
         case en_mp_compare:
+        case en_dot:
+        case en_pointsto:
+                break;
+        case en_void:
+        case en_voidnz:
             /*		case en_array: */
-            XCExpression(node->right, listPtr);
+            XCExpression(node->right, lst);
         case en_mp_as_bool:
         case en_blockclear:
         case en_argnopush:
         case en_not_lvalue:
         case en_lvalue:
         case en_funcret:
-            XCExpression(node->left, listPtr);
+            XCExpression(node->left, lst);
             break;
         case en_thisref:
-            **listPtr = (XCLIST*)Alloc(sizeof(XCLIST));
-            (**listPtr)->exp = node;
-            (*listPtr) = &(**listPtr)->next;
-            XCExpression(node->left, listPtr);
+            XCExpression(node->left, lst);
             break;
         case en_atomic:
             break;
@@ -711,24 +716,24 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
                 INITLIST* args = fp->arguments;
                 while (args)
                 {
-                    XCExpression(args->exp, listPtr);
+                    XCExpression(args->exp, lst);
                     args = args->next;
                 }
                 if (fp->thisptr)
-                    XCExpression(fp->thisptr, listPtr);
+                    XCExpression(fp->thisptr, lst);
                 if (fp->returnEXP)
-                    XCExpression(fp->returnEXP, listPtr);
+                    XCExpression(fp->returnEXP, lst);
             }
             break;
         case en_stmt:
-            XCStmt(node->v.stmt, listPtr);
+            XCStmt(node->v.stmt, lst);
             break;
         default:
             diag("XCExpression");
             break;
     }
 }
-static void XCStmt(STATEMENT* block, XCLIST*** listPtr)
+static void XCStmt(STATEMENT* block, std::map<int, std::map<int, __xclist*>> & lst)
 {
     while (block != nullptr)
     {
@@ -740,33 +745,37 @@ static void XCStmt(STATEMENT* block, XCLIST*** listPtr)
             case st___catch:
             case st___finally:
             case st___fault:
-                **listPtr = (XCLIST*)Alloc(sizeof(XCLIST));
-                (**listPtr)->stmt = block;
-                (**listPtr)->byStmt = true;
-                (*listPtr) = &(**listPtr)->next;
+            {
+                __xclist* temp = Allocate<__xclist>();
+                temp->stmt = block;
+                temp->byStmt = true;
+                lst[block->tryStart][block->tryEnd] = temp;
+                XCStmt(block->lower, lst);
+                break;
+            }
             case st_try:
             case st___try:
-                XCStmt(block->lower, listPtr);
+                XCStmt(block->lower, lst);
                 break;
             case st_return:
             case st_expr:
             case st_declare:
-                XCExpression(block->select, listPtr);
+                XCExpression(block->select, lst);
                 break;
             case st_goto:
             case st_label:
                 break;
             case st_select:
             case st_notselect:
-                XCExpression(block->select, listPtr);
+                XCExpression(block->select, lst);
                 break;
             case st_switch:
-                XCExpression(block->select, listPtr);
-                XCStmt(block->lower, listPtr);
+                XCExpression(block->select, lst);
+                XCStmt(block->lower, lst);
                 break;
             case st_block:
-                XCStmt(block->lower, listPtr);
-                XCStmt(block->blockTail, listPtr);
+                XCStmt(block->lower, lst);
+                XCStmt(block->blockTail, lst);
                 break;
             case st_passthrough:
             case st_nop:
@@ -860,18 +869,21 @@ static bool allocatedXC(EXPRESSION* exp)
             return false;
     }
 }
-static Optimizer::SimpleSymbol* evalsp(EXPRESSION* exp)
+Optimizer::SimpleSymbol* evalsp(EXPRESSION* exp)
 {
     switch (exp->type)
     {
         Optimizer::SimpleSymbol* rv;
+        case en_l_p:
+            return evalsp(exp->left);
         case en_add:
             rv = evalsp(exp->left);
             if (rv)
                 return rv;
             return evalsp(exp->right);
         case en_auto:
-            return Optimizer::SymbolManager::Get(exp->v.sp);
+            rv = Optimizer::SymbolManager::Get(exp->v.sp);
+            return rv;
         default:
             return nullptr;
     }
@@ -880,6 +892,8 @@ static int evalofs(EXPRESSION* exp, SYMBOL* funcsp)
 {
     switch (exp->type)
     {
+        case en_l_p:
+            return evalofs(exp->left, funcsp);
         case en_add:
             return evalofs(exp->left, funcsp) + evalofs(exp->right, funcsp);
         case en_c_i:
@@ -912,9 +926,20 @@ void XTDumpTab(SYMBOL* funcsp)
 {
     if (funcsp->sb->xc && funcsp->sb->xc->xctab && Optimizer::cparams.prm_xcept)
     {
-        XCLIST *list = nullptr, **listPtr = &list, *p;
+        XCLIST* list = nullptr, * p, *last = nullptr;
         SYMBOL* throwSym;
-        XCStmt(funcsp->sb->inlineFunc.stmt, &listPtr);
+        XCStmt(funcsp->sb->inlineFunc.stmt, rttiStatements);
+        // this is done this way because the nested maps form a natural sorting mechanism...
+        for (auto& s : rttiStatements)
+            for (auto& e : s.second)
+            {
+                p = e.second;
+                if (last)
+                    last->next = p;
+                else 
+                    list = p;
+                last = p;
+            }
         p = list;
         while (p)
         {
@@ -966,7 +991,7 @@ void XTDumpTab(SYMBOL* funcsp)
             else
             {
                 if (p->xtSym && !p->exp->dest && allocatedXC(p->exp->v.t.thisptr))
-                {
+                {        
                     XCLIST* q = p;
                     while (q)
                     {
@@ -979,11 +1004,15 @@ void XTDumpTab(SYMBOL* funcsp)
                     }
                     if (q)
                         q->used = true;
-                    Optimizer::genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
-                    Optimizer::genref(Optimizer::SymbolManager::Get(p->xtSym), 0);
-                    Optimizer::gen_autoref(evalsp(p->exp->v.t.thisptr), evalofs(p->exp->v.t.thisptr, funcsp));
-                    Optimizer::genint(p->exp->v.t.thisptr->xcInit);
-                    Optimizer::genint(p->exp->v.t.thisptr->xcDest);
+                    auto thsym = evalsp(p->exp->v.t.thisptr);
+                    if (thsym && thsym->genreffed)
+                    {
+                        Optimizer::genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
+                        Optimizer::genref(Optimizer::SymbolManager::Get(p->xtSym), 0);
+                        Optimizer::gen_autoref(thsym, evalofs(p->exp->v.t.thisptr, funcsp));
+                        Optimizer::genint(p->exp->v.t.thisptr->xcInit);
+                        Optimizer::genint(p->exp->v.t.thisptr->xcDest);
+                    }
                 }
             }
             p = p->next;
@@ -995,11 +1024,15 @@ void XTDumpTab(SYMBOL* funcsp)
             if (!p->byStmt && p->xtSym && p->exp->dest && !p->used)
             {
                 p->used = true;
-                Optimizer::genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
-                Optimizer::genref(Optimizer::SymbolManager::Get(p->xtSym), 0);
-                Optimizer::gen_autoref(evalsp(p->exp->v.t.thisptr), evalofs(p->exp->v.t.thisptr, funcsp));
-                Optimizer::genint(0);
-                Optimizer::genint(p->exp->v.t.thisptr->xcDest);
+                auto thsym = evalsp(p->exp->v.t.thisptr);
+                if (thsym && thsym->genreffed)
+                {
+                    Optimizer::genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
+                    Optimizer::genref(Optimizer::SymbolManager::Get(p->xtSym), 0);
+                    Optimizer::gen_autoref(thsym, evalofs(p->exp->v.t.thisptr, funcsp));
+                    Optimizer::genint(0);
+                    Optimizer::genint(p->exp->v.t.thisptr->xcDest);
+                }
             }
             p = p->next;
         }
@@ -1007,5 +1040,4 @@ void XTDumpTab(SYMBOL* funcsp)
         Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(funcsp->sb->xc->xclab));
     }
 }
-#endif
 }  // namespace Parser

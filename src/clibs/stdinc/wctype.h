@@ -1,22 +1,22 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *
+ *     
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #ifndef __WCTYPE_H
@@ -46,6 +46,7 @@
 #endif
 
 /* these are actually defined in stddef.h, replicated here for reference */
+#ifndef RC_INVOKED
 #ifndef _WCTYPE_T_DEFINED
 typedef unsigned int wctype_t;
 #    define _WCTYPE_T_DEFINED
@@ -57,7 +58,7 @@ typedef unsigned int wint_t;
 #endif
 
 typedef const wchar_t* wctrans_t;
-
+#endif
 #ifndef WEOF
 #    define WEOF (wint_t)(-1)
 #endif
@@ -79,6 +80,8 @@ typedef const wchar_t* wctrans_t;
 #    define _IS_GRAPH (_IS_ALNUM | _IS_HEX | _IS_PUN)
 #    define _IS_PRINT (_IS_GRAPH | _IS_BLK)
 #endif
+
+#ifndef RC_INVOKED
 
 #ifdef __cplusplus
 extern "C"
@@ -114,6 +117,8 @@ extern "C"
 #ifdef __cplusplus
 };
 #endif
+#endif
+
 #ifndef __NO_WCTYPE
 #    define iswalnum(wc) iswctype((wc), _IS_ALNUM)
 #    define iswalpha(wc) iswctype((wc), _IS_ALPHA)

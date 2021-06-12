@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -116,27 +116,14 @@ typedef struct _xctab
 {
     struct _xctab* next;   /* link to next exception higher function */
     void* _xceptfunc;      /* windows exception handler */
-    int esp;               /* esp at start of try block; code gen generates for this, don't
-                      move*/
-    int ebp;               /* ebp of this function */
-    XCEPTHEAD* xceptBlock; /* pointer to the function's xception block */
-    int funcIndex;         /* index of constructors/destructors, roughly follows EIP */
+    int esp;               /* esp at start of try block; code gen generates for this, don't move*/
+    int ebp;               /* ebp of this function; code gen generates this */
+    XCEPTHEAD* xceptBlock; /* pointer to the function's xception block, code gen generates this */
+    int funcIndex;         /* index of constructors/destructors, roughly follows EIP , code gen generates this*/
+    void *throwninstance;  /* instance being caught, code gen generates this, don't move */
     // things beyond this are used by throw()
-    int flags;            /* reserved */
     int eip;              /* eip this function where the catch occurred */
-    void* instance;       /* instance pointer to thrown class or reference to a base class */
-    void* throwninstance; /* instance point to current thrown class */
-    void* baseinstance;   /* instance pointer to orig version of thrown class */
-    void* cons;           /* constructor */
-    int elems;            /* number of array elements thrown */
-    RTTI* thrownxt;       /* xt that was thrown */
     XCEPT* thisxt;        /* pointer to this XT table list in case of throws
                through nested tries */
 } XCTAB;
 
-// FS:[4] - 4
-typedef struct _cppdata
-{
-    void (*term)();
-    void (*unexpected)();
-} CPPDATA;

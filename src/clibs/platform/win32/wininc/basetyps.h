@@ -22,9 +22,12 @@
 #        ifndef __int8
 #            define __int8 char
 #        endif
+#if 0
+// collides with libcxx 10
 #        ifndef __small
 #            define __small char
 #        endif
+#endif
 #        ifndef __hyper
 #            define __hyper long long
 #        endif

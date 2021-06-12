@@ -1,26 +1,26 @@
 #pragma once
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "CmdSwitch.h"
@@ -107,6 +107,7 @@ extern CmdSwitchBool prm_compileonly;
 extern CmdSwitchString prm_assemble;
 extern CmdSwitchBool prm_xcept;
 extern CmdSwitchBool prm_viaassembly;
+extern CmdSwitchBool displayTiming;
 extern CmdSwitchInt prm_stackaligns;
 extern CmdSwitchString prm_error;
 extern CmdSwitchString prm_define;
@@ -122,7 +123,8 @@ extern CmdSwitchCombineString prm_tool;
 extern CmdSwitchCombineString prm_library;
 
 extern CmdSwitchCombineString prm_cinclude;
-extern CmdSwitchCombineString prm_sysinclude;
+extern CmdSwitchCombineString prm_Csysinclude;
+extern CmdSwitchCombineString prm_CPPsysinclude;
 extern CmdSwitchCombineString prm_libpath;
 extern CmdSwitchString prm_pipe;
 extern CmdSwitchCombineString prm_output_def_file;

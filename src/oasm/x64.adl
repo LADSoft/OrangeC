@@ -1,114 +1,114 @@
   <ADL>
-	<Processor Name="x64">
-	</Processor>
-  <Coding>
+  <Processor Name="x64">
     <Param Name="CaseSensitive" Value="false"/>
     <Param Name="Endian" Value="little"/>
     <Param Name="BitsPerMAU" Value="8"/>
-    <Number Name="signed8offset">
+  </Processor>
+  <Coding>
+    <Number Class="signed8offset">
       <Instance Value="-#:8"/>
     </Number>
-    <Number Name="signed8">
+    <Number Class="signed8">
       <Instance Value="-#:8"/>
     </Number>
-    <Number Name="mem6">
+    <Number Class="mem6">
       <Instance Value="#:6"/>
     </Number>
-    <Number Name="mem8">
+    <Number Class="mem8">
       <Instance Value="#:8"/>
     </Number>
-    <Number Name="mem16">
+    <Number Class="mem16">
       <Instance Value="$#:16"/>
     </Number>
-    <Number Name="mem32">
+    <Number Class="mem32">
       <Instance Value="$#:32"/>
     </Number>
-    <Number Name="address16">
+    <Number Class="address16">
       <Instance Value="$#:16" Cond="'processorbits'==16"/>
     </Number>
-    <Number Name="address32">
+    <Number Class="address32">
       <Instance Value="$#:32" Cond="'processorbits'==32"/>
     </Number>
-    <Number Name="address64">
+    <Number Class="address64">
       <Instance Value="$#:32" Cond="'processorbits'==64"/>
     </Number>
-    <Number Name="rel8" relOfs="1">
+    <Number Class="rel8" relOfs="1">
       <Instance Value="-$#:8"/>
     </Number>
-    <Number Name="rel8n" relOfs="-1">
+    <Number Class="rel8n" relOfs="-1">
       <Instance Value="-$#:8"/>
     </Number>
-    <Number Name="rel16" relOfs="2">
+    <Number Class="rel16" relOfs="2">
       <Instance Value="-$#:16" Cond="'processorbits'==16"/>
     </Number>
-    <Number Name="rel16n" relOfs="-2">
+    <Number Class="rel16n" relOfs="-2">
       <Instance Value="-$#:16" Cond="'processorbits'==16"/>
     </Number>
-    <Number Name="rel16j" relOfs="2">
+    <Number Class="rel16j" relOfs="2">
       <Instance Value="-$#:16" Cond="'processorbits'==16"/>
     </Number>
-    <Number Name="rel16jn" relOfs="-2">
+    <Number Class="rel16jn" relOfs="-2">
       <Instance Value="-$#:16" Cond="'processorbits'==16"/>
     </Number>
-    <Number Name="rel32" relOfs="4">
+    <Number Class="rel32" relOfs="4">
       <Instance Value="-$#:32" Cond="'processorbits'!=16"/>
     </Number>
-    <Number Name="scale">
+    <Number Class="scale">
       <Instance Value="1;0"/>
       <Instance Value="2;1"/>
       <Instance Value="4;2"/>
       <Instance Value="8;3"/>
     </Number>
-    <Number Name="zero">
+    <Number Class="zero">
       <Instance Value="0;0"/>
     </Number>
-    <Number Name="one">
+    <Number Class="one">
       <Instance Value="1;1"/>
     </Number>
-    <Number Name="two">
+    <Number Class="two">
       <Instance Value="2;2"/>
     </Number>
-    <Number Name="four">
+    <Number Class="four">
       <Instance Value="4;4"/>
     </Number>
-    <Number Name="eight">
+    <Number Class="eight">
       <Instance Value="8;8"/>
     </Number>
     <StateVars>
       <Instance  Name="processorbits" Init="16"/>
     </StateVars>
     <State Name="addr16">
-      <When Cond="'processorbits'==16" Value=""/>
-      <When Cond="'processorbits'!=16" Value="0x67:8"/>
+      <Value Cond="'processorbits'==16" Coding=""/>
+      <Value Cond="'processorbits'!=16" Coding="0x67:8"/>
     </State>
     <State Name="addr32">
-      <When Cond="'processorbits'==32" Value=""/>
-      <When Cond="'processorbits'!=32" Value="0x67:8"/>
+      <Value Cond="'processorbits'==32" Coding=""/>
+      <Value Cond="'processorbits'!=32" Coding="0x67:8"/>
     </State>
     <State Name="addr64">
-      <When Cond="true" Value=""/>
+      <Value Cond="true" Coding=""/>
     </State>
     <State Name="data16">
-      <When Cond="'processorbits'==16" Value=""/>
-      <When Cond="'processorbits'!=16" Value="0x66:8"/>
+      <Value Cond="'processorbits'==16" Coding=""/>
+      <Value Cond="'processorbits'!=16" Coding="0x66:8"/>
     </State>
     <State Name="data32">
-      <When Cond="'processorbits'==16" Value="0x66:8"/>
-      <When Cond="'processorbits'!=16" Value=""/>
+      <Value Cond="'processorbits'==16" Coding="0x66:8"/>
+      <Value Cond="'processorbits'!=16" Coding=""/>
     </State>
     <State Name="data64">
-      <When Cond="true" Value=""/>
+      <Value Cond="true" Coding=""/>
     </State>
     <State Name="no64">
-      <When Cond="'processorbits'==64" Value="illegal"/>
-      <When Cond="'processorbits'!=64" Value=""/>
+      <Value Cond="'processorbits'==64" Coding="illegal"/>
+      <Value Cond="'processorbits'!=64" Coding=""/>
     </State>
     <State Name="only64">
-      <When Cond="'processorbits'!=64" Value="illegal"/>
-      <When Cond="'processorbits'==64" Value=""/>
+      <Value Cond="'processorbits'!=64" Coding="illegal"/>
+      <Value Cond="'processorbits'==64" Coding=""/>
     </State>
     <State Name="rex">
-      <When Cond="true" Value="0x4:4"/>
+      <Value Cond="true" Coding="0x4:4"/>
     </State>
     <Register Class="general">
       <Instance Name="al" Ord="0" B="0" X="0" R="0" W="0" Class="reg8,low"/>
@@ -352,14 +352,7 @@
     <Register Class="tracereg">
       <Instance Name="tr7" Ord="7" />
     </Register>
-    <DoubleReg Name="edx:eax"/>
-    <DoubleReg Name="ecx:eax"/>
-    <DoubleReg Name="edx:ecx"/>
-    <DoubleReg Name="ebx:esi" Class="pushed"/>
-    <DoubleReg Name="ebx:edi" Class="pushed"/>
-    <DoubleReg Name="edi:esi" Class="pushed"/>
-
-    <Address Name="['mem:address16']" Class="rmx,rm,frm,rm8,rm16,rm32,rm16it" Coding="'addr16' *'mand' 0x40:8 'op' 0:2 'mod':3 6:3 'mem':16"/>
+     <Address Name="['mem:address16']" Class="rmx,rm,frm,rm8,rm16,rm32,rm16it" Coding="'addr16' *'mand' 0x40:8 'op' 0:2 'mod':3 6:3 'mem':16"/>
     <Address Name="[ds:'mem:address16']" Class="rmx,rm,frm,rm8,rm16,rm32,rm16it" Coding="*'mand' 0x3e:8 'addr16' *'mand' 0x40:8 'op' 0:2 'mod':3 6:3 'mem':16"/>
     <Address Name="[ss:'mem:address16']" Class="rmx,rm,frm,rm8,rm16,rm32,rm16it" Coding="*'mand' 0x36:8 'addr16' *'mand' 0x40:8 'op' 0:2 'mod':3 6:3 'mem':16"/>
     <Address Name="['seg:segment':'mem:address16']" Class="rmx,rm,frm,rm8,rm16,rm32,rm16it" Coding="*'mand' 'seg.Prefix':8 'addr16' *'mand' 0x40:8 'op' 0:2 'mod':3 6:3 'mem':16"/>
@@ -2669,6 +2662,13 @@
 			<Instance Name="double" min="-1022" bias="1022" max="1024" mantissa_bits="54"/>
 			<Instance Name="longdouble" min="-16382" bias="16382" max="16384" mantissa_bits="65"/>
 		</Floating>
+                <DoubleReg Name="edx:eax"/>
+                <DoubleReg Name="ecx:eax"/>
+                <DoubleReg Name="edx:ecx"/>
+                <DoubleReg Name="ebx:esi" Class="pushed"/>
+                <DoubleReg Name="ebx:edi" Class="pushed"/>
+                <DoubleReg Name="edi:esi" Class="pushed"/>
+
 		<Assembler Profile="nasm">
 			<Usage>
 			</Usage>

@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "ppMain.h"
@@ -30,6 +30,13 @@
 #include <cstdlib>
 #include <algorithm>
 
+#if defined(WIN32) || defined(MICROSOFT)
+extern "C"
+{
+    char* __stdcall GetModuleFileNameA(void* handle, char* buf, int size);
+}
+#endif
+
 //#define TESTANNOTATE
 CmdSwitchParser ppMain::SwitchParser;
 CmdSwitchBool ppMain::assembly(SwitchParser, 'a', false);
@@ -39,6 +46,8 @@ CmdSwitchBool ppMain::trigraphs(SwitchParser, 'T', false);
 CmdSwitchDefine ppMain::defines(SwitchParser, 'D');
 CmdSwitchDefine ppMain::undefines(SwitchParser, 'U');
 CmdSwitchString ppMain::includePath(SwitchParser, 'I', ';');
+CmdSwitchString ppMain::CsysIncludePath(SwitchParser, 'z', ';');
+CmdSwitchString ppMain::CPPsysIncludePath(SwitchParser, 'Z', ';');
 CmdSwitchString ppMain::errorMax(SwitchParser, 'E');
 CmdSwitchFile ppMain::File(SwitchParser, '@');
 CmdSwitchString ppMain::outputPath(SwitchParser, 'o');
@@ -46,12 +55,12 @@ CmdSwitchString ppMain::outputPath(SwitchParser, 'o');
 const char* ppMain::usageText =
     "[options] files\n"
     "\n"
-    "/9             - C99 mode                  /a      - Assembler mode\n"
-    "/A             - Disable extensions        /Dxxx   - Define something\n"
-    "/E[+]nn        - Max number of errors      /Ipath  - Specify include path\n"
-    "/T             - translate trigraphs       /Uxxx   - Undefine something\n"
+    "/9             - C99 mode                  /a          - Assembler mode\n"
+    "/A             - Disable extensions        /Dxxx       - Define something\n"
+    "/E[+]nn        - Max number of errors      /Ipath      - Specify include path\n"
+    "/T             - translate trigraphs       /Uxxx       - Undefine something\n"
     "/V, --version  - Show version and date     /!,--nologo - No logo\n"
-    "/o             - set output file\n"
+    "/oxxx          - set output file           /zxxx,/Zxxx - set system path\n"
     "Time: " __TIME__ "  Date: " __DATE__;
 
 int main(int argc, char* argv[])
@@ -110,10 +119,16 @@ static void TestCharInfo(std::ostream* outStream, PreProcessor& pp, std::string&
 #endif
 int ppMain::Run(int argc, char* argv[])
 {
+    char buffer[256];
+#if defined(WIN32) || defined(MICROSOFT)
+    GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
+#else
+    strcpy(buffer, argv[0]);
+#endif
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
     CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
+    std::string configName = Utils::QualifiedFile(buffer, ".cfg");
     std::fstream configTest(configName, std::ios::in);
     if (!configTest.fail())
     {
@@ -129,32 +144,45 @@ int ppMain::Run(int argc, char* argv[])
     if (File.GetValue())
         files.Add(File.GetValue() + 1);
 
-    std::string sysSrchPth;
-    std::string srchPth;
-    if (!includePath.GetValue().empty())
-    {
-        size_t n = includePath.GetValue().find_first_of(';');
-        if (n == std::string::npos)
-        {
-            sysSrchPth = includePath.GetValue();
-        }
-        else
-        {
-            sysSrchPth = includePath.GetValue().substr(0, n);
-            srchPth = includePath.GetValue().substr(n + 1);
-        }
-    }
     Tokenizer::SetAnsi(disableExtensions.GetValue());
     Tokenizer::SetC99(c99Mode.GetValue());
     for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
-        PreProcessor pp((*it), srchPth, sysSrchPth, false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false,
+        bool cplusplus = false;
+        static const std::list<std::string> cppExtensions = {".h", ".hh", ".hpp", ".hxx", ".hm", ".cpp", ".cxx", ".cc", ".c++"};
+        for (auto& str : cppExtensions)
+        {
+            if (Utils::HasExt((*it).c_str(), str.c_str()))
+            {
+                cplusplus = true;
+                break;
+            }
+        }
+        PreProcessor pp((*it), includePath.GetValue(), cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(), 
+                        false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false,
                         !c99Mode.GetValue(), !disableExtensions.GetValue(), "");
         if (c99Mode.GetValue())
         {
             std::string ver = "199901L";
             pp.Define("__STDC_VERSION__", ver, true);
         }
+
+        // for libcxx 10
+#ifdef _WIN32
+        pp.Define("_WIN32", "1");
+#endif
+        pp.Define("__ORANGEC__", "1");
+        pp.Define("__need_size_t", "1");
+        pp.Define("__need_FILE", "1");
+        pp.Define("__need_wint_t", "1");
+        pp.Define("__need_malloc_and_calloc", "1");
+ 
+        if (cplusplus)
+        {
+            pp.Define("__cplusplus", "201402");
+            break;
+        }
+
         int n = defines.GetCount();
         int nu = undefines.GetCount();
         for (int i = 0, j = 0; i < n || j < nu;)

@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /*
@@ -32,6 +32,8 @@
 #include "compiler.h"
 #include "assert.h"
 #include "ppPragma.h"
+#include "rtti.h"
+#include "optmodules.h"
 
 /*
  *      this module contains all of the code generation routines
@@ -60,6 +62,7 @@
 #include "ioptimizer.h"
 #include "using.h"
 #include "template.h"
+#include "constopt.h"
 
 namespace Parser
 {
@@ -202,14 +205,14 @@ Optimizer::IMODE* make_imaddress(EXPRESSION* node, int size)
     {
         sym->allocate = true;
     }
-    ap2 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+    ap2 = Allocate<Optimizer::IMODE>();
     ap2->offset = node1;
     ap2->mode = Optimizer::i_immed;
     ap2->size = size;
     if (!sym->imvalue)  // the aliasing needs this regardless of whether we really use it
     {
         TYPE* tp = node->v.sp->tp;
-        sym->imvalue = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+        sym->imvalue = Allocate<Optimizer::IMODE>();
         *(sym->imvalue) = *ap2;
         sym->imvalue->mode = Optimizer::i_direct;
         while (tp->array)
@@ -237,7 +240,7 @@ Optimizer::IMODE* make_ioffset(EXPRESSION* node)
     Optimizer::SimpleSymbol* sym = varsp(node1);
     if (sym && sym->imvalue && sym->imvalue->size == natural_size(node))
         return sym->imvalue;
-    ap = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+    ap = Allocate<Optimizer::IMODE>();
     ap->offset = node1;
     ap->mode = Optimizer::i_direct;
     ap->size = natural_size(node);
@@ -253,7 +256,7 @@ Optimizer::IMODE* make_bf(EXPRESSION* node, Optimizer::IMODE* ap, int size)
  *      construct a bit field reference
  */
 {
-    Optimizer::IMODE* ap1 = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+    Optimizer::IMODE* ap1 = Allocate<Optimizer::IMODE>();
     Optimizer::SimpleSymbol* sym = varsp(ap->offset);
     if (node->startbit == -1)
         diag("Illegal bit field");
@@ -443,7 +446,7 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
             aa2 = Optimizer::tempreg(aa1->size, 0);
             Optimizer::gen_icode(Optimizer::i_assn, aa2, aa1, nullptr);
         }
-        aa1 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+        aa1 = Allocate<Optimizer::IMODE>();
         aa1->offset = Optimizer::SymbolManager::Get(node->left->right);
         aa1->mode = Optimizer::i_direct;
         aa1->size = aa2->size;
@@ -491,7 +494,6 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
     else if (node->left->type == en_const)
     {
         ap1 = gen_expr(funcsp, node->left->v.sp->sb->init->exp, 0, 0);
-        //            ap1 = Optimizer::make_immed(siz1, node->v.sp->sb->value.i);
     }
     /* deref for auto variables */
     else if (node->left->type == en_imode)
@@ -1104,7 +1106,7 @@ Optimizer::IMODE* gen_moveblock(EXPRESSION* node, SYMBOL* funcsp)
             gen_expr(funcsp, node->left, F_STORE, ISZ_OBJECT);
             ap2 = gen_expr(funcsp, node->right, F_OBJECT, ISZ_OBJECT);
             Optimizer::gen_icode(Optimizer::i_parm, 0, ap2, 0);
-            ap1 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+            ap1 = Allocate<Optimizer::IMODE>();
             ap1->mode = Optimizer::i_immed;
             ap1->offset = Optimizer::SymbolManager::Get(node->left);
             ap1->size = ap2->size;
@@ -1160,7 +1162,7 @@ Optimizer::IMODE* gen_clearblock(EXPRESSION* node, SYMBOL* funcsp)
         Optimizer::IMODE* ap1 = Optimizer::LookupLoadTemp(nullptr, ap);
         Optimizer::gen_icode(Optimizer::i_assn, ap1, ap, nullptr);
         Optimizer::intermed_tail->alwayslive = true;
-        ap = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+        ap = Allocate<Optimizer::IMODE>();
         ap->mode = Optimizer::i_immed;
         ap->offset = Optimizer::SymbolManager::Get(node->left);
         ap->size = ISZ_UINT;
@@ -1203,7 +1205,7 @@ Optimizer::IMODE* gen_cpinitblock(EXPRESSION* node, SYMBOL* funcsp, bool cp, int
     ap7 = Optimizer::LookupLoadTemp(nullptr, ap6);
     if (ap7 != ap6)
         Optimizer::gen_icode(Optimizer::i_assn, ap7, ap6, nullptr);
-    ap8 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+    ap8 = Allocate<Optimizer::IMODE>();
     memcpy(ap8, ap7, sizeof(Optimizer::IMODE));
     ap8->mode = Optimizer::i_ind;
     ap3 = gen_expr(funcsp, node->left->right, F_VOL, ISZ_UINT);
@@ -1237,7 +1239,7 @@ Optimizer::IMODE* gen_cpinitobj(EXPRESSION* node, SYMBOL* funcsp, bool cp, int f
     Optimizer::IMODE* ap1 = Optimizer::LookupLoadTemp(nullptr, ap);
     Optimizer::gen_icode(Optimizer::i_assn, ap1, ap, nullptr);
     Optimizer::intermed_tail->alwayslive = true;
-    ap = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+    ap = Allocate<Optimizer::IMODE>();
     ap->mode = Optimizer::i_immed;
     ap->offset = Optimizer::SymbolManager::Get(node->left);
     ap->size = ISZ_UINT;
@@ -1248,7 +1250,7 @@ Optimizer::IMODE* gen_cpinitobj(EXPRESSION* node, SYMBOL* funcsp, bool cp, int f
 Optimizer::IMODE* gen_cpsizeof(EXPRESSION* node, SYMBOL* funcsp, bool cp, int flags)
 {
     Optimizer::IMODE* ap1 = Optimizer::tempreg(-ISZ_UINT, false);
-    Optimizer::IMODE* ap = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+    Optimizer::IMODE* ap = Allocate<Optimizer::IMODE>();
     ap->mode = Optimizer::i_immed;
     ap->offset = Optimizer::SymbolManager::Get(node->left);
     ap->size = ISZ_UINT;
@@ -1300,7 +1302,7 @@ Optimizer::IMODE* gen_assign(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
         while (isarray(base))
             base = basetype(base)->btp;
         ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, isstructured(base) ? ISZ_OBJECT : sizeFromType(base));
-        ap2 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+        ap2 = Allocate<Optimizer::IMODE>();
         ap2->mode = Optimizer::i_immed;
         ap2->offset = Optimizer::SymbolManager::Get(node->right);
         ap2->size = ap1->size;
@@ -1314,7 +1316,7 @@ Optimizer::IMODE* gen_assign(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
         gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, sizeFromType(base));
         ap2 = gen_expr(funcsp, node->right, (flags & ~F_NOVALUE), sizeFromType(base));
         // Optimizer::gen_icode(Optimizer::i_parm, 0, ap2, 0);
-        ap1 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+        ap1 = Allocate<Optimizer::IMODE>();
         ap1->mode = Optimizer::i_immed;
         ap1->offset = Optimizer::SymbolManager::Get(node->left);
         ap1->size = ap2->size;
@@ -1554,7 +1556,7 @@ Optimizer::IMODE* gen_aincdec(SYMBOL* funcsp, EXPRESSION* node, int flags, int s
         ap5 = Optimizer::LookupLoadTemp(ap1, ap1);
         if (ap5 != ap1)
             Optimizer::gen_icode(Optimizer::i_assn, ap5, ap1, nullptr);
-        l = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+        l = Allocate<Optimizer::LIST>();
         l->data = (void*)node;
         if (!incdecList)
             incdecList = incdecListLast = l;
@@ -1718,7 +1720,7 @@ static int push_stackblock(TYPE* tp, EXPRESSION* ep, SYMBOL* funcsp, int sz, EXP
             ap3 = gen_expr(funcsp, ep, F_ADDR, ISZ_UINT);
             if (ap3->mode != Optimizer::i_direct && (Optimizer::chosenAssembler->arch->preferopts & OPT_ARGSTRUCTREF))
             {
-                ap = (Optimizer::IMODE*)oAlloc(sizeof(Optimizer::IMODE));
+                ap = oAllocate<Optimizer::IMODE>();
                 *ap = *ap3;
                 ap3 = ap;
                 ap3->mode = Optimizer::i_direct;
@@ -1968,7 +1970,7 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
                                         Optimizer::chosenAssembler->arch->retblocksize))
                     {
                         Optimizer::IMODE* temp = Optimizer::tempreg(tail->dc.left->size, 0);
-                        Optimizer::QUAD* q = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+                        Optimizer::QUAD* q = Allocate<Optimizer::QUAD>();
                         *q = *tail;
                         q->dc.opcode = Optimizer::i_assn;
                         q->ans = temp;
@@ -2025,12 +2027,12 @@ Optimizer::SimpleExpression *CreateMsilVarargs(SYMBOL* funcsp, FUNCTIONCALL* f)
         }  
         if (count)
         {
-            TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
+            TYPE* tp = Allocate<TYPE>();
             tp->type = bt_pointer;
             tp->size = 0;
             tp->array = tp->msil = true;
             tp->rootType = tp;
-            tp->btp = (TYPE*)Alloc(sizeof(TYPE));
+            tp->btp = Allocate<TYPE>();
             tp->btp->type = bt___object;
             tp->btp->size = getSize(bt_pointer);
             tp->btp->rootType = tp->btp;
@@ -2040,11 +2042,11 @@ Optimizer::SimpleExpression *CreateMsilVarargs(SYMBOL* funcsp, FUNCTIONCALL* f)
             rv->sp->msilObjectArray = true;
 
             // this is for the initialization of the object array
-            Optimizer::QUAD* q2 = (Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
-            Optimizer::QUAD* q3 = (Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+            Optimizer::QUAD* q2 = Allocate<Optimizer::QUAD>();
+            Optimizer::QUAD* q3 = Allocate<Optimizer::QUAD>();
             Optimizer::IMODE* ap4 = Optimizer::tempreg(ISZ_ADDR, 0);
             Optimizer::IMODE* ap5;
-            Optimizer::IMODE* ap6 = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+            Optimizer::IMODE* ap6 = Allocate<Optimizer::IMODE>();
             ap6->offset = rv;
             ap6->mode = Optimizer::i_direct;
             ap6->size = ISZ_ADDR;
@@ -2101,7 +2103,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         return gen_expr(funcsp, f->fcall, 0, ISZ_ADDR);
     }
 
-    if (f->sp->sb->isInline)
+    if (f->sp->sb->attribs.inheritable.isInline)
     {
         if (f->sp->sb->noinline)
         {
@@ -2228,7 +2230,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 if (varargarray)
                 {
                     Optimizer::IMODE* ap2 = Optimizer::tempreg(ISZ_ADDR, 0);
-                    Optimizer::IMODE* ap3 = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+                    Optimizer::IMODE* ap3 = Allocate<Optimizer::IMODE>();
                     ap3->size = ISZ_ADDR;
                     ap3->mode = Optimizer::i_direct;
                     ap3->offset = varargarray;
@@ -2296,7 +2298,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                             if (f->sp && !ap->offset->sp->importThunk && !f->sp->sb->attribs.inheritable.linkage2 == lk_import &&
                (Optimizer::architecture != ARCHITECTURE_MSIL))
                             {
-                                Optimizer::IMODE* ap1 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+                                Optimizer::IMODE* ap1 = Allocate<Optimizer::IMODE>();
                                 *ap1 = *ap;
                                 ap1->retval = false;
                                 ap = ap1;
@@ -2308,7 +2310,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         {
             Optimizer::IMODE* ap1 = ap;
             Optimizer::gen_icode(Optimizer::i_assn, ap = Optimizer::tempreg(ISZ_ADDR, 0), ap1, 0);
-            ap1 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+            ap1 = Allocate<Optimizer::IMODE>();
             *ap1 = *ap;
             ap1->retval = false;
             ap = ap1;
@@ -2331,7 +2333,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         INITLIST* il = f->arguments;
         while (il)
         {
-            *p = (Optimizer::ArgList*)Alloc(sizeof(Optimizer::ArgList));
+            *p = Allocate<Optimizer::ArgList>();
             (*p)->tp = Optimizer::SymbolManager::Get(il->tp);
             if (vaarg && !lvalue(il->exp) && !castvalue(il->exp))
                 (*p)->exp = Optimizer::SymbolManager::Get(il->exp);
@@ -2403,7 +2405,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             int siz1;
             if (stobj)
             {
-                ap1 = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+                ap1 = Allocate<Optimizer::IMODE>();
                 *ap1 = *stobj;
                 ap1->mode = Optimizer::i_ind;
                 ap1->size = ISZ_OBJECT;
@@ -2430,7 +2432,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         int siz1;
         if (stobj)
         {
-            ap1 = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+            ap1 = Allocate<Optimizer::IMODE>();
             *ap1 = *stobj;
             ap1->mode = Optimizer::i_ind;
             ap1->size = ISZ_OBJECT;
@@ -2562,7 +2564,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                 left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
                 Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
                 EXPRESSION* exp = anonymousVar(sc_auto, node->v.ad->tp);
-                rv = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+                rv = Allocate<Optimizer::IMODE>();
                 rv->mode = Optimizer::i_immed;
                 rv->size = ISZ_ADDR;
                 rv->offset = Optimizer::SymbolManager::Get(exp);
@@ -2605,7 +2607,8 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                 rv = right;
             }
             break;
-        case Optimizer::ao_modify:
+        case Optimizer::ao_modify_fetch:
+        case Optimizer::ao_fetch_modify:
             if (isstructured(node->v.ad->tp))
             {
                 left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
@@ -2615,7 +2618,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                 right = gen_expr(funcsp, node->v.ad->value, F_STORE, ISZ_ADDR);
                 barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
                 EXPRESSION* exp = anonymousVar(sc_auto, node->v.ad->tp);
-                rv = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+                rv = Allocate<Optimizer::IMODE>();
                 rv->mode = Optimizer::i_immed;
                 rv->size = ISZ_ADDR;
                 rv->offset = Optimizer::SymbolManager::Get(exp);
@@ -2666,12 +2669,15 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                         Optimizer::gen_icode(Optimizer::i_assn, tv, rv, nullptr);
                         Optimizer::gen_icode(op, tv, tv, right);
                     }
+                    if (node->v.ad->atomicOp == Optimizer::ao_modify_fetch)
+                        Optimizer::gen_icode(Optimizer::i_assn, rv, tv, nullptr);
                     Optimizer::gen_icode(Optimizer::i_assn, left, tv, nullptr);
                 }
                 else
                 {
                     Optimizer::gen_icode(op, rv, left, right);
                     Optimizer::intermed_tail->atomic = true;
+                    Optimizer::intermed_tail->atomicpostfetch = node->v.ad->atomicOp == Optimizer::ao_modify_fetch;
                     Optimizer::intermed_tail->alwayslive = true;
                 }
                 gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
@@ -2794,7 +2800,7 @@ Optimizer::IMODE* doatomicFence(SYMBOL* funcsp, EXPRESSION* parent, EXPRESSION* 
             }
             if (start)
             {
-                cur = (Optimizer::LIST *)Alloc(sizeof(Optimizer::LIST));
+                cur = Allocate<Optimizer::LIST>();
                 cur->next = lst;
                 lst = cur;
                 cur->data = node;
@@ -2867,6 +2873,17 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
     }
     switch (node->type)
     {
+        case en_dot:
+        case en_pointsto:
+            // usually this would be found in a template argument list, but just in case...
+            optimize_for_constants(&node);
+            if (node->type == en_dot || node->type == en_pointsto)
+            {
+                 node = intNode(en_c_i, 0);
+                 diag("gen_expr: member reference not valid");
+            }
+            rv = gen_expr(funcsp, node, flags, size);
+            break;
         case en_shiftby:
             ap3 = gen_expr(funcsp, node->left, flags, size);
             ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
@@ -3024,7 +3041,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 while (isarray(base))
                     base = basetype(base)->btp;
                 rv = Optimizer::tempreg(isstructured(base) ? ISZ_OBJECT : sizeFromType(base), 0);
-                ap1 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+                ap1 = Allocate<Optimizer::IMODE>();
                 ap1->size = rv->size;
                 ap1->mode = Optimizer::i_immed;
                 ap1->offset = Optimizer::SymbolManager::Get(node);
@@ -3071,7 +3088,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
         case en_threadlocal:
         {
             Optimizer::SimpleExpression* exp = Optimizer::SymbolManager::Get(node);
-            ap1 = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+            ap1 = Allocate<Optimizer::IMODE>();
             ap1->mode = Optimizer::i_direct;
             ap1->offset = exp;
             ap1->size = size;
@@ -3120,7 +3137,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             }
             else
             {
-                ap1 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+                ap1 = Allocate<Optimizer::IMODE>();
                 ap1->offset = Optimizer::SymbolManager::Get(node);
                 ap1->mode = Optimizer::i_immed;
                 if (flags & F_OBJECT)
@@ -3140,7 +3157,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             sym->addressTaken = true;
             break;
         case en_labcon:
-            ap1 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+            ap1 = Allocate<Optimizer::IMODE>();
             ap1->offset = Optimizer::SymbolManager::Get(node);
             ap1->mode = Optimizer::i_immed;
             ap1->size = size;
@@ -3212,7 +3229,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             rv = ap1;
             break;
         case en_c_string:
-            ap1 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+            ap1 = Allocate<Optimizer::IMODE>();
             ap1->mode = Optimizer::i_immed;
             ap1->size = ISZ_STRING;
             ap1->offset = Optimizer::SymbolManager::Get(node);
@@ -3263,7 +3280,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
         case en_c_fc:
         case en_c_dc:
         case en_c_ldc:
-            ap1 = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+            ap1 = Allocate<Optimizer::IMODE>();
             ap1->mode = Optimizer::i_immed;
             ap1->offset = Optimizer::SymbolManager::Get(node);
             switch (node->type)
@@ -3460,6 +3477,10 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 node->v.t.thisptr->xcDest = ++consIndex;
                 xcexp->right->v.i = consIndex;
                 gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
+                __xclist* t = Allocate<__xclist>();;
+                t->byStmt = false;
+                t->exp = node;
+                rttiStatements[node->v.t.thisptr->xcInit][node->v.t.thisptr->xcDest] = t;
             }
             ap1 = gen_expr(funcsp, node->left, flags, size);
             if (!node->dest && xcexp)
@@ -3467,6 +3488,10 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 node->v.t.thisptr->xcInit = ++consIndex;
                 xcexp->right->v.i = consIndex;
                 gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
+                __xclist* t = Allocate<__xclist>();;
+                t->byStmt = false;
+                t->exp = node;
+                rttiStatements[node->v.t.thisptr->xcInit][node->v.t.thisptr->xcDest] = t;
             }
             if (node->left->type == en_stmt)
             {
@@ -3490,7 +3515,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                     aa2 = Optimizer::tempreg(aa1->size, 0);
                     Optimizer::gen_icode(Optimizer::i_assn, aa2, aa1, nullptr);
                 }
-                aa1 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+                aa1 = Allocate<Optimizer::IMODE>();
                 aa1->offset = Optimizer::SymbolManager::Get(node->right);
                 aa1->mode = Optimizer::i_immed;
                 aa1->size = aa2->size;
@@ -3534,7 +3559,6 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
         case en_const:
             /* should never get here unless the constant optimizer is turned off */
             ap1 = gen_expr(funcsp, node->v.sp->sb->init->exp, 0, 0);
-            //            ap1 = Optimizer::make_immed(natural_size(node), node->v.sp->sb->value.i);
             rv = ap1;
             break;
         default:
@@ -3602,6 +3626,11 @@ int natural_size(EXPRESSION* node)
     }
     switch (node->type)
     {
+        case en_sizeofellipse:
+            return ISZ_UINT;
+        case en_pointsto:
+        case en_dot:
+            return natural_size(node->right);
         case en_thisshim:
             return ISZ_ADDR;
         case en_msil_array_access:

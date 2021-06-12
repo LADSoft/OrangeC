@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include <stdio.h>
@@ -126,7 +126,7 @@ bool matchesop(enum i_ops one, enum i_ops two)
 }
 static RESHAPE_LIST* InsertExpression(IMODE* im, RESHAPE_EXPRESSION* expr, QUAD* ins, int flags)
 {
-    RESHAPE_LIST* list = (RESHAPE_LIST*)tAlloc(sizeof(RESHAPE_LIST));
+    RESHAPE_LIST* list = tAllocate<RESHAPE_LIST>();
     RESHAPE_LIST** test = &expr->list;
     list->flags = flags;
     list->im = im;
@@ -267,7 +267,7 @@ static RESHAPE_LIST* cloneReshape(RESHAPE_LIST* in)
     RESHAPE_LIST *rv = nullptr, **p = &rv;
     while (in)
     {
-        *p = (RESHAPE_LIST*)tAlloc(sizeof(RESHAPE_LIST));
+        *p = tAllocate<RESHAPE_LIST>();
         **p = *in;
         (*p)->next = nullptr;
         in = in->next;
@@ -375,7 +375,7 @@ void ReplaceHashReshape(QUAD* rv, UBYTE* key, int size, DAGLIST** table)
 {
     int hashval = dhash(key, size);
     DAGLIST* newDag;
-    newDag = (DAGLIST*)tAlloc(sizeof(DAGLIST));
+    newDag = tAllocate<DAGLIST>();
     newDag->rv = (UBYTE*)rv;
     newDag->key = key;
     newDag->next = table[hashval];
@@ -405,8 +405,8 @@ static void replaceIM(IMODE** iml, IMODE* im)
             SimpleSymbol* sym = im->offset->sp;
             IMODE* imind;
             IMODELIST* imindl;
-            imind = (IMODE*)Alloc(sizeof(IMODE));
-            imindl = (IMODELIST*)Alloc(sizeof(IMODELIST));
+            imind = Allocate<IMODE>();
+            imindl = Allocate<IMODELIST>();
             *imind = *(im);
             imind->mode = i_ind;
             imind->ptrsize = (*iml)->ptrsize;
@@ -433,7 +433,7 @@ static void CopyExpressionTree(enum i_ops op, BLOCK* b, QUAD* insertBefore, IMOD
         {
             QUAD* newIns;
             op = i_nop;
-            newIns = (QUAD*)Alloc(sizeof(QUAD));
+            newIns = Allocate<QUAD>();
             newIns->ans = InitTempOpt(def->ans->offset->sp->imvalue->size, def->ans->offset->sp->imvalue->size);
             newIns->dc.left = def->dc.left;
             newIns->dc.right = def->dc.right;
@@ -457,7 +457,7 @@ static void CopyExpressionTree(enum i_ops op, BLOCK* b, QUAD* insertBefore, IMOD
         {
             QUAD* newIns;
             op = i_nop;
-            newIns = (QUAD*)Alloc(sizeof(QUAD));
+            newIns = Allocate<QUAD>();
             newIns->ans = InitTempOpt(def->ans->offset->sp->imvalue->size, def->ans->offset->sp->imvalue->size);
             newIns->dc.left = def->dc.left;
             newIns->dc.right = def->dc.right;
@@ -477,7 +477,7 @@ static IMODE* InsertAddInstruction(BLOCK* b, int size, QUAD* insertBefore, int f
         CopyExpressionTree(i_add, b, insertBefore, &iml, &imr);
     if (flagsl & (RF_NEG | RF_NOT))
     {
-        insn = (QUAD*)Alloc(sizeof(QUAD));
+        insn = Allocate<QUAD>();
         insn->ans = InitTempOpt(size, size);
         insn->dc.opcode = flagsl & RF_NEG ? i_neg : i_not;
         insn->dc.left = iml;
@@ -486,14 +486,14 @@ static IMODE* InsertAddInstruction(BLOCK* b, int size, QUAD* insertBefore, int f
     /*
     if (flagsr & (RF_NEG | RF_NOT))
     {
-        insn2 = (QUAD *)Alloc(sizeof(QUAD));
+        insn2 = Allocate<QUAD>();
         insn2->ans = InitTempOpt(size,size);
         insn2->dc.opcode = flagsr & RF_NEG ? i_neg : i_not;
         insn2->dc.left = imr;
         imr = insn2->ans;
     }
     */
-    ins = (QUAD*)Alloc(sizeof(QUAD));
+    ins = Allocate<QUAD>();
     ins->dc.opcode = flagsr & RF_NEG ? i_sub : i_add;
     ins->dc.left = iml;
     ins->dc.right = imr;
@@ -539,7 +539,7 @@ static IMODE* InsertMulInstruction(BLOCK* b, int size, QUAD* insertBefore, int f
         }
         else
         {
-            insn = (QUAD*)Alloc(sizeof(QUAD));
+            insn = Allocate<QUAD>();
             insn->ans = InitTempOpt(size, size);
             insn->dc.left = make_immed(size, 1);
             insn->dc.opcode = i_lsl;
@@ -547,7 +547,7 @@ static IMODE* InsertMulInstruction(BLOCK* b, int size, QUAD* insertBefore, int f
             iml = insn->ans;
         }
     }
-    ins = (QUAD*)Alloc(sizeof(QUAD));
+    ins = Allocate<QUAD>();
     ins->dc.opcode = flagsr & RF_SHIFT ? i_lsl : i_mul;
     ins->dc.left = iml;
     ins->dc.right = imr;

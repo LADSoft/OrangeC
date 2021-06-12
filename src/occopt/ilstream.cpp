@@ -1,26 +1,27 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
+
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
@@ -34,13 +35,14 @@
 #include "SharedMemory.h"
 #include <deque>
 #include <functional>
+#include <unordered_map>
 #include <map>
 #include <set>
 #include "ildata.h"
 namespace Optimizer
 {
 static std::list<std::string> textRegion;
-static std::map<std::string, int> cachedText;
+static std::unordered_map<std::string, int> cachedText;
 static size_t textOffset;
 static std::map<IMODE*, int> cachedImodes;
 static std::set<SimpleSymbol*> cachedAutos;
@@ -191,10 +193,6 @@ static void StreamType(SimpleType* type)
             StreamIndex(type->startbit);
             if (type->sp && type->type != st_any)
             {
-                //                if (type->sp->fileIndex == 0 && type->sp->typeIndex == 0)
-                //                {
-                //                    printf("hi");
-                //                }
 
                 if (type->sp->storage_class == scc_auto || type->sp->storage_class == scc_register)
                 {
@@ -286,8 +284,6 @@ static void StreamExpression(SimpleExpression* exp)
                 case Optimizer::se_threadlocal:
                 case Optimizer::se_pc:
                 case Optimizer::se_structelem:
-                    //                if (exp->sp->fileIndex == 0)
-                    //                    printf("hi");
                     StreamIndex(exp->sp->fileIndex);
                     break;
                 case Optimizer::se_labcon:
@@ -495,8 +491,6 @@ static void StreamInstruction(QUAD* q)
                 StreamIndex(0);
             if (q->altsp)
             {
-                //                if (q->altsp->fileIndex == 0)
-                //                    printf("hi");
                 if (q->altsp->storage_class == scc_auto ||
                     (q->altsp->storage_class == scc_parameter && q->altsp->fileIndex != q->altsp->typeIndex) ||
                     q->altsp->storage_class == scc_register)
@@ -574,7 +568,6 @@ static void StreamXParams()
         StreamString(intermediateName);
         StreamString(backendName);
         StreamIndex(showBanner);
-        StreamIndex(verbosity);
         StreamIndex(assembling);
         StreamIndex(dataAlign);
         StreamIndex(bssAlign);
@@ -995,8 +988,10 @@ static void NumberTypes()
     {
         s->typeIndex = 2 * i++ + 1;
         // static members
-        if (s->storage_class != scc_external && s->storage_class != scc_global)
+        if (s->storage_class != scc_external && s->storage_class != scc_global && s->storage_class != scc_constant)
+        {
             s->fileIndex = s->typeIndex;
+        }
     }
     for (auto s : typedefs)
         s->typeIndex = s->fileIndex = 2 * i++ + 1;

@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "compiler.h"
@@ -85,18 +85,18 @@ bool istype(SYMBOL* sym)
     return (sym->tp->type != bt_templateselector && sym->sb->storage_class == sc_type) || sym->sb->storage_class == sc_typedef;
 }
 bool ismemberdata(SYMBOL* sym) { return !isfunction(sym->tp) && ismember(sym); }
-bool startOfType(LEXEME* lex, bool assumeType)
+bool startOfType(LEXLIST* lex, bool assumeType)
 {
     Optimizer::LINEDATA *oldHead = linesHead, *oldTail = linesTail;
     if (!lex)
         return false;
 
-    if (lex->type == l_id)
+    if (lex->data->type == l_id)
     {
-        TEMPLATEPARAMLIST* tparam = TemplateLookupSpecializationParam(lex->value.s.a);
+        TEMPLATEPARAMLIST* tparam = TemplateLookupSpecializationParam(lex->data->value.s.a);
         if (tparam)
         {
-            LEXEME* placeHolder = lex;
+            LEXLIST* placeHolder = lex;
             bool member;
             lex = getsym();
             member = MATCHKW(lex, classsel);
@@ -114,11 +114,11 @@ bool startOfType(LEXEME* lex, bool assumeType)
             }
         }
     }
-    if (lex->type == l_id || MATCHKW(lex, classsel) || MATCHKW(lex, kw_decltype))
+    if (lex->data->type == l_id || MATCHKW(lex, classsel) || MATCHKW(lex, kw_decltype))
     {
         bool isdecltype = MATCHKW(lex, kw_decltype);
         SYMBOL *sym, *strSym = nullptr;
-        LEXEME* placeholder = lex;
+        LEXLIST* placeholder = lex;
         bool dest = false;
         nestedSearch(lex, &sym, &strSym, nullptr, &dest, nullptr, false, sc_global, false, false);
         if (Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL))
@@ -326,20 +326,12 @@ bool ismsil(TYPE* tp)
     tp = basetype(tp);
     return tp->type == bt___string || tp->type == bt___object;
 }
-bool isconstraw(const TYPE* tp, bool useTemplate)
+bool isconstraw(const TYPE* tp)
 {
     bool done = false;
     bool rv = false;
     while (!done && tp)
     {
-        if (useTemplate)
-        {
-            if (tp->templateConst)
-            {
-                rv = true;
-                done = true;
-            }
-        }
         switch (tp->type)
         {
             case bt_restrict:
@@ -367,7 +359,7 @@ bool isconstraw(const TYPE* tp, bool useTemplate)
     }
     return rv;
 }
-bool isconst(const TYPE* tp) { return isconstraw(tp, false); }
+bool isconst(const TYPE* tp) { return isconstraw(tp); }
 bool isvolatile(const TYPE* tp)
 {
     while (tp)
@@ -534,8 +526,9 @@ bool isunion(TYPE* tp)
         return tp->type == bt_union;
     return false;
 }
-void DeduceAuto(TYPE** pat, TYPE* nt)
+void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
 {
+    TYPE *patin = *pat;
     TYPE* in = nt;
     if (isautotype(*pat))
     {
@@ -543,16 +536,36 @@ void DeduceAuto(TYPE** pat, TYPE* nt)
         bool err = false;
         if (isref(*pat))
         {
-            if ((*pat)->type == bt_rref)
+            if ((*pat)->type == bt_rref && !isconst((*pat)->btp) && !isvolatile((*pat)->btp))
             {
                 // forwarding?  unadorned rref!
-                if (!nt->rref && basetype(nt)->type != bt_rref)
+                if (!nt->rref && basetype(nt)->type != bt_rref && !isarithmeticconst(exp))
                 {
-                    *pat = (TYPE*)Alloc(sizeof(TYPE));
+                    // lref
+                    *pat = Allocate<TYPE>();
                     (*pat)->type = bt_lref;
                     (*pat)->size = getSize(bt_pointer);
                     (*pat)->rootType = (*pat);
                     TYPE* t = basetype(nt);
+                    if (isref(t))
+                        t = t->btp;
+                    (*pat)->btp = t;
+                    return;
+                }
+                else
+                {
+                    // rref, get rid of qualifiers and return an rref
+                    TYPE *tp1;
+                    if (nt->type == bt_rref)
+                        tp1 = basetype(nt->btp);
+                    else
+                        tp1 = basetype(nt);
+                    // rref
+                    *pat = Allocate<TYPE>();
+                    (*pat)->type = bt_rref;
+                    (*pat)->size = getSize(bt_pointer);
+                    (*pat)->rootType = (*pat);
+                    TYPE* t = tp1;
                     if (isref(t))
                         t = t->btp;
                     (*pat)->btp = t;
@@ -566,32 +579,25 @@ void DeduceAuto(TYPE** pat, TYPE* nt)
             pointerOrRef = true;
             pat = &basetype(*pat)->btp;
         }
-        while (!err && ispointer(*pat) && ispointer(nt))
+        while (ispointer(*pat) && ispointer(nt))
         {
-            if (!ispointer(nt))
-            {
-                err = true;
-            }
-            else
-            {
-                pointerOrRef = true;
-                pat = &basetype(*pat)->btp;
-                nt = basetype(nt)->btp;
-            }
+            pointerOrRef = true;
+            pat = &basetype(*pat)->btp;
+            nt = basetype(nt)->btp;
         }
-        if (basetype(*pat)->type != bt_auto)
+        if (ispointer(*pat))
             err = true;
         nt = basetype(nt);
         if (err)
         {
-            errortype(ERR_CANNOT_DEDUCE_AUTO_TYPE, in, in);
+            errortype(ERR_CANNOT_DEDUCE_AUTO_TYPE, patin, in);
         }
         else if (!pointerOrRef)
         {
             if ((*pat)->decltypeauto)
                 if ((*pat)->decltypeautoextended)
                 {
-                    *pat = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+                    *pat = Allocate<TYPE>();
                     (*pat)->type = bt_lref;
                     (*pat)->size = getSize(bt_pointer);
                     (*pat)->btp = nt;
@@ -608,6 +614,10 @@ void DeduceAuto(TYPE** pat, TYPE* nt)
             {
                 *pat = nt;
             }
+        }
+        else if (ispointer(in))
+        {
+             *pat = nt;
         }
         else
         {
@@ -636,7 +646,7 @@ SYMBOL* getFunctionSP(TYPE** tp)
     }
     return nullptr;
 }
-LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
+LEXLIST* concatStringsInternal(LEXLIST* lex, STRING** str, int* elems)
 {
     Optimizer::SLCHAR** list;
     char* suffix = nullptr;
@@ -644,52 +654,52 @@ LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
     int pos = 0;
     enum e_lexType type = l_astr;
     STRING* string;
-    list = (Optimizer::SLCHAR**)(Optimizer::SLCHAR**)Alloc(sizeof(Optimizer::SLCHAR*) * count);
+    list = Allocate<Optimizer::SLCHAR*>(count);
     while (lex &&
-           (lex->type == l_astr || lex->type == l_wstr || lex->type == l_ustr || lex->type == l_Ustr || lex->type == l_msilstr))
+           (lex->data->type == l_astr || lex->data->type == l_wstr || lex->data->type == l_ustr || lex->data->type == l_Ustr || lex->data->type == l_msilstr))
     {
-        if (lex->type == l_msilstr)
+        if (lex->data->type == l_msilstr)
             type = l_msilstr;
-        else if (lex->type == l_Ustr)
+        else if (lex->data->type == l_Ustr)
             type = l_Ustr;
-        else if (type != l_Ustr && type != l_msilstr && lex->type == l_ustr)
+        else if (type != l_Ustr && type != l_msilstr && lex->data->type == l_ustr)
             type = l_ustr;
-        else if (type != l_Ustr && type != l_ustr && type != l_msilstr && lex->type == l_wstr)
+        else if (type != l_Ustr && type != l_ustr && type != l_msilstr && lex->data->type == l_wstr)
             type = l_wstr;
-        if (lex->suffix)
+        if (lex->data->suffix)
         {
             if (suffix)
             {
-                if (strcmp(lex->suffix, suffix) != 0)
+                if (strcmp(lex->data->suffix, suffix) != 0)
                     error(ERR_LITERAL_SUFFIX_MISMATCH);
             }
             else
             {
-                suffix = lex->suffix;
+                suffix = lex->data->suffix;
             }
         }
         if (pos >= count)
         {
-            Optimizer::SLCHAR** h = (Optimizer::SLCHAR**)(Optimizer::SLCHAR**)Alloc(sizeof(Optimizer::SLCHAR*) * (count + 10));
+            Optimizer::SLCHAR** h = Allocate<Optimizer::SLCHAR*>(count + 10);
             memcpy(h, list, sizeof(Optimizer::SLCHAR*) * count);
             list = h;
             count += 10;
         }
         if (elems)
-            *elems += ((Optimizer::SLCHAR*)lex->value.s.w)->count;
-        list[pos++] = (Optimizer::SLCHAR*)lex->value.s.w;
+            *elems += ((Optimizer::SLCHAR*)lex->data->value.s.w)->count;
+        list[pos++] = (Optimizer::SLCHAR*)lex->data->value.s.w;
         lex = getsym();
     }
-    string = (STRING*)Alloc(sizeof(STRING));
+    string = Allocate<STRING>();
     string->strtype = type;
     string->size = pos;
-    string->pointers = (Optimizer::SLCHAR**)Alloc(pos * sizeof(Optimizer::SLCHAR*));
+    string->pointers = Allocate<Optimizer::SLCHAR*>(pos);
     string->suffix = suffix;
     memcpy(string->pointers, list, pos * sizeof(Optimizer::SLCHAR*));
     *str = string;
     return lex;
 }
-LEXEME* concatStrings(LEXEME* lex, EXPRESSION** expr, enum e_lexType* tp, int* elems)
+LEXLIST* concatStrings(LEXLIST* lex, EXPRESSION** expr, enum e_lexType* tp, int* elems)
 {
     STRING* data;
     lex = concatStringsInternal(lex, &data, elems);
@@ -1294,7 +1304,8 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 case sc_localstatic:
                     if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
                     {
-                        expsym = exprNode(en_add, thisptr, intNode(en_c_i, sym->sb->offset));
+                        expsym = thisptr;
+//                        expsym = exprNode(en_add, thisptr, intNode(en_c_i, sym->sb->offset));
                     }
                     else
                     {
@@ -1306,7 +1317,8 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 case sc_global:
                     if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
                     {
-                        expsym = exprNode(en_add, thisptr, intNode(en_c_i, sym->sb->offset));
+                        expsym = thisptr;
+//                        expsym = exprNode(en_add, thisptr, intNode(en_c_i, sym->sb->offset));
                     }
                     else
                     {
@@ -1366,8 +1378,8 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 if (thisptr && exp->type == en_func)
                 {
                     EXPRESSION* exp1 = init->offset || (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)
-                                           ? exprNode(en_add, expsym, intNode(en_c_i, init->offset))
-                                           : expsym;
+                                           ? exprNode(en_add, copy_expression(expsym), intNode(en_c_i, init->offset))
+                                           : copy_expression(expsym);
                     if (isarray(tp))
                     {
                         exp->v.func->arguments->exp = exp1;
@@ -1382,7 +1394,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             else if (!init->exp)
             {
                 // usually empty braces, coudl be an error though
-                exp = exprNode(en_blockclear, expsym, nullptr);
+                exp = exprNode(en_blockclear, copy_expression(expsym), nullptr);
                 exp->size = init->offset;
             }
             else if (isstructured(init->basetp) || isarray(init->basetp))
@@ -1396,26 +1408,26 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     if (exp2->type == en_func && exp2->v.func->returnSP)
                     {
                         exp2->v.func->returnSP->sb->allocate = false;
-                        exp2->v.func->returnEXP = expsym;
+                        exp2->v.func->returnEXP = copy_expression(expsym);
                         exp = exp2;
                         noClear = true;
                     }
                     else if (exp2->type == en_thisref && exp2->left->v.func->returnSP)
                     {
                         exp2->left->v.func->returnSP->sb->allocate = false;
-                        exp2->left->v.func->returnEXP = expsym;
+                        exp2->left->v.func->returnEXP = copy_expression(expsym);
                         exp = exp2;
                         noClear = true;
                     }
                     else if ((Optimizer::cparams.prm_cplusplus) && !basetype(init->basetp)->sp->sb->trivialCons)
                     {
                         TYPE* ctype = init->basetp;
-                        callConstructorParam(&ctype, &expsym, ctype, exp2, true, false, false, false);
+                        callConstructorParam(&ctype, &expsym, ctype, exp2, true, false, false, false, true);
                         exp = expsym;
                     }
                     else
                     {
-                        exp = exprNode(en_blockassign, expsym, exp2);
+                        exp = exprNode(en_blockassign, copy_expression(expsym), exp2);
                         exp->size = init->basetp->size;
                         exp->altdata = (void*)(init->basetp);
                         noClear = true;
@@ -1446,7 +1458,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         }
                         if (!isstructured(btp) || btp->sp->sb->trivialCons)
                         {
-                            exp = exprNode(en_blockclear, expsym, nullptr);
+                            exp = exprNode(en_blockclear, copy_expression(expsym), nullptr);
                             exp->size = init->basetp->size;
                             exp = exprNode(en_void, exp, nullptr);
                             expp = &exp->right;
@@ -1469,7 +1481,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                                 }
                                 else
                                 {
-                                     asn = exprNode(en_add, expsym, intNode(en_c_i, init->offset));
+                                     asn = exprNode(en_add, copy_expression(expsym), intNode(en_c_i, init->offset));
                                 }
                                 deref(init->basetp, &asn);
                                 cast(init->basetp, &right);
@@ -1498,12 +1510,12 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                                 !init->basetp->sp->sb->trivialCons)
                             {
                                 TYPE* ctype = init->basetp;
-                                callConstructorParam(&ctype, &expsym, ctype, exp, true, false, false, false);
+                                callConstructorParam(&ctype, &expsym, ctype, exp, true, false, false, false, true);
                                 exp = expsym;
                             }
                             else
                             {
-                                exp = exprNode(en_blockassign, expsym, exp);
+                                exp = exprNode(en_blockassign, copy_expression(expsym), exp);
                                 exp->size = init->basetp->size;
                                 exp->altdata = (void*)(init->basetp);
                             }
@@ -1520,7 +1532,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 if (exp2->type == en_func && exp2->v.func->returnSP)
                 {
                     exp2->v.func->returnSP->sb->allocate = false;
-                    exp2->v.func->returnEXP = expsym;
+                    exp2->v.func->returnEXP = copy_expression(expsym);
                     exp = exp2;
                 }
                 else
@@ -1530,14 +1542,14 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         int lab = dumpMemberPtr(exp2->v.sp, init->basetp, true);
                         exp2 = intNode(en_labcon, lab);
                     }
-                    exp = exprNode(en_blockassign, expsym, exp2);
+                    exp = exprNode(en_blockassign, copy_expression(expsym), exp2);
                     exp->size = init->basetp->size;
                     exp->altdata = (void*)(init->basetp);
                 }
             }
             else
             {
-                EXPRESSION* exps = expsym;
+                EXPRESSION* exps = copy_expression(expsym);
                 if (isarray(tp) && tp->msil)
                 {
                     TYPE* btp = tp;
@@ -1552,7 +1564,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     exps->v.msilArray = (MSIL_ARRAY*)Alloc(sizeof(MSIL_ARRAY) + count * sizeof(EXPRESSION*));
                     exps->v.msilArray->max = count;
                     exps->v.msilArray->count = count;
-                    exps->v.msilArray->base = expsym;
+                    exps->v.msilArray->base = copy_expression(expsym);
                     exps->v.msilArray->tp = tp;
                     btp = tp->btp;
                     for (i = 0; i < count; i++)
@@ -1797,13 +1809,13 @@ bool isconstaddress(EXPRESSION* exp)
 }
 SYMBOL*(clonesym)(SYMBOL* sym_in, bool full)
 {
-    SYMBOL* rv = (SYMBOL*)nzAlloc(sizeof(SYMBOL));
+    SYMBOL* rv = nzAllocate<SYMBOL>();
     *rv = *sym_in;
     if (rv->sb)
     {
         if (full)
         {
-            rv->sb = (sym::_symbody*)nzAlloc(sizeof(sym::_symbody));
+            rv->sb = nzAllocate<sym::_symbody>();
             *rv->sb = *sym_in->sb;
         }
         rv->sb->symRef = nullptr;
@@ -1858,7 +1870,8 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         return tp2;
     if (isvoid(tp1) || isvoid(tp2) || ismsil(tp1) || ismsil(tp2))
     {
-        error(ERR_NOT_AN_ALLOWED_TYPE);
+        if  (exp1 && exp2)
+            error(ERR_NOT_AN_ALLOWED_TYPE);
         return tp1;
     }
     if (isref(tp1))
@@ -1867,8 +1880,8 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         tp2 = basetype(tp2)->btp;
     tp1 = basetype(tp1);
     tp2 = basetype(tp2);
-    isctp1 = isarithmetic(tp1);
-    isctp2 = isarithmetic(tp2);
+    isctp1 = isarithmetic(tp1) || tp1->type == bt_enum;
+    isctp2 = isarithmetic(tp2) || tp2->type == bt_enum;
 
     /*    if (isctp1 && isctp2 && tp1->type == tp2->type)
             return tp1 ;
@@ -1989,9 +2002,9 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
             tp = tp1;
         else
             tp = tp2;
-        if (tp->type != tp1->type && exp1 && tp2->type != bt_pointer)
+        if (exp1 && tp->type != tp1->type && exp1 && tp2->type != bt_pointer)
             cast(tp, exp1);
-        if (tp->type != tp2->type && exp1 && tp1->type != bt_pointer)
+        if (exp2 && tp->type != tp2->type && exp1 && tp1->type != bt_pointer)
             cast(tp, exp2);
         return tp;
     }
@@ -2023,9 +2036,9 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
             t2 = bt_int;
         t1 = btmax(t1, t2);
         rv = inttype(t1);
-        if (rv->type != tp1->type && exp1)
+        if (exp1 && rv->type != tp1->type && exp1)
             cast(rv, exp1);
-        if (rv->type != tp2->type && exp2)
+        if (exp2 && rv->type != tp2->type && exp2)
             cast(rv, exp2);
         if ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions)
         {
@@ -2055,30 +2068,10 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         if (isstructured(tp1))
         {
             return tp2;
-            /*
-                        if (comparetypes(tp1, tp2, false))
-                            return tp1;
-                        if (Optimizer::cparams.prm_cplusplus) {
-                            cppcast(tp2, tp1, exp1, false, ERR_CPPMISMATCH);
-                        } else
-
-                            error(ERR_ILL_STRUCTURE_OPERATION);
-                        return tp2;
-            */
         }
         if (isstructured(tp2))
         {
             return tp1;
-            /*
-                        if (comparetypes(tp1, tp2, false))
-                            return tp2;
-                        if (Optimizer::cparams.prm_cplusplus) {
-                            cppcast(tp1, tp2, exp1, false, ERR_CPPMISMATCH);
-                        } else
-
-                            error(ERR_ILL_STRUCTURE_OPERATION);
-                        return tp1;
-            */
         }
 
         if (isfunction(tp1))
@@ -2090,9 +2083,6 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         if (ispointer(tp1))
             if (ispointer(tp2))
             {
-                /*				if (tp1->type != tp2->type || !comparetypes(tp1->btp, tp2->btp, true))
-                                    generror(ERR_SUSPICIOUS, 0, 0);
-                */
                 return tp1;
             }
     }
@@ -2103,7 +2093,7 @@ EXPRESSION* RemoveAutoIncDec(EXPRESSION* exp)
     EXPRESSION* newExp;
     if (exp->type == en_autoinc || exp->type == en_autodec)
         return RemoveAutoIncDec(exp->left);
-    newExp = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
+    newExp = Allocate<EXPRESSION>();
     *newExp = *exp;
     if (newExp->left)
         newExp->left = RemoveAutoIncDec(newExp->left);

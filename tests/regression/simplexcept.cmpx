@@ -1,3 +1,40 @@
-one
-two
-548
+:basic
+basic
+:self
+self
+:unwind
+unwind_catch_1
+unwind_catch_2
+unwind_1
+unwind_0
+~unwind_0
+~unwind_1
+~unwind_catch_2
+unwind_catch_3
+unwind
+~unwind_catch_3
+~unwind_catch_1
+:rethrow
+rethrow
+:rethrow_exception_ptr
+rethrow_exception_ptr
+:throw_nest
+thrower_cls:throw_nest
+uncaught destructing2 2 true
+thrower_1
+uncaught destructing3 1 true
+uncaught destructing 1 true
+throw_nest
+uncaught idle2 0 false
+uncaught idle 0 false
+:rethrow_make_exception_ptr
+make_exception_ptr
+:rethrow_make_exception_ptr_global
+make_exception_ptr_global
+:rethrow_catch_unwind
+rethrow_unwind_catch
+~rethrow_unwind_catch
+rethrow_unwind
+:rethrow_if_nested
+first catch
+unnested: rethrow_if_nested

@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "compiler.h"
@@ -103,9 +103,9 @@ const char* overloadXlateTab[] = {
 static char mangledNames[MAX_MANGLE_NAME_COUNT][256];
 int mangledNamesCount;
 
-static int declTypeIndex;
 static char* lookupName(char* in, const char* name);
 static int uniqueID;
+static bool inKeyCreation;
 
 void mangleInit()
 {
@@ -115,13 +115,12 @@ void mangleInit()
         memcpy(overloadNameTab, msiloverloadNameTab, sizeof(msiloverloadNameTab));
         memcpy(cpp_funcname_tab, msiloverloadNameTab, sizeof(msiloverloadNameTab));
     }
+    inKeyCreation = false;
 }
 char* mangleNameSpaces(char* in, SYMBOL* sym)
 {
     if (!sym)
         return in;
-    //    if (!sym || sym->sb->value.i > 1)
-    //        return in;
     in = mangleNameSpaces(in, sym->sb->parentNameSpace);
     Optimizer::my_sprintf(in, "@%s", sym->name);
     return in + strlen(in);
@@ -203,6 +202,18 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
             case en_umod:
             case en_mod:
                 *buf++ = 'o';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                *buf = 0;
+                break;
+            case en_dot:
+                *buf++ = 'D';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                *buf = 0;
+                break;
+            case en_pointsto:
+                *buf++ = 'P';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
@@ -379,32 +390,39 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 {
                     *buf++ = 't';
                     buf = lookupName(buf, find->name);
+                    buf += strlen(buf);
                     find = find->next;
                 }
                 *buf = 0;
                 break;
             }
             case en_templateparam:
+            case en_auto:
                 *buf++ = 't';
                 *buf++ = 'p';
                 buf = lookupName(buf, exp->v.sp->name);
+                buf += strlen(buf);
                 *buf = 0;
                 break;
-
+            case en_thisref:
             case en_funcret:
                 buf = mangleExpressionInternal(buf, exp->left);
                 *buf = 0;
                 break;
             case en_func:
+            {
                 if (exp->v.func->ascall)
                 {
                     INITLIST* args = exp->v.func->arguments;
                     *buf++ = 'f';
-                    buf = lookupName(buf, exp->v.func->sp->name);
+                    buf = getName(buf, exp->v.func->sp);
                     while (args)
                     {
-                        *buf++ = 'f';
-                        buf = mangleExpressionInternal(buf, args->exp);
+                        if (args->exp)
+                        {
+                            *buf++ = 'F';
+                            buf = mangleExpressionInternal(buf, args->exp);
+                        }
                         args = args->next;
                     }
                 }
@@ -412,12 +430,13 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 {
                     *buf++ = 'e';
                     *buf++ = '?';
-                    strcpy(buf, exp->v.func->sp->name);
+                    buf = getName(buf, exp->v.func->sp);
                     buf += strlen(buf);
                     *buf++ = '$';
                     buf = mangleType(buf, exp->v.func->sp->tp, true);
                 }
                 break;
+            }
             case en_pc:
             case en_global:
             case en_const:
@@ -440,6 +459,16 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                     *buf = 0;
                 }
                 break;
+            case en_sizeofellipse:
+                *buf++ = 'z';
+                buf = getName(buf, exp->v.templateParam->argsym);
+                buf += strlen(buf);
+                break;
+            case en_void:
+                *buf++ = 'v';
+                // ignoring args to void...
+                *buf = 0;
+                break;
             default:
                 *buf = 0;
                 break;
@@ -452,7 +481,7 @@ static char* mangleExpression(char* buf, EXPRESSION* exp)
 {
     if (exp)
     {
-        *buf++ = '$';
+        *buf++ = '?';
         buf = mangleExpressionInternal(buf, exp);
     }
     return buf;
@@ -466,7 +495,13 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
         params = params->p->bySpecialization.types;
         bySpecial = true;
     }
-    if ((sym->sb->isConstructor || sym->sb->isDestructor) && sym->sb->templateLevel == sym->sb->parentClass->sb->templateLevel)
+    if (sym->tp->type == bt_templateparam && sym->tp->templateParam->p->type == kw_template)
+    {
+        auto sp = sym->tp->templateParam->p->byTemplate.val;
+        if (sp)
+            sym = sp;
+    }
+    if (sym->sb && (sym->sb->isConstructor || sym->sb->isDestructor) && sym->sb->templateLevel == sym->sb->parentClass->sb->templateLevel)
     {
         strcpy(buf, sym->name);
         while (*buf)
@@ -528,11 +563,14 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
             case kw_template:
                 if (params->p->packed)
                     *buf++ = 'e';
+                /*
                 if (bySpecial && params->p->byTemplate.dflt && params->p->byTemplate.val)
                 {
                     buf = mangleTemplate(buf, params->p->byTemplate.dflt, params->p->byTemplate.val->templateParams);
                 }
-                else if (sym->sb->instantiated && params->p->byTemplate.val)
+                else 
+                */
+                if (sym->sb->instantiated && params->p->byTemplate.val)
                 {
                     buf = mangleTemplate(buf, params->p->byTemplate.val, params->p->byTemplate.val->templateParams);
                 }
@@ -814,7 +852,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     }
                     else
                     {
-                        if (first || !tp->array)
+                        if (!tp->array || first && !inKeyCreation)
                         {
                             *in++ = 'p';
                         }
@@ -843,7 +881,10 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     *in++ = 'v';
                     break;
                 case bt_templateparam:
-                    in = getName(in, tp->templateParam->argsym);
+                    if (inKeyCreation && tp->templateParam->p->type == kw_typename && tp->templateParam->p->byClass.val && basetype(tp->templateParam->p->byClass.val)->type != bt_templateparam)
+                        in = mangleType(in, tp->templateParam->p->byClass.val, false);
+                    else
+                        in = getName(in, tp->templateParam->argsym);
                     break;
                 case bt_templateselector:
                 {
@@ -851,7 +892,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     char* p;
                     s = s->next;
                     if (s->isTemplate)
-                        p = mangleTemplate(nm, s->sp, s->templateParams);
+                        p = mangleTemplate(nm, s->sp, s->sp->sb->instantiated ? s->sp->templateParams : s->templateParams);
                     else
                         p = getName(nm, s->sp);
                     p[0] = 0;
@@ -874,12 +915,8 @@ char* mangleType(char* in, TYPE* tp, bool first)
                 }
                 break;
                 case bt_templatedecltype:
-                    // the index is being used to make names unique so two decltypes won't collide when storing them
-                    // in a symbol table...
-                    declTypeIndex = (declTypeIndex + 1) % 1000;
                     *in++ = 'E';
-                    Optimizer::my_sprintf(in, "%03d", declTypeIndex);
-                    in += 3;
+                    in = mangleExpression(in, tp->templateDeclType);
                     break;
                 case bt_aggregate:
                     in = getName(in, tp->sp);
@@ -897,7 +934,22 @@ char* mangleType(char* in, TYPE* tp, bool first)
     *in = 0;
     return in;
 }
-void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
+void GetClassKey(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
+{
+    inKeyCreation = true;
+    mangledNamesCount = 0;
+    SYMBOL* lastParent = sym;
+    while (lastParent->sb->parentClass)
+        lastParent = lastParent->sb->parentClass;
+    char* p = buf;
+    p = mangleNameSpaces(p, lastParent->sb->parentNameSpace);
+    p = mangleClasses(p, sym->sb->parentClass);
+    *p++ = '@';
+    p = mangleTemplate(p, sym, params);
+    *p = 0;
+    inKeyCreation = false;
+}
+void SetLinkerNames(SYMBOL* sym, enum e_lk linkage, bool isTemplateDefinition)
 {
     char errbuf[8192], *p = errbuf;
     memset(errbuf, 0, 8192);
@@ -971,13 +1023,15 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
             }
             break;
         case lk_cpp:
+            if (isTemplateDefinition)
+                *p++ = '@';
             lastParent = sym;
             while (lastParent->sb->parentClass)
                 lastParent = lastParent->sb->parentClass;
             p = mangleNameSpaces(p, lastParent->sb->parentNameSpace);
             p = mangleClasses(p, sym->sb->parentClass);
             *p++ = '@';
-            if (sym->sb->templateLevel && sym->templateParams && sym->templateParams)
+            if (sym->sb->templateLevel && sym->templateParams)
             {
                 p = mangleTemplate(p, sym, sym->templateParams);
             }

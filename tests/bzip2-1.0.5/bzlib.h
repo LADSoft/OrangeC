@@ -103,12 +103,8 @@ typedef
 
 
 #ifndef __GNUC__
-
-# define __DLL_IMPORT__ __import
-# define __DLL_EXPORT__ __export
-
-//# define __DLL_IMPORT__ __declspec(dllimport)
-//# define __DLL_EXPORT__ __declspec(dllexport)
+# define __DLL_IMPORT__ __declspec(dllimport)
+# define __DLL_EXPORT__ __declspec(dllexport)
 #   else
 # define __DLL_IMPORT__ __attribute__((dllimport)) extern
 # define __DLL_EXPORT__ __attribute__((dllexport)) extern

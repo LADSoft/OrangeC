@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -42,10 +42,10 @@
 
 CmdSwitchParser MakeMain::switchParser;
 CmdSwitchCombineString MakeMain::specifiedFiles(switchParser, 'f', ' ');
-CmdSwitchBool MakeMain::displayOnly(switchParser, 'n');
+CmdSwitchBool MakeMain::displayOnly(switchParser, 'n', false, "dry-run");
 CmdSwitchBool MakeMain::touch(switchParser, 't');
 CmdSwitchBool MakeMain::query(switchParser, 'q');
-CmdSwitchBool MakeMain::keepGoing(switchParser, 'k');
+CmdSwitchBool MakeMain::keepGoing(switchParser, 'k', false, "keep-going");
 CmdSwitchBool MakeMain::ignoreErrors(switchParser, 'i');
 CmdSwitchDefine MakeMain::defines(switchParser, 'D', "eval");
 CmdSwitchBool MakeMain::rebuild(switchParser, 'B');
@@ -62,7 +62,7 @@ CmdSwitchBool MakeMain::noBuiltinRules(switchParser, 'r');
 CmdSwitchBool MakeMain::noBuiltinVars(switchParser, 'R');
 CmdSwitchBool MakeMain::silent(switchParser, 's');
 CmdSwitchBool MakeMain::cancelKeep(switchParser, 'S');
-CmdSwitchBool MakeMain::printDir(switchParser, 'w');
+CmdSwitchBool MakeMain::printDir(switchParser, 'w', false, "print-directory");
 CmdSwitchBool MakeMain::warnUndef(switchParser, 'u');
 CmdSwitchBool MakeMain::treeBuild(switchParser, 'T');
 CmdSwitchBool MakeMain::keepResponseFiles(switchParser, 'K');

@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /*
@@ -59,10 +59,11 @@ bool parsingPreprocessorConstant;
 LEXCONTEXT* context;
 
 int charIndex;
+
+LEXLIST* currentLex;
 Optimizer::LINEDATA nullLineData = { 0, 0, "", "", 0, 0 };
 
 static bool valid;
-static LEXEME* pool;
 static unsigned long long llminus1;
 static int nextFree;
 static const unsigned char* linePointer;
@@ -137,7 +138,7 @@ KEYWORD keywords[] = {
     */
     {"_Alignas", 8, kw_alignas, KW_C1X, TT_CONTROL},
     {"_Alignof", 8, kw_alignof, KW_C1X, TT_UNARY | TT_OPERATOR},
-    {"_Atomic", 7, kw_atomic, KW_C1X, TT_POINTERQUAL | TT_TYPEQUAL | TT_BASETYPE},
+    {"_Atomic", 7, kw_atomic, KW_C1X | KW_CPLUSPLUS, TT_POINTERQUAL | TT_TYPEQUAL | TT_BASETYPE},
     {"_Bool", 5, kw_bool, 0, TT_BASETYPE | TT_BOOL},
     {"_CR0", 4, kw_cr0, KW_NONANSI | KW_386, TT_VAR},
     {"_CR1", 4, kw_cr1, KW_NONANSI | KW_386, TT_VAR},
@@ -147,7 +148,6 @@ KEYWORD keywords[] = {
     {"_CR5", 4, kw_cr5, KW_NONANSI | KW_386, TT_VAR},
     {"_CR6", 4, kw_cr6, KW_NONANSI | KW_386, TT_VAR},
     {"_CR7", 4, kw_cr7, KW_NONANSI | KW_386, TT_VAR},
-    {"_CS", 3, kw_A8, KW_NONANSI | KW_386, TT_VAR},
     {"_Complex", 8, kw__Complex, 0, TT_BASETYPE | TT_COMPLEX},
     /*
     { "_D0", 3,  kw_D0, KW_NONANSI | KW_68K, TT_VAR  },
@@ -167,14 +167,12 @@ KEYWORD keywords[] = {
     {"_DR5", 4, kw_dr5, KW_NONANSI | KW_386, TT_VAR},
     {"_DR6", 4, kw_dr6, KW_NONANSI | KW_386, TT_VAR},
     {"_DR7", 4, kw_dr7, KW_NONANSI | KW_386, TT_VAR},
-    {"_DS", 3, kw_A9, KW_NONANSI | KW_386, TT_VAR},
     {"_EAX", 4, kw_D0, KW_NONANSI | KW_386, TT_VAR},
     {"_EBP", 4, kw_D5, KW_NONANSI | KW_386, TT_VAR},
     {"_EBX", 4, kw_D3, KW_NONANSI | KW_386, TT_VAR},
     {"_ECX", 4, kw_D1, KW_NONANSI | KW_386, TT_VAR},
     {"_EDI", 4, kw_D7, KW_NONANSI | KW_386, TT_VAR},
     {"_EDX", 4, kw_D2, KW_NONANSI | KW_386, TT_VAR},
-    {"_ES", 3, kw_AA, KW_NONANSI | KW_386, TT_VAR},
     {"_ESI", 4, kw_D6, KW_NONANSI | KW_386, TT_VAR},
     {"_ESP", 4, kw_D4, KW_NONANSI | KW_386, TT_VAR},
     {"_FP0", 4, kw_F0, KW_NONANSI | KW_68K | KW_386, TT_VAR},
@@ -185,9 +183,7 @@ KEYWORD keywords[] = {
     {"_FP5", 4, kw_F5, KW_NONANSI | KW_68K | KW_386, TT_VAR},
     {"_FP6", 4, kw_F6, KW_NONANSI | KW_68K | KW_386, TT_VAR},
     {"_FP7", 4, kw_F7, KW_NONANSI | KW_68K | KW_386, TT_VAR},
-    {"_FS", 3, kw_AB, KW_NONANSI | KW_386, TT_VAR},
     {"_Generic", 8, kw_generic, KW_C1X, TT_VAR},
-    {"_GS", 3, kw_AC, KW_NONANSI | KW_386, TT_VAR},
     {"_INF", 4, kw__INF, 0, TT_VAR},
     {"_Imaginary", 10, kw__Imaginary, 0, TT_BASETYPE | TT_COMPLEX},
     {"_NAN", 4, kw__NAN, 0, TT_VAR},
@@ -204,15 +200,22 @@ KEYWORD keywords[] = {
     {"_TR5", 4, kw_tr5, KW_NONANSI | KW_386, TT_VAR},
     {"_TR6", 4, kw_tr6, KW_NONANSI | KW_386, TT_VAR},
     {"_TR7", 4, kw_tr7, KW_NONANSI | KW_386, TT_VAR},
+    {"__CS", 4, kw_A8, KW_NONANSI | KW_386, TT_VAR},
+    {"__DS", 4, kw_A9, KW_NONANSI | KW_386, TT_VAR},
+    {"__ES", 4, kw_AA, KW_NONANSI | KW_386, TT_VAR},
+    {"__FS", 4, kw_AB, KW_NONANSI | KW_386, TT_VAR},
+    {"__GS", 4, kw_AC, KW_NONANSI | KW_386, TT_VAR},
     {"__I", 3, kw___I, 0, TT_VAR},
+    {"__alignof", 9, kw_alignof, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
     {"__alloca", 8, kw_alloca, KW_NONANSI | KW_ALL, TT_OPERATOR | TT_UNARY},
     {"__asm", 5, kw_asm, KW_NONANSI | KW_ALL, TT_CONTROL},
     {"__atomic_cmpswp", 15, kw_atomic_cmpswp, 0, TT_VAR},
     {"__atomic_fence", 14, kw_atomic_fence, 0, TT_VAR},
+    {"__atomic_fetch_modify", 21, kw_atomic_fetch_modify, 0, TT_VAR},
     {"__atomic_flag_test_set", 22, kw_atomic_flag_test_set, 0, TT_VAR},
     {"__atomic_flag_clear", 19, kw_atomic_flag_clear, 0, TT_VAR},
     {"__atomic_load", 13, kw_atomic_load, 0, TT_VAR},
-    {"__atomic_modify", 15, kw_atomic_modify, 0, TT_VAR},
+    {"__atomic_modify_fetch", 21, kw_atomic_modify_fetch, 0, TT_VAR},
     {"__atomic_store", 14, kw_atomic_store, 0, TT_VAR},
     {"__atomic_var_init", 17, kw_atomic_var_init, 0, TT_VAR},
     {"__attribute__", 13, kw__attribute, 0, TT_VAR},
@@ -248,6 +251,7 @@ KEYWORD keywords[] = {
     {"__string", 8, kw___string, KW_MSIL, TT_BASETYPE},
     {"__try", 5, kw___try, KW_MSIL, TT_CONTROL},
     {"__typeid", 8, kw___typeid, KW_NONANSI | KW_ALL, TT_VAR},
+    {"__underlying_type", 17, kw___underlying_type,  KW_CPLUSPLUS, TT_BASETYPE},
     {"__unmanaged", 11, kw__unmanaged, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__uuid", 6, kw__uuid, 0, TT_LINKAGE},
     {"__uuidof", 8, kw__uuidof, 0, TT_VAR},
@@ -387,9 +391,8 @@ void lexini(void)
 #endif
     llminus1 = 0;
     llminus1--;
-    context = (LEXCONTEXT*)Alloc(sizeof(LEXCONTEXT));
+    context = Allocate<LEXCONTEXT>();
     nextFree = 0;
-    pool = (LEXEME*)Alloc(sizeof(LEXEME) * MAX_LOOKBACK);
     currentLine = "";
     linePointer = (const unsigned char*)currentLine.c_str();
     while (parseStack.size())
@@ -802,8 +805,8 @@ Optimizer::SLCHAR* getString(const unsigned char** source, enum e_lexType* tp)
                         Optimizer::SLCHAR* rv;
                         int i;
                         *source = p;
-                        rv = (Optimizer::SLCHAR*)Alloc(sizeof(Optimizer::SLCHAR));
-                        rv->str = (LCHAR*)Alloc(1);
+                        rv = Allocate<Optimizer::SLCHAR>();
+                        rv->str = Allocate<LCHAR>(1);
                         rv->str[0] = 0;
                         rv->count = 1;
                         return rv;
@@ -965,8 +968,8 @@ Optimizer::SLCHAR* getString(const unsigned char** source, enum e_lexType* tp)
     {
         Optimizer::SLCHAR* rv;
         int i;
-        rv = (Optimizer::SLCHAR*)Alloc(sizeof(Optimizer::SLCHAR));
-        rv->str = (LCHAR*)Alloc(count * sizeof(LCHAR));
+        rv = Allocate<Optimizer::SLCHAR>();
+        rv->str = Allocate<LCHAR>(count);
         for (i = 0; i < count; i++)
             rv->str[i] = data[i];
         rv->count = count;
@@ -1394,7 +1397,7 @@ int getId(const unsigned char** ptr, unsigned char* dest)
     *dest = 0;
     return 0;
 }
-LEXEME* SkipToNextLine(void)
+LEXLIST* SkipToNextLine(void)
 {
 
     if (!context->next)
@@ -1404,15 +1407,18 @@ LEXEME* SkipToNextLine(void)
     }
     return getsym();
 }
-LEXEME* getGTSym(LEXEME* in)
+LEXLIST* getGTSym(LEXLIST* in)
 {
-    static LEXEME lex;
+    static LEXLIST lex;
+    static LEXEME data;
     const unsigned char pgreater[2] = {'>', 0}, *ppgreater = pgreater;
     KEYWORD* kw;
     kw = searchkw(&ppgreater);
     lex = *in;
-    lex.type = l_kw;
-    lex.kw = kw;
+    lex.data = &data;
+    *lex.data = *in->data;
+    lex.data->type = l_kw;
+    lex.data->kw = kw;
     return &lex;
 }
 void SkipToEol() { linePointer = (const unsigned char*)currentLine.c_str() + currentLine.size(); }
@@ -1422,6 +1428,15 @@ bool AtEol()
     while (isspace(*p))
         p++;
     return *p == 0;
+}
+static void ReplaceStringInString(std::string& string, const std::string& val, const std::string& replace)
+{
+    size_t n = string.find(val);
+    while (n != std::string::npos)
+    {
+        string.replace(n, val.size(), replace);
+        n = string.find(val);
+    }
 }
 void CompilePragma(const unsigned char** linePointer)
 {
@@ -1436,11 +1451,20 @@ void CompilePragma(const unsigned char** linePointer)
         err = -1;
         if (**linePointer == '"')
         {
-            linePointer++;
-            const char* p = (const char*)*linePointer;
-            while (**linePointer && **linePointer != '"')
-                (*linePointer)++;
+            (*linePointer)++;
+            const char *p = (const char *)*linePointer;
+            while (**linePointer)
+                if (**linePointer == '\\' && (*(*linePointer + 1) == '\\' || *(*linePointer + 1) == '"'))
+                    (*linePointer) += 2;
+                else
+                    if (**linePointer != '"')
+                        (*linePointer)++;
+                    else
+                        break;            
+
             std::string toCompile(p, *linePointer - (const unsigned char*)p);
+            ReplaceStringInString(toCompile, "\\\"", "\"");
+            ReplaceStringInString(toCompile, "\\\\", "\\");
             preProcessor->CompilePragma(toCompile);
             if (**linePointer)
                 (*linePointer)++;
@@ -1532,12 +1556,12 @@ static void DumpPreprocessedLine()
         fputc('\n', cppFile);
     }
 }
-LEXEME* getsym(void)
+LEXLIST* getsym(void)
 {
     static std::deque<std::pair<int, int>> annotations;
-    static LEXEME* last;
+    static LEXLIST* last;
     static const char* origLine = "";
-    LEXEME* lex;
+    LEXLIST* lex;
     KEYWORD* kw;
     enum e_lexType tp;
     bool contin;
@@ -1553,37 +1577,39 @@ LEXEME* getsym(void)
 
     if (context->cur)
     {
-        LEXEME* rv;
+        LEXLIST* rv;
         rv = context->cur;
         if (context->last == rv->prev)
             TemplateRegisterDeferred(context->last);
         context->last = rv;
         context->cur = context->cur->next;
-        if (rv->linedata && rv->linedata != &nullLineData)
+        if (rv->data->linedata && rv->data->linedata != &nullLineData)
         {
-            linesHead = rv->linedata;
+            linesHead = rv->data->linedata;
             linesTail = linesHead;
 //            while (linesTail && linesTail->next)
 //                linesTail = linesTail->next;
         }
+        currentLex = rv;
         return rv;
     }
     else if (context->next)
     {
         return nullptr;
     }
-    lex = &pool[nextFree];
-    lex->linedata = nullptr;
+    lex = Allocate<LEXLIST>();
+    lex->data = Allocate<LEXEME>();
+    lex->data->linedata = nullptr;
     lex->prev = context->last;
     context->last = lex;
-    context->last->linedata = &nullLineData;
+    context->last->data->linedata = &nullLineData;
 
     lex->next = nullptr;
     if (lex->prev)
         lex->prev->next = lex;
     if (++nextFree >= MAX_LOOKBACK)
         nextFree = 0;
-    lex->registered = false;
+    lex->data->registered = false;
     if (!parsingPreprocessorConstant)
         TemplateRegisterDeferred(last);
     last = nullptr;
@@ -1628,9 +1654,9 @@ LEXEME* getsym(void)
                 }
             }
         } while (*linePointer == 0);
-        charIndex = lex->charindex = linePointer - (const unsigned char*)currentLine.c_str();
-        eofLine = lex->errline = preProcessor->GetErrLineNo();
-        eofFile = lex->errfile = preProcessor->GetErrFile().c_str();
+        charIndex = lex->data->charindex = linePointer - (const unsigned char*)currentLine.c_str();
+        eofLine = lex->data->errline = preProcessor->GetErrLineNo();
+        eofFile = lex->data->errfile = preProcessor->GetErrFile().c_str();
         int fileIndex = preProcessor->GetFileIndex();
         if (fileIndex != lastBrowseIndex)
         {
@@ -1645,11 +1671,12 @@ LEXEME* getsym(void)
                 cval = (e_lexType)(char)cval;
             if (tp == l_uchr && (cval & 0xffff0000))
                 error(ERR_INVALID_CHAR_CONSTANT);
-            lex->value.i = cval;
+            lex->data->value.i = cval;
             if (!Optimizer::cparams.prm_cplusplus)
-                lex->type = l_i;
+                lex->data->type = l_i;
             else
-                lex->type = tp;
+                lex->data->type = tp;
+            lex->data->suffix = nullptr;
             if (isstartchar(*linePointer))
             {
                 char suffix[256], *p = suffix;
@@ -1659,13 +1686,14 @@ LEXEME* getsym(void)
                 if (!Optimizer::cparams.prm_cplusplus)
                     error(ERR_INVCONST);
                 else
-                    lex->suffix = litlate(suffix);
+                    lex->data->suffix = litlate(suffix);
             }
         }
         else if ((strptr = getString(&linePointer, &tp)) != nullptr)
         {
-            lex->value.s.w = (LCHAR*)strptr;
-            lex->type = tp == l_u8str ? l_astr : tp;
+            lex->data->value.s.w = (LCHAR*)strptr;
+            lex->data->type = tp == l_u8str ? l_astr : tp;
+            lex->data->suffix = nullptr;
             if (isstartchar(*linePointer) && !isspace(*(linePointer - 1)))
             {
                 char suffix[256], *p = suffix;
@@ -1675,7 +1703,7 @@ LEXEME* getsym(void)
                 if (!Optimizer::cparams.prm_cplusplus)
                     error(ERR_INVCONST);
                 else
-                    lex->suffix = litlate(suffix);
+                    lex->data->suffix = litlate(suffix);
             }
         }
         else if (*linePointer != 0)
@@ -1684,25 +1712,26 @@ LEXEME* getsym(void)
             const unsigned char* start = linePointer;
             const unsigned char* end = linePointer;
             enum e_lexType tp;
+            lex->data->suffix = nullptr;
             if ((unsigned)(tp = getNumber(&linePointer, &end, suffix, &rval, &ival)) != (unsigned)INT_MIN)
             {
                 if (tp < l_f)
                 {
-                    lex->value.i = ival;
+                    lex->data->value.i = ival;
                 }
                 else
                 {
-                    lex->value.f = (FPF*)Alloc(sizeof(FPF));
-                    *lex->value.f = rval;
+                    lex->data->value.f = Allocate<FPF>();
+                    *lex->data->value.f = rval;
                 }
                 if (suffix[0])
                 {
-                    lex->suffix = litlate((char*)suffix);
+                    lex->data->suffix = litlate((char*)suffix);
                     memcpy(suffix, start, end - start);
                     suffix[end - start] = 0;
-                    lex->litaslit = litlate((char*)suffix);
+                    lex->data->litaslit = litlate((char*)suffix);
                 }
-                lex->type = tp;
+                lex->data->type = tp;
             }
             else if ((kw = searchkw(&linePointer)) != nullptr)
             {
@@ -1714,14 +1743,14 @@ LEXEME* getsym(void)
                 }
                 else
                 {
-                    lex->type = l_kw;
-                    lex->kw = kw;
+                    lex->data->type = l_kw;
+                    lex->data->kw = kw;
                 }
             }
             else if (getId(&linePointer, buf + pos) != INT_MIN)
             {
-                lex->value.s.a = (char*)buf + pos;
-                lex->type = l_id;
+                lex->data->value.s.a = (char*)buf + pos;
+                lex->data->type = l_id;
                 pos += strlen((char*)buf + pos) + 1;
                 if (pos >= sizeof(buf) - 512)
                     pos = 0;
@@ -1762,8 +1791,8 @@ LEXEME* getsym(void)
                  start -= trailer;
                  end -= trailer;
             }
-            lex->charindex = start;
-            lex->charindexend = end;
+            lex->data->charindex = start;
+            lex->data->charindexend = end;
 #ifdef TESTANNOTATE
 //            printf("%d %d\n", start, end);
             annotations.push_back(std::pair<int, int>(start, end));
@@ -1772,15 +1801,16 @@ LEXEME* getsym(void)
     } while (contin);
     if (linesHead)
     {
-        lex->linedata = linesHead;
+        lex->data->linedata = linesHead;
     }
     else
     {
-        lex->linedata = &nullLineData;
+        lex->data->linedata = &nullLineData;
     }
+    currentLex = lex;
     return last = lex;
 }
-LEXEME* prevsym(LEXEME* lex)
+LEXLIST* prevsym(LEXLIST* lex)
 {
     if (lex)
     {
@@ -1795,7 +1825,7 @@ LEXEME* prevsym(LEXEME* lex)
     }
     return lex;
 }
-LEXEME* backupsym(void)
+LEXLIST* backupsym(void)
 {
     if (context->cur)
     {
@@ -1809,31 +1839,33 @@ LEXEME* backupsym(void)
     }
     return context->cur->prev;
 }
-LEXEME* SetAlternateLex(LEXEME* lexList)
+LEXLIST* SetAlternateLex(LEXLIST* lexList)
 {
     if (lexList)
     {
-        LEXCONTEXT* newContext = (LEXCONTEXT*)Alloc(sizeof(LEXCONTEXT));
+        LEXCONTEXT* newContext = Allocate<LEXCONTEXT>();
         newContext->next = context;
         context = newContext;
         context->cur = lexList->next;
         context->last = lexList;
         TemplateRegisterDeferred(lexList);
+        currentLex = lexList;
         return lexList;
     }
     else
     {
         context = context->next;
+        currentLex = context->last;
         return nullptr;
     }
 }
-bool CompareLex(LEXEME* left, LEXEME* right)
+bool CompareLex(LEXLIST* left, LEXLIST* right)
 {
     while (left && right)
     {
-        if (left->type != right->type)
+        if (left->data->type != right->data->type)
             break;
-        switch (left->type)
+        switch (left->data->type)
         {
             case l_i:
             case l_ui:
@@ -1841,36 +1873,36 @@ bool CompareLex(LEXEME* left, LEXEME* right)
             case l_ul:
             case l_ll:
             case l_ull:
-                if (left->value.i != right->value.i)
+                if (left->data->value.i != right->data->value.i)
                     return false;
                 break;
             case l_f:
             case l_d:
             case l_ld:
-                if (left->value.f != right->value.f)
+                if (left->data->value.f != right->data->value.f)
                     return false;
                 break;
             case l_I:
                 break;
             case l_kw:
-                if (left->kw != right->kw)
+                if (left->data->kw != right->data->kw)
                     return false;
                 break;
             case l_id:
             case l_astr:
             case l_u8str:
             case l_msilstr:
-                if (strcmp(left->value.s.a, right->value.s.a))
+                if (strcmp(left->data->value.s.a, right->data->value.s.a))
                     return false;
                 break;
             case l_wstr:
             case l_ustr:
             case l_Ustr:
                 int i;
-                for (i = 0; left->value.s.w[i] && right->value.s.w[i]; i++)
-                    if (left->value.s.w[i] != right->value.s.w[i])
+                for (i = 0; left->data->value.s.w[i] && right->data->value.s.w[i]; i++)
+                    if (left->data->value.s.w[i] != right->data->value.s.w[i])
                         break;
-                if (left->value.s.w[i] || right->value.s.w[i])
+                if (left->data->value.s.w[i] || right->data->value.s.w[i])
                     return false;
                 break;
 
@@ -1878,7 +1910,7 @@ bool CompareLex(LEXEME* left, LEXEME* right)
             case l_wchr:
             case l_uchr:
             case l_Uchr:
-                if (left->value.i != right->value.i)
+                if (left->data->value.i != right->data->value.i)
                     return false;
             case l_qualifiedname:
             default:
@@ -1908,12 +1940,12 @@ void SetAlternateParse(bool set, const std::string& val)
 long long ParseExpression(std::string& line)
 {
     LEXCONTEXT* oldContext = context;
-    LEXCONTEXT* newContext = (LEXCONTEXT*)Alloc(sizeof(LEXCONTEXT));
+    LEXCONTEXT* newContext = Allocate<LEXCONTEXT>();
     context = newContext;
     TYPE* tp = nullptr;
     EXPRESSION* exp = nullptr;
     SetAlternateParse(true, line);
-    LEXEME* lex = getsym();
+    LEXLIST* lex = getsym();
     parsingPreprocessorConstant = true;
     lex = expression_no_comma(lex, nullptr, nullptr, &tp, &exp, nullptr, 0);
     if (tp)

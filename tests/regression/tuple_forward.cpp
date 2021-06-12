@@ -8,6 +8,6 @@ int& z()
 
 int main()
 {
-	auto t = std::tuple<int>(std::forward_as_tuple(z()));
+	auto t = std::forward_as_tuple(z());
 	printf("%d %d\n", std::get<0>(t), z());
 }

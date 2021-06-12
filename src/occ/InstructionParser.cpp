@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "InstructionParser.h"
@@ -39,46 +39,14 @@
 #include "ildata.h"
 #include "occ.h"
 
-static const unsigned mask[32] = {
-    0x1,      0x3,      0x7,       0xf,       0x1f,      0x3f,      0x7f,       0xff,       0x1ff,      0x3ff,      0x7ff,
-    0xfff,    0x1fff,   0x3fff,    0x7fff,    0xffff,    0x1ffff,   0x3ffff,    0x7ffff,    0xfffff,    0x1fffff,   0x3fffff,
-    0x7fffff, 0xffffff, 0x1ffffff, 0x3ffffff, 0x7ffffff, 0xfffffff, 0x1fffffff, 0x3fffffff, 0x7fffffff, 0xffffffff,
-};
-void BitStream::Add(int val, int cnt)
-{
-    val &= mask[cnt - 1];
-    int v = 8 - (bits & 7);
-    //	std::cout << val << ";" << cnt << std::endl;
-    if (cnt > v)
-    {
-        if (v != 8)
-        {
-            // assumes won't cross byte boundary
-            bytes[bits >> 3] |= (val >> (cnt - v));
-            cnt -= v;
-            bits += v;
-        }
-        while (cnt > 0)
-        {
-            // endianness assumed...
-            bytes[bits >> 3] = (val & 0xff);
-            val >>= 8;
-            bits += 8;
-            cnt -= 8;
-        }
-    }
-    else
-    {
-        bytes[bits >> 3] |= val << (v - cnt);
-        bits += (cnt);
-    }
-}
+extern const unsigned BitMasks[32];
+
 bool InstructionParser::ParseNumber(int relOfs, int sign, int bits, int needConstant, int tokenPos)
 {
 
     if (inputTokens[tokenPos]->type == InputToken::NUMBER)
     {
-        val = inputTokens[tokenPos]->val;
+        val = (AsmExprNode*)inputTokens[tokenPos]->val;
         bool isConst = val->IsAbsolute();
         if (isConst || !needConstant)
         {
@@ -88,15 +56,15 @@ bool InstructionParser::ParseNumber(int relOfs, int sign, int bits, int needCons
                     return false;
                 if (sign)
                 {
-                    if (bits == 8 && (val->ival & ~mask[bits - 2]) != 0)
-                        if ((val->ival & ~mask[bits - 2]) != (~mask[bits - 2]))
-                            if ((val->ival & ~mask[bits - 2]) != 0)
+                    if (bits == 8 && (val->ival & ~BitMasks[bits - 2]) != 0)
+                        if ((val->ival & ~BitMasks[bits - 2]) != (~BitMasks[bits - 2]))
+                            if ((val->ival & ~BitMasks[bits - 2]) != 0)
                                 return false;
                 }
                 else
                 {
-                    if (bits == 8 && (val->ival & ~mask[bits - 1]) != 0)
-                        if ((val->ival & ~mask[bits - 2]) != (~mask[bits - 2]))
+                    if (bits == 8 && (val->ival & ~BitMasks[bits - 1]) != 0)
+                        if ((val->ival & ~BitMasks[bits - 2]) != (~BitMasks[bits - 2]))
                             return false;
                 }
             }
@@ -116,7 +84,7 @@ bool InstructionParser::SetNumber(int tokenPos, int oldVal, int newVal)
     bool rv = false;
     if (tokenPos < inputTokens.size() && inputTokens[tokenPos]->type == InputToken::NUMBER)
     {
-        val = inputTokens[tokenPos]->val;
+        val = (AsmExprNode*)inputTokens[tokenPos]->val;
         bool isConst = val->IsAbsolute();
         if (isConst)
         {
@@ -145,37 +113,38 @@ std::string InstructionParser::FormatInstruction(ocode* ins)
     rv += " ";
     for (auto t : inputTokens)
     {
-        switch (t->type)
+        AsmExprNode* val = (AsmExprNode*)t->val;
+        switch(t->type)
         {
             case InputToken::LABEL:
-                rv += t->val->label;
+                rv += val->label;
                 break;
             case InputToken::NUMBER:
             {
-                if (t->val->GetType() == AsmExprNode::ADD)
+                if (val->GetType() == AsmExprNode::ADD)
                 {
-                    rv += t->val->GetLeft()->label + "+";
+                    rv += val->GetLeft()->label + "+";
                     char buf[256];
-                    sprintf(buf, "%d", (int)t->val->GetRight()->ival);
+                    sprintf(buf, "%d", (int)val->GetRight()->ival);
                     rv += buf;
                 }
-                else if (t->val->GetType() == AsmExprNode::LABEL)
+                else if (val->GetType() == AsmExprNode::LABEL)
                 {
-                    rv += t->val->label;
+                    rv += val->label;
                 }
                 else
                 {
                     char buf[256];
-                    sprintf(buf, "%d", (int)t->val->ival);
+                    sprintf(buf, "%d", (int)val->ival);
                     rv += buf;
                 }
                 break;
             }
             case InputToken::REGISTER:
-                rv += tokenNames[(e_tk)(t->val->ival + 1000)];
+                rv += tokenNames[(e_tk)(val->ival + 1000)];
                 break;
             case InputToken::TOKEN:
-                rv += tokenNames[(e_tk)t->val->ival];
+                rv += tokenNames[(e_tk)val->ival];
                 break;
             default:
                 rv += "unknown";
@@ -308,8 +277,8 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
             asmError rv = DispatchOpcode(ins->opcode);
             if (rv == AERR_NONE)
             {
-                unsigned char buf[32];
-                bits.GetBytes(buf, 32);
+                unsigned char buf[64];
+                bits.GetBytes(buf, (bits.GetBits() + 7) / 8);
                 newIns = new Instruction(buf, (bits.GetBits() + 7) / 8);
                 operands = this->operands;
             }
@@ -560,6 +529,9 @@ void InstructionParser::SetSize(int sz)
             case ISZ_LDOUBLE:
             case ISZ_ILDOUBLE:
                 inputTokens.push_back(&Tokenqword);
+                break;
+            case ISZ_FARPTR:
+                inputTokens.push_back(&Tokenfar);
                 break;
             default:
                 diag("SetSize: unknown enum");

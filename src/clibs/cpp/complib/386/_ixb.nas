@@ -1,6 +1,6 @@
 ; Software License Agreement
 ; 
-;     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+;     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
 ; 
 ;     This file is part of the Orange C Compiler package.
 ; 
@@ -59,7 +59,6 @@ SECTION code CLASS=CODE USE32
     mov [eax+12], edx   ; pointer to ebp
     mov [eax+16], ecx   ; function xception block
     mov DWORD [eax + 20], 0 ; constructor progress
-    mov DWORD [eax + 24], 0 ; throw flags
     mov [fs:0],eax
     pop edx
     pop ecx

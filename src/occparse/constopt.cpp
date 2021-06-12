@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /*
@@ -49,6 +49,9 @@
 #include "declcpp.h"
 #include "cpplookup.h"
 #include "beinterf.h"
+#include "exprcpp.h"
+#include "lex.h"
+#include "dsw.h"
 
 namespace Parser
 {
@@ -223,6 +226,8 @@ static bool hasFloats(EXPRESSION* node)
         case en_lor:
         case en_void:
         case en_voidnz:
+        case en_dot:
+        case en_pointsto:
             return (hasFloats(node->left) || hasFloats(node->right));
         case en_cond:
             return hasFloats(node->right);
@@ -453,7 +458,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = temp + (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -463,13 +468,13 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) + temp;
                         refloat(ep);
                         break;
                     case 4:
                         ep->type = maxfloattype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) + (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -478,7 +483,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep1->v.f);
                         ep->v.c->i = (*ep2->v.f);
                         refloat(ep);
@@ -488,14 +493,14 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep2->v.f);
                         ep->v.c->i = (*ep1->v.f);
                         refloat(ep);
                         break;
                     case 11:
                         ep->type = maximaginarytype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) + (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -504,7 +509,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (long long)ep2->v.i;
                         ep->v.c->i = (*ep1->v.f);
                         refloat(ep);
@@ -514,7 +519,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (long long)ep1->v.i;
                         ep->v.c->i = (*ep2->v.f);
                         refloat(ep);
@@ -524,7 +529,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep2->v.c->r;
                         ep->v.c->i = (*ep1->v.f) + ep2->v.c->i;
                         refloat(ep);
@@ -534,7 +539,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->r;
                         ep->v.c->i = (*ep2->v.f) + ep1->v.c->i;
                         refloat(ep);
@@ -544,7 +549,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep1->v.f) + ep2->v.c->r;
                         ep->v.c->i = ep2->v.c->i;
                         refloat(ep);
@@ -554,7 +559,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep2->v.f) + ep1->v.c->r;
                         ep->v.c->i = ep1->v.c->i;
                         refloat(ep);
@@ -564,7 +569,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->r + ep2->v.c->r;
                         ep->v.c->i = ep1->v.c->i + ep2->v.c->i;
                         refloat(ep);
@@ -578,7 +583,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->r + temp;
                         ep->v.c->i = ep1->v.c->i;
                         refloat(ep);
@@ -592,7 +597,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep2->v.c->r + temp;
                         ep->v.c->i = ep2->v.c->i;
                         refloat(ep);
@@ -615,7 +620,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = temp - (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -625,7 +630,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) - temp;
                         refloat(ep);
                         break;
@@ -635,7 +640,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) - (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -644,7 +649,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep1->v.f);
                         ep->v.c->i = (*ep2->v.f);
                         ep->v.c->i.Negate();
@@ -655,7 +660,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep2->v.f);
                         ep->v.c->r.Negate();
                         ep->v.c->i = (*ep1->v.f);
@@ -663,7 +668,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 11:
                         ep->type = maximaginarytype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) - (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -672,7 +677,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         if (isunsignedexpr(ep2))
                             ep->v.c->r = (unsigned long long)ep2->v.i;
                         else
@@ -685,7 +690,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         if (isunsignedexpr(ep1))
                             ep->v.c->r = (unsigned long long)ep1->v.i;
                         else
@@ -699,7 +704,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep2->v.c->r;
                         ep->v.c->r.Negate();
                         ep->v.c->i = (*ep1->v.f) - ep2->v.c->i;
@@ -710,7 +715,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->r;
                         ep->v.c->i = ep1->v.c->i - (*ep2->v.f);
                         refloat(ep);
@@ -720,7 +725,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep1->v.f) - ep2->v.c->r;
                         ep->v.c->i = ep2->v.c->i;
                         ep->v.c->i.Negate();
@@ -731,7 +736,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->r - (*ep2->v.f);
                         ep->v.c->i = ep1->v.c->i;
                         refloat(ep);
@@ -741,7 +746,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->r - ep2->v.c->r;
                         ep->v.c->i = ep1->v.c->i - ep2->v.c->i;
                         refloat(ep);
@@ -755,7 +760,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->r - temp;
                         ep->v.c->i = ep1->v.c->i;
                         refloat(ep);
@@ -769,7 +774,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = temp - ep2->v.c->r;
                         ep->v.c->i = ep2->v.c->i;
                         ep->v.c->i.Negate();
@@ -795,7 +800,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = temp * (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -805,31 +810,31 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) * temp;
                         refloat(ep);
                         break;
                     case 4:
                         ep->type = maxfloattype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) * (*ep2->v.f);
                         refloat(ep);
                         break;
                     case 9:
                         ep->type = maximaginarytype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) * (*ep2->v.f);
                         refloat(ep);
                         break;
                     case 10:
                         ep->type = maximaginarytype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) * (*ep2->v.f);
                         refloat(ep);
                         break;
                     case 11:
                         ep->type = maxfloattype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) * (*ep2->v.f);
                         ep->v.f->Negate();
                         refloat(ep);
@@ -840,7 +845,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) * temp;
                         refloat(ep);
                         break;
@@ -850,7 +855,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = temp * (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -859,7 +864,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep1->v.f) * ep2->v.c->i;
                         ep->v.c->r.Negate();
                         ep->v.c->i = (*ep1->v.f) * ep2->v.c->r;
@@ -870,7 +875,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep2->v.f) * ep1->v.c->i;
                         ep->v.c->r.Negate();
                         ep->v.c->i = (*ep2->v.f) * ep1->v.c->r;
@@ -881,7 +886,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep1->v.f) * ep2->v.c->r;
                         ep->v.c->i = (*ep1->v.f) * ep2->v.c->i;
                         refloat(ep);
@@ -891,7 +896,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep2->v.f) * ep1->v.c->r;
                         ep->v.c->i = (*ep2->v.f) * ep1->v.c->i;
                         refloat(ep);
@@ -903,7 +908,7 @@ void dooper(EXPRESSION** node, int mode)
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                            ep->v.c = Allocate<_COMPLEX_S>();
                             ep->v.c->i = ep2->v.c->r * ep1->v.c->i;
                             ep->v.c->r = ep2->v.c->i * ep1->v.c->i;
                             ep->v.c->r.Negate();
@@ -914,7 +919,7 @@ void dooper(EXPRESSION** node, int mode)
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                            ep->v.c = Allocate<_COMPLEX_S>();
                             ep->v.c->r = ep2->v.c->r * ep1->v.c->r;
                             ep->v.c->i = ep2->v.c->i * ep1->v.c->r;
                         }
@@ -924,7 +929,7 @@ void dooper(EXPRESSION** node, int mode)
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                            ep->v.c = Allocate<_COMPLEX_S>();
                             ep->v.c->i = ep1->v.c->r * ep2->v.c->i;
                             ep->v.c->r = ep1->v.c->i * ep2->v.c->i;
                             ep->v.c->r.Negate();
@@ -935,7 +940,7 @@ void dooper(EXPRESSION** node, int mode)
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                            ep->v.c = Allocate<_COMPLEX_S>();
                             ep->v.c->r = ep1->v.c->r * ep2->v.c->r;
                             ep->v.c->i = ep1->v.c->i * ep2->v.c->r;
                         }
@@ -950,7 +955,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = temp * ep2->v.c->r;
                         ep->v.c->i = temp * ep2->v.c->i;
                         refloat(ep);
@@ -982,7 +987,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = temp / (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -992,13 +997,13 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) / temp;
                         refloat(ep);
                         break;
                     case 4:
                         ep->type = maxfloattype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) / (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -1015,20 +1020,20 @@ void dooper(EXPRESSION** node, int mode)
                     break;
                     case 9:
                         ep->type = maximaginarytype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) / (*ep2->v.f);
                         ep->v.f->Negate();
                         refloat(ep);
                         break;
                     case 10:
                         ep->type = maximaginarytype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) / (*ep2->v.f);
                         refloat(ep);
                         break;
                     case 11:
                         ep->type = maximaginarytype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) / (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -1038,7 +1043,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) / temp;
                         refloat(ep);
                         break;
@@ -1048,7 +1053,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = temp / (*ep2->v.f);
                         ep->v.f->Negate();
                         refloat(ep);
@@ -1058,7 +1063,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->i / (*ep2->v.f);
                         ep->v.c->i = ep1->v.c->r / (*ep2->v.f);
                         ep->v.c->i.Negate();
@@ -1069,7 +1074,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->i / (*ep2->v.f);
                         ep->v.c->i = ep1->v.c->r / (*ep2->v.f);
                         refloat(ep);
@@ -1081,7 +1086,7 @@ void dooper(EXPRESSION** node, int mode)
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                            ep->v.c = Allocate<_COMPLEX_S>();
                             ep->v.c->i = ep1->v.c->r / ep2->v.c->i;
                             ep->v.c->r = ep1->v.c->i / ep2->v.c->i;
                             ep->v.c->i.Negate();
@@ -1092,7 +1097,7 @@ void dooper(EXPRESSION** node, int mode)
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                            ep->v.c = Allocate<_COMPLEX_S>();
                             ep->v.c->r = ep1->v.c->r / ep2->v.c->r;
                             ep->v.c->i = ep1->v.c->i / ep2->v.c->r;
                         }
@@ -1107,7 +1112,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->r / temp;
                         ep->v.c->i = ep1->v.c->i / temp;
                         refloat(ep);
@@ -1205,6 +1210,8 @@ int opt0(EXPRESSION** node)
         return false;
     switch (ep->type)
     {
+        case en_construct:
+            break;
         case en_l_sp:
         case en_l_fp:
         case en_l_bool:
@@ -1306,7 +1313,7 @@ int opt0(EXPRESSION** node)
             {
                 rv = true;
                 ep->type = ep->left->type;
-                ep->v.f = (FPF*)Alloc(sizeof(FPF*));
+                ep->v.f = Allocate<FPF>();
                 (*ep->v.f) = *ep->left->v.f;
                 ep->v.f->Negate();
                 *node = ep;
@@ -1315,7 +1322,7 @@ int opt0(EXPRESSION** node)
             {
                 rv = true;
                 ep->type = ep->left->type;
-                ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                ep->v.c = Allocate<_COMPLEX_S>();
                 ep->v.c->r = ep->left->v.c->r;
                 ep->v.c->r.Negate();
                 ep->v.c->i = ep->left->v.c->i;
@@ -2127,8 +2134,95 @@ int opt0(EXPRESSION** node)
         case en__sizeof:
             rv |= opt0(&(ep->left));
             break;
+        case en_dot:
+        case en_pointsto:
+        if (!templateNestingCount || instantiatingTemplate)
+        {
+            EXPRESSION *newExpr = ep->left;
+            EXPRESSION *next = ep->right;
+            TYPE* tp = LookupTypeFromExpression(ep->left, nullptr, false);
+            while (ep->type == en_dot || ep->type == en_pointsto)
+            {
+                rv |= opt0(&(ep->right));
+                rv |= opt0(&(ep->left));
+                if (ep->type == en_pointsto)
+                {
+                    if (!ispointer(tp))
+                        break;
+                    tp = basetype(tp->btp);
+                    deref(&stdpointer, &newExpr);
+                }
+                if (!isstructured(tp))
+                    break;
+                if (next->type == en_dot || next->type == en_pointsto)
+                {
+                    next = next->left;
+                }
+                STRUCTSYM s;
+                s.str = basetype(tp)->sp;
+                addStructureDeclaration(&s);
+                if (next->type == en_func)
+                {
+                    TYPE *ctype = tp;
+                    SYMBOL *sym = classsearch(next->v.func->sp->name, false, false);
+                    if (!sym)
+                    {
+                        dropStructureDeclaration();
+                        break;
+                    }
+                    FUNCTIONCALL *func = Allocate<FUNCTIONCALL>();
+                    *func = *next->v.func;
+                    func->sp = sym;
+                    TYPE *thistp = Allocate<TYPE>();
+                    thistp->type = bt_pointer;
+                    thistp->size = getSize(bt_pointer);
+                    thistp->btp = tp;
+                    func->thistp = thistp;
+                    func->thisptr = newExpr;
+                    sym =
+                        GetOverloadedFunction(&ctype, &func->fcall, sym, func, nullptr, true, false, true, 0);
+                    if (!sym)
+                    {
+                        dropStructureDeclaration();
+                        break;
+                    }
+                    EXPRESSION* temp = varNode(en_func, sym);
+                    temp->v.func = next->v.func;
+                    temp = exprNode(en_thisref, temp, nullptr);
+                    temp->v.t.thisptr = newExpr;
+                    temp->v.t.tp = tp;
+                    newExpr = temp;
+                    tp = basetype(sym->tp)->btp;
+                }
+                else
+                {
+                    SYMBOL *sym = classsearch(GetSymRef(next)->v.sp->name, false, false);
+                    if (!sym)
+                    {
+                        dropStructureDeclaration();
+                        break;
+                    }
+                    EXPRESSION *temp = intNode(en_c_i, 0);
+                    if (sym->sb->parentClass != basetype(tp)->sp)
+                    {
+                        temp = baseClassOffset(basetype(tp)->sp, sym->sb->parentClass, temp);
+                    }
+                    newExpr = exprNode(en_structadd, newExpr, temp);
+                    if (!isstructured(sym->tp))
+                        deref(sym->tp, &newExpr);
+                    tp = sym->tp;
+                }
+                dropStructureDeclaration();
+                ep = ep->right;
+            }
+            if (ep->type == en_dot || ep->type == en_pointsto)
+                rv = false;
+            else
+                *node = newExpr;
+        }
+        break;
         case en_func:
-            rv |= opt0(&((*node)->v.func->fcall));
+            //rv |= opt0(&((*node)->v.func->fcall));
             if ((*node)->v.func->thisptr)
                 rv |= opt0(&((*node)->v.func->thisptr));
             return rv;
@@ -2141,59 +2235,95 @@ int opt0(EXPRESSION** node)
             rv |= opt0(&((*node)->v.ad->value));
             return rv;
         case en_sizeofellipse:
-            if (!templateNestingCount)
+            if (!templateNestingCount || instantiatingTemplate)
             {
                 int n = 0;
-                TEMPLATEPARAMLIST* tpl = (*node)->v.templateParam->p->byPack.pack;
-                while (tpl)
-                    n++, tpl = tpl->next;
+                if (!(*node)->v.templateParam->p->packed)
+                {
+                    n = 1;
+                }
+                else
+                {
+                    TEMPLATEPARAMLIST* tpl = (*node)->v.templateParam->p->byPack.pack;
+                    while (tpl)
+                        n++, tpl = tpl->next;
+                }
                 *node = intNode(en_c_i, n);
             }
             break;
         case en_templateselector:
-            if (!templateNestingCount)
+           if (!templateNestingCount || instantiatingTemplate)
             {
                 TEMPLATESELECTOR* tsl = (*node)->v.templateSelector;
                 SYMBOL* ts = tsl->next->sp;
                 SYMBOL* sym = ts;
                 TEMPLATESELECTOR* find = tsl->next->next;
-                if (tsl->next->isTemplate)
+                if (tsl->next->isDeclType)
                 {
-                    TEMPLATEPARAMLIST* current = SolidifyTemplateParams(tsl->next->templateParams);
-                    sym = GetClassTemplate(ts, current, true);
-                }
-                if (sym && sym->tp->type == bt_templateselector)
-                {
-                    TYPE* tp = sym->tp;
-                    tp = SynthesizeType(tp, nullptr, false);
+                    TYPE *tp = TemplateLookupTypeFromDeclType(tsl->next->tp);
                     if (tp && isstructured(tp))
                         sym = basetype(tp)->sp;
+                    else
+                        sym = nullptr;
+                }
+                else
+                {
+                    if (ts->tp->type == bt_templateparam)
+                    {
+                        if (ts->tp->templateParam->p->type != kw_template)
+                            break;
+                        ts = ts->tp->templateParam->p->byTemplate.val;
+                        if (!ts)
+                            break;
+                    }
+                    if (tsl->next->isTemplate)
+                    {
+                        TEMPLATEPARAMLIST* current = SolidifyTemplateParams(tsl->next->templateParams);
+                        if (ts->sb->storage_class == sc_typedef)
+                        {
+                            sym = GetTypeAliasSpecialization(sym, current);
+                        }
+                        else
+                        {
+                            sym = GetClassTemplate(ts, current, true);
+                        }
+                    }
+                    if (sym && sym->tp->type == bt_templateselector)
+                    {
+                        TYPE* tp = sym->tp;
+                        tp = SynthesizeType(tp, nullptr, false);
+                        if (tp && isstructured(tp))
+                            sym = basetype(tp)->sp;
+                    }
                 }
                 if (sym)
                 {
                     sym = basetype(PerformDeferredInitialization(sym->tp, nullptr))->sp;
-                    while (find && sym)
+                    if (sym && !sym->sb->instantiationError)
                     {
-                        SYMBOL* spo = sym;
-                        if (!isstructured(spo->tp))
-                            break;
+                        while (find && sym)
+                        {
+                            SYMBOL* spo = sym;
+                            if (!isstructured(spo->tp))
+                                break;
 
-                        sym = search(find->name, spo->tp->syms);
-                        if (!sym)
-                        {
-                            sym = classdata(find->name, spo, nullptr, false, false);
-                            if (sym == (SYMBOL*)-1)
-                                sym = nullptr;
+                            sym = search(find->name, spo->tp->syms);
+                            if (!sym)
+                            {
+                                sym = classdata(find->name, spo, nullptr, false, false);
+                                if (sym == (SYMBOL*)-1)
+                                    sym = nullptr;
+                            }
+                            find = find->next;
                         }
-                        find = find->next;
-                    }
-                    if (!find && sym)
-                    {
-                        if (sym->sb->storage_class == sc_constant)
+                        if (!find && sym)
                         {
-                            optimize_for_constants(&sym->sb->init->exp);
-                            *node = sym->sb->init->exp;
-                            return true;
+                            if (sym->sb->storage_class == sc_constant)
+                            {
+                                optimize_for_constants(&sym->sb->init->exp);
+                                *node = sym->sb->init->exp;
+                                return true;
+                            }
                         }
                     }
                 }
@@ -2201,11 +2331,13 @@ int opt0(EXPRESSION** node)
             }
             break;
         case en_templateparam:
-            if (!templateNestingCount && (*node)->v.sp->tp->templateParam->p->type == kw_int)
+            if ((!templateNestingCount  || instantiatingTemplate) && (*node)->v.sp->tp->templateParam->p->type == kw_int)
             {
                 SYMBOL* sym = (*node)->v.sp;
-                TEMPLATEPARAMLIST* found = nullptr;
+                TEMPLATEPARAMLIST* found = (*node)->v.sp->tp->templateParam;
                 STRUCTSYM* search = structSyms;
+                if (!found || !found->p->byNonType.val)
+                    found = nullptr;
                 while (search && !found)
                 {
                     if (search->tmpl)
@@ -2222,7 +2354,7 @@ int opt0(EXPRESSION** node)
                 }
                 if (found && found->p->type == kw_int)
                 {
-                    if (found->p->byNonType.val)
+                    if (found->p->byNonType.val && !found->p->packed)
                         *node = found->p->byNonType.val;
                 }
             }
@@ -2684,6 +2816,8 @@ int fold_const(EXPRESSION* node)
         case en_mp_compare:
         case en__initblk:
         case en__cpblk:
+        case en_dot:
+        case en_pointsto:       
             rv |= fold_const(node->right);
         case en_blockclear:
         case en_argnopush:
@@ -2703,40 +2837,98 @@ int fold_const(EXPRESSION* node)
             if (node->left->type != en_func && node->left->type != en_funcret)
                 *node = *node->left;
             break;
-        case en_func:
-            if (node->v.func->sp && node->v.func->sp->sb->constexpression && node->v.func->sp->sb->inlineFunc.stmt)
+        case en_construct:
+        {
+            node->v.construct.tp = SynthesizeType(node->v.construct.tp, nullptr, false);
+            LEXLIST* lex = SetAlternateLex(node->v.construct.deferred);
+            if (isarithmetic(node->v.construct.tp))
             {
-                int i;
-                STATEMENT* stmt = node->v.func->sp->sb->inlineFunc.stmt;
-                while (stmt && stmt->type == st_expr)
-                    stmt = stmt->next;
-                if (stmt && stmt->type == st_block && stmt->lower)
+                INITIALIZER* init = nullptr, *dest = nullptr;
+                lex = initType(lex, nullptr, 0, sc_auto, &init, &dest, node->v.construct.tp, nullptr, false, 0);
+                if (init)
+                    *node = *init->exp;
+            }
+            else
+            {
+                EXPRESSION *exp = anonymousVar(sc_auto, node->v.construct.tp);
+                lex = initType(lex, nullptr, 0, sc_auto, &exp->v.sp->sb->init, &exp->v.sp->sb->dest, node->v.construct.tp, exp->v.sp, false, 0);
+            }
+            SetAlternateLex(nullptr);
+        }
+            break;
+        case en_func:
+            if (node->v.func->sp && node->v.func->sp->sb->constexpression)
+            {
+                SYMBOL* found1 = node->v.func->sp;
+                if (!node->v.func->sp->sb->inlineFunc.stmt && node->v.func->sp->sb->deferredCompile)
                 {
-                    STATEMENT* st = stmt->lower;
-                    while (st->type == st_varstart)
-                        st = st->next;
-                    if (st->type == st_block && !st->next)
+                    if (found1->sb->templateLevel && (found1->templateParams || found1->sb->isDestructor))
                     {
-                        st = st->lower;
-                        while (st->type == st_line || st->type == st_dbgblock || st->type == st_label)
-                            st = st->next;
-                        if (st->type == st_expr || st->type == st_return)
+                        found1 = found1->sb->mainsym;
+                        if (found1->sb->castoperator)
                         {
-                            if (st->select)
+                            found1 = detemplate(found1, nullptr, basetype(node->v.func->thistp)->btp);
+                        }
+                        else
+                        {
+                            found1 = detemplate(found1, node->v.func, nullptr);
+                        }
+                    }
+                    if (found1)
+                    {
+                        if (found1->sb->templateLevel && !templateNestingCount && node->v.func->templateParams)
+                        {
+                            int pushCount = pushContext(found1, false);
+                            found1 = TemplateFunctionInstantiate(found1, false, false);
+                            while (pushCount--)
+                                dropStructureDeclaration();
+                        }
+                        else
+                        {
+                            if (found1->templateParams)
+                                instantiatingTemplate++;
+                            deferredCompileOne(found1);
+                            if (found1->templateParams)
+                                instantiatingTemplate--;
+                        }
+                    }
+                }
+                if (found1 && found1->sb->inlineFunc.stmt)
+                {
+                    int i;
+                    STATEMENT* stmt = found1->sb->inlineFunc.stmt;
+                    while (stmt && stmt->type == st_expr)
+                        stmt = stmt->next;
+                    if (stmt && stmt->type == st_block && stmt->lower)
+                    {
+                        STATEMENT* st = stmt->lower;
+                        while (st->type == st_varstart)
+                            st = st->next;
+                        if (st->type == st_block && !st->next)
+                        {
+                            st = st->lower;
+                            while (st->type == st_line || st->type == st_dbgblock || st->type == st_label)
+                                st = st->next;
+                            if (st->type == st_expr || st->type == st_return)
                             {
-                                for (i = 0; i < functionnestingcount; i++)
-                                    if (functionnesting[i] == st->select)
-                                        break;
-                                if (i >= functionnestingcount)
+                                if (st->select)
                                 {
-                                    functionnesting[functionnestingcount++] = st->select;
-                                    // optimize_for_constants(&st->select);
-                                    functionnestingcount--;
-                                    if (IsConstantExpression(st->select, false, false))
+                                    for (i = 0; i < functionnestingcount; i++)
+                                        if (functionnesting[i] == st->select)
+                                            break;
+                                    if (i >= functionnestingcount)
                                     {
-                                        *node = *st->select;
-                                        node->noexprerr = true;
-                                        rv = true;
+                                        functionnesting[functionnestingcount++] = st->select;
+                                        bool optimizeConstants = !node->v.func->arguments;
+                                        if (optimizeConstants)
+                                            optimize_for_constants(&st->select);
+                                        functionnestingcount--;
+                                        if (IsConstantExpression(st->select, false, false))
+                                        {
+                                            *node = *st->select;
+                                            node->noexprerr = true;
+                                            rv = true;
+                                        }
                                     }
                                 }
                             }
@@ -2806,13 +2998,6 @@ int typedconsts(EXPRESSION* node1)
             rv = true;
             break;
         case en_const:
-            /* special trap to replace sc_constants */
-            //            if (basetype(node1->v.sp->tp)->type == bt_long_long || basetype(node1->v.sp->tp)->type ==
-            //            bt_unsigned_long_long)
-            //                node1->type = en_c_ll;
-            //            else
-            //                node1->type = en_c_i;
-            //            node1->v.i = node1->v.sp->sb->value.i;
             optimize_for_constants(&node1->v.sp->sb->init->exp);
             *node1 = *node1->v.sp->sb->init->exp;
             rv = true;
@@ -2883,6 +3068,8 @@ int typedconsts(EXPRESSION* node1)
         case en_mp_compare:
         case en__initblk:
         case en__cpblk:
+        case en_dot:
+        case en_pointsto:
             rv |= typedconsts(node1->right);
         case en_trapcall:
         case en_shiftby:
@@ -3114,7 +3301,7 @@ int typedconsts(EXPRESSION* node1)
             {
                 FPF temp = refloat(node1->left);
                 rv = true;
-                node1->v.f = (FPF*)Alloc(sizeof(FPF));
+                node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_FLOAT, &temp);
                 node1->type = en_c_f;
             }
@@ -3125,7 +3312,7 @@ int typedconsts(EXPRESSION* node1)
             {
                 FPF temp = refloat(node1->left);
                 rv = true;
-                node1->v.f = (FPF*)Alloc(sizeof(FPF));
+                node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_IFLOAT, &temp);
                 node1->type = en_c_fi;
             }
@@ -3136,7 +3323,7 @@ int typedconsts(EXPRESSION* node1)
             {
                 FPF temp = refloat(node1->left);
                 rv = true;
-                node1->v.f = (FPF*)Alloc(sizeof(FPF));
+                node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_DOUBLE, &temp);
                 node1->type = en_c_d;
             }
@@ -3147,7 +3334,7 @@ int typedconsts(EXPRESSION* node1)
             {
                 FPF temp = refloat(node1->left);
                 rv = true;
-                node1->v.f = (FPF*)Alloc(sizeof(FPF));
+                node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_IDOUBLE, &temp);
                 node1->type = en_c_di;
             }
@@ -3158,7 +3345,7 @@ int typedconsts(EXPRESSION* node1)
             {
                 FPF temp = refloat(node1->left);
                 rv = true;
-                node1->v.f = (FPF*)Alloc(sizeof(FPF));
+                node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_LDOUBLE, &temp);
                 node1->type = en_c_ld;
             }
@@ -3169,7 +3356,7 @@ int typedconsts(EXPRESSION* node1)
             {
                 FPF temp = refloat(node1->left);
                 rv = true;
-                node1->v.f = (FPF*)Alloc(sizeof(FPF));
+                node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
                 node1->type = en_c_ldi;
             }
@@ -3182,7 +3369,7 @@ int typedconsts(EXPRESSION* node1)
                 if (isintconst(node1->left) || isfloatconst(node1->left))
                 {
                     FPF temp = refloat(node1->left);
-                    node1->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                    node1->v.c = Allocate<_COMPLEX_S>();
                     node1->v.c->r = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
                     node1->v.c->i.SetZero(0);
                 }
@@ -3191,7 +3378,7 @@ int typedconsts(EXPRESSION* node1)
                     FPF temp;
                     node1->left->type = en_c_ld;
                     temp = refloat(node1->left);
-                    node1->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                    node1->v.c = Allocate<_COMPLEX_S>();
                     node1->v.c->i = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
                     node1->v.c->r.SetZero(0);
                 }
@@ -3210,7 +3397,7 @@ int typedconsts(EXPRESSION* node1)
                 if (isintconst(node1->left) || isfloatconst(node1->left))
                 {
                     FPF temp = refloat(node1->left);
-                    node1->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                    node1->v.c = Allocate<_COMPLEX_S>();
                     node1->v.c->r = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
                     node1->v.c->i.SetZero(0);
                 }
@@ -3219,7 +3406,7 @@ int typedconsts(EXPRESSION* node1)
                     FPF temp;
                     node1->left->type = en_c_ld;
                     temp = refloat(node1->left);
-                    node1->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                    node1->v.c = Allocate<_COMPLEX_S>();
                     node1->v.c->i = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
                     node1->v.c->r.SetZero(0);
                 }
@@ -3238,7 +3425,7 @@ int typedconsts(EXPRESSION* node1)
                 if (isintconst(node1->left) || isfloatconst(node1->left))
                 {
                     FPF temp = refloat(node1->left);
-                    node1->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                    node1->v.c = Allocate<_COMPLEX_S>();
                     node1->v.c->r = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
                     node1->v.c->i.SetZero(0);
                 }
@@ -3247,7 +3434,7 @@ int typedconsts(EXPRESSION* node1)
                     FPF temp;
                     node1->left->type = en_c_ld;
                     temp = refloat(node1->left);
-                    node1->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                    node1->v.c = Allocate<_COMPLEX_S>();
                     node1->v.c->i = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
                     node1->v.c->r.SetZero(0);
                 }
@@ -3262,99 +3449,17 @@ int typedconsts(EXPRESSION* node1)
     }
     return rv;
 }
-static int depth(EXPRESSION* ep)
+bool toConsider(EXPRESSION* exp1, EXPRESSION* exp2)
 {
-    if (ep == 0)
-        return 0;
-    switch (ep->type)
+    switch( exp2->type)
     {
-        case en_c_bool:
-        case en_c_c:
-        case en_c_uc:
-        case en_c_wc:
-        case en_c_u16:
-        case en_c_u32:
-        case en_c_i:
-        case en_c_ui:
-        case en_c_l:
-        case en_c_ul:
-        case en_c_ll:
-        case en_c_ull:
-        case en_c_f:
-        case en_c_d:
-        case en_c_ld:
-        case en_c_fc:
-        case en_c_dc:
-        case en_c_ldc:
-        case en_c_fi:
-        case en_c_di:
-        case en_c_ldi:
-        case en_c_string:
-        case en_global:
-        case en_auto:
-        case en_pc:
-        case en_threadlocal:
-        case en_labcon:
-        case en_absolute:
-        case en_nullptr:
-        case en_atomic:
-        case en_structelem:
-
-            return 1;
-        case en_funcret:
-            return depth(ep->left);
-        case en_func:
-
-            return 10 + imax(depth(ep->left), depth(ep->right));
-        case en_cond:
-            return 1 + imax(depth(ep->left), imax(depth(ep->right->left), depth(ep->right->right)));
-        default:
-            return 1 + imax(depth(ep->left), depth(ep->right));
-    }
-}
-static void rebalance(EXPRESSION* ep)
-{
-    if (ep == 0)
-        return;
-    switch (ep->type)
-    {
-        case en_c_bool:
-        case en_c_c:
-        case en_c_uc:
-        case en_c_wc:
-        case en_c_u16:
-        case en_c_u32:
-        case en_c_i:
-        case en_c_ui:
-        case en_c_l:
-        case en_c_ul:
-        case en_c_ll:
-        case en_c_ull:
-        case en_c_f:
-        case en_c_d:
-        case en_c_ld:
-        case en_c_fc:
-        case en_c_dc:
-        case en_c_ldc:
-        case en_c_fi:
-        case en_c_di:
-        case en_c_ldi:
-        case en_c_string:
-        case en_global:
-        case en_auto:
-        case en_pc:
-        case en_threadlocal:
-        case en_labcon:
-        case en_absolute:
-        case en_nullptr:
-        case en_structelem:
-            break;
         case en_add:
             // fixme : without the (architecture == ARCHITECTURE_MSIL) some complex expressions inside loops
             // get optimized wrong see x264::analyse.c around line 849
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
-                if (!isarithmeticconst(ep->left) || !isarithmeticconst(ep->right))
-                    break;
+                if (!isarithmeticconst(exp2->left) || !isarithmeticconst(exp2->right))
+                    return false;
+            return true;
         case en_mul:
         case en_umul:
         case en_arraymul:
@@ -3363,45 +3468,14 @@ static void rebalance(EXPRESSION* ep)
         case en_xor:
         case en_eq:
         case en_ne:
-            rebalance(ep->left);
-            rebalance(ep->right);
-            if (depth(ep->left) < depth(ep->right))
-            {
-                EXPRESSION* p = ep->left;
-                ep->left = ep->right;
-                ep->right = p;
-            }
-            break;
-        case en_sub:
-            rebalance(ep->left);
-            rebalance(ep->right);
-            if (depth(ep->left) < depth(ep->right))
-            {
-                EXPRESSION* p = ep->left;
-                ep->left = ep->right;
-                ep->right = p;
-                ep->type = en_add;
-                ep->left = exprNode(en_uminus, ep->left, 0);
-            }
-            break;
-        case en_cond:
-            rebalance(ep->left);
-            rebalance(ep->right->left);
-            rebalance(ep->right->right);
-            break;
-        case en_atomic:
-            rebalance(ep->v.ad->flg);
-            rebalance(ep->v.ad->memoryOrder1);
-            rebalance(ep->v.ad->memoryOrder1);
-            rebalance(ep->v.ad->address);
-            rebalance(ep->v.ad->value);
-            rebalance(ep->v.ad->third);
-            break;
-        default:
-            rebalance(ep->left);
-            rebalance(ep->right);
-            break;
+            return true;
+        default: 
+            return false;
     }
+}
+void rebalance(EXPRESSION** exp)
+{
+    *exp = Rebalance(*exp, toConsider);
 }
 bool msilConstant(EXPRESSION *exp)
 {
@@ -3467,10 +3541,10 @@ void optimize_for_constants(EXPRESSION** expr)
     asidetail = oldasidetail;
     if (Optimizer::architecture != ARCHITECTURE_MSIL)
     {
-        rebalance(*expr);
+        rebalance(expr);
     }
 }
-LEXEME* optimized_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed)
+LEXLIST* optimized_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed)
 {
 
     if (commaallowed)

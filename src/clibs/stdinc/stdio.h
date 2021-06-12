@@ -1,22 +1,22 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *
+ *     
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /*  stdio.h
@@ -53,6 +53,7 @@
 #    include <stdarg.h>
 #endif
 
+#ifndef RC_INVOKED
 #pragma pack(4)
 typedef struct __file__
 {
@@ -117,6 +118,7 @@ extern FILE _RTL_DATA* __stderr;
 extern FILE _RTL_DATA* __stdaux;
 extern FILE _RTL_DATA* __stdprn;
 #endif
+#endif
 
 #define stdin __stdin
 #define stdout __stdout
@@ -129,7 +131,13 @@ extern "C"
 {
 #endif
 
+#ifndef RC_INVOKED
     typedef long fpos_t;
+#ifndef _OFFT_DEFINED
+#define _OFFT_DEFINED
+    typedef long off_t;
+#endif
+#endif
 
 #define FILTOK 0x444c
 #define STACKPAD 512
@@ -193,15 +201,17 @@ extern "C"
     /* Standard I/O predefined streams
      */
 #ifndef _NFILE_EXT
+#ifndef RC_INVOKED
 #    define _NFILE_EXT
     extern unsigned _RTL_DATA _nfile;
-#endif
     FILE* _RTL_FUNC _IMPORT __getStream(int stream);
-
+#endif
+#endif
 #define _IOFBF 1
 #define _IOLBF 2
 #define _IONBF 4
 
+#ifndef RC_INVOKED
     void _RTL_FUNC _IMPORT clearerr(FILE* __stream);
     int _RTL_FUNC _IMPORT fclose(FILE* __stream);
     int _RTL_FUNC _IMPORT fflush(FILE* __stream);
@@ -220,8 +230,10 @@ extern "C"
     FILE* _RTL_FUNC _IMPORT freopen(const char* ZSTR __path, const char* ZSTR __mode, FILE* restrict __stream);
     int _RTL_FUNC _IMPORT fscanf(FILE* restrict __stream, const char* ZSTR restrict __format, ...);
     int _RTL_FUNC _IMPORT fseek(FILE* __stream, long __offset, int __whence);
+    int _RTL_FUNC _IMPORT fseeko(FILE* __stream, off_t __offset, int __whence);
     int _RTL_FUNC _IMPORT fsetpos(FILE* __stream, const fpos_t* __pos);
     long _RTL_FUNC _IMPORT ftell(FILE* __stream);
+    off_t _RTL_FUNC _IMPORT ftello(FILE* __stream);
     size_t _RTL_FUNC _IMPORT fwrite(const void* __ptr, size_t __size, size_t __n, FILE* __stream);
     FILE* _RTL_FUNC popen(const char* ZSTR name, const char* ZSTR restrict mode);
     FILE* _RTL_FUNC _popen(const char* ZSTR name, const char* ZSTR restrict mode);
@@ -238,8 +250,11 @@ extern "C"
     int _RTL_FUNC _IMPORT snprintf(char* ZSTR restrict __buffer, size_t n, const char* ZSTR restrict __format, ...);
     int _RTL_FUNC _IMPORT _snprintf(char* ZSTR restrict __buffer, size_t n, const char* ZSTR restrict __format, ...);
     int _RTL_FUNC _IMPORT sprintf(char* ZSTR restrict __buffer, const char* ZSTR restrict __format, ...);
+    int _RTL_FUNC _IMPORT asprintf(char** ZSTR restrict __buffer, const char* ZSTR restrict __format, ...);
     int _RTL_FUNC _IMPORT sscanf(const char* ZSTR restrict __buffer, const char* ZSTR restrict __format, ...);
     char* ZSTR _RTL_FUNC _IMPORT strerror(int __errnum);
+    errno_t _RTL_FUNC _IMPORT strerror_s(char* ZSTR buf, size_t size, errno_t __errnum);
+    errno_t _RTL_FUNC _IMPORT _strerror_s(char* ZSTR buf, size_t size, const char* ZSTR msg);
     char* ZSTR _RTL_FUNC _IMPORT tempnam(char* ZSTR __dir, char* ZSTR __prefix);
     char* ZSTR _RTL_FUNC _IMPORT _tempnam(char* ZSTR __dir, char* ZSTR __prefix);
     FILE* _RTL_FUNC _IMPORT tmpfile(void);
@@ -254,6 +269,7 @@ extern "C"
     int _RTL_FUNC _IMPORT _vsnprintf(char* ZSTR restrict __buffer, size_t __n, const char* ZSTR restrict __format,
                                      va_list __arglist);
     int _RTL_FUNC _IMPORT vsprintf(char* ZSTR __buffer, const char* ZSTR __format, va_list __arglist);
+    int _RTL_FUNC _IMPORT vasprintf(char** ZSTR __buffer, const char* ZSTR __format, va_list __arglist);
     int _RTL_FUNC _IMPORT vsscanf(const char* ZSTR __buffer, const char* ZSTR __format, va_list __arglist);
     int _RTL_FUNC _IMPORT unlink(const char* ZSTR __path);
     int _RTL_FUNC _IMPORT _unlink(const char* ZSTR __path);
@@ -306,7 +322,7 @@ extern "C"
 
     char* _RTL_FUNC _IMPORT fgets_unlocked(char* s, int n, FILE* stream);
     int _RTL_FUNC _IMPORT fputs_unlocked(const char* s, FILE* stream);
-
+#endif
 #if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL) && !defined(__MSIL__)
 #    define fileno(f) ((f)->fd)
 #    define _fileno(f) ((f)->fd)
@@ -314,9 +330,10 @@ extern "C"
 #if defined(__MSIL__)
 #    define fileno(f) _fileno(f)
 #endif
+#ifndef RC_INVOKED
     int _RTL_FUNC _IMPORT _fgetc(FILE* __stream);          /* used by getc() macro */
     int _RTL_FUNC _IMPORT _fputc(int __c, FILE* __stream); /* used by putc() macro */
-
+#endif
 #ifdef __cplusplus
 };
 #endif

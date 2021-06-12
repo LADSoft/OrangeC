@@ -1,22 +1,22 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *
+ *     
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include <stdio.h>
@@ -213,6 +213,10 @@ long _RTL_FUNC strtol(const char* restrict s, char** restrict endptr, int radix)
 unsigned long _RTL_FUNC strtoul(const char* restrict s, char** restrict endptr, int radix)
 {
     return (unsigned long)__xstrtol(s, INT_MAX, endptr, radix, ULONG_MAX, 1, STRT_ERR_RET_UNSIGNED);
+}
+LLONG_TYPE _RTL_FUNC _IMPORT _strtoi64(const char* restrict __s, char** restrict __endptr, int __radix)
+{
+    return strtoll(__s, __endptr, __radix);
 }
 LLONG_TYPE _RTL_FUNC atoll(const char* s) { return (LLONG_TYPE)__xstrtol(s, INT_MAX, 0, 10, LLONG_MAX, 1, STRT_ERR_RET_CV); }
 __int64 _RTL_FUNC _atoi64(const char* s) { return (__int64)__xstrtol(s, INT_MAX, 0, 10, _I64_MAX, 1, STRT_ERR_RET_CV); }

@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "ioptimizer.h"
@@ -96,7 +96,7 @@ int msil_examine_icode(QUAD* head)
             {
                 int sz = head->dc.opcode == i_muluh ? ISZ_ULONGLONG : -ISZ_ULONGLONG;
                 IMODE* ap = InitTempOpt(sz, sz);
-                QUAD* q = (QUAD*)Alloc(sizeof(QUAD));
+                QUAD* q = Allocate<QUAD>();
                 q->dc.opcode = i_assn;
                 q->ans = ap;
                 q->temps = TEMP_ANS;
@@ -109,7 +109,7 @@ int msil_examine_icode(QUAD* head)
             if (head->dc.left && head->dc.left->mode == i_immed && head->dc.opcode != i_assn)
             {
                 IMODE* ap = InitTempOpt(head->dc.left->size, head->dc.left->size);
-                QUAD *q = (QUAD*)Alloc(sizeof(QUAD)), *t;
+                QUAD *q = Allocate<QUAD>(), *t;
                 q->dc.opcode = i_assn;
                 q->ans = ap;
                 q->temps = TEMP_ANS;
@@ -126,12 +126,12 @@ int msil_examine_icode(QUAD* head)
             {
                 // insert the value to clear it to, e.g. zero
                 IMODE *ap = InitTempOpt(head->dc.right->size, head->dc.right->size);
-                QUAD *q = (QUAD *)Alloc(sizeof(QUAD));
+                QUAD *q = Allocate<QUAD>();
                 q->alwayslive = true;
                 q->dc.opcode = i_assn;
                 q->ans = ap;
                 q->temps = TEMP_ANS;
-                q->dc.left = (IMODE *)Alloc(sizeof(IMODE));
+                q->dc.left = Allocate<IMODE>();
                 q->dc.left->mode = i_immed;
                 q->dc.left->offset = simpleIntNode(se_i, 0);
                 InsertInstruction(head->back, q);
@@ -155,7 +155,7 @@ int msil_examine_icode(QUAD* head)
                     if (head->dc.right->offset->type != se_structelem)
                     {
                         IMODE* ap = InitTempOpt(head->dc.right->size, head->dc.right->size);
-                        QUAD* q = (QUAD*)Alloc(sizeof(QUAD));
+                        QUAD* q = Allocate<QUAD>();
                         q->dc.opcode = i_assn;
                         q->ans = ap;
                         q->temps = TEMP_ANS;

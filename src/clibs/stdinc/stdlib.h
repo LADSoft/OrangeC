@@ -1,22 +1,22 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *
+ *     
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #ifndef __STDLIB_H
@@ -48,6 +48,7 @@ extern "C"
 {
 #endif
 
+#ifndef RC_INVOKED
 #ifndef _DIV_T
 #    define _DIV_T
     typedef struct
@@ -76,7 +77,7 @@ extern "C"
     } lldiv_t;
 #    endif
 #endif
-
+#endif
 #undef _alloca
 #undef alloca
 #define _alloca(x) __alloca((x))
@@ -92,7 +93,9 @@ extern "C"
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
 
+#ifndef RC_INVOKED
     typedef void (*atexit_t)(void);
+    typedef void* _locale_t;
 
     void _RTL_FUNC _IMPORT abort(void);
     void _RTL_FUNC _IMPORT _abort(void);
@@ -126,6 +129,7 @@ extern "C"
     void _RTL_FUNC _IMPORT _NORETURN exit(int __status);
     void _RTL_FUNC _IMPORT _NORETURN _Exit(int __status);
     void _RTL_FUNC _IMPORT _MSIL_RTL free(void* __block);
+    void _RTL_FUNC _IMPORT _aligned_free(void* __block);
     char* ZSTR _RTL_FUNC _IMPORT getenv(const char* ZSTR __name);
     void* _RTL_FUNC _IMPORT lfind(const void* __key, const void* __base, size_t* __num, size_t __width,
                                   int (*fcmp)(const void*, const void*));
@@ -136,6 +140,7 @@ extern "C"
     void* _RTL_FUNC _IMPORT _lsearch(const void* __key, void* __base, size_t* __num, size_t __width,
                                      int (*fcmp)(const void*, const void*));
     void* _RTL_FUNC _IMPORT aligned_alloc(size_t __align, size_t __size);
+    void* _RTL_FUNC _IMPORT _aligned_malloc(size_t __align, size_t __size);
     void* _RTL_FUNC _IMPORT _MSIL_RTL malloc(size_t __size);
     int _RTL_FUNC _IMPORT mblen(const char* ZSTR __s, size_t __n);
     size_t _RTL_FUNC _IMPORT mbstowcs(wchar_t* restrict __pwcs, const char* ZSTR restrict __s, size_t __n);
@@ -161,8 +166,9 @@ extern "C"
 #endif
     unsigned long _RTL_FUNC _IMPORT strtoul(const char* ZSTR __s, char* ZSTR* __endptr, int __radix);
 #if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
-    long long _RTL_FUNC _IMPORT strtoull(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix);
+    unsigned long long _RTL_FUNC _IMPORT strtoull(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix);
 #endif
+    long long _RTL_FUNC _IMPORT _strtoi64(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix);
     int _RTL_FUNC _IMPORT system(const char* ZSTR __command);
     size_t _RTL_FUNC _IMPORT wcstombs(char* ZSTR restrict __s, const wchar_t* restrict __pwcs, size_t __n);
     int _RTL_FUNC _IMPORT wctomb(char* ZSTR restrict __s, wchar_t __wc);
@@ -189,6 +195,7 @@ extern int _RTL_DATA _fmode;
 extern unsigned char _RTL_DATA _osmajor;
 extern unsigned char _RTL_DATA _osminor;
 #endif
+#endif
 
     /* Constants for MSC pathname functions */
 
@@ -207,6 +214,7 @@ extern unsigned char _RTL_DATA _osminor;
 #endif
 #define _MAX_PATH2 (_MAX_PATH + 4)
 
+#ifndef RC_INVOKED
     long double _RTL_FUNC _IMPORT _atold(const char* ZSTR __s);
     void _RTL_FUNC _IMPORT _NORETURN _exit(int __status);
     char* ZSTR _RTL_FUNC _IMPORT _fullpath(char* ZSTR, const char* ZSTR, size_t);
@@ -277,6 +285,7 @@ extern unsigned char _RTL_DATA _osminor;
 int* _RTL_FUNC _IMPORT __GetErrno(void);
 #endif
     int* _RTL_FUNC _IMPORT __GetDosErrno(void);
+#endif
 
 #ifndef __cplusplus
 #    if defined(__MSIL__)
@@ -287,6 +296,7 @@ int* _RTL_FUNC _IMPORT __GetErrno(void);
 #    define _dos_errno (*__GetDosErrno())
 #endif
 #define sys_nerr _sys_nerr
+#ifndef RC_INVOKED
 #if defined(__LSCRTL_DLL)
     extern int _IMPORT _sys_nerr;
 #else
@@ -309,9 +319,10 @@ extern char _RTL_DATA** __argv;
 #endif
 
     void _RTL_FUNC _IMPORT perror(const char* ZSTR __s);
-
+#endif
 #if defined(__cplusplus)
 
+#ifndef RC_INVOKED
 #    ifndef _TIME_T
 #        define _TIME_T
     typedef long time_t;
@@ -321,6 +332,7 @@ extern char _RTL_DATA** __argv;
 
     inline void _RTL_FUNC _IMPORT randomize(void) { srand((unsigned)time(NULL)); }
     inline int _RTL_FUNC _IMPORT random(int num) { return ((rand() * (num)) / (RAND_MAX + 1)); }
+#endif
 
 /* must include the C++ header to get min and max defs */
 #else /* __cplusplus */

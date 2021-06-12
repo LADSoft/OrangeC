@@ -1,29 +1,31 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
- *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.pin *
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include <stdio.h>
+#include <time.h>
 #include "CmdSwitch.h"
 #include "Utils.h"
 #include "config.h"
@@ -40,26 +42,30 @@
 #include "ipeep.h"
 #include "configx86.h"
 #include "configmsil.h"
-#include "ilazy.h"
-#include "iloop.h"
 #include "ilive.h"
 #include "iflow.h"
-#include "istren.h"
 #include "irc.h"
 #include "irewrite.h"
 #include "iout.h"
 #include "output.h"
-#include "iinvar.h"
 #include "ilstream.h"
 #include "ilunstream.h"
 #include "iconst.h"
-#include "ialias.h"
 #include "ioptutil.h"
 #include "ipinning.h"
+#include "optmodules.h"
+#include "ilazy.h"
+#include "iloop.h"
 
 int usingEsp;
 
 Optimizer::SimpleSymbol* currentFunction;
+namespace Parser
+{
+    bool IsCompiler() {
+        return true;
+    }
+}
 
 namespace Optimizer
 {
@@ -67,13 +73,27 @@ CmdSwitchParser SwitchParser;
 CmdSwitchBool single(SwitchParser, 's', false, "single");
 CmdSwitchBool WriteIcdFile(SwitchParser, 'Y', false);
 CmdSwitchCombineString output(SwitchParser, 'o');
+CmdSwitchBool displayTiming(SwitchParser, 't');
+CmdSwitchCombineString prm_flags(SwitchParser, 'f', ';');
+CmdSwitchBool useSharedMemory(SwitchParser, 'S');
+CmdSwitchString prm_verbosity(SwitchParser, 'y');
+CmdSwitchString prm_optimize(SwitchParser, 'O', ';');
 
 const char* usageText =
     "[options] inputfile\n"
     "\n"
-    "-ofile       set output file (in file mode)\n"
+    "-f{flag}     set or clear a flag\n"
+    "-o{file}     set output file (in file mode)\n"
     "--single     don't open internal file list\n"
+    "-t           display timing info\n"
+    "-y[...]      set verbosity\n"
+    "Ox           optimization control\n"
+    "-S use shared memory\n"
     "-Y output icd file\n"
+    "\nOptimization control:\n"
+    OPTIMIZATION_DESCRIPTION
+    "\nFlags:\n"
+    OPTMODULES_DESCRIPTION
     "\nTime: " __TIME__ "  Date: " __DATE__;
 
 int anonymousNotAlloc;
@@ -142,7 +162,7 @@ int PreRegAlloc(QUAD* tail, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int 
 
 void CreateTempsAndBlocks(FunctionData* fd)
 {
-    blockArray = (BLOCK**)Alloc(sizeof(BLOCK*) * blockCount);
+    blockArray = Allocate<BLOCK*>(blockCount);
     blockMax = blockCount;
     for (auto im : fd->imodeList)
     {
@@ -168,7 +188,7 @@ void CreateTempsAndBlocks(FunctionData* fd)
                             break;
                         case i_ind:
                         {
-                            IMODELIST* iml = (IMODELIST*)Alloc(sizeof(IMODE));
+                            IMODELIST* iml = Allocate<IMODELIST>();
                             iml->next = im->offset->sp->imind;
                             iml->im = im;
                             im->offset->sp->imind = iml;
@@ -215,61 +235,16 @@ void Optimize(SimpleSymbol* funcsp)
 
     flows_and_doms();
     gatherLocalInfo(functionVariables);
+
+    RunOptimizerModules();
     if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly)
     {
-        Precolor(true);
-        RearrangePrecolors();
-        // printf("ssa\n");
-        TranslateToSSA();
-
-        // printf("const\n");
-        if (optflags & OPT_CONSTANT)
-        {
-            //ConstantFlow(); /* propagate constants */
-            RemoveInfiniteThunks();
-            //			RemoveCriticalThunks();
-            doms_only(false);
-        }
-        //		if (optflags & OPT_RESHAPE)
-        //			Reshape();		/* loop expression reshaping */
-        // printf("stren\n");
-        if (!(chosenAssembler->arch->denyopts & DO_NOGLOBAL))
-        {
-            if ((cparams.prm_optimize_for_speed) && (optflags & OPT_LSTRENGTH))
-                ReduceLoopStrength(); /* loop index variable strength reduction */
-                                      // printf("invar\n");
-            if ((cparams.prm_optimize_for_speed) && (optflags & OPT_INVARIANT))
-                MoveLoopInvariants(); /* move loop invariants out of loops */
-        }
-        if ((optflags & OPT_GLOBAL) && !(chosenAssembler->arch->denyopts & DO_NOGLOBAL))
-        {
-            // printf("alias\n");
-            AliasPass1();
-        }
-        // printf("ssa out\n");
-        TranslateFromSSA(false);
-        removeDead(blockArray[0]);
-        //		RemoveCriticalThunks();
-        if ((optflags & OPT_GLOBAL) && !(chosenAssembler->arch->denyopts & DO_NOGLOBAL))
-        {
-            // printf("alias 2\n");
-            SetGlobalTerms();
-            AliasPass2();
-            // printf("global\n");
-            GlobalOptimization(); /* partial redundancy, code motion */
-            AliasRundown();
-        }
-        nextTemp = tempBottom;
-        // printf("end opt\n");
-        RemoveCriticalThunks();
-        removeDead(blockArray[0]);
-        RemoveInfiniteThunks();
+        // empty
     }
     else
     {
         Precolor(false);
         RearrangePrecolors();
-
         RemoveCriticalThunks();
         RemoveInfiniteThunks();
     }
@@ -287,28 +262,22 @@ void Optimize(SimpleSymbol* funcsp)
     definesInfo();
     liveVariables();
     doms_only(true);
-    // printf("to ssa\n");
     TranslateToSSA();
     CalculateInduction();
     /* lower for backend, e.g. do transformations that will improve the eventual
      * code gen, such as picking scaled indexed modes, moving constants, etc...
      */
-    // printf("prealloc\n");
     Prealloc(1);
-    // printf("from ssa\n");
     TranslateFromSSA(!(chosenAssembler->arch->denyopts & DO_NOREGALLOC));
-    // printf("peep\n");
     peep_icode(false); /* peephole optimizations at the ICODE level */
     RemoveCriticalThunks();
     removeDead(blockArray[0]); /* remove dead blocks */
 
-    // printf("allocate\n");
     /* now do the actual allocation */
     if (!(chosenAssembler->arch->denyopts & DO_NOREGALLOC))
     {
         AllocateRegisters(intermed_head);
         /* backend peephole optimization can sometimes benefit by knowing what is live */
-        // printf("live\n");
 
         CalculateBackendLives();
     }
@@ -318,7 +287,6 @@ void Optimize(SimpleSymbol* funcsp)
         RewriteForPinning();
     }
     peep_icode(true); /* we do branche opts last to not interfere with other opts */
-                      // printf("optimzation done\n");
 }
 
 void ProcessFunction(FunctionData* fd)
@@ -398,10 +366,28 @@ void SaveFile(std::string& name, SharedMemory* optimizerMem)
     localFree();
     globalFree();
 }
+void ParseParams(char *argv[])
+{
+    std::vector<std::string> checks = Utils::split(prm_optimize.GetValue());
+    for (auto&& v : checks)
+    {
+        if (v.size() >= 1)
+        {
+            Optimizer::optimize_setup('O', v.c_str());
+        }
+    }
+    if (ParseOptimizerParams(prm_flags.GetValue()) != "")
+        Utils::usage(argv[0], usageText);
+    if (prm_verbosity.GetExists())
+    {
+        cparams.verbosity = 1 + prm_verbosity.GetValue().size();
+    }
+}
 }  // namespace Optimizer
 int main(int argc, char* argv[])
 {
     using namespace Optimizer;
+    unsigned startTime, stopTime;
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
 
@@ -409,9 +395,18 @@ int main(int argc, char* argv[])
     {
         Utils::usage(argv[0], usageText);
     }
-    bool fileMode = false;
-    if (argc == 2)
-        fileMode = true;
+    cparams.optimizer_modules = ~0;
+    bool fileMode = true;
+    if (useSharedMemory.GetValue())
+    {
+            if (argc != 3)
+                Utils::usage(argv[0], usageText);
+            fileMode = false;
+    }
+    else if (argc != 2)
+    {
+        Utils::usage(argv[0], usageText);
+    }
     SharedMemory* parserMem = nullptr;
     SharedMemory* optimizerMem = nullptr;
     std::string outputFile;
@@ -456,6 +451,12 @@ int main(int argc, char* argv[])
     }
     if (!LoadFile(parserMem))
         Utils::fatal("internal error: could not load intermediate file");
+    Optimizer::ParseParams(argv);
+    Optimizer::OptimizerStats();
+    if (Optimizer::cparams.prm_displaytiming || displayTiming.GetValue())
+    {
+        startTime = clock();
+    }
     regInit();
     alloc_init();
     ProcessFunctions();
@@ -487,5 +488,10 @@ int main(int argc, char* argv[])
     }
     delete parserMem;
     delete optimizerMem;
+    if (Optimizer::cparams.prm_displaytiming || displayTiming.GetValue())
+    {
+        stopTime = clock();
+        printf("occopt timing: %d.%03d\n", (stopTime - startTime)/1000, (stopTime - startTime)% 1000); 
+    }
     return 0;
 }

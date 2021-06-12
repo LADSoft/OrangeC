@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /*
@@ -56,6 +56,7 @@
 #include "help.h"
 #include "beinterf.h"
 #include "inasm.h"
+#include "optmodules.h"
 
 Optimizer::SimpleSymbol* currentFunction;
 
@@ -70,6 +71,7 @@ int catchLevel;
 int codeLabelOffset;
 
 static Optimizer::LIST* mpthunklist;
+static std::map<int, int> retLabs;
 
 static int breaklab;
 static int contlab;
@@ -93,9 +95,9 @@ Optimizer::IMODE* imake_label(int label)
  */
 
 {
-    Optimizer::IMODE* ap = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+    Optimizer::IMODE* ap = Allocate<Optimizer::IMODE>();
     ap->mode = Optimizer::i_immed;
-    ap->offset = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    ap->offset = Allocate<Optimizer::SimpleExpression>();
     ap->offset->type = Optimizer::se_labcon;
     ap->offset->i = label;
     ap->size = ISZ_ADDR;
@@ -138,7 +140,7 @@ Optimizer::IMODE* set_symbol(const char* name, int isproc)
         sym = SymAlloc();
         sym->sb->storage_class = sc_external;
         sym->name = sym->sb->decoratedName = litlate(name);
-        sym->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+        sym->tp = Allocate<TYPE>();
         sym->tp->type = isproc ? bt_func : bt_int;
         sym->sb->safefunc = true;
         insert(sym, globalNameSpace->valueData->syms);
@@ -152,8 +154,8 @@ Optimizer::IMODE* set_symbol(const char* name, int isproc)
         if (sym->sb->storage_class == sc_overloads)
             sym = (SYMBOL*)(sym->tp->syms->table[0]->p);
     }
-    result = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
-    result->offset = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    result = Allocate<Optimizer::IMODE>();
+    result->offset = Allocate<Optimizer::SimpleExpression>();
     result->offset->type = Optimizer::se_global;
     result->offset->sp = Optimizer::SymbolManager::Get(sym);
     result->mode = Optimizer::i_direct;
@@ -191,14 +193,14 @@ static void AddProfilerData(SYMBOL* funcsp)
         STRING* string;
         int i;
         int l = strlen(funcsp->sb->decoratedName);
-        pname = (LCHAR*)Alloc(sizeof(LCHAR) * l + 1);
+        pname = Allocate<LCHAR>(l + 1);
         for (i = 0; i < l + 1; i++)
             pname[i] = funcsp->sb->decoratedName[i];
-        string = (STRING*)Alloc(sizeof(STRING));
+        string = Allocate<STRING>();
         string->strtype = l_astr;
         string->size = 1;
-        string->pointers = (Optimizer::SLCHAR**)Alloc(sizeof(Optimizer::SLCHAR*));
-        string->pointers[0] = (Optimizer::SLCHAR*)Alloc(sizeof(Optimizer::SLCHAR));
+        string->pointers = Allocate<Optimizer::SLCHAR*>();
+        string->pointers[0] = Allocate<Optimizer::SLCHAR>();
         string->pointers[0]->str = pname;
         string->pointers[0]->count = l;
         string->suffix = nullptr;
@@ -239,7 +241,7 @@ void gather_cases(CASEDATA* cd, struct Optimizer::cases* cs)
     int pos = 0;
     if (!cs->ptrs)
     {
-        cs->ptrs = (struct Optimizer::caseptrs*)Alloc((cs->count) * sizeof(struct Optimizer::caseptrs));
+        cs->ptrs = Allocate<Optimizer::caseptrs>(cs->count);
     }
     while (cd)
     {
@@ -311,7 +313,7 @@ void genxswitch(STATEMENT* stmt, SYMBOL* funcsp)
             Optimizer::gen_icode(Optimizer::i_assn, ap3, ap, nullptr);
             ap = ap3;
         }
-        ap3 = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+        ap3 = Allocate<Optimizer::IMODE>();
         ap3->mode = Optimizer::i_direct;
         ap3->offset = Optimizer::SymbolManager::Get(en);
         ap3->size = -ISZ_UINT;
@@ -398,11 +400,11 @@ static STATEMENT* gen___try(SYMBOL* funcsp, STATEMENT* stmt)
                 mode = 2;
                 if (stmt->sp)
                 {
-                    left = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+                    left = Allocate<Optimizer::IMODE>();
                     left->mode = Optimizer::i_direct;
                     left->size = ISZ_OBJECT;
                     left->offset =
-                        (Optimizer::SimpleExpression*)(Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+                        Allocate<Optimizer::SimpleExpression>();
                     left->offset->type = Optimizer::se_auto;
                     left->offset->sp = Optimizer::SymbolManager::Get(stmt->sp);
                 }
@@ -518,7 +520,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
     {
         gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
     }
-    if (ap)
+    if (ap && (inlinesym_count || !isvoid(basetype(funcsp->tp)->btp)))
     {
         if (returnImode)
             ap1 = returnImode;
@@ -542,7 +544,34 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
         {
             retsize = funcsp->sb->paramsize;
         }
-        Optimizer::gen_label(retlab);
+        if (!inlinesym_count || retLabs[retlab] >= 2)
+        {
+            // main function or multiple returns, label is needed
+            Optimizer::gen_label(retlab);
+        }
+        else if (retLabs[retlab] == 1)
+        {
+            // only one return statement, label isn't needed
+            // and get rid of the goto as well...
+            Optimizer::QUAD *find = Optimizer::intermed_tail;
+            Optimizer::BLOCK* b = find->block;
+            while (b == find->block && (find->dc.opcode == Optimizer::i_line || find->ignoreMe))
+                find = find->back;
+            if (b == find->block && find->dc.opcode == Optimizer::i_goto && find->dc.v.label == retlab)
+            {
+                find->dc.opcode = Optimizer::i_nop;
+                find->dc.v.label = 0;
+            }
+            else
+            {
+                // might fall off the end without a return statement...
+                Optimizer::gen_label(retlab);
+            }
+        }
+        else
+        {
+            Optimizer::gen_label(retlab);
+        }
         Optimizer::intermed_tail->retcount = retcount;
         if (!noepilogue)
         {
@@ -559,7 +588,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
                 if (Optimizer::cparams.prm_xcept && funcsp->sb->xc && funcsp->sb->xc->xcRundownFunc)
                     gen_expr(funcsp, funcsp->sb->xc->xcRundownFunc, F_NOVALUE, ISZ_UINT);
                 SubProfilerData();
-                if (returnSym)
+                if (returnSym && !isvoid(basetype(funcsp->tp)->btp))
                 {
                     ap1 = Optimizer::tempreg(returnSym->size, 0);
                     ap1->retval = true;
@@ -597,6 +626,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
         /* not using gen_igoto because it will make a new block */
         Optimizer::gen_icode(Optimizer::i_goto, nullptr, nullptr, nullptr);
         Optimizer::intermed_tail->dc.v.label = retlab;
+        retLabs[retlab]++;
         retcount++;
     }
 }
@@ -605,7 +635,7 @@ void gen_varstart(void* exp)
 {
     if (Optimizer::cparams.prm_debug)
     {
-        Optimizer::IMODE* ap = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+        Optimizer::IMODE* ap = Allocate<Optimizer::IMODE>();
         ap->mode = Optimizer::i_immed;
         ap->offset = Optimizer::SymbolManager::Get((expr*)exp);
         ap->size = ISZ_ADDR;
@@ -614,7 +644,7 @@ void gen_varstart(void* exp)
 }
 void gen_func(void* exp, int start)
 {
-    Optimizer::IMODE* ap = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+    Optimizer::IMODE* ap = Allocate<Optimizer::IMODE>();
     ap->mode = Optimizer::i_immed;
     ap->offset = Optimizer::SymbolManager::Get((expr*)exp);
     ap->size = ISZ_ADDR;
@@ -628,7 +658,7 @@ void gen_asm(STATEMENT* stmt)
  */
 {
     Optimizer::QUAD* newQuad;
-    newQuad = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = Optimizer::i_passthrough;
     newQuad->dc.left = (Optimizer::IMODE*)stmt->select; /* actually is defined by the INASM module*/
     // if (Optimizer::chosenAssembler->gen->adjust_codelab)
@@ -640,7 +670,7 @@ void gen_asm(STATEMENT* stmt)
 void gen_asmdata(STATEMENT* stmt)
 {
     Optimizer::QUAD* newQuad;
-    newQuad = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = Optimizer::i_datapassthrough;
     newQuad->dc.left = (Optimizer::IMODE*)stmt->select; /* actually is defined by the INASM module*/
     Optimizer::flush_dag();
@@ -789,7 +819,7 @@ static void StoreInBucket(Optimizer::IMODE* mem, Optimizer::IMODE* addr)
         }
         lst = lst->next;
     }
-    lst = (DATA*)Alloc(sizeof(DATA));
+    lst = Allocate<DATA>();
     lst->mem = mem;
     lst->addr = addr;
     lst->next = buckets[bucket];
@@ -840,7 +870,7 @@ static void InsertParameterThunks(SYMBOL* funcsp, Optimizer::BLOCK* b)
         }
         if (funcsp->sb->oldstyle && sym->tp->type == bt_float)
         {
-            Optimizer::IMODE* right = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+            Optimizer::IMODE* right = Allocate<Optimizer::IMODE>();
             *right = *simpleSym->imvalue;
             right->size = ISZ_DOUBLE;
             if (!Optimizer::chosenAssembler->arch->hasFloatRegs)
@@ -887,7 +917,7 @@ static void SetReturnSym(SYMBOL *funcsp)
         auto exp = anonymousVar(sc_auto, basetype(funcsp->tp)->btp);
         auto sym = exp->v.sp;
         sym->sb->anonymous = false;
-        Optimizer::IMODE* ap = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+        Optimizer::IMODE* ap = Allocate<Optimizer::IMODE>();
         auto sym2 = Optimizer::SymbolManager::Get(sym);
         sym2->imvalue = ap;
         ap->offset = Optimizer::SymbolManager::Get(exp);
@@ -906,6 +936,8 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
  *      generate a function body and dump the icode
  */
 {
+    retLabs.clear();
+    rttiStatements.clear();
     Optimizer::IMODE* oldReturnImode = returnImode;
     Optimizer::IMODE* allocaAP = nullptr;
     SYMBOL* oldCurrentFunc;
@@ -961,9 +993,10 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     Optimizer::cseg();
     Optimizer::gen_line(funcsp->sb->linedata);
     gen_func(funcexp, 1);
+
     /* in C99 inlines can clash if declared 'extern' in multiple modules */
     /* in C++ we introduce virtual functions that get coalesced at link time */
-    if (funcsp->sb->attribs.inheritable.linkage == lk_virtual || tmpl)
+    if (!currentFunction->isinternal && (funcsp->sb->attribs.inheritable.linkage == lk_virtual || tmpl))
     {
         funcsp->sb->attribs.inheritable.linkage = lk_virtual;
         Optimizer::gen_virtual(Optimizer::SymbolManager::Get(funcsp), false);
@@ -1025,27 +1058,22 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     genreturn(0, funcsp, 1, 0, allocaAP);
     gen_func(funcexp, 0);
     tFree();
+
     InsertParameterThunks(funcsp, Optimizer::blockArray[1]);
     FreeLocalContext(nullptr, funcsp, Optimizer::nextLabel++);
 
-    //    if (!(Optimizer::chosenAssembler->arch->denyopts & DO_NOREGALLOC))
-    //        AllocateStackSpace(funcsp);
-    //    FillInPrologue(Optimizer::intermed_head, funcsp);
     /* Code gen from icode */
-    //    rewrite_icode(); /* Translate to machine code & dump */
-    //    if (Optimizer::chosenAssembler->gen->post_function_gen)
-    //        Optimizer::chosenAssembler->gen->post_function_gen(Optimizer::SymbolManager::Get(funcsp), Optimizer::intermed_head);
-    //    post_function_gen(currentFunction, Optimizer::intermed_head);
     Optimizer::AddFunction();
-    if (funcsp->sb->attribs.inheritable.linkage == lk_virtual || tmpl)
+
+    if (!currentFunction->isinternal && (funcsp->sb->attribs.inheritable.linkage == lk_virtual || tmpl))
         Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(funcsp));
+
     AllocateLocalContext(nullptr, funcsp, Optimizer::nextLabel);
     funcsp->sb->retblockparamadjust = Optimizer::chosenAssembler->arch->retblockparamadjust;
     XTDumpTab(funcsp);
     FreeLocalContext(nullptr, funcsp, Optimizer::nextLabel);
+
     Optimizer::intermed_head = nullptr;
-    //    dag_rundown();
-    //    oFree();
     theCurrentFunc = oldCurrentFunc;
     currentFunction = oldCurrentFunction;
     returnImode = oldReturnImode;

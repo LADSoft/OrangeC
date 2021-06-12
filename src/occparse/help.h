@@ -1,27 +1,28 @@
 #pragma once
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
+
 namespace Parser
 {
 extern int anonymousNotAlloc;
@@ -30,7 +31,7 @@ void deprecateMessage(SYMBOL* sym);
 bool ismember(SYMBOL* sym);
 bool istype(SYMBOL* sym);
 bool ismemberdata(SYMBOL* sym);
-bool startOfType(LEXEME* lex, bool assumeType);
+bool startOfType(LEXLIST* lex, bool assumeType);
 void UpdateRootTypes(TYPE* tp);
 bool isDerivedFromTemplate(TYPE* tp);
 bool isautotype(TYPE* tp);
@@ -41,7 +42,7 @@ bool iscomplex(TYPE* tp);
 bool isimaginary(TYPE* tp);
 bool isarithmetic(TYPE* tp);
 bool ismsil(TYPE* tp);
-bool isconstraw(const TYPE* tp, bool useTemplate);
+bool isconstraw(const TYPE* tp);
 bool isconst(const TYPE* tp);
 bool isvolatile(const TYPE* tp);
 bool islrqual(TYPE* tp);
@@ -52,10 +53,10 @@ bool isvoid(TYPE* tp);
 bool isvoidptr(TYPE* tp);
 bool isarray(TYPE* tp);
 bool isunion(TYPE* tp);
-void DeduceAuto(TYPE** pat, TYPE* nt);
+void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp);
 SYMBOL* getFunctionSP(TYPE** tp);
-LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems);
-LEXEME* concatStrings(LEXEME* lex, EXPRESSION** expr, enum e_lexType* tp, int* elems);
+LEXLIST* concatStringsInternal(LEXLIST* lex, STRING** str, int* elems);
+LEXLIST* concatStrings(LEXLIST* lex, EXPRESSION** expr, enum e_lexType* tp, int* elems);
 bool isintconst(EXPRESSION* exp);
 bool isfloatconst(EXPRESSION* exp);
 bool isimaginaryconst(EXPRESSION* exp);

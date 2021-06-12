@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "ioptimizer.h"
@@ -47,16 +47,16 @@ static IMODE* rwSetSymbol(const char* name, bool unused)
     if (sym == 0)
     {
         LIST* l1;
-        sym = (SimpleSymbol*)Alloc(sizeof(SimpleSymbol));
+        sym = Allocate<SimpleSymbol>();
         sym->storage_class = scc_external;
         sym->name = sym->outputName = litlate(name);
-        sym->tp = (SimpleType*)Alloc(sizeof(SimpleType));
+        sym->tp = Allocate<SimpleType>();
         sym->tp->type = st_func;
         //        SymbolManager::Add(name, sym);
         externals.push_back(sym);
     }
-    result = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
-    result->offset = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
+    result = Allocate<IMODE>();
+    result->offset = Allocate<SimpleExpression>();
     result->offset->type = se_global;
     result->offset->sp = sym;
     result->offset->type = se_pc;
@@ -75,7 +75,7 @@ void insert_parm(QUAD* head, QUAD* q)
         QUAD* move;
         temp = AllocateTemp(q->dc.left->size);
         //					tempInfo[tempCount-1] = temp->offset;
-        move = (QUAD*)beLocalAlloc(sizeof(QUAD));
+        move = beLocalAllocate<QUAD>();
         move->dc.opcode = i_assn;
         move->ans = temp;
         move->dc.left = q->dc.left;
@@ -90,7 +90,7 @@ void insert_parm(QUAD* head, QUAD* q)
 }
 void insert_nullparmadj(QUAD* head, int v)
 {
-    QUAD* q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+    QUAD* q = beLocalAllocate<QUAD>();
     q->dc.opcode = i_parmadj;
     q->dc.left = make_parmadj(0);
     q->dc.right = make_parmadj(v);
@@ -145,7 +145,7 @@ void x86FastcallColor(QUAD *head)
             if (head->dc.left->mode != i_direct || head->dc.left->offset->type != se_tempref)
             {
                 IMODE* temp = InitTempOpt(head->dc.left->size, head->dc.left->size);
-                QUAD* q = (QUAD*)(QUAD*)Alloc(sizeof(QUAD));
+                QUAD* q = Allocate<QUAD>();
                 *q = *head;
                 q->dc.opcode = i_assn;
                 q->ans = temp;
@@ -731,7 +731,7 @@ static void HandleAssn(QUAD* ins, BRIGGS_SET* globalVars)
             if (ins->ans->size >= ISZ_UINT || ins->ans->size <= -ISZ_UINT)
             {
                 IMODE *imn = InitTempOpt(ins->ans->size, ins->ans->size);
-                QUAD *newIns = (QUAD *)Alloc(sizeof(QUAD));
+                QUAD *newIns = Allocate<QUAD>();
                 newIns->ans = imn;
                 newIns->dc.left = ins->dc.left;
                 newIns->dc.opcode = i_assn;
@@ -809,7 +809,7 @@ int x86PreRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, in
             ProcessInd(&offset1, &offset2, &offset3, &scale);
             if (offset2 || offset3)
             {
-                IMODE* ind1 = (IMODE*)Alloc(sizeof(IMODE));
+                IMODE* ind1 = Allocate<IMODE>();
                 *ind1 = *ins->ans;
                 if ((offset1 && offset1->type == se_tempref) || (offset2 && offset2->type == se_tempref))
                 {
@@ -841,7 +841,7 @@ int x86PreRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, in
             ProcessInd(&offset1, &offset2, &offset3, &scale);
             if (offset2 || offset3)
             {
-                IMODE* ind1 = (IMODE*)Alloc(sizeof(IMODE));
+                IMODE* ind1 = Allocate<IMODE>();
                 *ind1 = *ins->dc.left;
                 if ((offset1 && offset1->type == se_tempref) || (offset2 && offset2->type == se_tempref))
                 {
@@ -873,7 +873,7 @@ int x86PreRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, in
             ProcessInd(&offset1, &offset2, &offset3, &scale);
             if (offset2 || offset3)
             {
-                IMODE* ind1 = (IMODE*)Alloc(sizeof(IMODE));
+                IMODE* ind1 = Allocate<IMODE>();
                 *ind1 = *ins->dc.right;
                 if ((offset1 && offset1->type == se_tempref) || (offset2 && offset2->type == se_tempref))
                 {
@@ -924,7 +924,7 @@ int x86PreRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, in
                 if (ins->temps & TEMP_RIGHT)
                 {
                     t = InitTempOpt(ins->dc.right->size, ins->dc.right->size);
-                    newIns = (QUAD*)Alloc(sizeof(QUAD));
+                    newIns = Allocate<QUAD>();
                     newIns->ans = t;
                     newIns->dc.left = ins->dc.right;
                     newIns->dc.opcode = i_assn;
@@ -940,7 +940,7 @@ int x86PreRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, in
                 if (ins->ans->size <= ISZ_ULONG && ins->dc.right->mode == i_immed && isintconst(ins->dc.right->offset))
                 {
                     t = InitTempOpt(ins->dc.right->size, ins->dc.right->size);
-                    newIns = (QUAD *)Alloc(sizeof(QUAD));
+                    newIns = Allocate<QUAD>();
                     newIns->ans = t;
                     newIns->dc.left = ins->dc.right;
                     newIns->dc.opcode = i_assn;
@@ -952,7 +952,7 @@ int x86PreRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, in
             case i_muluh:
             case i_mulsh:
                 t = InitTempOpt(ins->ans->size, ins->ans->size);
-                newIns = (QUAD*)Alloc(sizeof(QUAD));
+                newIns = Allocate<QUAD>();
                 newIns->dc.left = t;
                 newIns->ans = ins->ans;
                 newIns->dc.opcode = i_assn;
@@ -1013,7 +1013,7 @@ int x86_examine_icode(QUAD* head)
                 else
                     size = ISZ_ULONGLONG;
                 im = InitTempOpt(size, size);
-                q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                q = beLocalAllocate<QUAD>();
                 q->dc.opcode = i_assn;
                 q->ans = im;
                 q->dc.left = head->dc.left;
@@ -1050,8 +1050,8 @@ int x86_examine_icode(QUAD* head)
                 ians = head->ans;
                 temp = AllocateTemp(ISZ_ADDR);
                 //				tempInfo[tempCount-1] = temp->offset;
-                q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
-                tl = (IMODE*)(IMODE*)beLocalAlloc(sizeof(IMODE));
+                q = beLocalAllocate<QUAD>();
+                tl = beLocalAllocate<IMODE>();
                 tans = hl = indnode(temp, head->ans->size);
                 *tl = *head->ans;
                 tl->size = ISZ_ADDR;
@@ -1082,8 +1082,8 @@ int x86_examine_icode(QUAD* head)
                 {
                     temp = AllocateTemp(ISZ_ADDR);
                     //				tempInfo[tempCount-1] = temp->offset;
-                    q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
-                    tl = (IMODE*)(IMODE*)beLocalAlloc(sizeof(IMODE));
+                    q = beLocalAllocate<QUAD>();
+                    tl = beLocalAllocate<IMODE>();
                     hl = indnode(temp, head->dc.left->size);
                     *tl = *head->dc.left;
                     tl->size = ISZ_ADDR;
@@ -1109,8 +1109,8 @@ int x86_examine_icode(QUAD* head)
                 {
                     temp = AllocateTemp(ISZ_ADDR);
                     //				tempInfo[tempCount-1] = temp->offset;
-                    q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
-                    tl = (IMODE*)(IMODE*)beLocalAlloc(sizeof(IMODE));
+                    q = beLocalAllocate<QUAD>();
+                    tl = beLocalAllocate<IMODE>();
                     hl = indnode(temp, head->dc.right->size);
                     *tl = *head->dc.right;
                     tl->size = ISZ_ADDR;
@@ -1136,7 +1136,7 @@ int x86_examine_icode(QUAD* head)
                 {
                     IMODE* temp;
                     QUAD* q;
-                    q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                    q = beLocalAllocate<QUAD>();
                     temp = AllocateTemp(head->dc.left->size);
                     q->dc.opcode = i_assn;
                     q->ans = temp;
@@ -1156,7 +1156,7 @@ int x86_examine_icode(QUAD* head)
                 {
                     IMODE* temp;
                     QUAD* q;
-                    q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                    q = beLocalAllocate<QUAD>();
                     temp = AllocateTemp(head->dc.right->size);
                     q->dc.opcode = i_assn;
                     q->ans = temp;
@@ -1174,7 +1174,7 @@ int x86_examine_icode(QUAD* head)
                 {
                     IMODE* temp;
                     QUAD* q;
-                    q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                    q = beLocalAllocate<QUAD>();
                     *q = *head;
                     temp = AllocateTemp(head->ans->size);
                     q->ans = temp;
@@ -1200,7 +1200,7 @@ int x86_examine_icode(QUAD* head)
                     QUAD* q;
                     temp = AllocateTemp(ISZ_UINT);
                     //					tempInfo[tempCount-1] = temp->offset;
-                    q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                    q = beLocalAllocate<QUAD>();
                     q->dc.opcode = i_assn;
                     q->ans = temp;
                     q->dc.left = head->dc.left;
@@ -1215,7 +1215,7 @@ int x86_examine_icode(QUAD* head)
                     QUAD* q;
                     temp = AllocateTemp(ISZ_ADDR);
                     //					tempInfo[tempCount-1] = temp->offset;
-                    q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                    q = beLocalAllocate<QUAD>();
                     q->dc.opcode = i_assn;
                     q->ans = temp;
                     q->dc.left = head->dc.left;
@@ -1231,7 +1231,7 @@ int x86_examine_icode(QUAD* head)
                     QUAD *q;
                     temp = AllocateTemp(head->dc.left->size);
 //					tempInfo[tempCount-1] = temp->offset;
-                    q = (QUAD *)beLocalAlloc(sizeof(QUAD));
+                    q = beLocalAllocate<QUAD>();
                     q->dc.opcode = i_assn;
                     q->ans = temp;
                     q->dc.left = head->dc.left;
@@ -1252,7 +1252,7 @@ int x86_examine_icode(QUAD* head)
                     QUAD* q;
                     temp = AllocateTemp(head->dc.left->size);
                     //						tempInfo[tempCount-1] = temp->offset;
-                    q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                    q = beLocalAllocate<QUAD>();
                     q->dc.opcode = i_assn;
                     q->ans = temp;
                     q->dc.left = head->dc.left;
@@ -1276,14 +1276,14 @@ int x86_examine_icode(QUAD* head)
 
                         if (cparams.prm_lscrtdll)
                         {
-                            QUAD* q = (QUAD*)Alloc(sizeof(QUAD));
+                            QUAD* q = Allocate<QUAD>();
                             q->dc.opcode = i_assn;
                             q->dc.left = rwSetSymbol("__fzero", false);
                             q->dc.left->mode = i_direct;
                             q->dc.left->size = ISZ_ADDR;
                             q->ans = InitTempOpt(ISZ_ADDR, ISZ_ADDR);
                             q->temps = TEMP_ANS;
-                            IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
+                            IMODE* im = Allocate<IMODE>();
                             *im = *q->ans;
                             im->mode = i_ind;
                             im->size = head->ans->size;
@@ -1301,7 +1301,7 @@ int x86_examine_icode(QUAD* head)
                     else if (head->dc.left->size >= ISZ_FLOAT &&
                              (head->ans->size == ISZ_ULONGLONG || head->ans->size == -ISZ_ULONGLONG))
                     {
-                        QUAD* q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                        QUAD* q = beLocalAllocate<QUAD>();
                         IMODE* ret;
                         ret = AllocateTemp(head->ans->size);
                         ret->retval = true;
@@ -1309,7 +1309,7 @@ int x86_examine_icode(QUAD* head)
                         q->dc.left = head->dc.left;
                         if (head->dc.left->size >= ISZ_CFLOAT)
                         {
-                            QUAD* q1 = (QUAD*)Alloc(sizeof(QUAD));
+                            QUAD* q1 = Allocate<QUAD>();
                             q1->dc.opcode = i_assn;
                             q1->dc.left = head->dc.left;
                             q->dc.left = q1->ans = InitTempOpt(head->dc.left->size + ISZ_FLOAT - ISZ_CFLOAT,
@@ -1318,7 +1318,7 @@ int x86_examine_icode(QUAD* head)
                         }
                         if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT)
                         {
-                            QUAD* q1 = (QUAD*)Alloc(sizeof(QUAD));
+                            QUAD* q1 = Allocate<QUAD>();
                             q1->dc.opcode = i_assn;
                             q1->dc.left = q->dc.left;
                             q->dc.left = q1->ans = InitTempOpt(q->dc.left->size + 1, q->dc.left->size + 1);
@@ -1326,7 +1326,7 @@ int x86_examine_icode(QUAD* head)
                         }
                         insert_parm(head->back, q);
 
-                        q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_gosub;
                         if (head->ans->size == ISZ_ULONGLONG)
                             q->dc.left = rwSetSymbol("__ftoull", true);
@@ -1336,7 +1336,7 @@ int x86_examine_icode(QUAD* head)
                         insert_nullparmadj(head->back, sizeFromISZ(ISZ_DOUBLE));
                         if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
                         {
-                            q = (QUAD*)Alloc(sizeof(QUAD));
+                            q = Allocate<QUAD>();
                             q->ans = head->ans;
                             head->ans = AllocateTemp(head->ans->size);
                             q->dc.left = head->ans;
@@ -1351,7 +1351,7 @@ int x86_examine_icode(QUAD* head)
                     }
                     else if (head->dc.left->size >= ISZ_FLOAT && (head->ans->size <= ISZ_ULONG && head->ans->size != ISZ_BOOLEAN))
                     {
-                        QUAD* q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                        QUAD* q = beLocalAllocate<QUAD>();
                         IMODE* ret;
                         int n = 0;
                         switch (head->ans->size)
@@ -1390,12 +1390,12 @@ int x86_examine_icode(QUAD* head)
                         q->dc.opcode = i_parm;
                         q->dc.left = make_immed(ISZ_UINT, n);
                         insert_parm(head->back, q);
-                        q = (QUAD*)Alloc(sizeof(QUAD));
+                        q = Allocate<QUAD>();
                         q->dc.opcode = i_parm;
                         q->dc.left = head->dc.left;
                         if (head->dc.left->size >= ISZ_CFLOAT)
                         {
-                            QUAD* q1 = (QUAD*)Alloc(sizeof(QUAD));
+                            QUAD* q1 = Allocate<QUAD>();
                             q1->dc.opcode = i_assn;
                             q1->dc.left = head->dc.left;
                             q->dc.left = q1->ans = InitTempOpt(head->dc.left->size + ISZ_FLOAT - ISZ_CFLOAT,
@@ -1404,7 +1404,7 @@ int x86_examine_icode(QUAD* head)
                         }
                         if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT)
                         {
-                            QUAD* q1 = (QUAD*)Alloc(sizeof(QUAD));
+                            QUAD* q1 = Allocate<QUAD>();
                             q1->dc.opcode = i_assn;
                             q1->dc.left = q->dc.left;
                             q->dc.left = q1->ans = InitTempOpt(q->dc.left->size + 1, q->dc.left->size + 1);
@@ -1412,14 +1412,14 @@ int x86_examine_icode(QUAD* head)
                         }
                         insert_parm(head->back, q);
 
-                        q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_gosub;
                         q->dc.left = rwSetSymbol("__ftoi", true);
                         InsertInstruction(head->back, q);
                         insert_nullparmadj(head->back, sizeFromISZ(ISZ_DOUBLE) + sizeFromISZ(ISZ_UINT));
                         if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
                         {
-                            q = (QUAD*)Alloc(sizeof(QUAD));
+                            q = Allocate<QUAD>();
                             q->ans = head->ans;
                             head->ans = AllocateTemp(head->ans->size);
                             q->dc.left = head->ans;
@@ -1436,7 +1436,7 @@ int x86_examine_icode(QUAD* head)
                              (head->dc.left->size == ISZ_UINT || head->dc.left->size == ISZ_ULONG ||
                               head->dc.left->size == ISZ_ULONGLONG || head->dc.left->size == -ISZ_ULONGLONG))
                     {
-                        QUAD* q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                        QUAD* q = beLocalAllocate<QUAD>();
                         IMODE* ret;
                         ret = AllocateTemp(ISZ_DOUBLE);
                         ret->retval = true;
@@ -1444,7 +1444,7 @@ int x86_examine_icode(QUAD* head)
                         q->dc.opcode = i_parm;
                         q->dc.left = head->dc.left;
                         insert_parm(head->back, q);
-                        q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_gosub;
                         if (head->dc.left->size == ISZ_ULONGLONG)
                             q->dc.left = rwSetSymbol("__ulltof", true);
@@ -1456,7 +1456,7 @@ int x86_examine_icode(QUAD* head)
                         insert_nullparmadj(head->back, sizeFromISZ(head->dc.left->size));
                         if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
                         {
-                            q = (QUAD*)Alloc(sizeof(QUAD));
+                            q = Allocate<QUAD>();
                             q->ans = head->ans;
                             head->ans = AllocateTemp(head->ans->size);
                             q->dc.left = head->ans;
@@ -1483,7 +1483,7 @@ int x86_examine_icode(QUAD* head)
                                 QUAD* q;
                                 temp = AllocateTemp(head->dc.left->size);
                                 //						tempInfo[tempCount-1] = temp->offset;
-                                q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                                q = beLocalAllocate<QUAD>();
                                 q->dc.opcode = i_assn;
                                 q->ans = temp;
                                 q->dc.left = head->dc.left;
@@ -1499,7 +1499,7 @@ int x86_examine_icode(QUAD* head)
                                 QUAD* q;
                                 temp = AllocateTemp(head->ans->size);
                                 //						tempInfo[tempCount-1] = temp->offset;
-                                q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                                q = beLocalAllocate<QUAD>();
                                 q->dc.opcode = i_assn;
                                 q->dc.left = temp;
                                 q->ans = head->ans;
@@ -1521,7 +1521,7 @@ int x86_examine_icode(QUAD* head)
                                 QUAD* q;
                                 temp = AllocateTemp(head->ans->size);
                                 //						tempInfo[tempCount-1] = temp->offset;
-                                q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                                q = beLocalAllocate<QUAD>();
                                 q->dc.opcode = i_assn;
                                 q->dc.left = temp;
                                 q->ans = head->ans;
@@ -1545,21 +1545,21 @@ int x86_examine_icode(QUAD* head)
                 /*
                if (head->dc.left->mode != i_immed || head->dc.left->offset->i > 4080)
                {
-                   QUAD *q = (QUAD *)beLocalAlloc(sizeof(QUAD));
+                   QUAD *q = beLocalAllocate<QUAD>();
                     IMODE *ret ;
                    ret = AllocateTemp(head->ans->size);
                    ret->retval = true;
                    q->dc.opcode = i_parm;
                    q->dc.left = head->dc.left;
                    insert_parm(head->back, q);
-                   q = (QUAD *)beLocalAlloc(sizeof(QUAD));
+                   q = beLocalAllocate<QUAD>();
                    q->dc.opcode = i_gosub;
                    q->dc.left = rwSetSymbol( "___substackp", true);
                    InsertInstruction(head->back, q);
                    insert_nullparmadj(head->back, 4);
                    if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
                    {
-                       q = (QUAD *)Alloc(sizeof(QUAD));
+                       q = Allocate<QUAD>();
                        q->ans = head->ans;
                        head->ans = AllocateTemp(head->ans->size);
                        q->dc.left = head->ans;
@@ -1585,7 +1585,7 @@ int x86_examine_icode(QUAD* head)
                         QUAD* q;
                         temp = AllocateTemp(head->dc.left->size);
                         //						tempInfo[tempCount-1] = temp->offset;
-                        q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_assn;
                         q->ans = head->ans;
                         q->dc.left = temp;
@@ -1618,7 +1618,7 @@ int x86_examine_icode(QUAD* head)
                        QUAD *q;
                        temp = AllocateTemp(ISZ_UCHAR);
 //						tempInfo[tempCount-1] = temp->offset;
-                       q = (QUAD *)beLocalAlloc(sizeof(QUAD));
+                       q = beLocalAllocate<QUAD>();
                        q->dc.opcode = i_assn;
                        q->ans = temp;
                        q->dc.left = head->dc.left;
@@ -1648,7 +1648,7 @@ int x86_examine_icode(QUAD* head)
                         QUAD* q;
                         temp = AllocateTemp(head->dc.left->size);
                         //						tempInfo[tempCount-1] = temp->offset;
-                        q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_assn;
                         q->ans = temp;
                         q->dc.left = head->dc.left;
@@ -1664,7 +1664,7 @@ int x86_examine_icode(QUAD* head)
                         QUAD* q;
                         temp = AllocateTemp(head->dc.right->size);
                         //						tempInfo[tempCount-1] = temp->offset;
-                        q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_assn;
                         q->ans = temp;
                         q->dc.left = head->dc.right;
@@ -1681,7 +1681,7 @@ int x86_examine_icode(QUAD* head)
                         QUAD* q;
                         temp = AllocateTemp(head->dc.right->size);
                         //						tempInfo[tempCount-1] = temp->offset;
-                        q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_assn;
                         q->ans = temp;
                         q->dc.left = head->dc.right;
@@ -1732,7 +1732,7 @@ int x86_examine_icode(QUAD* head)
                         QUAD* q;
                         temp = AllocateTemp(head->dc.left->size);
                         //						tempInfo[tempCount-1] = temp->offset;
-                        q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_assn;
                         q->ans = temp;
                         q->dc.left = head->dc.left;
@@ -1750,7 +1750,7 @@ int x86_examine_icode(QUAD* head)
                     QUAD* q;
                     temp = AllocateTemp(ISZ_ADDR);
                     //						tempInfo[tempCount-1] = temp->offset;
-                    q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                    q = beLocalAllocate<QUAD>();
                     q->dc.opcode = i_assn;
                     q->ans = temp;
                     q->dc.left = head->dc.left;
@@ -1765,7 +1765,7 @@ int x86_examine_icode(QUAD* head)
                     QUAD* q;
                     temp = AllocateTemp(ISZ_ADDR);
                     //						tempInfo[tempCount-1] = temp->offset;
-                    q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                    q = beLocalAllocate<QUAD>();
                     q->dc.opcode = i_assn;
                     q->ans = temp;
                     q->dc.left = head->dc.right;
@@ -1782,7 +1782,7 @@ int x86_examine_icode(QUAD* head)
                         QUAD* q;
                         temp = AllocateTemp(head->dc.right->size);
                         //						tempInfo[tempCount-1] = temp->offset;
-                        q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_assn;
                         q->ans = temp;
                         q->dc.left = head->dc.right;
@@ -1811,7 +1811,7 @@ int x86_examine_icode(QUAD* head)
                         QUAD* q;
                         temp = AllocateTemp(head->dc.left->size);
                         //						tempInfo[tempCount-1] = temp->offset;
-                        q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_assn;
                         q->ans = head->ans;
                         q->dc.left = temp;
@@ -1831,7 +1831,7 @@ int x86_examine_icode(QUAD* head)
                         QUAD* q;
                         temp = AllocateTemp(head->dc.right->size);
                         //						tempInfo[tempCount-1] = temp->offset;
-                        q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_assn;
                         q->ans = temp;
                         q->dc.left = head->dc.right;
@@ -1944,7 +1944,7 @@ int x86_examine_icode(QUAD* head)
                         if (head->dc.right->size >= ISZ_ULONGLONG || head->dc.right->size == -ISZ_ULONGLONG)
                         {
                             temp = AllocateTemp(ISZ_ULONG);
-                            q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                            q = beLocalAllocate<QUAD>();
                             q->dc.opcode = i_assn;
                             q->ans = temp;
                             q->dc.left = head->dc.right;
@@ -1952,15 +1952,15 @@ int x86_examine_icode(QUAD* head)
                             head->temps |= TEMP_RIGHT;
                             InsertInstruction(head->back, q);
                         }
-                        q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_parm;
                         q->dc.left = head->dc.right;
                         insert_parm(head->back, q);
-                        q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_parm;
                         q->dc.left = head->dc.left;
                         insert_parm(head->back, q);
-                        q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_gosub;
                         switch (head->dc.opcode)
                         {
@@ -1984,7 +1984,7 @@ int x86_examine_icode(QUAD* head)
                         head->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
                         if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
                         {
-                            q = (QUAD*)Alloc(sizeof(QUAD));
+                            q = Allocate<QUAD>();
                             q->ans = head->ans;
                             head->ans = AllocateTemp(head->ans->size);
                             q->dc.left = head->ans;
@@ -2000,7 +2000,7 @@ int x86_examine_icode(QUAD* head)
                         IMODE* temp;
                         QUAD* q;
                         temp = AllocateTemp(head->dc.left->size);
-                        q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_assn;
                         q->dc.left = temp;
                         q->ans = head->ans;
@@ -2017,7 +2017,7 @@ int x86_examine_icode(QUAD* head)
                         IMODE* temp;
                         QUAD* q;
                         temp = AllocateTemp(head->dc.left->size);
-                        q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_assn;
                         q->dc.left = head->dc.left;
                         q->ans = temp;
@@ -2032,7 +2032,7 @@ int x86_examine_icode(QUAD* head)
                         IMODE* temp;
                         QUAD* q;
                         temp = AllocateTemp(head->dc.left->size);
-                        q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_assn;
                         q->dc.left = head->dc.right;
                         q->ans = temp;
@@ -2049,7 +2049,7 @@ int x86_examine_icode(QUAD* head)
                 if (head->ans->size == ISZ_UCHAR || head->ans->size == -ISZ_UCHAR)
                 {
                     IMODE* t = InitTempOpt(ISZ_UINT, ISZ_UINT);
-                    QUAD* newIns = (QUAD*)Alloc(sizeof(QUAD));
+                    QUAD* newIns = Allocate<QUAD>();
                     newIns->ans = t;
                     newIns->dc.left = head->dc.left;
                     newIns->dc.opcode = i_assn;
@@ -2057,7 +2057,7 @@ int x86_examine_icode(QUAD* head)
                     head->dc.left = t;
                     InsertInstruction(head->back, newIns);
                     t = InitTempOpt(ISZ_UINT, ISZ_UINT);
-                    newIns = (QUAD*)Alloc(sizeof(QUAD));
+                    newIns = Allocate<QUAD>();
                     newIns->ans = t;
                     newIns->dc.left = head->dc.right;
                     newIns->dc.opcode = i_assn;
@@ -2065,7 +2065,7 @@ int x86_examine_icode(QUAD* head)
                     head->dc.right = t;
                     InsertInstruction(head->back, newIns);
                     t = InitTempOpt(ISZ_UINT, ISZ_UINT);
-                    newIns = (QUAD*)Alloc(sizeof(QUAD));
+                    newIns = Allocate<QUAD>();
                     newIns->ans = head->ans;
                     newIns->dc.left = t;
                     newIns->dc.opcode = i_assn;
@@ -2089,7 +2089,7 @@ int x86_examine_icode(QUAD* head)
                     ret->retval = true;
                     if (head->ans->size == ISZ_CFLOAT)
                     {
-                        q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_assn;
                         q->alwayslive = true;
                         q->ans = InitTempOpt(ISZ_CLDOUBLE, ISZ_CLDOUBLE);
@@ -2098,13 +2098,13 @@ int x86_examine_icode(QUAD* head)
                         q->temps = TEMP_ANS | (head->temps & TEMP_RIGHT ? TEMP_LEFT : 0);
                         InsertInstruction(head->back, q);
                     }
-                    q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                    q = beLocalAllocate<QUAD>();
                     q->dc.opcode = i_parm;
                     q->dc.left = head->dc.right;
                     insert_parm(head->back, q);
                     if (head->ans->size == ISZ_CFLOAT)
                     {
-                        q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_assn;
                         q->alwayslive = true;
                         q->ans = InitTempOpt(ISZ_CLDOUBLE, ISZ_CLDOUBLE);
@@ -2113,11 +2113,11 @@ int x86_examine_icode(QUAD* head)
                         q->temps = TEMP_ANS | (head->temps & TEMP_LEFT ? TEMP_LEFT : 0);
                         InsertInstruction(head->back, q);
                     }
-                    q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                    q = beLocalAllocate<QUAD>();
                     q->dc.opcode = i_parm;
                     q->dc.left = head->dc.left;
                     insert_parm(head->back, q);
-                    q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                    q = beLocalAllocate<QUAD>();
                     q->dc.opcode = i_gosub;
                     switch (head->dc.opcode)
                     {
@@ -2141,7 +2141,7 @@ int x86_examine_icode(QUAD* head)
                     insert_nullparmadj(head->back, 8 * 4);
                     if (head->ans->size != ISZ_CDOUBLE)
                     {
-                        QUAD* q1 = (QUAD*)Alloc(sizeof(QUAD));
+                        QUAD* q1 = Allocate<QUAD>();
                         q1->dc.opcode = i_assn;
                         q1->dc.left = ret;
                         q1->alwayslive = true;
@@ -2155,7 +2155,7 @@ int x86_examine_icode(QUAD* head)
                     head->temps &= ~TEMP_RIGHT;
                     if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
                     {
-                        q = (QUAD*)Alloc(sizeof(QUAD));
+                        q = Allocate<QUAD>();
                         q->ans = head->ans;
                         head->ans = AllocateTemp(head->ans->size);
                         q->dc.left = head->ans;
@@ -2173,15 +2173,15 @@ int x86_examine_icode(QUAD* head)
                     IMODE* ret;
                     ret = AllocateTemp(head->ans->size);
                     ret->retval = true;
-                    q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                    q = beLocalAllocate<QUAD>();
                     q->dc.opcode = i_parm;
                     q->dc.left = head->dc.right;
                     insert_parm(head->back, q);
-                    q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                    q = beLocalAllocate<QUAD>();
                     q->dc.opcode = i_parm;
                     q->dc.left = head->dc.left;
                     insert_parm(head->back, q);
-                    q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                    q = beLocalAllocate<QUAD>();
                     q->dc.opcode = i_gosub;
                     switch (head->dc.opcode)
                     {
@@ -2211,7 +2211,7 @@ int x86_examine_icode(QUAD* head)
                     head->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
                     if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
                     {
-                        q = (QUAD*)Alloc(sizeof(QUAD));
+                        q = Allocate<QUAD>();
                         q->ans = head->ans;
                         head->ans = AllocateTemp(head->ans->size);
                         q->dc.left = head->ans;
@@ -2227,7 +2227,7 @@ int x86_examine_icode(QUAD* head)
                     QUAD* q;
                     IMODE* temp;
                     temp = AllocateTemp(head->dc.left->size);
-                    q = (QUAD*)(QUAD*)beLocalAlloc(sizeof(QUAD));
+                    q = beLocalAllocate<QUAD>();
                     q->dc.opcode = i_assn;
                     q->dc.left = temp;
                     q->ans = head->ans;
@@ -2279,14 +2279,14 @@ int x86_examine_icode(QUAD* head)
     {
         case ISZ_FLOAT:
         case ISZ_DOUBLE:
-            fltret = (SimpleType*)Alloc(sizeof(SimpleType));
+            fltret = Allocate<SimpleType>();
             fltret->type = st_f;
             fltret->size = 8;
             fltret->sizeFromType = ISZ_DOUBLE;
             break;
         case ISZ_CFLOAT:
         case ISZ_CDOUBLE:
-            fltret = (SimpleType*)Alloc(sizeof(SimpleType));
+            fltret = Allocate<SimpleType>();
             fltret->type = st_fc;
             fltret->size = 16;
             fltret->sizeFromType = ISZ_CDOUBLE;

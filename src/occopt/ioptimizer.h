@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #pragma once
@@ -45,19 +45,6 @@
 #define F_SWITCHVALUE 32
 #define F_OBJECT 64
 #define F_INRETURN 128
-
-#define OPT_RESHAPE 1
-#define OPT_LSTRENGTH 2
-#define OPT_GLOBAL 4
-#define OPT_CONSTANT 8
-#define OPT_INVARIANT 0x10
-
-#define OPT_BYTECOMPARE 0x10000
-#define OPT_REVERSESTORE 0x20000
-#define OPT_REVERSEPARAM 0x40000
-#define OPT_ARGSTRUCTREF 0x80000
-#define OPT_EXPANDSWITCH 0x100000
-#define OPT_THUNKRETVAL 0x200000
 
 namespace Parser
 {
@@ -205,6 +192,7 @@ struct SimpleSymbol
             unsigned isimport : 1;
             unsigned isexport : 1;
             unsigned isvirtual : 1;
+            unsigned isinternal : 1;
             unsigned msil_rtl : 1;
             unsigned isproperty : 1;
             unsigned unmanaged : 1;
@@ -335,6 +323,7 @@ struct SymbolManager
     static st_type Get(enum Parser::e_bt type);
     static void clear();
     static SimpleSymbol* Get(const char* name);
+    static void Put(SimpleSymbol* sym);
     static SimpleSymbol* Lookup(struct Parser::sym* old);
     static void Add(struct Parser::sym* old, SimpleSymbol* sym);
 
@@ -516,7 +505,7 @@ struct _basic_dag
         union
         {
             /* values for constant nodes */
-            long long i;
+            unsigned i;
             void* data; /* generic data, won't be filled in until after LCSE */
             PHIDATA* phi;
             long label;  // branches
@@ -588,6 +577,7 @@ typedef struct quad
             int nullvararg : 1;
             int blockassign : 1;
             int atomic : 1; /* atomic instruction */
+            int atomicpostfetch : 1; /* fetch has result after operation... */
             int vararg : 1; // msil
         };
         unsigned flags;

@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 // This file contains a lot of comments that use mutexes, this is because OrangeC currently does not have C++ mutexes but once it
@@ -88,12 +88,12 @@ std::string OS::QuoteCommand(std::string exe, std::string command)
     }
     else
     {
-        rv.push_back(L'"');
+        rv.push_back('"');
 
         for (auto it = command.begin(); it != command.end(); ++it)
         {
             unsigned slashcount = 0;
-            while (it != command.end() && *it == L'\\')
+            while (it != command.end() && *it == '\\')
             {
                 ++it;
                 ++slashcount;
@@ -102,23 +102,23 @@ std::string OS::QuoteCommand(std::string exe, std::string command)
             if (it == command.end())
             {
                 // escape all the backslashes
-                rv.append(slashcount * 2, L'\\');
+                rv.append(slashcount * 2, '\\');
                 break;
             }
-            else if (*it == L'"' && sh)
+            else if (*it == '"' && sh)
             {
                 // escape all the backslashes and add a \"
-                rv.append(slashcount * 2 + 1, L'\\');
+                rv.append(slashcount * 2 + 1, '\\');
                 rv.push_back('"');
             }
             else
             {
                 // no escape
-                rv.append(slashcount, L'\\');
+                rv.append(slashcount, '\\');
                 rv.push_back(*it);
             }
         }
-        rv.push_back(L'"');
+        rv.push_back('"');
     }
     return rv;
 }

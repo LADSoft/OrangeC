@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -42,9 +42,8 @@ all: alldirs
 
 
 lscrtl_objs:
-	$(MAKE) -Crtl --eval="OBJECT=$(DLLOBJECT)" --eval="$(BUILDING_DLL)"
+	$(MAKE) -Crtl --eval="$(BUILDING_DLL)"
 rtl_objs: lscrtl_objs
-	$(MAKE) -Crtl
 
 alldirs: rtl_objs
 ifdef FINAL

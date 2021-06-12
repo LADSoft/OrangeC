@@ -12,7 +12,7 @@ partition {
 	region {} importThunks [align = 4, size = IMPORTCOUNT * 6 ];
 	CODESIZE = $ - CODEBASE;
   } .text;
-} pt1 [addr=IMAGEBASE + OBJECTALIGN];
+} pt1 [addr=IMAGEBASE + OBJECTALIGN, fill = 0x90];
 
 partition {
   overlay {
@@ -26,6 +26,12 @@ partition {
 	_EXITSTART = $;
 	region {} crundown [ align = 2];
 	_EXITEND = $;
+        _TLSINITSTART = $;
+	region {} tstartup [ align = 2];
+        _TLSINITEND = $;
+        _TLSEXITSTART = $;
+	region {} trundown [ align = 2];
+        _TLSEXITEND = $;
     region {} string [ align = 2];
 	INITSIZE = $ - RAMBASE;
 	_BSSSTART = $;

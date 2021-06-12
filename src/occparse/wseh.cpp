@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "compiler.h"
@@ -89,11 +89,11 @@ static void ReorderSEHRecords(STATEMENT** xtry, BLOCKDATA* parent)
     while (parent->tail->next)
         parent->tail = parent->tail->next;
 }
-static LEXEME* SEH_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* SEH_catch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT* st;
     TYPE* tp = nullptr;
-    BLOCKDATA* catchstmt = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
+    BLOCKDATA* catchstmt = Allocate<BLOCKDATA>();
     SYMBOL* sym = nullptr;
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, true);
@@ -134,10 +134,10 @@ static LEXEME* SEH_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     st->sp = sym;
     return lex;
 }
-static LEXEME* SEH_finally(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* SEH_finally(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT* st;
-    BLOCKDATA* catchstmt = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
+    BLOCKDATA* catchstmt = Allocate<BLOCKDATA>();
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, true);
     catchstmt->breaklabel = -1;
@@ -164,10 +164,10 @@ static LEXEME* SEH_finally(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     st->lower = catchstmt->head;
     return lex;
 }
-static LEXEME* SEH_fault(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* SEH_fault(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT* st;
-    BLOCKDATA* catchstmt = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
+    BLOCKDATA* catchstmt = Allocate<BLOCKDATA>();
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, true);
     catchstmt->breaklabel = -1;
@@ -194,10 +194,10 @@ static LEXEME* SEH_fault(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     st->lower = catchstmt->head;
     return lex;
 }
-static LEXEME* SEH_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* SEH_try(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT *st, **tail = parent->head ? &parent->tail->next : &parent->head;
-    BLOCKDATA* trystmt = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
+    BLOCKDATA* trystmt = Allocate<BLOCKDATA>();
     trystmt->breaklabel = -1;
     trystmt->next = nullptr;    // so we can't break or continue out of the block
     trystmt->defaultlabel = -1; /* no default */
@@ -249,7 +249,7 @@ static LEXEME* SEH_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     return lex;
 }
 
-LEXEME* statement_SEH(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+LEXLIST* statement_SEH(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     switch (KW(lex))
     {

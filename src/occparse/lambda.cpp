@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "compiler.h"
@@ -139,7 +139,7 @@ static TYPE* lambda_type(TYPE* tp, enum e_cm mode)
         {
             tp = tp->btp;
         }
-        tp1 = (TYPE*)Alloc(sizeof(TYPE));
+        tp1 = Allocate<TYPE>();
         tp1->type = bt_lref;
         tp1->size = getSize(bt_pointer);
         tp1->btp = tp;
@@ -157,7 +157,7 @@ static TYPE* lambda_type(TYPE* tp, enum e_cm mode)
         tp = basetype(tp);
         if (!lambdas->isMutable)
         {
-            tp1 = (TYPE*)Alloc(sizeof(TYPE));
+            tp1 = Allocate<TYPE>();
             tp1->type = bt_const;
             tp1->size = tp->size;
             tp1->btp = tp;
@@ -173,7 +173,13 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
     {
         if (mode == cmThis)
         {
-            if (!sym || (lambdas->lthis && sym->sb->parentClass == basetype(lambdas->lthis->tp)->btp->sp))
+            SYMBOL* lthis = lambdas->lthis;
+            SYMBOL* base = basetype(lambdas->lthis->tp)->btp->sp;
+            if (lthis->sb->mainsym)
+                lthis = lthis->sb->mainsym;
+            if (base->sb->mainsym)
+                base = base->sb->mainsym;
+            if (!sym || (lambdas->lthis && lthis == base))
             {
                 if (lambdas->captureThis)
                 {
@@ -291,7 +297,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
                     {
                         // we are replicating captures through intermediate lambdas
                         // to make it easier to handle inner lambda creation.
-                        LAMBDASP* ins = (LAMBDASP*)Alloc(sizeof(LAMBDASP));
+                        LAMBDASP* ins = Allocate<LAMBDASP>();
                         ins->name = sym->name;
                         ins->parent = sym;
                         sym = clonesym(sym);
@@ -323,7 +329,7 @@ static TYPE* cloneFuncType(SYMBOL* funcin)
     tp = &func->tp;
     while (tp_in)
     {
-        *tp = (TYPE*)Alloc(sizeof(TYPE));
+        *tp = Allocate<TYPE>();
         **tp = *(tp_in);
         tp_in = tp_in->btp;
         tp = &(*tp)->btp;
@@ -334,7 +340,7 @@ static TYPE* cloneFuncType(SYMBOL* funcin)
     src = basetype(funcin->tp)->syms->table[0];
     while (src)
     {
-        *dest = (SYMLIST*)Alloc(sizeof(SYMLIST));
+        *dest = Allocate<SYMLIST>();
         (*dest)->p = (SYMBOL*)clonesymfalse((SYMBOL*)src->p);
         dest = &(*dest)->next;
         src = src->next;
@@ -346,8 +352,8 @@ static void cloneTemplateParams(SYMBOL* func)
     TEMPLATEPARAMLIST** tplp = &func->templateParams;
     SYMLIST* hr = basetype(func->tp)->syms->table[0];
     int index = 0;
-    (*tplp) = (TEMPLATEPARAMLIST*)(TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
-    (*tplp)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+    (*tplp) = Allocate<TEMPLATEPARAMLIST>();
+    (*tplp)->p = Allocate<TEMPLATEPARAM>();
     (*tplp)->p->type = kw_new;
     tplp = &(*tplp)->next;
     while (hr)
@@ -355,13 +361,13 @@ static void cloneTemplateParams(SYMBOL* func)
         SYMBOL* arg = (SYMBOL*)(hr->p);
         if (!arg->sb->thisPtr)
         {
-            TYPE* tpn = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+            TYPE* tpn = Allocate<TYPE>();
             *tpn = *arg->tp;
             arg->tp = tpn;
             UpdateRootTypes(tpn);
-            (*tplp) = (TEMPLATEPARAMLIST*)(TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
-            (*tplp)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
-            (*tplp)->argsym = (SYMBOL*)Alloc(sizeof(SYMBOL));
+            (*tplp) = Allocate<TEMPLATEPARAMLIST>();
+            (*tplp)->p = Allocate<TEMPLATEPARAM>();
+            (*tplp)->argsym = Allocate<SYMBOL>();
             *(*tplp)->argsym = *arg;
             (*tplp)->argsym->sb = nullptr;
             (*tplp)->p->type = kw_typename;
@@ -376,8 +382,8 @@ static void convertCallToTemplate(SYMBOL* func)
 {
     TEMPLATEPARAMLIST** tplholder;
     SYMLIST* hr;
-    func->templateParams = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-    func->templateParams->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+    func->templateParams = Allocate<TEMPLATEPARAMLIST>();
+    func->templateParams->p = Allocate<TEMPLATEPARAM>();
     func->templateParams->p->type = kw_new;
     if (isautotype(lambdas->functp))
         basetype(func->tp)->btp = &stdauto;  // convert return type back to auto
@@ -389,12 +395,12 @@ static void convertCallToTemplate(SYMBOL* func)
         SYMBOL* arg = (SYMBOL*)hr->p;
         if (isautotype(arg->tp))
         {
-            (*tplholder) = (TEMPLATEPARAMLIST*)(TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
-            (*tplholder)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
-            (*tplholder)->argsym = (SYMBOL*)Alloc(sizeof(SYMBOL));
+            (*tplholder) = Allocate<TEMPLATEPARAMLIST>();
+            (*tplholder)->p = Allocate<TEMPLATEPARAM>();
+            (*tplholder)->argsym = Allocate<SYMBOL>();
             *(*tplholder)->argsym = *arg;
             (*tplholder)->argsym->sb = nullptr;
-            arg->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+            arg->tp = Allocate<TYPE>();
             arg->tp->type = bt_templateparam;
             arg->tp->templateParam = *tplholder;
             (*tplholder)->p->type = kw_typename;
@@ -410,7 +416,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
 {
     INITLIST** argptr;
     SYMLIST* hr;
-    FUNCTIONCALL* params = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+    FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
     TYPE* args = cloneFuncType(lambdas->func);
     SYMBOL* func = makeID(sc_static, args, NULL, "___ptrcall");
     BLOCKDATA block1, block2;
@@ -419,7 +425,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
     basetype(args)->btp = basetype(lambdas->func->tp)->btp;
     func->sb->parentClass = lambdas->cls;
     func->sb->attribs.inheritable.linkage = lk_cdecl;
-    func->sb->isInline = true;
+    func->sb->attribs.inheritable.isInline = true;
     func->sb->storage_class = sc_static;
     func->sb->access = ac_private;
 
@@ -441,7 +447,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
             break;
         sym = clonesym(sym);
         sym->sb->offset -= getSize(bt_pointer);
-        *argptr = (INITLIST*)Alloc(sizeof(INITLIST));
+        *argptr = Allocate<INITLIST>();
         if (isstructured(sym->tp) && !isref(sym->tp))
         {
             SYMBOL* sym2 = anonymousVar(sc_auto, sym->tp)->v.sp;
@@ -473,7 +479,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
     func->sb->inlineFunc.syms = basetype(args)->syms;
     if (lambdas->templateFunctions)
     {
-        LEXEME* lex1;
+        LEXLIST* lex1;
         int l = 0;
         SYMLIST* hr = basetype(lambdas->func->tp)->syms->table[0];
         if (isautotype(lambdas->functp))
@@ -509,14 +515,14 @@ static void createConverter(SYMBOL* self)
 {
     SYMBOL* caller = createPtrToCaller(self);
     TYPE* args = cloneFuncType(lambdas->func);
-    SYMBOL* func = makeID(sc_member, (TYPE*)Alloc(sizeof(TYPE)), NULL, overloadNameTab[CI_CAST]);
+    SYMBOL* func = makeID(sc_member, Allocate<TYPE>(), NULL, overloadNameTab[CI_CAST]);
     BLOCKDATA block1, block2;
     STATEMENT* st;
     EXPRESSION* exp;
     SYMBOL* sym = makeID(sc_parameter, &stdvoid, NULL, AnonymousName());
-    SYMLIST* hr = (SYMLIST*)Alloc(sizeof(SYMLIST));
+    SYMLIST* hr = Allocate<SYMLIST>();
     func->tp->type = bt_func;
-    func->tp->btp = (TYPE*)Alloc(sizeof(TYPE));
+    func->tp->btp = Allocate<TYPE>();
     func->tp->btp->type = bt_pointer;
     func->tp->btp->size = getSize(bt_pointer);
     func->tp->btp->btp = args;
@@ -525,7 +531,7 @@ static void createConverter(SYMBOL* self)
     func->tp->syms = CreateHashTable(1);
     func->sb->parentClass = lambdas->cls;
     func->sb->attribs.inheritable.linkage = lk_virtual;
-    func->sb->isInline = true;
+    func->sb->attribs.inheritable.isInline = true;
     func->sb->storage_class = sc_member;
     func->sb->castoperator = true;
     func->tp->syms = CreateHashTable(1);
@@ -554,15 +560,15 @@ static void createConverter(SYMBOL* self)
     func->sb->inlineFunc.syms = CreateHashTable(1);
     if (lambdas->templateFunctions)
     {
-        LEXEME* lex1;
+        LEXLIST* lex1;
         TEMPLATEPARAMLIST *tpl, **tplp, **tplp2;
-        FUNCTIONCALL* f = (FUNCTIONCALL*)(FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+        FUNCTIONCALL* f = Allocate<FUNCTIONCALL>();
         INITLIST** args = &f->arguments;
         SYMLIST* hr;
         func->templateParams = caller->templateParams;
         func->sb->templateLevel = templateNestingCount;
         func->sb->parentTemplate = func;
-        basetype(func->tp)->btp = (TYPE*)Alloc(sizeof(TYPE));
+        basetype(func->tp)->btp = Allocate<TYPE>();
         basetype(func->tp)->btp->type = bt_templatedecltype;
         basetype(func->tp)->btp->templateDeclType = exprNode(en_func, NULL, NULL);
         basetype(func->tp)->btp->templateDeclType->v.func = f;
@@ -577,7 +583,7 @@ static void createConverter(SYMBOL* self)
             }
             else
             {
-                (*args) = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST));
+                (*args) = Allocate<INITLIST>();
                 (*args)->tp = sym->tp;
                 (*args)->exp = intNode(en_c_i, 0);
                 args = &(*args)->next;
@@ -623,7 +629,7 @@ static bool lambda_get_template_state(SYMBOL* func)
 }
 static void finishClass(void)
 {
-    TYPE* tps = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+    TYPE* tps = Allocate<TYPE>();
     SYMBOL* self = makeID(sc_static, tps, NULL, "___self");
     SYMLIST* lst;
     tps->type = bt_pointer;
@@ -660,13 +666,13 @@ static void finishClass(void)
     if (!lambdas->isMutable)
     {
         SYMBOL* ths = (SYMBOL*)lambdas->func->tp->syms->table[0]->p;
-        TYPE* tp2 = (TYPE*)Alloc(sizeof(TYPE));
+        TYPE* tp2 = Allocate<TYPE>();
         tp2->type = bt_const;
         tp2->size = lambdas->func->tp->size;
         tp2->btp = lambdas->func->tp;
         tp2->rootType = lambdas->func->tp->rootType;
         lambdas->func->tp = tp2;
-        tp2 = (TYPE*)Alloc(sizeof(TYPE));
+        tp2 = Allocate<TYPE>();
         tp2->type = bt_const;
         tp2->size = basetype(ths->tp)->btp->size;
         tp2->btp = basetype(ths->tp)->btp;
@@ -754,7 +760,7 @@ static EXPRESSION* createLambda(bool noinline)
                     TYPE* ctp = capture->tp;
                     if (isstructured(ctp))
                     {
-                        if (!callConstructorParam(&ctp, &en1, sp->tp, sp->sb->init->exp, true, false, true, false))
+                        if (!callConstructorParam(&ctp, &en1, sp->tp, sp->sb->init->exp, true, false, true, false, true))
                             errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sp);
                         en = en1;
                     }
@@ -805,7 +811,7 @@ static EXPRESSION* createLambda(bool noinline)
                     }
                     if (isstructured(ctp))
                     {
-                        if (!callConstructorParam(&ctp, &en1, ctp, en, true, false, true, false))
+                        if (!callConstructorParam(&ctp, &en1, ctp, en, true, false, true, false, true))
                             errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sp);
                         en = en1;
                     }
@@ -829,10 +835,10 @@ static EXPRESSION* createLambda(bool noinline)
         }
         hr = hr->next;
     }
-    *cur = clsThs;  // this expression will be used in copy constructors, or discarded if unneeded
+    *cur = copy_expression(clsThs);  // this expression will be used in copy constructors, or discarded if unneeded
     return rv;
 }
-LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, int flags)
+LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, int flags)
 {
     LAMBDA* self;
     SYMBOL *vpl, *ths;
@@ -841,8 +847,8 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     STRUCTSYM ssl;
     if (funcsp)
         funcsp->sb->noinline = true;
-    self = (LAMBDA*)Alloc(sizeof(LAMBDA));
-    ltp = (TYPE*)Alloc(sizeof(TYPE));
+    self = Allocate<LAMBDA>();
+    ltp = Allocate<TYPE>();
     ltp->type = bt_struct;
     ltp->syms = CreateHashTable(1);
     ltp->tags = CreateHashTable(1);
@@ -953,7 +959,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                 }
                 if (ISID(lex))
                 {
-                    LEXEME* idlex = lex;
+                    LEXLIST* idlex = lex;
                     SYMBOL* sp;
                     LAMBDA* current;
                     lex = getsym();
@@ -969,7 +975,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                         }
                         else
                         {
-                            SYMBOL* sp = makeID(sc_auto, tp, NULL, idlex->value.s.a);
+                            SYMBOL* sp = makeID(sc_auto, tp, NULL, idlex->data->value.s.a);
                             initInsert(&sp->sb->init, tp, exp, 0, true);
                             lambda_capture(sp, cmExplicitValue, true);
                             if (localMode == cmRef)
@@ -980,11 +986,11 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                     }
                     else
                     {
-                        sp = search(idlex->value.s.a, localNameSpace->valueData->syms);
+                        sp = search(idlex->data->value.s.a, localNameSpace->valueData->syms);
                         current = lambdas;
                         while (current && !sp)
                         {
-                            sp = search(idlex->value.s.a, current->oldSyms);
+                            sp = search(idlex->data->value.s.a, current->oldSyms);
                             current = current->next;
                         }
                         if (sp)
@@ -1019,7 +1025,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                             }
                         }
                         else
-                            errorstr(ERR_UNDEFINED_IDENTIFIER, idlex->value.s.a);
+                            errorstr(ERR_UNDEFINED_IDENTIFIER, idlex->data->value.s.a);
                     }
                 }
                 else
@@ -1045,7 +1051,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     {
         TYPE* tpx = &stdvoid;
         SYMLIST* hr;
-        lex = getFunctionParams(lex, NULL, &self->func, &tpx, false, sc_auto);
+        lex = getFunctionParams(lex, NULL, &self->func, &tpx, false, sc_auto, false);
         if (!self->func->tp->syms)
         {
             errorstr(ERR_MISSING_TYPE_FOR_PARAMETER, "undefined");
@@ -1087,7 +1093,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
         if (MATCHKW(lex, pointsto))
         {
             lex = getsym();
-            lex = get_type_id(lex, &self->functp, funcsp, sc_cast, false, true);
+            lex = get_type_id(lex, &self->functp, funcsp, sc_cast, false, true, false);
             if (!self->functp)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -1097,7 +1103,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     }
     else
     {
-        TYPE* tp1 = (TYPE*)Alloc(sizeof(TYPE));
+        TYPE* tp1 = Allocate<TYPE>();
         SYMBOL* spi;
         tp1->type = bt_func;
         tp1->size = getSize(bt_pointer);
@@ -1107,14 +1113,14 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
         self->func->tp = tp1;
         spi = makeID(sc_parameter, tp1, NULL, AnonymousName());
         spi->sb->anonymous = true;
-        spi->tp = (TYPE*)Alloc(sizeof(TYPE));
+        spi->tp = Allocate<TYPE>();
         spi->tp->type = bt_void;
         spi->tp->rootType = spi->tp;
         insert(spi, localNameSpace->valueData->syms);
         SetLinkerNames(spi, lk_cpp);
         self->func->tp->syms = localNameSpace->valueData->syms;
         self->funcargs = self->func->tp->syms->table[0];
-        self->func->tp->syms->table[0] = (SYMLIST*)Alloc(sizeof(SYMLIST));
+        self->func->tp->syms->table[0] = Allocate<SYMLIST>();
         self->func->tp->syms->table[0]->p = makeID(sc_parameter, &stdvoid, NULL, AnonymousName());
     }
     basetype(self->func->tp)->btp = self->functp;
@@ -1122,7 +1128,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     lambdas->func->tp->btp = self->functp;
     lambdas->func->tp->rootType = lambdas->func->tp;
     lambdas->func->sb->attribs.inheritable.linkage = lk_virtual;
-    lambdas->func->sb->isInline = true;
+    lambdas->func->sb->attribs.inheritable.isInline = true;
     lambdas->templateFunctions = lambda_get_template_state(lambdas->func);
     ssl.str = self->cls;
     ssl.tmpl = NULL;
@@ -1135,13 +1141,13 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
         lex = getDeferredData(lex, &self->func->sb->deferredCompile, true);
         if (!lambdas->templateFunctions)
         {
-            LEXEME* lex1 = SetAlternateLex(self->func->sb->deferredCompile);
+            LEXLIST* lex1 = SetAlternateLex(self->func->sb->deferredCompile);
             SetLinkerNames(self->func, lk_cdecl);
             body(lex1, self->func);
             lex1 = self->func->sb->deferredCompile;
             while (lex1)
             {
-                lex1->registered = false;
+                lex1->data->registered = false;
                 lex1 = lex1->next;
             }
             SetAlternateLex(NULL);

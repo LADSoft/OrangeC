@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include <stdio.h>
@@ -44,11 +44,11 @@
 namespace Parser
 {
 int inlinesym_count;
-EXPRESSION* inlinesym_thisptr[MAX_INLINE_NESTING];
+EXPRESSION* inlinesym_thisptr[1000];
 #undef MAX_INLINE_NESTING
 #define MAX_INLINE_NESTING 3
 
-static SYMBOL* inlinesym_list[MAX_INLINE_NESTING];
+static SYMBOL* inlinesym_list[1000];
 static int inline_nesting;
 void iinlineInit(void)
 {
@@ -84,7 +84,7 @@ static EXPRESSION* inlineGetThisPtr(EXPRESSION* exp)
         }
         else
         {
-            EXPRESSION* rv = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
+            EXPRESSION* rv = Allocate<EXPRESSION>();
             *rv = *exp;
             rv->left = inlineGetThisPtr(rv->left);
             rv->right = inlineGetThisPtr(rv->right);
@@ -152,7 +152,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SYMLIST* hr, INITLIST* args)
             hr1 = hr1->next;
         }
         hr1 = hr;
-        list = (EXPRESSION**)(EXPRESSION*)Alloc(sizeof(EXPRESSION*) * cnt);
+        list = Allocate<EXPRESSION*>(cnt);
         cnt = 0;
         while (hr && args)  // args might go to nullptr for a destructor, which currently has a VOID at the end of the arg list
         {
@@ -320,7 +320,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         return nullptr;
     }
     /* measure of complexity */
-    if (inlineTooComplex(f))
+    if (!f->sp->sb->simpleFunc && inlineTooComplex(f))
     {
         f->sp->sb->dumpInlineToFile = true;
         return nullptr;
@@ -365,7 +365,11 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
-    if (inlinesym_count >= MAX_INLINE_NESTING)
+    if (f->sp->sb->dontinstantiate)
+    {
+        return nullptr;
+    }
+    if (inlinesym_count >= MAX_INLINE_NESTING && ! f->sp->sb->simpleFunc)
     {
         f->sp->sb->dumpInlineToFile = true;
         return nullptr;
@@ -374,8 +378,19 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     {
         if (f->thisptr->type == en_auto && f->thisptr->v.sp->sb->stackblock)
         {
-            f->sp->sb->dumpInlineToFile = true;
-            return nullptr;
+            if (f->sp->sb->parentClass->sb->trivialCons)
+            {
+                Optimizer::IMODE* ap;
+                Optimizer::gen_icode(Optimizer::i_parmstack, ap = Optimizer::tempreg(ISZ_ADDR, 0), Optimizer::make_immed(ISZ_UINT, f->thisptr->v.sp->tp->size),
+                    nullptr);
+                Optimizer::intermed_tail->alwayslive = true;
+                Optimizer::SymbolManager::Get(f->thisptr->v.sp)->imvalue = ap;
+            }
+            else
+            {
+                f->sp->sb->dumpInlineToFile = true;
+                return nullptr;
+            }
         }
     }
     if (f->returnEXP && !isref(basetype(f->sp->tp)->btp))

@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /*
@@ -35,6 +35,7 @@
 #include "../occparse/winmode.h"
 #include "config.h"
 #include "irc.h"
+#include "optmodules.h"
 
 extern int usingEsp;
 namespace Optimizer
@@ -52,16 +53,17 @@ static char usage_text[] =
     "/1        - C1x mode                  /8        - c89 mode\n"
     "/9        - C99 mode                  /#        - compile then assemble then link\n"
     "/axxx     - set assembler extension   /c        - compile only\n"
-    "+e        - dump errors to file       +i        - dump preprocessed file\n"
-    "/lxxx     - include library           /oname    - specify output file name\n"
-    "/pxxx     - pass command to tool      /snn      - align stack\n"
+    "+e        - dump errors to file       /f{flags} - set flags\n"
+    "+i        - dump preprocessed file    /lxxx     - include library\n"
+    "/oname    - specify output file name  /pxxx     - pass command to tool\n"
+    "/snn      - align stack               /t        - display timing info\n"
     "+v or /g  - enable debug symbols      /wxxx     - warning control\n"
     "/x-       - don't include RTTI info   /y[...]   - verbosity\n"
     "/z        - set SYSTEM include path\n"
     "+A        - disable extensions        /Dxxx     - define something\n"
     "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
     "/Lxxx     - set library path          /M        - generate make stubs\n"
-    "/O-       - disable optimizations     /P        - set pipe for retrieving input files\n"
+    "/Ox        - optimization control     /P        - set pipe for retrieving input files\n"
     "+Q        - quiet mode                /Sasm;dbg - make ASM source file\n"
     "/T        - translate trigraphs       /Uxxx     - undefine something\n"
     "/V,--version - show version and date  /Wxx      - set executable type\n"
@@ -90,6 +92,10 @@ static char usage_text[] =
     "    d - dll                             c = crtdll.dll\n"
     "    w - windowing                       m = msvcrtdll.dll\n"
     "\n"
+    "\nOptimization control:\n"
+    OPTIMIZATION_DESCRIPTION
+    "\nFlags:\n"
+    OPTMODULES_DESCRIPTION
     " --output-def-file filename      output a .def file instead of a .lib file for DLLs\n"
     " --export-all-symbols            reserved\n"
     " -link                           reserved\n"
@@ -183,6 +189,7 @@ static ARCH_DEFINES defines[] = {
     {"__CRTDLL_DLL", "1", false, true},
     {"__RAW_IMAGE__", "1", false, true},
     /* end ordered */
+    {"__SEH__", "1", true, true},
     {"__386__", "1", true, true},
     {"__i386__", "1", true, true},
     {"_i386_", "1", true, true},
@@ -210,6 +217,7 @@ static ARCH_SIZING sizes = {
     0,                    /*char a_fcomplexpad;*/
     0,                    /*char a_rcomplexpad;*/
     0,                    /*char a_lrcomplexpad;*/
+    0,                    // char a_alignedstruct; // __attribute((__aligned__))
 };
 static ARCH_SIZING alignments = {
     1, /*char a_bool;*/
@@ -229,6 +237,7 @@ static ARCH_SIZING alignments = {
     4, /*char a_float;*/
     8, /*char a_double;*/
     8, /*char a_longdouble;*/
+    8,                    // char a_alignedstruct; // __attribute((__aligned__))
 };
 static ARCH_SIZING locks = {
     0, /*char a_bool; */
@@ -251,6 +260,7 @@ static ARCH_SIZING locks = {
     1,                  /*char a_fcomplexpad; */
     1,                  /*char a_rcomplexpad; */
     1,                  /*char a_lrcomplexpad; */
+    0,                    // char a_alignedstruct; // __attribute((__aligned__))
 };
 static ARCH_FLOAT aflt = {-126, 126, 128, 24};
 static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};

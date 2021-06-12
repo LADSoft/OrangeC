@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /* we are only doing local opts on temp variables.  At this point,
@@ -92,7 +92,7 @@ SimpleExpression* anonymousVar(enum e_scc_type storage_class, SimpleType* tp)
 {
     static int anonct = 1;
     char buf[256];
-    SimpleSymbol* rv = (SimpleSymbol*)Alloc(sizeof(SimpleSymbol));
+    SimpleSymbol* rv = Allocate<SimpleSymbol>();
     //    rv->key = NextSymbolKey();
     if (tp->size == 0 && (tp->type == st_struct || tp->type == st_union))
         tp = tp->sp->tp;
@@ -106,7 +106,7 @@ SimpleExpression* anonymousVar(enum e_scc_type storage_class, SimpleType* tp)
     rv->name = rv->outputName = litlate(buf);
     rv->align = tp->sp && tp->sp->align ? tp->sp->align : alignFromISZ(tp->sizeFromType);
     cacheTempSymbol(rv);
-    SimpleExpression* rve = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
+    SimpleExpression* rve = Allocate<SimpleExpression>();
     rve->type = storage_class == scc_auto || storage_class == scc_parameter ? se_auto : se_global;
     rve->sp = rv;
     return rve;
@@ -129,7 +129,7 @@ static IMODE* localVar(SimpleType* tp)
     exp->sizeFromType = tp->sizeFromType;
     sym->sizeFromType = tp->sizeFromType;
     sym->anonymous = false;
-    IMODE* ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
+    IMODE* ap = Allocate<IMODE>();
     sym->imvalue = ap;
     ap->offset = exp;
     ap->mode = i_direct;
@@ -145,7 +145,7 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
     {
         if (sym->imaddress)
         {
-            IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
+            IMODE* im = Allocate<IMODE>();
             *im = *sym->imaddress;
             im->size = sym->tp->sizeFromType;
             im->mode = i_direct;
@@ -153,7 +153,7 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
         }
         else if (sym->imind)
         {
-            IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
+            IMODE* im = Allocate<IMODE>();
             *im = *sym->imind->im;
             im->size = ISZ_ADDR;
             im->mode = i_direct;
@@ -212,13 +212,13 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
                 }
                 else
                 {
-                    parmName = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
+                    parmName = Allocate<IMODE>();
                     *parmName = *sym->imvalue;
                 }
             }
             else
             {
-                parmName = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
+                parmName = Allocate<IMODE>();
                 *parmName = *sym->imvalue;
             }
         }
@@ -313,14 +313,14 @@ static int AllocTempOpt(int size1)
     t = rv->offset->sp->i;
     if (t >= tempSize)
     {
-        TEMP_INFO** temp = (TEMP_INFO**)oAlloc((tempSize + 1000) * sizeof(TEMP_INFO*));
+        TEMP_INFO** temp = oAllocate<TEMP_INFO*>(tempSize + 1000);
         memcpy(temp, tempInfo, sizeof(TEMP_INFO*) * tempSize);
         tempSize += 1000;
         tempInfo = temp;
     }
     if (!tempInfo[t])
     {
-        tempInfo[t] = (TEMP_INFO*)oAlloc(sizeof(TEMP_INFO));
+        tempInfo[t] = oAllocate<TEMP_INFO>();
     }
     else
     {
@@ -359,11 +359,11 @@ static void InitTempInfo(void)
     int i;
     nextTemp = tempBottom = tempCount;
     tempSize = tempCount + 1000;
-    tempInfo = (TEMP_INFO**)oAlloc(sizeof(TEMP_INFO*) * (tempSize));
+    tempInfo = oAllocate<TEMP_INFO*>(tempSize);
 
     for (i = 0; i < tempCount; i++)
     {
-        tempInfo[i] = (TEMP_INFO*)oAlloc(sizeof(TEMP_INFO));
+        tempInfo[i] = oAllocate<TEMP_INFO>();
         tempInfo[i]->partition = i;
         tempInfo[i]->color = -1;
         tempInfo[i]->inUse = true;
@@ -445,12 +445,12 @@ static void InitTempInfo(void)
 }
 void insertDefines(QUAD* head, BLOCK* b, int tnum)
 {
-    LIST* l = (LIST*)oAlloc(sizeof(LIST));
+    LIST* l = oAllocate<LIST>();
     l->data = (void*)head;
     l->next = tempInfo[tnum]->idefines;
     tempInfo[tnum]->idefines = l;
 
-    l = (LIST*)oAlloc(sizeof(LIST));
+    l = oAllocate<LIST>();
     l->data = (void*)b;
     l->next = tempInfo[tnum]->bdefines;
     tempInfo[tnum]->bdefines = l;
@@ -464,7 +464,7 @@ void insertUses(QUAD* head, int dest)
             return;
         l = &(*l)->next;
     }
-    *l = (LIST*)oAlloc(sizeof(LIST));
+    *l = oAllocate<LIST>();
     (*l)->data = (void*)head;
 }
 void definesInfo(void)

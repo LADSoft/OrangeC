@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "compiler.h"
@@ -42,18 +42,22 @@
 #include "lex.h"
 #include "types.h"
 #include "help.h"
+#include "libcxx.h"
 #define ERROR 1
 #define WARNING 2
 #define TRIVIALWARNING 4
 #define ANSIERROR 8
 #define ANSIWARNING 16
 #define CPLUSPLUSERROR 32
+#define NOTE 64
 
 namespace Parser
 {
 
 int currentErrorLine;
 SYMBOL* theCurrentFunc;
+int templateInstantiationError;
+
 enum e_kw skim_end[] = {end, kw_none};
 enum e_kw skim_closepa[] = {closepa, semicolon, end, kw_none};
 enum e_kw skim_semi[] = {semicolon, end, kw_none};
@@ -62,9 +66,11 @@ enum e_kw skim_closebr[] = {closebr, semicolon, end, kw_none};
 enum e_kw skim_comma[] = {comma, closepa, closebr, semicolon, end, kw_none};
 enum e_kw skim_colon[] = {colon, kw_case, kw_default, semicolon, end, kw_none};
 enum e_kw skim_templateend[] = {gt, semicolon, end, kw_none};
+std::deque<std::tuple<const char*, int, SYMBOL*>> instantiationList;
 
 static Optimizer::LIST* listErrors;
 static const char* currentErrorFile;
+static bool disabledNote;
 
 static struct
 {
@@ -485,7 +491,7 @@ static struct
     {"Incorrect arguments passed to template '%s'", ERROR},
     {"Cannot instantiate template '%s' because it is not defined", ERROR},
     {"Cannot generate template specialization from '%s'", ERROR},
-    {"Cannot use template '%s' without specifying specialization parameters", ERROR},
+    {"Cannot use template '%s' without specifying template arguments", ERROR},
     {"Invalid template parameter", ERROR},
     {"Body has already been defined for function '%s'", ERROR},
     {"Invalid explicit specialization of '%s'", ERROR},
@@ -507,7 +513,7 @@ static struct
     {"'Class' template parameter expected", ERROR},
     {"Structured type expected", ERROR},
     {"Packed template parameter not allowed here", ERROR},
-    {"In template instantiation started here", WARNING},
+    {"In template instantiation started here", NOTE},
     {"Invalid use of type '%s'", ERROR},
     {"Requires template<> header", ERROR},
     {"Mutable member '%s' must be non-const", ERROR},
@@ -552,9 +558,9 @@ static struct
     {"Use of __catch or __fault or __finally must be preceded by __try", ERROR},
     {"Expected __catch or __fault or __finally", ERROR},
     {"__fault or __finally can appear only once per __try block", ERROR},
-    {"static function '%s' is undefined", TRIVIALWARNING},
+    {"static or internally attributed function '%s' is undefined", TRIVIALWARNING},
     {"Missing type specifier for identifier '%s'", WARNING},
-    {"Cannot deduce auto type from '%s'", ERROR},
+    {"Cannot deduce auto type '%s' from '%s'", ERROR},
     {"%s: dll interface member may not be declared in dll interface class", ERROR},
     {"%s: attempting to redefine dll interface linkage for class", WARNING},
     {"Ignoring __attribute__ specifier", WARNING},
@@ -576,8 +582,40 @@ static struct
     {"Attribute '%s' does not exist", ERROR},
     {"Attribute '%s' does not exist in attribute namespace '%s'", ERROR},
     {"static function '%s' is declared but never defined", TRIVIALWARNING},
+    {"Referenced in instantiation of '%s'", NOTE},
+    {"typedef templates not allowed", ERROR},
+    {"Missing 'typename' in front of dependent type '%s'", ERROR },
+    {"'typename' only used for dependent types", WARNING },
+    {"Function '%s' already has a body", ERROR },
+    {"static_assert generated: %s", ERROR },
+    {"Unknown type in template argument", ERROR },
 };
-
+void EnterInstantiation(LEXLIST* lex, SYMBOL *sym)
+{
+    if (lex)
+    {
+        instantiationList.push_front(std::tuple<const char *, int, SYMBOL*>(lex->data->errfile, lex->data->errline, sym));
+    }
+    else
+    {
+        instantiationList.push_front(std::tuple<const char *, int, SYMBOL*>(sym->sb->declfile, sym->sb->declline, sym));
+    }
+}
+void LeaveInstantiation()
+{
+    instantiationList.pop_front();
+}
+static void DumpInstantiations()
+{
+    for (auto i : instantiationList)
+    {
+        errorsym(ERR_REFERENCED_IN_INSTANTIATION, std::get<2>(i), std::get<1>(i), std::get<0>(i));
+    }
+    if (!instantiationList.empty())
+    {
+        printerr(ERR_TEMPLATE_INSTANTIATION_STARTED_IN, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo());
+    }
+}
 static bool ValidateWarning(int num)
 {
     if (num && num < sizeof(errors) / sizeof(errors[0]))
@@ -649,6 +687,9 @@ void errorinit(void)
 {
     total_errors = diagcount = 0;
     currentErrorFile = nullptr;
+    currentLex = nullptr;
+    disabledNote = false;
+    instantiationList.clear();
 }
 
 static char kwtosym(enum e_kw kw)
@@ -683,7 +724,6 @@ static bool IsReturnErr(int err)
 {
     switch (err)
     {
-            //        case ERR_FUNCTION_SHOULD_RETURN_VALUE:
         case ERR_CALL_FUNCTION_NO_PROTO:
         case ERR_RETURN_MUST_RETURN_VALUE:
         case ERR_RETURN_NO_VALUE:
@@ -753,19 +793,37 @@ static bool ignoreErrtemplateNestingCount(int err)
 }
 bool printerrinternal(int err, const char* file, int line, va_list args)
 {
-    char buf[2048];
-    char infunc[2048];
+    if (!file)
+    {
+        if (currentLex)
+        {
+            file = currentLex->data->errfile;
+            line = currentLex->data->errline;
+        }
+        else
+        {
+            file = preProcessor->GetErrFile().c_str();
+            line = preProcessor->GetErrLineNo();
+        }
+    }
+    char buf[10000];
+    char infunc[10000];
     const char* listerr;
     char nameb[265], *name = nameb;
     if (Optimizer::cparams.prm_makestubs || inDeduceArgs || (templateNestingCount && ignoreErrtemplateNestingCount(err)))
-        return false;
+        if (err != ERR_STATIC_ASSERT && !(errors[err].level & NOTE))
+        {
+            if (!templateNestingCount && instantiatingClass && !inNoExceptHandler && (errors[err].level & ERROR))
+                templateInstantiationError++;
+            return false;
+        }
     if (!file)
     {
-        if (context)
+        if (context && context->last->data->type != l_none)
         {
-            LEXEME* lex = context->cur ? context->cur->prev : context->last;
-            line = lex->errline;
-            file = lex->errfile;
+            LEXLIST* lex = context->cur ? context->cur->prev : context->last;
+            line = lex->data->errline;
+            file = lex->data->errfile;
         }
         else
         {
@@ -779,9 +837,12 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     }
     if (TotalErrors() > Optimizer::cparams.prm_maxerr)
         return false;
-    if (!alwaysErr(err) && currentErrorFile && !strcmp(currentErrorFile, preProcessor->GetRealFile().c_str()) &&
+    if (!(errors[err].level & NOTE) && !alwaysErr(err) && currentErrorFile && !strcmp(currentErrorFile, preProcessor->GetRealFile().c_str()) &&
         preProcessor->GetRealLineNo() == currentErrorLine)
+    {
+        disabledNote = true;
         return false;
+    }
     if (err >= sizeof(errors) / sizeof(errors[0]))
     {
         Optimizer::my_sprintf(buf, "Error %d", err);
@@ -790,7 +851,17 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     {
         vsprintf(buf, errors[err].name, args);
     }
-    if (IsReturnErr(err) || (errors[err].level & ERROR) || (Optimizer::cparams.prm_ansi && (errors[err].level & ANSIERROR)) ||
+    if (errors[err].level & NOTE)
+    {
+        if (!disabledNote)
+        {
+            if (!Optimizer::cparams.prm_quiet)
+                printf("note:        ");
+            if (Optimizer::cparams.prm_errfile)
+                fprintf(errFile, "note:   ");
+        }
+    }
+    else if (IsReturnErr(err) || (errors[err].level & ERROR) || (Optimizer::cparams.prm_ansi && (errors[err].level & ANSIERROR)) ||
         (Optimizer::cparams.prm_cplusplus && (errors[err].level & CPLUSPLUSERROR)))
     {
         if (!Optimizer::cparams.prm_quiet)
@@ -801,14 +872,17 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         total_errors++;
         currentErrorFile = preProcessor->GetRealFile().c_str();
         currentErrorLine = preProcessor->GetRealLineNo();
+        disabledNote = false;
     }
     else
     {
+        disabledNote = true;
         if (Warning::Instance()->IsSet(err, Warning::Disable))
             return false;
         if (Warning::Instance()->IsSet(err, Warning::OnlyOnce))
             if (Warning::Instance()->IsSet(err, Warning::Emitted))
                 return false;
+        disabledNote = false;
         Warning::Instance()->SetFlag(err, Warning::Emitted);
         if (Warning::Instance()->IsSet(err, Warning::AsError))
         {
@@ -831,7 +905,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
             listerr = "WARNING";
         }
     }
-    if (theCurrentFunc && err != ERR_TOO_MANY_ERRORS && err != ERR_PREVIOUS && err != ERR_TEMPLATE_INSTANTIATION_STARTED_IN)
+    if (0 && !(errors[err].level & NOTE) && theCurrentFunc && err != ERR_TOO_MANY_ERRORS && err != ERR_PREVIOUS && err != ERR_TEMPLATE_INSTANTIATION_STARTED_IN)
     {
         strcpy(infunc, " in function ");
         unmangle(infunc + strlen(infunc), theCurrentFunc->sb->decoratedName);
@@ -845,13 +919,12 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     if (TotalErrors() >= Optimizer::cparams.prm_maxerr)
     {
         error(ERR_TOO_MANY_ERRORS);
-#ifdef PARSER_ONLY
-        exit(0);
-#else
-        exit(1);
-#endif
+        exit(IsCompiler() ? 1 : 0);
     }
-
+    if (!(errors[err].level & NOTE))
+    {
+        DumpInstantiations();
+    }
     return true;
 }
 int printerr(int err, const char* file, int line, ...)
@@ -861,30 +934,25 @@ int printerr(int err, const char* file, int line, ...)
     va_start(arg, line);
     canprint = printerrinternal(err, file, line, arg);
     va_end(arg);
-    if (instantiatingTemplate && canprint)
-    {
-        printerrinternal(ERR_TEMPLATE_INSTANTIATION_STARTED_IN, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(),
-                         nullptr);
-    }
     return canprint;
 }
-void pperror(int err, int data) { printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), data); }
-void pperrorstr(int err, const char* str) { printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), str); }
+void pperror(int err, int data) { printerr(err, nullptr, 0, data); }
+void pperrorstr(int err, const char* str) { printerr(err, nullptr, 0, str); }
 void preverror(int err, const char* name, const char* origFile, int origLine)
 {
-    if (printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), name))
+    if (printerr(err, nullptr, 0, name))
         if (origFile && origLine)
             printerr(ERR_PREVIOUS, origFile, origLine, name);
 }
 void preverrorsym(int err, SYMBOL* sp, const char* origFile, int origLine)
 {
-    char buf[2048];
+    char buf[10000];
     unmangle(buf, sp->sb->decoratedName);
     if (origFile && origLine)
         preverror(err, buf, origFile, origLine);
 }
 void errorat(int err, const char* name, const char* file, int line) { printerr(err, file, line, name); }
-void errorcurrent(int err) { printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo()); }
+void errorcurrent(int err) { printerr(err, nullptr, 0); }
 void getns(char* buf, SYMBOL* nssym)
 {
     if (nssym->sb->parentNameSpace)
@@ -911,13 +979,16 @@ void getcls(char* buf, SYMBOL* clssym)
 void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char* name)
 {
     char buf[4096];
-    char unopped[2048];
+    char unopped[10000];
     const char* last = "typename";
-    char lastb[2048];
+    char lastb[10000];
     memset(buf, 0, sizeof(buf));
     if (strSym)
     {
-        unmangle(lastb, strSym->sb->decoratedName);
+        if (strSym->sb->decoratedName)
+            unmangle(lastb, strSym->sb->decoratedName);
+        else
+            strcpy(lastb, strSym->name);
         last = strrchr(lastb, ':');
         if (last)
             last++;
@@ -944,7 +1015,6 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char
     if (strSym)
     {
         typeToString(buf + strlen(buf), strSym->tp);
-        //        getcls(buf, strSym);
     }
     else if (nsv)
     {
@@ -953,25 +1023,25 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char
     strcat(buf, "'");
     if (strSym && !strSym->tp->syms)
         strcat(buf, " because the type is not defined");
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), buf);
+    printerr(err, nullptr, 0, buf);
 }
 void errorNotMember(SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char* name)
 {
     errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, name);
 }
-void error(int err) { printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo()); }
-void errorint(int err, int val) { printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), val); }
+void error(int err) { printerr(err, nullptr, 0); }
+void errorint(int err, int val) { printerr(err, nullptr, 0, val); }
 void errorstr(int err, const char* val)
 {
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), (char*)val);
+    printerr(err, nullptr, 0, (char*)val);
 }
 void errorstr2(int err, const char* val, const char* two)
 {
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), (char*)val, (char*)two);
+    printerr(err, nullptr, 0, (char*)val, (char*)two);
 }
 void errorsym(int err, SYMBOL* sym)
 {
-    char buf[2048];
+    char buf[5000];
     if (sym->sb)
     {
         if (!sym->sb->decoratedName)
@@ -984,11 +1054,11 @@ void errorsym(int err, SYMBOL* sym)
     {
         strcpy(buf, sym->name);
     }
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), buf);
+    printerr(err, nullptr, 0, buf);
 }
 void errorsym(int err, SYMBOL* sym, int line, const char* file)
 {
-    char buf[2048];
+    char buf[10000];
     if (!sym->sb->decoratedName)
     {
         SetLinkerNames(sym, lk_cdecl);
@@ -998,23 +1068,23 @@ void errorsym(int err, SYMBOL* sym, int line, const char* file)
 }
 void errorsym2(int err, SYMBOL* sym1, SYMBOL* sym2)
 {
-    char one[2048], two[2048];
+    char one[10000], two[10000];
     unmangle(one, sym1->sb->decoratedName);
     unmangle(two, sym2->sb->decoratedName);
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), one, two);
+    printerr(err, nullptr, 0, one, two);
 }
 void errorstrsym(int err, const char* name, SYMBOL* sym2)
 {
-    char two[2048];
+    char two[10000];
     unmangle(two, sym2->sb->decoratedName);
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), name, two);
+    printerr(err, nullptr, 0, name, two);
 }
 void errorstringtype(int err, char* str, TYPE* tp1)
 {
     char tpb1[4096];
     memset(tpb1, 0, sizeof(tpb1));
     typeToString(tpb1, tp1);
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), str, tpb1);
+    printerr(err, nullptr, 0, str, tpb1);
 }
 
 void errortype(int err, TYPE* tp1, TYPE* tp2)
@@ -1025,7 +1095,7 @@ void errortype(int err, TYPE* tp1, TYPE* tp2)
     typeToString(tpb1, tp1);
     if (tp2)
         typeToString(tpb2, tp2);
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), tpb1, tpb2);
+    printerr(err, nullptr, 0, tpb1, tpb2);
 }
 void errorabstract(int error, SYMBOL* sp)
 {
@@ -1039,8 +1109,8 @@ void errorabstract(int error, SYMBOL* sp)
 }
 void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
 {
-    char argbuf[2048];
-    char buf[2048];
+    char argbuf[10000];
+    char buf[10000];
     if (declsp->sb->anonymous)
         Optimizer::my_sprintf(argbuf, "%d", argnum);
     else
@@ -1049,22 +1119,24 @@ void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
     }
     unmangle(buf, funcsp->sb->decoratedName);
     currentErrorLine = 0;
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), argbuf, buf);
+    printerr(err, nullptr, 0, argbuf, buf);
 }
-static BALANCE* newbalance(LEXEME* lex, BALANCE* bal)
+static BALANCE* newbalance(LEXLIST* lex, BALANCE* bal)
 {
-    BALANCE* rv = (BALANCE*)Alloc(sizeof(BALANCE));
+    BALANCE* rv = Allocate<BALANCE>();
     rv->back = bal;
     rv->count = 0;
     if (KW(lex) == openpa)
         rv->type = BAL_PAREN;
     else if (KW(lex) == openbr)
         rv->type = BAL_BRACKET;
+    else if (KW(lex) == lt)
+        rv->type = BAL_LT;
     else
         rv->type = BAL_BEGIN;
     return (rv);
 }
-static void setbalance(LEXEME* lex, BALANCE** bal)
+static void setbalance(LEXLIST* lex, BALANCE** bal, bool assumeTemplate)
 {
     switch (KW(lex))
     {
@@ -1092,6 +1164,17 @@ static void setbalance(LEXEME* lex, BALANCE** bal)
             if (*bal && !(--(*bal)->count))
                 (*bal) = (*bal)->back;
             break;
+        case gt:
+        if (assumeTemplate)
+        {
+            while (*bal && (*bal)->type != BAL_LT)
+            {
+                (*bal) = (*bal)->back;
+            }
+            if (*bal && !(--(*bal)->count))
+                (*bal) = (*bal)->back;
+            break;
+        }
         case begin:
             if (!*bal || (*bal)->type != BAL_BEGIN)
                 *bal = newbalance(lex, *bal);
@@ -1108,6 +1191,14 @@ static void setbalance(LEXEME* lex, BALANCE** bal)
                 *bal = newbalance(lex, *bal);
             (*bal)->count++;
             break;
+        case lt:
+            if (assumeTemplate)
+            {
+                if (!*bal || (*bal)->type != BAL_LT)
+                    *bal = newbalance(lex, *bal);
+                (*bal)->count++;
+            }
+            break;
         default:
             break;
     }
@@ -1115,7 +1206,7 @@ static void setbalance(LEXEME* lex, BALANCE** bal)
 
 /*-------------------------------------------------------------------------*/
 
-void errskim(LEXEME** lex, enum e_kw* skimlist)
+void errskim(LEXLIST** lex, enum e_kw* skimlist, bool assumeTemplate)
 {
     BALANCE* bal = 0;
     while (true)
@@ -1130,16 +1221,16 @@ void errskim(LEXEME** lex, enum e_kw* skimlist)
                 if (kw == skimlist[i])
                     return;
         }
-        setbalance(*lex, &bal);
+        setbalance(*lex, &bal, assumeTemplate);
         *lex = getsym();
     }
 }
-void skip(LEXEME** lex, enum e_kw kw)
+void skip(LEXLIST** lex, enum e_kw kw)
 {
     if (MATCHKW(*lex, kw))
         *lex = getsym();
 }
-bool needkw(LEXEME** lex, enum e_kw kw)
+bool needkw(LEXLIST** lex, enum e_kw kw)
 {
     if (lex && MATCHKW(*lex, kw))
     {
@@ -1311,10 +1402,10 @@ static void labelIndexes(STATEMENT* stmt, int* min, int* max)
 static VLASHIM* mkshim(_vlaTypes type, int level, int label, STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, int blocknum,
                        int blockindex)
 {
-    VLASHIM* rv = (VLASHIM*)Alloc(sizeof(VLASHIM));
+    VLASHIM* rv = Allocate<VLASHIM>();
     if (last && last->type != v_return && last->type != v_goto)
     {
-        rv->backs = (Optimizer::LIST*)(Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+        rv->backs = Allocate<Optimizer::LIST>();
         rv->backs->data = last;
     }
     rv->type = type;
@@ -1472,7 +1563,7 @@ static void fillPrevious(VLASHIM* shim, VLASHIM** labels, int minLabel)
                 selected = labels[shim->label - minLabel];
                 if (selected)
                 {
-                    prev = (Optimizer::LIST*)(Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+                    prev = Allocate<Optimizer::LIST>();
                     prev->data = shim;
                     prev->next = selected->backs;
                     selected->backs = prev;
@@ -1609,7 +1700,7 @@ void checkGotoPastVLA(STATEMENT* stmt, bool first)
         labelIndexes(stmt, &min, &max);
         if (min > max)
             return;
-        VLASHIM** labels = (VLASHIM**)Alloc((max + 1 - min) * sizeof(VLASHIM*));
+        VLASHIM** labels = Allocate<VLASHIM*>(max + 1 - min);
 
         int blockNum = 0;
         bool branched = false;
@@ -1693,16 +1784,17 @@ void findUnusedStatics(NAMESPACEVALUELIST* nameSpace)
                         while (hr1)
                         {
                             SYMBOL* sp1 = (SYMBOL*)hr1->p;
-                            if (sp1->sb->isInline && !sp1->sb->inlineFunc.stmt && !sp1->sb->deferredCompile && !sp1->sb->templateLevel)
+                            if (sp1->sb->attribs.inheritable.isInline && !sp1->sb->inlineFunc.stmt && !sp1->sb->deferredCompile && !sp1->sb->templateLevel)
                             {
                                 errorsym(ERR_UNDEFINED_IDENTIFIER, sp1);
                             }
-                            else if (sp1->sb->storage_class == sc_static && !sp1->sb->inlineFunc.stmt &&
-                                     !(sp1->sb->templateLevel || sp1->sb->instantiated))
+                            else if (sp1->sb->attribs.inheritable.linkage2 == lk_internal ||
+                                    (sp1->sb->storage_class == sc_static && !sp1->sb->inlineFunc.stmt &&
+                                     !(sp1->sb->templateLevel || sp1->sb->instantiated)))
                             {
                                 if (sp1->sb->attribs.inheritable.used)
                                     errorsym(ERR_UNDEFINED_STATIC_FUNCTION, sp1, eofLine, eofFile);
-                                else
+                                else if (sp1->sb->attribs.inheritable.linkage2 != lk_internal)
                                     errorsym(ERR_STATIC_FUNCTION_USED_BUT_NOT_DEFINED, sp1, eofLine, eofFile);
                             }
                             hr1 = hr1->next;
@@ -1963,6 +2055,8 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case en_stackblock:
         case en_blockassign:
         case en_mp_compare:
+        case en_dot:
+        case en_pointsto:
             /*		case en_array: */
             assignmentUsages(node->left, false);
             assignmentUsages(node->right, false);
@@ -2005,6 +2099,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case en_sizeofellipse:
         case en__initobj:
         case en__sizeof:
+        case en_construct:
             break;
         default:
             diag("assignmentUsages");
@@ -2138,6 +2233,8 @@ static int checkDefaultExpression(EXPRESSION* node)
         case en_assign:
         case en__initblk:
         case en__cpblk:
+        case en_dot:
+        case en_pointsto:
             rv |= checkDefaultExpression(node->right);
             rv |= checkDefaultExpression(node->left);
             break;
@@ -2221,6 +2318,7 @@ static int checkDefaultExpression(EXPRESSION* node)
         case en_templateselector:
         case en__initobj:
         case en__sizeof:
+        case en_construct:
             break;
         default:
             diag("rv |= checkDefaultExpression");

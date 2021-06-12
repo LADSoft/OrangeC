@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include <stdio.h>
@@ -266,7 +266,7 @@ static IMODE* pinnedVar(SimpleType* tp)
     sym->sizeFromType = tp->sizeFromType;
     sym->anonymous = false;
     tp->pinned = true;
-    IMODE* ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
+    IMODE* ap = Allocate<IMODE>();
     sym->imvalue = ap;
     ap->offset = exp;
     ap->mode = i_direct;
@@ -287,13 +287,13 @@ static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*&
         exp = addresses.front()->dc.left;
     }
     SimpleType *tp;
-    tp = (SimpleType*)Alloc(sizeof(SimpleType));
+    tp = Allocate<SimpleType>();
     tp->type = st_lref;
     tp->size = sizeFromISZ(ISZ_ADDR);
     tp->sizeFromType = ISZ_ADDR;
     if (exp->offset->type == se_labcon)
     {
-        tp->btp = (SimpleType*)Alloc(sizeof(SimpleType));
+        tp->btp = Allocate<SimpleType>();
         tp->btp->type = st_i;
         tp->btp->size = 1;
         tp->btp->sizeFromType = -ISZ_UCHAR;
@@ -306,7 +306,7 @@ static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*&
         /*
         while (tp->btp->type == st_pointer)
         {
-            SimpleType* tp1 = (SimpleType*)Alloc(sizeof(SimpleType));
+            SimpleType* tp1 = Allocate<SimpleType>();
             *tp1 = *tp->btp;
             tp1->type = st_lref;
             tp->btp = tp1;
@@ -316,27 +316,24 @@ static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*&
     }
     IMODE *ans = pinnedVar(tp);
     ans->size = exp->size;
-    IMODE* ans2 = (IMODE*)Alloc(sizeof(IMODE));
-    *ans2 = *ans;
-    ans2->size = ISZ_UINT;
     managed = ans;
-    unmanaged = ans2;
+    unmanaged = ans;
 
 
     if (addresses.front()->dc.opcode == i_add)
     {
         // address of something global points to
-        QUAD *one = (QUAD *)Alloc(sizeof(QUAD));
+        QUAD *one = Allocate<QUAD>();
         *one = *addresses.front()->back;
         InsertInstruction(begin, one);
         begin = begin->fwd;
-        QUAD *two = (QUAD *)Alloc(sizeof(QUAD));
+        QUAD *two = Allocate<QUAD>();
         *two = *addresses.front();
         InsertInstruction(begin, two);
         begin = begin->fwd;
         exp = two->ans;
     }
-    QUAD *move = (QUAD*)Alloc(sizeof(QUAD));
+    QUAD *move = Allocate<QUAD>();
     move->ans = ans;
     move->dc.left = exp;
     move->dc.opcode = i_assn;
@@ -367,11 +364,11 @@ static void InsertFinalThunk(IMODE* managed, QUAD* end)
         end = end->back;
     if (end->back->dc.opcode == i_goto)
         end = end->back;
-    QUAD* load = (QUAD*)Alloc(sizeof(QUAD));
-    load->ans = InitTempOpt(ISZ_UINT, ISZ_UINT);
-    load->dc.left = make_immed(ISZ_UINT, 0);
+    QUAD* load = Allocate<QUAD>();
+    load->ans = InitTempOpt(ISZ_ADDR, ISZ_ADDR);
+    load->dc.left = make_immed(ISZ_ADDR, 0);
     load->dc.opcode = i_assn;
-    QUAD* store = (QUAD*)Alloc(sizeof(QUAD));
+    QUAD* store = Allocate<QUAD>();
     store->ans = managed;
     store->dc.left = load->ans;
     store->dc.opcode = i_assn;
@@ -438,20 +435,6 @@ void RewriteForPinning()
                 ReplaceLoads(managed, unmanaged, a);
                 InsertFinalThunk(managed, pair.second);
              }
-        }
-    }
-    if (autos.size())
-    {
-        for (auto a : autos)
-        {
-            for (auto s : a.second)
-            {
-                // this force a conv.u
-                if (s->dc.opcode == i_assn)
-                    s->dc.left->size = ISZ_UINT;
-                else
-                    s->dc.right->size = ISZ_UINT;
-            }
         }
     }
 }

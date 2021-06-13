@@ -340,13 +340,8 @@ void compile(bool global)
             dumpLits();
             WeedExterns();
         }
-        /*        rewrite_icode(); */
-        //        if (Optimizer::chosenAssembler->gen->finalGen)
-        //            Optimizer::chosenAssembler->gen->finalGen();
         if (!Optimizer::cparams.prm_assemble && Optimizer::cparams.prm_debug)
             debug_dumptypedefs(globalNameSpace);
-        //        if (!Optimizer::cparams.prm_asmfile)
-        //            outputObjFile();
         Optimizer::libIncludes = preProcessor->GetIncludeLibs();
     }
     findUnusedStatics(globalNameSpace);

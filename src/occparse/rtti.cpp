@@ -419,6 +419,7 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
 }
 static void RTTIDumpStruct(SYMBOL* xtSym, TYPE* tp)
 {
+    Optimizer::SymbolManager::Get(xtSym)->noextern = true;
     DumpEnclosedStructs(tp, true);
     RTTIDumpHeader(xtSym, tp, XD_CL_PRIMARY);
     DumpEnclosedStructs(tp, false);

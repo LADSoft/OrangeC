@@ -11642,7 +11642,9 @@ void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, NAMESPACEVALUELIST* ns
 static void referenceInstanceMembers(SYMBOL* cls, bool excludeFromExplicitInstantiation)
 {
     if (Optimizer::cparams.prm_xcept)
+    {
         RTTIDumpType(cls->tp);
+    }
     if (cls->sb->vtabsp)
     {
         Optimizer::SymbolManager::Get(cls->sb->vtabsp);

@@ -2487,14 +2487,15 @@ static void releaseInitializers(SYMBOL* cls, SYMBOL* cons)
         hr = hr->next;
     }
 }
-EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTABLE* syms, bool parseInitializers, bool doCopy)
+EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTABLE* syms, bool parseInitializers, bool doCopy, bool defaulted)
 {
     BASECLASS* bc;
     SYMLIST* hr = syms->table[0];
     EXPRESSION* thisptr = varNode(en_auto, hr->p);
     EXPRESSION* otherptr = nullptr;
     int oldCodeLabel = codeLabel;
-    codeLabel = INT_MIN;
+    if (defaulted)
+        codeLabel = INT_MIN;
     if (hr->next)
         otherptr = varNode(en_auto, hr->next->p);
     deref(&stdpointer, &thisptr);
@@ -2594,7 +2595,8 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
     if (parseInitializers)
         releaseInitializers(sym, cons);
     cons->sb->labelCount = codeLabel - INT_MIN;
-    codeLabel = oldCodeLabel;
+    if (defaulted)
+        codeLabel = oldCodeLabel;
     return thisptr;
 }
 static e_xc DefaultConstructorExceptionMode(STATEMENT* block);
@@ -2931,7 +2933,7 @@ void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
     b.type = begin;
     syms = localNameSpace->valueData->syms;
     localNameSpace->valueData->syms = basetype(consfunc->tp)->syms;
-    thisptr = thunkConstructorHead(&b, sp, consfunc, basetype(consfunc->tp)->syms, false, true);
+    thisptr = thunkConstructorHead(&b, sp, consfunc, basetype(consfunc->tp)->syms, false, true, true);
     st = stmtNode(nullptr, &b, st_return);
     st->select = thisptr;
     if (!inNoExceptHandler)
@@ -3217,7 +3219,7 @@ static void undoBases(BLOCKDATA* b, SYMBOL* against, BASECLASS* bc, EXPRESSION* 
         }
     }
 }
-void thunkDestructorTail(BLOCKDATA* b, SYMBOL* sp, SYMBOL* dest, HASHTABLE* syms)
+void thunkDestructorTail(BLOCKDATA* b, SYMBOL* sp, SYMBOL* dest, HASHTABLE* syms, bool defaulted)
 {
     if (sp->tp->type != bt_union)
     {
@@ -3226,7 +3228,8 @@ void thunkDestructorTail(BLOCKDATA* b, SYMBOL* sp, SYMBOL* dest, HASHTABLE* syms
         int oldCodeLabel = codeLabel;
         if (templateNestingCount)
             return;
-        codeLabel = INT_MIN;
+        if (defaulted)
+            codeLabel = INT_MIN;
         thisptr = varNode(en_auto, (SYMBOL*)syms->table[0]->p);
         undoVars(b, basetype(sp->tp)->syms->table[0], thisptr);
         undoBases(b, sp, sp->sb->baseClasses, thisptr);
@@ -3254,7 +3257,8 @@ void thunkDestructorTail(BLOCKDATA* b, SYMBOL* sp, SYMBOL* dest, HASHTABLE* syms
             st->label = lbl;
         }
         dest->sb->labelCount = codeLabel - INT_MIN;
-        codeLabel = oldCodeLabel;
+        if (defaulted)
+            codeLabel = oldCodeLabel;
     }
 }
 void createDestructor(SYMBOL* sp)
@@ -3266,7 +3270,7 @@ void createDestructor(SYMBOL* sp)
     dest = (SYMBOL*)basetype(dest->tp)->syms->table[0]->p;
     syms = localNameSpace->valueData->syms;
     localNameSpace->valueData->syms = basetype(dest->tp)->syms;
-    thunkDestructorTail(&b, sp, dest, basetype(dest->tp)->syms);
+    thunkDestructorTail(&b, sp, dest, basetype(dest->tp)->syms, true);
     dest->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
     dest->sb->inlineFunc.stmt->lower = b.head;
     dest->sb->inlineFunc.syms = basetype(dest->tp)->syms;

@@ -877,7 +877,10 @@ void InsertVarStart(Optimizer::SimpleSymbol* sym)
         attrib->v.sp = sym;
 
         InsertAttrib(attrib);
-        autos[sym] = autos.size();
+        // this is done this way because VC++ has bug in optimized code...
+        int n = autos.size();
+        autos[sym] = n;
+
         autotab.push_back(sym);
     }
 }

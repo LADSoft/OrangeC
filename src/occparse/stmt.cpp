@@ -3334,7 +3334,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
         if (Optimizer::cparams.prm_cplusplus && funcsp->sb->isConstructor && funcsp->sb->parentClass)
         {
             ParseMemberInitializers(funcsp->sb->parentClass, funcsp);
-            thisptr = thunkConstructorHead(blockstmt, funcsp->sb->parentClass, funcsp, basetype(funcsp->tp)->syms, true, false);
+            thisptr = thunkConstructorHead(blockstmt, funcsp->sb->parentClass, funcsp, basetype(funcsp->tp)->syms, true, false, false);
         }
     }
     lex = getsym(); /* past { */
@@ -3451,7 +3451,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
             insertXCInfo(funcsp);
         }
         if (!strcmp(funcsp->name, overloadNameTab[CI_DESTRUCTOR]))
-            thunkDestructorTail(blockstmt, funcsp->sb->parentClass, funcsp, basetype(funcsp->tp)->syms);
+            thunkDestructorTail(blockstmt, funcsp->sb->parentClass, funcsp, basetype(funcsp->tp)->syms, false);
     }
     if (Optimizer::cparams.prm_cplusplus)
         HandleEndOfSwitchBlock(blockstmt);

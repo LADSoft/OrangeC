@@ -714,7 +714,7 @@ bool ObjIeeeBinary::TypeSpec(const ObjByte *buffer, eParseType ParseType)
                 type = GetType(index);
             if (!type)
                 ThrowSyntax(buffer, ParseType);
-            else
+            else if (symbol)
                 symbol->SetBaseType(type);	
             break;
         }

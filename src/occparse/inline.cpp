@@ -164,18 +164,26 @@ void dumpInlines(void)
                     SYMBOL* sym = (SYMBOL*)vtabList->data;
                     if (Optimizer::SymbolManager::Test(sym->sb->vtabsp) && hasVTab(sym) && !sym->sb->vtabsp->sb->didinline)
                     {
-                        if (sym->sb->dontinstantiate || sym->sb->vtabsp->sb->dontinstantiate)
+                        if (inSearch(sym))
                         {
-                            Optimizer::SymbolManager::Get(sym->sb->vtabsp)->dontinstantiate = true;
-                            sym->sb->vtabsp->sb->storage_class = sc_external;
-                            sym->sb->vtabsp->sb->attribs.inheritable.linkage = lk_c;
+                            sym->sb->didinline = true;
                         }
                         else
                         {
-                            sym->sb->vtabsp->sb->didinline = true;
-                            sym->sb->vtabsp->sb->noextern = true;
-                            dumpVTab(sym);
-                            done = false;
+                            inInsert(sym);
+                            if (sym->sb->dontinstantiate || sym->sb->vtabsp->sb->dontinstantiate)
+                            {
+                                Optimizer::SymbolManager::Get(sym->sb->vtabsp)->dontinstantiate = true;
+                                sym->sb->vtabsp->sb->storage_class = sc_external;
+                                sym->sb->vtabsp->sb->attribs.inheritable.linkage = lk_c;
+                            }
+                            else
+                            {
+                                sym->sb->vtabsp->sb->didinline = true;
+                                sym->sb->vtabsp->sb->noextern = true;
+                                dumpVTab(sym);
+                                done = false;
+                            }
                         }
                     }
                     vtabList = vtabList->next;

@@ -321,7 +321,7 @@ void HandleDebugInfo(ObjFactory& factory, Section* sect, Instruction* ins)
             case e_ad_vardata:
                 if (autos.find(d->v.sp) != autos.end())
                 {
-                    ObjSymbol* autosp = autovector[autos[d->v.sp]-1];
+                    ObjSymbol* autosp = autovector[autos[d->v.sp]];
                     ObjDebugTag* tag = factory.MakeDebugTag(autosp);
                     dc->push_back(tag);
                     objSection->GetMemoryManager().Add(std::move(dc));
@@ -877,7 +877,10 @@ void InsertVarStart(Optimizer::SimpleSymbol* sym)
         attrib->v.sp = sym;
 
         InsertAttrib(attrib);
-        autos[sym] = autos.size();
+        // this is done this way because VC++ has bug in optimized code...
+        int n = autos.size();
+        autos[sym] = n;
+
         autotab.push_back(sym);
     }
 }

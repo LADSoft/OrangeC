@@ -122,8 +122,7 @@ void dumpInlines(void)
                     {
                         if ((sym->sb->parentClass && sym->sb->parentClass->sb->dontinstantiate && 
                                !sym->sb->attribs.inheritable.excludeFromExplicitInstantiation && 
-                               !sym->sb->templateLevel) ||
-                            sym->sb->attribs.inheritable.linkage2 == lk_import)
+                               !sym->sb->templateLevel))
                         {
                             sym->sb->dontinstantiate = true;
                         }

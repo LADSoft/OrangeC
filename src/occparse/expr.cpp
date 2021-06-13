@@ -4442,6 +4442,7 @@ static LEXLIST* expression_generic(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
             {
                 *tp = selectedGeneric->type;
                 *exp = selectedGeneric->exp;
+                optimize_for_constants(exp);
             }
             else
             {

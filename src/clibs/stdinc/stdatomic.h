@@ -67,16 +67,16 @@ typedef enum memory_order
 } memory_order;
 #endif
 
-#define ATOMIC_BOOL_LOCK_FREE 1
-#define ATOMIC_CHAR_LOCK_FREE 1
-#define ATOMIC_CHAR16_T_LOCK_FREE 1
-#define ATOMIC_CHAR32_T_LOCK_FREE 1
-#define ATOMIC_WCHAR_T_LOCK_FREE 1
-#define ATOMIC_SHORT_LOCK_FREE 1
-#define ATOMIC_INT_LOCK_FREE 1
-#define ATOMIC_LONG_LOCK_FREE 1
-#define ATOMIC_LLONG_LOCK_FREE 1
-#define ATOMIC_POINTER_LOCK_FREE 1
+#define ATOMIC_BOOL_LOCK_FREE 2
+#define ATOMIC_CHAR_LOCK_FREE 2
+#define ATOMIC_CHAR16_T_LOCK_FREE 2
+#define ATOMIC_CHAR32_T_LOCK_FREE 2
+#define ATOMIC_WCHAR_T_LOCK_FREE 2
+#define ATOMIC_SHORT_LOCK_FREE 2
+#define ATOMIC_INT_LOCK_FREE 2
+#define ATOMIC_LONG_LOCK_FREE 2
+#define ATOMIC_LLONG_LOCK_FREE 2
+#define ATOMIC_POINTER_LOCK_FREE 2
 
 #ifndef RC_INVOKED
 typedef struct atomic_flag
@@ -87,34 +87,37 @@ typedef struct atomic_flag
 #define atomic_is_lock_free(A) \
     _Generic(A, \
     struct atomic_flag: 1, \
-    bool: ATOMIC_BOOL_LOCK_FREE, \
-    char: ATOMIC_CHAR_LOCK_FREE,  \ 
-    signed char: ATOMIC_CHAR_LOCK_FREE,  \ 
-    unsigned char: ATOMIC_CHAR_LOCK_FREE,   \
-    short: ATOMIC_SHORT_LOCK_FREE,   \
-    unsigned short: ATOMIC_SHORT_LOCK_FREE,   \
-    int: ATOMIC_INT_LOCK_FREE,   \
-    unsigned int: ATOMIC_INT_LOCK_FREE,   \
-    long: ATOMIC_LONG_LOCK_FREE,   \
-    unsigned long: ATOMIC_LONG_LOCK_FREE,   \
-    long long: ATOMIC_LLONG_LOCK_FREE,   \
-    unsigned long long: ATOMIC_LLONG_LOCK_FREE,   \
-    __char16_t: ATOMIC_CHAR16_T_LOCK_FREE,\
-    __char32_t: ATOMIC_CHAR32_T_LOCK_FREE,\
+    _Bool: ATOMIC_BOOL_LOCK_FREE == 2, \
+    char: ATOMIC_CHAR_LOCK_FREE == 2,  \ 
+    signed char: ATOMIC_CHAR_LOCK_FREE == 2,  \ 
+    unsigned char: ATOMIC_CHAR_LOCK_FREE == 2,   \
+    short: ATOMIC_SHORT_LOCK_FREE == 2,   \
+    unsigned short: ATOMIC_SHORT_LOCK_FREE == 2,   \
+    int: ATOMIC_INT_LOCK_FREE == 2,   \
+    unsigned int: ATOMIC_INT_LOCK_FREE == 2,   \
+    long: ATOMIC_LONG_LOCK_FREE == 2,   \
+    unsigned long: ATOMIC_LONG_LOCK_FREE == 2,   \
+    long long: ATOMIC_LLONG_LOCK_FREE == 2,   \
+    unsigned long long: ATOMIC_LLONG_LOCK_FREE == 2,   \
+    __char16_t: ATOMIC_CHAR16_T_LOCK_FREE == 2,\
+    __char32_t: ATOMIC_CHAR32_T_LOCK_FREE == 2,\
     struct atomic_flag *: 1, \ 
-    char *: ATOMIC_POINTER_LOCK_FREE, \
-    signed char *: ATOMIC_POINTER_LOCK_FREE, \
-    unsigned char *: ATOMIC_POINTER_LOCK_FREE,   \
-    short *: ATOMIC_POINTER_LOCK_FREE,   \
-    unsigned short *: ATOMIC_POINTER_LOCK_FREE,   \
-    int *: ATOMIC_POINTER_LOCK_FREE,   \
-    unsigned int *: ATOMIC_POINTER_LOCK_FREE,   \
-    long *: ATOMIC_POINTER_LOCK_FREE,   \
-    unsigned long *: ATOMIC_POINTER_LOCK_FREE,   \
-    long long *: ATOMIC_POINTER_LOCK_FREE,   \
-    unsigned long long *: ATOMIC_POINTER_LOCK_FREE,   \
-    __char16_t *: ATOMIC_POINTER_LOCK_FREE,\
-    __char32_t *: ATOMIC_POINTER_LOCK_FREE,\
+    void *: ATOMIC_POINTER_LOCK_FREE == 2, \
+    _Bool *: ATOMIC_BOOL_LOCK_FREE == 2, \
+    char *: ATOMIC_POINTER_LOCK_FREE == 2, \
+    signed char *: ATOMIC_POINTER_LOCK_FREE == 2, \
+    unsigned char *: ATOMIC_POINTER_LOCK_FREE == 2,   \
+    short *: ATOMIC_POINTER_LOCK_FREE == 2,   \
+    unsigned short *: ATOMIC_POINTER_LOCK_FREE == 2,   \
+    int *: ATOMIC_POINTER_LOCK_FREE == 2,   \
+    unsigned int *: ATOMIC_POINTER_LOCK_FREE == 2,   \
+    long *: ATOMIC_POINTER_LOCK_FREE == 2,   \
+    unsigned long *: ATOMIC_POINTER_LOCK_FREE == 2,   \
+    long long *: ATOMIC_POINTER_LOCK_FREE == 2,   \
+    unsigned long long *: ATOMIC_POINTER_LOCK_FREE == 2,   \
+    __char16_t *: ATOMIC_POINTER_LOCK_FREE == 2,\
+    __char32_t *: ATOMIC_POINTER_LOCK_FREE == 2,\
+    void **: ATOMIC_POINTER_LOCK_FREE == 2, \
     default: 0)
 
 #define ATOMIC_FLAG_INIT \
@@ -152,7 +155,7 @@ extern "C"
 #define __ATOMIC_TYPE__(__x__, __y__) typedef _Atomic(__x__) __y__;
 
 #ifndef RC_INVOKED
-__ATOMIC_TYPE__(unsigned char, atomic_bool);
+__ATOMIC_TYPE__(_Bool, atomic_bool);
 __ATOMIC_TYPE__(void*, atomic_address);
 __ATOMIC_TYPE__(char, atomic_char);
 __ATOMIC_TYPE__(signed char, atomic_schar);

@@ -321,7 +321,7 @@ void HandleDebugInfo(ObjFactory& factory, Section* sect, Instruction* ins)
             case e_ad_vardata:
                 if (autos.find(d->v.sp) != autos.end())
                 {
-                    ObjSymbol* autosp = autovector[autos[d->v.sp]];
+                    ObjSymbol* autosp = autovector[autos[d->v.sp]-1];
                     ObjDebugTag* tag = factory.MakeDebugTag(autosp);
                     dc->push_back(tag);
                     objSection->GetMemoryManager().Add(std::move(dc));

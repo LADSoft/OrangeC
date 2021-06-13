@@ -1356,7 +1356,7 @@ namespace DotNetPELib
             /* below this is various CIL types*/
             Void, Bool, Char, i8, u8, i16, u16, i32, u32, i64, u64, inative, unative, r32, r64, object, string
         };
-        Type(BasicType Tp, int PointerLevel) : tp_(Tp), arrayLevel_(0), byRef_(false), typeRef_(nullptr), methodRef_(nullptr), peIndex_(0), pinned_(false), showType_(false), varnum_(0)
+        Type(BasicType Tp, int PointerLevel) : tp_(Tp), pointerLevel_(0), arrayLevel_(0), byRef_(false), typeRef_(nullptr), methodRef_(nullptr), peIndex_(0), pinned_(false), showType_(false), varnum_(0)
         {
             if (Tp == var || Tp == mvar)
                 varnum_ = PointerLevel;

@@ -1357,7 +1357,7 @@ void gen_goto(Optimizer::QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_o
     enum e_opcode sop = pos, sop1 = llpos, top = llneg, top1 = llintermpos, opa;
     Optimizer::IMODE* left = q->dc.left;
     Optimizer::IMODE* right = q->dc.right;
-    AMODE *apll, *aplh, *aprl, *aprh;
+    AMODE *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
     if (left->mode == Optimizer::i_immed && left->size < ISZ_FLOAT)
     {
         Optimizer::IMODE* t = right;
@@ -1674,22 +1674,6 @@ static void do_movzx(int dsize, int ssize, AMODE* dest, AMODE* src)
 {
     gen_code2(op_movzx, dsize, ssize, dest, src);
     return;
-
-    if (!equal_address(dest, src))
-    {
-        gen_code2(op_movzx, dsize, ssize, dest, src);
-        //		gen_code(op_xor, dest, dest);
-        //		gen_codes(op_mov, ssize, dest, src);
-    }
-    else
-    {
-        AMODE* am;
-        if (ssize == ISZ_UCHAR)
-            am = aimmed(0xff);
-        else
-            am = aimmed(0xffff);
-        gen_codes(op_and, ISZ_UINT, dest, am);
-    }
 }
 static void do_movsx(int dsize, int ssize, AMODE* dest, AMODE* src)
 {
@@ -2370,8 +2354,8 @@ void asm_goto(Optimizer::QUAD* q) /* unconditional branch */
 }
 void asm_parm(Optimizer::QUAD* q) /* push a parameter*/
 {
-    enum e_opcode op;
-    AMODE *apl, *aph;
+    enum e_opcode op = op_mov;
+    AMODE *apl = nullptr, *aph = nullptr;
     getAmodes(q, &op, q->dc.left, &apl, &aph);
     if (q->dc.left->mode == Optimizer::i_immed)
     {
@@ -2775,7 +2759,7 @@ void asm_add(Optimizer::QUAD* q) /* evaluate an addition */
         return;
     }
     enum e_opcode opa, opl, opr;
-    AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
+    AMODE *apal = nullptr, *apah = nullptr, *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
@@ -3032,7 +3016,7 @@ void asm_sub(Optimizer::QUAD* q) /* evaluate a subtraction */
         return;
     }
     enum e_opcode opa, opl, opr;
-    AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
+    AMODE *apal = nullptr, *apah = nullptr, *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
@@ -3124,7 +3108,7 @@ void asm_mulsh(Optimizer::QUAD* q) { gen_mulxh(q, op_imul); }
 void asm_mul(Optimizer::QUAD* q) /* signed multiply */
 {
     enum e_opcode opa, opl, opr;
-    AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
+    AMODE *apal = nullptr, *apah = nullptr, *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
@@ -3205,7 +3189,7 @@ void asm_mul(Optimizer::QUAD* q) /* signed multiply */
 void asm_lsr(Optimizer::QUAD* q) /* unsigned shift right */
 {
     enum e_opcode opa, opl, opr;
-    AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
+    AMODE *apal = nullptr, *apah = nullptr, *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
@@ -3247,7 +3231,7 @@ void asm_lsr(Optimizer::QUAD* q) /* unsigned shift right */
 void asm_lsl(Optimizer::QUAD* q) /* signed shift left */
 {
     enum e_opcode opa, opl, opr;
-    AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
+    AMODE *apal = nullptr, *apah = nullptr, *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
@@ -3289,7 +3273,7 @@ void asm_lsl(Optimizer::QUAD* q) /* signed shift left */
 void asm_asr(Optimizer::QUAD* q) /* signed shift right */
 {
     enum e_opcode opa, opl, opr;
-    AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
+    AMODE *apal = nullptr, *apah = nullptr, *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
@@ -3334,7 +3318,7 @@ void asm_asr(Optimizer::QUAD* q) /* signed shift right */
 void asm_neg(Optimizer::QUAD* q) /* negation */
 {
     enum e_opcode opa, opl;
-    AMODE *apal, *apah, *apll, *aplh;
+    AMODE *apal = nullptr, *apah = nullptr, *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
     if (q->ans->size >= ISZ_CFLOAT)
@@ -3389,7 +3373,7 @@ void asm_neg(Optimizer::QUAD* q) /* negation */
 void asm_not(Optimizer::QUAD* q) /* complement */
 {
     enum e_opcode opa, opl;
-    AMODE *apal, *apah, *apll, *aplh;
+    AMODE *apal = nullptr, *apah = nullptr, *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
     if (q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG)
@@ -3419,7 +3403,7 @@ void asm_and(Optimizer::QUAD* q) /* binary and */
         return;
     }
     enum e_opcode opa, opl, opr;
-    AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
+    AMODE *apal = nullptr, *apah = nullptr, *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
@@ -3475,7 +3459,7 @@ void asm_or(Optimizer::QUAD* q) /* binary or */
         return;
     }
     enum e_opcode opa, opl, opr;
-    AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
+    AMODE *apal = nullptr, *apah = nullptr, *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
@@ -3531,7 +3515,7 @@ void asm_eor(Optimizer::QUAD* q) /* binary exclusive or */
         return;
     }
     enum e_opcode opa, opl, opr;
-    AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
+    AMODE *apal = nullptr, *apah = nullptr, *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
@@ -3591,7 +3575,7 @@ void asm_setle(Optimizer::QUAD* q) /* evaluate a = b S<= c */ { gen_xset(q, op_s
 void asm_setge(Optimizer::QUAD* q) /* evaluate a = b S>= c */ { gen_xset(q, op_setge, op_setle, op_setae); }
 void asm_assn(Optimizer::QUAD* q) /* assignment */
 {
-    AMODE *apa, *apa1, *apl = nullptr, *apl1 = nullptr;
+    AMODE *apa = nullptr, *apa1 = nullptr, *apl = nullptr, *apl1 = nullptr;
     enum e_opcode opa, opl;
     /* when we get here, one side or the other is in a register */
     int szl;
@@ -4396,7 +4380,7 @@ void asm_dc(Optimizer::QUAD* q) /* unused */ { (void)q; }
 void asm_assnblock(Optimizer::QUAD* q) /* copy block of memory*/
 {
     int n = q->ans->offset->i;
-    AMODE *apl, *aph, *apal, *apah;
+    AMODE *apl = nullptr, *aph = nullptr, *apal = nullptr, *apah = nullptr;
     enum e_opcode op, opa;
     Optimizer::SimpleExpression *ofs, *ofsa;
 
@@ -4580,8 +4564,8 @@ void asm_assnblock(Optimizer::QUAD* q) /* copy block of memory*/
 void asm_clrblock(Optimizer::QUAD* q) /* clear block of memory */
 {
     int n = q->dc.right->offset->i;
-    AMODE *apl, *aph;
-    AMODE *aprl, *aprh;
+    AMODE *apl = nullptr, *aph = nullptr;
+    AMODE *aprl = nullptr, *aprh = nullptr;
     enum e_opcode op, opr;
     Optimizer::SimpleExpression* ofs;
 
@@ -4674,7 +4658,7 @@ void asm_clrblock(Optimizer::QUAD* q) /* clear block of memory */
 void asm_cmpblock(Optimizer::QUAD* q)
 {
     int n = q->ans->offset->i;
-    AMODE *apl, *aph, *apal, *apah;
+    AMODE *apl = nullptr, *aph = nullptr, *apal = nullptr, *apah = nullptr;
     enum e_opcode op, opa;
     Optimizer::SimpleExpression *ofs, *ofsa;
 
@@ -5116,11 +5100,11 @@ void asm_stackalloc(
             else
                 n = (n + 3) & ~3;
 
-            if (n <= 4092)  // also gets adds to the stack pointer
+            if (n >= 0 && n <= 4092)  // also gets adds to the stack pointer
                 gen_code(op_add, makedreg(ESP), aimmed(-n));
             else
             {
-                if (n <= 8188)
+                if (n >= 0 && n <= 8188)
                 {
                     gen_code(op_add, makedreg(ESP), aimmed(-4092));
                     gen_code(op_push, makedreg(EAX), 0);
@@ -5166,7 +5150,7 @@ void asm_loadstack(Optimizer::QUAD* q) /* load the stack pointer from a var */
 }
 void asm_savestack(Optimizer::QUAD* q) /* save the stack pointer to a var */
 {
-    AMODE *apl, *aph;
+    AMODE *apl = nullptr, *aph = nullptr;
     enum e_opcode op;
 
     getAmodes(q, &op, q->dc.left, &apl, &aph);
@@ -5199,6 +5183,7 @@ void asm_atomic(Optimizer::QUAD* q)
     if (needsync < 0)
         needsync = 0;
     // direct store has bit 7 set...
+    AMODE *apal = nullptr, *apah = nullptr, *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
     switch (q->dc.opcode)
     {
         bool pushed;
@@ -5206,7 +5191,6 @@ void asm_atomic(Optimizer::QUAD* q)
         enum e_opcode opa;
         enum e_opcode opl;
         enum e_opcode opr;
-        AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
         int lbl1, lbl2;
         case Optimizer::i_atomic_fence:
             if (needsync == Optimizer::mo_seq_cst + 0x80)  // in this case the value may be mo_seq_cst + 0x80 for store,
@@ -5392,7 +5376,7 @@ void asm_atomic(Optimizer::QUAD* q)
                     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
                     getAmodes(q, &opa, q->ans, &apal, &apah);
                     int lab;
-                    int reg = -1, push = false, push1 = false, push2 = false;
+                    int reg = -1, push1 = false, push2 = false;
                     if (apll->mode != am_dreg || apll->preg == EAX)
                     {
                         int reg1 = -1, reg2 = -1;
@@ -5462,13 +5446,7 @@ void asm_atomic(Optimizer::QUAD* q)
                         gen_codes(op_mov, sz, aprl, makedreg(EAX));
                         oa_gen_label(lab);
                     }
-                    if (push)
-                    {
-
-                        gen_code(op_pop, apll, NULL);
-                        pushlevel -= 4;
-                    }
-                    else if (push1)
+                    if (push1)
                     {
                         gen_code(op_pop, makedreg(EDX), NULL);
                         pushlevel -= 4;

@@ -2139,6 +2139,28 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
                     else if (isconst(tr))
                         return 1;
                 }
+                // if qualifiers are mismatched, choose a matching argument
+ 
+                bool va = isvolatile(ta);
+                bool vl = isvolatile(tl);
+                bool vr = isvolatile(tr);
+                bool ca = isconst(ta);
+                bool cl = isconst(tl);
+                bool cr = isconst(tr);
+                if (cl == cr && vl != vr)
+                {
+                    if (va == vl)
+                       return -1;
+                    else if (va == vr)
+                       return 1;
+                }
+                else if (vl == vr && cl != cr)
+                {
+                     if (ca == cl)
+                         return -1;
+                     else if (ca == cr)
+                         return 1;
+                }
             }
             else
             {

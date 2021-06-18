@@ -47,6 +47,8 @@
 #include "inline.h"
 #include "iexpr.h"
 #include "libcxx.h"
+#include "declcons.h"
+
 namespace Parser
 {
 int inGetUserConversion;
@@ -2166,7 +2168,7 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
             {
                 if (isref(tl) && isref(tr))
                 {
-                    // rref is better than const lref
+                    // const lref is better than rref
                     int refl = basetype(tl)->type;
                     int refr = basetype(tr)->type;
                     if (refl == bt_rref && refr == bt_lref && isconst(basetype(tr)->btp))
@@ -4491,6 +4493,14 @@ static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, Optimizer::LIST* 
         }
         gather = gather->next;
     }
+    int i;
+    for ( i = 0; i < n; i++)
+        if (spList[i] && !spList[i]->sb->deleted)
+            break;
+    if (i < n)
+        for (int i = 0; i < n; i++)
+            if (spList[i] && spList[i]->sb->deleted)
+                spList[i] = nullptr;
     return n;
 }
 static void doNames(SYMBOL* sym)

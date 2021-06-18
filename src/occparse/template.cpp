@@ -8545,11 +8545,11 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                         {
                             initial = tis.top();
                             tis.pop();
-                            if (initial && initial->p->packed)
-                            {
-                                tis.push(initial->next);
-                                initial = initial->p->byPack.pack;
-                            }
+                        }
+                        if (initial && initial->p->packed)
+                        {
+                            tis.push(initial->next);
+                            initial = initial->p->byPack.pack;
                         }
                         if (max)
                             max = max->next;

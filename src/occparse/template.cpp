@@ -4818,7 +4818,7 @@ static void ClearArgValues(TEMPLATEPARAMLIST* params, bool specialized)
                         TEMPLATEPARAMLIST* t = tp->templateParam;
                         t->p->byClass.val = nullptr;
                     }
-                    else if (isstructured(tp) && (tp->sp)->sb->attribs.inheritable.linkage != lk_virtual)
+                    else if (isstructured(tp) && (tp->sp)->sb->attribs.inheritable.linkage4 != lk_virtual)
                     {
                         ClearArgValues(tp->sp->templateParams, specialized);
                     }
@@ -5374,7 +5374,7 @@ static bool Deduce(TYPE* P, TYPE* A, bool change, bool byClass, bool allowSelect
         TYPE* Pb = basetype(P);
         if (isref(Ab))
             Ab = basetype(Ab->btp);
-        if (isstructured(Pb) && Pb->sp->sb->templateLevel && Pb->sp->sb->attribs.inheritable.linkage != lk_virtual &&
+        if (isstructured(Pb) && Pb->sp->sb->templateLevel && Pb->sp->sb->attribs.inheritable.linkage4 != lk_virtual &&
             isstructured(Ab))
         {
             if (DeduceFromTemplates(P, Ab, change, byClass))
@@ -7716,7 +7716,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
     LEXLIST* lex = nullptr;
     SYMBOL* cls = sym;
     int pushCount;
-    if (cls->sb->attribs.inheritable.linkage == lk_virtual)
+    if (cls->sb->attribs.inheritable.linkage4 == lk_virtual)
         return cls;
     if (packIndex == -1 && sym->sb->maintemplate)
     {
@@ -7786,7 +7786,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             lambdas = nullptr;
             old = *cls;
             cls->parserSet = false;
-            cls->sb->attribs.inheritable.linkage = lk_virtual;
+            cls->sb->attribs.inheritable.linkage4 = lk_virtual;
             cls->sb->parentClass = SynthesizeParentClass(cls->sb->parentClass);
             /*            if (cls->sb->parentTemplate)
                         {
@@ -7805,7 +7805,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
                         */
             SwapMainTemplateArgs(cls);
             pushCount = pushContext(cls, false);
-            cls->sb->attribs.inheritable.linkage = lk_virtual;
+            cls->sb->attribs.inheritable.linkage4 = lk_virtual;
             cls->tp = Allocate<TYPE>();
             *cls->tp = *old.tp;
             UpdateRootTypes(cls->tp);
@@ -7936,7 +7936,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
         SYMBOL* data = hr->p;
         if (data->sb->instantiated && TemplateInstantiationMatch(data, sym) && matchOverload(sym->tp, data->tp, true))
         {
-            if (data->sb->attribs.inheritable.linkage == lk_virtual || isExtern)
+            if (data->sb->attribs.inheritable.linkage4 == lk_virtual || isExtern)
                 return data;
             if (!data->sb->deferredCompile && sym->sb->deferredCompile)
             {
@@ -8026,7 +8026,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             linesHead = linesTail = nullptr;
             if (sym->sb->storage_class != sc_member && sym->sb->storage_class != sc_mutable && sym->sb->storage_class != sc_virtual)
                 sym->sb->storage_class = sc_global;
-            sym->sb->attribs.inheritable.linkage = lk_virtual;
+            sym->sb->attribs.inheritable.linkage4 = lk_virtual;
             sym->sb->xc = nullptr;
             sym->sb->maintemplate = orig;
             sym->sb->redeclared = false;
@@ -10389,7 +10389,7 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args)
                 RecalculateVariableTemplateInitializers(&in, outptr, found1->tp, 0);
                 found1->sb->init = p;
             }
-            found1->sb->attribs.inheritable.linkage = lk_virtual;
+            found1->sb->attribs.inheritable.linkage4 = lk_virtual;
             InsertInlineData(found1);
         }
         else

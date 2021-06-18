@@ -110,7 +110,7 @@ void thunkForImportTable(EXPRESSION** exp)
             newThunk = makeID(sc_global, &stdpointer, nullptr, litlate(buf));
             newThunk->sb->decoratedName = newThunk->name;
             newThunk->sb->mainsym = sym;  // mainsym is the symbol this was derived from
-            newThunk->sb->attribs.inheritable.linkage = lk_virtual;
+            newThunk->sb->attribs.inheritable.linkage4 = lk_virtual;
             newThunk->sb->importThunk = true;
             search = Allocate<Optimizer::LIST>();
             search->next = importThunks;

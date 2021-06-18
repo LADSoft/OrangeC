@@ -4530,7 +4530,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
                 (sym->sb->parentClass &&
                  allTemplateArgsSpecified(sym->sb->parentClass, sym->sb->parentClass->templateParams->next)))
             {
-                sym->sb->attribs.inheritable.linkage = lk_virtual;
+                sym->sb->attribs.inheritable.linkage4 = lk_virtual;
                 InsertInlineData(sym);
             }
         }

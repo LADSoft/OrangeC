@@ -3231,7 +3231,7 @@ static void insertXCInfo(SYMBOL* funcsp)
     makeXCTab(funcsp);
     Optimizer::my_sprintf(name, "@$xc%s", funcsp->sb->decoratedName);
     sym = makeID(sc_global, &stdpointer, nullptr, litlate(name));
-    sym->sb->attribs.inheritable.linkage = lk_virtual;
+    sym->sb->attribs.inheritable.linkage4 = lk_virtual;
     sym->sb->decoratedName = sym->name;
     sym->sb->allocate = true;
     sym->sb->attribs.inheritable.used = sym->sb->assigned = true;
@@ -3753,7 +3753,7 @@ static void handleInlines(SYMBOL* funcsp)
                     funcsp->sb->noinline = true;
             }
         }
-        if (funcsp->sb->attribs.inheritable.linkage == lk_virtual)
+        if (funcsp->sb->attribs.inheritable.linkage4 == lk_virtual)
         {
 
             SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
@@ -3927,7 +3927,7 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
                     funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
             }
         }
-        if (funcsp->sb->attribs.inheritable.linkage == lk_virtual || funcsp->sb->attribs.inheritable.isInline)
+        if (funcsp->sb->attribs.inheritable.linkage4 == lk_virtual || funcsp->sb->attribs.inheritable.isInline)
         {
             if (funcsp->sb->attribs.inheritable.isInline)
                 funcsp->sb->attribs.inheritable.linkage2 = lk_none;

@@ -540,6 +540,7 @@ struct attributes
         enum e_lk linkage;      /* stdcall */
         enum e_lk linkage2;     /* export, import, msil */
         enum e_lk linkage3;     /* used here for noreturn */
+        enum e_lk linkage4;     /* lk_virtual */
         struct sym* cleanup;    /* cleanup function */
         bool packed;            /* True if to reset alignment to 1 */
         bool alignedAttribute;  /* True if alignment came from gcc aligned attribute */

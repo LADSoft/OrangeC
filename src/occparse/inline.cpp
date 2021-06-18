@@ -138,7 +138,7 @@ void dumpInlines(void)
                                 {
                                     propagateTemplateDefinition(sym);
                                 }
-                                if ((sym->sb->attribs.inheritable.isInline || sym->sb->attribs.inheritable.linkage == lk_virtual
+                                if ((sym->sb->attribs.inheritable.isInline || sym->sb->attribs.inheritable.linkage4 == lk_virtual
                                     || sym->sb->forcedefault) &&
                                     sym->sb->inlineFunc.stmt)
                                 {
@@ -228,7 +228,7 @@ void dumpInlines(void)
                             sym->sb->didinline = true;
                             sym->sb->noextern = true;
                             sym->sb->storage_class = sc_global;
-                            sym->sb->attribs.inheritable.linkage = lk_virtual;
+                            sym->sb->attribs.inheritable.linkage4 = lk_virtual;
                             if (origsym->sb->deferredCompile)
                             {
                                 STRUCTSYM s1, s;
@@ -348,7 +348,7 @@ SYMBOL* getvc1Thunk(int offset)
         rv = SymAlloc();
         rv->name = rv->sb->decoratedName = litlate(name);
         rv->sb->storage_class = sc_static;
-        rv->sb->attribs.inheritable.linkage = lk_virtual;
+        rv->sb->attribs.inheritable.linkage4 = lk_virtual;
         rv->sb->offset = offset;
         rv->tp = &stdvoid;
         insert(rv, vc1Thunks);
@@ -630,7 +630,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case en_func:
             temp->v.func = nullptr;
             fp = node->v.func;
-            if (fp->sp->sb->attribs.inheritable.linkage == lk_virtual)
+            if (fp->sp->sb->attribs.inheritable.linkage4 == lk_virtual)
             {
                 // check for recursion
                 for (i = 0; i < inlinesp_count; i++)

@@ -46,6 +46,8 @@
 #include <set>
 #include <stdio.h>
 
+#pragma startup tlsStartup 255
+#pragma rundown tlsShutdown 1
 static int __rtlTlsIndex;
 
 static LocalAllocAllocator<__rtl_data> DataAllocator;
@@ -54,15 +56,21 @@ static LocalAllocAllocator<std::set<__rtl_data*, std::less<__rtl_data*>, LocalAl
 
 static std::set<__rtl_data*, std::less<__rtl_data*>, LocalAllocAllocator<__rtl_data*>>* RtlDataSet;
 
+static void tlsStartup()
+{
+    __rtlTlsIndex = TlsAlloc();
+}
+static void tlsShutdown()
+{
+    TlsFree(__rtlTlsIndex);
+}
 extern "C" void __threadinit(void)
 {
     RtlDataSet = SetAllocator.allocate(1);
     SetAllocator.construct(RtlDataSet);
-    __rtlTlsIndex = TlsAlloc();
 }
 extern "C" void __threadrundown(void)
 {
-    TlsFree(__rtlTlsIndex);
     SetAllocator.destroy(RtlDataSet);
     SetAllocator.deallocate(RtlDataSet, 1);
 }

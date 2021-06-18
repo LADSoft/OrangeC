@@ -1005,7 +1005,7 @@ static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac c
             Optimizer::my_sprintf(buf, "%s@_$vt", sp->sb->decoratedName);
             sp->sb->vtabsp = makeID(sc_static, &stdvoid, nullptr, litlate(buf));
             sp->sb->vtabsp->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
-            sp->sb->vtabsp->sb->attribs.inheritable.linkage = lk_virtual;
+            sp->sb->vtabsp->sb->attribs.inheritable.linkage4 = lk_virtual;
             sp->sb->vtabsp->sb->decoratedName = sp->sb->vtabsp->name;
             if (sp->sb->vtabsp->sb->attribs.inheritable.linkage2 == lk_import)
             {
@@ -5437,6 +5437,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
     enum e_lk linkage = lk_none;
     enum e_lk linkage2 = lk_none;
     enum e_lk linkage3 = lk_none;
+    enum e_lk linkage4 = lk_none;
     NAMESPACEVALUELIST* nsv = nullptr;
     SYMBOL* strSym = nullptr;
     Optimizer::ADDRESS address = 0;
@@ -5670,10 +5671,11 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                     }
                     if (linkage == lk_inline)
                     {
+                        linkage = lk_none;
                         if (Optimizer::cparams.prm_cplusplus)
-                            linkage = lk_virtual;
-                        else
-                            linkage = lk_none;
+                        {
+                            linkage4 = lk_virtual;
+                        }
                         if (sp)
                             sp->sb->attribs.inheritable.isInline = true;
                     }
@@ -5897,7 +5899,10 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         if (!asFriend)
                             sp->tp = tp1;
                         if (!sp->sb->instantiated)
+                        {
                             sp->sb->attribs.inheritable.linkage = linkage;
+                            sp->sb->attribs.inheritable.linkage4 = linkage4;
+                        }
                         if (ssp && ssp->sb->attribs.inheritable.linkage2 != lk_none && sp->sb->storage_class != sc_localstatic)
                         {
                             if (linkage2 != lk_none && !asFriend)
@@ -6074,9 +6079,9 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                     sp->sb->attribs.inheritable.linkage = lk_c;
                                 if (sp->sb->attribs.inheritable.linkage != sym->sb->attribs.inheritable.linkage &&
                                     ((sp->sb->attribs.inheritable.linkage != lk_cdecl &&
-                                      sp->sb->attribs.inheritable.linkage != lk_virtual) ||
+                                      sp->sb->attribs.inheritable.linkage4 != lk_virtual) ||
                                      (sym->sb->attribs.inheritable.linkage != lk_cdecl &&
-                                      sym->sb->attribs.inheritable.linkage != lk_virtual)) &&
+                                      sym->sb->attribs.inheritable.linkage4 != lk_virtual)) &&
                                     !sp->sb->attribs.inheritable.isInline && !sym->sb->attribs.inheritable.isInline)
                                 {
                                     preverrorsym(ERR_LINKAGE_MISMATCH_IN_FUNC_OVERLOAD, spi, spi->sb->declfile, spi->sb->declline);
@@ -6618,6 +6623,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                             sp->sb->attribs.inheritable.linkage = linkage;
                         if (linkage2 != lk_none)
                             sp->sb->attribs.inheritable.linkage2 = linkage2;
+                        if (linkage4 != lk_none)
+                            sp->sb->attribs.inheritable.linkage4 = linkage4;
                         if (linkage2 == lk_import)
                         {
                             sp->sb->importfile = importFile;
@@ -6698,7 +6705,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                 }
                                 if (storage_class_in != sc_member && TemplateFullySpecialized(sp->sb->parentClass))
                                 {
-                                    sp->sb->attribs.inheritable.linkage = lk_virtual;
+                                    sp->sb->attribs.inheritable.linkage4 = lk_virtual;
                                     lex = body(lex, sp);
                                 }
                                 else if (storage_class_in == sc_member || storage_class_in == sc_mutable ||

@@ -160,7 +160,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                         }
                         thunks[count].name = localsp = makeID(sc_static, &stdfunc, nullptr, litlate(buf));
                         localsp->sb->decoratedName = localsp->name;
-                        localsp->sb->attribs.inheritable.linkage = lk_virtual;
+                        localsp->sb->attribs.inheritable.linkage4 = lk_virtual;
                         Optimizer::genref(Optimizer::SymbolManager::Get(localsp), 0);
                         InsertInline(localsp);
                         count++;
@@ -779,7 +779,7 @@ void deferredCompileOne(SYMBOL* cur)
         Optimizer::LINEDATA *linesHeadOld = linesHead, *linesTailOld = linesTail;
         linesHead = linesTail = nullptr;
 
-        cur->sb->attribs.inheritable.linkage = lk_virtual;
+        cur->sb->attribs.inheritable.linkage4 = lk_virtual;
         if (cur->templateParams && cur->sb->templateLevel)
         {
             n.tmpl = cur->templateParams;
@@ -1011,7 +1011,7 @@ TYPE* PerformDeferredInitialization(TYPE* tp, SYMBOL* funcsp)
                 *tpx = sym->tp;
             }
         }
-        else if (sym->sb->templateLevel && (!sym->sb->instantiated || sym->sb->attribs.inheritable.linkage != lk_virtual) &&
+        else if (sym->sb->templateLevel && (!sym->sb->instantiated || sym->sb->attribs.inheritable.linkage4 != lk_virtual) &&
                  sym->templateParams && allTemplateArgsSpecified(sym, sym->templateParams->next))
         {
             sym = TemplateClassInstantiateInternal(sym, nullptr, false);
@@ -1019,7 +1019,7 @@ TYPE* PerformDeferredInitialization(TYPE* tp, SYMBOL* funcsp)
                 *tpx = sym->tp;
         }
         else if (!sym->sb->templateLevel && sym->sb->parentClass && sym->sb->parentClass->sb->templateLevel &&
-                 (!sym->sb->instantiated || sym->sb->attribs.inheritable.linkage != lk_virtual) &&
+                 (!sym->sb->instantiated || sym->sb->attribs.inheritable.linkage4 != lk_virtual) &&
                  sym->sb->parentClass->templateParams &&
                  allTemplateArgsSpecified(sym->sb->parentClass, sym->sb->parentClass->templateParams->next))
         {

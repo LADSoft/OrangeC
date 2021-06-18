@@ -47,6 +47,8 @@
 #include "inline.h"
 #include "iexpr.h"
 #include "libcxx.h"
+#include "declcons.h"
+
 namespace Parser
 {
 int inGetUserConversion;
@@ -2139,12 +2141,34 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
                     else if (isconst(tr))
                         return 1;
                 }
+                // if qualifiers are mismatched, choose a matching argument
+ 
+                bool va = isvolatile(ta);
+                bool vl = isvolatile(tl);
+                bool vr = isvolatile(tr);
+                bool ca = isconst(ta);
+                bool cl = isconst(tl);
+                bool cr = isconst(tr);
+                if (cl == cr && vl != vr)
+                {
+                    if (va == vl)
+                       return -1;
+                    else if (va == vr)
+                       return 1;
+                }
+                else if (vl == vr && cl != cr)
+                {
+                     if (ca == cl)
+                         return -1;
+                     else if (ca == cr)
+                         return 1;
+                }
             }
             else
             {
                 if (isref(tl) && isref(tr))
                 {
-                    // rref is better than const lref
+                    // const lref is better than rref
                     int refl = basetype(tl)->type;
                     int refr = basetype(tr)->type;
                     if (refl == bt_rref && refr == bt_lref && isconst(basetype(tr)->btp))
@@ -4469,6 +4493,14 @@ static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, Optimizer::LIST* 
         }
         gather = gather->next;
     }
+    int i;
+    for ( i = 0; i < n; i++)
+        if (spList[i] && !spList[i]->sb->deleted)
+            break;
+    if (i < n)
+        for (int i = 0; i < n; i++)
+            if (spList[i] && spList[i]->sb->deleted)
+                spList[i] = nullptr;
     return n;
 }
 static void doNames(SYMBOL* sym)

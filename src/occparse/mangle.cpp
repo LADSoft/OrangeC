@@ -975,11 +975,16 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage, bool isTemplateDefinition)
             linkage = lk_c;
         }
     }
+    else if (linkage == lk_stdcall)
+    {
+        if (sym->sb->parentClass)
+            linkage = lk_cpp;
+    }
     if (linkage == lk_auto && !Optimizer::cparams.prm_cplusplus)
         linkage = lk_c;
     if (linkage == lk_c && !Optimizer::cparams.prm_cmangle)
         linkage = lk_stdcall;
-    if (linkage == lk_virtual || linkage == lk_fastcall)
+    if (sym->sb->attribs.inheritable.linkage4 == lk_virtual || linkage == lk_fastcall)
     {
         if (Optimizer::cparams.prm_cplusplus)
             linkage = lk_cpp;

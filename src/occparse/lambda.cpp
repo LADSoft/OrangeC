@@ -530,7 +530,7 @@ static void createConverter(SYMBOL* self)
     func->tp->btp->rootType = func->tp->btp;
     func->tp->syms = CreateHashTable(1);
     func->sb->parentClass = lambdas->cls;
-    func->sb->attribs.inheritable.linkage = lk_virtual;
+    func->sb->attribs.inheritable.linkage4 = lk_virtual;
     func->sb->attribs.inheritable.isInline = true;
     func->sb->storage_class = sc_member;
     func->sb->castoperator = true;
@@ -1127,7 +1127,7 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     injectThisPtr(lambdas->func, basetype(lambdas->func->tp)->syms);
     lambdas->func->tp->btp = self->functp;
     lambdas->func->tp->rootType = lambdas->func->tp;
-    lambdas->func->sb->attribs.inheritable.linkage = lk_virtual;
+    lambdas->func->sb->attribs.inheritable.linkage4 = lk_virtual;
     lambdas->func->sb->attribs.inheritable.isInline = true;
     lambdas->templateFunctions = lambda_get_template_state(lambdas->func);
     ssl.str = self->cls;

@@ -676,7 +676,7 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
             crrqual++;
         name++;
     }
-    if (*name != 'p' && *name != 'P')
+    if (*name != 'p' && *name != 'P' && *name != 'q')
     {
         if (cconst)
             strcat(buf, tn_const);
@@ -1193,38 +1193,43 @@ char* unmangle(char* val, const char* name)
                     name = unmang_intrins(buf, name, last);
                     buf += strlen(buf);
                 }
-                else if (*(name + 1) == 'q')
-                {
-                    *buf = 0;
-                    name = unmang1(buf, name + 1, last, true);
-                    buf += strlen(buf);
-                }
-                else 
-                {
-                    name++;
-                    *buf++ = '<';
-                    while (*name && *name != '$')
+                else {
+                    const char* find = name + 1;
+                    while (*find == 'x' || *find == 'y')
+                        find++;
+                    if (*find == 'q')
                     {
                         *buf = 0;
-                        name = unmang1(buf, name, last, false);
+                        name = unmang1(buf, name + 1, last, true);
                         buf += strlen(buf);
-                        if (*name == '?')
-                        {
-                            char temp[5000];
-                            memset(temp, 0, sizeof(temp));
-                            name++;
-                            *buf++ = '=';
-                            *buf = 0;
-                            unmangleExpression(temp, &name);
-                            unmangle(buf, temp);
-                            buf += strlen(buf);
-                        }
-                        *buf++ = ',';
-                        *buf++ = ' ';
                     }
-                    buf[-2] = '>';
-                    buf--;
-                    *buf = 0;
+                    else
+                    {
+                        name++;
+                        *buf++ = '<';
+                        while (*name && *name != '$')
+                        {
+                            *buf = 0;
+                            name = unmang1(buf, name, last, false);
+                            buf += strlen(buf);
+                            if (*name == '?')
+                            {
+                                char temp[5000];
+                                memset(temp, 0, sizeof(temp));
+                                name++;
+                                *buf++ = '=';
+                                *buf = 0;
+                                unmangleExpression(temp, &name);
+                                unmangle(buf, temp);
+                                buf += strlen(buf);
+                            }
+                            *buf++ = ',';
+                            *buf++ = ' ';
+                        }
+                        buf[-2] = '>';
+                        buf--;
+                        *buf = 0;
+                    }
                 }
             }
             else if (*name == '@')

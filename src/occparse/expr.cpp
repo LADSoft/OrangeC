@@ -111,7 +111,7 @@ void thunkForImportTable(EXPRESSION** exp)
             newThunk = makeID(sc_global, &stdpointer, nullptr, litlate(buf));
             newThunk->sb->decoratedName = newThunk->name;
             newThunk->sb->mainsym = sym;  // mainsym is the symbol this was derived from
-            newThunk->sb->attribs.inheritable.linkage = lk_virtual;
+            newThunk->sb->attribs.inheritable.linkage4 = lk_virtual;
             newThunk->sb->importThunk = true;
             search = Allocate<Optimizer::LIST>();
             search->next = importThunks;
@@ -3166,9 +3166,10 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         // make numeric temp and perform cast
                         p->exp = createTemporary(sym->tp, p->exp);
                     }
-                    if (!isref(p->tp) && ((isconst(p->tp) && !isconst(basetype(sym->tp)->btp)) ||
-                                          (isvolatile(p->tp) && !isvolatile(basetype(sym->tp)->btp))))
-                        error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
+                    if (!isref(p->tp) &&
+                        ((isconst(p->tp) && !isconst(basetype(sym->tp)->btp)) || (isvolatile(p->tp) && !isvolatile(basetype(sym->tp)->btp))))
+                        if (basetype(sym->tp)->type != bt_rref) // converting const lref to rref is ok...
+                            error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
                     p->tp = sym->tp;
                 }
                 else if (isstructured(p->tp))

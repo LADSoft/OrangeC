@@ -2599,9 +2599,16 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
             {
                 sz = sizeFromType(node->v.ad->tp);
                 right = gen_expr(funcsp, node->v.ad->value, 0, sz);
+                if (right->mode != Optimizer::i_direct || right->offset->type != en_tempref)
+                {
+                    auto temp = Optimizer::tempreg(sizeFromType(node->v.ad->tp), 0);
+                    Optimizer::gen_icode(Optimizer::i_assn, temp, right, nullptr);
+                    right = temp;
+                }
                 av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
                 left = Optimizer::indnode(av, sz);
                 Optimizer::gen_icode(Optimizer::i_assn, left, right, nullptr);
+                Optimizer::intermed_tail->atomic = true;
                 barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
                 gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
                 rv = right;

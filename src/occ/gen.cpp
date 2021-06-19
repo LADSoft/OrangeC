@@ -3700,6 +3700,11 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
                 pushlevel -= 8;
             }
         }
+        else if (q->atomic && (q->ans->mode != Optimizer::i_direct || q->ans->offset->type != Optimizer::se_tempref))
+        {
+            // can't get here with floats...
+            gen_code(op_xchg, apa, apl);
+        }
         else if (q->ans->retval && q->ans->size >= ISZ_FLOAT)
         {
             if (Optimizer::fltexp)

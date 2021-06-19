@@ -1512,6 +1512,8 @@ void createDefaultConstructors(SYMBOL* sp)
                 if (pcls->sb->storage_class == sc_member || pcls->sb->storage_class == sc_mutable ||
                     pcls->sb->storage_class == sc_overloads)
                 {
+                    if (pcls->sb->memberInitializers)
+                        break;
                     if (isstructured(tp))
                     {
                         if (!basetype(tp)->sp->sb->trivialCons)

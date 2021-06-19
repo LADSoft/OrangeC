@@ -115,6 +115,7 @@ version 6.0.46:
     occ: constexpr constructors were being duplicated in the output files
     occ: better resolution for overload matching of mismatched qualifiers
     occ: allow __stdcall to work with templated functions
+    occ: fix bug where simple structure with member initializers wouldn't construct properly
     occil: various improvements to allow generated code to be decompiled
     occil: add runtime support for function pointer via delegate
     occil: fix bug in pinning

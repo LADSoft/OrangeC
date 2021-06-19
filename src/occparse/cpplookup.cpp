@@ -2380,6 +2380,7 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
     }
     else if (xl == user)
     {
+        TYPE* ta = atype, * tl = ltype, * tr = rtype;
         if (isref(ltype) && isref(rtype))
         {
             // rref is better than const lref
@@ -2478,6 +2479,32 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
         else if (seql[l] != CV_USER && seqr[r] == CV_USER)
         {
             return 1;
+        }
+        // if qualifiers are mismatched, choose a matching argument
+        if (tl && tr)
+        {
+            if (isref(tl))
+                tl = basetype(tl)->btp;
+            if (isref(tr))
+                tr = basetype(tr)->btp;
+            bool vl = isvolatile(tl);
+            bool vr = isvolatile(tr);
+            bool cl = isconst(tl);
+            bool cr = isconst(tr);
+            if (cl == cr && vl != vr)
+            {
+                if (vl)
+                    return 1;
+                else
+                    return -1;
+            }
+            else if (vl == vr && cl != cr)
+            {
+                if (l)
+                    return 1;
+                else
+                    return -1;
+            }
         }
     }
     // ellipse always returns 0;
@@ -2578,8 +2605,15 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                         }
                         else
                         {
-                            TYPE* tpl = hrl ? (hrl->p)->tp : nullptr;
-                            TYPE* tpr = hrr ? (hrr->p)->tp : nullptr;
+                            TYPE* tpl, * tpr;
+                            if (spList[i]->sb->castoperator)
+                                tpl = spList[i]->tp;
+                            else
+                                tpl = hrl ? (hrl->p)->tp : nullptr;
+                            if (spList[j]->sb->castoperator)
+                                tpr = spList[j]->tp;
+                            else
+                                tpr = hrr ? (hrr->p)->tp : nullptr;
                             if (tpl && tpr)
                                 arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, args ? args->tp : 0,
                                                             args ? args->exp : 0, funcList ? funcList[i][k] : nullptr,

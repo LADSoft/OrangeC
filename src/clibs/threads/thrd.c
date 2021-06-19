@@ -18,14 +18,14 @@ int __thrd_rel_delay(const struct timespec* xt)
     struct timespec xt2, xt3;
     xt3 = *xt;
     timespec_get(&xt2, TIME_UTC);
-    xt3.sec -= xt2.sec;
-    xt3.nsec -= xt2.nsec;
-    while (xt3.nsec < 0)
+    xt3.tv_sec -= xt2.tv_sec;
+    xt3.tv_nsec -= xt2.tv_nsec;
+    while (xt3.tv_nsec < 0)
     {
-        xt3.sec--;
-        xt3.nsec += 1000000000;
+        xt3.tv_sec--;
+        xt3.tv_nsec += 1000000000;
     }
-    int t = xt3.sec * 1000 + xt3.nsec / 1000000;
+    int t = xt3.tv_sec * 1000 + xt3.tv_nsec / 1000000;
     return t;
 }
 int _RTL_FUNC thrd_create(thrd_t* thr, thrd_start_t func, void* arg)
@@ -94,13 +94,13 @@ void _RTL_FUNC thrd_sleep(const struct timespec* xt, struct timespec* rv)
         int t = __thrd_rel_delay(xt);
         if (t < 0)
         {
-            rv->sec = 0;
-            rv->nsec = 0;
+            rv->tv_sec = 0;
+            rv->tv_nsec = 0;
         }
         else
         {
-            rv->sec = t / 1000;
-            rv->nsec = (t % 1000) * 1000000;
+            rv->tv_sec = t / 1000;
+            rv->tv_nsec = (t % 1000) * 1000000;
         }
     }
 }

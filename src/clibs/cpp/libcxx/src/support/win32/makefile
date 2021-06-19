@@ -1,0 +1,2 @@
+CPP_DEPENDENCIES = thread_win32.cpp
+all: $(DEPENDENCIES)

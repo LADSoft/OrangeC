@@ -37,4 +37,5 @@ CPP_DEPENDENCIES = $(wildcard *.cpp)
 H_FILES=$(wildcard *.h)
 
 all: $(DEPENDENCIES)
+	$(MAKE) -CSUPPORT
 $(eval $(FORMATTER))

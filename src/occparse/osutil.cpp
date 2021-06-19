@@ -582,6 +582,25 @@ void setglbdefs(void)
         preProcessor->Define("__cplusplus", "201402");
         if (Optimizer::cparams.prm_xcept)
             preProcessor->Define("__RTTI__", "1");
+        Optimizer::ARCH_SIZING* local_store_of_locks = Optimizer::chosenAssembler->arch->type_needsLock;
+
+        preProcessor->Define("ATOMIC_BOOL_LOCK_FREE", std::to_string((local_store_of_locks->a_bool == 0) ? 2 : 0)); // In our current system, 0 means always lock free, so change it to conform
+        preProcessor->Define("ATOMIC_CHAR_LOCK_FREE", std::to_string((local_store_of_locks->a_char == 0) ? 2 : 0));
+        preProcessor->Define("ATOMIC_WCHAR_T_LOCK_FREE", std::to_string((local_store_of_locks->a_wchar_t == 0) ? 2 : 0));
+        preProcessor->Define("ATOMIC_SHORT_LOCK_FREE", std::to_string((local_store_of_locks->a_short == 0) ? 2 : 0));
+        preProcessor->Define("ATOMIC_INT_LOCK_FREE", std::to_string((local_store_of_locks->a_int == 0) ? 2 : 0));
+        preProcessor->Define("ATOMIC_LONG_LOCK_FREE", std::to_string((local_store_of_locks->a_long == 0) ? 2 : 0));
+        preProcessor->Define("ATOMIC_LLONG_LOCK_FREE", std::to_string((local_store_of_locks->a_longlong == 0) ? 2 : 0));
+        preProcessor->Define("ATOMIC_POINTER_LOCK_FREE", std::to_string((local_store_of_locks->a_addr == 0) ? 2 : 0));
+
+        preProcessor->Define("ATOMIC_CHAR16_T_LOCK_FREE", std::to_string((local_store_of_locks->a_char16_t == 0) ? 2 : 0)); // temporary since this is how it's done internally, will fix when sizing is fixed
+        preProcessor->Define("ATOMIC_CHAR32_T_LOCK_FREE", std::to_string((local_store_of_locks->a_char32_t == 0) ? 2 : 0));
+        preProcessor->Define("__ATOMIC_RELAXED", std::to_string(Optimizer::e_mo::mo_relaxed));
+        preProcessor->Define("__ATOMIC_CONSUME", std::to_string(Optimizer::e_mo::mo_consume));
+        preProcessor->Define("__ATOMIC_ACQUIRE", std::to_string(Optimizer::e_mo::mo_acquire));
+        preProcessor->Define("__ATOMIC_RELEASE", std::to_string(Optimizer::e_mo::mo_release));
+        preProcessor->Define("__ATOMIC_ACQ_REL", std::to_string(Optimizer::e_mo::mo_acq_rel));
+        preProcessor->Define("__ATOMIC_SEQ_CST", std::to_string(Optimizer::e_mo::mo_seq_cst));
     }
     preProcessor->Define("__STDC__", "1");
 
@@ -591,13 +610,33 @@ void setglbdefs(void)
     preProcessor->Define("__need_wint_t", "1");
     preProcessor->Define("__need_malloc_and_calloc", "1");
 
-    if (Optimizer::cparams.prm_c99 || Optimizer::cparams.prm_c1x)
+    if (Optimizer::cparams.prm_c99 || Optimizer::cparams.prm_c1x || Optimizer::cparams.prm_cplusplus)
     {
         preProcessor->Define("__STDC_HOSTED__", Optimizer::chosenAssembler->hosted);  // hosted compiler, not embedded
     }
     if (Optimizer::cparams.prm_c1x)
     {
         preProcessor->Define("__STDC_VERSION__", "201112L");
+        Optimizer::ARCH_SIZING* local_store_of_locks = Optimizer::chosenAssembler->arch->type_needsLock;
+
+        preProcessor->Define("ATOMIC_BOOL_LOCK_FREE", std::to_string((local_store_of_locks->a_bool == 0) ? 2 : 0)); // In our current system, 0 means always lock free, so change it to conform
+        preProcessor->Define("ATOMIC_CHAR_LOCK_FREE", std::to_string((local_store_of_locks->a_char == 0) ? 2 : 0));
+        preProcessor->Define("ATOMIC_WCHAR_T_LOCK_FREE", std::to_string((local_store_of_locks->a_wchar_t == 0) ? 2 : 0));
+        preProcessor->Define("ATOMIC_SHORT_LOCK_FREE", std::to_string((local_store_of_locks->a_short == 0) ? 2 : 0));
+        preProcessor->Define("ATOMIC_INT_LOCK_FREE", std::to_string((local_store_of_locks->a_int == 0) ? 2 : 0));
+        preProcessor->Define("ATOMIC_LONG_LOCK_FREE", std::to_string((local_store_of_locks->a_long == 0) ? 2 : 0));
+        preProcessor->Define("ATOMIC_LLONG_LOCK_FREE", std::to_string((local_store_of_locks->a_longlong == 0) ? 2 : 0));
+        preProcessor->Define("ATOMIC_POINTER_LOCK_FREE", std::to_string((local_store_of_locks->a_addr == 0) ? 2 : 0));
+
+        preProcessor->Define("ATOMIC_CHAR16_T_LOCK_FREE", std::to_string((local_store_of_locks->a_char16_t == 0) ? 2 : 0)); // temporary since this is how it's done internally, will fix when sizing is fixed
+        preProcessor->Define("ATOMIC_CHAR32_T_LOCK_FREE", std::to_string((local_store_of_locks->a_char32_t == 0) ? 2 : 0));
+
+        preProcessor->Define("__ATOMIC_RELAXED", std::to_string(Optimizer::e_mo::mo_relaxed));
+        preProcessor->Define("__ATOMIC_CONSUME", std::to_string(Optimizer::e_mo::mo_consume));
+        preProcessor->Define("__ATOMIC_ACQUIRE", std::to_string(Optimizer::e_mo::mo_acquire));
+        preProcessor->Define("__ATOMIC_RELEASE", std::to_string(Optimizer::e_mo::mo_release));
+        preProcessor->Define("__ATOMIC_ACQ_REL", std::to_string(Optimizer::e_mo::mo_acq_rel));
+        preProcessor->Define("__ATOMIC_SEQ_CST", std::to_string(Optimizer::e_mo::mo_seq_cst));
     }
     else if (Optimizer::cparams.prm_c99)
     {

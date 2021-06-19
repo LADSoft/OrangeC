@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -68,7 +68,8 @@ Optimizer::LIST* importThunks;
 /*--------------------------------------------------------------------------------------------------------------------------------
  */
 static EXPRESSION* nodeSizeof(TYPE* tp, EXPRESSION* exp, int flags = 0);
-static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
+static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable,
+                                   int flags);
 static LEXLIST* expression_pm(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
 LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
 static LEXLIST* expression_msilfunc(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags);
@@ -473,7 +474,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                 case kw_template:
                     lex = prevsym(placeholder);
                     *tp = nullptr;
-                    if ((flags & (_F_SIZEOF | _F_PACKABLE))== (_F_SIZEOF | _F_PACKABLE))
+                    if ((flags & (_F_SIZEOF | _F_PACKABLE)) == (_F_SIZEOF | _F_PACKABLE))
                     {
                         *exp = varNode(en_templateparam, sym);
                         *tp = sym->tp;
@@ -616,240 +617,240 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             {
                 switch (sym->sb->storage_class)
                 {
-                case sc_mutable:
-                    if (ismutable)
-                        *ismutable = true;
-                case sc_member:
-                    /*
-                    if (flags & _F_SIZEOF)
-                    {
-                        *exp = intNode(en_c_i, 0);
-                    }
-                    else
-                    */
-                    if (Optimizer::cparams.prm_cplusplus && (flags & _F_AMPERSAND) && strSym)
-                    {
-                        *exp = getMemberPtr(sym, strSym, tp, funcsp);
-                    }
-                    else
-                    {
-                        *exp = getMemberNode(sym, strSym, tp, funcsp);
-                    }
-                    break;
-                case sc_type:
-                case sc_typedef:
-                    lex = prevsym(placeholder);
-                    *tp = nullptr;
-                    lex = expression_func_type_cast(lex, funcsp, tp, exp, flags);
-                    if (!*exp)
-                        *exp = intNode(en_c_i, 0);
-                    return lex;
-                case sc_overloads:
-                    hr = basetype(sym->tp)->syms->table[0];
-                    funcparams = Allocate<FUNCTIONCALL>();
-                    if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, lt))
-                    {
-                        lex = GetTemplateArguments(lex, funcsp, sym, &funcparams->templateParams);
-                        funcparams->astemplate = true;
-                    }
-                    if (hr->next || Optimizer::cparams.prm_cplusplus)
-                    {
-                        funcparams->ascall = MATCHKW(lex, openpa);
-                        funcparams->sp = sym;
-                    }
-                    else
-                    {
-                        // we only get here for C language, sadly we have to do
-                        // argument based lookup in C++...
-                        funcparams->sp = hr->p;
-                        funcparams->sp->sb->attribs.inheritable.used = true;
-                        funcparams->fcall = varNode(en_pc, funcparams->sp);
-                        if (!MATCHKW(lex, openpa))
-                            funcparams->sp->sb->dumpInlineToFile = funcparams->sp->sb->attribs.inheritable.isInline;
-                    }
-                    funcparams->functp = funcparams->sp->tp;
-                    *tp = funcparams->sp->tp;
-                    funcparams->asaddress = !!(flags & _F_AMPERSAND);
-                    if (Optimizer::cparams.prm_cplusplus && ismember(basetype(*tp)->sp) && !MATCHKW(lex, openpa))
-                    {
-                        EXPRESSION* exp1 = Allocate<EXPRESSION>();
-                        exp1->type = en_memberptr;
-                        exp1->left = *exp;
-                        exp1->v.sp = funcparams->sp;
-                        *exp = exp1;
-                        getMemberPtr(sym, strSym, tp, funcsp);
-                    }
-                    else
-                    {
-                        *exp = varNode(en_func, nullptr);
-                        (*exp)->v.func = funcparams;
-                    }
-                    break;
-                case sc_catchvar:
-                    makeXCTab(funcsp);
-                    *exp = varNode(en_auto, funcsp->sb->xc->xctab);
-                    *exp = exprNode(en_add, *exp, intNode(en_c_i, XCTAB_INSTANCE_OFS));
-                    deref(&stdpointer, exp);
-                    break;
-                case sc_enumconstant:
-                    *exp = intNode(en_c_i, sym->sb->value.i);
-                    break;
-                case sc_constant:
-                    *exp = varNode(en_const, sym);
-                    break;
-                case sc_auto:
-                case sc_register: /* register variables are treated as
-                                   * auto variables in this compiler
-                                   * of course the usage restraints of the
-                                   * register keyword are enforced elsewhere
-                                   */
-                    *exp = varNode(en_auto, sym);
-                    sym->sb->anyTry |= tryLevel != 0;
-                    break;
-                case sc_parameter:
-                    if (sym->packed)
-                    {
-                        if (!(flags & _F_PACKABLE))
-                            error(ERR_PACK_SPECIFIER_MUST_BE_USED_IN_ARGUMENT);
-                        if (packIndex >= 0)
+                    case sc_mutable:
+                        if (ismutable)
+                            *ismutable = true;
+                    case sc_member:
+                        /*
+                        if (flags & _F_SIZEOF)
                         {
-                            TYPE* tp1 = sym->tp;
-                            TEMPLATEPARAMLIST* templateParam;
-                            int i;
-                            while (ispointer(tp1) || isref(tp1))
-                                tp1 = basetype(tp1)->btp;
-                            tp1 = basetype(tp1);
-                            if (tp1->type == bt_templateparam)
+                            *exp = intNode(en_c_i, 0);
+                        }
+                        else
+                        */
+                        if (Optimizer::cparams.prm_cplusplus && (flags & _F_AMPERSAND) && strSym)
+                        {
+                            *exp = getMemberPtr(sym, strSym, tp, funcsp);
+                        }
+                        else
+                        {
+                            *exp = getMemberNode(sym, strSym, tp, funcsp);
+                        }
+                        break;
+                    case sc_type:
+                    case sc_typedef:
+                        lex = prevsym(placeholder);
+                        *tp = nullptr;
+                        lex = expression_func_type_cast(lex, funcsp, tp, exp, flags);
+                        if (!*exp)
+                            *exp = intNode(en_c_i, 0);
+                        return lex;
+                    case sc_overloads:
+                        hr = basetype(sym->tp)->syms->table[0];
+                        funcparams = Allocate<FUNCTIONCALL>();
+                        if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, lt))
+                        {
+                            lex = GetTemplateArguments(lex, funcsp, sym, &funcparams->templateParams);
+                            funcparams->astemplate = true;
+                        }
+                        if (hr->next || Optimizer::cparams.prm_cplusplus)
+                        {
+                            funcparams->ascall = MATCHKW(lex, openpa);
+                            funcparams->sp = sym;
+                        }
+                        else
+                        {
+                            // we only get here for C language, sadly we have to do
+                            // argument based lookup in C++...
+                            funcparams->sp = hr->p;
+                            funcparams->sp->sb->attribs.inheritable.used = true;
+                            funcparams->fcall = varNode(en_pc, funcparams->sp);
+                            if (!MATCHKW(lex, openpa))
+                                funcparams->sp->sb->dumpInlineToFile = funcparams->sp->sb->attribs.inheritable.isInline;
+                        }
+                        funcparams->functp = funcparams->sp->tp;
+                        *tp = funcparams->sp->tp;
+                        funcparams->asaddress = !!(flags & _F_AMPERSAND);
+                        if (Optimizer::cparams.prm_cplusplus && ismember(basetype(*tp)->sp) && !MATCHKW(lex, openpa))
+                        {
+                            EXPRESSION* exp1 = Allocate<EXPRESSION>();
+                            exp1->type = en_memberptr;
+                            exp1->left = *exp;
+                            exp1->v.sp = funcparams->sp;
+                            *exp = exp1;
+                            getMemberPtr(sym, strSym, tp, funcsp);
+                        }
+                        else
+                        {
+                            *exp = varNode(en_func, nullptr);
+                            (*exp)->v.func = funcparams;
+                        }
+                        break;
+                    case sc_catchvar:
+                        makeXCTab(funcsp);
+                        *exp = varNode(en_auto, funcsp->sb->xc->xctab);
+                        *exp = exprNode(en_add, *exp, intNode(en_c_i, XCTAB_INSTANCE_OFS));
+                        deref(&stdpointer, exp);
+                        break;
+                    case sc_enumconstant:
+                        *exp = intNode(en_c_i, sym->sb->value.i);
+                        break;
+                    case sc_constant:
+                        *exp = varNode(en_const, sym);
+                        break;
+                    case sc_auto:
+                    case sc_register: /* register variables are treated as
+                                       * auto variables in this compiler
+                                       * of course the usage restraints of the
+                                       * register keyword are enforced elsewhere
+                                       */
+                        *exp = varNode(en_auto, sym);
+                        sym->sb->anyTry |= tryLevel != 0;
+                        break;
+                    case sc_parameter:
+                        if (sym->packed)
+                        {
+                            if (!(flags & _F_PACKABLE))
+                                error(ERR_PACK_SPECIFIER_MUST_BE_USED_IN_ARGUMENT);
+                            if (packIndex >= 0)
                             {
-                                templateParam = tp1->templateParam->p->byPack.pack;
-                                for (i = 0; i < packIndex && templateParam; i++)
-                                    templateParam = templateParam->next;
-                                if (templateParam)
+                                TYPE* tp1 = sym->tp;
+                                TEMPLATEPARAMLIST* templateParam;
+                                int i;
+                                while (ispointer(tp1) || isref(tp1))
+                                    tp1 = basetype(tp1)->btp;
+                                tp1 = basetype(tp1);
+                                if (tp1->type == bt_templateparam)
                                 {
-                                    sym = templateParam->p->packsym;
-                                    *tp = sym->tp;
-                                    *exp = varNode(en_auto, sym);
+                                    templateParam = tp1->templateParam->p->byPack.pack;
+                                    for (i = 0; i < packIndex && templateParam; i++)
+                                        templateParam = templateParam->next;
+                                    if (templateParam)
+                                    {
+                                        sym = templateParam->p->packsym;
+                                        *tp = sym->tp;
+                                        *exp = varNode(en_auto, sym);
+                                    }
+                                    else
+                                    {
+                                        *exp = intNode(en_packedempty, 0);
+                                    }
                                 }
                                 else
                                 {
-                                    *exp = intNode(en_packedempty, 0);
+                                    SYMLIST* found = nullptr;
+                                    HASHTABLE* tables = localNameSpace->valueData->syms;
+                                    while (tables && !found)
+                                    {
+                                        SYMLIST* hr = tables->table[0];
+                                        while (hr && !found)
+                                        {
+                                            if (hr->p == sym)
+                                                found = hr;
+                                            hr = hr->next;
+                                        }
+                                        tables = tables->next;
+                                    }
+                                    if (found)
+                                    {
+                                        int i;
+                                        for (i = 0; found && i < packIndex; i++)
+                                            found = found->next;
+                                        if (found)
+                                        {
+                                            sym = found->p;
+                                        }
+                                        *exp = varNode(en_auto, sym);
+                                        *tp = sym->tp;
+                                    }
+                                    else
+                                    {
+                                        *exp = intNode(en_packedempty, 0);
+                                    }
                                 }
                             }
                             else
                             {
-                                SYMLIST* found = nullptr;
-                                HASHTABLE* tables = localNameSpace->valueData->syms;
-                                while (tables && !found)
-                                {
-                                    SYMLIST* hr = tables->table[0];
-                                    while (hr && !found)
-                                    {
-                                        if (hr->p == sym)
-                                            found = hr;
-                                        hr = hr->next;
-                                    }
-                                    tables = tables->next;
-                                }
-                                if (found)
-                                {
-                                    int i;
-                                    for (i = 0; found && i < packIndex; i++)
-                                        found = found->next;
-                                    if (found)
-                                    {
-                                        sym = found->p;
-                                    }
-                                    *exp = varNode(en_auto, sym);
-                                    *tp = sym->tp;
-                                }
-                                else
-                                {
-                                    *exp = intNode(en_packedempty, 0);
-                                }
+                                *exp = varNode(en_auto, sym);
                             }
                         }
                         else
                         {
                             *exp = varNode(en_auto, sym);
                         }
-                    }
-                    else
-                    {
-                        *exp = varNode(en_auto, sym);
-                    }
-                    /* derefereance parameters which are declared as arrays */
-                    {
-                        TYPE* tpa = basetype(sym->tp);
-                        if (isref(tpa))
-                            tpa = basetype(tpa->btp);
-                        if (tpa->array)
-                            deref(&stdpointer, exp);
-                    }
-                    sym->sb->anyTry |= tryLevel != 0;
-                    break;
-
-                case sc_localstatic:
-                    tagNonConst(funcsp, sym->tp);
-                    if (funcsp && funcsp->sb->attribs.inheritable.isInline)
-                    {
-                        if (funcsp->sb->promotedToInline || Optimizer::cparams.prm_cplusplus)
+                        /* derefereance parameters which are declared as arrays */
                         {
-                            funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
+                            TYPE* tpa = basetype(sym->tp);
+                            if (isref(tpa))
+                                tpa = basetype(tpa->btp);
+                            if (tpa->array)
+                                deref(&stdpointer, exp);
                         }
-                    }
-                    if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
-                    {
+                        sym->sb->anyTry |= tryLevel != 0;
+                        break;
+
+                    case sc_localstatic:
+                        tagNonConst(funcsp, sym->tp);
+                        if (funcsp && funcsp->sb->attribs.inheritable.isInline)
+                        {
+                            if (funcsp->sb->promotedToInline || Optimizer::cparams.prm_cplusplus)
+                            {
+                                funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile =
+                                    funcsp->sb->promotedToInline = false;
+                            }
+                        }
+                        if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
+                        {
+                            funcsp->sb->nonConstVariableUsed = true;
+                            *exp = varNode(en_threadlocal, sym);
+                        }
+                        else
+                        {
+                            *exp = varNode(en_global, sym);
+                        }
+                        sym->sb->attribs.inheritable.used = true;
+                        break;
+                    case sc_absolute:
                         funcsp->sb->nonConstVariableUsed = true;
-                        *exp = varNode(en_threadlocal, sym);
+                        *exp = varNode(en_absolute, sym);
+                        break;
+                    case sc_static:
+                        sym->sb->attribs.inheritable.used = true;
+                    case sc_global:
+                    case sc_external: {
+                        tagNonConst(funcsp, sym->tp);
+                        SYMBOL* tpl = sym;
+                        while (tpl)
+                        {
+                            if (tpl->sb->templateLevel)
+                                break;
+                            tpl = tpl->sb->parentClass;
+                        }
+                        if (tpl && tpl->sb->instantiated)
+                        {
+                            TemplateDataInstantiate(sym, false, false);
+                        }
+                        if (sym->sb->parentClass && !isExpressionAccessible(nullptr, sym, funcsp, nullptr, false))
+                            errorsym(ERR_CANNOT_ACCESS, sym);
+                        if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
+                            *exp = varNode(en_threadlocal, sym);
+                        else
+                            *exp = varNode(en_global, sym);
+                        if (sym->sb->attribs.inheritable.linkage2 == lk_import)
+                        {
+                            deref(&stdpointer, exp);
+                        }
+                        break;
                     }
-                    else
-                    {
-                        *exp = varNode(en_global, sym);
-                    }
-                    sym->sb->attribs.inheritable.used = true;
-                    break;
-                case sc_absolute:
-                    funcsp->sb->nonConstVariableUsed = true;
-                    *exp = varNode(en_absolute, sym);
-                    break;
-                case sc_static:
-                    sym->sb->attribs.inheritable.used = true;
-                case sc_global:
-                case sc_external:
-                {
-                    tagNonConst(funcsp, sym->tp);
-                    SYMBOL* tpl = sym;
-                    while (tpl)
-                    {
-                        if (tpl->sb->templateLevel)
-                            break;
-                        tpl = tpl->sb->parentClass;
-                    }
-                    if (tpl && tpl->sb->instantiated)
-                    {
-                        TemplateDataInstantiate(sym, false, false);
-                    }
-                    if (sym->sb->parentClass && !isExpressionAccessible(nullptr, sym, funcsp, nullptr, false))
-                        errorsym(ERR_CANNOT_ACCESS, sym);
-                    if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
-                        *exp = varNode(en_threadlocal, sym);
-                    else
-                        *exp = varNode(en_global, sym);
-                    if (sym->sb->attribs.inheritable.linkage2 == lk_import)
-                    {
-                        deref(&stdpointer, exp);
-                    }
-                    break;
-                }
-                case sc_namespace:
-                case sc_namespacealias:
-                    errorsym(ERR_INVALID_USE_OF_NAMESPACE, sym);
-                    *exp = intNode(en_c_i, 1);
-                    break;
-                default:
-                    error(ERR_IDENTIFIER_EXPECTED);
-                    *exp = intNode(en_c_i, 1);
-                    break;
+                    case sc_namespace:
+                    case sc_namespacealias:
+                        errorsym(ERR_INVALID_USE_OF_NAMESPACE, sym);
+                        *exp = intNode(en_c_i, 1);
+                        break;
+                    default:
+                        error(ERR_IDENTIFIER_EXPECTED);
+                        *exp = intNode(en_c_i, 1);
+                        break;
                 }
             }
             else
@@ -1090,7 +1091,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                 {
                     char buf[4000];
                     buf[0] = 0;
-                    LEXLIST *find = placeholder;
+                    LEXLIST* find = placeholder;
                     while (lex != find)
                     {
                         if (ISKW(find))
@@ -1234,7 +1235,9 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
         }
         *tp = &stdvoid;
     }
-    else if (!isstructured(*tp) || (points && !ispointer(typein)) || (parsingTrailingReturnOrUsing && isstructured(*tp) && templateNestingCount && !instantiatingTemplate && basetype(*tp)->sp->sb->templateLevel))
+    else if (!isstructured(*tp) || (points && !ispointer(typein)) ||
+             (parsingTrailingReturnOrUsing && isstructured(*tp) && templateNestingCount && !instantiatingTemplate &&
+              basetype(*tp)->sp->sb->templateLevel))
     {
         if (Optimizer::cparams.prm_cplusplus && ISKW(lex) && (lex->data->kw->tokenTypes & TT_BASETYPE))
         {
@@ -1287,7 +1290,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
         else if (templateNestingCount && Optimizer::cparams.prm_cplusplus)
         {
             *exp = exprNode(points ? en_pointsto : en_dot, *exp, nullptr);
-            EXPRESSION **ptr = &(*exp)->right;
+            EXPRESSION** ptr = &(*exp)->right;
             while (ISID(lex) || MATCHKW(lex, kw_operator))
             {
                 TYPE* tp2 = nullptr;
@@ -1663,26 +1666,26 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
         if (points && ispointer(typein))
             typein = basetype(typein)->btp;
 
-/*
-        if (isconst(typein) && !isconst(*tp))
-        {
-            TYPE* p = Allocate<TYPE>();
-            p->type = bt_const;
-            p->btp = *tp;
-            p->rootType = (*tp)->rootType;
-            p->size = p->btp->size;
-            (*tp) = p;
-        }
-        if (isvolatile(typein) && !isvolatile(*tp))
-        {
-            TYPE* p = Allocate<TYPE>();
-            p->type = bt_volatile;
-            p->btp = *tp;
-            p->rootType = (*tp)->rootType;
-            p->size = p->btp->size;
-            (*tp) = p;
-        }
-*/
+        /*
+                if (isconst(typein) && !isconst(*tp))
+                {
+                    TYPE* p = Allocate<TYPE>();
+                    p->type = bt_const;
+                    p->btp = *tp;
+                    p->rootType = (*tp)->rootType;
+                    p->size = p->btp->size;
+                    (*tp) = p;
+                }
+                if (isvolatile(typein) && !isvolatile(*tp))
+                {
+                    TYPE* p = Allocate<TYPE>();
+                    p->type = bt_volatile;
+                    p->btp = *tp;
+                    p->rootType = (*tp)->rootType;
+                    p->size = p->btp->size;
+                    (*tp) = p;
+                }
+        */
     }
     return lex;
 }
@@ -1691,7 +1694,8 @@ TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr)
     if (tp->type == bt_aggregate)
     {
         SYMLIST* hr = tp->syms->table[0];
-        if (memberptr && hr->p->sb->parentClass && hr->p->sb->storage_class != sc_static && hr->p->sb->storage_class != sc_global && hr->p->sb->storage_class != sc_external)
+        if (memberptr && hr->p->sb->parentClass && hr->p->sb->storage_class != sc_static && hr->p->sb->storage_class != sc_global &&
+            hr->p->sb->storage_class != sc_external)
         {
             EXPRESSION* rv;
             TYPE* tpq = Allocate<TYPE>();
@@ -1870,7 +1874,7 @@ static LEXLIST* expression_bracket(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                         }
                         else
                         {
-                            TYPE *tp1 = *tp;
+                            TYPE* tp1 = *tp;
                             int n = tp1->size;
                             while (isarray(tp1))
                                 tp1 = tp1->btp;
@@ -1929,7 +1933,7 @@ static LEXLIST* expression_bracket(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                         }
                         else
                         {
-                            TYPE *tp1 = *tp;
+                            TYPE* tp1 = *tp;
                             int n = tp1->size;
                             while (isarray(tp1))
                                 tp1 = tp1->btp;
@@ -2210,8 +2214,9 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                 }
                 else if (ispointer(list->tp))
                 {
-                
-                    if (Optimizer::architecture == ARCHITECTURE_MSIL && (list->exp->type != en_auto || !list->exp->v.sp->sb->va_typeof) && !params->vararg)
+
+                    if (Optimizer::architecture == ARCHITECTURE_MSIL &&
+                        (list->exp->type != en_auto || !list->exp->v.sp->sb->va_typeof) && !params->vararg)
                         cast(&stdint, &list->exp);
                 }
                 if (dest && list && list->tp && basetype(dest)->type != bt_memberptr && !comparetypes(dest, list->tp, true))
@@ -2260,7 +2265,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
         errorsym(ERR_PARAMETER_LIST_TOO_SHORT, params->sp);
 }
 static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, enum e_kw finish, bool allowNesting, bool allowPack,
-                               bool toErr, int flags)
+                                bool toErr, int flags)
 {
     *lptr = nullptr;
     lex = getsym(); /* past ( */
@@ -2884,7 +2889,8 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         TYPE* ctype = sp->tp;
                         EXPRESSION* dexp = thisptr;
                         p->exp = thisptr;
-                        callConstructorParam(&ctype, &p->exp, pinit ? pinit->tp : nullptr, pinit? pinit->exp : nullptr, true, true, implicit, false, true);
+                        callConstructorParam(&ctype, &p->exp, pinit ? pinit->tp : nullptr, pinit ? pinit->exp : nullptr, true, true,
+                                             implicit, false, true);
                         if (!isref(sym->tp))
                         {
                             sp->sb->stackblock = true;
@@ -3410,7 +3416,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
         lptr = &(*lptr)->next;
     }
 }
-static TEMPLATEPARAMLIST *LiftTemplateParams(TEMPLATEPARAMLIST* tpl)
+static TEMPLATEPARAMLIST* LiftTemplateParams(TEMPLATEPARAMLIST* tpl)
 {
     TEMPLATEPARAMLIST *rv = nullptr, **last = &rv;
     while (tpl)
@@ -3420,7 +3426,8 @@ static TEMPLATEPARAMLIST *LiftTemplateParams(TEMPLATEPARAMLIST* tpl)
         (*last)->p = Allocate<TEMPLATEPARAM>();
         *(*last)->p = *tpl->p;
         TEMPLATEPARAMLIST* temp = tpl;
-        if (tpl->p->type == kw_typename && !tpl->p->packed && tpl->p->byClass.dflt && basetype(tpl->p->byClass.dflt)->type == bt_templateparam)
+        if (tpl->p->type == kw_typename && !tpl->p->packed && tpl->p->byClass.dflt &&
+            basetype(tpl->p->byClass.dflt)->type == bt_templateparam)
         {
             (*last)->p = Allocate<TEMPLATEPARAM>();
             temp = basetype(tpl->p->byClass.dflt)->templateParam;
@@ -3442,7 +3449,7 @@ static TEMPLATEPARAMLIST *LiftTemplateParams(TEMPLATEPARAMLIST* tpl)
             {
                 if (s->tmpl)
                 {
-                    TEMPLATEPARAMLIST *tpl1 = s->tmpl;
+                    TEMPLATEPARAMLIST* tpl1 = s->tmpl;
                     while (tpl1 && !rv)
                     {
                         if (tpl1->argsym && !strcmp(tpl1->argsym->name, (*last)->argsym->name))
@@ -3457,7 +3464,7 @@ static TEMPLATEPARAMLIST *LiftTemplateParams(TEMPLATEPARAMLIST* tpl)
                 if ((*last)->p->packed)
                 {
                     (*last)->p->byPack.pack = nullptr;
-                    TEMPLATEPARAMLIST**next = &(*last)->p->byPack.pack;
+                    TEMPLATEPARAMLIST** next = &(*last)->p->byPack.pack;
                     for (auto tpl2 = rv->p->byPack.pack; tpl2; tpl2 = tpl2->next)
                     {
                         (*next) = Allocate<TEMPLATEPARAMLIST>();
@@ -3663,7 +3670,9 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         // we may get here with the overload resolution already done, e.g.
         // for operator or cast function calls...
         // also if in a trailing return we want to defer the lookup until later if there are going to be multiple choices...
-        if (funcparams->sp->sb->storage_class == sc_overloads && (!parsingTrailingReturnOrUsing || funcparams->sp->tp->type != bt_aggregate || !funcparams->sp->tp->syms->table[0]->next))
+        if (funcparams->sp->sb->storage_class == sc_overloads &&
+            (!parsingTrailingReturnOrUsing || funcparams->sp->tp->type != bt_aggregate ||
+             !funcparams->sp->tp->syms->table[0]->next))
         {
             TYPE* tp1;
             // note at this pointer the arglist does NOT have the this pointer,
@@ -3711,38 +3720,38 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                         }
                         else if (classRefCount(sym->sb->parentClass, funcsp->sb->parentClass) != 1)
                         {
-                        errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sym->sb->parentClass, funcsp->sb->parentClass);
+                            errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sym->sb->parentClass, funcsp->sb->parentClass);
                         }
                         else if (funcsp->sb->storage_class == sc_member || funcsp->sb->storage_class == sc_virtual)
                         {
-                        TYPE** cur;
-                        funcparams->thisptr = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);
-                        deref(&stdpointer, &funcparams->thisptr);
-                        funcparams->thisptr =
-                            DerivedToBase(sym->sb->parentClass->tp, basetype(funcparams->thisptr->left->v.sp->tp)->btp,
-                                funcparams->thisptr, _F_VALIDPOINTER);
-                        funcparams->thistp = Allocate<TYPE>();
-                        cur = &funcparams->thistp->btp;
-                        funcparams->thistp->type = bt_pointer;
-                        funcparams->thistp->size = getSize(bt_pointer);
-                        if (isconst(sym->tp))
-                        {
-                            (*cur) = Allocate<TYPE>();
-                            (*cur)->type = bt_const;
-                            (*cur)->size = sym->sb->parentClass->tp->size;
-                            cur = &(*cur)->btp;
-                        }
-                        if (isvolatile(sym->tp))
-                        {
-                            (*cur) = Allocate<TYPE>();
-                            (*cur)->type = bt_volatile;
-                            (*cur)->size = sym->sb->parentClass->tp->size;
-                            cur = &(*cur)->btp;
-                        }
-                        *cur = sym->sb->parentClass->tp;
-                        UpdateRootTypes(funcparams->thistp->btp);
-                        cppCast(((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p)->tp, &funcparams->thistp,
-                            &funcparams->thisptr);
+                            TYPE** cur;
+                            funcparams->thisptr = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);
+                            deref(&stdpointer, &funcparams->thisptr);
+                            funcparams->thisptr =
+                                DerivedToBase(sym->sb->parentClass->tp, basetype(funcparams->thisptr->left->v.sp->tp)->btp,
+                                              funcparams->thisptr, _F_VALIDPOINTER);
+                            funcparams->thistp = Allocate<TYPE>();
+                            cur = &funcparams->thistp->btp;
+                            funcparams->thistp->type = bt_pointer;
+                            funcparams->thistp->size = getSize(bt_pointer);
+                            if (isconst(sym->tp))
+                            {
+                                (*cur) = Allocate<TYPE>();
+                                (*cur)->type = bt_const;
+                                (*cur)->size = sym->sb->parentClass->tp->size;
+                                cur = &(*cur)->btp;
+                            }
+                            if (isvolatile(sym->tp))
+                            {
+                                (*cur) = Allocate<TYPE>();
+                                (*cur)->type = bt_volatile;
+                                (*cur)->size = sym->sb->parentClass->tp->size;
+                                cur = &(*cur)->btp;
+                            }
+                            *cur = sym->sb->parentClass->tp;
+                            UpdateRootTypes(funcparams->thistp->btp);
+                            cppCast(((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p)->tp, &funcparams->thistp,
+                                    &funcparams->thisptr);
                         }
                     }
                 }
@@ -3750,9 +3759,9 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         }
         else
         {
-        operands = !ismember(funcparams->sp) && funcparams->thisptr && !addedThisPointer;
-        if (!isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr,
-            funcparams->sp, funcsp, funcparams->thisptr, false))
+            operands = !ismember(funcparams->sp) && funcparams->thisptr && !addedThisPointer;
+            if (!isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, funcparams->sp, funcsp, funcparams->thisptr,
+                                        false))
                 errorsym(ERR_CANNOT_ACCESS, funcparams->sp);
         }
         if (sym)
@@ -3761,13 +3770,11 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
             *tp = sym->tp;
             if (hasThisPtr)
             {
-                test = isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, sym, funcsp, funcparams->thisptr,
-                    false);
+                test = isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, sym, funcsp, funcparams->thisptr, false);
             }
             else
             {
-                test = isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, sym,
-                    funcsp, funcparams->thisptr, false);
+                test = isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, sym, funcsp, funcparams->thisptr, false);
             }
             if (!test)
             {
@@ -4004,7 +4011,8 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                             exp_in->v.t.tp = funcparams->returnSP->tp;
 
                             expx = funcparams->returnEXP;
-                            callDestructor(basetype(funcparams->returnSP->tp)->sp, nullptr, &expx, nullptr, true, false, true, true);
+                            callDestructor(basetype(funcparams->returnSP->tp)->sp, nullptr, &expx, nullptr, true, false, true,
+                                           true);
                             initInsert(&funcparams->returnSP->sb->dest, funcparams->returnSP->tp, expx, 0, true);
                         }
                     }
@@ -4605,6 +4613,51 @@ static bool getSuffixedNumber(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
     errorstr(ERR_COULD_NOT_FIND_A_MATCH_FOR_LITERAL_SUFFIX, lex->data->suffix);
     return false;
 }
+static Parser::LEXLIST* atomic_modify_specific_op(Parser::LEXLIST* lex, Parser::SYMBOL* funcsp, Parser::TYPE** tp,
+                                                  Parser::TYPE** typf, Parser::ATOMICDATA* d, int flags, Parser::e_kw function, bool fetch_first)
+{
+    Parser::TYPE* tpf = *typf;
+    lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->address, nullptr, flags);
+    if (tpf)
+    {
+        if (!ispointer(tpf))
+        {
+            error(ERR_DEREF);
+            d->tp = *tp = &stdint;
+        }
+        else
+        {
+            d->tp = *tp = basetype(tpf)->btp;
+        }
+    }
+    d->third = intNode(en_c_i, function);
+    if (needkw(&lex, comma))
+    {
+        lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->value, nullptr, flags);
+        if (!comparetypes(tpf, *tp, false))
+        {
+            error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+        }
+    }
+    else
+    {
+        *tp = &stdint;
+        d->value = intNode(en_c_i, 0);
+    }
+    if (needkw(&lex, comma))
+    {
+        lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->memoryOrder1, nullptr, flags);
+    }
+    else
+    {
+        tpf = &stdint;
+        d->memoryOrder1 = intNode(en_c_i, Optimizer::mo_seq_cst);
+    }
+    d->atomicOp = fetch_first ? Optimizer::e_ao::ao_fetch_modify : Optimizer::e_ao::ao_modify_fetch;
+    if (!d->memoryOrder2)
+        d->memoryOrder2 = d->memoryOrder1;
+    return lex;
+}
 static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
     enum e_kw kw = KW(lex);
@@ -4618,7 +4671,7 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                 error(ERR_EXPRESSION_SYNTAX);
             needkw(&lex, closepa);
         }
-        else if (kw == kw_atomic_var_init)
+        else if (kw == kw_atomic_var_init || kw == kw_c11_atomic_init)
         {
             lex = expression_assign(lex, funcsp, nullptr, tp, exp, nullptr, flags);
             if (!*tp)
@@ -4723,6 +4776,27 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                     *tp = &stdvoid;
                     break;
                 case kw_atomic_fence:
+                    lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->memoryOrder1, nullptr, flags);
+                    if (!d->memoryOrder2)
+                        d->memoryOrder2 = d->memoryOrder1;
+                    d->memoryOrder1 = exprNode(en_add, d->memoryOrder1, intNode(en_c_i, 0x80));
+                    d->atomicOp = Optimizer::ao_fence;
+                    *tp = &stdvoid;
+                    break;
+                case kw_c11_atomic_thread_fence:  // keep separate from kw_atomic_fence until I know which of the two
+                                                  // kw_atomic_fence is
+                    lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->memoryOrder1, nullptr, flags);
+                    if (!d->memoryOrder2)
+                        d->memoryOrder2 = d->memoryOrder1;
+                    d->memoryOrder1 = exprNode(en_add, d->memoryOrder1, intNode(en_c_i, 0x80));
+                    d->atomicOp = Optimizer::ao_fence;
+                    *tp = &stdvoid;
+                    break;
+                case kw_c11_atomic_signal_fence:
+                    // Let these two be the functional same as our atomic_fence for now even though
+                    // they're slightly different as we need to work out what needs to actually happen
+                    // for signal fences on our side
+                    // TODO: make this actually be a signal fence
                     lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->memoryOrder1, nullptr, flags);
                     if (!d->memoryOrder2)
                         d->memoryOrder2 = d->memoryOrder1;
@@ -4860,6 +4934,129 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                     if (!d->memoryOrder2)
                         d->memoryOrder2 = d->memoryOrder1;
                     break;
+// there's extremely likely a better way to do this, maybe a lookup table for these and using that...
+                case kw_c11_atomic_xchg:
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, assign, true);
+                    break;
+                case kw_c11_atomic_ftchadd:
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asplus, true);
+                    break;
+                case kw_c11_atomic_ftchsub:
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asminus, true);
+                    break;
+                case kw_c11_atomic_ftchand:
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asand, true);
+                    break;
+                case kw_c11_atomic_ftchor:
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asor, true);
+                    break;
+                case kw_c11_atomic_ftchxor:
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asxor, true);
+                    break;
+                case kw_atomic_addftch:
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asplus, false);
+                    break;
+                case kw_atomic_subftch:
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asminus, false);
+                    break;
+                case kw_atomic_andftch:
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asand, false);
+                    break;
+                case kw_atomic_orftch:
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asor, false);
+                    break;
+                case kw_atomic_xorftch:
+                    lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asxor, false);
+                    break;
+                case kw_atomic_cmpxchg_n:
+                    lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->address, nullptr, flags);
+                    if(tpf)
+                    {
+                        if(!ispointer(tpf))
+                        {
+                            error(ERR_DEREF);
+                            d->tp = *tp = &stdint;
+                        }
+                        else
+                        {
+                            d->tp = *tp = basetype(tpf)->btp;
+                        }
+                    }
+                    if(needkw(&lex, comma))
+                    {
+                        lex = expression_assign(lex, funcsp, nullptr, &tpf1, &d->third, nullptr, flags);
+                        if(!comparetypes(tpf, tpf1, false))
+                        {
+                            error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                        }
+                    }
+                    else
+                    {
+                        *tp = &stdint;
+                        d->third = intNode(en_c_i, 0);
+                    }
+                    if (needkw(&lex, comma))
+                    {
+                        lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->value, nullptr, flags);
+                        if(!comparetypes(tpf, *tp, false))
+                        {
+                            error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                        }
+                        if(!isstructured(*tp))
+                        {
+                            cast(*tp, &d->value);
+                        }
+                    }
+                    else
+                    {
+                        *tp = &stdint;
+                        d->value = intNode(en_c_i, 0);
+                    }
+                    // MUSTFIX: need to get the bool value here for weak/strong check!!!
+                    // THIS MATTERS FOR ARM PLATFORMS AND OTHERS WITH WEAK/STRONG SEMANTICS
+                    if (needkw(&lex, comma))
+                    {
+                        // FIXME: unsure if this is correct, get this reviewed
+                        TYPE* weak_type = nullptr;
+                        EXPRESSION* weak_expr = nullptr;
+                    
+                        lex = optimized_expression(lex, funcsp, nullptr, &weak_type, &weak_expr, false);
+                        if (!isintconst(weak_expr))
+                        {
+                            error(ERR_NEED_INTEGER_TYPE);
+                        }
+                        bool weak = (bool)weak_expr->v.i; // MSVC complains if weak is declared outside of this if statement
+                    }
+                    if (needkw(&lex, comma))
+                    {
+                        lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->memoryOrder1, nullptr, flags);
+                    }
+                    else
+                    {
+                        tpf = &stdint;
+                        d->memoryOrder1 = intNode(en_c_i, Optimizer::mo_seq_cst);
+                    }
+                    if (needkw(&lex, comma))
+                    {
+                        lex = expression_assign(lex, funcsp, nullptr, &tpf1, &d->memoryOrder2, nullptr, flags);
+                    }
+                    else
+                    {
+                        tpf1 = &stdint;
+                        d->memoryOrder2 = intNode(en_c_i, Optimizer::mo_seq_cst);
+                    }
+                    d->atomicOp = Optimizer::ao_cmpswp;
+                    if (!d->memoryOrder2)
+                    {
+                        d->memoryOrder2 = d->memoryOrder1;
+                    }
+                    *tp = &stdint;
+                    break;
+                case kw_c11_atomic_cmpxchg_weak:  // keep these two c11 types separate for weak and strong cuz cmpswp is ? of either
+                                                  // and this is highly platform specific, needs future works
+                                                  // TODO: make weak or strong available so that platforms where this matters have
+                                                  // them
+                case kw_c11_atomic_cmpxchg_strong:
                 case kw_atomic_cmpswp:
                     lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->address, nullptr, flags);
                     if (tpf)
@@ -5324,6 +5521,12 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 case kw_generic:
                     lex = expression_generic(lex, funcsp, tp, exp, flags);
                     break;
+                case kw_atomic_addftch:
+                case kw_atomic_subftch:
+                case kw_atomic_andftch:
+                case kw_atomic_xorftch:
+                case kw_atomic_orftch:
+                case kw_atomic_cmpxchg_n:
                 case kw_atomic_flag_test_set:
                 case kw_atomic_flag_clear:
                 case kw_atomic_fence:
@@ -5334,6 +5537,17 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 case kw_atomic_cmpswp:
                 case kw_atomic_kill_dependency:
                 case kw_atomic_var_init:
+                case kw_c11_atomic_cmpxchg_strong:
+                case kw_c11_atomic_cmpxchg_weak:
+                case kw_c11_atomic_ftchadd:
+                case kw_c11_atomic_ftchsub:
+                case kw_c11_atomic_xchg:
+                case kw_c11_atomic_ftchand:
+                case kw_c11_atomic_ftchor:
+                case kw_c11_atomic_ftchxor:
+                case kw_c11_atomic_init:
+                case kw_c11_atomic_signal_fence:
+                case kw_c11_atomic_thread_fence:
                     lex = expression_atomic_func(lex, funcsp, tp, exp, flags);
                     break;
                 case kw_typename:
@@ -5773,8 +5987,7 @@ static LEXLIST* expression_ampersand(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TY
                 case en_auto:
                 case en_global:
                 case en_absolute:
-                case en_threadlocal:
-                {
+                case en_threadlocal: {
                     SYMBOL* sym = exp1->v.sp;
                     if (sym->sb->isConstructor || sym->sb->isDestructor)
                         error(ERR_CANNOT_TAKE_ADDRESS_OF_CONSTRUCTOR_OR_DESTRUCTOR);
@@ -6431,8 +6644,7 @@ LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EX
         case kw_noexcept:
             lex = expression_noexcept(lex, funcsp, tp, exp);
             break;
-        case classsel:
-        {
+        case classsel: {
             LEXLIST* placeholder = lex;
             lex = getsym();
             switch (KW(lex))
@@ -7187,7 +7399,7 @@ static LEXLIST* expression_shift(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
     return lex;
 }
 static LEXLIST* expression_inequality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable,
-                                     int flags)
+                                      int flags)
 {
     bool done = false;
     lex = expression_shift(lex, funcsp, atp, tp, exp, ismutable, flags);
@@ -7331,7 +7543,8 @@ static LEXLIST* expression_inequality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, T
     }
     return lex;
 }
-static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable,
+                                    int flags)
 {
     lex = expression_inequality(lex, funcsp, atp, tp, exp, ismutable, flags);
     if (*tp == nullptr)
@@ -7555,9 +7768,9 @@ void GetLogicalDestructors(EXPRESSION* top, EXPRESSION* cur)
     }
 }
 static LEXLIST* binop(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, enum e_kw kw, enum e_node type,
-                     LEXLIST*(nextFunc)(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable,
-                                       int flags),
-                     bool* ismutable, int flags)
+                      LEXLIST*(nextFunc)(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable,
+                                         int flags),
+                      bool* ismutable, int flags)
 {
     bool first = true;
     lex = (*nextFunc)(lex, funcsp, atp, tp, exp, ismutable, flags);
@@ -8131,8 +8344,8 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         symRef = (Optimizer::architecture == ARCHITECTURE_MSIL) ? temp : nullptr;
         LookupSingleAggregate(tp1, &exp1);
 
-        if (isconstraw(*tp) && !localMutable && (!temp || temp->v.sp->sb->storage_class != sc_parameter || !isarray(*tp))
-            && ((*exp)->type != en_func || !isconstraw(basetype((*exp)->v.func->sp->tp)->btp)))
+        if (isconstraw(*tp) && !localMutable && (!temp || temp->v.sp->sb->storage_class != sc_parameter || !isarray(*tp)) &&
+            ((*exp)->type != en_func || !isconstraw(basetype((*exp)->v.func->sp->tp)->btp)))
             error(ERR_CANNOT_MODIFY_CONST_OBJECT);
         else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate)
             error(ERR_NOT_AN_ALLOWED_TYPE);
@@ -8604,7 +8817,7 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             }
         }
         /* now if there is a cast on the LHS move it to the RHS */
-        EXPRESSION *expl = (*exp)->left;
+        EXPRESSION* expl = (*exp)->left;
         if (castvalue(expl))
         {
             auto exp2 = expl;
@@ -8614,22 +8827,21 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 /* cast on the lhs isn't sign-extended */
                 switch (exp2->type)
                 {
-                case en_x_c:
-                    exp2->type = en_x_uc;
-                    break;
-                case en_x_s:
-                    exp2->type = en_x_us;
-                    break;
-                case en_x_i:
-                    exp2->type = en_x_ui;
-                    break;
-                case en_x_l:
-                    exp2->type = en_x_ul;
-                    break;
-                case en_x_ll:
-                    exp2->type = en_x_ull;
-                    break;
-
+                    case en_x_c:
+                        exp2->type = en_x_uc;
+                        break;
+                    case en_x_s:
+                        exp2->type = en_x_us;
+                        break;
+                    case en_x_i:
+                        exp2->type = en_x_ui;
+                        break;
+                    case en_x_l:
+                        exp2->type = en_x_ul;
+                        break;
+                    case en_x_ll:
+                        exp2->type = en_x_ull;
+                        break;
                 }
                 if (castvalue(exp2->left))
                     exp3 = exp2->left;

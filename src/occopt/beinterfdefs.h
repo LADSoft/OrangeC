@@ -115,6 +115,8 @@ typedef struct
     char a_int;
     char a_long;
     char a_longlong;
+    char a_char16_t;
+    char a_char32_t;
     char a_addr;
     char a_farptr;
     char a_farseg;

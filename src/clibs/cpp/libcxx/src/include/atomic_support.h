@@ -26,6 +26,8 @@
 #   define _LIBCPP_HAS_ATOMIC_BUILTINS
 #elif !defined(__clang__) && defined(_GNUC_VER) && _GNUC_VER >= 407
 #   define _LIBCPP_HAS_ATOMIC_BUILTINS
+#elif defined(__ORANGEC__)
+#   define _LIBCPP_HAS_ATOMIC_BUILTINS
 #endif
 
 #if !defined(_LIBCPP_HAS_ATOMIC_BUILTINS) && !defined(_LIBCPP_HAS_NO_THREADS)

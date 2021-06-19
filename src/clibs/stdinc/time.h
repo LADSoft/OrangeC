@@ -91,8 +91,8 @@ extern "C"
 #    define TIME_UTC 1
     struct timespec
     {
-        time_t sec;
-        long nsec;
+        time_t tv_sec;
+        long tv_nsec;
     };
     int timespec_get(struct timespec* ts, int base);
 #endif

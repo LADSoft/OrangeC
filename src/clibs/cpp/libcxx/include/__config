@@ -136,44 +136,11 @@
 #endif
 
 #ifdef __ORANGEC__
-#include <float.h>
-
 #define __has_feature(__x) (__has_##__x)
 #define __has_keyword(__x) (__has_##__x)
 #define __has_builtin(__x) (__has##__x)
 #define __has_attribute(__x) (__has__##__x)
-
-#define __builtin_strlen(s) strlen(s)
-
-#define objc_arc 0
-#define objc_arc_weak 0
-#define has_underlying_type 0
-#define __SIZEOF_SIZE_T__ 4
-#define _LIBCPP_PROVIDES_DEFAULT_RUNE_TABLE
-#define _LIBCPP_WEAK
-#ifndef NEW_ORANGEC_THREADING_BEHAVIOR
-#define _LIBCPP_HAS_NO_THREADS
-#define _LIBCPP_HAS_NO_MONOTONIC_CLOCK
-#else
-#define _LIBCPP_PUSH_MACROS
-#define _LIBCPP_POP_MACROS
-#define _LIBCPP_TEMPLATE_VIS _LIBCPP_TYPE_VIS
-#define _LIBCPP_EQUAL_DELETE = delete
-#define _LIBCPP_METHOD_TEMPLATE_IMPLICIT_INSTANTIATION_VIS
-#define _LIBCPP_HAS_THREAD_API_WIN32
-#define _LIBCPP_AVAILABILITY_FUTURE_ERROR
-#define _LIBCPP_AVAILABILITY_FUTURE
-#endif // NEW_ORANGEC_THREADING_BEHAVIOR
-#ifndef __BUILDING_LSCRTL_DLL
-#ifndef __LSCRTL_DLL
-#define _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
 #endif
-#endif
-#endif // __ORANGEC__
-
-
-
-
 
 #ifndef __has_attribute
 #define __has_attribute(__x) 0
@@ -224,6 +191,8 @@
 #  define _LIBCPP_COMPILER_MSVC
 #elif defined(__IBMCPP__)
 #  define _LIBCPP_COMPILER_IBM
+#elif defined(__ORANGEC__)
+#  define _LIBCPP_COMPILER_ORANGEC
 #endif
 
 #if defined(_LIBCPP_COMPILER_GCC) && __cplusplus < 201103L
@@ -436,7 +405,7 @@
 
 #define _LIBCPP_PREFERRED_ALIGNOF(_Tp) __alignof(_Tp)
 
-#if defined(_LIBCPP_COMPILER_CLANG) || defined(__ORANGEC__)
+#if defined(_LIBCPP_COMPILER_CLANG)
 
 // _LIBCPP_ALTERNATE_STRING_LAYOUT is an old name for
 // _LIBCPP_ABI_ALTERNATE_STRING_LAYOUT left here for backward compatibility.
@@ -546,9 +515,7 @@ typedef __char32_t char32_t;
     (defined(__apple_build_version__) && __apple_build_version__ < 10010000)
 #define _LIBCPP_HAS_NO_CXX20_CHRONO_LITERALS
 #endif
-
 #define _LIBCPP_DISABLE_EXTENSION_WARNING __extension__
-
 #elif defined(_LIBCPP_COMPILER_GCC)
 
 #define _ALIGNAS(x) __attribute__((__aligned__(x)))
@@ -634,7 +601,38 @@ typedef __char32_t char32_t;
 #define _LIBCPP_HAS_NO_VECTOR_EXTENSION
 
 #define _LIBCPP_DISABLE_EXTENSION_WARNING
+#elif defined(_LIBCPP_COMPILER_ORANGEC)
+#define NEW_ORANGEC_THREADING_BEHAVIOR
+#define _ALIGNAS(x) alignas(x)
+#define _ALIGNAS_TYPE(x) alignas(_LIBCPP_ALIGNOF(x))
+#define _LIBCPP_NORETURN [[noreturn]]
+#define _LIBCPP_HAS_NO_ASAN
+#define _LIBCPP_HAS_NO_VECTOR_EXTENSION
+#define _LIBCPP_DISABLE_EXTENSION_WARNING
+#define _LIBCPP_WEAK
+#define _LIBCPP_PROVIDES_DEFAULT_RUNE_TABLE
+#define _LIBCPP_ALWAYS_INLINE inline
 
+#define __SIZEOF_SIZE_T__ 4
+// defined here because we don't actually provide our own builtin... yet
+#define __builtin_strlen(s) strlen(s)
+
+// Still working out these kinks on this branch
+#ifndef NEW_ORANGEC_THREADING_BEHAVIOR
+#define _LIBCPP_HAS_NO_THREADS
+#define _LIBCPP_HAS_NO_MONOTONIC_CLOCK
+#else
+#define _LIBCPP_METHOD_TEMPLATE_IMPLICIT_INSTANTIATION_VIS
+#define _LIBCPP_HAS_THREAD_API_WIN32
+#endif // NEW_ORANGEC_THREADING_BEHAVIOR
+
+#if 0
+#ifndef __BUILDING_LSCRTL_DLL
+#ifndef __LSCRTL_DLL
+#define _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
+#endif
+#endif
+#endif
 #endif // _LIBCPP_COMPILER_[CLANG|GCC|MSVC|IBM]
 
 #if defined(_LIBCPP_OBJECT_FORMAT_COFF)
@@ -663,7 +661,11 @@ typedef __char32_t char32_t;
 #  define _LIBCPP_OVERRIDABLE_FUNC_VIS _LIBCPP_DLL_VIS
 #  define _LIBCPP_EXPORTED_FROM_ABI __declspec(dllexport)
 #else
+#if defined(_LIBCPP_COMPILER_ORANGEC) && !defined(__LSCRTL_DLL)
+#  define _LIBCPP_DLL_VIS
+#else
 #  define _LIBCPP_DLL_VIS __declspec(dllimport)
+#endif
 #  define _LIBCPP_EXTERN_TEMPLATE_TYPE_VIS _LIBCPP_DLL_VIS
 #  define _LIBCPP_CLASS_TEMPLATE_INSTANTIATION_VIS
 #  define _LIBCPP_OVERRIDABLE_FUNC_VIS
@@ -680,11 +682,13 @@ typedef __char32_t char32_t;
 
 #endif // defined(_LIBCPP_OBJECT_FORMAT_COFF)
 
+#if 0
 #ifdef __ORANGEC__
 # define _LIBCPP_HIDDEN
 #ifndef _LIBCPP_FUNC_VIS
 # define _LIBCPP_FUNC_VIS
 #endif
+
 #ifndef _LIBCPP_TYPE_VIS
 # define _LIBCPP_TYPE_VIS
 #endif
@@ -705,6 +709,7 @@ typedef __char32_t char32_t;
 #endif
 
 #endif /* ORANGEC */
+#endif
 
 #ifndef _LIBCPP_HIDDEN
 #  if !defined(_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS)
@@ -843,11 +848,7 @@ typedef __char32_t char32_t;
 #endif
 
 // Just so we can migrate to the new macros gradually.
-# if defined(__ORANGEC__)
-#  define _LIBCPP_INLINE_VISIBILITY
-# elif
 #define _LIBCPP_INLINE_VISIBILITY _LIBCPP_HIDE_FROM_ABI
-# endif
 
 // Inline namespaces are available in Clang/GCC/MSVC regardless of C++ dialect.
 #define _LIBCPP_BEGIN_NAMESPACE_STD namespace std { inline namespace _LIBCPP_ABI_NAMESPACE {

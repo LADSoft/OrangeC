@@ -82,8 +82,7 @@ bool IsCompiler();
         kw_char32_t, kw_mutable, kw_nullptr, kw_noexcept, kw_thread_local, kw_constexpr,
         kw_rangefor,
         /* Extended */
-        kw_atomic_flag_test_set, kw_atomic_flag_clear, kw_atomic_fence, kw_atomic_kill_dependency,
-        kw_atomic_load, kw_atomic_store, kw_atomic_fetch_modify, kw_atomic_modify_fetch, kw_atomic_cmpswp, kw_atomic_var_init,
+        kw_atomic_flag_test_set, kw_atomic_flag_clear, kw_atomic_kill_dependency,
         /* Clang compatibility for atomics */
         kw_c11_atomic_init, kw_c11_atomic_thread_fence, kw_c11_atomic_signal_fence,
         kw_c11_atomic_is_lock_free, kw_c11_atomic_store, kw_c11_atomic_load, // NOTE: clang's atomic_is_lock_free runs on the atomic's size, not the address

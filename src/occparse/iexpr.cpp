@@ -1415,7 +1415,7 @@ Optimizer::IMODE* gen_assign(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
     }
     if (node->left->isatomic)
     {
-        Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, Optimizer::make_immed(ISZ_UINT, Optimizer::mo_seq_cst | 0x80),
+        Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, Optimizer::make_immed(ISZ_UINT, Optimizer::mo_seq_cst | 0x80),
                              nullptr);
     }
     if (!(flags & F_NOVALUE) && (Optimizer::chosenAssembler->arch->preferopts & OPT_REVERSESTORE) && ap1->mode == Optimizer::i_ind)
@@ -2510,7 +2510,7 @@ Optimizer::IMODE* gen_atomic_barrier(SYMBOL* funcsp, ATOMICDATA* ad, Optimizer::
         {
             left = Optimizer::make_immed(ISZ_UINT, ad->memoryOrder1->v.i);
         }
-        Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
+        Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, left, nullptr);
         return (Optimizer::IMODE*)-1;
     }
 }
@@ -2553,16 +2553,20 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
             right = gen_expr(funcsp, node->v.ad->flg, F_STORE, ISZ_UINT);
             Optimizer::gen_icode(Optimizer::i_atomic_flag_clear, nullptr, left, right);
             break;
-        case Optimizer::ao_fence:
+        case Optimizer::ao_thread_fence:
             left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
-            Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
+            Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, left, nullptr);
+            break;
+        case Optimizer::ao_signal_fence:
+            left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
+            Optimizer::gen_icode(Optimizer::i_atomic_signal_fence, nullptr, left, nullptr);
             break;
         case Optimizer::ao_load:
             av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
             if (isstructured(node->v.ad->tp))
             {
                 left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
-                Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
+                Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, left, nullptr);
                 EXPRESSION* exp = anonymousVar(sc_auto, node->v.ad->tp);
                 rv = Allocate<Optimizer::IMODE>();
                 rv->mode = Optimizer::i_immed;
@@ -2587,7 +2591,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
             if (isstructured(node->v.ad->tp))
             {
                 left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
-                Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
+                Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, left, nullptr);
                 right = gen_expr(funcsp, node->v.ad->value, F_STORE, ISZ_ADDR);
                 av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
                 Optimizer::gen_icode(Optimizer::i_assnblock, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->btp->size), av, right);
@@ -2619,7 +2623,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
             if (isstructured(node->v.ad->tp))
             {
                 left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
-                Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
+                Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, left, nullptr);
                 // presumed xchg
                 av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
                 right = gen_expr(funcsp, node->v.ad->value, F_STORE, ISZ_ADDR);
@@ -2690,9 +2694,10 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                 gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
             }
             break;
-        case Optimizer::ao_cmpswp:
+        case Optimizer::ao_cmpxchgweak:
+        case Optimizer::ao_cmpxchgstrong:
             left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
-            Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
+            Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, left, nullptr);
             if (isstructured(node->v.ad->tp))
             {
 
@@ -2720,7 +2725,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
             else
             {
                 left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
-                Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
+                Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, left, nullptr);
                 sz = sizeFromType(node->v.ad->tp);
                 av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
                 left = Optimizer::indnode(av, sz);
@@ -2747,7 +2752,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                 }
                 else
                 {
-                    Optimizer::gen_icode(Optimizer::i_cmpswp, left, rv, right);
+                    Optimizer::gen_icode(node->v.ad->atomicOp == Optimizer::ao_cmpxchgweak ? Optimizer::i_cmpxchgweak : Optimizer::i_cmpxchgstrong, left, rv, right);
                     rv = Optimizer::tempreg(ISZ_UINT, 0);
                     rv->retval = true;
                     av = Optimizer::tempreg(ISZ_UINT, 0);
@@ -2757,7 +2762,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                 gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
             }
             left = gen_expr(funcsp, node->v.ad->memoryOrder2, 0, ISZ_UINT);
-            Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
+            Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, left, nullptr);
             break;
     }
     return rv;
@@ -2815,7 +2820,7 @@ Optimizer::IMODE* doatomicFence(SYMBOL* funcsp, EXPRESSION* parent, EXPRESSION* 
         }
         else
         {
-            Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, Optimizer::make_immed(ISZ_UINT, start ? afImmed : -afImmed),
+            Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, Optimizer::make_immed(ISZ_UINT, start ? afImmed : -afImmed),
 nullptr); barrier = (Optimizer::IMODE*)-1;
         }
     }

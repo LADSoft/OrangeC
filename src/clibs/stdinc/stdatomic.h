@@ -114,7 +114,7 @@ typedef struct atomic_flag
     {                    \
         0                \
     }
-#define ATOMIC_VAR_INIT(x) __atomic_var_init(x)
+#define ATOMIC_VAR_INIT(x) __c11_atomic_init(x)
 
 #ifndef RC_INVOKED
 
@@ -139,8 +139,8 @@ extern "C"
 #define atomic_flag_clear_explicit(object, order) __atomic_flag_clear(object, order)
 #define atomic_flag_clear(object) __atomic_flag_clear(object, memory_order_seq_cst)
 
-#define atomic_thread_fence(order) __atomic_fence(order)
-#define atomic_signal_fence(order) __atomic_fence(order)
+#define atomic_thread_fence(order) __c11_atomic_thread_fence(order)
+#define atomic_signal_fence(order) __c11_atomic_signal_fence(order)
 
 #define __ATOMIC_TYPE__(__x__, __y__) typedef _Atomic(__x__) __y__;
 
@@ -186,49 +186,50 @@ __ATOMIC_TYPE__(uintmax_t, atomic_uintmax_t);
 #endif
 #define kill_dependency(y) __kill_dependency(y)
 
-#define atomic_init(__a__, __v__) __atomic_var_init(__v__, __a__)
+#define atomic_init(__a__, __v__) __c11_atomic_init(__v__, __a__)
 
-#define atomic_load(__a__) __atomic_load(__a__, memory_order_seq_cst)
+#define atomic_load(__a__) __c11_atomic_load(__a__, memory_order_seq_cst)
 
-#define atomic_load_explicit(__a__, __x__) __atomic_load(__a__, __x__)
+#define atomic_load_explicit(__a__, __x__) __c11_atomic_load(__a__, __x__)
 
-#define atomic_store(__a__, __m__) __atomic_store(__a__, __m__, memory_order_seq_cst)
+#define atomic_store(__a__, __m__) __c11_atomic_store(__a__, __m__, memory_order_seq_cst)
 
-#define atomic_store_explicit(__a__, __m__, __x__) __atomic_store(__a__, __m__, __x__)
+#define atomic_store_explicit(__a__, __m__, __x__) __c11_atomic_store(__a__, __m__, __x__)
 
-#define atomic_exchange(__a__, __m__) __atomic_fetch_modify(__a__, =, __m__, memory_order_seq_cst)
+#define atomic_exchange(__a__, __m__) __c11_atomic_exchange(__a__, __m__, memory_order_seq_cst)
 
-#define atomic_exchange_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, =, __m__, __x__)
+#define atomic_exchange_explicit(__a__, __m__, __x__) __c11_atomic_exchange(__a__, __m__, __x__)
 
 #define atomic_compare_exchange_strong(__a__, __e__, __m__) \
-    __atomic_cmpswp(__a__, __e__, __m__, memory_order_seq_cst, memory_order_seq_cst)
+    __c11_atomic_compare_exchange_strong(__a__, __e__, __m__, memory_order_seq_cst, memory_order_seq_cst)
 
 #define atomic_compare_exchange_strong_explicit(__a__, __e__, __m__, __x__, __y__) \
-    __atomic_cmpswp(__a__, __e__, __m__, __x__, __y__)
+    __c11_atomic_compare_exchange_strong(__a__, __e__, __m__, __x__, __y__)
 
 #define atomic_compare_exchange_weak(__a__, __e__, __m__) \
-    __atomic_cmpswp(__a__, __e__, __m__, memory_order_seq_cst, memory_order_seq_cst)
+    __c11_atomic_compare_exchange_weak(__a__, __e__, __m__, memory_order_seq_cst, memory_order_seq_cst)
 
-#define atomic_compare_exchange_weak_explicit(__a__, __e__, __m__, __x__, __y__) __atomic_cmpswp(__a__, __e__, __m__, __x__, __y__)
+#define atomic_compare_exchange_weak_explicit(__a__, __e__, __m__, __x__, __y__) \
+    __c11_atomic_compare_exchange_weak(__a__, __e__, __m__, __x__, __y__)
+		
+#define atomic_fetch_add_explicit(__a__, __m__, __x__) __c11_atomic_fetch_add(__a__, __m__, __x__)
 
-#define atomic_fetch_add_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, +=, __m__, __x__)
+#define atomic_fetch_add(__a__, __m__) __c11_atomic_fetch_add(__a__, __m__, memory_order_seq_cst)
 
-#define atomic_fetch_add(__a__, __m__) __atomic_fetch_modify(__a__, +=, __m__, memory_order_seq_cst)
+#define atomic_fetch_sub_explicit(__a__, __m__, __x__) __c11_atomic_fetch_sub(__a__, __m__, __x__)
 
-#define atomic_fetch_sub_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, -=, __m__, __x__)
+#define atomic_fetch_sub(__a__, __m__) __c11_atomic_fetch_sub(__a__, __m__, memory_order_seq_cst)
 
-#define atomic_fetch_sub(__a__, __m__) __atomic_fetch_modify(__a__, -=, __m__, memory_order_seq_cst)
+#define atomic_fetch_or_explicit(__a__, __m__, __x__) __c11_atomic_fetch_or(__a__, __m__, __x__)
 
-#define atomic_fetch_or_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, |=, __m__, __x__)
+#define atomic_fetch_or(__a__, __m__) __c11_atomic_fetch_or(__a__, __m__, memory_order_seq_cst)
 
-#define atomic_fetch_or(__a__, __m__) __atomic_fetch_modify(__a__, |=, __m__, memory_order_seq_cst)
+#define atomic_fetch_and_explicit(__a__, __m__, __x__) __c11_atomic_fetch_and(__a__, __m__, __x__)
 
-#define atomic_fetch_and_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, &=, __m__, __x__)
+#define atomic_fetch_and(__a__, __m__) __c11_atomic_fetch_and(__a__, __m__, memory_order_seq_cst)
 
-#define atomic_fetch_and(__a__, __m__) __atomic_fetch_modify(__a__, &=, __m__, memory_order_seq_cst)
+#define atomic_fetch_xor_explicit(__a__, __m__, __x__) __c11_atomic_fetch_xor(__a__, __m__, __x__)
 
-#define atomic_fetch_xor_explicit(__a__, __m__, __x__) __atomic_fetch_modify(__a__, ^=, __m__, __x__)
-
-#define atomic_fetch_xor(__a__, __m__) __atomic_fetch_modify(__a__, ^=, __m__, memory_order_seq_cst)
+#define atomic_fetch_xor(__a__, __m__) __c11_atomic_fetch_xor(__a__, __m__, memory_order_seq_cst)
 
 #endif

@@ -415,7 +415,7 @@ struct ArgList
         i_array, i_arrayindex, i_arraylsh, i_struct, i_cppini, i_block, i_blockend,
         i_dbgblock, i_dbgblockend, i_varstart, i_func, i_livein, i_icon, i_fcon, i_imcon, i_cxcon,
         i_atomic_flag_test_and_set, i_atomic_flag_clear,
-        i_atomic_fence, i_atomic_flag_fence, i_cmpswp, i_xchg,
+        i_atomic_thread_fence, i_atomic_signal_fence, i_atomic_flag_fence, i_cmpxchgweak, i_cmpxchgstrong, i_xchg,
         i_prologue, i_epilogue, i_pushcontext, i_popcontext, i_loadcontext, i_unloadcontext,
         i_tryblock, i_substack, i_parmstack, i_loadstack, i_savestack, i_functailstart, i_functailend,
         i_gcsestub, i_expressiontag, i_tag, i_seh,

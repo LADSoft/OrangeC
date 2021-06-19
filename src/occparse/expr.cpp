@@ -4671,7 +4671,7 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                 error(ERR_EXPRESSION_SYNTAX);
             needkw(&lex, closepa);
         }
-        else if (kw == kw_atomic_var_init || kw == kw_c11_atomic_init)
+        else if (kw == kw_c11_atomic_init)
         {
             lex = expression_assign(lex, funcsp, nullptr, tp, exp, nullptr, flags);
             if (!*tp)
@@ -4775,36 +4775,23 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                         d->memoryOrder2 = d->memoryOrder1;
                     *tp = &stdvoid;
                     break;
-                case kw_atomic_fence:
+                case kw_c11_atomic_thread_fence:  
                     lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->memoryOrder1, nullptr, flags);
                     if (!d->memoryOrder2)
                         d->memoryOrder2 = d->memoryOrder1;
                     d->memoryOrder1 = exprNode(en_add, d->memoryOrder1, intNode(en_c_i, 0x80));
-                    d->atomicOp = Optimizer::ao_fence;
-                    *tp = &stdvoid;
-                    break;
-                case kw_c11_atomic_thread_fence:  // keep separate from kw_atomic_fence until I know which of the two
-                                                  // kw_atomic_fence is
-                    lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->memoryOrder1, nullptr, flags);
-                    if (!d->memoryOrder2)
-                        d->memoryOrder2 = d->memoryOrder1;
-                    d->memoryOrder1 = exprNode(en_add, d->memoryOrder1, intNode(en_c_i, 0x80));
-                    d->atomicOp = Optimizer::ao_fence;
+                    d->atomicOp = Optimizer::ao_thread_fence;
                     *tp = &stdvoid;
                     break;
                 case kw_c11_atomic_signal_fence:
-                    // Let these two be the functional same as our atomic_fence for now even though
-                    // they're slightly different as we need to work out what needs to actually happen
-                    // for signal fences on our side
-                    // TODO: make this actually be a signal fence
                     lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->memoryOrder1, nullptr, flags);
                     if (!d->memoryOrder2)
                         d->memoryOrder2 = d->memoryOrder1;
                     d->memoryOrder1 = exprNode(en_add, d->memoryOrder1, intNode(en_c_i, 0x80));
-                    d->atomicOp = Optimizer::ao_fence;
+                    d->atomicOp = Optimizer::ao_signal_fence;
                     *tp = &stdvoid;
                     break;
-                case kw_atomic_load:
+                case kw_c11_atomic_load:
                     lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->address, nullptr, flags);
                     if (tpf)
                     {
@@ -4831,7 +4818,7 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                     if (!d->memoryOrder2)
                         d->memoryOrder2 = d->memoryOrder1;
                     break;
-                case kw_atomic_store:
+                case kw_c11_atomic_store:
                     lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->address, nullptr, flags);
                     if (tpf)
                     {
@@ -4872,68 +4859,6 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                         d->memoryOrder2 = d->memoryOrder1;
                     d->memoryOrder1 = exprNode(en_add, d->memoryOrder1, intNode(en_c_i, 0x80));
                     break;
-                case kw_atomic_fetch_modify:
-                case kw_atomic_modify_fetch:
-                    lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->address, nullptr, flags);
-                    if (tpf)
-                    {
-                        if (!ispointer(tpf))
-                        {
-                            error(ERR_DEREF);
-                            d->tp = *tp = &stdint;
-                        }
-                        else
-                        {
-                            d->tp = *tp = basetype(tpf)->btp;
-                        }
-                    }
-                    if (needkw(&lex, comma))
-                    {
-                        switch (KW(lex))
-                        {
-                            default:
-                                d->third = intNode(en_c_i, asplus);
-                                break;
-                            case asplus:
-                            case asminus:
-                            case asor:
-                            case asand:
-                            case asxor:
-                                if (isstructured(*tp))
-                                    error(ERR_ILL_STRUCTURE_OPERATION);
-                            case assign:
-                                d->third = intNode(en_c_i, KW(lex));
-                                break;
-                        }
-                        lex = getsym();
-                    }
-
-                    if (needkw(&lex, comma))
-                    {
-                        lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->value, nullptr, flags);
-                        if (!comparetypes(tpf, *tp, false))
-                        {
-                            error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
-                        }
-                    }
-                    else
-                    {
-                        *tp = &stdint;
-                        d->value = intNode(en_c_i, 0);
-                    }
-                    if (needkw(&lex, comma))
-                    {
-                        lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->memoryOrder1, nullptr, flags);
-                    }
-                    else
-                    {
-                        tpf = &stdint;
-                        d->memoryOrder1 = intNode(en_c_i, Optimizer::mo_seq_cst);
-                    }
-                    d->atomicOp = kw == kw_atomic_fetch_modify ? Optimizer::ao_fetch_modify : Optimizer::ao_modify_fetch;
-                    if (!d->memoryOrder2)
-                        d->memoryOrder2 = d->memoryOrder1;
-                    break;
 // there's extremely likely a better way to do this, maybe a lookup table for these and using that...
                 case kw_c11_atomic_xchg:
                     lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, assign, true);
@@ -4969,10 +4894,12 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                     lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asxor, false);
                     break;
                 case kw_atomic_cmpxchg_n:
+                {
+                    bool weak = false;
                     lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->address, nullptr, flags);
-                    if(tpf)
+                    if (tpf)
                     {
-                        if(!ispointer(tpf))
+                        if (!ispointer(tpf))
                         {
                             error(ERR_DEREF);
                             d->tp = *tp = &stdint;
@@ -4982,10 +4909,10 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                             d->tp = *tp = basetype(tpf)->btp;
                         }
                     }
-                    if(needkw(&lex, comma))
+                    if (needkw(&lex, comma))
                     {
                         lex = expression_assign(lex, funcsp, nullptr, &tpf1, &d->third, nullptr, flags);
-                        if(!comparetypes(tpf, tpf1, false))
+                        if (!comparetypes(tpf, tpf1, false))
                         {
                             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
                         }
@@ -4998,11 +4925,11 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                     if (needkw(&lex, comma))
                     {
                         lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->value, nullptr, flags);
-                        if(!comparetypes(tpf, *tp, false))
+                        if (!comparetypes(tpf, *tp, false))
                         {
                             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
                         }
-                        if(!isstructured(*tp))
+                        if (!isstructured(*tp))
                         {
                             cast(*tp, &d->value);
                         }
@@ -5019,13 +4946,13 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                         // FIXME: unsure if this is correct, get this reviewed
                         TYPE* weak_type = nullptr;
                         EXPRESSION* weak_expr = nullptr;
-                    
+
                         lex = optimized_expression(lex, funcsp, nullptr, &weak_type, &weak_expr, false);
                         if (!isintconst(weak_expr))
                         {
                             error(ERR_NEED_INTEGER_TYPE);
                         }
-                        bool weak = (bool)weak_expr->v.i; // MSVC complains if weak is declared outside of this if statement
+                        weak = (bool)weak_expr->v.i;
                     }
                     if (needkw(&lex, comma))
                     {
@@ -5045,19 +4972,16 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                         tpf1 = &stdint;
                         d->memoryOrder2 = intNode(en_c_i, Optimizer::mo_seq_cst);
                     }
-                    d->atomicOp = Optimizer::ao_cmpswp;
+                    d->atomicOp = weak ? Optimizer::ao_cmpxchgweak : Optimizer::ao_cmpxchgstrong;
                     if (!d->memoryOrder2)
                     {
                         d->memoryOrder2 = d->memoryOrder1;
                     }
                     *tp = &stdint;
                     break;
-                case kw_c11_atomic_cmpxchg_weak:  // keep these two c11 types separate for weak and strong cuz cmpswp is ? of either
-                                                  // and this is highly platform specific, needs future works
-                                                  // TODO: make weak or strong available so that platforms where this matters have
-                                                  // them
+                }
+                case kw_c11_atomic_cmpxchg_weak:
                 case kw_c11_atomic_cmpxchg_strong:
-                case kw_atomic_cmpswp:
                     lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->address, nullptr, flags);
                     if (tpf)
                     {
@@ -5118,7 +5042,7 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                         tpf1 = &stdint;
                         d->memoryOrder2 = intNode(en_c_i, Optimizer::mo_seq_cst);
                     }
-                    d->atomicOp = Optimizer::ao_cmpswp;
+                    d->atomicOp = kw == kw_c11_atomic_cmpxchg_weak ? Optimizer::ao_cmpxchgweak : Optimizer::ao_cmpxchgstrong;
                     if (!d->memoryOrder2)
                         d->memoryOrder2 = d->memoryOrder1;
                     *tp = &stdint;
@@ -5529,14 +5453,9 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 case kw_atomic_cmpxchg_n:
                 case kw_atomic_flag_test_set:
                 case kw_atomic_flag_clear:
-                case kw_atomic_fence:
-                case kw_atomic_load:
-                case kw_atomic_store:
-                case kw_atomic_fetch_modify:
-                case kw_atomic_modify_fetch:
-                case kw_atomic_cmpswp:
                 case kw_atomic_kill_dependency:
-                case kw_atomic_var_init:
+                case kw_c11_atomic_load:
+                case kw_c11_atomic_store:
                 case kw_c11_atomic_cmpxchg_strong:
                 case kw_c11_atomic_cmpxchg_weak:
                 case kw_c11_atomic_ftchadd:

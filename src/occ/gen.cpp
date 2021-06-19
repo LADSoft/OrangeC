@@ -5197,7 +5197,7 @@ void asm_atomic(Optimizer::QUAD* q)
         enum e_opcode opl;
         enum e_opcode opr;
         int lbl1, lbl2;
-        case Optimizer::i_atomic_fence:
+        case Optimizer::i_atomic_thread_fence:
             if (needsync == Optimizer::mo_seq_cst + 0x80)  // in this case the value may be mo_seq_cst + 0x80 for store,
                                                            // for the x86 we are only genning these on stores:
             {
@@ -5324,7 +5324,8 @@ void asm_atomic(Optimizer::QUAD* q)
                 }
             }
             break;
-        case Optimizer::i_cmpswp:
+        case Optimizer::i_cmpxchgweak:
+        case Optimizer::i_cmpxchgstrong:
             /*
                 address == address2 ? address = value : address2 = address
                 rv         right      rv        left    right      rv

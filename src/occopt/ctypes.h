@@ -78,12 +78,14 @@ enum e_ao
     ao_init,
     ao_flag_set_test,
     ao_flag_clear,
-    ao_fence,
+    ao_thread_fence,
+    ao_signal_fence,
     ao_load,
     ao_store,
     ao_fetch_modify,
     ao_modify_fetch,
-    ao_cmpswp
+    ao_cmpxchgweak,
+    ao_cmpxchgstrong,
 };
 
 #define ATOMIC_FLAG_SPACE Optimizer::sizeFromISZ(ISZ_UINT)

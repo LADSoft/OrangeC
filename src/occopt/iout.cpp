@@ -663,9 +663,15 @@ static void iop_gcsestub(Optimizer::QUAD* q) { oprintf(icdFile, "\tGCSE"); }
 static void iop_expressiontag(Optimizer::QUAD* q) { oprintf(icdFile, "\tEXPR TAG\t%d", q->dc.v.label); }
 static void iop_tag(Optimizer::QUAD* q) { oprintf(icdFile, "\tTAG"); }
 static void iop_seh(Optimizer::QUAD* q) { oprintf(icdFile, "\tSEH %d", q->sehMode); }
-static void iop_atomic_fence(Optimizer::QUAD* q)
+static void iop_atomic_thread_fence(Optimizer::QUAD* q)
 {
-    oprintf(icdFile, "\tATOMIC FENCE");
+    oprintf(icdFile, "\tATOMIC THREAD FENCE");
+    oputc(' ', icdFile);
+    putamode(q, q->dc.left);
+}
+static void iop_atomic_signal_fence(Optimizer::QUAD* q)
+{
+    oprintf(icdFile, "\tATOMIC SIGNAL FENCE");
     oputc(' ', icdFile);
     putamode(q, q->dc.left);
 }
@@ -699,9 +705,18 @@ static void iop_atomic_flag_clear(Optimizer::QUAD* q)
     oputc(' ', icdFile);
     putamode(q, q->dc.left);
 }
-static void iop_cmpswp(Optimizer::QUAD* q)
+static void iop_cmpxchgweak(Optimizer::QUAD* q)
 {
-    oprintf(icdFile, "\tCMPSWP\t");
+    oprintf(icdFile, "\tCMPXCHGWEAK\t");
+    putamode(q, q->ans);
+    oputc(',', icdFile);
+    putamode(q, q->dc.left);
+    oputc(',', icdFile);
+    putamode(q, q->dc.right);
+}
+static void iop_cmpxchgstrong(Optimizer::QUAD* q)
+{
+    oprintf(icdFile, "\tCMPXCHGSTRONG\t");
     putamode(q, q->ans);
     oputc(',', icdFile);
     putamode(q, q->dc.left);
@@ -805,9 +820,11 @@ static void (*oplst[])(Optimizer::QUAD* q) = {
     iop_cxcon,
     iop_atomic_flag_test_and_set,
     iop_atomic_flag_clear,
-    iop_atomic_fence,
+    iop_atomic_thread_fence,
+    iop_atomic_signal_fence,
     iop_atomic_flag_fence,
-    iop_cmpswp,
+    iop_cmpxchgweak,
+    iop_cmpxchgstrong,
     iop_xchg,
     iop_prologue,
     iop_epilogue,

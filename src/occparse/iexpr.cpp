@@ -2543,9 +2543,8 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
             break;
         case Optimizer::ao_kill_dependency:
             rv = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
-            Optimizer::gen_icode(Optimizer::i_kill_dependency, nullptr, rv, nullptr);
+            Optimizer::gen_icode_with_atomic(Optimizer::i_kill_dependency, nullptr, rv, nullptr);
             Optimizer::intermed_tail->alwayslive = true;
-            Optimizer::intermed_tail->atomic = true;
             break;
         case Optimizer::ao_flag_set_test:
             left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
@@ -2629,8 +2628,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                 left = Optimizer::indnode(av, sizeFromType(node->v.ad->tp));
                 rv = Optimizer::tempreg(sizeFromType(node->v.ad->tp), 0);
                 barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
-                Optimizer::gen_icode(Optimizer::i_assn, rv, left, nullptr);
-                Optimizer::intermed_tail->atomic = true;
+                Optimizer::gen_icode_with_atomic(Optimizer::i_assn, rv, left, nullptr);
                 Optimizer::intermed_tail->alwayslive = true;
                 gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
             }
@@ -2671,8 +2669,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                     av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
                     left = Optimizer::indnode(av, sz);
                     left->size = sz;
-                    Optimizer::gen_icode(Optimizer::i_assn, left, right, nullptr);
-                    Optimizer::intermed_tail->atomic = true;
+                    Optimizer::gen_icode_with_atomic(Optimizer::i_assn, left, right, nullptr);
                     rv = right;
                     barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
                     gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
@@ -2719,9 +2716,8 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                 }
                 av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
                 left = Optimizer::indnode(av, sz1);
-                Optimizer::gen_icode(Optimizer::i_assn, left, right, nullptr);
-                Optimizer::intermed_tail->atomic = true;
                 barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
+                Optimizer::gen_icode_with_atomic(Optimizer::i_assn, left, right, nullptr);
                 gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
                 rv = right;
             }
@@ -2794,8 +2790,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                 }
                 else
                 {
-                    Optimizer::gen_icode(op, rv, left, right);
-                    Optimizer::intermed_tail->atomic = true;
+                    Optimizer::gen_icode_with_atomic(op, rv, left, right);
                     Optimizer::intermed_tail->atomicpostfetch = node->v.ad->atomicOp == Optimizer::ao_modify_fetch;
                     Optimizer::intermed_tail->alwayslive = true;
                 }

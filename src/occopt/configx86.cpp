@@ -260,9 +260,9 @@ static ARCH_SIZING locks = {
     1, /*char a_memberptr; */
     1, /*char a_struct; */ 
     /* alignment only */
-    1,                  /*char a_float; */
-    1,                  /*char a_double; */
-    1,                  /*char a_longdouble; */
+    0,                  /*char a_float; */
+    0,                  /*char a_double; */
+    0,                  /*char a_longdouble; */
     1,                  /*char a_fcomplexpad; */
     1,                  /*char a_rcomplexpad; */
     1,                  /*char a_lrcomplexpad; */
@@ -279,6 +279,7 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     0,           /* custom alignment routine */
     &sizes,      /* sizes */
     &locks,      /* atomic locks */
+    8,           /* maximum value for __c11_atomic_is_lock_free */
     0,           /* routine is called in case parameters less than paramwidth need offsets */
     ISZ_ULONG,   /* size compatible to an integer */
     ISZ_ULONG,   /* size compatible to an address */

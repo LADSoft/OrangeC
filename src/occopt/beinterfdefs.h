@@ -198,6 +198,7 @@ typedef struct
     int (*align)(int size);      /* custom alignment routine */
     ARCH_SIZING* type_sizes;     /* sizes */
     ARCH_SIZING* type_needsLock; /* needs atomic lock */
+    int isLockFreeSize;           /* maximum value for __c11_atomic_is_lock_free */
     int (*param_offs)(int size); /* routine is called in case parameters less than paramwidth need offsets */
     int compatibleIntSize;       /* size compatible to an integer */
     int compatibleAddrSize;      /* size compatible to an address */

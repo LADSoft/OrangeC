@@ -86,6 +86,7 @@ enum e_ao
     ao_modify_fetch,
     ao_cmpxchgweak,
     ao_cmpxchgstrong,
+    ao_kill_dependency
 };
 
 #define ATOMIC_FLAG_SPACE Optimizer::sizeFromISZ(ISZ_UINT)

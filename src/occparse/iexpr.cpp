@@ -34,7 +34,7 @@
 #include "ppPragma.h"
 #include "rtti.h"
 #include "optmodules.h"
-
+#include "Utils.h"
 /*
  *      this module contains all of the code generation routines
  *      for evaluating expressions and conditions.
@@ -2541,6 +2541,12 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
             }
             rv = right;
             break;
+        case Optimizer::ao_kill_dependency:
+            rv = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
+            Optimizer::gen_icode(Optimizer::i_kill_dependency, nullptr, rv, nullptr);
+            Optimizer::intermed_tail->alwayslive = true;
+            Optimizer::intermed_tail->atomic = true;
+            break;
         case Optimizer::ao_flag_set_test:
             left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
             right = gen_expr(funcsp, node->v.ad->flg, F_STORE, ISZ_UINT);
@@ -2565,16 +2571,58 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
             av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
             if (isstructured(node->v.ad->tp))
             {
-                left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
-                Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, left, nullptr);
-                EXPRESSION* exp = anonymousVar(sc_auto, node->v.ad->tp);
-                rv = Allocate<Optimizer::IMODE>();
-                rv->mode = Optimizer::i_immed;
-                rv->size = ISZ_ADDR;
-                rv->offset = Optimizer::SymbolManager::Get(exp);
-                barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
-                Optimizer::gen_icode(Optimizer::i_assnblock, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->btp->size), rv, av);
-                gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
+                if ((Optimizer::chosenAssembler->arch->isLockFreeSize >= node->v.ad->tp->size
+                    && (node->v.ad->tp->size & (node->v.ad->tp->size - 1)) == 0))
+                {
+                    int sz = ISZ_U32;
+                    switch (node->v.ad->tp->size)
+                    {
+                    case 1:
+                        sz = ISZ_UCHAR;
+                        break;
+                    case 2:
+                        sz = ISZ_U16;
+                        break;
+                    case 4:
+                        sz = ISZ_U32;
+                        break;
+                    case 8:
+                        sz = ISZ_ULONGLONG;
+                        break;
+                    default:
+                        Utils::fatal("ao_load: invalid structure size");
+                        break;
+                    }
+                    left = Optimizer::indnode(av, sz);
+                    auto expr = anonymousVar(sc_auto, node->v.ad->tp);
+                    auto store = Allocate<Optimizer::IMODE>();
+                    store->mode = Optimizer::i_direct;
+                    store->size = sz;
+                    store->offset = Optimizer::SymbolManager::Get(expr);
+                    auto temp = Optimizer::tempreg(sz, 0);
+                    Optimizer::gen_icode(Optimizer::i_assn, temp, left, nullptr);
+                    barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
+                    Optimizer::gen_icode(Optimizer::i_assn, store, temp, nullptr);
+                    Optimizer::intermed_tail->alwayslive = true;
+                    gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
+                    rv = Allocate<Optimizer::IMODE>();
+                    rv->mode = Optimizer::i_immed;
+                    rv->size = ISZ_ADDR;
+                    rv->offset = store->offset;
+                }
+                else
+                {
+                    left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
+                    Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, left, nullptr);
+                    EXPRESSION* exp = anonymousVar(sc_auto, node->v.ad->tp);
+                    rv = Allocate<Optimizer::IMODE>();
+                    rv->mode = Optimizer::i_immed;
+                    rv->size = ISZ_ADDR;
+                    rv->offset = Optimizer::SymbolManager::Get(exp);
+                    barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
+                    Optimizer::gen_icode(Optimizer::i_assnblock, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->size - ATOMIC_FLAG_SPACE), rv, av);
+                    gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
+                }
             }
             else
             {
@@ -2590,27 +2638,87 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
         case Optimizer::ao_store:
             if (isstructured(node->v.ad->tp))
             {
-                left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
-                Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, left, nullptr);
-                right = gen_expr(funcsp, node->v.ad->value, F_STORE, ISZ_ADDR);
-                av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
-                Optimizer::gen_icode(Optimizer::i_assnblock, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->btp->size), av, right);
-                rv = right;
-                barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
-                gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
+                if ((Optimizer::chosenAssembler->arch->isLockFreeSize >= node->v.ad->tp->size
+                    && (node->v.ad->tp->size & (node->v.ad->tp->size - 1)) == 0))
+                {
+                    int sz = ISZ_U32;
+                    switch (node->v.ad->tp->size)
+                    {
+                        case 1:
+                            sz = ISZ_UCHAR;
+                            break;
+                        case 2:
+                            sz = ISZ_U16;
+                            break;
+                        case 4:
+                            sz = ISZ_U32;
+                            break;
+                        case 8:
+                            sz = ISZ_ULONGLONG;
+                            break;
+                        default:
+                            Utils::fatal("ao_store: invalid structure size");
+                            break;
+                    }
+                    left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
+                    Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, left, nullptr);
+                    right = gen_expr(funcsp, node->v.ad->value, F_STORE, ISZ_ADDR);
+                    right = Optimizer::indnode(right, sz);
+                    right->size = sz;
+                    auto temp = Optimizer::tempreg(sz, 0);
+                    Optimizer::gen_icode(Optimizer::i_assn, temp, right, 0);
+                    right = temp;
+                    av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
+                    left = Optimizer::indnode(av, sz);
+                    left->size = sz;
+                    Optimizer::gen_icode(Optimizer::i_assn, left, right, nullptr);
+                    Optimizer::intermed_tail->atomic = true;
+                    rv = right;
+                    barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
+                    gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
+                }
+                else
+                {
+                    left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
+                    Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, left, nullptr);
+                    right = gen_expr(funcsp, node->v.ad->value, F_STORE, ISZ_ADDR);
+                    av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
+                    Optimizer::gen_icode(Optimizer::i_assnblock, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->size- ATOMIC_FLAG_SPACE), av, right);
+                    rv = right;
+                    barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
+                    gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
+                }
             }
             else
             {
                 sz = sizeFromType(node->v.ad->tp);
+                int sz1 = sz;
+                if (sz == ISZ_FLOAT || sz == ISZ_DOUBLE)
+                    sz1 = (node->v.ad->tp->size == 4 ? ISZ_U32 : ISZ_ULONGLONG);
                 right = gen_expr(funcsp, node->v.ad->value, 0, sz);
-                if (right->mode != Optimizer::i_direct || right->offset->type != en_tempref)
+                if (sz1 != sz && right->mode == Optimizer::i_direct && right->offset->type == Optimizer::se_tempref)
                 {
-                    auto temp = Optimizer::tempreg(sizeFromType(node->v.ad->tp), 0);
+                    // floating useing int registers, move the value into a temporary
+                    auto expr  = anonymousVar(sc_auto, node->v.ad->tp);
+                    auto temp = Allocate<Optimizer::IMODE>();
+                    temp->mode = Optimizer::i_direct;
+                    temp->size = sz;
+                    temp->offset = Optimizer::SymbolManager::Get(expr);
+                    Optimizer::gen_icode(Optimizer::i_assn, temp, right, nullptr);
+                    right = Allocate<Optimizer::IMODE>();
+                    right->mode = Optimizer::i_direct;
+                    right->size = sz1;
+                    right->offset = Optimizer::SymbolManager::Get(expr);
+                }
+                if (right->mode != Optimizer::i_direct || right->offset->type != Optimizer::se_tempref)
+                {
+                    right->size = sz1;                    
+                    auto temp = Optimizer::tempreg(sz1, 0);
                     Optimizer::gen_icode(Optimizer::i_assn, temp, right, nullptr);
                     right = temp;
                 }
                 av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
-                left = Optimizer::indnode(av, sz);
+                left = Optimizer::indnode(av, sz1);
                 Optimizer::gen_icode(Optimizer::i_assn, left, right, nullptr);
                 Optimizer::intermed_tail->atomic = true;
                 barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);

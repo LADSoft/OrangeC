@@ -723,6 +723,12 @@ static void iop_cmpxchgstrong(Optimizer::QUAD* q)
     oputc(',', icdFile);
     putamode(q, q->dc.right);
 }
+static void iop_kill_dependency(Optimizer::QUAD* q)
+{
+    oprintf(icdFile, "\tKILLDEPENDENCY\t");
+    putamode(q, q->dc.left);
+}
+
 static void iop_xchg(Optimizer::QUAD* q)
 {
     oprintf(icdFile, "\tXCHG\t");
@@ -825,6 +831,7 @@ static void (*oplst[])(Optimizer::QUAD* q) = {
     iop_atomic_flag_fence,
     iop_cmpxchgweak,
     iop_cmpxchgstrong,
+    iop_kill_dependency,
     iop_xchg,
     iop_prologue,
     iop_epilogue,

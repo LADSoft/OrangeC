@@ -189,6 +189,7 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     0,           /* custom alignment routine */
     &sizes,      /* sizes */
     &locks,      /* atomic locks */
+    4,           /* maximum value for __c11_atomic_is_lock_free */
     0,           /* routine is called in case parameters less than paramwidth need offsets */
     ISZ_ULONG,   /* size compatible to an integer */
     ISZ_ULONG,   /* size compatible to an address */

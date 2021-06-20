@@ -102,6 +102,9 @@ int needsAtomicLockFromType(TYPE* tp)
         case bt_struct:
         case bt_union:
         default:
+            if ((Optimizer::chosenAssembler->arch->isLockFreeSize >= basetype(tp)->size
+                && (basetype(tp)->size & (basetype(tp)->size - 1)) == 0))
+                return 0;
             return 1;
     }
 }

@@ -55,6 +55,7 @@
 #include "browse.h"
 #include "ildata.h"
 #include "optmodules.h"
+#include "config.h"
 
 namespace Parser
 {
@@ -4664,11 +4665,14 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
     lex = getsym();
     if (needkw(&lex, openpa))
     {
-        if (kw == kw_atomic_kill_dependency)
+        if (kw == kw_c11_atomic_is_lock_free)
         {
-            lex = expression_assign(lex, funcsp, nullptr, tp, exp, nullptr, flags);
-            if (!*tp)
-                error(ERR_EXPRESSION_SYNTAX);
+            lex = optimized_expression(lex, funcsp, nullptr, tp, exp, false);
+            if (!isint(*tp) || !isintconst(*exp))
+                error(ERR_NEED_INTEGER_TYPE);
+            *tp = & stdint;
+            bool found = (*exp)->v.i > 0 && (*exp)->v.i <= Optimizer::chosenAssembler->arch->isLockFreeSize && ((*exp)->v.i & ((*exp)->v.i - 1)) == 0;
+            *exp = intNode(en_c_i, found);
             needkw(&lex, closepa);
         }
         else if (kw == kw_c11_atomic_init)
@@ -4726,7 +4730,15 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
             d = Allocate<ATOMICDATA>();
             switch (kw)
             {
+                case kw_atomic_kill_dependency:
+                    lex = expression_assign(lex, funcsp, nullptr, &d->tp, &d->address, nullptr, flags);
+                    *tp = d->tp;
+                    if (!*tp)
+                        error(ERR_EXPRESSION_SYNTAX);
+                    d->atomicOp = Optimizer::ao_kill_dependency;
+                    break;
                 case kw_atomic_flag_test_set:
+
                     lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->flg, nullptr, flags);
                     if (tpf)
                     {
@@ -4834,8 +4846,9 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                     }
                     if (needkw(&lex, comma))
                     {
-                        lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->value, nullptr, flags);
-                        if (!comparetypes(tpf, *tp, false))
+                        TYPE* tpf1;
+                        lex = expression_assign(lex, funcsp, nullptr, &tpf1, &d->value, nullptr, flags);
+                        if (!comparetypes(d->tp, tpf1, false))
                         {
                             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
                         }
@@ -4939,11 +4952,8 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                         *tp = &stdint;
                         d->value = intNode(en_c_i, 0);
                     }
-                    // MUSTFIX: need to get the bool value here for weak/strong check!!!
-                    // THIS MATTERS FOR ARM PLATFORMS AND OTHERS WITH WEAK/STRONG SEMANTICS
                     if (needkw(&lex, comma))
                     {
-                        // FIXME: unsure if this is correct, get this reviewed
                         TYPE* weak_type = nullptr;
                         EXPRESSION* weak_expr = nullptr;
 
@@ -5454,6 +5464,7 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 case kw_atomic_flag_test_set:
                 case kw_atomic_flag_clear:
                 case kw_atomic_kill_dependency:
+                case kw_c11_atomic_is_lock_free:
                 case kw_c11_atomic_load:
                 case kw_c11_atomic_store:
                 case kw_c11_atomic_cmpxchg_strong:

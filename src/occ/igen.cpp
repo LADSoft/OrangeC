@@ -176,6 +176,7 @@ static void iop_atomic_flag_test_and_set(Optimizer::QUAD* q) { asm_atomic(q); }
 static void iop_atomic_flag_clear(Optimizer::QUAD* q) { asm_atomic(q); }
 static void iop_cmpxchgweak(Optimizer::QUAD* q) { asm_atomic(q); }
 static void iop_cmpxchgstrong(Optimizer::QUAD* q) { asm_atomic(q); }
+static void iop_kill_dependency(Optimizer::QUAD* q) { }
 static void iop_xchg(Optimizer::QUAD* q) { asm_atomic(q); }
 static void iop_parm(Optimizer::QUAD* q)
 {
@@ -277,6 +278,7 @@ static void (*oplst[])(Optimizer::QUAD* q) = {
     iop_atomic_flag_fence,
     iop_cmpxchgweak,
     iop_cmpxchgstrong,
+    iop_kill_dependency,
     iop_xchg,
     asm_prologue,
     asm_epilogue,

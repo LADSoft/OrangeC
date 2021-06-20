@@ -37,6 +37,7 @@
 #include "iblock.h"
 #include "ilocal.h"
 #include "irc.h"
+#include "iconst.h"
 #include "Utils.h"
 namespace Optimizer
 {
@@ -108,8 +109,9 @@ OptimizerModule Modules[]
     { OptimizePrecolor, nullptr, ~0, 0, false, false }, // Precolor(true);
     { RearrangePrecolors, nullptr, ~0, 0, false, false },
     { SSAIn, nullptr, ~0, 0, false, false },
-//    { ConstantFlow, "Constant Optimization", OPT_CONSTANT, 0, false, false },
+    { ConstantFlow, "Constant Optimization", OPT_CONSTANT, 0, false, false },
     { RemoveInfiniteThunks, nullptr, OPT_CONSTANT, 0, false, false },
+//    { RemoveCriticalThunks, nullptr, OPT_CONSTANT, 0, false, false },
     { RedoDoms, nullptr, OPT_CONSTANT, 0, false, false },
 //    { Reshape, "Loop reshaping", OPT_RESHAPE, 0, false, false },
     { ReduceLoopStrength, "Reduce Loop Strength", OPT_LSTRENGTH, DO_NOGLOBAL, true, false },
@@ -167,7 +169,6 @@ void OptimizerStats()
 
 void RunOptimizerModules()
 {
-    
     if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size))
     {
         if (!functionHasAssembly)

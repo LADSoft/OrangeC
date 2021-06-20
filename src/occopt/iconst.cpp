@@ -1780,6 +1780,9 @@ static void removeForward(BLOCK* start)
             case i_goto:
                 return;
             case i_coswitch:
+                // not doing this optimization, because GOTO statements  in the cases cause a crash
+                // look at dtoa.c if you want to try to resolve it..
+                break;
                 if (tail->dc.left->mode == i_immed)
                 {
                     con = tail->dc.left->offset->i;

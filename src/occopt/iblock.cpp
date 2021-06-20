@@ -407,7 +407,7 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
              * in the CSE table.  At this point a temp var will already exist
              * in the case that a volatile exists as the answer.
              */
-            if (newQuad->ans && (newQuad->dc.opcode != i_assn || newQuad->dc.left->mode != i_immed) &&
+            if (newQuad->ans && !newQuad->atomic && (newQuad->dc.opcode != i_assn || newQuad->dc.left->mode != i_immed) &&
                 (!newQuad->ans->vol && !newQuad->ans->retval &&
                  (newQuad->ans->size < ISZ_FLOAT || Optimizer::chosenAssembler->arch->hasFloatRegs) &&
                  (!newQuad->dc.left || !(newQuad->livein & IM_LIVELEFT) ||
@@ -430,6 +430,7 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
         node = newQuad;
         outnode = liveout(node);
         outnode->genConflict = newQuad->genConflict;
+        outnode->atomic = newQuad->atomic;
         add_intermed(outnode);
     }
     else
@@ -439,6 +440,7 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
         outnode->ans = newQuad->ans;
         outnode->dc.left = node->ans;
         outnode->genConflict = newQuad->genConflict;
+        outnode->atomic = newQuad->atomic;
         if (outnode->ans != outnode->dc.left)
             add_intermed(outnode);
     }
@@ -561,7 +563,7 @@ void gen_label(int labno)
 /*-------------------------------------------------------------------------*/
 
 Optimizer::QUAD* gen_icode_with_conflict(enum i_ops op, Optimizer::IMODE* res, Optimizer::IMODE* left, Optimizer::IMODE* right,
-                                         bool conflicting)
+                                         bool conflicting, bool atomic)
 /*
  *      generate a code sequence into the peep list.
  */
@@ -594,6 +596,10 @@ Optimizer::QUAD* gen_icode_with_conflict(enum i_ops op, Optimizer::IMODE* res, O
     newQuad->dc.left = left;
     newQuad->dc.right = right;
     newQuad->ans = res;
+    if (atomic)
+    {
+        newQuad->atomic = true;
+    }
     newQuad = add_dag(newQuad);
     switch (op)
     {
@@ -611,6 +617,11 @@ Optimizer::QUAD* gen_icode(enum i_ops op, Optimizer::IMODE* res, Optimizer::IMOD
 {
     return gen_icode_with_conflict(op, res, left, right, false);
 }
+QUAD* gen_icode_with_atomic(enum i_ops op, IMODE* res, IMODE* left, IMODE* right)
+{
+    return gen_icode_with_conflict(op, res, left, right, false, true);
+}
+
 
 /*-------------------------------------------------------------------------*/
 

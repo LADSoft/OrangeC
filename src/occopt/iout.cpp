@@ -247,7 +247,10 @@ static void putunary(Optimizer::QUAD* q, const char* str)
 {
     oputc('\t', icdFile);
     putamode(q, q->ans);
-    oprintf(icdFile, " = ");
+    if (q->atomic)
+        oprintf(icdFile, " Atomic= ");
+    else
+       oprintf(icdFile, " = ");
     oprintf(icdFile, " %s ", str);
     putamode(q, q->dc.left);
 }

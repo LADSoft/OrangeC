@@ -169,12 +169,16 @@ static void iop_functailend(Optimizer::QUAD* q)
     }
 }
 static void iop_gcsestub(Optimizer::QUAD* q) {}
-static void iop_atomic_fence(Optimizer::QUAD* q) { asm_atomic(q); }
+static void iop_atomic_thread_fence(Optimizer::QUAD* q) { asm_atomic(q); }
+static void iop_atomic_signal_fence(Optimizer::QUAD* q) { asm_atomic(q); }
 static void iop_atomic_flag_fence(Optimizer::QUAD* q) { asm_atomic(q); }
 static void iop_atomic_flag_test_and_set(Optimizer::QUAD* q) { asm_atomic(q); }
 static void iop_atomic_flag_clear(Optimizer::QUAD* q) { asm_atomic(q); }
-static void iop_cmpswp(Optimizer::QUAD* q) { asm_atomic(q); }
+static void iop_cmpxchgweak(Optimizer::QUAD* q) { asm_atomic(q); }
+static void iop_cmpxchgstrong(Optimizer::QUAD* q) { asm_atomic(q); }
+static void iop_kill_dependency(Optimizer::QUAD* q) { asm_atomic(q); }
 static void iop_xchg(Optimizer::QUAD* q) { asm_atomic(q); }
+
 /* List of opcodes
  * This list MUST be in the same order as the op_ enums
  */
@@ -263,9 +267,12 @@ static void (*oplst[])(Optimizer::QUAD* q) = {
     iop_cxcon,
     iop_atomic_flag_test_and_set,
     iop_atomic_flag_clear,
-    iop_atomic_fence,
+    iop_atomic_thread_fence,
+    iop_atomic_signal_fence,
     iop_atomic_flag_fence,
-    iop_cmpswp,
+    iop_cmpxchgweak,
+    iop_cmpxchgstrong,
+    iop_kill_dependency,
     iop_xchg,
     asm_prologue,
     asm_epilogue,

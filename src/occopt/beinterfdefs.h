@@ -238,6 +238,7 @@ typedef struct
 #define DO_NOBRANCHTOBRANCH 8192
 #define DO_NOMULTOSHIFT 16384
 #define DO_NOALIAS 32768
+#define DO_NOCONST 0x10000
 
     int erropts; /* error options */
 #define EO_RETURNASERR 1

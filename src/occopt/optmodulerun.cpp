@@ -109,7 +109,7 @@ OptimizerModule Modules[]
     { OptimizePrecolor, nullptr, ~0, 0, false, false }, // Precolor(true);
     { RearrangePrecolors, nullptr, ~0, 0, false, false },
     { SSAIn, nullptr, ~0, 0, false, false },
-    { ConstantFlow, "Constant Optimization", OPT_CONSTANT, 0, false, false },
+    { ConstantFlow, "Constant Optimization", OPT_CONSTANT, DO_NOCONST, false, false },
     { RemoveInfiniteThunks, nullptr, OPT_CONSTANT, 0, false, false },
 //    { RemoveCriticalThunks, nullptr, OPT_CONSTANT, 0, false, false },
     { RedoDoms, nullptr, OPT_CONSTANT, 0, false, false },

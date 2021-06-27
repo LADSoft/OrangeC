@@ -102,6 +102,7 @@ struct FunctionData
 };
 struct BaseData
 {
+    BaseData() { } // don't care about init, we just want the memory functions to compile
     enum
     {
         DF_GLOBAL = 1,

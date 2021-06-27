@@ -728,6 +728,7 @@ static void StreamTemps()
             if (t->pushedtotemp)
                 val |= TF_PUSHEDTOTEMP;
             StreamByte(val);
+            StreamType(t->tp);
         }
     }
 }

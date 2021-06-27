@@ -401,7 +401,7 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
     if (!node || (newQuad->dc.opcode == i_assn && node->ans->size != newQuad->ans->size) || node->ans->bits != newQuad->ans->bits)
     {
         if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) &&
-            !(Optimizer::chosenAssembler->arch->denyopts & DO_NOLOCAL))
+            !(Optimizer::chosenAssembler->arch->denyopts & DO_NOLCSE))
         {
             /* take care of volatiles by not registering volatile expressions
              * in the CSE table.  At this point a temp var will already exist
@@ -449,7 +449,7 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
      * is needed for constant-folding in subsequent instructions
      */
     if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) &&
-        !(Optimizer::chosenAssembler->arch->denyopts & DO_NOLOCAL))
+        !(Optimizer::chosenAssembler->arch->denyopts & DO_NOLCSE))
 
     {
         if (newQuad->ans && (newQuad->ans->mode == i_ind || newQuad->ans->offset->type != Optimizer::se_tempref))
@@ -569,7 +569,7 @@ Optimizer::QUAD* gen_icode_with_conflict(enum i_ops op, Optimizer::IMODE* res, O
  */
 {
     Optimizer::QUAD* newQuad;
-    if (right && right->mode == i_immed /*&& right->size == ISZ_NONE*/)
+    if (right && right->mode == i_immed && right->size != left->size)
     {
         if (op != i_lsl && op != i_asr && op != i_lsr)
         {

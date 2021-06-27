@@ -4,7 +4,7 @@
  * 
  *     This file is part of the Orange C Compiler package.
  * 
- *     The Orange C Compiler package is free software: you can redistribute it and/or modify
+ *     The Orange C Compiler package is free software: you can redistributue it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
@@ -694,6 +694,7 @@ static void UnstreamTemps()
             temps[temp]->loadTemp = !!(val & TF_LOADTEMP);
             temps[temp]->pushedtotemp = !!(val & TF_PUSHEDTOTEMP);
         }
+        temps[temp]->tp = UnstreamType();
     }
 }
 static void UnstreamLoadCache(FunctionData* fd, std::map<Optimizer::IMODE*, Optimizer::IMODE*>& hash)
@@ -1196,6 +1197,11 @@ static void ResolveNames(std::map<int, std::string>& texts)
         ResolveSymbol(v.prop, texts, globalCache);
         ResolveSymbol(v.getter, texts, globalCache);
         ResolveSymbol(v.setter, texts, globalCache);
+    }
+    for (auto&& t : temps)
+    {
+        if (t)
+            ResolveType(t->tp, texts, typeSymbols);
     }
 }
 bool InputIntermediate(SharedMemory* inputMem)

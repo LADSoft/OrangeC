@@ -33,13 +33,18 @@ struct OptimizerParam
     const char *paramName;
     unsigned optMask;
 };
-OptimizerParam Params[]
+std::vector<OptimizerParam> Params
 {
     { "reshape", OPT_RESHAPE },
     { "constant", OPT_CONSTANT },
     { "loop-strength", OPT_LSTRENGTH },
     { "move-invariants", OPT_INVARIANT },
-    { "global", OPT_GLOBAL },
+    { "gcse", OPT_GCSE },
+};
+
+std::vector<OptimizerParam> IcdParams
+{
+    { "gcse", ICD_OCP },
 };
 
 void optimize_setup(char select, const char* string)
@@ -84,7 +89,14 @@ std::string ParseOptimizerParams(std::string in)
     auto xx = Utils::split(in);
     for (auto a : xx)
     {
+        bool working = false;
+        bool icd = false;
         if (a.substr(0, 4) == "opt-")
+            working = true;
+        else if (a.substr(0,4) == "icd-")
+            working = icd = true;       
+
+        if (working)
         {
             bool no = false;
             int offs = 4;
@@ -95,15 +107,26 @@ std::string ParseOptimizerParams(std::string in)
             }
             auto test = a.substr(offs);
             bool found = false;
-            for (auto v : Params)
+
+            for (auto && v : icd ? IcdParams : Params)
             {
                 if (v.paramName && test == v.paramName)
                 {
                     found = true;
-                    if (no)
-                        Optimizer::cparams.optimizer_modules &= ~v.optMask;
+                    if (!icd)
+                    {
+                        if (no)
+                            Optimizer::cparams.optimizer_modules &= ~v.optMask;
+                        else
+                            Optimizer::cparams.optimizer_modules |= v.optMask;
+                    }
                     else
-                        Optimizer::cparams.optimizer_modules |= v.optMask;
+                    {
+                        if (no)
+                            Optimizer::cparams.icd_flags &= ~v.optMask;
+                        else
+                            Optimizer::cparams.icd_flags |= v.optMask;
+                    }
                     break;
                 }
             }

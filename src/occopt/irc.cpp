@@ -1679,6 +1679,7 @@ static void RewriteAllSpillNodes(void)
             else
             {
                 if (head->ans->offset && head->ans->offset->type == se_tempref && tempInfo[head->ans->offset->sp->i]->spilling)
+                 
                     spillVars[0] = head->ans->offset->sp->i;
                 if (head->ans->offset2 && head->ans->offset2->type == se_tempref && tempInfo[head->ans->offset2->sp->i]->spilling)
                     spillVars[1] = head->ans->offset2->sp->i;

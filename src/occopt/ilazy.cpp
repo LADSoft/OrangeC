@@ -27,7 +27,7 @@
 #include <string.h>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
-
+#include "optmodules.h"
 /* global data flow analysis is an optimal placement of all expressions
  * it is culled from:
  *
@@ -70,9 +70,19 @@ unsigned termCount;
 
 static BLOCK **reverseOrder, **forwardOrder;
 static BITINT *tempBytes, *tempBytes2, *tempBytes3;
-static int blocks;
+static int fwdBlocks, reverseBlocks;
 static BITINT* unMoveableTerms;
 static BITINT* ocpTerms;
+
+typedef std::list<std::pair<QUAD*, QUAD*>> QuadPairList;
+
+static BITINT* allocate_bits(int size)
+{
+    if (cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY)
+        return lallocbit(size);
+    else
+        return aallocbit(size); 
+}
 
 static void ormap(BITINT* dest, BITINT* src)
 {
@@ -143,15 +153,16 @@ static bool AnySet(BITINT* map)
 }
 static void EnterGlobal(QUAD* head)
 {
-    head->dsafe = aallocbit(termCount);
-    head->earliest = aallocbit(termCount);
-    head->delay = aallocbit(termCount);
-    head->latest = aallocbit(termCount);
-    head->isolated = aallocbit(termCount);
-    head->OCP = aallocbit(termCount);
-    head->RO = aallocbit(termCount);
-    head->uses = aallocbit(termCount);
-    head->transparent = aallocbit(termCount);
+    head->OCPTerms = termCount;
+    head->dsafe = allocate_bits(termCount);
+    head->earliest = allocate_bits(termCount);
+    head->delay = allocate_bits(termCount);
+    head->latest = allocate_bits(termCount);
+    head->isolated = allocate_bits(termCount);
+    head->OCP = allocate_bits(termCount);
+    head->RO = allocate_bits(termCount);
+    head->uses = allocate_bits(termCount);
+    head->transparent = allocate_bits(termCount);
     setmap(head->transparent, true);
 }
 static void GatherGlobals(void)
@@ -194,12 +205,19 @@ static void GatherGlobals(void)
             }
         }
 }
+inline static bool isstructptr(SimpleType* tp)
+{
+    return (tp->type == st_pointer) &&
+           ((tp->btp->type == st_union) ||
+            (tp->btp->type == st_class) ||
+            (tp->btp->type == st_struct));
+}
 void SetunMoveableTerms(void)
 {
     int i;
     // if they don't have floating point regs then don't move expressions involving
     // floating point
-    unMoveableTerms = aallocbit(termCount);
+    unMoveableTerms = allocate_bits(termCount);
     setmap(unMoveableTerms, true);
     for (i = 0; i < blockCount; i++)
     {
@@ -212,12 +230,35 @@ void SetunMoveableTerms(void)
             {
                 if (!head->ignoreMe && head->dc.opcode != i_label)
                 {
-                    if (head->temps & TEMP_ANS)
+                    if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct)
                     {
-                        int n = termMap[head->ans->offset->sp->i];
+                        int n = head->ans->offset->sp->i;
                         if ((!chosenAssembler->arch->hasFloatRegs && head->ans->size >= ISZ_FLOAT) || head->ans->bits ||
-                            head->ans->vol || head->ans->offset->sp->loadTemp)
-                            clearbit(unMoveableTerms, n);
+                            head->ans->vol)
+                            clearbit(unMoveableTerms, termMap[n]);
+                        if (head->ans->offset->sp->loadTemp)
+                        {
+                            bool structptr = false;
+                            switch(head->dc.left->offset->type)
+                            {
+                               case se_auto:
+                               case se_global:
+                               case se_pc:
+                               case se_threadlocal:
+                                   structptr = isstructptr(head->dc.left->offset->sp->tp);
+                                   break;
+                               case se_tempref:
+                                   if (head->dc.left->offset->right)
+                                       structptr = isstructptr(((SimpleSymbol*)head->dc.left->offset->right)->tp);
+                                   break;
+                            }
+                            if (structptr)
+                            {
+                                clearbit(unMoveableTerms, termMap[n]);
+                                if (tempInfo[n]->terms)
+                                    andmap(unMoveableTerms, tempInfo[n]->terms);
+                            }
+                        }
                     }
                 }
                 head = head->fwd;
@@ -238,7 +279,7 @@ static void CalculateUses(void)
     {
         bool first = true;
         head = tail;
-        setmap(head->uses, false);
+        setmap(tail->uses, false);
         while (head && (first || !head->OCP))
         {
             first = false;
@@ -341,7 +382,7 @@ static void CalculateTransparent(void)
                         int n = head->ans->offset->sp->i;
                         if (!tempInfo[n]->uses)
                         {
-                            tempInfo[n]->uses = aallocbit(termCount);
+                            tempInfo[n]->uses = allocate_bits(termCount);
                             AliasUses(tempInfo[n]->uses, head->dc.left, true);
                             AliasUses(tempInfo[n]->uses, head->dc.right, true);
                         }
@@ -367,7 +408,12 @@ static void CalculateTransparent(void)
             if (tail->ans && tail->dc.opcode != i_label)
             {
                 setmap(tempBytes, false);
-                AliasUses(tempBytes, tail->ans, true);
+                AliasUses(tempBytes, tail->ans, false);
+                if (tail->atomic)
+                {
+                    if (tail->temps & TEMP_LEFT)
+                        setbit(tempBytes, termMap[tail->dc.left->offset->sp->i]);
+                }
                 for (i = 0; i < termCount; i++)
                 {
                     if (isset(tempBytes, i))
@@ -423,7 +469,7 @@ static void CalculateDSafe(void)
     do
     {
         changed = false;
-        for (i = 0; i < blocks; i++)
+        for (i = 0; i < reverseBlocks; i++)
         {
             BLOCK* b = reverseOrder[i];
             if (b)
@@ -480,7 +526,7 @@ static void CalculateEarliest(void)
     do
     {
         changed = false;
-        for (i = 0; i < blocks; i++)
+        for (i = 0; i < fwdBlocks; i++)
         {
             BLOCK* b = forwardOrder[i];
             if (b)
@@ -491,7 +537,7 @@ static void CalculateEarliest(void)
                     BLOCKLIST* pbl = head->block->pred;
                     if (pbl)
                     {
-                        setmap(tempBytes3, true);
+                        setmap(tempBytes3, false);
                         while (pbl)
                         {
                             QUAD* tail = Last(pbl->block->tail);
@@ -511,6 +557,7 @@ static void CalculateEarliest(void)
                         }
                         changed |= !samemap(head->earliest, tempBytes3);
                     }
+
                     while (true)
                     {
                         QUAD* next = successor(head);
@@ -544,7 +591,7 @@ static void CalculateDelay(void)
     do
     {
         changed = false;
-        for (i = 0; i < blocks; i++)
+        for (i = 0; i < fwdBlocks; i++)
         {
             BLOCK* b = forwardOrder[i];
             if (b)
@@ -557,7 +604,7 @@ static void CalculateDelay(void)
                     andmap(tempBytes3, head->earliest);
                     if (pbl)
                     {
-                        setmap(tempBytes, false);
+                        setmap(tempBytes, true);
                         while (pbl)
                         {
                             QUAD* tail = Last(pbl->block->tail);
@@ -604,7 +651,7 @@ static void CalculateDelay(void)
 static void CalculateLatest(void)
 {
     int i;
-    for (i = 0; i < blocks; i++)
+    for (i = 0; i < reverseBlocks; i++)
     {
         BLOCK* b = reverseOrder[i];
         if (b)
@@ -659,12 +706,13 @@ static void CalculateIsolated(void)
 {
     int i;
     bool changed;
-    for (i = 0; i < blocks; i++)
+    setmap(blockArray[exitBlock]->tail ->isolated, true);
+    for (i = 0; i < reverseBlocks; i++)
         setmap(reverseOrder[i]->head->isolated, true);
     do
     {
         changed = false;
-        for (i = 0; i < blocks; i++)
+        for (i = 0; i < reverseBlocks; i++)
         {
             BLOCK* b = reverseOrder[i];
             if (b && b->blocknum != exitBlock)
@@ -735,15 +783,15 @@ static void GatherTerms(void)
             if ((tail->temps & TEMP_ANS) && tail->ans->mode == i_direct)
             {
                 int n = tail->ans->offset->sp->i;
-                if ((tail->temps & (TEMP_LEFT | TEMP_RIGHT)) || tail->dc.left->retval)
+                if (((tail->temps & (TEMP_LEFT | TEMP_RIGHT)) || tail->dc.left->retval))
+
                 {
-                    if (((tail->temps & TEMP_LEFT) || tail->dc.left->retval) /*&& 
-                            (!tail->dc.left->offset->sp->pushedtotemp)*/)
+                    if (((tail->temps & TEMP_LEFT) || tail->dc.left->retval))
                     {
                         int l = tail->dc.left->offset->sp->i;
                         if (!tempInfo[l]->terms)
                         {
-                            tempInfo[l]->terms = aallocbit(termCount);
+                            tempInfo[l]->terms = allocate_bits(termCount);
                         }
                         if (tempInfo[l]->termClear)
                         {
@@ -761,7 +809,7 @@ static void GatherTerms(void)
                         int l = tail->dc.right->offset->sp->i;
                         if (!tempInfo[l]->terms)
                         {
-                            tempInfo[l]->terms = aallocbit(termCount);
+                            tempInfo[l]->terms = allocate_bits(termCount);
                         }
                         if (tempInfo[l]->termClear)
                         {
@@ -788,8 +836,8 @@ static void GatherTerms(void)
 static void CalculateOCPAndRO(void)
 {
     int i;
-    ocpTerms = aallocbit(termCount);
-    for (i = 0; i < blocks; i++)
+    ocpTerms = allocate_bits(termCount);
+    for (i = 0; i < fwdBlocks; i++)
     {
         if (forwardOrder[i])
         {
@@ -820,69 +868,136 @@ static void HandleOCP(QUAD* after, int tn)
 {
     if (tempInfo[tn]->idefines)
     {
-        QUAD* p = (QUAD*)(tempInfo[tn]->idefines->data);
-        QUAD* tail = after;
-        QUAD* ins = Allocate<QUAD>();
-        QUAD* bans;
-        bool a = false, l = false;
-        if (after->dc.opcode != i_block && after->dc.opcode != i_label)
+        QUAD* ocppoint = after;
+        if (ocppoint->dc.opcode == i_block)
         {
-            QUAD *beforea, *beforel = nullptr;
-            after = after->back;
-            beforea = nullptr;
-            while (!after->OCP && !beforel && after->dc.opcode != i_label &&	
-                   (!after->dc.left || !after->dc.left->retval) && after->dc.opcode != i_block)
-            {
-                if (after->temps & TEMP_ANS)
-                {
-                    if (tn == after->ans->offset->sp->i)
-                        if (after->ans->mode == i_direct)
-                            beforea = after;
-                }
-                after = after->back;
-            }
-            if (beforel)
-                after = beforel;
-            else if (beforea)
-                after = beforea;
-        }
-        else
-        {
-            while (!after->ignoreMe || after->fwd->dc.opcode == i_label || after->fwd->OCPInserted)
+            after = after->fwd;
+            while (!after->OCP && (after->ignoreMe || after->OCPInserted || after->dc.opcode == i_label))
                 after = after->fwd;
         }
-        *ins = *p;
-        ins->uses = nullptr;
-        ins->transparent = nullptr;
-        ins->dsafe = nullptr;
-        ins->earliest = nullptr;
-        ins->delay = nullptr;
-        ins->latest = nullptr;
-        ins->isolated = nullptr;
-        ins->OCP = nullptr;
-        ins->RO = nullptr;
+        QUAD* p = (QUAD*)(tempInfo[tn]->idefines->data);
+        if (!isset(ocppoint->uses, termMap[tn]))
+        {
+            QUAD* ins = Allocate<QUAD>();
+            *ins = *p;
+            ins->uses = nullptr;
+            ins->transparent = nullptr;
+            ins->dsafe = nullptr;
+            ins->earliest = nullptr;
+            ins->delay = nullptr;
+            ins->latest = nullptr;
+            ins->isolated = nullptr;
+            ins->OCP = nullptr;
+            ins->RO = nullptr;
 
-        ins->OCPInserted = true;
-        ins->fwd = after->fwd;
-        ins->back = after;
-        ins->back->fwd = ins;
-        ins->fwd->back = ins;
-        ins->block = after->block;
-        if (after == after->block->tail)
-            after->block->tail = ins;
-        bans = Allocate<QUAD>();
+            ins->OCPInserted = true;
+            ins->fwd = after;
+            ins->back = after->back;
+            ins->back->fwd = ins;
+            ins->fwd->back = ins;
+            ins->block = ocppoint->block;
+        }
+        QUAD* bans = Allocate<QUAD>();
         bans->ans = tempInfo[tn]->copy;
-        bans->dc.left = ins->ans;
+        bans->dc.left = p->ans;
         bans->dc.opcode = i_assn;
         bans->OCPInserted = true;
-        bans->back = ins;
-        bans->fwd = ins->fwd;
+        bans->back = after->back;
+        bans->fwd = after;
         bans->back->fwd = bans;
         bans->fwd->back = bans;
-        bans->block = ins->block;
+        bans->block = ocppoint->block;
         bans->temps = TEMP_LEFT | TEMP_ANS;
-        if (ins == ins->block->tail)
-            ins->block->tail = bans;
+        if (bans->block != after->block)
+            bans->block->tail = bans;
+    }
+}
+static bool PlaceOCP(std::deque<QUAD*>& working, QUAD* head)
+{
+    bool rv = false;
+    for (auto it = working.begin(); it != working.end(); ++it)
+    {
+        auto current = *it;
+        if (head->temps & TEMP_ANS)
+        {
+            if (current->temps & TEMP_LEFT)
+            {
+                if (current->dc.left->offset->sp->i == head->ans->offset->sp->i)
+                {
+                    rv = true;
+                    working.insert(it, head);
+                    break;
+                }
+            }
+            if (current->temps & TEMP_RIGHT)
+            {
+                if (current->dc.right->offset->sp->i == head->ans->offset->sp->i)
+                {
+                    rv = true;
+                    working.insert(it, head);
+                    break;
+                }
+            }
+        }
+    }
+    if (!rv)
+        working.push_back(head);
+    return rv;
+}
+static void SortOCP(QUAD* head)
+{
+    std::deque<QUAD*> queue;
+    QUAD* tail = head;
+    QUAD* insertionPoint = nullptr;
+    if (tail->dc.opcode == i_block)
+    {
+        do
+        {
+            tail = tail->fwd;
+            if (tail->OCPInserted)
+            {
+                if (!insertionPoint)
+                    insertionPoint = tail->back;
+                queue.push_back(tail);
+                tail->fwd->back = tail->back;
+                tail->back->fwd = tail->fwd;
+            }
+        } while (!tail->OCP && (tail->ignoreMe || tail->OCPInserted || tail->dc.opcode == i_label));
+    }
+    else
+    {
+        while (!tail->back->OCP && !tail->back->ignoreMe && tail->back->dc.opcode != i_label && tail->back->dc.opcode != i_tag)
+        {
+            tail = tail->back;
+            queue.push_front(tail);
+            tail->fwd->back = tail->back;
+            tail->back->fwd = tail->fwd;
+        }
+        insertionPoint = head->back;
+    }
+    if (insertionPoint)
+    {
+        bool processing = queue.size() != 0;
+        while (processing)
+        {
+            processing = false;
+            std::deque<QUAD*> working;
+            for (auto current : queue)
+            {
+                processing |= PlaceOCP(working, current);
+            }
+            queue = working;
+        }
+        for (auto current : queue)
+        {
+            current->back = insertionPoint;
+            current->fwd = insertionPoint->fwd;
+            insertionPoint->fwd->back = current;
+            insertionPoint->fwd = current;
+            insertionPoint = insertionPoint->fwd;
+            if (current->fwd->block != current->block)
+                current->block->tail = current;
+        }
     }
 }
 static IMODE* GetROVar(IMODE* oldvar, IMODE* newvar, bool mov)
@@ -933,7 +1048,6 @@ static IMODE* GetROVar(IMODE* oldvar, IMODE* newvar, bool mov)
 static void HandleRO(QUAD* after, int tn)
 {
     BITINT* OCP = after->OCP;
-
     if (after->dc.opcode != i_block)
         do
         {
@@ -980,7 +1094,7 @@ static void MoveExpressions(void)
             int j;
             int size = tempInfo[termMapUp[i]]->enode->sp->imvalue->size;
             tempInfo[termMapUp[i]]->copy = InitTempOpt(size, size);
-            for (j = 0; j < blocks; j++)
+            for (j = 0; j < fwdBlocks; j++)
             {
 
                 QUAD* head = forwardOrder[j]->head;
@@ -998,12 +1112,25 @@ static void MoveExpressions(void)
             }
         }
     }
+    // have to sort the OCPs, temp reallocation may force the natural
+    // ordering not to work...
+    for (j = 0; j < fwdBlocks; j++)
+    {
+
+        QUAD* head = forwardOrder[j]->head;
+        while (head != forwardOrder[j]->tail->fwd)
+        {
+            if (head->OCP)
+                SortOCP(head);
+            head = head->fwd;
+        }
+    }
     for (i = 0; i < termCount; i++)
     {
         if (isset(ocpTerms, i))
         {
             int j;
-            for (j = 0; j < blocks; j++)
+            for (j = 0; j < fwdBlocks; j++)
             {
 
                 QUAD* head = forwardOrder[j]->head;
@@ -1011,7 +1138,7 @@ static void MoveExpressions(void)
                 {
                     if (head->OCP)
                     {
-                        if (isset(head->RO, i))
+                        if (isset(head->RO, i) && !isset(head->OCP, i))
                             HandleRO(head, termMapUp[i]);
                     }
                     head = head->fwd;
@@ -1107,14 +1234,21 @@ static int fgc(enum e_fgtype type, BLOCK* parent, BLOCK* b) { return true; }
 void SetGlobalTerms(void)
 {
     int i, j;
-    termCount = 0;
-    for (i = 0; i < tempCount; i++)
-        if (tempInfo[i]->inUse)
-            termCount++;
+    if (cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY )
+    {
+        termCount = tempCount;
+    }
+    else
+    {
+        termCount = 0;
+        for (i = 0; i < tempCount; i++)
+            if (tempInfo[i]->inUse)
+                termCount++;
+    }
     termMap = Allocate<unsigned short>(tempCount);
     termMapUp = Allocate<unsigned short>(termCount);
     for (i = 0, j = 0; i < tempCount; i++)
-        if (tempInfo[i]->inUse)
+        if (tempInfo[i]->inUse || (cparams.icd_flags & ICD_OCP &~ICD_QUITEARLY))
         {
             termMap[i] = j;
             termMapUp[j] = i;
@@ -1127,12 +1261,12 @@ void GlobalOptimization(void)
     int i;
     PadBlocks();
     forwardOrder = oAllocate<BLOCK*>(blockCount);
-    blocks = 0;
+    fwdBlocks = 0;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->visiteddfst = false;
-    forwardOrder[blocks++] = blockArray[0];
-    for (i = 0; i < blocks; i++)
+    forwardOrder[fwdBlocks++] = blockArray[0];
+    for (i = 0; i < fwdBlocks; i++)
     {
         BLOCK* b = forwardOrder[i];
         BLOCKLIST* bl = b->succ;
@@ -1141,18 +1275,18 @@ void GlobalOptimization(void)
             if (!bl->block->visiteddfst)
             {
                 bl->block->visiteddfst = true;
-                forwardOrder[blocks++] = bl->block;
+                forwardOrder[fwdBlocks++] = bl->block;
             }
             bl = bl->next;
         }
     }
     reverseOrder = oAllocate<BLOCK*>(blockCount);
-    blocks = 0;
+    reverseBlocks = 0;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->visiteddfst = false;
-    reverseOrder[blocks++] = blockArray[exitBlock];
-    for (i = 0; i < blocks; i++)
+    reverseOrder[reverseBlocks++] = blockArray[exitBlock];
+    for (i = 0; i < reverseBlocks; i++)
     {
         BLOCK* b = reverseOrder[i];
         BLOCKLIST* bl = b->pred;
@@ -1161,16 +1295,16 @@ void GlobalOptimization(void)
             if (!bl->block->visiteddfst)
             {
                 bl->block->visiteddfst = true;
-                reverseOrder[blocks++] = bl->block;
+                reverseOrder[reverseBlocks++] = bl->block;
             }
             bl = bl->next;
         }
     }
 
     definesInfo();
-    tempBytes = aallocbit(termCount);
-    tempBytes2 = aallocbit(termCount);
-    tempBytes3 = aallocbit(termCount);
+    tempBytes = allocate_bits(termCount);
+    tempBytes2 = allocate_bits(termCount);
+    tempBytes3 = allocate_bits(termCount);
     GatherGlobals();
     GatherTerms();
     CalculateUses();

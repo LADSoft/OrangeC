@@ -283,6 +283,7 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     0,           /* routine is called in case parameters less than paramwidth need offsets */
     ISZ_ULONG,   /* size compatible to an integer */
     ISZ_ULONG,   /* size compatible to an address */
+    ISZ_UINT,    /* size compatible with the register width */
     8,           /* default packing level */
     8,           /* alignment of malloc() out of RTL */
     /* floating point characteristics not fully implemented */

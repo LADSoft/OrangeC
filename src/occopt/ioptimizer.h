@@ -274,6 +274,7 @@ struct SimpleString
 };
 struct SimpleExpression
 {
+    SimpleExpression() { }// don't care about init, we just want the memory functions to compile
     se_type type;
     union
     {
@@ -550,6 +551,7 @@ typedef struct quad
     int sourceindx;
     int copy;
     int retcount;
+    short OCPTerms;
     char sehMode;
     union
     {

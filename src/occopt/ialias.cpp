@@ -1283,7 +1283,69 @@ void AliasUses(BITINT* bits, IMODE* im, bool rhs)
         }
         else
         {
-            setbit(bits, termMap[im->offset->sp->i]);
+            if (im->offset->type == se_tempref)
+            {
+                ormap(bits, tempInfo[im->offset->sp->i]->modifiedBy);
+                if (im->mode == i_direct)
+                {
+                    im = LookupLoadTemp(im, im);
+                    setbit(bits, termMap[im->offset->sp->i]);
+                }
+                else
+                {
+                    auto al = tempInfo[im->offset->sp->i]->pointsto;
+                    while (al)
+                    {
+                        auto addr = al->address;
+                        while (addr->merge)
+                            addr = addr->merge;
+                        if (addr->name->byUIV)
+                        {
+                            AliasUses(bits, addr->name->v.uiv->im, true);
+                        }
+//                        if (al->address->modifiedBy)
+//                            ormap(bits, al->address->modifiedBy);
+                        al = al->next;
+                    }
+                    clearbit(bits, termMap[im->offset->sp->i]);
+                }
+            }
+            else if (im->mode == i_direct)
+            {
+                ALIASNAME* an = LookupMem(im);
+                ALIASADDRESS* aa;
+                an = LookupAliasName(an, 0);
+                aa = LookupAddress(an, 0);
+                while (aa->merge)
+                    aa = aa->merge;
+                if (aa->modifiedBy)
+                    ormap(bits, aa->modifiedBy);
+                im = GetLoadTemp(im);
+                if (im)
+                {
+                    setbit(bits, termMap[im->offset->sp->i]);
+                }
+            }
+            else if (im->mode == i_immed && !isintconst(im->offset) && !isimaginaryconst(im->offset) &&
+                     !iscomplexconst(im->offset) && !isfloatconst(im->offset) && im->offset->type != se_labcon)
+            {
+                ALIASNAME* an = LookupMem(im);
+                ALIASADDRESS* aa;
+                aa = LookupAddress(an, 0);
+                while (aa->merge)
+                    aa = aa->merge;
+                if (aa->modifiedBy)
+                    ormap(bits, aa->modifiedBy);
+                im = im->offset->sp->imvalue;
+                if (im)
+                {
+                    im = GetLoadTemp(im);
+                    if (im)
+                    {
+                        setbit(bits, termMap[im->offset->sp->i]);
+                    }
+                }
+            }
         }
     }
 }

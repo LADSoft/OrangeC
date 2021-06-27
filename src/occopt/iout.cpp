@@ -45,7 +45,7 @@
 #include "ioptutil.h"
 #include "output.h"
 #include "ilocal.h"
-
+#include "optmodules.h"
 /*      variable initialization         */
 
 namespace Optimizer
@@ -1132,6 +1132,29 @@ void putamode(Optimizer::QUAD* q, Optimizer::IMODE* ap)
     //        oprintf(icdFile,"[0x%x]", q->liveRegs);
 }
 
+static void put_bitarray(const char* msg, BITINT* bits, int termCount)
+{
+    int n = (termCount + BITINTBITS - 1) / BITINTBITS;
+    oprintf(icdFile,"%20s: ", msg);
+    for (int i = 0; i < n; i++)
+        oprintf(icdFile,"%8x ", bits[i]);
+    oputc('\n', icdFile);
+}
+static void put_diagnostics(Optimizer::QUAD* q)
+{
+    if (q->OCP && (cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY))
+    {
+        put_bitarray("Uses", q->uses, q->OCPTerms);
+        put_bitarray("Transparent", q->transparent, q->OCPTerms);
+        put_bitarray("DSafe", q->dsafe, q->OCPTerms);
+        put_bitarray("Earliest", q->earliest, q->OCPTerms);
+        put_bitarray("Delay", q->delay, q->OCPTerms);
+        put_bitarray("Latest", q->latest, q->OCPTerms);
+        put_bitarray("Isolated", q->isolated, q->OCPTerms);
+        put_bitarray("OCP", q->OCP, q->OCPTerms);
+        put_bitarray("RO", q->RO, q->OCPTerms);
+    }
+}
 /*-------------------------------------------------------------------------*/
 void put_code(Optimizer::QUAD* q)
 /*
@@ -1147,6 +1170,7 @@ void put_code(Optimizer::QUAD* q)
     if (q->genConflict)
         oputc('^', icdFile);
     oputc('\n', icdFile);
+    put_diagnostics(q);
 }
 
 /*

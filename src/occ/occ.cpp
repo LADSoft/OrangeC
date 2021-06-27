@@ -70,6 +70,10 @@ namespace Parser
         return true;
     }
 }
+namespace Optimizer
+{
+    unsigned termCount;
+};
 
 namespace occx86
 {

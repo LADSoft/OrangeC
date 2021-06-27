@@ -45,6 +45,7 @@ typedef struct
     int prm_maxerr;     /* number of errors at which the compiler stops*/
     int prm_stackalign; /* stack alignment */
     int optimizer_modules; // optimizer module selection
+    int icd_flags;
     int verbosity; // verbosity level
     bool prm_optimize_for_speed;
     bool prm_optimize_for_size;
@@ -202,6 +203,7 @@ typedef struct
     int (*param_offs)(int size); /* routine is called in case parameters less than paramwidth need offsets */
     int compatibleIntSize;       /* size compatible to an integer */
     int compatibleAddrSize;      /* size compatible to an address */
+    int nativeRegisterWidth;     /* size compatible with the register width */
     int packSize;                /* default packing */
     int rtlAlign;                /* alignment for memory operations, as provided by RTL */
     /* floating point characteristics not fully implemented */
@@ -222,8 +224,8 @@ typedef struct
     const char* fastcallRegs;   /* register list for regs used in fastcall */
     int preferopts;             /* preferred optimizations */
     int denyopts;               /* optimizations we don't want */
-#define DO_NOGLOBAL 1
-#define DO_NOLOCAL 2
+#define DO_NOGCSE 1
+#define DO_NOLCSE 2
 #define DO_NOREGALLOC 4
 #define DO_NOADDRESSINIT 8
 #define DO_NOPARMADJSIZE 16

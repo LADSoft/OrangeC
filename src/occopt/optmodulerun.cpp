@@ -74,7 +74,7 @@ struct OptimizerModule
         //    if ((cparams.prm_optimize_for_speed) && (optflags & OPT_INVARIANT))
         //        MoveLoopInvariants(); /* move loop invariants out of loops */
         //}
-        //if ((optflags & OPT_GLOBAL) && !(chosenAssembler->arch->denyopts & DO_NOGLOBAL))
+        //if ((optflags & OPT_GCSE) && !(chosenAssembler->arch->denyopts & DO_NOGCSE))
         //{
         //    // printf("alias\n");
         //    AliasPass1();
@@ -111,20 +111,20 @@ OptimizerModule Modules[]
     { SSAIn, nullptr, ~0, 0, false, false },
     { ConstantFlow, "Constant Optimization", OPT_CONSTANT, DO_NOCONST, false, false },
     { RemoveInfiniteThunks, nullptr, OPT_CONSTANT, 0, false, false },
-//    { RemoveCriticalThunks, nullptr, OPT_CONSTANT, 0, false, false },
+////    { RemoveCriticalThunks, nullptr, OPT_CONSTANT, 0, false, false },
     { RedoDoms, nullptr, OPT_CONSTANT, 0, false, false },
-//    { Reshape, "Loop reshaping", OPT_RESHAPE, 0, false, false },
-    { ReduceLoopStrength, "Reduce Loop Strength", OPT_LSTRENGTH, DO_NOGLOBAL, true, false },
-    { MoveLoopInvariants, "Move Loop Invariants", OPT_INVARIANT, DO_NOGLOBAL, true, false },
+////    { Reshape, "Loop reshaping", OPT_RESHAPE, 0, false, false },
+//    { ReduceLoopStrength, "Reduce Loop Strength", OPT_LSTRENGTH, DO_NOGCSE, true, false },
+//    { MoveLoopInvariants, "Move Loop Invariants", OPT_INVARIANT, DO_NOGCSE, true, false },
     { AliasPass1, nullptr, ~0, DO_NOALIAS, false, false },
     { SSAOut, nullptr, ~0, 0, false, false },
     { RemoveDead, nullptr, ~0, 0, false, false },
     { SetGlobalTerms, nullptr, ~0, 0, false, false },
     { AliasPass2, nullptr, ~0, DO_NOALIAS, false, false },
-    { GlobalOptimization, "Lazy global optimization", OPT_GLOBAL, DO_NOGLOBAL, false, false },
+    { RemoveCriticalThunks, nullptr, ~0, 0, false, false },
+    { GlobalOptimization, "Lazy global optimization", OPT_GCSE, DO_NOGCSE, false, false },
     { AliasRundown, nullptr, ~0, DO_NOALIAS, false, false },
     { ResetTempBottom, nullptr, ~0, 0, false, false },
-    { RemoveCriticalThunks, nullptr, ~0, 0, false, false },
     { RemoveDead, nullptr, ~0, 0, false, false },
     { RemoveInfiniteThunks, nullptr, ~0, 0, false, false },
 };

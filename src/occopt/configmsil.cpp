@@ -193,6 +193,7 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     0,           /* routine is called in case parameters less than paramwidth need offsets */
     ISZ_ULONG,   /* size compatible to an integer */
     ISZ_ULONG,   /* size compatible to an address */
+    ISZ_ULONGLONG,/* size compatible with the register width */
     8,           /* default packing level */
     8,           /* alignment of malloc() out of RTL */
     /* floating point characteristics not fully implemented */
@@ -208,7 +209,7 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     0,                                                                            /* register list for regs used in fastcall */
 
     OPT_REVERSESTORE | OPT_REVERSEPARAM | OPT_ARGSTRUCTREF | OPT_EXPANDSWITCH | OPT_THUNKRETVAL, /* preferred optimizations */
-    DO_NOGLOBAL | DO_NOLOCAL | DO_NOREGALLOC | DO_NOADDRESSINIT | DO_NOPARMADJSIZE | DO_NOLOADSTACK | DO_NOENTRYIF | DO_NOALIAS | DO_NOCONST |
+    DO_NOGCSE | DO_NOLCSE | DO_NOREGALLOC | DO_NOADDRESSINIT | DO_NOPARMADJSIZE | DO_NOLOADSTACK | DO_NOENTRYIF | DO_NOALIAS | DO_NOCONST |
         DO_NOOPTCONVERSION | DO_NOINLINE | DO_UNIQUEIND | DO_NOFASTDIV | DO_NODEADPUSHTOTEMP | DO_MIDDLEBITS | DO_NOBRANCHTOBRANCH | DO_NOMULTOSHIFT,
     /* optimizations we don't want */
     EO_RETURNASERR,    /* error options */

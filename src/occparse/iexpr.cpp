@@ -130,11 +130,7 @@ void DumpLogicalDestructors(EXPRESSION* node, SYMBOL* funcsp)
 Optimizer::IMODE* LookupExpression(enum Optimizer::i_ops op, int size, Optimizer::IMODE* left, Optimizer::IMODE* right)
 {
     Optimizer::IMODE* ap = nullptr;
-    Optimizer::QUAD head;
-    memset(&head, 0, sizeof(head));
-    head.dc.left = left;
-    head.dc.right = right;
-    head.dc.opcode = op;
+    Optimizer::QUAD head = { op, left, right };
     if (!left->bits && (!right || !right->bits))
         ap = (Optimizer::IMODE*)LookupNVHash((Optimizer::UBYTE*)&head, DAGCOMPARE, name_value_hash);
     if (!ap)
@@ -4315,8 +4311,12 @@ void truejp(EXPRESSION* node, SYMBOL* funcsp, int label)
                 ap4 = Optimizer::indnode(ap3, ap3->size);
                 ap2 = Optimizer::indnode(ap1, ap1->size);
                 Optimizer::gen_icgoto(Optimizer::i_jne, lab0, ap4, ap2);
-                Optimizer::gen_icode(Optimizer::i_add, ap3, ap3, Optimizer::make_immed(ap3->size, siz2));
-                Optimizer::gen_icode(Optimizer::i_add, ap1, ap1, Optimizer::make_immed(ap3->size, siz2));
+                Optimizer::IMODE* ap5 = Optimizer::tempreg(ap3->size, 0);
+                Optimizer::IMODE* ap6 = Optimizer::tempreg(ap1->size, 0);
+                Optimizer::gen_icode(Optimizer::i_add, ap5, ap3, Optimizer::make_immed(ap3->size, siz2));
+                Optimizer::gen_icode(Optimizer::i_add, ap6, ap1, Optimizer::make_immed(ap3->size, siz2));
+                ap3 = ap5;
+                ap1 = ap6;
             }
             ap4 = Optimizer::indnode(ap3, ap3->size);
             ap2 = Optimizer::indnode(ap1, ap1->size);
@@ -4336,7 +4336,11 @@ void truejp(EXPRESSION* node, SYMBOL* funcsp, int label)
                 ap2 = Optimizer::indnode(ap3, ap3->size);
                 Optimizer::gen_icgoto(Optimizer::i_jne, label, ap2, Optimizer::make_immed(ap3->size, 0));
                 if (i < siz1 / siz2 - 1)
-                    Optimizer::gen_icode(Optimizer::i_add, ap3, ap3, Optimizer::make_immed(ap3->size, siz2));
+                {
+                    Optimizer::IMODE* ap5 = Optimizer::tempreg(ap3->size, 0);
+                    Optimizer::gen_icode(Optimizer::i_add, ap5, ap3, Optimizer::make_immed(ap3->size, siz2));
+                    ap3 = ap5;
+                }
             }
             break;
         default:
@@ -4429,8 +4433,12 @@ void falsejp(EXPRESSION* node, SYMBOL* funcsp, int label)
                 Optimizer::gen_icgoto(Optimizer::i_jne, label, ap4, ap2);
                 if (i < siz1 / siz2 - 1)
                 {
-                    Optimizer::gen_icode(Optimizer::i_add, ap3, ap3, Optimizer::make_immed(ap3->size, siz2));
-                    Optimizer::gen_icode(Optimizer::i_add, ap1, ap1, Optimizer::make_immed(ap3->size, siz2));
+                    Optimizer::IMODE* ap5 = Optimizer::tempreg(ap3->size, 0);
+                    Optimizer::IMODE* ap6 = Optimizer::tempreg(ap1->size, 0);
+                    Optimizer::gen_icode(Optimizer::i_add, ap5, ap3, Optimizer::make_immed(ap3->size, siz2));
+                    Optimizer::gen_icode(Optimizer::i_add, ap6, ap1, Optimizer::make_immed(ap3->size, siz2));
+                    ap3 = ap5;
+                    ap1 = ap6;
                 }
             }
             break;
@@ -4447,9 +4455,12 @@ void falsejp(EXPRESSION* node, SYMBOL* funcsp, int label)
             {
                 ap2 = Optimizer::indnode(ap3, ap3->size);
                 Optimizer::gen_icgoto(Optimizer::i_jne, lab0, ap2, Optimizer::make_immed(ap3->size, 0));
-                Optimizer::gen_icode(Optimizer::i_add, ap3, ap3, Optimizer::make_immed(ap3->size, siz2));
+                Optimizer::IMODE* ap5 = Optimizer::tempreg(ap3->size, 0);
+                Optimizer::gen_icode(Optimizer::i_add, ap5, ap3, Optimizer::make_immed(ap3->size, siz2));
+                ap3 = ap5;
             }
-            Optimizer::gen_icgoto(Optimizer::i_je, label, ap2, Optimizer::make_immed(ap3->size, 0));
+            ap4 = Optimizer::indnode(ap3, ap3->size);
+            Optimizer::gen_icgoto(Optimizer::i_je, label, ap4, Optimizer::make_immed(ap3->size, 0));
             Optimizer::gen_label(lab0);
             break;
         default:

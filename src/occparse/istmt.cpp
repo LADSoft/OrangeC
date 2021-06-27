@@ -522,17 +522,27 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
     }
     if (ap && (inlinesym_count || !isvoid(basetype(funcsp->tp)->btp)))
     {
+        bool needsOCP = false;
         if (returnImode)
+        {
             ap1 = returnImode;
+            needsOCP = true;
+        }
         else
         {
             ap1 = Optimizer::tempreg(ap->size, 0);
             if (!inlinesym_count)
+            {
                 ap1->retval = true;
+            }
             else
+            {
                 returnImode = ap1;
+                needsOCP = true;
+            }
         }
         Optimizer::gen_icode(Optimizer::i_assn, ap1, ap, 0);
+        Optimizer::intermed_tail->needsOCP = needsOCP;
     }
     /* create the return or a branch to the return
      * return is put at end of function...

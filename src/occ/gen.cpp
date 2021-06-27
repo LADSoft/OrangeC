@@ -74,7 +74,7 @@ Optimizer::SimpleExpression* copy_expression(Optimizer::SimpleExpression* node)
     memcpy(rv, node, sizeof(*rv));
     if (rv->left)
         rv->left = copy_expression(rv->left);
-    if (rv->right)
+    if (rv->right && rv->type != Optimizer::se_tempref)
         rv->right = copy_expression(rv->right);
     return rv;
 }

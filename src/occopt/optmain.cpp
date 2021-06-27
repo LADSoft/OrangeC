@@ -214,7 +214,6 @@ void CreateTempsAndBlocks(FunctionData* fd)
 
 void Optimize(SimpleSymbol* funcsp)
 {
-    static int optflags = ~0;
     // printf("optimization start\n");
     weed_goto();
 
@@ -239,7 +238,8 @@ void Optimize(SimpleSymbol* funcsp)
     RunOptimizerModules();
     if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly)
     {
-        // empty
+        if (cparams.icd_flags & ICD_QUITEARLY)
+            return;
     }
     else
     {

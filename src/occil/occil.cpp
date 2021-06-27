@@ -59,6 +59,10 @@ namespace Parser
         return true;
     }
 }
+namespace Optimizer
+{
+    unsigned termCount;
+};
 
 using namespace DotNetPELib;
 PELib* peLib;

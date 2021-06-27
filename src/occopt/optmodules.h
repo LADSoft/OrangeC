@@ -26,9 +26,12 @@
 
 #define OPT_RESHAPE 1
 #define OPT_LSTRENGTH 2
-#define OPT_GLOBAL 4
+#define OPT_GCSE 4
 #define OPT_CONSTANT 8
 #define OPT_INVARIANT 0x10
+
+#define ICD_QUITEARLY 0x80000000
+#define ICD_OCP ( 1 | ICD_QUITEARLY)
 
 #define OPT_BYTECOMPARE 0x10000
 #define OPT_REVERSESTORE 0x20000
@@ -41,7 +44,8 @@
 #define OPTMODULES_DESCRIPTION "  -fopt-{no}constant        turn on or off constant optimizations\n" \
                                  "  -fopt-{no}loop-strength   turn on or off loop strength optimization\n"  \
                                  "  -fopt-{no}move-invariants turn on or off loop invariant code motion\n" \
-                                 "  -fopt-{no}global          turn on or off global subexpression evaluation\n" 
+                                 "  -fopt-{no}gcse            turn on or off global subexpression evaluation\n" \
+                                 "  -ficd-{no}gcse            turn on or off gcse diagnostics in the icd file\n"
 
 #define OPTIMIZATION_DESCRIPTION "  -O-, -O0                  disable optimizations\n" \
                                  "  -O1                       optimize for size\n" \

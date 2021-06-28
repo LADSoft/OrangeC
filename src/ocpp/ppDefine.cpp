@@ -434,7 +434,6 @@ int ppDefine::LookupDefault(std::string& macro, int begin, int end, const std::s
     macro.replace(begin, end - begin, insert);
     return insert.size();
 }
-int count;
 std::string ppDefine::defid(const std::string& macroname, int& i, int& j)
 /*
  * Get an identifier during macro replacement

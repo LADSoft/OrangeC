@@ -63,8 +63,8 @@ SYMBOL* lookupPointerCast(SYMBOL* sym, TYPE* tp);
 void GetRefs(TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref);
 void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
                          bool allowUser);
-bool sameTemplatePointedTo(TYPE* tnew, TYPE* told);
-bool sameTemplate(TYPE* P, TYPE* A);
+bool sameTemplatePointedTo(TYPE* tnew, TYPE* told, bool quals = false);
+bool sameTemplate(TYPE* P, TYPE* A, bool quals = false);
 void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
                          bool allowUser);
 SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, TYPE* atp);

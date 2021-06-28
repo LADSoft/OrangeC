@@ -7295,7 +7295,7 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                                 return false;
                             if (tsym->type == bt_templateparam)
                                 tsym = tsym->templateParam->p->byClass.val;
-                            if (!templatecomparetypes(torig, tsym, true) && !sameTemplate(torig, tsym))
+                            if (!templatecomparetypes(torig, tsym, true) && !sameTemplate(torig, tsym, true))
                                 return false;
                             if (isref(torig))
                                 torig = basetype(torig)->btp;
@@ -7322,7 +7322,7 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                         if ((basetype(torig)->type == bt_enum) != (basetype(tsym)->type == bt_enum))
                             return false;
                         if ((!templatecomparetypes(torig, tsym, true) || !templatecomparetypes(tsym, torig, true)) &&
-                            !sameTemplate(torig, tsym))
+                            !sameTemplate(torig, tsym, true))
                             return false;
                         if (!comparePointerTypes(torig, tsym))
                             return false;
@@ -7712,6 +7712,7 @@ void SwapMainTemplateArgs(SYMBOL* cls)
 }
 SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, bool isExtern)
 {
+    (void)args;
     (void)args;
     LEXLIST* lex = nullptr;
     SYMBOL* cls = sym;
@@ -11433,7 +11434,6 @@ static TEMPLATEPARAMLIST* TypeAliasAdjustArgs(TEMPLATEPARAMLIST* tpl, TEMPLATEPA
     }
     return args;
 }
-int count;
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
     SYMBOL* rv;

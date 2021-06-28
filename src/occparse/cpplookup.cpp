@@ -3189,7 +3189,7 @@ static void getPointerConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* exp, int* n, 
         getQualConversion(tpp, tpa, exp, n, seq);
     }
 }
-bool sameTemplatePointedTo(TYPE* tnew, TYPE* told)
+bool sameTemplatePointedTo(TYPE* tnew, TYPE* told, bool quals)
 {
     if (isconst(tnew) != isconst(told) || isvolatile(tnew) != isvolatile(told))
         return false;
@@ -3200,9 +3200,9 @@ bool sameTemplatePointedTo(TYPE* tnew, TYPE* told)
         if (isconst(tnew) != isconst(told) || isvolatile(tnew) != isvolatile(told))
             return false;
     }
-    return sameTemplate(tnew, told);
+    return sameTemplate(tnew, told, quals);
 }
-bool sameTemplate(TYPE* P, TYPE* A)
+bool sameTemplate(TYPE* P, TYPE* A, bool quals)
 {
     bool PLd, PAd;
     TEMPLATEPARAMLIST *PL, *PA;
@@ -3281,6 +3281,17 @@ bool sameTemplate(TYPE* P, TYPE* A)
                     if ((PAd || PA->p->byClass.val) && (PLd || PL->p->byClass.val) && !templatecomparetypes(pa, pl, true))
                     {
                         break;
+                    }
+                    // now make sure the qualifiers match...
+                    if (quals)
+                    {
+                        int n = 0;
+                        enum e_cvsrn xx[5];
+                        getQualConversion(pl, pa, nullptr, &n, xx);
+                        if (n != 1 || xx[0] != CV_IDENTITY)
+                        {
+                            break;
+                        }
                     }
                 }
                 else if (PL->p->type == kw_template)
@@ -4543,7 +4554,7 @@ static void doNames(SYMBOL* sym)
         doNames(sym->sb->parentClass);
     SetLinkerNames(sym, lk_cdecl);
 }
-int count1;
+int count4;
 SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, bool toErr,
                               bool maybeConversion, bool toInstantiate, int flags)
 {

@@ -1308,6 +1308,9 @@ void AliasUses(BITINT* bits, IMODE* im, bool rhs)
                         al = al->next;
                     }
                     clearbit(bits, termMap[im->offset->sp->i]);
+                    im = GetLoadTemp(im);
+                    if (im)
+                        setbit(bits, termMap[im->offset->sp->i]);
                 }
             }
             else if (im->mode == i_direct)

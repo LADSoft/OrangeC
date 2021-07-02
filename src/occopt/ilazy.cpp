@@ -214,8 +214,6 @@ inline static bool isstructptr(SimpleType* tp)
 }
 void SetunMoveableTerms(void)
 {
-    if (strstr(currentFunction->name, "InternalRun"))
-        printf("hi");
     int i;
     // if they don't have floating point regs then don't move expressions involving
     // floating point

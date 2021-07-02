@@ -214,6 +214,8 @@ inline static bool isstructptr(SimpleType* tp)
 }
 void SetunMoveableTerms(void)
 {
+    if (strstr(currentFunction->name, "InternalRun"))
+        printf("hi");
     int i;
     // if they don't have floating point regs then don't move expressions involving
     // floating point
@@ -233,30 +235,39 @@ void SetunMoveableTerms(void)
                     if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct)
                     {
                         int n = head->ans->offset->sp->i;
-                        if ((!chosenAssembler->arch->hasFloatRegs && head->ans->size >= ISZ_FLOAT) || head->ans->bits ||
-                            head->ans->vol)
-                            clearbit(unMoveableTerms, termMap[n]);
-                        if (head->ans->offset->sp->loadTemp)
+                        if (head->dc.opcode == Optimizer::i_substack || head->dc.opcode == Optimizer::i_parmstack)
                         {
-                            bool structptr = false;
-                            switch(head->dc.left->offset->type)
-                            {
-                               case se_auto:
-                               case se_global:
-                               case se_pc:
-                               case se_threadlocal:
-                                   structptr = isstructptr(head->dc.left->offset->sp->tp);
-                                   break;
-                               case se_tempref:
-                                   if (head->dc.left->offset->right)
-                                       structptr = isstructptr(((SimpleSymbol*)head->dc.left->offset->right)->tp);
-                                   break;
-                            }
-                            if (structptr)
-                            {
+                            clearbit(unMoveableTerms, termMap[n]);
+                            if (tempInfo[n]->terms)
+                                andmap(unMoveableTerms, tempInfo[n]->terms);
+                        }
+                        else
+                        {
+                            if ((!chosenAssembler->arch->hasFloatRegs && head->ans->size >= ISZ_FLOAT) || head->ans->bits ||
+                                head->ans->vol)
                                 clearbit(unMoveableTerms, termMap[n]);
-                                if (tempInfo[n]->terms)
-                                    andmap(unMoveableTerms, tempInfo[n]->terms);
+                            if (head->ans->offset->sp->loadTemp)
+                            {
+                                bool structptr = false;
+                                switch (head->dc.left->offset->type)
+                                {
+                                case se_auto:
+                                case se_global:
+                                case se_pc:
+                                case se_threadlocal:
+                                    structptr = isstructptr(head->dc.left->offset->sp->tp);
+                                    break;
+                                case se_tempref:
+                                    if (head->dc.left->offset->right)
+                                        structptr = isstructptr(((SimpleSymbol*)head->dc.left->offset->right)->tp);
+                                    break;
+                                }
+                                if (structptr)
+                                {
+                                    clearbit(unMoveableTerms, termMap[n]);
+                                    if (tempInfo[n]->terms)
+                                        andmap(unMoveableTerms, tempInfo[n]->terms);
+                                }
                             }
                         }
                     }

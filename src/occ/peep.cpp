@@ -1577,8 +1577,11 @@ void peep_call(OCODE* ip)
         OCODE* ip1 = ip->back;
         if (ip1->opcode == op_mov && equal_address(ip->oper1, ip1->oper1))
         {
-            ip->oper1 = ip1->oper2;
-            remove_peep_entry(ip1);
+            if (!live(ip->oper1->liveRegs, ip->oper1->preg))
+            {
+                ip->oper1 = ip1->oper2;
+                remove_peep_entry(ip1);
+            }
         }
     }
 }

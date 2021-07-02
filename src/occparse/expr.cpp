@@ -2669,19 +2669,72 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
             dest = exprNode(en_add, data, intNode(en_c_i, i * (initializerListType->size)));
             if (isstructured(initializerListType))
             {
-                TYPE* ctype = initializerListType;
-                EXPRESSION* cdest = dest;
-                FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
-                INITLIST* arg = Allocate<INITLIST>();
-                params->arguments = arg;
-                *arg = (*lptr)->nested ? *(*lptr)->nested : **lptr;
-                if (!(*lptr)->nested)
+                initializerListType = basetype(initializerListType);
+                if (initializerListType->sp->sb->trivialCons)
                 {
-                    arg->next = nullptr;
+                    auto hr = initializerListType->syms->table[0];
+                    node = nullptr;
+                    auto list = &node;
+                    INITLIST* arg = Allocate<INITLIST>();
+                    *arg = (*lptr)->nested ? *(*lptr)->nested : **lptr;
+                    while (hr && arg)
+                    {
+                        auto sym = hr->p;
+                        if (ismemberdata(sym))
+                        {
+                            auto pos = exprNode(en_add, dest, intNode(en_c_i, sym->sb->offset));
+                            deref(sym->tp, &pos);
+                            auto node1 = exprNode(en_assign, pos, arg->exp);
+                            if (node)
+                            {
+                                *list = exprNode(en_void, *list, node1);
+                                list = &(*list)->right;
+                            }
+                            else
+                            {
+                                node = node1;
+                            }
+                        }
+                        hr = hr->next;
+                        arg = arg->next;
+                    }
+                    while (hr)
+                    {
+                        auto sym = hr->p;
+                        if (ismemberdata(sym))
+                        {
+                            auto pos = exprNode(en_add, dest, intNode(en_c_i, sym->sb->offset));
+                            deref(sym->tp, &pos);
+                            auto node1 = exprNode(en_assign, pos, intNode(en_c_i, 0));
+                            if (node)
+                            {
+                                *list = exprNode(en_void, *list, node1);
+                                list = &(*list)->right;
+                            }
+                            else
+                            {
+                                node = node1;
+                            }
+                        }
+                        hr = hr->next;
+                    }
                 }
+                else
+                {
+                    TYPE* ctype = initializerListType;
+                    EXPRESSION* cdest = dest;
+                    FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
+                    INITLIST* arg = Allocate<INITLIST>();
+                    params->arguments = arg;
+                    *arg = (*lptr)->nested ? *(*lptr)->nested : **lptr;
+                    if (!(*lptr)->nested)
+                    {
+                        arg->next = nullptr;
+                    }
 
-                callConstructor(&ctype, &cdest, params, false, nullptr, true, false, false, false, _F_INITLIST, false, true);
-                node = cdest;
+                    callConstructor(&ctype, &cdest, params, false, nullptr, true, false, false, false, _F_INITLIST, false, true);
+                    node = cdest;
+                }
             }
             else
             {

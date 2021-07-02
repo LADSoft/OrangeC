@@ -3928,7 +3928,8 @@ static void getInitListConversion(TYPE* tp, INITLIST* list, TYPE* tpp, int* n, e
     if (isstructured(tp) || (isref(tp) && isstructured(basetype(tp)->btp)))
     {
         if (isref(tp))
-            tp = basetype(basetype(tp)->btp);
+            tp = basetype(tp)->btp;
+        tp = basetype(tp);
         if (tp->sp->sb->trivialCons)
         {
             SYMLIST* structSyms = tp->syms->table[0];

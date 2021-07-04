@@ -1221,10 +1221,10 @@ void AliasGosub(QUAD* tail, BITINT* parms, BITINT* bits, int n)
                 SimpleType* tp = tail->dc.left->offset->sp->tp;
                 while (tp->type == st_pointer)
                    tp = tp->btp;
-                if (tp->type == st_struct || tp->type == st_union || tp->type == st_class)
+                if (tail->dc.left->offset->sp->tp->isarray || tp->type == st_struct || tp->type == st_union || tp->type == st_class)
                 {
                     ALIASNAME* an = LookupMem(tail->dc.left);
-                    int n = tp->size;
+                    int n = tail->dc.left->offset->sp->tp->isarray ? tail->dc.left->offset->sp->tp->size : tp->size;
                     for (i = 0; i < n; i++)
                     {
                         ALIASADDRESS* aa = GetAddress(an, i);

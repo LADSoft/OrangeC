@@ -1216,6 +1216,36 @@ void AliasGosub(QUAD* tail, BITINT* parms, BITINT* bits, int n)
                 ResetProcessed();
                 scanDepends(parms, al);
             }
+            else if (tail->dc.left->mode == i_immed && !isintconst(tail->dc.left->offset) && !isfloatconst(tail->dc.left->offset) && !iscomplexconst(tail->dc.left->offset) && tail->dc.left->offset->type != se_labcon)
+            {
+                SimpleType* tp = tail->dc.left->offset->sp->tp;
+                while (tp->type == st_pointer)
+                   tp = tp->btp;
+                if (tp->type == st_struct || tp->type == st_union || tp->type == st_class)
+                {
+                    ALIASNAME* an = LookupMem(tail->dc.left);
+                    int n = tp->size;
+                    for (i = 0; i < n; i++)
+                    {
+                        ALIASADDRESS* aa = GetAddress(an, i);
+                        if (aa)
+                        {
+                            while (aa->merge)
+                                aa = aa->merge;
+                            if (aa && aa->modifiedBy)
+                            {
+                                 ormap(parms, aa->modifiedBy);
+                            }
+                            ResetProcessed();
+                            scanDepends(parms, aa->pointsto);
+                        }
+                    }
+                }
+                else
+                {
+                    AliasUses(parms, tail->dc.left, true);
+                }
+            }
             else
             {
                 AliasUses(parms, tail->dc.left, true);

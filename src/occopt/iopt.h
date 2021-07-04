@@ -312,6 +312,7 @@ typedef struct
     BITINT* modifiedBy;
     BITINT* uses;
     BITINT* terms;
+    BITINT* indTerms;
     IMODE* copy;
     NORMLIST* currentNormal;
     int strengthRename;

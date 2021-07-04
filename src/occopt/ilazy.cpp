@@ -359,10 +359,19 @@ static void CalculateTransparent(void)
             }
             complementmap(tempBytes3);
             for (i = 0; i < termCount; i++)
-                if (!isset(tempBytes3, i) && tempInfo[termMapUp[i]]->terms)
+            {
+                if (!isset(tempBytes3, i))
                 {
-                    andmap(tail->transparent, tempInfo[termMapUp[i]]->terms);
+                    if (tempInfo[termMapUp[i]]->terms)
+                    {
+                        andmap(tail->transparent, tempInfo[termMapUp[i]]->terms);
+                    }
+                    if (tempInfo[termMapUp[i]]->indTerms)
+                    {
+                        andmap(tail->transparent, tempInfo[termMapUp[i]]->indTerms);
+                    }
                 }
+            }
         }
         else if (tail->dc.opcode == i_assnblock)
         {
@@ -418,6 +427,16 @@ static void CalculateTransparent(void)
             {
                 setmap(tempBytes, false);
                 AliasUses(tempBytes, tail->ans, false);
+                if (tail->ans->mode == i_ind)
+                {
+                    int a = tail->ans->offset->sp->i;
+                    if (tempInfo[a]->indTerms)
+                    {
+                        copymap(tempBytes2, tempInfo[a]->indTerms);
+                        complementmap(tempBytes2);
+                        ormap(tempBytes, tempBytes2);
+                    }
+                }
                 if (tail->atomic)
                 {
                     if (tail->temps & TEMP_LEFT)
@@ -784,6 +803,7 @@ static void GatherTerms(void)
     {
         tempInfo[i]->termClear = true;
     }
+    std::unordered_map<IMODE*, BITINT*> loadTerms;
     while (tail)
     {
         tail = tail->back;
@@ -798,9 +818,22 @@ static void GatherTerms(void)
                     if (((tail->temps & TEMP_LEFT) || tail->dc.left->retval))
                     {
                         int l = tail->dc.left->offset->sp->i;
+                        if (tail->dc.left->mode == i_ind)
+                        {
+                            if (!tempInfo[l]->indTerms)
+                            {
+                                tempInfo[l]->indTerms = allocate_bits(termCount);
+                                setmap(tempInfo[l]->indTerms, true);
+                            }
+                            if (tempInfo[n]->terms)
+                            {
+                                andmap(tempInfo[l]->indTerms, tempInfo[n]->terms);
+                            }
+                            clearbit(tempInfo[l]->indTerms, termMap[n]);
+                        }
                         if (!tempInfo[l]->terms)
                         {
-                            tempInfo[l]->terms = allocate_bits(termCount);
+                                tempInfo[l]->terms = allocate_bits(termCount);
                         }
                         if (tempInfo[l]->termClear)
                         {
@@ -810,6 +843,10 @@ static void GatherTerms(void)
                         if (tempInfo[n]->terms)
                         {
                             andmap(tempInfo[l]->terms, tempInfo[n]->terms);
+                        }
+                        if (tempInfo[n]->indTerms)
+                        {
+//                            andmap(tempInfo[l]->terms, tempInfo[n]->indTerms);
                         }
                         clearbit(tempInfo[l]->terms, termMap[n]);
                     }
@@ -829,11 +866,95 @@ static void GatherTerms(void)
                         {
                             andmap(tempInfo[l]->terms, tempInfo[n]->terms);
                         }
+                        if (tempInfo[n]->indTerms)
+                        {
+//                            andmap(tempInfo[l]->terms, tempInfo[n]->indTerms);
+                        }
                         clearbit(tempInfo[l]->terms, termMap[n]);
+                    }
+                }
+                else if (tail->dc.left->mode == i_direct)
+                {
+                    if (!loadTerms[tail->dc.left])
+                    {
+                        loadTerms[tail->dc.left] = allocate_bits(termCount);
+                        setmap(loadTerms[tail->dc.left], true);
+                    }
+                    clearbit(loadTerms[tail->dc.left], termMap[n]);
+                    if (tempInfo[n]->indTerms)
+                    {
+                        andmap(loadTerms[tail->dc.left], tempInfo[n]->indTerms);
                     }
                 }
             }
             tail = tail->back;
+        }
+    }
+    tail = intermed_tail;
+    while (tail && !tail->OCP)
+        tail = tail->back;
+    std::unordered_map<IMODE*, BITINT*> immediateTerms;
+    // go through immediates and figure out which ind nodes they affect
+    while (tail)
+    {
+        tail = tail->back;
+        while (tail && !tail->OCP)
+        {
+            if ((tail->temps & TEMP_ANS) && tail->ans->mode == i_direct)
+            {
+                int n = tail->ans->offset->sp->i;
+                if (tail->dc.left && tail->dc.left->mode == i_immed)
+                {
+                    if (tail->dc.left->size == ISZ_ADDR && !isintconst(tail->dc.left->offset))
+                    {
+                        if (!tail->dc.right || tail->dc.right->mode == i_immed)
+                        {
+                            if (!immediateTerms[tail->dc.left])
+                            {
+                                immediateTerms[tail->dc.left] = allocate_bits(termCount);
+                                setmap(immediateTerms[tail->dc.left], true);
+                            }
+                            if (tempInfo[n]->indTerms)
+                                andmap(immediateTerms[tail->dc.left], tempInfo[n]->indTerms);
+                        }
+                    }
+                }
+            }
+
+            tail = tail->back;
+        }
+        if (tail && tail->ans && (!(tail->temps & TEMP_ANS) || tail->ans->mode == i_ind))
+        {
+            if (tail->dc.left && tail->dc.left->mode == i_immed)
+            {
+                if (tail->dc.left->size == ISZ_ADDR && !isintconst(tail->dc.left->offset))
+                {
+                    if (!immediateTerms[tail->dc.left])
+                    {
+                        immediateTerms[tail->dc.left] = allocate_bits(termCount);
+                        setmap(immediateTerms[tail->dc.left], true);
+                    }
+                    if (loadTerms[tail->ans])
+                    {
+                        andmap(tempBytes, loadTerms[tail->ans]);
+                    }
+                    for (int i = 0; i < termCount; i++)
+                    {
+                        if (!isset(tempBytes, i) && tempInfo[termMap[i]]->indTerms)
+                            andmap(immediateTerms[tail->dc.left], tempInfo[termMap[i]]->indTerms);
+                    }
+                }
+            }
+        }
+    }
+    for (auto&& t : immediateTerms)
+    {
+        for (int i = 0; i < termCount; i++)
+        {
+            if (!isset(t.second, i) && tempInfo[termMapUp[i]]->terms)
+            {
+                andmap(tempInfo[termMapUp[i]]->terms, t.second);
+            }
         }
     }
     for (i = 0; i < termCount; i++)

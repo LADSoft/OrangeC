@@ -129,6 +129,30 @@ void DumpLogicalDestructors(EXPRESSION* node, SYMBOL* funcsp)
 }
 Optimizer::IMODE* LookupExpression(enum Optimizer::i_ops op, int size, Optimizer::IMODE* left, Optimizer::IMODE* right)
 {
+    if (right && right->mode == Optimizer::i_immed && right->size != left->size)
+    {
+        // if it is an address mode with a right constant we do this so that we can
+        // find the expression later...
+        if (size == ISZ_ADDR && op != Optimizer::i_lsl && op != Optimizer::i_asr && op != Optimizer::i_lsr)
+        {
+            if (left->mode == Optimizer::i_immed && Optimizer::isintconst(left->offset))
+            {
+                left = Optimizer::make_immed(right->size, left->offset->i);
+                if (op == Optimizer::i_add)
+                {
+                    auto temp = left;
+                    left = right;
+                    right = temp;
+                }
+            }
+            else if (isintconst(right->offset))
+            {
+                right = Optimizer::make_immed(left->size, right->offset->i);
+                if (!isintconst(right->offset))
+                    printf("hi");
+            }
+        }
+    }
     Optimizer::IMODE* ap = nullptr;
     Optimizer::QUAD head = { op, left, right };
     if (!left->bits && (!right || !right->bits))

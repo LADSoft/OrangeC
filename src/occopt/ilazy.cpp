@@ -300,27 +300,27 @@ static void CalculateUses(void)
                     {
                         setbit(tail->uses, termMap[head->ans->offset->sp->i]);
                     }
-                }
-                if (head->temps & TEMP_LEFT)
-                {
-                    if (head->dc.left->mode == i_ind)
+                    if (head->temps & TEMP_LEFT)
                     {
-                        setbit(tail->uses, termMap[head->dc.left->offset->sp->i]);
+                        if (head->dc.left->mode == i_ind)
+                        {
+                            setbit(tail->uses, termMap[head->dc.left->offset->sp->i]);
+                        }
+                        else if (!head->dc.left->offset->sp->pushedtotemp)
+                        {
+                            setbit(tail->uses, termMap[head->dc.left->offset->sp->i]);
+                        }
                     }
-                    else if (!head->dc.left->offset->sp->pushedtotemp)
+                    if (head->temps & TEMP_RIGHT)
                     {
-                        setbit(tail->uses, termMap[head->dc.left->offset->sp->i]);
-                    }
-                }
-                if (head->temps & TEMP_RIGHT)
-                {
-                    if (head->dc.right->mode == i_ind)
-                    {
-                        setbit(tail->uses, termMap[head->dc.right->offset->sp->i]);
-                    }
-                    else if (!head->dc.right->offset->sp->pushedtotemp)
-                    {
-                        setbit(tail->uses, termMap[head->dc.right->offset->sp->i]);
+                        if (head->dc.right->mode == i_ind)
+                        {
+                            setbit(tail->uses, termMap[head->dc.right->offset->sp->i]);
+                        }
+                        else if (!head->dc.right->offset->sp->pushedtotemp)
+                        {
+                            setbit(tail->uses, termMap[head->dc.right->offset->sp->i]);
+                        }
                     }
                 }
             }
@@ -994,6 +994,37 @@ static void CalculateOCPAndRO(void)
         }
     }
 }
+static void CopyExpressionTree(QUAD* after, QUAD* ocppoint, int tn)
+{
+    if (!isset(ocppoint->uses, termMap[tn]))
+    {
+        QUAD* p = (QUAD*)(tempInfo[tn]->idefines->data);
+        if (!(p->temps & TEMP_LEFT) || !p->dc.left->offset->sp->pushedtotemp)
+        {
+            if (p->temps & TEMP_RIGHT)
+                CopyExpressionTree(after, ocppoint, p->dc.right->offset->sp->i);
+            if (p->temps & TEMP_LEFT)
+                CopyExpressionTree(after, ocppoint, p->dc.left->offset->sp->i);
+        }
+        QUAD* ins = Allocate<QUAD>();
+        *ins = *p;
+        ins->uses = nullptr;
+        ins->transparent = nullptr;
+        ins->dsafe = nullptr;
+        ins->earliest = nullptr;
+        ins->delay = nullptr;
+        ins->latest = nullptr;
+        ins->isolated = nullptr;
+        ins->OCP = nullptr;
+        ins->RO = nullptr;
+        ins->OCPInserted = true;
+        ins->fwd = after;
+        ins->back = after->back;
+        ins->back->fwd = ins;
+        ins->fwd->back = ins;
+        ins->block = ocppoint->block;
+    }
+}
 static void HandleOCP(QUAD* after, int tn)
 {
     if (tempInfo[tn]->idefines)
@@ -1005,28 +1036,8 @@ static void HandleOCP(QUAD* after, int tn)
             while (!after->OCP && (after->ignoreMe || after->OCPInserted || after->dc.opcode == i_label))
                 after = after->fwd;
         }
+        CopyExpressionTree(after, ocppoint, tn);
         QUAD* p = (QUAD*)(tempInfo[tn]->idefines->data);
-        if (!isset(ocppoint->uses, termMap[tn]))
-        {
-            QUAD* ins = Allocate<QUAD>();
-            *ins = *p;
-            ins->uses = nullptr;
-            ins->transparent = nullptr;
-            ins->dsafe = nullptr;
-            ins->earliest = nullptr;
-            ins->delay = nullptr;
-            ins->latest = nullptr;
-            ins->isolated = nullptr;
-            ins->OCP = nullptr;
-            ins->RO = nullptr;
-
-            ins->OCPInserted = true;
-            ins->fwd = after;
-            ins->back = after->back;
-            ins->back->fwd = ins;
-            ins->fwd->back = ins;
-            ins->block = ocppoint->block;
-        }
         QUAD* bans = Allocate<QUAD>();
         bans->ans = tempInfo[tn]->copy;
         bans->dc.left = p->ans;

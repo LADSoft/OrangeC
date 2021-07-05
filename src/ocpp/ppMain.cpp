@@ -42,9 +42,10 @@ CmdSwitchParser ppMain::SwitchParser;
 CmdSwitchBool ppMain::assembly(SwitchParser, 'a', false);
 CmdSwitchBool ppMain::disableExtensions(SwitchParser, 'A', false);
 CmdSwitchBool ppMain::c99Mode(SwitchParser, '9', true);
+CmdSwitchBool ppMain::c11Mode(SwitchParser, '1', false);
 CmdSwitchBool ppMain::trigraphs(SwitchParser, 'T', false);
 CmdSwitchDefine ppMain::defines(SwitchParser, 'D');
-CmdSwitchDefine ppMain::undefines(SwitchParser, 'U');
+sCmdSwitchDefine ppMain::undefines(SwitchParser, 'U');
 CmdSwitchString ppMain::includePath(SwitchParser, 'I', ';');
 CmdSwitchString ppMain::CsysIncludePath(SwitchParser, 'z', ';');
 CmdSwitchString ppMain::CPPsysIncludePath(SwitchParser, 'Z', ';');
@@ -55,7 +56,8 @@ CmdSwitchString ppMain::outputPath(SwitchParser, 'o');
 const char* ppMain::usageText =
     "[options] files\n"
     "\n"
-    "/9             - C99 mode                  /a          - Assembler mode\n"
+    "/1             - C11 mode                  /9          - C99 mode\n"
+    "/a             - Assembler mode\n"
     "/A             - Disable extensions        /Dxxx       - Define something\n"
     "/E[+]nn        - Max number of errors      /Ipath      - Specify include path\n"
     "/T             - translate trigraphs       /Uxxx       - Undefine something\n"
@@ -145,7 +147,7 @@ int ppMain::Run(int argc, char* argv[])
         files.Add(File.GetValue() + 1);
 
     Tokenizer::SetAnsi(disableExtensions.GetValue());
-    Tokenizer::SetC99(c99Mode.GetValue());
+    Tokenizer::SetC99(c99Mode.GetValue() || c11Mode.GetValue());
     for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
         bool cplusplus = false;
@@ -160,10 +162,20 @@ int ppMain::Run(int argc, char* argv[])
         }
         PreProcessor pp((*it), includePath.GetValue(), cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(), 
                         false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false,
-                        !c99Mode.GetValue(), !disableExtensions.GetValue(), "");
-        if (c99Mode.GetValue())
+                        !c99Mode.GetValue() && !c11Mode.GetValue(), !disableExtensions.GetValue(), "");
+        if (c11Mode.GetValue())
+        {
+            std::string ver = "201112L";
+            pp.Define("__STDC_VERSION__", ver, true);
+        }
+        else if (c99Mode.GetValue())
         {
             std::string ver = "199901L";
+            pp.Define("__STDC_VERSION__", ver, true);
+        }
+        else
+        {
+            std::string ver = "199404L";
             pp.Define("__STDC_VERSION__", ver, true);
         }
 

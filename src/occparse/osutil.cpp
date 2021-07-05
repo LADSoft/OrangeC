@@ -662,6 +662,10 @@ void setglbdefs(void)
     {
         preProcessor->Define("__STDC_VERSION__", "199901L");
     }
+    else
+    {
+        preProcessor->Define("__STDC_VERSION__", "199409L");
+    }    
     /*   preProcessor->Define("__STDC_IEC_599__","1");*/
     /*   preProcessor->Define("__STDC_IEC_599_COMPLEX__","1");*/
     /*   preProcessor->Define("__STDC_ISO_10646__","199712L");*/

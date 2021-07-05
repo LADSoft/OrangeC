@@ -37,6 +37,7 @@ class ppMain
     static CmdSwitchBool assembly;
     static CmdSwitchBool disableExtensions;
     static CmdSwitchBool c99Mode;
+    static CmdSwitchBool c11Mode;
     static CmdSwitchBool trigraphs;
     static CmdSwitchDefine defines;
     static CmdSwitchDefine undefines;

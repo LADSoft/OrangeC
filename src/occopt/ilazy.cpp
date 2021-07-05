@@ -186,7 +186,8 @@ static void GatherGlobals(void)
                     else if (head->ans)
                     {
                         if (!(head->temps & TEMP_ANS) || head->dc.opcode == i_clrblock || head->dc.opcode == i_assnblock ||
-                            ((head->temps & TEMP_ANS) && (head->ans->mode == i_ind || head->ans->offset->sp->pushedtotemp)))
+                            ((head->temps & TEMP_ANS) && (head->ans->mode == i_ind || head->ans->offset->sp->pushedtotemp)) ||
+                            (head->dc.opcode >= i_setne && head->dc.opcode <= i_setge))
                         {
                             EnterGlobal(head);
                         }
@@ -889,6 +890,18 @@ static void GatherTerms(void)
             }
             tail = tail->back;
         }
+        if (tail && tail->dc.opcode == i_parm)
+        {
+            if (tail->dc.left->size == ISZ_ADDR && (tail->temps & TEMP_LEFT))
+            {
+                int l = tail->dc.left->offset->sp->i;
+                if (!tempInfo[l]->indTerms)
+                {
+                    tempInfo[l]->indTerms = allocate_bits(termCount);
+                    setmap(tempInfo[l]->indTerms, true);
+                }
+            }
+        }
     }
     tail = intermed_tail;
     while (tail && !tail->OCP)
@@ -920,7 +933,6 @@ static void GatherTerms(void)
                     }
                 }
             }
-
             tail = tail->back;
         }
         if (tail && tail->ans && (!(tail->temps & TEMP_ANS) || tail->ans->mode == i_ind))
@@ -947,11 +959,37 @@ static void GatherTerms(void)
             }
         }
     }
+    tail = intermed_tail;
+    while (tail && !tail->OCP)
+        tail = tail->back;
+    while (tail)
+    {
+        if (tail->dc.opcode == i_parm)
+        {
+            // this is a little conservative when dealing with params that are ind nodes
+            if (tail->dc.left->size == ISZ_ADDR && (tail->temps & TEMP_LEFT))
+            {
+                int l = tail->dc.left->offset->sp->i;
+                QUAD* p = (QUAD*)(tempInfo[l]->idefines->data);
+                if (p->dc.opcode == i_add || p->dc.opcode == i_assn)
+                {
+                    if (p->dc.left->mode == i_immed && p->dc.left->size == ISZ_ADDR && !isintconst(p->dc.left->offset))
+                    {
+                         if (immediateTerms[p->dc.left])
+                         {
+                             andmap(tempInfo[l]->indTerms, immediateTerms[p->dc.left]);
+                         }
+                    }
+                }
+            }
+        }
+        tail = tail->back;
+    }
     for (auto&& t : immediateTerms)
     {
         for (int i = 0; i < termCount; i++)
         {
-            if (!isset(t.second, i) && tempInfo[termMapUp[i]]->terms)
+            if (t.second && !isset(t.second, i) && tempInfo[termMapUp[i]]->terms)
             {
                 andmap(tempInfo[termMapUp[i]]->terms, t.second);
             }

@@ -1212,9 +1212,12 @@ void AliasGosub(QUAD* tail, BITINT* parms, BITINT* bits, int n)
         {
             if (tail->temps & TEMP_LEFT)
             {
-                ALIASLIST* al = tempInfo[tail->dc.left->offset->sp->i]->pointsto;
+                int n = tail->dc.left->offset->sp->i;
+                ALIASLIST* al = tempInfo[n]->pointsto;
                 ResetProcessed();
                 scanDepends(parms, al);
+                if (tempInfo[n]->indTerms)
+                    andmap(parms, tempInfo[n]->indTerms);
             }
             else if (tail->dc.left->mode == i_immed && !isintconst(tail->dc.left->offset) && !isfloatconst(tail->dc.left->offset) && !iscomplexconst(tail->dc.left->offset) && tail->dc.left->offset->type != se_labcon)
             {

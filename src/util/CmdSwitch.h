@@ -127,6 +127,7 @@ class CmdSwitchString : public CmdSwitchBase
     CmdSwitchString() : value(""), concat(0) {}
     virtual int Parse(const char* data) override;
     const std::string& GetValue() const { return value; }
+    void SetValue(std::string val) { value = val; }
     std::string operator+=(const char* c)
     {
         value += c;

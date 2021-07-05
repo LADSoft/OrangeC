@@ -455,14 +455,29 @@ int main(int argc, char* argv[])
             CompletionCompiler::ccNewFile(buffer, true);
         }
         Utils::AddExt(buffer, ".C");
-        static const std::list<std::string> cppExtensions = {".h", ".hh", ".hpp", ".hxx", ".hm", ".cpp", ".cxx", ".cc", ".c++"};
-        for (auto& str : cppExtensions)
+        if (prm_language.GetExists())
         {
-            if (Utils::HasExt(buffer, str.c_str()))
+            if (prm_language.GetValue() == "c++")
             {
                 Optimizer::cparams.prm_cplusplus = true;
                 Optimizer::cparams.prm_c99 = Optimizer::cparams.prm_c1x = false;
-                break;
+            }
+            else if (prm_language.GetValue() != "c")
+            {
+                Utils::fatal("Unknown language specifier: %s\n", prm_language.GetValue().c_str());
+            }
+        }
+        else
+        {
+            static const std::list<std::string> cppExtensions = {".h", ".hh", ".hpp", ".hxx", ".hm", ".cpp", ".cxx", ".cc", ".c++"};
+            for (auto& str : cppExtensions)
+            {
+                if (Utils::HasExt(buffer, str.c_str()))
+                {
+                    Optimizer::cparams.prm_cplusplus = true;
+                    Optimizer::cparams.prm_c99 = Optimizer::cparams.prm_c1x = false;
+                    break;
+                }
             }
         }
         if (Optimizer::cparams.prm_cplusplus && (Optimizer::architecture == ARCHITECTURE_MSIL))

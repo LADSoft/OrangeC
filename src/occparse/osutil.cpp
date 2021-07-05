@@ -89,7 +89,7 @@ CmdSwitchBool prm_debug2(switchParser, 'g');
 CmdSwitchBool prm_makestubs(switchParser, 'M');
 CmdSwitchBool prm_compileonly(switchParser, 'c');
 CmdSwitchString prm_assemble(switchParser, 'S');
-CmdSwitchBool prm_xcept(switchParser, 'x');
+CmdSwitchBool prm_xcept(switchParser, 'X');
 CmdSwitchBool prm_viaassembly(switchParser, '#');
 CmdSwitchBool displayTiming(switchParser, 't');
 CmdSwitchInt prm_stackalign(switchParser, 's', 16, 0, 2048);
@@ -103,7 +103,10 @@ CmdSwitchString prm_verbose(switchParser, 'y');
 CmdSwitchString prm_warning(switchParser, 'w', ';');
 CmdSwitchCombineString prm_output(switchParser, 'o');
 CmdSwitchCombineString prm_tool(switchParser, 'p', ';');
-
+CmdSwitchCombineString prm_language(switchParser, 'x');
+CmdSwitchBool prm_nostdinc(switchParser, 0, false, "nostdinc");
+CmdSwitchBool prm_nostdincpp(switchParser, 0, false, "nostdinc++");
+CmdSwitchString prm_std(switchParser, 0, 0, "std");
 CmdSwitchCombineString prm_library(switchParser, 'l', ';');
 
 CmdSwitchCombineString prm_cinclude(switchParser, 'I', ';');
@@ -131,6 +134,8 @@ CmdSwitchString prmLink(switchParser, 0, 0, "link");
 CmdSwitchString prmDll(switchParser, 0, 0, "dll");
 
 static std::string firstFile;
+static int cplusplusversion = 14;
+
 enum e_lk getDefaultLinkage()
 {
     switch (Optimizer::architecture)
@@ -325,6 +330,49 @@ void ParamTransfer(char* name)
  * activation routine (callback) for boolean command line arguments
  */
 {
+    if (prm_nostdinc.GetValue())
+        prm_Csysinclude.SetValue("");
+    if (prm_nostdincpp.GetValue())
+        prm_CPPsysinclude.SetValue("");
+    if (prm_std.GetExists())
+    {
+        if (prm_std.GetValue() == "c89")
+        {
+            Optimizer::cparams.prm_c99 = Optimizer::cparams.prm_c1x = false;
+        }
+        else if (prm_std.GetValue() == "c99")
+        {
+            Optimizer::cparams.prm_c99 = true;
+            Optimizer::cparams.prm_c1x = false;
+        }
+        else if (prm_std.GetValue() == "c11")
+        {
+            Optimizer::cparams.prm_c99 = true;
+            Optimizer::cparams.prm_c1x = true;
+        }
+        else if (prm_std.GetValue() == "c++11")
+        {
+            cplusplusversion = 11;
+            Optimizer::cparams.prm_c99 = false;
+            Optimizer::cparams.prm_c1x = false;
+        }
+        else if (prm_std.GetValue() == "c++14")
+        {
+            cplusplusversion = 14;
+            Optimizer::cparams.prm_c99 = false;
+            Optimizer::cparams.prm_c1x = false;
+        }
+        else if (prm_std.GetValue() == "c++17")
+        {
+            cplusplusversion = 17;
+            Optimizer::cparams.prm_c99 = false;
+            Optimizer::cparams.prm_c1x = false;
+        }
+        else 
+        {
+            Utils::fatal("value given for 'std' argument unknown: %s", prm_std.GetValue().c_str());
+        }
+    }
     Optimizer::cparams.optimizer_modules = ~0;
     if (Optimizer::ParseOptimizerParams(prm_flags.GetValue()) != "")
         Utils::usage(name, getUsageText());
@@ -579,7 +627,18 @@ void setglbdefs(void)
     preProcessor->Define("__CHAR_BIT__", "8");
     if (Optimizer::cparams.prm_cplusplus)
     {
-        preProcessor->Define("__cplusplus", "201402");
+        switch (cplusplusversion)
+        {
+            case 11:
+                preProcessor->Define("__cplusplus", "201103");
+                break;
+            case 14:
+                preProcessor->Define("__cplusplus", "201402");
+                break;
+            case 17: 
+                preProcessor->Define("__cplusplus", "201703");
+                break;
+        }
         if (Optimizer::cparams.prm_xcept)
             preProcessor->Define("__RTTI__", "1");
         Optimizer::ARCH_SIZING* local_store_of_locks = Optimizer::chosenAssembler->arch->type_needsLock;

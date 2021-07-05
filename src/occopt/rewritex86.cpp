@@ -928,6 +928,7 @@ int x86PreRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, in
                     newIns->ans = t;
                     newIns->dc.left = ins->dc.right;
                     newIns->dc.opcode = i_assn;
+                    newIns->genConflict = true;
                     ins->dc.right = t;
                     InsertInstruction(ins->back, newIns);
                 }

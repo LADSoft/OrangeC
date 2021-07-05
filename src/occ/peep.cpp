@@ -1488,7 +1488,7 @@ void peep_prefixes(OCODE* ip)
                     return;
             if (ip->oper1 && (ip->oper1->length == ISZ_USHORT || ip->oper1->length == ISZ_U16))
                 ip->oper1->length = ISZ_UINT;
-            if (ip->oper2 && (ip->oper2->length == ISZ_USHORT || ip->oper1->length == ISZ_U16))
+            if (ip->oper2 && (ip->oper2->length == ISZ_USHORT || ip->oper2->length == ISZ_U16))
                 ip->oper2->length = ISZ_UINT;
         }
 }

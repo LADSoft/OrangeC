@@ -87,6 +87,7 @@ enum e_lk getDefaultLinkage();
 extern Optimizer::LIST* clist;
 extern int showVersion;
 extern std::string bePostFile;
+extern int cplusplusversion;
 
 extern std::deque<DefValue> defines;
 
@@ -122,6 +123,7 @@ extern CmdSwitchCombineString prm_tool;
 
 extern CmdSwitchCombineString prm_library;
 extern CmdSwitchCombineString prm_language;
+extern CmdSwitchString prm_std;
 extern CmdSwitchCombineString prm_cinclude;
 extern CmdSwitchCombineString prm_Csysinclude;
 extern CmdSwitchCombineString prm_CPPsysinclude;

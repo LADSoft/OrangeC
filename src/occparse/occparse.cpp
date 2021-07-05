@@ -455,7 +455,49 @@ int main(int argc, char* argv[])
             CompletionCompiler::ccNewFile(buffer, true);
         }
         Utils::AddExt(buffer, ".C");
-        if (prm_language.GetExists())
+        if (prm_std.GetExists())
+        {
+            if (prm_std.GetValue() == "c89")
+            {
+                Optimizer::cparams.prm_c99 = Optimizer::cparams.prm_c1x = false;
+            }
+            else if (prm_std.GetValue() == "c99")
+            {
+                Optimizer::cparams.prm_c99 = true;
+                Optimizer::cparams.prm_c1x = false;
+            }
+            else if (prm_std.GetValue() == "c11")
+            {
+                Optimizer::cparams.prm_c99 = true;
+                Optimizer::cparams.prm_c1x = true;
+            }
+            else if (prm_std.GetValue() == "c++11")
+            {
+                cplusplusversion = 11;
+                Optimizer::cparams.prm_c99 = false;
+                Optimizer::cparams.prm_c1x = false;
+                Optimizer::cparams.prm_cplusplus = true;
+            }
+            else if (prm_std.GetValue() == "c++14")
+            {
+                cplusplusversion = 14;
+                Optimizer::cparams.prm_c99 = false;
+                Optimizer::cparams.prm_c1x = false;
+                Optimizer::cparams.prm_cplusplus = true;
+            }
+            else if (prm_std.GetValue() == "c++17")
+            {
+                cplusplusversion = 17;
+                Optimizer::cparams.prm_c99 = false;
+                Optimizer::cparams.prm_c1x = false;
+                Optimizer::cparams.prm_cplusplus = true;
+            }
+            else 
+            {
+                Utils::fatal("value given for 'std' argument unknown: %s", prm_std.GetValue().c_str());
+            }
+        }
+        else if (prm_language.GetExists())
         {
             if (prm_language.GetValue() == "c++")
             {

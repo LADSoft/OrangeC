@@ -71,6 +71,7 @@ extern "C"
 Optimizer::LIST* clist = 0;
 int showVersion = false;
 std::string bePostFile;
+int cplusplusversion = 14;
 
 std::deque<DefValue> defines;
 
@@ -134,7 +135,6 @@ CmdSwitchString prmLink(switchParser, 0, 0, "link");
 CmdSwitchString prmDll(switchParser, 0, 0, "dll");
 
 static std::string firstFile;
-static int cplusplusversion = 14;
 
 enum e_lk getDefaultLinkage()
 {
@@ -334,45 +334,6 @@ void ParamTransfer(char* name)
         prm_Csysinclude.SetValue("");
     if (prm_nostdincpp.GetValue())
         prm_CPPsysinclude.SetValue("");
-    if (prm_std.GetExists())
-    {
-        if (prm_std.GetValue() == "c89")
-        {
-            Optimizer::cparams.prm_c99 = Optimizer::cparams.prm_c1x = false;
-        }
-        else if (prm_std.GetValue() == "c99")
-        {
-            Optimizer::cparams.prm_c99 = true;
-            Optimizer::cparams.prm_c1x = false;
-        }
-        else if (prm_std.GetValue() == "c11")
-        {
-            Optimizer::cparams.prm_c99 = true;
-            Optimizer::cparams.prm_c1x = true;
-        }
-        else if (prm_std.GetValue() == "c++11")
-        {
-            cplusplusversion = 11;
-            Optimizer::cparams.prm_c99 = false;
-            Optimizer::cparams.prm_c1x = false;
-        }
-        else if (prm_std.GetValue() == "c++14")
-        {
-            cplusplusversion = 14;
-            Optimizer::cparams.prm_c99 = false;
-            Optimizer::cparams.prm_c1x = false;
-        }
-        else if (prm_std.GetValue() == "c++17")
-        {
-            cplusplusversion = 17;
-            Optimizer::cparams.prm_c99 = false;
-            Optimizer::cparams.prm_c1x = false;
-        }
-        else 
-        {
-            Utils::fatal("value given for 'std' argument unknown: %s", prm_std.GetValue().c_str());
-        }
-    }
     Optimizer::cparams.optimizer_modules = ~0;
     if (Optimizer::ParseOptimizerParams(prm_flags.GetValue()) != "")
         Utils::usage(name, getUsageText());

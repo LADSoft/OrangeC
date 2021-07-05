@@ -56,7 +56,5 @@ By default the compiler compiles for pre-99 standard.  If you want extended feat
          c++11     - c++, 2011
          c++14     - c++, 2014
 
-      note that choosing a c++ standard does not put the compiler into c++ mode.
-
       also, the C++ standard settings don't actually compare the source code against the
       standard, their only function is to set the value of the __cplusplus macro.

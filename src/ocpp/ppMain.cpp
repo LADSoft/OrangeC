@@ -45,7 +45,7 @@ CmdSwitchBool ppMain::c99Mode(SwitchParser, '9', true);
 CmdSwitchBool ppMain::c11Mode(SwitchParser, '1', false);
 CmdSwitchBool ppMain::trigraphs(SwitchParser, 'T', false);
 CmdSwitchDefine ppMain::defines(SwitchParser, 'D');
-sCmdSwitchDefine ppMain::undefines(SwitchParser, 'U');
+CmdSwitchDefine ppMain::undefines(SwitchParser, 'U');
 CmdSwitchString ppMain::includePath(SwitchParser, 'I', ';');
 CmdSwitchString ppMain::CsysIncludePath(SwitchParser, 'z', ';');
 CmdSwitchString ppMain::CPPsysIncludePath(SwitchParser, 'Z', ';');

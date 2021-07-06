@@ -95,6 +95,7 @@ CmdSwitchBool prm_viaassembly(switchParser, '#');
 CmdSwitchBool displayTiming(switchParser, 't');
 CmdSwitchInt prm_stackalign(switchParser, 's', 16, 0, 2048);
 CmdSwitchString prm_error(switchParser, 'E');
+CmdSwitchString prm_Werror(switchParser, 0, 0, "Werror"); // doesn't do anything, just to help the libcxx tests...
 CmdSwitchString prm_define(switchParser, 'D', ';');
 CmdSwitchString prm_undefine(switchParser, 'U', ';');
 CmdSwitchFile prm_file(switchParser, '@');

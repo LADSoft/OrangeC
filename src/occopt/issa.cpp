@@ -38,6 +38,8 @@
 #include "iconfl.h"
 #include "ilocal.h"
 #include "ialias.h"
+#include "optmodules.h"
+
 /* Single static assignment algorithms, see robert morgan, building an optimizing compiler
  * This isn't too intelligent as it makes a new name for each instance of an assignment,
  * remembering the old name so it can convert back for GCSE.  I gather one would
@@ -94,7 +96,7 @@ static void DominancePrime(BLOCK* workList[], BRIGGS_SET* dest, BLOCKLIST* src)
 static void insertPhiOp(BLOCK* b, int tnum)
 {
     QUAD *q = Allocate<QUAD>(), *I;
-    PHIDATA* phi = oAllocate<PHIDATA>();
+    PHIDATA* phi = Allocate<PHIDATA>();
     BLOCKLIST* pred = b->pred;
     struct _phiblock** pbhold;
     LIST* list;
@@ -116,7 +118,7 @@ static void insertPhiOp(BLOCK* b, int tnum)
     pbhold = &phi->temps;
     while (pred)
     {
-        struct _phiblock* pb = oAllocate<_phiblock>();
+        struct _phiblock* pb = Allocate<_phiblock>();
         LIST* list;
         phi->nblocks++;
         *pbhold = pb;
@@ -1037,6 +1039,8 @@ static void cancelPartition(void)
 }
 void TranslateFromSSA(bool all)
 {
+    if (cparams.icd_flags & ICD_STAYSSA)
+        return;
     int i;
     QUAD* head;
     BRIGGS_SET* nodes;

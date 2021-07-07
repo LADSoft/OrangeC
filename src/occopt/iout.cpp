@@ -80,10 +80,10 @@ static void iop_phi(Optimizer::QUAD* q)
 {
     PHIDATA* phi = q->dc.v.phi;
     struct _phiblock* pb = phi->temps;
-    Optimizer::SimpleExpression* enode = tempInfo[phi->T0]->enode;
-    if (enode->right)
-        oprintf(icdFile, "\tT%d[%s] = PHI(", phi->T0, ((Optimizer::SimpleSymbol*)(enode->right))->name);
-    else
+//    Optimizer::SimpleExpression* enode = tempInfo[phi->T0]->enode;
+//    if (enode->right)
+//        oprintf(icdFile, "\tT%d[%s] = PHI(", phi->T0, ((Optimizer::SimpleSymbol*)(enode->right))->name);
+//    else
         oprintf(icdFile, "\tT%d = PHI(", phi->T0);
     while (pb)
     {

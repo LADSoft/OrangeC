@@ -45,6 +45,8 @@ std::vector<OptimizerParam> Params
 std::vector<OptimizerParam> IcdParams
 {
     { "gcse", ICD_OCP },
+    { "qe", ICD_QUITEARLY },
+    { "ssa", ICD_STAYSSA },
 };
 
 void optimize_setup(char select, const char* string)

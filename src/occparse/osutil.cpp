@@ -331,10 +331,21 @@ void ParamTransfer(char* name)
  * activation routine (callback) for boolean command line arguments
  */
 {
-    if (prm_nostdinc.GetValue())
+    bool nsi = prm_nostdinc.GetValue();
+    bool nspp = prm_nostdincpp.GetValue();
+    if (nspp && nsi)
+    {
         prm_Csysinclude.SetValue("");
-    if (prm_nostdincpp.GetValue())
         prm_CPPsysinclude.SetValue("");
+    }
+    else if (nspp)
+    {
+        prm_CPPsysinclude.SetValue(prm_Csysinclude.GetValue());
+    }
+    else if (nsi)
+    {
+        prm_Csysinclude.SetValue("");
+    }
     Optimizer::cparams.optimizer_modules = ~0;
     if (Optimizer::ParseOptimizerParams(prm_flags.GetValue()) != "")
         Utils::usage(name, getUsageText());

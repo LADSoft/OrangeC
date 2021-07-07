@@ -196,7 +196,7 @@ def executeCommand(command, cwd=None, env=None, input=None, timeout=0):
     """
     if input is not None:
         input = to_bytes(input)
-    p = subprocess.Popen(command, cwd=cwd,
+    p = subprocess.Popen(' '.join(command), shell=True, cwd=cwd, #DAL
                          stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,

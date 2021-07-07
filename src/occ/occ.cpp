@@ -112,7 +112,7 @@ void outputfile(char* buf, const char* name, const char* ext, bool obj)
         if (p)
             strcpy(buf, p + 1);
         Utils::StripExt(buf);
-        Utils::AddExt(buf, ext);
+        strcat(buf, ext);
     }
     else
     {

@@ -5309,6 +5309,30 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 case kw___offsetof:
                     lex = expression_offsetof(lex, funcsp, tp, exp, ismutable, flags);
                     break;
+                case kw__volatile:
+                    lex = getsym();
+                    lex = expression_no_comma(lex, funcsp, nullptr, tp, exp, nullptr, 0);
+                    *exp = GetSymRef(*exp);
+                    if (!*exp)
+                    {
+                        error(ERR_IDENTIFIER_EXPECTED);
+                        *exp = intNode(en_c_i, 0);
+                    }
+                    else
+                    {
+                        if (!isvolatile((*exp)->v.sp->tp))
+                        {
+                            auto tp1 = Allocate<TYPE>();
+                            tp1->type = bt_volatile;
+                            tp1->btp = (*exp)->v.sp->tp;
+                            tp1->size = tp1->btp->size;
+                            tp1->rootType = tp1->btp->rootType;
+                            (*exp)->v.sp->tp = tp1;
+                        }
+                    }
+                    *exp = intNode(en_c_i, 0);
+                    *tp = &stdvoid;
+                    break;
                 case kw_true:
                     lex = getsym();
                     *exp = intNode(en_c_i, 1);

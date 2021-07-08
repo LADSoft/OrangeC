@@ -172,7 +172,7 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
         (((chosenAssembler->arch->hasFloatRegs || tp->type < st_f) && tp->type < st_void) ||
          (tp->type == st_pointer && tp->btp->type != st_func) || tp->type == st_lref || tp->type == st_rref) &&
         (sym->storage_class == scc_auto || sym->storage_class == scc_register || sym->storage_class == scc_parameter) &&
-        (!sym->usedasbit || fastcallCandidate))
+        (!sym->usedasbit || fastcallCandidate) && !sym->tp->isvolatile)
     {
         /* this works because all IMODES refering to the same
          * variable are the same, at least until this point

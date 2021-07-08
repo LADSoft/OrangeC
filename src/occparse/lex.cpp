@@ -278,6 +278,7 @@ KEYWORD keywords[] = {
     {"__uuidof", 8, kw__uuidof, 0, TT_VAR},
     {"__va_list__", 11, kw___va_list__, KW_NONANSI | KW_ALL, TT_TYPEQUAL | TT_POINTERQUAL},
     {"__va_typeof__", 13, kw___va_typeof__, KW_NONANSI | KW_ALL, TT_VAR},
+    {"__volatile", 10, kw__volatile, KW_NONANSI | KW_ALL, TT_VAR},
     {"_absolute", 9, kw__absolute, KW_NONANSI | KW_ALL, TT_STORAGE_CLASS},
     {"_asm", 4, kw_asm, KW_NONANSI | KW_ALL, TT_CONTROL},
     {"_cdecl", 6, kw__cdecl, KW_NONANSI, TT_LINKAGE},

@@ -2545,19 +2545,36 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
         int sz;
         Optimizer::i_ops op;
         case Optimizer::ao_init:
-            sz = sizeFromType(node->v.ad->tp);
-            av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
-            left = Optimizer::indnode(av, sz);
-            right = gen_expr(funcsp, node->v.ad->value, 0, sz);
-            Optimizer::gen_icode(Optimizer::i_assn, left, right, nullptr);
+            if (isstructured(node->v.ad->tp))
+            {
+                Optimizer::IMODE* ap1,* ap2,* ap6;
+                av = gen_expr(funcsp, node->v.ad->address, F_VOL, ISZ_UINT);
+                ap1 = Optimizer::LookupLoadTemp(nullptr, av);
+                if (ap1 != av)
+                    Optimizer::gen_icode(Optimizer::i_assn, ap1, av, nullptr);
+                right = gen_expr(funcsp, node->v.ad->value, F_VOL | F_ADDR, ISZ_UINT);
+                ap2 = Optimizer::LookupLoadTemp(nullptr, right);
+                if (ap2 != right)
+                    Optimizer::gen_icode(Optimizer::i_assn, ap2, right, nullptr);
+                ap6 = Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->size);
+                Optimizer::gen_icode(Optimizer::i_assnblock, ap6, ap1, ap2);
+            }
+            else
+            {
+                sz = sizeFromType(node->v.ad->tp);
+                av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
+                left = Optimizer::indnode(av, sz);
+                right = gen_expr(funcsp, node->v.ad->value, 0, sz);
+                Optimizer::gen_icode(Optimizer::i_assn, left, right, nullptr);
+            }
             if (needsAtomicLockFromType(node->v.ad->tp))
             {
                 Optimizer::IMODE* temp = Optimizer::tempreg(ISZ_ADDR, 0);
                 Optimizer::gen_icode(Optimizer::i_add, temp, av,
-                                     Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->size - ATOMIC_FLAG_SPACE));
+                    Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->size - ATOMIC_FLAG_SPACE));
                 temp = Optimizer::indnode(temp, ISZ_UINT);
                 Optimizer::gen_icode(Optimizer::i_atomic_flag_clear, nullptr,
-                                     Optimizer::make_immed(ISZ_UINT, Optimizer::mo_relaxed), temp);
+                    Optimizer::make_immed(ISZ_UINT, Optimizer::mo_relaxed), temp);
             }
             rv = right;
             break;

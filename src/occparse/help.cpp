@@ -85,8 +85,10 @@ bool istype(SYMBOL* sym)
     return (sym->tp->type != bt_templateselector && sym->sb->storage_class == sc_type) || sym->sb->storage_class == sc_typedef;
 }
 bool ismemberdata(SYMBOL* sym) { return !isfunction(sym->tp) && ismember(sym); }
-bool startOfType(LEXLIST* lex, bool assumeType)
+bool startOfType(LEXLIST* lex, bool* structured, bool assumeType)
 {
+    if (structured)
+        *structured = false;
     Optimizer::LINEDATA *oldHead = linesHead, *oldTail = linesTail;
     if (!lex)
         return false;
@@ -125,6 +127,20 @@ bool startOfType(LEXLIST* lex, bool assumeType)
             prevsym(placeholder);
         linesHead = oldHead;
         linesTail = oldTail;
+        if (structured && sym && istype(sym))
+        {
+            if (sym->tp->type == bt_templateparam)
+            {
+                if (sym->tp->templateParam->p->type == kw_typename && sym->tp->templateParam->p->byClass.val)
+                    *structured = isstructured(sym->tp->templateParam->p->byClass.val);
+                else if (sym->tp->templateParam->p->type == kw_template)
+                    *structured = true;
+            }
+            else
+            {
+                *structured = isstructured(sym->tp);
+            }
+        }
         return (!sym && isdecltype) || (sym && sym->tp && istype(sym)) ||
                (assumeType && strSym && (strSym->tp->type == bt_templateselector || strSym->tp->type == bt_templatedecltype));
     }

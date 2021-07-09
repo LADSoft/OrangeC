@@ -2804,7 +2804,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
             if (assn || arrayMember)
             {
                 // assignments or array members come here
-                if (startOfType(lex, false))
+                if (startOfType(lex, nullptr, false))
                 {
                     TYPE* tp1 = nullptr;
                     EXPRESSION* exp1;

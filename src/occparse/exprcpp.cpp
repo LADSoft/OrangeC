@@ -298,6 +298,11 @@ bool castToArithmeticInternal(bool integer, TYPE** tp, EXPRESSION** exp, enum e_
 {
     (void)kw;
     SYMBOL* sym = basetype(*tp)->sp;
+
+    if (other && ispointer(other) && (kw == plus || kw == minus || (kw >= eq && kw <= geq)))
+    {
+        return castToPointer(tp, exp, kw, other);
+    }
     if (!other || isarithmetic(other))
     {
         SYMBOL* cst = integer ? lookupIntCast(sym, other ? other : &stdint, implicit)
@@ -1218,7 +1223,7 @@ LEXLIST* expression_typeid(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION**
     if (needkw(&lex, openpa))
     {
         bool byType = false;
-        if (startOfType(lex, false))
+        if (startOfType(lex, nullptr, false))
         {
             lex = get_type_id(lex, tp, funcsp, sc_cast, false, true, false);
             byType = true;
@@ -1661,7 +1666,7 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
     if (MATCHKW(lex, openpa))
     {
         lex = getsym();
-        if (startOfType(lex, false))
+        if (startOfType(lex, nullptr, false))
         {
             // type in parenthesis
             lex = get_type_id(lex, tp, funcsp, sc_cast, false, true, false);

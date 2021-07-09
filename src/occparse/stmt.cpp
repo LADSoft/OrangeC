@@ -225,7 +225,8 @@ static LEXLIST* selection_expression(LEXLIST* lex, BLOCKDATA* parent, EXPRESSION
     TYPE* tp = nullptr;
     bool hasAttributes = ParseAttributeSpecifiers(&lex, funcsp, true);
     (void)parent;
-    if (startOfType(lex, false) && (!Optimizer::cparams.prm_cplusplus || resolveToDeclaration(lex)))
+    bool structured = false;
+    if (startOfType(lex, &structured, false) && (!Optimizer::cparams.prm_cplusplus || resolveToDeclaration(lex, structured)))
     {
         if (declaration)
             *declaration = true;
@@ -2933,7 +2934,7 @@ static LEXLIST* autodeclare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
 
     return lex;
 }
-bool resolveToDeclaration(LEXLIST* lex)
+bool resolveToDeclaration(LEXLIST* lex, bool structured)
 {
     LEXLIST* placeholder = lex;
     if (ISKW(lex))
@@ -2997,7 +2998,7 @@ bool resolveToDeclaration(LEXLIST* lex)
             }
             lex = getsym();
         }
-        if (MATCHKW(lex, assign) || MATCHKW(lex, openpa) || MATCHKW(lex, openbr))
+        if (MATCHKW(lex, assign) || (!structured && MATCHKW(lex, openpa)) || MATCHKW(lex, openbr))
         {
             prevsym(placeholder);
             return true;
@@ -3143,10 +3144,13 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacont
             lex = statement_SEH(lex, funcsp, parent);
             break;
         default:
-            if (((startOfType(lex, false) &&
+        {
+            bool structured = false;
+
+            if (((startOfType(lex, &structured, false) &&
                   ((!Optimizer::cparams.prm_cplusplus &&
                     ((Optimizer::architecture != ARCHITECTURE_MSIL) || !Optimizer::cparams.msilAllowExtensions)) ||
-                   resolveToDeclaration(lex)))) ||
+                   resolveToDeclaration(lex, structured)))) ||
                 MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_constexpr) ||
                 MATCHKW(lex, kw_decltype) || MATCHKW(lex, kw_static_assert))
             {
@@ -3158,9 +3162,9 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacont
                 {
                     AllocateLocalContext(parent, funcsp, codeLabel++);
                 }
-                while (((startOfType(lex, false) &&
+                while (((startOfType(lex, &structured, false) &&
                          ((!Optimizer::cparams.prm_cplusplus && (Optimizer::architecture != ARCHITECTURE_MSIL)) ||
-                          resolveToDeclaration(lex)))) ||
+                          resolveToDeclaration(lex, structured)))) ||
                        MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) ||
                        MATCHKW(lex, kw_static_assert) || MATCHKW(lex, kw_constexpr))
                 {
@@ -3193,6 +3197,7 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacont
                 lex = statement_expr(lex, funcsp, parent);
                 parent->needlabel = isCallNoreturnFunction;
             }
+        }
     }
     if (MATCHKW(lex, semicolon))
     {
@@ -3343,7 +3348,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     if (!Optimizer::cparams.prm_cplusplus)
     {
         // have to defer so we can get expression like constructor calls
-        while (startOfType(lex, false))
+        while (startOfType(lex, nullptr, false))
         {
             STATEMENT* current = blockstmt->tail;
             declareAndInitialize = false;

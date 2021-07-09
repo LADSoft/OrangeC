@@ -445,7 +445,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             MATCHKW(lex, lt))
         {
             lex = getsym();
-            if (startOfType(lex, false))
+            if (startOfType(lex, nullptr, false))
             {
                 TEMPLATEPARAMLIST* lst = nullptr;
                 SYMBOL* sp1 = sym;
@@ -3087,6 +3087,15 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             EXPRESSION* paramexp = p->exp;
                             p->exp = consexp;
                             callConstructorParam(&ctype, &p->exp, basetype(p->tp), paramexp, true, true, false, false, true);
+                            if (p->exp->type == en_thisref)
+                            {
+                                TYPE* tpx = basetype(p->exp->left->v.func->sp->tp);
+                                if (isfunction(tpx) && tpx->sp->sb->castoperator)
+                                {
+                                    p->tp = tpx->btp;
+                                }
+                            }
+                            /*
                             if (p->exp->type == en_func)
                             {
                                 SYMBOL* spx = p->exp->v.func->sp;
@@ -3111,6 +3120,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                                 else
                                     cast(sym->tp, &p->exp);
                             }
+                            */
                         }
                         else
                         {
@@ -4743,7 +4753,7 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                 {
                     ATOMICDATA* d;
                     d = Allocate<ATOMICDATA>();
-                    if (!ispointer(tp1))
+                    if (!ispointer(*tp))
                     {
                         error(ERR_DEREF);
                         d->tp = *tp = &stdint;
@@ -4751,15 +4761,15 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                     else
                     {
                         TYPE* tp2 = *tp;
-                        d->tp = *tp = basetype(tp1)->btp;
+                        d->tp = *tp = basetype(*tp)->btp;
+                        if (!comparetypes(*tp, tp1, false))
+                        {
+                            error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                        }
                         tp1 = tp2;
                     }
-                    if (!comparetypes(*tp, tp1, false))
-                    {
-                        error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
-                    }
-                    d->address = exp1;
-                    d->value = *exp;
+                    d->address = *exp;
+                    d->value = exp1;
                     d->atomicOp = Optimizer::ao_init;
                     *exp = exprNode(en_atomic, nullptr, nullptr);
                     (*exp)->v.ad = d;
@@ -5473,7 +5483,7 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                     if (MATCHKW(lex, openpa))
                     {
                         lex = getsym();
-                        if (startOfType(lex, false))
+                        if (startOfType(lex, nullptr, false))
                         {
                             SYMBOL* sym;
                             lex = get_type_id(lex, tp, funcsp, sc_cast, false, true, false);
@@ -5828,7 +5838,7 @@ static LEXLIST* expression_sizeof(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
             paren = true;
             lex = getsym();
         }
-        if (!paren || !startOfType(lex, false))
+        if (!paren || !startOfType(lex, nullptr, false))
         {
             if (paren)
             {
@@ -6689,9 +6699,10 @@ LEXLIST* expression_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
             basisAttribs = {0};
             ParseAttributeSpecifiers(&lex, funcsp, true);
         }
-        if (startOfType(lex, false))
+        bool structured = false;
+        if (startOfType(lex, &structured, false))
         {
-            if (!Optimizer::cparams.prm_cplusplus || resolveToDeclaration(lex))
+            if (!Optimizer::cparams.prm_cplusplus || resolveToDeclaration(lex, structured))
             {
                 bool done = false;
                 lex = get_type_id(lex, tp, funcsp, sc_cast, false, true, false);

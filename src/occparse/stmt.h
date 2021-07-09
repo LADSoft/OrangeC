@@ -51,7 +51,7 @@ LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, int la
 LEXLIST* statement_try(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent);
 bool hasInlineAsm(void);
 LEXLIST* statement_asm(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent);
-bool resolveToDeclaration(LEXLIST* lex);
+bool resolveToDeclaration(LEXLIST* lex, bool structured);
 LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontrol);
 LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first);
 void assignParam(SYMBOL* funcsp, int* base, SYMBOL* param);

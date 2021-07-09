@@ -318,6 +318,11 @@ inline void DoNotOptimize(Tp& value) {
   asm volatile("" : "+m,r"(value) : : "memory");
 #endif
 }
+#elif defined(__ORANGEC__)
+template <class Tp>
+inline void DoNotOptimize(Tp const& value) {
+  __volatile(value);
+}
 #else
 #include <intrin.h>
 template <class Tp>

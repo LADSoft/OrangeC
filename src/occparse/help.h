@@ -31,7 +31,7 @@ void deprecateMessage(SYMBOL* sym);
 bool ismember(SYMBOL* sym);
 bool istype(SYMBOL* sym);
 bool ismemberdata(SYMBOL* sym);
-bool startOfType(LEXLIST* lex, bool assumeType);
+bool startOfType(LEXLIST* lex, bool* structured, bool assumeType);
 void UpdateRootTypes(TYPE* tp);
 bool isDerivedFromTemplate(TYPE* tp);
 bool isautotype(TYPE* tp);

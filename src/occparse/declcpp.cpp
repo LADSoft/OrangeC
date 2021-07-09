@@ -3788,7 +3788,7 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                 if (needkw(lex, openpa))
                 {
                     int align = 1;
-                    if (startOfType(*lex, false))
+                    if (startOfType(*lex, nullptr, false))
                     {
                         TYPE* tp = nullptr;
                         *lex = get_type_id(*lex, &tp, funcsp, sc_cast, false, true, false);

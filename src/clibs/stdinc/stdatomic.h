@@ -186,7 +186,7 @@ __ATOMIC_TYPE__(uintmax_t, atomic_uintmax_t);
 #endif
 #define kill_dependency(y) __kill_dependency(y)
 
-#define atomic_init(__a__, __v__) __c11_atomic_init(__v__, __a__)
+#define atomic_init(__a__, __v__) __c11_atomic_init(__a__, __v__)
 
 #define atomic_load(__a__) __c11_atomic_load(__a__, memory_order_seq_cst)
 

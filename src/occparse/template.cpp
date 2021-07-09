@@ -1217,7 +1217,7 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPL
         {
             tp = nullptr;
             if (MATCHKW(lex, kw_typename) || (((orig && orig->p->type != kw_int) ||
-                (!orig && startOfType(lex, true) && !constructedInt(lex, funcsp)))&& !MATCHKW(lex, kw_sizeof)))
+                (!orig && startOfType(lex, nullptr, true) && !constructedInt(lex, funcsp)))&& !MATCHKW(lex, kw_sizeof)))
             {
                 LEXLIST* start = lex;
                 noTypeNameError++;
@@ -6793,8 +6793,11 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                     TEMPLATEPARAMLIST* special =
                         params->p->bySpecialization.types ? params->p->bySpecialization.types : params->next;
                     if (special)
-                        for (auto tpl = sym->templateParams->next; tpl; tpl = tpl->next)
-                            TransferClassTemplates(special, special, tpl);
+                    {
+                        TEMPLATEPARAMLIST* tpl = sym->templateParams->p->bySpecialization.types ? sym->templateParams->p->bySpecialization.types : sym->templateParams->next;
+                            for ( ; tpl; tpl = tpl->next)
+                                TransferClassTemplates(special, special, tpl);
+                    }
                 }
                 hr = hr->next;
             }
@@ -8325,6 +8328,30 @@ static void TemplateConstMatching(SYMBOL** spList, int n, TEMPLATEPARAMLIST* par
 }
 static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* val, TEMPLATEPARAMLIST* params)
 {
+    bool ptr = false;
+    TYPE* tdv = nullptr, * tdd = nullptr;
+    TYPE* tvv = nullptr, *tvd = nullptr;
+    if (dflt->p->type == kw_typename && dflt->p->byClass.val && val->p->byClass.val && ispointer(dflt->p->byClass.val) && ispointer(val->p->byClass.val))
+    {
+        tdv = dflt->p->byClass.val;
+        tdd = dflt->p->byClass.dflt;
+        tvv = val->p->byClass.val;
+        tvd = val->p->byClass.dflt;
+        ptr = true;
+        while (ispointer(dflt->p->byClass.val))
+        {
+            dflt->p->byClass.val = basetype(dflt->p->byClass.val)->btp;
+            if (dflt->p->byClass.dflt && ispointer(dflt->p->byClass.dflt))
+                dflt->p->byClass.dflt = basetype(dflt->p->byClass.dflt)->btp;
+
+        }
+        while (ispointer(val->p->byClass.val))
+        {
+            val->p->byClass.val = basetype(val->p->byClass.val)->btp;
+            if (val->p->byClass.dflt && ispointer(val->p->byClass.dflt))
+                val->p->byClass.dflt = basetype(val->p->byClass.dflt)->btp;
+        }
+    }
     if (params && params->p->packed)
     {
         TEMPLATEPARAMLIST* find = dflt;
@@ -8338,6 +8365,11 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* v
         {
             params->p->byPack.pack = find->p->byPack.pack;
         }
+    }
+    else if (!val->p->packed && val->p->type == kw_typename && val->p->byClass.dflt && val->p->byClass.val && val->p->byClass.dflt->type == bt_templateparam)
+    {
+        if (!params->p->byClass.val)
+            params->p->byClass.val = val->p->byClass.val;
     }
     else if (!val->p->packed && val->p->type == kw_typename && val->p->byClass.dflt && val->p->byClass.val && isstructured(val->p->byClass.dflt) &&
         isstructured(val->p->byClass.val))
@@ -8478,6 +8510,13 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* v
                 param1 = param1->next;
             }
         }
+    }
+    if (ptr)
+    {
+        dflt->p->byClass.val = tdv;
+        dflt->p->byClass.dflt = tdd;
+        val->p->byClass.val = tvv;
+        val->p->byClass.dflt = tvd;
     }
 }
 static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialized, TEMPLATEPARAMLIST* args)

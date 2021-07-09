@@ -3587,10 +3587,11 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
 
     basisAttribs = {0};
     ParseAttributeSpecifiers(&lex, funcsp, true);
-    if (startOfType(lex, true))
+    bool structured = false;
+    if (startOfType(lex, &structured, true) && (!Optimizer::cparams.prm_cplusplus || resolveToDeclaration(lex, structured)))
     {
         sp->sb->hasproto = true;
-        while (startOfType(lex, true) || MATCHKW(lex, ellipse))
+        while (startOfType(lex, nullptr, true) || MATCHKW(lex, ellipse))
         {
             bool templType = inTemplateType;
             inTemplateType = !!templateNestingCount;
@@ -3643,7 +3644,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                 {
                     LEXLIST* cur = lex;
                     lex = getsym();
-                    if (!MATCHKW(lex, star) && !MATCHKW(lex, andx) && !startOfType(lex, true))
+                    if (!MATCHKW(lex, star) && !MATCHKW(lex, andx) && !startOfType(lex, nullptr, true))
                     {
                         if (*spin)
                         {
@@ -3940,9 +3941,9 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
             errskim(&lex, skim_closepa);
             skip(&lex, closepa);
         }
-        if (startOfType(lex, false))
+        if (startOfType(lex, nullptr, false))
         {
-            while (startOfType(lex, false))
+            while (startOfType(lex, nullptr, false))
             {
                 Optimizer::ADDRESS address;
                 bool blocked;
@@ -4755,7 +4756,7 @@ LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SY
                 lex = getsym();
                 /* in a parameter, open paren followed by a type is an  unnamed function */
                 if (storage_class == sc_parameter &&
-                    (MATCHKW(lex, closepa) || (startOfType(lex, false) && (!ISKW(lex) || !(lex->data->kw->tokenTypes & TT_LINKAGE)))))
+                    (MATCHKW(lex, closepa) || (startOfType(lex, nullptr, false) && (!ISKW(lex) || !(lex->data->kw->tokenTypes & TT_LINKAGE)))))
                 {
                     TYPE* tp1;
                     if (!*spi)
@@ -5283,7 +5284,7 @@ static LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym,
     *constexpression = false;
 
     while (KWTYPE(lex, TT_STORAGE_CLASS | TT_POINTERQUAL | TT_LINKAGE | TT_DECLARE) ||
-           (!foundType && startOfType(lex, assumeType)) || MATCHKW(lex, complx) || (*storage_class == sc_typedef && !foundType))
+           (!foundType && startOfType(lex, nullptr, assumeType)) || MATCHKW(lex, complx) || (*storage_class == sc_typedef && !foundType))
     {
         if (KWTYPE(lex, TT_DECLARE))
         {

@@ -43,12 +43,28 @@
 #include <locale.h>
 #include "libp.h"
 
+extern unsigned _win32;
+
 void __ll_assertfail(const char* __who, const char* __file, int __line, const char* __func, const char* __msg)
 {
-    char buf[256];
+    char buf[10000];
     if (__func)
         sprintf(buf, "%s %s(%s:%d) : %s\n", __who, __file, __func, __line, __msg);
     else
         sprintf(buf, "%s %s(%d) : %s\n", __who, __file, __line, __msg);
-    MessageBox(0, buf, "Assertion Failed", MB_TASKMODAL);
+    if (_win32)
+    {
+        MessageBox(0, buf, "Assertion Failed", MB_TASKMODAL);
+    }
+    else
+    {
+        int n = strlen(buf);
+        for (int i=0; i < n; i++)
+        {
+            if (buf[i] == '\\')
+                fputc(buf[i], stderr);       
+            fputc(buf[i], stderr);
+        }
+    }
 }
+ 

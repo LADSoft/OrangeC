@@ -1039,7 +1039,7 @@ static void cancelPartition(void)
 }
 void TranslateFromSSA(bool all)
 {
-    if (cparams.icd_flags & ICD_STAYSSA)
+    if (cparams.icd_flags & (ICD_STAYSSA & ~ICD_QUITEARLY))
         return;
     int i;
     QUAD* head;

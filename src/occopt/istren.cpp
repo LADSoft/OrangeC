@@ -34,7 +34,9 @@
 #include "memory.h"
 #include "ilocal.h"
 #include "ireshape.h"
-
+#include "Utils.h"
+#include <unordered_map>
+#include <deque>
 /* reshaping and loop induction strength reduction */
 
 /* there is some minor problems - if an induction set spans multiple loops
@@ -49,6 +51,8 @@
 
 namespace Optimizer
 {
+    static std::unordered_map<int, IMODE*> loadTemps;
+
 static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int match, ILIST* vars)
 {
     while (l)
@@ -174,7 +178,7 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
                     tempInfo[v->data]->sl = s1;
                     s1->multiplier = multiplier;
                     s1->strengthName = n;
-                    tempInfo[n]->enode->sp->pushedtotemp = true;
+//                    tempInfo[n]->enode->sp->pushedtotemp = true;
                     tempInfo[n]->inductionLoop = tempInfo[v->data]->inductionLoop;
                     tempInfo[n]->oldInductionVar = v->data;
                     v = v->next;
@@ -182,6 +186,7 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
                 s = tempInfo[tnum]->sl;
             }
             tempInfo[ans->offset->sp->i]->strengthRename = s->strengthName;
+            tempInfo[s->strengthName]->enode->sp->pushedtotemp = true;
         }
         multiplier = oldMult;
         l = l->next;
@@ -216,16 +221,32 @@ static void ScanStrength(void)
 void ReplaceOneUses(QUAD* head, IMODE** im)
 {
     int n = tempInfo[(*im)->offset->sp->i]->strengthRename;
-
     if (n > 0)
     {
         // cancel the SSA backward translation to make the global opts happy
         if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct)
             unmarkPreSSA(head);
         if ((*im)->mode == i_direct)
-            *im = tempInfo[n]->enode->sp->imvalue;
+        {
+            IMODE* left = tempInfo[n]->enode->sp->imvalue;
+            IMODE* ans = loadTemps[left->offset->sp->i];
+            if (ans)
+            {
+                QUAD* ins = Allocate<QUAD>();
+                ins->dc.opcode = i_assn;
+                ins->dc.left = left;
+                ins->ans = ans;
+                InsertInstruction(head->back, ins);
+            }
+            else
+            {
+                ans = left;
+            }
+            *im = ans;
+        }
         else
         {
+            Utils::fatal("unexpected indirect node in ReplaceUses"); 
             IMODELIST* iml = tempInfo[n]->enode->sp->imind;
             while (iml)
             {
@@ -254,7 +275,7 @@ void ReplaceStrengthUses(QUAD* head)
         ReplaceOneUses(head, &head->dc.right);
     }
 }
-void ReduceStrengthAssign(QUAD* head)
+bool ReduceStrengthAssign(QUAD* head)
 {
     if ((head->temps & (TEMP_LEFT | TEMP_ANS)) == (TEMP_LEFT | TEMP_ANS))
     {
@@ -276,11 +297,12 @@ void ReduceStrengthAssign(QUAD* head)
                     sla = sla->next;
                     sll = sll->next;
                 }
-                return;
+                return true;
             }
         }
     }
     ReplaceStrengthUses(head);
+    return false;
 }
 static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
 {
@@ -402,7 +424,22 @@ static void DoCompare(QUAD* head, IMODE** temp, IMODE** cnst)
         if (sl)
         {
             if (!tempInfo[n]->inductionInitVar)
-                *temp = tempInfo[sl->strengthName]->enode->sp->imvalue;
+            {
+                IMODE* im = loadTemps[sl->strengthName];
+                if (im)
+                {
+                    QUAD* ins = Allocate<QUAD>();
+                    ins->dc.opcode = i_assn;
+                    ins->ans = im;
+                    ins->dc.left = tempInfo[sl->strengthName]->enode->sp->imvalue;
+                    InsertInstruction(head->back, ins);
+                }
+                else
+                {
+                    im = tempInfo[sl->strengthName]->enode->sp->imvalue;
+                }
+                *temp = im;
+            }
             *cnst = StrengthConstant(head, *cnst, sl->multiplier, (*cnst)->size);
         }
     }
@@ -422,7 +459,7 @@ static QUAD* ReduceStrengthCompare(QUAD* head)
     ReplaceStrengthUses(head);
     return head;
 }
-static void ReduceStrengthAdd(QUAD* head)
+static bool ReduceStrengthAdd(QUAD* head)
 {
     if ((head->temps & (TEMP_LEFT | TEMP_ANS)) == (TEMP_LEFT | TEMP_ANS))
     {
@@ -445,7 +482,7 @@ static void ReduceStrengthAdd(QUAD* head)
                     sla = sla->next;
                     sll = sll->next;
                 }
-                return;
+                return true;
             }
         }
     }
@@ -470,11 +507,12 @@ static void ReduceStrengthAdd(QUAD* head)
                     sla = sla->next;
                     slr = slr->next;
                 }
-                return;
+                return true;
             }
         }
     }
     ReplaceStrengthUses(head);
+    return false;
 }
 static int HandlePhiInitVar(QUAD* insin, USES_STRENGTH* sl, int tnum)
 {
@@ -500,6 +538,9 @@ static int HandlePhiInitVar(QUAD* insin, USES_STRENGTH* sl, int tnum)
         tempInfo[n]->inductionLoop = insin->block->loopParent->loopnum;
         tempInfo[n]->inductionInitVar = 1;
         tempInfo[tnum]->strengthRename = n;
+        IMODE* im = InitTempOpt(tempInfo[tnum]->size, tempInfo[tnum]->size);
+        loadTemps[n] = im;
+        tempInfo[n]->enode->sp->pushedtotemp = true;
         return ins->ans->offset->sp->i;
     }
     return rv->offset->sp->i;
@@ -521,6 +562,7 @@ static void ReduceStrengthPhi(QUAD* head)
             newpd->T0 = sl->strengthName;
             newpd->nblocks = pd->nblocks;
             newpb = &newpd->temps;
+            bool pushedtotemp = tempInfo[sl->strengthName]->enode->sp->pushedtotemp;
             while (pb)
             {
                 USES_STRENGTH* sl1 = tempInfo[pb->Tn]->sl;
@@ -538,6 +580,11 @@ static void ReduceStrengthPhi(QUAD* head)
                     (*newpb)->Tn = HandlePhiInitVar(head, sl, pb->Tn);
                     tempInfo[(*newpb)->Tn]->inductionLoop = -1;  // no invariant code motion
                 }
+                if (pushedtotemp)
+                {
+                    tempInfo[(*newpb)->Tn]->enode->sp->pushedtotemp = true;
+                    loadTemps[(*newpb)->Tn] = loadTemps[sl->strengthName];
+                }
                 newpb = &(*newpb)->next;
                 pb = pb->next;
             }
@@ -546,6 +593,61 @@ static void ReduceStrengthPhi(QUAD* head)
             sl = sl->next;
         }
     }
+}
+static void Sort(BLOCK* b, QUAD* head, QUAD* tail)
+{
+    // the algorithm interleaves the addition sequences,
+    // rather than rewrite it we are just going to sort them
+    // so that things that go together are.
+    QUAD* prev = head->back;        
+    QUAD* next = tail->fwd;
+    prev->fwd = next;
+    next->back = prev;
+
+    std::deque<QUAD*> ordered;
+    while (head != tail->fwd)
+    {
+        std::deque<QUAD*>::iterator it;
+        for (it = ordered.begin(); it != ordered.end(); ++it)
+        {
+            QUAD* current = *it;
+            if (current->temps & TEMP_ANS)
+            {
+                int n = current->ans->offset->sp->i;
+                if ((head->temps & TEMP_ANS) && head->ans->mode == i_ind)
+                {
+                    if (head->ans->offset->sp->i == n)
+                        break;
+                }
+                if (head->temps & TEMP_LEFT)
+                {
+                    if (head->dc.left->offset->sp->i == n)
+                        break;
+                }
+                if (head->temps & TEMP_RIGHT)
+                {
+                    if (head->dc.right->offset->sp->i == n)
+                        break;
+                }
+            }
+        }
+        if (it != ordered.end())
+            ++it;
+        if (it == ordered.end())
+            ordered.push_back(head);
+        else
+            ordered.insert(it, head);
+        head = head->fwd;
+    }
+    for (auto q : ordered)
+    {
+        q->back = next->back;
+        q->fwd = next;
+        q->back->fwd = q;
+        q->fwd->back = q;
+    }
+    if (b->tail == tail)
+        b->tail = next->back;
 }
 static void ReduceStrength(BLOCK* b)
 {
@@ -556,38 +658,47 @@ static void ReduceStrength(BLOCK* b)
     head = b->head;
     while (head != b->tail->fwd)
     {
-        switch (head->dc.opcode)
+        QUAD* begin = head->back, *end = begin;
+        bool toContinue = true;
+        while (toContinue && head != b->tail->fwd)
         {
-            case i_assn:
-            case i_neg:
-                ReduceStrengthAssign(head);
-                break;
-            case i_add:
-                if (head->dc.right->offset->type == se_structelem)
+            end = head->back;
+            toContinue = false;
+            switch (head->dc.opcode)
+            {
+                case i_assn:
+                case i_neg:
+                    toContinue = ReduceStrengthAssign(head);
                     break;
-            case i_sub:
-            case i_or:
-            case i_eor:
-            case i_and:
-                ReduceStrengthAdd(head);
-                break;
-            case i_je:
-            case i_jne:
-            case i_jl:
-            case i_jc:
-            case i_jg:
-            case i_ja:
-            case i_jle:
-            case i_jbe:
-            case i_jge:
-            case i_jnc:
-                ReduceStrengthCompare(head);
-                break;
-            default:
-                ReplaceStrengthUses(head);
-                break;
+                case i_add:
+                    if (head->dc.right->offset->type == se_structelem)
+                        break;
+                case i_sub:
+                case i_or:
+                case i_eor:
+                case i_and:
+                    toContinue = ReduceStrengthAdd(head);
+                    break;
+                case i_je:
+                case i_jne:
+                case i_jl:
+                case i_jc:
+                case i_jg:
+                case i_ja:
+                case i_jle:
+                case i_jbe:
+                case i_jge:
+                case i_jnc:
+                    ReduceStrengthCompare(head);
+                    break;
+                default:
+                    ReplaceStrengthUses(head);
+                    break;
+            }
+            head = head->fwd;
         }
-        head = head->fwd;
+        if (!b->critical && begin != end)
+            Sort(b, begin->fwd, end->fwd);
     }
     while (bl)
     {
@@ -598,10 +709,46 @@ static void ReduceStrength(BLOCK* b)
 }
 void ReduceLoopStrength(void)
 {
+    loadTemps.clear();
     int i;
     memset(ins_hash, 0, sizeof(ins_hash));
     CalculateInduction();
     ScanStrength();
+    for (i = 0; i < blockCount; i++)
+    {
+        BLOCK* b = blockArray[i];
+        if (b)
+        {
+            QUAD* head = b->head;
+            while (head != b->tail->fwd)
+            {
+                if (head->dc.opcode == i_assn)
+                {
+                    if ((head->temps & (TEMP_LEFT | TEMP_ANS)) == (TEMP_LEFT | TEMP_ANS))
+                    {
+                        if (head->dc.left->mode == i_direct && head->ans->mode == i_direct)
+                        {
+                            int ta = head->ans->offset->sp->i;
+                            int tl = head->dc.left->offset->sp->i;
+                            USES_STRENGTH* sla = tempInfo[ta]->sl;
+                            USES_STRENGTH* sll = tempInfo[tl]->sl;
+                            if (sla && sll)
+                            {
+                                while (sla && sll)
+                                {
+                                    loadTemps[sll->strengthName] = tempInfo[sla->strengthName]->enode->sp->imvalue;
+                                    sla = sla->next;
+                                    sll = sll->next;
+                                }
+                            }
+                        }
+                    }
+
+                }
+                head = head->fwd;
+            }
+        }
+    }
     for (i = 0; i < blockCount; i++)
     {
         BLOCK* b = blockArray[i];

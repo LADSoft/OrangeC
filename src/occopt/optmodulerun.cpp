@@ -114,7 +114,7 @@ OptimizerModule Modules[]
 ////    { RemoveCriticalThunks, nullptr, OPT_CONSTANT, 0, false, false },
     { RedoDoms, nullptr, OPT_CONSTANT, 0, false, false },
 ////    { Reshape, "Loop reshaping", OPT_RESHAPE, 0, false, false },
-//    { ReduceLoopStrength, "Reduce Loop Strength", OPT_LSTRENGTH, DO_NOGCSE, true, false },
+    { ReduceLoopStrength, "Reduce Loop Strength", OPT_LSTRENGTH, DO_NOGCSE, true, false },
 //    { MoveLoopInvariants, "Move Loop Invariants", OPT_INVARIANT, DO_NOGCSE, true, false },
     { AliasPass1, nullptr, ~0, DO_NOALIAS, false, false },
     { SSAOut, nullptr, ~0, 0, false, false },

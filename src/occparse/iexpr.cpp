@@ -148,8 +148,6 @@ Optimizer::IMODE* LookupExpression(enum Optimizer::i_ops op, int size, Optimizer
             else if (isintconst(right->offset))
             {
                 right = Optimizer::make_immed(left->size, right->offset->i);
-                if (!isintconst(right->offset))
-                    printf("hi");
             }
         }
     }

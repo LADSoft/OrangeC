@@ -643,6 +643,10 @@ static bool checkDefaultCons(SYMBOL* sp, HASHTABLE* syms, enum e_ac access)
             if (!isAccessible(sp, dflt->sb->parentClass, dflt, nullptr, access, false))
                 return true;
         }
+        else
+        {
+            return true;
+        }
     }
     return false;
 }
@@ -822,6 +826,10 @@ static bool checkCopyCons(SYMBOL* sp, SYMBOL* base, enum e_ac access)
         if (!isAccessible(sp, dflt->sb->parentClass, dflt, nullptr, access, false))
             return true;
     }
+    else
+    {
+        return true;
+    }
     return false;
 }
 static bool checkCopyAssign(SYMBOL* sp, SYMBOL* base, enum e_ac access)
@@ -834,6 +842,10 @@ static bool checkCopyAssign(SYMBOL* sp, SYMBOL* base, enum e_ac access)
         if (!isAccessible(sp, dflt->sb->parentClass, dflt, nullptr, access, false))
             return true;
     }
+    else
+    {
+        return true;
+    }
     return false;
 }
 static bool checkMoveCons(SYMBOL* sp, SYMBOL* base, enum e_ac access)
@@ -845,6 +857,10 @@ static bool checkMoveCons(SYMBOL* sp, SYMBOL* base, enum e_ac access)
             return true;
         if (!isAccessible(sp, dflt->sb->parentClass, dflt, nullptr, access, false))
             return true;
+    }
+    else
+    {
+        return true;
     }
     return false;
 }
@@ -1488,8 +1504,8 @@ void createDefaultConstructors(SYMBOL* sp)
         // create the default constructor
         newcons = declareConstructor(sp, true, false);
         cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
-        conditionallyDeleteDefaultConstructor(cons);
     }
+    conditionallyDeleteDefaultConstructor(cons);
     // see if the default constructor could be trivial
     if (!hasVTab(sp) && sp->sb->vbaseEntries == nullptr && !dest)
     {

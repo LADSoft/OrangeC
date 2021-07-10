@@ -2789,7 +2789,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
     if ((Optimizer::cparams.prm_cplusplus || ((Optimizer::architecture == ARCHITECTURE_MSIL) && !assn)) && isstructured(itype) &&
         (basetype(itype)->sp->sb->hasUserCons || (!basetype(itype)->sp->sb->trivialCons && !MATCHKW(lex, begin)) || arrayMember))
     {
-        if (base->sb->storage_class != sc_member || MATCHKW(lex, openpa) || assn || MATCHKW(lex, begin))
+        if ((base->sb->storage_class != sc_member && base->sb->storage_class != sc_mutable) || MATCHKW(lex, openpa) || assn || MATCHKW(lex, begin))
         {
             // initialization via constructor
             FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();

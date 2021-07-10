@@ -67,6 +67,7 @@ static bool is_trivially_assignable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, 
 static bool is_trivially_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 static bool is_trivially_copyable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 static bool is_union(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_literal_type(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 
 static struct _ihash
 {
@@ -92,6 +93,7 @@ static struct _ihash
     {"__is_trivially_constructible", is_trivially_constructible},
     {"__is_trivially_copyable", is_trivially_copyable},
     {"__is_union", is_union},
+    {"__is_literal_type", is_literal_type},
 };
 
 static std::unordered_map<std::string, std::unordered_map<unsigned, SYMBOL*>> integerSequences;
@@ -1324,6 +1326,86 @@ static bool is_union(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPR
     if (funcparams.arguments && !funcparams.arguments->next)
     {
         rv = basetype(funcparams.arguments->tp)->type == bt_union;
+    }
+    *exp = intNode(en_c_i, rv);
+    *tp = &stdint;
+    return true;
+}
+static bool hasConstexprConstructor(TYPE *tp)
+{
+    auto ovl = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp)->syms);
+    if (ovl)
+    {
+        auto hr = ovl->tp->syms->table[0];
+        while (hr)
+        {
+            if (hr->p->sb->constexpression)
+                return true;
+            hr = hr->next;
+        }
+    }
+    return false;   
+}
+static bool is_literal_type(TYPE* tp);
+static void nonStaticLiteralTypes(TYPE* tp, bool& all, bool& one)
+{
+    auto hr = basetype(tp)->syms->table[0];
+    if (hr)
+    {
+        hr = hr->next; // skip shim
+        while (hr)
+        {
+            auto sym = hr->p;
+            if (sym->sb->storage_class == sc_member || sym->sb->storage_class == sc_mutable)
+            {
+                if (isvolatile(sym->tp))
+                {
+                    all = false;
+                }
+                else
+                {
+                    if (is_literal_type(sym->tp))
+                        one = true;
+                    else
+                        all = false;
+                }
+            } 
+            hr = hr->next;
+        }
+    }
+} 
+static bool is_literal_type(TYPE* tp)
+{
+    if (isref(tp) || isarithmetic(tp) || isvoid(tp))
+        return true;
+    if (isarray(tp))
+        return is_literal_type(tp->btp);
+    if (isstructured(tp))
+    {
+        if (trivialDestructor(tp))
+        {
+            if (basetype(tp)->sp->sb->trivialCons || hasConstexprConstructor(tp))
+            {
+                bool all = true, one = false;
+                nonStaticLiteralTypes(tp, all, one);
+                if (basetype(tp)->type == bt_union && one)
+                    return true;
+                else if (all)
+                    return true;               
+            }
+        }
+    }
+    return false;
+}
+static bool is_literal_type(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+{
+    bool rv = false;
+    FUNCTIONCALL funcparams;
+    memset(&funcparams, 0, sizeof(funcparams));
+    *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
+    if (funcparams.arguments && !funcparams.arguments->next)
+    {
+        rv = is_literal_type(funcparams.arguments->tp);
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;

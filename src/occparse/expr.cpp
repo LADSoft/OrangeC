@@ -467,7 +467,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             }
         }
         if ((!sym->sb || sym->sb->storage_class == sc_templateparam) && sym->tp->type == bt_templateparam &&
-            sym->tp->templateParam->p->byNonType.val)
+             (sym->tp->templateParam->p->type != kw_int || (sym->tp->templateParam->p->type == kw_int && sym->tp->templateParam->p->byNonType.val)))
         {
             switch (sym->tp->templateParam->p->type)
             {
@@ -480,6 +480,18 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                         *exp = varNode(en_templateparam, sym);
                         *tp = sym->tp;
                         lex = getsym();
+                        if (MATCHKW(lex, openpa))
+                        {
+                            lex = getsym();
+                            errskim(&lex, skim_closepa, false);
+                            lex = getsym();
+                        }
+                        else if (MATCHKW(lex, begin))
+                        {
+                            lex = getsym();
+                            errskim(&lex, skim_end, false);
+                            lex = getsym();
+                        }
                     }
                     else
                     {
@@ -3653,7 +3665,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         }
     }
 
-    if ((!templateNestingCount || instantiatingTemplate) && funcparams->sp && funcparams->sp->name[0] == '_' &&
+    if (/*(!templateNestingCount || instantiatingTemplate) &&*/ funcparams->sp && funcparams->sp->name[0] == '_' &&
         parseBuiltInTypelistFunc(&lex, funcsp, funcparams->sp, tp, exp))
         return lex;
     if (lex)

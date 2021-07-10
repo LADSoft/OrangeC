@@ -1201,6 +1201,8 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPL
     if (templ)
     {
         auto templ1 = templ;
+        if (templ1->sb && templ1->sb->maintemplate)
+            templ1 = templ1->sb->maintemplate;
         if (templ->tp && templ1->tp->type == bt_aggregate)
             templ1 = templ1->tp->syms->table[0]->p;
             orig = templ1->templateParams

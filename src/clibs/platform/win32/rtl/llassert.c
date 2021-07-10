@@ -58,13 +58,7 @@ void __ll_assertfail(const char* __who, const char* __file, int __line, const ch
     }
     else
     {
-        int n = strlen(buf);
-        for (int i=0; i < n; i++)
-        {
-            if (buf[i] == '\\')
-                fputc(buf[i], stderr);       
-            fputc(buf[i], stderr);
-        }
+        fputs(buf, stderr);
     }
 }
  

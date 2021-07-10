@@ -1888,23 +1888,30 @@ void ConstantFlow(void)
     head = blockArray[0]->head;
     while (head)
     {
-
         if (head->temps & TEMP_ANS)
         {
             if (head->ans->mode == i_direct)
             {
                 if (head->temps & TEMP_LEFT)
                 {
-                    if (head->dc.left->vol)
+                    if (head->dc.left->vol || head->atomic)
                     {
                         tempInfo[head->ans->offset->sp->i]->value.type = vo_bottom;
+                    }
+                    if (head->atomic)
+                    {
+                        tempInfo[head->dc.left->offset->sp->i]->value.type = vo_bottom;
                     }
                 }
                 if (head->temps & TEMP_RIGHT)
                 {
-                    if (head->dc.right->vol)
+                    if (head->dc.right->vol || head->atomic)
                     {
                         tempInfo[head->ans->offset->sp->i]->value.type = vo_bottom;
+                    }
+                    if (head->atomic)
+                    {
+                        tempInfo[head->dc.right->offset->sp->i]->value.type = vo_bottom;
                     }
                 }
             }

@@ -252,6 +252,8 @@ void ScanForInvariants(BLOCK* b)
                     }
                     else if (head->dc.right && head->dc.right->mode != i_immed)
                         canMove = false;
+                    if (head->atomic)
+                        canMove = false;
                     if (canMove)
                         canMove = InvariantPhiUsing(head);
                     if (canMove)

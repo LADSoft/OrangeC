@@ -231,7 +231,17 @@ void SetunMoveableTerms(void)
             {
                 if (!head->ignoreMe && head->dc.opcode != i_label)
                 {
-                    if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct)
+                    if (head->atomic)
+                    {
+                        if (head->temps & TEMP_ANS)
+                        {
+                            int n = head->ans->offset->sp->i;
+                            clearbit(unMoveableTerms, termMap[n]);
+                            if (tempInfo[n]->terms)
+                                andmap(unMoveableTerms, tempInfo[n]->terms);
+                        }
+                    }
+                    else if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct)
                     {
                         int n = head->ans->offset->sp->i;
                         if (head->dc.opcode == Optimizer::i_substack || head->dc.opcode == Optimizer::i_parmstack)
@@ -437,11 +447,6 @@ static void CalculateTransparent(void)
                         complementmap(tempBytes2);
                         ormap(tempBytes, tempBytes2);
                     }
-                }
-                if (tail->atomic)
-                {
-                    if (tail->temps & TEMP_LEFT)
-                        setbit(tempBytes, termMap[tail->dc.left->offset->sp->i]);
                 }
                 for (i = 0; i < termCount; i++)
                 {

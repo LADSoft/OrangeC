@@ -176,6 +176,14 @@ OCODE* gen_code(int op, AMODE* ap1, AMODE* ap2)
     add_peep(newitem);
     return newitem;
 }
+OCODE* gen_code_sse(int op, AMODE* ap1, AMODE* ap2)
+{
+    if (ap1->mode != am_dreg)
+        ap1->length = 0;
+    if (ap2->mode != am_dreg)
+        ap2->length = 0;
+    return gen_code(op, ap1, ap2);
+}
 OCODE* gen_code_sse(int ops, int opd, int sz, AMODE* ap1, AMODE* ap2)
 {
     int op = opd;

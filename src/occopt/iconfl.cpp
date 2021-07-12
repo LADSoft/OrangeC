@@ -213,6 +213,11 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
                             }
                             briggsReset(live, tnum);
                             // processor dependent
+                            if (tail->atomic && (tail->temps & TEMP_RIGHT) && tail->ans->size >= ISZ_FLOAT)
+                            {
+                                // fetch_modify or modify_fetch may need an extra floating point register allocated...
+                                insertConflict(tnum, tail->dc.right->offset->sp->i);
+                            }
                             if (tail->ans->size == ISZ_ULONGLONG || tail->ans->size == -ISZ_ULONGLONG)
                             {
                                 if (tail->dc.left->mode == i_ind)

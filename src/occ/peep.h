@@ -34,6 +34,7 @@ AMODE* makedreg(int r);
 AMODE* makefreg(int r);
 AMODE* copy_addr(AMODE* ap);
 OCODE* gen_code(int op, AMODE* ap1, AMODE* ap2);
+OCODE* gen_code_sse(int op, AMODE* ap1, AMODE* ap2);
 OCODE* gen_code_sse(int ops, int opd, int sz, AMODE* ap1, AMODE* ap2);
 OCODE* gen_code_sse_imm(int ops, int opd, int sz, AMODE* ap1, AMODE* ap2, AMODE* ap3);
 OCODE* gen_code3(int op, AMODE* ap1, AMODE* ap2, AMODE* ap3);

@@ -79,7 +79,85 @@ Optimizer::SimpleExpression* copy_expression(Optimizer::SimpleExpression* node)
     return rv;
 }
 //-------------------------------------------------------------------------
+int makeregflags(AMODE* ap)
+{
+    int regflags = (1 << ESP) | (1 << EBP);
+    if (ap->mode == am_dreg)
+    {
+        regflags |= 1 << ap->preg;
+    }
+    else if (ap->mode == am_indisp)
+    {
+        regflags |= 1 << ap->preg;
+    }
+    else if (ap->mode == am_indispscale)
+    {
+        regflags |= 1 << ap->preg;
+        regflags |= 1 << ap->sreg;
+    }
+    return regflags;
+}
+int getreg(AMODE *apll, int regflags, bool& pushed)
+{
+    pushed = false;
+    int reg = 0;
+    for (reg = 0; reg < 8; reg++)
+        if (!(regflags & (1 << reg)) && !(apll->liveRegs & (1 << reg)))
+            break;
+    if (reg >= 8)
+    {
+        for (reg = 0; reg < 8; reg++)
+            if (!(regflags & (1 << reg)))
+                break;
+        pushed = true;
+        gen_codes(op_push, ISZ_UINT, makedreg(reg), nullptr);
+        pushlevel += 4;
+    }
+    else if (reg >= 4)
+    {
+        pushed = true;
+        gen_codes(op_push, ISZ_UINT, makedreg(reg), nullptr);
+        pushlevel += 4;
+    }
 
+    return reg;
+}
+AMODE* offsetToHigh(AMODE* low)
+{
+    AMODE* rv = Allocate<AMODE>();
+    *rv = *low;
+    Optimizer::SimpleExpression* ep = beLocalAllocate<Optimizer::SimpleExpression>();
+    ep->type = Optimizer::se_i;
+    ep->i = 4;
+    if (rv->offset)
+    {
+        Optimizer::SimpleExpression* ep1 = beLocalAllocate<Optimizer::SimpleExpression>();
+        ep1->type = Optimizer::se_add;
+        ep1->left = rv->offset;
+        ep1->right = ep;
+        rv->offset = ep1;
+    }
+    else
+    {
+        rv->offset = ep;
+    }
+    return rv;
+}
+AMODE* atomic_lea(AMODE* apll, AMODE* apa, int regflags, int &reg, bool &pushed)
+{
+    reg = getreg(apll, regflags, pushed);
+    AMODE* apal = makedreg(reg);
+    if (apa->mode == am_indisp && (!apa->offset || (apa->offset->type == Optimizer::se_i && apa->offset->i == 0)))
+    {
+        gen_code(op_mov, apal, makedreg(apa->preg));
+    }
+    else
+    {
+        gen_code(op_lea, makedreg(reg), apa);
+    }
+    apal->mode = am_indisp;
+    return apal;
+}
 AMODE* make_muldivval(AMODE* ap)
 {
     AMODE* ap1 = make_label(queue_muldivval(ap->offset->i));
@@ -456,7 +534,7 @@ void floatchs(AMODE* ap, int sz)
         }
         else
         {
-            gen_code(op_push, makedreg(EAX), NULL);
+            gen_codes(op_push, ISZ_UINT, makedreg(EAX), NULL);
             pushlevel += 4;
             pushed = true;
             reg = EAX;
@@ -476,7 +554,7 @@ void floatchs(AMODE* ap, int sz)
     if (reg != -1)
     {
         pushlevel -= 4;
-        gen_code(op_pop, makedreg(reg), NULL);
+        gen_codes(op_pop, ISZ_UINT, makedreg(reg), NULL);
     }
 }
 
@@ -484,7 +562,7 @@ void zerocleanup(void)
 {
     if (fconstcleanup >= 0)
     {
-        gen_code(op_pop, makedreg(fconstcleanup), NULL);
+        gen_codes(op_pop, ISZ_UINT, makedreg(fconstcleanup), NULL);
         pushlevel -= 4;
     }
     fconstcleanup = -1;
@@ -513,7 +591,7 @@ AMODE* floatzero(AMODE* ap)
         }
         else
         {
-            gen_code(op_push, makedreg(EAX), NULL);
+            gen_codes(op_push, ISZ_UINT, makedreg(EAX), NULL);
             pushlevel += 4;
             reg = EAX;
         }
@@ -625,7 +703,7 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
         AMODE* temp = setSymbol("__TLSINITSTART");
         temp->mode = am_immed;
         temp->offset = Optimizer::simpleExpressionNode(Optimizer::se_sub, im->offset, temp->offset);
-        gen_code(op_push, temp, 0);
+        gen_codes(op_push, ISZ_UINT, temp, 0);
         callLibrary("___tlsaddr", 0);
         *apl = beLocalAllocate<AMODE>();
         (*apl)->preg = Optimizer::chosenAssembler->arch->regMap[beRegFromTemp(q, q->ans)][0];
@@ -1084,7 +1162,7 @@ void gen_lshift(enum e_opcode op, AMODE* aph, AMODE* apl, AMODE* n)
         }
         else
         {
-            gen_code(op_push, makedreg(EAX), NULL);
+            gen_codes(op_push, ISZ_UINT, makedreg(EAX), NULL);
             pushlevel += 4;
             pushed = true;
             reg = EAX;
@@ -1107,7 +1185,7 @@ void gen_lshift(enum e_opcode op, AMODE* aph, AMODE* apl, AMODE* n)
         }
         if (pushed)
         {
-            gen_code(op_pop, makedreg(EAX), NULL);
+            gen_codes(op_pop, ISZ_UINT, makedreg(EAX), NULL);
             pushlevel -= 4;
         }
     }
@@ -1181,13 +1259,13 @@ void gen_xset(Optimizer::QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_o
             else
                 flt = op_setp;
             if ((apal->mode != am_dreg || apal->preg != EAX) && live(apll->liveRegs, EAX))
-                gen_code(op_push, makedreg(EAX), nullptr);
+                gen_codes(op_push, ISZ_UINT, makedreg(EAX), nullptr);
             gen_code(op_lahf, nullptr, nullptr);
             // if the 'parity' and 'zero' flags are the same, they are not equal
             // otherwise the zero flag will be set so they are equal
             gen_codes(op_test, ISZ_UCHAR, makedreg(AH), aimmed(0x44));
             if ((apal->mode != am_dreg || apal->preg != EAX) && live(apll->liveRegs, EAX))
-                gen_code(op_pop, makedreg(EAX), nullptr);
+                gen_codes(op_pop, ISZ_UINT, makedreg(EAX), nullptr);
             gen_codes(flt, ISZ_UCHAR, apal, 0);
             gen_codes(op_and, ISZ_UINT, apal, aimmed(1));
             return;
@@ -1264,9 +1342,9 @@ void gen_xset(Optimizer::QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_o
             }
             else if (stacked)
             {
-                gen_code(op_push, aimmed(0), NULL);
+                gen_codes(op_push, ISZ_UINT, aimmed(0), NULL);
                 gen_codes(op, ISZ_UCHAR, altreg, 0);
-                gen_code(op_pop, apal, NULL);
+                gen_codes(op_pop, ISZ_UINT, apal, NULL);
             }
             else
             {
@@ -1291,9 +1369,9 @@ void gen_xset(Optimizer::QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_o
             }
             else if (stacked)
             {
-                gen_code(op_push, aimmed(0), NULL);
+                gen_codes(op_push, ISZ_UINT, aimmed(0), NULL);
                 gen_codes(sop, ISZ_UCHAR, altreg, 0);
-                gen_code(op_pop, apal, NULL);
+                gen_codes(op_pop, ISZ_UINT, apal, NULL);
             }
             else
             {
@@ -1312,9 +1390,9 @@ void gen_xset(Optimizer::QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_o
             }
             else if (stacked)
             {
-                gen_code(op_push, aimmed(0), NULL);
+                gen_codes(op_push, ISZ_UINT, aimmed(0), NULL);
                 gen_codes(op, ISZ_UCHAR, altreg, 0);
-                gen_code(op_pop, apal, NULL);
+                gen_codes(op_pop, ISZ_UINT, apal, NULL);
             }
             else
             {
@@ -1340,9 +1418,9 @@ void gen_xset(Optimizer::QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_o
     }
     else if (stacked)
     {
-        gen_code(op_push, aimmed(0), NULL);
+        gen_codes(op_push, ISZ_UINT, aimmed(0), NULL);
         gen_codes(op, ISZ_UCHAR, altreg, 0);
-        gen_code(op_pop, apal, NULL);
+        gen_codes(op_pop, ISZ_UINT, apal, NULL);
     }
     else
     {
@@ -1417,13 +1495,13 @@ void gen_goto(Optimizer::QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_o
             else
                 flt = op_jp;
             if (live(apll->liveRegs, EAX))
-                gen_code(op_push, makedreg(EAX), nullptr);
+                gen_codes(op_push, ISZ_UINT, makedreg(EAX), nullptr);
             gen_code(op_lahf, nullptr, nullptr);
             // if the 'parity' and 'zero' flags are the same, they are not equal
             // otherwise the zero flag will be set so they are equal
             gen_codes(op_test, ISZ_UCHAR, makedreg(AH), aimmed(0x44));
             if (live(apll->liveRegs, EAX))
-                gen_code(op_pop, makedreg(EAX), nullptr);
+                gen_codes(op_pop, ISZ_UINT, makedreg(EAX), nullptr);
             gen_branch(flt, q->dc.v.label);
             return;
         }
@@ -1633,11 +1711,11 @@ static void gen_shift(Optimizer::QUAD* q, enum e_opcode op, AMODE* apal, AMODE* 
             {
                 if (apll->mode != am_dreg || (apll->liveRegs & (1 << apll->preg)))
                 {
-                    gen_code(op_push, apll, NULL);
+                    gen_codes(op_push, ISZ_UINT, apll, NULL);
                     pushlevel += 4;
                     gen_code(op, apll, cx);
                     gen_codes(op_mov, ISZ_UINT, apal, apll);
-                    gen_code(op_pop, apll, NULL);
+                    gen_codes(op_pop, ISZ_UINT, apll, NULL);
                     pushlevel -= 4;
                 }
                 else
@@ -1855,243 +1933,187 @@ int getPushMask(int i)
 }
 static void llongatomicmath(e_opcode low, e_opcode high, Optimizer::QUAD* q)
 {
-    bool pushax = false, pushcx = false, pushdx = false, pushbx = false;
-    bool pushsi = false, pushdi = false, pushbp = false;
+    int lab = 0;
     enum e_opcode opa, opl, opr;
-    AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
-    getAmodes(q, &opl, q->dc.left, &apll, &aplh);
+    AMODE* apal, * apah, * apll, * aplh, * aprl, * aprh;
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
+    getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
-    int reg1 = apal->preg, reg2 = apah ? apah->preg : -1;
-    if ((apal->liveRegs & (1 << EAX)) && reg1 != EAX && reg2 != EAX)
+    int regflagsa = makeregflags(apal);
+    int regflagsl = makeregflags(apll);
+    int regflagsr = makeregflags(aprl);
+    int regflags = regflagsa | regflagsl | regflagsr;
+    bool pushreg1 = false, pushreg2 = false, pushreg3 = false;
+    int reg1 = 0, reg2 = 0, reg3 = 0;
+    int used_mask = (1 << EAX) | (1 << EBX) | (1 << ECX) | (1 << EDX);
+    bool pushpair = false;
+    gen_codes(op_push, ISZ_UINT, makedreg(ECX), nullptr);
+    gen_codes(op_push, ISZ_UINT, makedreg(EBX), nullptr);
+    pushlevel += 8;
+    if (regflagsa & used_mask)
     {
-        pushax = true;
-        gen_code(op_push, makedreg(EAX), NULL);
+        if (apal->mode != am_dreg)
+        {
+            apal = atomic_lea(apll, apal, regflags | used_mask, reg1, pushreg1);
+            apah = nullptr;
+            used_mask |= 1 << reg1;
+        }
+    }
+    if (regflagsl & used_mask)
+    {
+        if (apll->mode != am_dreg)
+        {
+            apll = atomic_lea(apll, apll, regflags | used_mask, reg2, pushreg2);
+            aplh = nullptr;
+            used_mask |= 1 << reg2;
+        }
+    }
+    if (regflagsr & used_mask)
+    {
+        if (aprl->mode != am_dreg)
+        {
+            aprl = atomic_lea(apll, aprl, regflags | used_mask, reg3, pushreg3);
+            aprh = nullptr;
+            if (!pushreg3)
+            {
+                pushreg3 = true;
+                gen_codes(op_push, ISZ_UINT, makedreg(EBP), nullptr);
+                pushlevel += 4;
+            }
+        }
+    }
+    // out of regs after this
+    if (q->ans->size == ISZ_DOUBLE)
+    {
+        if (!aplh)
+            aplh = offsetToHigh(apll);
+        gen_codes(op_push, ISZ_UINT, aplh, nullptr);
+        pushlevel += 4;
+        gen_codes(op_push, ISZ_UINT, apll, nullptr);
         pushlevel += 4;
     }
-    if ((apal->liveRegs & (1 << ECX)))
+    if (aprl->mode == am_xmmreg)
     {
-        pushcx = true;
-        gen_code(op_push, makedreg(ECX), NULL);
-        pushlevel += 4;
-    }
-    if ((apal->liveRegs & (1 << EDX)) && reg1 != EDX && reg2 != EDX)
-    {
-        pushdx = true;
-        gen_code(op_push, makedreg(EDX), NULL);
-        pushlevel += 4;
-    }
-    if ((apal->liveRegs & (1 << EBX)))
-    {
-        pushbx = true;
-        gen_code(op_push, makedreg(EBX), NULL);
-        pushlevel += 4;
-    }
-    if (q->ans->size != ISZ_DOUBLE && low != op_xchg && aprl->mode != am_immed && /*(apal->liveRegs & (1 << ESI)) &&*/ reg1 != ESI && reg2 != ESI)
-    {
-        pushsi = true;
-        gen_code(op_push, makedreg(ESI), NULL);
-        pushlevel += 4;
-    }
-    if (q->ans->size != ISZ_DOUBLE && low != op_xchg && aprl->mode != am_immed && /*(apal->liveRegs & (1 << EDI)) &&*/ reg1 != EDI && reg2 != EDI)
-    {
-        pushdi = true;
-        gen_code(op_push, makedreg(EDI), NULL);
-        pushlevel += 4;
-    }
-    if (/*(apal->liveRegs & (1 << EBP)) &&*/ (apll->mode == am_indispscale ||
-                                              (apll->mode == am_indisp && apll->preg != EBP && apll->preg != ESP)))
-    {
-        pushbp = true;
-        gen_code(op_push, makedreg(EBP), NULL);
-        pushlevel += 4;
-    }
-    if (aprl->mode == am_indispscale || (aprl->mode == am_indisp && aprl->preg != ESP && aprl->preg != EBP))
-    {
-        gen_code(op_lea, makedreg(EAX), aprl);
-        aprl = makedreg(EAX);
-        aprl->mode = am_indisp;
-        aprl->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
-        aprh = makedreg(EAX);
-        aprh->mode = am_indisp;
-        aprh->offset = Optimizer::simpleIntNode(Optimizer::se_i, 4);
-    }
-    if (apll->mode == am_indispscale || (apll->mode == am_indisp && apll->preg != EBP && apll->preg != ESP))
-    {
-        gen_code(op_lea, makedreg(EBP), apll);
-        apll = makedreg(EBP);
-        apll->mode = am_indisp;
-        apll->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
-        aplh = makedreg(EBP);
-        aplh->mode = am_indisp;
-        aplh->offset = Optimizer::simpleIntNode(Optimizer::se_i, 4);
-    }
-    if (high == op_cmpxchg8b)
-    {
-        gen_codes(op_mov, ISZ_UINT, makedreg(EBX), apll);
-        gen_codes(op_mov, ISZ_UINT, makedreg(ECX), aplh);
-        gen_codes(op_mov, ISZ_UINT, makedreg(EAX), aprl);
-        gen_codes(op_mov, ISZ_UINT, makedreg(EDX), aprh);
-    }
-    else if (q->ans->size == ISZ_DOUBLE)
-    {
-        aplh = Allocate<AMODE>();
-        *aplh = *apll;
-        aplh->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, apll->offset,
-            Optimizer::simpleIntNode(Optimizer::se_i, 4));
-        gen_codes(op_mov, ISZ_UINT, makedreg(EAX), apll);
-        gen_codes(op_mov, ISZ_UINT, makedreg(EDX), aplh);
-        gen_code(op_push, makedreg(EDX), nullptr);
-        gen_code(op_push, makedreg(EAX), nullptr);
-        gen_code(op_push, makedreg(EDX), nullptr);
-        gen_code(op_push, makedreg(EAX), nullptr);
-        pushlevel += 16;
+        gen_code(op_add, makedreg(ESP), aimmed(-8));
     }
     else
     {
-        AMODE* regl = low == op_xchg ? makedreg(EBX) : makedreg(ESI);
-        AMODE* regh = low == op_xchg ? makedreg(ECX) : makedreg(EDI);
-        if (aprl->mode != am_immed)
-        {
-
-            if (aprl->mode == am_dreg)
-            {
-                if (aprh->preg == regl->preg)
-                {
-                    if (aprl->preg == regh->preg)
-                    {
-                        gen_code(op_xchg, regl, regh);
-                    }
-                    else
-                    {
-                        gen_code(op_mov, regh, aprh);
-                        gen_code(op_mov, regl, aprl);
-                    }
-                }
-                else
-                {
-                    gen_code(op_mov, regl, aprl);
-                    gen_code(op_mov, regh, aprh);
-                }
-            }
-            else
-            {
-                gen_code(op_mov, regl, aprl);
-                gen_code(op_mov, regh, aprh);
-            }
-        }
-        gen_codes(op_mov, ISZ_UINT, makedreg(EAX), apll);
-        gen_codes(op_mov, ISZ_UINT, makedreg(EDX), aplh);
+        if (!aprh)
+            aprh = offsetToHigh(aprl);
+        gen_codes(op_push, ISZ_UINT, aprh, nullptr);
+        pushlevel += 4;
+        gen_codes(op_push, ISZ_UINT, aprl, nullptr);
+        pushlevel += 4;
     }
-    if (low != op_xchg && aprl->mode != am_immed && q->ans->size != ISZ_DOUBLE)
+    if (!aplh)
+        aplh = offsetToHigh(apll);
+    gen_codes(op_push, ISZ_UINT, aplh, nullptr);
+    pushlevel += 4;
+    gen_codes(op_push, ISZ_UINT, apll, nullptr);
+    pushlevel += 4;
+    if (q->ans->size == ISZ_DOUBLE)
     {
-        aprl = makedreg(ESI);
-        aprh = makedreg(EDI);
+        oa_gen_label(lab = beGetLabel);
+        gen_code_sse(op_movsd, apal, make_stack(-16));
+        gen_code(low == op_add ? op_addsd : op_subsd, apal, aprl);
+        gen_code_sse(op_movsd, make_stack(-16), apal);
+        gen_code(op_mov, makedreg(EBX), make_stack(-16));
+        gen_code(op_mov, makedreg(ECX), make_stack(-20));
+        gen_codes(op_cmpxchg8b, ISZ_NONE, apll, nullptr);
+        gen_codes(op_mov, ISZ_UINT, make_stack(-16), makedreg(EAX));
+        gen_codes(op_mov, ISZ_UINT, make_stack(-20), makedreg(EDX));
     }
-    int labno;
-    if (high != op_cmpxchg8b)
+    else
     {
-        labno = beGetLabel;
-        oa_gen_label(labno);
+        gen_code(op_mov, makedreg(EAX), make_stack(-0));
+        gen_code(op_mov, makedreg(EDX), make_stack(-4));
+        oa_gen_label(lab = beGetLabel);
+        gen_code(op_mov, makedreg(EBX), makedreg(EAX));
+        gen_code(op_mov, makedreg(ECX), makedreg(EDX));
+        gen_code(low, makedreg(EBX), make_stack(-8));
+        gen_code(high, makedreg(ECX), make_stack(-12));
+        gen_codes(op_cmpxchg8b, ISZ_NONE, apll, nullptr);
     }
-    if (low != op_xchg)
+    gen_code(op_jne, make_label(lab), NULL);
+    if (q->atomicpostfetch)
     {
         if (q->ans->size == ISZ_DOUBLE)
         {
-            gen_code(op_movsd, apal, make_stack(0));
+            gen_code_sse(op_movsd, apal, make_stack(-16));
             gen_code(low == op_add ? op_addsd : op_subsd, apal, aprl);
-            gen_code(op_movsd, make_stack(-8), apal);
-            gen_code(op_mov, makedreg(EBX), make_stack(-8));
-            gen_code(op_mov, makedreg(ECX), make_stack(-12));
         }
         else
         {
-            gen_code(op_mov, makedreg(EBX), makedreg(EAX));
-            gen_code(op_mov, makedreg(ECX), makedreg(EDX));
-            gen_code(low, makedreg(EBX), aprl);
-            gen_code(high, makedreg(ECX), aprh);
+            gen_codes(low, ISZ_UINT, makedreg(EAX), make_stack(-8));
+            gen_codes(high, ISZ_UINT, makedreg(EDX), make_stack(-12));
+            gen_codes(op_mov, ISZ_UINT, apal, makedreg(EAX));
+            gen_codes(op_mov, ISZ_UINT, apah, makedreg(EDX));
         }
+        gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
+        pushlevel -= 8;
     }
-    gen_code(op_lock, NULL, NULL);
-    gen_codes(op_cmpxchg8b, ISZ_NONE, high == op_cmpxchg8b ? apal : apll, NULL);
-    if (high != op_cmpxchg8b)
+    else if (q->ans->size == ISZ_DOUBLE)
     {
-        gen_code(op_jne, make_label(labno), NULL);
-        if (q->ans->size == ISZ_DOUBLE)
-        {
-            if (q->atomicpostfetch)
-            {
-                gen_code(op_mov, make_stack(-0), makedreg(EBX));
-                gen_code(op_mov, make_stack(-4), makedreg(ECX));
-                gen_code(op_movsd, apal, make_stack(0));
-                gen_code(low == op_add ? op_addsd : op_subsd, apal, aprl);
-            }
-            else
-            {
-                gen_code(op_movsd, apal, make_stack(0));
-            }
-            gen_code(op_add, makedreg(ESP), aimmed(16));
-            pushlevel += 16;
-        }
+        gen_code_sse(op_movsd, apal, make_stack(0));
+        gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
+        pushlevel -= 8;
+    }
+    else
+    {
+        gen_codes(op_pop, ISZ_UINT, apal, nullptr);
+        pushlevel -= 4;
+        gen_codes(op_pop, ISZ_UINT, apah, nullptr);
+        pushlevel -= 4;
+    }
+
+    gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
+    pushlevel -= 8;
+    if (q->ans->size == ISZ_DOUBLE)
+    {
+        gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
+        pushlevel -= 8;
+    }
+    if (pushreg3)
+    {
+        if (equal_address(apal, makedreg(reg3)) || equal_address(apah, makedreg(reg3)))
+            gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(4));
         else
-        {
-            if (q->atomicpostfetch)
-            {
-                gen_codes(low, ISZ_UINT, makedreg(EAX), aprl);
-                gen_codes(high, ISZ_UINT, makedreg(EDX), aprh);
-            }
+            gen_codes(op_pop, ISZ_UINT, makedreg(reg3), nullptr);
+        pushlevel -= 4;
 
-            if (reg1 != EAX || reg2 != EDX)
-            {
-                if (apal->preg == EDX)
-                {
-                    gen_code(op_mov, apah, makedreg(EDX));
-                    gen_code(op_mov, apal, makedreg(EAX));
-                }
-                else
-                {
-                    gen_code(op_mov, apal, makedreg(EAX));
-                    gen_code(op_mov, apah, makedreg(EDX));
-                }
-            }
-        }
     }
-    if (pushbp)
+    if (pushreg2)
     {
-        gen_code(op_pop, makedreg(EBP), NULL);
+        if (equal_address(apal, makedreg(reg2)) || apah && equal_address(apah, makedreg(reg2)))
+            gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(4));
+        else
+            gen_codes(op_pop, ISZ_UINT, makedreg(reg2), nullptr);
         pushlevel -= 4;
     }
-    if (pushdi && q->ans->size != ISZ_DOUBLE)
+    if (pushreg1)
     {
-        gen_code(op_pop, makedreg(EDI), NULL);
+        if (equal_address(apal, makedreg(reg1)) || apah && equal_address(apah, makedreg(reg1)))
+            gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(4));
+        else
+            gen_codes(op_pop, ISZ_UINT, makedreg(reg1), nullptr);
         pushlevel -= 4;
     }
-    if (pushsi && q->ans->size != ISZ_DOUBLE)
+    else if (pushpair)
     {
-        gen_code(op_pop, makedreg(ESI), NULL);
+        gen_codes(op_pop, ISZ_UINT, makedreg(EAX), nullptr);
+        pushlevel -= 4;
+        gen_codes(op_pop, ISZ_UINT, makedreg(EAX), nullptr);
         pushlevel -= 4;
     }
-
-    if (pushbx)
-    {
-        gen_code(op_pop, makedreg(EBX), NULL);
-        pushlevel -= 4;
-    }
-    if (pushdx)
-    {
-        gen_code(op_pop, makedreg(EDX), NULL);
-        pushlevel -= 4;
-    }
-    if (pushcx)
-    {
-        gen_code(op_pop, makedreg(ECX), NULL);
-        pushlevel -= 4;
-    }
-    if (pushax)
-    {
-        gen_code(op_pop, makedreg(EAX), NULL);
-        pushlevel -= 4;
-    }
+    if (apal->preg != EBX && (!apah || apah->preg != EBX))
+        gen_codes(op_pop, ISZ_UINT, makedreg(EBX), nullptr);
+    else
+        gen_code(op_add, makedreg(ESP), aimmed(4));
+    if (apal->preg != ECX && (!apah || apah->preg != ECX))
+        gen_codes(op_pop, ISZ_UINT, makedreg(ECX), nullptr);
+    else
+        gen_code(op_add, makedreg(ESP), aimmed(4));
+    pushlevel -= 8;
 }
 static void logicatomic(e_opcode op, Optimizer::QUAD* q);
 
@@ -2107,51 +2129,26 @@ static void addsubatomic(e_opcode op, Optimizer::QUAD* q)
         getAmodes(q, &opl, q->dc.left, &apll, &aplh);
         getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
         getAmodes(q, &opa, q->ans, &apal, &apah);
-        if (apll->mode == am_indispscale || (apll->mode == am_indisp && apll->preg != ESP && apll->preg != EBP))
-        {
-            pushbp = true;
-            gen_code(op_push, makedreg(EBP), NULL);
-            pushlevel += 4;
-
-            gen_code(op_lea, makedreg(EBP), apll);
-            apll = makedreg(EBP);
-            apll->mode = am_indisp;
-            apll->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
-        }
         if (apal->liveRegs & (1 << apal->preg))
         {
-            if (aprl->mode == am_dreg && aprl->preg != apal->preg)
+            int regflags = makeregflags(apll);
+            regflags |= makeregflags(apal);
+            bool pushed = false;
+            int reg = getreg(apll, regflags, pushed);
+            gen_codes(op_mov, q->ans->size, makedreg(reg), aprl);
+            if (op == op_sub)
+                gen_codes(op_neg, q->ans->size, makedreg(reg), NULL);
+            gen_code(op_lock, NULL, NULL);
+            gen_codes(op_xadd, q->ans->size, apll, makedreg(reg));
+            if (q->atomicpostfetch)
             {
-                if (op == op_sub)
-                    gen_codes(op_neg, q->ans->size, aprl, NULL);
-                if (q->atomicpostfetch)
-                {
-                    gen_codes(op_mov, q->ans->size, apal, aprl);
-                }
-                gen_code(op_lock, NULL, NULL);
-                gen_codes(op_xadd, q->ans->size, apll, aprl);
-                if (q->atomicpostfetch)
-                {
-                    gen_codes(op_add, q->ans->size, aprl, apal);
-                }
-                gen_codes(op_mov, q->ans->size, apal, aprl);
+                gen_codes(op, q->ans->size, makedreg(reg), aprl);
             }
-            else
+            gen_codes(op_mov, q->ans->size, apal, makedreg(reg));
+            if (pushed)
             {
-                gen_codes(op_mov, q->ans->size, apal, aprl);
-                if (op == op_sub)
-                    gen_codes(op_neg, q->ans->size, apal, NULL);
-                if (q->atomicpostfetch)
-                {
-                    gen_code(op_push, aprl, nullptr);
-                }
-                gen_code(op_lock, NULL, NULL);
-                gen_codes(op_xadd, q->ans->size, apll, apal);
-                if (q->atomicpostfetch)
-                {
-                    gen_codes(op, q->ans->size, apal, make_stack(0));
-                    gen_code(op_add, makedreg(ESP), aimmed(4));
-                }
+                gen_codes(op_pop, ISZ_UINT, makedreg(reg), nullptr);
+                pushlevel -= 4;
             }
         }
         else
@@ -2167,11 +2164,6 @@ static void addsubatomic(e_opcode op, Optimizer::QUAD* q)
                 gen_code(op_lock, NULL, NULL);
                 gen_codes(op, q->ans->size, apll, apal);
             }
-        }
-        if (pushbp)
-        {
-            gen_code(op_pop, makedreg(EBP), NULL);
-            pushlevel -= 4;
         }
     }
     else if (q->ans->size == ISZ_FLOAT)
@@ -2198,98 +2190,95 @@ static void logicatomic(e_opcode op, Optimizer::QUAD* q)
         getAmodes(q, &opl, q->dc.left, &apll, &aplh);
         getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
         getAmodes(q, &opa, q->ans, &apal, &apah);
-        if (apll->mode == am_indispscale || (apll->mode == am_indisp && apll->preg != ESP && apll->preg != EBP))
-        {
-            pushbp = true;
-            gen_code(op_push, makedreg(EBP), NULL);
-            pushlevel += 4;
-
-            gen_code(op_lea, makedreg(EBP), apll);
-            apll = makedreg(EBP);
-            apll->mode = am_indisp;
-            apll->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
-        }
         if (apal->liveRegs & (1 << apal->preg) || q->ans->size == ISZ_FLOAT)
         {
-            bool pusheddx = false;
-            bool pushedcx = false;
-            bool pushedax = false;
-            if ((apal->liveRegs & (1 << ECX)) && apal->preg != EDX && (aprl->mode != am_dreg || aprl->preg == EAX) &&
-                aprl->mode != am_immed)
-                pusheddx = true;
-            if ((apal->liveRegs & (1 << ECX)) && apal->preg != ECX)
-                pushedcx = true;
-            if ((apal->liveRegs & (1 << EAX)) && apal->preg != EAX)
-                pushedax = true;
-            if (pusheddx && q->ans->size != ISZ_FLOAT)
-            {
-                gen_code(op_push, makedreg(EDX), NULL);
-                pushlevel += 4;
-            }
-            if (pushedcx)
-            {
-                gen_code(op_push, makedreg(ECX), NULL);
-                pushlevel += 4;
-            }
-            if (pushedax)
-            {
-                gen_code(op_push, makedreg(EAX), NULL);
-                pushlevel += 4;
-            }
             int lab = beGetLabel;
-            if (q->ans->size != ISZ_FLOAT)
+            int regflagsa = makeregflags(apal);
+            int regflagsr = makeregflags(aprl);
+            int regflagsl = makeregflags(apll);
+            int reg1=0, reg2=0, reg3=0;
+            bool pushreg1 = false, pushreg2= false, pushreg3 = false;
+            if (regflagsr & (1 << EAX))
             {
-                if ((aprl->mode != am_dreg || aprl->preg == EAX) && aprl->mode != am_immed)
+                if (aprl->mode == am_dreg)
                 {
-                    gen_codes(op_mov, q->ans->size, makedreg(EDX), aprl);
-                    aprl = makedreg(EDX);
+                    reg1 = getreg(apll, regflagsl | regflagsr, pushreg1);
+                    gen_codes(op_mov, q->ans->size, makedreg(reg1), aprl);
+                    aprl = makedreg(reg1);
                 }
+                else
+                {
+                    aprl = atomic_lea(apll, aprl, regflagsl | regflagsr, reg1, pushreg1);
+                }
+                aprh = nullptr;
+                regflagsr |= 1 << reg1;
             }
+            if (regflagsl & (1 << EAX))
+            {
+                apll = atomic_lea(apll, apll, regflagsl | regflagsr, reg2, pushreg2);
+                aplh = nullptr;
+                regflagsl |= 1 << reg2;
+            }
+            reg3 = getreg(apal, regflagsl | regflagsr | (1 << EAX), pushreg3);
             gen_codes(op_mov, q->ans->size == ISZ_FLOAT ? ISZ_UINT : q->ans->size, makedreg(EAX), apll);
+            if (!q->atomicpostfetch)
+            {
+                gen_codes(op_push, ISZ_UINT, makedreg(EAX), nullptr);
+                pushlevel += 4;
+            }
             oa_gen_label(lab);
             if (q->ans->size == ISZ_FLOAT)
             {
                 gen_code(op_movd, apal, makedreg(EAX));
                 gen_code(op == op_add ? op_addss : op_subss, apal, aprl);
-                gen_code(op_movd, makedreg(ECX), apal);
+                gen_code(op_movd, makedreg(reg3), apal);
             }
             else
             {
-                gen_codes(op_mov, q->ans->size, makedreg(ECX), makedreg(EAX));
-                gen_codes(op, q->ans->size, makedreg(ECX), aprl);
+                gen_codes(op_mov, q->ans->size, makedreg(reg3), makedreg(EAX));
+                gen_codes(op, q->ans->size, makedreg(reg3), aprl);
             }
-            gen_codes(op_cmpxchg, q->ans->size == ISZ_FLOAT ? ISZ_UINT : q->ans->size, apll, makedreg(ECX));
+            gen_codes(op_cmpxchg, q->ans->size == ISZ_FLOAT ? ISZ_UINT : q->ans->size, apll, makedreg(reg3));
             gen_code(op_jne, make_label(lab), NULL);
             if (q->atomicpostfetch)
             {
                 if (q->ans->size == ISZ_FLOAT)
                 {
-                    gen_code(op_movd, apal, makedreg(ECX));
-                    gen_code(op_addss, apal, aprl);
+                    gen_code(op_movd, apal, makedreg(EAX));
+                    gen_code(op == op_add ? op_addss : op_subss, apal, aprl);
                 }
                 else
                 {
-                    gen_codes(op, q->ans->size, makedreg(ECX), aprl);
-                    gen_codes(op_mov, q->ans->size, apal, makedreg(ECX));
+                    gen_codes(op, q->ans->size, makedreg(EAX), aprl);
+                    gen_codes(op_mov, q->ans->size, apal, makedreg(EAX));
                 }
             }
-            else if (q->ans->size == ISZ_FLOAT)
-                gen_code(op_movs, apal, makedreg(ECX));
             else
-                gen_codes(op_mov, q->ans->size, apal, makedreg(EAX));
-            if (pushedax)
             {
-                gen_code(op_pop, makedreg(EAX), NULL);
+                if (q->ans->size == ISZ_FLOAT)
+                {
+                    gen_code_sse(op_movss, apal, make_stack(0));
+                    gen_code(op_add, makedreg(ESP), aimmed(4));
+                }
+                else
+                {
+                    gen_codes(op_pop, ISZ_UINT, apal, nullptr);
+                }
                 pushlevel -= 4;
             }
-            if (pushedcx)
+            if (pushreg3)
             {
-                gen_code(op_pop, makedreg(ECX), NULL);
+                gen_codes(op_pop, ISZ_UINT, makedreg(reg3), nullptr);
                 pushlevel -= 4;
             }
-            if (pusheddx && q->ans->size != ISZ_FLOAT)
+            if (pushreg2)
             {
-                gen_code(op_pop, makedreg(EDX), NULL);
+                gen_codes(op_pop, ISZ_UINT, makedreg(reg2), nullptr);
+                pushlevel -= 4;
+            }
+            if (pushreg1)
+            {
+                gen_codes(op_pop, ISZ_UINT, makedreg(reg1), nullptr);
                 pushlevel -= 4;
             }
         }
@@ -2306,11 +2295,6 @@ static void logicatomic(e_opcode op, Optimizer::QUAD* q)
                 gen_code(op_lock, NULL, NULL);
                 gen_codes(op, q->ans->size, apll, apal);
             }
-        }
-        if (pushbp)
-        {
-            gen_code(op_pop, makedreg(EBP), NULL);
-            pushlevel -= 4;
         }
     }
     else
@@ -2473,7 +2457,7 @@ void asm_parm(Optimizer::QUAD* q) /* push a parameter*/
             if (apl->mode == am_xmmreg)
             {
                 if (sz == 4)
-                    gen_code(op_push, makedreg(ECX), NULL);
+                    gen_codes(op_push, ISZ_UINT, makedreg(ECX), NULL);
                 else
                     gen_codes(op_sub, ISZ_UINT, makedreg(ESP), aimmed(sz));
                 gen_code_sse(op_movss, op_movsd, q->dc.left->size, make_stack(0), apl);
@@ -2550,7 +2534,7 @@ void asm_parm(Optimizer::QUAD* q) /* push a parameter*/
             if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT || q->dc.left->size == ISZ_CFLOAT)
                 sz = 4;
             if (sz == 4)
-                gen_code(op_push, makedreg(ECX), NULL);
+                gen_codes(op_push, ISZ_UINT, makedreg(ECX), NULL);
             else
                 gen_codes(op_sub, ISZ_UINT, makedreg(ESP), aimmed(sz));
             pushlevel += sz;
@@ -2697,12 +2681,12 @@ void asm_parmadj(Optimizer::QUAD* q) /* adjust stack after function call */
     {
         if (i == 4)
         {
-            gen_code(op_pop, makedreg(ECX), 0);
+            gen_codes(op_pop, ISZ_UINT, makedreg(ECX), 0);
         }
         else if (i == 8)
         {
-            gen_code(op_pop, makedreg(ECX), 0);
-            gen_code(op_pop, makedreg(ECX), 0);
+            gen_codes(op_pop, ISZ_UINT, makedreg(ECX), 0);
+            gen_codes(op_pop, ISZ_UINT, makedreg(ECX), 0);
         }
         else
         {
@@ -2714,7 +2698,7 @@ void asm_parmadj(Optimizer::QUAD* q) /* adjust stack after function call */
     for (i = 3; i >= 0; i--)
         if ((1 << i) & mask)
         {
-            gen_code(op_pop, makedreg(Optimizer::chosenAssembler->arch->regMap[i][0]), 0);
+            gen_codes(op_pop, ISZ_UINT, makedreg(Optimizer::chosenAssembler->arch->regMap[i][0]), 0);
             pushlevel -= 4;
         }
 }
@@ -2740,8 +2724,8 @@ void asm_gosub(Optimizer::QUAD* q) /* normal gosub to an immediate label or thro
                 // doing call via ret here because we really need a register and we may not have one...
                 apl->length = 0;
                 int lbl = beGetLabel;
-                gen_code(op_push, make_label(lbl), nullptr);
-                gen_code(op_push, apl, nullptr);
+                gen_codes(op_push, ISZ_UINT, make_label(lbl), nullptr);
+                gen_codes(op_push, ISZ_UINT, apl, nullptr);
                 gen_code(op_ret, nullptr, nullptr);
                 oa_gen_label(lbl);
             }
@@ -2782,7 +2766,7 @@ void asm_gosub(Optimizer::QUAD* q) /* normal gosub to an immediate label or thro
 }
 void asm_fargosub(Optimizer::QUAD* q) /* far version of gosub */
 {
-    gen_code(op_push, makesegreg(CS), 0);
+    gen_codes(op_push, ISZ_UINT, makesegreg(CS), 0);
     asm_gosub(q);
 }
 void asm_trap(Optimizer::QUAD* q) /* 'trap' instruction - the arg will be an immediate # */
@@ -2795,7 +2779,7 @@ void asm_trap(Optimizer::QUAD* q) /* 'trap' instruction - the arg will be an imm
 void asm_int(Optimizer::QUAD* q) /* 'int' instruction(Optimizer::QUAD *q) calls a labeled function which is an interrupt */
 {
     gen_code(op_pushf, 0, 0);
-    gen_code(op_push, makesegreg(CS), 0);
+    gen_codes(op_push, ISZ_UINT, makesegreg(CS), 0);
     asm_gosub(q);
 }
 /* left will be a constant holding the number of bytes to pop
@@ -3708,109 +3692,110 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
     {
         if (q->atomic && (q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG))
         {
-            bool pushed = false;
-            bool pushbx = false, pushcx = false, pushbp = false;
-            int reg1 = apa->preg;
-            int reg2 = apa1->preg;
-            if ((reg1 != EAX || reg2 != EDX) && (apa->liveRegs & ((1 << EAX) | (1 << EDX))))
-            {
-                pushed = true;
-                gen_code(op_push, makedreg(EDX), NULL);
-                gen_code(op_push, makedreg(EAX), NULL);
-                pushlevel += 8;
-            }
-            if (apa->liveRegs & (1 << EBX))
-            {
-                pushbx = true;
-                gen_code(op_push, makedreg(EBX), NULL);
-                pushlevel += 4;
-            }
-            if (apa->liveRegs & (1 << ECX))
-            {
-                pushcx = true;
-                gen_code(op_push, makedreg(ECX), NULL);
-                pushlevel += 4;
-            }
+            int lab = 0;
+            int regflagsa = makeregflags(apa);
+            int regflagsl = makeregflags(apl);
+            int regflags = regflagsa | regflagsl;
+            bool pushreg1 = false, pushreg2 = false;
+            int reg1 = 0, reg2 = 0;
+            int used_mask = (1 << EAX) | (1 << EBX) | (1 << ECX) | (1 << EDX);
+            bool pushpair = false;
+            AMODE* aplhold = apl1,* apllold = apl;
+            gen_codes(op_push, ISZ_UINT, makedreg(ECX), nullptr);
+            gen_codes(op_push, ISZ_UINT, makedreg(EBX), nullptr);
+            pushlevel += 8;
             if (apa->mode != am_dreg)
             {
-                gen_code(op_push, makedreg(EDI), NULL);
-                gen_code(op_push, makedreg(ESI), NULL);
-                pushlevel += 8;
-            }
-            if (apl->mode == am_indispscale || (apl->mode == am_indisp && apl->preg != ESP && apl->preg != EBP))
-            {
-                pushbp = true;
-                gen_code(op_push, makedreg(EBP), NULL);
+                if (regflagsa & used_mask)
+                {
+                    apa = atomic_lea(apl, apa, regflags | used_mask, reg1, pushreg1);
+                    apa1 = nullptr;
+                    used_mask |= 1 << reg1;
+                }
+                if (!apa1)
+                    apa1 = offsetToHigh(apl);
+                gen_codes(op_push, ISZ_UINT, apa1, nullptr);
                 pushlevel += 4;
-
-                gen_code(op_lea, makedreg(EBP), apl);
-                apl = makedreg(EBP);
-                apl->mode = am_indisp;
-                apl->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
-                apl1 = makedreg(EBP);
-                apl1->mode = am_indisp;
-                apl1->offset = Optimizer::simpleIntNode(Optimizer::se_i, 4);
-            }
-            if (apa->mode != am_dreg)
-            {
-                gen_code(op_mov, makedreg(ESI), apl);
-                gen_code(op_mov, makedreg(EDI), apl1);
-                gen_code(op_mov, makedreg(EAX), apa);
-                gen_code(op_mov, makedreg(EDX), apa1);
+                gen_codes(op_push, ISZ_UINT, apa, nullptr);
+                pushlevel += 4;
             }
             else
             {
-                gen_code(op_mov, makedreg(EAX), apl);
-                gen_code(op_mov, makedreg(EDX), apl1);
+                if (regflagsl & used_mask)
+                {
+                    apl = atomic_lea(apl, apl, regflags | used_mask, reg2, pushreg2);
+                    apl1 = nullptr;
+                    used_mask |= 1 << reg2;
+                }
             }
-            int labno = beGetLabel;
-            oa_gen_label(labno);
-            if (apa->mode != am_dreg)
+            if (apl->mode == am_xmmreg)
             {
-                gen_code(op_mov, makedreg(EBX), makedreg(ESI));
-                gen_code(op_mov, makedreg(ECX), makedreg(EDI));
-                gen_codes(op_cmpxchg8b, ISZ_NONE, apa, NULL);
+                gen_code(op_sub, makedreg(ESP), aimmed(8));
+                pushlevel += 8;
+                gen_code_sse(op_movsd, make_stack(0), apl);
             }
             else
             {
-                gen_code(op_mov, makedreg(EBX), makedreg(EAX));
-                gen_code(op_mov, makedreg(ECX), makedreg(EDX));
-                gen_codes(op_cmpxchg8b, ISZ_NONE, apl, NULL);
-
+                if (!apl1)
+                    apl1 = offsetToHigh(apl);
+                gen_codes(op_push, ISZ_UINT, apl1, nullptr);
+                pushlevel += 4;
+                gen_codes(op_push, ISZ_UINT, apl, nullptr);
+                pushlevel += 4;
             }
-            gen_code(op_jne, make_label(labno), NULL);
-            if (apa->mode != am_dreg)
+            if (apa->mode == am_dreg)
             {
-                gen_code(op_pop, makedreg(ESI), NULL);
-                gen_code(op_pop, makedreg(EDI), NULL);
+                gen_codes(op_mov, ISZ_UINT, makedreg(EAX), make_stack(-0));
+                gen_codes(op_mov, ISZ_UINT, makedreg(EDX), make_stack(-4));
+                oa_gen_label(lab = beGetLabel);
+                gen_codes(op_mov, ISZ_UINT, makedreg(EBX), makedreg(EAX));
+                gen_codes(op_mov, ISZ_UINT, makedreg(ECX), makedreg(EDX));
+            }
+            else
+            {
+                gen_codes(op_mov, ISZ_UINT, makedreg(EAX), make_stack(-8));
+                gen_codes(op_mov, ISZ_UINT, makedreg(EDX), make_stack(-12));
+                oa_gen_label(lab = beGetLabel);
+                gen_codes(op_mov, ISZ_UINT, makedreg(EBX), make_stack(-0));
+                gen_codes(op_mov, ISZ_UINT, makedreg(ECX), make_stack(-4));
+            }
+            gen_codes(op_cmpxchg8b, ISZ_NONE, apa->mode == am_dreg ? apl : apa, nullptr);
+            gen_code(op_jne, make_label(lab), NULL);
+            if (apa->mode == am_dreg)
+            {
+                gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
                 pushlevel -= 8;
             }
             else
             {
-                gen_code(op_mov, apa, makedreg(EBX));
-                gen_code(op_mov, apa1, makedreg(ECX));
+                gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(16));
+                pushlevel -= 16;
             }
-            if (pushbp)
+
+            if (pushreg2)
             {
-                gen_code(op_pop, makedreg(EBP), NULL);
+                gen_codes(op_pop, ISZ_UINT, makedreg(reg2), nullptr);
                 pushlevel -= 4;
             }
-            if (pushcx)
+            if (pushreg1)
             {
-                gen_code(op_pop, makedreg(ECX), NULL);
+                gen_codes(op_pop, ISZ_UINT, makedreg(reg1), nullptr);
                 pushlevel -= 4;
             }
-            if (pushbx)
+            else if (pushpair)
             {
-                gen_code(op_pop, makedreg(EBX), NULL);
-                pushlevel -= 4;
-            }
-            if (pushed)
-            {
-                gen_code(op_pop, makedreg(EAX), NULL);
-                gen_code(op_pop, makedreg(EDX), NULL);
+                gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
                 pushlevel -= 8;
             }
+            if (apa->preg != EBX && (!apa1 || apa1->preg != EBX))
+                gen_codes(op_pop, ISZ_UINT, makedreg(EBX), nullptr);
+            else
+                gen_code(op_add, makedreg(ESP), aimmed(4));
+            if (apa->preg != ECX && (!apa1 || apa1->preg != ECX))
+                gen_codes(op_pop, ISZ_UINT, makedreg(ECX), nullptr);
+            else
+                gen_code(op_add, makedreg(ESP), aimmed(4));
+            pushlevel -= 8;
         }
         else if (q->atomic && (q->ans->mode != Optimizer::i_direct || q->ans->offset->type != Optimizer::se_tempref))
         {
@@ -5016,7 +5001,7 @@ void asm_prologue(Optimizer::QUAD* q) /* function prologue */
         /* enter is *really* inefficient so we will not use it */
         if (!usingEsp)
         {
-            gen_code(op_push, makedreg(EBP), 0);
+            gen_codes(op_push, ISZ_UINT, makedreg(EBP), 0);
             gen_code(op_mov, makedreg(EBP), makedreg(ESP));
         }
         pushlevel = 0;
@@ -5026,7 +5011,7 @@ void asm_prologue(Optimizer::QUAD* q) /* function prologue */
             {
                 int i;
                 for (i = 0; i < n; i += 4)
-                    gen_code(op_push, makedreg(ECX), 0);
+                    gen_codes(op_push, ISZ_UINT, makedreg(ECX), 0);
             }
             else if (n <= 4092)
             {
@@ -5037,14 +5022,14 @@ void asm_prologue(Optimizer::QUAD* q) /* function prologue */
                 if (n <= 8188)
                 {
                     gen_code(op_add, makedreg(ESP), aimmed(-4092));
-                    gen_code(op_push, makedreg(EAX), 0);
+                    gen_codes(op_push, ISZ_UINT, makedreg(EAX), 0);
                     gen_code(op_add, makedreg(ESP), aimmed(-(n - 4096)));
                 }
                 else
                 {
                     n += 15;   // must match the RTL...
                     n &= -16;  //
-                    gen_code(op_push, aimmed(n), 0);
+                    gen_codes(op_push, ISZ_UINT, aimmed(n), 0);
                     callLibrary("___substackp", 0);
                 }
             }
@@ -5067,7 +5052,7 @@ void asm_prologue(Optimizer::QUAD* q) /* function prologue */
             if (mask & compare)
             {
                 funcstackheight += 4;
-                gen_code(op_push, makedreg(Optimizer::chosenAssembler->arch->regMap[cnt][0]), 0);
+                gen_codes(op_push, ISZ_UINT, makedreg(Optimizer::chosenAssembler->arch->regMap[cnt][0]), 0);
             }
             cnt++, mask <<= 1;
         }
@@ -5091,7 +5076,7 @@ void asm_epilogue(Optimizer::QUAD* q) /* function epilogue */
         {
             if (mask & compare)
             {
-                gen_code(op_pop, makedreg(Optimizer::chosenAssembler->arch->regMap[cnt][0]), 0);
+                gen_codes(op_pop, ISZ_UINT, makedreg(Optimizer::chosenAssembler->arch->regMap[cnt][0]), 0);
                 funcstackheight -= 4;
             }
             cnt--, mask >>= 1;
@@ -5105,7 +5090,7 @@ void asm_epilogue(Optimizer::QUAD* q) /* function epilogue */
             {
                 int i;
                 for (i = 0; i < funcstackheight; i += 4)
-                    gen_code(op_pop, makedreg(ECX), 0);
+                    gen_codes(op_pop, ISZ_UINT, makedreg(ECX), 0);
             }
             else
             {
@@ -5116,7 +5101,7 @@ void asm_epilogue(Optimizer::QUAD* q) /* function epilogue */
         {
             if (beGetIcon(q->dc.right))
                 gen_code(op_mov, makedreg(ESP), makedreg(EBP));
-            gen_code(op_pop, makedreg(EBP), 0);
+            gen_codes(op_pop, ISZ_UINT, makedreg(EBP), 0);
         }
     }
 }
@@ -5128,9 +5113,9 @@ void asm_pushcontext(Optimizer::QUAD* q) /* push register context */
     (void)q;
     if (Optimizer::cparams.prm_farkeyword)
     {
-        gen_code(op_push, makesegreg(ES), 0);
-        gen_code(op_push, makesegreg(FS), 0);
-        gen_code(op_push, makesegreg(GS), 0);
+        gen_codes(op_push, ISZ_UINT, makesegreg(ES), 0);
+        gen_codes(op_push, ISZ_UINT, makesegreg(FS), 0);
+        gen_codes(op_push, ISZ_UINT, makesegreg(GS), 0);
     }
     gen_code(op_pushad, 0, 0);
 }
@@ -5143,9 +5128,9 @@ void asm_popcontext(Optimizer::QUAD* q) /* pop register context */
     gen_code(op_popad, 0, 0);
     if (Optimizer::cparams.prm_farkeyword)
     {
-        gen_code(op_pop, makesegreg(GS), 0);
-        gen_code(op_pop, makesegreg(FS), 0);
-        gen_code(op_pop, makesegreg(ES), 0);
+        gen_codes(op_pop, ISZ_UINT, makesegreg(GS), 0);
+        gen_codes(op_pop, ISZ_UINT, makesegreg(FS), 0);
+        gen_codes(op_pop, ISZ_UINT, makesegreg(ES), 0);
     }
 }
 /*
@@ -5154,10 +5139,10 @@ void asm_popcontext(Optimizer::QUAD* q) /* pop register context */
 void asm_loadcontext(Optimizer::QUAD* q) /* load register context (e.g. at interrupt level ) */
 {
     (void)q;
-    gen_code(op_push, makesegreg(DS), 0);
-    gen_code(op_push, makesegreg(CS), 0);
+    gen_codes(op_push, ISZ_UINT, makesegreg(DS), 0);
+    gen_codes(op_push, ISZ_UINT, makesegreg(CS), 0);
     gen_codes(op_add, 2, make_stack(0), aimmed(8));
-    gen_code(op_pop, makesegreg(DS), 0);
+    gen_codes(op_pop, ISZ_UINT, makesegreg(DS), 0);
 }
 /*
  * unloads a context, e.g. for the loadds qualifier
@@ -5165,7 +5150,7 @@ void asm_loadcontext(Optimizer::QUAD* q) /* load register context (e.g. at inter
 void asm_unloadcontext(Optimizer::QUAD* q) /* load register context (e.g. at interrupt level ) */
 {
     (void)q;
-    gen_code(op_pop, makesegreg(DS), 0);
+    gen_codes(op_pop, ISZ_UINT, makesegreg(DS), 0);
 }
 void asm_tryblock(Optimizer::QUAD* q) /* try/catch */
 {
@@ -5224,7 +5209,7 @@ void asm_stackalloc(
                 if (n >= 0 && n <= 8188)
                 {
                     gen_code(op_add, makedreg(ESP), aimmed(-4092));
-                    gen_code(op_push, makedreg(EAX), 0);
+                    gen_codes(op_push, ISZ_UINT, makedreg(EAX), 0);
                     gen_code(op_add, makedreg(ESP), aimmed(-(n - 4096)));
                 }
                 else
@@ -5233,7 +5218,7 @@ void asm_stackalloc(
                         n = (n - 15) & ~15;
                     else
                         n = (n + 15) & ~15;
-                    gen_code(op_push, aimmed(n), 0);
+                    gen_codes(op_push, ISZ_UINT, aimmed(n), 0);
                     callLibrary("___substackp", 0);
                 }
             }
@@ -5247,7 +5232,7 @@ void asm_stackalloc(
     }
     else
     {
-        gen_code(op_push, apl, 0);
+        gen_codes(op_push, ISZ_UINT, apl, 0);
         callLibrary("___substackp", 0);  // substack does paragraph rounding already...
         if (q->ans)
         {
@@ -5336,7 +5321,7 @@ void asm_atomic(Optimizer::QUAD* q)
                 {
                     pushed = true;
                     reg = (apll->preg & 3) ^ 1;
-                    gen_code(op_push, makedreg(reg), 0);
+                    gen_codes(op_push, ISZ_UINT, makedreg(reg), 0);
                     pushlevel += 4;
                 }
                 oa_gen_label(lbl1);
@@ -5352,7 +5337,7 @@ void asm_atomic(Optimizer::QUAD* q)
                 oa_gen_label(lbl2);
                 if (pushed)
                 {
-                    gen_code(op_pop, makedreg(reg), 0);
+                    gen_codes(op_pop, ISZ_UINT, makedreg(reg), 0);
                     pushlevel -= 4;
                 }
             }
@@ -5369,7 +5354,7 @@ void asm_atomic(Optimizer::QUAD* q)
                 (apll->mode == am_indispscale && (apll->preg == EAX || apll->sreg == EAX)))
             {
                 pushed = true;
-                gen_code(op_push, makedreg(EBP), 0);
+                gen_codes(op_push, ISZ_UINT, makedreg(EBP), 0);
                 pushlevel += 4;
                 gen_codes(op_lea, ISZ_UINT, makedreg(EBP), apll);
                 apll = makedreg(EBP);
@@ -5381,7 +5366,7 @@ void asm_atomic(Optimizer::QUAD* q)
             gen_codes(op_xchg, ISZ_UCHAR, apal, apll);
             if (pushed)
             {
-                gen_code(op_pop, makedreg(EBP), NULL);
+                gen_codes(op_pop, ISZ_UINT, makedreg(EBP), NULL);
                 pushlevel -= 4;
             }
             break;
@@ -5394,45 +5379,157 @@ void asm_atomic(Optimizer::QUAD* q)
             }
             break;
         case Optimizer::i_xchg:
-            if ((q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG) &&
-                (q->dc.left->size == ISZ_ULONGLONG || q->dc.left->size == -ISZ_ULONGLONG) &&
-                (q->dc.right->size == ISZ_ULONGLONG || q->dc.right->size == -ISZ_ULONGLONG))
+            if ((q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG || q->ans->size >= ISZ_DOUBLE) &&
+                (q->dc.left->size == ISZ_ULONGLONG || q->dc.left->size == -ISZ_ULONGLONG || q->dc.left->size >= ISZ_DOUBLE) &&
+                (q->dc.right->size == ISZ_ULONGLONG || q->dc.right->size == -ISZ_ULONGLONG || q->dc.right->size >= ISZ_DOUBLE))
             {
-                llongatomicmath(op_xchg, op_xchg, q);
-            }
-            else
-            {
-                bool pushbp = false;
+                int lab = 0;
                 getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
                 getAmodes(q, &opl, q->dc.left, &apll, &aplh);
                 getAmodes(q, &opa, q->ans, &apal, &apah);
-                if (apll->mode == am_indispscale || (apll->mode == am_indisp && apll->preg != ESP && apll->preg != EBP))
+                int regflagsa = makeregflags(apal);
+                int regflagsl = makeregflags(apll);
+                int regflagsr = makeregflags(aprl);
+                int regflags = regflagsa | regflagsl | regflagsr;
+                bool pushreg1 = false;
+                int reg1=0;
+                int used_mask = (1 << EAX) | (1 << EBX) | (1<<ECX) | (1 <<EDX);
+                gen_codes(op_push, ISZ_UINT, makedreg(ECX), nullptr);
+                gen_codes(op_push, ISZ_UINT, makedreg(EBX), nullptr);
+                pushlevel += 8;
+                if (regflagsl & used_mask)
                 {
-                    // if (apll->liveRegs & (1 << EBP))
-                    {
-                        pushbp = true;
-                        gen_code(op_push, makedreg(EBP), NULL);
-                        pushlevel += 4;
-                    }
-                    gen_code(op_lea, makedreg(EBP), apll);
-                    apll = makedreg(EBP);
-                    apll->mode = am_indisp;
-                    apll->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
+                    apll = atomic_lea(apll, apll, regflags | used_mask, reg1, pushreg1);
+                    aplh = nullptr;
+                    used_mask |= 1 << reg1;
                 }
-
-                if (aprl->mode == am_dreg)
+                if (aprl->mode == am_xmmreg)
                 {
-                    gen_codes(op_xchg, q->ans->size, apll, aprl);
+                    gen_code(op_sub, makedreg(ESP), aimmed(8));
+                    pushlevel += 8;
+                    gen_code_sse(op_movsd, make_stack(0), aprl);
                 }
                 else
                 {
-                    gen_codes(op_mov, q->ans->size, apal, aprl);
-                    gen_codes(op_xchg, q->ans->size, apll, apal);
+                    if (!aprh)
+                        aprh = offsetToHigh(aprl);
+                    gen_codes(op_push, ISZ_UINT, aprh, nullptr);
+                    pushlevel += 4;
+                    gen_codes(op_push, ISZ_UINT, aprl, nullptr);
+                    pushlevel += 4;
                 }
-                if (pushbp)
+                if (!aplh)
+                    aplh = offsetToHigh(apll);
+                gen_codes(op_push, ISZ_UINT, aplh, nullptr);
+                pushlevel += 4;
+                gen_codes(op_push, ISZ_UINT, apll, nullptr);
+                pushlevel += 4;
+                gen_codes(op_mov, ISZ_UINT, makedreg(EAX), make_stack(-0));
+                gen_codes(op_mov, ISZ_UINT, makedreg(EDX), make_stack(-4));
+                oa_gen_label(lab = beGetLabel);
+                gen_codes(op_mov, ISZ_UINT, makedreg(EBX), make_stack(-8));
+                gen_codes(op_mov, ISZ_UINT, makedreg(ECX), make_stack(-12));
+                gen_codes(op_cmpxchg8b, ISZ_NONE, apll, nullptr);
+                gen_code(op_jne, make_label(lab), NULL);
+
+                if (apal->mode == am_xmmreg)
                 {
-                    gen_code(op_pop, makedreg(EBP), NULL);
+                    gen_codes(op_push, ISZ_UINT, makedreg(EDX), nullptr);
+                    gen_codes(op_push, ISZ_UINT, makedreg(EAX), nullptr);
+                    gen_code_sse(op_movsd, apal, make_stack(0));
+                    gen_code(op_add, makedreg(ESP), aimmed(8));
+                }
+                else
+                {
+                    gen_codes(op_mov, ISZ_UINT, apal, makedreg(EAX));
+                    gen_codes(op_mov, ISZ_UINT, apah, makedreg(EDX));
+                }
+                if (aprl->mode == am_dreg)
+                {
+                    gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
+                    pushlevel -= 8;
+                    if (apal->preg != aprl->preg && (!apah || apah->preg != aprl->preg))
+                        gen_codes(op_pop, ISZ_UINT, aprl, nullptr);
+                    else
+                        gen_code(op_add, makedreg(ESP), aimmed(4));
                     pushlevel -= 4;
+                    if (apal->preg != aprh->preg && (!apah || apah->preg != aprh->preg))
+                        gen_codes(op_pop, ISZ_UINT, aprh, nullptr);
+                    else
+                        gen_code(op_add, makedreg(ESP), aimmed(4));
+                    pushlevel -= 4;
+                }
+                else
+                {
+                    gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(16));
+                    pushlevel -= 16;
+                }
+                if (pushreg1)
+                {
+                    if (equal_address(apal, makedreg(reg1)) || apah && equal_address(apah, makedreg(reg1)))
+                        gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(4));
+                    else
+                        gen_codes(op_pop, ISZ_UINT, makedreg(reg1), nullptr);
+                    pushlevel -= 4;
+                }
+                if (apal->preg != EBX && (!apah || apah->preg != EBX))
+                    gen_codes(op_pop, ISZ_UINT, makedreg(EBX), nullptr);
+                else
+                    gen_code(op_add, makedreg(ESP), aimmed(4));
+                if (apal->preg != ECX && (!apah || apah->preg != ECX))
+                    gen_codes(op_pop, ISZ_UINT, makedreg(ECX), nullptr);
+                else
+                    gen_code(op_add, makedreg(ESP), aimmed(4));
+                pushlevel -= 8;
+            }
+            else
+            {
+                getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
+                getAmodes(q, &opl, q->dc.left, &apll, &aplh);
+                getAmodes(q, &opa, q->ans, &apal, &apah);
+                int regflags = makeregflags(apll);
+                if (regflags & (1 << apal->preg))
+                {
+                    bool pushed = false;
+                    int reg = getreg(apll, regflags, pushed);
+                    if (aprl->mode == am_xmmreg)
+                    {
+                        gen_code(op_movd, makedreg(reg), aprl);
+                    }
+                    else
+                    {
+                        gen_codes(op_mov, q->ans->size == ISZ_FLOAT ? ISZ_UINT : q->ans->size, makedreg(reg), aprl);
+                    }
+                    gen_codes(op_xchg, q->ans->size == ISZ_FLOAT ? ISZ_UINT : q->ans->size, apll, makedreg(reg));
+                    if (apal->mode == am_xmmreg)
+                        gen_code(op_movd, apal, makedreg(reg));
+                    else
+                        gen_codes(op_mov, q->ans->size, apal, makedreg(reg));
+                    if (pushed)
+                    {
+                        gen_codes(op_pop, ISZ_UINT, makedreg(reg), nullptr);
+                        pushlevel -= 4;
+                    }
+                }
+                else
+                {
+                    if (aprl->mode == am_xmmreg)
+                    {
+                        int reg = getreg(apll, regflags, pushed);
+                        gen_code(op_movd, makedreg(reg), aprl);
+                        gen_codes(op_xchg, ISZ_UINT, apll, makedreg(reg));
+                        gen_code(op_movd, apal, makedreg(reg));
+                        if (pushed)
+                        {
+                            gen_codes(op_pop, ISZ_UINT, makedreg(reg), nullptr);
+                            pushlevel -= 4;
+                        }
+                    }
+                    else
+                    {
+                        gen_codes(op_mov, q->ans->size, apal, aprl);
+                        gen_codes(op_xchg, q->ans->size, apll, apal);
+                    }
                 }
             }
             break;
@@ -5445,133 +5542,199 @@ void asm_atomic(Optimizer::QUAD* q)
                                         zf              nz
                                         true            false
                 rm32       eax        rm32      reg     eax        rm32
-            
-
-
-
-
-
-
-
-
               */
             {
                 int sz = q->ans->size;
-                if ((sz == ISZ_ULONGLONG || sz == -ISZ_ULONGLONG) &&
-                    (q->dc.left->size == ISZ_ULONGLONG || q->dc.left->size == -ISZ_ULONGLONG) &&
-                    (q->dc.right->size == ISZ_ULONGLONG || q->dc.right->size == -ISZ_ULONGLONG))
+                if ((q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG || q->ans->size >= ISZ_DOUBLE) &&
+                    (q->dc.left->size == ISZ_ULONGLONG || q->dc.left->size == -ISZ_ULONGLONG || q->dc.left->size >= ISZ_DOUBLE))
                 {
-                    bool pushed = false;
-                    getAmodes(q, &opl, q->dc.right, &aprl, &aprh);
-                    if ((aprl->mode == am_indisp && aprl->preg != ESP && aprl->preg != EBP) || aprl->mode == am_indispscale)
+                    int lab = 0;
+                    getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
+                    getAmodes(q, &opl, q->dc.left, &apll, &aplh);
+                    getAmodes(q, &opa, q->ans, &apal, &apah);
+                    AMODE* aprlold = aprl, * aprhold = aprh;
+                    int regflagsa = makeregflags(apal);
+                    int regflagsl = makeregflags(apll);
+                    int regflagsr = makeregflags(aprl);
+                    int regflags = regflagsa | regflagsl | regflagsr;
+                    bool pushreg1 = false, pushreg2 = false, pushreg3 = false;
+                    int reg1 = 0, reg2 = 0, reg3 = 0;
+                    int used_mask = (1 << EAX) | (1 << EBX) | (1 << ECX) | (1 << EDX);
+                    bool pushpair = false;
+                    gen_codes(op_push, ISZ_UINT, makedreg(ECX), nullptr);
+                    gen_codes(op_push, ISZ_UINT, makedreg(EBX), nullptr);
+                    pushlevel += 8;
+                    if (regflagsa & used_mask)
                     {
-                        gen_code(op_push, makedreg(EBP), 0);
-                        pushlevel += 4;
-                        gen_code(op_lea, makedreg(EBP), aprl);
-                        pushed = true;
-                        aprl = makedreg(EBP);
-                        aprl->mode = am_indisp;
-                        aprl->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
-                        aprh = makedreg(EBP);
-                        aprh->mode = am_indisp;
-                        aprh->offset = Optimizer::simpleIntNode(Optimizer::se_i, 4);
+                        if (apal->mode == am_dreg || apal->mode == am_immed)
+                        {
+                            pushpair = true;
+                            gen_codes(op_push, ISZ_UINT, apah, nullptr);
+                            pushlevel += 4;
+                            gen_codes(op_push, ISZ_UINT, apal, nullptr);
+
+                            pushlevel += 4;
+                            apal = make_stack(-16);
+                        }
+                        else
+                        {
+                            apal = atomic_lea(apll, apal, regflags | used_mask, reg1, pushreg1);
+                            apah = nullptr;
+                            used_mask |= 1 << reg1;
+                        }
                     }
-                    llongatomicmath(op_xchg, op_cmpxchg8b, q);
-                    int labno = beGetLabel;
-                    gen_code(op_je, make_label(labno), 0);
-                    gen_codes(op_mov, ISZ_UINT, aprl, makedreg(EAX));
-                    gen_codes(op_mov, ISZ_UINT, aprh, makedreg(EDX));
-                    oa_gen_label(labno);
-                    if (pushed)
+                    if (regflagsl & used_mask)
                     {
-                        gen_code(op_pop, makedreg(EBP), 0);
+                        if (apll->mode != am_dreg)
+                        {
+                            apll = atomic_lea(apll, apll, regflags | used_mask, reg2, pushreg2);
+                            aplh = nullptr;
+                            used_mask |= 1 << reg2;
+                        }
+                    }
+                    if (aprl->mode == am_immed)
+                        aprl->mode = am_direct;
+                    if (regflagsr & used_mask)
+                    {
+                        aprl = atomic_lea(apll, aprl, ~(1 << EBP), reg3, pushreg3);
+                        aprh = nullptr;
+                        used_mask |= 1 << reg3;
+                        if (!pushreg3)
+                        {
+                            pushreg3 = true;
+                            gen_codes(op_push, ISZ_UINT, makedreg(EBP), nullptr);
+                            pushlevel += 4;
+                        }
+                    }
+                    // out of regs after this
+                    if (!aprh)
+                        aprh = offsetToHigh(aprl);
+                    if (apll->mode == am_xmmreg)
+                    {
+                        gen_code(op_sub, makedreg(ESP), aimmed(8));
+                        pushlevel += 8;
+                        gen_code_sse(op_movsd, make_stack(0), apll);
+                    }
+                    else
+                    {
+                        if (!aplh)
+                            aplh = offsetToHigh(apll);
+                        gen_codes(op_push, ISZ_UINT, aplh, nullptr);
+                        pushlevel += 4;
+                        gen_codes(op_push, ISZ_UINT, apll, nullptr);
+                        pushlevel += 4;
+                    }
+                    if (!aprh)
+                        aprh = offsetToHigh(aprl);
+                    gen_codes(op_push, ISZ_UINT, aprh, nullptr);
+                    pushlevel += 4;
+                    gen_codes(op_push, ISZ_UINT, aprl, nullptr);
+                    pushlevel += 4;
+                    gen_codes(op_mov, ISZ_UINT, makedreg(EAX), make_stack(-0));
+                    gen_codes(op_mov, ISZ_UINT, makedreg(EDX), make_stack(-4));
+                    gen_codes(op_mov, ISZ_UINT, makedreg(EBX), make_stack(-8));
+                    gen_codes(op_mov, ISZ_UINT, makedreg(ECX), make_stack(-12));
+                    gen_codes(op_cmpxchg8b, ISZ_NONE, apal, nullptr);
+                    gen_code(op_je, make_label(lab= beGetLabel), NULL);
+                    gen_codes(op_mov, ISZ_UINT, aprh, makedreg(EDX));
+                    gen_codes(op_mov, ISZ_UINT, aprl, makedreg(EAX));
+                    oa_gen_label(lab);
+                    gen_code(op_mov, makedreg(EAX), aimmed(0));
+                    gen_codes(op_setz, ISZ_UCHAR, makedreg(EAX), NULL);
+                    if (aprlold->mode == am_dreg)
+                    {
+                        gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
+                        pushlevel -= 8;
+                        if (equal_address(makedreg(EAX), aprlold))
+                            gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(4));
+                        else
+                            gen_codes(op_pop, ISZ_UINT, aprlold, nullptr);
+                        pushlevel -= 4;
+                        if (equal_address(makedreg(EAX), aprhold))
+                            gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(4));
+                        else
+                            gen_codes(op_pop, ISZ_UINT, aprhold, nullptr);
                         pushlevel -= 4;
                     }
+                    else
+                    {
+                        gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(16));
+                        pushlevel -= 16;
+                    }
+                    if (pushreg3)
+                    {
+                        gen_codes(op_pop, ISZ_UINT, makedreg(reg3), nullptr);
+                        pushlevel -= 4;
+                    }
+                    if (pushreg2)
+                    {
+                        gen_codes(op_pop, ISZ_UINT, makedreg(reg2), nullptr);
+                        pushlevel -= 4;
+                    }
+                    if (pushreg1)
+                    {
+                        gen_codes(op_pop, ISZ_UINT, makedreg(reg1), nullptr);
+                        pushlevel -= 4;
+                    }
+                    else if (pushpair)
+                    {
+                        gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
+                        pushlevel -= 8;
+                    }
+                    if (apal->preg != EBX && (!apah || apah->preg != EBX))
+                        gen_codes(op_pop, ISZ_UINT, makedreg(EBX), nullptr);
+                    else
+                        gen_code(op_add, makedreg(ESP), aimmed(4));
+                    if (apal->preg != ECX && (!apah || apah->preg != ECX))
+                        gen_codes(op_pop, ISZ_UINT, makedreg(ECX), nullptr);
+                    else
+                        gen_code(op_add, makedreg(ESP), aimmed(4));
+                    pushlevel -= 8;
                 }
                 else
                 {
                     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
                     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
                     getAmodes(q, &opa, q->ans, &apal, &apah);
-                    int lab;
-                    int reg = -1, push1 = false, push2 = false;
-                    if (apll->mode != am_dreg || apll->preg == EAX)
+                    int lab = beGetLabel;
+                    int regflagsl = makeregflags(apal) | makeregflags(aprl);
+                    int reg1=0, reg2=0;
+                    bool pushreg1 = false, pushreg2= false;
+                    if (aprl->mode == am_immed)
+                        aprl->mode = am_direct;
+                    if (regflagsl & (1 << EAX))
                     {
-                        int reg1 = -1, reg2 = -1;
-                        if (apal->mode == am_indisp)
-                        {
-                            reg1 = apal->preg;
-                        }
-                        else if (apal->mode == am_indispscale)
-                        {
-                            reg1 = apal->preg;
-                            reg2 = apal->sreg;
-                        }
-                        if (!(apll->liveRegs & (1 << ECX)) && reg1 != ECX && reg2 != ECX)
-                        {
-                            reg = ECX;
-                        }
-                        else if (!(apll->liveRegs & (1 << EDX)) && reg1 != EDX && reg2 != EDX)
-                        {
-                            reg = EDX;
-                        }
-                        else if (!(apll->liveRegs & (1 << EBX)) && reg1 != EBX && reg2 != EBX)
-                        {
-                            reg = EBX;
-                        }
-                        else if (!(apll->liveRegs & (1 << ESI)) && reg1 != ESI && reg2 != ESI)
-                        {
-                            reg = ESI;
-                        }
-                        else if (!(apll->liveRegs & (1 << EDI)) && reg1 != EDI && reg2 != EDI)
-                        {
-                            reg = EDI;
-                        }
-                        if (reg == -1)
-                        {
-                            reg = EDX;
-                            push1 = true;
-                            gen_code(op_push, makedreg(EDX), NULL);
-                            pushlevel += 4;
-                        }
-                        gen_codes(op_mov, sz, makedreg(reg), apll);
+                        aprl = atomic_lea(apll, aprl, regflagsl, reg1, pushreg1);
+                        aprh = nullptr;
+                        regflagsl |= 1 << reg1;
+                    }
+                    reg2 = getreg(apll, regflagsl | (1 << EAX), pushreg2);
+                    if (apll->mode == am_xmmreg)
+                    {           
+                        gen_code(op_movd, makedreg(reg2), apll);
                     }
                     else
                     {
-                        reg = apll->preg;
+                        gen_codes(op_mov, q->ans->size, makedreg(reg2), apll);
                     }
-                    if ((aprl->mode == am_indisp && aprl->preg == EAX) ||
-                        (aprl->mode == am_indispscale && (aprl->preg == EAX || aprl->sreg == EAX)))
+                    gen_codes(op_mov, q->ans->size == ISZ_FLOAT ? ISZ_UINT : q->ans->size, makedreg(EAX), aprl);
+                    gen_codes(op_cmpxchg, q->ans->size == ISZ_FLOAT ? ISZ_UINT : q->ans->size, apal, makedreg(reg2));
+                    gen_code(op_je, make_label(lab), NULL);
+                    gen_codes(op_mov, q->ans->size == ISZ_FLOAT ? ISZ_UINT : q->ans->size, aprl, makedreg(EAX));
+                    oa_gen_label(lab);
+                    gen_codes(op_mov, ISZ_UINT, makedreg(EAX), aimmed(0));
+                    gen_codes(op_setz, ISZ_UCHAR, makedreg(EAX), NULL);
+                    if (pushreg2)
                     {
-                        push2 = true;
-                        gen_code(op_push, makedreg(EAX), NULL);
-                        pushlevel += 4;
-                    }
-                    gen_codes(op_mov, sz, makedreg(EAX), aprl);
-                    gen_code(op_lock, NULL, NULL);
-                    gen_codes(op_cmpxchg, sz, apal, makedreg(reg));
-                    gen_code(op_je, make_label(lab = beGetLabel), NULL);
-                    if (push2)
-                    {
-                        gen_codes(op_mov, sz, makedreg(EDX), makedreg(EAX));
-                        oa_gen_label(lab);
-                        gen_code(op_pop, makedreg(EAX), NULL);
+                        gen_codes(op_pop, ISZ_UINT, makedreg(reg2), nullptr);
                         pushlevel -= 4;
-                        gen_codes(op_mov, sz, aprl, makedreg(EDX));
                     }
-                    else
+                    if (pushreg1)
                     {
-                        gen_codes(op_mov, sz, aprl, makedreg(EAX));
-                        oa_gen_label(lab);
-                    }
-                    if (push1)
-                    {
-                        gen_code(op_pop, makedreg(EDX), NULL);
+                       gen_codes(op_pop, ISZ_UINT, makedreg(reg1), nullptr);
                         pushlevel -= 4;
                     }
                 }
-                gen_code(op_mov, makedreg(EAX), aimmed(0));
-                gen_codes(op_setz, ISZ_UCHAR, makedreg(EAX), NULL);
             }
             break;
         default:

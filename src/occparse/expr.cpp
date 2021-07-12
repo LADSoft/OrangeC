@@ -4714,6 +4714,10 @@ static Parser::LEXLIST* atomic_modify_specific_op(Parser::LEXLIST* lex, Parser::
         {
             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
         }
+        if (ispointer(*tp) && (function == asplus || function == asminus))
+        {
+            d->value = exprNode(en_mul, d->value, intNode(en_c_i, (*tp)->size));
+        }
     }
     else
     {

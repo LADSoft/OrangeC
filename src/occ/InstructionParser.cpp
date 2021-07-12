@@ -237,7 +237,7 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
                         {
                             if (ins->oper1->length == ISZ_UCHAR)
                                 ins->oper2->offset->i &= 0xff;
-                            else if (ins->oper1->length == ISZ_USHORT || ins->oper1->length == ISZ_U16)
+                            else if (ins->oper1->length == ISZ_USHORT || ins->oper1->length == ISZ_U16 || ins->oper1->length == ISZ_WCHAR)
                                 ins->oper2->offset->i &= 0xffff;
                         }
                     }

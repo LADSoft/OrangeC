@@ -1227,7 +1227,7 @@ void peep_mathdirect(OCODE* ip)
     }
     if (ip->oper2 && ip->oper2->mode == am_immed)
     {
-        if (ip->oper1->length == ISZ_USHORT || ip->oper1->length == -ISZ_USHORT || ip->oper1->length == ISZ_U16)
+        if (ip->oper1->length == ISZ_USHORT || ip->oper1->length == -ISZ_USHORT || ip->oper1->length == ISZ_U16|| ip->oper1->length == ISZ_WCHAR)
         {
             ip->oper2->offset->i &= 0xffff;
         }
@@ -1240,7 +1240,7 @@ void peep_mathdirect(OCODE* ip)
 void peep_xor(OCODE* ip)
 {
     if (ip->oper1->mode == am_dreg && ip->oper2->mode == am_dreg)
-        if (ip->oper1->length == ISZ_USHORT || ip->oper1->length == ISZ_U16)
+        if (ip->oper1->length == ISZ_USHORT || ip->oper1->length == ISZ_U16 || ip->oper1->length == ISZ_WCHAR)
             if (ip->oper1->preg == ip->oper2->preg)
                 ip->oper1->length = ip->oper2->length = ISZ_UINT;
 }
@@ -1286,7 +1286,7 @@ void peep_and(OCODE* ip)
         if (ip->oper2->mode == am_immed)
         {
             unsigned t = ip->oper2->offset->i;
-            if (ip->oper1->length == ISZ_USHORT || ip->oper1->length == ISZ_U16)
+            if (ip->oper1->length == ISZ_USHORT || ip->oper1->length == ISZ_U16 || ip->oper1->length == ISZ_WCHAR)
             {
                 t &= 0xffff;
                 if (t == 0xffff)
@@ -1495,9 +1495,9 @@ void peep_prefixes(OCODE* ip)
             if (ip->opcode == op_and && ip->oper2)
                 if (ip->oper1->preg == ip->oper2->preg)
                     return;
-            if (ip->oper1 && (ip->oper1->length == ISZ_USHORT || ip->oper1->length == ISZ_U16))
+            if (ip->oper1 && (ip->oper1->length == ISZ_USHORT || ip->oper1->length == ISZ_U16 || ip->oper1->length == ISZ_WCHAR))
                 ip->oper1->length = ISZ_UINT;
-            if (ip->oper2 && (ip->oper2->length == ISZ_USHORT || ip->oper2->length == ISZ_U16))
+            if (ip->oper2 && (ip->oper2->length == ISZ_USHORT || ip->oper2->length == ISZ_U16 || ip->oper2->length == ISZ_WCHAR))
                 ip->oper2->length = ISZ_UINT;
         }
 }

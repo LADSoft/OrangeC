@@ -278,7 +278,7 @@ void oa_putconst(int op, int sz, Optimizer::SimpleExpression* offset, bool doSig
                 {
                     if (sz == ISZ_UCHAR || sz == -ISZ_UCHAR)
                         n &= 0xff;
-                    if (sz == ISZ_USHORT || sz == -ISZ_USHORT)
+                    if (sz == ISZ_USHORT || sz == -ISZ_USHORT || sz == ISZ_U16 || sz == ISZ_WCHAR)
                         n &= 0xffff;
                 }
                 AsmOutput("0%xh", n);
@@ -540,7 +540,7 @@ void oa_putamode(int op, int szalt, AMODE* ap)
                     {
                         AsmOutput("byte ");
                     }
-                    else if (ap->length == -ISZ_USHORT || ap->length == ISZ_USHORT)
+                    else if (ap->length == -ISZ_USHORT || ap->length == ISZ_USHORT || ap->length == ISZ_U16 || ap->length == ISZ_WCHAR)
                     {
                         AsmOutput("word ");
                     }

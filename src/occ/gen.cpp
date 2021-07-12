@@ -312,6 +312,7 @@ AMODE* aimmedt(long i, int size)
         case ISZ_U16:
         case ISZ_USHORT:
         case -ISZ_USHORT:
+        case ISZ_WCHAR:
             i &= 0xffff;
             break;
         case ISZ_ADDR:
@@ -1850,6 +1851,7 @@ static void compactSwitchHeader(long long bottom)
     switch (switch_ip->size)
     {
         case ISZ_USHORT:
+        case ISZ_WCHAR:
             do_movzx(ISZ_UINT, ISZ_USHORT, switch_apl, switch_apl);
             break;
         case -ISZ_USHORT:
@@ -2494,6 +2496,7 @@ void asm_parm(Optimizer::QUAD* q) /* push a parameter*/
                 switch (sz)
                 {
                     case ISZ_USHORT:
+                    case ISZ_WCHAR:
                         i &= 0xffff;
                         break;
                     case -ISZ_USHORT:
@@ -2575,6 +2578,7 @@ void asm_parm(Optimizer::QUAD* q) /* push a parameter*/
                     switch (q->dc.left->size)
                     {
                         case ISZ_USHORT:
+                        case ISZ_WCHAR:
                             do_movzx(ISZ_UINT, ISZ_USHORT, pal, pal);
                             break;
                         case -ISZ_USHORT:
@@ -3941,6 +3945,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
                             break;
                         case ISZ_USHORT:
                         case ISZ_U16:
+                        case ISZ_WCHAR:
                             max = 16;
                             break;
                         case ISZ_UINT:
@@ -4102,6 +4107,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
                             break;
                         case ISZ_USHORT:
                         case ISZ_U16:
+                        case ISZ_WCHAR:
                             max = 16;
                             break;
                         case ISZ_UINT:
@@ -4201,6 +4207,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
                                 do_movsx(ISZ_UINT, ISZ_UCHAR, ap, apl);
                                 break;
                             case ISZ_USHORT:
+                            case ISZ_WCHAR:
                                 do_movzx(ISZ_UINT, ISZ_USHORT, ap, apl);
                                 break;
                             case -ISZ_USHORT:
@@ -4265,6 +4272,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
                         break;
                     case ISZ_USHORT:
                     case ISZ_U16:
+                    case ISZ_WCHAR:
                         do_movzx(ISZ_UINT, ISZ_USHORT, ap, apl);
                         break;
                     case -ISZ_USHORT:
@@ -4319,6 +4327,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
                                 break;
                             case ISZ_USHORT:
                             case ISZ_U16:
+                            case ISZ_WCHAR:
                                 max = 16;
                                 break;
                             case ISZ_UINT:

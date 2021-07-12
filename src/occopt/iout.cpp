@@ -1003,6 +1003,9 @@ void putlen(int l)
         case -ISZ_USHORT:
             oprintf(icdFile, ".S");
             break;
+        case ISZ_WCHAR:
+            oprintf(icdFile, ".W");
+            break;
         case ISZ_UINT:
             oprintf(icdFile, ".UI");
             break;

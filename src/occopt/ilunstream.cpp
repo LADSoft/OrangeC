@@ -748,6 +748,7 @@ static FunctionData* UnstreamFunc()
 }
 static void UnstreamData()
 {
+    temps.clear();
     UnstreamBlock(SBT_DATA, []() {
         int len = UnstreamIndex();
         for (int i = 0; i < len; i++)

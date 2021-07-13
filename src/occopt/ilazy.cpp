@@ -244,6 +244,19 @@ void SetunMoveableTerms(void)
                     else if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct)
                     {
                         int n = head->ans->offset->sp->i;
+                        if (head->dc.opcode == i_assn && !(head->temps & TEMP_LEFT))
+                        {
+                            if (head->dc.left->mode == i_direct && head->dc.left->offset->type != se_labcon)
+                            {
+                                // this takes care of memory locations that were made to hold arguments for inlined functions
+                                if (head->dc.left->offset->sp->allocate)
+                                {
+                                    clearbit(unMoveableTerms, termMap[n]);
+                                    if (tempInfo[n]->terms)
+                                        andmap(unMoveableTerms, tempInfo[n]->terms);
+                                }
+                            }
+                        }
                         if (head->dc.opcode == Optimizer::i_substack || head->dc.opcode == Optimizer::i_parmstack)
                         {
                             clearbit(unMoveableTerms, termMap[n]);
@@ -351,7 +364,18 @@ static void CalculateTransparent(void)
     while (tail)
     {
         setmap(tail->transparent, true);
-        if (tail->dc.opcode == i_gosub)
+        if (tail->dc.opcode == i_cmpxchgstrong || tail->dc.opcode == i_cmpxchgweak)
+        {
+            QUAD* next = tail->fwd;
+            if (next->dc.opcode == i_assn && next->dc.left->retval)
+            {
+                int n = next->ans->offset->sp->i;
+                clearbit(head->transparent, termMap[n]);
+                if (tempInfo[n]->terms)
+                    andmap(tail->transparent, tempInfo[n]->terms);
+            }
+        }
+        else if (tail->dc.opcode == i_gosub)
         {
             QUAD* next = tail->fwd;
             setmap(tempBytes3, false);

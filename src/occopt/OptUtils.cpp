@@ -71,8 +71,8 @@ int sizeFromISZ(int isz)
         case ISZ_USHORT:
         case -ISZ_USHORT:
             return p->a_short;
-            /*        case ISZ_:*/
-            /*            return p->a_wchar_t;*/
+        case ISZ_WCHAR:
+            return p->a_wchar_t;
         case ISZ_ULONG:
         case -ISZ_ULONG:
             return p->a_long;
@@ -132,8 +132,8 @@ int alignFromISZ(int isz)
         case ISZ_USHORT:
         case -ISZ_USHORT:
             return p->a_short;
-            /*        case ISZ_:*/
-            /*            return p->a_wchar_t;*/
+        case ISZ_WCHAR:
+            return p->a_wchar_t;
         case ISZ_ULONG:
         case -ISZ_ULONG:
             return p->a_long;
@@ -193,8 +193,8 @@ int needsAtomicLockFromISZ(int isz)
         case ISZ_USHORT:
         case -ISZ_USHORT:
             return p->a_short;
-            /*        case ISZ_:*/
-            /*            return p->a_wchar_t;*/
+        case ISZ_WCHAR:
+            return p->a_wchar_t;
         case ISZ_ULONG:
         case -ISZ_ULONG:
             return p->a_long;

@@ -59,6 +59,7 @@ unsigned long long CastToInt(int size, long long value)
         case ISZ_ULONG:
         case -ISZ_ULONGLONG:
         case ISZ_ULONGLONG:
+        case ISZ_WCHAR:
             bits = sizeFromISZ(size) * 8;
             break;
     }

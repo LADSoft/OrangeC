@@ -112,7 +112,7 @@ static void rvColor(IMODE* ip)
     {
         tempInfo[n]->color = R_EAXEDX;
     }
-    else if (ip->size == ISZ_USHORT || ip->size == -ISZ_USHORT || ip->size == ISZ_U16)
+    else if (ip->size == ISZ_USHORT || ip->size == -ISZ_USHORT || ip->size == ISZ_U16 || ip->size == ISZ_WCHAR)
         tempInfo[n]->color = R_AX;
     else if (ip->size == ISZ_UCHAR || ip->size == -ISZ_UCHAR || ip->size == ISZ_BOOLEAN)
         tempInfo[n]->color = R_AL;
@@ -264,6 +264,7 @@ void x86PreColor(QUAD* head) /* precolor an instruction */
                 case ISZ_U16:
                 case ISZ_USHORT:
                 case -ISZ_USHORT:
+                case ISZ_WCHAR:
                     tempInfo[tr]->color = R_CX;
                     break;
                 case ISZ_ULONGLONG:
@@ -1365,6 +1366,7 @@ int x86_examine_icode(QUAD* head)
                                 n = 1;
                                 break;
                             case ISZ_USHORT:
+                            case ISZ_WCHAR:
                                 n = 2;
                                 break;
                             case -ISZ_USHORT:

@@ -57,6 +57,18 @@
 #include "optmodules.h"
 #include "config.h"
 
+// there is a bug where the compiler needs constant values for the memory order,
+// but parsed code may not provide it directly.   
+// e.g. when an atomic primitive is called from inside a function.
+//
+// we probably have to force inlining a little better to get around it, but would still need
+// some kind of error in the back end if they do try to pass a non-constant value for a memory order.
+//
+// It isn't critical on the x86 so I'm putting in a temporary workaround for expediency
+// this will have to be revisited when we do other architectures though.
+//
+#define NEED_CONST_MO
+
 namespace Parser
 {
 int packIndex;
@@ -5150,6 +5162,12 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                 errskim(&lex, skim_closepa);
                 skip(&lex, closepa);
             }
+#ifdef NEED_CONST_MO
+            if (d->memoryOrder1 && !isintconst(d->memoryOrder1))
+                d->memoryOrder1 = intNode(en_c_i, Optimizer::mo_seq_cst);
+            if (d->memoryOrder2 && !isintconst(d->memoryOrder2))
+                d->memoryOrder2 = intNode(en_c_i, Optimizer::mo_seq_cst);
+#endif
             *exp = exprNode(en_atomic, nullptr, nullptr);
             (*exp)->v.ad = d;
         }

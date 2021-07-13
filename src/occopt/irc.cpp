@@ -1971,10 +1971,10 @@ static unsigned lscost(int size)
             return p->a_bool;
         case ISZ_USHORT:
         case -ISZ_USHORT:
-        case ISZ_U16:
+        case ISZ_U16:           
             return p->a_short;
-            /*        case ISZ_:*/
-            /*            return p->a_wchar_t;*/
+        case ISZ_WCHAR:
+            return p->a_wchar_t;
         case ISZ_ULONG:
         case -ISZ_ULONG:
             return p->a_long;

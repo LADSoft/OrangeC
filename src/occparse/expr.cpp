@@ -2185,7 +2185,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                             }
                             else if (ispointer(list->tp))
                             {
-                                if (!ispointer(decl->tp))
+                                if (!ispointer(decl->tp) && basetype(decl->tp)->type != bt_bool)
                                     errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
                             }
                             else if (isarithmetic(list->tp) && isarithmetic(decl->tp))
@@ -8625,13 +8625,22 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     else if (ispointer(tp1))
                     {
                         if (iscomplex(*tp))
+                        {
                             error(ERR_ILL_USE_OF_COMPLEX);
+                        }
                         else if (isfloat(*tp) || isimaginary(*tp))
+                        {
                             error(ERR_ILL_USE_OF_FLOATING);
+                        }
                         else if (isint(*tp))
-                            error(ERR_NONPORTABLE_POINTER_CONVERSION);
+                        {
+                            if (basetype(*tp)->type != bt_bool)
+                                error(ERR_NONPORTABLE_POINTER_CONVERSION);
+                        }
                         else if (isarray(tp1) && (tp1)->msil)
+                        {
                             error(ERR_MANAGED_OBJECT_NO_ADDRESS);
+                        }
                     }
                     if (isstructured(*tp) && (!isstructured(tp1) || (!comparetypes(*tp, tp1, true) && !sameTemplate(tp1, *tp))))
                     {

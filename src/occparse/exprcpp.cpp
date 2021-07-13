@@ -902,6 +902,12 @@ bool doStaticCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* funcs
             cast(*newType, exp);
         return true;
     }
+    // pointer to bool
+    if (basetype(*newType)->type == bt_bool && basetype(oldType)->type == bt_pointer)
+    {
+        cast(basetype(*newType), exp);
+        return true;
+    }
     // base to derived pointer or derived to base pointer
     if ((ispointer(*newType) && ispointer(oldType)) || isref(orig))
     {
@@ -1029,6 +1035,12 @@ bool doReinterpretCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* 
     }
     // enum to pointer
     if (ispointer(*newType) && basetype(oldType)->type == bt_enum)
+    {
+        cast(*newType, exp);
+        return true;
+    }
+    // pointer to bool
+    if (basetype(*newType)->type == bt_bool && basetype(oldType)->type == bt_pointer)
     {
         cast(*newType, exp);
         return true;

@@ -1385,7 +1385,7 @@ static LEXLIST* initialize_bool_type(LEXLIST* lex, SYMBOL* funcsp, int offset, e
             castToArithmetic(false, &tp, &exp, (enum e_kw) - 1, itype, true);
             if (isstructured(tp))
                 error(ERR_ILL_STRUCTURE_ASSIGNMENT);
-            else if ((!isarithmetic(tp) && basetype(tp)->type != bt_enum) ||
+            else if ((!isarithmetic(tp) && basetype(tp)->type != bt_enum && basetype(tp)->type != bt_pointer) ||
                 (sc != sc_auto && sc != sc_register && !isarithmeticconst(exp) && !msilConstant(exp) && !Optimizer::cparams.prm_cplusplus))
                     error(ERR_CONSTANT_VALUE_EXPECTED);
             

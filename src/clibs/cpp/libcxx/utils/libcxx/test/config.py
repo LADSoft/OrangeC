@@ -563,7 +563,7 @@ class Configuration(object):
         if enable_32bit:
             self.cxx.flags += ['-m32']
         # Use verbose output for better errors
-        self.cxx.flags += ['-v']
+        self.cxx.flags += ['-y'] # DAL
         sysroot = self.get_lit_conf('sysroot')
         if sysroot:
             self.cxx.flags += ['--sysroot=' + sysroot]

@@ -43,8 +43,6 @@
 #ifndef __MATH_H
 #define __MATH_H
 
-#pragma pack(1)
-
 /* these are the defaults even when this file isn't included */
 #pragma STDC FENV_ACCESS OFF
 #pragma STDC FP_CONTRACT ON
@@ -55,6 +53,10 @@
 
 #ifdef __cplusplus
 #include <limits>
+#endif
+
+#pragma pack(1)
+
 #ifdef __cplusplus
     bool _RTL_FUNC _IMPORTMM fpclassify(float x);
 
@@ -95,7 +97,6 @@
     bool _RTL_FUNC _IMPORTMM islessequal(long double x, long double y);
     bool _RTL_FUNC _IMPORTMM islessgreater(long double x, long double y);
     bool _RTL_FUNC _IMPORTMM isunordered(long double x, long double y);
-#endif
 extern "C"
 {
 #endif

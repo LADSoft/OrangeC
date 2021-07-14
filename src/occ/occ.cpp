@@ -73,6 +73,10 @@ namespace Parser
 namespace Optimizer
 {
     unsigned termCount;
+void SymbolManager::clear()
+{
+    globalSymbols.clear();
+}
 };
 
 namespace occx86
@@ -321,6 +325,7 @@ bool ProcessData(const char* name)
 
 bool LoadFile(SharedMemory* optimizerMem)
 {
+    Optimizer::SymbolManager::clear();
     Optimizer::InitIntermediate();
     bool rv = Optimizer::InputIntermediate(optimizerMem);
     Optimizer::SelectBackendData();

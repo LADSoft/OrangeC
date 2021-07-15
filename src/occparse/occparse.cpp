@@ -668,4 +668,5 @@ int main(int argc, char* argv[])
         printf("occparse timing: %d.%03d\n", (stopTime - startTime)/1000, (stopTime - startTime)% 1000); 
     }
     rv = IsCompiler() ? !!stoponerr : 0;
+    return rv;
 }

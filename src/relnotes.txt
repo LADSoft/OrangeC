@@ -117,6 +117,21 @@ version 6.0.46:
     occ: allow __stdcall to work with templated functions
     occ: fix bug where simple structure with member initializers wouldn't construct properly
     occ: fix problem with overloading cast operators that only differ by qualifiers
+    occ: fix bugs in code generation for atomics
+    occ: add new atomic intrinsics, overhaul the atomic headers
+    occ: fix generation of debug info
+    occ: fix problem with simple structures having member initializers not getting initialized
+    occ: fix problem where a container with a structured initializer list wouldn't initialize
+    occ: fix bug in peephole optimization
+    occ: fix the gcse optimizer to work again, fix various bugs in aliasing
+    occ: add -std=xxx, -x, -nostdinc, -nostdinc++, -fsyntax-only  to the command line
+    occ: fix __STDC_VERSION__ for C89
+    occ: allow dots in the file name specified on the command line (before the extension)
+    occ: handle volatiles better
+    occ: handle __FILE__ preprocessor macro better in the presence of backslashes
+    occ: handle wchar_t better in the code generator
+    occ: allow conversions from pointer to bool
+    occ: fix various problems with specifying multiple input files on the command line
     occil: various improvements to allow generated code to be decompiled
     occil: add runtime support for function pointer via delegate
     occil: fix bug in pinning
@@ -155,7 +170,10 @@ version 6.0.46:
     rtl: add enough support for fibersapi to allow libcxx10 threading to compile
     rtl: fix some alignment issues in the WIN32 headers
     rtl: only need one tls index, not one per thread
+    rtl: send ojut put of 'assert' to console for console mode programs
+    rtl: fix bug in math.h, could include C++ headers with the wrong structure alignment
     tests: run what we can in parallel
+    tests: complete libcxx tests on atomics
 version 6.0.45:
     occ:   functions ending in a function call for a function tagged as 'noreturn' will not generate a 'needs return value' warning.
     occ:   fix bug where destructs called after an if statement could be called at the wrong time.

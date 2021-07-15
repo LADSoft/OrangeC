@@ -42,16 +42,16 @@
 #define OPT_THUNKRETVAL 0x200000
 
 
-#define OPTMODULES_DESCRIPTION "  -fopt-{no}constant        turn on or off constant optimizations\n" \
-                                 "  -fopt-{no}loop-strength   turn on or off loop strength optimization\n"  \
-                                 "  -fopt-{no}move-invariants turn on or off loop invariant code motion\n" \
-                                 "  -fopt-{no}gcse            turn on or off global subexpression evaluation\n" \
-                                 "  -ficd-{no}gcse            turn on or off gcse diagnostics in the icd file\n"
+#define OPTMODULES_DESCRIPTION "  -fopt-{no}constant             turn on or off constant optimizations\n" \
+                                 "  -fopt-{no}loop-strength        turn on or off loop strength optimization\n"  \
+                                 "  -fopt-{no}move-invariants      turn on or off loop invariant code motion\n" \
+                                 "  -fopt-{no}gcse                 turn on or off global subexpression evaluation\n" \
+                                 "  -ficd-{no}gcse                 turn on or off gcse diagnostics in the icd file\n"
 
-#define OPTIMIZATION_DESCRIPTION "  -O-, -O0                  disable optimizations\n" \
-                                 "  -O1                       optimize for size\n" \
-                                 "  -O2                       optimize for speed\n" \
-                                 "  -Of                       optimize floating point accesses\n"
+#define OPTIMIZATION_DESCRIPTION "  -O-, -O0                       disable optimizations\n" \
+                                 "  -O1                            optimize for size\n" \
+                                 "  -O2                            optimize for speed\n" \
+                                 "  -Of                            optimize floating point accesses\n"
 
 namespace Optimizer
 {

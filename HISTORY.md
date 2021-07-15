@@ -1,5 +1,179 @@
 Release notes:
 
+version 6.0.50:
+* various projects: fix various GCC warnings
+* various projects: add a diagnostic when an output file cannot be opened or created
+* various projects: convert ieee format to binary
+* various projects: if the command line help is too long, it will prompt you after each page
+* various projects: use unordered_map where possible, to speed things up
+* visual studio solution: make backends dependent on the programs they spawn
+* visual studio solution: update projects to VS2019
+* builds: remove duplicate rebuilds
+* builds: fix some problems with builds not erroring out properly on failure
+* occ: fix assembly language jmp [eax] to not truncate the register to word size
+* occ: fix bug in sign extension of negated unsigned short
+* occ: fix bug with not calling virtual destructors properly
+* occ: fix bug with not promoting default destructors to 'virtual' when needed
+* occ: fix bug with *(double*)aa = value sometimes not working properly, where 'aa' is a long long
+* occ: fix the code that enables the profiler
+* occ: enable 'inline' in the c++ headers (speedup applications)
+* occ: fix argument type lookup to work with enumeration constant in namespace
+* occ: add -LINK and -DLL command line switches (for autoconfig support)
+* occ: some internal optimizations in the source code
+* occ: fix fastcall calling convention to work with optimized code
+* occ: rewrite shared memory mapping handling to use less resources
+* occ: add __asm keyword (still supports 'asm')
+* occ: fix a case where there could be a crash if a structure is undefined
+* occ: destructor for union should not automatically delete objects defined in the union
+* occ: elide copy constructor references in certain initializations
+* occ: fix formatting on assembly language output files
+* occ: fix bug that prevented occ from working when compiled with CLANG version 10 or greater
+* occ: clean up errors (remove function reference)
+* occ: add 'referenced from' for references from higher templates
+* occ: clean up errors (fix mangling and unmangling)
+* occ: fix bug where packed arguments to a function wouldn't be fully expanded with qualifiers
+* occ: fix crashes when compiling in debug mode
+* occ: add #include_next
+* occ: sometimes the error for undefined variables would not appear
+* occ: rewrite the type alias functionality
+* occ: change padding in code segment to use nops
+* occ: fix some bugs in the name unmangling
+* occ: fix some problems with packed templates
+* occ: allow decltype to be used where a class selector could be used
+* occ: libcxx 10 support
+* occ: handle template instantion overloads where the only difference is the function return value
+* occ: clean up array access in for-range loops
+* occ: don't attempt to return a value when a template function's return type evaluates to void
+* occ: don't generate labels for inline function returns, unless absolutely needed (aids optimizations)
+* occ: the const qualifier should not be removed when evaluating a typedef
+* occ: fix bugs in auto deduction
+* occ: fix various problems with formatting, argument reference types
+* occ: don't generate const/ref member initializers error for a delegating constructor
+* occ: allow access to private constructors while generating default constructors
+* occ: handle conversion of rref to lref in function arguments properly
+* occ: don't generate an error when converting const lref to rref in function arguments
+* occ: require typename in a more standard way
+* occ: fix bugs with honoring member access specifiers
+* occ: fix some probelms with deleting default constructors
+* occ: arithmetic constants are rvalues for purposes of argument deduction
+* occ: refactor how memory allocation is done to clean up code base
+* occ: convert constants to boolean correctly
+* occ: add error if function body is redefined
+* occ: update the __attribute__ parsing
+* occ: unique_ptr didn't compile when passing free() for the destruction function
+* occ: fix randomly occurring 'unknown suffix' errors
+* occ: fixes to typeinfo
+* occ: fix static assert to work within structures
+* occ: fix static_assert error to be more obvious, add C++17 version of static_assert
+* occ: don't reserve space for static const integral members of structures
+* occ: fix variable size arrays to convert to char* properly
+* occ: int and long are same (on x86) for purposes of argument deduction.  Exact match is still prefered.
+* occ: bool was sometimes considered the same as char
+* occ: fix crash when initializing bool with a function address (should result in true)
+* occ: allow forward declaration of a non-member class, within a class
+* occ: allow _atomic in C++ mode, add new atomic intrinsics
+* occ: handle problems where the evaluation of template selectors didn't happen in a timely way
+* occ: clean up is_constructible and is_nothrow_constructible
+* occ: add some intrincs to help compiling tuples
+* occ: fix problems evaluating sfinae
+* occ: add display of timing information
+* occ: add some new command line switches
+* occ: clean up what happens when running occparse directly
+* occ: fix some problems with initializer lists
+* occ: fix some problems with poiinters to member functions
+* occ: fix rare bug where sometimes a function call would not be treated as a call
+* occ: fix problem an optimization of a pointer to an array would not allocate auto variables properly
+* occ: fix problems with finding an overload match for a nullptr_t argument
+* occ: fix bug where cast conversions combined with inlining could generate bad code
+* occ: rewrite the expression rebalancing operation to operate in real time
+* occ: fix bug with code generation for long long math
+* occ: fix some problems with extraneous extern statements in the assembly language output files
+* occ: changes to how inlining is done
+* occ: internal improvements for memory usage while compiling
+* occ: fix code completion compiler
+* occ: prefer conversion of wchar_t to char to a widening conversion, in function argument matching
+* occ: remove code generation of some unnecessary calls to empty constructors
+* occ: converting enum to long long generated bad code
+* occ: use native ints instead of long longs, for integers within the optimizer code
+* occ: support __attributed((aligned)) without specifying an alignment
+* occ: static operator new/delete can be members of a class
+* occ: fix bug surrounding __VARARGS__ processing
+* occ: fix a bug where namespace usage could result in an infinite loop
+* occ: support for-range where the range specifier is an explicit initializer list
+* occ: add support for parsing __attribute__((format)) but not its functionality
+* occ: trying to scope an unnamed enum resulted in a compiler error
+* occ: when a member using statement specifies a base class, the constructures were not pulled in.
+* occ: fix bug in implicit lambda capture of 'this'
+* occ: allow access to base classes of a member function's class, from within a lambda
+* occ: allow conversion to a base class, when returning a structure
+* occ: internal modification, change unwieldy macros to constexpr functions
+* occ: fix some problems with overloading methods that have enums as arguments
+* occ: add __attribute__((internal_linkage))
+* occ: add __attribute__((exclude_from_explicit_instantiation))
+* occ: 'far' keyword not handling properly during code generation
+* occ: fix bugs with initializing a lambda function at the global level
+* occ: constexpr constructors were being duplicated in the output files
+* occ: better resolution for overload matching of mismatched qualifiers
+* occ: allow __stdcall to work with templated functions
+* occ: fix bug where simple structure with member initializers wouldn't construct properly
+* occ: fix problem with overloading cast operators that only differ by qualifiers
+* occ: fix bugs in code generation for atomics
+* occ: add new atomic intrinsics, overhaul the atomic headers
+* occ: fix generation of debug info
+* occ: fix problem with simple structures having member initializers not getting initialized
+* occ: fix problem where a container with a structured initializer list wouldn't initialize
+* occ: fix bug in peephole optimization
+* occ: fix the gcse optimizer to work again, fix various bugs in aliasing
+* occ: add -std=xxx, -x, -nostdinc, -nostdinc++, -fsyntax-only  to the command line
+* occ: fix __STDC_VERSION__ for C89
+* occ: allow dots in the file name specified on the command line (before the extension)
+* occ: handle volatiles better
+* occ: handle __FILE__ preprocessor macro better in the presence of backslashes
+* occ: handle wchar_t better in the code generator
+* occ: allow conversions from pointer to bool
+* occ: fix various problems with specifying multiple input files on the command line
+* occil: various improvements to allow generated code to be decompiled
+* occil: add runtime support for function pointer via delegate
+* occil: fix bug in pinning
+* olib: add --noexports switch to remove exports while importing to library
+* ieeeconvert: new project for converting binary object files to more readable ascii format
+* utilites: some code cleanup
+* netlib: add support for generic classes and functions
+* netlib: add support for pinning
+* netlib: various small improvements
+* netlib: cache namespaces and classes while loading to speed up the load
+* netlib: add some improvements for GCC compiles, and MONO support
+* adl compiler: improvements and documentation
+* rtl: libcxx 10 support, atomic support, threads support
+* rtl: add flockfile and friends
+* rtl: add fmemopen and friends
+* rtl: add rpmalloc allocator and remove lea allocator
+* rtl: rename 'asm' keyword to '__asm' throughout
+* rtl: update makefiles for clang-format and format most of the runtime library
+* rtl: fix various issues with C11 threading and mutexes
+* rtl: putmkdir and friends in right header
+* rtl: add getopt implementation
+* rtl: rewrite C language headers to check for RC_INVOKED
+* rtl: fix crash in flushall
+* rtl: fix complex.h
+* rtl: newlocal() is inline now and other locale() updates for libcxx 10
+* rtl: copy header files to main include directory during a build, remove explict include directories from build command line
+* rtl: rename _DS and friends to allow compiling of filesystem header
+* rtl: add fseeko and ftello
+* rtl: fix bug in sscanf, using %c multiple times didn't work.
+* rtl: use VirtualAlloc in the memory manager
+* rtl: add various unwind functions to the dll export definitions file
+* rtl: add standardize exception handling support
+* rtl: add constructors/destructors for objects in thread local storage
+* rtl: add strerror_s and _strerror_s and errno_t
+* rtl: add enough support for fibersapi to allow libcxx10 threading to compile
+* rtl: fix some alignment issues in the WIN32 headers
+* rtl: only need one tls index, not one per thread
+* rtl: send output of 'assert' to console for console mode programs
+* rtl: fix bug in math.h, could include C++ headers with the wrong structure alignment
+* tests: run what we can in parallel
+* tests: complete libcxx tests on atomics
+
 version 6.0.45: 5/18/2020
 * occ:   functions ending in a function call for a function tagged as 'noreturn' will not generate a 'needs return value' warning.
 * occ:   fix bug where destructs called after an if statement could be called at the wrong time.

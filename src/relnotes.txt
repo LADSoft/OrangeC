@@ -1,6 +1,6 @@
 Release notes:
 
-version 6.0.46:
+version 6.0.50:
     various projects: fix various GCC warnings
     various projects: add a diagnostic when an output file cannot be opened or created
     various projects: convert ieee format to binary
@@ -170,7 +170,7 @@ version 6.0.46:
     rtl: add enough support for fibersapi to allow libcxx10 threading to compile
     rtl: fix some alignment issues in the WIN32 headers
     rtl: only need one tls index, not one per thread
-    rtl: send ojut put of 'assert' to console for console mode programs
+    rtl: send output of 'assert' to console for console mode programs
     rtl: fix bug in math.h, could include C++ headers with the wrong structure alignment
     tests: run what we can in parallel
     tests: complete libcxx tests on atomics

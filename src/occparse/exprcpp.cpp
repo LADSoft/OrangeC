@@ -1362,7 +1362,7 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
     }
     funcparams->ascall = true;
 
-    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, nullptr, false, false, true, flags);
+    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, nullptr, F_GOFDELETEDERR, false, true, flags);
     if (s3)
     {
         if (!isExpressionAccessible(nullptr, s3, funcsp, funcparams->thisptr, false))
@@ -1598,7 +1598,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
     }
     funcparams->ascall = true;
     s30 = s3;
-    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, nullptr, false, false, true, flags);
+    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, nullptr, F_GOFDELETEDERR, false, true, flags);
     if (s3)
     {
         if (!isExpressionAccessible(nullptr, s3, funcsp, funcparams->thisptr, false))

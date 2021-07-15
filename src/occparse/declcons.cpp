@@ -1544,7 +1544,8 @@ void createDefaultConstructors(SYMBOL* sp)
                             SYMBOL* s = (SYMBOL*)p->p;
                             if (s->sb->storage_class != sc_static)
                             {
-                                err |= s->sb->isConstructor && !s->sb->defaulted && !s->sb->deleted;
+                                err |= s->sb->isConstructor && !s->sb->defaulted;
+                                err |= s->sb->deleted;
                                 err |= s->sb->access != ac_public;
                             }
                             p = p->next;

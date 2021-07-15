@@ -4555,7 +4555,7 @@ static void doNames(SYMBOL* sym)
         doNames(sym->sb->parentClass);
     SetLinkerNames(sym, lk_cdecl);
 }
-SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, bool toErr,
+SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, int toErr,
                               bool maybeConversion, bool toInstantiate, int flags)
 {
     STRUCTSYM s;
@@ -4749,7 +4749,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     }
 #ifdef DEBUG
                     // this block to aid in debugging unfound functions...
-                    if (toErr && (!found1 || (found1 && found2)) && !templateNestingCount)
+                    if ((toErr & F_GOFERR) && (!found1 || (found1 && found2)) && !templateNestingCount)
                     {
                         memset(spFilterList, 0, sizeof(SYMBOL*) * n);
 
@@ -4777,7 +4777,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
             }
         }
         // any errors
-        if (toErr || (found1 && !found2))
+        if ((toErr & F_GOFERR) || (found1 && !found2))
         {
             if (!found1)
             {
@@ -4939,7 +4939,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     errorsym(ERR_AUTO_FUNCTION_RETURN_TYPE_NOT_DEFINED, found1);
             }
         }
-        if (!toErr && found2)
+        if (!(toErr & F_GOFERR) && found2)
         {
             sp = nullptr;
         }

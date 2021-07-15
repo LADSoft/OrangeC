@@ -110,6 +110,7 @@ CmdSwitchBool prm_nostdinc(switchParser, 0, false, "nostdinc");
 CmdSwitchBool prm_nostdincpp(switchParser, 0, false, "nostdinc++");
 CmdSwitchString prm_std(switchParser, 0, 0, "std");
 CmdSwitchCombineString prm_library(switchParser, 'l', ';');
+CmdSwitchBool prm_prmSyntaxOnly(switchParser, 0, false, "fsyntax-only"); // doesn't do anything yet
 
 CmdSwitchCombineString prm_cinclude(switchParser, 'I', ';');
 CmdSwitchCombineString prm_Csysinclude(switchParser, 'z', ';');

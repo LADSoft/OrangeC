@@ -400,6 +400,7 @@ int main(int argc, char* argv[])
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
     unsigned startTime, stopTime;
+    bool syntaxOnly = false;
 
     if (!Utils::HasLocalExe("occopt") || !Utils::HasLocalExe("occparse"))
     {
@@ -409,6 +410,8 @@ int main(int argc, char* argv[])
     {
         if (strstr(*p, "/y") || strstr(*p, "-y"))
             occ_verbosity = "";
+        if (strstr(*p, "/fsyntax-only") || strstr(*p, "-fsyntax-only"))
+            syntaxOnly = true;
     }
     auto optimizerMem = new SharedMemory(MAX_SHARED_REGION);
     optimizerMem->Create();
@@ -433,7 +436,7 @@ int main(int argc, char* argv[])
         rv = InvokeParser(argc, argv, parserMem) || InvokeOptimizer(parserMem, optimizerMem);
         delete parserMem;
     }
-    if (!rv)
+    if (!rv && !syntaxOnly)
     {
         if (!LoadFile(optimizerMem))
         {

@@ -34,6 +34,9 @@ extern HASHTABLE* CreateHashTable(int size);
 #define F_POINTER 16
 #define F_CONVERSION 32
 
+#define F_GOFERR 1
+#define F_GOFDELETEDERR 2
+
 Optimizer::LIST* tablesearchone(const char* name, NAMESPACEVALUELIST* ns, bool tagsOnly);
 Optimizer::LIST* tablesearchinline(const char* name, NAMESPACEVALUELIST* ns, bool tagsOnly, bool allowUsing = false);
 SYMBOL* namespacesearch(const char* name, NAMESPACEVALUELIST* ns, bool qualified, bool tagsOnly);
@@ -70,7 +73,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
 SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, TYPE* atp);
 SYMBOL* GetOverloadedTemplate(SYMBOL* sp, FUNCTIONCALL* args);
 void weedgathering(Optimizer::LIST** gather);
-SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, bool toErr,
+SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, int toErr,
                               bool maybeConversion, bool toInstantiate, int flags);
 SYMBOL* MatchOverloadedFunction(TYPE* tp, TYPE** mtp, SYMBOL* sym, EXPRESSION** exp, int flags);
 

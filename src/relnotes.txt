@@ -1,6 +1,6 @@
 Release notes:
 
-version 6.0.50:
+version 6.0.50: 7/15/2021
     various projects: fix various GCC warnings
     various projects: add a diagnostic when an output file cannot be opened or created
     various projects: convert ieee format to binary
@@ -174,7 +174,7 @@ version 6.0.50:
     rtl: fix bug in math.h, could include C++ headers with the wrong structure alignment
     tests: run what we can in parallel
     tests: complete libcxx tests on atomics
-version 6.0.45:
+version 6.0.45: 5/17/2020
     occ:   functions ending in a function call for a function tagged as 'noreturn' will not generate a 'needs return value' warning.
     occ:   fix bug where destructs called after an if statement could be called at the wrong time.
     occ:   implement better error diagnostics (not used yet)

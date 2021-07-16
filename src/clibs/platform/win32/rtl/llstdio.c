@@ -47,15 +47,16 @@ extern int __maxfiles;
 extern FILE* _pstreams[];
 
 static unsigned char inbuf[512];
-
+static unsigned char outbuf[512];
+static unsigned char errbuf[512];
 static struct __file2 _iextended[3] = {
     {"CON:"},
     {"CON:"},
     {"CON:"},
 };
 FILE _istreams[3] = {{FILTOK, _F_READ | _F_LBUF | _F_TERM, 0, 0, 0, 512, inbuf, inbuf, &_iextended[0]},
-                     {FILTOK, _F_WRIT | _F_LBUF | _F_TERM, 0, 1, 0, 0, 0, 0, &_iextended[1]},
-                     {FILTOK, _F_WRIT | _F_LBUF | _F_TERM, 0, 2, 0, 0, 0, 0, &_iextended[2]}};
+                     {FILTOK, _F_WRIT | _F_LBUF | _F_TERM, 0, 1, 0, 512, outbuf, outbuf, &_iextended[1]},
+                     {FILTOK, _F_WRIT | _F_LBUF | _F_TERM, 0, 2, 0, 512, errbuf, errbuf, &_iextended[2]}};
 
 void* _RTL_FUNC __iob_func() { return _istreams; }
 

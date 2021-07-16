@@ -1,6 +1,6 @@
 version: '6.0.50.{BUILD}'
 
-image: Visual Studio 2017
+image: Visual Studio 2019
 
 install:
     - appveyor-retry choco install InnoSetup
@@ -20,15 +20,15 @@ branches:
      - /v\d*\.\d*\.\d*\.\d*/
 
 configuration:
-     - MINGW64 THEN WITH STATIC LIB
-     - CLANG THEN WITH STATIC LIB
+#     - MINGW64 THEN WITH STATIC LIB
+#     - CLANG THEN WITH STATIC LIB
      - MSVC THEN WITH STATIC LIB
-     - MSVC THEN WITH LSCRTL
-     - MSVC THEN VIA ASSEMBLY
-     - MSVC THEN WITH DEBUG
-     - CODE ANALYZER TEST
-     - MSIL COMPILER
-     - MS WITH PDB
+#     - MSVC THEN WITH LSCRTL
+#     - MSVC THEN VIA ASSEMBLY
+#     - MSVC THEN WITH DEBUG
+#     - CODE ANALYZER TEST
+#     - MSIL COMPILER
+#     - MS WITH PDB
 
 for:
 -
@@ -42,7 +42,7 @@ for:
           description: 'Current Release'
           provider: GitHub
           auth_token:
-              secure: gOXANm+uz1YSqzv6tHI8/UAlAbA/ofp6o1NNxA+dsVX/jnTZioWTVD3f8Q8S6Un7
+              secure: L2Uw6o1Msz3bAsw+p2n9bjxJqqtuP+7YuJNaWtpsRnWZ3JWDjkULQG6c6YRPk+v+
           artifact: /.*/
           draft: false
           prerelease: false

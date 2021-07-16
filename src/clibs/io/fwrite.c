@@ -33,7 +33,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
-
+#include <windows.h>
 #include <stdio.h>
 #include <errno.h>
 #include <time.h>
@@ -151,5 +151,7 @@ size_t _RTL_FUNC fwrite_unlocked(void* restrict buf, size_t size, size_t count, 
             stream->flags |= _F_EOF;
         i += l;
     }
+    if (size == 1)
+        return i;
     return i / size;
 }

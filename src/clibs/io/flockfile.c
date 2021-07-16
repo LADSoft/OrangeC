@@ -45,6 +45,9 @@
 #include <fcntl.h>
 #include <share.h>
 #include <sys\stat.h>
+#include <stdatomic.h>
+#include <threads.h>
+
 #include "libp.h"
 
 void flockfile(FILE* stream)
@@ -54,7 +57,12 @@ void flockfile(FILE* stream)
         errno = _dos_errno = ENOENT;
         return;
     }
-    __ll_mtxTake(stream->extended->lock, -1);
+    int expected = 0;
+    while (atomic_compare_exchange_strong(&stream->extended->lock, &expected, 1))
+    {
+        thrd_yield();
+        expected = 0;
+    }
 }
 int ftrylockfile(FILE* stream)
 {
@@ -63,7 +71,8 @@ int ftrylockfile(FILE* stream)
         errno = _dos_errno = ENOENT;
         return 0;
     }
-    return __ll_mtxTake(stream->extended->lock, 0);
+    int expected = 0;
+    return !atomic_compare_exchange_strong(&stream->extended->lock, &expected, 1);
 }
 void funlockfile(FILE* stream)
 {
@@ -72,5 +81,5 @@ void funlockfile(FILE* stream)
         errno = _dos_errno = ENOENT;
         return;
     }
-    __ll_mtxRelease(stream->extended->lock);
+    atomic_store(&stream->extended->lock, 0);
 }

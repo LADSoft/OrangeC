@@ -80,7 +80,7 @@ typedef struct __file__
             char* name; /* filename */
             void* dynamicBuffer[2];
         };
-        long long lock;
+        int lock; // this is actually an atomic type 
     } * extended;
 } FILE; /* This is the FILE object    */
 #pragma pack()

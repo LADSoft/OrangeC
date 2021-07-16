@@ -1,6 +1,6 @@
 version: '6.0.50.{BUILD}'
 
-image: Visual Studio 2019
+image: Visual Studio 2017
 
 install:
     - appveyor-retry choco install InnoSetup

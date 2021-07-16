@@ -34,6 +34,8 @@
 #    include <Windows.h>
 #endif
 
+//#define USE_PAGING_FILE
+
 SharedMemory::SharedMemory(unsigned max, std::string name, unsigned window) :
     max_(max),
     windowSize_(window),
@@ -70,8 +72,12 @@ bool SharedMemory::Open()
 bool SharedMemory::Create()
 {
 #ifdef _WIN32
-    fileHandle_ = INVALID_HANDLE_VALUE;  // CreateFile(name_.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
-                                         // FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE, nullptr);
+#ifdef USE_PAGING_FILE
+    fileHandle_ = INVALID_HANDLE_VALUE;
+#else
+    fileHandle_ = CreateFile(name_.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
+                             FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE, nullptr);
+#endif
     regionHandle = CreateFileMapping(fileHandle_, NULL, PAGE_READWRITE | SEC_RESERVE, 0, max_, name_.c_str());
 #endif
     return !!regionHandle && GetMapping();

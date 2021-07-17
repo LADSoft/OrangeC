@@ -3257,7 +3257,8 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                     if (!isref(p->tp) &&
                         ((isconst(p->tp) && !isconst(basetype(sym->tp)->btp)) || (isvolatile(p->tp) && !isvolatile(basetype(sym->tp)->btp))))
                         if (basetype(sym->tp)->type != bt_rref) // converting const lref to rref is ok...
-                            error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
+                            if (!isstructured(basetype(sym->tp)->btp)) // structure constructor is ok
+                                error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
                     p->tp = sym->tp;
                 }
                 else if (isstructured(p->tp))

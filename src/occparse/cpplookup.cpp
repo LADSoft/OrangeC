@@ -1767,7 +1767,17 @@ SYMBOL* lookupPointerCast(SYMBOL* sym, TYPE* tp)
 }
 static Optimizer::LIST* structuredArg(SYMBOL* sym, Optimizer::LIST* in, TYPE* tp)
 {
-    return searchNS(sym, basetype(tp)->sp->sb->parentNameSpace, in);
+    if (basetype(tp)->sp->sb->parentNameSpace)
+        return searchNS(sym, basetype(tp)->sp->sb->parentNameSpace, in);
+
+    // a null value means the global namespace
+    auto g = globalNameSpace;
+    while (g->next) g = g->next;
+    SYMBOL nssp = { 0 };
+    SYMBOL::_symbody sb = { 0 };
+    nssp.sb = &sb;
+    sb.nameSpaceValues = g;
+    return searchNS(sym, &nssp, in);
 }
 static Optimizer::LIST* searchOneArg(SYMBOL* sym, Optimizer::LIST* in, TYPE* tp);
 static Optimizer::LIST* funcArg(SYMBOL* sp, Optimizer::LIST* in, TYPE* tp)
@@ -1789,13 +1799,11 @@ static Optimizer::LIST* searchOneArg(SYMBOL* sym, Optimizer::LIST* in, TYPE* tp)
     if (isarithmetic(tp))
     {
         if (tp->btp && tp->btp->type == bt_enum)
-            return searchNS(sym, tp->btp->sp->sb->parentNameSpace, in);
+            return structuredArg(sym, in, tp);
         return in;
     }
-    if (isstructured(tp))
+    if (isstructured(tp) || basetype(tp)->type == bt_enum)
         return structuredArg(sym, in, tp);
-    if (basetype(tp)->type == bt_enum)
-        return searchNS(sym, basetype(tp)->sp->sb->parentNameSpace, in);
     if (isfunction(tp))
         return funcArg(sym, in, tp);
     // member pointers...

@@ -4422,7 +4422,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
         }
         else if (!sym->sb->init)
         {
-            if (sym->sb->storage_class != sc_external && !initialized && !isstructured(sp->tp))
+            if (sym->sb->storage_class != sc_external && !initialized && (!sp || !isstructured(sp->tp)))
                 error(ERR_CONSTEXPR_REQUIRES_INITIALIZER);
         }
         else if (isstructured(tp))

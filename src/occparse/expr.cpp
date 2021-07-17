@@ -3114,7 +3114,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             if (p->exp->type == en_thisref)
                             {
                                 TYPE* tpx = basetype(p->exp->left->v.func->sp->tp);
-                                if (isfunction(tpx) && tpx->sp->sb->castoperator)
+                                if (isfunction(tpx) && tpx->sp && tpx->sp->sb->castoperator)
                                 {
                                     p->tp = tpx->btp;
                                 }

@@ -6180,7 +6180,7 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
         // we need to act specially
         while (ispointer(P))
             P = basetype(P)->btp;
-        if (isvoid(P) || isarithmetic(P) || isfunction(P) || (isstructured(P) && !basetype(P)->sp->sb->templateLevel))
+        if (isvoid(P) || isarithmetic(P) || isfunction(P) || (isstructured(P) && (!basetype(P)->sp->sb->templateLevel || basetype(P)->sp->sb->instantiated)))
             return true;
         return false;
     }

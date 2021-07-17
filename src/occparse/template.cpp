@@ -8330,6 +8330,8 @@ static void TemplateConstMatching(SYMBOL** spList, int n, TEMPLATEPARAMLIST* par
 }
 static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* val, TEMPLATEPARAMLIST* params)
 {
+    if (!dflt || !val)
+        return;
     bool ptr = false;
     TYPE* tdv = nullptr, * tdd = nullptr;
     TYPE* tvv = nullptr, *tvd = nullptr;

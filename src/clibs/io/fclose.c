@@ -78,6 +78,8 @@ int _RTL_FUNC fcloseall(void)
     int rv = __maxfiles - 3;
     for (i = __maxfiles - 1; i >= 3; i--)
         fclose(_pstreams[i]);
+    fflush(stdout);
+    fflush(stderr);
     __maxfiles = 3;
     return rv;
 }

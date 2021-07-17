@@ -463,6 +463,13 @@ namespace Parser
                                         if (tpn->sp->sb->templateSelector->next->next->name[0])
                                             return false;
                                     }
+                                    else if (basetype(told)->btp->type == bt_typedef && strcmp(basetype(told)->btp->sp->name, tpn->sp->sb->templateSelector->next->next->name) == 0)
+                                    {
+                                    }
+                                    else
+                                    {
+                                        return false;
+                                    }
                                 }
                             }
                             else

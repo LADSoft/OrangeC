@@ -2480,6 +2480,40 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
         {
             return 1;
         }
+        while (l < lenl && seql[l] == CV_IDENTITY)
+            l++;
+        while (r < lenr && seqr[r] == CV_IDENTITY)
+            r++;
+        if (l == lenl && r != lenr)
+        {
+            return -1;
+        }
+        else if (l != lenl && r == lenr)
+        {
+            return 1;
+        }
+        l++, r++;
+        // compare ranks
+        rankl = CV_IDENTITY;
+        for (; l < lenl; l++)
+            if (rank[seql[l]] > rankl && seql[l] != CV_DERIVEDFROMBASE)
+                rankl = rank[seql[l]];
+        rankr = CV_IDENTITY;
+        for (; r < lenr; r++)
+            if (rank[seqr[r]] > rankr && seqr[r] != CV_DERIVEDFROMBASE)
+                rankr = rank[seqr[r]];
+        if (rankl < rankr)
+            return -1;
+        else if (rankr < rankl)
+            return 1;
+        else if (lenl < lenr)
+        {
+            return -1;
+        }
+        else if (lenr < lenl)
+        {
+            return 1;
+        }
         // if qualifiers are mismatched, choose a matching argument
         if (tl && tr)
         {
@@ -3042,7 +3076,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                     }
                     if (seq)
                     {
-                        int l = lenList[m][0] + 1;  // + lenList[m][1];
+                        int l = lenList[m][0] + (found1->sb->castoperator ? lenList[m][1] : 1);
                         memcpy(&seq[*n], &icsList[m][0], l * sizeof(enum e_cvsrn));
                         *n += l;
                         if (userFunc)
@@ -4749,7 +4783,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     }
 #ifdef DEBUG
                     // this block to aid in debugging unfound functions...
-                    if ((toErr & F_GOFERR) && (!found1 || (found1 && found2)) && !templateNestingCount)
+                    if (toErr && (!found1 || (found1 && found2)) && !templateNestingCount)
                     {
                         memset(spFilterList, 0, sizeof(SYMBOL*) * n);
 

@@ -767,7 +767,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                         {
                             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
                         }
-                        else if (!templateNestingCount)
+                        else if (!templateNestingCount || (isint(*tp) && isintconst(*exp)))
                         {
                             cast(*tp, exp);
                         }

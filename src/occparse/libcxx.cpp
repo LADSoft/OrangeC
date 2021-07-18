@@ -632,7 +632,7 @@ static bool nothrowConstructible(TYPE* tp, INITLIST* args)
             }
             if (sp)
             {
-                return sp->sb->noExcept;
+                return sp->sb->noExcept && sp->sb->access == ac_public;
             }
         }
     }
@@ -932,8 +932,9 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                                 PushPopTemplateArgs(spl->p, true);
                             }
                         }
-                        rv = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, nullptr, false, false, false, _F_SIZEOF) !=
-                            nullptr;
+                        auto sym = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, nullptr, false, false, false, _F_SIZEOF);
+                        rv = sym && sym->sb->access == ac_public;
+                            
                         while (stk.size())
                         {
                             PushPopTemplateArgs(stk.top(), false);

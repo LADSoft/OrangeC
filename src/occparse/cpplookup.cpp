@@ -3153,10 +3153,18 @@ static void getQualConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* exp, int* n, enu
         first = false;
         if (tpa->type == bt_enum)
             tpa = tpa->btp;
-        tpa = basetype(tpa)->btp;
+        if (isarray(tpa))
+            while (isarray(tpa))
+                tpa = basetype(tpa)->btp;
+        else
+            tpa = basetype(tpa)->btp;
         if (tpp->type == bt_enum)
             tpp = tpp->btp;
-        tpp = basetype(tpp)->btp;
+        if (isarray(tpp))
+            while (isarray(tpp))
+                tpp = basetype(tpp)->btp;
+        else
+            tpp = basetype(tpp)->btp;
     }
     if ((!tpa && !tpp) || (tpa && tpp && tpa->type != bt_pointer && tpp->type != bt_pointer))
     {
@@ -3224,9 +3232,22 @@ static void getPointerConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* exp, int* n, 
                 seq[(*n)++] = CV_IDENTITY;
             }
         }
-        else if (!comparetypes(tpp, tpa, true) && !basetype(tpa)->nullptrType)
+        else
         {
-            seq[(*n)++] = CV_NONE;
+            TYPE* t1 = tpp;
+            TYPE* t2 = tpa;
+            if (isarray(t2) && ispointer(t1))
+            {
+                while (isarray(t2)) t2 = basetype(t2)->btp;
+                if (isarray(t1))
+                    while (isarray(t1)) t1 = basetype(t1)->btp;
+                else
+                    t1 = basetype(t1)->btp;
+            }
+            if (!comparetypes(t1, t2, true) && !basetype(tpa)->nullptrType)
+            {
+                seq[(*n)++] = CV_NONE;
+            }
         }
         getQualConversion(tpp, tpa, exp, n, seq);
     }

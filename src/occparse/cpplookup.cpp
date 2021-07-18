@@ -4618,6 +4618,7 @@ static void doNames(SYMBOL* sym)
         doNames(sym->sb->parentClass);
     SetLinkerNames(sym, lk_cdecl);
 }
+int count4;
 SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, int toErr,
                               bool maybeConversion, bool toInstantiate, int flags)
 {
@@ -4733,6 +4734,18 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         argl->tp = func->tp;
                         argl->exp = varNode(en_pc, func);
                         InsertInline(func);
+                    }
+                    else if (argl->exp->type == en_func && argl->exp->v.func->astemplate && !argl->exp->v.func->ascall)
+                    {
+                        TYPE* ctype = argl->tp;
+                        EXPRESSION* exp = nullptr;
+                        auto sp = GetOverloadedFunction(&ctype, &exp, argl->exp->v.func->sp, argl->exp->v.func, nullptr, toErr, false, false, 0);
+                        if (sp)
+                        {
+                            argl->tp = ctype;
+                            argl->exp = exp;
+                            InsertInline(sp);
+                        }
                     }
                 }
                 argl = argl->next;

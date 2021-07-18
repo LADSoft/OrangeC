@@ -3117,7 +3117,7 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
     bool doparam = false;
     while (arguments)
     {
-        if (arguments->exp && arguments->exp->type == en_func)
+        if (arguments->exp && (arguments->exp->type == en_func || arguments->exp->type == en_funcret))
         {
             dofunc = true;
         }

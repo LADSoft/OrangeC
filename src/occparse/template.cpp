@@ -2147,22 +2147,31 @@ SYMBOL* LookupFunctionSpecialization(SYMBOL* overloads, SYMBOL* sp)
         {
             TEMPLATEPARAMLIST* tpl;
             SYMLIST* hr = overloads->tp->syms->table[0]->next;
+
             while (hr)
             {
                 if (exactMatchOnTemplateArgs(found1->templateParams, hr->p->templateParams))
-                    return hr->p;
+                    if (matchOverload(found1->tp, sp->tp, true))
+                        return hr->p;
                 hr = hr->next;
             }
-            sp->templateParams->p->bySpecialization.types = copyParams(found1->templateParams->next, false);
-            tpl = sp->templateParams->p->bySpecialization.types;
-            while (tpl)
+            if (matchOverload(found1->tp, sp->tp, true))
             {
-                tpl->p->byClass.dflt = tpl->p->byClass.val;
-                tpl->p->byClass.val = nullptr;
-                tpl = tpl->next;
+                sp->templateParams->p->bySpecialization.types = copyParams(found1->templateParams->next, false);
+                tpl = sp->templateParams->p->bySpecialization.types;
+                while (tpl)
+                {
+                    tpl->p->byClass.dflt = tpl->p->byClass.val;
+                    tpl->p->byClass.val = nullptr;
+                    tpl = tpl->next;
+                }
+                SetLinkerNames(sp, lk_cdecl);
+                found1 = sp;
             }
-            SetLinkerNames(sp, lk_cdecl);
-            found1 = sp;
+            else
+            {
+                found1 = nullptr;
+            }
         }
         else
         {

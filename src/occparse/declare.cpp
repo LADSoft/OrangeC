@@ -6618,6 +6618,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         inTemplateBody++;
                     }
 
+                    if (sp->sb->constexpression && ismemberdata(sp))
+                        error(ERR_CONSTEXPR_MEMBER_MUST_BE_STATIC);
                     if (lex)
                     {
                         if (linkage != lk_cdecl)

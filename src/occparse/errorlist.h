@@ -533,5 +533,6 @@ ERRLIST(ERR_NO_TYPENAME_HERE, 508, "'typename' only used for dependent types", W
 ERRLIST(ERR_FUNCTION_HAS_BODY, 509, "Function '%s' already has a body", ERROR)
 ERRLIST(ERR_STATIC_ASSERT, 510, "static_assert generated: %s", ERROR)
 ERRLIST(ERR_UNKNOWN_TYPE_TEMPLATE_ARG, 511, "Unknown type in template argument", ERROR)
+ERRLIST(ERR_CONSTEXPR_MEMBER_MUST_BE_STATIC, 512, "Members qualified with constexpr must also be static", ERROR)
 #undef ERRLIST
 #undef ERRSCHEMA

@@ -1708,6 +1708,8 @@ std::stack<EXPRESSION*> iterateToPostOrder(EXPRESSION* exp)
 }
 bool hasPackedExpression(EXPRESSION* exp, bool useAuto)
 {
+    if (!exp)
+        return false;
     std::stack<EXPRESSION*> st = iterateToPostOrder(exp);
     while (!st.empty())
     {

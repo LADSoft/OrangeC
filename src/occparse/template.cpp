@@ -6275,6 +6275,13 @@ static bool TemplateDeduceArgList(SYMLIST* funcArgs, SYMLIST* templateArgs, INIT
         }
         else if ((symArgs->nested || (!symArgs->tp && !symArgs->exp)) && funcArgs)
         {
+            if (symArgs->nested && isstructured(sp->tp) && basetype(sp->tp)->sp->sb->templateLevel && !strcmp(basetype(sp->tp)->sp->name, "initializer_list"))
+            {
+                if (basetype(sp->tp)->sp->templateParams->next)
+                    if (!TemplateDeduceFromArg(basetype(sp->tp)->sp->templateParams->next->argsym->tp, symArgs->nested->tp, symArgs->nested->exp, allowSelectors, baseClasses))
+                        rv = false;
+
+            }
             symArgs = symArgs->next;
             if (funcArgs)
                 funcArgs = funcArgs->next;

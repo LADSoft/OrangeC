@@ -4069,10 +4069,11 @@ static void getInitListConversion(TYPE* tp, INITLIST* list, TYPE* tpp, int* n, e
     }
     else
     {
-        if (a && a->next)
-            seq[(*n)++] = CV_NONE;
-        else if (a)
-            getSingleConversion(tp, a ? a->tp : tpp, a ? a->exp : nullptr, n, seq, candidate, userFunc, true);
+        while (a)
+        {
+            getSingleConversion(tp, a->tp, a->exp, n, seq, candidate, userFunc, true);
+            a = a->next;
+        }
     }
 }
 static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* parent, enum e_cvsrn arr[], int* sizes, int count,
@@ -4272,9 +4273,9 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                 }
             }
         }
-        // before matching the args see if  this function is a constructor and uses initializer-list
+        // before matching the args see if  this function uses initializer-list
         // as the first and only undefaulted param, and has at least one argument passed
-        if (sym->sb->isConstructor && (a || (hrt && *hrt)))
+        if (a || (hrt && *hrt))
         {
             SYMLIST* hr = basetype(sym->tp)->syms->table[0];
             if (hr->p->sb->thisPtr)

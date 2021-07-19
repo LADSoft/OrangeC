@@ -2762,9 +2762,30 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
             }
             else
             {
-                EXPRESSION* src = (*lptr)->exp;
-                deref(initializerListType, &dest);
-                node = exprNode(en_assign, dest, src);
+                INITLIST* arg = Allocate<INITLIST>();
+                *arg = (*lptr)->nested ? *(*lptr)->nested : **lptr;
+                node = nullptr;
+                auto list = &node;
+                int count1 = 0;
+                while (arg)
+                {
+                    EXPRESSION* src = arg->exp;
+                    auto pos = exprNode(en_add, dest, intNode(en_c_i, count1++ * initializerListType->size));
+                    deref(initializerListType, &pos);
+                    auto node1 = exprNode(en_assign, pos, arg->exp);
+                    if (node)
+                    {
+                        *list = exprNode(en_void, *list, node1);
+                        list = &(*list)->right;
+                    }
+                    else
+                    {
+                        node = node1;
+                    }
+                    arg = arg->next;
+                }
+                tp->size += (count1 - 1) * (initializerListType->size);
+                tp->esize->v.i += count1 - 1;
             }
             if (rv)
             {

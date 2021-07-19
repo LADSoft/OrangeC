@@ -990,12 +990,44 @@ bool doStaticCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* funcs
             }
         }
     }
-    // class to anything via converwion func
+    // class to anything via conversion func
     if (isstructured(oldType))
     {
         bool rv = cppCast(oldType, newType, exp);
         if (rv)
             return true;
+    }
+    // class via constructor
+    if (isstructured(*newType))
+    {
+        TYPE* ctype = *newType;
+        if (callConstructorParam(&ctype, exp, oldType, *exp, true, true, false, false, false))
+        {
+            EXPRESSION* exp2 = anonymousVar(sc_auto, *newType);
+            TYPE* type2 = Allocate<TYPE>();
+            type2->type = bt_pointer;
+            type2->size = getSize(bt_pointer);
+            type2->btp = *newType;
+            if (isconst(oldType))
+            {
+                TYPE* type3 = Allocate<TYPE>();
+                type3->type = bt_const;
+                type3->size = getSize(bt_const);
+                type3->btp = type2;
+                type2 = type3;
+            }
+            if (isvolatile(oldType))
+            {
+                TYPE* type3 = Allocate<TYPE>();
+                type3->type = bt_const;
+                type3->size = getSize(bt_volatile);
+                type3->btp = type2;
+                type2 = type3;
+            }
+            (*exp)->left->v.func->thistp = type2;
+            (*exp)->left->v.func->thisptr = exp2;
+            return true;
+        }
     }
     *newType = orig;
     return false;

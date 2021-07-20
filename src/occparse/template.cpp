@@ -52,6 +52,8 @@
 #include "types.h"
 #include "template.h"
 #include "libcxx.h"
+#include "constexpr.h"
+
 #ifdef HAVE_UNISTD_H
 #    define _alloca alloca
 #endif

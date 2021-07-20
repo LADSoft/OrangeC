@@ -53,6 +53,7 @@
 #include "istmt.h"
 #include "types.h"
 #include "browse.h"
+#include "constexpr.h"
 /* initializers, local... can do w/out c99 */
 
 namespace Parser
@@ -1902,6 +1903,8 @@ EXPRESSION* createTemporary(TYPE* tp, EXPRESSION* val)
     rv = anonymousVar(sc_auto, tp);
     if (val)
     {
+        if (IsConstantExpression(val, true, true))
+            rv->v.sp->sb->constexpression = true;
         EXPRESSION* rv1 = copy_expression(rv);
         deref(tp, &rv);
         cast(tp, &val);
@@ -3694,256 +3697,6 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIA
     }
     return lex;
 }
-bool checkconstexprfunc(EXPRESSION* node)
-{
-    if (node->type == en_thisref)
-        node = node->left;
-    if (node->type == en_func && node->v.func->sp)
-    {
-        return node->v.func->sp->sb->constexpression;
-    }
-    return false;
-}
-bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc)
-{
-    bool rv = false;
-    if (TotalErrors())  // in some error conditions nodes can get into a loop
-        // for purposes of this function...  guard against it.   Consider everything
-        // CONST to avoid more errors..
-        return true;
-    if (node == 0)
-        return rv;
-    switch (node->type)
-    {
-        case en_dot:
-        case en_pointsto:
-            rv = false;
-            break;
-        case en_const:
-            rv = true;
-            break;
-        case en_memberptr:
-            rv = true;
-            break;
-        case en_templateparam:
-        case en_templateselector:
-            rv = true;
-            break;
-        case en_c_ll:
-        case en_c_ull:
-        case en_c_d:
-        case en_c_ld:
-        case en_c_f:
-        case en_c_dc:
-        case en_c_ldc:
-        case en_c_fc:
-        case en_c_di:
-        case en_c_ldi:
-        case en_c_fi:
-        case en_c_i:
-        case en_c_l:
-        case en_c_ui:
-        case en_c_ul:
-        case en_c_c:
-        case en_c_bool:
-        case en_c_uc:
-        case en_c_wc:
-        case en_c_u16:
-        case en_c_u32:
-        case en_c_string:
-        case en_nullptr:
-        case en_structelem:
-            rv = true;
-            break;
-        case en_global:
-        case en_pc:
-        case en_labcon:
-        case en_absolute:
-        case en_threadlocal:
-            rv = true;
-            break;
-        case en_auto:
-        case en_construct:
-            rv = false;
-            break;
-        case en_l_sp:
-        case en_l_fp:
-        case en_bits:
-        case en_l_f:
-        case en_l_d:
-        case en_l_ld:
-        case en_l_fi:
-        case en_l_di:
-        case en_l_ldi:
-        case en_l_fc:
-        case en_l_dc:
-        case en_l_ldc:
-        case en_l_c:
-        case en_l_wc:
-        case en_l_u16:
-        case en_l_u32:
-        case en_l_s:
-        case en_l_ul:
-        case en_l_l:
-        case en_l_p:
-        case en_l_ref:
-        case en_l_i:
-        case en_l_ui:
-        case en_l_inative:
-        case en_l_unative:
-        case en_l_uc:
-        case en_l_us:
-        case en_l_bool:
-        case en_l_bit:
-        case en_l_ll:
-        case en_l_ull:
-        case en_l_string:
-        case en_l_object:
-            if (node->left->type == en_auto)
-                rv = allowParams && node->left->v.sp->sb->storage_class == sc_parameter;
-            else
-                switch (node->left->type)
-                {
-                    case en_global:
-                    case en_pc:
-                    case en_labcon:
-                    case en_absolute:
-                    case en_threadlocal:
-                        return node->left->v.sp->sb->constexpression;// ||
-//                               (node->left->v.sp->sb->init &&
-//                                IsConstantExpression(node->left->v.sp->sb->init->exp, allowParams, allowFunc));
-                    default:
-                        break;
-                }
-            break;
-        case en_uminus:
-        case en_compl:
-        case en_not:
-        case en_x_f:
-        case en_x_d:
-        case en_x_ld:
-        case en_x_fi:
-        case en_x_di:
-        case en_x_ldi:
-        case en_x_fc:
-        case en_x_dc:
-        case en_x_ldc:
-        case en_x_ll:
-        case en_x_ull:
-        case en_x_i:
-        case en_x_ui:
-        case en_x_inative:
-        case en_x_unative:
-        case en_x_c:
-        case en_x_u16:
-        case en_x_u32:
-        case en_x_wc:
-        case en_x_uc:
-        case en_x_bool:
-        case en_x_bit:
-        case en_x_s:
-        case en_x_us:
-        case en_x_l:
-        case en_x_ul:
-        case en_x_p:
-        case en_x_fp:
-        case en_x_sp:
-        case en_x_string:
-        case en_x_object:
-        case en_trapcall:
-        case en_shiftby:
-            /*        case en_movebyref: */
-        case en_substack:
-        case en_alloca:
-        case en_loadstack:
-        case en_savestack:
-        case en_literalclass:
-            rv = IsConstantExpression(node->left, allowParams, allowFunc);
-            break;
-        case en_assign:
-            rv = false;
-            break;
-        case en_autoinc:
-        case en_autodec:
-            rv = IsConstantExpression(node->left, allowParams, allowFunc);
-            break;
-        case en_add:
-        case en_sub:
-            /*        case en_addcast: */
-        case en_lsh:
-        case en_arraylsh:
-        case en_rsh:
-        case en_rshd:
-        case en_void:
-        case en_voidnz:
-            /*        case en_dvoid: */
-        case en_arraymul:
-        case en_arrayadd:
-        case en_arraydiv:
-        case en_structadd:
-        case en_mul:
-        case en_div:
-        case en_umul:
-        case en_udiv:
-        case en_umod:
-        case en_ursh:
-        case en_mod:
-        case en_and:
-        case en_or:
-        case en_xor:
-        case en_lor:
-        case en_land:
-        case en_eq:
-        case en_ne:
-        case en_gt:
-        case en_ge:
-        case en_lt:
-        case en_le:
-        case en_ugt:
-        case en_uge:
-        case en_ult:
-        case en_ule:
-        case en_cond:
-        case en_intcall:
-        case en_stackblock:
-        case en_blockassign:
-        case en_mp_compare:
-        case en__initblk:
-        case en__cpblk:
-            /*		case en_array: */
-
-            rv = IsConstantExpression(node->left, allowParams, allowFunc);
-            rv &= IsConstantExpression(node->right, allowParams, allowFunc);
-            break;
-        case en_atomic:
-            rv = false;
-            break;
-        case en_blockclear:
-        case en_argnopush:
-        case en_not_lvalue:
-        case en_mp_as_bool:
-        case en_thisref:
-        case en_lvalue:
-        case en_funcret:
-        case en__initobj:
-            rv = IsConstantExpression(node->left, allowParams, allowFunc);
-            break;
-        case en_func:
-            return !node->v.func->ascall || (allowFunc && checkconstexprfunc(node));
-            break;
-        case en_stmt:
-            rv = false;
-            break;
-        case en__sizeof:
-            rv = true;
-            break;
-        default:
-            rv = false;
-            diag("IsConstantExpression");
-            break;
-    }
-    return rv;
-}
 static bool hasData(TYPE* tp)
 {
     SYMLIST* hr = basetype(tp)->syms->table[0];
@@ -4451,6 +4204,10 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
             {
                 sym->sb->init->exp = intNode(en_c_i, 0);
                 error(ERR_CONSTANT_EXPRESSION_EXPECTED);
+            }
+            else
+            {
+                sym->sb->init->exp = EvaluateConstantExpression(sym->sb->init->exp);
             }
         }
         else

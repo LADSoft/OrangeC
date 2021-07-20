@@ -59,6 +59,7 @@
 #include "ildata.h"
 #include "template.h"
 #include "libcxx.h"
+#include "constexpr.h"
 
 namespace Parser
 {
@@ -3588,11 +3589,16 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
     basisAttribs = {0};
     ParseAttributeSpecifiers(&lex, funcsp, true);
     bool structured = false;
-    if (startOfType(lex, &structured, true) && (!Optimizer::cparams.prm_cplusplus || resolveToDeclaration(lex, structured)))
+    if (startOfType(lex, &structured, true) && (!Optimizer::cparams.prm_cplusplus || resolveToDeclaration(lex, structured)) || MATCHKW(lex, kw_constexpr))
     {
         sp->sb->hasproto = true;
-        while (startOfType(lex, nullptr, true) || MATCHKW(lex, ellipse))
+        while (startOfType(lex, nullptr, true) || MATCHKW(lex, ellipse) || MATCHKW(lex, kw_constexpr))
         {
+            if (MATCHKW(lex, kw_constexpr))
+            {
+                lex = getsym();
+                error(ERR_CONSTEXPR_NO_PARAM);
+            }
             bool templType = inTemplateType;
             inTemplateType = !!templateNestingCount;
             if (MATCHKW(lex, ellipse))

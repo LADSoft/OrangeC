@@ -48,6 +48,7 @@
 #include "Property.h"
 #include "memory.h"
 #include "exprcpp.h"
+#include "constexpr.h"
 
 namespace Parser
 {

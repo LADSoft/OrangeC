@@ -60,6 +60,7 @@
 #include "browse.h"
 #include "stmt.h"
 #include "optmodules.h"
+#include "constexpr.h"
 
 
 #define MAX_INLINE_EXPRESSIONS 3

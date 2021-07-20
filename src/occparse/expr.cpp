@@ -56,6 +56,7 @@
 #include "ildata.h"
 #include "optmodules.h"
 #include "config.h"
+#include "constexpr.h"
 
 // there is a bug where the compiler needs constant values for the memory order,
 // but parsed code may not provide it directly.   
@@ -8418,7 +8419,7 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         symRef = (Optimizer::architecture == ARCHITECTURE_MSIL) ? temp : nullptr;
         LookupSingleAggregate(tp1, &exp1);
 
-        if (isconstraw(*tp) && !localMutable && (!temp || temp->v.sp->sb->storage_class != sc_parameter || !isarray(*tp)) &&
+        if (((*exp)->type == en_const || isconstraw(*tp)) && !localMutable && (!temp || temp->v.sp->sb->storage_class != sc_parameter || !isarray(*tp)) &&
             ((*exp)->type != en_func || !isconstraw(basetype((*exp)->v.func->sp->tp)->btp)))
             error(ERR_CANNOT_MODIFY_CONST_OBJECT);
         else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate)

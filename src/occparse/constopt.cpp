@@ -52,6 +52,7 @@
 #include "exprcpp.h"
 #include "lex.h"
 #include "dsw.h"
+#include "constexpr.h"
 
 namespace Parser
 {

@@ -229,8 +229,8 @@ ERRLIST(ERR_EOF_RAW_STRING, 218, "Non-terminated raw string in file started at l
 ERRLIST(ERR_RAW_STRING_INVALID_CHAR, 219, "Invalid character in raw string", ERROR)
 ERRLIST(ERR_MAIN_CANNOT_BE_STATIC_FUNC, 220, "'main' may not be declared as static", ERROR)
 ERRLIST(ERR_MAIN_CANNOT_BE_CONSTEXPR, 221, "'main' may not be declared as constexpr", ERROR)
-ERRLIST(ERR_CONSTANT_EXPRESSION_EXPECTED, 222, "constexpr expression is not const", ERROR)
-ERRLIST(ERR_CONSTANT_FUNCTION_EXPECTED, 223, "constexpr function '%s' does not evaluate to const", ERROR)
+ERRLIST(ERR_CONSTANT_EXPRESSION_EXPECTED, 222, "constexpr expression does not evaluate to a constant", ERROR)
+ERRLIST(ERR_CONSTANT_FUNCTION_EXPECTED, 223, "constexpr function '%s' does not evaluate to constexpr", ERROR)
 ERRLIST(ERR_CONSTEXPR_REQUIRES_INITIALIZER, 224, "constexpr declaration requires initializer or function body", ERROR)
 ERRLIST(ERR_CONSTEXPR_SIMPLE_TYPE, 225, "Variable style constexpr declaration needs simple type", ERROR)
 ERRLIST(ERR_FUNCTION_RETURNING_REF_SHOULD_RETURN_VALUE, 226, "Function returning reference must return a value", ERROR)
@@ -534,5 +534,6 @@ ERRLIST(ERR_FUNCTION_HAS_BODY, 509, "Function '%s' already has a body", ERROR)
 ERRLIST(ERR_STATIC_ASSERT, 510, "static_assert generated: %s", ERROR)
 ERRLIST(ERR_UNKNOWN_TYPE_TEMPLATE_ARG, 511, "Unknown type in template argument", ERROR)
 ERRLIST(ERR_CONSTEXPR_MEMBER_MUST_BE_STATIC, 512, "Members qualified with constexpr must also be static", ERROR)
+ERRLIST(ERR_CONSTEXPR_NO_PARAM, 513, "'constexpr' specifier cannot be used with a function parameter", ERROR)
 #undef ERRLIST
 #undef ERRSCHEMA

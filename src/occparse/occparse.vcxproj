@@ -63,6 +63,7 @@
     <ClCompile Include="beinterf.cpp" />
     <ClCompile Include="browse.cpp" />
     <ClCompile Include="ccerr.cpp" />
+    <ClCompile Include="constexpr.cpp" />
     <ClCompile Include="occparse.cpp" />
     <ClCompile Include="constopt.cpp" />
     <ClCompile Include="cppbltin.cpp" />
@@ -135,6 +136,7 @@
     <ClInclude Include="config.h" />
     <ClInclude Include="configmsil.h" />
     <ClInclude Include="configx86.h" />
+    <ClInclude Include="constexpr.h" />
     <ClInclude Include="constopt.h" />
     <ClInclude Include="cppbltin.h" />
     <ClInclude Include="cpplookup.h" />

@@ -255,6 +255,9 @@
     <ClCompile Include="occprstub.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="constexpr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="c.h">
@@ -474,6 +477,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\occopt\optmodules.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="constexpr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

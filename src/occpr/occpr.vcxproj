@@ -41,6 +41,7 @@
     <ClCompile Include="..\occopt\OptUtils.cpp" />
     <ClCompile Include="..\occopt\output.cpp" />
     <ClCompile Include="..\occopt\symfuncs.cpp" />
+    <ClCompile Include="..\occparse\constexpr.cpp" />
     <ClCompile Include="..\occ\InstructionParser.cpp" />
     <ClCompile Include="..\occ\x64Parser.cpp" />
     <ClCompile Include="..\occ\x64stub.cpp" />
@@ -110,6 +111,7 @@
     <ClInclude Include="..\occopt\ildata.h" />
     <ClInclude Include="..\occopt\ioptimizer.h" />
     <ClInclude Include="..\occopt\optmodules.h" />
+    <ClInclude Include="..\occparse\constexpr.h" />
     <ClInclude Include="..\ocpp\Errors.h" />
     <ClInclude Include="..\ocpp\Floating.h" />
     <ClInclude Include="..\ocpp\InputFile.h" />

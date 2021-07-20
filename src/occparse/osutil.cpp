@@ -136,6 +136,11 @@ CmdSwitchString AssemblerExtension(switchParser, 'a');
 CmdSwitchString prmLink(switchParser, 0, 0, "link");
 CmdSwitchString prmDll(switchParser, 0, 0, "dll");
 
+CmdSwitchBool prmDumpVersion(switchParser, 0, 0, "dumpversion");
+CmdSwitchBool prmDumpMachine(switchParser, 0, 0, "dumpmachine");
+CmdSwitchString prmPrintFileName(switchParser, 0, 0, "print-file-name");
+CmdSwitchString prmPrintProgName(switchParser, 0, 0, "print-prog-name");
+
 static std::string firstFile;
 
 enum e_lk getDefaultLinkage()
@@ -327,7 +332,95 @@ static bool validatenamespaceAndClass(const char* str)
     }
     return true;
 }
-void ParamTransfer(char* name)
+
+static int DisplayerParams()
+{
+    int rv = 0;
+    if (prmDumpVersion.GetValue())
+    {
+        printf("%s", STRING_VERSION);
+        rv = 1;
+    }
+    if (prmDumpMachine.GetValue())
+    {
+        if (!Optimizer::chosenAssembler)
+        {
+            printf("unknown");
+        }
+        else
+        {
+            printf("%s", Optimizer::chosenAssembler->machine);
+        }
+        rv = 1;
+    }
+    if (prmPrintFileName.GetExists())
+    {
+        if (Optimizer::chosenAssembler->libfile[0] == 0)
+        {
+            printf("none");
+        }
+        else
+        {
+            char *orangec = getenv("ORANGEC");
+            if (orangec)
+            {
+                printf("%s\\lib\\", orangec);
+            }
+            printf("%s", Optimizer::chosenAssembler->libfile);
+        }
+        rv = 1;
+    }
+    if (prmPrintProgName.GetExists()) 
+    {
+        std::string tool = prmPrintProgName.GetValue();
+        if (!tool.size())
+        {
+            printf(" ");
+            rv = 1;
+        }
+        else 
+        {
+            auto splitval = Utils::split(tool);
+            if (splitval.size() != 1)
+            {
+                for (auto v : splitval)
+                    if (v == "cpp")
+                        tool = v;
+            }
+            char *orangec = getenv("ORANGEC");
+            std::string path;
+            if (orangec)
+            {
+                path = orangec;
+                path += "\\bin\\";
+            }
+            std::string name = path + tool + ".exe";
+            FILE* fil = fopen(name.c_str(), "rb");
+            if (fil)
+            {
+                fclose(fil);
+                rv = 1;
+                printf("%s", name.c_str());
+            }
+            if (!rv)
+            {
+                if (tool == "cpp")
+                    tool = path + "ocpp.exe";
+                if (tool == "cc1" || tool == "cc1plus")
+                    tool = path + "occ.exe";
+                if (tool == "as")
+                    tool = path + "oasm.exe";
+                if (tool == "ld" || tool == "collect2")
+                    tool = path + "olink.exe";
+                printf("%s", tool.c_str());
+                rv = 1;
+            }
+        }
+    }
+
+    return rv;
+}
+static void ParamTransfer(char* name)
 /*
  * activation routine (callback) for boolean command line arguments
  */
@@ -917,7 +1010,7 @@ void internalError(int a)
 }
 
 /*-------------------------------------------------------------------------*/
-void ccinit(int argc, char* argv[])
+int ccinit(int argc, char* argv[])
 {
     char buffer[260];
     char* p;
@@ -1018,6 +1111,8 @@ void ccinit(int argc, char* argv[])
     if (!init_backend())
         Utils::fatal("Could not initialize back end");
 
+    if (DisplayerParams())
+        return true;
     if (need_usage)
     {
         Utils::usage(argv[0], getUsageText());
@@ -1106,5 +1201,6 @@ void ccinit(int argc, char* argv[])
     /* Set up a ctrl-C handler so we can exit the prog with cleanup */
     //    signal(SIGINT, ctrlchandler);
     //    signal(SIGSEGV, internalError);
+    return 0;
 }
 }  // namespace Parser

@@ -383,7 +383,8 @@ int main(int argc, char* argv[])
     }
     */
     /* parse environment variables, command lines, and config files  */
-    ccinit(argc, argv);
+    if (ccinit(argc, argv))
+        return 255; // some sort of noop operation such as a display occurred
 
     if (Optimizer::cparams.prm_displaytiming)
     {

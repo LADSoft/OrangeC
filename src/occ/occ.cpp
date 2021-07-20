@@ -433,7 +433,9 @@ int main(int argc, char* argv[])
     {
         auto parserMem = new SharedMemory(MAX_SHARED_REGION);
         parserMem->Create();
-        rv = InvokeParser(argc, argv, parserMem) || InvokeOptimizer(parserMem, optimizerMem);
+        rv = InvokeParser(argc, argv, parserMem);
+        if (!rv)
+            rv = InvokeOptimizer(parserMem, optimizerMem);
         delete parserMem;
     }
     if (!rv && !syntaxOnly)
@@ -478,5 +480,7 @@ int main(int argc, char* argv[])
         rv = RunExternalFiles();
     }
     delete optimizerMem;
+    if (rv == 255) // means don't run the optimizer or backend
+        rv = 0;
     return rv;
 }

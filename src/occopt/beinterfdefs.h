@@ -468,6 +468,8 @@ typedef struct _arch_asm
     const char* progname;   /* name of the program, for usage */
     const char* cfgname;    /* name of a config file if you want to use one, or nullptr (sans extension) */
     const char* usage_text; /* pointer to usage text */
+    const char* libfile;    /* name of library to be linked against */
+    const char* machine;    /* machine string */
 #ifdef ISPARSER___
     CMDLIST* Args; /* argument handling */
 #else

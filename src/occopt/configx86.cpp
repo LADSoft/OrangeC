@@ -112,6 +112,10 @@ static char usage_text[] =
     " --export-all-symbols            reserved\n"
     " -link                           reserved\n"
     " -dll                            compile as DLL (same as /Wd)\n"
+    " -dumpversion                    print(to stdout) the version of the compiler\n"
+    " -dumpmachine                    print(to stdout) a representation of the target architecture\n"
+    " -print-file-name=xxx            print(to stdout) the runtime library file path\n"
+    " -print-prog-name=xxx            print(to stdout) the executable path for the xxx executable\n"
     "\n--architecture <architecture>\n"
     "    x86 - x86 code       msil - managed code\n"
     "\nCommand line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior\n\n"
@@ -484,6 +488,8 @@ ARCH_ASM x86AssemblerInterface[] = {
         "occ",                                 /* name of the program, for usage */
         "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                            /* pointer to usage text */
+        "clwin.l",                             /* lib file */
+        "i686-w32-occ",                        /* machine string */
         nullptr,                               // args,                           /* extra args */
         0,                                     // sizeof(args) / sizeof(args[0]), /* number of args */
         nullptr,                               /* specific keywords, e.g. allow a 'bit' keyword and so forth */
@@ -530,6 +536,8 @@ ARCH_ASM x86AssemblerInterface[] = {
         "occ",                                 /* name of the program, for usage */
         "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                            /* pointer to usage text */
+        "clwin.l",                             /* lib file */
+        "i686-w32-occ",                        /* machine string */
         nullptr,                               // args,                           /* extra args */
         0,                                     // sizeof(args) / sizeof(args[0]), /* number of args */
         nullptr,                               /* specific keywords, e.g. allow a 'bit' keyword and so forth */
@@ -576,6 +584,8 @@ ARCH_ASM x86AssemblerInterface[] = {
         "occ",                                 /* name of the program, for usage */
         "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                            /* pointer to usage text */
+        "clwin.l",                             /* lib file */
+        "i686-w32-occ",                        /* machine string */
         nullptr,                               // args,                           /* extra args */
         0,                                     // sizeof(args) / sizeof(args[0]), /* number of args */
         nullptr,                               /* specific keywords, e.g. allow a 'bit' keyword and so forth */
@@ -622,6 +632,8 @@ ARCH_ASM x86AssemblerInterface[] = {
         "occ",                                 /* name of the program, for usage */
         "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                            /* pointer to usage text */
+        "clwin.l",                             /* lib file */
+        "i686-w32-occ",                        /* machine string */
         nullptr,                               // args,                           /* extra args */
         0,                                     // sizeof(args) / sizeof(args[0]), /* number of args */
         nullptr,                               /* specific keywords, e.g. allow a 'bit' keyword and so forth */
@@ -668,6 +680,8 @@ ARCH_ASM x86AssemblerInterface[] = {
         "occ",                                 /* name of the program, for usage */
         "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                            /* pointer to usage text */
+        "clwin.l",                             /* lib file */
+        "i686-w32-occ",                        /* machine string */
         nullptr,                               // args,                           /* extra args */
         0,                                     // sizeof(args) / sizeof(args[0]), /* number of args */
         nullptr,                               /* specific keywords, e.g. allow a 'bit' keyword and so forth */
@@ -714,6 +728,8 @@ ARCH_ASM x86AssemblerInterface[] = {
         "occ",                                 /* name of the program, for usage */
         "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                            /* pointer to usage text */
+        "clwin.l",                             /* lib file */
+        "i686-w32-occ",                        /* machine string */
         nullptr,                               // args,                           /* extra args */
         0,                                     // sizeof(args) / sizeof(args[0]), /* number of args */
         nullptr,                               /* specific keywords, e.g. allow a 'bit' keyword and so forth */

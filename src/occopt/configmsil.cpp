@@ -387,6 +387,8 @@ ARCH_ASM msilAssemblerInterface[] = {
         "occil",         /* name of the program, for usage */
         "occil",         /* name of a config file if you want to use one, or NULL (sans extension) */
         usage_text,      /* pointer to usage text */
+        "",                                    /* lib file */
+        "msil-w32-occil",                      /* machine string */
         nullptr,         // args,                           /* extra args */
         0,               // sizeof(args) / sizeof(args[0]), /* number of args */
         0,               // prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */

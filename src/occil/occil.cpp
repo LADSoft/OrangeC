@@ -435,7 +435,9 @@ int main(int argc, char* argv[])
     {
         auto parserMem = new SharedMemory(MAX_SHARED_REGION);
         parserMem->Create();
-        rv = InvokeParser(argc, argv, parserMem) || InvokeOptimizer(parserMem, optimizerMem);
+        rv = InvokeParser(argc, argv, parserMem);
+        if (!rv)
+            rv = InvokeOptimizer(parserMem, optimizerMem);
         delete parserMem;
     }
     if (!rv)
@@ -484,5 +486,7 @@ int main(int argc, char* argv[])
         if (!rv)
             msil_main_postprocess(false);
     }
+    if (rv == 255)
+        rv = 0;
     return rv;
 }

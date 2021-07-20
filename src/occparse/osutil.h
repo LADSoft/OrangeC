@@ -160,6 +160,6 @@ void outputfile(char* buf, const char* orgbuf, const char* ext);
 void addinclude(void);
 void dumperrs(FILE* file);
 void internalError(int a);
-void ccinit(int argc, char* argv[]);
+int ccinit(int argc, char* argv[]);
 
 }  // namespace Parser

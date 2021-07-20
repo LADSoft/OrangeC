@@ -4205,10 +4205,6 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
                 sym->sb->init->exp = intNode(en_c_i, 0);
                 error(ERR_CONSTANT_EXPRESSION_EXPECTED);
             }
-            else
-            {
-                sym->sb->init->exp = EvaluateConstantExpression(sym->sb->init->exp);
-            }
         }
         else
         {

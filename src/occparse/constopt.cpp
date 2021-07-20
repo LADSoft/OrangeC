@@ -60,8 +60,6 @@ unsigned long long reint(EXPRESSION* node);
 
 static EXPRESSION *asidehead, **asidetail;
 static unsigned long long shifts[sizeof(long long) * 8];
-static EXPRESSION* functionnesting[100];
-static int functionnestingcount = 0;
 static int optimizerfloatconst(EXPRESSION* en)
 {
     if ((en->pragmas & STD_PRAGMA_FENV) && !initializingGlobalVar)
@@ -2860,82 +2858,7 @@ int fold_const(EXPRESSION* node)
         case en_func:
             if (node->v.func->sp && node->v.func->sp->sb->constexpression)
             {
-                SYMBOL* found1 = node->v.func->sp;
-                if (!node->v.func->sp->sb->inlineFunc.stmt && node->v.func->sp->sb->deferredCompile)
-                {
-                    if (found1->sb->templateLevel && (found1->templateParams || found1->sb->isDestructor))
-                    {
-                        found1 = found1->sb->mainsym;
-                        if (found1->sb->castoperator)
-                        {
-                            found1 = detemplate(found1, nullptr, basetype(node->v.func->thistp)->btp);
-                        }
-                        else
-                        {
-                            found1 = detemplate(found1, node->v.func, nullptr);
-                        }
-                    }
-                    if (found1)
-                    {
-                        if (found1->sb->templateLevel && !templateNestingCount && node->v.func->templateParams)
-                        {
-                            int pushCount = pushContext(found1, false);
-                            found1 = TemplateFunctionInstantiate(found1, false, false);
-                            while (pushCount--)
-                                dropStructureDeclaration();
-                        }
-                        else
-                        {
-                            if (found1->templateParams)
-                                instantiatingTemplate++;
-                            deferredCompileOne(found1);
-                            if (found1->templateParams)
-                                instantiatingTemplate--;
-                        }
-                    }
-                }
-                if (found1 && found1->sb->inlineFunc.stmt)
-                {
-                    int i;
-                    STATEMENT* stmt = found1->sb->inlineFunc.stmt;
-                    while (stmt && stmt->type == st_expr)
-                        stmt = stmt->next;
-                    if (stmt && stmt->type == st_block && stmt->lower)
-                    {
-                        STATEMENT* st = stmt->lower;
-                        while (st->type == st_varstart)
-                            st = st->next;
-                        if (st->type == st_block && !st->next)
-                        {
-                            st = st->lower;
-                            while (st->type == st_line || st->type == st_dbgblock || st->type == st_label)
-                                st = st->next;
-                            if (st->type == st_expr || st->type == st_return)
-                            {
-                                if (st->select)
-                                {
-                                    for (i = 0; i < functionnestingcount; i++)
-                                        if (functionnesting[i] == st->select)
-                                            break;
-                                    if (i >= functionnestingcount)
-                                    {
-                                        functionnesting[functionnestingcount++] = st->select;
-                                        bool optimizeConstants = !node->v.func->arguments;
-                                        if (optimizeConstants)
-                                            optimize_for_constants(&st->select);
-                                        functionnestingcount--;
-                                        if (IsConstantExpression(st->select, false, false))
-                                        {
-                                            *node = *st->select;
-                                            node->noexprerr = true;
-                                            rv = true;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+		rv = EvaluateConstexprFunction(node);
             }
             if (!rv)
                 rv |= fold_const(node->v.func->fcall);

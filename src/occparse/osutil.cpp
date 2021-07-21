@@ -135,6 +135,7 @@ CmdSwitchString AssemblerExtension(switchParser, 'a');
 
 CmdSwitchString prmLink(switchParser, 0, 0, "link");
 CmdSwitchString prmDll(switchParser, 0, 0, "dll");
+CmdSwitchString prmShared(switchParser, 0, 0, "shared");
 
 CmdSwitchBool prmDumpVersion(switchParser, 0, 0, "dumpversion");
 CmdSwitchBool prmDumpMachine(switchParser, 0, 0, "dumpmachine");
@@ -478,9 +479,9 @@ static void ParamTransfer(char* name)
     if (displayTiming.GetExists())
         Optimizer::cparams.prm_displaytiming = true;
 
-    if (prm_debug.GetExists() || prm_debug2.GetExists())
+    if ((prm_debug.GetExists() && getenv("OCC_LEGACY_OPTIONS")) || prm_debug2.GetExists())
     {
-        Optimizer::cparams.prm_debug = prm_debug.GetValue() || prm_debug2.GetValue();
+        Optimizer::cparams.prm_debug = (prm_debug.GetValue() && getenv("OCC_LEGACY_OPTIONS")) || prm_debug2.GetValue();
         if (Optimizer::cparams.prm_debug)
         {
             Optimizer::cparams.prm_optimize_for_speed = Optimizer::cparams.prm_optimize_for_size = 0;
@@ -606,7 +607,7 @@ static void ParamTransfer(char* name)
                 break;
         }
     }
-    if (prmDll.GetExists())
+    if (prmDll.GetExists() || prmShared.GetExists())
     {
         switch (Optimizer::architecture)
         {
@@ -1030,6 +1031,15 @@ int ccinit(int argc, char* argv[])
             {
                 showVersion = true;
             }
+            else if (!getenv("OCC_LEGACY_OPTIONS") && argv[i][1] == 'v' && argv[i][2] == 0)
+            {
+                printf("\n");
+                showVersion = true;
+            } 
+            else if (!strncmp(&argv[i][1], "print", 5) || !strncmp(&argv[i][1], "dump", 4))
+            {
+                Optimizer::showBanner = false;
+            }
         }
 
     if (Optimizer::showBanner || showVersion)
@@ -1039,7 +1049,7 @@ int ccinit(int argc, char* argv[])
     if (showVersion)
     {
         fprintf(stderr, "Compile date: " __DATE__ ", time: " __TIME__ "\n");
-        exit(0);
+        exit(255);
     }
 
 #if defined(WIN32) || defined(MICROSOFT)

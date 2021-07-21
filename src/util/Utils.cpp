@@ -87,6 +87,9 @@ void Utils::banner(const char* progName)
             if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
                 if (__argv[i][1] == '!' || !strcmp(__argv[i], "--nologo"))
                     return;
+                else if (!strncmp(&__argv[i][1], "print", 5) || !strncmp(&__argv[i][1], "dump", 4))
+                    return;
+
 #endif
     fprintf(stderr, "%s Version " STRING_VERSION " " COPYRIGHT "\n", ShortName(progName));
     if (have_version)

@@ -10,7 +10,7 @@ In addition, during default SIGSEGV processing the program will attempt to load 
 
 The stack trace will either not be shown or be meaningless with 'release' builds, because normally for a release EBP is used as a scratch register rather than as a link register.   But if certain compiler switches are used that enable EBP to be used as a link register, the stack trace will be meaningful.
 
-The first interesting switch is **+v (or -g)**.   This switch enables debug information.   When this switch is set EBP will also be set up as a link register.   Under these circumstances the program should be able to show a stack trace, complete with symbol information consisting of offsets into the functions referenced on the stack.
+The first interesting switch is **-g (or +v in legacy mode)**.   This switch enables debug information.   When this switch is set EBP will also be set up as a link register.   Under these circumstances the program should be able to show a stack trace, complete with symbol information consisting of offsets into the functions referenced on the stack.
 
 The next interesting switch is **/C-E**.   This switch enables using EBP as a link register, but does not otherwise affect the compile.   in this case a stack trace is shown, although without symbol information.
 

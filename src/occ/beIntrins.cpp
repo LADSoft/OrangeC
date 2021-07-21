@@ -1,39 +1,62 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <unordered_map>
+#include <functional>
 #include "be.h"
 #include "peep.h"
 #include "gen.h"
 
 namespace occx86
 {
+template <typename T, T FNV_prime, T FNV_offset>
+class fnv1a_class
+{
+    public:
+    T operator()(const char* arr) const
+    {
+        // Follows the Fowler-Noll-Vol hash function as described by wikipedia in the following article:
+        // https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function#FNV-1a_hash
+        size_t len = strlen(arr);
+        unsigned char* arr2 = (unsigned char*)arr;
+        T hash = FNV_offset;
+        for(size_t i = 0; i < len; i++)
+        {
+            hash = hash * FNV_prime;
+            hash = hash ^ arr2[i];
+        }
+        return hash;
+    }
 
+};
+using fnv1a64 = fnv1a_class<uint64_t, UINT64_C(1099511628211), UINT64_C(14695981039346656037)>;
 typedef bool (*BUILTIN)();
+
 typedef struct builtins
 {
     const char* name;
@@ -42,7 +65,7 @@ typedef struct builtins
 #define PROTO(PROT, NAME, FUNC) bool FUNC();
 #include "beIntrinsicProtos.h"
 #define PROTO(PROT, NAME, FUNC) {#NAME, FUNC},
-static BUILTINS builtins[] = {
+std::unordered_map<const char*, BUILTIN, fnv1a64> builtin_map = {
 #include "beIntrinsicProtos.h"
 };
 
@@ -216,12 +239,10 @@ bool BackendIntrinsic(Optimizer::QUAD* q)
 {
     const char* name = q->dc.left->offset->sp->name;
 
-    for (int i = 0; i < (sizeof(builtins) / sizeof(builtins[0])); i++)
+    auto thing = builtin_map.find(name);
+    if(thing != builtin_map.end())
     {
-        if (!strcmp(name, builtins[i].name))
-        {
-            return builtins[i].func();
-        }
+        return thing->second();
     }
     return false;
 }

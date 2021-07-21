@@ -63,7 +63,7 @@ typedef unsigned uint_least32_t;
 typedef int int_fast32_t;
 typedef unsigned uint_fast32_t;
 
-#if __STDC_VERSION__ >= 199901L
+#if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
 typedef long long int64_t;
 typedef unsigned long long uint64_t;
 typedef long long int_least64_t;
@@ -86,7 +86,7 @@ typedef int64_t intmax_t;
 typedef uint64_t uintmax_t;
 
 #endif
-#if !defined(__cplusplus) || defined(__STDC_LIMIT_MACROS)
+#if defined(__STDC_LIMIT_MACROS) || defined(__cplusplus)
 
 #    define INT8_MIN -128
 #    define INT8_MAX 127
@@ -155,7 +155,7 @@ typedef uint64_t uintmax_t;
 
 #endif
 
-#if !defined(__cplusplus) || _LIBCPP_VERSION >= 10000 || defined(__STDC_CONSTANT_MACROS)
+#if defined(__STDC_CONSTANT_MACROS) || defined(__cplusplus)
 
 #    define INT8_C(x) ((int_least8_t)x)
 #    define UINT8_C(x) ((uint_least8_t)x##U)

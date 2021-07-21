@@ -66,6 +66,8 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc, bo
         // for purposes of this function...  guard against it.   Consider everything
         // CONST to avoid more errors..
         return true;
+    if (!node)
+        return false;
     std::stack<EXPRESSION*> stk;
     stk.push(node);
     while (!stk.empty())

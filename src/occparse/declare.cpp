@@ -6762,6 +6762,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                     if (MATCHKW(lex, kw_delete))
                                     {
                                         sp->sb->deleted = true;
+                                        sp->sb->constexpression = true;
                                         if (sp->sb->redeclared && !templateNestingCount)
                                         {
                                             errorsym(ERR_DELETE_ON_REDECLARATION, sp);

@@ -30,6 +30,7 @@ void libcxx_init(void);
 void libcxx_builtins(void);
 bool parseBuiltInTypelistFunc(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 bool underlying_type(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+bool is_literal_type(TYPE* tp);
 SYMBOL* MakeIntegerSeq(SYMBOL* sp, TEMPLATEPARAMLIST* args);
 SYMBOL* TypePackElementCls(SYMBOL* sym, TEMPLATEPARAMLIST* args);
 SYMBOL* TypePackElement(SYMBOL* sym, TEMPLATEPARAMLIST* args);

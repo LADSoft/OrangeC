@@ -2858,7 +2858,7 @@ int fold_const(EXPRESSION* node)
         case en_func:
             if (node->v.func->sp && node->v.func->sp->sb->constexpression)
             {
-		rv = EvaluateConstexprFunction(node);
+        		rv = EvaluateConstexprFunction(node);
             }
             if (!rv)
                 rv |= fold_const(node->v.func->fcall);
@@ -3046,7 +3046,11 @@ int typedconsts(EXPRESSION* node1)
         case en_l_string:
         case en_l_object:
         case en_bits:
-            if (node1->left->type == en_global)
+            if (node1->left->type == en_cshimref)
+            {
+                *node1 = *node1->left->v.exp;
+            }
+            else if (node1->left->type == en_global)
             {
                 if (node1->left->v.sp->sb->storage_class == sc_constant && isintconst(node1->left->v.sp->sb->init->exp))
                 {

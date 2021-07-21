@@ -2943,6 +2943,45 @@ static e_xc DefaultConstructorExceptionMode(STATEMENT* block)
     }
     return rv;
 }
+static bool DefaultConstructorConstExpression(SYMBOL *sp)
+{
+    if (sp->sb->constexpression)
+        return true;
+    if (sp->sb->vbaseEntries)
+        return false;
+    if (sp->tp->type != bt_union)
+    {
+        SYMLIST* hr;
+        hr = basetype(sp->tp)->syms->table[0];
+        while (hr)
+        {
+            SYMBOL* sp1 = hr->p;
+            TYPE* m;
+            if (sp1->sb->storage_class == sc_mutable)
+                return false;
+            if (sp1->sb->storage_class == sc_member)
+            {
+                if (!is_literal_type(sp1->tp))
+                    return false;
+                if (!sp1->sb->memberInitializers)
+                    return false;
+            }
+            hr = hr->next;
+        }
+    }
+
+    BASECLASS* base;
+    base = sp->sb->baseClasses;
+    while (base)
+    {
+        if (!DefaultConstructorConstExpression(base->cls))
+            return false;
+        base = base->next;
+    }
+    sp->sb->constexpression = true;
+    return true;
+}
+
 void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
 {
     HASHTABLE* syms;
@@ -2974,6 +3013,7 @@ void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
         e_xc mode = DefaultConstructorExceptionMode(b.head);
         consfunc->sb->noExcept = mode == xc_none;
     }
+    consfunc->sb->constexpression = DefaultConstructorConstExpression(sp);
     localNameSpace->valueData->syms = syms;
 }
 void asnVirtualBases(BLOCKDATA* b, SYMBOL* sp, VBASEENTRY* vbe, EXPRESSION* thisptr, EXPRESSION* other, bool move, bool isconst)

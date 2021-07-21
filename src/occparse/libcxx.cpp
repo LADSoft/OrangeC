@@ -1347,7 +1347,7 @@ static bool hasConstexprConstructor(TYPE *tp)
     }
     return false;   
 }
-static bool is_literal_type(TYPE* tp);
+bool is_literal_type(TYPE* tp);
 static void nonStaticLiteralTypes(TYPE* tp, bool& all, bool& one)
 {
     auto hr = basetype(tp)->syms->table[0];
@@ -1375,7 +1375,7 @@ static void nonStaticLiteralTypes(TYPE* tp, bool& all, bool& one)
         }
     }
 } 
-static bool is_literal_type(TYPE* tp)
+bool is_literal_type(TYPE* tp)
 {
     if (isref(tp) || isarithmetic(tp) || isvoid(tp))
         return true;

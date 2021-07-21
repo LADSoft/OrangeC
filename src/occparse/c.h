@@ -164,7 +164,9 @@ typedef struct
         en_imode, en_x_p, en_substack, en_alloca, en__cpblk, en__initblk, en__initobj,  en__sizeof,
         en_loadstack, en_savestack, en_stmt, en_atomic, en_placeholder, en_thisshim, en_thisref,
         en_construct, en_literalclass, en_templateparam, en_templateselector, en_packedempty, en_sizeofellipse,
-        en_type, en_pointsto, en_dot
+        en_type, en_pointsto, en_dot,
+        // stuff that can only appear temporarily in constexpr expressions
+        en_cshimref, en_cshimthis
     };
 // clang-format on
 
@@ -311,6 +313,7 @@ typedef struct expr
             struct _msilarray* msilArray;
             HASHTABLE* syms;
             struct typ* tp;
+            struct expr* exp;
             struct
             {
                 struct expr* thisptr;

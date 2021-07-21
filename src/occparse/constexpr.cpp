@@ -38,7 +38,7 @@
 #include "declare.h"
 #include "declcpp.h"
 #include "help.h"
-
+#include "memory.h"
 namespace Parser
 {
     static EXPRESSION* functionnesting[100];
@@ -62,259 +62,126 @@ bool checkconstexprfunc(EXPRESSION* node)
 }
 bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc, bool fromFunc)
 {
-    bool rv = false;
     if (TotalErrors() && !fromFunc && (!allowFunc || (node->type != en_func && node->type != en_thisref)))  // in some error conditions nodes can get into a loop
         // for purposes of this function...  guard against it.   Consider everything
         // CONST to avoid more errors..
         return true;
-    if (node == 0)
-        return rv;
-    switch (node->type)
+    std::stack<EXPRESSION*> stk;
+    stk.push(node);
+    while (!stk.empty())
     {
-        case en_dot:
-        case en_pointsto:
-            rv = false;
-            break;
-        case en_const:
-            rv = true;
-            break;
-        case en_memberptr:
-            rv = true;
-            break;
-        case en_templateparam:
-        case en_templateselector:
-            rv = true;
-            break;
-        case en_c_ll:
-        case en_c_ull:
-        case en_c_d:
-        case en_c_ld:
-        case en_c_f:
-        case en_c_dc:
-        case en_c_ldc:
-        case en_c_fc:
-        case en_c_di:
-        case en_c_ldi:
-        case en_c_fi:
-        case en_c_i:
-        case en_c_l:
-        case en_c_ui:
-        case en_c_ul:
-        case en_c_c:
-        case en_c_bool:
-        case en_c_uc:
-        case en_c_wc:
-        case en_c_u16:
-        case en_c_u32:
-        case en_c_string:
-        case en_nullptr:
-        case en_structelem:
-            rv = true;
-            break;
-        case en_global:
-        case en_pc:
-        case en_labcon:
-        case en_absolute:
-        case en_threadlocal:
-            rv = true;
-            break;
-        case en_auto:
-        case en_construct:
-            rv = false;
-            break;
-        case en_l_sp:
-        case en_l_fp:
-        case en_bits:
-        case en_l_f:
-        case en_l_d:
-        case en_l_ld:
-        case en_l_fi:
-        case en_l_di:
-        case en_l_ldi:
-        case en_l_fc:
-        case en_l_dc:
-        case en_l_ldc:
-        case en_l_c:
-        case en_l_wc:
-        case en_l_u16:
-        case en_l_u32:
-        case en_l_s:
-        case en_l_ul:
-        case en_l_l:
-        case en_l_p:
-        case en_l_ref:
-        case en_l_i:
-        case en_l_ui:
-        case en_l_inative:
-        case en_l_unative:
-        case en_l_uc:
-        case en_l_us:
-        case en_l_bool:
-        case en_l_bit:
-        case en_l_ll:
-        case en_l_ull:
-        case en_l_string:
-        case en_l_object:
-            if (node->left->type == en_auto)
-                rv = node->left->v.sp->sb->constexpression || (allowParams && node->left->v.sp->sb->storage_class == sc_parameter);
-            else
-                switch (node->left->type)
+        auto exp = stk.top();
+        stk.pop();
+        switch(exp->type)
+        {
+            case en_stmt:
+            case en_atomic:
+            case en_dot:
+            case en_pointsto:
+            case en_auto:
+            case en_construct:
+                return false;
+            case en_l_sp:
+            case en_l_fp:
+            case en_bits:
+            case en_l_f:
+            case en_l_d:
+            case en_l_ld:
+            case en_l_fi:
+            case en_l_di:
+            case en_l_ldi:
+            case en_l_fc:
+            case en_l_dc:
+            case en_l_ldc:
+            case en_l_c:
+            case en_l_wc:
+            case en_l_u16:
+            case en_l_u32:
+            case en_l_s:
+            case en_l_ul:
+            case en_l_l:
+            case en_l_p:
+            case en_l_ref:
+            case en_l_i:
+            case en_l_ui:
+            case en_l_inative:
+            case en_l_unative:
+            case en_l_uc:
+            case en_l_us:
+            case en_l_bool:
+            case en_l_bit:
+            case en_l_ll:
+            case en_l_ull:
+            case en_l_string:
+            case en_l_object:
+                if (node->left->type == en_auto)
                 {
-                    case en_global:
-                    case en_pc:
-                    case en_labcon:
-                    case en_absolute:
-                    case en_threadlocal:
-                        return node->left->v.sp->sb->constexpression;
-                    default:
-                        break;
+                    if (!(node->left->v.sp->sb->constexpression || (allowParams && node->left->v.sp->sb->storage_class == sc_parameter)))
+                        return false;
                 }
-            break;
-        case en_uminus:
-        case en_compl:
-        case en_not:
-        case en_x_f:
-        case en_x_d:
-        case en_x_ld:
-        case en_x_fi:
-        case en_x_di:
-        case en_x_ldi:
-        case en_x_fc:
-        case en_x_dc:
-        case en_x_ldc:
-        case en_x_ll:
-        case en_x_ull:
-        case en_x_i:
-        case en_x_ui:
-        case en_x_inative:
-        case en_x_unative:
-        case en_x_c:
-        case en_x_u16:
-        case en_x_u32:
-        case en_x_wc:
-        case en_x_uc:
-        case en_x_bool:
-        case en_x_bit:
-        case en_x_s:
-        case en_x_us:
-        case en_x_l:
-        case en_x_ul:
-        case en_x_p:
-        case en_x_fp:
-        case en_x_sp:
-        case en_x_string:
-        case en_x_object:
-        case en_trapcall:
-        case en_shiftby:
-            /*        case en_movebyref: */
-        case en_substack:
-        case en_alloca:
-        case en_loadstack:
-        case en_savestack:
-        case en_literalclass:
-            rv = IsConstantExpression(node->left, allowParams, allowFunc);
-            break;
-        case en_assign:
-            rv = IsConstantExpression(node->left, allowParams, allowFunc);
-//            rv = false;
-            break;
-        case en_autoinc:
-        case en_autodec:
-            rv = IsConstantExpression(node->left, allowParams, allowFunc);
-            break;
-        case en_add:
-        case en_sub:
-            /*        case en_addcast: */
-        case en_lsh:
-        case en_arraylsh:
-        case en_rsh:
-        case en_rshd:
-            /*        case en_dvoid: */
-        case en_arraymul:
-        case en_arrayadd:
-        case en_arraydiv:
-        case en_structadd:
-        case en_mul:
-        case en_div:
-        case en_umul:
-        case en_udiv:
-        case en_umod:
-        case en_ursh:
-        case en_mod:
-        case en_and:
-        case en_or:
-        case en_xor:
-        case en_lor:
-        case en_land:
-        case en_eq:
-        case en_ne:
-        case en_gt:
-        case en_ge:
-        case en_lt:
-        case en_le:
-        case en_ugt:
-        case en_uge:
-        case en_ult:
-        case en_ule:
-        case en_cond:
-        case en_intcall:
-        case en_stackblock:
-        case en_blockassign:
-        case en_mp_compare:
-        case en__initblk:
-        case en__cpblk:
-            /*		case en_array: */
+                else
+                {
+                    switch (node->left->type)
+                    {
+                        case en_global:
+                        case en_pc:
+                        case en_labcon:
+                        case en_absolute:
+                        case en_threadlocal:
+                            if (!node->left->v.sp->sb->constexpression)
+                                return false;
+                            break;
+                         default:
+                            break;
+                    }
+                    stk.push(node->left);
+                }
+                break;
+            case en_void:
+            case en_voidnz:
+                stk.push(node->left);
+                if (node->right->type == en_void || !fromFunc)
+                {
+                    stk.push(node->right);
+                }
+                break;
+            case en_func:
+                if (!( !node->v.func->ascall || (allowFunc && checkconstexprfunc(node))))
+                     return false;
+                break;
 
-            rv = IsConstantExpression(node->left, allowParams, allowFunc);
-            rv &= IsConstantExpression(node->right, allowParams, allowFunc);
-            break;
-        case en_void:
-        case en_voidnz:
-            rv = IsConstantExpression(node->left, allowParams, allowFunc);
-            if (!fromFunc || node->right->type == en_void)
-                rv &= IsConstantExpression(node->right, allowParams, allowFunc);
-            break;
-        case en_atomic:
-            rv = false;
-            break;
-        case en_blockclear:
-        case en_argnopush:
-        case en_not_lvalue:
-        case en_mp_as_bool:
-        case en_thisref:
-        case en_lvalue:
-        case en_funcret:
-        case en__initobj:
-            rv = IsConstantExpression(node->left, allowParams, allowFunc);
-            break;
-        case en_func:
-            return !node->v.func->ascall || (allowFunc && checkconstexprfunc(node));
-            break;
-        case en_stmt:
-            rv = false;
-            break;
-        case en__sizeof:
-            rv = true;
-            break;
-        default:
-            rv = false;
-            diag("IsConstantExpression");
-            break;
+            default:
+                if (exp->left)
+                    stk.push(exp->left);
+                if (exp->right)
+                    stk.push(exp->right);
+                break;
+         }
     }
-    return rv;
+    return true;
 }
-EXPRESSION* CopyExprWithArgReplacement(EXPRESSION* node, SYMBOL* sym, INITLIST* args)
+bool hascshim(EXPRESSION* node)
 {
-    auto hr = basetype(sym->tp)->syms->table[0];
-    if (hr->p->sb->thisPtr)
-        hr = hr->next;
-    std::unordered_map<SYMBOL*, EXPRESSION*> argmap;
-    while (hr && args)
+    if (!node)
+        return false;
+    if (hascshim(node->left) || hascshim(node->right))
+        return true;
+    if (node->type == en_cshimref)
+        return true;
+    if (node->type == en_func)
     {
-        argmap[hr->p] = args->exp;
-        hr = hr->next;
-        args = args->next;
+        auto t = node->v.func->arguments;
+        while (t)
+        {
+            if (hascshim(t->exp))
+                return true;
+            t = t->next;
+        }
     }
+    return false;
+}
+EXPRESSION* CopyExpressionWithArgReplacement(EXPRESSION* node, std::unordered_map<SYMBOL*, EXPRESSION*>& argmap)
+{
     EXPRESSION* rv = copy_expression(node);
     std::stack<EXPRESSION*> stk;
     stk.push(node);
@@ -328,101 +195,154 @@ EXPRESSION* CopyExprWithArgReplacement(EXPRESSION* node, SYMBOL* sym, INITLIST* 
             stk.push(exp->right);
         if (exp->left && lvalue(exp))
         {
-            if (exp->left->type == en_auto)
+            while (exp->left && lvalue(exp->left))
+                exp = exp->left;
+            if (exp->left && exp->left->type == en_auto)
             {     
                 auto node1 = argmap[exp->left->v.sp];
                 if (node1)
                 {
-                    *exp = *node1;
+                    if (node1->type == en_void && node1->left->type == en_assign && node1->right->type == en_auto && IsConstantExpression(node1->left->right, true, true))
+                    {
+                        // an argument which has been made into a temp variable
+                        // we have to shim it up so that we can handle the upcoming dereference
+                        exp->type = en_cshimref;
+                        exp->v.exp = node1->left->right;
+                        exp->left = nullptr;
+                        optimize_for_constants(&exp->v.exp);
+                    }
+                    else
+                    {
+                        *exp = *node1;
+                    }
                 }
             }
+        }
+        else if (exp->type == en_func)
+        {
+            auto func = Allocate<FUNCTIONCALL>();
+            *func = *exp->v.func;
+            exp->v.func = func; 
+            INITLIST* args = func->arguments;
+            func->arguments = nullptr;
+            INITLIST** list = &func->arguments;
+            while (args)
+            {
+                *list = Allocate<INITLIST>();
+                **list = *args;
+                (*list)->exp = CopyExpressionWithArgReplacement(args->exp, argmap);
+                list = &(*list)->next;
+                args = args->next;
+            }
+            if (!strcmp(func->sp->name, "forward"))
+                if (hascshim(exp))
+                    printf("hi");
+            optimize_for_constants(&exp);
+            if (func->thisptr)
+                func->thisptr = CopyExpressionWithArgReplacement(func->thisptr, argmap);
         }
     }
     return rv;
 }
 bool EvaluateConstexprFunction(EXPRESSION*&node)
 {
+
     bool rv = false;
-    /*
     auto args = node->v.func->arguments;
     while (args)
     {
-        if (!IsConstantExpression(args->exp, true, true))
+        if (!IsConstantExpression(args->exp, false, true, true))
             break;
         args = args->next;
     }
     if (!args)
-    */
-    SYMBOL* found1 = node->v.func->sp;
-    if (!node->v.func->sp->sb->inlineFunc.stmt && node->v.func->sp->sb->deferredCompile)
     {
-        if (found1->sb->templateLevel && (found1->templateParams || found1->sb->isDestructor))
+        SYMBOL* found1 = node->v.func->sp;
+        if (!node->v.func->sp->sb->inlineFunc.stmt && node->v.func->sp->sb->deferredCompile)
         {
-            found1 = found1->sb->mainsym;
-            if (found1->sb->castoperator)
+            if (found1->sb->templateLevel && (found1->templateParams || found1->sb->isDestructor))
             {
-                found1 = detemplate(found1, nullptr, basetype(node->v.func->thistp)->btp);
-            }
-            else
-            {
-                found1 = detemplate(found1, node->v.func, nullptr);
-            }
-        }
-        if (found1)
-        {
-            if (found1->sb->templateLevel && !templateNestingCount && node->v.func->templateParams)
-            {
-                int pushCount = pushContext(found1, false);
-                found1 = TemplateFunctionInstantiate(found1, false, false);
-                while (pushCount--)
-                    dropStructureDeclaration();
-            }
-            else
-            {
-                if (found1->templateParams)
-                    instantiatingTemplate++;
-                deferredCompileOne(found1);
-                if (found1->templateParams)
-                    instantiatingTemplate--;
-            }
-        }
-    }
-    if (found1 && found1->sb->inlineFunc.stmt)
-    {
-        int i;
-        STATEMENT* stmt = found1->sb->inlineFunc.stmt;
-        while (stmt && stmt->type == st_expr)
-            stmt = stmt->next;
-        if (stmt && stmt->type == st_block && stmt->lower)
-        {
-            STATEMENT* st = stmt->lower;
-            while (st->type == st_varstart)
-                st = st->next;
-            if (st->type == st_block && !st->next)
-            {
-                st = st->lower;
-                while (st->type == st_line || st->type == st_dbgblock || st->type == st_label)
-                    st = st->next;
-                if (st->type == st_expr || st->type == st_return)
+                found1 = found1->sb->mainsym;
+                if (found1->sb->castoperator)
                 {
-                    if (st->select)
+                    found1 = detemplate(found1, nullptr, basetype(node->v.func->thistp)->btp);
+                }
+                else
+                {
+                    found1 = detemplate(found1, node->v.func, nullptr);
+                }
+            }
+            if (found1)
+            {
+                if (found1->sb->templateLevel && !templateNestingCount && node->v.func->templateParams)
+                {
+                    int pushCount = pushContext(found1, false);
+                    found1 = TemplateFunctionInstantiate(found1, false, false);
+                    while (pushCount--)
+                        dropStructureDeclaration();
+                }
+                else
+                {
+                    if (found1->templateParams)
+                        instantiatingTemplate++;
+                    deferredCompileOne(found1);
+                    if (found1->templateParams)
+                        instantiatingTemplate--;
+                }
+            }
+        }
+        if (found1 && found1->sb->inlineFunc.stmt)
+        {
+            int i;
+            STATEMENT* stmt = found1->sb->inlineFunc.stmt;
+            while (stmt && stmt->type == st_expr)
+                stmt = stmt->next;
+            if (stmt && stmt->type == st_block && stmt->lower)
+            {
+                STATEMENT* st = stmt->lower;
+                while (st->type == st_varstart)
+                    st = st->next;
+                if (st->type == st_block && !st->next)
+                {
+                    st = st->lower;
+                    while (st->type == st_line || st->type == st_dbgblock || st->type == st_label)
+                        st = st->next;
+                    if (st->type == st_expr || st->type == st_return)
                     {
-                        for (i = 0; i < functionnestingcount; i++)
-                            if (functionnesting[i] == st->select)
-                                break;
-                        if (i >= functionnestingcount)
+                        if (st->select)
                         {
-                            functionnesting[functionnestingcount++] = st->select;
-                            // st->select = CopyExpressionWithArgs(st->select, found1, node->v.func->arguments);
-                            bool optimizeConstants = !node->v.func->arguments;
-                            if (optimizeConstants)
-                                optimize_for_constants(&st->select);
-                            functionnestingcount--;
-                            if (IsConstantExpression(st->select, false, false))
+                            for (i = 0; i < functionnestingcount; i++)
+                                if (functionnesting[i] == st->select)
+                                    break;
+                            if (i >= functionnestingcount)
                             {
-                                *node = *st->select;
-                                node->noexprerr = true;
-                                rv = true;
+                                functionnesting[functionnestingcount++] = st->select;
+                                std::unordered_map<SYMBOL*, EXPRESSION*> argmap;
+                                auto hr = basetype(found1->tp)->syms->table[0];
+                                if (hr->p->sb->thisPtr)
+                                    hr = hr->next;
+                                auto arglist = node->v.func->arguments;
+                                while (hr && arglist)
+                                {
+                                    argmap[hr->p] = arglist->exp;
+                                    hr = hr->next;
+                                    arglist = arglist->next;
+                                }
+                                if (hascshim(node))
+                                    printf("hi");
+                                auto node1 = CopyExpressionWithArgReplacement(st->select, argmap);
+                                optimize_for_constants(&node1);
+                                functionnestingcount--;
+                                if (IsConstantExpression(node1, false, false) && node1->type != en_func && node1->type != en_funcret && node1->type != en_thisref)
+                                {
+                                    if (hascshim(node1))
+                                        printf("hi");
+                                    *node = *node1;
+                                    node->noexprerr = true;
+                                    rv = true;
+                                }
+                                if (hascshim(node))
+                                    printf("hi");
                             }
                         }
                     }

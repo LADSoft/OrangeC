@@ -47,7 +47,7 @@ CC=$(COMPILER_PATH)\bin\occ
 endif
 
 ifneq "$(WITHDEBUG)" ""
-DEBUGFLAG := /v
+DEBUGFLAG := /g
 endif
 
 ifeq "$(VIAASSEMBLY)" ""

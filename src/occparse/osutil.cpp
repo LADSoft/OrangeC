@@ -139,8 +139,8 @@ CmdSwitchString prmShared(switchParser, 0, 0, "shared");
 
 CmdSwitchBool prmDumpVersion(switchParser, 0, 0, "dumpversion");
 CmdSwitchBool prmDumpMachine(switchParser, 0, 0, "dumpmachine");
-CmdSwitchString prmPrintFileName(switchParser, 0, 0, "print-file-name");
-CmdSwitchString prmPrintProgName(switchParser, 0, 0, "print-prog-name");
+CmdSwitchCombineString prmPrintFileName(switchParser, 0, 0, "print-file-name");
+CmdSwitchCombineString prmPrintProgName(switchParser, 0, 0, "print-prog-name");
 
 static std::string firstFile;
 
@@ -1036,7 +1036,7 @@ int ccinit(int argc, char* argv[])
                 printf("\n");
                 showVersion = true;
             } 
-            else if (!strncmp(&argv[i][1], "print", 5) || !strncmp(&argv[i][1], "dump", 4))
+            else if (!strncmp(&argv[i][1], "-print", 6) || !strncmp(&argv[i][1], "dump", 4))
             {
                 Optimizer::showBanner = false;
             }

@@ -116,39 +116,39 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc, bo
             case en_l_ull:
             case en_l_string:
             case en_l_object:
-                if (node->left->type == en_auto)
+                if (exp->left->type == en_auto)
                 {
-                    if (!(node->left->v.sp->sb->constexpression || (allowParams && node->left->v.sp->sb->storage_class == sc_parameter)))
+                    if (!(exp->left->v.sp->sb->constexpression || (allowParams && exp->left->v.sp->sb->storage_class == sc_parameter)))
                         return false;
                 }
                 else
                 {
-                    switch (node->left->type)
+                    switch (exp->left->type)
                     {
                         case en_global:
                         case en_pc:
                         case en_labcon:
                         case en_absolute:
                         case en_threadlocal:
-                            if (!node->left->v.sp->sb->constexpression)
+                            if (!exp->left->v.sp->sb->constexpression)
                                 return false;
                             break;
                          default:
                             break;
                     }
-                    stk.push(node->left);
+                    stk.push(exp->left);
                 }
                 break;
             case en_void:
             case en_voidnz:
-                stk.push(node->left);
-                if (node->right->type == en_void || !fromFunc)
+                stk.push(exp->left);
+                if (exp->right->type == en_void || !fromFunc)
                 {
-                    stk.push(node->right);
+                    stk.push(exp->right);
                 }
                 break;
             case en_func:
-                if (!( !node->v.func->ascall || (allowFunc && checkconstexprfunc(node))))
+                if (!( !exp->v.func->ascall || (allowFunc && checkconstexprfunc(exp))))
                      return false;
                 break;
 
@@ -186,26 +186,28 @@ EXPRESSION* CopyExpressionWithArgReplacement(EXPRESSION* node, std::unordered_ma
 {
     EXPRESSION* rv = copy_expression(node);
     std::stack<EXPRESSION*> stk;
-    stk.push(node);
+    stk.push(rv);
     while (!stk.empty())
     {
         auto exp = stk.top();
         stk.pop();
-        if (exp->left)
-            stk.push(exp->left);
         if (exp->right)
             stk.push(exp->right);
+        if (exp->left)
+            stk.push(exp->left);
         if (exp->left && lvalue(exp))
         {
-            while (exp->left && lvalue(exp->left))
+            while (lvalue(exp->left))
                 exp = exp->left;
             if (exp->left && exp->left->type == en_auto)
             {     
                 auto node1 = argmap[exp->left->v.sp];
                 if (node1)
                 {
-                    if (node1->type == en_void && node1->left->type == en_assign && node1->right->type == en_auto && IsConstantExpression(node1->left->right, true, true))
+                    if (node1->type == en_void && node1->left->type == en_assign && node1->right->type == en_auto && 
+                        node1->right->v.sp->sb->constexpression && IsConstantExpression(node1->left->right, true, true))
                     {
+                        stk.pop();
                         // an argument which has been made into a temp variable
                         // we have to shim it up so that we can handle the upcoming dereference
                         exp->type = en_cshimref;
@@ -223,8 +225,9 @@ EXPRESSION* CopyExpressionWithArgReplacement(EXPRESSION* node, std::unordered_ma
         else if (exp->type == en_func)
         {
             auto func = Allocate<FUNCTIONCALL>();
+            EXPRESSION temp = *exp, *temp1 = &temp;
             *func = *exp->v.func;
-            exp->v.func = func; 
+            temp1->v.func = func;
             INITLIST* args = func->arguments;
             func->arguments = nullptr;
             INITLIST** list = &func->arguments;
@@ -239,9 +242,17 @@ EXPRESSION* CopyExpressionWithArgReplacement(EXPRESSION* node, std::unordered_ma
             if (!strcmp(func->sp->name, "forward"))
                 if (hascshim(exp))
                     printf("hi");
-            optimize_for_constants(&exp);
-            if (func->thisptr)
-                func->thisptr = CopyExpressionWithArgReplacement(func->thisptr, argmap);
+            optimize_for_constants(&temp1);
+            if (temp1->type != en_func || !hascshim(temp1))
+            {
+                 *exp = *temp1;
+                 if (func->thisptr)
+                     func->thisptr = CopyExpressionWithArgReplacement(func->thisptr, argmap);
+            }
+            else 
+            {
+                diag("CopyExpressionWithArgReplacement: unreplaced function %s", func->sp->name);
+            }
         }
     }
     return rv;
@@ -331,6 +342,8 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
                                     arglist = arglist->next;
                                 }
                                 if (hascshim(node))
+                                    printf("hi");
+                                if (node->type == en_func && !strcmp(node->v.func->sp->name, "max"))
                                     printf("hi");
                                 auto node1 = CopyExpressionWithArgReplacement(st->select, argmap);
                                 optimize_for_constants(&node1);

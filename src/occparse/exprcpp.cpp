@@ -621,7 +621,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
     {
         *tp = nullptr;
         lex = getBasicType(lex, funcsp, tp, nullptr, false, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd,
-                           &consdest, nullptr, false, true, false, false);
+                           &consdest, nullptr, false, true, false, false, false);
         if (isstructured(*tp) && !(*tp)->size && (!templateNestingCount || !basetype(*tp)->sp->sb->templateLevel))
         {
             (*tp) = basetype(*tp)->sp->tp;

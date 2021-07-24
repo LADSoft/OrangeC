@@ -66,6 +66,7 @@
 #include "istmt.h"
 #include "irc.h"
 #include "DotNetPELib.h"
+#include "constexpr.h"
 
 using namespace DotNetPELib;
 PELib* peLib;
@@ -266,6 +267,7 @@ void compile(bool global)
     mangleInit();
     errorinit();
     Optimizer::constoptinit();
+    constexprinit();
     declare_init();
     init_init();
     inlineinit();

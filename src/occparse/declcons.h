@@ -27,6 +27,7 @@ namespace Parser
 {
 
 void ConsDestDeclarationErrors(SYMBOL* sp, bool notype);
+void ConstexprMembersNotInitializedErrors(SYMBOL* sym);
 LEXLIST* FindClass(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sym);
 MEMBERINITIALIZERS* GetMemberInitializers(LEXLIST** lex2, SYMBOL* funcsp, SYMBOL* sym);
 void SetParams(SYMBOL* cons);

@@ -25,6 +25,7 @@
 #include "compiler.h"
 #include "rtti.h"
 #include <stack>
+#include <unordered_set>
 #include "ccerr.h"
 #include "config.h"
 #include "template.h"
@@ -47,7 +48,6 @@
 #include "lex.h"
 #include "declcons.h"
 #include "libcxx.h"
-
 namespace Parser
 {
     std::set<SYMBOL*> defaultRecursionMap;
@@ -81,6 +81,41 @@ void ConsDestDeclarationErrors(SYMBOL* sp, bool notype)
     else if (sp->sb->parentClass && !strcmp(sp->name, sp->sb->parentClass->name))
     {
         error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
+    }
+}
+void ConstexprMembersNotInitializedErrors(SYMBOL* sym)
+{
+    auto cons = search(overloadNameTab[CI_CONSTRUCTOR], sym->tp->syms);
+    if (cons)
+    {
+        auto hrcons = cons->tp->syms->table[0];
+        while (hrcons)
+        {
+            sym = hrcons->p;
+            if (sym->sb->constexpression)
+            {
+                std::unordered_set<std::string> initialized;
+                auto m = sym->sb->memberInitializers;
+                while (m)
+                {
+                    initialized.insert(m->name);
+                    m = m->next;
+                }
+                auto hr = sym->sb->parentClass->tp->syms->table[0];
+                while (hr)
+                {
+                    if (!hr->p->sb->init && ismemberdata(hr->p))
+                    {
+                        if (initialized.find(hr->p->name) == initialized.end())
+                        {
+                            errorsym(ERR_CONSTEXPR_MUST_INITIALIZE, hr->p);
+                        }
+                    }
+                    hr = hr->next;
+                }
+            }
+            hrcons = hrcons->next;
+        }
     }
 }
 LEXLIST* FindClass(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sym)

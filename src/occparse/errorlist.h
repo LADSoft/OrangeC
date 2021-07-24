@@ -535,5 +535,7 @@ ERRLIST(ERR_STATIC_ASSERT, 510, "static_assert generated: %s", ERROR)
 ERRLIST(ERR_UNKNOWN_TYPE_TEMPLATE_ARG, 511, "Unknown type in template argument", ERROR)
 ERRLIST(ERR_CONSTEXPR_MEMBER_MUST_BE_STATIC, 512, "Members qualified with constexpr must also be static", ERROR)
 ERRLIST(ERR_CONSTEXPR_NO_PARAM, 513, "'constexpr' specifier cannot be used with a function parameter", ERROR)
+ERRLIST(ERR_CONSTEXPR_NO_STRUCT, 514, "'constexpr' specifier cannot be used with a structure", ERROR)
+ERRLIST(ERR_CONSTEXPR_MUST_INITIALIZE, 515, "constexpr constructor does not initialize '%s'", ERROR) 
 #undef ERRLIST
 #undef ERRSCHEMA

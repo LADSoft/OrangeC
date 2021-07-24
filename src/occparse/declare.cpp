@@ -417,7 +417,7 @@ LEXLIST* get_type_id(LEXLIST* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_
 
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, nullptr);
     lex = getBasicType(lex, funcsp, tp, nullptr, false, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public,
-                       &notype, &defd, nullptr, nullptr, false, false, inUsing, false);
+                       &notype, &defd, nullptr, nullptr, false, false, inUsing, false, false);
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, nullptr);
     lex = getBeforeType(lex, funcsp, tp, &sp, nullptr, nullptr, false, storage_class, &linkage, &linkage2, &linkage3, false, false,
                         beforeOnly, false); /* fixme at file scope init */
@@ -1165,7 +1165,7 @@ static unsigned char* ParseUUID(LEXLIST** lex)
     return nullptr;
 }
 static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplate, bool asfriend, enum e_sc storage_class, enum e_ac access,
-                          bool* defd)
+                          bool* defd, bool constexpression)
 {
     bool isfinal = false;
     HASHTABLE* table;
@@ -1437,6 +1437,11 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
             errorsym(ERR_CANNOT_REDEFINE_ACCESS_FOR, sp);
         }
         lex = innerDeclStruct(lex, funcsp, sp, inTemplate, defaultAccess, isfinal, defd);
+        if (constexpression)
+        {
+            error(ERR_CONSTEXPR_NO_STRUCT);
+        }
+        ConstexprMembersNotInitializedErrors(sp);
         *tp = sp->tp;
     }
     basisAttribs = oldAttribs;
@@ -2234,7 +2239,7 @@ static bool isPointer(LEXLIST* lex)
 }
 LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out, bool inTemplate, enum e_sc storage_class,
                      enum e_lk* linkage_in, enum e_lk* linkage2_in, enum e_lk* linkage3_in, enum e_ac access, bool* notype,
-                     bool* defd, int* consdest, bool* templateArg, bool isTypedef, bool templateErr, bool inUsing, bool asfriend)
+                     bool* defd, int* consdest, bool* templateArg, bool isTypedef, bool templateErr, bool inUsing, bool asfriend, bool constexpression)
 {
     enum e_bt type = bt_none;
     TYPE* tn = nullptr;
@@ -2558,7 +2563,7 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                 inTemplateType = false;
                 if (foundsigned || foundunsigned || type != bt_none)
                     flagerror = true;
-                lex = declstruct(lex, funcsp, &tn, inTemplate, asfriend, storage_class, access, defd);
+                lex = declstruct(lex, funcsp, &tn, inTemplate, asfriend, storage_class, access, defd, constexpression);
                 goto exit;
             case kw_enum:
                 if (foundsigned || foundunsigned || type != bt_none)
@@ -5322,7 +5327,7 @@ static LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym,
             {
                 foundType = true;
                 lex = getBasicType(lex, funcsp, tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access,
-                                   notype, defd, consdest, templateArg, *storage_class == sc_typedef, true, false, asFriend ? *asFriend : false);
+                                   notype, defd, consdest, templateArg, *storage_class == sc_typedef, true, false, asFriend ? *asFriend : false, *constexpression);
             }
             if (*linkage3 == lk_threadlocal && *storage_class == sc_member)
                 *storage_class = sc_static;
@@ -5335,7 +5340,7 @@ static LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym,
         {
             foundType = true;
             lex = getBasicType(lex, funcsp, tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access, notype,
-                               defd, consdest, templateArg, *storage_class == sc_typedef, true, false, asFriend ? *asFriend : false);
+                               defd, consdest, templateArg, *storage_class == sc_typedef, true, false, asFriend ? *asFriend : false, *constexpression);
             if (*linkage3 == lk_threadlocal && *storage_class == sc_member)
                 *storage_class = sc_static;
         }

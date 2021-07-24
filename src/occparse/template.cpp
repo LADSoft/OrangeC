@@ -1178,7 +1178,7 @@ bool constructedInt(LEXLIST* lex, SYMBOL* funcsp)
     if (cont)
     {
         lex = getBasicType(lex, funcsp, &tp, nullptr, false, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3,
-                           ac_public, &notype, &defd, nullptr, nullptr, false, false, false, false);
+                           ac_public, &notype, &defd, nullptr, nullptr, false, false, false, false, false);
         lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
         if (isint(tp))
         {
@@ -2467,7 +2467,7 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
             noTypeNameError++;
             lex = getBasicType(lex, funcsp, &tp, nullptr, false, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3,
-                               ac_public, &notype, &defd, nullptr, nullptr, false, true, false, false);
+                               ac_public, &notype, &defd, nullptr, nullptr, false, true, false, false, false);
             noTypeNameError--;
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
             // get type qualifiers
@@ -12430,7 +12430,7 @@ LEXLIST* TemplateDeclaration(LEXLIST* lex, SYMBOL* funcsp, enum e_ac access, enu
             int consdest = 0;
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
             lex = getBasicType(lex, funcsp, &tp, &strSym, true, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3,
-                               ac_public, &notype, &defd, &consdest, nullptr, false, true, false, false);
+                               ac_public, &notype, &defd, &consdest, nullptr, false, true, false, false, false);
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
             lex = getBeforeType(lex, funcsp, &tp, &sym, &strSym, &nsv, true, sc_cast, &linkage, &linkage2, &linkage3, false,
                                 consdest, false, false);

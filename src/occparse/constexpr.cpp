@@ -28,6 +28,7 @@
 #include "compiler.h"
 #include "ppPragma.h"
 #include <stack>
+#include <unordered_map>
 
 #include "config.h"
 #include "ccerr.h"
@@ -41,9 +42,22 @@
 #include "memory.h"
 namespace Parser
 {
-    static EXPRESSION* functionnesting[100];
-    static int functionnestingcount = 0;
+static EXPRESSION* functionnesting[100];
+static int functionnestingcount = 0;
 
+std::unordered_map<SYMBOL*, EXPRESSION*>globalMap, localMap;
+
+
+void constexprinit()
+{
+    globalMap.clear();
+    localMap.clear();
+    functionnestingcount = 0;
+}
+void constexprfunctioninit()
+{
+    localMap.clear();
+}
 bool checkconstexprfunc(EXPRESSION* node)
 {
     if (node->type == en_thisref)

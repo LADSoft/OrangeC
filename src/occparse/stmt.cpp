@@ -3846,6 +3846,7 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     bool oldHasFuncCall = hasFuncCall;
     int oldExpressionCount = expressions;
     int oldControlSequences = controlSequences;
+    constexprfunctioninit();
     expressions = 0;
     controlSequences = 0;
     Optimizer::LIST* oldGlobal = globalNameSpace->valueData->usingDirectives;

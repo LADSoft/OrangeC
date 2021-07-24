@@ -1232,7 +1232,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
         TYPE* tp1 = nullptr;
         lex = getsym();
         lex = getBasicType(lex, funcsp, &tp1, nullptr, false, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd,
-                           nullptr, nullptr, false, true, false, false);
+                           nullptr, nullptr, false, true, false, false, false);
         if (!tp1)
         {
             error(ERR_TYPE_NAME_EXPECTED);
@@ -1273,7 +1273,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
             bool notype = false;
             TYPE* tp1 = nullptr;
             lex = getBasicType(lex, funcsp, &tp1, nullptr, false, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype,
-                               &defd, nullptr, nullptr, false, true, false, false);
+                               &defd, nullptr, nullptr, false, true, false, false, false);
             if (!tp1)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -1298,7 +1298,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                     lex = getsym();
                     tp1 = nullptr;
                     lex = getBasicType(lex, funcsp, &tp1, nullptr, false, sc_auto, &linkage, &linkage2, &linkage3, ac_public,
-                                       &notype, &defd, nullptr, nullptr, false, true, false, false);
+                                       &notype, &defd, nullptr, nullptr, false, true, false, false, false);
                     if (!tp1)
                     {
                         error(ERR_TYPE_NAME_EXPECTED);

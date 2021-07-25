@@ -28,8 +28,7 @@
 #include "compiler.h"
 #include "ppPragma.h"
 #include <stack>
-#include <unordered_map>
-
+#include <deque>
 #include "config.h"
 #include "ccerr.h"
 #include "constexpr.h"
@@ -40,12 +39,20 @@
 #include "declcpp.h"
 #include "help.h"
 #include "memory.h"
+#include "symtab.h"
+#include "expr.h"
 namespace Parser
 {
-static EXPRESSION* functionnesting[100];
 static int functionnestingcount = 0;
 
-std::unordered_map<SYMBOL*, EXPRESSION*>globalMap, localMap;
+struct ConstExprThisPtr
+{
+    EXPRESSION* oldval;
+    EXPRESSION* newval;
+};
+std::deque<ConstExprThisPtr> globalMap;
+
+std::deque<std::deque<ConstExprThisPtr>> localMap;
 
 
 void constexprinit()
@@ -54,9 +61,16 @@ void constexprinit()
     localMap.clear();
     functionnestingcount = 0;
 }
-void constexprfunctioninit()
+void constexprfunctioninit(bool start)
 {
-    localMap.clear();
+    if (start)
+    {
+        localMap.push_back(std::deque<ConstExprThisPtr>());
+    }
+    else
+    {
+        localMap.pop_back();
+    }
 }
 bool checkconstexprfunc(EXPRESSION* node)
 {
@@ -196,7 +210,103 @@ bool hascshim(EXPRESSION* node)
     }
     return false;
 }
-EXPRESSION* CopyExpressionWithArgReplacement(EXPRESSION* node, std::unordered_map<SYMBOL*, EXPRESSION*>& argmap)
+static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr)
+{
+    EXPRESSION* exp = Allocate<EXPRESSION>();
+    exp->type = en_cshimthis;
+    exp->v.sp = sym;
+    exp->v.constexprData = Allocate<EXPRESSION*>(sym->sb->parentClass->tp->size);
+    auto hr = sym->sb->parentClass->tp->syms->table[0];
+    while (hr)
+    {
+        if (ismemberdata(hr->p) && hr->p->sb->init)
+        {
+            exp->v.constexprData[hr->p->sb->offset] = hr->p->sb->init->exp;
+        }
+        hr = hr->next;
+    }
+    auto m = sym->sb->memberInitializers;
+    while (m)
+    {
+        SYMBOL* sp = search(m->name, sym->sb->parentClass->tp->syms);
+        if (sp)
+            exp->v.constexprData[sp->sb->offset] = m->init->exp;
+        m = m->next;
+    }
+    if (localMap.size())
+    {
+        localMap.back().push_back(ConstExprThisPtr{ thisptr, exp });
+    }
+    else
+    {
+        globalMap.push_back(ConstExprThisPtr{ thisptr, exp });
+    }
+    return exp;
+}
+static bool ExactExpression(EXPRESSION* exp1, EXPRESSION* exp2)
+{
+    std::stack<EXPRESSION*> stk;
+    stk.push(exp1);
+    stk.push(exp2);
+    while (!stk.empty())
+    {
+        exp2 = stk.top();
+        stk.pop();
+        exp1 = stk.top();
+        stk.pop();
+        if (exp1->type == en_add && exp1->right->type == en_c_i && exp1->right->v.i == 0)
+            exp1 = exp1->left;
+        if (exp2->type == en_add && exp2->right->type == en_c_i && exp2->right->v.i == 0)
+            exp2 = exp2->left;
+        if (exp1->type != exp2->type)
+            return false;
+        if (isintconst(exp1) || exp1->type == en_labcon)
+            if (exp1->v.i != exp2->v.i)
+                return false;
+        switch (exp1->type)
+        {
+        case en_global:
+        case en_pc:
+        case en_const:
+        case en_threadlocal:
+        case en_auto:
+            if (exp1->v.sp != exp2->v.sp)
+                return false;
+            break;
+        }
+        if (exp1->left)
+        {
+            stk.push(exp1->left);
+            stk.push(exp2->left);
+        }
+        if (exp1->right)
+        {
+            stk.push(exp1->right);
+            stk.push(exp2->right);
+        }
+    }
+    return true;
+}
+static EXPRESSION* LookupThis(EXPRESSION* exp)
+{
+    if (!exp)
+        return nullptr;
+    if (localMap.size())
+    {
+        for (auto l : localMap.back())
+        {
+            if (ExactExpression(exp, l.oldval))
+                return l.newval;
+        }
+    }
+    for (auto g : globalMap)
+    {
+        if (ExactExpression(exp, g.oldval))
+            return (EXPRESSION*) -1;
+    }
+    return nullptr;
+}
+static EXPRESSION* EvaluateExpression(EXPRESSION* node, std::unordered_map<SYMBOL*, EXPRESSION*>& argmap, EXPRESSION* ths)
 {
     EXPRESSION* rv = copy_expression(node);
     std::stack<EXPRESSION*> stk;
@@ -209,13 +319,80 @@ EXPRESSION* CopyExpressionWithArgReplacement(EXPRESSION* node, std::unordered_ma
             stk.push(exp->right);
         if (exp->left)
             stk.push(exp->left);
-        if (exp->left && lvalue(exp))
+        if (exp->type == en_autoinc || exp->type == en_autodec)
         {
-            while (lvalue(exp->left))
-                exp = exp->left;
-            if (exp->left && exp->left->type == en_auto)
+            stk.pop();
+            stk.pop();
+            rv = EvaluateExpression(exp->left, argmap, ths);
+            EXPRESSION* inced = exprNode(exp->type == en_autoinc ? en_add : en_sub, rv, exp->right);
+            EXPRESSION* exp1 = exp->left;
+            while (lvalue(exp1->left))
+                exp1 = exp1->left;
+            if (ths && exp1->left->type == en_structadd && exp1->left->left->type == en_l_p && exp1->left->left->left->type == en_auto && exp1->left->left->left->v.sp->sb->thisPtr)
+            {
+                int i = exp1->left->right->v.i;
+                ths->v.constexprData[i] = inced;
+            }
+            else if (ths && exp1->left->type == en_auto && exp1->left->v.sp->sb->thisPtr)
+            {
+                ths->v.constexprData[0] = inced;
+            }
+            else if (exp1->left && exp1->left->type == en_auto)
+            {
+                argmap[exp1->left->v.sp] = inced;
+            }
+        }
+        else if (exp->type == en_assign)
+        {
+            stk.pop();
+            stk.pop();
+            rv = EvaluateExpression(exp->right, argmap, ths);
+            EXPRESSION* exp1 = exp->left;
+            while (lvalue(exp1->left))
+                exp1 = exp1->left;
+            if (ths && exp1->left->type == en_structadd && exp1->left->left->type == en_l_p && exp1->left->left->left->type == en_auto && exp1->left->left->left->v.sp->sb->thisPtr)
+            {
+                int i = exp1->left->right->v.i;
+                ths->v.constexprData[i] = rv;
+            }
+            else if (ths && exp1->left->type == en_auto && exp1->left->v.sp->sb->thisPtr)
+            {
+                ths->v.constexprData[0] = rv;
+            }
+            else if (exp1->left && exp1->left->type == en_auto)
+            {
+                argmap[exp1->left->v.sp] = rv;
+            }
+        }
+        else if (exp->left && lvalue(exp))
+        {
+            EXPRESSION* exp1 = exp;
+            while (lvalue(exp1->left))
+                exp1 = exp1->left;
+            if (ths && exp1->left->type == en_structadd && exp1->left->left->type == en_l_p && exp1->left->left->left->type == en_auto && exp1->left->left->left->v.sp->sb->thisPtr)
+            {
+                stk.pop();
+                int i = exp1->left->right->v.i;
+                if (ths->v.constexprData[i])
+                {
+                    exp1->left->type = en_cshimref;
+                    exp1->left->v.exp = ths->v.constexprData[i];
+                    exp1->left->left = nullptr;
+                }
+            }
+            else if (ths && exp1->left->type == en_auto && exp1->left->v.sp->sb->thisPtr)
+            {
+                stk.pop();
+                if (ths->v.constexprData[0])
+                {
+                    exp1->type = en_cshimref;
+                    exp1->v.exp = ths->v.constexprData[0];
+                    exp1->left = nullptr;
+                }
+            }
+            else if (exp1->left && exp1->left->type == en_auto)
             {     
-                auto node1 = argmap[exp->left->v.sp];
+                auto node1 = argmap[exp1->left->v.sp];
                 if (node1)
                 {
                     if (node1->type == en_void && node1->left->type == en_assign && node1->right->type == en_auto && 
@@ -224,18 +401,18 @@ EXPRESSION* CopyExpressionWithArgReplacement(EXPRESSION* node, std::unordered_ma
                         stk.pop();
                         // an argument which has been made into a temp variable
                         // we have to shim it up so that we can handle the upcoming dereference
-                        exp->type = en_cshimref;
-                        exp->v.exp = node1->left->right;
-                        exp->left = nullptr;
-                        optimize_for_constants(&exp->v.exp);
+                        exp1->type = en_cshimref;
+                        exp1->v.exp = node1->left->right;
+                        exp1->left = nullptr;
+                        optimize_for_constants(&exp1->v.exp);
                     }
                     else
                     {
-                        *exp = *node1;
+                        *exp1 = *node1;
                     }
                 }
             }
-        }
+	        }
         else if (exp->type == en_func)
         {
             auto func = Allocate<FUNCTIONCALL>();
@@ -249,27 +426,160 @@ EXPRESSION* CopyExpressionWithArgReplacement(EXPRESSION* node, std::unordered_ma
             {
                 *list = Allocate<INITLIST>();
                 **list = *args;
-                (*list)->exp = CopyExpressionWithArgReplacement(args->exp, argmap);
+                (*list)->exp = EvaluateExpression(args->exp, argmap, ths);
                 list = &(*list)->next;
                 args = args->next;
             }
-            if (!strcmp(func->sp->name, "forward"))
-                if (hascshim(exp))
-                    printf("hi");
             optimize_for_constants(&temp1);
             if (temp1->type != en_func || !hascshim(temp1))
             {
                  *exp = *temp1;
                  if (func->thisptr)
-                     func->thisptr = CopyExpressionWithArgReplacement(func->thisptr, argmap);
+                     func->thisptr = EvaluateExpression(func->thisptr, argmap, ths);
             }
             else 
             {
-                diag("CopyExpressionWithArgReplacement: unreplaced function %s", func->sp->name);
+                diag("EvaluateExpression: unreplaced function %s", func->sp->name);
             }
         }
     }
     return rv;
+}
+static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordered_map<SYMBOL*, EXPRESSION*>& argmap, EXPRESSION* ths)
+{
+    std::unordered_map<int, STATEMENT*> labels;
+    std::stack<STATEMENT*> stk;
+    stk.push(stmt);
+    while (!stk.empty())
+    {
+        auto p = stk.top();
+        stk.pop();
+        while (p)
+        {
+            switch (p->type)
+            {
+            case st_label:
+                labels[p->label] = p;
+                break;
+            case st_block:
+            case st___try:
+            case st_try:
+                stk.push(p->lower);
+                break;
+            }
+            p = p->next;
+        }
+    }
+    std::stack<STATEMENT*> blockList;
+    blockList.push(stmt);
+    while (!blockList.empty())
+    {
+        stmt = blockList.top();
+        blockList.pop();
+        while (stmt)
+        {
+            switch (stmt->type)
+            {
+            case st_line:
+            case st_nop:
+            case st_declare:
+            case st_dbgblock:
+            case st_label:
+            case st_varstart:
+            case st_catch:
+            case st___catch:
+            case st___finally:
+            case st___fault:
+                break;
+            case st_throw:
+            case st_asmgoto:
+            case st_asmcond:
+            case st__genword:
+            case st_passthrough:
+            case st_datapassthrough:
+                return false;
+            case st_select:
+            case st_notselect:
+            {
+                auto node1 = EvaluateExpression(stmt->select, argmap, ths);
+                optimize_for_constants(&node1);
+                if (!IsConstantExpression(node1, false, false))
+                    return false;
+                if ((node1->v.i && stmt->type == st_notselect) || (!node1->v.i && stmt->type == st_select))
+                    break;
+                stmt = labels[stmt->label];
+                if (!stmt)
+                    return false;
+                break;
+            }
+            case st_goto:
+            case st_loopgoto:
+                if (stmt->explicitGoto)
+                    return false;
+                stmt = labels[stmt->label];
+                if (!stmt)
+                    return false;
+                break;
+            case st_switch:
+            {
+                auto node1 = EvaluateExpression(stmt->select, argmap, ths);
+                optimize_for_constants(&node1);
+                if (!IsConstantExpression(node1, false, false))
+                    return false;
+                int label = stmt->label;
+                auto c = stmt->cases;
+                while (c)
+                {
+                    if (c->val == node1->v.i)
+                    {
+                        label = c->label;
+                        break;
+                    }
+                    c = c->next;
+                }
+                stmt = labels[label];
+                if (!stmt)
+                    return false;
+                break;
+            }
+            case st_block:
+            case st___try:
+            case st_try:
+                blockList.push(stmt->next);
+                stmt = stmt->lower;
+                continue;
+            case st_expr:
+                if (stmt->select)
+                {
+                    auto node1 = EvaluateExpression(stmt->select, argmap, ths);
+                    optimize_for_constants(&node1);
+                }
+                break;
+            case st_return:
+                if (stmt->select)
+                {
+                    auto node1 = EvaluateExpression(stmt->select, argmap, ths);
+                    optimize_for_constants(&node1);
+                    if (node->v.func->sp->sb->isConstructor && node1->type == en_cshimref)
+                    {
+                        *node = *node1->v.exp;
+                        node->noexprerr = true;
+                        return true;
+                    }
+                    else if (IsConstantExpression(node1, false, false) && node1->type != en_func && node1->type != en_funcret && node1->type != en_thisref)
+                    {
+                        *node = *node1;
+                        node->noexprerr = true;
+                        return true;
+                    }
+                    return false;
+                }
+                break;
+            }
+            stmt = stmt->next;
+        }
+    }
+    return false;
 }
 bool EvaluateConstexprFunction(EXPRESSION*&node)
 {
@@ -320,60 +630,57 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
         }
         if (found1 && found1->sb->inlineFunc.stmt)
         {
-            int i;
-            STATEMENT* stmt = found1->sb->inlineFunc.stmt;
-            while (stmt && stmt->type == st_expr)
-                stmt = stmt->next;
-            if (stmt && stmt->type == st_block && stmt->lower)
+            EXPRESSION* ths = nullptr;
+            if (found1->sb->isConstructor)
+                ths = ConstExprInitializeMembers(found1, node->v.func->thisptr);
+            else
+                ths = LookupThis(node->v.func->thisptr);
+            if (!ths && node->v.func->thisptr)
             {
-                STATEMENT* st = stmt->lower;
-                while (st->type == st_varstart)
-                    st = st->next;
-                if (st->type == st_block && !st->next)
+                //                diag("EvaluateConstexprFunction: unfound this data");
+                return false;
+            }
+            else if (ths == (EXPRESSION*)-1)
+            {
+                // cant do constexpr on nonstatic global struct instances
+                // but don't know the difference between static and nonstatic here
+                // so we just don't do constexpr on global struct instances...
+                return false;
+            }
+            else
+            {
+                int i;
+                STATEMENT* stmt = found1->sb->inlineFunc.stmt;
+                while (stmt && stmt->type == st_expr)
+                    stmt = stmt->next;
+                if (stmt && stmt->type == st_block && stmt->lower)
                 {
-                    st = st->lower;
-                    while (st->type == st_line || st->type == st_dbgblock || st->type == st_label)
+                    STATEMENT* st = stmt->lower;
+
+                    while (st->type == st_varstart)
                         st = st->next;
-                    if (st->type == st_expr || st->type == st_return)
+                    if (st->type == st_block && !st->next)
                     {
-                        if (st->select)
+                        if (++functionnestingcount >= 1000)
                         {
-                            for (i = 0; i < functionnestingcount; i++)
-                                if (functionnesting[i] == st->select)
-                                    break;
-                            if (i >= functionnestingcount)
-                            {
-                                functionnesting[functionnestingcount++] = st->select;
-                                std::unordered_map<SYMBOL*, EXPRESSION*> argmap;
-                                auto hr = basetype(found1->tp)->syms->table[0];
-                                if (hr->p->sb->thisPtr)
-                                    hr = hr->next;
-                                auto arglist = node->v.func->arguments;
-                                while (hr && arglist)
-                                {
-                                    argmap[hr->p] = arglist->exp;
-                                    hr = hr->next;
-                                    arglist = arglist->next;
-                                }
-                                if (hascshim(node))
-                                    printf("hi");
-                                if (node->type == en_func && !strcmp(node->v.func->sp->name, "max"))
-                                    printf("hi");
-                                auto node1 = CopyExpressionWithArgReplacement(st->select, argmap);
-                                optimize_for_constants(&node1);
-                                functionnestingcount--;
-                                if (IsConstantExpression(node1, false, false) && node1->type != en_func && node1->type != en_funcret && node1->type != en_thisref)
-                                {
-                                    if (hascshim(node1))
-                                        printf("hi");
-                                    *node = *node1;
-                                    node->noexprerr = true;
-                                    rv = true;
-                                }
-                                if (hascshim(node))
-                                    printf("hi");
-                            }
+                            diag("EvaluateConstexprFunction: recursion level too high");
                         }
+                        else
+                        {
+                            std::unordered_map<SYMBOL*, EXPRESSION*> argmap;
+                            auto hr = basetype(found1->tp)->syms->table[0];
+                            if (hr->p->sb->thisPtr)
+                                hr = hr->next;
+                            auto arglist = node->v.func->arguments;
+                            while (hr && arglist)
+                            {
+                                argmap[hr->p] = arglist->exp;
+                                hr = hr->next;
+                                arglist = arglist->next;
+                            }
+                            rv = EvaluateStatements(node, st->lower, argmap, ths);
+                        }
+                        --functionnestingcount;
                     }
                 }
             }

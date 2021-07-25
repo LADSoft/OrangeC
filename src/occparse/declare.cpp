@@ -1441,7 +1441,6 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
         {
             error(ERR_CONSTEXPR_NO_STRUCT);
         }
-        ConstexprMembersNotInitializedErrors(sp);
         *tp = sp->tp;
     }
     basisAttribs = oldAttribs;
@@ -6720,6 +6719,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                 if (storage_class_in != sc_member && TemplateFullySpecialized(sp->sb->parentClass))
                                 {
                                     sp->sb->attribs.inheritable.linkage4 = lk_virtual;
+                                    if (sp->sb->constexpression && sp->sb->isConstructor)
+                                        ConstexprMembersNotInitializedErrors(sp);
                                     lex = body(lex, sp);
                                 }
                                 else if (storage_class_in == sc_member || storage_class_in == sc_mutable ||

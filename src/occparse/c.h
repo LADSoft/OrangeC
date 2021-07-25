@@ -304,7 +304,11 @@ typedef struct expr
             long long i;
             FPF* f;
             _COMPLEX_S* c;
-            struct sym* sp;   /* sym will be defined later */
+            struct
+            {
+                struct sym* sp;   /* sym will be defined later */
+                struct expr** constexprData;
+            };
             const char* name; /* name during base class processing */
             struct functioncall* func;
             struct _atomicData* ad;

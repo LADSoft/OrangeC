@@ -83,15 +83,44 @@ void ConsDestDeclarationErrors(SYMBOL* sp, bool notype)
         error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
     }
 }
-void ConstexprMembersNotInitializedErrors(SYMBOL* sym)
+static bool HasConstexprConstructorInternal(SYMBOL* sym)
 {
-    auto cons = search(overloadNameTab[CI_CONSTRUCTOR], sym->tp->syms);
-    if (cons)
+    sym = search(overloadNameTab[CI_CONSTRUCTOR], sym->tp->syms);
+    if (sym)
     {
+        auto hr = sym->tp->syms->table[0];
+        while (hr)
+        {
+            if (hr->p->sb->constexpression)
+                return true;
+            hr = hr->next;
+        }
+    }
+    return false;
+
+}
+static bool HasConstexprConstructor(TYPE* tp)
+{
+    auto sym = basetype(tp)->sp;
+    if (HasConstexprConstructorInternal(sym))
+        return true;
+    auto hr = sym->sb->specializations;
+    while (hr)
+    {
+        if (HasConstexprConstructorInternal(hr->p))
+            return true;
+        hr = hr->next;
+    }
+    return false;
+}
+void ConstexprMembersNotInitializedErrors(SYMBOL* cons)
+{
+    if (!templateNestingCount || instantiatingTemplate)
+{
         auto hrcons = cons->tp->syms->table[0];
         while (hrcons)
         {
-            sym = hrcons->p;
+            auto sym = hrcons->p;
             if (sym->sb->constexpression)
             {
                 std::unordered_set<std::string> initialized;
@@ -108,7 +137,10 @@ void ConstexprMembersNotInitializedErrors(SYMBOL* sym)
                     {
                         if (initialized.find(hr->p->name) == initialized.end())
                         {
-                            errorsym(ERR_CONSTEXPR_MUST_INITIALIZE, hr->p);
+                            // this should check the actual base class constructor in use
+                            // but that would be difficult to get at this point.
+                            if (!isstructured(hr->p->tp) || !HasConstexprConstructor(hr->p->tp))
+                                errorsym(ERR_CONSTEXPR_MUST_INITIALIZE, hr->p);
                         }
                     }
                     hr = hr->next;
@@ -3726,6 +3758,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
             *exp = exprNode(en_thisref, *exp, nullptr);
             (*exp)->v.t.thisptr = params->thisptr;
             (*exp)->v.t.tp = sp->tp;
+            optimize_for_constants(exp); // for constexpr constructors
             // hasXCInfo = true;
         }
 

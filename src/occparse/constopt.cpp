@@ -448,11 +448,13 @@ void dooper(EXPRESSION** node, int mode)
                 {
                     case 1:
                         ep->type = maxinttype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->v.i = ep1->v.i + ep2->v.i;
                         ep->v.i = reint(ep);
                         break;
                     case 2:
                         ep->type = maxfloattype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         if (isunsignedexpr(ep1))
                             temp = (unsigned long long)ep1->v.i;
                         else
@@ -463,6 +465,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 3:
                         ep->type = maxfloattype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         if (isunsignedexpr(ep2))
                             temp = (unsigned long long)ep2->v.i;
                         else
@@ -473,12 +476,14 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 4:
                         ep->type = maxfloattype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) + (*ep2->v.f);
                         refloat(ep);
                         break;
                     case 9:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -489,6 +494,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 10:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -499,12 +505,14 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 11:
                         ep->type = maximaginarytype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) + (*ep2->v.f);
                         refloat(ep);
                         break;
                     case 14:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -515,6 +523,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 15:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -525,6 +534,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 16:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -535,6 +545,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 17:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -545,6 +556,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 18:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -555,6 +567,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 19:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -565,6 +578,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 20:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -575,6 +589,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 23:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -589,6 +604,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 24:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -610,11 +626,13 @@ void dooper(EXPRESSION** node, int mode)
                 {
                     case 1:
                         ep->type = maxinttype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->v.i = ep1->v.i - ep2->v.i;
                         ep->v.i = reint(ep);
                         break;
                     case 2:
                         ep->type = maxfloattype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         if (isunsignedexpr(ep1))
                             temp = (unsigned long long)ep1->v.i;
                         else
@@ -625,6 +643,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 3:
                         ep->type = maxfloattype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         if (isunsignedexpr(ep2))
                             temp = (unsigned long long)ep2->v.i;
                         else
@@ -635,6 +654,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 4:
                         ep->type = maxfloattype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         if (isunsignedexpr(ep1))
                             temp = (unsigned long long)ep1->v.i;
                         else
@@ -645,6 +665,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 9:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -656,6 +677,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 10:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -667,12 +689,14 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 11:
                         ep->type = maximaginarytype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) - (*ep2->v.f);
                         refloat(ep);
                         break;
                     case 14:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -686,6 +710,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 15:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -700,6 +725,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 16:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -711,6 +737,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 17:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -721,6 +748,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 18:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -732,6 +760,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 19:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -742,6 +771,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 20:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -752,6 +782,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 23:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -766,6 +797,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 24:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -790,11 +822,13 @@ void dooper(EXPRESSION** node, int mode)
                 {
                     case 1:
                         ep->type = maxinttype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->v.i = ep1->v.i * ep2->v.i;
                         ep->v.i = reint(ep);
                         break;
                     case 2:
                         ep->type = maxfloattype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         if (isunsignedexpr(ep1))
                             temp = (unsigned long long)ep1->v.i;
                         else
@@ -805,6 +839,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 3:
                         ep->type = maxfloattype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         if (isunsignedexpr(ep2))
                             temp = (unsigned long long)ep2->v.i;
                         else
@@ -815,24 +850,28 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 4:
                         ep->type = maxfloattype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) * (*ep2->v.f);
                         refloat(ep);
                         break;
                     case 9:
                         ep->type = maximaginarytype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) * (*ep2->v.f);
                         refloat(ep);
                         break;
                     case 10:
                         ep->type = maximaginarytype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) * (*ep2->v.f);
                         refloat(ep);
                         break;
                     case 11:
                         ep->type = maxfloattype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) * (*ep2->v.f);
                         ep->v.f->Negate();
@@ -840,6 +879,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 14:
                         ep->type = maximaginarytype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         if (isunsignedexpr(ep2))
                             temp = (unsigned long long)ep2->v.i;
                         else
@@ -850,6 +890,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 15:
                         ep->type = maximaginarytype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         if (isunsignedexpr(ep1))
                             temp = (unsigned long long)ep1->v.i;
                         else
@@ -860,6 +901,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 16:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -871,6 +913,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 17:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -882,6 +925,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 18:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -892,6 +936,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 19:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -904,6 +949,7 @@ void dooper(EXPRESSION** node, int mode)
                         if (ep1->v.c->r.ValueIsZero())
                         {
                             ep->type = maxcomplextype(ep1, ep2);
+                            ep->left = ep->right = nullptr;
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
@@ -915,6 +961,7 @@ void dooper(EXPRESSION** node, int mode)
                         else if (ep1->v.c->i.ValueIsZero())
                         {
                             ep->type = maxcomplextype(ep1, ep2);
+                            ep->left = ep->right = nullptr;
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
@@ -925,6 +972,7 @@ void dooper(EXPRESSION** node, int mode)
                         else if (ep2->v.c->r.ValueIsZero())
                         {
                             ep->type = maxcomplextype(ep1, ep2);
+                            ep->left = ep->right = nullptr;
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
@@ -936,6 +984,7 @@ void dooper(EXPRESSION** node, int mode)
                         else if (ep2->v.c->i.ValueIsZero())
                         {
                             ep->type = maxcomplextype(ep1, ep2);
+                            ep->left = ep->right = nullptr;
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
@@ -947,6 +996,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 24:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -972,6 +1022,7 @@ void dooper(EXPRESSION** node, int mode)
                         if (ep2->v.i)
                         {
                             ep->type = maxinttype(ep1, ep2);
+                            ep->left = ep->right = nullptr;
                             if (isunsignedexpr(ep1) || isunsignedexpr(ep2))
                                 ep->v.i = (unsigned long long)ep1->v.i / (unsigned long long)ep2->v.i;
                             else
@@ -982,6 +1033,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 2:
                         ep->type = maxfloattype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         if (isunsignedexpr(ep1))
                             temp = (unsigned long long)ep1->v.i;
                         else
@@ -992,6 +1044,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 3:
                         ep->type = maxfloattype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         if (isunsignedexpr(ep2))
                             temp = (unsigned long long)ep2->v.i;
                         else
@@ -1002,6 +1055,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 4:
                         ep->type = maxfloattype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) / (*ep2->v.f);
                         refloat(ep);
@@ -1014,11 +1068,13 @@ void dooper(EXPRESSION** node, int mode)
                         temp1 = temp1 / (*ep2->v.f);
                         (*ep2->v.f) = temp1;
                         ep->type = en_mul;
+                        ep->left = ep->right = nullptr;
                         */
                     }
                     break;
                     case 9:
                         ep->type = maximaginarytype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) / (*ep2->v.f);
                         ep->v.f->Negate();
@@ -1026,18 +1082,21 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 10:
                         ep->type = maximaginarytype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) / (*ep2->v.f);
                         refloat(ep);
                         break;
                     case 11:
                         ep->type = maximaginarytype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) / (*ep2->v.f);
                         refloat(ep);
                         break;
                     case 14:
                         ep->type = maximaginarytype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         if (isunsignedexpr(ep2))
                             temp = (unsigned long long)ep2->v.i;
                         else
@@ -1048,6 +1107,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 15:
                         ep->type = maximaginarytype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         if (isunsignedexpr(ep1))
                             temp = (unsigned long long)ep1->v.i;
                         else
@@ -1059,6 +1119,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 17:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -1070,6 +1131,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 19:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -1082,6 +1144,7 @@ void dooper(EXPRESSION** node, int mode)
                         if (ep2->v.c->r.ValueIsZero())
                         {
                             ep->type = maxcomplextype(ep1, ep2);
+                            ep->left = ep->right = nullptr;
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
@@ -1093,6 +1156,7 @@ void dooper(EXPRESSION** node, int mode)
                         else if (ep2->v.c->i.ValueIsZero())
                         {
                             ep->type = maxcomplextype(ep1, ep2);
+                            ep->left = ep->right = nullptr;
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
@@ -1104,6 +1168,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 23:
                         ep->type = maxcomplextype(ep1, ep2);
+                        ep->left = ep->right = nullptr;
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
@@ -1125,6 +1190,7 @@ void dooper(EXPRESSION** node, int mode)
                 if (ep2->v.i)
                 {
                     ep->type = maxinttype(ep1, ep2);
+                    ep->left = ep->right = nullptr;
 
                     if (isunsignedexpr(ep1) || isunsignedexpr(ep2))
                         ep->v.i = (unsigned long long)ep1->v.i % (unsigned long long)ep2->v.i;
@@ -1136,32 +1202,38 @@ void dooper(EXPRESSION** node, int mode)
             case en_arraylsh:
             case en_lsh:
                 ep->type = ep1->type; /* maxinttype(ep1, ep2);*/
+                ep->left = ep->right = nullptr;
                 ep->v.i = ep1->v.i << ep2->v.i;
                 ep->v.i = reint(ep);
                 break;
             case en_ursh:
                 ep->type = ep1->type; /* maxinttype(ep1, ep2);*/
+                ep->left = ep->right = nullptr;
                 ep1->v.i = reint(ep1);
                 ep->v.i = ((unsigned long long)ep1->v.i) >> ep2->v.i;
                 ep->v.i = reint(ep);
                 break;
             case en_rsh:
                 ep->type = ep1->type; /* maxinttype(ep1, ep2);*/
+                ep->left = ep->right = nullptr;
                 ep->v.i = ep1->v.i >> ep2->v.i;
                 ep->v.i = reint(ep);
                 break;
             case en_and:
                 ep->type = maxinttype(ep1, ep2);
+                ep->left = ep->right = nullptr;
                 ep->v.i = ep1->v.i & ep2->v.i;
                 ep->v.i = reint(ep);
                 break;
             case en_or:
                 ep->type = maxinttype(ep1, ep2);
+                ep->left = ep->right = nullptr;
                 ep->v.i = ep1->v.i | ep2->v.i;
                 ep->v.i = reint(ep);
                 break;
             case en_xor:
                 ep->type = maxinttype(ep1, ep2);
+                ep->left = ep->right = nullptr;
                 ep->v.i = ep1->v.i ^ ep2->v.i;
                 ep->v.i = reint(ep);
                 break;
@@ -1290,6 +1362,7 @@ int opt0(EXPRESSION** node)
                 ep->v.i = ~ep->left->v.i;
                 ep->v.i = reint(ep);
                 ep->unionoffset = ep->left->unionoffset;
+                ep->left = ep->right = nullptr;
             }
             return rv;
 
@@ -1316,6 +1389,7 @@ int opt0(EXPRESSION** node)
                 (*ep->v.f) = *ep->left->v.f;
                 ep->v.f->Negate();
                 *node = ep;
+                ep->left = ep->right = nullptr;
             }
             else if (ep->left->type == en_c_dc || ep->left->type == en_c_fc || ep->left->type == en_c_ldc)
             {
@@ -1327,6 +1401,7 @@ int opt0(EXPRESSION** node)
                 ep->v.c->i = ep->left->v.c->i;
                 ep->v.c->i.Negate();
                 *node = ep;
+                ep->left = ep->right = nullptr;
             }
             return rv;
         case en_structadd:
@@ -1467,6 +1542,7 @@ int opt0(EXPRESSION** node)
                                 ep->right = x;
                                 ep->right->v.i = i;
                                 ep->right->type = en_c_i;
+                                ep->right->left = ep->right->right = nullptr;
                                 rv = true;
                                 switch (ep->type)
                                 {
@@ -1531,6 +1607,7 @@ int opt0(EXPRESSION** node)
                             {
                                 ep->right->v.i = i;
                                 ep->right->type = en_c_i;
+                                ep->right->left = ep->right->right = nullptr;
                                 rv = true;
                                 switch (ep->type)
                                 {
@@ -1667,6 +1744,7 @@ int opt0(EXPRESSION** node)
                     {
                         ep->v.i = 0;
                         ep->type = en_c_i;
+                        ep->left = ep->right = nullptr;
                     }
                     break;
                 case 1:
@@ -3080,6 +3158,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.i = Optimizer::CastToInt(ISZ_ULONGLONG, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_ull;
+                node1->left = nullptr;
             }
             break;
         case en_x_ll:
@@ -3090,6 +3169,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.i = Optimizer::CastToInt(-ISZ_ULONGLONG, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_ll;
+                node1->left = nullptr;
             }
             break;
         case en_x_bit:
@@ -3108,6 +3188,7 @@ int typedconsts(EXPRESSION* node1)
                     node1->unionoffset = node1->left->unionoffset;
                 }
                 node1->type = en_c_bool;
+                node1->left = nullptr;
             }
             break;
         case en_x_c:
@@ -3118,6 +3199,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.i = Optimizer::CastToInt(-ISZ_UCHAR, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_c;
+                node1->left = nullptr;
             }
             break;
         case en_x_u16:
@@ -3128,6 +3210,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.i = Optimizer::CastToInt(ISZ_U16, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_u16;
+                node1->left = nullptr;
             }
             break;
         case en_x_u32:
@@ -3138,6 +3221,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.i = Optimizer::CastToInt(ISZ_U32, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_u32;
+                node1->left = nullptr;
             }
             break;
         case en_x_wc:
@@ -3148,6 +3232,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.i = Optimizer::CastToInt(-ISZ_WCHAR, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_wc;
+                node1->left = nullptr;
             }
             break;
         case en_x_uc:
@@ -3158,6 +3243,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.i = Optimizer::CastToInt(ISZ_UCHAR, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_uc;
+                node1->left = nullptr;
             }
             break;
         case en_x_s:
@@ -3168,6 +3254,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.i = Optimizer::CastToInt(-ISZ_USHORT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_i;
+                node1->left = nullptr;
             }
             break;
         case en_x_us:
@@ -3178,6 +3265,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.i = Optimizer::CastToInt(ISZ_USHORT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_ui;
+                node1->left = nullptr;
             }
             break;
         case en_x_i:
@@ -3189,6 +3277,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.i = Optimizer::CastToInt(-ISZ_UINT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_i;
+                node1->left = nullptr;
             }
             break;
         case en_x_ui:
@@ -3200,6 +3289,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.i = Optimizer::CastToInt(ISZ_UINT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_ul;
+                node1->left = nullptr;
             }
             break;
         case en_x_l:
@@ -3210,6 +3300,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.i = Optimizer::CastToInt(-ISZ_ULONG, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_i;
+                node1->left = nullptr;
             }
             break;
         case en_x_ul:
@@ -3220,6 +3311,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.i = Optimizer::CastToInt(ISZ_ULONG, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_ul;
+                node1->left = nullptr;
             }
             break;
             /*#ifdef XXXXX */
@@ -3232,6 +3324,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_FLOAT, &temp);
                 node1->type = en_c_f;
+                node1->left = nullptr;
             }
             break;
         case en_x_fi:
@@ -3243,6 +3336,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_IFLOAT, &temp);
                 node1->type = en_c_fi;
+                node1->left = nullptr;
             }
             break;
         case en_x_d:
@@ -3254,6 +3348,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_DOUBLE, &temp);
                 node1->type = en_c_d;
+                node1->left = nullptr;
             }
             break;
         case en_x_di:
@@ -3265,6 +3360,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_IDOUBLE, &temp);
                 node1->type = en_c_di;
+                node1->left = nullptr;
             }
             break;
         case en_x_ld:
@@ -3276,6 +3372,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_LDOUBLE, &temp);
                 node1->type = en_c_ld;
+                node1->left = nullptr;
             }
             break;
         case en_x_ldi:
@@ -3287,6 +3384,7 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
                 node1->type = en_c_ldi;
+                node1->left = nullptr;
             }
             break;
         case en_x_fc:
@@ -3315,6 +3413,7 @@ int typedconsts(EXPRESSION* node1)
                     node1->v.c = node1->left->v.c;
                 }
                 node1->type = en_c_fc;
+                node1->left = nullptr;
             }
             break;
         case en_x_dc:
@@ -3343,6 +3442,7 @@ int typedconsts(EXPRESSION* node1)
                     node1->v.c = node1->left->v.c;
                 }
                 node1->type = en_c_dc;
+                node1->left = nullptr;
             }
             break;
         case en_x_ldc:
@@ -3371,6 +3471,7 @@ int typedconsts(EXPRESSION* node1)
                     node1->v.c = node1->left->v.c;
                 }
                 node1->type = en_c_ldc;
+                node1->left = nullptr;
             }
             break;
             /*#endif */

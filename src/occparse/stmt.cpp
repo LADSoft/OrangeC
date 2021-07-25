@@ -3846,7 +3846,7 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     bool oldHasFuncCall = hasFuncCall;
     int oldExpressionCount = expressions;
     int oldControlSequences = controlSequences;
-    constexprfunctioninit();
+    constexprfunctioninit(true);
     expressions = 0;
     controlSequences = 0;
     Optimizer::LIST* oldGlobal = globalNameSpace->valueData->usingDirectives;
@@ -3973,6 +3973,7 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     if (IsCompiler() && funcNesting == 1)  // top level function
         localFree();
     handleInlines(funcsp);
+    constexprfunctioninit(false);
     controlSequences = oldControlSequences;
     expressions = oldExpressionCount;
     globalNameSpace->valueData->usingDirectives = oldGlobal;

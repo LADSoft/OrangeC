@@ -26,7 +26,7 @@
 namespace Parser
 {
 void constexprinit();
-void constexprfunctioninit();
+void constexprfunctioninit(bool start);
 bool checkconstexprfunc(EXPRESSION* node);
 bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc, bool fromFunc= false);
 bool EvaluateConstexprFunction(EXPRESSION*& node);

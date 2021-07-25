@@ -92,11 +92,13 @@ const char* LinkerMain::usageText =
     "/c+       Case sensitive link        /l             link only\n"
     "/m[x]     Generate Map file          /oxxx          Set output file\n"
     "/r+       Relative output file       /sxxx          Read specification file\n"
-    "/v or /g  Pass debug info            /y[...]        Verbose\n"
+    "/g  Pass debug info            /y[...]        Verbose\n"
     "/!, --nologo   No logo\n"
     "\n"
     " --output-def filename    create a .def file for DLLs\n"
+    " --shared                 create a shared library\n"
     "@xxx      Read commands from file\n"
+    "\nCommand line behavior has changed.  Use environment var OLINK_LEGACY_OPTIONS for old behavior\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
 
 const ObjString& LinkerMain::GetOutputFile(CmdFiles& files)
@@ -195,8 +197,15 @@ std::string LinkerMain::SpecFileContents(const std::string& specFile)
     }
     return rv;
 }
+void RewriteArgs(int argc, char** argv)
+{
+    for (int i=0; i < argc; i++)
+        if (!strcmp(argv[i], "--shared"))
+            strcpy(argv[i], "-T:DLL32");
+}
 int LinkerMain::Run(int argc, char** argv)
 {
+    RewriteArgs(argc, argv);
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
     char* modName = Utils::GetModuleName();
@@ -257,7 +266,7 @@ int LinkerMain::Run(int argc, char** argv)
     ObjIeeeIndexManager im1;
     ObjIeeeIndexManager im2;
     ObjFactory fact1(&im2);
-    if (DebugInfo.GetValue() || DebugInfo2.GetValue())
+    if ((DebugInfo.GetValue() && !getenv("OLINK_LEGACY_OPTIONS")) || DebugInfo2.GetValue())
         debugFile = Utils::QualifiedFile(outputFile.c_str(), ".odx");
     char* lpath = getenv("LIBRARY_PATH");
     if (lpath)
@@ -272,7 +281,7 @@ int LinkerMain::Run(int argc, char** argv)
     linker.SetIndexManager(&im1);
     linker.SetFactory(&fact1);
     ObjIeee ieee(outputFile, CaseSensitive.GetValue());
-    ieee.SetDebugInfoFlag(DebugInfo.GetValue() || DebugInfo2.GetValue());
+    ieee.SetDebugInfoFlag((DebugInfo.GetValue() && !getenv("OLINK_LEGACY_OPTIONS")) || DebugInfo2.GetValue());
     linker.SetObjIo(&ieee);
     // enter files and link
     AddFiles(linker, files);

@@ -356,18 +356,22 @@ static int DisplayerParams()
     }
     if (prmPrintFileName.GetExists())
     {
-        if (Optimizer::chosenAssembler->libfile[0] == 0)
+        char buf[260];
+        char *orangec = getenv("ORANGEC");
+        if (orangec)
         {
-            printf("none");
+            sprintf(buf, "%s\\lib\\", orangec);
+        }
+        sprintf(buf + strlen(buf), "%s", prmPrintFileName.GetValue().c_str());
+        FILE* fil = fopen(buf, "rb");
+        if (fil)
+        {
+            fclose(fil);
+            printf("%s", buf); 
         }
         else
         {
-            char *orangec = getenv("ORANGEC");
-            if (orangec)
-            {
-                printf("%s\\lib\\", orangec);
-            }
-            printf("%s", Optimizer::chosenAssembler->libfile);
+            printf("%s", prmPrintFileName.GetValue().c_str());
         }
         rv = 1;
     }
@@ -1036,7 +1040,11 @@ int ccinit(int argc, char* argv[])
                 printf("\n");
                 showVersion = true;
             } 
-            else if (!strncmp(&argv[i][1], "-print", 6) || !strncmp(&argv[i][1], "dump", 4))
+            else if (!strncmp(&argv[i][1], "print", 5) || !strncmp(&argv[i][1], "dump", 4))
+            {
+                Optimizer::showBanner = false;
+            }
+            else if (!strncmp(&argv[i][1], "-print", 6) || !strncmp(&argv[i][1], "-dump", 5))
             {
                 Optimizer::showBanner = false;
             }

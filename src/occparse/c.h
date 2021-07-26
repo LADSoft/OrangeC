@@ -348,6 +348,7 @@ typedef struct expr
     int isfunc : 1;
     int dest : 1;  // for thisref
     int noexprerr : 1;
+    int init : 1; // for no replacement by a constexpr array
 } EXPRESSION;
 
 typedef struct _msilarray

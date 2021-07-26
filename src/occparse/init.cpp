@@ -506,55 +506,58 @@ static void dumpDynamicInitializers(void)
         codeLabel = INT_MIN;
         while (dynamicInitializers)
         {
-            EXPRESSION* exp = nullptr, ** next = &exp, * exp1;
-            STATEMENT* stmt = nullptr, ** stmtp = &stmt;
-            int i = 0;
-            exp = convertInitToExpression(dynamicInitializers->init ? dynamicInitializers->init->basetp : dynamicInitializers->sp->tp,
-                dynamicInitializers->sp, nullptr, nullptr, dynamicInitializers->init, nullptr, false);
-
-            while (*next && (*next)->type == en_void)
+            if (!isstructured(dynamicInitializers->sp->tp) || !isintconst(dynamicInitializers->init->exp))
             {
-                counter++;
-                if (++i == 10)
+                EXPRESSION* exp = nullptr, ** next = &exp, * exp1;
+                STATEMENT* stmt = nullptr, ** stmtp = &stmt;
+                int i = 0;
+                exp = convertInitToExpression(dynamicInitializers->init ? dynamicInitializers->init->basetp : dynamicInitializers->sp->tp,
+                    dynamicInitializers->sp, nullptr, nullptr, dynamicInitializers->init, nullptr, false);
+
+                while (*next && (*next)->type == en_void)
                 {
-                    exp1 = *next;
-                    *next = intNode(en_c_i, 0);  // fill in the final right with a value
+                    counter++;
+                    if (++i == 10)
+                    {
+                        exp1 = *next;
+                        *next = intNode(en_c_i, 0);  // fill in the final right with a value
+                        (*stmtp) = stmtNode(nullptr, nullptr, st_expr);
+                        (*stmtp)->select = exp;
+                        stmtp = &(*stmtp)->next;
+
+                        next = &exp1;
+                        exp = exp1;
+                        i = 0;
+                    }
+                    else
+                    {
+                        next = &(*next)->right;
+                    }
+                }
+                if (exp)
+                {
                     (*stmtp) = stmtNode(nullptr, nullptr, st_expr);
                     (*stmtp)->select = exp;
                     stmtp = &(*stmtp)->next;
-
-                    next = &exp1;
-                    exp = exp1;
-                    i = 0;
                 }
-                else
+                if (stmt)
                 {
-                    next = &(*next)->right;
+                    STATEMENT* opt = stmt;
+                    while (opt)
+                    {
+                        optimize_for_constants(&opt->select);  // DAL fix
+                        opt = opt->next;
+                    }
+                    *stmtp = st;
+                    st = stmt;
                 }
-            }
-            if (exp)
-            {
-                (*stmtp) = stmtNode(nullptr, nullptr, st_expr);
-                (*stmtp)->select = exp;
-                stmtp = &(*stmtp)->next;
-            }
-            if (stmt)
-            {
-                STATEMENT* opt = stmt;
-                while (opt)
+                if (++counter >= 1500)
                 {
-                    optimize_for_constants(&opt->select);  // DAL fix
-                    opt = opt->next;
+                    counter = 0;
+                    callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_STARTUP, index++, st);
+                    st = nullptr;
+                    stp = &st;
                 }
-                *stmtp = st;
-                st = stmt;
-            }
-            if (++counter >= 1500)
-            {
-                counter = 0;
-                callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_STARTUP, index++, st);
-                st = nullptr;
-                stp = &st;
             }
             dynamicInitializers = dynamicInitializers->next;
         }

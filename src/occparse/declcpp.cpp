@@ -52,6 +52,7 @@
 #include "ildata.h"
 #include "types.h"
 #include "declare.h"
+#include "constopt.h"
 
 namespace CompletionCompiler
 {
@@ -2889,6 +2890,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
         }
     }
 }
+static int count4;
 LEXLIST* handleStaticAssert(LEXLIST* lex)
 {
     if (!needkw(&lex, openpa))
@@ -2902,11 +2904,13 @@ LEXLIST* handleStaticAssert(LEXLIST* lex)
         char buf[5000];
         TYPE* tp;
         EXPRESSION *expr = nullptr, *expr2 = nullptr;
+        inConstantExpression++;
         lex = expression_no_comma(lex, nullptr, nullptr, &tp, &expr, nullptr, 0);
         expr2 = Allocate<EXPRESSION>();
         expr2->type = en_x_bool;
         expr2->left = expr;
         optimize_for_constants(&expr2);
+        inConstantExpression--;
         if (!isarithmeticconst(expr2) && !templateNestingCount)
             error(ERR_CONSTANT_VALUE_EXPECTED);
         v = expr2->v.i;

@@ -99,6 +99,7 @@ void declare_init(void)
     argument_nesting = 0;
     symbolKey = 0;
     noNeedToSpecialize = 0;
+    inConstantExpression = 0;
 }
 
 void InsertGlobal(SYMBOL* sp) { Optimizer::globalCache.push_back(Optimizer::SymbolManager::Get(sp)); }

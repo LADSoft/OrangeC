@@ -53,11 +53,11 @@
 #include "lex.h"
 #include "dsw.h"
 #include "constexpr.h"
-
 namespace Parser
 {
 unsigned long long reint(EXPRESSION* node);
 
+int inConstantExpression;
 static EXPRESSION *asidehead, **asidetail;
 static unsigned long long shifts[sizeof(long long) * 8];
 static int optimizerfloatconst(EXPRESSION* en)
@@ -1251,7 +1251,47 @@ void addaside(EXPRESSION* node)
 }
 
 /*-------------------------------------------------------------------------*/
-
+EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add = true)
+{
+    EXPRESSION* rv;
+    switch (node->type)
+    {
+    case en_global:
+    case en_auto:
+    case en_threadlocal:
+        return node;
+    case en_add:
+    {
+        auto rv1 = relptr(node->left, offset, true);
+        auto rv2 = relptr(node->right, offset, true);
+        if (rv1)
+            return rv1;
+        else
+            return rv2;
+        break;
+    }
+    case en_sub:
+    {
+        auto rv1 = rv = relptr(node->left, offset, false);
+        auto rv2 = relptr(node->right, offset, false);
+        if (rv1)
+            return rv1;
+        else
+            return rv2;
+        break;
+    }
+    default:
+        if (isintconst(node))
+        {
+            if (add)
+                offset += node->v.i;
+            else
+                offset -= node->v.i;
+        }
+        return nullptr;
+    }
+    return rv;
+}
 int opt0(EXPRESSION** node)
 /*
  *      opt0 - delete useless expressions and combine constants.
@@ -1286,9 +1326,7 @@ int opt0(EXPRESSION** node)
         case en_l_sp:
         case en_l_fp:
         case en_l_bool:
-        case en_x_bool:
         case en_l_bit:
-        case en_x_bit:
         case en_l_wc:
         case en_l_u16:
         case en_l_u32:
@@ -1319,6 +1357,43 @@ int opt0(EXPRESSION** node)
         case en_l_ldc:
         case en_l_string:
         case en_l_object:
+        {
+            rv |= opt0(&((*node)->left));
+            if (!(*node)->left->init && inConstantExpression)
+            {
+                int offset = 0;
+     
+                auto ref = relptr((*node)->left, offset);
+                if (ref)
+                {
+                    // this will only do one level, so if we have an array of pointers to arrays
+                    // it won't work.
+                    if (ref->v.sp->sb->constexpression)
+                    {
+                        if (isarray(ref->v.sp->tp))
+                        {
+                            int n = offset / ref->v.sp->tp->btp->size;
+                            auto init = ref->v.sp->sb->init;
+                            while (n-- && init)
+                                init = init->next;
+                            if (init)
+                            {
+                                **node = *init->exp;
+                                rv = true;
+                            }
+                        }
+                        else
+                        {
+                            **node = *ref->v.sp->sb->init->exp;
+                            rv = true;
+                        }
+                    }
+                }
+            }
+        }
+            break;
+        case en_x_bool:
+        case en_x_bit:
         case en_x_wc:
         case en_x_c:
         case en_x_uc:
@@ -1435,11 +1510,6 @@ int opt0(EXPRESSION** node)
                             rv = true;
                         }
                     }
-                    else
-                    {
-                        dooper(node, mode);
-                        rv = true;
-                    }
                     break;
                 case 6:
                     if (ep->left->v.f->ValueIsZero())
@@ -1526,6 +1596,7 @@ int opt0(EXPRESSION** node)
                             {
                                 addaside(ep->right);
                                 *node = ep->left;
+                                rv = true;
                             }
                         }
                         else if (val == 1)
@@ -1562,8 +1633,6 @@ int opt0(EXPRESSION** node)
                             }
                         }
                     }
-                    dooper(node, mode);
-                    rv = true;
                     break;
                 case 6:
                     dval = *ep->left->v.f;
@@ -1680,10 +1749,8 @@ int opt0(EXPRESSION** node)
                     {
                         addaside(ep->right);
                         *node = ep->left;
+                        rv = true;
                     }
-                    else
-                        dooper(node, mode);
-                    rv = true;
                     break;
                 case 6:
                     dooper(node, mode);
@@ -2011,7 +2078,24 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 default:
-                    break;
+                {
+                    int offset1 = 0, offset2 = 0;
+                    auto rv1 = relptr(ep->left, offset1, true);
+                    auto rv2 = relptr(ep->right, offset2, true);
+                    if (rv1 && rv2)
+                    {
+                        if (rv1->v.sp != rv2->v.sp || offset1 != offset2)
+                        {
+                            *node = intNode(en_c_i, 1);
+                        }
+                        else
+                        {
+                            *node = intNode(en_c_i, 0);
+                        }
+                    }
+
+                }
+                break;
             }
             break;
         case en_ne:
@@ -2029,7 +2113,25 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 default:
-                    break;
+                {
+                    int offset1 = 0, offset2 = 0;
+                    auto rv1 = relptr(ep->left, offset1, true);
+                    auto rv2 = relptr(ep->right, offset2, true);
+                    if (rv1 && rv2)
+                    {
+                        if (rv1->v.sp != rv2->v.sp || offset1 != offset2)
+                        {
+                            *node = intNode(en_c_i, 1);
+                        }
+                        else
+                        {
+                            *node = intNode(en_c_i, 0);
+                        }
+                        rv = true;
+                    }
+
+                }
+                break;
             }
             break;
         case en_lt:
@@ -2047,7 +2149,18 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 default:
-                    break;
+                {
+                    int offset1 = 0, offset2 = 0;
+                    auto rv1 = relptr(ep->left, offset1, true);
+                    auto rv2 = relptr(ep->right, offset2, true);
+                    if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
+                    {
+                        *node = intNode(en_c_i, offset1 < offset2);
+                        rv = true;
+                    }
+
+                }
+                break;
             }
             break;
         case en_le:
@@ -2065,7 +2178,18 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 default:
-                    break;
+                {
+                    int offset1 = 0, offset2 = 0;
+                    auto rv1 = relptr(ep->left, offset1, true);
+                    auto rv2 = relptr(ep->right, offset2, true);
+                    if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
+                    {
+                        *node = intNode(en_c_i, offset1 <= offset2);
+                        rv = true;
+                    }
+
+                }
+                break;
             }
             break;
         case en_ugt:
@@ -2079,7 +2203,18 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 default:
-                    break;
+                {
+                    int offset1 = 0, offset2 = 0;
+                    auto rv1 = relptr(ep->left, offset1, true);
+                    auto rv2 = relptr(ep->right, offset2, true);
+                    if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
+                    {
+                        *node = intNode(en_c_i, offset1 > offset2);
+                        rv = true;
+                    }
+
+                }
+                break;
             }
             break;
         case en_uge:
@@ -2093,7 +2228,18 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 default:
-                    break;
+                {
+                    int offset1 = 0, offset2 = 0;
+                    auto rv1 = relptr(ep->left, offset1, true);
+                    auto rv2 = relptr(ep->right, offset2, true);
+                    if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
+                    {
+                        *node = intNode(en_c_i, offset1 >= offset2);
+                        rv = true;
+                    }
+
+                }
+                break;
             }
             break;
         case en_ult:
@@ -2107,7 +2253,18 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 default:
-                    break;
+                {
+                    int offset1 = 0, offset2 = 0;
+                    auto rv1 = relptr(ep->left, offset1, true);
+                    auto rv2 = relptr(ep->right, offset2, true);
+                    if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
+                    {
+                        *node = intNode(en_c_i, offset1 < offset2);
+                        rv = true;
+                    }
+
+                }
+                break;
             }
             break;
         case en_ule:
@@ -2121,7 +2278,17 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 default:
-                    break;
+                {
+                    int offset1 = 0, offset2 = 0;
+                    auto rv1 = relptr(ep->left, offset1, true);
+                    auto rv2 = relptr(ep->right, offset2, true);
+                    if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
+                    {
+                        *node = intNode(en_c_i, offset1 <= offset2);
+                        rv = true;
+                    }
+                }
+                break;
             }
             break;
         case en_gt:
@@ -2139,7 +2306,18 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 default:
-                    break;
+                {
+                    int offset1 = 0, offset2 = 0;
+                    auto rv1 = relptr(ep->left, offset1, true);
+                    auto rv2 = relptr(ep->right, offset2, true);
+                    if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
+                    {
+                        *node = intNode(en_c_i, offset1 > offset2);
+                        rv = true;
+                    }
+
+                }
+                break;
             }
             break;
         case en_ge:
@@ -2157,7 +2335,17 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 default:
-                    break;
+                {
+                    int offset1 = 0, offset2 = 0;
+                    auto rv1 = relptr(ep->left, offset1, true);
+                    auto rv2 = relptr(ep->right, offset2, true);
+                    if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
+                    {
+                        *node = intNode(en_c_i, offset1 >= offset2);
+                        rv = true;
+                    }
+                }
+                break;
             }
             break;
 
@@ -2936,7 +3124,9 @@ int fold_const(EXPRESSION* node)
         case en_func:
             if (node->v.func->sp && node->v.func->sp->sb->constexpression)
             {
-        		rv = EvaluateConstexprFunction(node);
+                inConstantExpression++;
+            	rv = EvaluateConstexprFunction(node);
+                inConstantExpression--;
             }
             if (!rv)
                 rv |= fold_const(node->v.func->fcall);
@@ -3504,6 +3694,18 @@ bool toConsider(EXPRESSION* exp1, EXPRESSION* exp2)
 }
 void rebalance(EXPRESSION** exp)
 {
+    std::stack<EXPRESSION*> stk;
+    stk.push(*exp);
+    while (!stk.empty())
+    {
+        auto top = stk.top();
+        stk.pop();
+        top->treesize = 0;
+        if (top->left)
+            stk.push(top->left);
+        if (top->right)
+            stk.push(top->right);
+    }
     *exp = Rebalance(*exp, toConsider);
 }
 bool msilConstant(EXPRESSION *exp)
@@ -3575,7 +3777,6 @@ void optimize_for_constants(EXPRESSION** expr)
 }
 LEXLIST* optimized_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed)
 {
-
     if (commaallowed)
         lex = expression(lex, funcsp, atp, tp, expr, 0);
     else

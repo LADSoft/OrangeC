@@ -1566,6 +1566,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             else
             {
                 EXPRESSION* exps = copy_expression(expsym);
+                exps->init = true;
                 if (isarray(tp) && tp->msil)
                 {
                     TYPE* btp = tp;
@@ -1602,7 +1603,10 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 }
                 else if (init->offset ||
                          (init->next && init->next->basetp && (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)))
+                {
                     exps = exprNode(en_add, exps, intNode(en_c_i, init->offset));
+                    exps->init = true;
+                }
                 if (exps->type != en_msil_array_access)
                     deref(init->basetp, &exps);
                 optimize_for_constants(&exps);

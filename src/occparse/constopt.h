@@ -25,6 +25,7 @@
 
 namespace Parser
 {
+extern int inConstantExpression;
 
 long long MaxOut(enum e_bt size, long long value);
 void dooper(EXPRESSION** node, int mode);

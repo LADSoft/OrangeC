@@ -25,7 +25,7 @@ framing1.o: framing.c
 	occ /c /9 /! /I$(INCLUDE) /D_V_SELFTEST /D_WIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DLIBOGG_EXPORTS /oframing1.o framing.c
 
 bitwise.exe: bitwise1.o
-	occ /obitwise bitwise1.o
+	occ /! /obitwise bitwise1.o
 framing.exe: framing1.o
-	occ /oframing framing1.o
+	occ /! /oframing framing1.o
 

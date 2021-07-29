@@ -14,20 +14,20 @@ all: $(TESTS)
 	occ /c /! $<
 
 %.o: %.asm
-	oasm $<
+	oasm /! $<
 	
 %.exe: %.o
-	occ $<
+	occ .! $<
 	
 mpfrdll.dll: mpfr.c
-	occ /Wd /ompfrdll.dll /DDLL mpfr.c
-	oimplib -C mpfrdll.l mpfrdll.dll
+	occ /! /Wd /ompfrdll.dll /DDLL mpfr.c
+	oimplib /! -C mpfrdll.l mpfrdll.dll
 
 mpfr.exe: mpfrdll.dll mpfr.c
-	occ /ompfr.exe mpfr.c -l mpfrdll.l
+	occ /! /ompfr.exe mpfr.c -l mpfrdll.l
 
 fastcall1.exe: fastcall.c
-	occ /ofastcall1.exe /O- fastcall.c
+	occ /! /ofastcall1.exe /O- fastcall.c
 
 %.tst: %.exe
 	$< > $*.out

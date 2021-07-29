@@ -5,10 +5,10 @@ clean:
 
 
 asmcmp.exe : asmcmp.cpp
-	occ $^
+	occ /! $^
 
 %.o: %.nas
-	oasm /b $^
+	oasm /! /b $^
 
 %.tst: %.o %1.cmpx
 	asmcmp $* > $*.tst

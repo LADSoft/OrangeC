@@ -212,7 +212,7 @@ FILES = \
     00217.exe
 
 %.exe: %.c
-	occ  /D__ILP32__ /D__noinline__=__stdcall__ $^
+	occ  /! /D__ILP32__ /D__noinline__=__stdcall__ $^
 
 %.tst: %.exe
 	$^ > $*.tst

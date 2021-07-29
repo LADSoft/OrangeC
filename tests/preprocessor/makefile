@@ -41,8 +41,8 @@ clean:
 	$(CLEAN)
 
 af.o : af.c
-	occ /c $^
+	occ /c /! $^
 
 %.exe: %.c af.o
-	occ /T /9 $^ af.o
+	occ /! /T /9 $^ af.o
 	$*.exe

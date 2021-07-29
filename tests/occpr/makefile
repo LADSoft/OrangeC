@@ -3,7 +3,7 @@ FILES2=$(wildcard inc*.cpp)
 all: gen.exe $(FILES:.c=.ods) $(FILES2:.cpp=.ods)
 
 gen.exe: gen.c
-	occ gen.c
+	occ /! gen.c
 	gen
 
 clean:

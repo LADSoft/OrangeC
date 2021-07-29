@@ -54,6 +54,14 @@ class fnv1a_class
     }
 
 };
+class str_eql
+{
+    public:
+    bool operator()(const char* a, const char* b) const
+    {
+        return !strcmp(a, b);
+    }
+};
 using fnv1a64 = fnv1a_class<uint64_t, UINT64_C(1099511628211), UINT64_C(14695981039346656037)>;
 typedef bool (*BUILTIN)();
 
@@ -65,7 +73,7 @@ typedef struct builtins
 #define PROTO(PROT, NAME, FUNC) bool FUNC();
 #include "beIntrinsicProtos.h"
 #define PROTO(PROT, NAME, FUNC) {#NAME, FUNC},
-std::unordered_map<const char*, BUILTIN, fnv1a64> builtin_map = {
+std::unordered_map<const char*, BUILTIN, fnv1a64, str_eql> builtin_map = {
 #include "beIntrinsicProtos.h"
 };
 
@@ -238,7 +246,6 @@ bool handleBSWAP64()
 bool BackendIntrinsic(Optimizer::QUAD* q)
 {
     const char* name = q->dc.left->offset->sp->name;
-
     auto thing = builtin_map.find(name);
     if(thing != builtin_map.end())
     {

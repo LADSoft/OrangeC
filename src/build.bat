@@ -112,7 +112,7 @@
                   )
                   if "%TRAVIS_OS_NAME%" NEQ "" (
                        goto done;
-                  }
+                  )
                   cd ..\tests
                   omake -B -j:%PARALLEL% /DCOMPILER=OCC
                   IF %ERRORLEVEL% NEQ 0 (

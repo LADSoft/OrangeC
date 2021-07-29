@@ -220,7 +220,7 @@ int LinkerMain::Run(int argc, char** argv)
     }
     if (DebugInfo.GetValue() && !getenv("OLINK_LEGACY_OPTIONS"))
     {
-        fprintf(stderr, "\nCompile date: " __DATE__ " time: " __TIME__ "\n");
+        printf("\nCompile date: " __DATE__ " time: " __TIME__ "\n");
         exit(0);
     }
     if (argc == 1 && File.GetCount() <= 1)

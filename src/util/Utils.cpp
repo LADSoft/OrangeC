@@ -93,10 +93,10 @@ void Utils::banner(const char* progName)
                     return;
 
 #endif
-    fprintf(stderr, "%s Version " STRING_VERSION " " COPYRIGHT "\n", ShortName(progName));
+    printf("%s Version " STRING_VERSION " " COPYRIGHT "\n", ShortName(progName));
     if (have_version)
     {
-        fprintf(stderr, "\nCompile date: " __DATE__ " time: " __TIME__ "\n");
+        printf("\nCompile date: " __DATE__ " time: " __TIME__ "\n");
         exit(0);
     }
 }

@@ -1037,7 +1037,6 @@ int ccinit(int argc, char* argv[])
             }
             else if (!getenv("OCC_LEGACY_OPTIONS") && argv[i][1] == 'v' && argv[i][2] == 0)
             {
-                printf("\n");
                 showVersion = true;
             } 
             else if (!strncmp(&argv[i][1], "print", 5) || !strncmp(&argv[i][1], "dump", 4))
@@ -1056,7 +1055,7 @@ int ccinit(int argc, char* argv[])
     }
     if (showVersion)
     {
-        fprintf(stderr, "Compile date: " __DATE__ ", time: " __TIME__ "\n");
+        printf("\nCompile date: " __DATE__ ", time: " __TIME__ "\n");
         exit(255);
     }
 
@@ -1064,7 +1063,7 @@ int ccinit(int argc, char* argv[])
     GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
 #else
     strcpy(buffer, argv[0]);
-#endif
+	#endif
 
     if (!getenv("ORANGEC"))
     {

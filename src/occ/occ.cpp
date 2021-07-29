@@ -398,6 +398,7 @@ int main(int argc, char* argv[])
 {
     using namespace occx86;
     Utils::banner(argv[0]);
+    fflush(stdout);
     Utils::SetEnvironmentToPathParent("ORANGEC");
     unsigned startTime, stopTime;
     bool syntaxOnly = false;

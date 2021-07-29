@@ -9,7 +9,7 @@ clean:
 
 ogg.l: bitwise.o framing.o
 	del ogg.l 2> NUL
-	olib ogg.l bitwise.o framing.o
+	olib /! ogg.l bitwise.o framing.o
 
 bitwise.o: bitwise.c
 	occ /c /! /9 /I$(INCLUDE) /D_WIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DLIBOGG_EXPORTS $<

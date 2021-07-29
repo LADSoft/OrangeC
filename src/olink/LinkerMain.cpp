@@ -96,6 +96,7 @@ const char* LinkerMain::usageText =
     "/!, --nologo   No logo\n"
     "\n"
     " --output-def filename    create a .def file for DLLs\n"
+    " --shared                 create a dll\n"
     "@xxx      Read commands from file\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
 
@@ -195,8 +196,15 @@ std::string LinkerMain::SpecFileContents(const std::string& specFile)
     }
     return rv;
 }
+void RewriteArgs(int argc, char **argv)
+{
+    for (int i=0; i < argc; i++)
+        if (!strcmp(argv[i], "--shared"))
+            strcpy(argv[i], "-T:DLL32");
+}
 int LinkerMain::Run(int argc, char** argv)
 {
+    RewriteArgs(argc, argv);
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
     char* modName = Utils::GetModuleName();
@@ -214,7 +222,16 @@ int LinkerMain::Run(int argc, char** argv)
         if (!internalConfig.Parse(configName.c_str()))
             Utils::fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || (argc == 1 && File.GetCount() <= 1))
+    if (!SwitchParser.Parse(&argc, argv))
+    {
+        Utils::usage(argv[0], usageText);
+    }
+    if (DebugInfo.GetValue() && !getenv("OLINK_LEGACY_OPTIONS"))
+    {
+        printf("\nCompile date: " __DATE__ " time: " __TIME__ "\n");
+        exit(0);
+    }
+    if (argc == 1 && File.GetCount() <= 1)
     {
         Utils::usage(argv[0], usageText);
     }

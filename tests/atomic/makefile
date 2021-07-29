@@ -18,10 +18,10 @@ clean:
 	occ -D__SIZE_TYPE__=unsigned /c /! $<
 
 %.o: %.asm
-	oasm $<
+	oasm /! $<
 	
 %.exe: %.o
-	occ $<
+	occ /! $<
 	
 %.tst: %.exe
 	$<

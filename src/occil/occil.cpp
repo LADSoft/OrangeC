@@ -402,6 +402,7 @@ int main(int argc, char* argv[])
 {
     using namespace occmsil;
     Utils::banner(argv[0]);
+    fflush(stdout);
     Utils::SetEnvironmentToPathParent("ORANGEC");
     unsigned startTime, stopTime;
 

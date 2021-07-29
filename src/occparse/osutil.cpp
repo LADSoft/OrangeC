@@ -356,18 +356,22 @@ static int DisplayerParams()
     }
     if (prmPrintFileName.GetExists())
     {
-        if (Optimizer::chosenAssembler->libfile[0] == 0)
+        char buf[260];
+        char *orangec = getenv("ORANGEC");
+        if (orangec)
         {
-            printf("none");
+            sprintf(buf, "%s\\lib\\", orangec);
+        }
+        sprintf(buf + strlen(buf), "%s", prmPrintFileName.GetValue().c_str());
+        FILE* fil = fopen(buf, "rb");
+        if (fil)
+        {
+            fclose(fil);
+            printf("%s", buf); 
         }
         else
         {
-            char *orangec = getenv("ORANGEC");
-            if (orangec)
-            {
-                printf("%s\\lib\\", orangec);
-            }
-            printf("%s", Optimizer::chosenAssembler->libfile);
+            printf("%s", prmPrintFileName.GetValue().c_str());
         }
         rv = 1;
     }
@@ -1033,10 +1037,13 @@ int ccinit(int argc, char* argv[])
             }
             else if (!getenv("OCC_LEGACY_OPTIONS") && argv[i][1] == 'v' && argv[i][2] == 0)
             {
-                printf("\n");
                 showVersion = true;
             } 
-            else if (!strncmp(&argv[i][1], "-print", 6) || !strncmp(&argv[i][1], "dump", 4))
+            else if (!strncmp(&argv[i][1], "print", 5) || !strncmp(&argv[i][1], "dump", 4))
+            {
+                Optimizer::showBanner = false;
+            }
+            else if (!strncmp(&argv[i][1], "-print", 6) || !strncmp(&argv[i][1], "-dump", 5))
             {
                 Optimizer::showBanner = false;
             }
@@ -1048,7 +1055,7 @@ int ccinit(int argc, char* argv[])
     }
     if (showVersion)
     {
-        fprintf(stderr, "Compile date: " __DATE__ ", time: " __TIME__ "\n");
+        printf("\nCompile date: " __DATE__ ", time: " __TIME__ "\n");
         exit(255);
     }
 
@@ -1056,7 +1063,7 @@ int ccinit(int argc, char* argv[])
     GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
 #else
     strcpy(buffer, argv[0]);
-#endif
+	#endif
 
     if (!getenv("ORANGEC"))
     {

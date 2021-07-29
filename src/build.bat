@@ -110,17 +110,18 @@
                   IF %ERRORLEVEL% NEQ 0 (
                        goto error;
                   )
-                  if "%TRAVIS_OS_NAME%" EQU "" (
-                      cd ..\tests
-                      omake -B -j:%PARALLEL% /DCOMPILER=OCC
-                      IF %ERRORLEVEL% NEQ 0 (
-                          goto error;
-                      )
-                      cd ..\src
-                      omake /fzip7z.mak
-                      IF %ERRORLEVEL% NEQ 0 (
-                          goto error;
-                      )
+                  if "%TRAVIS_OS_NAME%" NEQ "" (
+                       goto done;
+                  }
+                  cd ..\tests
+                  omake -B -j:%PARALLEL% /DCOMPILER=OCC
+                  IF %ERRORLEVEL% NEQ 0 (
+                      goto error;
+                  )
+                  cd ..\src
+                  omake /fzip7z.mak
+                  IF %ERRORLEVEL% NEQ 0 (
+                      goto error;
                   )
                   echo succeeded
                   goto done

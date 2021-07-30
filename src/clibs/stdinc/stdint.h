@@ -86,8 +86,6 @@ typedef int64_t intmax_t;
 typedef uint64_t uintmax_t;
 
 #endif
-#if defined(__STDC_LIMIT_MACROS) || defined(__cplusplus)
-
 #    define INT8_MIN -128
 #    define INT8_MAX 127
 #    define INT_LEAST8_MIN -128
@@ -153,10 +151,6 @@ typedef uint64_t uintmax_t;
 #    define WINT_MIN WCHAR_MIN
 #    define WINT_MAX WCHAR_MAX
 
-#endif
-
-#if defined(__STDC_CONSTANT_MACROS) || defined(__cplusplus)
-
 #    define INT8_C(x) ((int_least8_t)x)
 #    define UINT8_C(x) ((uint_least8_t)x##U)
 #    define INT16_C(x) ((int_least16_t)x)
@@ -168,7 +162,5 @@ typedef uint64_t uintmax_t;
 
 #    define INTMAX_C(x) (x##LL)
 #    define UINTMAX_C(x) (x##LLU)
-
-#endif
 
 #endif /* __STDINT_H */

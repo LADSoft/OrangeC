@@ -24,6 +24,11 @@
  */
 
 #include "ctypes.h"
+#ifdef BORLAND
+// hack for buggy embarcadero compiler
+#define beLocalAlloc(x) Alloc(x)
+#define beGlobalAlloc(x) globalAlloc(x)
+#endif
 
 typedef struct _memblk_
 {

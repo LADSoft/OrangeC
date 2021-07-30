@@ -21,10 +21,16 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
-ifeq "$(COMPILER)" "BCC32"
+ifeq "$(COMPILER)" "RADSTUDIO"
 
-COMPILER_PATH := \bcc102
-OBJ_IND_PATH := bcc32
+RADSTUDIO_BASE := c:\program files (x86)\Embarcadero\Studio
+RADSTUDIO_VERSION := $(lastword $(shell dir /b "$(RADSTUDIO_BASE)"))
+COMPILER_PATH := $(RADSTUDIO_BASE)\$(RADSTUDIO_VERSION)
+OBJ_IND_PATH := radstudio
+
+ifeq "$(RADSTUDIO_VERSION)" ""
+$(error "Please install Embarcadero RadStudio")
+endif
 
 CPP_deps = $(notdir $(CPP_DEPENDENCIES:.cpp=.obj))
 C_deps = $(notdir $(C_DEPENDENCIES:.c=.obj))
@@ -105,7 +111,14 @@ $(_LIBDIR)\$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
 |
 
 $(NAME).exe: $(MAIN_DEPENDENCIES) $(LIB_DEPENDENCIES) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(NAME)$(LIB_EXT) $(RES_deps)
-	$(LINK) $(TYPE) $(LFLAGS) $(STARTUP) $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES)), $(NAME), $(NAME), $(_LIBDIR)\$(NAME)$(LIB_EXT) $(LIB_DEPENDENCIES) $(COMPLIB) import32$(LIB_EXT), $(DEF_DEPENDENCIES), $(addprefix $(_OUTPUTDIR)\,$(RES_deps))
+	$(LINK) $(TYPE) $(LFLAGS) @&&|
+$(STARTUP) $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES))
+$(NAME)
+$(NAME)
+$(_LIBDIR)\$(NAME)$(LIB_EXT) $(LIB_DEPENDENCIES) $(COMPLIB) import32$(LIB_EXT)
+$(DEF_DEPENDENCIES)
+$(addprefix $(_OUTPUTDIR)\,$(RES_deps))
+|
 
 %.exe: %.c
 	$(CC) -o$@ $^

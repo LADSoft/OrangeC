@@ -24,6 +24,9 @@
 
 #include "DotNetPELib.h"
 #include <new>
+#ifdef BORLAND
+#include <malloc.h>
+#endif
 namespace DotNetPELib
 {
 

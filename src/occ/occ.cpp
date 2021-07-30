@@ -66,6 +66,8 @@ void regInit() {}
 
 namespace Parser
 {
+    char outFile[260];
+    InstructionParser* instructionParser;
     bool IsCompiler() {
         return true;
     }
@@ -82,10 +84,8 @@ void SymbolManager::clear()
 namespace occx86
 {
 
-char outFile[260];
 char infile[260];
 
-InstructionParser* instructionParser;
 
 static const char* occ_verbosity = nullptr;
 static Optimizer::FunctionData* lastFunc;
@@ -341,18 +341,18 @@ bool SaveFile(const char* name)
     if (!Optimizer::cparams.prm_asmfile)
     {
         strcpy(infile, name);
-        outputfile(outFile, name, Optimizer::chosenAssembler->objext, true);
-        InsertExternalFile(outFile, false);
-        Optimizer::outputFile = fopen(outFile, "wb");
+        outputfile(Parser::outFile, name, Optimizer::chosenAssembler->objext, true);
+        InsertExternalFile(Parser::outFile, false);
+        Optimizer::outputFile = fopen(Parser::outFile, "wb");
         if (!Optimizer::outputFile)
             return false;
         if (Optimizer::cparams.prm_browse)
         {
-            outputfile(outFile, name, ".cbr", true);
+            outputfile(Parser::outFile, name, ".cbr", true);
             // have to readd the extension in case /o was specified
-            Utils::StripExt(outFile);
-            Utils::AddExt(outFile, ".cbr");
-            Optimizer::browseFile = fopen(outFile, "wb");
+            Utils::StripExt(Parser::outFile);
+            Utils::AddExt(Parser::outFile, ".cbr");
+            Optimizer::browseFile = fopen(Parser::outFile, "wb");
             if (!Optimizer::browseFile)
                 return false;
         }
@@ -471,7 +471,7 @@ int main(int argc, char* argv[])
             if (!ProcessData(p.c_str()))
                 Utils::fatal("File I/O error");
             if (!SaveFile(p.c_str()))
-                Utils::fatal("Cannot open '%s' for write", outFile);
+                Utils::fatal("Cannot open '%s' for write", Parser::outFile);
         }
         if (Optimizer::cparams.prm_displaytiming)
         {

@@ -907,7 +907,11 @@ void InsertAnyFile(const char* filename, char* path, int drive)
     struct _finddata_t findbuf;
     size_t n;
     _splitpath(filename, drv, dir, name, ext);
+#ifdef BORLAND
+    n = _findfirst(const_cast<char *>(filename), &findbuf);
+#else
     n = _findfirst(filename, &findbuf);
+#endif
     if (n != -1)
     {
         do

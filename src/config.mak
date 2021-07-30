@@ -25,6 +25,12 @@ ifndef COMPILER
 COMPILER := MS
 endif
 
+# note that the bcc32 and radstudio versions presently compile the compiler
+# but the resulting code will crash.
+#
+# I think the last time I looked into this I found that long long support is broken
+# in the embarcadero compiler.
+#
 include $(TREETOP)/bcc32.mak
 include $(TREETOP)/ms.mak
 include $(TREETOP)/mingw.mak
@@ -32,3 +38,4 @@ include $(TREETOP)/mingw64.mak
 include $(TREETOP)/clang.mak
 include $(TREETOP)/occ.mak
 include $(TREETOP)/gcc-linux.mak
+include $(TREETOP)/radstudio.mak

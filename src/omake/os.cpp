@@ -43,7 +43,9 @@
 #    ifndef _SH_DENYNO
 #        define _SH_DENYNO 0
 #    endif
+#ifndef BORLAND
 #    define chdir _chdir
+#endif
 #endif
 #include <string.h>
 #undef WriteConsole

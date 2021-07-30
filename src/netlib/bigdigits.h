@@ -24,6 +24,7 @@
 #ifndef BIGDIGITS_H_
 #define BIGDIGITS_H_ 1
 
+#include <ctype.h> // workaround for a bug in the embarcadero headers
 #include <stdlib.h>
 #include "bigdtypes.h"
 

@@ -33,7 +33,9 @@
 #include "ifloatconv.h"
 #include "ilocal.h"
 #include "output.h"
-
+#ifdef BORLAND
+#include "malloc.h"
+#endif
 namespace Parser
 {
     bool IsCompiler();

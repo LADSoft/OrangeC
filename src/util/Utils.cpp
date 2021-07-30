@@ -39,6 +39,9 @@
 #else
 #    include <io.h>
 extern "C" char* getcwd(char*, int);
+#ifdef BORLAND
+#    define _isatty isatty
+#endif
 #endif
 
 #include "Utils.h"

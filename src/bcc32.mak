@@ -41,7 +41,7 @@ LLIB_DEPENDENCIES = $(notdir $(filter-out $(addsuffix .obj,$(EXCLUDE)) $(MAIN_DE
 
 
 CC="$(COMPILER_PATH)\bin\bcc32c"
-CCFLAGS = /c /w- /O2 /x /DBCC32c
+CCFLAGS = /c /w- /x /O2 /DBCC32c
 
 LINK="$(COMPILER_PATH)\bin\ilink32"
 LFLAGS=-c -m -Gn -Gi /V5.1 /L"$(COMPILER_PATH)\lib\win32c\release" /L"$(COMPILER_PATH)\lib\win32c\release\psdk" /L$(_LIBDIR)

@@ -17,7 +17,7 @@ all: $(TESTS)
 	oasm /! $<
 	
 %.exe: %.o
-	occ .! $<
+	occ /! $<
 	
 mpfrdll.dll: mpfr.c
 	occ /! /Wd /ompfrdll.dll /DDLL mpfr.c

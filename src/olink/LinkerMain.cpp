@@ -37,6 +37,7 @@
 #include "LinkPartition.h"
 #include "LinkOverlay.h"
 #include "LinkLibrary.h"
+#include "..\version.h"
 #include <fstream>
 #include <cstdio>
 #include <cstring>
@@ -205,6 +206,15 @@ void RewriteArgs(int argc, char **argv)
 int LinkerMain::Run(int argc, char** argv)
 {
     RewriteArgs(argc, argv);
+    if (!getenv("OLINK_LEGACY_OPTIONS"))
+    {
+        for (int i=0; i < argc; i++)
+            if (!strcmp(argv[i], "-v"))
+            {
+                 printf("%s Version " STRING_VERSION, Utils::ShortName(argv[0]));
+                 exit(0);
+            }
+    }
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
     char* modName = Utils::GetModuleName();
@@ -225,11 +235,6 @@ int LinkerMain::Run(int argc, char** argv)
     if (!SwitchParser.Parse(&argc, argv))
     {
         Utils::usage(argv[0], usageText);
-    }
-    if (DebugInfo.GetValue() && !getenv("OLINK_LEGACY_OPTIONS"))
-    {
-        printf("\nCompile date: " __DATE__ " time: " __TIME__ "\n");
-        exit(0);
     }
     if (argc == 1 && File.GetCount() <= 1)
     {

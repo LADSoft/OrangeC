@@ -27,6 +27,10 @@
 
 extern Optimizer::SimpleSymbol* currentFunction;
 
+namespace Parser
+{
+extern int anonymousNotAlloc;
+}
 namespace Optimizer
 {
 
@@ -37,7 +41,6 @@ extern CmdSwitchCombineString output;
 
 extern const char* usageText;
 
-extern int anonymousNotAlloc;
 extern int usingEsp;
 
 void InternalConflict(QUAD* head);

@@ -66,6 +66,7 @@ void regInit() {}
 
 namespace Parser
 {
+    int anonymousNotAlloc;
     char outFile[260];
     InstructionParser* instructionParser;
     bool IsCompiler() {

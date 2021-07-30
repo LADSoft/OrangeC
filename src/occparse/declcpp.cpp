@@ -3467,6 +3467,41 @@ TYPE* AttributeFinish(SYMBOL* sym, TYPE* tp)
     }
     return tp;
 }
+static const std::unordered_map<std::string, int> gccStyleAttribNames = {
+    {"alias", 1},  // 1 arg, alias name
+    {"aligned",
+     2},  // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
+    {"warn_if_not_aligned", 3},  // arg is the desired minimum alignment
+    {"alloc_size", 4},           // implement by ignoring one or two args
+    {"cleanup", 5},  // arg is afunc: similar to a destructor.   Also gets called during exception processing
+                     //                    { "common", 6 }, // no args, decide whether to support
+                     //                    { "nocommon", 7 }, // no args, decide whether to support
+    {"copy",
+     8},  // one arg, varible/func/type, the two variable kinds must match don't copy alias visibility or weak
+    {"deprecated", 9},  // zero or one arg, match C++
+    {"nonstring", 10},  // has no null terminator
+    {"packed",
+     11},  // ignore auto-align on this field
+           //                    { "section", 12 }, // one argument, the section name
+           //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
+    {"unused", 14},  // warning control
+    {"used", 15},    // warning control
+    {"vector_size",
+     16},  // one arg, which must be a power of two multiple of the base size.  implement as fixed-size array
+    //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't
+    //                    support for now as requires linker changes. { "weak", 18 }, // not supporting
+    {"dllimport", 19},
+    {"dllexport", 20},
+    //                    { "selectany", 21 },  // requires linker support
+    //                    { "shared", 22 },
+    {"zstring", 23},  // non-gcc, added to support nonstring
+    {"noreturn", 24},
+    {"stdcall", 25},
+    {"always_inline", 26}, // we don't really force inline this is still just a suggestion.   in practice the types of functions that get flagged with this will likely always be inlined anyway
+    {"format", 27},
+    {"internal_linkage", 28},
+    {"exclude_from_explicit_instantiation", 29 },
+};
 void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
 {
     if (MATCHKW(*lex, kw__attribute))
@@ -3478,41 +3513,6 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
             {
                 if (ISID(*lex) || ISKW(*lex))
                 {
-                    static const std::unordered_map<std::string, int> gccStyleAttribNames = {
-                        {"alias", 1},  // 1 arg, alias name
-                        {"aligned",
-                         2},  // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
-                        {"warn_if_not_aligned", 3},  // arg is the desired minimum alignment
-                        {"alloc_size", 4},           // implement by ignoring one or two args
-                        {"cleanup", 5},  // arg is afunc: similar to a destructor.   Also gets called during exception processing
-                                         //                    { "common", 6 }, // no args, decide whether to support
-                                         //                    { "nocommon", 7 }, // no args, decide whether to support
-                        {"copy",
-                         8},  // one arg, varible/func/type, the two variable kinds must match don't copy alias visibility or weak
-                        {"deprecated", 9},  // zero or one arg, match C++
-                        {"nonstring", 10},  // has no null terminator
-                        {"packed",
-                         11},  // ignore auto-align on this field
-                               //                    { "section", 12 }, // one argument, the section name
-                               //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
-                        {"unused", 14},  // warning control
-                        {"used", 15},    // warning control
-                        {"vector_size",
-                         16},  // one arg, which must be a power of two multiple of the base size.  implement as fixed-size array
-                        //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't
-                        //                    support for now as requires linker changes. { "weak", 18 }, // not supporting
-                        {"dllimport", 19},
-                        {"dllexport", 20},
-                        //                    { "selectany", 21 },  // requires linker support
-                        //                    { "shared", 22 },
-                        {"zstring", 23},  // non-gcc, added to support nonstring
-                        {"noreturn", 24},
-                        {"stdcall", 25},
-                        {"always_inline", 26}, // we don't really force inline this is still just a suggestion.   in practice the types of functions that get flagged with this will likely always be inlined anyway
-                        {"format", 27},
-                        {"internal_linkage", 28},
-                        {"exclude_from_explicit_instantiation", 29 },
-                    };
                     std::string name;
                     if (ISID(*lex))
                         name = (*lex)->data->value.s.a;
@@ -3770,6 +3770,27 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
         }
     }
 }
+static const std::unordered_map<std::string, int> occCPPStyleAttribNames = {
+    {"zstring", 23},  // non-gcc, added to support nonstring
+};
+static const std::unordered_map<std::string, int> clangCPPStyleAttribNames = {
+     {"internal_linkage", 28},
+     {"exclude_from_explicit_instantiation", 29 },
+};
+static const std::unordered_map<std::string, int> gccCPPStyleAttribNames = {
+    {"alloc_size",
+     4},  // implement by ignoring one or two args
+          //                    { "common", 6 }, // no args, decide whether to support
+          //                    { "nocommon", 7 }, // no args, decide whether to support
+          //                    { "section", 12 }, // one argument, the section name
+    //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't
+    //                    support { "visibility", 17 }, // one arg, 'default' ,'hidden',
+    //                    'internal', 'protected.   don't support for now as requires linker
+    //                    changes. { "weak", 18 }, // not supporting { "selectany", 21 }, //
+    //                    requires linker support { "shared", 22 },
+    {"dllexport", 25},
+    {"dllimport", 26},
+    {"stdcall", 27} };
 bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
 {
     (void)always;
@@ -3908,9 +3929,6 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                                     }
                                     else if (*lex)
                                     {
-                                        static const std::unordered_map<std::string, int> occCPPStyleAttribNames = {
-                                            {"zstring", 23},  // non-gcc, added to support nonstring
-                                        };
                                         std::string name = (*lex)->data->value.s.a;
                                         auto searchedName = occCPPStyleAttribNames.find(name);
                                         if (searchedName != occCPPStyleAttribNames.end())
@@ -3948,10 +3966,6 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                                     }
                                     else if (*lex)
                                     {
-                                        static const std::unordered_map<std::string, int> clangCPPStyleAttribNames = {
-                                             {"internal_linkage", 28},
-                                             {"exclude_from_explicit_instantiation", 29 },
-                                        };
                                         std::string name = (*lex)->data->value.s.a;
                                         auto searchedName = clangCPPStyleAttribNames.find(name);
                                         if (searchedName != clangCPPStyleAttribNames.end())
@@ -3995,20 +4009,6 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                                         // note: these are only the namespaced names listed, the __attribute__ names are unlisted
                                         // here as they don't exist in GCC and we want ours to follow theirs for actual consistency
                                         // reasons.
-                                        static const std::unordered_map<std::string, int> gccCPPStyleAttribNames = {
-                                            {"alloc_size",
-                                             4},  // implement by ignoring one or two args
-                                                  //                    { "common", 6 }, // no args, decide whether to support
-                                                  //                    { "nocommon", 7 }, // no args, decide whether to support
-                                                  //                    { "section", 12 }, // one argument, the section name
-                                            //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't
-                                            //                    support { "visibility", 17 }, // one arg, 'default' ,'hidden',
-                                            //                    'internal', 'protected.   don't support for now as requires linker
-                                            //                    changes. { "weak", 18 }, // not supporting { "selectany", 21 }, //
-                                            //                    requires linker support { "shared", 22 },
-                                            {"dllexport", 25},
-                                            {"dllimport", 26},
-                                            {"stdcall", 27}};
                                         std::string name = (*lex)->data->value.s.a;
                                         auto searchedName = gccCPPStyleAttribNames.find(name);
                                         if (searchedName != gccCPPStyleAttribNames.end())

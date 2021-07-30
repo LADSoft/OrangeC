@@ -55,6 +55,7 @@ void diag(const char* fmt, ...) {}
 void Import() {}
 namespace Parser
 {
+    int anonymousNotAlloc;
     bool IsCompiler() {
         return true;
     }

@@ -39,6 +39,9 @@
 #else
 #    include <io.h>
 extern "C" char* getcwd(char*, int);
+#ifdef BORLAND
+#    define _isatty isatty
+#endif
 #endif
 
 #include "Utils.h"
@@ -93,7 +96,7 @@ void Utils::banner(const char* progName)
                     return;
 
 #endif
-    printf("%s Version " STRING_VERSION " " COPYRIGHT "\n", ShortName(progName));
+    printf("%s (OrangeC) Version " STRING_VERSION "\n" COPYRIGHT "\n", ShortName(progName));
     if (have_version)
     {
         printf("\nCompile date: " __DATE__ " time: " __TIME__ "\n");
@@ -142,7 +145,7 @@ void Utils::usage(const char* prog_name, const char* text)
         rows = ScreenHeight();
 #endif
     fprintf(stderr, "\nUsage: %s ", ShortName(prog_name));
-    int left = rows - 3;
+    int left = rows - 4;
     std::string buf;
     while (GetLine(&text, buf))
     {

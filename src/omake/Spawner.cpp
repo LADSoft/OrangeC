@@ -43,6 +43,7 @@
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
 long Spawner::runningProcesses;
+bool Spawner::stopAll;
 
 unsigned WINFUNC Spawner::Thread(void* cls)
 {
@@ -173,6 +174,8 @@ int Spawner::InternalRun()
         else
         {
             int rv1 = Run(cmd, curIgnore, curSilent, curDontRun, make);
+            if (stopAll)
+                break;
             make = false;
             if (!rv)
             {
@@ -184,27 +187,30 @@ int Spawner::InternalRun()
                 rv = rv1;
             }
         }
-        if (outputType == o_line)
+        if (outputType == o_line && !stopAll)
             OS::ToConsole(output);
         if (curIgnore)
             rv = 0;
         if (rv && posix)
             break;
     }
-    if (oneShell)
+    if (oneShell && !stopAll)
     {
         rv = Run(longstr, ignoreErrors, silent, dontRun, false);
         if (rv)
             MakeMain::MakeMessage("Commands returned %d in '%s(%d)'%s", rv, ruleList->GetTarget().c_str(), commands->GetLine(),
                                   ignoreErrors ? " (Ignored)" : "");
     }
-    OS::ToConsole(output);
+    if (!stopAll)
+        OS::ToConsole(output);
     for (auto f : tempFiles)
         OS::RemoveFile(f);
     return rv;
 }
 int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool dontrun, bool make)
 {
+    if (stopAll)
+        return 0;
     int rv = 0;
     std::string cmd = cmdin;
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
@@ -240,24 +246,29 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
             //                make1 = true;
             if (!make1)
                 OS::TakeJob();
-            if (!silent)
+            if (!stopAll)
             {
-                OS::WriteConsole(OS::JobName() + command + "\n");
-            }
-            int rv1;
-            if (!dontrun)
-            {
-                std::string str;
-                rv1 = OS::Spawn(command, environment, outputType != o_none && (outputType != o_recurse || !make) ? &str : nullptr);
-                if (outputType != o_none && !str.empty())
-                    output.push_back(str);
-                if (!rv)
-                    rv = rv1;
+                if (!silent)
+                {
+                    OS::WriteConsole(OS::JobName() + command + "\n");
+                }
+                int rv1;
+                if (!dontrun)
+                {
+                    std::string str;
+                    rv1 = OS::Spawn(command, environment, outputType != o_none && (outputType != o_recurse || !make) ? &str : nullptr);
+                    if (outputType != o_none && !str.empty())
+                        output.push_back(str);
+                    if (!rv)
+                        rv = rv1;
+                }
             }
             if (!make1)
                 OS::GiveJob();
             if (rv && posix)
                 return rv;
+            if (stopAll)
+                return 0;
         }
         return rv;
     }

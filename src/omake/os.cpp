@@ -43,7 +43,9 @@
 #    ifndef _SH_DENYNO
 #        define _SH_DENYNO 0
 #    endif
+#ifndef BORLAND
 #    define chdir _chdir
+#endif
 #endif
 #include <string.h>
 #undef WriteConsole
@@ -67,6 +69,7 @@
 #include "semaphores.h"
 //#define DEBUG
 static Semaphore sema;
+static Semaphore processIdSem;
 #ifdef _WIN32
 static CRITICAL_SECTION consoleSync;
 static CRITICAL_SECTION evalSync;
@@ -78,6 +81,15 @@ int OS::jobsLeft;
 std::string OS::jobName = "\t";
 std::string OS::jobFile;
 
+static std::set<HANDLE> processIds;
+
+void OS::TerminateAll()
+{
+    processIdSem.Wait();
+    for (auto a : processIds)
+       TerminateProcess(a, 0);
+    processIdSem.Post();
+}
 std::string OS::QuoteCommand(std::string exe, std::string command)
 {
     std::string rv;
@@ -231,6 +243,7 @@ void OS::JobInit()
     v->SetExport(true);
     name = std::string("OMAKE") + name;
     sema = Semaphore(name, jobsLeft);
+    processIdSem = Semaphore(std::string("OMAKE1") + name, 1);
 
     if (MakeMain::printDir.GetValue() && jobName == "\t")
     {
@@ -315,6 +328,7 @@ void OS::JobInit()
 void OS::JobRundown()
 {
     sema.~Semaphore();
+    processIdSem.~Semaphore();
     if (jobFile.size())
         RemoveFile(jobFile);
 }
@@ -441,9 +455,17 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     // try as an app first
     if (asapp && CreateProcess(nullptr, (char*)command1.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
     {
+        processIdSem.Wait();
+        processIds.insert(pi.hProcess);
+        processIdSem.Post();
         WaitForSingleObject(pi.hProcess, INFINITE);
+        processIdSem.Wait();
+        processIds.erase(pi.hProcess);
+        processIdSem.Post();
+        
         if (output)
         {
+            
             DWORD avail = 0;
             PeekNamedPipe(pipeRead, nullptr, 0, nullptr, &avail, nullptr);
             if (avail > 0)
@@ -467,7 +489,13 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         // not found, try running a shell to handle it...
         if (CreateProcess(nullptr, (char*)cmd.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
         {
+            processIdSem.Wait();
+            processIds.insert(pi.hProcess);
+            processIdSem.Post();
             WaitForSingleObject(pi.hProcess, INFINITE);
+            processIdSem.Wait();
+            processIds.erase(pi.hProcess);
+            processIdSem.Post();
             if (output)
             {
                 DWORD avail = 0;

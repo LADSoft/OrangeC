@@ -62,6 +62,7 @@ int usingEsp;
 Optimizer::SimpleSymbol* currentFunction;
 namespace Parser
 {
+    int anonymousNotAlloc;
     bool IsCompiler() {
         return true;
     }
@@ -95,8 +96,6 @@ const char* usageText =
     "\nFlags:\n"
     OPTMODULES_DESCRIPTION
     "\nTime: " __TIME__ "  Date: " __DATE__;
-
-int anonymousNotAlloc;
 
 bool InputIntermediate(SharedMemory* mem);
 void OutputIntermediate(SharedMemory* mem);
@@ -292,7 +291,7 @@ void Optimize(SimpleSymbol* funcsp)
 void ProcessFunction(FunctionData* fd)
 {
     SetUsesESP(currentFunction->usesEsp);
-    anonymousNotAlloc = 0;
+    Parser::anonymousNotAlloc = 0;
     CreateTempsAndBlocks(fd);
     Optimize(currentFunction);
 

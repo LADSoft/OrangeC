@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
+#include <stdlib.h>
 #include <limits.h>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"

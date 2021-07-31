@@ -91,6 +91,7 @@ class Spawner
     static unsigned WINFUNC Thread(void* cls);
     int InternalRun();
     void Run(Command& Commands, OutputType Type, RuleList* RuleList = nullptr, Rule* Rule = nullptr);
+    static void Stop() { stopAll = true; }
     std::string shell(const std::string& command);
     void SetLineLength(int length) { lineLength = length; }
     bool GetLineLength() const { return lineLength; }
@@ -128,5 +129,6 @@ class Spawner
     int retVal;
     OutputType outputType;
     static long runningProcesses;
+    static bool stopAll;
 };
 #endif

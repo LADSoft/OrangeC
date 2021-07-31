@@ -7308,6 +7308,8 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                         {
                             TYPE* torig = (TYPE*)packorig->p->byClass.val;
                             TYPE* tsym = (TYPE*)packsym->p->byClass.val;
+                            if (basetype(torig)->nullptrType != basetype(tsym)->nullptrType)
+                                return false;
                             if (isref(torig) != isref(tsym))
                                 return false;
                             if (basetype(torig)->array != basetype(tsym)->array)
@@ -7336,6 +7338,8 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                     {
                         TYPE* torig = (TYPE*)xorig;
                         TYPE* tsym = (TYPE*)xsym;
+                        if (basetype(torig)->nullptrType != basetype(tsym)->nullptrType)
+                            return false;
                         if (isref(torig) != isref(tsym))
                             return false;
                         if (basetype(torig)->array != basetype(tsym)->array)

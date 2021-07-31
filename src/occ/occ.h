@@ -28,11 +28,14 @@ extern int usingEsp;
 extern Optimizer::SimpleSymbol* currentFunction;
 void regInit(void);
 
-namespace occx86
+namespace Parser
 {
 extern char outFile[260];
-extern char infile[260];
 extern InstructionParser* instructionParser;
+}
+namespace occx86
+{
+extern char infile[260];
 
 void outputfile(char* buf, const char* name, const char* ext, bool obj);
 void global(Optimizer::SimpleSymbol* sym, int flags);

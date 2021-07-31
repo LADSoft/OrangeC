@@ -174,7 +174,7 @@ void dbginit(void)
 void outcode_file_init(void)
 {
     int i;
-    instructionParser = InstructionParser::GetInstance();
+    Parser::instructionParser = InstructionParser::GetInstance();
     lastIncludeNum = 0;
     virtualSegmentNumber = Optimizer::MAX_SEGS;
     labelMap.clear();
@@ -505,7 +505,7 @@ static void DumpFile(ObjFactory& f, ObjFile* fi, FILE* outputFile)
 
         if (outputFile != nullptr)
         {
-            ObjIeee i(outFile);
+            ObjIeee i(Parser::outFile);
 
             i.SetTranslatorName(ObjString("occ"));
             i.SetDebugInfoFlag(Optimizer::cparams.prm_debug && outputFile == Optimizer::outputFile);
@@ -565,7 +565,7 @@ void outcode_enterseg(int seg)
     if (!sections[seg])
     {
         sections[seg] = new Section(segnames[seg], seg);
-        instructionParser->Setup(sections[seg]);
+        Parser::instructionParser->Setup(sections[seg]);
     }
     currentSection = sections[seg];
     if (oa_currentSeg == Optimizer::codeseg)
@@ -846,7 +846,7 @@ void outcode_start_virtual_seg(Optimizer::SimpleSymbol* sym, int data)
     virtualSyms[virtsect] = sym;
     virtuals.push_back(virtsect);
     currentSection = virtsect;
-    instructionParser->Setup(virtsect);
+    Parser::instructionParser->Setup(virtsect);
     AsmExpr::SetSection(virtsect);
     std::string name = sym->outputName;
     Label* l = new Label(name, lblvirt.size(), virtualSegmentNumber - 1);
@@ -948,7 +948,7 @@ void AddFixup(Instruction* newIns, OCODE* ins, const std::list<Numeric*>& operan
 
 void outcode_diag(OCODE* ins, const char* str)
 {
-    std::string instruction = instructionParser->FormatInstruction(ins);
+    std::string instruction = Parser::instructionParser->FormatInstruction(ins);
     std::string name("Error compiling assembly instruction \"" + instruction + "\": " + str);
     diag(name.c_str());
 }
@@ -961,7 +961,7 @@ void outcode_AssembleIns(OCODE* ins)
         Instruction* newIns = nullptr;
         std::list<Numeric*> operands;
 
-        asmError err = instructionParser->GetInstruction(ins, newIns, operands);
+        asmError err = Parser::instructionParser->GetInstruction(ins, newIns, operands);
 
         switch (err)
         {

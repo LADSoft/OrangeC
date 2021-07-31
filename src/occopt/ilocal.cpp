@@ -99,7 +99,7 @@ SimpleExpression* anonymousVar(enum e_scc_type storage_class, SimpleType* tp)
     rv->storage_class = storage_class;
     rv->tp = tp;
     rv->anonymous = true;
-    rv->allocate = !anonymousNotAlloc;
+    rv->allocate = !Parser::anonymousNotAlloc;
     if (currentFunction)
         rv->i = currentFunction->i;
     my_sprintf(buf, "$anontempSE%d", anonct++);

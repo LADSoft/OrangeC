@@ -598,7 +598,14 @@ int Maker::RunCommands(bool keepGoing)
             if (rv <= 0 && rv1 != 0)
                 rv = rv1;
             if (rv > 0)
+            {
                 stop = true;
+                if (!keepGoing)
+                {                    
+                    Spawner::Stop();
+                    OS::TerminateAll();
+                }
+            }
         }
         OS::Yield();
     } while (rv < 0);

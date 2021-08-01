@@ -458,7 +458,6 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, EXPRESSION**
     bool rv = false;
     if (exp->left && lvalue(exp))
     {
-        rv = true;
         auto exp1 = exp;
         if (lvalue(exp1->left))
             exp1 = exp1->left;

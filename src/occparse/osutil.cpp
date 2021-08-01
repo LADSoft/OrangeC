@@ -143,6 +143,8 @@ CmdSwitchCombineString prmPrintFileName(switchParser, 0, 0, "print-file-name");
 CmdSwitchCombineString prmPrintProgName(switchParser, 0, 0, "print-prog-name");
 
 CmdSwitchBool prmPIC(switchParser, 0,0, "fPIC"); // ignored for now
+CmdSwitchBool prmWall(switchParser, 0, 0, "Wall"); // ignored for now
+CmdSwitchBool prmWextra(switchParser, 0, 0, "Wextra"); // ignored for now
 
 static std::string firstFile;
 
@@ -554,6 +556,16 @@ static void ParamTransfer(char* name)
     for (auto&& v : checks)
     {
         warning_setup('w', v.c_str());
+    }
+    if (prmWall.GetValue())
+    {
+        Optimizer::cparams.prm_warning = true;
+        DisableTrivialWarnings();
+    }
+    if (prmWextra.GetValue())
+    {
+        Optimizer::cparams.prm_extwarning = true;
+        DisableTrivialWarnings();
     }
     checks = Utils::split(prm_tool.GetValue());
     for (auto&& v : checks)

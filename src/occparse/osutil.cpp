@@ -360,6 +360,7 @@ static int DisplayerParams()
     }
     if (prmPrintFileName.GetExists())
     {
+#if 0
         char buf[260];
         char *orangec = getenv("ORANGEC");
         if (orangec)
@@ -374,6 +375,7 @@ static int DisplayerParams()
             printf("%s", buf); 
         }
         else
+#endif
         {
             printf("%s", prmPrintFileName.GetValue().c_str());
         }

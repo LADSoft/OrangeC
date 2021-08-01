@@ -1681,7 +1681,9 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE *argtp, 
                     gen_expr(funcsp, ep->left, 0, ISZ_UINT);
                     ep = ep->right;
                 }
-                push_param(ep, funcsp, valist, argtp, flags);
+                // the if handles structures that have been used with constexpr...
+                if (ep->type != en_auto || !ep->v.sp->sb->stackblock)
+                    push_param(ep, funcsp, valist, argtp, flags);
                 break;
             case en_argnopush:
                 gen_expr(funcsp, ep->left, 0, ISZ_UINT);

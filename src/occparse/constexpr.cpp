@@ -41,6 +41,9 @@
 #include "memory.h"
 #include "symtab.h"
 #include "expr.h"
+#include "initbackend.h"
+#include "declcons.h"
+
 namespace Parser
 {
 static int functionnestingcount = 0;
@@ -212,39 +215,6 @@ bool hascshim(EXPRESSION* node)
     }
     return false;
 }
-static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr)
-{
-    EXPRESSION* exp = Allocate<EXPRESSION>();
-    exp->type = en_cshimthis;
-    exp->v.sp = sym;
-    exp->v.constexprData = Allocate<EXPRESSION*>(sym->sb->parentClass->tp->size);
-    auto hr = sym->sb->parentClass->tp->syms->table[0];
-    while (hr)
-    {
-        if (ismemberdata(hr->p) && hr->p->sb->init)
-        {
-            exp->v.constexprData[hr->p->sb->offset] = hr->p->sb->init->exp;
-        }
-        hr = hr->next;
-    }
-    auto m = sym->sb->memberInitializers;
-    while (m)
-    {
-        SYMBOL* sp = search(m->name, sym->sb->parentClass->tp->syms);
-        if (sp)
-            exp->v.constexprData[sp->sb->offset] = m->init->exp;
-        m = m->next;
-    }
-    if (localMap.size())
-    {
-        localMap.back().push_back(ConstExprThisPtr{ thisptr, exp });
-    }
-    else
-    {
-        globalMap.push_back(ConstExprThisPtr{ thisptr, exp });
-    }
-    return exp;
-}
 static bool ExactExpression(EXPRESSION* exp1, EXPRESSION* exp2)
 {
     std::stack<EXPRESSION*> stk;
@@ -293,6 +263,8 @@ static EXPRESSION* LookupThis(EXPRESSION* exp)
 {
     if (!exp)
         return nullptr;
+    while (exp->type == en_void)
+        exp = exp->right;
     if (localMap.size())
     {
         for (auto l : localMap.back())
@@ -304,9 +276,86 @@ static EXPRESSION* LookupThis(EXPRESSION* exp)
     for (auto g : globalMap)
     {
         if (ExactExpression(exp, g.oldval))
-            return (EXPRESSION*) -1;
+            return (EXPRESSION*)-1;
     }
     return nullptr;
+}
+static EXPRESSION* EvaluateExpression(EXPRESSION* node, std::unordered_map<SYMBOL*, EXPRESSION**>& argmap, EXPRESSION* ths);
+static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, INITLIST* args, std::unordered_map<SYMBOL*, EXPRESSION**>& argmap)
+{
+    if (matchesCopy(sym, false) || matchesCopy(sym, true))
+    {
+        return LookupThis(args->exp);
+    }
+    else
+    {
+        EXPRESSION* exp = Allocate<EXPRESSION>();
+        exp->type = en_cshimthis;
+        exp->v.sp = sym;
+        exp->v.constexprData = Allocate<EXPRESSION*>(sym->sb->parentClass->tp->size);
+        auto hr = sym->sb->parentClass->tp->syms->table[0];
+        while (hr)
+        {
+            if (ismemberdata(hr->p) && hr->p->sb->init)
+            {
+                exp->v.constexprData[hr->p->sb->offset] = EvaluateExpression(hr->p->sb->init->exp, argmap, exp);
+            }
+            hr = hr->next;
+        }
+        auto m = sym->sb->memberInitializers;
+        while (m)
+        {
+            SYMBOL* sp = search(m->name, sym->sb->parentClass->tp->syms);
+            if (sp)
+                exp->v.constexprData[sp->sb->offset] = EvaluateExpression(m->init->exp, argmap, exp);
+            m = m->next;
+
+        }
+        if (localMap.size())
+        {
+            localMap.back().push_back(ConstExprThisPtr{ thisptr, exp });
+        }
+        else
+        {
+            globalMap.push_back(ConstExprThisPtr{ thisptr, exp });
+        }
+        return exp;
+    }
+}
+int count4 = 0;
+static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<SYMBOL*, EXPRESSION**>& argmap, EXPRESSION* ths)
+{
+    if (thisptr->type == en_auto && thisptr->v.sp->sb->stackblock)
+    {
+        thisptr = exprNode(en_substack, intNode(en_c_i, thisptr->v.sp->tp->size), nullptr);
+    }
+    else
+    {
+        if (++count4 >= 11)
+            printf("hi");
+    }
+
+    EXPRESSION* varptr = anonymousVar(sc_auto, &stdpointer);
+    deref(&stdpointer, &varptr);
+    EXPRESSION* rv = exprNode(en_assign, varptr, thisptr);
+    EXPRESSION** last = &rv;
+    auto hr = ths->v.sp->sb->parentClass->tp->syms->table[0];
+    while (hr)
+    {
+        if (ismemberdata(hr->p))
+        {
+            EXPRESSION* next = exprNode(en_add, varptr, intNode(en_c_i, hr->p->sb->offset));
+            deref(hr->p->tp, &next);
+            next = exprNode(en_assign, next, EvaluateExpression(ths->v.constexprData[hr->p->sb->offset], argmap, ths));
+            if (next->right == nullptr)
+                return nullptr;
+            *last = exprNode(en_void, *last, next);
+            last = &(*last)->right;
+        }
+        hr = hr->next;
+    }
+    *last = exprNode(en_void, *last, varptr);
+    return rv;
 }
 static void pushArray(EXPRESSION *exp, std::unordered_map<SYMBOL*, EXPRESSION**>& argmap)
 {
@@ -339,7 +388,6 @@ static void pushArray(EXPRESSION *exp, std::unordered_map<SYMBOL*, EXPRESSION**>
         }
     }
 }
-static EXPRESSION* EvaluateExpression(EXPRESSION* node, std::unordered_map<SYMBOL*, EXPRESSION**>& argmap, EXPRESSION* ths);
 static EXPRESSION* HandleAssign(EXPRESSION* exp, std::unordered_map<SYMBOL*, EXPRESSION**>& argmap, EXPRESSION* ths)
 {
     EXPRESSION* rv = nullptr;
@@ -514,8 +562,8 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, EXPRESSION**
         if (temp1->type != en_func || !hascshim(temp1))
         {
             *exp = *temp1;
-            if (func->thisptr)
-                func->thisptr = EvaluateExpression(func->thisptr, argmap, ths);
+//            if (func->thisptr)
+//                func->thisptr = EvaluateExpression(func->thisptr, argmap, ths);
             rv = true;
         }
         else
@@ -719,10 +767,23 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
                     optimize_for_constants(&node1);
                     if (node->v.func->sp->sb->isConstructor)
                     {
-                        node->type = en_c_i;
-                        node->v.i = 0;
-                        node->left = nullptr;
-                        node->noexprerr = true;
+                        if (true || node->v.func->thisptr->type == en_auto && node->v.func->thisptr->v.sp->sb->stackblock)
+                        {
+                            auto newNode = InstantiateStructure(node->v.func->thisptr, argmap, ths);
+                            if (newNode)
+                            {
+                                *node = *newNode;
+                                return true;
+                            }
+                            return false;
+                        }
+                        else
+                        {
+                            node->type = en_c_i;
+                            node->v.i = 0;
+                            node->left = nullptr;
+                            node->noexprerr = true;
+                        }
                         return true;
                     }
                     else if (IsConstantExpression(node1, false, false) && node1->type != en_func && node1->type != en_funcret && node1->type != en_thisref)
@@ -742,6 +803,9 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
 }
 bool EvaluateConstexprFunction(EXPRESSION*&node)
 {
+    if (strstr(node->v.func->sp->name, "$bctr"))
+        if (!strcmp(node->v.func->sp->sb->parentClass->name, "pair"))
+            printf("hi");
 
     bool rv = false;
     auto args = node->v.func->arguments;
@@ -751,7 +815,7 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
             break;
         args = args->next;
     }
-    if (!args)
+    if (!args || (node->v.func->sp->sb->isConstructor && (matchesCopy(node->v.func->sp, false) || matchesCopy(node->v.func->sp, true))))
     {
         SYMBOL* found1 = node->v.func->sp;
         if (!node->v.func->sp->sb->inlineFunc.stmt && node->v.func->sp->sb->deferredCompile)
@@ -789,69 +853,88 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
         }
         if (found1 && found1->sb->inlineFunc.stmt)
         {
-            EXPRESSION* ths = nullptr;
-            if (found1->sb->isConstructor)
-                ths = ConstExprInitializeMembers(found1, node->v.func->thisptr);
-            else
-                ths = LookupThis(node->v.func->thisptr);
-            /*
-            if (!ths && node->v.func->thisptr)
+            int i;
+            STATEMENT* stmt = found1->sb->inlineFunc.stmt;
+            while (stmt && stmt->type == st_expr)
+                stmt = stmt->next;
+            if (stmt && stmt->type == st_block && stmt->lower)
             {
-                //                diag("EvaluateConstexprFunction: unfound this data");
-                return false;
-            }
-            else */
-            if (ths == (EXPRESSION*)-1)
-            {
-                // cant do constexpr on nonstatic global struct instances
-                // but don't know the difference between static and nonstatic here
-                // so we just don't do constexpr on global struct instances...
-                return false;
-            }
-            else
-            {
-                int i;
-                STATEMENT* stmt = found1->sb->inlineFunc.stmt;
-                while (stmt && stmt->type == st_expr)
-                    stmt = stmt->next;
-                if (stmt && stmt->type == st_block && stmt->lower)
+                if (++functionnestingcount >= 1000)
                 {
-                    if (++functionnestingcount >= 1000)
+                    diag("EvaluateConstexprFunction: recursion level too high");
+                }
+                else
+                {
+                    std::unordered_map<SYMBOL*, EXPRESSION**> argmap;
+                    if (!nestedMaps.empty())
                     {
-                        diag("EvaluateConstexprFunction: recursion level too high");
+                        auto&& o = *nestedMaps.top();
+                        for (auto s : o)
+                        {
+                            if (s.first->sb->storage_class != sc_parameter)
+                            {
+                                argmap[s.first] = s.second;
+                            }
+                        }
+                    }
+                    auto hr = basetype(found1->tp)->syms->table[0];
+                    if (hr->p->sb->thisPtr)
+                        hr = hr->next;
+                    auto arglist = node->v.func->arguments;
+                    while (hr && arglist)
+                    {
+                        argmap[hr->p] = Allocate<EXPRESSION*>();
+                        argmap[hr->p][0] = arglist->exp;
+                        pushArray(arglist->exp, argmap);
+                        hr = hr->next;
+                        arglist = arglist->next;
+                    }
+                    nestedMaps.push(&argmap);
+                    EXPRESSION* ths = nullptr;
+                    if (found1->sb->isConstructor)
+                        ths = ConstExprInitializeMembers(found1, node->v.func->thisptr, node->v.func->arguments, argmap);
+                    else
+                        ths = LookupThis(node->v.func->thisptr);
+                    if (ths == (EXPRESSION*)-1)
+                    {
+                        // cant do constexpr on nonstatic global struct instances
+                        // but don't know the difference between static and nonstatic here
+                        // so we just don't do constexpr on global struct instances...
+                        rv = false;
                     }
                     else
                     {
-                        std::unordered_map<SYMBOL*, EXPRESSION**> argmap;
-                        if (!nestedMaps.empty())
+                        if (matchesCopy(found1, true) || matchesCopy(found1, false))
                         {
-                            auto&& o = *nestedMaps.top();
-                            for (auto s : o)
+                            if (ths)
                             {
-                                if (s.first->sb->storage_class != sc_parameter)
+                                auto newNode = InstantiateStructure(node->v.func->thisptr, argmap, ths);
+                                if (newNode)
                                 {
-                                    argmap[s.first] = s.second;
+                                    *node = *newNode;
+                                    rv = true;
+                                }
+                                else
+                                {
+                                    rv = false;
                                 }
                             }
+                            else
+                            {
+                                rv = false;
+                            }
                         }
-                        auto hr = basetype(found1->tp)->syms->table[0];
-                        if (hr->p->sb->thisPtr)
-                            hr = hr->next;
-                        auto arglist = node->v.func->arguments;
-                        while (hr && arglist)
+                        else
                         {
-                            argmap[hr->p] = Allocate<EXPRESSION*>();
-                            argmap[hr->p][0] = arglist->exp;
-                            pushArray(arglist->exp, argmap);
-                            hr = hr->next;
-                            arglist = arglist->next;
+int old = Optimizer::cparams.prm_debug;
+//Optimizer::cparams.prm_debug = true;
+                            rv = EvaluateStatements(node, stmt->lower, argmap, ths);
+Optimizer::cparams.prm_debug = old;
                         }
-                        nestedMaps.push(&argmap);
-                        rv = EvaluateStatements(node, stmt->lower, argmap, ths);
                         nestedMaps.pop();
                     }
-                    --functionnestingcount;
                 }
+                --functionnestingcount;
             }
         }
     }

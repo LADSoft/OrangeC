@@ -3694,19 +3694,28 @@ bool toConsider(EXPRESSION* exp1, EXPRESSION* exp2)
 }
 void rebalance(EXPRESSION** exp)
 {
-    std::stack<EXPRESSION*> stk;
-    stk.push(*exp);
-    while (!stk.empty())
+    if ((*exp)->type == en_void)
     {
-        auto top = stk.top();
-        stk.pop();
-        top->treesize = 0;
-        if (top->left)
-            stk.push(top->left);
-        if (top->right)
-            stk.push(top->right);
+        rebalance(&(*exp)->left);
+        if ((*exp)->right)
+            rebalance(&(*exp)->right);
     }
-    *exp = Rebalance(*exp, toConsider);
+    else
+    {
+        std::stack<EXPRESSION*> stk;
+        stk.push(*exp);
+        while (!stk.empty())
+        {
+            auto top = stk.top();
+            stk.pop();
+            top->treesize = 0;
+            if (top->left)
+                stk.push(top->left);
+            if (top->right)
+                stk.push(top->right);
+        }
+        *exp = Rebalance(*exp, toConsider);
+    }
 }
 bool msilConstant(EXPRESSION *exp)
 {

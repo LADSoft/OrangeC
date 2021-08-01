@@ -3080,7 +3080,7 @@ void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
         e_xc mode = DefaultConstructorExceptionMode(b.head);
         consfunc->sb->noExcept = mode == xc_none;
     }
-    consfunc->sb->constexpression = DefaultConstructorConstExpression(sp);
+    consfunc->sb->constexpression = DefaultConstructorConstExpression(sp) || matchesCopy(consfunc, false) || matchesCopy(consfunc, true);
     localNameSpace->valueData->syms = syms;
 }
 void asnVirtualBases(BLOCKDATA* b, SYMBOL* sp, VBASEENTRY* vbe, EXPRESSION* thisptr, EXPRESSION* other, bool move, bool isconst)

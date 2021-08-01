@@ -855,17 +855,18 @@
 
 #define SELECTDIB (41)
 
+#define sndAlias(ch0, ch1)    (SND_ALIAS_START + (DWORD)(BYTE)(ch0) | ((DWORD)(BYTE)(ch1) << 8)) 
 #define SND_ALIAS (65536)
 #define SND_ALIAS_ID (1114112)
 #define SND_ALIAS_START (0)
-#define SND_ALIAS_SYSTEMASTERISK sndAlias 'S', '*'
-#define SND_ALIAS_SYSTEMDEFAULT sndAlias 'S', 'D'
-#define SND_ALIAS_SYSTEMEXCLAMATION sndAlias 'S', '!'
-#define SND_ALIAS_SYSTEMEXIT sndAlias 'S', 'E'
-#define SND_ALIAS_SYSTEMHAND sndAlias 'S', 'H'
-#define SND_ALIAS_SYSTEMQUESTION sndAlias 'S', '?'
-#define SND_ALIAS_SYSTEMSTART sndAlias 'S', 'S'
-#define SND_ALIAS_SYSTEMWELCOME sndAlias 'S', 'W'
+#define SND_ALIAS_SYSTEMASTERISK sndAlias('S', '*')
+#define SND_ALIAS_SYSTEMDEFAULT sndAlias('S', 'D')
+#define SND_ALIAS_SYSTEMEXCLAMATION sndAlias('S', '!')
+#define SND_ALIAS_SYSTEMEXIT sndAlias('S', 'E')
+#define SND_ALIAS_SYSTEMHAND sndAlias('S', 'H')
+#define SND_ALIAS_SYSTEMQUESTION sndAlias('S', '?')
+#define SND_ALIAS_SYSTEMSTART sndAlias('S', 'S')
+#define SND_ALIAS_SYSTEMWELCOME sndAlias('S', 'W')
 #define SND_APPLICATION (128)
 #define SND_ASYNC (1)
 #define SND_FILENAME (131072)

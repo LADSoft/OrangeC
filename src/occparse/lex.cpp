@@ -402,6 +402,8 @@ void lexini(void)
  * create a keyword hash table
  */
 {
+    bool old = Optimizer::cparams.prm_extwarning;
+    Optimizer::cparams.prm_extwarning = false;
 #ifdef KW_HASH
     int i;
     kwhash = CreateHashTable(1024);
@@ -420,6 +422,7 @@ void lexini(void)
     while (parseStack.size())
         parseStack.pop();
     lastBrowseIndex = 0;
+    Optimizer::cparams.prm_extwarning = old;
 }
 
 /*-------------------------------------------------------------------------*/

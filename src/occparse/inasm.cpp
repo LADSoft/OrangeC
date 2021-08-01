@@ -115,6 +115,8 @@ static int floating;
 static HASHTABLE* asmHash;
 void inlineAsmInit(void)
 {
+    bool old = Optimizer::cparams.prm_extwarning;
+    Optimizer::cparams.prm_extwarning = false;
     Optimizer::assembling = false;
     Optimizer::ASMREG* r = reglst;
     ASM_HASH_ENTRY* s;
@@ -159,6 +161,7 @@ void inlineAsmInit(void)
             o++;
         }
     }
+    Optimizer::cparams.prm_extwarning = old;
 }
 static void inasm_err(int errnum)
 {

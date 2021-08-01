@@ -142,6 +142,8 @@ CmdSwitchBool prmDumpMachine(switchParser, 0, 0, "dumpmachine");
 CmdSwitchCombineString prmPrintFileName(switchParser, 0, 0, "print-file-name");
 CmdSwitchCombineString prmPrintProgName(switchParser, 0, 0, "print-prog-name");
 
+CmdSwitchBool prmPIC(switchParser, 0,0, "fPIC"); // ignored for now
+
 static std::string firstFile;
 
 enum e_lk getDefaultLinkage()

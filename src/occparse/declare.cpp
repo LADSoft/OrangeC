@@ -789,7 +789,7 @@ void resolveAnonymousUnions(SYMBOL* sp)
                     error(ERR_ANONYMOUS_UNION_WARNING);
                 }
             }
-            else
+            else if (!Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_cplusplus)
             {
                 error(ERR_ANONYMOUS_STRUCT_WARNING);
             }

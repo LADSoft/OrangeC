@@ -622,7 +622,7 @@ namespace Parser
             if (in->sb->storage_class == sc_parameter || in->sb->storage_class == sc_auto || in->sb->storage_class == sc_register)
             {
                 SYMBOL* sym;
-                if ((sym = gsearch(in->name)) != nullptr)
+                if ((sym = gsearch(in->name)) != nullptr && (sym->sb->storage_class == sc_parameter || sym->sb->storage_class == sc_auto))
                     preverror(ERR_VARIABLE_OBSCURES_VARIABLE_AT_HIGHER_SCOPE, in->name, sym->sb->declfile, sym->sb->declline);
             }
         if (AddName(in, table) && (IsCompiler() || table != CompletionCompiler::ccHash))

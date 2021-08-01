@@ -150,6 +150,8 @@ extern "C"
     YIELDPROC PASCAL WINBASEAPI mciGetYieldProc(MCIDEVICEID mciId, LPDWORD pdwYieldData);
     WINBOOL PASCAL WINBASEAPI mciExecute(LPCSTR pszCommand);
 
+#define sndAlias(ch0, ch1)    (SND_ALIAS_START + (DWORD)(BYTE)(ch0) | ((DWORD)(BYTE)(ch1) << 8)) 
+
 #ifdef UNICODE
     WINBOOL PASCAL WINBASEAPI sndPlaySoundW(LPCWSTR pszSound, UINT fuSound);
     WINBOOL PASCAL WINBASEAPI PlaySoundW(LPCWSTR pszSound, HMODULE hmod, DWORD fdwSound);

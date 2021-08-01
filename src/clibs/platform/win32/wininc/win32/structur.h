@@ -712,6 +712,18 @@ typedef struct _CONSOLE_SCREEN_BUFFER_INFO
     SMALL_RECT srWindow;
     COORD dwMaximumWindowSize;
 } CONSOLE_SCREEN_BUFFER_INFO, *PCONSOLE_SCREEN_BUFFER_INFO;
+
+typedef struct _CONSOLE_SCREEN_BUFFER_INFOEX {
+  ULONG      cbSize;
+  COORD      dwSize;
+  COORD      dwCursorPosition;
+  WORD       wAttributes;
+  SMALL_RECT srWindow;
+  COORD      dwMaximumWindowSize;
+  WORD       wPopupAttributes;
+  BOOL       bFullscreenSupported;
+  COLORREF   ColorTable[16];
+} CONSOLE_SCREEN_BUFFER_INFOEX, *PCONSOLE_SCREEN_BUFFER_INFOEX;
 #    pragma pack()
 
 #    ifdef __i386__

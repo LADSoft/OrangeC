@@ -16,7 +16,7 @@
    modify it under the terms of the GNU Library General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+   
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -1974,6 +1974,8 @@ extern WINBOOL PASCAL WINBASEAPI ActivateKeyboardLayout(HKL hkl, UINT Flags);
     extern WINBOOL PASCAL WINBASEAPI GetConsoleScreenBufferInfo(HANDLE hConsoleOutput,
                                                                 PCONSOLE_SCREEN_BUFFER_INFO lpConsoleScreenBufferInfo);
 
+    extern WINBOOL PASCAL WINBASEAPI GetConsoleScreenBufferInfoEx(HANDLE hConsoleOutput,
+                                                                  PCONSOLE_SCREEN_BUFFER_INFOEX lpConsoleScreenBufferInfoEx);
     extern COORD PASCAL WINBASEAPI GetLargestConsoleWindowSize(HANDLE hConsoleOutput);
 
     extern WINBOOL PASCAL WINBASEAPI GetConsoleCursorInfo(HANDLE hConsoleOutput, PCONSOLE_CURSOR_INFO lpConsoleCursorInfo);
@@ -1988,6 +1990,8 @@ extern WINBOOL PASCAL WINBASEAPI ActivateKeyboardLayout(HKL hkl, UINT Flags);
 
     extern WINBOOL PASCAL WINBASEAPI SetConsoleScreenBufferSize(HANDLE hConsoleOutput, COORD dwSize);
 
+    extern WINBOOL PASCAL WINBASEAPI SetConsoleScreenBufferInfoEx(HANDLE hConsoleOutput,
+                                                                  PCONSOLE_SCREEN_BUFFER_INFOEX lpConsoleScreenBufferInfoEx);
     extern WINBOOL PASCAL WINBASEAPI SetConsoleCursorPosition(HANDLE hConsoleOutput, COORD dwCursorPosition);
 
     extern WINBOOL PASCAL WINBASEAPI SetConsoleCursorInfo(HANDLE hConsoleOutput, CONST CONSOLE_CURSOR_INFO* lpConsoleCursorInfo);

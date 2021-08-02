@@ -322,17 +322,11 @@ static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, 
         return exp;
     }
 }
-int count4 = 0;
 static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<SYMBOL*, EXPRESSION**>& argmap, EXPRESSION* ths)
 {
     if (thisptr->type == en_auto && thisptr->v.sp->sb->stackblock)
     {
         thisptr = exprNode(en_substack, intNode(en_c_i, thisptr->v.sp->tp->size), nullptr);
-    }
-    else
-    {
-        if (++count4 >= 11)
-            printf("hi");
     }
 
     EXPRESSION* varptr = anonymousVar(sc_auto, &stdpointer);
@@ -347,7 +341,7 @@ static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<
             EXPRESSION* next = exprNode(en_add, varptr, intNode(en_c_i, hr->p->sb->offset));
             deref(hr->p->tp, &next);
             next = exprNode(en_assign, next, EvaluateExpression(ths->v.constexprData[hr->p->sb->offset], argmap, ths));
-            if (next->right == nullptr)
+            if (next->right == nullptr || !IsConstantExpression(next->right, false, false))
                 return nullptr;
             *last = exprNode(en_void, *last, next);
             last = &(*last)->right;
@@ -561,8 +555,6 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, EXPRESSION**
         if (temp1->type != en_func || !hascshim(temp1))
         {
             *exp = *temp1;
-//            if (func->thisptr)
-//                func->thisptr = EvaluateExpression(func->thisptr, argmap, ths);
             rv = true;
         }
         else
@@ -802,10 +794,12 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
 }
 bool EvaluateConstexprFunction(EXPRESSION*&node)
 {
-    if (strstr(node->v.func->sp->name, "$bctr"))
-        if (!strcmp(node->v.func->sp->sb->parentClass->name, "pair"))
-            printf("hi");
-
+    if (node->v.func->sp->sb->isConstructor)
+    {
+        // we don't support constexpr constructors for classes with base classes right now...
+        if (node->v.func->sp->sb->parentClass->sb->baseClasses)
+            return false;
+    }
     bool rv = false;
     auto args = node->v.func->arguments;
     while (args)

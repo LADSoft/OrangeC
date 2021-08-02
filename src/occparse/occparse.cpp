@@ -542,6 +542,7 @@ int main(int argc, char* argv[])
         {
             enter_filename((char*)clist->data);
             MakeStubs();
+            rv = 255;
         }
         else
         {

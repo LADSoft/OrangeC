@@ -409,6 +409,19 @@ void MakeMain::SetTreePath(std::string& files)
         }
     }
 }
+void MakeMain::RewriteDefines(int argc, char** argv)
+{
+    for (int i=1; i < argc; i++)
+    {
+        if (argv[i][0] != '-' && argv[i][0] != '/' && strchr(argv[i], '=') != 0)
+        {
+            char *p = (char *)calloc(strlen(argv[i]) + 3 , 1);
+            strcpy(p, "-D");
+            strcat(p, argv[i]);
+            argv[i] = p;
+        }
+    }
+}
 int MakeMain::Run(int argc, char** argv)
 {
     OS::Init();
@@ -436,6 +449,7 @@ int MakeMain::Run(int argc, char** argv)
         std::string cmdLine = r.Evaluate();
         Dispatch(cmdLine.c_str());
     }
+    RewriteDefines(argc, argv);
     if (!switchParser.Parse(&argc, argv) || help.GetValue() || help2.GetValue())
     {
         Utils::banner(argv[0]);

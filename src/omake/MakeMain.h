@@ -92,6 +92,7 @@ class MakeMain
     void ShowRule(RuleList* ruleList);
     void ShowDatabase();
     void SetTreePath(std::string& files);
+    void RewriteDefines(int argc, char** argv);
 
   private:
     int restarts;

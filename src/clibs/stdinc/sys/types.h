@@ -48,7 +48,10 @@
 #        define _SIZE_T
 #        define _USING_TYPES_H_SIZE_T
 typedef unsigned size_t;
+#        ifndef	_SSIZE_T_
+#        define _SSIZE_T
 typedef int ssize_t;
+#        endif
 #    endif
 
 #    ifndef _TIME_T
@@ -62,16 +65,31 @@ typedef short dev_t;
 #    else
 typedef int dev_t;
 #    endif
+
+#ifndef _INO_T_
+#define	_INO_T_
 typedef short ino_t;
+#endif
+
+#ifndef _MODE_T_
+#define	_MODE_T_
 typedef short mode_t;
+#endif
+
 typedef int nlink_t;
 typedef short uid_t;
 typedef short gid_t;
+
 #ifndef _OFFT_DEFINED
 #define _OFFT_DEFINED
 typedef long off_t;
 #endif
+
+#ifndef _PID_T_
+#define	_PID_T_
 typedef long pid_t;
+#endif
+
 typedef long pthread_t;
 typedef long pthread_attr_t;
 

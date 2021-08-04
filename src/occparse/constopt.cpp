@@ -1251,7 +1251,7 @@ void addaside(EXPRESSION* node)
 }
 
 /*-------------------------------------------------------------------------*/
-EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add = true)
+EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add)
 {
     EXPRESSION* rv;
     switch (node->type)
@@ -3125,7 +3125,7 @@ int fold_const(EXPRESSION* node)
             if (node->v.func->sp && node->v.func->sp->sb->constexpression)
             {
                 inConstantExpression++;
-            	rv = EvaluateConstexprFunction(node);
+                rv = EvaluateConstexprFunction(node);
                 inConstantExpression--;
             }
             if (!rv)

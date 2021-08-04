@@ -469,6 +469,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
                 DumpIncDec(funcsp);
                 sym->sb->offset = Optimizer::chosenAssembler->arch->retblocksize;
                 sym->name = "__retblock";
+                sym->sb->retblk = true;
                 sym->sb->allocate = false;
                 if ((funcsp->sb->attribs.inheritable.linkage == lk_pascal) && basetype(funcsp->tp)->syms->table[0] &&
                     ((SYMBOL*)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)

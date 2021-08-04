@@ -348,7 +348,10 @@ static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<
         }
         hr = hr->next;
     }
-    *last = exprNode(en_void, *last, varptr);
+    if (thisptr->type == en_substack)
+        *last = exprNode(en_void, *last, varptr);
+    else
+        *last = exprNode(en_void, *last, thisptr);
     return rv;
 }
 static void pushArray(EXPRESSION *exp, std::unordered_map<SYMBOL*, EXPRESSION**>& argmap)
@@ -548,6 +551,8 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, EXPRESSION**
             *list = Allocate<INITLIST>();
             **list = *args;
             (*list)->exp = EvaluateExpression(args->exp, argmap, ths);
+            if (!(*list)->exp)
+                return false;
             list = &(*list)->next;
             args = args->next;
         }
@@ -800,6 +805,16 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
         if (node->v.func->sp->sb->parentClass->sb->baseClasses)
             return false;
     }
+    auto exp = node->v.func->thisptr;
+    if (exp && exp->type == en_add)
+        exp = exp->left;
+    if (exp && exp->type == en_l_p)
+    {
+        int offset = 0;
+        exp = relptr(exp->left, offset);
+        if (exp && (exp->v.sp->sb->thisPtr || exp->v.sp->sb->retblk))
+            return false;
+    }
     bool rv = false;
     auto args = node->v.func->arguments;
     while (args)
@@ -919,10 +934,7 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
                         }
                         else
                         {
-int old = Optimizer::cparams.prm_debug;
-//Optimizer::cparams.prm_debug = true;
                             rv = EvaluateStatements(node, stmt->lower, argmap, ths);
-Optimizer::cparams.prm_debug = old;
                         }
                         nestedMaps.pop();
                     }

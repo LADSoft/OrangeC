@@ -2041,6 +2041,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
             sp->sb->offset = Optimizer::chosenAssembler->arch->retblocksize;
             sp->sb->structuredReturn = true;
             sp->name = "__retblock";
+            sp->sb->retblk = true;
             if ((funcsp->sb->attribs.inheritable.linkage == lk_pascal) && basetype(funcsp->tp)->syms->table[0] &&
                 ((SYMBOL*)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
                 sp->sb->offset = funcsp->sb->paramsize;

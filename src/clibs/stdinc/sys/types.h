@@ -57,21 +57,43 @@ typedef int ssize_t;
 typedef long time_t;
 #    endif
 
+#ifndef __dev_t_defined
+#define __dev_t_defined
 #    ifdef __CRTDLL_DLL
 typedef short dev_t;
 #    else
 typedef int dev_t;
 #    endif
+#endif
+#ifndef __ino_t_defined
+#define __ino_t_defined
 typedef short ino_t;
+#endif
+#ifndef __mode_t_defined
+#define __mode_t_defined
 typedef short mode_t;
+#endif
+#ifndef __nlink_t_defined
+#define __nlink_t_defined
 typedef int nlink_t;
+#endif
+#ifndef __uid_t_defined
+#define __uid_t_defined
 typedef short uid_t;
+#endif
+#ifndef __gid_t_defined
+#define __gid_t_defined
 typedef short gid_t;
-#ifndef _OFFT_DEFINED
+#endif
+#if !defined(_OFFT_DEFINED) && !defined(__off_t_defined)
 #define _OFFT_DEFINED
+#define __off_t_defined
 typedef long off_t;
 #endif
+#ifndef __pid_t_defined
+#define __pid_t_defined
 typedef long pid_t;
+#endif
 typedef long pthread_t;
 typedef long pthread_attr_t;
 

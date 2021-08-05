@@ -409,17 +409,30 @@ void MakeMain::SetTreePath(std::string& files)
         }
     }
 }
-void MakeMain::RewriteDefines(int argc, char** argv)
+void MakeMain::LoadEquates(int& argc, char** argv)
 {
+    int j=1;
     for (int i=1; i < argc; i++)
     {
         if (argv[i][0] != '-' && argv[i][0] != '/' && strchr(argv[i], '=') != 0)
         {
-            char *p = (char *)calloc(strlen(argv[i]) + 3 , 1);
-            strcpy(p, "-D");
-            strcat(p, argv[i]);
-            argv[i] = p;
+            equates.push_back(argv[i]);
         }
+        else
+        {
+            argv[j++] = argv[i];
+        }
+    }
+    argc = j;
+    argv[argc] = nullptr;
+}
+void MakeMain::RunEquates()
+{
+    for (auto e : equates)
+    {
+        Parser p(e, "<eval>", 1, false, Variable::o_default);
+        p.SetAutoExport();
+        p.Parse();
     }
 }
 int MakeMain::Run(int argc, char** argv)
@@ -449,7 +462,7 @@ int MakeMain::Run(int argc, char** argv)
         std::string cmdLine = r.Evaluate();
         Dispatch(cmdLine.c_str());
     }
-    RewriteDefines(argc, argv);
+    LoadEquates(argc, argv);
     if (!switchParser.Parse(&argc, argv) || help.GetValue() || help2.GetValue())
     {
         Utils::banner(argv[0]);
@@ -490,6 +503,7 @@ int MakeMain::Run(int argc, char** argv)
         Maker::ClearFirstGoal();
         LoadEnvironment();
         LoadCmdDefines();
+        RunEquates();
         SetVariable("MAKE", argv[0], Variable::o_environ, false);
         Variable* v = VariableContainer::Instance()->Lookup("SHELL");
         if (!v)

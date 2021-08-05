@@ -92,7 +92,8 @@ class MakeMain
     void ShowRule(RuleList* ruleList);
     void ShowDatabase();
     void SetTreePath(std::string& files);
-    void RewriteDefines(int argc, char** argv);
+    void LoadEquates(int& argc, char** argv);
+    void RunEquates();
 
   private:
     int restarts;
@@ -103,6 +104,7 @@ class MakeMain
     std::unique_ptr<char* []> argvx;
     int argcx;
     std::string cwd;
+    std::deque<std::string> equates;
 };
 
 #endif

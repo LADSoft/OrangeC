@@ -124,6 +124,10 @@ bool ppInclude::CheckLine(kw token, const std::string& args)
 }
 void ppInclude::pushFile(const std::string& name, const std::string& errname, bool include_next, bool foundAsSystem, int dirs_traversed)
 {
+        if (systemNesting)
+            foundAsSystem = true;
+        if (foundAsSystem)
+            systemNesting++;
 	// gotta do the test first to get the error correct if it isn't there
 	if (foundAsSystem)
 	{
@@ -191,6 +195,8 @@ void ppInclude::pushFile(const std::string& name, const std::string& errname, bo
 }
 bool ppInclude::popFile()
 {
+        if (systemNesting)
+            systemNesting--;
 	if (!files.empty())
 	{
 		current = std::move(files.front());

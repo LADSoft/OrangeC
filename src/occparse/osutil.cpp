@@ -87,7 +87,6 @@ CmdSwitchBool prm_icdfile(switchParser, 'Y');
 CmdSwitchBool prm_trigraph(switchParser, 'T');
 CmdSwitchBool prm_debug(switchParser, 'v');
 CmdSwitchBool prm_debug2(switchParser, 'g');
-CmdSwitchBool prm_makestubs(switchParser, 'M');
 CmdSwitchBool prm_compileonly(switchParser, 'c');
 CmdSwitchString prm_assemble(switchParser, 'S');
 CmdSwitchBool prm_xcept(switchParser, 'X');
@@ -145,6 +144,16 @@ CmdSwitchCombineString prmPrintProgName(switchParser, 0, 0, "print-prog-name");
 CmdSwitchBool prmPIC(switchParser, 0,0, "fPIC"); // ignored for now
 CmdSwitchBool prmWall(switchParser, 0, 0, "Wall"); // ignored for now
 CmdSwitchBool prmWextra(switchParser, 0, 0, "Wextra"); // ignored for now
+
+CmdSwitchBool MakeStubsOption(switchParser, 0, 0, "M");
+CmdSwitchBool MakeStubsUser(switchParser, 0, 0, "MM");
+CmdSwitchCombineString MakeStubsOutputFile(switchParser, 0, ';', "MF" );
+CmdSwitchBool MakeStubsMissingHeaders(switchParser, 0, 0, "MG" );
+CmdSwitchBool MakeStubsPhonyTargets(switchParser, 0, 0, "MP" );
+CmdSwitchCombineString MakeStubsTargets(switchParser, 0, ';', "MT" );
+CmdSwitchCombineString MakeStubsQuotedTargets(switchParser, 0, ';', "MQ" );
+CmdSwitchBool MakeStubsContinue(switchParser, 0, 0, "MD");
+CmdSwitchBool MakeStubsContinueUser(switchParser, 0, 0, "MMD");
 
 static std::string firstFile;
 
@@ -467,8 +476,8 @@ static void ParamTransfer(char* name)
         Optimizer::cparams.prm_c99 = prm_c11.GetValue();
         Optimizer::cparams.prm_c1x = prm_c11.GetValue();
     }
-    if (prm_makestubs.GetExists())
-        Optimizer::cparams.prm_makestubs = prm_makestubs.GetValue();
+    if (MakeStubsOption.GetValue() || MakeStubsUser.GetValue() || MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue())
+        Optimizer::cparams.prm_makestubs = true;
     if (prm_ansi.GetExists())
         Optimizer::cparams.prm_ansi = prm_ansi.GetValue();
     if (prm_errfile.GetExists())
@@ -1064,6 +1073,10 @@ int ccinit(int argc, char* argv[])
                 Optimizer::showBanner = false;
             }
             else if (!strncmp(&argv[i][1], "-print", 6) || !strncmp(&argv[i][1], "-dump", 5))
+            {
+                Optimizer::showBanner = false;
+            }
+            else if (!strcmp(&argv[i][1], "M") || !strcmp(&argv[i][1], "MM"))
             {
                 Optimizer::showBanner = false;
             }

@@ -53,7 +53,8 @@ public:
 		forcedEOF(false),
 		nextIndex(0),
 		piper(pipeName),
-                noErr(NoErr)
+                noErr(NoErr),
+                systemNesting(0)
 	{
 		ppExpr::SetInclude(this);
 		srchPath = SrchPth;
@@ -170,5 +171,6 @@ private:
 	int nextIndex;
 	PipeArbitrator piper;
 	static char commentChar;
+        int systemNesting;
 };
 #endif

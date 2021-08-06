@@ -53,15 +53,15 @@ CmdSwitchString ppMain::errorMax(SwitchParser, 'E');
 CmdSwitchFile ppMain::File(SwitchParser, '@');
 CmdSwitchString ppMain::outputPath(SwitchParser, 'o');
 
-CmdSwitchBool ppMain::MakeStubs(SwitchParser, 0, 0, "M");
-CmdSwitchBool ppMain::MakeStubsUser(SwitchParser, 0, 0, "MM");
-CmdSwitchCombineString ppMain::MakeStubsOutputFile(SwitchParser, 0, ';', "MF" );
-CmdSwitchBool ppMain::MakeStubsMissingHeaders(SwitchParser, 0, 0, "MG" );
-CmdSwitchBool ppMain::MakeStubsPhonyTargets(SwitchParser, 0, 0, "MP" );
-CmdSwitchCombineString ppMain::MakeStubsTargets(SwitchParser, 0, ';', "MT" );
-CmdSwitchCombineString ppMain::MakeStubsQuotedTargets(SwitchParser, 0, ';', "MQ" );
-CmdSwitchBool ppMain::MakeStubsContinue(SwitchParser, 0, 0, "MD");
-CmdSwitchBool ppMain::MakeStubsContinueUser(SwitchParser, 0, 0, "MMD");
+CmdSwitchBool ppMain::MakeStubs(SwitchParser, 0, 0, { "M" });
+CmdSwitchBool ppMain::MakeStubsUser(SwitchParser, 0, 0, { "MM" });
+CmdSwitchCombineString ppMain::MakeStubsOutputFile(SwitchParser, 0, ';', { "MF" });
+CmdSwitchBool ppMain::MakeStubsMissingHeaders(SwitchParser, 0, 0, { "MG" });
+CmdSwitchBool ppMain::MakeStubsPhonyTargets(SwitchParser, 0, 0, { "MP" });
+CmdSwitchCombineString ppMain::MakeStubsTargets(SwitchParser, 0, ';', { "MT" });
+CmdSwitchCombineString ppMain::MakeStubsQuotedTargets(SwitchParser, 0, ';', { "MQ" });
+CmdSwitchBool ppMain::MakeStubsContinue(SwitchParser, 0, 0, { "MD" });
+CmdSwitchBool ppMain::MakeStubsContinueUser(SwitchParser, 0, 0, { "MMD" });
 
 const char* ppMain::usageText =
     "[options] files\n"

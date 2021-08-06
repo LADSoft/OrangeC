@@ -32,19 +32,20 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <deque>
 class CmdSwitchParser;
 
 class CmdSwitchBase
 {
   public:
     CmdSwitchBase() : switchChar(-1), exists(false) {}
-    CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar, std::string longName);
-    CmdSwitchBase(char SwitchChar, std::string LongName) : switchChar(SwitchChar), exists(false), longName(LongName) {}
+    CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar, std::deque<std::string> LongNames);
+    CmdSwitchBase(char SwitchChar, std::deque<std::string> LongNames) : switchChar(SwitchChar), exists(false), longNames(LongNames) {}
     CmdSwitchBase(const CmdSwitchBase& orig) = default;
     virtual int Parse(const char* data) { return 0; }
 
     char GetSwitchChar() const { return switchChar; }
-    const std::string& GetLongName() const { return longName; }
+    const std::deque<std::string>& GetLongNames() const { return longNames; }
     void SetExists(bool val = true) { exists = val; }
     bool GetExists() const { return exists; }
     virtual void SetArgNum(int an) {}
@@ -52,14 +53,14 @@ class CmdSwitchBase
   private:
     bool exists;
     char switchChar;
-    std::string longName;
+    std::deque<std::string> longNames;
 };
 
 class CmdSwitchBool : public CmdSwitchBase
 {
   public:
-    CmdSwitchBool(CmdSwitchParser& parser, char SwitchChar, bool State = false, std::string LongName = "") :
-        CmdSwitchBase(parser, SwitchChar, LongName),
+    CmdSwitchBool(CmdSwitchParser& parser, char SwitchChar, bool State = false, std::deque<std::string> LongNames = { }) :
+        CmdSwitchBase(parser, SwitchChar, LongNames),
         value(State)
     {
     }
@@ -75,8 +76,8 @@ class CmdSwitchInt : public CmdSwitchBase
 {
   public:
     CmdSwitchInt(CmdSwitchParser& parser, char SwitchChar, int Value = 0, int LowLimit = 0, int HiLimit = INT_MAX,
-                 std::string LongName = "") :
-        CmdSwitchBase(parser, SwitchChar, LongName),
+                 std::deque<std::string> LongNames = { }) :
+        CmdSwitchBase(parser, SwitchChar, LongNames),
         value(Value),
         lowLimit(LowLimit),
         hiLimit(HiLimit)
@@ -97,8 +98,8 @@ class CmdSwitchHex : public CmdSwitchBase
 {
   public:
     CmdSwitchHex(CmdSwitchParser& parser, char SwitchChar, int Value = 0, int LowLimit = 0, int HiLimit = INT_MAX,
-                 std::string LongName = "") :
-        CmdSwitchBase(parser, SwitchChar, LongName),
+                 std::deque<std::string> LongNames = { }) :
+        CmdSwitchBase(parser, SwitchChar, LongNames),
         value(Value),
         lowLimit(LowLimit),
         hiLimit(HiLimit)
@@ -117,8 +118,8 @@ class CmdSwitchHex : public CmdSwitchBase
 class CmdSwitchString : public CmdSwitchBase
 {
   public:
-    CmdSwitchString(CmdSwitchParser& parser, char SwitchChar, char Concat = '\0', std::string LongName = "") :
-        CmdSwitchBase(parser, SwitchChar, LongName),
+    CmdSwitchString(CmdSwitchParser& parser, char SwitchChar, char Concat = '\0', std::deque<std::string> LongNames = { }) :
+        CmdSwitchBase(parser, SwitchChar, LongNames),
         value(""),
         concat(Concat)
     {
@@ -143,8 +144,8 @@ class CmdSwitchString : public CmdSwitchBase
 class CmdSwitchCombineString : public CmdSwitchString
 {
   public:
-    CmdSwitchCombineString(CmdSwitchParser& parser, char SwitchChar, char Concat = '\0', std::string LongName = "") :
-        CmdSwitchString(parser, SwitchChar, Concat, LongName)
+    CmdSwitchCombineString(CmdSwitchParser& parser, char SwitchChar, char Concat = '\0', std::deque<std::string> LongNames = { }) :
+        CmdSwitchString(parser, SwitchChar, Concat, LongNames)
     {
     }
     CmdSwitchCombineString() {}
@@ -153,8 +154,8 @@ class CmdSwitchCombineString : public CmdSwitchString
 class CmdSwitchCombo : public CmdSwitchString
 {
   public:
-    CmdSwitchCombo(CmdSwitchParser& parser, char SwitchChar, const char* Valid, std::string LongName = "") :
-        CmdSwitchString(parser, SwitchChar, '\0', LongName),
+    CmdSwitchCombo(CmdSwitchParser& parser, char SwitchChar, const char* Valid, std::deque<std::string> LongNames = { }) :
+        CmdSwitchString(parser, SwitchChar, '\0', LongNames),
         valid(Valid),
         selected(false)
     {
@@ -173,8 +174,8 @@ class CmdSwitchOutput : public CmdSwitchCombineString
 {
   public:
     CmdSwitchOutput(CmdSwitchParser& parser, char SwitchChar, const char* Extension, bool concat = false,
-                    std::string LongName = "") :
-        CmdSwitchCombineString(parser, SwitchChar, concat, LongName),
+                    std::deque<std::string> LongNames = { }) :
+        CmdSwitchCombineString(parser, SwitchChar, concat, LongNames),
         extension(Extension)
     {
     }
@@ -187,8 +188,8 @@ class CmdSwitchOutput : public CmdSwitchCombineString
 class CmdSwitchDefine : public CmdSwitchBase
 {
   public:
-    CmdSwitchDefine(CmdSwitchParser& parser, char SwitchChar, std::string LongName = "") :
-        CmdSwitchBase(parser, SwitchChar, LongName)
+    CmdSwitchDefine(CmdSwitchParser& parser, char SwitchChar, std::deque<std::string> LongNames = { }) :
+        CmdSwitchBase(parser, SwitchChar, LongNames)
     {
     }
     CmdSwitchDefine(const CmdSwitchDefine& orig) = default;
@@ -214,8 +215,8 @@ class CmdSwitchDefine : public CmdSwitchBase
 class CmdSwitchFile : public CmdSwitchString
 {
   public:
-    CmdSwitchFile(CmdSwitchParser& parser, char SwitchChar, std::string LongName = "") :
-        CmdSwitchString(parser, SwitchChar, '\0', LongName),
+    CmdSwitchFile(CmdSwitchParser& parser, char SwitchChar, std::deque<std::string> LongNames = { }) :
+        CmdSwitchString(parser, SwitchChar, '\0', LongNames),
         Parser(&parser),
         argc(0),
         argv(nullptr)
@@ -240,7 +241,7 @@ class CmdSwitchFile : public CmdSwitchString
 class CmdSwitchParser
 {
   public:
-    CmdSwitchParser() : nologo(*this, '!', false, "nologo") {}
+    CmdSwitchParser() : nologo(*this, '!', false, {"nologo"}) {}
     ~CmdSwitchParser() {}
 
     bool Parse(const std::string& v, int* argc, char* argv[]);
@@ -253,7 +254,7 @@ class CmdSwitchParser
         return *this;
     }
 
-    CmdSwitchBase* Find(const char* sw, bool useLongName, bool toErr);
+    CmdSwitchBase* Find(const char* sw, bool useLongNames, bool toErr);
 
   protected:
     void ScanEnv(char* output, size_t len, const char* string);

@@ -82,7 +82,7 @@ CmdSwitchDefine LinkerMain::Defines(SwitchParser, 'D');
 CmdSwitchCombineString LinkerMain::LibPath(SwitchParser, 'L', ';');
 CmdSwitchOutput LinkerMain::OutputFile(SwitchParser, 'o', ".rel");
 CmdSwitchBool LinkerMain::Verbosity(SwitchParser, 'y');
-CmdSwitchCombineString LinkerMain::OutputDefFile(SwitchParser, 0, 0, "output-def");
+CmdSwitchCombineString LinkerMain::OutputDefFile(SwitchParser, 0, 0, { "output-def" });
 
 SwitchConfig LinkerMain::TargetConfig(SwitchParser, 'T');
 const char* LinkerMain::usageText =

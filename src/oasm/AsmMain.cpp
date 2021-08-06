@@ -43,19 +43,19 @@ extern bool IsSymbolCharRoutine(const char*, bool);
 bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
 
 CmdSwitchParser AsmMain::SwitchParser;
-CmdSwitchBool AsmMain::CaseInsensitive(SwitchParser, 'i', false, "case-insensitive");
-CmdSwitchCombo AsmMain::CreateListFile(SwitchParser, 'l', "m", "list");
+CmdSwitchBool AsmMain::CaseInsensitive(SwitchParser, 'i', false, { "case-insensitive" });
+CmdSwitchCombo AsmMain::CreateListFile(SwitchParser, 'l', "m", { "list" });
 CmdSwitchFile AsmMain::File(SwitchParser, '@');
-CmdSwitchBool AsmMain::PreprocessOnly(SwitchParser, 'e', false, "preprocess-only");
-CmdSwitchOutput AsmMain::OutputFile(SwitchParser, 'o', ".o", "output-file");
+CmdSwitchBool AsmMain::PreprocessOnly(SwitchParser, 'e', false, { "preprocess-only" });
+CmdSwitchOutput AsmMain::OutputFile(SwitchParser, 'o', ".o", false, { "output-file" });
 CmdSwitchDefine AsmMain::Defines(SwitchParser, 'D');
-CmdSwitchCombineString AsmMain::includePath(SwitchParser, 'I', ';', "include-path");
-CmdSwitchBool AsmMain::BinaryOutput(SwitchParser, 'b', false, "binary");
-CmdSwitchBool AsmMain::Intel(SwitchParser, '\0', false, "intel");
-CmdSwitchBool AsmMain::GAS(SwitchParser, '\0', false, "gas");
-CmdSwitchInt AsmMain::ProcessorMode(SwitchParser, 's', 32, 0, 100, "processor-mode");
-CmdSwitchBool AsmMain::WarningsAsErrors(SwitchParser, '\0', false, "warningsaserrors");
-CmdSwitchBool AsmMain::NoGasDirectiveWarning(SwitchParser, '\0', false, "nogasdirectivewarning");
+CmdSwitchCombineString AsmMain::includePath(SwitchParser, 'I', ';', { "include-path" });
+CmdSwitchBool AsmMain::BinaryOutput(SwitchParser, 'b', false, { "binary" });
+CmdSwitchBool AsmMain::Intel(SwitchParser, '\0', false, { "intel" });
+CmdSwitchBool AsmMain::GAS(SwitchParser, '\0', false, { "gas" });
+CmdSwitchInt AsmMain::ProcessorMode(SwitchParser, 's', 32, 0, 100, { "processor-mode" });
+CmdSwitchBool AsmMain::WarningsAsErrors(SwitchParser, '\0', false, { "warningsaserrors" });
+CmdSwitchBool AsmMain::NoGasDirectiveWarning(SwitchParser, '\0', false, { "nogasdirectivewarning" });
 const char* AsmMain::usageText =
     "[options] file"
     "\n"

@@ -71,7 +71,7 @@ PELib* peLib;
 namespace occmsil
 {
 CmdSwitchParser SwitchParser;
-CmdSwitchBool single(SwitchParser, 's', false, "single");
+CmdSwitchBool single(SwitchParser, 's', false, { "single" });
 
 const char* usageText =
     "[options] inputfile\n"

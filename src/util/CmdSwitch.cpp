@@ -32,10 +32,10 @@
 #include <cstdlib>
 #include <cstring>
 
-CmdSwitchBase::CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar, std::string LongName) :
+CmdSwitchBase::CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar, std::deque<std::string> LongNames) :
     exists(false),
     switchChar(SwitchChar),
-    longName(LongName)
+    longNames(LongNames)
 {
     parser += this;
 }
@@ -289,12 +289,15 @@ CmdSwitchBase* CmdSwitchParser::Find(const char* name, bool useLongName, bool to
         {
             for (auto s : switches)
             {
-                if (!strnicmp(name, s->GetLongName().c_str(), i))
+                for (auto s1 : s->GetLongNames())
                 {
-                    if (i == max && s->GetLongName().size() == max)
-                        return s;
-                    else if (!bigmatch.size())
-                        bigmatch = s->GetLongName();
+                    if (!strnicmp(name, s1.c_str(), i))
+                    {
+                        if (i == max && s1.size() == max)
+                            return s;
+                        else if (!bigmatch.size())
+                            bigmatch = s1;
+                    }
                 }
             }
         }
@@ -338,6 +341,7 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
         else if ((argv[0][0] == '-' || argv[0][0] == '/' || (argv[0][0] == '+' && argv[0][1] != '-')) && argv[0][1] &&
                  (argv[0][1] != '-' || argv[0][2]))
         {
+            const char* swtch = &argv[0][0];
             const char* data = &argv[0][0];
             bool longName = data[1] == '-';
             data += 1 + longName;
@@ -371,15 +375,7 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
                 {
                     if (!argv[1])
                     {
-                        if (longName)
-                        {
-                            std::cerr << "switch '--" << b->GetLongName();
-                        }
-                        else
-                        {
-                            std::cerr << "switch '-" << b->GetSwitchChar();
-                        }
-                        std::cerr << "' requires argument" << std::endl;
+                        std::cerr << "switch '" << swtch << "' requires argument" << std::endl;
                         return false;
                     }
                     shifted = true;

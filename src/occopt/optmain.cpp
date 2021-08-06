@@ -71,7 +71,7 @@ namespace Parser
 namespace Optimizer
 {
 CmdSwitchParser SwitchParser;
-CmdSwitchBool single(SwitchParser, 's', false, "single");
+CmdSwitchBool single(SwitchParser, 's', false, { "single" });
 CmdSwitchBool WriteIcdFile(SwitchParser, 'Y', false);
 CmdSwitchCombineString output(SwitchParser, 'o');
 CmdSwitchBool displayTiming(SwitchParser, 't');

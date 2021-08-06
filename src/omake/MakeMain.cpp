@@ -41,28 +41,28 @@
 #include <algorithm>
 
 CmdSwitchParser MakeMain::switchParser;
-CmdSwitchCombineString MakeMain::specifiedFiles(switchParser, 'f', ' ', "file");
-CmdSwitchBool MakeMain::displayOnly(switchParser, 'n', false, "dry-run");
-CmdSwitchBool MakeMain::touch(switchParser, 't', false, "touch");
-CmdSwitchBool MakeMain::query(switchParser, 'q', false, "question");
-CmdSwitchBool MakeMain::keepGoing(switchParser, 'k', false, "keep-going");
-CmdSwitchBool MakeMain::ignoreErrors(switchParser, 'i', false, "ignore-errors");
-CmdSwitchDefine MakeMain::defines(switchParser, 'D', "eval");
-CmdSwitchBool MakeMain::rebuild(switchParser, 'B', false, "always-make");
-CmdSwitchCombineString MakeMain::newFiles(switchParser, 'W', ' ', "assume-new");
-CmdSwitchCombineString MakeMain::oldFiles(switchParser, 'o', ' ', "assume-old");
-CmdSwitchCombineString MakeMain::dir(switchParser, 'C', '+', "directory");
+CmdSwitchCombineString MakeMain::specifiedFiles(switchParser, 'f', ' ', { "file" });
+CmdSwitchBool MakeMain::displayOnly(switchParser, 'n', false, { "dry-run" });
+CmdSwitchBool MakeMain::touch(switchParser, 't', false, { "touch" });
+CmdSwitchBool MakeMain::query(switchParser, 'q', false, { "question" });
+CmdSwitchBool MakeMain::keepGoing(switchParser, 'k', false, { "keep-going" });
+CmdSwitchBool MakeMain::ignoreErrors(switchParser, 'i', false, { "ignore-errors" });
+CmdSwitchDefine MakeMain::defines(switchParser, 'D', { "eval" });
+CmdSwitchBool MakeMain::rebuild(switchParser, 'B', false, { "always-make" });
+CmdSwitchCombineString MakeMain::newFiles(switchParser, 'W', ' ', { "assume-new" });
+CmdSwitchCombineString MakeMain::oldFiles(switchParser, 'o', ' ', { "assume-old" });
+CmdSwitchCombineString MakeMain::dir(switchParser, 'C', '+', { "directory" });
 CmdSwitchBool MakeMain::debug(switchParser, 'd');  // not implemented
-CmdSwitchBool MakeMain::environOverride(switchParser, 'e', false, "environment-overrides");
+CmdSwitchBool MakeMain::environOverride(switchParser, 'e', false, { "environment-overrides" });
 CmdSwitchBool MakeMain::help(switchParser, 'h');
-CmdSwitchBool MakeMain::help2(switchParser, '?', false, "help");
-CmdSwitchCombineString MakeMain::includes(switchParser, 'I', ';', "include-dir");
-CmdSwitchBool MakeMain::showDatabase(switchParser, 'p', false, "print-data-base");
-CmdSwitchBool MakeMain::noBuiltinRules(switchParser, 'r', false, "no-builtin-rules");
-CmdSwitchBool MakeMain::noBuiltinVars(switchParser, 'R', false, "no-builtin-variables");
-CmdSwitchBool MakeMain::silent(switchParser, 's', false, "quiet");
-CmdSwitchBool MakeMain::cancelKeep(switchParser, 'S', false, "no-keep-going");
-CmdSwitchBool MakeMain::printDir(switchParser, 'w', false, "print-directory");
+CmdSwitchBool MakeMain::help2(switchParser, '?', false, { "help" });
+CmdSwitchCombineString MakeMain::includes(switchParser, 'I', ';', { "include-dir" });
+CmdSwitchBool MakeMain::showDatabase(switchParser, 'p', false, { "print-data-base" });
+CmdSwitchBool MakeMain::noBuiltinRules(switchParser, 'r', false, { "no-builtin-rules" });
+CmdSwitchBool MakeMain::noBuiltinVars(switchParser, 'R', false, { "no-builtin-variables" });
+CmdSwitchBool MakeMain::silent(switchParser, 's', false, { "quiet" });
+CmdSwitchBool MakeMain::cancelKeep(switchParser, 'S', false, { "no-keep-going" });
+CmdSwitchBool MakeMain::printDir(switchParser, 'w', false, { "print-directory" });
 CmdSwitchBool MakeMain::warnUndef(switchParser, 'u');
 CmdSwitchBool MakeMain::treeBuild(switchParser, 'T');
 CmdSwitchBool MakeMain::keepResponseFiles(switchParser, 'K');

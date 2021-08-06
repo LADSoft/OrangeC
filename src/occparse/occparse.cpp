@@ -433,7 +433,10 @@ int main(int argc, char* argv[])
         {
             if (buffer[0] == '-')
                 strcpy(buffer, "a.c");
-            strcpy(realOutFile, prm_output.GetValue().c_str());
+            if (!MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
+                strcpy(realOutFile, prm_output.GetValue().c_str());
+            else
+                strcpy(realOutFile, "");
             outputfile(realOutFile, buffer, ".icf");
         }
         else

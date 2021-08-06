@@ -3710,6 +3710,8 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
     if (/*(!templateNestingCount || instantiatingTemplate) &&*/ funcparams->sp && funcparams->sp->name[0] == '_' &&
         parseBuiltInTypelistFunc(&lex, funcsp, funcparams->sp, tp, exp))
         return lex;
+    if (funcparams->sp && !strcmp(funcparams->sp->name, "nn"))
+        printf("hi");
     if (lex)
     {
         lex = getArgs(lex, funcsp, funcparams, closepa, true, flags);
@@ -3979,13 +3981,10 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                             if (isstructured(tp))
                             {
                                 SYMBOL* sym = (basetype(tp)->sp);
-                                if (sym->sb->parentNameSpace && !strcmp(sym->sb->parentNameSpace->name, "std"))
+                                if (sym->sb->initializer_list && sym->sb->templateLevel)
                                 {
-                                    if (!strcmp(sym->name, "initializer_list") && sym->sb->templateLevel)
-                                    {
-                                        initializerListTemplate = sym->tp;
-                                        initializerListType = sym->templateParams->next->p->byClass.val;
-                                    }
+                                    initializerListTemplate = sym->tp;
+                                    initializerListType = sym->templateParams->next->p->byClass.val;
                                 }
                             }
                         }

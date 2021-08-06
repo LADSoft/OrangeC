@@ -4288,12 +4288,9 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                 if (isstructured(tp))
                 {
                     SYMBOL* sym1 = (basetype(tp)->sp);
-                    if (sym1->sb->parentNameSpace && !strcmp(sym1->sb->parentNameSpace->name, "std"))
+                    if (sym1->sb->initializer_list && sym1->sb->templateLevel)
                     {
-                        if (!strcmp(sym1->name, "initializer_list") && sym1->sb->templateLevel)
-                        {
-                            initializerListType = sym1->templateParams->next->p->byClass.val;
-                        }
+                        initializerListType = sym1->templateParams->next->p->byClass.val;
                     }
                 }
             }

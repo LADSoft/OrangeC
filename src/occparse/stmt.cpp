@@ -888,6 +888,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         selectTP = Allocate<TYPE>();
                         selectTP->type = bt_struct;
                         selectTP->sp = makeID(sc_type, selectTP, nullptr, "initializer_list");
+                        selectTP->sp->sb->initializer_list = true;
                     }
                     INITIALIZER* init;
                     initInsert(&init, &stdpointer, begin, 0, false);

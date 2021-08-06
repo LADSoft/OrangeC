@@ -530,6 +530,7 @@ int main(int argc, char* argv[])
                              true, Optimizer::cparams.prm_trigraph, '#',
                              Optimizer::cparams.prm_charisunsigned,
                              !Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_c1x && !Optimizer::cparams.prm_cplusplus,
+                             false,
                              !Optimizer::cparams.prm_ansi, prm_pipe.GetValue() != "+" ? prm_pipe.GetValue() : "");
 
         if (!preProcessor->IsOpen())

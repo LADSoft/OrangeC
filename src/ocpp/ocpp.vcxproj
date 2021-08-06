@@ -130,6 +130,7 @@
     <ClCompile Include="Errors.cpp" />
     <ClCompile Include="Floating.cpp" />
     <ClCompile Include="InputFile.cpp" />
+    <ClCompile Include="MakeStubs.cpp" />
     <ClCompile Include="PipeArbitrator.cpp" />
     <ClCompile Include="ppCond.cpp" />
     <ClCompile Include="ppCtx.cpp" />
@@ -149,6 +150,7 @@
     <ClInclude Include="Errors.h" />
     <ClInclude Include="Floating.h" />
     <ClInclude Include="InputFile.h" />
+    <ClInclude Include="MakeStubs.h" />
     <ClInclude Include="PipeArbitrator.h" />
     <ClInclude Include="ppCond.h" />
     <ClInclude Include="ppCtx.h" />

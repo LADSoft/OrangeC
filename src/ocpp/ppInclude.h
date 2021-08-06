@@ -39,7 +39,7 @@ class ppInclude
 {
 public:
 	ppInclude(bool Fullname, bool Trigraph, bool extended, bool isunsignedchar, bool C89, const std::string& SrchPth,
-		const std::string& SysSrchPth, bool Asmpp, const std::string& pipeName) :
+		const std::string& SysSrchPth, bool Asmpp, bool NoErr, const std::string& pipeName) :
 		unsignedchar(isunsignedchar),
 		c89(C89),
 		trigraphs(Trigraph),
@@ -52,7 +52,8 @@ public:
 		expr(unsignedchar),
 		forcedEOF(false),
 		nextIndex(0),
-		piper(pipeName)
+		piper(pipeName),
+                noErr(NoErr)
 	{
 		ppExpr::SetInclude(this);
 		srchPath = SrchPth;
@@ -65,7 +66,7 @@ public:
 		define = Define;
 		ctx = Ctx;
 		expr.SetParams(define);
-		pushFile(Name, Name, false);
+		pushFile(Name, Name, false, false);
 	}
 	bool Check(kw token, const std::string& line);
 	bool IsOpen() const
@@ -112,7 +113,7 @@ public:
 			return current->GetIndex();
 		return false;
 	}
-	void IncludeFile(const std::string& name) { pushFile(name, name, false); }
+	void IncludeFile(const std::string& name) { pushFile(name, name, false, false); }
 	void SetInProc(const std::string& name) { inProc = name; }
 	void Mark() { current->Mark(); }
 	void Drop() { current->Drop(); }
@@ -121,6 +122,7 @@ public:
 	bool has_include_next(const std::string& args);
 	void ForceEOF() { forcedEOF = true; }
 	std::set<std::string>& GetUserIncludes() { return userIncludes; }
+	std::set<std::string>& GetSysIncludes() { return sysIncludes; }
 
 	static void SetCommentChar(char ch) { commentChar = ch; }
 	int AnonymousIndex() const
@@ -135,11 +137,11 @@ protected:
 	void StripAsmComment(std::string& line);
 	bool CheckInclude(kw token, const std::string& line);
 	bool CheckLine(kw token, const std::string& line);
-	void pushFile(const std::string& name, const std::string& errname, bool include_next, int dirs_traversed = 0);
+	void pushFile(const std::string& name, const std::string& errname, bool include_next, bool foundAsSystem, int dirs_traversed = 0);
 	bool popFile();
 	std::string ParseName(const std::string& args, bool& specifiedAsSystem);
 	// Put a throwaway value in dirs_skipped here unless you need to use it for #include_next shenanigans with pushFile
-	std::string FindFile(bool specifiedAsSystem, const std::string& name, bool skipFirst, int& dirs_skipped);
+	std::string FindFile(bool specifiedAsSystem, const std::string& name, bool skipFirst, int& dirs_skipped, bool& foundAsSystem);
 	std::string SrchPath(bool system, const std::string& name, const std::string& searchPath, bool skipUntilDepth, int& filesSkipped);
 	const char* RetrievePath(char* buf, const char* path);
 	void AddName(char* buf, const std::string& name);
@@ -148,6 +150,7 @@ private:
 	static bool system;
 	std::list<std::unique_ptr<ppFile>> files;
 	std::set<std::string> userIncludes;
+	std::set<std::string> sysIncludes;
 	std::unique_ptr<ppFile> current;
 	std::unordered_map<std::string, int> fileMap;
 	ppDefine* define;
@@ -162,6 +165,7 @@ private:
 	std::string inProc;
 	bool asmpp;
 	bool forcedEOF;
+        bool noErr;
 	std::string dummy;
 	int nextIndex;
 	PipeArbitrator piper;

@@ -2184,14 +2184,15 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
                     if (refr == bt_rref && refl == bt_lref && isconst(basetype(tl)->btp))
                         return -1;
                 }
-                if (isref(ta))
+                if (ta && isref(ta))
                     ta = basetype(ta)->btp;
                 if (isref(tl))
                     tl = basetype(tl)->btp;
                 if (isref(tr))
                     tr = basetype(tr)->btp;
             }
-            if (isstructured(ta) && isstructured(tl) && isstructured(tr))
+          
+            if (ta && isstructured(ta) && isstructured(tl) && isstructured(tr))
             {
                 ta = basetype(ta);
                 tl = basetype(tl);
@@ -2268,7 +2269,7 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
                 }
             }
 
-            if (basetype(ta)->type == bt_memberptr && basetype(tl)->type == bt_memberptr && basetype(tr)->type == bt_memberptr)
+            if (ta && basetype(ta)->type == bt_memberptr && basetype(tl)->type == bt_memberptr && basetype(tr)->type == bt_memberptr)
             {
                 ta = basetype(ta);
                 tl = basetype(tl);
@@ -4273,28 +4274,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                 }
             }
         }
-        // before matching the args see if  this function uses initializer-list
-        // as the first and only undefaulted param, and has at least one argument passed
-        if (a || (hrt && *hrt))
-        {
-            SYMLIST* hr = basetype(sym->tp)->syms->table[0];
-            if (hr->p->sb->thisPtr)
-                hr = hr->next;
-            if (!hr->next || (hr->next->p)->sb->init)
-            {
-                TYPE* tp = hr->p->tp;
-                if (basetype(tp)->type == bt_lref)
-                    tp = basetype(tp)->btp;
-                if (isstructured(tp))
-                {
-                    SYMBOL* sym1 = (basetype(tp)->sp);
-                    if (sym1->sb->initializer_list && sym1->sb->templateLevel)
-                    {
-                        initializerListType = sym1->templateParams->next->p->byClass.val;
-                    }
-                }
-            }
-        }
+
         while (*hr && (a || (hrt && *hrt)))
         {
             SYMBOL* argsym = (SYMBOL*)(*hr)->p;
@@ -4318,12 +4298,27 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                     return true;
                 }
                 m = 0;
+                TYPE* tp1 = tp;
+                if (basetype(tp1)->type == bt_lref)
+                    tp1 = basetype(tp1)->btp;
+                if (isstructured(tp1))
+                {
+                    SYMBOL* sym1 = (basetype(tp1)->sp);
+                    if (sym1->sb->initializer_list && sym1->sb->templateLevel)
+                    {
+                        initializerListType = sym1->templateParams->next->p->byClass.val;
+                    }
+                }
                 if (initializerListType)
                 {
                     if (a && a->nested)
                     {
+                        INITLIST* next = a->nested->next;
+                        if (!a->initializer_list)
+                            a->nested->next = nullptr;
                         getInitListConversion(initializerListType, a->nested, nullptr, &m, seq, sym,
                                               userFunc ? &userFunc[n] : nullptr);
+                        a->nested->next = next;
                     }
                     else if (a->initializer_list)
                     {
@@ -4336,7 +4331,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
 
                     }
                 }
-                else if (a && (a->nested || (!a->tp && ! a->exp)))
+                else if (a && (a->nested || (!a->tp && !a->exp)))
                 {
                     seq[m++] = CV_QUALS;  // have to make a distinction between an initializer list and the same func without one...
                     getInitListConversion(basetype(tp), a->nested, nullptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr);
@@ -4370,14 +4365,14 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
             }
             if (tr)
                 tr = tr->next;
-            if (!initializerListType && !tr)
-                hr = &(*hr)->next;
             if (a)
                 a = a->next;
             else
                 hrt = &(*hrt)->next;
+            if ((!initializerListType || !a || !a->initializer_list) && !tr)
+                hr = &(*hr)->next;
         }
-        if (*hr && !initializerListType)
+        if (*hr)
         {
             SYMBOL* sym = (SYMBOL*)(*hr)->p;
             if (sym->sb->init || sym->sb->deferredCompile || sym->packed)

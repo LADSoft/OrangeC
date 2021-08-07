@@ -38,10 +38,10 @@ class PreProcessor
 {
   public:
     PreProcessor(const std::string& FileName, const std::string& SrchPth, const std::string& SysSrchPth, bool fullName,
-                 bool Trigraph, char PPStart, bool isunsignedchar, bool C89, bool extensions, const std::string& pipeName) :
+                 bool Trigraph, char PPStart, bool isunsignedchar, bool C89, bool extensions, bool NoErr, const std::string& pipeName) :
         ppStart(PPStart),
         lineno(0),
-        include(fullName, Trigraph, extensions, isunsignedchar, C89, SrchPth, SysSrchPth, PPStart == '%', pipeName),
+        include(fullName, Trigraph, extensions, isunsignedchar, C89, SrchPth, SysSrchPth, PPStart == '%', NoErr, pipeName),
         define(extensions, &include, C89, PPStart == '%'),
         macro(include, define),
         ctx(define),
@@ -85,6 +85,7 @@ class PreProcessor
     int GetCppPrio() { return pragma.CppPrio(); }
     std::list<std::string>& GetIncludeLibs() { return pragma.IncludeLibs(); }
     std::set<std::string>& GetUserIncludes() { return include.GetUserIncludes(); }
+    std::set<std::string>& GetSysIncludes() { return include.GetSysIncludes(); }
     std::map<std::string, std::unique_ptr<Startups::Properties>>& GetStartups() { return pragma.GetStartups(); }
     const char* LookupAlias(const char* name) const { return pragma.LookupAlias(name); }
     void IncludeFile(const std::string& name) { include.IncludeFile(name); }

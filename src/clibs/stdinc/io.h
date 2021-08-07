@@ -150,6 +150,7 @@ extern "C"
     int _RTL_FUNC _IMPORT _chmod(const char* ZSTR, int);
     int _RTL_FUNC _IMPORT _chsize(int, long);
     int _RTL_FUNC _IMPORT _close(int);
+    int _RTL_FUNC _IMPORT _commit(int);
     int _RTL_FUNC _IMPORT _creat(const char* ZSTR, int);
     int _RTL_FUNC _IMPORT _dup(int);
     int _RTL_FUNC _IMPORT _dup2(int, int);
@@ -161,6 +162,7 @@ extern "C"
     int _RTL_FUNC _IMPORT _isatty(int);
     int _RTL_FUNC _IMPORT _locking(int, int, long);
     long _RTL_FUNC _IMPORT _lseek(int, long, int);
+    __int64 _RTL_FUNC _IMPORT _lseeki64(int, __int64, int);
     char* ZSTR _RTL_FUNC _IMPORT _mktemp(char* ZSTR);
     int _RTL_FUNC _IMPORT _open(const char* ZSTR, int, ...);
     int _RTL_FUNC _IMPORT _read(int, void*, unsigned int);

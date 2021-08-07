@@ -45,8 +45,8 @@
 
 size_t __ll_getpos(int fd)
 {
-    int rv = SetFilePointer((HANDLE)fd, 0, 0, FILE_CURRENT);
-    if (rv == -1)
-        errno = GetLastError();
+    size_t rv = SetFilePointer((HANDLE)fd, 0, 0, FILE_CURRENT);
+    if (rv == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
+         errno = GetLastError();
     return rv;
 }

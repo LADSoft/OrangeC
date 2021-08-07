@@ -53,6 +53,16 @@ CmdSwitchString ppMain::errorMax(SwitchParser, 'E');
 CmdSwitchFile ppMain::File(SwitchParser, '@');
 CmdSwitchString ppMain::outputPath(SwitchParser, 'o');
 
+CmdSwitchBool ppMain::MakeStubs(SwitchParser, 0, 0, { "M" });
+CmdSwitchBool ppMain::MakeStubsUser(SwitchParser, 0, 0, { "MM" });
+CmdSwitchCombineString ppMain::MakeStubsOutputFile(SwitchParser, 0, ';', { "MF" });
+CmdSwitchBool ppMain::MakeStubsMissingHeaders(SwitchParser, 0, 0, { "MG" });
+CmdSwitchBool ppMain::MakeStubsPhonyTargets(SwitchParser, 0, 0, { "MP" });
+CmdSwitchCombineString ppMain::MakeStubsTargets(SwitchParser, 0, ';', { "MT" });
+CmdSwitchCombineString ppMain::MakeStubsQuotedTargets(SwitchParser, 0, ';', { "MQ" });
+CmdSwitchBool ppMain::MakeStubsContinue(SwitchParser, 0, 0, { "MD" });
+CmdSwitchBool ppMain::MakeStubsContinueUser(SwitchParser, 0, 0, { "MMD" });
+
 const char* ppMain::usageText =
     "[options] files\n"
     "\n"
@@ -63,6 +73,16 @@ const char* ppMain::usageText =
     "/T             - translate trigraphs       /Uxxx       - Undefine something\n"
     "/V, --version  - Show version and date     /!,--nologo - No logo\n"
     "/oxxx          - set output file           /zxxx,/Zxxx - set system path\n"
+    "\nDependency generation:\n"
+    "  /M             - basic generation\n"
+    "  /MM            - basic generation, user files only\n"
+    "  /MF file       - specify output file\n"
+    "  /MG            - missing headers as dependencies\n"
+    "  /MP            - add phony targets\n"
+    "  /MT target     - add target\n"
+    "  /MQ target     - add target, quote special characters\n"
+    "  /MD            - basic generation and continue\n"
+    "  /MMD           - basic generation and continue, user files only\n"
     "Time: " __TIME__ "  Date: " __DATE__;
 
 int main(int argc, char* argv[])
@@ -127,7 +147,6 @@ int ppMain::Run(int argc, char* argv[])
 #else
     strcpy(buffer, argv[0]);
 #endif
-    Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(buffer, ".cfg");
@@ -136,11 +155,19 @@ int ppMain::Run(int argc, char* argv[])
     {
         configTest.close();
         if (!internalConfig.Parse(configName.c_str()))
+        {
+            Utils::banner(argv[0]);
             Utils::fatal("Corrupt configuration file");
+        }
     }
     if (!SwitchParser.Parse(&argc, argv) || (argc == 1 && File.GetCount() <= 1))
     {
+        Utils::banner(argv[0]);
         Utils::usage(argv[0], usageText);
+    }
+    if (!MakeStubs.GetValue() && !MakeStubsUser.GetValue() && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
+    {
+        Utils::banner(argv[0]);
     }
     CmdFiles files(argv + 1);
     if (File.GetValue())
@@ -162,7 +189,9 @@ int ppMain::Run(int argc, char* argv[])
         }
         PreProcessor pp((*it), includePath.GetValue(), cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(), 
                         false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false,
-                        !c99Mode.GetValue() && !c11Mode.GetValue(), !disableExtensions.GetValue(), "");
+                        !c99Mode.GetValue() && !c11Mode.GetValue(), !disableExtensions.GetValue(), 
+                        (MakeStubs.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(), 
+                        "");
         if (c11Mode.GetValue())
         {
             std::string ver = "201112L";
@@ -242,7 +271,10 @@ int ppMain::Run(int argc, char* argv[])
                 Errors::SetMaxErrors(n);
             }
         }
-        if (!outputPath.GetValue().empty())
+
+        working = "";
+
+        if (!outputPath.GetValue().empty() && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
             working = outputPath.GetValue();
         else if (getenv("OCC_LEGACY_OPTIONS"))
             working = Utils::QualifiedFile((*it).c_str(), ".i");
@@ -331,8 +363,48 @@ int ppMain::Run(int argc, char* argv[])
                     }
                 }
             }
-            (*outstream) << "#line " << pp.GetErrLineNo() << " \"" << pp.GetErrFile() << "\"" << std::endl;
-            (*outstream) << working << std::endl;
+            if (!MakeStubs.GetValue() && !MakeStubsUser.GetValue() || (errorMax.GetExists() && errorMax.GetValue().empty()))
+            {
+                (*outstream) << "#line " << pp.GetErrLineNo() << " \"" << pp.GetErrFile() << "\"" << std::endl;
+                (*outstream) << working << std::endl;
+            }
+        }
+        if (MakeStubs.GetValue() || MakeStubsUser.GetValue() || MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue())
+        {
+            std::string inFile;
+            inFile = *it;
+            int end = inFile.find_last_of('/');
+            if (end == std::string::npos)
+                end = -1;
+            int end1 = inFile.find_last_of('\\');
+            if (end1 == std::string::npos)
+                end1 = -1;
+            if (end < end1)
+                end = end1;
+            inFile = inFile.substr(end+1);
+
+            std::string outFile;
+            if (MakeStubs.GetValue() || MakeStubsUser.GetValue())
+            {
+                outFile = MakeStubsOutputFile.GetValue();
+            }
+            else if (!outputPath.GetValue().empty())
+            {
+                outFile = outputPath.GetValue(); 
+            }
+            else
+            {
+                outFile = inFile;
+                end = outFile.find_last_of('.');
+                if (end != std::string::npos)
+                    outFile = outFile.substr(0, end);
+                outFile += ".d";
+            }
+            ::MakeStubs stubber(pp, MakeStubsUser.GetValue() || MakeStubsContinueUser.GetValue(), 
+                      MakeStubsPhonyTargets.GetValue(),
+                      inFile, outFile, 
+                       MakeStubsTargets.GetValue(), MakeStubsQuotedTargets.GetValue());
+            stubber.Run(MakeStubs.GetValue() || MakeStubsUser.GetValue() ? outstream : nullptr);
         }
         if (outstream != &std::cout)
         {

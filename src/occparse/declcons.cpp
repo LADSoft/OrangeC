@@ -3662,13 +3662,10 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                     if (isstructured(tp))
                     {
                         SYMBOL* sym = (basetype(tp)->sp);
-                        if (sym->sb->parentNameSpace && !strcmp(sym->sb->parentNameSpace->name, "std"))
+                        if (sym->sb->initializer_list && sym->sb->templateLevel)
                         {
-                            if (!strcmp(sym->name, "initializer_list") && sym->sb->templateLevel)
-                            {
-                                initializerListTemplate = sym->tp;
-                                initializerListType = sym->templateParams->next->p->byClass.val;
-                            }
+                            initializerListTemplate = sym->tp;
+                            initializerListType = sym->templateParams->next->p->byClass.val;
                         }
                     }
                 }

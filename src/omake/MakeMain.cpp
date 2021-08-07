@@ -41,28 +41,28 @@
 #include <algorithm>
 
 CmdSwitchParser MakeMain::switchParser;
-CmdSwitchCombineString MakeMain::specifiedFiles(switchParser, 'f', ' ');
-CmdSwitchBool MakeMain::displayOnly(switchParser, 'n', false, "dry-run");
-CmdSwitchBool MakeMain::touch(switchParser, 't');
-CmdSwitchBool MakeMain::query(switchParser, 'q');
-CmdSwitchBool MakeMain::keepGoing(switchParser, 'k', false, "keep-going");
-CmdSwitchBool MakeMain::ignoreErrors(switchParser, 'i');
-CmdSwitchDefine MakeMain::defines(switchParser, 'D', "eval");
-CmdSwitchBool MakeMain::rebuild(switchParser, 'B');
-CmdSwitchCombineString MakeMain::newFiles(switchParser, 'W', ' ');
-CmdSwitchCombineString MakeMain::oldFiles(switchParser, 'o', ' ');
-CmdSwitchCombineString MakeMain::dir(switchParser, 'C', '+');
+CmdSwitchCombineString MakeMain::specifiedFiles(switchParser, 'f', ' ', { "file" });
+CmdSwitchBool MakeMain::displayOnly(switchParser, 'n', false, { "dry-run" });
+CmdSwitchBool MakeMain::touch(switchParser, 't', false, { "touch" });
+CmdSwitchBool MakeMain::query(switchParser, 'q', false, { "question" });
+CmdSwitchBool MakeMain::keepGoing(switchParser, 'k', false, { "keep-going" });
+CmdSwitchBool MakeMain::ignoreErrors(switchParser, 'i', false, { "ignore-errors" });
+CmdSwitchDefine MakeMain::defines(switchParser, 'D', { "eval" });
+CmdSwitchBool MakeMain::rebuild(switchParser, 'B', false, { "always-make" });
+CmdSwitchCombineString MakeMain::newFiles(switchParser, 'W', ' ', { "assume-new" });
+CmdSwitchCombineString MakeMain::oldFiles(switchParser, 'o', ' ', { "assume-old" });
+CmdSwitchCombineString MakeMain::dir(switchParser, 'C', '+', { "directory" });
 CmdSwitchBool MakeMain::debug(switchParser, 'd');  // not implemented
-CmdSwitchBool MakeMain::environOverride(switchParser, 'e');
+CmdSwitchBool MakeMain::environOverride(switchParser, 'e', false, { "environment-overrides" });
 CmdSwitchBool MakeMain::help(switchParser, 'h');
-CmdSwitchBool MakeMain::help2(switchParser, '?', false, "help");
-CmdSwitchCombineString MakeMain::includes(switchParser, 'I', ';');
-CmdSwitchBool MakeMain::showDatabase(switchParser, 'p');
-CmdSwitchBool MakeMain::noBuiltinRules(switchParser, 'r');
-CmdSwitchBool MakeMain::noBuiltinVars(switchParser, 'R');
-CmdSwitchBool MakeMain::silent(switchParser, 's');
-CmdSwitchBool MakeMain::cancelKeep(switchParser, 'S');
-CmdSwitchBool MakeMain::printDir(switchParser, 'w', false, "print-directory");
+CmdSwitchBool MakeMain::help2(switchParser, '?', false, { "help" });
+CmdSwitchCombineString MakeMain::includes(switchParser, 'I', ';', { "include-dir" });
+CmdSwitchBool MakeMain::showDatabase(switchParser, 'p', false, { "print-data-base" });
+CmdSwitchBool MakeMain::noBuiltinRules(switchParser, 'r', false, { "no-builtin-rules" });
+CmdSwitchBool MakeMain::noBuiltinVars(switchParser, 'R', false, { "no-builtin-variables" });
+CmdSwitchBool MakeMain::silent(switchParser, 's', false, { "quiet" });
+CmdSwitchBool MakeMain::cancelKeep(switchParser, 'S', false, { "no-keep-going" });
+CmdSwitchBool MakeMain::printDir(switchParser, 'w', false, { "print-directory" });
 CmdSwitchBool MakeMain::warnUndef(switchParser, 'u');
 CmdSwitchBool MakeMain::treeBuild(switchParser, 'T');
 CmdSwitchBool MakeMain::keepResponseFiles(switchParser, 'K');
@@ -409,6 +409,32 @@ void MakeMain::SetTreePath(std::string& files)
         }
     }
 }
+void MakeMain::LoadEquates(int& argc, char** argv)
+{
+    int j=1;
+    for (int i=1; i < argc; i++)
+    {
+        if (argv[i][0] != '-' && argv[i][0] != '/' && strchr(argv[i], '=') != 0)
+        {
+            equates.push_back(argv[i]);
+        }
+        else
+        {
+            argv[j++] = argv[i];
+        }
+    }
+    argc = j;
+    argv[argc] = nullptr;
+}
+void MakeMain::RunEquates()
+{
+    for (auto e : equates)
+    {
+        Parser p(e, "<eval>", 1, false, Variable::o_default);
+        p.SetAutoExport();
+        p.Parse();
+    }
+}
 int MakeMain::Run(int argc, char** argv)
 {
     OS::Init();
@@ -436,6 +462,7 @@ int MakeMain::Run(int argc, char** argv)
         std::string cmdLine = r.Evaluate();
         Dispatch(cmdLine.c_str());
     }
+    LoadEquates(argc, argv);
     if (!switchParser.Parse(&argc, argv) || help.GetValue() || help2.GetValue())
     {
         Utils::banner(argv[0]);
@@ -476,6 +503,7 @@ int MakeMain::Run(int argc, char** argv)
         Maker::ClearFirstGoal();
         LoadEnvironment();
         LoadCmdDefines();
+        RunEquates();
         SetVariable("MAKE", argv[0], Variable::o_environ, false);
         Variable* v = VariableContainer::Instance()->Lookup("SHELL");
         if (!v)

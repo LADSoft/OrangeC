@@ -87,7 +87,6 @@ CmdSwitchBool prm_icdfile(switchParser, 'Y');
 CmdSwitchBool prm_trigraph(switchParser, 'T');
 CmdSwitchBool prm_debug(switchParser, 'v');
 CmdSwitchBool prm_debug2(switchParser, 'g');
-CmdSwitchBool prm_makestubs(switchParser, 'M');
 CmdSwitchBool prm_compileonly(switchParser, 'c');
 CmdSwitchString prm_assemble(switchParser, 'S');
 CmdSwitchBool prm_xcept(switchParser, 'X');
@@ -95,7 +94,7 @@ CmdSwitchBool prm_viaassembly(switchParser, '#');
 CmdSwitchBool displayTiming(switchParser, 't');
 CmdSwitchInt prm_stackalign(switchParser, 's', 16, 0, 2048);
 CmdSwitchString prm_error(switchParser, 'E');
-CmdSwitchString prm_Werror(switchParser, 0, 0, "Werror"); // doesn't do anything, just to help the libcxx tests...
+CmdSwitchString prm_Werror(switchParser, 0, 0, { "Werror" }); // doesn't do anything, just to help the libcxx tests...
 CmdSwitchString prm_define(switchParser, 'D', ';');
 CmdSwitchString prm_undefine(switchParser, 'U', ';');
 CmdSwitchFile prm_file(switchParser, '@');
@@ -106,43 +105,55 @@ CmdSwitchString prm_warning(switchParser, 'w', ';');
 CmdSwitchCombineString prm_output(switchParser, 'o');
 CmdSwitchCombineString prm_tool(switchParser, 'p', ';');
 CmdSwitchCombineString prm_language(switchParser, 'x');
-CmdSwitchBool prm_nostdinc(switchParser, 0, false, "nostdinc");
-CmdSwitchBool prm_nostdincpp(switchParser, 0, false, "nostdinc++");
-CmdSwitchString prm_std(switchParser, 0, 0, "std");
+CmdSwitchBool prm_nostdinc(switchParser, 0, false, { "nostdinc" });
+CmdSwitchBool prm_nostdincpp(switchParser, 0, false, { "nostdinc++" });
+CmdSwitchString prm_std(switchParser, 0, 0, { "std" });
 CmdSwitchCombineString prm_library(switchParser, 'l', ';');
-CmdSwitchBool prm_prmSyntaxOnly(switchParser, 0, false, "fsyntax-only"); // doesn't do anything yet
+CmdSwitchBool prm_prmSyntaxOnly(switchParser, 0, false, { "fsyntax-only" }); // doesn't do anything yet
 
 CmdSwitchCombineString prm_cinclude(switchParser, 'I', ';');
 CmdSwitchCombineString prm_Csysinclude(switchParser, 'z', ';');
 CmdSwitchCombineString prm_CPPsysinclude(switchParser, 'Z', ';');
 CmdSwitchCombineString prm_libpath(switchParser, 'L', ';');
 CmdSwitchString prm_pipe(switchParser, 'P', ';');
-CmdSwitchCombineString prm_output_def_file(switchParser, 0, 0, "output-def");
+CmdSwitchCombineString prm_output_def_file(switchParser, 0, 0, { "output-def" });
 CmdSwitchCombineString prm_flags(switchParser, 'f', ';');
-CmdSwitchBool prm_export_all(switchParser, 0, false, "export-all-symbols");
+CmdSwitchBool prm_export_all(switchParser, 0, false, { "export-all-symbols" });
 
 CmdSwitchBool prm_msil_noextensions(switchParser, 'd');
 CmdSwitchString prm_msil_strongnamekeyfile(switchParser, 'K');
 CmdSwitchString prm_msil_namespace(switchParser, 'N');
 CmdSwitchString prm_msil_version(switchParser, 'V');
-CmdSwitchCombineString prm_architecture(switchParser, 0, 0, "architecture");
+CmdSwitchCombineString prm_architecture(switchParser, 0, 0, { "architecture" });
 
 CmdSwitchString prm_Winmode(switchParser, 'W');
-CmdSwitchCombineString OutputDefFile(switchParser, 0, 0, "output-def");
-CmdSwitchBool ExportAll(switchParser, 0, false, "export-all-symbols");
+CmdSwitchCombineString OutputDefFile(switchParser, 0, 0, { "output-def" });
+CmdSwitchBool ExportAll(switchParser, 0, false, { "export-all-symbols" });
 
 CmdSwitchString AssemblerExtension(switchParser, 'a');
 
-CmdSwitchString prmLink(switchParser, 0, 0, "link");
-CmdSwitchString prmDll(switchParser, 0, 0, "dll");
-CmdSwitchString prmShared(switchParser, 0, 0, "shared");
+CmdSwitchString prmLink(switchParser, 0, 0, { "link" });
+CmdSwitchString prmDll(switchParser, 0, 0, { "dll" });
+CmdSwitchString prmShared(switchParser, 0, 0, { "shared" });
 
-CmdSwitchBool prmDumpVersion(switchParser, 0, 0, "dumpversion");
-CmdSwitchBool prmDumpMachine(switchParser, 0, 0, "dumpmachine");
-CmdSwitchCombineString prmPrintFileName(switchParser, 0, 0, "print-file-name");
-CmdSwitchCombineString prmPrintProgName(switchParser, 0, 0, "print-prog-name");
+CmdSwitchBool prmDumpVersion(switchParser, 0, 0, { "dumpversion" });
+CmdSwitchBool prmDumpMachine(switchParser, 0, 0, { "dumpmachine" });
+CmdSwitchCombineString prmPrintFileName(switchParser, 0, 0, { "print-file-name" });
+CmdSwitchCombineString prmPrintProgName(switchParser, 0, 0, { "print-prog-name" });
 
-CmdSwitchBool prmPIC(switchParser, 0,0, "fPIC"); // ignored for now
+CmdSwitchBool prmPIC(switchParser, 0, 0, { "fPIC" }); // ignored for now
+CmdSwitchBool prmWall(switchParser, 0, 0, { "Wall" }); // ignored for now
+CmdSwitchBool prmWextra(switchParser, 0, 0, { "Wextra" }); // ignored for now
+
+CmdSwitchBool MakeStubsOption(switchParser, 0, 0, { "M" });
+CmdSwitchBool MakeStubsUser(switchParser, 0, 0, { "MM" });
+CmdSwitchCombineString MakeStubsOutputFile(switchParser, 0, ';', { "MF" });
+CmdSwitchBool MakeStubsMissingHeaders(switchParser, 0, 0, { "MG" });
+CmdSwitchBool MakeStubsPhonyTargets(switchParser, 0, 0, { "MP" });
+CmdSwitchCombineString MakeStubsTargets(switchParser, 0, ';', { "MT" });
+CmdSwitchCombineString MakeStubsQuotedTargets(switchParser, 0, ';', { "MQ" });
+CmdSwitchBool MakeStubsContinue(switchParser, 0, 0, { "MD" });
+CmdSwitchBool MakeStubsContinueUser(switchParser, 0, 0, { "MMD" });
 
 static std::string firstFile;
 
@@ -358,6 +369,7 @@ static int DisplayerParams()
     }
     if (prmPrintFileName.GetExists())
     {
+#if 0
         char buf[260];
         char *orangec = getenv("ORANGEC");
         if (orangec)
@@ -372,6 +384,7 @@ static int DisplayerParams()
             printf("%s", buf); 
         }
         else
+#endif
         {
             printf("%s", prmPrintFileName.GetValue().c_str());
         }
@@ -463,8 +476,8 @@ static void ParamTransfer(char* name)
         Optimizer::cparams.prm_c99 = prm_c11.GetValue();
         Optimizer::cparams.prm_c1x = prm_c11.GetValue();
     }
-    if (prm_makestubs.GetExists())
-        Optimizer::cparams.prm_makestubs = prm_makestubs.GetValue();
+    if (MakeStubsOption.GetValue() || MakeStubsUser.GetValue() || MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue())
+        Optimizer::cparams.prm_makestubs = true;
     if (prm_ansi.GetExists())
         Optimizer::cparams.prm_ansi = prm_ansi.GetValue();
     if (prm_errfile.GetExists())
@@ -554,6 +567,16 @@ static void ParamTransfer(char* name)
     for (auto&& v : checks)
     {
         warning_setup('w', v.c_str());
+    }
+    if (prmWall.GetValue())
+    {
+        Optimizer::cparams.prm_warning = true;
+        DisableTrivialWarnings();
+    }
+    if (prmWextra.GetValue())
+    {
+        Optimizer::cparams.prm_extwarning = true;
+        DisableTrivialWarnings();
     }
     checks = Utils::split(prm_tool.GetValue());
     for (auto&& v : checks)
@@ -969,7 +992,7 @@ void outputfile(char* buf, const char* orgbuf, const char* ext)
         Utils::StripExt(buf);
         Utils::AddExt(buf, ext);
     }
-    else if (prm_output.GetExists())
+    else if (prm_output.GetExists() && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
     {
         Utils::AddExt(buf, ext);
     }
@@ -1050,6 +1073,10 @@ int ccinit(int argc, char* argv[])
                 Optimizer::showBanner = false;
             }
             else if (!strncmp(&argv[i][1], "-print", 6) || !strncmp(&argv[i][1], "-dump", 5))
+            {
+                Optimizer::showBanner = false;
+            }
+            else if (!strcmp(&argv[i][1], "M") || !strcmp(&argv[i][1], "MM"))
             {
                 Optimizer::showBanner = false;
             }
@@ -1195,7 +1222,7 @@ int ccinit(int argc, char* argv[])
     if (IsCompiler())
     {
 
-        if (prm_output.GetExists())
+        if (prm_output.GetExists() && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
         {
             Optimizer::outputFileName = prm_output.GetValue();
             if (!Optimizer::cparams.prm_compileonly)

@@ -62,8 +62,9 @@ bool ppInclude::CheckInclude(kw token, const std::string& args)
 		std::string name = ParseName(line1, specifiedAsSystem);
 		const char* breakpoint = name.c_str();
 		int dirs_traversed = 0; // this is needed to get #include_next working correctly, the __has_include versions of this don't need to actually keep track tho cuz they don't actually include
-		name = FindFile(specifiedAsSystem, name, false, dirs_traversed);
-		pushFile(name, line1, false, dirs_traversed);
+                bool foundAsSystem = false;
+		name = FindFile(specifiedAsSystem, name, false, dirs_traversed, foundAsSystem);
+		pushFile(name, line1, false, foundAsSystem, dirs_traversed);
 		return true;
 	}
 	else if (token == kw::INCLUDE_NEXT)
@@ -75,8 +76,9 @@ bool ppInclude::CheckInclude(kw token, const std::string& args)
 		bool specifiedAsSystem = false;
 		std::string name = ParseName(line1, specifiedAsSystem);
 		int dirs_skipped = 0;
-		name = FindFile(false, name, true, dirs_skipped);
-		pushFile(name, line1, true, dirs_skipped);
+                bool foundAsSystem = false;
+		name = FindFile(false, name, true, dirs_skipped, foundAsSystem);
+		pushFile(name, line1, true, foundAsSystem, dirs_skipped);
 		return true;
 	}
 	return false;
@@ -87,7 +89,8 @@ bool ppInclude::has_include_next(const std::string& args)
 	bool specifiedAsSystem = false;
 	std::string name = ParseName(line1, specifiedAsSystem);
 	int throwaway = 0;
-	name = FindFile(specifiedAsSystem, name, true, throwaway);
+        bool foundAsSystem = false;
+	name = FindFile(specifiedAsSystem, name, true, throwaway, foundAsSystem);
 	return !name.empty();
 }
 bool ppInclude::has_include(const std::string& args)
@@ -96,7 +99,8 @@ bool ppInclude::has_include(const std::string& args)
 	bool specifiedAsSystem = false;
 	std::string name = ParseName(line1, specifiedAsSystem);
 	int throwaway = 0;
-	name = FindFile(specifiedAsSystem, name, false, throwaway);
+        bool foundAsSystem = false;
+	name = FindFile(specifiedAsSystem, name, false, throwaway, foundAsSystem);
 	return !name.empty();
 }
 bool ppInclude::CheckLine(kw token, const std::string& args)
@@ -118,19 +122,40 @@ bool ppInclude::CheckLine(kw token, const std::string& args)
 	}
 	return false;
 }
-void ppInclude::pushFile(const std::string& name, const std::string& errname, bool include_next, int dirs_traversed)
+void ppInclude::pushFile(const std::string& name, const std::string& errname, bool include_next, bool foundAsSystem, int dirs_traversed)
 {
+        if (systemNesting)
+            foundAsSystem = true;
+        if (foundAsSystem)
+            systemNesting++;
 	// gotta do the test first to get the error correct if it isn't there
+	if (foundAsSystem)
+	{
+		if (sysIncludes.find(name) == sysIncludes.end())
+		{
+			sysIncludes.insert(name);
+		}
+	}
+	else
+	{
+		if (userIncludes.find(name) == userIncludes.end())
+		{
+			userIncludes.insert(name);
+		}
+	}
 	std::fstream in(name, std::ios::in);
 	if (!piper.HasPipe() && name[0] != '-' && !in.is_open())
 	{
-		if (!include_next)
-		{
-			Errors::Error(std::string("Could not open ") + errname + " for input");
-		}
-		else
-		{
-			Errors::Error(std::string("Could not open using #include_next ") + errname + " for input");
+                if (!noErr)
+                {
+			if (!include_next)
+  			{
+				Errors::Error(std::string("Could not open ") + errname + " for input");
+			}
+			else
+			{
+				Errors::Error(std::string("Could not open using #include_next ") + errname + " for input");
+			}
 		}
 	}
 	else
@@ -148,7 +173,8 @@ void ppInclude::pushFile(const std::string& name, const std::string& errname, bo
 		// if (current)
 		if (!current->Open())
 		{
-			Errors::Error(std::string("Could not open ") + errname + " for input");
+			if (!noErr)
+				Errors::Error(std::string("Could not open ") + errname + " for input");
 			popFile();
 		}
 	}
@@ -169,6 +195,8 @@ void ppInclude::pushFile(const std::string& name, const std::string& errname, bo
 }
 bool ppInclude::popFile()
 {
+        if (systemNesting)
+            systemNesting--;
 	if (!files.empty())
 	{
 		current = std::move(files.front());
@@ -221,7 +249,7 @@ std::string ppInclude::ParseName(const std::string& args, bool& specifiedAsSyste
 // search in local directory next
 // search the user include path next
 // if didn't already search system path do it now
-std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name, bool skipFirst, int& dirs_skipped)
+std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name, bool skipFirst, int& dirs_skipped, bool& foundAsSystem)
 {
 	std::string rv;
 	int include_files_skipped = 0;
@@ -231,6 +259,7 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
 		rv = SrchPath(true, name, sysSrchPath, skipFirst, include_files_skipped);
 		if (!rv.empty())
 		{
+                        foundAsSystem = true;
 			dirs_skipped = std::count(srchPath.cbegin(), srchPath.cend(), ';') + 1; // This counts the number of search directories we have using the same logic we use to split it up, semicolons, there are always n semicolon + 1 dirs
 			return rv;
 		}
@@ -281,9 +310,13 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
 		rv = SrchPath(false, name, srchPath, skipFirst, include_files_skipped);
 	// if not there and we haven't searched the system search path, do it now
 	if (rv.empty() && !specifiedAsSystem)
-		rv = SrchPath(true, name, sysSrchPath, skipFirst, include_files_skipped);
+        {
+            rv = SrchPath(true, name, sysSrchPath, skipFirst, include_files_skipped);
+            if (!rv.empty())
+                foundAsSystem = true;
+        }
 	dirs_skipped = include_files_skipped;
-	return rv;
+	return rv.empty() ? name : rv;
 }
 
 std::string ppInclude::SrchPath(bool system, const std::string& name, const std::string& searchPath, bool skipUntilDepth, int& filesSkipped)
@@ -336,13 +369,6 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 			}
 			if (searchPath == ".")  // clean up for current directory searches
 				memmove(buf, buf + 2, strlen(buf) + 1);
-			if (!system)
-			{
-				if (userIncludes.find(buf) == userIncludes.end())
-				{
-					userIncludes.insert(buf);
-				}
-			}
 			return buf;
 		}
 	} while (path);

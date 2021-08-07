@@ -32,6 +32,7 @@
 #include "winmode.h"
 #include "InstructionParser.h"
 #include "SharedMemory.h"
+#include "MakeStubs.h"
 
 #    include "x64Operand.h"
 #    include "x64Parser.h"
@@ -241,22 +242,6 @@ static void debug_dumptypedefs(NAMESPACEVALUELIST* nameSpace)
         }
     }
 }
-void MakeStubs(void)
-{
-    // parse the file, only gets the macro expansions
-    errorinit();
-    syminit();
-    lexini();
-    setglbdefs();
-    while (getsym() != nullptr)
-        ;
-    printf("%s:\\\n", infile);
-    for (auto&& v : preProcessor->GetUserIncludes())
-    {
-        printf("    %s \\\n", v.c_str());
-    }
-    printf("\n");
-}
 void compile(bool global)
 {
     fileIndex++;
@@ -450,7 +435,10 @@ int main(int argc, char* argv[])
         {
             if (buffer[0] == '-')
                 strcpy(buffer, "a.c");
-            strcpy(realOutFile, prm_output.GetValue().c_str());
+            if (!MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
+                strcpy(realOutFile, prm_output.GetValue().c_str());
+            else
+                strcpy(realOutFile, "");
             outputfile(realOutFile, buffer, ".icf");
         }
         else
@@ -532,7 +520,9 @@ int main(int argc, char* argv[])
                              true, Optimizer::cparams.prm_trigraph, '#',
                              Optimizer::cparams.prm_charisunsigned,
                              !Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_c1x && !Optimizer::cparams.prm_cplusplus,
-                             !Optimizer::cparams.prm_ansi, prm_pipe.GetValue() != "+" ? prm_pipe.GetValue() : "");
+                             !Optimizer::cparams.prm_ansi, 
+                             (MakeStubsOption.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(), 
+                             prm_pipe.GetValue() != "+" ? prm_pipe.GetValue() : "");
 
         if (!preProcessor->IsOpen())
             exit(1);
@@ -540,12 +530,7 @@ int main(int argc, char* argv[])
         preProcessor->SetPragmaCatchall([](const std::string& kw, const std::string& tag) { Optimizer::bePragma[kw] = tag; });
 
         strcpy(infile, buffer);
-        if (Optimizer::cparams.prm_makestubs)
-        {
-            enter_filename((char*)clist->data);
-            MakeStubs();
-        }
-        else
+        if (!Optimizer::cparams.prm_makestubs || (MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue()) && (!prm_error.GetExists() || !prm_error.GetValue().empty()))
         {
             if (Optimizer::cparams.prm_cppfile)
             {
@@ -603,6 +588,52 @@ int main(int argc, char* argv[])
                 Optimizer::InitIntermediate();
             }
         }
+        else
+        {
+            enter_filename((char*)clist->data);
+            errorinit();
+            syminit();
+            lexini();
+            setglbdefs();
+            while (getsym() != nullptr) ;
+        }
+        if (Optimizer::cparams.prm_makestubs)
+        {
+            std::string inFile;
+            inFile = (char *)clist->data;
+            int end = inFile.find_last_of('/');
+            if (end == std::string::npos)
+                end = -1;
+            int end1 = inFile.find_last_of('\\');
+            if (end1 == std::string::npos)
+                end1 = -1;
+            if (end < end1)
+                end = end1;
+            inFile = inFile.substr(end+1);
+
+            std::string outFile;
+            if (MakeStubsOption.GetValue() || MakeStubsUser.GetValue())
+            {
+                outFile = MakeStubsOutputFile.GetValue();
+            }
+            else if (!prm_output.GetValue().empty())
+            {
+                outFile = prm_output.GetValue(); 
+            }
+            else
+            {
+                outFile = inFile;
+                end = outFile.find_last_of('.');
+                if (end != std::string::npos)
+                    outFile = outFile.substr(0, end);
+                outFile += ".d";
+            }
+            MakeStubs stubber(*preProcessor, MakeStubsUser.GetValue() || MakeStubsContinueUser.GetValue(), 
+                      MakeStubsPhonyTargets.GetValue(),
+                      inFile, outFile, 
+                       MakeStubsTargets.GetValue(), MakeStubsQuotedTargets.GetValue());
+            stubber.Run(MakeStubsOption.GetValue() || MakeStubsUser.GetValue() ? &std::cout : nullptr);
+        }
         if (!IsCompiler())
         {
             localFree();
@@ -614,6 +645,7 @@ int main(int argc, char* argv[])
             mem_summary();
             printf("Intermediate stats:\n");
             printf("  Block peak:          %d\n", maxBlocks);
+
             printf("  Temp peak:           %d\n", maxTemps);
         }
         maxBlocks = maxTemps = 0;
@@ -670,6 +702,9 @@ int main(int argc, char* argv[])
         stopTime = clock();
         printf("occparse timing: %d.%03d\n", (stopTime - startTime)/1000, (stopTime - startTime)% 1000); 
     }
-    rv = IsCompiler() ? !!stoponerr : 0;
+    if (!Optimizer::cparams.prm_makestubs || (MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue()) && (!prm_error.GetExists() || !prm_error.GetValue().empty()))
+        rv = IsCompiler() ? !!stoponerr : 0;
+    else
+        rv = 255;
     return rv;
 }

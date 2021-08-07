@@ -71,7 +71,7 @@ PELib* peLib;
 namespace occmsil
 {
 CmdSwitchParser SwitchParser;
-CmdSwitchBool single(SwitchParser, 's', false, "single");
+CmdSwitchBool single(SwitchParser, 's', false, { "single" });
 
 const char* usageText =
     "[options] inputfile\n"
@@ -402,7 +402,15 @@ int InvokeOptimizer(SharedMemory* parserMem, SharedMemory* optimizerMem)
 int main(int argc, char* argv[])
 {
     using namespace occmsil;
-    Utils::banner(argv[0]);
+    bool showBanner = true;
+    for (int i=0; i < argc; i++)
+        if (argv[i][0] == '-' || argv[i][0] == '/')
+            if (!strcmp(&argv[i][1], "M") || !strcmp(&argv[i][1], "MM"))
+            {
+                showBanner = false;
+            }
+    if (showBanner)
+        Utils::banner(argv[0]);
     fflush(stdout);
     Utils::SetEnvironmentToPathParent("ORANGEC");
     unsigned startTime, stopTime;

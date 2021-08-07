@@ -2298,6 +2298,8 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
     while (!MATCHKW(lex, finish))
     {
         INITLIST* p = Allocate<INITLIST>();
+        if (finish == end)
+            p->initializer_list = true;
         if (MATCHKW(lex, begin))
         {
             lex = getInitInternal(lex, funcsp, &p->nested, end, true, false, false, flags);
@@ -2744,6 +2746,38 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
                         hr = hr->next;
                     }
                 }
+                else if (*lptr && !(*lptr)->initializer_list && (*lptr)->nested)
+                {
+                    INITLIST* arg = (*lptr)->nested;
+                    node = nullptr;
+                    auto list = &node;
+                    int count1 = 0;
+                    while (arg)
+                    {
+                        TYPE* ctype = initializerListType;
+                        auto pos = exprNode(en_add, dest, intNode(en_c_i, count1++ * initializerListType->size));
+                        FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
+                        params->ascall = true;
+                        params->thisptr = pos;
+                        INITLIST* next = Allocate<INITLIST>();
+                        *next = *arg;
+                        next->next = nullptr;
+                        params->arguments = next;
+                        callConstructor(&ctype, &pos, params, false, nullptr, true, false, false, false, _F_INITLIST, false, true);
+                        if (node)
+                        {
+                            *list = exprNode(en_void, *list, pos);
+                            list = &(*list)->right;
+                        }
+                        else
+                        {
+                            node = pos;
+                        }
+                        arg = arg->next;
+                    }
+                    tp->size += (count1 - 1) * (initializerListType->size);
+                    tp->esize->v.i += count1 - 1;
+                }
                 else
                 {
                     TYPE* ctype = initializerListType;
@@ -2964,7 +2998,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                     EXPRESSION* thisptr;
                     if (isref(stype))
                         stype = basetype(stype)->btp;
-                    thisptr = anonymousVar(theCurrentFunc ? sc_auto : sc_localstatic, stype);
+                    thisptr = anonymousVar(theCurrentFunc || !isref(sym->tp) ? sc_auto : sc_localstatic, stype);
                     sp = thisptr->v.sp;
                     if (!theCurrentFunc)
                     {
@@ -2993,11 +3027,14 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                     }
                     else
                     {
+                        FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
+                        params->ascall = true;
+                        params->arguments = p;
                         TYPE* ctype = sp->tp;
                         EXPRESSION* dexp = thisptr;
+                        params->thisptr = thisptr;
                         p->exp = thisptr;
-                        callConstructorParam(&ctype, &p->exp, pinit ? pinit->tp : nullptr, pinit ? pinit->exp : nullptr, true, true,
-                                             implicit, false, true);
+                        callConstructor(&ctype, &p->exp, params, false, nullptr, true, false, true, false, true, false, true);
                         if (!isref(sym->tp))
                         {
                             sp->sb->stackblock = true;
@@ -3710,6 +3747,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
     if (/*(!templateNestingCount || instantiatingTemplate) &&*/ funcparams->sp && funcparams->sp->name[0] == '_' &&
         parseBuiltInTypelistFunc(&lex, funcsp, funcparams->sp, tp, exp))
         return lex;
+
     if (lex)
     {
         lex = getArgs(lex, funcsp, funcparams, closepa, true, flags);
@@ -3979,13 +4017,10 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                             if (isstructured(tp))
                             {
                                 SYMBOL* sym = (basetype(tp)->sp);
-                                if (sym->sb->parentNameSpace && !strcmp(sym->sb->parentNameSpace->name, "std"))
+                                if (sym->sb->initializer_list && sym->sb->templateLevel)
                                 {
-                                    if (!strcmp(sym->name, "initializer_list") && sym->sb->templateLevel)
-                                    {
-                                        initializerListTemplate = sym->tp;
-                                        initializerListType = sym->templateParams->next->p->byClass.val;
-                                    }
+                                    initializerListTemplate = sym->tp;
+                                    initializerListType = sym->templateParams->next->p->byClass.val;
                                 }
                             }
                         }

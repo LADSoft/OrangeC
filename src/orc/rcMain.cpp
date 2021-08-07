@@ -119,7 +119,7 @@ int rcMain::Run(int argc, char* argv[])
     for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
         std::string inName = Utils::QualifiedFile((*it).c_str(), ".rc");
-        PreProcessor pp(inName, srchPth, sysSrchPth, false, false, '#', false, true, true, "");
+        PreProcessor pp(inName, srchPth, sysSrchPth, false, false, '#', false, true, true, false, "");
 
         // for libcxx 10
         pp.Define("__need_size_t", "1");

@@ -56,7 +56,7 @@ CmdSwitchParser LibMain::SwitchParser;
 CmdSwitchBool LibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
 CmdSwitchOutput LibMain::OutputFile(SwitchParser, 'o', ".a");
 CmdSwitchFile LibMain::File(SwitchParser, '@');
-CmdSwitchBool LibMain::noExport(SwitchParser, 0, false, "noexports");
+CmdSwitchBool LibMain::noExport(SwitchParser, 0, false, { "noexports" });
 const char* LibMain::usageText =
     "[options] libfile [+ files] [- files] [* files]\n"
     "\n"

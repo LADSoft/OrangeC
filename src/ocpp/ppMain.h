@@ -26,6 +26,7 @@
 #define ppMain_h
 
 #include "CmdSwitch.h"
+#include "MakeStubs.h"
 
 class ppMain
 {
@@ -47,6 +48,16 @@ class ppMain
     static CmdSwitchString errorMax;
     static CmdSwitchFile File;
     static CmdSwitchString outputPath;
+
+    static CmdSwitchBool MakeStubs;
+    static CmdSwitchBool MakeStubsUser;
+    static CmdSwitchCombineString MakeStubsOutputFile;
+    static CmdSwitchBool MakeStubsMissingHeaders;
+    static CmdSwitchBool MakeStubsPhonyTargets;
+    static CmdSwitchCombineString MakeStubsTargets;
+    static CmdSwitchCombineString MakeStubsQuotedTargets;
+    static CmdSwitchBool MakeStubsContinue;
+    static CmdSwitchBool MakeStubsContinueUser;
 
     static const char* usageText;
 };

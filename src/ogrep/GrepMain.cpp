@@ -47,7 +47,7 @@ CmdSwitchBool GrepMain::displayLineNumbers(SwitchParser, 'n');
 CmdSwitchBool GrepMain::unixMode(SwitchParser, 'o');
 CmdSwitchBool GrepMain::displayNonMatching(SwitchParser, 'v');
 CmdSwitchBool GrepMain::verboseMode(SwitchParser, 'z');
-CmdSwitchBool GrepMain::showHelp(SwitchParser, '?', false, "help");
+CmdSwitchBool GrepMain::showHelp(SwitchParser, '?', false, { "help" });
 // not actual parameters
 CmdSwitchBool GrepMain::displayFileNames(SwitchParser, '#');
 CmdSwitchBool GrepMain::displayHeaderFileName(SwitchParser, '#');

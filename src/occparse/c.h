@@ -685,6 +685,7 @@ typedef struct sym
         unsigned noExcept : 1;                           // tagged as noexcept or default determined as noexcept
         unsigned explicitlyInstantiated : 1;              // explicitly instantiated
         unsigned retblk : 1;                             // is a return block address
+        unsigned initializer_list : 1;                   // struct is initializer_list
         int __func__label;                               /* label number for the __func__ keyword */
         int labelCount;                                  /* number of code labels within a function body */
         int offset;                                      /* address offset of data in the given seg, or optimize register */

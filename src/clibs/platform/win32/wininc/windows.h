@@ -83,4 +83,7 @@
 #    include <commctrl.h>
 #endif
 
+/* multimedia support */
+#include <mmsystem.h>
+
 #endif /* _GNU_H_WINDOWS_H */

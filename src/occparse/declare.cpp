@@ -790,7 +790,7 @@ void resolveAnonymousUnions(SYMBOL* sp)
                     error(ERR_ANONYMOUS_UNION_WARNING);
                 }
             }
-            else
+            else if (!Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_cplusplus)
             {
                 error(ERR_ANONYMOUS_STRUCT_WARNING);
             }
@@ -1302,6 +1302,8 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
             sp->sb->parentClass = getStructureDeclaration();
         if (nsv)
             sp->sb->parentNameSpace = nsv->valueData->name;
+        if (nsv && nsv->valueData->name && !strcmp(sp->name, "initializer_list") && !strcmp(nsv->valueData->name->name, "std"))
+            sp->sb->initializer_list = true;
         if (inTemplate)
             sp->sb->parentTemplate = sp;
         sp->sb->anonymous = charindex == -1;

@@ -34,61 +34,22 @@
  * 
  */
 
-#include <io.h>
+#include <errno.h>
+#include <windows.h>
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"
 
-extern int __uiflags[HANDLE_MAX];
-long _RTL_FUNC lseek(int __handle, long __offset, int __whence)
+__int64 __ll_getpos64(int fd)
 {
-    int ohand = __handle;
-    long rv;
-    __ll_enter_critical();
-    __handle = __uiohandle(__handle);
-    if (__handle == -1)
-    {
-        __ll_exit_critical();
-        return -1;
-    }
-    if (__ll_seek(__handle, __offset, __whence) < 0)
-    {
-        __ll_exit_critical();
-        return -1;
-    }
-    if (__whence == SEEK_END && __offset >= 0)
-        __uiflags[ohand] |= UIF_EOF;
+    long high;
+    __int64 rv = SetFilePointer((HANDLE)fd, 0, &high, FILE_CURRENT);
+    if (rv == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
+        errno = GetLastError();
     else
-        __uiflags[ohand] &= ~UIF_EOF;
-    rv = __ll_getpos(__handle);
-    __ll_exit_critical();
-    return rv;
-}
-long _RTL_FUNC _lseek(int __handle, long __offset, int __whence) { return lseek(__handle, __offset, __whence); }
-__int64 _RTL_FUNC _lseeki64(int __handle, __int64 __offset, int __whence)
-{
-    int ohand = __handle;
-    __int64 rv;
-    __ll_enter_critical();
-    __handle = __uiohandle(__handle);
-    if (__handle == -1)
-    {
-        __ll_exit_critical();
-        return -1;
-    }
-    if (__ll_seek64(__handle, __offset, __whence) < 0)
-    {
-        __ll_exit_critical();
-        return -1;
-    }
-    if (__whence == SEEK_END && __offset >= 0)
-        __uiflags[ohand] |= UIF_EOF;
-    else
-        __uiflags[ohand] &= ~UIF_EOF;
-    rv = __ll_getpos64(__handle);
-    __ll_exit_critical();
+        rv = ((__int64)high << 32) + rv;
     return rv;
 }

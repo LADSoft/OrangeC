@@ -46,7 +46,7 @@ CmdSwitchString dlPeMain::outputFileSwitch(SwitchParser, 'o');
 CmdSwitchString dlPeMain::DebugFile(SwitchParser, 'v');
 CmdSwitchBool dlPeMain::FlatExports(SwitchParser, 'f');
 CmdSwitchBool dlPeMain::Verbose(SwitchParser, 'y');
-CmdSwitchCombineString dlPeMain::OutputDefFile(SwitchParser, 0, 0, "output-def");
+CmdSwitchCombineString dlPeMain::OutputDefFile(SwitchParser, 0, 0, { "output-def" });
 
 time_t dlPeMain::timeStamp;
 

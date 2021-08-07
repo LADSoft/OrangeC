@@ -144,6 +144,16 @@ extern CmdSwitchBool ExportAll;
 
 extern CmdSwitchString AssemblerExtension;
 
+extern CmdSwitchBool MakeStubsOption;
+extern CmdSwitchBool MakeStubsUser;
+extern CmdSwitchCombineString MakeStubsOutputFile;
+extern CmdSwitchBool MakeStubsMissingHeaders;
+extern CmdSwitchBool MakeStubsPhonyTargets;
+extern CmdSwitchCombineString MakeStubsTargets;
+extern CmdSwitchCombineString MakeStubsQuotedTargets;
+extern CmdSwitchBool MakeStubsContinue;
+extern CmdSwitchBool MakeStubsContinueUser;
+
 extern const char* getUsageText(void);
 
 void EXEPath(char* buffer, char* filename);

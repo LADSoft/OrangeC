@@ -48,7 +48,10 @@
 #        define _SIZE_T
 #        define _USING_TYPES_H_SIZE_T
 typedef unsigned size_t;
+#        ifndef	_SSIZE_T_
+#        define _SSIZE_T
 typedef int ssize_t;
+#        endif
 #    endif
 
 #    ifndef _TIME_T
@@ -57,21 +60,54 @@ typedef int ssize_t;
 typedef long time_t;
 #    endif
 
+#ifndef __dev_t_defined
+#define __dev_t_defined
 #    ifdef __CRTDLL_DLL
 typedef short dev_t;
 #    else
 typedef int dev_t;
 #    endif
+#endif
+
+#if !defined(__ino_t_defined) && !defined(_INO_T_)
+#define __ino_t_defined
+#define _INO_T_
 typedef short ino_t;
+#endif
+
+#if !defined(__mode_t_defined) && !defined(_MODE_T_)
+#define __mode_t_defined
+#define _MODE_T_
 typedef short mode_t;
+#endif
+
+#ifndef __nlink_t_defined
+#define __nlink_t_defined
 typedef int nlink_t;
+#endif
+
+#ifndef __uid_t_defined
+#define __uid_t_defined
 typedef short uid_t;
+#endif
+
+#ifndef __gid_t_defined
+#define __gid_t_defined
 typedef short gid_t;
-#ifndef _OFFT_DEFINED
+#endif
+
+#if !defined(_OFFT_DEFINED) && !defined(__off_t_defined)
 #define _OFFT_DEFINED
+#define __off_t_defined
 typedef long off_t;
 #endif
+
+#if !defined(__pid_t_defined) && !defined(_PID_T_)
+#define __pid_t_defined
+#define _PID_T_
 typedef long pid_t;
+#endif
+
 typedef long pthread_t;
 typedef long pthread_attr_t;
 

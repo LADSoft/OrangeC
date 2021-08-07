@@ -5,8 +5,7 @@ OrangeC Compiler And Tool Chain
 
 Project Build Status:
 [![Build status Appveyor](https://ci.appveyor.com/api/projects/status/4ts7bsgas67osyht?svg=true)](https://ci.appveyor.com/project/LADSoft/orangec)
-[![Build status Travis-CI](https://api.travis-ci.org/LADSoft/OrangeC.svg?branch=master)](https://travis-ci.org/LADSoft/OrangeC)
-
+[![Build status Travis-CI](https://travis-ci.com/LADSoft/OrangeC.svg?branch=master)](https://travis-ci.com/LADSoft/OrangeC)
 Documentation status: 
 [![Documentation Status](https://readthedocs.org/projects/orangec/badge/?version=latest)](http://orangec.readthedocs.io/en/latest/Tools/)
 

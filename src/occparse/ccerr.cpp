@@ -240,6 +240,7 @@ static bool alwaysErr(int err)
         case ERR_REF_CLASS_NO_CONSTRUCTORS:
         case ERR_CONST_CLASS_NO_CONSTRUCTORS:
         case ERR_CONSTEXPR_MUST_INITIALIZE:
+        case ERR_PREVIOUS:
             return true;
         default:
             return false;

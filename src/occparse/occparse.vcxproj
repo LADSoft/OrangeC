@@ -47,6 +47,7 @@
     <ClCompile Include="..\ocpp\Errors.cpp" />
     <ClCompile Include="..\ocpp\Floating.cpp" />
     <ClCompile Include="..\ocpp\InputFile.cpp" />
+    <ClCompile Include="..\ocpp\MakeStubs.cpp" />
     <ClCompile Include="..\ocpp\PipeArbitrator.cpp" />
     <ClCompile Include="..\ocpp\ppCond.cpp" />
     <ClCompile Include="..\ocpp\ppCtx.cpp" />
@@ -112,6 +113,7 @@
     <ClInclude Include="..\ocpp\Errors.h" />
     <ClInclude Include="..\ocpp\Floating.h" />
     <ClInclude Include="..\ocpp\InputFile.h" />
+    <ClInclude Include="..\ocpp\MakeStubs.h" />
     <ClInclude Include="..\ocpp\PipeArbitrator.h" />
     <ClInclude Include="..\ocpp\ppCond.h" />
     <ClInclude Include="..\ocpp\ppCtx.h" />

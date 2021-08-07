@@ -118,6 +118,16 @@ static char usage_text[] =
     " -print-prog-name=xxx            print(to stdout) the executable path for the xxx executable\n"
     "\n--architecture <architecture>\n"
     "    x86 - x86 code       msil - managed code\n"
+    "\nDependency generation:\n"
+    "  /M             - basic generation\n"
+    "  /MM            - basic generation, user files only\n"
+    "  /MF file       - specify output file\n"
+    "  /MG            - missing headers as dependencies\n"
+    "  /MP            - add phony targets\n"
+    "  /MT target     - add target\n"
+    "  /MQ target     - add target, quote special characters\n"
+    "  /MD            - basic generation and continue\n"
+    "  /MMD           - basic generation and continue, user files only\n"
     "\nCommand line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior\n\n"
     "Time: " __TIME__ "  Date: " __DATE__;
 

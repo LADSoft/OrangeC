@@ -5221,7 +5221,8 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                 error(ERR_NEED_INTEGER_TYPE);
                 d->memoryOrder1 = *exp = intNode(en_c_i, Optimizer::mo_relaxed);
             }
-            optimize_for_constants(&d->memoryOrder1);
+            if (d->memoryOrder1)
+                optimize_for_constants(&d->memoryOrder1);
             if (!needkw(&lex, closepa))
             {
                 errskim(&lex, skim_closepa);

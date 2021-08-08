@@ -53,6 +53,7 @@
 #include "lex.h"
 #include "dsw.h"
 #include "constexpr.h"
+#include "ccerr.h"
 namespace Parser
 {
 unsigned long long reint(EXPRESSION* node);
@@ -1382,7 +1383,7 @@ int opt0(EXPRESSION** node)
                                 rv = true;
                             }
                         }
-                        else
+                        else if (ref->v.sp->sb->init)
                         {
                             **node = *ref->v.sp->sb->init->exp;
                             rv = true;

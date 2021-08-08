@@ -10498,9 +10498,9 @@ bool ReplaceIntAliasParams(EXPRESSION**exp, SYMBOL* sym, TEMPLATEPARAMLIST* args
     {
         const char *name = (*exp)->v.sp->name;
         TEMPLATEPARAMLIST* found = TypeAliasSearch(name);
-        if (found)
+        if (found && found->p->byNonType.dflt)
         {
-            *exp = found->p->byNonType.dflt ? found->p->byNonType.dflt : found->p->byNonType.val;
+            *exp = found->p->byNonType.dflt;
         }
         rv = true;
     }

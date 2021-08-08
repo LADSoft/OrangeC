@@ -332,6 +332,7 @@ static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<
     EXPRESSION* varptr = anonymousVar(sc_auto, &stdpointer);
     varptr->v.sp->sb->constexpression = true;
     deref(&stdpointer, &varptr);
+
     EXPRESSION* rv = exprNode(en_assign, varptr, thisptr);
     EXPRESSION** last = &rv;
     auto hr = ths->v.sp->sb->parentClass->tp->syms->table[0];
@@ -539,7 +540,6 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, EXPRESSION**
     }
     else if (exp->type == en_func)
     {
-        rv = true;
         auto func = Allocate<FUNCTIONCALL>();
         EXPRESSION temp = *exp, * temp1 = &temp;
         *func = *exp->v.func;

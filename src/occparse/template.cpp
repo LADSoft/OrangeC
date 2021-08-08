@@ -10500,7 +10500,7 @@ bool ReplaceIntAliasParams(EXPRESSION**exp, SYMBOL* sym, TEMPLATEPARAMLIST* args
         TEMPLATEPARAMLIST* found = TypeAliasSearch(name);
         if (found)
         {
-            *exp = found->p->byNonType.dflt;
+            *exp = found->p->byNonType.dflt ? found->p->byNonType.dflt : found->p->byNonType.val;
         }
         rv = true;
     }
@@ -10588,6 +10588,7 @@ static TYPE* ReplaceTemplateParam(TYPE* in)
     }
     return in;
 }
+static int count4 = 0;
 static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEPARAMLIST* orig, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing);
 void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool expression, SYMBOL* sym, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing)
 {

@@ -330,6 +330,7 @@ static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<
     }
 
     EXPRESSION* varptr = anonymousVar(sc_auto, &stdpointer);
+    varptr->v.sp->sb->constexpression = true;
     deref(&stdpointer, &varptr);
     EXPRESSION* rv = exprNode(en_assign, varptr, thisptr);
     EXPRESSION** last = &rv;
@@ -912,7 +913,7 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
                     }
                     else
                     {
-                        if (matchesCopy(found1, true) || matchesCopy(found1, false))
+                        if (found1->sb->isConstructor && (matchesCopy(found1, true) || matchesCopy(found1, false)))
                         {
                             if (ths)
                             {

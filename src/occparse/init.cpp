@@ -506,7 +506,7 @@ static void dumpDynamicInitializers(void)
         codeLabel = INT_MIN;
         while (dynamicInitializers)
         {
-            if (!isstructured(dynamicInitializers->sp->tp) || !isintconst(dynamicInitializers->init->exp))
+            if (!isstructured(dynamicInitializers->sp->tp) || basetype(dynamicInitializers->sp->tp)->sp->sb->trivialCons || !isintconst(dynamicInitializers->init->exp))
             {
                 EXPRESSION* exp = nullptr, ** next = &exp, * exp1;
                 STATEMENT* stmt = nullptr, ** stmtp = &stmt;

@@ -764,24 +764,12 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
                     optimize_for_constants(&node1);
                     if (node->v.func->sp->sb->isConstructor)
                     {
-                        if (true || node->v.func->thisptr->type == en_auto && node->v.func->thisptr->v.sp->sb->stackblock)
+                        auto newNode = InstantiateStructure(node->v.func->thisptr, argmap, ths);
+                        if (newNode)
                         {
-                            auto newNode = InstantiateStructure(node->v.func->thisptr, argmap, ths);
-                            if (newNode)
-                            {
-                                *node = *newNode;
-                                return true;
-                            }
-                            return false;
+                            *node = *newNode;
+                            return true;
                         }
-                        else
-                        {
-                            node->type = en_c_i;
-                            node->v.i = 0;
-                            node->left = nullptr;
-                            node->noexprerr = true;
-                        }
-                        return true;
                     }
                     else if (IsConstantExpression(node1, false, false) && node1->type != en_func && node1->type != en_funcret && node1->type != en_thisref)
                     {

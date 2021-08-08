@@ -34,7 +34,7 @@
 #    include <Windows.h>
 #endif
 
-//#define USE_PAGING_FILE
+#define USE_PAGING_FILE
 
 SharedMemory::SharedMemory(unsigned max, std::string name, unsigned window) :
     max_(max),

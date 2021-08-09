@@ -69,7 +69,10 @@ namespace Parser
 {
 void refreshBackendParams(SYMBOL* funcsp);
 
+
 bool isCallNoreturnFunction;
+
+int inLoopOrConditional;
 
 int funcNesting;
 int funcLevel;
@@ -106,6 +109,7 @@ void statement_ini(bool global)
     tryLevel = 0;
     controlSequences = 0;
     expressions = 0;
+    inLoopOrConditional = 0;
 }
 bool msilManaged(SYMBOL* s)
 {
@@ -626,6 +630,7 @@ static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     currentLineData(dostmt, lex, 0);
     st = stmtNode(lex, dostmt, st_label);
     st->label = loopLabel;
+    inLoopOrConditional++;
     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
     {
         addedBlock++;
@@ -687,6 +692,7 @@ static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         errskim(&lex, skim_semi);
         skip(&lex, semicolon);
     }
+    inLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(dostmt, funcsp, codeLabel++);
     AddBlock(lex, parent, dostmt);
@@ -708,6 +714,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     currentLineData(forstmt, lex, -1);
     forline = currentLineData(nullptr, lex, 0);
     lex = getsym();
+    inLoopOrConditional++;
     if (MATCHKW(lex, openpa))
     {
         bool declaration = false;
@@ -1605,6 +1612,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         errskim(&lex, skim_closepa);
         skip(&lex, closepa);
     }
+    inLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(forstmt, funcsp, codeLabel++);
     AddBlock(lex, parent, forstmt);
@@ -1619,6 +1627,7 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     bool needlabelelse = false;
     int ifbranch = codeLabel++;
     lex = getsym();
+    inLoopOrConditional++;
     if (MATCHKW(lex, openpa))
     {
         lex = getsym();
@@ -1766,6 +1775,7 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         errskim(&lex, skim_closepa);
         skip(&lex, closepa);
     }
+    inLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
     return lex;
@@ -2439,6 +2449,7 @@ static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
     switchstmt->type = kw_switch;
     switchstmt->table = localNameSpace->valueData->syms;
     lex = getsym();
+    inLoopOrConditional++;
     if (MATCHKW(lex, openpa))
     {
         lex = getsym();
@@ -2487,6 +2498,7 @@ static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
         errskim(&lex, skim_closepa);
         skip(&lex, closepa);
     }
+    inLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(switchstmt, funcsp, codeLabel++);
     AddBlock(lex, parent, switchstmt);
@@ -2507,6 +2519,7 @@ static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     whilestmt->table = localNameSpace->valueData->syms;
     whileline = currentLineData(nullptr, lex, 0);
     lex = getsym();
+    inLoopOrConditional++;
     if (MATCHKW(lex, openpa))
     {
         lex = getsym();
@@ -2585,6 +2598,7 @@ static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         errskim(&lex, skim_closepa);
         skip(&lex, closepa);
     }
+    inLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(whilestmt, funcsp, codeLabel++);
     AddBlock(lex, parent, whilestmt);
@@ -2713,6 +2727,7 @@ static LEXLIST* asm_declare(LEXLIST* lex)
 LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, int label, int startlab, int endlab)
 {
     bool last = false;
+    inLoopOrConditional++;
     if (!MATCHKW(lex, kw_catch))
     {
         error(ERR_EXPECTED_CATCH_CLAUSE);
@@ -2773,6 +2788,7 @@ LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, int la
             errskim(&lex, skim_end);
         }
     }
+    inLoopOrConditional--;
     return lex;
 }
 LEXLIST* statement_try(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
@@ -2787,6 +2803,7 @@ LEXLIST* statement_try(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     trystmt->table = localNameSpace->valueData->syms;
     funcsp->sb->anyTry = true;
     lex = getsym();
+    inLoopOrConditional++;
     if (!MATCHKW(lex, begin))
     {
         error(ERR_EXPECTED_TRY_BLOCK);
@@ -2810,6 +2827,7 @@ LEXLIST* statement_try(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             parent->next->nosemi = true;
         lex = statement_catch(lex, funcsp, parent, st->breaklabel, st->label, st->endlabel);
     }
+    inLoopOrConditional--;
 
     return lex;
 }

@@ -27,6 +27,7 @@ namespace Parser
 {
 extern bool isCallNoreturnFunction;
 
+extern int inLoopOrConditional;
 extern int funcNesting;
 extern int funcLevel;
 extern int tryLevel;

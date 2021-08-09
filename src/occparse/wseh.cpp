@@ -33,6 +33,8 @@
 #include "declare.h"
 #include "memory.h"
 #include "wseh.h"
+#include "stmt.h"
+
 namespace Parser
 {
 static void ReorderSEHRecords(STATEMENT** xtry, BLOCKDATA* parent)
@@ -102,6 +104,7 @@ static LEXLIST* SEH_catch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     catchstmt->defaultlabel = -1; /* no default */
     catchstmt->type = kw_catch;
     catchstmt->table = localNameSpace->valueData->syms;
+    inLoopOrConditional++;
     AllocateLocalContext(catchstmt, funcsp, codeLabel++);
     if (MATCHKW(lex, openpa))
     {
@@ -126,6 +129,7 @@ static LEXLIST* SEH_catch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     {
         error(ERR_EXPECTED_CATCH_BLOCK);
     }
+    inLoopOrConditional--;
     FreeLocalContext(catchstmt, funcsp, codeLabel++);
     st = stmtNode(lex, parent, st___catch);
     st->blockTail = catchstmt->blockTail;
@@ -146,6 +150,7 @@ static LEXLIST* SEH_finally(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     catchstmt->type = kw_catch;
     catchstmt->table = localNameSpace->valueData->syms;
     AllocateLocalContext(catchstmt, funcsp, codeLabel++);
+    inLoopOrConditional++;
     if (MATCHKW(lex, begin))
     {
         lex = compound(lex, funcsp, catchstmt, false);
@@ -159,6 +164,7 @@ static LEXLIST* SEH_finally(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         error(ERR_EXPECTED_CATCH_BLOCK);
     }
     FreeLocalContext(catchstmt, funcsp, codeLabel++);
+    inLoopOrConditional--;
     st = stmtNode(lex, parent, st___finally);
     st->blockTail = catchstmt->blockTail;
     st->lower = catchstmt->head;
@@ -176,6 +182,7 @@ static LEXLIST* SEH_fault(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     catchstmt->type = kw_catch;
     catchstmt->table = localNameSpace->valueData->syms;
     AllocateLocalContext(catchstmt, funcsp, codeLabel++);
+    inLoopOrConditional++;
     if (MATCHKW(lex, begin))
     {
         lex = compound(lex, funcsp, catchstmt, false);
@@ -192,6 +199,7 @@ static LEXLIST* SEH_fault(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     st = stmtNode(lex, parent, st___fault);
     st->blockTail = catchstmt->blockTail;
     st->lower = catchstmt->head;
+    inLoopOrConditional--;
     return lex;
 }
 static LEXLIST* SEH_try(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
@@ -204,6 +212,7 @@ static LEXLIST* SEH_try(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     trystmt->type = kw_try;
     trystmt->table = localNameSpace->valueData->syms;
     lex = getsym();
+    inLoopOrConditional++;
     if (!MATCHKW(lex, begin))
     {
         error(ERR_EXPECTED_TRY_BLOCK);
@@ -245,6 +254,7 @@ static LEXLIST* SEH_try(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         }
         ReorderSEHRecords(tail, parent);
     }
+    inLoopOrConditional--;
 
     return lex;
 }

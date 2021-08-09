@@ -9180,12 +9180,14 @@ void TemplateArgsScan(TEMPLATEPARAMLIST* current, TEMPLATEPARAMLIST* base)
             {
                 if (current->p->byClass.dflt && isstructured(current->p->byClass.dflt))
                 {
-                    auto tpv = basetype(current->p->byClass.dflt)->sp->templateParams;
-                    for (auto tpl = basetype(current->p->byClass.val)->sp->templateParams; tpl && tpv; tpl = tpl->next, tpv = tpv->next)
+                    if (isstructured(current->p->byClass.val))
                     {
-                        TemplateArgsAdd(tpl, tpv, base);
+                        auto tpv = basetype(current->p->byClass.dflt)->sp->templateParams;
+                        for (auto tpl = basetype(current->p->byClass.val)->sp->templateParams; tpl && tpv; tpl = tpl->next, tpv = tpv->next)
+                        {
+                            TemplateArgsAdd(tpl, tpv, base);
+                        }
                     }
-
                 }
                 else if (isstructured(current->p->byClass.val))
                 {

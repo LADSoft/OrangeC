@@ -43,7 +43,7 @@
 #include "expr.h"
 #include "initbackend.h"
 #include "declcons.h"
-
+#include "stmt.h"
 namespace Parser
 {
 static int functionnestingcount = 0;
@@ -305,9 +305,12 @@ static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, 
         auto m = sym->sb->memberInitializers;
         while (m)
         {
-            SYMBOL* sp = search(m->name, sym->sb->parentClass->tp->syms);
-            if (sp)
-                exp->v.constexprData[sp->sb->offset] = EvaluateExpression(m->init->exp, argmap, exp);
+            if (m->init)
+            {
+                SYMBOL* sp = search(m->name, sym->sb->parentClass->tp->syms);
+                if (sp)
+                    exp->v.constexprData[sp->sb->offset] = EvaluateExpression(m->init->exp, argmap, exp);
+            }
             m = m->next;
 
         }
@@ -802,6 +805,11 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
         int offset = 0;
         exp = relptr(exp->left, offset);
         if (exp && (exp->v.sp->sb->thisPtr || exp->v.sp->sb->retblk))
+            return false;
+    }
+    if (exp && exp->type == en_auto)
+    {
+        if (inLoopOrConditional)
             return false;
     }
     bool rv = false;

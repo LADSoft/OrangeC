@@ -47,13 +47,21 @@ int main()
 {
     try
     {
+printf("A");
         ObjIeeeIndexManager im1;
+printf("B");
         ObjFactory fact1(&im1);
-        FILE* b = fopen("bzip2.o", "r");
-        FILE* c = fopen("q.o", "w");
+printf("C");
+        FILE* b = fopen("bzip2.o", "rb");
+printf("D");
+        FILE* c = fopen("q.o", "wb");
+printf("E");
         ObjIeee i1("hi");
+printf("1");
         ObjFile* fi1 = i1.Read(b, ObjIeee::eAll, &fact1);
+printf("2");
         i1.Write(c, fi1, &fact1);
+printf("3");
     }
     catch (ObjIeeeBinary::SyntaxError e)
     {

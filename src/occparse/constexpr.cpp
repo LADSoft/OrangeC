@@ -566,10 +566,6 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, EXPRESSION**
             *exp = *temp1;
             rv = true;
         }
-        else
-        {
-            diag("EvaluateExpression: unreplaced function %s", func->sp->name);
-        }
     }
     return rv;
 }

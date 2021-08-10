@@ -41,6 +41,8 @@ class LinkerMain
     void AddFiles(LinkManager& linker, CmdFiles& files);
     void SetDefines(LinkManager& linker);
     std::string SpecFileContents(const std::string& specFile);
+    void RewriteArgs(int argc, char **argv);
+    bool DoPrintFileName(LinkManager& linker);
 
   private:
     static CmdSwitchParser SwitchParser;
@@ -58,6 +60,7 @@ class LinkerMain
     static CmdSwitchBool RelFile;
     static CmdSwitchBool Verbosity;
     static CmdSwitchCombineString OutputDefFile;
+    static CmdSwitchCombineString PrintFileName;
     static SwitchConfig TargetConfig;
     static const char* usageText;
 };

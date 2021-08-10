@@ -397,6 +397,37 @@ bool LinkManager::ScanVirtuals()
     }
     return rv;
 }
+FILE* LinkManager::GetLibraryPath(const std::string& stem, std::string& name)
+{
+    FILE* infile = fopen(name.c_str(), "rb");
+    if (!infile)
+    {
+        std::string hold = libPath;
+        while (!hold.empty())
+        {
+            std::string next;
+            size_t npos = hold.find(";");
+            if (npos == std::string::npos)
+            {
+                next = hold;
+                hold = "";
+            }
+            else
+            {
+                next = hold.substr(0, npos);
+                if (npos + 1 < hold.size())
+                    hold = hold.substr(npos + 1);
+                else
+                    hold = "";
+            }
+            name = Utils::FullPath(next, stem);
+            infile = fopen(name.c_str(), "rb");
+            if (infile)
+                hold = "";
+        }
+    }
+    return infile;
+}
 void LinkManager::LoadFiles()
 {
     if (!factory || !indexManager || !ioBase)
@@ -408,33 +439,8 @@ void LinkManager::LoadFiles()
     for (auto it = objectFiles.FileNameBegin(); it != objectFiles.FileNameEnd(); ++it)
     {
         ObjString name = (*it);
-        FILE* infile = fopen(name.c_str(), "rb");
-        if (!infile)
-        {
-            std::string hold = libPath;
-            while (!hold.empty())
-            {
-                std::string next;
-                size_t npos = hold.find(";");
-                if (npos == std::string::npos)
-                {
-                    next = hold;
-                    hold = "";
-                }
-                else
-                {
-                    next = hold.substr(0, npos);
-                    if (npos + 1 < hold.size())
-                        hold = hold.substr(npos + 1);
-                    else
-                        hold = "";
-                }
-                name = Utils::FullPath(next, (*it));
-                infile = fopen(name.c_str(), "rb");
-                if (infile)
-                    hold = "";
-            }
-        }
+        std::string path;
+        FILE* infile = GetLibraryPath(*it, path);
         if (infile)
         {
             ObjFile* file = ioBase->Read(infile, ObjIOBase::eAll, factory);

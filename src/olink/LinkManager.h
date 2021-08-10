@@ -36,6 +36,7 @@
 #include <map>
 #include <memory>
 #include <deque>
+#include <stdio.h>
 
 class LibManager;
 class LinkPartition;
@@ -163,6 +164,8 @@ class LinkManager
         std::cout << "Warning: " << error << std::endl;
         warnings++;
     }
+
+    FILE* LinkManager::GetLibraryPath(const std::string& stem, std::string& name);
 
     bool IsExternal(ObjString& name)
     {

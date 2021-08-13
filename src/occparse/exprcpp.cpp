@@ -1222,6 +1222,7 @@ LEXLIST* GetCastInfo(LEXLIST* lex, SYMBOL* funcsp, TYPE** newType, TYPE** oldTyp
             if (needkw(&lex, openpa))
             {
                 lex = expression(lex, funcsp, nullptr, oldType, oldExp, packed ? _F_PACKABLE : 0);
+                ConstExprPatch(oldExp);
                 if (!needkw(&lex, closepa))
                 {
                     errskim(&lex, skim_closepa);
@@ -1744,6 +1745,7 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
                 name = overloadNameTab[CI_NEWA];
                 lex = getsym();
                 lex = expression(lex, funcsp, nullptr, &tp1, &exp, flags);
+                ConstExprPatch(&exp);
                 if (!isint(tp1))
                 {
                     error(ERR_NEED_INTEGER_TYPE);
@@ -1756,6 +1758,7 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
                     lex = getsym();
                     lex = expression(lex, funcsp, nullptr, &tp1, &exp, flags);
                     optimize_for_constants(&exp);
+                    ConstExprPatch(&exp);
                     if (!isint(tp1))
                     {
                         error(ERR_NEED_INTEGER_TYPE);

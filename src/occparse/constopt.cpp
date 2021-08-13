@@ -3795,6 +3795,7 @@ LEXLIST* optimized_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
     {
         optimize_for_constants(expr);
     }
+    ConstExprPatch(expr);
     return lex;
 }
 }  // namespace Parser

@@ -1690,6 +1690,7 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPL
                                             while (exp->type == en_void && exp->right)
                                                 exp = exp->right;
                                         }
+                                        ConstExprPatch(&exp);
                                         SetAlternateLex(nullptr);
                                         if (tp)
                                         {

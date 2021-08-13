@@ -1634,6 +1634,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                         {
                             *exp = baseClassOffset(sp2->sb->parentClass, basetype(typ2)->sp, *exp);
                         }
+                        ConstExprPromote(*exp);
                         *exp = exprNode(en_structadd, *exp, offset);
                         if (isref(*tp))
                         {
@@ -3217,6 +3218,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             if (!comparetypes(sym->tp, p->tp, true))
                                 p->exp = DerivedToBase(sym->tp, p->tp, p->exp, 0);
                         }
+                        ConstExprPromote(p->exp);
                     }
                     else if (basetype(basetype(sym->tp)->btp)->type == bt_memberptr)
                     {

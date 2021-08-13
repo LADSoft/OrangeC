@@ -53,6 +53,7 @@
 #include "types.h"
 #include "declare.h"
 #include "constopt.h"
+#include "constexpr.h"
 
 namespace CompletionCompiler
 {
@@ -2191,6 +2192,7 @@ INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXLIST* start,
                         LEXLIST* lex = SetAlternateLex(start);
                         packIndex = i;
                         expression_assign(lex, funcsp, nullptr, &p->tp, &p->exp, nullptr, _F_PACKABLE);
+                        ConstExprPatch(&p->exp);
                         SetAlternateLex(nullptr);
                         if (p->tp->type != bt_void)
                             if (p->tp)

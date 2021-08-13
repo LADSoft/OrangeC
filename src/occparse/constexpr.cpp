@@ -44,6 +44,7 @@
 #include "initbackend.h"
 #include "declcons.h"
 #include "stmt.h"
+
 namespace Parser
 {
 static int functionnestingcount = 0;
@@ -57,6 +58,10 @@ std::deque<ConstExprThisPtr> globalMap;
 
 std::deque<std::deque<ConstExprThisPtr>> localMap;
 std::stack<std::unordered_map<SYMBOL*, EXPRESSION**>*> nestedMaps;
+std::deque<EXPRESSION*> clearedInitializations;
+
+static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<SYMBOL*, EXPRESSION**>& argmap, EXPRESSION* ths);
+static bool ExactExpression(EXPRESSION* exp1, EXPRESSION* exp2);
 
 void constexprinit()
 {
@@ -194,6 +199,57 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc, bo
          }
     }
     return true;
+}
+void ConstExprPatch(EXPRESSION** node)
+{
+    if (*node && !clearedInitializations.empty())
+    {
+        EXPRESSION* rv = nullptr, **last = &rv;
+        for (auto c : clearedInitializations)
+        {
+            if (c)
+            {
+                *last = exprNode(en_void, c, nullptr);
+                last = &(*last)->right;
+            }
+        }
+        *last = *node;
+        *node = rv;
+        clearedInitializations.clear();
+    }
+}
+void ConstExprPromote(EXPRESSION* node)
+{
+    if (!templateNestingCount || instantiatingTemplate)
+    {
+        int ofs;
+        EXPRESSION* rel = relptr(node, ofs);
+        if (!rel || rel->type != en_global)
+        {
+            EXPRESSION* found = nullptr;
+            if (!localMap.empty())
+                for (auto it = localMap.back().begin(); it != localMap.back().end(); ++it)
+                    if (ExactExpression((*it).oldval, node))
+                    {
+                        found = (*it).newval;
+                        localMap.back().erase(it);
+                        break;
+                    }
+            if (!found)
+                for (auto it = globalMap.begin(); it != globalMap.end(); ++it)
+                    if (ExactExpression((*it).oldval, node))
+                    {
+                        found = (*it).newval;
+                        globalMap.erase(it);
+                        break;
+                    }
+            if (found)
+            {
+                std::unordered_map<SYMBOL*, EXPRESSION**> argmap;
+                clearedInitializations.push_back(InstantiateStructure(node, argmap, found));
+            }
+        }
+    }
 }
 bool hascshim(EXPRESSION* node)
 {

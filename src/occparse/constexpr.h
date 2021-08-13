@@ -25,6 +25,8 @@
 
 namespace Parser
 {
+void ConstExprPatch(EXPRESSION** node);
+void ConstExprPromote(EXPRESSION* node);
 void constexprinit();
 void constexprfunctioninit(bool start);
 bool checkconstexprfunc(EXPRESSION* node);

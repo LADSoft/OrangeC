@@ -261,6 +261,7 @@ static LEXLIST* selection_expression(LEXLIST* lex, BLOCKDATA* parent, EXPRESSION
         if (declaration)
             *declaration = false;
         lex = expression(lex, funcsp, nullptr, &tp, exp, kw != kw_for && kw != kw_rangefor ? _F_SELECTOR : 0);
+        ConstExprPatch(exp);
         if (tp)
         {
             if (tp->type == bt_memberptr)
@@ -1522,6 +1523,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     else
                     {
                         optimize_for_constants(&before);
+	                ConstExprPatch(&before);
                     }
                 }
                 if (!MATCHKW(lex, closepa))
@@ -2034,6 +2036,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
             EXPRESSION* exp1;
             LEXLIST* current = lex;
             lex = expression(lex, funcsp, nullptr, &tp1, &exp1, _F_SIZEOF);
+            ConstExprPatch(&exp1);
             lex = prevsym(current);
             while (tp1->type == bt_typedef)
                 tp1 = tp1->btp;

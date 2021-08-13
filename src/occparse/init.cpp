@@ -1309,6 +1309,7 @@ static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
     if (*tp && (isvoid(*tp) || ismsil(*tp)))
         error(ERR_NOT_AN_ALLOWED_TYPE);
     optimize_for_constants(expr);
+    ConstExprPatch(expr);
     if (*tp)
     {
         if (*expr && (*expr)->type == en_func && (*expr)->v.func->sp->sb->parentClass && !(*expr)->v.func->ascall &&
@@ -1983,6 +1984,7 @@ static LEXLIST* initialize_reference_type(LEXLIST* lex, SYMBOL* funcsp, int offs
         DeduceAuto(&sym->tp, tp, exp);
         UpdateRootTypes(itype);
         UpdateRootTypes(sym->tp);
+        ConstExprPromote(exp);
         if (!isref(tp) &&
             ((isconst(tp) && !isconst(basetype(itype)->btp)) || (isvolatile(tp) && !isvolatile(basetype(itype)->btp))))
             error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
@@ -2676,6 +2678,7 @@ static LEXLIST* initialize___object(LEXLIST* lex, SYMBOL* funcsp, int offset, TY
     EXPRESSION* expr = nullptr;
     TYPE* tp = nullptr;
     lex = expression_assign(lex, funcsp, nullptr, &tp, &expr, nullptr, 0);
+    ConstExprPatch(&expr);
     if (!tp || !lex)
     {
         error(ERR_EXPRESSION_SYNTAX);
@@ -2692,6 +2695,7 @@ static LEXLIST* initialize___string(LEXLIST* lex, SYMBOL* funcsp, int offset, TY
     EXPRESSION* expr = nullptr;
     TYPE* tp = nullptr;
     lex = expression_assign(lex, funcsp, itype, &tp, &expr, nullptr, 0);
+    ConstExprPatch(&expr);
     if (!tp || !lex)
     {
         error(ERR_EXPRESSION_SYNTAX);
@@ -2711,6 +2715,7 @@ static LEXLIST* initialize_auto_struct(LEXLIST* lex, SYMBOL* funcsp, int offset,
     EXPRESSION* expr = nullptr;
     TYPE* tp = nullptr;
     lex = expression_assign(lex, funcsp, nullptr, &tp, &expr, nullptr, 0);
+    ConstExprPatch(&expr);
     if (!tp || !lex)
     {
         error(ERR_EXPRESSION_SYNTAX);
@@ -2973,6 +2978,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
         EXPRESSION* exp = getThisNode(base);
         TYPE* tp = nullptr;
         lex = expression(lex, funcsp, nullptr, &tp, &exp, 0);
+        ConstExprPatch(&exp);
         if (!tp)
         {
             error(ERR_EXPRESSION_SYNTAX);
@@ -3001,6 +3007,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
         EXPRESSION* exp = nullptr;
         TYPE* tp = nullptr;
         lex = expression(lex, funcsp, nullptr, &tp, &exp, 0);
+        ConstExprPatch(&exp);
         if (!tp)
         {
             error(ERR_EXPRESSION_SYNTAX);

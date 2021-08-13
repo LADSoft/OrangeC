@@ -369,25 +369,11 @@ static int DisplayerParams()
     }
     if (prmPrintFileName.GetExists())
     {
-#if 0
-        char buf[260];
         char *orangec = getenv("ORANGEC");
-        if (orangec)
-        {
-            sprintf(buf, "%s\\lib\\", orangec);
-        }
-        sprintf(buf + strlen(buf), "%s", prmPrintFileName.GetValue().c_str());
-        FILE* fil = fopen(buf, "rb");
-        if (fil)
-        {
-            fclose(fil);
-            printf("%s", buf); 
-        }
-        else
-#endif
-        {
-            printf("%s", prmPrintFileName.GetValue().c_str());
-        }
+        std::string cmd=std::string(orangec) + "\\bin\\olink --print-file-name " + prmPrintFileName.GetValue();
+        if (prm_libpath.GetExists())
+            cmd += " /L " + prm_libpath.GetValue();
+        mysystem(cmd.c_str());
         rv = 1;
     }
     if (prmPrintProgName.GetExists()) 

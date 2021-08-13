@@ -83,6 +83,7 @@ CmdSwitchCombineString LinkerMain::LibPath(SwitchParser, 'L', ';');
 CmdSwitchOutput LinkerMain::OutputFile(SwitchParser, 'o', ".rel");
 CmdSwitchBool LinkerMain::Verbosity(SwitchParser, 'y');
 CmdSwitchCombineString LinkerMain::OutputDefFile(SwitchParser, 0, 0, { "output-def" });
+CmdSwitchCombineString LinkerMain::PrintFileName(SwitchParser, 0, 0, { "print-file-name" });
 
 SwitchConfig LinkerMain::TargetConfig(SwitchParser, 'T');
 const char* LinkerMain::usageText =
@@ -117,7 +118,7 @@ const ObjString& LinkerMain::GetOutputFile(CmdFiles& files)
         auto it = files.FileNameBegin();
         outputFile = Utils::QualifiedFile((*it).c_str(), ".rel");
     }
-    else
+    else if (!PrintFileName.GetExists())
     {
         std::cout << "Nothing to do." << std::endl;
         exit(1);
@@ -136,7 +137,7 @@ const ObjString& LinkerMain::GetMapFile(CmdFiles& files)
         auto it = files.FileNameBegin();
         mapFile = Utils::QualifiedFile((*it).c_str(), ".map");
     }
-    else
+    else if (!PrintFileName.GetExists())
     {
         std::cout << "Nothing to do." << std::endl;
         exit(1);
@@ -197,25 +198,52 @@ std::string LinkerMain::SpecFileContents(const std::string& specFile)
     }
     return rv;
 }
-void RewriteArgs(int argc, char **argv)
+void LinkerMain::RewriteArgs(int argc, char **argv)
 {
     for (int i=0; i < argc; i++)
         if (!strcmp(argv[i], "--shared"))
             strcpy(argv[i], "-T:DLL32");
 }
+bool LinkerMain::DoPrintFileName(LinkManager& linker)
+{
+    if (PrintFileName.GetExists())
+    {
+        std::string path;
+        FILE*fil = linker.GetLibraryPath(PrintFileName.GetValue(), path);
+        if (fil)
+        {
+            fclose(fil);
+            printf("%s", path.c_str());
+        }
+        else
+        {
+            printf("%s", PrintFileName.GetValue().c_str());
+        }
+        return true;
+    }
+    return false;
+}
 int LinkerMain::Run(int argc, char** argv)
 {
+    bool showBanner = true;
     RewriteArgs(argc, argv);
     if (!getenv("OLINK_LEGACY_OPTIONS"))
     {
         for (int i=0; i < argc; i++)
+        {
             if (!strcmp(argv[i], "-v"))
             {
                  printf("%s Version " STRING_VERSION, Utils::ShortName(argv[0]));
                  exit(0);
             }
+            else if (!strcmp(argv[i], "--print-file-name"))
+            {
+                 showBanner = false;
+            }
+        }
     }
-    Utils::banner(argv[0]);
+    if (showBanner)
+        Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
     char* modName = Utils::GetModuleName();
     std::string appName = Utils::QualifiedFile(modName, ".app");
@@ -236,7 +264,7 @@ int LinkerMain::Run(int argc, char** argv)
     {
         Utils::usage(argv[0], usageText);
     }
-    if (argc == 1 && File.GetCount() <= 1)
+    if (argc == 1 && File.GetCount() <= 1 && !PrintFileName.GetExists())
     {
         Utils::usage(argv[0], usageText);
     }
@@ -291,6 +319,8 @@ int LinkerMain::Run(int argc, char** argv)
     LinkManager linker(SpecFileContents(specificationFile), CaseSensitive.GetValue(), outputFile,
                        !RelFile.GetValue() && !TargetConfig.GetRelFile(), TargetConfig.GetDebugPassThrough(), debugFile);
     linker.SetLibPath(LibPath.GetValue());
+    if (DoPrintFileName(linker))
+        exit(0);
     linker.SetIndexManager(&im1);
     linker.SetFactory(&fact1);
     ObjIeee ieee(outputFile, CaseSensitive.GetValue());

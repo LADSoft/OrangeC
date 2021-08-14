@@ -2648,11 +2648,11 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
     INITLIST* searchx = *lptr;
     TYPE* tp = Allocate<TYPE>();
     EXPRESSION *data, *initList;
-    SYMBOL *start, *end;
+    SYMBOL *begin, *size;
     EXPRESSION* dest;
-    start = search("_M_start", basetype(initializerListTemplate)->syms);
-    end = search("_M_end", basetype(initializerListTemplate)->syms);
-    if (!start || !end)
+    begin = search("__begin_", basetype(initializerListTemplate)->syms);
+    size = search("__size_", basetype(initializerListTemplate)->syms);
+    if (!begin || !size)
         Utils::fatal("Invalid definition of initializer-list");
     if (!(*initial)->nested && comparetypes((*initial)->tp, initializerListTemplate, true))
     {
@@ -2841,7 +2841,7 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
             }
         }
         initList = anonymousVar(sc_auto, initializerListTemplate);
-        dest = exprNode(en_add, initList, intNode(en_c_i, start->sb->offset));
+        dest = exprNode(en_add, initList, intNode(en_c_i, begin->sb->offset));
         deref(&stdpointer, &dest);
         dest = exprNode(en_assign, dest, data);
         if (rv)
@@ -2853,9 +2853,9 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
         {
             rv = dest;
         }
-        dest = exprNode(en_add, initList, intNode(en_c_i, end->sb->offset));
+        dest = exprNode(en_add, initList, intNode(en_c_i, size->sb->offset));
         deref(&stdpointer, &dest);
-        dest = exprNode(en_assign, dest, exprNode(en_add, data, intNode(en_c_i, tp->size)));
+        dest = exprNode(en_assign, dest, intNode(en_c_i, tp->size/initializerListType->size));
         if (rv)
         {
             *pos = exprNode(en_void, *pos, dest);

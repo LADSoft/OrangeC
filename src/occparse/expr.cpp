@@ -3035,7 +3035,10 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         EXPRESSION* dexp = thisptr;
                         params->thisptr = thisptr;
                         p->exp = thisptr;
+                        auto old = p->next;
+                        p->next = nullptr;
                         callConstructor(&ctype, &p->exp, params, false, nullptr, true, false, true, false, true, false, true);
+                        p->next = old;
                         if (!isref(sym->tp))
                         {
                             sp->sb->stackblock = true;

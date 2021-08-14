@@ -4301,6 +4301,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                 TYPE* tp1 = tp;
                 if (basetype(tp1)->type == bt_lref)
                     tp1 = basetype(tp1)->btp;
+                initializerListType = nullptr;
                 if (isstructured(tp1))
                 {
                     SYMBOL* sym1 = (basetype(tp1)->sp);

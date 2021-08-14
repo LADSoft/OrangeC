@@ -118,9 +118,12 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc, bo
             case en_atomic:
             case en_dot:
             case en_pointsto:
-            case en_auto:
             case en_construct:
                 return false;
+            case en_auto:
+                if (!exp->v.sp->sb->constexpression)
+                    return false;
+                break;
             case en_l_sp:
             case en_l_fp:
             case en_bits:

@@ -1299,13 +1299,14 @@ INITIALIZER* initInsert(INITIALIZER** pos, TYPE* tp, EXPRESSION* exp, int offset
     *pos = pos1;
     return pos1;
 }
-static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed)
+static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed, std::function<EXPRESSION*(EXPRESSION*, TYPE*)> modify)
 {
     LEXLIST* start = lex;
     if (commaallowed)
         lex = expression(lex, funcsp, atp, tp, expr, 0);
     else
         lex = expression_no_comma(lex, funcsp, atp, tp, expr, nullptr, 0);
+    *expr = modify(*expr, *tp);
     if (*tp && (isvoid(*tp) || ismsil(*tp)))
         error(ERR_NOT_AN_ALLOWED_TYPE);
     optimize_for_constants(expr);
@@ -1379,7 +1380,7 @@ static LEXLIST* initialize_bool_type(LEXLIST* lex, SYMBOL* funcsp, int offset, e
     }
     else
     {
-        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false);
+        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false, [](EXPRESSION* exp, TYPE* tp) { return exp; });
         if (!tp)
         {
             error(ERR_EXPRESSION_SYNTAX);
@@ -1433,7 +1434,7 @@ static LEXLIST* initialize_arithmetic_type(LEXLIST* lex, SYMBOL* funcsp, int off
     }
     else
     {
-        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false);
+        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false, [](EXPRESSION* exp, TYPE* tp) { return exp; });
         if (!tp || !exp)
         {
             error(ERR_EXPRESSION_SYNTAX);
@@ -1571,7 +1572,7 @@ static LEXLIST* initialize_pointer_type(LEXLIST* lex, SYMBOL* funcsp, int offset
         if (!lex ||
             (lex->data->type != l_astr && lex->data->type != l_wstr && lex->data->type != l_ustr && lex->data->type != l_Ustr && lex->data->type != l_msilstr))
         {
-            lex = init_expression(lex, funcsp, itype, &tp, &exp, false);
+            lex = init_expression(lex, funcsp, itype, &tp, &exp, false, [](EXPRESSION* exp, TYPE* tp) { return exp; });
             if (!tp)
             {
                 error(ERR_EXPRESSION_SYNTAX);
@@ -1704,7 +1705,7 @@ static LEXLIST* initialize_memberptr(LEXLIST* lex, SYMBOL* funcsp, int offset, e
     }
     else
     {
-        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false);
+        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false, [](EXPRESSION* exp, TYPE* tp) { return exp; });
         ResolveTemplateVariable(&tp, &exp, itype, nullptr);
         if (!isconstzero(tp, exp) && exp->type != en_nullptr)
         {
@@ -1984,7 +1985,7 @@ static LEXLIST* initialize_reference_type(LEXLIST* lex, SYMBOL* funcsp, int offs
         DeduceAuto(&sym->tp, tp, exp);
         UpdateRootTypes(itype);
         UpdateRootTypes(sym->tp);
-        ConstExprPromote(exp);
+        ConstExprPromote(exp, isconst(basetype(itype)->btp));
         if (!isref(tp) &&
             ((isconst(tp) && !isconst(basetype(itype)->btp)) || (isvolatile(tp) && !isvolatile(basetype(itype)->btp))))
             error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
@@ -2253,7 +2254,7 @@ static bool designator(LEXLIST** lex, SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** des
                 EXPRESSION* enode = nullptr;
                 int index;
                 *lex = getsym();
-                *lex = init_expression(*lex, funcsp, nullptr, &tp, &enode, false);
+                *lex = init_expression(*lex, funcsp, nullptr, &tp, &enode, false, [](EXPRESSION* exp, TYPE* tp) { return exp; });
                 needkw(lex, closebr);
                 if (!tp)
                     error(ERR_EXPRESSION_SYNTAX);
@@ -2819,7 +2820,43 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                 {
                     TYPE* tp1 = nullptr;
                     EXPRESSION* exp1;
-                    lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, false);
+                    lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, false, [&exp, &constructed](EXPRESSION* exp1, TYPE* tp) 
+                        { 
+                            if (exp1->type == en_thisref)
+                            {
+                                constructed = true;
+                                if (exp1->left->v.func->thisptr || !exp1->left->v.func->returnEXP)
+                                {
+                                    if (!lvalue(exp1->left->v.func->thisptr))
+                                    {
+                                        EXPRESSION* exp2 = exp1->left->v.func->thisptr;
+                                        while (exp2->left)
+                                            exp2 = exp2->left;
+                                        if (exp2->type == en_auto)
+                                        {
+                                            exp2->v.sp->sb->dest = nullptr;
+                                        }
+                                    }
+
+                                    exp1->left->v.func->thisptr = exp;
+                                }
+                                else
+                                {
+                                    if (!lvalue(exp1->left->v.func->returnEXP))
+                                    {
+                                        EXPRESSION* exp2 = exp1->left->v.func->returnEXP;
+                                        while (exp2->left)
+                                            exp2 = exp2->left;
+                                        if (exp2->type == en_auto)
+                                        {
+                                            exp2->v.sp->sb->dest = nullptr;
+                                        }
+                                    }
+                                    exp1->left->v.func->returnEXP = exp;
+                                }
+                            }
+                            return exp1;
+                        });
                     if (isautotype(tp1))
                         tp1 = itype;
                     if (!tp1 || !comparetypes(basetype(tp1), basetype(itype), true))
@@ -2828,46 +2865,9 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                         errskim(&lex, skim_semi);
                         return lex;
                     }
-                    else if (exp1->type != en_thisref)
-                    {
-                        // might get here if there was an error upstream...
-                        exp = exp1;
-                        itype = tp1;
-                    }
                     else
                     {
-                        EXPRESSION* exp3 = exp1;
-                        constructed = true;
-                        if (exp1->left->v.func->thisptr || !exp1->left->v.func->returnEXP)
-                        {
-                            if (!lvalue(exp1->left->v.func->thisptr))
-                            {
-                                EXPRESSION* exp2 = exp1->left->v.func->thisptr;
-                                while (exp2->left)
-                                    exp2 = exp2->left;
-                                if (exp2->type == en_auto)
-                                {
-                                    exp2->v.sp->sb->dest = nullptr;
-                                }
-                            }
-
-                            exp1->left->v.func->thisptr = exp;
-                        }
-                        else
-                        {
-                            if (!lvalue(exp1->left->v.func->returnEXP))
-                            {
-                                EXPRESSION* exp2 = exp1->left->v.func->returnEXP;
-                                while (exp2->left)
-                                    exp2 = exp2->left;
-                                if (exp2->type == en_auto)
-                                {
-                                    exp2->v.sp->sb->dest = nullptr;
-                                }
-                            }
-                            exp1->left->v.func->returnEXP = exp;
-                        }
-                        exp = exp3;
+                        exp = exp1;
                         itype = tp1;
                     }
                 }
@@ -2886,26 +2886,29 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                         // shortcut for conversion from single expression
                         EXPRESSION* exp1 = nullptr;
                         TYPE* tp1 = nullptr;
-                        lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, false);
+                        lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, false, [&exp, itype, &constructed](EXPRESSION* exp1, TYPE* tp1)
+                            {
+                                if (exp1->type == en_thisref && exp1->left->type == en_func)
+                                {
+                                    if (exp1->left->v.func->returnEXP)
+                                    {
+                                        if (isstructured(tp1) && comparetypes(itype, tp1, 0))
+                                        {
+                                            if (!basetype(tp1)->sp->sb->templateLevel || sameTemplate(itype, tp1))
+                                            {
+                                                exp1->left->v.func->returnSP->sb->destructed = true;
+                                                exp1->left->v.func->returnEXP = exp;
+                                                constructed = true;
+                                                exp = exp1;
+                                            }
+                                        }
+                                    }
+                                }
+                                return exp1;
+                            });
                         funcparams->arguments = Allocate<INITLIST>();
                         funcparams->arguments->tp = tp1;
                         funcparams->arguments->exp = exp1;
-                        if (exp1->type == en_thisref && exp1->left->type == en_func)
-                        {
-                            if (exp1->left->v.func->returnEXP)
-                            {
-                                if (isstructured(tp1) && comparetypes(itype, tp1, 0))
-                                {
-                                    if (!basetype(tp1)->sp->sb->templateLevel || sameTemplate(itype, tp1))
-                                    {
-                                        exp1->left->v.func->returnSP->sb->destructed = true;
-                                        exp1->left->v.func->returnEXP = exp;
-                                        constructed = true;
-                                        exp = exp1;
-                                     }
-                                }
-                            }
-                        }
                     }
                 }
             }
@@ -2925,7 +2928,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                 // shortcut for conversion from single expression
                 EXPRESSION* exp1 = nullptr;
                 TYPE* tp1 = nullptr;
-                lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, false);
+                lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, false, [](EXPRESSION* exp, TYPE* tp) { return exp; });
                 funcparams->arguments = Allocate<INITLIST>();
                 funcparams->arguments->tp = tp1;
                 funcparams->arguments->exp = exp1;
@@ -3417,7 +3420,7 @@ static LEXLIST* initialize_auto(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e
     {
         TYPE* tp = nullptr;
         EXPRESSION* exp;
-        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false);
+        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false, [](EXPRESSION* exp, TYPE* tp) { return exp; });
         if (!tp)
             error(ERR_EXPRESSION_SYNTAX);
         else

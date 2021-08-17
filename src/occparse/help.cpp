@@ -1321,7 +1321,6 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
                     {
                         expsym = thisptr;
-//                        expsym = exprNode(en_add, thisptr, intNode(en_c_i, sym->sb->offset));
                     }
                     else
                     {
@@ -1333,9 +1332,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 case sc_global:
                     if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
                     {
-                        expsym = thisptr;
-//                        expsym = exprNode(en_add, thisptr, intNode(en_c_i, sym->sb->offset));
-                    }
+                        expsym = thisptr;                    }
                     else
                     {
                         local = true;
@@ -1356,7 +1353,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     if (Optimizer::architecture == ARCHITECTURE_MSIL)
                         expsym = exprNode(en_structadd, expsym, varNode(en_structelem, sym));
                     else
-                        expsym = exprNode(en_add, expsym, intNode(en_c_i, sym->sb->offset));
+                        expsym = exprNode(en_structadd, expsym, intNode(en_c_i, sym->sb->offset));
                     break;
                 case sc_external:
                     /*			expsym = varNode(en_global, sym);

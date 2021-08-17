@@ -1634,7 +1634,6 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                         {
                             *exp = baseClassOffset(sp2->sb->parentClass, basetype(typ2)->sp, *exp);
                         }
-                        ConstExprPromote(*exp);
                         *exp = exprNode(en_structadd, *exp, offset);
                         if (isref(*tp))
                         {
@@ -2710,7 +2709,7 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
                         auto sym = hr->p;
                         if (ismemberdata(sym))
                         {
-                            auto pos = exprNode(en_add, dest, intNode(en_c_i, sym->sb->offset));
+                            auto pos = exprNode(en_structadd, dest, intNode(en_c_i, sym->sb->offset));
                             deref(sym->tp, &pos);
                             auto node1 = exprNode(en_assign, pos, arg->exp);
                             if (node)
@@ -2731,7 +2730,7 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
                         auto sym = hr->p;
                         if (ismemberdata(sym))
                         {
-                            auto pos = exprNode(en_add, dest, intNode(en_c_i, sym->sb->offset));
+                            auto pos = exprNode(en_structadd, dest, intNode(en_c_i, sym->sb->offset));
                             deref(sym->tp, &pos);
                             auto node1 = exprNode(en_assign, pos, intNode(en_c_i, 0));
                             if (node)
@@ -2807,7 +2806,7 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
                     int count1 = 0;
                     while (arg)
                     {
-                        auto pos = exprNode(en_add, dest, intNode(en_c_i, count1++ * initializerListType->size));
+                        auto pos = exprNode(en_structadd, dest, intNode(en_c_i, count1++ * initializerListType->size));
                         deref(initializerListType, &pos);
                         auto node1 = exprNode(en_assign, pos, arg->exp);
                         if (node)
@@ -2841,7 +2840,7 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
             }
         }
         initList = anonymousVar(sc_auto, initializerListTemplate);
-        dest = exprNode(en_add, initList, intNode(en_c_i, begin->sb->offset));
+        dest = exprNode(en_structadd, initList, intNode(en_c_i, begin->sb->offset));
         deref(&stdpointer, &dest);
         dest = exprNode(en_assign, dest, data);
         if (rv)
@@ -2853,7 +2852,7 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
         {
             rv = dest;
         }
-        dest = exprNode(en_add, initList, intNode(en_c_i, size->sb->offset));
+        dest = exprNode(en_structadd, initList, intNode(en_c_i, size->sb->offset));
         deref(&stdpointer, &dest);
         dest = exprNode(en_assign, dest, intNode(en_c_i, tp->size/initializerListType->size));
         if (rv)
@@ -3221,7 +3220,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             if (!comparetypes(sym->tp, p->tp, true))
                                 p->exp = DerivedToBase(sym->tp, p->tp, p->exp, 0);
                         }
-                        ConstExprPromote(p->exp);
+                        ConstExprPromote(p->exp, isconst(basetype(sym->tp)->btp));
                     }
                     else if (basetype(basetype(sym->tp)->btp)->type == bt_memberptr)
                     {
@@ -4036,6 +4035,18 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
             {
                 if (initializerListType)
                 {
+                    if (funcparams->sp->sb->constexpression)
+                    {
+                        EXPRESSION* node = Allocate<EXPRESSION>();
+                        node->type = en_func;
+                        node->v.func = funcparams;
+                        if (EvaluateConstexprFunction(node))
+                        {
+                            *tp = basetype(funcparams->sp->tp)->btp;
+                            *exp = node;
+                            return lex;
+                        }
+                    }
                     CreateInitializerList(initializerListTemplate, initializerListType, lptr, operands, initializerRef);
                     if (hr->next)
                         AdjustParams(funcparams->sp, hr->next, &(*lptr)->next, operands, true);
@@ -4089,6 +4100,8 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     {
                         funcparams->returnEXP = anonymousVar(sc_auto, basetype(*tp)->btp);
                         funcparams->returnSP = funcparams->returnEXP->v.sp;
+                        if (theCurrentFunc && theCurrentFunc->sb->constexpression)
+                            funcparams->returnEXP->v.sp->sb->constexpression = true;
                     }
                 }
                 funcparams->ascall = true;
@@ -5384,7 +5397,7 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                                 *tp = t1;
                                 *exp = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);  // this ptr
                                 deref(&stdpointer, exp);
-                                *exp = exprNode(en_add, *exp, intNode(en_c_i, ths->sb->offset));
+                                *exp = exprNode(en_structadd, *exp, intNode(en_c_i, ths->sb->offset));
                                 deref(&stdpointer, exp);
                             }
                             else
@@ -6370,7 +6383,7 @@ static LEXLIST* expression_postfix(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 break;
             case autoinc:
             case autodec:
-
+                ConstExprPromote(*exp, false);
                 kw = KW(lex);
                 lex = getsym();
                 if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
@@ -6673,6 +6686,7 @@ LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EX
         case autodec:
             lex = getsym();
             lex = expression_cast(lex, funcsp, atp, tp, exp, &localMutable, flags);
+            ConstExprPromote(*exp, false);
             if (*tp)
             {
                 if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
@@ -6852,6 +6866,7 @@ LEXLIST* expression_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                                     break;
                                 case autoinc:
                                 case autodec:
+                                    ConstExprPromote(*exp, false);
 
                                     kw = KW(lex);
                                     lex = getsym();
@@ -8393,8 +8408,9 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             *tp = nullptr;
             return lex;
         }
-        ResolveTemplateVariable(tp, exp, tp1, nullptr);
+        ResolveTemplateVariable(tp, exp, tp1, nullptr);        
         ResolveTemplateVariable(&tp1, &exp1, *tp, nullptr);
+        ConstExprPromote(*exp, false);
         if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
             insertOperatorFunc(selovcl, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags))
         {

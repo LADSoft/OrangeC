@@ -1744,8 +1744,6 @@ void destructBlock(EXPRESSION** exp, SYMLIST* hr, bool mainDestruct)
                 if (isstructured(sp->tp))
                 {
                     EXPRESSION* iexp = getThisNode(sp);
-                    //                    iexp = exprNode(en_add, iexp, intNode(en_c_i,
-                    //                    Optimizer::chosenAssembler->arch->retblocksize));
                     callDestructor(basetype(sp->tp)->sp, nullptr, &iexp, nullptr, true, false, false, true);
                     optimize_for_constants(&iexp);
                     if (*exp)
@@ -1786,8 +1784,8 @@ static void genConsData(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi, SYMBO
     (void)mi;
     if (doCopy && (matchesCopy(parentCons, false) || matchesCopy(parentCons, true)))
     {
-        thisptr = exprNode(en_add, thisptr, intNode(en_c_i, offset));
-        otherptr = exprNode(en_add, otherptr, intNode(en_c_i, offset));
+        thisptr = exprNode(en_structadd, thisptr, intNode(en_c_i, offset));
+        otherptr = exprNode(en_structadd, otherptr, intNode(en_c_i, offset));
         if (isstructured(member->tp) || isarray(member->tp) || basetype(member->tp)->type == bt_memberptr)
         {
             EXPRESSION* exp = exprNode(en_blockassign, thisptr, otherptr);
@@ -1831,7 +1829,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
         }
         else
         {
-            exp = exprNode(en_add, thisptr, intNode(en_c_i, member->sb->offset));
+            exp = exprNode(en_structadd, thisptr, intNode(en_c_i, member->sb->offset));
             exp = exprNode(en_blockclear, exp, 0);
             exp->size = member->tp->size;
         }
@@ -1842,7 +1840,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
     else
     {
         TYPE* ctype = member->tp;
-        EXPRESSION* exp = exprNode(en_add, thisptr, intNode(en_c_i, memberOffs));
+        EXPRESSION* exp = exprNode(en_structadd, thisptr, intNode(en_c_i, memberOffs));
         if (doCopy && matchesCopy(parentCons, false))
         {
             if (useDefault)
@@ -1852,7 +1850,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
             }
             else
             {
-                EXPRESSION* other = exprNode(en_add, otherptr, intNode(en_c_i, memberOffs));
+                EXPRESSION* other = exprNode(en_structadd, otherptr, intNode(en_c_i, memberOffs));
                 if (basetype(parentCons->tp)->type == bt_rref)
                     other = exprNode(en_not_lvalue, other, nullptr);
 
@@ -1885,7 +1883,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
             }
             else
             {
-                EXPRESSION* other = exprNode(en_add, otherptr, intNode(en_c_i, memberOffs));
+                EXPRESSION* other = exprNode(en_structadd, otherptr, intNode(en_c_i, memberOffs));
                 if (basetype(parentCons->tp)->type == bt_rref)
                     other = exprNode(en_not_lvalue, other, nullptr);
                 TYPE* tp = Allocate<TYPE>();
@@ -1965,8 +1963,8 @@ static void virtualBaseThunks(BLOCKDATA* b, SYMBOL* sp, EXPRESSION* thisptr)
     STATEMENT* st;
     while (entries)
     {
-        EXPRESSION* left = exprNode(en_add, thisptr, intNode(en_c_i, entries->pointerOffset));
-        EXPRESSION* right = exprNode(en_add, thisptr, intNode(en_c_i, entries->structOffset));
+        EXPRESSION* left = exprNode(en_structadd, thisptr, intNode(en_c_i, entries->pointerOffset));
+        EXPRESSION* right = exprNode(en_structadd, thisptr, intNode(en_c_i, entries->structOffset));
         EXPRESSION* asn;
         deref(&stdpointer, &left);
         asn = exprNode(en_assign, left, right);
@@ -1995,7 +1993,7 @@ static void HandleEntries(EXPRESSION **pos, VTABENTRY* entries, EXPRESSION* this
     {
         if (!entries->isdead && entries->isvirtual == isvirtual && hasVTab(entries->cls))
         {
-            EXPRESSION* left = exprNode(en_add, thisptr, intNode(en_c_i, entries->dataOffset));
+            EXPRESSION* left = exprNode(en_structadd, thisptr, intNode(en_c_i, entries->dataOffset));
             EXPRESSION* right =
                 exprNode(en_add, exprNode(en_add, vtabBase, intNode(en_c_i, entries->vtabOffset)), intNode(en_c_i, VTAB_XT_OFFS));
             EXPRESSION* asn;
@@ -3094,8 +3092,8 @@ void asnVirtualBases(BLOCKDATA* b, SYMBOL* sp, VBASEENTRY* vbe, EXPRESSION* this
 }
 static void genAsnData(BLOCKDATA* b, SYMBOL* cls, SYMBOL* member, int offset, EXPRESSION* thisptr, EXPRESSION* other)
 {
-    EXPRESSION* left = exprNode(en_add, thisptr, intNode(en_c_i, offset));
-    EXPRESSION* right = exprNode(en_add, other, intNode(en_c_i, offset));
+    EXPRESSION* left = exprNode(en_structadd, thisptr, intNode(en_c_i, offset));
+    EXPRESSION* right = exprNode(en_structadd, other, intNode(en_c_i, offset));
     STATEMENT* st;
     (void)cls;
     if (isstructured(member->tp) || isarray(member->tp))
@@ -3124,8 +3122,8 @@ static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPR
     TYPE* tp = Allocate<TYPE>();
     SYMBOL* asn1;
     SYMBOL* cons = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(base->tp)->syms);
-    EXPRESSION* left = exprNode(en_add, thisptr, intNode(en_c_i, offset));
-    EXPRESSION* right = exprNode(en_add, other, intNode(en_c_i, offset));
+    EXPRESSION* left = exprNode(en_structadd, thisptr, intNode(en_c_i, offset));
+    EXPRESSION* right = exprNode(en_structadd, other, intNode(en_c_i, offset));
     if (move)
     {
         right = exprNode(en_not_lvalue, right, nullptr);
@@ -3290,7 +3288,7 @@ static void genDestructorCall(BLOCKDATA* b, SYMBOL* sp, SYMBOL* against, EXPRESS
         return;
     exp = base;
     deref(&stdpointer, &exp);
-    exp = exprNode(en_add, exp, intNode(en_c_i, offset));
+    exp = exprNode(en_structadd, exp, intNode(en_c_i, offset));
     dest = (SYMBOL*)basetype(dest->tp)->syms->table[0]->p;
     if (dest->sb->defaulted && !dest->sb->inlineFunc.stmt)
     {
@@ -3493,7 +3491,7 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
         {
             auto exp_in = params->thisptr;
             deref(&stdpointer, &exp_in);
-            exp_in = exprNode(en_add, exp_in, intNode(en_c_i, dest1->sb->vtaboffset));
+            exp_in = exprNode(en_structadd, exp_in, intNode(en_c_i, dest1->sb->vtaboffset));
             deref(&stdpointer, &exp_in);
             params->fcall = exp_in;
         }
@@ -3745,7 +3743,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
         {
             // this needs work, won't work for structures as members of other structures...
             EXPRESSION* exp1 = params->thisptr;
-            if (exp1->type == en_add && isconstzero(&stdint, exp1->right))
+            if ((exp1->type == en_add || exp1->type == en_structadd) && isconstzero(&stdint, exp1->right))
                 exp1 = exp1->left;
             *exp = exprNode(en_assign, exp1, *exp);
             params->thisptr = nullptr;

@@ -1282,6 +1282,10 @@ EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add)
         break;
     }
     default:
+        if (castvalue(node))
+        {
+            return relptr(node->left, offset, add);
+        }
         if (isintconst(node))
         {
             if (add)
@@ -1360,7 +1364,8 @@ int opt0(EXPRESSION** node)
         case en_l_object:
         {
             rv |= opt0(&((*node)->left));
-            if (!(*node)->left->init && inConstantExpression)
+            ConstExprStructElemEval(node);
+            if (lvalue(*node) && !(*node)->left->init && inConstantExpression)
             {
                 int offset = 0;
      
@@ -2070,7 +2075,7 @@ int opt0(EXPRESSION** node)
             switch (mode)
             {
                 case 1:
-                    *node = intNode(en_c_i, (ep->left->v.i == ep->right->v.i));
+                    *node = intNode(en_c_i, (ep->left->v.i == ep->right->v.i)); 
                     rv = true;
 
                     break;
@@ -2087,14 +2092,13 @@ int opt0(EXPRESSION** node)
                     {
                         if (rv1->v.sp != rv2->v.sp || offset1 != offset2)
                         {
-                            *node = intNode(en_c_i, 1);
+                            *node = intNode(en_c_i, 0);
                         }
                         else
                         {
-                            *node = intNode(en_c_i, 0);
+                            *node = intNode(en_c_i, 1);
                         }
                     }
-
                 }
                 break;
             }
@@ -2130,7 +2134,6 @@ int opt0(EXPRESSION** node)
                         }
                         rv = true;
                     }
-
                 }
                 break;
             }

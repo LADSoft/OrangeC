@@ -2661,7 +2661,7 @@ int fold_const(EXPRESSION* node)
         case en_structadd:
             rv |= fold_const(node->left);
             rv |= fold_const(node->right);
-            if (node->right->type == en_structelem || node->left->type == en_structadd)
+            if (!inConstantExpression && (node->right->type == en_structelem || node->left->type == en_structadd))
                 break;
             if (isoptconst(node->right))
             {
@@ -3321,6 +3321,21 @@ int typedconsts(EXPRESSION* node1)
             if (node1->left->type == en_cshimref)
             {
                 *node1 = *node1->left->v.exp;
+            }
+            else if (node1->left->type == en_structadd)
+            {
+                if (node1->left->left->type == en_cshimref)
+                {
+                    node1->left->left = node1->left->left->v.exp;
+                    optimize_for_constants(&node1->left);
+                    *node1 = *node1->left;
+                }
+                else if (node1->left->right->type == en_cshimref)
+                {
+                    node1->left->right = node1->left->right->v.exp;
+                    optimize_for_constants(&node1->left);
+                    *node1 = *node1->left;
+                }
             }
             else if (node1->left->type == en_global)
             {

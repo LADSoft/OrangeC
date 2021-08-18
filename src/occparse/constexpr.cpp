@@ -70,6 +70,7 @@ std::deque<EXPRESSION*> clearedInitializations;
 static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<SYMBOL*, ArgArray>& argmap, EXPRESSION* ths);
 static bool ExactExpression(EXPRESSION* exp1, EXPRESSION* exp2);
 static EXPRESSION* LookupThis(EXPRESSION* exp, std::unordered_map<SYMBOL*, ArgArray> argmap);
+bool hascshim(EXPRESSION* node);
 
 void constexprinit()
 {
@@ -281,7 +282,9 @@ void ConstExprStructElemEval(EXPRESSION** node)
             {
                 node2 = node2->v.constexprData[node1->right->v.i];
                 if (node2)
+                {
                     *node = node2;
+                }
             }
         }
     }
@@ -440,6 +443,25 @@ EXPRESSION* ConstExprRetBlock(SYMBOL* sym, EXPRESSION* node)
     }
     return exp;
 }
+static void ReplaceShimref(EXPRESSION** node)
+{
+    std::stack<EXPRESSION**> stk;
+    stk.push(node);
+    while (!stk.empty())
+    {
+        node = stk.top();
+        stk.pop();
+        if ((*node)->type == en_cshimref)
+        {
+            *node = (*node)->v.exp;
+        }
+        else if ((*node)->type == en_void)
+        {
+            stk.push(&(*node)->left);
+            stk.push(&(*node)->right);
+        }
+    }
+}
 static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<SYMBOL*, ArgArray>& argmap, EXPRESSION* ths)
 {
     if (thisptr->type == en_auto && thisptr->v.sp->sb->stackblock)
@@ -463,8 +485,12 @@ static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<
             next = exprNode(en_assign, next, EvaluateExpression(ths->v.constexprData[hr->p->sb->offset], argmap, ths, nullptr, false));
             if (next->right == nullptr || !IsConstantExpression(next->right, false, false))
                 return nullptr;
-            if (next->right->type == en_cshimref)
-                next->right = next->right->v.exp;
+            inConstantExpression++;
+            optimize_for_constants(&next->right);
+            inConstantExpression--;
+            ReplaceShimref(&next->right);
+            if (hascshim(next))
+                printf("hi");
             *last = exprNode(en_void, *last, next);
             last = &(*last)->right;
         }
@@ -1138,7 +1164,8 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
                     }
                     else
                     {
-                        rv = EvaluateStatements(node, stmt->lower, argmap, ths, nullptr);
+                        if (!ths || !getStructureDeclaration())
+                            rv = EvaluateStatements(node, stmt->lower, argmap, ths, nullptr);
                     }
 
                     nestedMaps.pop();

@@ -376,7 +376,7 @@ static EXPRESSION* LookupThis(EXPRESSION* exp, std::unordered_map<SYMBOL*, ArgAr
     {
         for (auto t : argmap)
         {
-            if (exp->v.sp == t.first)
+            if (exp->v.sp == t.first && t.second.data)
             {
                 EXPRESSION* exp1 = Allocate<EXPRESSION>();
                 exp1->type = en_cshimthis;

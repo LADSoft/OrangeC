@@ -566,7 +566,7 @@ static void pushArray(SYMBOL* arg, INITLIST* il, std::unordered_map<SYMBOL*, Arg
     sym->sb->constexpression = true;
     auto listDeclarator = Allocate<EXPRESSION*>(getSize(bt_pointer) + getSize(bt_int));
 
-    listDeclarator[0] = varNode(en_global, sym);
+    listDeclarator[0] = varNode(en_auto, sym);
     listDeclarator[getSize(bt_pointer)] = intNode(en_c_i, n);
 
     argmap[arg] = { getSize(bt_pointer) + getSize(bt_int), listDeclarator };
@@ -745,7 +745,7 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, ArgArray>& a
     else if (exp->type == en_auto)
     {
         auto xx = argmap[exp->v.sp].data;
-        if (xx)
+        if (xx && xx[0])
         {
             if (arg)
             {

@@ -449,16 +449,35 @@ static void ReplaceShimref(EXPRESSION** node)
     stk.push(node);
     while (!stk.empty())
     {
-        node = stk.top();
+        EXPRESSION** node1 = stk.top();
         stk.pop();
-        if ((*node)->type == en_cshimref)
+        if ((*node1)->type == en_cshimref)
         {
-            *node = (*node)->v.exp;
+            *node1 = (*node)->v.exp;
         }
-        else if ((*node)->type == en_void)
+        else if ((*node1)->type == en_void)
         {
-            stk.push(&(*node)->left);
-            stk.push(&(*node)->right);
+            *node1 = (*node1)->right;
+            stk.push(&(*node1)->right);
+        }
+    }
+
+    stk.push(node);
+    while (!stk.empty())
+    {
+        EXPRESSION** node1 = stk.top();
+        stk.pop();
+        if ((*node1)->type == en_void && (*node1)->left->type == en_cshimref)
+        {
+            (*node1) = (*node1)->right;
+            stk.push(node1);
+        }
+        else
+        {
+            if ((*node1)->left)
+                stk.push(&(*node1)->left);
+            if ((*node1)->right)
+                stk.push(&(*node1)->right);
         }
     }
 }
@@ -627,7 +646,7 @@ static EXPRESSION* HandleAssign(EXPRESSION* exp, std::unordered_map<SYMBOL*, Arg
         {
             auto val = EvaluateExpression(exp1->left->right, argmap, ths, retblk, false);
             optimize_for_constants(&val);
-            if (isintconst(val) && val->v.i < exp1->left->left->v.sp->tp->size)
+            if (isintconst(val) && isarray(exp1->left->left->v.sp->tp) && val->v.i < exp1->left->left->v.sp->tp->size)
             {
                 auto n = val->v.i / exp1->left->left->v.sp->tp->btp->size;
                 auto xx = argmap[exp1->left->left->v.sp].data;

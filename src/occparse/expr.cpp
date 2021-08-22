@@ -3153,7 +3153,10 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         EXPRESSION* consexp = anonymousVar(sc_auto, ctype);  // sc_parameter to push it...
                         SYMBOL* esp = consexp->v.sp;
                         esp->sb->stackblock = true;
+                        esp->sb->constexpression = true;
                         callConstructorParam(&ctype, &consexp, p->tp, p->exp, true, true, implicit, false, true);
+                        if (consexp->type == en_thisref)
+                            esp->sb->constexpression = false;
                         p->exp = consexp;
                     }
                     p->tp = sym->tp;

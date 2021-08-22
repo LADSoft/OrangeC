@@ -799,6 +799,17 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, ArgArray>& a
         {
             func->thisptr = retblk;
         }
+        if (func->thisptr)
+        {
+            int ofs;
+
+            auto xx = relptr(func->thisptr, ofs);
+            if (xx && xx->type == en_auto)
+            {
+                if (func->sp->sb->constexpression)
+                    xx->v.sp->sb->constexpression = true;
+            }
+        }
         optimize_for_constants(&temp1);
         if (temp1->type != en_func || (!hascshim(temp1) && temp1->v.sp != exp->v.sp))
         {
@@ -1070,6 +1081,12 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
     {
         if (inLoopOrConditional)
             return false;
+        if (!exp->v.sp->sb->constexpression)
+        {
+            if (currentLex->data->errline == 2422)
+                printf("hi");
+            return false;
+        }
     }
     bool rv = false;
     auto args = node->v.func->arguments;

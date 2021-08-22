@@ -78,7 +78,7 @@ int main1()
 int main()
 {
 	static_assert(b == 9);
-	aa nn(4);
+	constexpr aa nn(4);
         static_assert(nn.func(5) == 15);
         static_assert(aa1(4) == 10);
         static_assert(bb1(true) == 5);

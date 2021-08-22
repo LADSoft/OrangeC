@@ -696,9 +696,10 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                 EXPRESSION* exp2;
                 exp2 = exp1 = *exp = anonymousVar(sc_auto, unboxed ? unboxed : basetype(*tp)->sp->tp);
                 sym = exp1->v.sp;
+                sym->sb->constexpression = true;
                 callConstructor(&ctype, exp, funcparams, false, nullptr, true, true, false, false, false, false, true);
-                if ((*exp)->type != en_thisref || theCurrentFunc && theCurrentFunc->sb->constexpression)
-                    sym->sb->constexpression = true;
+                if ((*exp)->type == en_thisref)
+                    sym->sb->constexpression = false;
                 PromoteConstructorArgs(funcparams->sp, funcparams);
                 callDestructor(basetype(*tp)->sp, nullptr, &exp1, nullptr, true, false, false, true);
                 if (Optimizer::architecture == ARCHITECTURE_MSIL)

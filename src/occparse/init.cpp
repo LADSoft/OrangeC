@@ -1363,7 +1363,10 @@ static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
     }
     return lex;
 }
-
+static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed)
+{
+    return init_expression(lex, funcsp, atp, tp, expr, commaallowed, [](EXPRESSION* exp, TYPE* tp) { return exp; });
+}
 static LEXLIST* initialize_bool_type(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
 {
     TYPE* tp;
@@ -1380,7 +1383,7 @@ static LEXLIST* initialize_bool_type(LEXLIST* lex, SYMBOL* funcsp, int offset, e
     }
     else
     {
-        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false, [](EXPRESSION* exp, TYPE* tp) { return exp; });
+        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false);
         if (!tp)
         {
             error(ERR_EXPRESSION_SYNTAX);
@@ -1434,7 +1437,7 @@ static LEXLIST* initialize_arithmetic_type(LEXLIST* lex, SYMBOL* funcsp, int off
     }
     else
     {
-        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false, [](EXPRESSION* exp, TYPE* tp) { return exp; });
+        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false);
         if (!tp || !exp)
         {
             error(ERR_EXPRESSION_SYNTAX);
@@ -1572,7 +1575,7 @@ static LEXLIST* initialize_pointer_type(LEXLIST* lex, SYMBOL* funcsp, int offset
         if (!lex ||
             (lex->data->type != l_astr && lex->data->type != l_wstr && lex->data->type != l_ustr && lex->data->type != l_Ustr && lex->data->type != l_msilstr))
         {
-            lex = init_expression(lex, funcsp, itype, &tp, &exp, false, [](EXPRESSION* exp, TYPE* tp) { return exp; });
+            lex = init_expression(lex, funcsp, itype, &tp, &exp, false);
             if (!tp)
             {
                 error(ERR_EXPRESSION_SYNTAX);
@@ -1705,7 +1708,7 @@ static LEXLIST* initialize_memberptr(LEXLIST* lex, SYMBOL* funcsp, int offset, e
     }
     else
     {
-        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false, [](EXPRESSION* exp, TYPE* tp) { return exp; });
+        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false);
         ResolveTemplateVariable(&tp, &exp, itype, nullptr);
         if (!isconstzero(tp, exp) && exp->type != en_nullptr)
         {
@@ -2254,7 +2257,7 @@ static bool designator(LEXLIST** lex, SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** des
                 EXPRESSION* enode = nullptr;
                 int index;
                 *lex = getsym();
-                *lex = init_expression(*lex, funcsp, nullptr, &tp, &enode, false, [](EXPRESSION* exp, TYPE* tp) { return exp; });
+                *lex = init_expression(*lex, funcsp, nullptr, &tp, &enode, false);
                 needkw(lex, closebr);
                 if (!tp)
                     error(ERR_EXPRESSION_SYNTAX);
@@ -2898,6 +2901,13 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                                             {
                                                 exp1->left->v.func->returnSP->sb->destructed = true;
                                                 exp1->left->v.func->returnEXP = exp;
+                                                int offs = 0;
+                                                if (exp1->left->v.func->sp->sb->constexpression)
+                                                {
+                                                    auto xx = relptr(exp1->left->v.func->returnEXP, offs);
+                                                    if (xx->type == en_auto && xx->v.sp->sb->anonymous)
+                                                        xx->v.sp->sb->constexpression = true;
+                                                }
                                                 constructed = true;
                                                 exp = exp1;
                                             }
@@ -2928,7 +2938,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                 // shortcut for conversion from single expression
                 EXPRESSION* exp1 = nullptr;
                 TYPE* tp1 = nullptr;
-                lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, false, [](EXPRESSION* exp, TYPE* tp) { return exp; });
+                lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, false);
                 funcparams->arguments = Allocate<INITLIST>();
                 funcparams->arguments->tp = tp1;
                 funcparams->arguments->exp = exp1;
@@ -3420,7 +3430,7 @@ static LEXLIST* initialize_auto(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e
     {
         TYPE* tp = nullptr;
         EXPRESSION* exp;
-        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false, [](EXPRESSION* exp, TYPE* tp) { return exp; });
+        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false);
         if (!tp)
             error(ERR_EXPRESSION_SYNTAX);
         else

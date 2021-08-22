@@ -376,7 +376,8 @@ static EXPRESSION* LookupThis(EXPRESSION* exp, std::unordered_map<SYMBOL*, ArgAr
     {
         for (auto t : argmap)
         {
-            if (exp->v.sp == t.first && t.second.data)
+            // expecting an initializer-list structure...
+            if (exp->v.sp == t.first && t.second.data && t.second.size != 1)
             {
                 EXPRESSION* exp1 = Allocate<EXPRESSION>();
                 exp1->type = en_cshimthis;
@@ -412,7 +413,9 @@ static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, 
         {
             SYMBOL* sp = search(m->name, sym->sb->parentClass->tp->syms);
             if (sp)
+            {
                 exp->v.constexprData[sp->sb->offset] = EvaluateExpression(m->init->exp, argmap, exp, nullptr, false);
+            }
         }
         m = m->next;
 
@@ -508,8 +511,6 @@ static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<
             optimize_for_constants(&next->right);
             inConstantExpression--;
             ReplaceShimref(&next->right);
-            if (hascshim(next))
-                printf("hi");
             *last = exprNode(en_void, *last, next);
             last = &(*last)->right;
         }
@@ -1083,8 +1084,6 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
             return false;
         if (!exp->v.sp->sb->constexpression)
         {
-            if (currentLex->data->errline == 2422)
-                printf("hi");
             return false;
         }
     }

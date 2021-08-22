@@ -4328,8 +4328,8 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                     }
                     else
                     {
-                        seq[m++] = CV_NONE;
-
+                        getSingleConversion((basetype(tp1)->sp)->tp, a ? a->tp : ((SYMBOL*)(*hrt)->p)->tp, a ? a->exp : nullptr, & m,
+                            seq, sym, userFunc ? &userFunc[n] : nullptr, true);
                     }
                 }
                 else if (a && (a->nested || (!a->tp && !a->exp)))

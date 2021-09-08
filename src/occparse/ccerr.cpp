@@ -43,6 +43,8 @@
 #include "types.h"
 #include "help.h"
 #include "libcxx.h"
+#include "FNV_hash.h"
+#include <cstdio>
 #define ERROR 1
 #define WARNING 2
 #define TRIVIALWARNING 4
@@ -78,9 +80,57 @@ static struct
     int level;
 } errors[] = {
 #define ERRLIST(x, y, z, a) {z, a},
+#define ERRWITHWARNFLAG(x, y, z, a, b) {z, a},
 #include "errorlist.h"
 
 };
+namespace Util = OrangeC::Utils;
+// Maps GCC warning names to OCC warning numbers using the FNV algorithm because the string constructor is a strlen call which is expensive
+static const std::unordered_map<const char*, int, Util::fnv1a64, Util::str_eql> error_name_map
+{
+#define ERRWITHWARNFFLAG(x, y, z, a, b) {b, y},
+#define ERRWTIHWARNFLAGHELP(x, y, z, a, b, c) {b, y},
+#include "errorlist.h"
+};
+// The difference between the following two maps is that the one immediately below uses the internal error number while the other uses the GCC name
+static const std::unordered_map<int, std::string> error_help_map
+{
+#define ERRWITHWARNFLAGHELP(x, y, z, a, b, c) {y, c},
+#define ERRWITHHELP(x, y, z, a, b) {y, b},
+#include "errorlist.h"
+};
+static const std::unordered_map<const char*, std::string, Util::fnv1a64, Util::str_eql> error_name_help_map
+{
+#define ERRWITHWARNFLAGHELP(x, y, z, a, b, c) {b, c},
+#include "errorlist.h"
+};
+void DumpErrorNameMap()
+{
+    printf("Error name to number map:\n");
+    for(auto a : error_name_map)
+    {
+        printf("%s: %d", a.first, a.second);
+    }
+    printf("Name to number map end");
+}
+void DumpErrorNumToHelpMap()
+{
+    printf("Error number to help map:\n");
+    for(auto a : error_help_map)
+    {
+        printf("%d: %s", a.first, a.second.c_str());
+    }
+    printf("Number to help map end.");
+}
+void DumpErrorNameToHelpMap()
+{
+    printf("Error name to help map:\n");
+    for(auto a : error_name_help_map)
+    {
+        printf("%s: %s", a.first, a.second.c_str());
+    }
+    printf("Name to help map end.");
+}
 void EnterInstantiation(LEXLIST* lex, SYMBOL *sym)
 {
     if (lex)

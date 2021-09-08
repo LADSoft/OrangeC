@@ -136,6 +136,7 @@
     <ClCompile Include="xml.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="FNV_hash.h" />
     <ClInclude Include="CmdFiles.h" />
     <ClInclude Include="CmdSwitch.h" />
     <ClInclude Include="SharedMemory.h" />

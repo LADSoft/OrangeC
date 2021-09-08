@@ -31,38 +31,10 @@
 #include "be.h"
 #include "peep.h"
 #include "gen.h"
-
+#include "FNV_hash.h"
 namespace occx86
 {
-template <typename T, T FNV_prime, T FNV_offset>
-class fnv1a_class
-{
-    public:
-    T operator()(const char* arr) const
-    {
-        // Follows the Fowler-Noll-Vol hash function as described by wikipedia in the following article:
-        // https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function#FNV-1a_hash
-        size_t len = strlen(arr);
-        unsigned char* arr2 = (unsigned char*)arr;
-        T hash = FNV_offset;
-        for(size_t i = 0; i < len; i++)
-        {
-            hash = hash * FNV_prime;
-            hash = hash ^ arr2[i];
-        }
-        return hash;
-    }
-
-};
-class str_eql
-{
-    public:
-    bool operator()(const char* a, const char* b) const
-    {
-        return !strcmp(a, b);
-    }
-};
-using fnv1a64 = fnv1a_class<uint64_t, UINT64_C(1099511628211), UINT64_C(14695981039346656037)>;
+namespace Util = OrangeC::Utils;
 typedef bool (*BUILTIN)();
 
 typedef struct builtins
@@ -73,7 +45,7 @@ typedef struct builtins
 #define PROTO(PROT, NAME, FUNC) bool FUNC();
 #include "beIntrinsicProtos.h"
 #define PROTO(PROT, NAME, FUNC) {#NAME, FUNC},
-std::unordered_map<const char*, BUILTIN, fnv1a64, str_eql> builtin_map = {
+std::unordered_map<const char*, BUILTIN, Util::fnv1a64, Util::str_eql> builtin_map = {
 #include "beIntrinsicProtos.h"
 };
 

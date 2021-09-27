@@ -83,6 +83,7 @@ void DisableWarning(int num);
 void EnableWarning(int num);
 void WarningOnlyOnce(int num);
 void WarningAsError(int num);
+void WarningAsError(const char* str);
 void AllWarningsAsError(void);
 void AllWarningsDisable(void);
 void PushWarnings(void);

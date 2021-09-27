@@ -131,6 +131,7 @@ void DumpErrorNameToHelpMap()
     }
     printf("Name to help map end.");
 }
+
 void EnterInstantiation(LEXLIST* lex, SYMBOL *sym)
 {
     if (lex)
@@ -169,12 +170,36 @@ static bool ValidateWarning(int num)
     printf("Warning: /w index %d does not correspond to a warning\n", num);
     return false;
 }
+static bool ValidateWarning(const char* str)
+{
+    auto thing = error_name_map.find(str);
+    if (thing != error_name_map.end())
+    {
+        auto val = thing->second;
+        if(!(errors[val].level & ERROR))
+        {
+            return true;
+        }
+        printf("Warning: Name %s does not correspond to a warning\n", str);
+        return false;
+    }
+    printf("Warning: %s does not pertain to any warning or error\n", str);
+    return false;
+}
 void DisableWarning(int num)
 {
     if (ValidateWarning(num))
     {
         Warning::Instance()->SetFlag(num, Warning::Disable);
     }
+}
+void WarningAsError(const char* str)
+{
+    if (ValidateWarning(str))
+    {
+        int val = error_name_map.find(str)->second;
+        Warning::Instance()->SetFlag(val, Warning::AsError);
+    }   
 }
 void EnableWarning(int num)
 {

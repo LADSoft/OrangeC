@@ -275,7 +275,7 @@ void ConstExprStructElemEval(EXPRESSION** node)
     {
         auto node1 = (*node)->left;
         if (node1->type == en_structadd)
-        {             
+        {
             std::unordered_map<SYMBOL*, ArgArray> argmap;
             auto node2 = LookupThis(node1->left, argmap);
             if (node2 && node2 != (EXPRESSION*)-1)
@@ -1028,6 +1028,8 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
                 }
                 break;
             case st_return:
+                if (!strcmp(node->v.func->sp->name, "$bequ"))
+                    printf("hi");
                 if (stmt->select)
                 {
                     if (node->v.func->returnEXP)
@@ -1062,6 +1064,8 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
 }
 bool EvaluateConstexprFunction(EXPRESSION*&node)
 {
+    if (!strcmp(node->v.func->sp->name, "minmax"))
+        printf("hi");
     if (node->v.func->sp->sb->isConstructor)
     {
         // we don't support constexpr constructors for classes with base classes right now...

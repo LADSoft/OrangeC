@@ -2683,6 +2683,18 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
         tp->size = count * (initializerListType->size);
         tp->esize = intNode(en_c_i, count);
         data = anonymousVar(sc_auto, tp);
+        if ((*lptr)->nested)
+        {
+            auto l = (*lptr)->nested;
+            while (l)
+            {
+                if (!IsConstantExpression(l->exp, false, false))
+                    break;
+                l = l->next;
+            }
+            if (!l)
+                data->v.sp->sb->constexpression = true;
+        }
         if (isstructured(initializerListType))
         {
             EXPRESSION* exp = data;
@@ -2840,6 +2852,7 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
             }
         }
         initList = anonymousVar(sc_auto, initializerListTemplate);
+        initList->v.sp->sb->constexpression = true;
         dest = exprNode(en_structadd, initList, intNode(en_c_i, begin->sb->offset));
         deref(&stdpointer, &dest);
         dest = exprNode(en_assign, dest, data);

@@ -20,9 +20,9 @@ zzz.dll:
 	-copy \orangec\bin\lsmsilcrtl.dll *.* > $(NULLDEV)
 	occil /Wd zzz.c /Nzzz.ar
 
-test.exe: test.c sqlite3.dll
+test.exe: sqlite3.c shell.c sqlite3.dll
 	-copy \orangec\bin\lsmsilcrtl.dll *.* > $(NULLDEV)
-	occil test.c /I$(ORANGEC)\src\sqlite3 /LKernel32
+	occil /otest.exe sqlite3.c shell.c /I$(ORANGEC)\src\sqlite3 /LKernel32
 
 testsqlite.exe: testsqlite.cs sqlite3.dll
 	-copy \orangec\bin\lsmsilcrtl.dll *.* > $(NULLDEV)

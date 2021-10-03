@@ -1032,7 +1032,7 @@ static void shellAddSchemaName(
 #define SQLITE_EXTENSION_INIT1
 #define SQLITE_EXTENSION_INIT2(X) (void)(X)
 
-#if defined(_WIN32) && defined(_MSC_VER)
+#if defined(_WIN32) //&& defined(_MSC_VER)
 /************************* Begin test_windirent.h ******************/
 /*
 ** 2015 November 30
@@ -1049,8 +1049,9 @@ static void shellAddSchemaName(
 ** POSIX functions on Win32 using the MSVCRT.
 */
 
-#if defined(_WIN32) && defined(_MSC_VER) && !defined(SQLITE_WINDIRENT_H)
+#if defined(_WIN32) /*&& defined(_MSC_VER)*/ && !defined(SQLITE_WINDIRENT_H)
 #define SQLITE_WINDIRENT_H
+#include <stdint.h>
 
 /*
 ** We need several data types from the Windows SDK header.
@@ -1152,7 +1153,6 @@ struct DIRENT {
   char d_name[NAME_MAX + 1]; /* Name within the directory. */
 };
 #endif
-
 #ifndef DIR_DEFINED
 #define DIR_DEFINED
 typedef struct DIR DIR;
@@ -1211,7 +1211,7 @@ extern INT closedir(LPDIR dirp);
 ** POSIX functions on Win32 using the MSVCRT.
 */
 
-#if defined(_WIN32) && defined(_MSC_VER)
+#if defined(_WIN32) //&& defined(_MSC_VER)
 /* #include "test_windirent.h" */
 
 /*
@@ -2514,7 +2514,7 @@ static int writeFile(
 
   if( mtime>=0 ){
 #if defined(_WIN32)
-#if !SQLITE_OS_WINRT
+#if 0 && !SQLITE_OS_WINRT
     /* Windows */
     FILETIME lastAccess;
     FILETIME lastWrite;
@@ -16554,13 +16554,13 @@ static int optionMatch(const char *zStr, const char *zOpt){
 */
 int shellDeleteFile(const char *zFilename){
   int rc;
-#ifdef _WIN32
-  wchar_t *z = sqlite3_win32_utf8_to_unicode(zFilename);
-  rc = _wunlink(z);
-  sqlite3_free(z);
-#else
+//#ifdef _WIN32
+//  wchar_t *z = sqlite3_win32_utf8_to_unicode(zFilename);
+//  rc = _wunlink(z);
+//  sqlite3_free(z);
+//#else
   rc = unlink(zFilename);
-#endif
+//#endif
   return rc;
 }
 

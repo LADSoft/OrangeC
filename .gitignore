@@ -113,6 +113,7 @@ src/.vs
 *.tst
 *.err
 *.out
+*.pyc
 src/onm/Debug/*
 src/oimplib/Debug/*
 src/obrc/Debug/*

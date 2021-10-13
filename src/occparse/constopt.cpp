@@ -3760,6 +3760,7 @@ bool msilConstant(EXPRESSION *exp)
             case en_umul:
             case en_div:
             case en_udiv:
+            case en_global:
                 return true;
             default:
                 return isarithmeticconst(exp);

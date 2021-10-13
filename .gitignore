@@ -114,6 +114,7 @@ src/.vs
 *.err
 *.out
 *.pyc
+**/__pycache__/
 src/onm/Debug/*
 src/oimplib/Debug/*
 src/obrc/Debug/*

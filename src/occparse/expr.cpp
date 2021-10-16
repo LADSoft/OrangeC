@@ -2323,7 +2323,7 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
             if (p->tp)
             {
                 if (p->exp && p->exp->type == en_func && p->exp->v.func->sp->sb->parentClass && !p->exp->v.func->ascall &&
-                    !p->exp->v.func->asaddress)
+                    !p->exp->v.func->asaddress && p->exp->v.func->functp)
                 {
                     SYMLIST* hr = basetype(p->exp->v.func->functp)->syms->table[0];
                     while (hr)

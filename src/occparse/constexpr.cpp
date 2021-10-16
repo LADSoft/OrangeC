@@ -815,6 +815,8 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, ArgArray>& a
                     xx->v.sp->sb->constexpression = true;
             }
         }
+        if (!strcmp(func->sp->name, "minmax"))
+            printf("hi");
         optimize_for_constants(&temp1);
         if (temp1->type != en_func || (!hascshim(temp1) && temp1->v.sp != exp->v.sp))
         {
@@ -1032,8 +1034,6 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
                 }
                 break;
             case st_return:
-                if (!strcmp(node->v.func->sp->name, "$bequ"))
-                    printf("hi");
                 if (stmt->select)
                 {
                     if (node->v.func->returnEXP)
@@ -1068,7 +1068,7 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
 }
 bool EvaluateConstexprFunction(EXPRESSION*&node)
 {
-    if (!strcmp(node->v.func->sp->name, "minmax"))
+    if (!strcmp(node->v.func->sp->name, "$bequ"))
         printf("hi");
     if (node->v.func->sp->sb->isConstructor)
     {

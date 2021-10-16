@@ -698,7 +698,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                 sym = exp1->v.sp;
                 sym->sb->constexpression = true;
                 callConstructor(&ctype, exp, funcparams, false, nullptr, true, true, false, false, false, false, true);
-                if ((*exp)->type == en_thisref)
+                if ((*exp)->type == en_thisref && ! (*exp)->left->v.func->sp->sb->constexpression)
                     sym->sb->constexpression = false;
                 PromoteConstructorArgs(funcparams->sp, funcparams);
                 callDestructor(basetype(*tp)->sp, nullptr, &exp1, nullptr, true, false, false, true);

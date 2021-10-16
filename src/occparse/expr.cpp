@@ -6119,7 +6119,7 @@ static LEXLIST* expression_ampersand(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TY
             error(ERR_CANNOT_TAKE_ADDRESS_OF_BIT_FIELD);
         else if (btp->msil)
             error(ERR_MANAGED_OBJECT_NO_ADDRESS);
-        else if (symRef && symRef->v.sp->sb->attribs.inheritable.linkage2 == lk_property)
+        else if (symRef && symRef->type != en_labcon && symRef->v.sp->sb->attribs.inheritable.linkage2 == lk_property)
             errorsym(ERR_CANNOT_TAKE_ADDRESS_OF_PROPERTY, symRef->v.sp);
         else if (inreg(*exp, true))
             error(ERR_CANNOT_TAKE_ADDRESS_OF_REGISTER);

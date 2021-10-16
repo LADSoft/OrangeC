@@ -30,16 +30,17 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 */
-#if defined(__ORANGEC__)
-#define SQLITE_OMIT_VIRTUALTABLE
-long long Int32x32To64(int l, int r)
-{
-    return (long long)l * (long long)r;
-}
-#endif
 #if (defined(_WIN32) || defined(WIN32)) && !defined(_CRT_SECURE_NO_WARNINGS)
 /* This needs to come before any includes for MSVC compiler */
 #define _CRT_SECURE_NO_WARNINGS
+#endif
+
+/*
+** Determine if we are dealing with WinRT, which provides only a subset of
+** the full Win32 API.
+*/
+#if !defined(SQLITE_OS_WINRT)
+# define SQLITE_OS_WINRT 0
 #endif
 
 /*
@@ -154,22 +155,26 @@ typedef unsigned char u8;
 
 
 #if defined(_WIN32) || defined(WIN32)
-# include <io.h>
-# include <fcntl.h>
-# define isatty(h) _isatty(h)
-# ifndef access
-#  define access(f,m) _access((f),(m))
+# if SQLITE_OS_WINRT
+#  define SQLITE_OMIT_POPEN 1
+# else
+#  include <io.h>
+#  include <fcntl.h>
+#  define isatty(h) _isatty(h)
+#  ifndef access
+#   define access(f,m) _access((f),(m))
+#  endif
+#  ifndef unlink
+#   define unlink _unlink
+#  endif
+#  ifndef strdup
+#   define strdup _strdup
+#  endif
+#  undef popen
+#  define popen _popen
+#  undef pclose
+#  define pclose _pclose
 # endif
-# ifndef unlink
-#  define unlink _unlink
-# endif
-# ifndef strdup
-#  define strdup _strdup
-# endif
-# undef popen
-# define popen _popen
-# undef pclose
-# define pclose _pclose
 #else
  /* Make sure isatty() has a prototype. */
  extern int isatty(int);
@@ -198,6 +203,9 @@ typedef unsigned char u8;
 #define ToLower(X)  (char)tolower((unsigned char)X)
 
 #if defined(_WIN32) || defined(WIN32)
+#if SQLITE_OS_WINRT
+#include <intrin.h>
+#endif
 #include <windows.h>
 
 /* string conversion routines only needed on Win32 */
@@ -213,7 +221,7 @@ extern LPWSTR sqlite3_win32_utf8_to_unicode(const char *zText);
 ** rendering quoted strings that contain \n characters).  The following
 ** routines take care of that.
 */
-#if defined(_WIN32) || defined(WIN32)
+#if (defined(_WIN32) || defined(WIN32)) && !SQLITE_OS_WINRT
 static void setBinaryMode(FILE *file, int isOutput){
   if( isOutput ) fflush(file);
   _setmode(_fileno(file), _O_BINARY);
@@ -236,6 +244,7 @@ static sqlite3_int64 timeOfDay(void){
   static sqlite3_vfs *clockVfs = 0;
   sqlite3_int64 t;
   if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
+  if( clockVfs==0 ) return 0;  /* Never actually happens */
   if( clockVfs->iVersion>=2 && clockVfs->xCurrentTimeInt64!=0 ){
     clockVfs->xCurrentTimeInt64(clockVfs, &t);
   }else{
@@ -317,6 +326,7 @@ static int hasTimer(void){
   if( getProcessTimesAddr ){
     return 1;
   } else {
+#if !SQLITE_OS_WINRT
     /* GetProcessTimes() isn't supported in WIN95 and some other Windows
     ** versions. See if the version we are running on has it, and if it
     ** does, save off a pointer to it and the current process handle.
@@ -333,6 +343,7 @@ static int hasTimer(void){
         FreeLibrary(hinstLib);
       }
     }
+#endif
   }
   return 0;
 }
@@ -422,6 +433,15 @@ static sqlite3 *globalDb = 0;
 */
 static volatile int seenInterrupt = 0;
 
+#ifdef SQLITE_DEBUG
+/*
+** Out-of-memory simulator variables
+*/
+static unsigned int oomCounter = 0;    /* Simulate OOM when equals 1 */
+static unsigned int oomRepeat = 0;     /* Number of OOMs in a row */
+static void*(*defaultMalloc)(int) = 0; /* The low-level malloc routine */
+#endif /* SQLITE_DEBUG */
+
 /*
 ** This is the name of our program. It is set in main(), used
 ** in a number of other places, mostly for error messages.
@@ -473,6 +493,49 @@ static void shell_out_of_memory(void){
   exit(1);
 }
 
+#ifdef SQLITE_DEBUG
+/* This routine is called when a simulated OOM occurs.  It is broken
+** out as a separate routine to make it easy to set a breakpoint on
+** the OOM
+*/
+void shellOomFault(void){
+  if( oomRepeat>0 ){
+    oomRepeat--;
+  }else{
+    oomCounter--;
+  }
+}
+#endif /* SQLITE_DEBUG */
+
+#ifdef SQLITE_DEBUG
+/* This routine is a replacement malloc() that is used to simulate
+** Out-Of-Memory (OOM) errors for testing purposes.
+*/
+static void *oomMalloc(int nByte){
+  if( oomCounter ){
+    if( oomCounter==1 ){
+      shellOomFault();
+      return 0;
+    }else{
+      oomCounter--;
+    }
+  }
+  return defaultMalloc(nByte);
+}
+#endif /* SQLITE_DEBUG */
+
+#ifdef SQLITE_DEBUG
+/* Register the OOM simulator.  This must occur before any memory
+** allocations */
+static void registerOomSimulator(void){
+  sqlite3_mem_methods mem;
+  sqlite3_config(SQLITE_CONFIG_GETMALLOC, &mem);
+  defaultMalloc = mem.xMalloc;
+  mem.xMalloc = oomMalloc;
+  sqlite3_config(SQLITE_CONFIG_MALLOC, &mem);
+}
+#endif
+
 /*
 ** Write I/O traces to the following stream.
 */
@@ -509,8 +572,6 @@ static void utf8_width_print(FILE *pOut, int w, const char *zUtf){
   int i;
   int n;
   int aw = w<0 ? -w : w;
-  char zBuf[1000];
-  if( aw>(int)sizeof(zBuf)/3 ) aw = (int)sizeof(zBuf)/3;
   for(i=n=0; zUtf[i]; i++){
     if( (zUtf[i]&0xc0)!=0x80 ){
       n++;
@@ -578,6 +639,21 @@ static int strlenChar(const char *z){
   }
   return n;
 }
+
+/*
+** Return true if zFile does not exist or if it is not an ordinary file.
+*/
+#ifdef _WIN32
+# define notNormalFile(X) 0
+#else
+static int notNormalFile(const char *zFile){
+  struct stat x;
+  int rc;
+  memset(&x, 0, sizeof(x));
+  rc = stat(zFile, &x);
+  return rc || !S_ISREG(x.st_mode);
+}
+#endif
 
 /*
 ** This routine reads a line of text from FILE in, stores
@@ -891,7 +967,7 @@ static void shellModuleSchema(
 **    CREATE VIRTUAL TABLE
 **
 ** This UDF is used by the .schema command to insert the schema name of
-** attached databases into the middle of the sqlite_master.sql field.
+** attached databases into the middle of the sqlite_schema.sql field.
 */
 static void shellAddSchemaName(
   sqlite3_context *pCtx,
@@ -956,7 +1032,7 @@ static void shellAddSchemaName(
 #define SQLITE_EXTENSION_INIT1
 #define SQLITE_EXTENSION_INIT2(X) (void)(X)
 
-#if defined(_WIN32) && (defined(_MSC_VER) || defined(__ORANGEC__))
+#if defined(_WIN32) //&& defined(_MSC_VER)
 /************************* Begin test_windirent.h ******************/
 /*
 ** 2015 November 30
@@ -973,8 +1049,9 @@ static void shellAddSchemaName(
 ** POSIX functions on Win32 using the MSVCRT.
 */
 
-#if defined(_WIN32) && (defined(_MSC_VER) || defined(__ORANGEC__)) && !defined(SQLITE_WINDIRENT_H)
+#if defined(_WIN32) /*&& defined(_MSC_VER)*/ && !defined(SQLITE_WINDIRENT_H)
 #define SQLITE_WINDIRENT_H
+#include <stdint.h>
 
 /*
 ** We need several data types from the Windows SDK header.
@@ -1003,9 +1080,7 @@ static void shellAddSchemaName(
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef __ORANGEC__
-#include <stdint.h>
-#endif
+
 /*
 ** We may need several defines that should have been in "sys/stat.h".
 */
@@ -1028,19 +1103,16 @@ static void shellAddSchemaName(
 
 #ifndef MODE_T_DEFINED
   #define MODE_T_DEFINED
-#ifndef __ORANGEC__
   typedef unsigned short mode_t;
 #endif
-#endif
+
 /*
 ** We may need to provide the "ino_t" type.
 */
 
 #ifndef INO_T_DEFINED
   #define INO_T_DEFINED
-#ifndef __ORANGEC__
   typedef unsigned short ino_t;
-#endif
 #endif
 
 /*
@@ -1081,7 +1153,6 @@ struct DIRENT {
   char d_name[NAME_MAX + 1]; /* Name within the directory. */
 };
 #endif
-
 #ifndef DIR_DEFINED
 #define DIR_DEFINED
 typedef struct DIR DIR;
@@ -1140,7 +1211,7 @@ extern INT closedir(LPDIR dirp);
 ** POSIX functions on Win32 using the MSVCRT.
 */
 
-#if defined(_WIN32) && defined(_MSC_VER)
+#if defined(_WIN32) //&& defined(_MSC_VER)
 /* #include "test_windirent.h" */
 
 /*
@@ -1354,7 +1425,10 @@ SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
 #include <stdarg.h>
+
+#ifndef SQLITE_AMALGAMATION
 /* typedef sqlite3_uint64 u64; */
+#endif /* SQLITE_AMALGAMATION */
 
 /******************************************************************************
 ** The Hash Engine
@@ -1944,9 +2018,11 @@ static void sha3QueryFunc(
     }
     nCol = sqlite3_column_count(pStmt);
     z = sqlite3_sql(pStmt);
-    n = (int)strlen(z);
-    hash_step_vformat(&cx,"S%d:",n);
-    SHA3Update(&cx,(unsigned char*)z,n);
+    if( z ){
+      n = (int)strlen(z);
+      hash_step_vformat(&cx,"S%d:",n);
+      SHA3Update(&cx,(unsigned char*)z,n);
+    }
 
     /* Compute a hash over the result of the query */
     while( SQLITE_ROW==sqlite3_step(pStmt) ){
@@ -2019,19 +2095,23 @@ int sqlite3_shathree_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "sha3", 1, SQLITE_UTF8, 0,
-                               sha3Func, 0, 0);
+  rc = sqlite3_create_function(db, "sha3", 1,
+                      SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC,
+                      0, sha3Func, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "sha3", 2, SQLITE_UTF8, 0,
-                                 sha3Func, 0, 0);
+    rc = sqlite3_create_function(db, "sha3", 2,
+                      SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC,
+                      0, sha3Func, 0, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "sha3_query", 1, SQLITE_UTF8, 0,
-                                 sha3QueryFunc, 0, 0);
+    rc = sqlite3_create_function(db, "sha3_query", 1,
+                      SQLITE_UTF8 | SQLITE_DIRECTONLY,
+                      0, sha3QueryFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "sha3_query", 2, SQLITE_UTF8, 0,
-                                 sha3QueryFunc, 0, 0);
+    rc = sqlite3_create_function(db, "sha3_query", 2,
+                      SQLITE_UTF8 | SQLITE_DIRECTONLY,
+                      0, sha3QueryFunc, 0, 0);
   }
   return rc;
 }
@@ -2434,6 +2514,7 @@ static int writeFile(
 
   if( mtime>=0 ){
 #if defined(_WIN32)
+#if 0 && !SQLITE_OS_WINRT
     /* Windows */
     FILETIME lastAccess;
     FILETIME lastWrite;
@@ -2464,6 +2545,7 @@ static int writeFile(
     }else{
       return 1;
     }
+#endif
 #elif defined(AT_FDCWD) && 0 /* utimensat() is not universally available */
     /* Recent unix */
     struct timespec times[2];
@@ -2625,6 +2707,7 @@ static int fsdirConnect(
     pNew = (fsdir_tab*)sqlite3_malloc( sizeof(*pNew) );
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
+    sqlite3_vtab_config(db, SQLITE_VTAB_DIRECTONLY);
   }
   *ppVtab = (sqlite3_vtab*)pNew;
   return rc;
@@ -3018,10 +3101,12 @@ int sqlite3_fileio_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "readfile", 1, SQLITE_UTF8, 0,
+  rc = sqlite3_create_function(db, "readfile", 1, 
+                               SQLITE_UTF8|SQLITE_DIRECTONLY, 0,
                                readfileFunc, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "writefile", -1, SQLITE_UTF8, 0,
+    rc = sqlite3_create_function(db, "writefile", -1,
+                                 SQLITE_UTF8|SQLITE_DIRECTONLY, 0,
                                  writefileFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){
@@ -3156,6 +3241,7 @@ static int completionConnect(
 #define COMPLETION_COLUMN_WHOLELINE 2  /* Entire line seen so far */
 #define COMPLETION_COLUMN_PHASE     3  /* ePhase - used for debugging only */
 
+  sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
   rc = sqlite3_declare_vtab(db,
       "CREATE TABLE x("
       "  candidate TEXT,"
@@ -3263,7 +3349,7 @@ static int completionNext(sqlite3_vtab_cursor *cur){
             const char *zDb = (const char*)sqlite3_column_text(pS2, 1);
             zSql = sqlite3_mprintf(
                "%z%s"
-               "SELECT name FROM \"%w\".sqlite_master",
+               "SELECT name FROM \"%w\".sqlite_schema",
                zSql, zSep, zDb
             );
             if( zSql==0 ) return SQLITE_NOMEM;
@@ -3287,7 +3373,7 @@ static int completionNext(sqlite3_vtab_cursor *cur){
             const char *zDb = (const char*)sqlite3_column_text(pS2, 1);
             zSql = sqlite3_mprintf(
                "%z%s"
-               "SELECT pti.name FROM \"%w\".sqlite_master AS sm"
+               "SELECT pti.name FROM \"%w\".sqlite_schema AS sm"
                        " JOIN pragma_table_info(sm.name,%Q) AS pti"
                " WHERE sm.type='table'",
                zSql, zSep, zDb, zDb
@@ -3555,24 +3641,23 @@ int sqlite3_completion_init(
 ** appended onto the end of some other file, such as an executable.
 **
 ** A special record must appear at the end of the file that identifies the
-** file as an appended database and provides an offset to page 1.  For
-** best performance page 1 should be located at a disk page boundary, though
-** that is not required.
+** file as an appended database and provides the offset to the first page
+** of the exposed content. (Or, it is the length of the content prefix.)
+** For best performance page 1 should be located at a disk page boundary,
+** though that is not required.
 **
 ** When opening a database using this VFS, the connection might treat
-** the file as an ordinary SQLite database, or it might treat is as a
-** database appended onto some other file.  Here are the rules:
+** the file as an ordinary SQLite database, or it might treat it as a
+** database appended onto some other file.  The decision is made by
+** applying the following rules in order:
 **
-**  (1)  When opening a new empty file, that file is treated as an ordinary
-**       database.
+**  (1)  An empty file is an ordinary database.
 **
-**  (2)  When opening a file that begins with the standard SQLite prefix
-**       string "SQLite format 3", that file is treated as an ordinary
-**       database.
+**  (2)  If the file ends with the appendvfs trailer string
+**       "Start-Of-SQLite3-NNNNNNNN" that file is an appended database.
 **
-**  (3)  When opening a file that ends with the appendvfs trailer string
-**       "Start-Of-SQLite3-NNNNNNNN" that file is treated as an appended
-**       database.
+**  (3)  If the file begins with the standard SQLite prefix string
+**       "SQLite format 3", that file is an ordinary database.
 **
 **  (4)  If none of the above apply and the SQLITE_OPEN_CREATE flag is
 **       set, then a new database is appended to the already existing file.
@@ -3580,13 +3665,13 @@ int sqlite3_completion_init(
 **  (5)  Otherwise, SQLITE_CANTOPEN is returned.
 **
 ** To avoid unnecessary complications with the PENDING_BYTE, the size of
-** the file containing the database is limited to 1GB.  This VFS will refuse
-** to read or write past the 1GB mark.  This restriction might be lifted in
-** future versions.  For now, if you need a large database, then keep the
-** database in a separate file.
+** the file containing the database is limited to 1GiB. (1073741824 bytes)
+** This VFS will not read or write past the 1GiB mark.  This restriction
+** might be lifted in future versions.  For now, if you need a larger
+** database, then keep it in a separate file.
 **
-** If the file being opened is not an appended database, then this shim is
-** a pass-through into the default underlying VFS.
+** If the file being opened is a plain database (not an appended one), then
+** this shim is a pass-through into the default underlying VFS. (rule 3)
 **/
 /* #include "sqlite3ext.h" */
 SQLITE_EXTENSION_INIT1
@@ -3599,17 +3684,27 @@ SQLITE_EXTENSION_INIT1
 **     123456789 123456789 12345
 **
 ** The NNNNNNNN represents a 64-bit big-endian unsigned integer which is
-** the offset to page 1.
+** the offset to page 1, and also the length of the prefix content.
 */
 #define APND_MARK_PREFIX     "Start-Of-SQLite3-"
 #define APND_MARK_PREFIX_SZ  17
-#define APND_MARK_SIZE       25
+#define APND_MARK_FOS_SZ      8
+#define APND_MARK_SIZE       (APND_MARK_PREFIX_SZ+APND_MARK_FOS_SZ)
 
 /*
 ** Maximum size of the combined prefix + database + append-mark.  This
 ** must be less than 0x40000000 to avoid locking issues on Windows.
 */
-#define APND_MAX_SIZE  (65536*15259)
+#define APND_MAX_SIZE  (0x40000000)
+
+/*
+** Try to align the database to an even multiple of APND_ROUNDUP bytes.
+*/
+#ifndef APND_ROUNDUP
+#define APND_ROUNDUP 4096
+#endif
+#define APND_ALIGN_MASK         ((sqlite3_int64)(APND_ROUNDUP-1))
+#define APND_START_ROUNDUP(fsz) (((fsz)+APND_ALIGN_MASK) & ~APND_ALIGN_MASK)
 
 /*
 ** Forward declaration of objects used by this utility
@@ -3623,11 +3718,45 @@ typedef struct ApndFile ApndFile;
 #define ORIGVFS(p)  ((sqlite3_vfs*)((p)->pAppData))
 #define ORIGFILE(p) ((sqlite3_file*)(((ApndFile*)(p))+1))
 
-/* An open file */
+/* An open appendvfs file
+**
+** An instance of this structure describes the appended database file.
+** A separate sqlite3_file object is always appended. The appended
+** sqlite3_file object (which can be accessed using ORIGFILE()) describes
+** the entire file, including the prefix, the database, and the
+** append-mark.
+**
+** The structure of an AppendVFS database is like this:
+**
+**   +-------------+---------+----------+-------------+
+**   | prefix-file | padding | database | append-mark |
+**   +-------------+---------+----------+-------------+
+**                           ^          ^
+**                           |          |
+**                         iPgOne      iMark
+**
+**
+** "prefix file" -  file onto which the database has been appended.
+** "padding"     -  zero or more bytes inserted so that "database"
+**                  starts on an APND_ROUNDUP boundary
+** "database"    -  The SQLite database file
+** "append-mark" -  The 25-byte "Start-Of-SQLite3-NNNNNNNN" that indicates
+**                  the offset from the start of prefix-file to the start
+**                  of "database".
+**
+** The size of the database is iMark - iPgOne.
+**
+** The NNNNNNNN in the "Start-Of-SQLite3-NNNNNNNN" suffix is the value
+** of iPgOne stored as a big-ending 64-bit integer.
+**
+** iMark will be the size of the underlying file minus 25 (APND_MARKSIZE).
+** Or, iMark is -1 to indicate that it has not yet been written.
+*/
 struct ApndFile {
-  sqlite3_file base;              /* IO methods */
-  sqlite3_int64 iPgOne;           /* File offset to page 1 */
-  sqlite3_int64 iMark;            /* Start of the append-mark */
+  sqlite3_file base;        /* Subclass.  MUST BE FIRST! */
+  sqlite3_int64 iPgOne;     /* Offset to the start of the database */
+  sqlite3_int64 iMark;      /* Offset of the append mark.  -1 if unwritten */
+  /* Always followed by another sqlite3_file that describes the whole file */
 };
 
 /*
@@ -3719,8 +3848,6 @@ static const sqlite3_io_methods apnd_io_methods = {
   apndUnfetch                     /* xUnfetch */
 };
 
-
-
 /*
 ** Close an apnd-file.
 */
@@ -3738,22 +3865,37 @@ static int apndRead(
   int iAmt, 
   sqlite_int64 iOfst
 ){
-  ApndFile *p = (ApndFile *)pFile;
+  ApndFile *paf = (ApndFile *)pFile;
   pFile = ORIGFILE(pFile);
-  return pFile->pMethods->xRead(pFile, zBuf, iAmt, iOfst+p->iPgOne);
+  return pFile->pMethods->xRead(pFile, zBuf, iAmt, paf->iPgOne+iOfst);
 }
 
 /*
-** Add the append-mark onto the end of the file.
+** Add the append-mark onto what should become the end of the file.
+*  If and only if this succeeds, internal ApndFile.iMark is updated.
+*  Parameter iWriteEnd is the appendvfs-relative offset of the new mark.
 */
-static int apndWriteMark(ApndFile *p, sqlite3_file *pFile){
-  int i;
+static int apndWriteMark(
+  ApndFile *paf,
+  sqlite3_file *pFile,
+  sqlite_int64 iWriteEnd
+){
+  sqlite_int64 iPgOne = paf->iPgOne;
   unsigned char a[APND_MARK_SIZE];
+  int i = APND_MARK_FOS_SZ;
+  int rc;
+  assert(pFile == ORIGFILE(paf));
   memcpy(a, APND_MARK_PREFIX, APND_MARK_PREFIX_SZ);
-  for(i=0; i<8; i++){
-    a[APND_MARK_PREFIX_SZ+i] = (p->iPgOne >> (56 - i*8)) & 0xff;
+  while( --i >= 0 ){
+    a[APND_MARK_PREFIX_SZ+i] = (unsigned char)(iPgOne & 0xff);
+    iPgOne >>= 8;
   }
-  return pFile->pMethods->xWrite(pFile, a, APND_MARK_SIZE, p->iMark);
+  iWriteEnd += paf->iPgOne;
+  if( SQLITE_OK==(rc = pFile->pMethods->xWrite
+                  (pFile, a, APND_MARK_SIZE, iWriteEnd)) ){
+    paf->iMark = iWriteEnd;
+  }
+  return rc;
 }
 
 /*
@@ -3765,38 +3907,28 @@ static int apndWrite(
   int iAmt,
   sqlite_int64 iOfst
 ){
-  int rc;
-  ApndFile *p = (ApndFile *)pFile;
+  ApndFile *paf = (ApndFile *)pFile;
+  sqlite_int64 iWriteEnd = iOfst + iAmt;
+  if( iWriteEnd>=APND_MAX_SIZE ) return SQLITE_FULL;
   pFile = ORIGFILE(pFile);
-  if( iOfst+iAmt>=APND_MAX_SIZE ) return SQLITE_FULL;
-  rc = pFile->pMethods->xWrite(pFile, zBuf, iAmt, iOfst+p->iPgOne);
-  if( rc==SQLITE_OK &&  iOfst + iAmt + p->iPgOne > p->iMark ){
-    sqlite3_int64 sz = 0;
-    rc = pFile->pMethods->xFileSize(pFile, &sz);
-    if( rc==SQLITE_OK ){
-      p->iMark = sz - APND_MARK_SIZE;
-      if( iOfst + iAmt + p->iPgOne > p->iMark ){
-        p->iMark = p->iPgOne + iOfst + iAmt;
-        rc = apndWriteMark(p, pFile);
-      }
-    }
+  /* If append-mark is absent or will be overwritten, write it. */
+  if( paf->iMark < 0 || paf->iPgOne + iWriteEnd > paf->iMark ){
+    int rc = apndWriteMark(paf, pFile, iWriteEnd);
+    if( SQLITE_OK!=rc ) return rc;
   }
-  return rc;
+  return pFile->pMethods->xWrite(pFile, zBuf, iAmt, paf->iPgOne+iOfst);
 }
 
 /*
 ** Truncate an apnd-file.
 */
 static int apndTruncate(sqlite3_file *pFile, sqlite_int64 size){
-  int rc;
-  ApndFile *p = (ApndFile *)pFile;
+  ApndFile *paf = (ApndFile *)pFile;
   pFile = ORIGFILE(pFile);
-  rc = pFile->pMethods->xTruncate(pFile, size+p->iPgOne+APND_MARK_SIZE);
-  if( rc==SQLITE_OK ){
-    p->iMark = p->iPgOne+size;
-    rc = apndWriteMark(p, pFile);
-  }
-  return rc;
+  /* The append mark goes out first so truncate failure does not lose it. */
+  if( SQLITE_OK!=apndWriteMark(paf, pFile, size) ) return SQLITE_IOERR;
+  /* Truncate underlying file just past append mark */
+  return pFile->pMethods->xTruncate(pFile, paf->iMark+APND_MARK_SIZE);
 }
 
 /*
@@ -3809,16 +3941,12 @@ static int apndSync(sqlite3_file *pFile, int flags){
 
 /*
 ** Return the current file-size of an apnd-file.
+** If the append mark is not yet there, the file-size is 0.
 */
 static int apndFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
-  ApndFile *p = (ApndFile *)pFile;
-  int rc;
-  pFile = ORIGFILE(p);
-  rc = pFile->pMethods->xFileSize(pFile, pSize);
-  if( rc==SQLITE_OK && p->iPgOne ){
-    *pSize -= p->iPgOne + APND_MARK_SIZE;
-  }
-  return rc;
+  ApndFile *paf = (ApndFile *)pFile;
+  *pSize = ( paf->iMark >= 0 )? (paf->iMark - paf->iPgOne) : 0;
+  return SQLITE_OK;
 }
 
 /*
@@ -3849,12 +3977,13 @@ static int apndCheckReservedLock(sqlite3_file *pFile, int *pResOut){
 ** File control method. For custom operations on an apnd-file.
 */
 static int apndFileControl(sqlite3_file *pFile, int op, void *pArg){
-  ApndFile *p = (ApndFile *)pFile;
+  ApndFile *paf = (ApndFile *)pFile;
   int rc;
   pFile = ORIGFILE(pFile);
+  if( op==SQLITE_FCNTL_SIZE_HINT ) *(sqlite3_int64*)pArg += paf->iPgOne;
   rc = pFile->pMethods->xFileControl(pFile, op, pArg);
   if( rc==SQLITE_OK && op==SQLITE_FCNTL_VFSNAME ){
-    *(char**)pArg = sqlite3_mprintf("apnd(%lld)/%z", p->iPgOne, *(char**)pArg);
+    *(char**)pArg = sqlite3_mprintf("apnd(%lld)/%z", paf->iPgOne,*(char**)pArg);
   }
   return rc;
 }
@@ -3913,6 +4042,9 @@ static int apndFetch(
   void **pp
 ){
   ApndFile *p = (ApndFile *)pFile;
+  if( p->iMark < 0 || iOfst+iAmt > p->iMark ){
+    return SQLITE_IOERR; /* Cannot read what is not yet there. */
+  }
   pFile = ORIGFILE(pFile);
   return pFile->pMethods->xFetch(pFile, iOfst+p->iPgOne, iAmt, pp);
 }
@@ -3925,94 +4057,154 @@ static int apndUnfetch(sqlite3_file *pFile, sqlite3_int64 iOfst, void *pPage){
 }
 
 /*
-** Check to see if the file is an ordinary SQLite database file.
-*/
-static int apndIsOrdinaryDatabaseFile(sqlite3_int64 sz, sqlite3_file *pFile){
-  int rc;
-  char zHdr[16];
-  static const char aSqliteHdr[] = "SQLite format 3";
-  if( sz<512 ) return 0;
-  rc = pFile->pMethods->xRead(pFile, zHdr, sizeof(zHdr), 0);
-  if( rc ) return 0;
-  return memcmp(zHdr, aSqliteHdr, sizeof(zHdr))==0;
-}
-
-/*
 ** Try to read the append-mark off the end of a file.  Return the
-** start of the appended database if the append-mark is present.  If
-** there is no append-mark, return -1;
+** start of the appended database if the append-mark is present.
+** If there is no valid append-mark, return -1;
+**
+** An append-mark is only valid if the NNNNNNNN start-of-database offset
+** indicates that the appended database contains at least one page.  The
+** start-of-database value must be a multiple of 512.
 */
 static sqlite3_int64 apndReadMark(sqlite3_int64 sz, sqlite3_file *pFile){
   int rc, i;
   sqlite3_int64 iMark;
+  int msbs = 8 * (APND_MARK_FOS_SZ-1);
   unsigned char a[APND_MARK_SIZE];
 
-  if( sz<=APND_MARK_SIZE ) return -1;
+  if( APND_MARK_SIZE!=(sz & 0x1ff) ) return -1;
   rc = pFile->pMethods->xRead(pFile, a, APND_MARK_SIZE, sz-APND_MARK_SIZE);
   if( rc ) return -1;
   if( memcmp(a, APND_MARK_PREFIX, APND_MARK_PREFIX_SZ)!=0 ) return -1;
-  iMark = ((sqlite3_int64)(a[APND_MARK_PREFIX_SZ]&0x7f))<<56;
-  for(i=1; i<8; i++){    
-    iMark += (sqlite3_int64)a[APND_MARK_PREFIX_SZ+i]<<(56-8*i);
+  iMark = ((sqlite3_int64)(a[APND_MARK_PREFIX_SZ] & 0x7f)) << msbs;
+  for(i=1; i<8; i++){
+    msbs -= 8;
+    iMark |= (sqlite3_int64)a[APND_MARK_PREFIX_SZ+i]<<msbs;
   }
+  if( iMark > (sz - APND_MARK_SIZE - 512) ) return -1;
+  if( iMark & 0x1ff ) return -1;
   return iMark;
+}
+
+static const char apvfsSqliteHdr[] = "SQLite format 3";
+/*
+** Check to see if the file is an appendvfs SQLite database file.
+** Return true iff it is such. Parameter sz is the file's size.
+*/
+static int apndIsAppendvfsDatabase(sqlite3_int64 sz, sqlite3_file *pFile){
+  int rc;
+  char zHdr[16];
+  sqlite3_int64 iMark = apndReadMark(sz, pFile);
+  if( iMark>=0 ){
+    /* If file has the correct end-marker, the expected odd size, and the
+    ** SQLite DB type marker where the end-marker puts it, then it
+    ** is an appendvfs database.
+    */
+    rc = pFile->pMethods->xRead(pFile, zHdr, sizeof(zHdr), iMark);
+    if( SQLITE_OK==rc
+     && memcmp(zHdr, apvfsSqliteHdr, sizeof(zHdr))==0
+     && (sz & 0x1ff) == APND_MARK_SIZE
+     && sz>=512+APND_MARK_SIZE
+    ){
+      return 1; /* It's an appendvfs database */
+    }
+  }
+  return 0;
+}
+
+/*
+** Check to see if the file is an ordinary SQLite database file.
+** Return true iff so. Parameter sz is the file's size.
+*/
+static int apndIsOrdinaryDatabaseFile(sqlite3_int64 sz, sqlite3_file *pFile){
+  char zHdr[16];
+  if( apndIsAppendvfsDatabase(sz, pFile) /* rule 2 */
+   || (sz & 0x1ff) != 0
+   || SQLITE_OK!=pFile->pMethods->xRead(pFile, zHdr, sizeof(zHdr), 0)
+   || memcmp(zHdr, apvfsSqliteHdr, sizeof(zHdr))!=0
+  ){
+    return 0;
+  }else{
+    return 1;
+  }
 }
 
 /*
 ** Open an apnd file handle.
 */
 static int apndOpen(
-  sqlite3_vfs *pVfs,
+  sqlite3_vfs *pApndVfs,
   const char *zName,
   sqlite3_file *pFile,
   int flags,
   int *pOutFlags
 ){
-  ApndFile *p;
-  sqlite3_file *pSubFile;
-  sqlite3_vfs *pSubVfs;
+  ApndFile *pApndFile = (ApndFile*)pFile;
+  sqlite3_file *pBaseFile = ORIGFILE(pFile);
+  sqlite3_vfs *pBaseVfs = ORIGVFS(pApndVfs);
   int rc;
-  sqlite3_int64 sz;
-  pSubVfs = ORIGVFS(pVfs);
+  sqlite3_int64 sz = 0;
   if( (flags & SQLITE_OPEN_MAIN_DB)==0 ){
-    return pSubVfs->xOpen(pSubVfs, zName, pFile, flags, pOutFlags);
+    /* The appendvfs is not to be used for transient or temporary databases.
+    ** Just use the base VFS open to initialize the given file object and
+    ** open the underlying file. (Appendvfs is then unused for this file.)
+    */
+    return pBaseVfs->xOpen(pBaseVfs, zName, pFile, flags, pOutFlags);
   }
-  p = (ApndFile*)pFile;
-  memset(p, 0, sizeof(*p));
-  pSubFile = ORIGFILE(pFile);
-  p->base.pMethods = &apnd_io_methods;
-  rc = pSubVfs->xOpen(pSubVfs, zName, pSubFile, flags, pOutFlags);
-  if( rc ) goto apnd_open_done;
-  rc = pSubFile->pMethods->xFileSize(pSubFile, &sz);
+  memset(pApndFile, 0, sizeof(ApndFile));
+  pFile->pMethods = &apnd_io_methods;
+  pApndFile->iMark = -1;    /* Append mark not yet written */
+
+  rc = pBaseVfs->xOpen(pBaseVfs, zName, pBaseFile, flags, pOutFlags);
+  if( rc==SQLITE_OK ){
+    rc = pBaseFile->pMethods->xFileSize(pBaseFile, &sz);
+    if( rc ){
+      pBaseFile->pMethods->xClose(pBaseFile);
+    }
+  }
   if( rc ){
-    pSubFile->pMethods->xClose(pSubFile);
-    goto apnd_open_done;
+    pFile->pMethods = 0;
+    return rc;
   }
-  if( apndIsOrdinaryDatabaseFile(sz, pSubFile) ){
-    memmove(pFile, pSubFile, pSubVfs->szOsFile);
+  if( apndIsOrdinaryDatabaseFile(sz, pBaseFile) ){
+    /* The file being opened appears to be just an ordinary DB. Copy
+    ** the base dispatch-table so this instance mimics the base VFS. 
+    */
+    memmove(pApndFile, pBaseFile, pBaseVfs->szOsFile);
     return SQLITE_OK;
   }
-  p->iMark = 0;
-  p->iPgOne = apndReadMark(sz, pFile);
-  if( p->iPgOne>0 ){
+  pApndFile->iPgOne = apndReadMark(sz, pFile);
+  if( pApndFile->iPgOne>=0 ){
+    pApndFile->iMark = sz - APND_MARK_SIZE; /* Append mark found */
     return SQLITE_OK;
   }
   if( (flags & SQLITE_OPEN_CREATE)==0 ){
-    pSubFile->pMethods->xClose(pSubFile);
+    pBaseFile->pMethods->xClose(pBaseFile);
     rc = SQLITE_CANTOPEN;
+    pFile->pMethods = 0;
+  }else{
+    /* Round newly added appendvfs location to #define'd page boundary. 
+    ** Note that nothing has yet been written to the underlying file.
+    ** The append mark will be written along with first content write.
+    ** Until then, paf->iMark value indicates it is not yet written.
+    */
+    pApndFile->iPgOne = APND_START_ROUNDUP(sz);
   }
-  p->iPgOne = (sz+0xfff) & ~(sqlite3_int64)0xfff;
-apnd_open_done:
-  if( rc ) pFile->pMethods = 0;
   return rc;
+}
+
+/*
+** Delete an apnd file.
+** For an appendvfs, this could mean delete the appendvfs portion,
+** leaving the appendee as it was before it gained an appendvfs.
+** For now, this code deletes the underlying file too.
+*/
+static int apndDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
+  return ORIGVFS(pVfs)->xDelete(ORIGVFS(pVfs), zPath, dirSync);
 }
 
 /*
 ** All other VFS methods are pass-thrus.
 */
-static int apndDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
-  return ORIGVFS(pVfs)->xDelete(ORIGVFS(pVfs), zPath, dirSync);
-}
 static int apndAccess(
   sqlite3_vfs *pVfs, 
   const char *zPath, 
@@ -4092,6 +4284,7 @@ int sqlite3_appendvfs_init(
   (void)pzErrMsg;
   (void)db;
   pOrig = sqlite3_vfs_find(0);
+  if( pOrig==0 ) return SQLITE_ERROR;
   apnd_vfs.iVersion = pOrig->iVersion;
   apnd_vfs.pAppData = pOrig;
   apnd_vfs.szOsFile = pOrig->szOsFile + sizeof(ApndFile);
@@ -4217,6 +4410,2253 @@ int sqlite3MemTraceDeactivate(void){
 }
 
 /************************* End ../ext/misc/memtrace.c ********************/
+/************************* Begin ../ext/misc/uint.c ******************/
+/*
+** 2020-04-14
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+******************************************************************************
+**
+** This SQLite extension implements the UINT collating sequence.
+**
+** UINT works like BINARY for text, except that embedded strings
+** of digits compare in numeric order.
+**
+**     *   Leading zeros are handled properly, in the sense that
+**         they do not mess of the maginitude comparison of embedded
+**         strings of digits.  "x00123y" is equal to "x123y".
+**
+**     *   Only unsigned integers are recognized.  Plus and minus
+**         signs are ignored.  Decimal points and exponential notation
+**         are ignored.
+**
+**     *   Embedded integers can be of arbitrary length.  Comparison
+**         is *not* limited integers that can be expressed as a
+**         64-bit machine integer.
+*/
+/* #include "sqlite3ext.h" */
+SQLITE_EXTENSION_INIT1
+#include <assert.h>
+#include <string.h>
+#include <ctype.h>
+
+/*
+** Compare text in lexicographic order, except strings of digits
+** compare in numeric order.
+*/
+static int uintCollFunc(
+  void *notUsed,
+  int nKey1, const void *pKey1,
+  int nKey2, const void *pKey2
+){
+  const unsigned char *zA = (const unsigned char*)pKey1;
+  const unsigned char *zB = (const unsigned char*)pKey2;
+  int i=0, j=0, x;
+  (void)notUsed;
+  while( i<nKey1 && j<nKey2 ){
+    x = zA[i] - zB[j];
+    if( isdigit(zA[i]) ){
+      int k;
+      if( !isdigit(zB[j]) ) return x;
+      while( i<nKey1 && zA[i]=='0' ){ i++; }
+      while( j<nKey2 && zB[j]=='0' ){ j++; }
+      k = 0;
+      while( i+k<nKey1 && isdigit(zA[i+k])
+             && j+k<nKey2 && isdigit(zB[j+k]) ){
+        k++;
+      }
+      if( i+k<nKey1 && isdigit(zA[i+k]) ){
+        return +1;
+      }else if( j+k<nKey2 && isdigit(zB[j+k]) ){
+        return -1;
+      }else{
+        x = memcmp(zA+i, zB+j, k);
+        if( x ) return x;
+        i += k;
+        j += k;
+      }
+    }else if( x ){
+      return x;
+    }else{
+      i++;
+      j++;
+    }
+  }
+  return (nKey1 - i) - (nKey2 - j);
+}
+
+#ifdef _WIN32
+
+#endif
+int sqlite3_uint_init(
+  sqlite3 *db, 
+  char **pzErrMsg, 
+  const sqlite3_api_routines *pApi
+){
+  SQLITE_EXTENSION_INIT2(pApi);
+  (void)pzErrMsg;  /* Unused parameter */
+  return sqlite3_create_collation(db, "uint", SQLITE_UTF8, 0, uintCollFunc);
+}
+
+/************************* End ../ext/misc/uint.c ********************/
+/************************* Begin ../ext/misc/decimal.c ******************/
+/*
+** 2020-06-22
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+******************************************************************************
+**
+** Routines to implement arbitrary-precision decimal math.
+**
+** The focus here is on simplicity and correctness, not performance.
+*/
+/* #include "sqlite3ext.h" */
+SQLITE_EXTENSION_INIT1
+#include <assert.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+/* Mark a function parameter as unused, to suppress nuisance compiler
+** warnings. */
+#ifndef UNUSED_PARAMETER
+# define UNUSED_PARAMETER(X)  (void)(X)
+#endif
+
+
+/* A decimal object */
+typedef struct Decimal Decimal;
+struct Decimal {
+  char sign;        /* 0 for positive, 1 for negative */
+  char oom;         /* True if an OOM is encountered */
+  char isNull;      /* True if holds a NULL rather than a number */
+  char isInit;      /* True upon initialization */
+  int nDigit;       /* Total number of digits */
+  int nFrac;        /* Number of digits to the right of the decimal point */
+  signed char *a;   /* Array of digits.  Most significant first. */
+};
+
+/*
+** Release memory held by a Decimal, but do not free the object itself.
+*/
+static void decimal_clear(Decimal *p){
+  sqlite3_free(p->a);
+}
+
+/*
+** Destroy a Decimal object
+*/
+static void decimal_free(Decimal *p){
+  if( p ){
+    decimal_clear(p);
+    sqlite3_free(p);
+  }
+}
+
+/*
+** Allocate a new Decimal object.  Initialize it to the number given
+** by the input string.
+*/
+static Decimal *decimal_new(
+  sqlite3_context *pCtx,
+  sqlite3_value *pIn,
+  int nAlt,
+  const unsigned char *zAlt
+){
+  Decimal *p;
+  int n, i;
+  const unsigned char *zIn;
+  int iExp = 0;
+  p = sqlite3_malloc( sizeof(*p) );
+  if( p==0 ) goto new_no_mem;
+  p->sign = 0;
+  p->oom = 0;
+  p->isInit = 1;
+  p->isNull = 0;
+  p->nDigit = 0;
+  p->nFrac = 0;
+  if( zAlt ){
+    n = nAlt,
+    zIn = zAlt;
+  }else{
+    if( sqlite3_value_type(pIn)==SQLITE_NULL ){
+      p->a = 0;
+      p->isNull = 1;
+      return p;
+    }
+    n = sqlite3_value_bytes(pIn);
+    zIn = sqlite3_value_text(pIn);
+  }
+  p->a = sqlite3_malloc64( n+1 );
+  if( p->a==0 ) goto new_no_mem;
+  for(i=0; isspace(zIn[i]); i++){}
+  if( zIn[i]=='-' ){
+    p->sign = 1;
+    i++;
+  }else if( zIn[i]=='+' ){
+    i++;
+  }
+  while( i<n && zIn[i]=='0' ) i++;
+  while( i<n ){
+    char c = zIn[i];
+    if( c>='0' && c<='9' ){
+      p->a[p->nDigit++] = c - '0';
+    }else if( c=='.' ){
+      p->nFrac = p->nDigit + 1;
+    }else if( c=='e' || c=='E' ){
+      int j = i+1;
+      int neg = 0;
+      if( j>=n ) break;
+      if( zIn[j]=='-' ){
+        neg = 1;
+        j++;
+      }else if( zIn[j]=='+' ){
+        j++;
+      }
+      while( j<n && iExp<1000000 ){
+        if( zIn[j]>='0' && zIn[j]<='9' ){
+          iExp = iExp*10 + zIn[j] - '0';
+        }
+        j++;
+      }
+      if( neg ) iExp = -iExp;
+      break;
+    }
+    i++;
+  }
+  if( p->nFrac ){
+    p->nFrac = p->nDigit - (p->nFrac - 1);
+  }
+  if( iExp>0 ){
+    if( p->nFrac>0 ){
+      if( iExp<=p->nFrac ){
+        p->nFrac -= iExp;
+        iExp = 0;
+      }else{
+        iExp -= p->nFrac;
+        p->nFrac = 0;
+      }
+    }
+    if( iExp>0 ){   
+      p->a = sqlite3_realloc64(p->a, p->nDigit + iExp + 1 );
+      if( p->a==0 ) goto new_no_mem;
+      memset(p->a+p->nDigit, 0, iExp);
+      p->nDigit += iExp;
+    }
+  }else if( iExp<0 ){
+    int nExtra;
+    iExp = -iExp;
+    nExtra = p->nDigit - p->nFrac - 1;
+    if( nExtra ){
+      if( nExtra>=iExp ){
+        p->nFrac += iExp;
+        iExp  = 0;
+      }else{
+        iExp -= nExtra;
+        p->nFrac = p->nDigit - 1;
+      }
+    }
+    if( iExp>0 ){
+      p->a = sqlite3_realloc64(p->a, p->nDigit + iExp + 1 );
+      if( p->a==0 ) goto new_no_mem;
+      memmove(p->a+iExp, p->a, p->nDigit);
+      memset(p->a, 0, iExp);
+      p->nDigit += iExp;
+      p->nFrac += iExp;
+    }
+  }
+  return p;
+
+new_no_mem:
+  if( pCtx ) sqlite3_result_error_nomem(pCtx);
+  sqlite3_free(p);
+  return 0;
+}
+
+/*
+** Make the given Decimal the result.
+*/
+static void decimal_result(sqlite3_context *pCtx, Decimal *p){
+  char *z;
+  int i, j;
+  int n;
+  if( p==0 || p->oom ){
+    sqlite3_result_error_nomem(pCtx);
+    return;
+  }
+  if( p->isNull ){
+    sqlite3_result_null(pCtx);
+    return;
+  }
+  z = sqlite3_malloc( p->nDigit+4 );
+  if( z==0 ){
+    sqlite3_result_error_nomem(pCtx);
+    return;
+  }
+  i = 0;
+  if( p->nDigit==0 || (p->nDigit==1 && p->a[0]==0) ){
+    p->sign = 0;
+  }
+  if( p->sign ){
+    z[0] = '-';
+    i = 1;
+  }
+  n = p->nDigit - p->nFrac;
+  if( n<=0 ){
+    z[i++] = '0';
+  }
+  j = 0;
+  while( n>1 && p->a[j]==0 ){
+    j++;
+    n--;
+  }
+  while( n>0  ){
+    z[i++] = p->a[j] + '0';
+    j++;
+    n--;
+  }
+  if( p->nFrac ){
+    z[i++] = '.';
+    do{
+      z[i++] = p->a[j] + '0';
+      j++;
+    }while( j<p->nDigit );
+  }
+  z[i] = 0;
+  sqlite3_result_text(pCtx, z, i, sqlite3_free);
+}
+
+/*
+** SQL Function:   decimal(X)
+**
+** Convert input X into decimal and then back into text
+*/
+static void decimalFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  Decimal *p = decimal_new(context, argv[0], 0, 0);
+  UNUSED_PARAMETER(argc);
+  decimal_result(context, p);
+  decimal_free(p);
+}
+
+/*
+** Compare to Decimal objects.  Return negative, 0, or positive if the
+** first object is less than, equal to, or greater than the second.
+**
+** Preconditions for this routine:
+**
+**    pA!=0
+**    pA->isNull==0
+**    pB!=0
+**    pB->isNull==0
+*/
+static int decimal_cmp(const Decimal *pA, const Decimal *pB){
+  int nASig, nBSig, rc, n;
+  if( pA->sign!=pB->sign ){
+    return pA->sign ? -1 : +1;
+  }
+  if( pA->sign ){
+    const Decimal *pTemp = pA;
+    pA = pB;
+    pB = pTemp;
+  }
+  nASig = pA->nDigit - pA->nFrac;
+  nBSig = pB->nDigit - pB->nFrac;
+  if( nASig!=nBSig ){
+    return nASig - nBSig;
+  }
+  n = pA->nDigit;
+  if( n>pB->nDigit ) n = pB->nDigit;
+  rc = memcmp(pA->a, pB->a, n);
+  if( rc==0 ){
+    rc = pA->nDigit - pB->nDigit;
+  }
+  return rc;
+}
+
+/*
+** SQL Function:   decimal_cmp(X, Y)
+**
+** Return negative, zero, or positive if X is less then, equal to, or
+** greater than Y.
+*/
+static void decimalCmpFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  Decimal *pA = 0, *pB = 0;
+  int rc;
+
+  UNUSED_PARAMETER(argc);
+  pA = decimal_new(context, argv[0], 0, 0);
+  if( pA==0 || pA->isNull ) goto cmp_done;
+  pB = decimal_new(context, argv[1], 0, 0);
+  if( pB==0 || pB->isNull ) goto cmp_done;
+  rc = decimal_cmp(pA, pB);
+  if( rc<0 ) rc = -1;
+  else if( rc>0 ) rc = +1;
+  sqlite3_result_int(context, rc);
+cmp_done:
+  decimal_free(pA);
+  decimal_free(pB);
+}
+
+/*
+** Expand the Decimal so that it has a least nDigit digits and nFrac
+** digits to the right of the decimal point.
+*/
+static void decimal_expand(Decimal *p, int nDigit, int nFrac){
+  int nAddSig;
+  int nAddFrac;
+  if( p==0 ) return;
+  nAddFrac = nFrac - p->nFrac;
+  nAddSig = (nDigit - p->nDigit) - nAddFrac;
+  if( nAddFrac==0 && nAddSig==0 ) return;
+  p->a = sqlite3_realloc64(p->a, nDigit+1);
+  if( p->a==0 ){
+    p->oom = 1;
+    return;
+  }
+  if( nAddSig ){
+    memmove(p->a+nAddSig, p->a, p->nDigit);
+    memset(p->a, 0, nAddSig);
+    p->nDigit += nAddSig;
+  }
+  if( nAddFrac ){
+    memset(p->a+p->nDigit, 0, nAddFrac);
+    p->nDigit += nAddFrac;
+    p->nFrac += nAddFrac;
+  }
+}
+
+/*
+** Add the value pB into pA.
+**
+** Both pA and pB might become denormalized by this routine.
+*/
+static void decimal_add(Decimal *pA, Decimal *pB){
+  int nSig, nFrac, nDigit;
+  int i, rc;
+  if( pA==0 ){
+    return;
+  }
+  if( pA->oom || pB==0 || pB->oom ){
+    pA->oom = 1;
+    return;
+  }
+  if( pA->isNull || pB->isNull ){
+    pA->isNull = 1;
+    return;
+  }
+  nSig = pA->nDigit - pA->nFrac;
+  if( nSig && pA->a[0]==0 ) nSig--;
+  if( nSig<pB->nDigit-pB->nFrac ){
+    nSig = pB->nDigit - pB->nFrac;
+  }
+  nFrac = pA->nFrac;
+  if( nFrac<pB->nFrac ) nFrac = pB->nFrac;
+  nDigit = nSig + nFrac + 1;
+  decimal_expand(pA, nDigit, nFrac);
+  decimal_expand(pB, nDigit, nFrac);
+  if( pA->oom || pB->oom ){
+    pA->oom = 1;
+  }else{
+    if( pA->sign==pB->sign ){
+      int carry = 0;
+      for(i=nDigit-1; i>=0; i--){
+        int x = pA->a[i] + pB->a[i] + carry;
+        if( x>=10 ){
+          carry = 1;
+          pA->a[i] = x - 10;
+        }else{
+          carry = 0;
+          pA->a[i] = x;
+        }
+      }
+    }else{
+      signed char *aA, *aB;
+      int borrow = 0;
+      rc = memcmp(pA->a, pB->a, nDigit);
+      if( rc<0 ){
+        aA = pB->a;
+        aB = pA->a;
+        pA->sign = !pA->sign;
+      }else{
+        aA = pA->a;
+        aB = pB->a;
+      }
+      for(i=nDigit-1; i>=0; i--){
+        int x = aA[i] - aB[i] - borrow;
+        if( x<0 ){
+          pA->a[i] = x+10;
+          borrow = 1;
+        }else{
+          pA->a[i] = x;
+          borrow = 0;
+        }
+      }
+    }
+  }
+}
+
+/*
+** Compare text in decimal order.
+*/
+static int decimalCollFunc(
+  void *notUsed,
+  int nKey1, const void *pKey1,
+  int nKey2, const void *pKey2
+){
+  const unsigned char *zA = (const unsigned char*)pKey1;
+  const unsigned char *zB = (const unsigned char*)pKey2;
+  Decimal *pA = decimal_new(0, 0, nKey1, zA);
+  Decimal *pB = decimal_new(0, 0, nKey2, zB);
+  int rc;
+  UNUSED_PARAMETER(notUsed);
+  if( pA==0 || pB==0 ){
+    rc = 0;
+  }else{
+    rc = decimal_cmp(pA, pB);
+  }
+  decimal_free(pA);
+  decimal_free(pB);
+  return rc;
+}
+
+
+/*
+** SQL Function:   decimal_add(X, Y)
+**                 decimal_sub(X, Y)
+**
+** Return the sum or difference of X and Y.
+*/
+static void decimalAddFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  Decimal *pA = decimal_new(context, argv[0], 0, 0);
+  Decimal *pB = decimal_new(context, argv[1], 0, 0);
+  UNUSED_PARAMETER(argc);
+  decimal_add(pA, pB);
+  decimal_result(context, pA);
+  decimal_free(pA);
+  decimal_free(pB);
+}
+static void decimalSubFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  Decimal *pA = decimal_new(context, argv[0], 0, 0);
+  Decimal *pB = decimal_new(context, argv[1], 0, 0);
+  UNUSED_PARAMETER(argc);
+  if( pB ){
+    pB->sign = !pB->sign;
+    decimal_add(pA, pB);
+    decimal_result(context, pA);
+  }
+  decimal_free(pA);
+  decimal_free(pB);
+}
+
+/* Aggregate funcion:   decimal_sum(X)
+**
+** Works like sum() except that it uses decimal arithmetic for unlimited
+** precision.
+*/
+static void decimalSumStep(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  Decimal *p;
+  Decimal *pArg;
+  UNUSED_PARAMETER(argc);
+  p = sqlite3_aggregate_context(context, sizeof(*p));
+  if( p==0 ) return;
+  if( !p->isInit ){
+    p->isInit = 1;
+    p->a = sqlite3_malloc(2);
+    if( p->a==0 ){
+      p->oom = 1;
+    }else{
+      p->a[0] = 0;
+    }
+    p->nDigit = 1;
+    p->nFrac = 0;
+  }
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
+  pArg = decimal_new(context, argv[0], 0, 0);
+  decimal_add(p, pArg);
+  decimal_free(pArg);
+}
+static void decimalSumInverse(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  Decimal *p;
+  Decimal *pArg;
+  UNUSED_PARAMETER(argc);
+  p = sqlite3_aggregate_context(context, sizeof(*p));
+  if( p==0 ) return;
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
+  pArg = decimal_new(context, argv[0], 0, 0);
+  if( pArg ) pArg->sign = !pArg->sign;
+  decimal_add(p, pArg);
+  decimal_free(pArg);
+}
+static void decimalSumValue(sqlite3_context *context){
+  Decimal *p = sqlite3_aggregate_context(context, 0);
+  if( p==0 ) return;
+  decimal_result(context, p);
+}
+static void decimalSumFinalize(sqlite3_context *context){
+  Decimal *p = sqlite3_aggregate_context(context, 0);
+  if( p==0 ) return;
+  decimal_result(context, p);
+  decimal_clear(p);
+}
+
+/*
+** SQL Function:   decimal_mul(X, Y)
+**
+** Return the product of X and Y.
+**
+** All significant digits after the decimal point are retained.
+** Trailing zeros after the decimal point are omitted as long as
+** the number of digits after the decimal point is no less than
+** either the number of digits in either input.
+*/
+static void decimalMulFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  Decimal *pA = decimal_new(context, argv[0], 0, 0);
+  Decimal *pB = decimal_new(context, argv[1], 0, 0);
+  signed char *acc = 0;
+  int i, j, k;
+  int minFrac;
+  UNUSED_PARAMETER(argc);
+  if( pA==0 || pA->oom || pA->isNull
+   || pB==0 || pB->oom || pB->isNull 
+  ){
+    goto mul_end;
+  }
+  acc = sqlite3_malloc64( pA->nDigit + pB->nDigit + 2 );
+  if( acc==0 ){
+    sqlite3_result_error_nomem(context);
+    goto mul_end;
+  }
+  memset(acc, 0, pA->nDigit + pB->nDigit + 2);
+  minFrac = pA->nFrac;
+  if( pB->nFrac<minFrac ) minFrac = pB->nFrac;
+  for(i=pA->nDigit-1; i>=0; i--){
+    signed char f = pA->a[i];
+    int carry = 0, x;
+    for(j=pB->nDigit-1, k=i+j+3; j>=0; j--, k--){
+      x = acc[k] + f*pB->a[j] + carry;
+      acc[k] = x%10;
+      carry = x/10;
+    }
+    x = acc[k] + carry;
+    acc[k] = x%10;
+    acc[k-1] += x/10;
+  }
+  sqlite3_free(pA->a);
+  pA->a = acc;
+  acc = 0;
+  pA->nDigit += pB->nDigit + 2;
+  pA->nFrac += pB->nFrac;
+  pA->sign ^= pB->sign;
+  while( pA->nFrac>minFrac && pA->a[pA->nDigit-1]==0 ){
+    pA->nFrac--;
+    pA->nDigit--;
+  }
+  decimal_result(context, pA);
+
+mul_end:
+  sqlite3_free(acc);
+  decimal_free(pA);
+  decimal_free(pB);
+}
+
+#ifdef _WIN32
+
+#endif
+int sqlite3_decimal_init(
+  sqlite3 *db, 
+  char **pzErrMsg, 
+  const sqlite3_api_routines *pApi
+){
+  int rc = SQLITE_OK;
+  static const struct {
+    const char *zFuncName;
+    int nArg;
+    void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
+  } aFunc[] = {
+    { "decimal",       1,   decimalFunc        },
+    { "decimal_cmp",   2,   decimalCmpFunc     },
+    { "decimal_add",   2,   decimalAddFunc     },
+    { "decimal_sub",   2,   decimalSubFunc     },
+    { "decimal_mul",   2,   decimalMulFunc     },
+  };
+  unsigned int i;
+  (void)pzErrMsg;  /* Unused parameter */
+
+  SQLITE_EXTENSION_INIT2(pApi);
+
+  for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
+    rc = sqlite3_create_function(db, aFunc[i].zFuncName, aFunc[i].nArg,
+                   SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_DETERMINISTIC,
+                   0, aFunc[i].xFunc, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_window_function(db, "decimal_sum", 1,
+                   SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_DETERMINISTIC, 0,
+                   decimalSumStep, decimalSumFinalize,
+                   decimalSumValue, decimalSumInverse, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_collation(db, "decimal", SQLITE_UTF8,
+                                  0, decimalCollFunc);
+  }
+  return rc;
+}
+
+/************************* End ../ext/misc/decimal.c ********************/
+/************************* Begin ../ext/misc/ieee754.c ******************/
+/*
+** 2013-04-17
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+******************************************************************************
+**
+** This SQLite extension implements functions for the exact display
+** and input of IEEE754 Binary64 floating-point numbers.
+**
+**   ieee754(X)
+**   ieee754(Y,Z)
+**
+** In the first form, the value X should be a floating-point number.
+** The function will return a string of the form 'ieee754(Y,Z)' where
+** Y and Z are integers such that X==Y*pow(2,Z).
+**
+** In the second form, Y and Z are integers which are the mantissa and
+** base-2 exponent of a new floating point number.  The function returns
+** a floating-point value equal to Y*pow(2,Z).
+**
+** Examples:
+**
+**     ieee754(2.0)             ->     'ieee754(2,0)'
+**     ieee754(45.25)           ->     'ieee754(181,-2)'
+**     ieee754(2, 0)            ->     2.0
+**     ieee754(181, -2)         ->     45.25
+**
+** Two additional functions break apart the one-argument ieee754()
+** result into separate integer values:
+**
+**     ieee754_mantissa(45.25)  ->     181
+**     ieee754_exponent(45.25)  ->     -2
+**
+** These functions convert binary64 numbers into blobs and back again.
+**
+**     ieee754_from_blob(x'3ff0000000000000')  ->  1.0
+**     ieee754_to_blob(1.0)                    ->  x'3ff0000000000000'
+**
+** In all single-argument functions, if the argument is an 8-byte blob
+** then that blob is interpreted as a big-endian binary64 value.
+**
+**
+** EXACT DECIMAL REPRESENTATION OF BINARY64 VALUES
+** -----------------------------------------------
+**
+** This extension in combination with the separate 'decimal' extension
+** can be used to compute the exact decimal representation of binary64
+** values.  To begin, first compute a table of exponent values:
+**
+**    CREATE TABLE pow2(x INTEGER PRIMARY KEY, v TEXT);
+**    WITH RECURSIVE c(x,v) AS (
+**      VALUES(0,'1')
+**      UNION ALL
+**      SELECT x+1, decimal_mul(v,'2') FROM c WHERE x+1<=971
+**    ) INSERT INTO pow2(x,v) SELECT x, v FROM c;
+**    WITH RECURSIVE c(x,v) AS (
+**      VALUES(-1,'0.5')
+**      UNION ALL
+**      SELECT x-1, decimal_mul(v,'0.5') FROM c WHERE x-1>=-1075
+**    ) INSERT INTO pow2(x,v) SELECT x, v FROM c;
+**
+** Then, to compute the exact decimal representation of a floating
+** point value (the value 47.49 is used in the example) do:
+**
+**    WITH c(n) AS (VALUES(47.49))
+**          ---------------^^^^^---- Replace with whatever you want
+**    SELECT decimal_mul(ieee754_mantissa(c.n),pow2.v)
+**      FROM pow2, c WHERE pow2.x=ieee754_exponent(c.n);
+**
+** Here is a query to show various boundry values for the binary64
+** number format:
+**
+**    WITH c(name,bin) AS (VALUES
+**       ('minimum positive value',        x'0000000000000001'),
+**       ('maximum subnormal value',       x'000fffffffffffff'),
+**       ('mininum positive nornal value', x'0010000000000000'),
+**       ('maximum value',                 x'7fefffffffffffff'))
+**    SELECT c.name, decimal_mul(ieee754_mantissa(c.bin),pow2.v)
+**      FROM pow2, c WHERE pow2.x=ieee754_exponent(c.bin);
+**
+*/
+/* #include "sqlite3ext.h" */
+SQLITE_EXTENSION_INIT1
+#include <assert.h>
+#include <string.h>
+
+/* Mark a function parameter as unused, to suppress nuisance compiler
+** warnings. */
+#ifndef UNUSED_PARAMETER
+# define UNUSED_PARAMETER(X)  (void)(X)
+#endif
+
+/*
+** Implementation of the ieee754() function
+*/
+static void ieee754func(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  if( argc==1 ){
+    sqlite3_int64 m, a;
+    double r;
+    int e;
+    int isNeg;
+    char zResult[100];
+    assert( sizeof(m)==sizeof(r) );
+    if( sqlite3_value_type(argv[0])==SQLITE_BLOB
+     && sqlite3_value_bytes(argv[0])==sizeof(r)
+    ){
+      const unsigned char *x = sqlite3_value_blob(argv[0]);
+      unsigned int i;
+      sqlite3_uint64 v = 0;
+      for(i=0; i<sizeof(r); i++){
+        v = (v<<8) | x[i];
+      }
+      memcpy(&r, &v, sizeof(r));
+    }else{
+      r = sqlite3_value_double(argv[0]);
+    }
+    if( r<0.0 ){
+      isNeg = 1;
+      r = -r;
+    }else{
+      isNeg = 0;
+    }
+    memcpy(&a,&r,sizeof(a));
+    if( a==0 ){
+      e = 0;
+      m = 0;
+    }else{
+      e = a>>52;
+      m = a & ((((sqlite3_int64)1)<<52)-1);
+      if( e==0 ){
+        m <<= 1;
+      }else{
+        m |= ((sqlite3_int64)1)<<52;
+      }
+      while( e<1075 && m>0 && (m&1)==0 ){
+        m >>= 1;
+        e++;
+      }
+      if( isNeg ) m = -m;
+    }
+    switch( *(int*)sqlite3_user_data(context) ){
+      case 0:
+        sqlite3_snprintf(sizeof(zResult), zResult, "ieee754(%lld,%d)",
+                         m, e-1075);
+        sqlite3_result_text(context, zResult, -1, SQLITE_TRANSIENT);
+        break;
+      case 1:
+        sqlite3_result_int64(context, m);
+        break;
+      case 2:
+        sqlite3_result_int(context, e-1075);
+        break;
+    }
+  }else{
+    sqlite3_int64 m, e, a;
+    double r;
+    int isNeg = 0;
+    m = sqlite3_value_int64(argv[0]);
+    e = sqlite3_value_int64(argv[1]);
+
+    /* Limit the range of e.  Ticket 22dea1cfdb9151e4 2021-03-02 */
+    if( e>10000 ){
+      e = 10000;
+    }else if( e<-10000 ){
+      e = -10000;
+    }
+
+    if( m<0 ){
+      isNeg = 1;
+      m = -m;
+      if( m<0 ) return;
+    }else if( m==0 && e>-1000 && e<1000 ){
+      sqlite3_result_double(context, 0.0);
+      return;
+    }
+    while( (m>>32)&0xffe00000 ){
+      m >>= 1;
+      e++;
+    }
+    while( m!=0 && ((m>>32)&0xfff00000)==0 ){
+      m <<= 1;
+      e--;
+    }
+    e += 1075;
+    if( e<=0 ){
+      /* Subnormal */
+      m >>= 1-e;
+      e = 0;
+    }else if( e>0x7ff ){
+      e = 0x7ff;
+    }
+    a = m & ((((sqlite3_int64)1)<<52)-1);
+    a |= e<<52;
+    if( isNeg ) a |= ((sqlite3_uint64)1)<<63;
+    memcpy(&r, &a, sizeof(r));
+    sqlite3_result_double(context, r);
+  }
+}
+
+/*
+** Functions to convert between blobs and floats.
+*/
+static void ieee754func_from_blob(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  UNUSED_PARAMETER(argc);
+  if( sqlite3_value_type(argv[0])==SQLITE_BLOB
+   && sqlite3_value_bytes(argv[0])==sizeof(double)
+  ){
+    double r;
+    const unsigned char *x = sqlite3_value_blob(argv[0]);
+    unsigned int i;
+    sqlite3_uint64 v = 0;
+    for(i=0; i<sizeof(r); i++){
+      v = (v<<8) | x[i];
+    }
+    memcpy(&r, &v, sizeof(r));
+    sqlite3_result_double(context, r);
+  }
+}
+static void ieee754func_to_blob(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  UNUSED_PARAMETER(argc);
+  if( sqlite3_value_type(argv[0])==SQLITE_FLOAT
+   || sqlite3_value_type(argv[0])==SQLITE_INTEGER
+  ){
+    double r = sqlite3_value_double(argv[0]);
+    sqlite3_uint64 v;
+    unsigned char a[sizeof(r)];
+    unsigned int i;
+    memcpy(&v, &r, sizeof(r));
+    for(i=1; i<=sizeof(r); i++){
+      a[sizeof(r)-i] = v&0xff;
+      v >>= 8;
+    }
+    sqlite3_result_blob(context, a, sizeof(r), SQLITE_TRANSIENT);
+  }
+}
+
+
+#ifdef _WIN32
+
+#endif
+int sqlite3_ieee_init(
+  sqlite3 *db, 
+  char **pzErrMsg, 
+  const sqlite3_api_routines *pApi
+){
+  static const struct {
+    char *zFName;
+    int nArg;
+    int iAux;
+    void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
+  } aFunc[] = {
+    { "ieee754",           1,   0, ieee754func },
+    { "ieee754",           2,   0, ieee754func },
+    { "ieee754_mantissa",  1,   1, ieee754func },
+    { "ieee754_exponent",  1,   2, ieee754func },
+    { "ieee754_to_blob",   1,   0, ieee754func_to_blob },
+    { "ieee754_from_blob", 1,   0, ieee754func_from_blob },
+
+  };
+  unsigned int i;
+  int rc = SQLITE_OK;
+  SQLITE_EXTENSION_INIT2(pApi);
+  (void)pzErrMsg;  /* Unused parameter */
+  for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
+    rc = sqlite3_create_function(db, aFunc[i].zFName, aFunc[i].nArg,	
+                               SQLITE_UTF8|SQLITE_INNOCUOUS,
+                               (void*)&aFunc[i].iAux,
+                               aFunc[i].xFunc, 0, 0);
+  }
+  return rc;
+}
+
+/************************* End ../ext/misc/ieee754.c ********************/
+/************************* Begin ../ext/misc/series.c ******************/
+/*
+** 2015-08-18
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+**
+** This file demonstrates how to create a table-valued-function using
+** a virtual table.  This demo implements the generate_series() function
+** which gives similar results to the eponymous function in PostgreSQL.
+** Examples:
+**
+**      SELECT * FROM generate_series(0,100,5);
+**
+** The query above returns integers from 0 through 100 counting by steps
+** of 5.
+**
+**      SELECT * FROM generate_series(0,100);
+**
+** Integers from 0 through 100 with a step size of 1.
+**
+**      SELECT * FROM generate_series(20) LIMIT 10;
+**
+** Integers 20 through 29.
+**
+** HOW IT WORKS
+**
+** The generate_series "function" is really a virtual table with the
+** following schema:
+**
+**     CREATE TABLE generate_series(
+**       value,
+**       start HIDDEN,
+**       stop HIDDEN,
+**       step HIDDEN
+**     );
+**
+** Function arguments in queries against this virtual table are translated
+** into equality constraints against successive hidden columns.  In other
+** words, the following pairs of queries are equivalent to each other:
+**
+**    SELECT * FROM generate_series(0,100,5);
+**    SELECT * FROM generate_series WHERE start=0 AND stop=100 AND step=5;
+**
+**    SELECT * FROM generate_series(0,100);
+**    SELECT * FROM generate_series WHERE start=0 AND stop=100;
+**
+**    SELECT * FROM generate_series(20) LIMIT 10;
+**    SELECT * FROM generate_series WHERE start=20 LIMIT 10;
+**
+** The generate_series virtual table implementation leaves the xCreate method
+** set to NULL.  This means that it is not possible to do a CREATE VIRTUAL
+** TABLE command with "generate_series" as the USING argument.  Instead, there
+** is a single generate_series virtual table that is always available without
+** having to be created first.
+**
+** The xBestIndex method looks for equality constraints against the hidden
+** start, stop, and step columns, and if present, it uses those constraints
+** to bound the sequence of generated values.  If the equality constraints
+** are missing, it uses 0 for start, 4294967295 for stop, and 1 for step.
+** xBestIndex returns a small cost when both start and stop are available,
+** and a very large cost if either start or stop are unavailable.  This
+** encourages the query planner to order joins such that the bounds of the
+** series are well-defined.
+*/
+/* #include "sqlite3ext.h" */
+SQLITE_EXTENSION_INIT1
+#include <assert.h>
+#include <string.h>
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+
+
+/* series_cursor is a subclass of sqlite3_vtab_cursor which will
+** serve as the underlying representation of a cursor that scans
+** over rows of the result
+*/
+typedef struct series_cursor series_cursor;
+struct series_cursor {
+  sqlite3_vtab_cursor base;  /* Base class - must be first */
+  int isDesc;                /* True to count down rather than up */
+  sqlite3_int64 iRowid;      /* The rowid */
+  sqlite3_int64 iValue;      /* Current value ("value") */
+  sqlite3_int64 mnValue;     /* Mimimum value ("start") */
+  sqlite3_int64 mxValue;     /* Maximum value ("stop") */
+  sqlite3_int64 iStep;       /* Increment ("step") */
+};
+
+/*
+** The seriesConnect() method is invoked to create a new
+** series_vtab that describes the generate_series virtual table.
+**
+** Think of this routine as the constructor for series_vtab objects.
+**
+** All this routine needs to do is:
+**
+**    (1) Allocate the series_vtab object and initialize all fields.
+**
+**    (2) Tell SQLite (via the sqlite3_declare_vtab() interface) what the
+**        result set of queries against generate_series will look like.
+*/
+static int seriesConnect(
+  sqlite3 *db,
+  void *pUnused,
+  int argcUnused, const char *const*argvUnused,
+  sqlite3_vtab **ppVtab,
+  char **pzErrUnused
+){
+  sqlite3_vtab *pNew;
+  int rc;
+
+/* Column numbers */
+#define SERIES_COLUMN_VALUE 0
+#define SERIES_COLUMN_START 1
+#define SERIES_COLUMN_STOP  2
+#define SERIES_COLUMN_STEP  3
+
+  (void)pUnused;
+  (void)argcUnused;
+  (void)argvUnused;
+  (void)pzErrUnused;
+  rc = sqlite3_declare_vtab(db,
+     "CREATE TABLE x(value,start hidden,stop hidden,step hidden)");
+  if( rc==SQLITE_OK ){
+    pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
+    if( pNew==0 ) return SQLITE_NOMEM;
+    memset(pNew, 0, sizeof(*pNew));
+    sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
+  }
+  return rc;
+}
+
+/*
+** This method is the destructor for series_cursor objects.
+*/
+static int seriesDisconnect(sqlite3_vtab *pVtab){
+  sqlite3_free(pVtab);
+  return SQLITE_OK;
+}
+
+/*
+** Constructor for a new series_cursor object.
+*/
+static int seriesOpen(sqlite3_vtab *pUnused, sqlite3_vtab_cursor **ppCursor){
+  series_cursor *pCur;
+  (void)pUnused;
+  pCur = sqlite3_malloc( sizeof(*pCur) );
+  if( pCur==0 ) return SQLITE_NOMEM;
+  memset(pCur, 0, sizeof(*pCur));
+  *ppCursor = &pCur->base;
+  return SQLITE_OK;
+}
+
+/*
+** Destructor for a series_cursor.
+*/
+static int seriesClose(sqlite3_vtab_cursor *cur){
+  sqlite3_free(cur);
+  return SQLITE_OK;
+}
+
+
+/*
+** Advance a series_cursor to its next row of output.
+*/
+static int seriesNext(sqlite3_vtab_cursor *cur){
+  series_cursor *pCur = (series_cursor*)cur;
+  if( pCur->isDesc ){
+    pCur->iValue -= pCur->iStep;
+  }else{
+    pCur->iValue += pCur->iStep;
+  }
+  pCur->iRowid++;
+  return SQLITE_OK;
+}
+
+/*
+** Return values of columns for the row at which the series_cursor
+** is currently pointing.
+*/
+static int seriesColumn(
+  sqlite3_vtab_cursor *cur,   /* The cursor */
+  sqlite3_context *ctx,       /* First argument to sqlite3_result_...() */
+  int i                       /* Which column to return */
+){
+  series_cursor *pCur = (series_cursor*)cur;
+  sqlite3_int64 x = 0;
+  switch( i ){
+    case SERIES_COLUMN_START:  x = pCur->mnValue; break;
+    case SERIES_COLUMN_STOP:   x = pCur->mxValue; break;
+    case SERIES_COLUMN_STEP:   x = pCur->iStep;   break;
+    default:                   x = pCur->iValue;  break;
+  }
+  sqlite3_result_int64(ctx, x);
+  return SQLITE_OK;
+}
+
+/*
+** Return the rowid for the current row. In this implementation, the
+** first row returned is assigned rowid value 1, and each subsequent
+** row a value 1 more than that of the previous.
+*/
+static int seriesRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
+  series_cursor *pCur = (series_cursor*)cur;
+  *pRowid = pCur->iRowid;
+  return SQLITE_OK;
+}
+
+/*
+** Return TRUE if the cursor has been moved off of the last
+** row of output.
+*/
+static int seriesEof(sqlite3_vtab_cursor *cur){
+  series_cursor *pCur = (series_cursor*)cur;
+  if( pCur->isDesc ){
+    return pCur->iValue < pCur->mnValue;
+  }else{
+    return pCur->iValue > pCur->mxValue;
+  }
+}
+
+/* True to cause run-time checking of the start=, stop=, and/or step= 
+** parameters.  The only reason to do this is for testing the
+** constraint checking logic for virtual tables in the SQLite core.
+*/
+#ifndef SQLITE_SERIES_CONSTRAINT_VERIFY
+# define SQLITE_SERIES_CONSTRAINT_VERIFY 0
+#endif
+
+/*
+** This method is called to "rewind" the series_cursor object back
+** to the first row of output.  This method is always called at least
+** once prior to any call to seriesColumn() or seriesRowid() or 
+** seriesEof().
+**
+** The query plan selected by seriesBestIndex is passed in the idxNum
+** parameter.  (idxStr is not used in this implementation.)  idxNum
+** is a bitmask showing which constraints are available:
+**
+**    1:    start=VALUE
+**    2:    stop=VALUE
+**    4:    step=VALUE
+**
+** Also, if bit 8 is set, that means that the series should be output
+** in descending order rather than in ascending order.  If bit 16 is
+** set, then output must appear in ascending order.
+**
+** This routine should initialize the cursor and position it so that it
+** is pointing at the first row, or pointing off the end of the table
+** (so that seriesEof() will return true) if the table is empty.
+*/
+static int seriesFilter(
+  sqlite3_vtab_cursor *pVtabCursor, 
+  int idxNum, const char *idxStrUnused,
+  int argc, sqlite3_value **argv
+){
+  series_cursor *pCur = (series_cursor *)pVtabCursor;
+  int i = 0;
+  (void)idxStrUnused;
+  if( idxNum & 1 ){
+    pCur->mnValue = sqlite3_value_int64(argv[i++]);
+  }else{
+    pCur->mnValue = 0;
+  }
+  if( idxNum & 2 ){
+    pCur->mxValue = sqlite3_value_int64(argv[i++]);
+  }else{
+    pCur->mxValue = 0xffffffff;
+  }
+  if( idxNum & 4 ){
+    pCur->iStep = sqlite3_value_int64(argv[i++]);
+    if( pCur->iStep==0 ){
+      pCur->iStep = 1;
+    }else if( pCur->iStep<0 ){
+      pCur->iStep = -pCur->iStep;
+      if( (idxNum & 16)==0 ) idxNum |= 8;
+    }
+  }else{
+    pCur->iStep = 1;
+  }
+  for(i=0; i<argc; i++){
+    if( sqlite3_value_type(argv[i])==SQLITE_NULL ){
+      /* If any of the constraints have a NULL value, then return no rows.
+      ** See ticket https://www.sqlite.org/src/info/fac496b61722daf2 */
+      pCur->mnValue = 1;
+      pCur->mxValue = 0;
+      break;
+    }
+  }
+  if( idxNum & 8 ){
+    pCur->isDesc = 1;
+    pCur->iValue = pCur->mxValue;
+    if( pCur->iStep>0 ){
+      pCur->iValue -= (pCur->mxValue - pCur->mnValue)%pCur->iStep;
+    }
+  }else{
+    pCur->isDesc = 0;
+    pCur->iValue = pCur->mnValue;
+  }
+  pCur->iRowid = 1;
+  return SQLITE_OK;
+}
+
+/*
+** SQLite will invoke this method one or more times while planning a query
+** that uses the generate_series virtual table.  This routine needs to create
+** a query plan for each invocation and compute an estimated cost for that
+** plan.
+**
+** In this implementation idxNum is used to represent the
+** query plan.  idxStr is unused.
+**
+** The query plan is represented by bits in idxNum:
+**
+**  (1)  start = $value  -- constraint exists
+**  (2)  stop = $value   -- constraint exists
+**  (4)  step = $value   -- constraint exists
+**  (8)  output in descending order
+*/
+static int seriesBestIndex(
+  sqlite3_vtab *tabUnused,
+  sqlite3_index_info *pIdxInfo
+){
+  int i, j;              /* Loop over constraints */
+  int idxNum = 0;        /* The query plan bitmask */
+  int unusableMask = 0;  /* Mask of unusable constraints */
+  int nArg = 0;          /* Number of arguments that seriesFilter() expects */
+  int aIdx[3];           /* Constraints on start, stop, and step */
+  const struct sqlite3_index_constraint *pConstraint;
+
+  /* This implementation assumes that the start, stop, and step columns
+  ** are the last three columns in the virtual table. */
+  assert( SERIES_COLUMN_STOP == SERIES_COLUMN_START+1 );
+  assert( SERIES_COLUMN_STEP == SERIES_COLUMN_START+2 );
+  (void)tabUnused;
+  aIdx[0] = aIdx[1] = aIdx[2] = -1;
+  pConstraint = pIdxInfo->aConstraint;
+  for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
+    int iCol;    /* 0 for start, 1 for stop, 2 for step */
+    int iMask;   /* bitmask for those column */
+    if( pConstraint->iColumn<SERIES_COLUMN_START ) continue;
+    iCol = pConstraint->iColumn - SERIES_COLUMN_START;
+    assert( iCol>=0 && iCol<=2 );
+    iMask = 1 << iCol;
+    if( pConstraint->usable==0 ){
+      unusableMask |=  iMask;
+      continue;
+    }else if( pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ ){
+      idxNum |= iMask;
+      aIdx[iCol] = i;
+    }
+  }
+  for(i=0; i<3; i++){
+    if( (j = aIdx[i])>=0 ){
+      pIdxInfo->aConstraintUsage[j].argvIndex = ++nArg;
+      pIdxInfo->aConstraintUsage[j].omit = !SQLITE_SERIES_CONSTRAINT_VERIFY;
+    }
+  }
+  if( (unusableMask & ~idxNum)!=0 ){
+    /* The start, stop, and step columns are inputs.  Therefore if there
+    ** are unusable constraints on any of start, stop, or step then
+    ** this plan is unusable */
+    return SQLITE_CONSTRAINT;
+  }
+  if( (idxNum & 3)==3 ){
+    /* Both start= and stop= boundaries are available.  This is the 
+    ** the preferred case */
+    pIdxInfo->estimatedCost = (double)(2 - ((idxNum&4)!=0));
+    pIdxInfo->estimatedRows = 1000;
+    if( pIdxInfo->nOrderBy==1 ){
+      if( pIdxInfo->aOrderBy[0].desc ){
+        idxNum |= 8;
+      }else{
+        idxNum |= 16;
+      }
+      pIdxInfo->orderByConsumed = 1;
+    }
+  }else{
+    /* If either boundary is missing, we have to generate a huge span
+    ** of numbers.  Make this case very expensive so that the query
+    ** planner will work hard to avoid it. */
+    pIdxInfo->estimatedRows = 2147483647;
+  }
+  pIdxInfo->idxNum = idxNum;
+  return SQLITE_OK;
+}
+
+/*
+** This following structure defines all the methods for the 
+** generate_series virtual table.
+*/
+static sqlite3_module seriesModule = {
+  0,                         /* iVersion */
+  0,                         /* xCreate */
+  seriesConnect,             /* xConnect */
+  seriesBestIndex,           /* xBestIndex */
+  seriesDisconnect,          /* xDisconnect */
+  0,                         /* xDestroy */
+  seriesOpen,                /* xOpen - open a cursor */
+  seriesClose,               /* xClose - close a cursor */
+  seriesFilter,              /* xFilter - configure scan constraints */
+  seriesNext,                /* xNext - advance a cursor */
+  seriesEof,                 /* xEof - check for end of scan */
+  seriesColumn,              /* xColumn - read data */
+  seriesRowid,               /* xRowid - read data */
+  0,                         /* xUpdate */
+  0,                         /* xBegin */
+  0,                         /* xSync */
+  0,                         /* xCommit */
+  0,                         /* xRollback */
+  0,                         /* xFindMethod */
+  0,                         /* xRename */
+  0,                         /* xSavepoint */
+  0,                         /* xRelease */
+  0,                         /* xRollbackTo */
+  0                          /* xShadowName */
+};
+
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+#ifdef _WIN32
+
+#endif
+int sqlite3_series_init(
+  sqlite3 *db, 
+  char **pzErrMsg, 
+  const sqlite3_api_routines *pApi
+){
+  int rc = SQLITE_OK;
+  SQLITE_EXTENSION_INIT2(pApi);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( sqlite3_libversion_number()<3008012 ){
+    *pzErrMsg = sqlite3_mprintf(
+        "generate_series() requires SQLite 3.8.12 or later");
+    return SQLITE_ERROR;
+  }
+  rc = sqlite3_create_module(db, "generate_series", &seriesModule, 0);
+#endif
+  return rc;
+}
+
+/************************* End ../ext/misc/series.c ********************/
+/************************* Begin ../ext/misc/regexp.c ******************/
+/*
+** 2012-11-13
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+******************************************************************************
+**
+** The code in this file implements a compact but reasonably
+** efficient regular-expression matcher for posix extended regular
+** expressions against UTF8 text.
+**
+** This file is an SQLite extension.  It registers a single function
+** named "regexp(A,B)" where A is the regular expression and B is the
+** string to be matched.  By registering this function, SQLite will also
+** then implement the "B regexp A" operator.  Note that with the function
+** the regular expression comes first, but with the operator it comes
+** second.
+**
+**  The following regular expression syntax is supported:
+**
+**     X*      zero or more occurrences of X
+**     X+      one or more occurrences of X
+**     X?      zero or one occurrences of X
+**     X{p,q}  between p and q occurrences of X
+**     (X)     match X
+**     X|Y     X or Y
+**     ^X      X occurring at the beginning of the string
+**     X$      X occurring at the end of the string
+**     .       Match any single character
+**     \c      Character c where c is one of \{}()[]|*+?.
+**     \c      C-language escapes for c in afnrtv.  ex: \t or \n
+**     \uXXXX  Where XXXX is exactly 4 hex digits, unicode value XXXX
+**     \xXX    Where XX is exactly 2 hex digits, unicode value XX
+**     [abc]   Any single character from the set abc
+**     [^abc]  Any single character not in the set abc
+**     [a-z]   Any single character in the range a-z
+**     [^a-z]  Any single character not in the range a-z
+**     \b      Word boundary
+**     \w      Word character.  [A-Za-z0-9_]
+**     \W      Non-word character
+**     \d      Digit
+**     \D      Non-digit
+**     \s      Whitespace character
+**     \S      Non-whitespace character
+**
+** A nondeterministic finite automaton (NFA) is used for matching, so the
+** performance is bounded by O(N*M) where N is the size of the regular
+** expression and M is the size of the input string.  The matcher never
+** exhibits exponential behavior.  Note that the X{p,q} operator expands
+** to p copies of X following by q-p copies of X? and that the size of the
+** regular expression in the O(N*M) performance bound is computed after
+** this expansion.
+*/
+#include <string.h>
+#include <stdlib.h>
+/* #include "sqlite3ext.h" */
+SQLITE_EXTENSION_INIT1
+
+/*
+** The following #defines change the names of some functions implemented in
+** this file to prevent name collisions with C-library functions of the
+** same name.
+*/
+#define re_match   sqlite3re_match
+#define re_compile sqlite3re_compile
+#define re_free    sqlite3re_free
+
+/* The end-of-input character */
+#define RE_EOF            0    /* End of input */
+
+/* The NFA is implemented as sequence of opcodes taken from the following
+** set.  Each opcode has a single integer argument.
+*/
+#define RE_OP_MATCH       1    /* Match the one character in the argument */
+#define RE_OP_ANY         2    /* Match any one character.  (Implements ".") */
+#define RE_OP_ANYSTAR     3    /* Special optimized version of .* */
+#define RE_OP_FORK        4    /* Continue to both next and opcode at iArg */
+#define RE_OP_GOTO        5    /* Jump to opcode at iArg */
+#define RE_OP_ACCEPT      6    /* Halt and indicate a successful match */
+#define RE_OP_CC_INC      7    /* Beginning of a [...] character class */
+#define RE_OP_CC_EXC      8    /* Beginning of a [^...] character class */
+#define RE_OP_CC_VALUE    9    /* Single value in a character class */
+#define RE_OP_CC_RANGE   10    /* Range of values in a character class */
+#define RE_OP_WORD       11    /* Perl word character [A-Za-z0-9_] */
+#define RE_OP_NOTWORD    12    /* Not a perl word character */
+#define RE_OP_DIGIT      13    /* digit:  [0-9] */
+#define RE_OP_NOTDIGIT   14    /* Not a digit */
+#define RE_OP_SPACE      15    /* space:  [ \t\n\r\v\f] */
+#define RE_OP_NOTSPACE   16    /* Not a digit */
+#define RE_OP_BOUNDARY   17    /* Boundary between word and non-word */
+
+/* Each opcode is a "state" in the NFA */
+typedef unsigned short ReStateNumber;
+
+/* Because this is an NFA and not a DFA, multiple states can be active at
+** once.  An instance of the following object records all active states in
+** the NFA.  The implementation is optimized for the common case where the
+** number of actives states is small.
+*/
+typedef struct ReStateSet {
+  unsigned nState;            /* Number of current states */
+  ReStateNumber *aState;      /* Current states */
+} ReStateSet;
+
+/* An input string read one character at a time.
+*/
+typedef struct ReInput ReInput;
+struct ReInput {
+  const unsigned char *z;  /* All text */
+  int i;                   /* Next byte to read */
+  int mx;                  /* EOF when i>=mx */
+};
+
+/* A compiled NFA (or an NFA that is in the process of being compiled) is
+** an instance of the following object.
+*/
+typedef struct ReCompiled ReCompiled;
+struct ReCompiled {
+  ReInput sIn;                /* Regular expression text */
+  const char *zErr;           /* Error message to return */
+  char *aOp;                  /* Operators for the virtual machine */
+  int *aArg;                  /* Arguments to each operator */
+  unsigned (*xNextChar)(ReInput*);  /* Next character function */
+  unsigned char zInit[12];    /* Initial text to match */
+  int nInit;                  /* Number of characters in zInit */
+  unsigned nState;            /* Number of entries in aOp[] and aArg[] */
+  unsigned nAlloc;            /* Slots allocated for aOp[] and aArg[] */
+};
+
+/* Add a state to the given state set if it is not already there */
+static void re_add_state(ReStateSet *pSet, int newState){
+  unsigned i;
+  for(i=0; i<pSet->nState; i++) if( pSet->aState[i]==newState ) return;
+  pSet->aState[pSet->nState++] = (ReStateNumber)newState;
+}
+
+/* Extract the next unicode character from *pzIn and return it.  Advance
+** *pzIn to the first byte past the end of the character returned.  To
+** be clear:  this routine converts utf8 to unicode.  This routine is 
+** optimized for the common case where the next character is a single byte.
+*/
+static unsigned re_next_char(ReInput *p){
+  unsigned c;
+  if( p->i>=p->mx ) return 0;
+  c = p->z[p->i++];
+  if( c>=0x80 ){
+    if( (c&0xe0)==0xc0 && p->i<p->mx && (p->z[p->i]&0xc0)==0x80 ){
+      c = (c&0x1f)<<6 | (p->z[p->i++]&0x3f);
+      if( c<0x80 ) c = 0xfffd;
+    }else if( (c&0xf0)==0xe0 && p->i+1<p->mx && (p->z[p->i]&0xc0)==0x80
+           && (p->z[p->i+1]&0xc0)==0x80 ){
+      c = (c&0x0f)<<12 | ((p->z[p->i]&0x3f)<<6) | (p->z[p->i+1]&0x3f);
+      p->i += 2;
+      if( c<=0x7ff || (c>=0xd800 && c<=0xdfff) ) c = 0xfffd;
+    }else if( (c&0xf8)==0xf0 && p->i+3<p->mx && (p->z[p->i]&0xc0)==0x80
+           && (p->z[p->i+1]&0xc0)==0x80 && (p->z[p->i+2]&0xc0)==0x80 ){
+      c = (c&0x07)<<18 | ((p->z[p->i]&0x3f)<<12) | ((p->z[p->i+1]&0x3f)<<6)
+                       | (p->z[p->i+2]&0x3f);
+      p->i += 3;
+      if( c<=0xffff || c>0x10ffff ) c = 0xfffd;
+    }else{
+      c = 0xfffd;
+    }
+  }
+  return c;
+}
+static unsigned re_next_char_nocase(ReInput *p){
+  unsigned c = re_next_char(p);
+  if( c>='A' && c<='Z' ) c += 'a' - 'A';
+  return c;
+}
+
+/* Return true if c is a perl "word" character:  [A-Za-z0-9_] */
+static int re_word_char(int c){
+  return (c>='0' && c<='9') || (c>='a' && c<='z')
+      || (c>='A' && c<='Z') || c=='_';
+}
+
+/* Return true if c is a "digit" character:  [0-9] */
+static int re_digit_char(int c){
+  return (c>='0' && c<='9');
+}
+
+/* Return true if c is a perl "space" character:  [ \t\r\n\v\f] */
+static int re_space_char(int c){
+  return c==' ' || c=='\t' || c=='\n' || c=='\r' || c=='\v' || c=='\f';
+}
+
+/* Run a compiled regular expression on the zero-terminated input
+** string zIn[].  Return true on a match and false if there is no match.
+*/
+static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
+  ReStateSet aStateSet[2], *pThis, *pNext;
+  ReStateNumber aSpace[100];
+  ReStateNumber *pToFree;
+  unsigned int i = 0;
+  unsigned int iSwap = 0;
+  int c = RE_EOF+1;
+  int cPrev = 0;
+  int rc = 0;
+  ReInput in;
+
+  in.z = zIn;
+  in.i = 0;
+  in.mx = nIn>=0 ? nIn : (int)strlen((char const*)zIn);
+
+  /* Look for the initial prefix match, if there is one. */
+  if( pRe->nInit ){
+    unsigned char x = pRe->zInit[0];
+    while( in.i+pRe->nInit<=in.mx 
+     && (zIn[in.i]!=x ||
+         strncmp((const char*)zIn+in.i, (const char*)pRe->zInit, pRe->nInit)!=0)
+    ){
+      in.i++;
+    }
+    if( in.i+pRe->nInit>in.mx ) return 0;
+  }
+
+  if( pRe->nState<=(sizeof(aSpace)/(sizeof(aSpace[0])*2)) ){
+    pToFree = 0;
+    aStateSet[0].aState = aSpace;
+  }else{
+    pToFree = sqlite3_malloc64( sizeof(ReStateNumber)*2*pRe->nState );
+    if( pToFree==0 ) return -1;
+    aStateSet[0].aState = pToFree;
+  }
+  aStateSet[1].aState = &aStateSet[0].aState[pRe->nState];
+  pNext = &aStateSet[1];
+  pNext->nState = 0;
+  re_add_state(pNext, 0);
+  while( c!=RE_EOF && pNext->nState>0 ){
+    cPrev = c;
+    c = pRe->xNextChar(&in);
+    pThis = pNext;
+    pNext = &aStateSet[iSwap];
+    iSwap = 1 - iSwap;
+    pNext->nState = 0;
+    for(i=0; i<pThis->nState; i++){
+      int x = pThis->aState[i];
+      switch( pRe->aOp[x] ){
+        case RE_OP_MATCH: {
+          if( pRe->aArg[x]==c ) re_add_state(pNext, x+1);
+          break;
+        }
+        case RE_OP_ANY: {
+          if( c!=0 ) re_add_state(pNext, x+1);
+          break;
+        }
+        case RE_OP_WORD: {
+          if( re_word_char(c) ) re_add_state(pNext, x+1);
+          break;
+        }
+        case RE_OP_NOTWORD: {
+          if( !re_word_char(c) && c!=0 ) re_add_state(pNext, x+1);
+          break;
+        }
+        case RE_OP_DIGIT: {
+          if( re_digit_char(c) ) re_add_state(pNext, x+1);
+          break;
+        }
+        case RE_OP_NOTDIGIT: {
+          if( !re_digit_char(c) && c!=0 ) re_add_state(pNext, x+1);
+          break;
+        }
+        case RE_OP_SPACE: {
+          if( re_space_char(c) ) re_add_state(pNext, x+1);
+          break;
+        }
+        case RE_OP_NOTSPACE: {
+          if( !re_space_char(c) && c!=0 ) re_add_state(pNext, x+1);
+          break;
+        }
+        case RE_OP_BOUNDARY: {
+          if( re_word_char(c)!=re_word_char(cPrev) ) re_add_state(pThis, x+1);
+          break;
+        }
+        case RE_OP_ANYSTAR: {
+          re_add_state(pNext, x);
+          re_add_state(pThis, x+1);
+          break;
+        }
+        case RE_OP_FORK: {
+          re_add_state(pThis, x+pRe->aArg[x]);
+          re_add_state(pThis, x+1);
+          break;
+        }
+        case RE_OP_GOTO: {
+          re_add_state(pThis, x+pRe->aArg[x]);
+          break;
+        }
+        case RE_OP_ACCEPT: {
+          rc = 1;
+          goto re_match_end;
+        }
+        case RE_OP_CC_EXC: {
+          if( c==0 ) break;
+          /* fall-through */
+        }
+        case RE_OP_CC_INC: {
+          int j = 1;
+          int n = pRe->aArg[x];
+          int hit = 0;
+          for(j=1; j>0 && j<n; j++){
+            if( pRe->aOp[x+j]==RE_OP_CC_VALUE ){
+              if( pRe->aArg[x+j]==c ){
+                hit = 1;
+                j = -1;
+              }
+            }else{
+              if( pRe->aArg[x+j]<=c && pRe->aArg[x+j+1]>=c ){
+                hit = 1;
+                j = -1;
+              }else{
+                j++;
+              }
+            }
+          }
+          if( pRe->aOp[x]==RE_OP_CC_EXC ) hit = !hit;
+          if( hit ) re_add_state(pNext, x+n);
+          break;
+        }
+      }
+    }
+  }
+  for(i=0; i<pNext->nState; i++){
+    if( pRe->aOp[pNext->aState[i]]==RE_OP_ACCEPT ){ rc = 1; break; }
+  }
+re_match_end:
+  sqlite3_free(pToFree);
+  return rc;
+}
+
+/* Resize the opcode and argument arrays for an RE under construction.
+*/
+static int re_resize(ReCompiled *p, int N){
+  char *aOp;
+  int *aArg;
+  aOp = sqlite3_realloc64(p->aOp, N*sizeof(p->aOp[0]));
+  if( aOp==0 ) return 1;
+  p->aOp = aOp;
+  aArg = sqlite3_realloc64(p->aArg, N*sizeof(p->aArg[0]));
+  if( aArg==0 ) return 1;
+  p->aArg = aArg;
+  p->nAlloc = N;
+  return 0;
+}
+
+/* Insert a new opcode and argument into an RE under construction.  The
+** insertion point is just prior to existing opcode iBefore.
+*/
+static int re_insert(ReCompiled *p, int iBefore, int op, int arg){
+  int i;
+  if( p->nAlloc<=p->nState && re_resize(p, p->nAlloc*2) ) return 0;
+  for(i=p->nState; i>iBefore; i--){
+    p->aOp[i] = p->aOp[i-1];
+    p->aArg[i] = p->aArg[i-1];
+  }
+  p->nState++;
+  p->aOp[iBefore] = (char)op;
+  p->aArg[iBefore] = arg;
+  return iBefore;
+}
+
+/* Append a new opcode and argument to the end of the RE under construction.
+*/
+static int re_append(ReCompiled *p, int op, int arg){
+  return re_insert(p, p->nState, op, arg);
+}
+
+/* Make a copy of N opcodes starting at iStart onto the end of the RE
+** under construction.
+*/
+static void re_copy(ReCompiled *p, int iStart, int N){
+  if( p->nState+N>=p->nAlloc && re_resize(p, p->nAlloc*2+N) ) return;
+  memcpy(&p->aOp[p->nState], &p->aOp[iStart], N*sizeof(p->aOp[0]));
+  memcpy(&p->aArg[p->nState], &p->aArg[iStart], N*sizeof(p->aArg[0]));
+  p->nState += N;
+}
+
+/* Return true if c is a hexadecimal digit character:  [0-9a-fA-F]
+** If c is a hex digit, also set *pV = (*pV)*16 + valueof(c).  If
+** c is not a hex digit *pV is unchanged.
+*/
+static int re_hex(int c, int *pV){
+  if( c>='0' && c<='9' ){
+    c -= '0';
+  }else if( c>='a' && c<='f' ){
+    c -= 'a' - 10;
+  }else if( c>='A' && c<='F' ){
+    c -= 'A' - 10;
+  }else{
+    return 0;
+  }
+  *pV = (*pV)*16 + (c & 0xff);
+  return 1;
+}
+
+/* A backslash character has been seen, read the next character and
+** return its interpretation.
+*/
+static unsigned re_esc_char(ReCompiled *p){
+  static const char zEsc[] = "afnrtv\\()*.+?[$^{|}]";
+  static const char zTrans[] = "\a\f\n\r\t\v";
+  int i, v = 0;
+  char c;
+  if( p->sIn.i>=p->sIn.mx ) return 0;
+  c = p->sIn.z[p->sIn.i];
+  if( c=='u' && p->sIn.i+4<p->sIn.mx ){
+    const unsigned char *zIn = p->sIn.z + p->sIn.i;
+    if( re_hex(zIn[1],&v)
+     && re_hex(zIn[2],&v)
+     && re_hex(zIn[3],&v)
+     && re_hex(zIn[4],&v)
+    ){
+      p->sIn.i += 5;
+      return v;
+    }
+  }
+  if( c=='x' && p->sIn.i+2<p->sIn.mx ){
+    const unsigned char *zIn = p->sIn.z + p->sIn.i;
+    if( re_hex(zIn[1],&v)
+     && re_hex(zIn[2],&v)
+    ){
+      p->sIn.i += 3;
+      return v;
+    }
+  }
+  for(i=0; zEsc[i] && zEsc[i]!=c; i++){}
+  if( zEsc[i] ){
+    if( i<6 ) c = zTrans[i];
+    p->sIn.i++;
+  }else{
+    p->zErr = "unknown \\ escape";
+  }
+  return c;
+}
+
+/* Forward declaration */
+static const char *re_subcompile_string(ReCompiled*);
+
+/* Peek at the next byte of input */
+static unsigned char rePeek(ReCompiled *p){
+  return p->sIn.i<p->sIn.mx ? p->sIn.z[p->sIn.i] : 0;
+}
+
+/* Compile RE text into a sequence of opcodes.  Continue up to the
+** first unmatched ")" character, then return.  If an error is found,
+** return a pointer to the error message string.
+*/
+static const char *re_subcompile_re(ReCompiled *p){
+  const char *zErr;
+  int iStart, iEnd, iGoto;
+  iStart = p->nState;
+  zErr = re_subcompile_string(p);
+  if( zErr ) return zErr;
+  while( rePeek(p)=='|' ){
+    iEnd = p->nState;
+    re_insert(p, iStart, RE_OP_FORK, iEnd + 2 - iStart);
+    iGoto = re_append(p, RE_OP_GOTO, 0);
+    p->sIn.i++;
+    zErr = re_subcompile_string(p);
+    if( zErr ) return zErr;
+    p->aArg[iGoto] = p->nState - iGoto;
+  }
+  return 0;
+}
+
+/* Compile an element of regular expression text (anything that can be
+** an operand to the "|" operator).  Return NULL on success or a pointer
+** to the error message if there is a problem.
+*/
+static const char *re_subcompile_string(ReCompiled *p){
+  int iPrev = -1;
+  int iStart;
+  unsigned c;
+  const char *zErr;
+  while( (c = p->xNextChar(&p->sIn))!=0 ){
+    iStart = p->nState;
+    switch( c ){
+      case '|':
+      case '$':
+      case ')': {
+        p->sIn.i--;
+        return 0;
+      }
+      case '(': {
+        zErr = re_subcompile_re(p);
+        if( zErr ) return zErr;
+        if( rePeek(p)!=')' ) return "unmatched '('";
+        p->sIn.i++;
+        break;
+      }
+      case '.': {
+        if( rePeek(p)=='*' ){
+          re_append(p, RE_OP_ANYSTAR, 0);
+          p->sIn.i++;
+        }else{
+          re_append(p, RE_OP_ANY, 0);
+        }
+        break;
+      }
+      case '*': {
+        if( iPrev<0 ) return "'*' without operand";
+        re_insert(p, iPrev, RE_OP_GOTO, p->nState - iPrev + 1);
+        re_append(p, RE_OP_FORK, iPrev - p->nState + 1);
+        break;
+      }
+      case '+': {
+        if( iPrev<0 ) return "'+' without operand";
+        re_append(p, RE_OP_FORK, iPrev - p->nState);
+        break;
+      }
+      case '?': {
+        if( iPrev<0 ) return "'?' without operand";
+        re_insert(p, iPrev, RE_OP_FORK, p->nState - iPrev+1);
+        break;
+      }
+      case '{': {
+        int m = 0, n = 0;
+        int sz, j;
+        if( iPrev<0 ) return "'{m,n}' without operand";
+        while( (c=rePeek(p))>='0' && c<='9' ){ m = m*10 + c - '0'; p->sIn.i++; }
+        n = m;
+        if( c==',' ){
+          p->sIn.i++;
+          n = 0;
+          while( (c=rePeek(p))>='0' && c<='9' ){ n = n*10 + c-'0'; p->sIn.i++; }
+        }
+        if( c!='}' ) return "unmatched '{'";
+        if( n>0 && n<m ) return "n less than m in '{m,n}'";
+        p->sIn.i++;
+        sz = p->nState - iPrev;
+        if( m==0 ){
+          if( n==0 ) return "both m and n are zero in '{m,n}'";
+          re_insert(p, iPrev, RE_OP_FORK, sz+1);
+          n--;
+        }else{
+          for(j=1; j<m; j++) re_copy(p, iPrev, sz);
+        }
+        for(j=m; j<n; j++){
+          re_append(p, RE_OP_FORK, sz+1);
+          re_copy(p, iPrev, sz);
+        }
+        if( n==0 && m>0 ){
+          re_append(p, RE_OP_FORK, -sz);
+        }
+        break;
+      }
+      case '[': {
+        int iFirst = p->nState;
+        if( rePeek(p)=='^' ){
+          re_append(p, RE_OP_CC_EXC, 0);
+          p->sIn.i++;
+        }else{
+          re_append(p, RE_OP_CC_INC, 0);
+        }
+        while( (c = p->xNextChar(&p->sIn))!=0 ){
+          if( c=='[' && rePeek(p)==':' ){
+            return "POSIX character classes not supported";
+          }
+          if( c=='\\' ) c = re_esc_char(p);
+          if( rePeek(p)=='-' ){
+            re_append(p, RE_OP_CC_RANGE, c);
+            p->sIn.i++;
+            c = p->xNextChar(&p->sIn);
+            if( c=='\\' ) c = re_esc_char(p);
+            re_append(p, RE_OP_CC_RANGE, c);
+          }else{
+            re_append(p, RE_OP_CC_VALUE, c);
+          }
+          if( rePeek(p)==']' ){ p->sIn.i++; break; }
+        }
+        if( c==0 ) return "unclosed '['";
+        p->aArg[iFirst] = p->nState - iFirst;
+        break;
+      }
+      case '\\': {
+        int specialOp = 0;
+        switch( rePeek(p) ){
+          case 'b': specialOp = RE_OP_BOUNDARY;   break;
+          case 'd': specialOp = RE_OP_DIGIT;      break;
+          case 'D': specialOp = RE_OP_NOTDIGIT;   break;
+          case 's': specialOp = RE_OP_SPACE;      break;
+          case 'S': specialOp = RE_OP_NOTSPACE;   break;
+          case 'w': specialOp = RE_OP_WORD;       break;
+          case 'W': specialOp = RE_OP_NOTWORD;    break;
+        }
+        if( specialOp ){
+          p->sIn.i++;
+          re_append(p, specialOp, 0);
+        }else{
+          c = re_esc_char(p);
+          re_append(p, RE_OP_MATCH, c);
+        }
+        break;
+      }
+      default: {
+        re_append(p, RE_OP_MATCH, c);
+        break;
+      }
+    }
+    iPrev = iStart;
+  }
+  return 0;
+}
+
+/* Free and reclaim all the memory used by a previously compiled
+** regular expression.  Applications should invoke this routine once
+** for every call to re_compile() to avoid memory leaks.
+*/
+static void re_free(ReCompiled *pRe){
+  if( pRe ){
+    sqlite3_free(pRe->aOp);
+    sqlite3_free(pRe->aArg);
+    sqlite3_free(pRe);
+  }
+}
+
+/*
+** Compile a textual regular expression in zIn[] into a compiled regular
+** expression suitable for us by re_match() and return a pointer to the
+** compiled regular expression in *ppRe.  Return NULL on success or an
+** error message if something goes wrong.
+*/
+static const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase){
+  ReCompiled *pRe;
+  const char *zErr;
+  int i, j;
+
+  *ppRe = 0;
+  pRe = sqlite3_malloc( sizeof(*pRe) );
+  if( pRe==0 ){
+    return "out of memory";
+  }
+  memset(pRe, 0, sizeof(*pRe));
+  pRe->xNextChar = noCase ? re_next_char_nocase : re_next_char;
+  if( re_resize(pRe, 30) ){
+    re_free(pRe);
+    return "out of memory";
+  }
+  if( zIn[0]=='^' ){
+    zIn++;
+  }else{
+    re_append(pRe, RE_OP_ANYSTAR, 0);
+  }
+  pRe->sIn.z = (unsigned char*)zIn;
+  pRe->sIn.i = 0;
+  pRe->sIn.mx = (int)strlen(zIn);
+  zErr = re_subcompile_re(pRe);
+  if( zErr ){
+    re_free(pRe);
+    return zErr;
+  }
+  if( rePeek(pRe)=='$' && pRe->sIn.i+1>=pRe->sIn.mx ){
+    re_append(pRe, RE_OP_MATCH, RE_EOF);
+    re_append(pRe, RE_OP_ACCEPT, 0);
+    *ppRe = pRe;
+  }else if( pRe->sIn.i>=pRe->sIn.mx ){
+    re_append(pRe, RE_OP_ACCEPT, 0);
+    *ppRe = pRe;
+  }else{
+    re_free(pRe);
+    return "unrecognized character";
+  }
+
+  /* The following is a performance optimization.  If the regex begins with
+  ** ".*" (if the input regex lacks an initial "^") and afterwards there are
+  ** one or more matching characters, enter those matching characters into
+  ** zInit[].  The re_match() routine can then search ahead in the input 
+  ** string looking for the initial match without having to run the whole
+  ** regex engine over the string.  Do not worry able trying to match
+  ** unicode characters beyond plane 0 - those are very rare and this is
+  ** just an optimization. */
+  if( pRe->aOp[0]==RE_OP_ANYSTAR && !noCase ){
+    for(j=0, i=1; j<(int)sizeof(pRe->zInit)-2 && pRe->aOp[i]==RE_OP_MATCH; i++){
+      unsigned x = pRe->aArg[i];
+      if( x<=127 ){
+        pRe->zInit[j++] = (unsigned char)x;
+      }else if( x<=0xfff ){
+        pRe->zInit[j++] = (unsigned char)(0xc0 | (x>>6));
+        pRe->zInit[j++] = 0x80 | (x&0x3f);
+      }else if( x<=0xffff ){
+        pRe->zInit[j++] = (unsigned char)(0xd0 | (x>>12));
+        pRe->zInit[j++] = 0x80 | ((x>>6)&0x3f);
+        pRe->zInit[j++] = 0x80 | (x&0x3f);
+      }else{
+        break;
+      }
+    }
+    if( j>0 && pRe->zInit[j-1]==0 ) j--;
+    pRe->nInit = j;
+  }
+  return pRe->zErr;
+}
+
+/*
+** Implementation of the regexp() SQL function.  This function implements
+** the build-in REGEXP operator.  The first argument to the function is the
+** pattern and the second argument is the string.  So, the SQL statements:
+**
+**       A REGEXP B
+**
+** is implemented as regexp(B,A).
+*/
+static void re_sql_func(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  ReCompiled *pRe;          /* Compiled regular expression */
+  const char *zPattern;     /* The regular expression */
+  const unsigned char *zStr;/* String being searched */
+  const char *zErr;         /* Compile error message */
+  int setAux = 0;           /* True to invoke sqlite3_set_auxdata() */
+
+  (void)argc;  /* Unused */
+  pRe = sqlite3_get_auxdata(context, 0);
+  if( pRe==0 ){
+    zPattern = (const char*)sqlite3_value_text(argv[0]);
+    if( zPattern==0 ) return;
+    zErr = re_compile(&pRe, zPattern, sqlite3_user_data(context)!=0);
+    if( zErr ){
+      re_free(pRe);
+      sqlite3_result_error(context, zErr, -1);
+      return;
+    }
+    if( pRe==0 ){
+      sqlite3_result_error_nomem(context);
+      return;
+    }
+    setAux = 1;
+  }
+  zStr = (const unsigned char*)sqlite3_value_text(argv[1]);
+  if( zStr!=0 ){
+    sqlite3_result_int(context, re_match(pRe, zStr, -1));
+  }
+  if( setAux ){
+    sqlite3_set_auxdata(context, 0, pRe, (void(*)(void*))re_free);
+  }
+}
+
+/*
+** Invoke this routine to register the regexp() function with the
+** SQLite database connection.
+*/
+#ifdef _WIN32
+
+#endif
+int sqlite3_regexp_init(
+  sqlite3 *db, 
+  char **pzErrMsg, 
+  const sqlite3_api_routines *pApi
+){
+  int rc = SQLITE_OK;
+  SQLITE_EXTENSION_INIT2(pApi);
+  (void)pzErrMsg;  /* Unused */
+  rc = sqlite3_create_function(db, "regexp", 2, SQLITE_UTF8|SQLITE_INNOCUOUS,
+                               0, re_sql_func, 0, 0);
+  if( rc==SQLITE_OK ){
+    /* The regexpi(PATTERN,STRING) function is a case-insensitive version
+    ** of regexp(PATTERN,STRING). */
+    rc = sqlite3_create_function(db, "regexpi", 2, SQLITE_UTF8|SQLITE_INNOCUOUS,
+                                 (void*)db, re_sql_func, 0, 0);
+  }
+  return rc;
+}
+
+/************************* End ../ext/misc/regexp.c ********************/
 #ifdef SQLITE_HAVE_ZLIB
 /************************* Begin ../ext/misc/zipfile.c ******************/
 /*
@@ -4257,10 +6697,24 @@ SQLITE_EXTENSION_INIT1
 
 #ifndef SQLITE_AMALGAMATION
 
+#ifndef UINT32_TYPE
+# ifdef HAVE_UINT32_T
+#  define UINT32_TYPE uint32_t
+# else
+#  define UINT32_TYPE unsigned int
+# endif
+#endif
+#ifndef UINT16_TYPE
+# ifdef HAVE_UINT16_T
+#  define UINT16_TYPE uint16_t
+# else
+#  define UINT16_TYPE unsigned short int
+# endif
+#endif
 /* typedef sqlite3_int64 i64; */
 /* typedef unsigned char u8; */
-typedef unsigned short u16;
-typedef unsigned long u32;
+typedef UINT32_TYPE u32;           /* 4-byte unsigned integer */
+typedef UINT16_TYPE u16;           /* 2-byte unsigned integer */
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 
 #if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_MUTATION_TEST)
@@ -4590,6 +7044,7 @@ static int zipfileConnect(
       zipfileDequote(pNew->zFile);
     }
   }
+  sqlite3_vtab_config(db, SQLITE_VTAB_DIRECTONLY);
   *ppVtab = (sqlite3_vtab*)pNew;
   return rc;
 }
@@ -4743,14 +7198,16 @@ static int zipfileAppendData(
   const u8 *aWrite,
   int nWrite
 ){
-  size_t n;
-  fseek(pTab->pWriteFd, (long)pTab->szCurrent, SEEK_SET);
-  n = fwrite(aWrite, 1, nWrite, pTab->pWriteFd);
-  if( (int)n!=nWrite ){
-    pTab->base.zErrMsg = sqlite3_mprintf("error in fwrite()");
-    return SQLITE_ERROR;
+  if( nWrite>0 ){
+    size_t n = nWrite;
+    fseek(pTab->pWriteFd, (long)pTab->szCurrent, SEEK_SET);
+    n = fwrite(aWrite, 1, nWrite, pTab->pWriteFd);
+    if( (int)n!=nWrite ){
+      pTab->base.zErrMsg = sqlite3_mprintf("error in fwrite()");
+      return SQLITE_ERROR;
+    }
+    pTab->szCurrent += nWrite;
   }
-  pTab->szCurrent += nWrite;
   return SQLITE_OK;
 }
 
@@ -4924,34 +7381,24 @@ static int zipfileScanExtra(u8 *aExtra, int nExtra, u32 *pmTime){
 ** https://msdn.microsoft.com/en-us/library/9kkf9tah.aspx
 */
 static u32 zipfileMtime(ZipfileCDS *pCDS){
-  int Y = (1980 + ((pCDS->mDate >> 9) & 0x7F));
-  int M = ((pCDS->mDate >> 5) & 0x0F);
-  int D = (pCDS->mDate & 0x1F);
-  int B = -13;
-
-  int sec = (pCDS->mTime & 0x1F)*2;
-  int min = (pCDS->mTime >> 5) & 0x3F;
-  int hr = (pCDS->mTime >> 11) & 0x1F;
-  i64 JD;
-
-  /* JD = INT(365.25 * (Y+4716)) + INT(30.6001 * (M+1)) + D + B - 1524.5 */
-
-  /* Calculate the JD in seconds for noon on the day in question */
-  if( M<3 ){
-    Y = Y-1;
-    M = M+12;
+  int Y,M,D,X1,X2,A,B,sec,min,hr;
+  i64 JDsec;
+  Y = (1980 + ((pCDS->mDate >> 9) & 0x7F));
+  M = ((pCDS->mDate >> 5) & 0x0F);
+  D = (pCDS->mDate & 0x1F);
+  sec = (pCDS->mTime & 0x1F)*2;
+  min = (pCDS->mTime >> 5) & 0x3F;
+  hr = (pCDS->mTime >> 11) & 0x1F;
+  if( M<=2 ){
+    Y--;
+    M += 12;
   }
-  JD = (i64)(24*60*60) * (
-      (int)(365.25 * (Y + 4716))
-    + (int)(30.6001 * (M + 1))
-    + D + B - 1524
-  );
-
-  /* Correct the JD for the time within the day */
-  JD += (hr-12) * 3600 + min * 60 + sec;
-
-  /* Convert JD to unix timestamp (the JD epoch is 2440587.5) */
-  return (u32)(JD - (i64)(24405875) * 24*60*6);
+  X1 = 36525*(Y+4716)/100;
+  X2 = 306001*(M+1)/10000;
+  A = Y/100;
+  B = 2 - A + (A/4);
+  JDsec = (i64)((X1 + X2 + D + B - 1524.5)*86400) + hr*3600 + min*60 + sec;
+  return (u32)(JDsec - (i64)24405875*(i64)8640);
 }
 
 /*
@@ -5202,25 +7649,25 @@ static int zipfileDeflate(
   u8 **ppOut, int *pnOut,         /* Output */
   char **pzErr                    /* OUT: Error message */
 ){
-  sqlite3_int64 nAlloc = compressBound(nIn);
-  u8 *aOut;
   int rc = SQLITE_OK;
+  sqlite3_int64 nAlloc;
+  z_stream str;
+  u8 *aOut;
 
+  memset(&str, 0, sizeof(str));
+  str.next_in = (Bytef*)aIn;
+  str.avail_in = nIn;
+  deflateInit2(&str, 9, Z_DEFLATED, -15, 8, Z_DEFAULT_STRATEGY);
+
+  nAlloc = deflateBound(&str, nIn);
   aOut = (u8*)sqlite3_malloc64(nAlloc);
   if( aOut==0 ){
     rc = SQLITE_NOMEM;
   }else{
     int res;
-    z_stream str;
-    memset(&str, 0, sizeof(str));
-    str.next_in = (Bytef*)aIn;
-    str.avail_in = nIn;
     str.next_out = aOut;
     str.avail_out = nAlloc;
-
-    deflateInit2(&str, 9, Z_DEFLATED, -15, 8, Z_DEFAULT_STRATEGY);
     res = deflate(&str, Z_FINISH);
-
     if( res==Z_STREAM_END ){
       *ppOut = aOut;
       *pnOut = (int)str.total_out;
@@ -5529,10 +7976,10 @@ static int zipfileBestIndex(
       idx = i;
     }
   }
+  pIdxInfo->estimatedCost = 1000.0;
   if( idx>=0 ){
     pIdxInfo->aConstraintUsage[idx].argvIndex = 1;
     pIdxInfo->aConstraintUsage[idx].omit = 1;
-    pIdxInfo->estimatedCost = 1000.0;
     pIdxInfo->idxNum = 1;
   }else if( unusable ){
     return SQLITE_CONSTRAINT;
@@ -5654,8 +8101,8 @@ static int zipfileGetMode(
 ** identical, ignoring any trailing '/' character in either path.  */
 static int zipfileComparePath(const char *zA, const char *zB, int nB){
   int nA = (int)strlen(zA);
-  if( zA[nA-1]=='/' ) nA--;
-  if( zB[nB-1]=='/' ) nB--;
+  if( nA>0 && zA[nA-1]=='/' ) nA--;
+  if( nB>0 && zB[nB-1]=='/' ) nB--;
   if( nA==nB && memcmp(zA, zB, nA)==0 ) return 0;
   return 1;
 }
@@ -5665,6 +8112,10 @@ static int zipfileBegin(sqlite3_vtab *pVtab){
   int rc = SQLITE_OK;
 
   assert( pTab->pWriteFd==0 );
+  if( pTab->zFile==0 || pTab->zFile[0]==0 ){
+    pTab->base.zErrMsg = sqlite3_mprintf("zipfile: missing filename");
+    return SQLITE_ERROR;
+  }
 
   /* Open a write fd on the file. Also load the entire central directory
   ** structure into memory. During the transaction any new file data is 
@@ -5696,6 +8147,7 @@ static int zipfileBegin(sqlite3_vtab *pVtab){
 static u32 zipfileTime(void){
   sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
   u32 ret;
+  if( pVfs==0 ) return 0;
   if( pVfs->iVersion>=2 && pVfs->xCurrentTimeInt64 ){
     i64 ms;
     pVfs->xCurrentTimeInt64(pVfs, &ms);
@@ -5839,6 +8291,7 @@ static int zipfileUpdate(
 
     if( rc==SQLITE_OK ){
       zPath = (const char*)sqlite3_value_text(apVal[2]);
+      if( zPath==0 ) zPath = "";
       nPath = (int)strlen(zPath);
       mTime = zipfileGetTime(apVal[4]);
     }
@@ -5848,11 +8301,15 @@ static int zipfileUpdate(
       ** '/'. This appears to be required for compatibility with info-zip
       ** (the unzip command on unix). It does not create directories
       ** otherwise.  */
-      if( zPath[nPath-1]!='/' ){
+      if( nPath<=0 || zPath[nPath-1]!='/' ){
         zFree = sqlite3_mprintf("%s/", zPath);
-        if( zFree==0 ){ rc = SQLITE_NOMEM; }
         zPath = (const char*)zFree;
-        nPath++;
+        if( zFree==0 ){
+          rc = SQLITE_NOMEM;
+          nPath = 0;
+        }else{
+          nPath = (int)strlen(zPath);
+        }
       }
     }
 
@@ -6245,19 +8702,19 @@ void zipfileStep(sqlite3_context *pCtx, int nVal, sqlite3_value **apVal){
   ** at the end of the path. Or, if this is not a directory and the path
   ** ends in '/' it is an error. */
   if( bIsDir==0 ){
-    if( zName[nName-1]=='/' ){
+    if( nName>0 && zName[nName-1]=='/' ){
       zErr = sqlite3_mprintf("non-directory name must not end with /");
       rc = SQLITE_ERROR;
       goto zipfile_step_out;
     }
   }else{
-    if( zName[nName-1]!='/' ){
+    if( nName==0 || zName[nName-1]!='/' ){
       zName = zFree = sqlite3_mprintf("%s/", zName);
-      nName++;
       if( zName==0 ){
         rc = SQLITE_NOMEM;
         goto zipfile_step_out;
       }
+      nName = (int)strlen(zName);
     }else{
       while( nName>1 && zName[nName-2]=='/' ) nName--;
     }
@@ -6379,6 +8836,10 @@ static int zipfileRegister(sqlite3 *db){
         zipfileStep, zipfileFinal
     );
   }
+  assert( sizeof(i64)==8 );
+  assert( sizeof(u32)==4 );
+  assert( sizeof(u16)==2 );
+  assert( sizeof(u8)==1 );
   return rc;
 }
 #else         /* SQLITE_OMIT_VIRTUALTABLE */
@@ -6419,6 +8880,7 @@ int sqlite3_zipfile_init(
 /* #include "sqlite3ext.h" */
 SQLITE_EXTENSION_INIT1
 #include <zlib.h>
+#include <assert.h>
 
 /*
 ** Implementation of the "sqlar_compress(X)" SQL function.
@@ -6513,10 +8975,12 @@ int sqlite3_sqlar_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "sqlar_compress", 1, SQLITE_UTF8, 0,
+  rc = sqlite3_create_function(db, "sqlar_compress", 1, 
+                               SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
                                sqlarCompressFunc, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "sqlar_uncompress", 2, SQLITE_UTF8, 0,
+    rc = sqlite3_create_function(db, "sqlar_uncompress", 2,
+                                 SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
                                  sqlarUncompressFunc, 0, 0);
   }
   return rc;
@@ -6537,8 +9001,8 @@ int sqlite3_sqlar_init(
 **
 *************************************************************************
 */
-
-
+#if !defined(SQLITEEXPERT_H)
+#define SQLITEEXPERT_H 1
 /* #include "sqlite3.h" */
 
 typedef struct sqlite3expert sqlite3expert;
@@ -6692,7 +9156,7 @@ const char *sqlite3_expert_report(sqlite3expert*, int iStmt, int eReport);
 */
 void sqlite3_expert_destroy(sqlite3expert*);
 
-
+#endif  /* !defined(SQLITEEXPERT_H) */
 
 /************************* End ../ext/expert/sqlite3expert.h ********************/
 /************************* Begin ../ext/expert/sqlite3expert.c ******************/
@@ -7383,8 +9847,9 @@ static int idxGetTableInfo(
   IdxTable *pNew = 0;
   int rc, rc2;
   char *pCsr = 0;
+  int nPk = 0;
 
-  rc = idxPrintfPrepareStmt(db, &p1, pzErrmsg, "PRAGMA table_info=%Q", zTab);
+  rc = idxPrintfPrepareStmt(db, &p1, pzErrmsg, "PRAGMA table_xinfo=%Q", zTab);
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(p1) ){
     const char *zCol = (const char*)sqlite3_column_text(p1, 1);
     nByte += 1 + STRLEN(zCol);
@@ -7393,6 +9858,7 @@ static int idxGetTableInfo(
     );
     nByte += 1 + STRLEN(zCol);
     nCol++;
+    nPk += (sqlite3_column_int(p1, 5)>0);
   }
   rc2 = sqlite3_reset(p1);
   if( rc==SQLITE_OK ) rc = rc2;
@@ -7412,7 +9878,7 @@ static int idxGetTableInfo(
     const char *zCol = (const char*)sqlite3_column_text(p1, 1);
     int nCopy = STRLEN(zCol) + 1;
     pNew->aCol[nCol].zName = pCsr;
-    pNew->aCol[nCol].iPk = sqlite3_column_int(p1, 5);
+    pNew->aCol[nCol].iPk = (sqlite3_column_int(p1, 5)==1 && nPk==1);
     memcpy(pCsr, zCol, nCopy);
     pCsr += nCopy;
 
@@ -7826,14 +10292,19 @@ int idxFindIndexes(
       /* int iParent = sqlite3_column_int(pExplain, 1); */
       /* int iNotUsed = sqlite3_column_int(pExplain, 2); */
       const char *zDetail = (const char*)sqlite3_column_text(pExplain, 3);
-      int nDetail = STRLEN(zDetail);
+      int nDetail;
       int i;
+
+      if( !zDetail ) continue;
+      nDetail = STRLEN(zDetail);
 
       for(i=0; i<nDetail; i++){
         const char *zIdx = 0;
-        if( memcmp(&zDetail[i], " USING INDEX ", 13)==0 ){
+        if( i+13<nDetail && memcmp(&zDetail[i], " USING INDEX ", 13)==0 ){
           zIdx = &zDetail[i+13];
-        }else if( memcmp(&zDetail[i], " USING COVERING INDEX ", 22)==0 ){
+        }else if( i+22<nDetail 
+            && memcmp(&zDetail[i], " USING COVERING INDEX ", 22)==0 
+        ){
           zIdx = &zDetail[i+22];
         }
         if( zIdx ){
@@ -7916,7 +10387,7 @@ static int idxProcessOneTrigger(
   IdxTable *pTab = pWrite->pTab;
   const char *zTab = pTab->zName;
   const char *zSql = 
-    "SELECT 'CREATE TEMP' || substr(sql, 7) FROM sqlite_master "
+    "SELECT 'CREATE TEMP' || substr(sql, 7) FROM sqlite_schema "
     "WHERE tbl_name = %Q AND type IN ('table', 'trigger') "
     "ORDER BY type;";
   sqlite3_stmt *pSelect = 0;
@@ -8016,12 +10487,12 @@ static int idxCreateVtabSchema(sqlite3expert *p, char **pzErrmsg){
   **   2) Create the equivalent virtual table in dbv.
   */
   rc = idxPrepareStmt(p->db, &pSchema, pzErrmsg,
-      "SELECT type, name, sql, 1 FROM sqlite_master "
+      "SELECT type, name, sql, 1 FROM sqlite_schema "
       "WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%%' "
       " UNION ALL "
-      "SELECT type, name, sql, 2 FROM sqlite_master "
+      "SELECT type, name, sql, 2 FROM sqlite_schema "
       "WHERE type = 'trigger'"
-      "  AND tbl_name IN(SELECT name FROM sqlite_master WHERE type = 'view') "
+      "  AND tbl_name IN(SELECT name FROM sqlite_schema WHERE type = 'view') "
       "ORDER BY 4, 1"
   );
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSchema) ){
@@ -8191,7 +10662,7 @@ static int idxLargestIndex(sqlite3 *db, int *pnMax, char **pzErr){
   int rc = SQLITE_OK;
   const char *zMax = 
     "SELECT max(i.seqno) FROM "
-    "  sqlite_master AS s, "
+    "  sqlite_schema AS s, "
     "  pragma_index_list(s.name) AS l, "
     "  pragma_index_info(l.name) AS i "
     "WHERE s.type = 'table'";
@@ -8344,7 +10815,7 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
 
   const char *zAllIndex =
     "SELECT s.rowid, s.name, l.name FROM "
-    "  sqlite_master AS s, "
+    "  sqlite_schema AS s, "
     "  pragma_index_list(s.name) AS l "
     "WHERE s.type = 'table'";
   const char *zIndexXInfo = 
@@ -8412,13 +10883,15 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
   idxFinalize(&rc, pIndexXInfo);
   idxFinalize(&rc, pWrite);
 
-  for(i=0; i<pCtx->nSlot; i++){
-    sqlite3_free(pCtx->aSlot[i].z);
+  if( pCtx ){
+    for(i=0; i<pCtx->nSlot; i++){
+      sqlite3_free(pCtx->aSlot[i].z);
+    }
+    sqlite3_free(pCtx);
   }
-  sqlite3_free(pCtx);
 
   if( rc==SQLITE_OK ){
-    rc = sqlite3_exec(p->dbm, "ANALYZE sqlite_master", 0, 0, 0);
+    rc = sqlite3_exec(p->dbm, "ANALYZE sqlite_schema", 0, 0, 0);
   }
 
   sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp."UNIQUE_TABLE_NAME,0,0,0);
@@ -8457,7 +10930,7 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
   if( rc==SQLITE_OK ){
     sqlite3_stmt *pSql;
     rc = idxPrintfPrepareStmt(pNew->db, &pSql, pzErrmsg, 
-        "SELECT sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%%'"
+        "SELECT sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%%'"
         " AND sql NOT LIKE 'CREATE VIRTUAL %%'"
     );
     while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
@@ -8648,7 +11121,7 @@ void sqlite3_expert_destroy(sqlite3expert *p){
   }
 }
 
-#endif /* ifndef SQLITE_OMIT_VIRTUAL_TABLE */
+#endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
 
 /************************* End ../ext/expert/sqlite3expert.c ********************/
 
@@ -9522,18 +11995,6 @@ struct OpenSession {
 };
 #endif
 
-/*
-** Shell output mode information from before ".explain on",
-** saved so that it can be restored by ".explain off"
-*/
-typedef struct SavedModeInfo SavedModeInfo;
-struct SavedModeInfo {
-  int valid;          /* Is there legit data in here? */
-  int mode;           /* Mode prior to ".explain on" */
-  int showHeader;     /* The ".header" setting prior to ".explain on" */
-  int colWidth[100];  /* Column widths prior to ".explain on" */
-};
-
 typedef struct ExpertInfo ExpertInfo;
 struct ExpertInfo {
   sqlite3expert *pExpert;
@@ -9568,16 +12029,17 @@ struct ShellState {
   u8 autoEQP;            /* Run EXPLAIN QUERY PLAN prior to seach SQL stmt */
   u8 autoEQPtest;        /* autoEQP is in test mode */
   u8 autoEQPtrace;       /* autoEQP is in trace mode */
-  u8 statsOn;            /* True to display memory stats before each finalize */
   u8 scanstatsOn;        /* True to display scan stats before each finalize */
   u8 openMode;           /* SHELL_OPEN_NORMAL, _APPENDVFS, or _ZIPFILE */
   u8 doXdgOpen;          /* Invoke start/open/xdg-open in output_reset() */
   u8 nEqpLevel;          /* Depth of the EQP output graph */
   u8 eTraceType;         /* SHELL_TRACE_* value for type of trace */
+  unsigned statsOn;      /* True to display memory stats before each finalize */
   unsigned mEqpLines;    /* Mask of veritical lines in the EQP output graph */
   int outCount;          /* Revert to stdout when reaching zero */
   int cnt;               /* Number of records displayed so far */
   int lineno;            /* Line number of last line read from in */
+  int openFlags;         /* Additional flags to open.  (SQLITE_OPEN_NOFOLLOW) */
   FILE *in;              /* Read commands from this stream */
   FILE *out;             /* Write results here */
   FILE *traceOut;        /* Output for sqlite3_trace() */
@@ -9593,6 +12055,7 @@ struct ShellState {
   unsigned mxProgress;   /* Maximum progress callbacks before failing */
   unsigned flgProgress;  /* Flags for the progress callback */
   unsigned shellFlgs;    /* Various flags */
+  unsigned priorShFlgs;  /* Saved copy of flags */
   sqlite3_int64 szMax;   /* --maxsize argument to .open */
   char *zDestTable;      /* Name of destination table when MODE_Insert */
   char *zTempFile;       /* Temporary file that might need deleting */
@@ -9601,8 +12064,9 @@ struct ShellState {
   char rowSeparator[20]; /* Row separator character for MODE_Ascii */
   char colSepPrior[20];  /* Saved column separator */
   char rowSepPrior[20];  /* Saved row separator */
-  int colWidth[100];     /* Requested width of each column when in column mode*/
-  int actualWidth[100];  /* Actual width of each column */
+  int *colWidth;         /* Requested width of each column in columnar modes */
+  int *actualWidth;      /* Actual width of each column */
+  int nWidth;            /* Number of slots in colWidth[] and actualWidth[] */
   char nullValue[20];    /* The text to print when a NULL comes back from
                          ** the database */
   char outfile[FILENAME_MAX]; /* Filename for *out */
@@ -9663,6 +12127,9 @@ struct ShellState {
 #define SHFLG_Newlines       0x00000010 /* .dump --newline flag */
 #define SHFLG_CountChanges   0x00000020 /* .changes setting */
 #define SHFLG_Echo           0x00000040 /* .echo or --echo setting */
+#define SHFLG_HeaderSet      0x00000080 /* .header has been used */
+#define SHFLG_DumpDataOnly   0x00000100 /* .dump show data only */
+#define SHFLG_DumpNoSys      0x00000200 /* .dump omits system tables */
 
 /*
 ** Macros for testing and setting shellFlgs
@@ -9687,6 +12154,10 @@ struct ShellState {
 #define MODE_Ascii   10  /* Use ASCII unit and record separators (0x1F/0x1E) */
 #define MODE_Pretty  11  /* Pretty-print schemas */
 #define MODE_EQP     12  /* Converts EXPLAIN QUERY PLAN output into a graph */
+#define MODE_Json    13  /* Output JSON */
+#define MODE_Markdown 14 /* Markdown formatting */
+#define MODE_Table   15  /* MySQL-style table formatting */
+#define MODE_Box     16  /* Unicode box-drawing characters */
 
 static const char *modeDescr[] = {
   "line",
@@ -9701,7 +12172,11 @@ static const char *modeDescr[] = {
   "explain",
   "ascii",
   "prettyprint",
-  "eqp"
+  "eqp",
+  "json",
+  "markdown",
+  "table",
+  "box"
 };
 
 /*
@@ -9813,12 +12288,12 @@ static void editFunc(
   }
   sz = sqlite3_value_bytes(argv[0]);
   if( bBin ){
-    x = fwrite(sqlite3_value_blob(argv[0]), 1, sz, f);
+    x = fwrite(sqlite3_value_blob(argv[0]), 1, (size_t)sz, f);
   }else{
     const char *z = (const char*)sqlite3_value_text(argv[0]);
     /* Remember whether or not the value originally contained \r\n */
     if( z && strstr(z,"\r\n")!=0 ) hasCRNL = 1;
-    x = fwrite(sqlite3_value_text(argv[0]), 1, sz, f);
+    x = fwrite(sqlite3_value_text(argv[0]), 1, (size_t)sz, f);
   }
   fclose(f);
   f = 0;
@@ -9846,12 +12321,12 @@ static void editFunc(
   fseek(f, 0, SEEK_END);
   sz = ftell(f);
   rewind(f);
-  p = sqlite3_malloc64( sz+(bBin==0) );
+  p = sqlite3_malloc64( sz+1 );
   if( p==0 ){
     sqlite3_result_error_nomem(context);
     goto edit_func_end;
   }
-  x = fread(p, 1, sz, f);
+  x = fread(p, 1, (size_t)sz, f);
   fclose(f);
   f = 0;
   if( x!=sz ){
@@ -9893,11 +12368,13 @@ edit_func_end:
 */
 static void outputModePush(ShellState *p){
   p->modePrior = p->mode;
+  p->priorShFlgs = p->shellFlgs;
   memcpy(p->colSepPrior, p->colSeparator, sizeof(p->colSeparator));
   memcpy(p->rowSepPrior, p->rowSeparator, sizeof(p->rowSeparator));
 }
 static void outputModePop(ShellState *p){
   p->mode = p->modePrior;
+  p->shellFlgs = p->priorShFlgs;
   memcpy(p->colSeparator, p->colSepPrior, sizeof(p->colSeparator));
   memcpy(p->rowSeparator, p->rowSepPrior, sizeof(p->rowSeparator));
 }
@@ -10060,6 +12537,40 @@ static void output_c_string(FILE *out, const char *z){
       fputc('r', out);
     }else if( !isprint(c&0xff) ){
       raw_printf(out, "\\%03o", c&0xff);
+    }else{
+      fputc(c, out);
+    }
+  }
+  fputc('"', out);
+}
+
+/*
+** Output the given string as a quoted according to JSON quoting rules.
+*/
+static void output_json_string(FILE *out, const char *z, int n){
+  unsigned int c;
+  if( n<0 ) n = (int)strlen(z);
+  fputc('"', out);
+  while( n-- ){
+    c = *(z++);
+    if( c=='\\' || c=='"' ){
+      fputc('\\', out);
+      fputc(c, out);
+    }else if( c<=0x1f ){
+      fputc('\\', out);
+      if( c=='\b' ){
+        fputc('b', out);
+      }else if( c=='\f' ){
+        fputc('f', out);
+      }else if( c=='\n' ){
+        fputc('n', out);
+      }else if( c=='\r' ){
+        fputc('r', out);
+      }else if( c=='\t' ){
+        fputc('t', out);
+      }else{
+         raw_printf(out, "u%04x",c);
+      }
     }else{
       fputc(c, out);
     }
@@ -10323,7 +12834,8 @@ static void eqp_render_level(ShellState *p, int iEqpId){
   for(pRow = eqp_next_row(p, iEqpId, 0); pRow; pRow = pNext){
     pNext = eqp_next_row(p, iEqpId, pRow);
     z = pRow->zText;
-    utf8_printf(p->out, "%s%s%s\n", p->sGraph.zPrefix, pNext ? "|--" : "`--", z);
+    utf8_printf(p->out, "%s%s%s\n", p->sGraph.zPrefix,
+                pNext ? "|--" : "`--", z);
     if( n<(int)sizeof(p->sGraph.zPrefix)-7 ){
       memcpy(&p->sGraph.zPrefix[n], pNext ? "|  " : "   ", 4);
       eqp_render_level(p, pRow->iEqpId);
@@ -10376,6 +12888,40 @@ static int progress_handler(void *pClientData) {
 #endif /* SQLITE_OMIT_PROGRESS_CALLBACK */
 
 /*
+** Print N dashes
+*/
+static void print_dashes(FILE *out, int N){
+  const char zDash[] = "--------------------------------------------------";
+  const int nDash = sizeof(zDash) - 1;
+  while( N>nDash ){
+    fputs(zDash, out);
+    N -= nDash;
+  }
+  raw_printf(out, "%.*s", N, zDash);
+}
+
+/*
+** Print a markdown or table-style row separator using ascii-art
+*/
+static void print_row_separator(
+  ShellState *p,
+  int nArg,
+  const char *zSep
+){
+  int i;
+  if( nArg>0 ){
+    fputs(zSep, p->out);
+    print_dashes(p->out, p->actualWidth[0]+2);
+    for(i=1; i<nArg; i++){
+      fputs(zSep, p->out);
+      print_dashes(p->out, p->actualWidth[i]+2);
+    }
+    fputs(zSep, p->out);
+  }
+  fputs("\n", p->out);
+}
+
+/*
 ** This is the callback routine that the shell
 ** invokes for each row of a query result.
 */
@@ -10384,7 +12930,7 @@ static int shell_callback(
   int nArg,        /* Number of result columns */
   char **azArg,    /* Text of each result column */
   char **azCol,    /* Column names */
-  int *aiType      /* Column types */
+  int *aiType      /* Column types.  Might be NULL */
 ){
   int i;
   ShellState *p = (ShellState*)pArg;
@@ -10405,68 +12951,28 @@ static int shell_callback(
       }
       break;
     }
-    case MODE_Explain:
-    case MODE_Column: {
-      static const int aExplainWidths[] = {4, 13, 4, 4, 4, 13, 2, 13};
-      const int *colWidth;
-      int showHdr;
-      char *rowSep;
-      if( p->cMode==MODE_Column ){
-        colWidth = p->colWidth;
-        showHdr = p->showHeader;
-        rowSep = p->rowSeparator;
-      }else{
-        colWidth = aExplainWidths;
-        showHdr = 1;
-        rowSep = SEP_Row;
+    case MODE_Explain: {
+      static const int aExplainWidth[] = {4, 13, 4, 4, 4, 13, 2, 13};
+      if( nArg>ArraySize(aExplainWidth) ){
+        nArg = ArraySize(aExplainWidth);
       }
       if( p->cnt++==0 ){
         for(i=0; i<nArg; i++){
-          int w, n;
-          if( i<ArraySize(p->colWidth) ){
-            w = colWidth[i];
-          }else{
-            w = 0;
-          }
-          if( w==0 ){
-            w = strlenChar(azCol[i] ? azCol[i] : "");
-            if( w<10 ) w = 10;
-            n = strlenChar(azArg && azArg[i] ? azArg[i] : p->nullValue);
-            if( w<n ) w = n;
-          }
-          if( i<ArraySize(p->actualWidth) ){
-            p->actualWidth[i] = w;
-          }
-          if( showHdr ){
-            utf8_width_print(p->out, w, azCol[i]);
-            utf8_printf(p->out, "%s", i==nArg-1 ? rowSep : "  ");
-          }
+          int w = aExplainWidth[i];
+          utf8_width_print(p->out, w, azCol[i]);
+          fputs(i==nArg-1 ? "\n" : "  ", p->out);
         }
-        if( showHdr ){
-          for(i=0; i<nArg; i++){
-            int w;
-            if( i<ArraySize(p->actualWidth) ){
-               w = p->actualWidth[i];
-               if( w<0 ) w = -w;
-            }else{
-               w = 10;
-            }
-            utf8_printf(p->out,"%-*.*s%s",w,w,
-                   "----------------------------------------------------------"
-                   "----------------------------------------------------------",
-                    i==nArg-1 ? rowSep : "  ");
-          }
+        for(i=0; i<nArg; i++){
+          int w = aExplainWidth[i];
+          print_dashes(p->out, w);
+          fputs(i==nArg-1 ? "\n" : "  ", p->out);
         }
       }
       if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
-        int w;
-        if( i<ArraySize(p->actualWidth) ){
-           w = p->actualWidth[i];
-        }else{
-           w = 10;
-        }
-        if( p->cMode==MODE_Explain && azArg[i] && strlenChar(azArg[i])>w ){
+        int w = aExplainWidth[i];
+        if( i==nArg-1 ) w = 0;
+        if( azArg[i] && strlenChar(azArg[i])>w ){
           w = strlenChar(azArg[i]);
         }
         if( i==1 && p->aiIndent && p->pStmt ){
@@ -10476,7 +12982,7 @@ static int shell_callback(
           p->iIndent++;
         }
         utf8_width_print(p->out, w, azArg[i] ? azArg[i] : p->nullValue);
-        utf8_printf(p->out, "%s", i==nArg-1 ? rowSep : "  ");
+        fputs(i==nArg-1 ? "\n" : "  ", p->out);
       }
       break;
     }
@@ -10514,7 +13020,7 @@ static int shell_callback(
       while( j>0 && IsSpace(z[j-1]) ){ j--; }
       z[j] = 0;
       if( strlen30(z)>=79 ){
-        for(i=j=0; (c = z[i])!=0; i++){  /* Copy changes from z[i] back to z[j] */
+        for(i=j=0; (c = z[i])!=0; i++){ /* Copy from z[i] back to z[j] */
           if( c==cEnd ){
             cEnd = 0;
           }else if( c=='"' || c=='\'' || c=='`' ){
@@ -10680,18 +13186,60 @@ static int shell_callback(
       raw_printf(p->out,");\n");
       break;
     }
+    case MODE_Json: {
+      if( azArg==0 ) break;
+      if( p->cnt==0 ){
+        fputs("[{", p->out);
+      }else{
+        fputs(",\n{", p->out);
+      }
+      p->cnt++;
+      for(i=0; i<nArg; i++){
+        output_json_string(p->out, azCol[i], -1);
+        putc(':', p->out);
+        if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
+          fputs("null",p->out);
+        }else if( aiType && aiType[i]==SQLITE_FLOAT ){
+          char z[50];
+          double r = sqlite3_column_double(p->pStmt, i);
+          sqlite3_uint64 ur;
+          memcpy(&ur,&r,sizeof(r));
+          if( ur==0x7ff0000000000000LL ){
+            raw_printf(p->out, "1e999");
+          }else if( ur==0xfff0000000000000LL ){
+            raw_printf(p->out, "-1e999");
+          }else{
+            sqlite3_snprintf(50,z,"%!.20g", r);
+            raw_printf(p->out, "%s", z);
+          }
+        }else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
+          const void *pBlob = sqlite3_column_blob(p->pStmt, i);
+          int nBlob = sqlite3_column_bytes(p->pStmt, i);
+          output_json_string(p->out, pBlob, nBlob);
+        }else if( aiType && aiType[i]==SQLITE_TEXT ){
+          output_json_string(p->out, azArg[i], -1);
+        }else{
+          utf8_printf(p->out,"%s", azArg[i]);
+        }
+        if( i<nArg-1 ){
+          putc(',', p->out);
+        }
+      }
+      putc('}', p->out);
+      break;
+    }
     case MODE_Quote: {
       if( azArg==0 ) break;
       if( p->cnt==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
-          if( i>0 ) raw_printf(p->out, ",");
+          if( i>0 ) fputs(p->colSeparator, p->out);
           output_quoted_string(p->out, azCol[i]);
         }
-        raw_printf(p->out,"\n");
+        fputs(p->rowSeparator, p->out);
       }
       p->cnt++;
       for(i=0; i<nArg; i++){
-        if( i>0 ) raw_printf(p->out, ",");
+        if( i>0 ) fputs(p->colSeparator, p->out);
         if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
           utf8_printf(p->out,"NULL");
         }else if( aiType && aiType[i]==SQLITE_TEXT ){
@@ -10713,7 +13261,7 @@ static int shell_callback(
           output_quoted_string(p->out, azArg[i]);
         }
       }
-      raw_printf(p->out,"\n");
+      fputs(p->rowSeparator, p->out);
       break;
     }
     case MODE_Ascii: {
@@ -10786,16 +13334,16 @@ static void createSelftestTable(ShellState *p){
     "INSERT INTO [_shell$self]\n"
     "  SELECT 'run',\n"
     "    'SELECT hex(sha3_query(''SELECT type,name,tbl_name,sql "
-                                 "FROM sqlite_master ORDER BY 2'',224))',\n"
+                                 "FROM sqlite_schema ORDER BY 2'',224))',\n"
     "    hex(sha3_query('SELECT type,name,tbl_name,sql "
-                          "FROM sqlite_master ORDER BY 2',224));\n"
+                          "FROM sqlite_schema ORDER BY 2',224));\n"
     "INSERT INTO [_shell$self]\n"
     "  SELECT 'run',"
     "    'SELECT hex(sha3_query(''SELECT * FROM \"' ||"
     "        printf('%w',name) || '\" NOT INDEXED'',224))',\n"
     "    hex(sha3_query(printf('SELECT * FROM \"%w\" NOT INDEXED',name),224))\n"
     "  FROM (\n"
-    "    SELECT name FROM sqlite_master\n"
+    "    SELECT name FROM sqlite_schema\n"
     "     WHERE type='table'\n"
     "       AND name<>'selftest'\n"
     "       AND coalesce(rootpage,0)>0\n"
@@ -10858,8 +13406,7 @@ static void set_table_name(ShellState *p, const char *zName){
 */
 static int run_table_dump_query(
   ShellState *p,           /* Query context */
-  const char *zSelect,     /* SELECT statement to extract content */
-  const char *zFirstRow    /* Print before first row, if not NULL */
+  const char *zSelect      /* SELECT statement to extract content */
 ){
   sqlite3_stmt *pSelect;
   int rc;
@@ -10876,10 +13423,6 @@ static int run_table_dump_query(
   rc = sqlite3_step(pSelect);
   nResult = sqlite3_column_count(pSelect);
   while( rc==SQLITE_ROW ){
-    if( zFirstRow ){
-      utf8_printf(p->out, "%s", zFirstRow);
-      zFirstRow = 0;
-    }
     z = (const char*)sqlite3_column_text(pSelect, 0);
     utf8_printf(p->out, "%s", z);
     for(i=1; i<nResult; i++){
@@ -10993,7 +13536,7 @@ static int display_stats(
   if( pArg==0 || pArg->out==0 ) return 0;
   out = pArg->out;
 
-  if( pArg->pStmt && (pArg->statsOn & 2) ){
+  if( pArg->pStmt && pArg->statsOn==2 ){
     int nCol, i, x;
     sqlite3_stmt *pStmt = pArg->pStmt;
     char z[100];
@@ -11015,6 +13558,14 @@ static int display_stats(
       utf8_printf(out, "%-36s %s\n", z, sqlite3_column_origin_name(pStmt,i));
 #endif
     }
+  }
+
+  if( pArg->statsOn==3 ){
+    if( pArg->pStmt ){
+      iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_VM_STEP, bReset);
+      raw_printf(pArg->out, "VM-steps: %d\n", iCur);
+    }
+    return 0;
   }
 
   displayStatLine(pArg, "Memory Used:",
@@ -11093,7 +13644,7 @@ static int display_stats(
     raw_printf(pArg->out, "Autoindex Inserts:                   %d\n", iCur);
     iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_VM_STEP, bReset);
     raw_printf(pArg->out, "Virtual Machine Steps:               %d\n", iCur);
-    iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_REPREPARE, bReset);
+    iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_REPREPARE,bReset);
     raw_printf(pArg->out, "Reprepare operations:                %d\n", iCur);
     iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_RUN, bReset);
     raw_printf(pArg->out, "Number of times run:                 %d\n", iCur);
@@ -11283,45 +13834,36 @@ static void explain_data_delete(ShellState *p){
 /*
 ** Disable and restore .wheretrace and .selecttrace settings.
 */
-#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_SELECTTRACE)
-extern int sqlite3SelectTrace;
-static int savedSelectTrace;
-#endif
-#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_WHERETRACE)
-extern int sqlite3WhereTrace;
-static int savedWhereTrace;
-#endif
+static unsigned int savedSelectTrace;
+static unsigned int savedWhereTrace;
 static void disable_debug_trace_modes(void){
-#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_SELECTTRACE)
-  savedSelectTrace = sqlite3SelectTrace;
-  sqlite3SelectTrace = 0;
-#endif
-#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_WHERETRACE)
-  savedWhereTrace = sqlite3WhereTrace;
-  sqlite3WhereTrace = 0;
-#endif
+  unsigned int zero = 0;
+  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 0, &savedSelectTrace);
+  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &zero);
+  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 2, &savedWhereTrace);
+  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &zero);
 }
 static void restore_debug_trace_modes(void){
-#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_SELECTTRACE)
-  sqlite3SelectTrace = savedSelectTrace;
-#endif
-#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_WHERETRACE)
-  sqlite3WhereTrace = savedWhereTrace;
-#endif
+  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &savedSelectTrace);
+  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &savedWhereTrace);
 }
 
 /* Create the TEMP table used to store parameter bindings */
 static void bind_table_init(ShellState *p){
   int wrSchema = 0;
+  int defensiveMode = 0;
+  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, -1, &defensiveMode);
+  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 0, 0);
   sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, -1, &wrSchema);
   sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
   sqlite3_exec(p->db,
     "CREATE TABLE IF NOT EXISTS temp.sqlite_parameters(\n"
     "  key TEXT PRIMARY KEY,\n"
-    "  value ANY\n"
+    "  value\n"
     ") WITHOUT ROWID;",
     0, 0, 0);
   sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, wrSchema, 0);
+  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, defensiveMode, 0);
 }
 
 /*
@@ -11332,9 +13874,9 @@ static void bind_table_init(ShellState *p){
 **    CREATE TEMP TABLE sqlite_parameters(key TEXT PRIMARY KEY, value)
 **    WITHOUT ROWID;
 **
-** No bindings occur if this table does not exist.  The special character '$'
-** is included in the table name to help prevent collisions with actual tables.
-** The table must be in the TEMP schema.
+** No bindings occur if this table does not exist.  The name of the table
+** begins with "sqlite_" so that it will not collide with ordinary application
+** tables.  The table must be in the TEMP schema.
 */
 static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
   int nVar;
@@ -11371,6 +13913,234 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
 }
 
 /*
+** UTF8 box-drawing characters.  Imagine box lines like this:
+**
+**           1
+**           |
+**       4 --+-- 2
+**           |
+**           3
+**
+** Each box characters has between 2 and 4 of the lines leading from
+** the center.  The characters are here identified by the numbers of
+** their corresponding lines.
+*/
+#define BOX_24   "\342\224\200"  /* U+2500 --- */
+#define BOX_13   "\342\224\202"  /* U+2502  |  */
+#define BOX_23   "\342\224\214"  /* U+250c  ,- */
+#define BOX_34   "\342\224\220"  /* U+2510 -,  */
+#define BOX_12   "\342\224\224"  /* U+2514  '- */
+#define BOX_14   "\342\224\230"  /* U+2518 -'  */
+#define BOX_123  "\342\224\234"  /* U+251c  |- */
+#define BOX_134  "\342\224\244"  /* U+2524 -|  */
+#define BOX_234  "\342\224\254"  /* U+252c -,- */
+#define BOX_124  "\342\224\264"  /* U+2534 -'- */
+#define BOX_1234 "\342\224\274"  /* U+253c -|- */
+
+/* Draw horizontal line N characters long using unicode box
+** characters
+*/
+static void print_box_line(FILE *out, int N){
+  const char zDash[] = 
+      BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24
+      BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24;
+  const int nDash = sizeof(zDash) - 1;
+  N *= 3;
+  while( N>nDash ){
+    utf8_printf(out, zDash);
+    N -= nDash;
+  }
+  utf8_printf(out, "%.*s", N, zDash);
+}
+
+/*
+** Draw a horizontal separator for a MODE_Box table.
+*/
+static void print_box_row_separator(
+  ShellState *p,
+  int nArg,
+  const char *zSep1,
+  const char *zSep2,
+  const char *zSep3
+){
+  int i;
+  if( nArg>0 ){
+    utf8_printf(p->out, "%s", zSep1);
+    print_box_line(p->out, p->actualWidth[0]+2);
+    for(i=1; i<nArg; i++){
+      utf8_printf(p->out, "%s", zSep2);
+      print_box_line(p->out, p->actualWidth[i]+2);
+    }
+    utf8_printf(p->out, "%s", zSep3);
+  }
+  fputs("\n", p->out);
+}
+
+
+
+/*
+** Run a prepared statement and output the result in one of the
+** table-oriented formats: MODE_Column, MODE_Markdown, MODE_Table,
+** or MODE_Box.
+**
+** This is different from ordinary exec_prepared_stmt() in that
+** it has to run the entire query and gather the results into memory
+** first, in order to determine column widths, before providing
+** any output.
+*/
+static void exec_prepared_stmt_columnar(
+  ShellState *p,                        /* Pointer to ShellState */
+  sqlite3_stmt *pStmt                   /* Statment to run */
+){
+  sqlite3_int64 nRow = 0;
+  int nColumn = 0;
+  char **azData = 0;
+  sqlite3_int64 nAlloc = 0;
+  const char *z;
+  int rc;
+  sqlite3_int64 i, nData;
+  int j, nTotal, w, n;
+  const char *colSep = 0;
+  const char *rowSep = 0;
+
+  rc = sqlite3_step(pStmt);
+  if( rc!=SQLITE_ROW ) return;
+  nColumn = sqlite3_column_count(pStmt);
+  nAlloc = nColumn*4;
+  if( nAlloc<=0 ) nAlloc = 1;
+  azData = sqlite3_malloc64( nAlloc*sizeof(char*) );
+  if( azData==0 ) shell_out_of_memory();
+  for(i=0; i<nColumn; i++){
+    azData[i] = strdup(sqlite3_column_name(pStmt,i));
+  }
+  do{
+    if( (nRow+2)*nColumn >= nAlloc ){
+      nAlloc *= 2;
+      azData = sqlite3_realloc64(azData, nAlloc*sizeof(char*));
+      if( azData==0 ) shell_out_of_memory();
+    }
+    nRow++;
+    for(i=0; i<nColumn; i++){
+      z = (const char*)sqlite3_column_text(pStmt,i);
+      azData[nRow*nColumn + i] = z ? strdup(z) : 0;
+    }
+  }while( (rc = sqlite3_step(pStmt))==SQLITE_ROW );
+  if( nColumn>p->nWidth ){
+    p->colWidth = realloc(p->colWidth, nColumn*2*sizeof(int));
+    if( p->colWidth==0 ) shell_out_of_memory();
+    for(i=p->nWidth; i<nColumn; i++) p->colWidth[i] = 0;
+    p->nWidth = nColumn;
+    p->actualWidth = &p->colWidth[nColumn];
+  }
+  memset(p->actualWidth, 0, nColumn*sizeof(int));
+  for(i=0; i<nColumn; i++){
+    w = p->colWidth[i];
+    if( w<0 ) w = -w;
+    p->actualWidth[i] = w;
+  }
+  nTotal = nColumn*(nRow+1);
+  for(i=0; i<nTotal; i++){
+    z = azData[i];
+    if( z==0 ) z = p->nullValue;
+    n = strlenChar(z);
+    j = i%nColumn;
+    if( n>p->actualWidth[j] ) p->actualWidth[j] = n;
+  }
+  if( seenInterrupt ) goto columnar_end;
+  if( nColumn==0 ) goto columnar_end;
+  switch( p->cMode ){
+    case MODE_Column: {
+      colSep = "  ";
+      rowSep = "\n";
+      if( p->showHeader ){
+        for(i=0; i<nColumn; i++){
+          w = p->actualWidth[i];
+          if( p->colWidth[i]<0 ) w = -w;
+          utf8_width_print(p->out, w, azData[i]);
+          fputs(i==nColumn-1?"\n":"  ", p->out);
+        }
+        for(i=0; i<nColumn; i++){
+          print_dashes(p->out, p->actualWidth[i]);
+          fputs(i==nColumn-1?"\n":"  ", p->out);
+        }
+      }
+      break;
+    }
+    case MODE_Table: {
+      colSep = " | ";
+      rowSep = " |\n";
+      print_row_separator(p, nColumn, "+");
+      fputs("| ", p->out);
+      for(i=0; i<nColumn; i++){
+        w = p->actualWidth[i];
+        n = strlenChar(azData[i]);
+        utf8_printf(p->out, "%*s%s%*s", (w-n)/2, "", azData[i], (w-n+1)/2, "");
+        fputs(i==nColumn-1?" |\n":" | ", p->out);
+      }
+      print_row_separator(p, nColumn, "+");
+      break;
+    }
+    case MODE_Markdown: {
+      colSep = " | ";
+      rowSep = " |\n";
+      fputs("| ", p->out);
+      for(i=0; i<nColumn; i++){
+        w = p->actualWidth[i];
+        n = strlenChar(azData[i]);
+        utf8_printf(p->out, "%*s%s%*s", (w-n)/2, "", azData[i], (w-n+1)/2, "");
+        fputs(i==nColumn-1?" |\n":" | ", p->out);
+      }
+      print_row_separator(p, nColumn, "|");
+      break;
+    }
+    case MODE_Box: {
+      colSep = " " BOX_13 " ";
+      rowSep = " " BOX_13 "\n";
+      print_box_row_separator(p, nColumn, BOX_23, BOX_234, BOX_34);
+      utf8_printf(p->out, BOX_13 " ");
+      for(i=0; i<nColumn; i++){
+        w = p->actualWidth[i];
+        n = strlenChar(azData[i]);
+        utf8_printf(p->out, "%*s%s%*s%s",
+            (w-n)/2, "", azData[i], (w-n+1)/2, "",
+            i==nColumn-1?" "BOX_13"\n":" "BOX_13" ");
+      }
+      print_box_row_separator(p, nColumn, BOX_123, BOX_1234, BOX_134);
+      break;
+    }
+  }
+  for(i=nColumn, j=0; i<nTotal; i++, j++){
+    if( j==0 && p->cMode!=MODE_Column ){
+      utf8_printf(p->out, "%s", p->cMode==MODE_Box?BOX_13" ":"| ");
+    }
+    z = azData[i];
+    if( z==0 ) z = p->nullValue;
+    w = p->actualWidth[j];
+    if( p->colWidth[j]<0 ) w = -w;
+    utf8_width_print(p->out, w, z);
+    if( j==nColumn-1 ){
+      utf8_printf(p->out, "%s", rowSep);
+      j = -1;
+      if( seenInterrupt ) goto columnar_end;
+    }else{
+      utf8_printf(p->out, "%s", colSep);
+    }
+  }
+  if( p->cMode==MODE_Table ){
+    print_row_separator(p, nColumn, "+");
+  }else if( p->cMode==MODE_Box ){
+    print_box_row_separator(p, nColumn, BOX_12, BOX_124, BOX_14);
+  }
+columnar_end:
+  if( seenInterrupt ){
+    utf8_printf(p->out, "Interrupt\n");
+  }
+  nData = (nRow+1)*nColumn;
+  for(i=0; i<nData; i++) free(azData[i]);
+  sqlite3_free(azData);
+}
+
+/*
 ** Run a prepared statement
 */
 static void exec_prepared_stmt(
@@ -11378,6 +14148,15 @@ static void exec_prepared_stmt(
   sqlite3_stmt *pStmt                              /* Statment to run */
 ){
   int rc;
+
+  if( pArg->cMode==MODE_Column
+   || pArg->cMode==MODE_Table
+   || pArg->cMode==MODE_Box
+   || pArg->cMode==MODE_Markdown
+  ){
+    exec_prepared_stmt_columnar(pArg, pStmt);
+    return;
+  }
 
   /* perform the first step.  this will tell us if we
   ** have a result set or not and how wide it is.
@@ -11426,6 +14205,9 @@ static void exec_prepared_stmt(
         }
       } while( SQLITE_ROW == rc );
       sqlite3_free(pData);
+      if( pArg->cMode==MODE_Json ){
+        fputs("]\n", pArg->out);
+      }
     }
   }
 }
@@ -11638,6 +14420,7 @@ static int shell_exec(
             const char *zEQPLine = (const char*)sqlite3_column_text(pExplain,3);
             int iEqpId = sqlite3_column_int(pExplain, 0);
             int iParentId = sqlite3_column_int(pExplain, 1);
+            if( zEQPLine==0 ) zEQPLine = "";
             if( zEQPLine[0]=='-' ) eqp_render(pArg);
             eqp_append(pArg, iEqpId, iParentId, zEQPLine);
           }
@@ -11865,19 +14648,25 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
   const char *zType;
   const char *zSql;
   ShellState *p = (ShellState *)pArg;
+  int dataOnly;
+  int noSys;
 
   UNUSED_PARAMETER(azNotUsed);
   if( nArg!=3 || azArg==0 ) return 0;
   zTable = azArg[0];
   zType = azArg[1];
   zSql = azArg[2];
+  dataOnly = (p->shellFlgs & SHFLG_DumpDataOnly)!=0;
+  noSys    = (p->shellFlgs & SHFLG_DumpNoSys)!=0;
 
-  if( strcmp(zTable, "sqlite_sequence")==0 ){
-    raw_printf(p->out, "DELETE FROM sqlite_sequence;\n");
-  }else if( sqlite3_strglob("sqlite_stat?", zTable)==0 ){
-    raw_printf(p->out, "ANALYZE sqlite_master;\n");
+  if( strcmp(zTable, "sqlite_sequence")==0 && !noSys ){
+    if( !dataOnly ) raw_printf(p->out, "DELETE FROM sqlite_sequence;\n");
+  }else if( sqlite3_strglob("sqlite_stat?", zTable)==0 && !noSys ){
+    if( !dataOnly ) raw_printf(p->out, "ANALYZE sqlite_schema;\n");
   }else if( strncmp(zTable, "sqlite_", 7)==0 ){
     return 0;
+  }else if( dataOnly ){
+    /* no-op */
   }else if( strncmp(zSql, "CREATE VIRTUAL TABLE", 20)==0 ){
     char *zIns;
     if( !p->writableSchema ){
@@ -11885,7 +14674,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
       p->writableSchema = 1;
     }
     zIns = sqlite3_mprintf(
-       "INSERT INTO sqlite_master(type,name,tbl_name,rootpage,sql)"
+       "INSERT INTO sqlite_schema(type,name,tbl_name,rootpage,sql)"
        "VALUES('table','%q','%q',0,'%q');",
        zTable, zTable, zSql);
     utf8_printf(p->out, "%s\n", zIns);
@@ -12016,29 +14805,29 @@ static const char *(azHelp[]) = {
   ".archive ...             Manage SQL archives",
   "   Each command must have exactly one of the following options:",
   "     -c, --create               Create a new archive",
-  "     -u, --update               Add files or update files with changed mtime",
-  "     -i, --insert               Like -u but always add even if mtime unchanged",
+  "     -u, --update               Add or update files with changed mtime",
+  "     -i, --insert               Like -u but always add even if unchanged",
   "     -t, --list                 List contents of archive",
   "     -x, --extract              Extract files from archive",
   "   Optional arguments:",
   "     -v, --verbose              Print each filename as it is processed",
-  "     -f FILE, --file FILE       Operate on archive FILE (default is current db)",
-  "     -a FILE, --append FILE     Operate on FILE opened using the apndvfs VFS",
-  "     -C DIR, --directory DIR    Change to directory DIR to read/extract files",
+  "     -f FILE, --file FILE       Use archive FILE (default is current db)",
+  "     -a FILE, --append FILE     Open FILE using the apndvfs VFS",
+  "     -C DIR, --directory DIR    Read/extract files from directory DIR",
   "     -n, --dryrun               Show the SQL that would have occurred",
   "   Examples:",
-  "     .ar -cf archive.sar foo bar  # Create archive.sar from files foo and bar",
-  "     .ar -tf archive.sar          # List members of archive.sar",
-  "     .ar -xvf archive.sar         # Verbosely extract files from archive.sar",
+  "     .ar -cf ARCHIVE foo bar  # Create ARCHIVE from files foo and bar",
+  "     .ar -tf ARCHIVE          # List members of ARCHIVE",
+  "     .ar -xvf ARCHIVE         # Verbosely extract files from ARCHIVE",
   "   See also:",
-  "      http://sqlite.org/cli.html#sqlar_archive_support",
+  "      http://sqlite.org/cli.html#sqlite_archive_support",
 #endif
 #ifndef SQLITE_OMIT_AUTHORIZATION
   ".auth ON|OFF             Show authorizer callbacks",
 #endif
   ".backup ?DB? FILE        Backup DB (default \"main\") to FILE",
   "       --append            Use the appendvfs",
-  "       --async             Write to FILE without a journal and without fsync()",
+  "       --async             Write to FILE without journal and fsync()",
   ".bail on|off             Stop after hitting an error.  Default OFF",
   ".binary on|off           Turn binary output on or off.  Default OFF",
   ".cd DIRECTORY            Change the working directory to DIRECTORY",
@@ -12048,31 +14837,46 @@ static const char *(azHelp[]) = {
   ".databases               List names and files of attached databases",
   ".dbconfig ?op? ?val?     List or change sqlite3_db_config() options",
   ".dbinfo ?DB?             Show status information about the database",
-  ".dump ?TABLE? ...        Render all database content as SQL",
+  ".dump ?OBJECTS?          Render database content as SQL",
   "   Options:",
-  "     --preserve-rowids      Include ROWID values in the output",
+  "     --data-only            Output only INSERT statements",
   "     --newlines             Allow unescaped newline characters in output",
-  "   TABLE is a LIKE pattern for the tables to dump",
+  "     --nosys                Omit system tables (ex: \"sqlite_stat1\")",
+  "     --preserve-rowids      Include ROWID values in the output",
+  "   OBJECTS is a LIKE pattern for tables, indexes, triggers or views to dump",
+  "   Additional LIKE patterns can be given in subsequent arguments",
   ".echo on|off             Turn command echo on or off",
   ".eqp on|off|full|...     Enable or disable automatic EXPLAIN QUERY PLAN",
   "   Other Modes:",
 #ifdef SQLITE_DEBUG
   "      test                  Show raw EXPLAIN QUERY PLAN output",
-  "      trace                 Like \"full\" but also enable \"PRAGMA vdbe_trace\"",
+  "      trace                 Like \"full\" but enable \"PRAGMA vdbe_trace\"",
 #endif
   "      trigger               Like \"full\" but also show trigger bytecode",
-  ".excel                   Display the output of next command in a spreadsheet",
+  ".excel                   Display the output of next command in spreadsheet",
+  "   --bom                   Put a UTF8 byte-order mark on intermediate file",
   ".exit ?CODE?             Exit this program with return-code CODE",
-  ".expert                  EXPERIMENTAL. Suggest indexes for specified queries",
-/* Because explain mode comes on automatically now, the ".explain" mode
-** is removed from the help screen.  It is still supported for legacy, however */
-/*".explain ?on|off|auto?   Turn EXPLAIN output mode on or off or to automatic",*/
+  ".expert                  EXPERIMENTAL. Suggest indexes for queries",
+  ".explain ?on|off|auto?   Change the EXPLAIN formatting mode.  Default: auto",
   ".filectrl CMD ...        Run various sqlite3_file_control() operations",
-  "                           Run \".filectrl\" with no arguments for details",
+  "   --schema SCHEMA         Use SCHEMA instead of \"main\"",
+  "   --help                  Show CMD details",
   ".fullschema ?--indent?   Show schema and the content of sqlite_stat tables",
   ".headers on|off          Turn display of headers on or off",
   ".help ?-all? ?PATTERN?   Show help text for PATTERN",
   ".import FILE TABLE       Import data from FILE into TABLE",
+  "   Options:",
+  "     --ascii               Use \\037 and \\036 as column and row separators",
+  "     --csv                 Use , and \\n as column and row separators",
+  "     --skip N              Skip the first N rows of input",
+  "     -v                    \"Verbose\" - increase auxiliary output",
+  "   Notes:",
+  "     *  If TABLE does not exist, it is created.  The first row of input",
+  "        determines the column names.",
+  "     *  If neither --csv or --ascii are used, the input mode is derived",
+  "        from the \".mode\" output mode",
+  "     *  If FILE begins with \"|\" then it is a command that generates the",
+  "        input text.",
 #ifndef SQLITE_OMIT_TEST_CONTROL
   ".imposter INDEX TABLE    Create imposter table TABLE on index INDEX",
 #endif
@@ -12092,41 +14896,53 @@ static const char *(azHelp[]) = {
   ".log FILE|off            Turn logging on or off.  FILE can be stderr/stdout",
   ".mode MODE ?TABLE?       Set output mode",
   "   MODE is one of:",
-  "     ascii    Columns/rows delimited by 0x1F and 0x1E",
-  "     csv      Comma-separated values",
-  "     column   Left-aligned columns.  (See .width)",
-  "     html     HTML <table> code",
-  "     insert   SQL insert statements for TABLE",
-  "     line     One value per line",
-  "     list     Values delimited by \"|\"",
-  "     quote    Escape answers as for SQL",
-  "     tabs     Tab-separated values",
-  "     tcl      TCL list elements",
+  "     ascii     Columns/rows delimited by 0x1F and 0x1E",
+  "     box       Tables using unicode box-drawing characters",
+  "     csv       Comma-separated values",
+  "     column    Output in columns.  (See .width)",
+  "     html      HTML <table> code",
+  "     insert    SQL insert statements for TABLE",
+  "     json      Results in a JSON array",
+  "     line      One value per line",
+  "     list      Values delimited by \"|\"",
+  "     markdown  Markdown table format",
+  "     quote     Escape answers as for SQL",
+  "     table     ASCII-art table",
+  "     tabs      Tab-separated values",
+  "     tcl       TCL list elements",
   ".nullvalue STRING        Use STRING in place of NULL values",
-  ".once (-e|-x|FILE)       Output for the next SQL command only to FILE",
+  ".once ?OPTIONS? ?FILE?   Output for the next SQL command only to FILE",
   "     If FILE begins with '|' then open as a pipe",
-  "     Other options:",
-  "       -e    Invoke system text editor",
-  "       -x    Open in a spreadsheet",
+  "       --bom  Put a UTF8 byte-order mark at the beginning",
+  "       -e     Send output to the system text editor",
+  "       -x     Send output as CSV to a spreadsheet (same as \".excel\")",
+#ifdef SQLITE_DEBUG
+  ".oom ?--repeat M? ?N?    Simulate an OOM error on the N-th allocation",
+#endif 
   ".open ?OPTIONS? ?FILE?   Close existing database and reopen FILE",
   "     Options:",
   "        --append        Use appendvfs to append database to the end of FILE",
-#ifdef SQLITE_ENABLE_DESERIALIZE
-  "        --deserialize   Load into memory useing sqlite3_deserialize()",
-  "        --hexdb         Load the output of \"dbtotxt\" as an in-memory database",
+#ifndef SQLITE_OMIT_DESERIALIZE
+  "        --deserialize   Load into memory using sqlite3_deserialize()",
+  "        --hexdb         Load the output of \"dbtotxt\" as an in-memory db",
   "        --maxsize N     Maximum size for --hexdb or --deserialized database",
 #endif
   "        --new           Initialize FILE to an empty database",
+  "        --nofollow      Do not follow symbolic links",
   "        --readonly      Open FILE readonly",
   "        --zip           FILE is a ZIP archive",
   ".output ?FILE?           Send output to FILE or stdout if FILE is omitted",
-  "     If FILE begins with '|' then open it as a pipe.",
+  "   If FILE begins with '|' then open it as a pipe.",
+  "   Options:",
+  "     --bom                 Prefix output with a UTF8 byte-order mark",
+  "     -e                    Send output to the system text editor",
+  "     -x                    Send output as CSV to a spreadsheet",
   ".parameter CMD ...       Manage SQL parameter bindings",
   "   clear                   Erase all bindings",
   "   init                    Initialize the TEMP table that holds bindings",
   "   list                    List the current parameter bindings",
   "   set PARAMETER VALUE     Given SQL parameter PARAMETER a value of VALUE",
-  "                           PARAMETER should start with '$', ':', '@', or '?'",
+  "                           PARAMETER should start with one of: $ : @ ?",
   "   unset PARAMETER         Remove PARAMETER from the binding table",
   ".print STRING...         Print literal STRING",
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
@@ -12141,13 +14957,19 @@ static const char *(azHelp[]) = {
   ".read FILE               Read input from FILE",
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
   ".recover                 Recover as much data as possible from corrupt db.",
+  "   --freelist-corrupt       Assume the freelist is corrupt",
+  "   --recovery-db NAME       Store recovery metadata in database file NAME",
+  "   --lost-and-found TABLE   Alternative name for the lost-and-found table",
+  "   --no-rowids              Do not attempt to recover rowid values",
+  "                            that are not also INTEGER PRIMARY KEYs",
 #endif
   ".restore ?DB? FILE       Restore content of DB (default \"main\") from FILE",
   ".save FILE               Write in-memory database into FILE",
   ".scanstats on|off        Turn sqlite3_stmt_scanstatus() metrics on or off",
   ".schema ?PATTERN?        Show the CREATE statements matching PATTERN",
-  "     Options:",
-  "         --indent            Try to pretty-print the schema",
+  "   Options:",
+  "      --indent             Try to pretty-print the schema",
+  "      --nosys              Omit objects whose names start with \"sqlite_\"",
   ".selftest ?OPTIONS?      Run tests defined in the SELFTEST table",
   "    Options:",
   "       --init               Create a new SELFTEST table",
@@ -12170,9 +14992,9 @@ static const char *(azHelp[]) = {
 #endif
   ".sha3sum ...             Compute a SHA3 hash of database content",
   "    Options:",
-  "      --schema              Also hash the sqlite_master table",
+  "      --schema              Also hash the sqlite_schema table",
   "      --sha3-224            Use the sha3-224 algorithm",
-  "      --sha3-256            Use the sha3-256 algorithm.  This is the default.",
+  "      --sha3-256            Use the sha3-256 algorithm (default)",
   "      --sha3-384            Use the sha3-384 algorithm",
   "      --sha3-512            Use the sha3-512 algorithm",
   "    Any other argument is a LIKE pattern for tables to hash",
@@ -12180,7 +15002,11 @@ static const char *(azHelp[]) = {
   ".shell CMD ARGS...       Run CMD ARGS... in a system shell",
 #endif
   ".show                    Show the current values for various settings",
-  ".stats ?on|off?          Show stats or turn stats on or off",
+  ".stats ?ARG?             Show stats or turn stats on or off",
+  "   off                      Turn off automatic stat display",
+  "   on                       Turn on automatic stat display",
+  "   stmt                     Show statement stats",
+  "   vmstep                   Show the virtual machine step count only",
 #ifndef SQLITE_NOHAVE_SYSTEM
   ".system CMD ARGS...      Run CMD ARGS... in a system shell",
 #endif
@@ -12206,10 +15032,14 @@ static const char *(azHelp[]) = {
   "    --row                   Trace each row (SQLITE_TRACE_ROW)",
   "    --close                 Trace connection close (SQLITE_TRACE_CLOSE)",
 #endif /* SQLITE_OMIT_TRACE */
+#ifdef SQLITE_DEBUG
+  ".unmodule NAME ...       Unregister virtual table modules",
+  "    --allexcept             Unregister everything except those named",
+#endif
   ".vfsinfo ?AUX?           Information about the top-level VFS",
   ".vfslist                 List all available VFSes",
   ".vfsname ?AUX?           Print the name of the VFS stack",
-  ".width NUM1 NUM2 ...     Set column widths for \"column\" mode",
+  ".width NUM1 NUM2 ...     Set minimum column widths for columnar output",
   "     Negative values right-justify",
 };
 
@@ -12231,6 +15061,7 @@ static int showHelp(FILE *out, const char *zPattern){
    || zPattern[0]=='0'
    || strcmp(zPattern,"-a")==0
    || strcmp(zPattern,"-all")==0
+   || strcmp(zPattern,"--all")==0
   ){
     /* Show all commands, but only one line per command */
     if( zPattern==0 ) zPattern = "";
@@ -12413,7 +15244,7 @@ int deduceDatabaseType(const char *zName, int dfltZip){
   return rc;  
 }
 
-#ifdef SQLITE_ENABLE_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
 /*
 ** Reconstruct an in-memory database using the output from the "dbtotxt"
 ** program.  Read content from the file in p->zDbFilename.  If p->zDbFilename
@@ -12448,6 +15279,8 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
   rc = sscanf(zLine, "| size %d pagesize %d", &n, &pgsz);
   if( rc!=2 ) goto readHexDb_error;
   if( n<0 ) goto readHexDb_error;
+  if( pgsz<512 || pgsz>65536 || (pgsz&(pgsz-1))!=0 ) goto readHexDb_error;
+  n = (n+pgsz-1)&~(pgsz-1);  /* Round n up to the next multiple of pgsz */
   a = sqlite3_malloc( n ? n : 1 );
   if( a==0 ){
     utf8_printf(stderr, "Out of memory!\n");
@@ -12500,7 +15333,7 @@ readHexDb_error:
   utf8_printf(stderr,"Error on line %d of --hexdb input\n", nLine);
   return 0;
 }
-#endif /* SQLITE_ENABLE_DESERIALIZE */
+#endif /* SQLITE_OMIT_DESERIALIZE */
 
 /*
 ** Scalar function "shell_int32". The first argument to this function
@@ -12530,6 +15363,37 @@ static void shellInt32(
                        + ((sqlite3_int64)a[3]<< 0);
     sqlite3_result_int64(context, iVal);
   }
+}
+
+/*
+** Scalar function "shell_idquote(X)" returns string X quoted as an identifier,
+** using "..." with internal double-quote characters doubled.
+*/
+static void shellIdQuote(
+  sqlite3_context *context, 
+  int argc, 
+  sqlite3_value **argv
+){
+  const char *zName = (const char*)sqlite3_value_text(argv[0]);
+  UNUSED_PARAMETER(argc);
+  if( zName ){
+    char *z = sqlite3_mprintf("\"%w\"", zName);
+    sqlite3_result_text(context, z, -1, sqlite3_free);
+  }
+}
+
+/*
+** Scalar function "usleep(X)" invokes sqlite3_sleep(X) and returns X.
+*/
+static void shellUSleepFunc(
+  sqlite3_context *context, 
+  int argcUnused, 
+  sqlite3_value **argv
+){
+  int sleep = sqlite3_value_int(argv[0]);
+  (void)argcUnused;
+  sqlite3_sleep(sleep/1000);
+  sqlite3_result_int(context, sleep);
 }
 
 /*
@@ -12653,7 +15517,7 @@ static void open_db(ShellState *p, int openFlags){
     switch( p->openMode ){
       case SHELL_OPEN_APPENDVFS: {
         sqlite3_open_v2(p->zDbFilename, &p->db, 
-           SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, "apndvfs");
+           SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|p->openFlags, "apndvfs");
         break;
       }
       case SHELL_OPEN_HEXDB:
@@ -12666,12 +15530,14 @@ static void open_db(ShellState *p, int openFlags){
         break;
       }
       case SHELL_OPEN_READONLY: {
-        sqlite3_open_v2(p->zDbFilename, &p->db, SQLITE_OPEN_READONLY, 0);
+        sqlite3_open_v2(p->zDbFilename, &p->db,
+            SQLITE_OPEN_READONLY|p->openFlags, 0);
         break;
       }
       case SHELL_OPEN_UNSPEC:
       case SHELL_OPEN_NORMAL: {
-        sqlite3_open(p->zDbFilename, &p->db);
+        sqlite3_open_v2(p->zDbFilename, &p->db,
+           SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|p->openFlags, 0);
         break;
       }
     }
@@ -12691,6 +15557,11 @@ static void open_db(ShellState *p, int openFlags){
     sqlite3_fileio_init(p->db, 0, 0);
     sqlite3_shathree_init(p->db, 0, 0);
     sqlite3_completion_init(p->db, 0, 0);
+    sqlite3_uint_init(p->db, 0, 0);
+    sqlite3_decimal_init(p->db, 0, 0);
+    sqlite3_regexp_init(p->db, 0, 0);
+    sqlite3_ieee_init(p->db, 0, 0);
+    sqlite3_series_init(p->db, 0, 0);
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
     sqlite3_dbdata_init(p->db, 0, 0);
 #endif
@@ -12708,6 +15579,10 @@ static void open_db(ShellState *p, int openFlags){
                             shellEscapeCrnl, 0, 0);
     sqlite3_create_function(p->db, "shell_int32", 2, SQLITE_UTF8, 0,
                             shellInt32, 0, 0);
+    sqlite3_create_function(p->db, "shell_idquote", 1, SQLITE_UTF8, 0,
+                            shellIdQuote, 0, 0);
+    sqlite3_create_function(p->db, "usleep",1,SQLITE_UTF8,0,
+                            shellUSleepFunc, 0, 0);
 #ifndef SQLITE_NOHAVE_SYSTEM
     sqlite3_create_function(p->db, "edit", 1, SQLITE_UTF8, 0,
                             editFunc, 0, 0);
@@ -12720,7 +15595,7 @@ static void open_db(ShellState *p, int openFlags){
       sqlite3_exec(p->db, zSql, 0, 0, 0);
       sqlite3_free(zSql);
     }
-#ifdef SQLITE_ENABLE_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
     else
     if( p->openMode==SHELL_OPEN_DESERIALIZE || p->openMode==SHELL_OPEN_HEXDB ){
       int rc;
@@ -13021,15 +15896,28 @@ typedef struct ImportCtx ImportCtx;
 struct ImportCtx {
   const char *zFile;  /* Name of the input file */
   FILE *in;           /* Read the CSV text from this input stream */
+  int (SQLITE_CDECL *xCloser)(FILE*);      /* Func to close in */
   char *z;            /* Accumulated text for a field */
   int n;              /* Number of bytes in z */
   int nAlloc;         /* Space allocated for z[] */
   int nLine;          /* Current line number */
+  int nRow;           /* Number of rows imported */
+  int nErr;           /* Number of errors encountered */
   int bNotFirst;      /* True if one or more bytes already read */
   int cTerm;          /* Character that terminated the most recent field */
   int cColSep;        /* The column separator character.  (Usually ",") */
   int cRowSep;        /* The row separator character.  (Usually "\n") */
 };
+
+/* Clean up resourced used by an ImportCtx */
+static void import_cleanup(ImportCtx *p){
+  if( p->in!=0 && p->xCloser!=0 ){
+    p->xCloser(p->in);
+    p->in = 0;
+  }
+  sqlite3_free(p->z);
+  p->z = 0;
+}
 
 /* Append a single byte to z[] */
 static void import_append_char(ImportCtx *p, int c){
@@ -13279,7 +16167,7 @@ end_data_xfer:
 ** Try to transfer all rows of the schema that match zWhere.  For
 ** each row, invoke xForEach() on the object defined by that row.
 ** If an error is encountered while moving forward through the
-** sqlite_master table, try again moving backwards.
+** sqlite_schema table, try again moving backwards.
 */
 static void tryToCloneSchema(
   ShellState *p,
@@ -13294,7 +16182,7 @@ static void tryToCloneSchema(
   const unsigned char *zSql;
   char *zErrMsg = 0;
 
-  zQuery = sqlite3_mprintf("SELECT name, sql FROM sqlite_master"
+  zQuery = sqlite3_mprintf("SELECT name, sql FROM sqlite_schema"
                            " WHERE %s", zWhere);
   rc = sqlite3_prepare_v2(p->db, zQuery, -1, &pQuery, 0);
   if( rc ){
@@ -13321,7 +16209,7 @@ static void tryToCloneSchema(
   if( rc!=SQLITE_DONE ){
     sqlite3_finalize(pQuery);
     sqlite3_free(zQuery);
-    zQuery = sqlite3_mprintf("SELECT name, sql FROM sqlite_master"
+    zQuery = sqlite3_mprintf("SELECT name, sql FROM sqlite_schema"
                              " WHERE %s ORDER BY rowid DESC", zWhere);
     rc = sqlite3_prepare_v2(p->db, zQuery, -1, &pQuery, 0);
     if( rc ){
@@ -13406,11 +16294,15 @@ static void output_reset(ShellState *p){
       zCmd = sqlite3_mprintf("%s %s", zXdgOpenCmd, p->zTempFile);
       if( system(zCmd) ){
         utf8_printf(stderr, "Failed: [%s]\n", zCmd);
+      }else{
+        /* Give the start/open/xdg-open command some time to get
+        ** going before we continue, and potential delete the
+        ** p->zTempFile data file out from under it */
+        sqlite3_sleep(2000);
       }
       sqlite3_free(zCmd);
       outputModePop(p);
       p->doXdgOpen = 0;
-      sqlite3_sleep(100);
     }
 #endif /* !defined(SQLITE_NOHAVE_SYSTEM) */
   }
@@ -13443,7 +16335,7 @@ static unsigned int get4byteInt(unsigned char *a){
 }
 
 /*
-** Implementation of the ".info" command.
+** Implementation of the ".dbinfo" command.
 **
 ** Return 1 on error, 2 to exit, and 0 otherwise.
 */
@@ -13486,12 +16378,7 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
              "SELECT data FROM sqlite_dbpage(?1) WHERE pgno=1",
              -1, &pStmt, 0);
   if( rc ){
-    if( !sqlite3_compileoption_used("ENABLE_DBPAGE_VTAB") ){
-      utf8_printf(stderr, "the \".dbinfo\" command requires the "
-                          "-DSQLITE_ENABLE_DBPAGE_VTAB compile-time options\n");
-    }else{
-      utf8_printf(stderr, "error: %s\n", sqlite3_errmsg(p->db));
-    }
+    utf8_printf(stderr, "error: %s\n", sqlite3_errmsg(p->db));
     sqlite3_finalize(pStmt);
     return 1;
   }
@@ -13526,11 +16413,11 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
     raw_printf(p->out, "\n");
   }
   if( zDb==0 ){
-    zSchemaTab = sqlite3_mprintf("main.sqlite_master");
+    zSchemaTab = sqlite3_mprintf("main.sqlite_schema");
   }else if( strcmp(zDb,"temp")==0 ){
-    zSchemaTab = sqlite3_mprintf("%s", "sqlite_temp_master");
+    zSchemaTab = sqlite3_mprintf("%s", "sqlite_temp_schema");
   }else{
-    zSchemaTab = sqlite3_mprintf("\"%w\".sqlite_master", zDb);
+    zSchemaTab = sqlite3_mprintf("\"%w\".sqlite_schema", zDb);
   }
   for(i=0; i<ArraySize(aQuery); i++){
     char *zSql = sqlite3_mprintf(aQuery[i].zSql, zSchemaTab);
@@ -13667,13 +16554,13 @@ static int optionMatch(const char *zStr, const char *zOpt){
 */
 int shellDeleteFile(const char *zFilename){
   int rc;
-#if defined(_WIN32) && !defined(__ORANGEC__)
-  wchar_t *z = sqlite3_win32_utf8_to_unicode(zFilename);
-  rc = _wunlink(z);
-  sqlite3_free(z);
-#else
+//#ifdef _WIN32
+//  wchar_t *z = sqlite3_win32_utf8_to_unicode(zFilename);
+//  rc = _wunlink(z);
+//  sqlite3_free(z);
+//#else
   rc = unlink(zFilename);
-#endif
+//#endif
   return rc;
 }
 
@@ -13700,9 +16587,21 @@ static void newTempFile(ShellState *p, const char *zSuffix){
     sqlite3_file_control(p->db, 0, SQLITE_FCNTL_TEMPFILENAME, &p->zTempFile);
   }
   if( p->zTempFile==0 ){
+    /* If p->db is an in-memory database then the TEMPFILENAME file-control
+    ** will not work and we will need to fallback to guessing */
+    char *zTemp;
     sqlite3_uint64 r;
     sqlite3_randomness(sizeof(r), &r);
-    p->zTempFile = sqlite3_mprintf("temp%llx.%s", r, zSuffix);
+    zTemp = getenv("TEMP");
+    if( zTemp==0 ) zTemp = getenv("TMP");
+    if( zTemp==0 ){
+#ifdef _WIN32
+      zTemp = "\\tmp";
+#else
+      zTemp = "/tmp";
+#endif
+    }
+    p->zTempFile = sqlite3_mprintf("%s/temp%llx.%s", zTemp, r, zSuffix);
   }else{
     p->zTempFile = sqlite3_mprintf("%z.%s", p->zTempFile, zSuffix);
   }
@@ -13825,7 +16724,7 @@ static int lintFkeyIndexes(
     "  || fkey_collate_clause("
     "       f.[table], COALESCE(f.[to], p.[name]), s.name, f.[from]),' AND ')"
     ", "
-    "     'SEARCH TABLE ' || s.name || ' USING COVERING INDEX*('"
+    "     'SEARCH ' || s.name || ' USING COVERING INDEX*('"
     "  || group_concat('*=?', ' AND ') || ')'"
     ", "
     "     s.name  || '(' || group_concat(f.[from],  ', ') || ')'"
@@ -13840,12 +16739,12 @@ static int lintFkeyIndexes(
     "  || ');'"
     ", "
     "     f.[table] "
-    "FROM sqlite_master AS s, pragma_foreign_key_list(s.name) AS f "
+    "FROM sqlite_schema AS s, pragma_foreign_key_list(s.name) AS f "
     "LEFT JOIN pragma_table_info AS p ON (pk-1=seq AND p.arg=f.[table]) "
     "GROUP BY s.name, f.id "
     "ORDER BY (CASE WHEN ? THEN f.[table] ELSE s.name END)"
   ;
-  const char *zGlobIPK = "SEARCH TABLE * USING INTEGER PRIMARY KEY (rowid=?)";
+  const char *zGlobIPK = "SEARCH * USING INTEGER PRIMARY KEY (rowid=?)";
 
   for(i=2; i<nArg; i++){
     int n = strlen30(azArg[i]);
@@ -14055,7 +16954,7 @@ void shellReset(
 #endif /* !defined SQLITE_OMIT_VIRTUALTABLE */
 
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
-/*********************************************************************************
+/******************************************************************************
 ** The ".archive" or ".ar" command.
 */
 /*
@@ -14253,7 +17152,8 @@ static int arParseCommand(
                 i = n;
               }else{
                 if( iArg>=(nArg-1) ){
-                  return arErrorMsg(pAr, "option requires an argument: %c",z[i]);
+                  return arErrorMsg(pAr, "option requires an argument: %c",
+                                    z[i]);
                 }
                 zArg = azArg[++iArg];
               }
@@ -14641,10 +17541,10 @@ end_ar_transaction:
 ** Implementation of ".ar" dot command.
 */
 static int arDotCommand(
-  ShellState *pState,             /* Current shell tool state */
-  int fromCmdLine,                /* True if -A command-line option, not .ar cmd */
-  char **azArg,                   /* Array of arguments passed to dot command */
-  int nArg                        /* Number of entries in azArg[] */
+  ShellState *pState,          /* Current shell tool state */
+  int fromCmdLine,             /* True if -A command-line option, not .ar cmd */
+  char **azArg,                /* Array of arguments passed to dot command */
+  int nArg                     /* Number of entries in azArg[] */
 ){
   ArCommand cmd;
   int rc;
@@ -14744,7 +17644,7 @@ end_ar_command:
   return rc;
 }
 /* End of the ".archive" or ".ar" command logic
-**********************************************************************************/
+*******************************************************************************/
 #endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB) */
 
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
@@ -14762,6 +17662,7 @@ static void shellExec(sqlite3 *db, int *pRc, const char *zSql){
     if( rc!=SQLITE_OK ){
       raw_printf(stderr, "SQL error: %s\n", zErr);
     }
+    sqlite3_free(zErr);
     *pRc = rc;
   }
 }
@@ -14886,6 +17787,10 @@ static RecoverTable *recoverNewTable(
     
     rc = sqlite3_open("", &dbtmp);
     if( rc==SQLITE_OK ){
+      sqlite3_create_function(dbtmp, "shell_idquote", 1, SQLITE_UTF8, 0,
+                              shellIdQuote, 0, 0);
+    }
+    if( rc==SQLITE_OK ){
       rc = sqlite3_exec(dbtmp, "PRAGMA writable_schema = on", 0, 0, 0);
     }
     if( rc==SQLITE_OK ){
@@ -14910,7 +17815,7 @@ static RecoverTable *recoverNewTable(
     shellPreparePrintf(dbtmp, &rc, &pStmt, 
       "SELECT ("
       "  SELECT substr(data,1,1)==X'0D' FROM sqlite_dbpage WHERE pgno=rootpage"
-      ") FROM sqlite_master WHERE name = %Q", zName
+      ") FROM sqlite_schema WHERE name = %Q", zName
     );
     if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
       bSqlIntkey = sqlite3_column_int(pStmt, 0);
@@ -14941,18 +17846,18 @@ static RecoverTable *recoverNewTable(
         }
       }
 
-      pTab->zQuoted = shellMPrintf(&rc, "%Q", zName);
+      pTab->zQuoted = shellMPrintf(&rc, "\"%w\"", zName);
       pTab->azlCol = (char**)shellMalloc(&rc, sizeof(char*) * (nSqlCol+1));
       pTab->nCol = nSqlCol;
 
       if( bIntkey ){
-        pTab->azlCol[0] = shellMPrintf(&rc, "%Q", zPk);
+        pTab->azlCol[0] = shellMPrintf(&rc, "\"%w\"", zPk);
       }else{
         pTab->azlCol[0] = shellMPrintf(&rc, "");
       }
       i = 1;
       shellPreparePrintf(dbtmp, &rc, &pStmt, 
-          "SELECT %Q || group_concat(name, ', ') "
+          "SELECT %Q || group_concat(shell_idquote(name), ', ') "
           "  FILTER (WHERE cid!=%d) OVER (ORDER BY %s cid) "
           "FROM pragma_table_info(%Q)", 
           bIntkey ? ", " : "", pTab->iPk, 
@@ -14982,7 +17887,7 @@ static RecoverTable *recoverNewTable(
 
 /*
 ** This function is called to search the schema recovered from the
-** sqlite_master table of the (possibly) corrupt database as part
+** sqlite_schema table of the (possibly) corrupt database as part
 ** of a ".recover" command. Specifically, for a table with root page
 ** iRoot and at least nCol columns. Additionally, if bIntkey is 0, the
 ** table must be a WITHOUT ROWID table, or if non-zero, not one of
@@ -15066,7 +17971,7 @@ static RecoverTable *recoverOrphanTable(
 
     pTab = (RecoverTable*)shellMalloc(pRc, sizeof(RecoverTable));
     if( pTab ){
-      pTab->zQuoted = shellMPrintf(pRc, "%Q", zTab);
+      pTab->zQuoted = shellMPrintf(pRc, "\"%w\"", zTab);
       pTab->nCol = nCol;
       pTab->iPk = -2;
       if( nCol>0 ){
@@ -15115,6 +18020,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   RecoverTable *pOrphan = 0;
 
   int bFreelist = 1;              /* 0 if --freelist-corrupt is specified */
+  int bRowids = 1;                /* 0 if --no-rowids */
   for(i=1; i<nArg; i++){
     char *z = azArg[i];
     int n;
@@ -15130,13 +18036,13 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
     if( n<=15 && memcmp("-lost-and-found", z, n)==0 && i<(nArg-1) ){
       i++;
       zLostAndFound = azArg[i];
+    }else
+    if( n<=10 && memcmp("-no-rowids", z, n)==0 ){
+      bRowids = 0;
     }
     else{
-      raw_printf(stderr, "unexpected option: %s\n", azArg[i]); 
-      raw_printf(stderr, "options are:\n");
-      raw_printf(stderr, "    --freelist-corrupt\n");
-      raw_printf(stderr, "    --recovery-db DATABASE\n");
-      raw_printf(stderr, "    --lost-and-found TABLE-NAME\n");
+      utf8_printf(stderr, "unexpected option: %s\n", azArg[i]); 
+      showHelp(pState->out, azArg[0]);
       return 1;
     }
   }
@@ -15144,6 +18050,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   shellExecPrintf(pState->db, &rc,
     /* Attach an in-memory database named 'recovery'. Create an indexed 
     ** cache of the sqlite_dbptr virtual table. */
+    "PRAGMA writable_schema = on;"
     "ATTACH %Q AS recovery;"
     "DROP TABLE IF EXISTS recovery.dbptr;"
     "DROP TABLE IF EXISTS recovery.freelist;"
@@ -15173,6 +18080,21 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
       "REPLACE INTO recovery.freelist SELECT freepgno FROM freelist;"
     );
   }
+
+  /* If this is an auto-vacuum database, add all pointer-map pages to
+  ** the freelist table. Do this regardless of whether or not 
+  ** --freelist-corrupt was specified.  */
+  shellExec(pState->db, &rc, 
+    "WITH ptrmap(pgno) AS ("
+    "  SELECT 2 WHERE shell_int32("
+    "    (SELECT data FROM sqlite_dbpage WHERE pgno=1), 13"
+    "  )"
+    "    UNION ALL "
+    "  SELECT pgno+1+(SELECT page_size FROM pragma_page_size)/5 AS pp "
+    "  FROM ptrmap WHERE pp<=(SELECT page_count FROM pragma_page_count)"
+    ")"
+    "REPLACE INTO recovery.freelist SELECT pgno FROM ptrmap"
+  );
 
   shellExec(pState->db, &rc, 
     "CREATE TABLE recovery.dbptr("
@@ -15222,13 +18144,13 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
     "    )"
     "    SELECT pgno FROM p WHERE (parent IS NULL OR pgno = orig)"
     ") "
-    "FROM pages WHERE maxlen > 0 AND i NOT IN freelist;"
+    "FROM pages WHERE maxlen IS NOT NULL AND i NOT IN freelist;"
     "UPDATE recovery.map AS o SET intkey = ("
     "  SELECT substr(data, 1, 1)==X'0D' FROM sqlite_dbpage WHERE pgno=o.pgno"
     ");"
 
     /* Extract data from page 1 and any linked pages into table
-    ** recovery.schema. With the same schema as an sqlite_master table.  */
+    ** recovery.schema. With the same schema as an sqlite_schema table.  */
     "CREATE TABLE recovery.schema(type, name, tbl_name, rootpage, sql);"
     "INSERT INTO recovery.schema SELECT "
     "  max(CASE WHEN field=0 THEN value ELSE NULL END),"
@@ -15247,6 +18169,11 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   ** CREATE TABLE statements that extracted from the existing schema.  */
   if( rc==SQLITE_OK ){
     sqlite3_stmt *pStmt = 0;
+    /* ".recover" might output content in an order which causes immediate
+    ** foreign key constraints to be violated. So disable foreign-key
+    ** constraint enforcement to prevent problems when running the output
+    ** script. */
+    raw_printf(pState->out, "PRAGMA foreign_keys=OFF;\n");
     raw_printf(pState->out, "BEGIN;\n");
     raw_printf(pState->out, "PRAGMA writable_schema = on;\n");
     shellPrepare(pState->db, &rc,
@@ -15277,8 +18204,12 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   shellPrepare(pState->db, &rc,
       "SELECT pgno FROM recovery.map WHERE root=?", &pPages
   );
+
   shellPrepare(pState->db, &rc,
-      "SELECT max(field), group_concat(shell_escape_crnl(quote(value)), ', ')"
+      "SELECT max(field), group_concat(shell_escape_crnl(quote"
+      "(case when (? AND field<0) then NULL else value end)"
+      "), ', ')"
+      ", min(field) "
       "FROM sqlite_dbdata WHERE pgno = ? AND field != ?"
       "GROUP BY cell", &pCells
   );
@@ -15297,6 +18228,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
     int bNoop = 0;
     RecoverTable *pTab;
 
+    assert( bIntkey==0 || bIntkey==1 );
     pTab = recoverFindTable(pState, &rc, iRoot, bIntkey, nCol, &bNoop);
     if( bNoop || rc ) continue;
     if( pTab==0 ){
@@ -15307,29 +18239,44 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
       if( pTab==0 ) break;
     }
 
-    if( 0==sqlite3_stricmp(pTab->zQuoted, "'sqlite_sequence'") ){
+    if( 0==sqlite3_stricmp(pTab->zQuoted, "\"sqlite_sequence\"") ){
       raw_printf(pState->out, "DELETE FROM sqlite_sequence;\n");
     }
     sqlite3_bind_int(pPages, 1, iRoot);
-    sqlite3_bind_int(pCells, 2, pTab->iPk);
+    if( bRowids==0 && pTab->iPk<0 ){
+      sqlite3_bind_int(pCells, 1, 1);
+    }else{
+      sqlite3_bind_int(pCells, 1, 0);
+    }
+    sqlite3_bind_int(pCells, 3, pTab->iPk);
 
     while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pPages) ){
       int iPgno = sqlite3_column_int(pPages, 0);
-      sqlite3_bind_int(pCells, 1, iPgno);
+      sqlite3_bind_int(pCells, 2, iPgno);
       while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pCells) ){
         int nField = sqlite3_column_int(pCells, 0);
+        int iMin = sqlite3_column_int(pCells, 2);
         const char *zVal = (const char*)sqlite3_column_text(pCells, 1);
 
+        RecoverTable *pTab2 = pTab;
+        if( pTab!=pOrphan && (iMin<0)!=bIntkey ){
+          if( pOrphan==0 ){
+            pOrphan = recoverOrphanTable(pState, &rc, zLostAndFound, nOrphan);
+          }
+          pTab2 = pOrphan;
+          if( pTab2==0 ) break;
+        }
+
         nField = nField+1;
-        if( pTab==pOrphan ){
+        if( pTab2==pOrphan ){
           raw_printf(pState->out, 
               "INSERT INTO %s VALUES(%d, %d, %d, %s%s%s);\n",
-              pTab->zQuoted, iRoot, iPgno, nField, 
-              bIntkey ? "" : "NULL, ", zVal, pTab->azlCol[nField]
+              pTab2->zQuoted, iRoot, iPgno, nField,
+              iMin<0 ? "" : "NULL, ", zVal, pTab2->azlCol[nField]
           );
         }else{
           raw_printf(pState->out, "INSERT INTO %s(%s) VALUES( %s );\n", 
-              pTab->zQuoted, pTab->azlCol[nField], zVal
+              pTab2->zQuoted, pTab2->azlCol[nField], zVal
           );
         }
       }
@@ -15355,7 +18302,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
       if( sqlite3_strnicmp(zSql, "create virt", 11)==0 ){
         const char *zName = (const char*)sqlite3_column_text(pStmt, 1);
         char *zPrint = shellMPrintf(&rc, 
-          "INSERT INTO sqlite_master VALUES('table', %Q, %Q, 0, %Q)",
+          "INSERT INTO sqlite_schema VALUES('table', %Q, %Q, 0, %Q)",
           zName, zName, zSql
         );
         raw_printf(pState->out, "%s;\n", zPrint);
@@ -15388,7 +18335,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   int nArg = 0;
   int n, c;
   int rc = 0;
-  char *azArg[50];
+  char *azArg[52];
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   if( p->expert.pExpert ){
@@ -15398,7 +18345,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   /* Parse the input line into tokens.
   */
-  while( zLine[h] && nArg<ArraySize(azArg) ){
+  while( zLine[h] && nArg<ArraySize(azArg)-1 ){
     while( IsSpace(zLine[h]) ){ h++; }
     if( zLine[h]==0 ) break;
     if( zLine[h]=='\'' || zLine[h]=='"' ){
@@ -15419,6 +18366,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       resolve_backslashes(azArg[nArg-1]);
     }
   }
+  azArg[nArg] = 0;
 
   /* Process the input line.
   */
@@ -15610,21 +18558,41 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='d' && n>1 && strncmp(azArg[0], "databases", n)==0 ){
-    ShellState data;
-    char *zErrMsg = 0;
+    char **azName = 0;
+    int nName = 0;
+    sqlite3_stmt *pStmt;
+    int i;
     open_db(p, 0);
-    memcpy(&data, p, sizeof(data));
-    data.showHeader = 0;
-    data.cMode = data.mode = MODE_List;
-    sqlite3_snprintf(sizeof(data.colSeparator),data.colSeparator,": ");
-    data.cnt = 0;
-    sqlite3_exec(p->db, "SELECT name, file FROM pragma_database_list",
-                 callback, &data, &zErrMsg);
-    if( zErrMsg ){
-      utf8_printf(stderr,"Error: %s\n", zErrMsg);
-      sqlite3_free(zErrMsg);
+    rc = sqlite3_prepare_v2(p->db, "PRAGMA database_list", -1, &pStmt, 0);
+    if( rc ){
+      utf8_printf(stderr, "Error: %s\n", sqlite3_errmsg(p->db));
       rc = 1;
+    }else{
+      while( sqlite3_step(pStmt)==SQLITE_ROW ){
+        const char *zSchema = (const char *)sqlite3_column_text(pStmt,1);
+        const char *zFile = (const char*)sqlite3_column_text(pStmt,2);
+        azName = sqlite3_realloc(azName, (nName+1)*2*sizeof(char*));
+        if( azName==0 ){ shell_out_of_memory();  /* Does not return */ }
+        azName[nName*2] = strdup(zSchema);
+        azName[nName*2+1] = strdup(zFile);
+        nName++;
+      }
     }
+    sqlite3_finalize(pStmt);
+    for(i=0; i<nName; i++){
+      int eTxn = sqlite3_txn_state(p->db, azName[i*2]);
+      int bRdonly = sqlite3_db_readonly(p->db, azName[i*2]);
+      const char *z = azName[i*2+1];
+      utf8_printf(p->out, "%s: %s %s%s\n",
+         azName[i*2],
+         z && z[0] ? z : "\"\"",
+         bRdonly ? "r/o" : "r/w",
+         eTxn==SQLITE_TXN_NONE ? "" :
+            eTxn==SQLITE_TXN_READ ? " read-txn" : " write-txn");
+      free(azName[i*2]);
+      free(azName[i*2+1]);
+    }
+    sqlite3_free(azName);
   }else
 
   if( c=='d' && n>=3 && strncmp(azArg[0], "dbconfig", n)==0 ){
@@ -15632,19 +18600,22 @@ static int do_meta_command(char *zLine, ShellState *p){
       const char *zName;
       int op;
     } aDbConfig[] = {
+        { "defensive",          SQLITE_DBCONFIG_DEFENSIVE             },
+        { "dqs_ddl",            SQLITE_DBCONFIG_DQS_DDL               },
+        { "dqs_dml",            SQLITE_DBCONFIG_DQS_DML               },
         { "enable_fkey",        SQLITE_DBCONFIG_ENABLE_FKEY           },
+        { "enable_qpsg",        SQLITE_DBCONFIG_ENABLE_QPSG           },
         { "enable_trigger",     SQLITE_DBCONFIG_ENABLE_TRIGGER        },
+        { "enable_view",        SQLITE_DBCONFIG_ENABLE_VIEW           },
         { "fts3_tokenizer",     SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER },
+        { "legacy_alter_table", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE    },
+        { "legacy_file_format", SQLITE_DBCONFIG_LEGACY_FILE_FORMAT    },
         { "load_extension",     SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
         { "no_ckpt_on_close",   SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE      },
-        { "enable_qpsg",        SQLITE_DBCONFIG_ENABLE_QPSG           },
-        { "trigger_eqp",        SQLITE_DBCONFIG_TRIGGER_EQP           },
         { "reset_database",     SQLITE_DBCONFIG_RESET_DATABASE        },
-        { "defensive",          SQLITE_DBCONFIG_DEFENSIVE             },
+        { "trigger_eqp",        SQLITE_DBCONFIG_TRIGGER_EQP           },
+        { "trusted_schema",     SQLITE_DBCONFIG_TRUSTED_SCHEMA        },
         { "writable_schema",    SQLITE_DBCONFIG_WRITABLE_SCHEMA       },
-        { "legacy_alter_table", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE    },
-        { "dqs_dml",            SQLITE_DBCONFIG_DQS_DML               },
-        { "dqs_ddl",            SQLITE_DBCONFIG_DQS_DDL               },
     };
     int ii, v;
     open_db(p, 0);
@@ -15654,7 +18625,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         sqlite3_db_config(p->db, aDbConfig[ii].op, booleanValue(azArg[2]), 0);
       }
       sqlite3_db_config(p->db, aDbConfig[ii].op, -1, &v);
-      utf8_printf(p->out, "%18s %s\n", aDbConfig[ii].zName, v ? "on" : "off");
+      utf8_printf(p->out, "%19s %s\n", aDbConfig[ii].zName, v ? "on" : "off");
       if( nArg>1 ) break;
     }
     if( nArg>1 && ii==ArraySize(aDbConfig) ){
@@ -15675,11 +18646,14 @@ static int do_meta_command(char *zLine, ShellState *p){
 #endif /* !(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB) */
 
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
-    const char *zLike = 0;
+    char *zLike = 0;
+    char *zSql;
     int i;
     int savedShowHeader = p->showHeader;
     int savedShellFlags = p->shellFlgs;
-    ShellClearFlag(p, SHFLG_PreserveRowid|SHFLG_Newlines|SHFLG_Echo);
+    ShellClearFlag(p, 
+       SHFLG_PreserveRowid|SHFLG_Newlines|SHFLG_Echo
+       |SHFLG_DumpDataOnly|SHFLG_DumpNoSys);
     for(i=1; i<nArg; i++){
       if( azArg[i][0]=='-' ){
         const char *z = azArg[i]+1;
@@ -15689,6 +18663,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           raw_printf(stderr, "The --preserve-rowids option is not compatible"
                              " with SQLITE_OMIT_VIRTUALTABLE\n");
           rc = 1;
+          sqlite3_free(zLike);
           goto meta_command_exit;
 #else
           ShellSetFlag(p, SHFLG_PreserveRowid);
@@ -15697,71 +18672,87 @@ static int do_meta_command(char *zLine, ShellState *p){
         if( strcmp(z,"newlines")==0 ){
           ShellSetFlag(p, SHFLG_Newlines);
         }else
+        if( strcmp(z,"data-only")==0 ){
+          ShellSetFlag(p, SHFLG_DumpDataOnly);
+        }else
+        if( strcmp(z,"nosys")==0 ){
+          ShellSetFlag(p, SHFLG_DumpNoSys);
+        }else
         {
           raw_printf(stderr, "Unknown option \"%s\" on \".dump\"\n", azArg[i]);
           rc = 1;
+          sqlite3_free(zLike);
           goto meta_command_exit;
         }
-      }else if( zLike ){
-        raw_printf(stderr, "Usage: .dump ?--preserve-rowids? "
-                           "?--newlines? ?LIKE-PATTERN?\n");
-        rc = 1;
-        goto meta_command_exit;
       }else{
-        zLike = azArg[i];
+        /* azArg[i] contains a LIKE pattern. This ".dump" request should
+        ** only dump data for tables for which either the table name matches
+        ** the LIKE pattern, or the table appears to be a shadow table of
+        ** a virtual table for which the name matches the LIKE pattern.
+        */
+        char *zExpr = sqlite3_mprintf(
+            "name LIKE %Q ESCAPE '\\' OR EXISTS ("
+            "  SELECT 1 FROM sqlite_schema WHERE "
+            "    name LIKE %Q ESCAPE '\\' AND"
+            "    sql LIKE 'CREATE VIRTUAL TABLE%%' AND"
+            "    substr(o.name, 1, length(name)+1) == (name||'_')"
+            ")", azArg[i], azArg[i]
+        );
+      
+        if( zLike ){
+          zLike = sqlite3_mprintf("%z OR %z", zLike, zExpr);
+        }else{
+          zLike = zExpr;
+        }
       }
     }
 
     open_db(p, 0);
 
-    /* When playing back a "dump", the content might appear in an order
-    ** which causes immediate foreign key constraints to be violated.
-    ** So disable foreign-key constraint enforcement to prevent problems. */
-    raw_printf(p->out, "PRAGMA foreign_keys=OFF;\n");
-    raw_printf(p->out, "BEGIN TRANSACTION;\n");
+    if( (p->shellFlgs & SHFLG_DumpDataOnly)==0 ){
+      /* When playing back a "dump", the content might appear in an order
+      ** which causes immediate foreign key constraints to be violated.
+      ** So disable foreign-key constraint enforcement to prevent problems. */
+      raw_printf(p->out, "PRAGMA foreign_keys=OFF;\n");
+      raw_printf(p->out, "BEGIN TRANSACTION;\n");
+    }
     p->writableSchema = 0;
     p->showHeader = 0;
     /* Set writable_schema=ON since doing so forces SQLite to initialize
-    ** as much of the schema as it can even if the sqlite_master table is
+    ** as much of the schema as it can even if the sqlite_schema table is
     ** corrupt. */
     sqlite3_exec(p->db, "SAVEPOINT dump; PRAGMA writable_schema=ON", 0, 0, 0);
     p->nErr = 0;
-    if( zLike==0 ){
-      run_schema_dump_query(p,
-        "SELECT name, type, sql FROM sqlite_master "
-        "WHERE sql NOT NULL AND type=='table' AND name!='sqlite_sequence'"
-      );
-      run_schema_dump_query(p,
-        "SELECT name, type, sql FROM sqlite_master "
-        "WHERE name=='sqlite_sequence'"
-      );
-      run_table_dump_query(p,
-        "SELECT sql FROM sqlite_master "
-        "WHERE sql NOT NULL AND type IN ('index','trigger','view')", 0
-      );
-    }else{
-      char *zSql;
+    if( zLike==0 ) zLike = sqlite3_mprintf("true");
+    zSql = sqlite3_mprintf(
+      "SELECT name, type, sql FROM sqlite_schema AS o "
+      "WHERE (%s) AND type=='table'"
+      "  AND sql NOT NULL"
+      " ORDER BY tbl_name='sqlite_sequence', rowid",
+      zLike
+    );
+    run_schema_dump_query(p,zSql);
+    sqlite3_free(zSql);
+    if( (p->shellFlgs & SHFLG_DumpDataOnly)==0 ){
       zSql = sqlite3_mprintf(
-        "SELECT name, type, sql FROM sqlite_master "
-        "WHERE tbl_name LIKE %Q AND type=='table'"
-        "  AND sql NOT NULL", zLike);
-      run_schema_dump_query(p,zSql);
-      sqlite3_free(zSql);
-      zSql = sqlite3_mprintf(
-        "SELECT sql FROM sqlite_master "
-        "WHERE sql NOT NULL"
-        "  AND type IN ('index','trigger','view')"
-        "  AND tbl_name LIKE %Q", zLike);
-      run_table_dump_query(p, zSql, 0);
+        "SELECT sql FROM sqlite_schema AS o "
+        "WHERE (%s) AND sql NOT NULL"
+        "  AND type IN ('index','trigger','view')",
+        zLike
+      );
+      run_table_dump_query(p, zSql);
       sqlite3_free(zSql);
     }
+    sqlite3_free(zLike);
     if( p->writableSchema ){
       raw_printf(p->out, "PRAGMA writable_schema=OFF;\n");
       p->writableSchema = 0;
     }
     sqlite3_exec(p->db, "PRAGMA writable_schema=OFF;", 0, 0, 0);
     sqlite3_exec(p->db, "RELEASE dump;", 0, 0, 0);
-    raw_printf(p->out, p->nErr?"ROLLBACK; -- due to errors\n":"COMMIT;\n");
+    if( (p->shellFlgs & SHFLG_DumpDataOnly)==0 ){
+      raw_printf(p->out, p->nErr?"ROLLBACK; -- due to errors\n":"COMMIT;\n");
+    }
     p->showHeader = savedShowHeader;
     p->shellFlgs = savedShellFlags;
   }else
@@ -15794,7 +18785,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         p->autoEQP = AUTOEQP_full;
         p->autoEQPtrace = 1;
         open_db(p, 0);
-        sqlite3_exec(p->db, "SELECT name FROM sqlite_master LIMIT 1", 0, 0, 0);
+        sqlite3_exec(p->db, "SELECT name FROM sqlite_schema LIMIT 1", 0, 0, 0);
         sqlite3_exec(p->db, "PRAGMA vdbe_trace=ON;", 0, 0, 0);
 #endif
       }else{
@@ -15848,15 +18839,17 @@ static int do_meta_command(char *zLine, ShellState *p){
        int ctrlCode;            /* Integer code for that option */
        const char *zUsage;      /* Usage notes */
     } aCtrl[] = {
-      { "size_limit",     SQLITE_FCNTL_SIZE_LIMIT,      "[LIMIT]"        },
       { "chunk_size",     SQLITE_FCNTL_CHUNK_SIZE,      "SIZE"           },
-   /* { "win32_av_retry", SQLITE_FCNTL_WIN32_AV_RETRY,  "COUNT DELAY"    },*/
-      { "persist_wal",    SQLITE_FCNTL_PERSIST_WAL,     "[BOOLEAN]"      },
-      { "psow",       SQLITE_FCNTL_POWERSAFE_OVERWRITE, "[BOOLEAN]"      },
-   /* { "pragma",         SQLITE_FCNTL_PRAGMA,          "NAME ARG"       },*/
-      { "tempfilename",   SQLITE_FCNTL_TEMPFILENAME,    ""               },
+      { "data_version",   SQLITE_FCNTL_DATA_VERSION,    ""               },
       { "has_moved",      SQLITE_FCNTL_HAS_MOVED,       ""               },  
       { "lock_timeout",   SQLITE_FCNTL_LOCK_TIMEOUT,    "MILLISEC"       },
+      { "persist_wal",    SQLITE_FCNTL_PERSIST_WAL,     "[BOOLEAN]"      },
+   /* { "pragma",         SQLITE_FCNTL_PRAGMA,          "NAME ARG"       },*/
+      { "psow",       SQLITE_FCNTL_POWERSAFE_OVERWRITE, "[BOOLEAN]"      },
+      { "reserve_bytes",  SQLITE_FCNTL_RESERVE_BYTES,   "[N]"            },
+      { "size_limit",     SQLITE_FCNTL_SIZE_LIMIT,      "[LIMIT]"        },
+      { "tempfilename",   SQLITE_FCNTL_TEMPFILENAME,    ""               },
+   /* { "win32_av_retry", SQLITE_FCNTL_WIN32_AV_RETRY,  "COUNT DELAY"    },*/
     };
     int filectrl = -1;
     int iCtrl = -1;
@@ -15864,9 +18857,20 @@ static int do_meta_command(char *zLine, ShellState *p){
     int isOk = 0;            /* 0: usage  1: %lld  2: no-result */
     int n2, i;
     const char *zCmd = 0;
+    const char *zSchema = 0;
 
     open_db(p, 0);
     zCmd = nArg>=2 ? azArg[1] : "help";
+
+    if( zCmd[0]=='-' 
+     && (strcmp(zCmd,"--schema")==0 || strcmp(zCmd,"-schema")==0)
+     && nArg>=4
+    ){
+      zSchema = azArg[2];
+      for(i=3; i<nArg; i++) azArg[i-2] = azArg[i];
+      nArg -= 2;
+      zCmd = azArg[1];
+    }
 
     /* The argument can optionally begin with "-" or "--" */
     if( zCmd[0]=='-' && zCmd[1] ){
@@ -15909,7 +18913,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         case SQLITE_FCNTL_SIZE_LIMIT: {
           if( nArg!=2 && nArg!=3 ) break;
           iRes = nArg==3 ? integerValue(azArg[2]) : -1;
-          sqlite3_file_control(p->db, 0, SQLITE_FCNTL_SIZE_LIMIT, &iRes);
+          sqlite3_file_control(p->db, zSchema, SQLITE_FCNTL_SIZE_LIMIT, &iRes);
           isOk = 1;
           break;
         }
@@ -15918,7 +18922,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           int x;
           if( nArg!=3 ) break;
           x = (int)integerValue(azArg[2]);
-          sqlite3_file_control(p->db, 0, filectrl, &x);
+          sqlite3_file_control(p->db, zSchema, filectrl, &x);
           isOk = 2;
           break;
         }
@@ -15927,15 +18931,16 @@ static int do_meta_command(char *zLine, ShellState *p){
           int x;
           if( nArg!=2 && nArg!=3 ) break;
           x = nArg==3 ? booleanValue(azArg[2]) : -1;
-          sqlite3_file_control(p->db, 0, filectrl, &x);
+          sqlite3_file_control(p->db, zSchema, filectrl, &x);
           iRes = x;
           isOk = 1;
           break;
         }
+        case SQLITE_FCNTL_DATA_VERSION:
         case SQLITE_FCNTL_HAS_MOVED: {
           int x;
           if( nArg!=2 ) break;
-          sqlite3_file_control(p->db, 0, filectrl, &x);
+          sqlite3_file_control(p->db, zSchema, filectrl, &x);
           iRes = x;
           isOk = 1;
           break;
@@ -15943,11 +18948,23 @@ static int do_meta_command(char *zLine, ShellState *p){
         case SQLITE_FCNTL_TEMPFILENAME: {
           char *z = 0;
           if( nArg!=2 ) break;
-          sqlite3_file_control(p->db, 0, filectrl, &z);
+          sqlite3_file_control(p->db, zSchema, filectrl, &z);
           if( z ){
             utf8_printf(p->out, "%s\n", z);
             sqlite3_free(z);
           }
+          isOk = 2;
+          break;
+        }
+        case SQLITE_FCNTL_RESERVE_BYTES: {
+          int x;
+          if( nArg>=3 ){
+            x = atoi(azArg[2]);
+            sqlite3_file_control(p->db, zSchema, filectrl, &x);
+          }
+          x = -1;
+          sqlite3_file_control(p->db, zSchema, filectrl, &x);
+          utf8_printf(p->out,"%d\n", x);
           isOk = 2;
           break;
         }
@@ -15965,7 +18982,6 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='f' && strncmp(azArg[0], "fullschema", n)==0 ){
     ShellState data;
-    char *zErrMsg = 0;
     int doStats = 0;
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
@@ -15983,16 +18999,16 @@ static int do_meta_command(char *zLine, ShellState *p){
     rc = sqlite3_exec(p->db,
        "SELECT sql FROM"
        "  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
-       "     FROM sqlite_master UNION ALL"
-       "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_master) "
+       "     FROM sqlite_schema UNION ALL"
+       "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_schema) "
        "WHERE type!='meta' AND sql NOTNULL AND name NOT LIKE 'sqlite_%' "
        "ORDER BY rowid",
-       callback, &data, &zErrMsg
+       callback, &data, 0
     );
     if( rc==SQLITE_OK ){
       sqlite3_stmt *pStmt;
       rc = sqlite3_prepare_v2(p->db,
-               "SELECT rowid FROM sqlite_master"
+               "SELECT rowid FROM sqlite_schema"
                " WHERE name GLOB 'sqlite_stat[134]'",
                -1, &pStmt, 0);
       doStats = sqlite3_step(pStmt)==SQLITE_ROW;
@@ -16001,23 +19017,22 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( doStats==0 ){
       raw_printf(p->out, "/* No STAT tables available */\n");
     }else{
-      raw_printf(p->out, "ANALYZE sqlite_master;\n");
-      sqlite3_exec(p->db, "SELECT 'ANALYZE sqlite_master'",
-                   callback, &data, &zErrMsg);
+      raw_printf(p->out, "ANALYZE sqlite_schema;\n");
+      sqlite3_exec(p->db, "SELECT 'ANALYZE sqlite_schema'",
+                   callback, &data, 0);
       data.cMode = data.mode = MODE_Insert;
       data.zDestTable = "sqlite_stat1";
-      shell_exec(&data, "SELECT * FROM sqlite_stat1", &zErrMsg);
-      data.zDestTable = "sqlite_stat3";
-      shell_exec(&data, "SELECT * FROM sqlite_stat3", &zErrMsg);
+      shell_exec(&data, "SELECT * FROM sqlite_stat1", 0);
       data.zDestTable = "sqlite_stat4";
-      shell_exec(&data, "SELECT * FROM sqlite_stat4", &zErrMsg);
-      raw_printf(p->out, "ANALYZE sqlite_master;\n");
+      shell_exec(&data, "SELECT * FROM sqlite_stat4", 0);
+      raw_printf(p->out, "ANALYZE sqlite_schema;\n");
     }
   }else
 
   if( c=='h' && strncmp(azArg[0], "headers", n)==0 ){
     if( nArg==2 ){
       p->showHeader = booleanValue(azArg[1]);
+      p->shellFlgs |= SHFLG_HeaderSet;
     }else{
       raw_printf(stderr, "Usage: .headers on|off\n");
       rc = 1;
@@ -16036,8 +19051,8 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='i' && strncmp(azArg[0], "import", n)==0 ){
-    char *zTable;               /* Insert data into this table */
-    char *zFile;                /* Name of file to extra content from */
+    char *zTable = 0;           /* Insert data into this table */
+    char *zFile = 0;            /* Name of file to extra content from */
     sqlite3_stmt *pStmt = NULL; /* A statement */
     int nCol;                   /* Number of columns in the table */
     int nByte;                  /* Number of bytes in an SQL string */
@@ -16047,82 +19062,146 @@ static int do_meta_command(char *zLine, ShellState *p){
     char *zSql;                 /* An SQL statement */
     ImportCtx sCtx;             /* Reader context */
     char *(SQLITE_CDECL *xRead)(ImportCtx*); /* Func to read one value */
-    int (SQLITE_CDECL *xCloser)(FILE*);      /* Func to close file */
+    int eVerbose = 0;           /* Larger for more console output */
+    int nSkip = 0;              /* Initial lines to skip */
+    int useOutputMode = 1;      /* Use output mode to determine separators */
 
-    if( nArg!=3 ){
-      raw_printf(stderr, "Usage: .import FILE TABLE\n");
+    memset(&sCtx, 0, sizeof(sCtx));
+    if( p->mode==MODE_Ascii ){
+      xRead = ascii_read_one_field;
+    }else{
+      xRead = csv_read_one_field;
+    }
+    for(i=1; i<nArg; i++){
+      char *z = azArg[i];
+      if( z[0]=='-' && z[1]=='-' ) z++;
+      if( z[0]!='-' ){
+        if( zFile==0 ){
+          zFile = z;
+        }else if( zTable==0 ){
+          zTable = z;
+        }else{
+          utf8_printf(p->out, "ERROR: extra argument: \"%s\".  Usage:\n", z);
+          showHelp(p->out, "import");
+          rc = 1;
+          goto meta_command_exit;
+        }
+      }else if( strcmp(z,"-v")==0 ){
+        eVerbose++;
+      }else if( strcmp(z,"-skip")==0 && i<nArg-1 ){
+        nSkip = integerValue(azArg[++i]);
+      }else if( strcmp(z,"-ascii")==0 ){
+        sCtx.cColSep = SEP_Unit[0];
+        sCtx.cRowSep = SEP_Record[0];
+        xRead = ascii_read_one_field;
+        useOutputMode = 0;
+      }else if( strcmp(z,"-csv")==0 ){
+        sCtx.cColSep = ',';
+        sCtx.cRowSep = '\n';
+        xRead = csv_read_one_field;
+        useOutputMode = 0;
+      }else{
+        utf8_printf(p->out, "ERROR: unknown option: \"%s\".  Usage:\n", z);
+        showHelp(p->out, "import");
+        rc = 1;
+        goto meta_command_exit;
+      }
+    }
+    if( zTable==0 ){
+      utf8_printf(p->out, "ERROR: missing %s argument. Usage:\n",
+                  zFile==0 ? "FILE" : "TABLE");
+      showHelp(p->out, "import");
+      rc = 1;
       goto meta_command_exit;
     }
-    zFile = azArg[1];
-    zTable = azArg[2];
     seenInterrupt = 0;
-    memset(&sCtx, 0, sizeof(sCtx));
     open_db(p, 0);
-    nSep = strlen30(p->colSeparator);
-    if( nSep==0 ){
-      raw_printf(stderr,
-                 "Error: non-null column separator required for import\n");
-      return 1;
-    }
-    if( nSep>1 ){
-      raw_printf(stderr, "Error: multi-character column separators not allowed"
-                      " for import\n");
-      return 1;
-    }
-    nSep = strlen30(p->rowSeparator);
-    if( nSep==0 ){
-      raw_printf(stderr, "Error: non-null row separator required for import\n");
-      return 1;
-    }
-    if( nSep==2 && p->mode==MODE_Csv && strcmp(p->rowSeparator, SEP_CrLf)==0 ){
-      /* When importing CSV (only), if the row separator is set to the
-      ** default output row separator, change it to the default input
-      ** row separator.  This avoids having to maintain different input
-      ** and output row separators. */
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
+    if( useOutputMode ){
+      /* If neither the --csv or --ascii options are specified, then set
+      ** the column and row separator characters from the output mode. */
+      nSep = strlen30(p->colSeparator);
+      if( nSep==0 ){
+        raw_printf(stderr,
+                   "Error: non-null column separator required for import\n");
+        rc = 1;
+        goto meta_command_exit;
+      }
+      if( nSep>1 ){
+        raw_printf(stderr, 
+              "Error: multi-character column separators not allowed"
+              " for import\n");
+        rc = 1;
+        goto meta_command_exit;
+      }
       nSep = strlen30(p->rowSeparator);
-    }
-    if( nSep>1 ){
-      raw_printf(stderr, "Error: multi-character row separators not allowed"
-                      " for import\n");
-      return 1;
+      if( nSep==0 ){
+        raw_printf(stderr,
+            "Error: non-null row separator required for import\n");
+        rc = 1;
+        goto meta_command_exit;
+      }
+      if( nSep==2 && p->mode==MODE_Csv && strcmp(p->rowSeparator,SEP_CrLf)==0 ){
+        /* When importing CSV (only), if the row separator is set to the
+        ** default output row separator, change it to the default input
+        ** row separator.  This avoids having to maintain different input
+        ** and output row separators. */
+        sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
+        nSep = strlen30(p->rowSeparator);
+      }
+      if( nSep>1 ){
+        raw_printf(stderr, "Error: multi-character row separators not allowed"
+                           " for import\n");
+        rc = 1;
+        goto meta_command_exit;
+      }
+      sCtx.cColSep = p->colSeparator[0];
+      sCtx.cRowSep = p->rowSeparator[0];
     }
     sCtx.zFile = zFile;
     sCtx.nLine = 1;
     if( sCtx.zFile[0]=='|' ){
 #ifdef SQLITE_OMIT_POPEN
       raw_printf(stderr, "Error: pipes are not supported in this OS\n");
-      return 1;
+      rc = 1;
+      goto meta_command_exit;
 #else
       sCtx.in = popen(sCtx.zFile+1, "r");
       sCtx.zFile = "<pipe>";
-      xCloser = pclose;
+      sCtx.xCloser = pclose;
 #endif
     }else{
       sCtx.in = fopen(sCtx.zFile, "rb");
-      xCloser = fclose;
-    }
-    if( p->mode==MODE_Ascii ){
-      xRead = ascii_read_one_field;
-    }else{
-      xRead = csv_read_one_field;
+      sCtx.xCloser = fclose;
     }
     if( sCtx.in==0 ){
       utf8_printf(stderr, "Error: cannot open \"%s\"\n", zFile);
-      return 1;
+      rc = 1;
+      goto meta_command_exit;
     }
-    sCtx.cColSep = p->colSeparator[0];
-    sCtx.cRowSep = p->rowSeparator[0];
-    zSql = sqlite3_mprintf("SELECT * FROM %s", zTable);
+    if( eVerbose>=2 || (eVerbose>=1 && useOutputMode) ){
+      char zSep[2];
+      zSep[1] = 0;
+      zSep[0] = sCtx.cColSep;
+      utf8_printf(p->out, "Column separator ");
+      output_c_string(p->out, zSep);
+      utf8_printf(p->out, ", row separator ");
+      zSep[0] = sCtx.cRowSep;
+      output_c_string(p->out, zSep);
+      utf8_printf(p->out, "\n");
+    }
+    while( (nSkip--)>0 ){
+      while( xRead(&sCtx) && sCtx.cTerm==sCtx.cColSep ){}
+    }
+    zSql = sqlite3_mprintf("SELECT * FROM \"%w\"", zTable);
     if( zSql==0 ){
-      xCloser(sCtx.in);
+      import_cleanup(&sCtx);
       shell_out_of_memory();
     }
     nByte = strlen30(zSql);
     rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
     import_append_char(&sCtx, 0);    /* To ensure sCtx.z is allocated */
     if( rc && sqlite3_strglob("no such table: *", sqlite3_errmsg(p->db))==0 ){
-      char *zCreate = sqlite3_mprintf("CREATE TABLE %s", zTable);
+      char *zCreate = sqlite3_mprintf("CREATE TABLE \"%w\"", zTable);
       char cSep = '(';
       while( xRead(&sCtx) ){
         zCreate = sqlite3_mprintf("%z%c\n  \"%w\" TEXT", zCreate, cSep, sCtx.z);
@@ -16131,20 +19210,23 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
       if( cSep=='(' ){
         sqlite3_free(zCreate);
-        sqlite3_free(sCtx.z);
-        xCloser(sCtx.in);
+        import_cleanup(&sCtx);
         utf8_printf(stderr,"%s: empty file\n", sCtx.zFile);
-        return 1;
+        rc = 1;
+        goto meta_command_exit;
       }
       zCreate = sqlite3_mprintf("%z\n)", zCreate);
+      if( eVerbose>=1 ){
+        utf8_printf(p->out, "%s\n", zCreate);
+      }
       rc = sqlite3_exec(p->db, zCreate, 0, 0, 0);
       sqlite3_free(zCreate);
       if( rc ){
-        utf8_printf(stderr, "CREATE TABLE %s(...) failed: %s\n", zTable,
+        utf8_printf(stderr, "CREATE TABLE \"%s\"(...) failed: %s\n", zTable,
                 sqlite3_errmsg(p->db));
-        sqlite3_free(sCtx.z);
-        xCloser(sCtx.in);
-        return 1;
+        import_cleanup(&sCtx);
+        rc = 1;
+        goto meta_command_exit;
       }
       rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
     }
@@ -16152,8 +19234,9 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( rc ){
       if (pStmt) sqlite3_finalize(pStmt);
       utf8_printf(stderr,"Error: %s\n", sqlite3_errmsg(p->db));
-      xCloser(sCtx.in);
-      return 1;
+      import_cleanup(&sCtx);
+      rc = 1;
+      goto meta_command_exit;
     }
     nCol = sqlite3_column_count(pStmt);
     sqlite3_finalize(pStmt);
@@ -16161,7 +19244,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( nCol==0 ) return 0; /* no columns, no error */
     zSql = sqlite3_malloc64( nByte*2 + 20 + nCol*2 );
     if( zSql==0 ){
-      xCloser(sCtx.in);
+      import_cleanup(&sCtx);
       shell_out_of_memory();
     }
     sqlite3_snprintf(nByte+20, zSql, "INSERT INTO \"%w\" VALUES(?", zTable);
@@ -16172,13 +19255,17 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     zSql[j++] = ')';
     zSql[j] = 0;
+    if( eVerbose>=2 ){
+      utf8_printf(p->out, "Insert using: %s\n", zSql);
+    }
     rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
     sqlite3_free(zSql);
     if( rc ){
       utf8_printf(stderr, "Error: %s\n", sqlite3_errmsg(p->db));
       if (pStmt) sqlite3_finalize(pStmt);
-      xCloser(sCtx.in);
-      return 1;
+      import_cleanup(&sCtx);
+      rc = 1;
+      goto meta_command_exit;
     }
     needCommit = sqlite3_get_autocommit(p->db);
     if( needCommit ) sqlite3_exec(p->db, "BEGIN", 0, 0, 0);
@@ -16221,14 +19308,21 @@ static int do_meta_command(char *zLine, ShellState *p){
         if( rc!=SQLITE_OK ){
           utf8_printf(stderr, "%s:%d: INSERT failed: %s\n", sCtx.zFile,
                       startLine, sqlite3_errmsg(p->db));
+          sCtx.nErr++;
+        }else{
+          sCtx.nRow++;
         }
       }
     }while( sCtx.cTerm!=EOF );
 
-    xCloser(sCtx.in);
-    sqlite3_free(sCtx.z);
+    import_cleanup(&sCtx);
     sqlite3_finalize(pStmt);
     if( needCommit ) sqlite3_exec(p->db, "COMMIT", 0, 0, 0);
+    if( eVerbose>0 ){
+      utf8_printf(p->out,
+          "Added %d rows with %d errors using %d lines of input\n",
+          sCtx.nRow, sCtx.nErr, sCtx.nLine-1);
+    }
   }else
 
 #ifndef SQLITE_UNTESTABLE
@@ -16237,10 +19331,19 @@ static int do_meta_command(char *zLine, ShellState *p){
     char *zCollist = 0;
     sqlite3_stmt *pStmt;
     int tnum = 0;
+    int isWO = 0;  /* True if making an imposter of a WITHOUT ROWID table */
+    int lenPK = 0; /* Length of the PRIMARY KEY string for isWO tables */
     int i;
     if( !(nArg==3 || (nArg==2 && sqlite3_stricmp(azArg[1],"off")==0)) ){
       utf8_printf(stderr, "Usage: .imposter INDEX IMPOSTER\n"
                           "       .imposter off\n");
+      /* Also allowed, but not documented:
+      **
+      **    .imposter TABLE IMPOSTER
+      **
+      ** where TABLE is a WITHOUT ROWID table.  In that case, the
+      ** imposter is another WITHOUT ROWID table with the columns in
+      ** storage order. */
       rc = 1;
       goto meta_command_exit;
     }
@@ -16249,19 +19352,22 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 1);
       goto meta_command_exit;
     }
-    zSql = sqlite3_mprintf("SELECT rootpage FROM sqlite_master"
-                           " WHERE name='%q' AND type='index'", azArg[1]);
+    zSql = sqlite3_mprintf(
+      "SELECT rootpage, 0 FROM sqlite_schema"
+      " WHERE name='%q' AND type='index'"
+      "UNION ALL "
+      "SELECT rootpage, 1 FROM sqlite_schema"
+      " WHERE name='%q' AND type='table'"
+      "   AND sql LIKE '%%without%%rowid%%'",
+      azArg[1], azArg[1]
+    );
     sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
     sqlite3_free(zSql);
     if( sqlite3_step(pStmt)==SQLITE_ROW ){
       tnum = sqlite3_column_int(pStmt, 0);
+      isWO = sqlite3_column_int(pStmt, 1);
     }
     sqlite3_finalize(pStmt);
-    if( tnum==0 ){
-      utf8_printf(stderr, "no such index: \"%s\"\n", azArg[1]);
-      rc = 1;
-      goto meta_command_exit;
-    }
     zSql = sqlite3_mprintf("PRAGMA index_xinfo='%q'", azArg[1]);
     rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
     sqlite3_free(zSql);
@@ -16278,6 +19384,9 @@ static int do_meta_command(char *zLine, ShellState *p){
           zCol = zLabel;
         }
       }
+      if( isWO && lenPK==0 && sqlite3_column_int(pStmt,5)==0 && zCollist ){
+        lenPK = (int)strlen(zCollist);
+      }
       if( zCollist==0 ){
         zCollist = sqlite3_mprintf("\"%w\"", zCol);
       }else{
@@ -16285,9 +19394,16 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
     }
     sqlite3_finalize(pStmt);
+    if( i==0 || tnum==0 ){
+      utf8_printf(stderr, "no such index: \"%s\"\n", azArg[1]);
+      rc = 1;
+      sqlite3_free(zCollist);
+      goto meta_command_exit;
+    }
+    if( lenPK==0 ) lenPK = 100000;
     zSql = sqlite3_mprintf(
-          "CREATE TABLE \"%w\"(%s,PRIMARY KEY(%s))WITHOUT ROWID",
-          azArg[2], zCollist, zCollist);
+          "CREATE TABLE \"%w\"(%s,PRIMARY KEY(%.*s))WITHOUT ROWID",
+          azArg[2], zCollist, lenPK, zCollist);
     sqlite3_free(zCollist);
     rc = sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 1, tnum);
     if( rc==SQLITE_OK ){
@@ -16298,7 +19414,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else{
         utf8_printf(stdout, "%s;\n", zSql);
         raw_printf(stdout,
-           "WARNING: writing to an imposter table will corrupt the index!\n"
+          "WARNING: writing to an imposter table will corrupt the \"%s\" %s!\n",
+          azArg[1], isWO ? "table" : "index"
         );
       }
     }else{
@@ -16437,6 +19554,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
     }else if( c2=='c' && strncmp(azArg[1],"columns",n2)==0 ){
       p->mode = MODE_Column;
+      if( (p->shellFlgs & SHFLG_HeaderSet)==0 ){
+        p->showHeader = 1;
+      }
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
     }else if( c2=='l' && n2>2 && strncmp(azArg[1],"list",n2)==0 ){
       p->mode = MODE_List;
@@ -16460,15 +19580,26 @@ static int do_meta_command(char *zLine, ShellState *p){
       set_table_name(p, nArg>=3 ? azArg[2] : "table");
     }else if( c2=='q' && strncmp(azArg[1],"quote",n2)==0 ){
       p->mode = MODE_Quote;
+      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
+      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
     }else if( c2=='a' && strncmp(azArg[1],"ascii",n2)==0 ){
       p->mode = MODE_Ascii;
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Unit);
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Record);
+    }else if( c2=='m' && strncmp(azArg[1],"markdown",n2)==0 ){
+      p->mode = MODE_Markdown;
+    }else if( c2=='t' && strncmp(azArg[1],"table",n2)==0 ){
+      p->mode = MODE_Table;
+    }else if( c2=='b' && strncmp(azArg[1],"box",n2)==0 ){
+      p->mode = MODE_Box;
+    }else if( c2=='j' && strncmp(azArg[1],"json",n2)==0 ){
+      p->mode = MODE_Json;
     }else if( nArg==1 ){
       raw_printf(p->out, "current output mode: %s\n", modeDescr[p->mode]);
     }else{
       raw_printf(stderr, "Error: mode should be one of: "
-         "ascii column csv html insert line list quote tabs tcl\n");
+         "ascii box column csv html insert json line list markdown "
+         "quote table tabs tcl\n");
       rc = 1;
     }
     p->cMode = p->mode;
@@ -16484,10 +19615,38 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+#ifdef SQLITE_DEBUG
+  if( c=='o' && strcmp(azArg[0],"oom")==0 ){
+    int i;
+    for(i=1; i<nArg; i++){
+      const char *z = azArg[i];
+      if( z[0]=='-' && z[1]=='-' ) z++;
+      if( strcmp(z,"-repeat")==0 ){
+        if( i==nArg-1 ){
+          raw_printf(p->out, "missing argument on \"%s\"\n", azArg[i]);
+          rc = 1;
+        }else{
+          oomRepeat = (int)integerValue(azArg[++i]);
+        }
+      }else if( IsDigit(z[0]) ){
+        oomCounter = (int)integerValue(azArg[i]);
+      }else{
+        raw_printf(p->out, "unknown argument: \"%s\"\n", azArg[i]);
+        raw_printf(p->out, "Usage: .oom [--repeat N] [M]\n");
+        rc = 1;
+      }
+    }
+    if( rc==0 ){
+      raw_printf(p->out, "oomCounter = %d\n", oomCounter);
+      raw_printf(p->out, "oomRepeat  = %d\n", oomRepeat);
+    }
+  }else
+#endif /* SQLITE_DEBUG */
+
   if( c=='o' && strncmp(azArg[0], "open", n)==0 && n>=2 ){
-    char *zNewFilename;  /* Name of the database file to open */
-    int iName = 1;       /* Index in azArg[] of the filename */
-    int newFlag = 0;     /* True to delete file before opening */
+    char *zNewFilename = 0;  /* Name of the database file to open */
+    int iName = 1;           /* Index in azArg[] of the filename */
+    int newFlag = 0;         /* True to delete file before opening */
     /* Close the existing database */
     session_close_all(p);
     close_db(p->db);
@@ -16496,9 +19655,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_free(p->zFreeOnClose);
     p->zFreeOnClose = 0;
     p->openMode = SHELL_OPEN_UNSPEC;
+    p->openFlags = 0;
     p->szMax = 0;
     /* Check for command-line arguments */
-    for(iName=1; iName<nArg && azArg[iName][0]=='-'; iName++){
+    for(iName=1; iName<nArg; iName++){
       const char *z = azArg[iName];
       if( optionMatch(z,"new") ){
         newFlag = 1;
@@ -16510,22 +19670,29 @@ static int do_meta_command(char *zLine, ShellState *p){
         p->openMode = SHELL_OPEN_APPENDVFS;
       }else if( optionMatch(z, "readonly") ){
         p->openMode = SHELL_OPEN_READONLY;
-#ifdef SQLITE_ENABLE_DESERIALIZE
+      }else if( optionMatch(z, "nofollow") ){
+        p->openFlags |= SQLITE_OPEN_NOFOLLOW;
+#ifndef SQLITE_OMIT_DESERIALIZE
       }else if( optionMatch(z, "deserialize") ){
         p->openMode = SHELL_OPEN_DESERIALIZE;
       }else if( optionMatch(z, "hexdb") ){
         p->openMode = SHELL_OPEN_HEXDB;
       }else if( optionMatch(z, "maxsize") && iName+1<nArg ){
         p->szMax = integerValue(azArg[++iName]);
-#endif /* SQLITE_ENABLE_DESERIALIZE */
+#endif /* SQLITE_OMIT_DESERIALIZE */
       }else if( z[0]=='-' ){
         utf8_printf(stderr, "unknown option: %s\n", z);
         rc = 1;
         goto meta_command_exit;
+      }else if( zNewFilename ){
+        utf8_printf(stderr, "extra argument: \"%s\"\n", z);
+        rc = 1;
+        goto meta_command_exit;
+      }else{
+        zNewFilename = sqlite3_mprintf("%s", z);
       }
     }
     /* If a filename is specified, try to open it first */
-    zNewFilename = nArg>iName ? sqlite3_mprintf("%s", azArg[iName]) : 0;
     if( zNewFilename || p->openMode==SHELL_OPEN_HEXDB ){
       if( newFlag ) shellDeleteFile(zNewFilename);
       p->zDbFilename = zNewFilename;
@@ -16548,46 +19715,76 @@ static int do_meta_command(char *zLine, ShellState *p){
         && (strncmp(azArg[0], "output", n)==0||strncmp(azArg[0], "once", n)==0))
    || (c=='e' && n==5 && strcmp(azArg[0],"excel")==0)
   ){
-    const char *zFile = nArg>=2 ? azArg[1] : "stdout";
+    char *zFile = 0;
     int bTxtMode = 0;
-    if( azArg[0][0]=='e' ){
-      /* Transform the ".excel" command into ".once -x" */
-      nArg = 2;
-      azArg[0] = "once";
-      zFile = azArg[1] = "-x";
-      n = 4;
+    int i;
+    int eMode = 0;
+    int bBOM = 0;
+    int bOnce = 0;  /* 0: .output, 1: .once, 2: .excel */
+
+    if( c=='e' ){
+      eMode = 'x';
+      bOnce = 2;
+    }else if( strncmp(azArg[0],"once",n)==0 ){
+      bOnce = 1;
     }
-    if( nArg>2 ){
-      utf8_printf(stderr, "Usage: .%s [-e|-x|FILE]\n", azArg[0]);
-      rc = 1;
-      goto meta_command_exit;
-    }
-    if( n>1 && strncmp(azArg[0], "once", n)==0 ){
-      if( nArg<2 ){
-        raw_printf(stderr, "Usage: .once (-e|-x|FILE)\n");
+    for(i=1; i<nArg; i++){
+      char *z = azArg[i];
+      if( z[0]=='-' ){
+        if( z[1]=='-' ) z++;
+        if( strcmp(z,"-bom")==0 ){
+          bBOM = 1;
+        }else if( c!='e' && strcmp(z,"-x")==0 ){
+          eMode = 'x';  /* spreadsheet */
+        }else if( c!='e' && strcmp(z,"-e")==0 ){
+          eMode = 'e';  /* text editor */
+        }else{
+          utf8_printf(p->out, "ERROR: unknown option: \"%s\".  Usage:\n",
+                      azArg[i]);
+          showHelp(p->out, azArg[0]);
+          rc = 1;
+          goto meta_command_exit;
+        }
+      }else if( zFile==0 && eMode!='e' && eMode!='x' ){
+        zFile = sqlite3_mprintf("%s", z);
+        if( zFile[0]=='|' ){
+          while( i+1<nArg ) zFile = sqlite3_mprintf("%z %s", zFile, azArg[++i]);
+          break;
+        }
+      }else{
+        utf8_printf(p->out,"ERROR: extra parameter: \"%s\".  Usage:\n",
+                    azArg[i]);
+        showHelp(p->out, azArg[0]);
         rc = 1;
+        sqlite3_free(zFile);
         goto meta_command_exit;
       }
+    }
+    if( zFile==0 ) zFile = sqlite3_mprintf("stdout");
+    if( bOnce ){
       p->outCount = 2;
     }else{
       p->outCount = 0;
     }
     output_reset(p);
-    if( zFile[0]=='-' && zFile[1]=='-' ) zFile++;
 #ifndef SQLITE_NOHAVE_SYSTEM
-    if( strcmp(zFile, "-e")==0 || strcmp(zFile, "-x")==0 ){
+    if( eMode=='e' || eMode=='x' ){
       p->doXdgOpen = 1;
       outputModePush(p);
-      if( zFile[1]=='x' ){
+      if( eMode=='x' ){
+        /* spreadsheet mode.  Output as CSV. */
         newTempFile(p, "csv");
+        ShellClearFlag(p, SHFLG_Echo);
         p->mode = MODE_Csv;
         sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
         sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_CrLf);
       }else{
+        /* text editor mode */
         newTempFile(p, "txt");
         bTxtMode = 1;
       }
-      zFile = p->zTempFile;
+      sqlite3_free(zFile);
+      zFile = sqlite3_mprintf("%s", p->zTempFile);
     }
 #endif /* SQLITE_NOHAVE_SYSTEM */
     if( zFile[0]=='|' ){
@@ -16602,6 +19799,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         p->out = stdout;
         rc = 1;
       }else{
+        if( bBOM ) fprintf(p->out,"\357\273\277");
         sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", zFile);
       }
 #endif
@@ -16614,9 +19812,11 @@ static int do_meta_command(char *zLine, ShellState *p){
         p->out = stdout;
         rc = 1;
       } else {
+        if( bBOM ) fprintf(p->out,"\357\273\277");
         sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", zFile);
       }
     }
+    sqlite3_free(zFile);
   }else
 
   if( c=='p' && n>=3 && strncmp(azArg[0], "parameter", n)==0 ){
@@ -16627,12 +19827,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     ** Clear all bind parameters by dropping the TEMP table that holds them.
     */
     if( nArg==2 && strcmp(azArg[1],"clear")==0 ){
-      int wrSchema = 0;
-      sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, -1, &wrSchema);
-      sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
       sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp.sqlite_parameters;",
                    0, 0, 0);
-      sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, wrSchema, 0);
     }else
 
     /* .parameter list
@@ -16803,8 +19999,22 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = 1;
       goto meta_command_exit;
     }
-    p->in = fopen(azArg[1], "rb");
-    if( p->in==0 ){
+    if( azArg[1][0]=='|' ){
+#ifdef SQLITE_OMIT_POPEN
+      raw_printf(stderr, "Error: pipes are not supported in this OS\n");
+      rc = 1;
+      p->out = stdout;
+#else
+      p->in = popen(azArg[1]+1, "r");
+      if( p->in==0 ){
+        utf8_printf(stderr, "Error: cannot open \"%s\"\n", azArg[1]);
+        rc = 1;
+      }else{
+        rc = process_input(p);
+        pclose(p->in);
+      }
+#endif
+    }else if( notNormalFile(azArg[1]) || (p->in = fopen(azArg[1], "rb"))==0 ){
       utf8_printf(stderr,"Error: cannot open \"%s\"\n", azArg[1]);
       rc = 1;
     }else{
@@ -16886,6 +20096,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     const char *zName = 0;
     int iSchema = 0;
     int bDebug = 0;
+    int bNoSystemTabs = 0;
     int ii;
 
     open_db(p, 0);
@@ -16898,17 +20109,26 @@ static int do_meta_command(char *zLine, ShellState *p){
         data.cMode = data.mode = MODE_Pretty;
       }else if( optionMatch(azArg[ii],"debug") ){
         bDebug = 1;
+      }else if( optionMatch(azArg[ii],"nosys") ){
+        bNoSystemTabs = 1;
+      }else if( azArg[ii][0]=='-' ){
+        utf8_printf(stderr, "Unknown option: \"%s\"\n", azArg[ii]);
+        rc = 1;
+        goto meta_command_exit;
       }else if( zName==0 ){
         zName = azArg[ii];
       }else{
-        raw_printf(stderr, "Usage: .schema ?--indent? ?LIKE-PATTERN?\n");
+        raw_printf(stderr, "Usage: .schema ?--indent? ?--nosys? ?LIKE-PATTERN?\n");
         rc = 1;
         goto meta_command_exit;
       }
     }
     if( zName!=0 ){
-      int isMaster = sqlite3_strlike(zName, "sqlite_master", '\\')==0;
-      if( isMaster || sqlite3_strlike(zName,"sqlite_temp_master", '\\')==0 ){
+      int isSchema = sqlite3_strlike(zName, "sqlite_master", '\\')==0
+                  || sqlite3_strlike(zName, "sqlite_schema", '\\')==0
+                  || sqlite3_strlike(zName,"sqlite_temp_master", '\\')==0
+                  || sqlite3_strlike(zName,"sqlite_temp_schema", '\\')==0;
+      if( isSchema ){
         char *new_argv[2], *new_colv[2];
         new_argv[0] = sqlite3_mprintf(
                       "CREATE TABLE %s (\n"
@@ -16917,7 +20137,7 @@ static int do_meta_command(char *zLine, ShellState *p){
                       "  tbl_name text,\n"
                       "  rootpage integer,\n"
                       "  sql text\n"
-                      ")", isMaster ? "sqlite_master" : "sqlite_temp_master");
+                      ")", zName);
         new_argv[1] = 0;
         new_colv[0] = "sql";
         new_colv[1] = 0;
@@ -16945,7 +20165,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         zDiv = " UNION ALL ";
         appendText(&sSelect, "SELECT shell_add_schema(sql,", 0);
         if( sqlite3_stricmp(zDb, "main")!=0 ){
-          appendText(&sSelect, zDb, '"');
+          appendText(&sSelect, zDb, '\'');
         }else{
           appendText(&sSelect, "NULL", 0);
         }
@@ -16954,15 +20174,16 @@ static int do_meta_command(char *zLine, ShellState *p){
         appendText(&sSelect, " AS snum, ", 0);
         appendText(&sSelect, zDb, '\'');
         appendText(&sSelect, " AS sname FROM ", 0);
-        appendText(&sSelect, zDb, '"');
-        appendText(&sSelect, ".sqlite_master", 0);
+        appendText(&sSelect, zDb, quoteChar(zDb));
+        appendText(&sSelect, ".sqlite_schema", 0);
       }
       sqlite3_finalize(pStmt);
-#ifdef SQLITE_INTROSPECTION_PRAGMAS
+#ifndef SQLITE_OMIT_INTROSPECTION_PRAGMAS
       if( zName ){
         appendText(&sSelect,
            " UNION ALL SELECT shell_module_schema(name),"
-           " 'table', name, name, name, 9e+99, 'main' FROM pragma_module_list", 0);
+           " 'table', name, name, name, 9e+99, 'main' FROM pragma_module_list",
+        0);
       }
 #endif
       appendText(&sSelect, ") WHERE ", 0);
@@ -16983,7 +20204,10 @@ static int do_meta_command(char *zLine, ShellState *p){
         appendText(&sSelect, " AND ", 0);
         sqlite3_free(zQarg);
       }
-      appendText(&sSelect, "type!='meta' AND sql IS NOT NULL"
+      if( bNoSystemTabs ){
+        appendText(&sSelect, "name NOT LIKE 'sqlite_%%' AND ", 0);
+      }
+      appendText(&sSelect, "sql IS NOT NULL"
                            " ORDER BY snum, rowid", 0);
       if( bDebug ){
         utf8_printf(p->out, "SQL: %s;\n", sSelect.z);
@@ -17004,11 +20228,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
-#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_SELECTTRACE)
   if( c=='s' && n==11 && strncmp(azArg[0], "selecttrace", n)==0 ){
-    sqlite3SelectTrace = (int)integerValue(azArg[1]);
+    unsigned int x = nArg>=2 ? (unsigned int)integerValue(azArg[1]) : 0xffffffff;
+    sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &x);
   }else
-#endif
 
 #if defined(SQLITE_ENABLE_SESSION)
   if( c=='s' && strncmp(azArg[0],"session",n)==0 && n>=3 ){
@@ -17061,7 +20284,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( pSession->p==0 ) goto session_not_open;
       out = fopen(azCmd[1], "wb");
       if( out==0 ){
-        utf8_printf(stderr, "ERROR: cannot open \"%s\" for writing\n", azCmd[1]);
+        utf8_printf(stderr, "ERROR: cannot open \"%s\" for writing\n",
+                    azCmd[1]);
       }else{
         int szChng;
         void *pChng;
@@ -17382,8 +20606,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         {
           utf8_printf(stderr, "Unknown option \"%s\" on \"%s\"\n",
                       azArg[i], azArg[0]);
-          raw_printf(stderr, "Should be one of: --schema"
-                             " --sha3-224 --sha3-256 --sha3-384 --sha3-512\n");
+          showHelp(p->out, azArg[0]);
           rc = 1;
           goto meta_command_exit;
         }
@@ -17398,12 +20621,12 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
     }
     if( bSchema ){
-      zSql = "SELECT lower(name) FROM sqlite_master"
+      zSql = "SELECT lower(name) FROM sqlite_schema"
              " WHERE type='table' AND coalesce(rootpage,0)>1"
-             " UNION ALL SELECT 'sqlite_master'"
+             " UNION ALL SELECT 'sqlite_schema'"
              " ORDER BY 1 collate nocase";
     }else{
-      zSql = "SELECT lower(name) FROM sqlite_master"
+      zSql = "SELECT lower(name) FROM sqlite_schema"
              " WHERE type='table' AND coalesce(rootpage,0)>1"
              " AND name NOT LIKE 'sqlite_%'"
              " ORDER BY 1 collate nocase";
@@ -17420,8 +20643,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         appendText(&sQuery,"SELECT * FROM ", 0);
         appendText(&sQuery,zTab,'"');
         appendText(&sQuery," NOT INDEXED;", 0);
-      }else if( strcmp(zTab, "sqlite_master")==0 ){
-        appendText(&sQuery,"SELECT type,name,tbl_name,sql FROM sqlite_master"
+      }else if( strcmp(zTab, "sqlite_schema")==0 ){
+        appendText(&sQuery,"SELECT type,name,tbl_name,sql FROM sqlite_schema"
                            " ORDER BY name;", 0);
       }else if( strcmp(zTab, "sqlite_sequence")==0 ){
         appendText(&sQuery,"SELECT name,seq FROM sqlite_sequence"
@@ -17429,8 +20652,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else if( strcmp(zTab, "sqlite_stat1")==0 ){
         appendText(&sQuery,"SELECT tbl,idx,stat FROM sqlite_stat1"
                            " ORDER BY tbl,idx;", 0);
-      }else if( strcmp(zTab, "sqlite_stat3")==0
-             || strcmp(zTab, "sqlite_stat4")==0 ){
+      }else if( strcmp(zTab, "sqlite_stat4")==0 ){
         appendText(&sQuery, "SELECT * FROM ", 0);
         appendText(&sQuery, zTab, 0);
         appendText(&sQuery, " ORDER BY tbl, idx, rowid;\n", 0);
@@ -17490,6 +20712,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='s' && strncmp(azArg[0], "show", n)==0 ){
     static const char *azBool[] = { "off", "on", "trigger", "full"};
+    const char *zOut;
     int i;
     if( nArg!=1 ){
       raw_printf(stderr, "Usage: .show\n");
@@ -17514,9 +20737,15 @@ static int do_meta_command(char *zLine, ShellState *p){
     utf8_printf(p->out,"%12.12s: ", "rowseparator");
       output_c_string(p->out, p->rowSeparator);
       raw_printf(p->out, "\n");
-    utf8_printf(p->out, "%12.12s: %s\n","stats", azBool[p->statsOn!=0]);
+    switch( p->statsOn ){
+      case 0:  zOut = "off";     break;
+      default: zOut = "on";      break;
+      case 2:  zOut = "stmt";    break;
+      case 3:  zOut = "vmstep";  break;
+    }
+    utf8_printf(p->out, "%12.12s: %s\n","stats", zOut);
     utf8_printf(p->out, "%12.12s: ", "width");
-    for (i=0;i<(int)ArraySize(p->colWidth) && p->colWidth[i] != 0;i++) {
+    for (i=0;i<p->nWidth;i++) {
       raw_printf(p->out, "%d ", p->colWidth[i]);
     }
     raw_printf(p->out, "\n");
@@ -17526,11 +20755,17 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='s' && strncmp(azArg[0], "stats", n)==0 ){
     if( nArg==2 ){
-      p->statsOn = (u8)booleanValue(azArg[1]);
+      if( strcmp(azArg[1],"stmt")==0 ){
+        p->statsOn = 2;
+      }else if( strcmp(azArg[1],"vmstep")==0 ){
+        p->statsOn = 3;
+      }else{
+        p->statsOn = (u8)booleanValue(azArg[1]);
+      }
     }else if( nArg==1 ){
       display_stats(p->db, p, 0);
     }else{
-      raw_printf(stderr, "Usage: .stats ?on|off?\n");
+      raw_printf(stderr, "Usage: .stats ?on|off|stmt|vmstep?\n");
       rc = 1;
     }
   }else
@@ -17573,7 +20808,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         appendText(&s, "||'.'||name FROM ", 0);
       }
       appendText(&s, zDbName, '"');
-      appendText(&s, ".sqlite_master ", 0);
+      appendText(&s, ".sqlite_schema ", 0);
       if( c=='t' ){
         appendText(&s," WHERE type IN ('table','view')"
                       "   AND name NOT LIKE 'sqlite_%'"
@@ -17662,25 +20897,27 @@ static int do_meta_command(char *zLine, ShellState *p){
        int ctrlCode;            /* Integer code for that option */
        const char *zUsage;      /* Usage notes */
     } aCtrl[] = {
-      { "always",             SQLITE_TESTCTRL_ALWAYS,        "BOOLEAN"            },
-      { "assert",             SQLITE_TESTCTRL_ASSERT,        "BOOLEAN"            },
-    /*{ "benign_malloc_hooks",SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS, ""          },*/
-    /*{ "bitvec_test",        SQLITE_TESTCTRL_BITVEC_TEST,   ""                },*/
-      { "byteorder",          SQLITE_TESTCTRL_BYTEORDER,     ""                   },
-    /*{ "fault_install",      SQLITE_TESTCTRL_FAULT_INSTALL, ""                }, */
-      { "imposter",           SQLITE_TESTCTRL_IMPOSTER,   "SCHEMA ON/OFF ROOTPAGE"},
-      { "internal_functions", SQLITE_TESTCTRL_INTERNAL_FUNCTIONS, "BOOLEAN"       },
-      { "localtime_fault",    SQLITE_TESTCTRL_LOCALTIME_FAULT,"BOOLEAN"           },
-      { "never_corrupt",      SQLITE_TESTCTRL_NEVER_CORRUPT, "BOOLEAN"            },
-      { "optimizations",      SQLITE_TESTCTRL_OPTIMIZATIONS, "DISABLE-MASK"       },
+      { "always",             SQLITE_TESTCTRL_ALWAYS,        "BOOLEAN"        },
+      { "assert",             SQLITE_TESTCTRL_ASSERT,        "BOOLEAN"        },
+    /*{ "benign_malloc_hooks",SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS, ""       },*/
+    /*{ "bitvec_test",        SQLITE_TESTCTRL_BITVEC_TEST,   ""             },*/
+      { "byteorder",          SQLITE_TESTCTRL_BYTEORDER,     ""               },
+      { "extra_schema_checks",SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS,"BOOLEAN"   },
+    /*{ "fault_install",      SQLITE_TESTCTRL_FAULT_INSTALL, ""             },*/
+      { "imposter",         SQLITE_TESTCTRL_IMPOSTER, "SCHEMA ON/OFF ROOTPAGE"},
+      { "internal_functions", SQLITE_TESTCTRL_INTERNAL_FUNCTIONS, "" },
+      { "localtime_fault",    SQLITE_TESTCTRL_LOCALTIME_FAULT,"BOOLEAN"       },
+      { "never_corrupt",      SQLITE_TESTCTRL_NEVER_CORRUPT, "BOOLEAN"        },
+      { "optimizations",      SQLITE_TESTCTRL_OPTIMIZATIONS, "DISABLE-MASK"   },
 #ifdef YYCOVERAGE
-      { "parser_coverage",    SQLITE_TESTCTRL_PARSER_COVERAGE, ""                 },
+      { "parser_coverage",    SQLITE_TESTCTRL_PARSER_COVERAGE, ""             },
 #endif
-      { "pending_byte",       SQLITE_TESTCTRL_PENDING_BYTE,  "OFFSET  "           },
-      { "prng_reset",         SQLITE_TESTCTRL_PRNG_RESET,    ""                   },
-      { "prng_restore",       SQLITE_TESTCTRL_PRNG_RESTORE,  ""                   },
-      { "prng_save",          SQLITE_TESTCTRL_PRNG_SAVE,     ""                   },
-      { "reserve",            SQLITE_TESTCTRL_RESERVE,       "BYTES-OF-RESERVE"   },
+      { "pending_byte",       SQLITE_TESTCTRL_PENDING_BYTE,  "OFFSET  "       },
+      { "prng_restore",       SQLITE_TESTCTRL_PRNG_RESTORE,  ""               },
+      { "prng_save",          SQLITE_TESTCTRL_PRNG_SAVE,     ""               },
+      { "prng_seed",          SQLITE_TESTCTRL_PRNG_SEED,     "SEED ?db?"      },
+      { "seek_count",         SQLITE_TESTCTRL_SEEK_COUNT,    ""               },
+      { "tune",               SQLITE_TESTCTRL_TUNE,          "ID VALUE"       },
     };
     int testctrl = -1;
     int iCtrl = -1;
@@ -17733,9 +20970,8 @@ static int do_meta_command(char *zLine, ShellState *p){
 
         /* sqlite3_test_control(int, db, int) */
         case SQLITE_TESTCTRL_OPTIMIZATIONS:
-        case SQLITE_TESTCTRL_RESERVE:
           if( nArg==3 ){
-            int opt = (int)strtol(azArg[2], 0, 0);
+            unsigned int opt = (unsigned int)strtol(azArg[2], 0, 0);
             rc2 = sqlite3_test_control(testctrl, p->db, opt);
             isOk = 3;
           }
@@ -17744,7 +20980,6 @@ static int do_meta_command(char *zLine, ShellState *p){
         /* sqlite3_test_control(int) */
         case SQLITE_TESTCTRL_PRNG_SAVE:
         case SQLITE_TESTCTRL_PRNG_RESTORE:
-        case SQLITE_TESTCTRL_PRNG_RESET:
         case SQLITE_TESTCTRL_BYTEORDER:
           if( nArg==2 ){
             rc2 = sqlite3_test_control(testctrl);
@@ -17761,10 +20996,30 @@ static int do_meta_command(char *zLine, ShellState *p){
           }
           break;
 
+        /* sqlite3_test_control(int, int, sqlite3*) */
+        case SQLITE_TESTCTRL_PRNG_SEED:
+          if( nArg==3 || nArg==4 ){
+            int ii = (int)integerValue(azArg[2]);
+            sqlite3 *db;
+            if( ii==0 && strcmp(azArg[2],"random")==0 ){
+              sqlite3_randomness(sizeof(ii),&ii);
+              printf("-- random seed: %d\n", ii);
+            }
+            if( nArg==3 ){
+              db = 0;
+            }else{
+              db = p->db;
+              /* Make sure the schema has been loaded */
+              sqlite3_table_column_metadata(db, 0, "x", 0, 0, 0, 0, 0, 0);
+            }
+            rc2 = sqlite3_test_control(testctrl, ii, db);
+            isOk = 3;
+          }
+          break;
+
         /* sqlite3_test_control(int, int) */
         case SQLITE_TESTCTRL_ASSERT:
         case SQLITE_TESTCTRL_ALWAYS:
-        case SQLITE_TESTCTRL_INTERNAL_FUNCTIONS:
           if( nArg==3 ){
             int opt = booleanValue(azArg[2]);
             rc2 = sqlite3_test_control(testctrl, opt);
@@ -17782,6 +21037,12 @@ static int do_meta_command(char *zLine, ShellState *p){
           }
           break;
 
+        /* sqlite3_test_control(sqlite3*) */
+        case SQLITE_TESTCTRL_INTERNAL_FUNCTIONS:
+          rc2 = sqlite3_test_control(testctrl, p->db);
+          isOk = 3;
+          break;
+
         case SQLITE_TESTCTRL_IMPOSTER:
           if( nArg==5 ){
             rc2 = sqlite3_test_control(testctrl, p->db,
@@ -17792,17 +21053,54 @@ static int do_meta_command(char *zLine, ShellState *p){
           }
           break;
 
+        case SQLITE_TESTCTRL_SEEK_COUNT: {
+          u64 x = 0;
+          rc2 = sqlite3_test_control(testctrl, p->db, &x);
+          utf8_printf(p->out, "%llu\n", x);
+          isOk = 3;
+          break;
+        }
+
 #ifdef YYCOVERAGE
-        case SQLITE_TESTCTRL_PARSER_COVERAGE:
+        case SQLITE_TESTCTRL_PARSER_COVERAGE: {
           if( nArg==2 ){
             sqlite3_test_control(testctrl, p->out);
             isOk = 3;
           }
+          break;
+        }
+#endif
+#ifdef SQLITE_DEBUG
+        case SQLITE_TESTCTRL_TUNE: {
+          if( nArg==4 ){
+            int id = (int)integerValue(azArg[2]);
+            int val = (int)integerValue(azArg[3]);
+            sqlite3_test_control(testctrl, id, &val);
+            isOk = 3;
+          }else if( nArg==3 ){
+            int id = (int)integerValue(azArg[2]);
+            sqlite3_test_control(testctrl, -id, &rc2);
+            isOk = 1;
+          }else if( nArg==2 ){
+            int id = 1;
+            while(1){
+              int val = 0;
+              rc2 = sqlite3_test_control(testctrl, -id, &val);
+              if( rc2!=SQLITE_OK ) break;
+              if( id>1 ) utf8_printf(p->out, "  ");
+              utf8_printf(p->out, "%d: %d", id, val);
+              id++;
+            }
+            if( id>1 ) utf8_printf(p->out, "\n");
+            isOk = 3;
+          }
+          break;
+        }
 #endif
       }
     }
     if( isOk==0 && iCtrl>=0 ){
-      utf8_printf(p->out, "Usage: .testctrl %s %s\n", zCmd, aCtrl[iCtrl].zUsage);
+      utf8_printf(p->out, "Usage: .testctrl %s %s\n", zCmd,aCtrl[iCtrl].zUsage);
       rc = 1;
     }else if( isOk==1 ){
       raw_printf(p->out, "%d\n", rc2);
@@ -17880,6 +21178,31 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 #endif /* !defined(SQLITE_OMIT_TRACE) */
 
+#if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_VIRTUALTABLE)
+  if( c=='u' && strncmp(azArg[0], "unmodule", n)==0 ){
+    int ii;
+    int lenOpt;
+    char *zOpt;
+    if( nArg<2 ){
+      raw_printf(stderr, "Usage: .unmodule [--allexcept] NAME ...\n");
+      rc = 1;
+      goto meta_command_exit;
+    }
+    open_db(p, 0);
+    zOpt = azArg[1];
+    if( zOpt[0]=='-' && zOpt[1]=='-' && zOpt[2]!=0 ) zOpt++;
+    lenOpt = (int)strlen(zOpt);
+    if( lenOpt>=3 && strncmp(zOpt, "-allexcept",lenOpt)==0 ){
+      assert( azArg[nArg]==0 );
+      sqlite3_drop_modules(p->db, nArg>2 ? (const char**)(azArg+2) : 0);
+    }else{
+      for(ii=1; ii<nArg; ii++){
+        sqlite3_create_module(p->db, azArg[ii], 0, 0);
+      }
+    }
+  }else
+#endif
+
 #if SQLITE_USER_AUTHENTICATION
   if( c=='u' && strncmp(azArg[0], "user", n)==0 ){
     if( nArg<2 ){
@@ -17894,7 +21217,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         rc = 1;
         goto meta_command_exit;
       }
-      rc = sqlite3_user_authenticate(p->db, azArg[2], azArg[3], strlen30(azArg[3]));
+      rc = sqlite3_user_authenticate(p->db, azArg[2], azArg[3],
+                                     strlen30(azArg[3]));
       if( rc ){
         utf8_printf(stderr, "Authentication failed for user %s\n", azArg[2]);
         rc = 1;
@@ -18005,16 +21329,19 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
-#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_WHERETRACE)
   if( c=='w' && strncmp(azArg[0], "wheretrace", n)==0 ){
-    sqlite3WhereTrace = nArg>=2 ? booleanValue(azArg[1]) : 0xff;
+    unsigned int x = nArg>=2 ? (unsigned int)integerValue(azArg[1]) : 0xffffffff;
+    sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &x);
   }else
-#endif
 
   if( c=='w' && strncmp(azArg[0], "width", n)==0 ){
     int j;
     assert( nArg<=ArraySize(azArg) );
-    for(j=1; j<nArg && j<ArraySize(p->colWidth); j++){
+    p->nWidth = nArg-1;
+    p->colWidth = realloc(p->colWidth, p->nWidth*sizeof(int)*2);
+    if( p->colWidth==0 && p->nWidth>0 ) shell_out_of_memory();
+    if( p->nWidth ) p->actualWidth = &p->colWidth[p->nWidth];
+    for(j=1; j<nArg; j++){
       p->colWidth[j-1] = (int)integerValue(azArg[j]);
     }
   }else
@@ -18340,8 +21667,11 @@ static void process_sqliterc(
     if( stdin_is_interactive ){
       utf8_printf(stderr,"-- Loading resources from %s\n",sqliterc);
     }
-    process_input(p);
+    if( process_input(p) && bail_on_error ) exit(1);
     fclose(p->in);
+  }else if( sqliterc_override!=0 ){
+    utf8_printf(stderr,"cannot open: \"%s\"\n", sqliterc);
+    if( bail_on_error ) exit(1);
   }
   p->in = inSaved;
   p->lineno = savedLineno;
@@ -18359,10 +21689,11 @@ static const char zOptions[] =
   "   -ascii               set output mode to 'ascii'\n"
   "   -bail                stop after hitting an error\n"
   "   -batch               force batch I/O\n"
+  "   -box                 set output mode to 'box'\n"
   "   -column              set output mode to 'column'\n"
   "   -cmd COMMAND         run \"COMMAND\" before reading stdin\n"
   "   -csv                 set output mode to 'csv'\n"
-#if defined(SQLITE_ENABLE_DESERIALIZE)
+#if !defined(SQLITE_OMIT_DESERIALIZE)
   "   -deserialize         open the database using sqlite3_deserialize()\n"
 #endif
   "   -echo                print commands before execution\n"
@@ -18374,10 +21705,12 @@ static const char zOptions[] =
   "   -help                show this message\n"
   "   -html                set output mode to HTML\n"
   "   -interactive         force interactive I/O\n"
+  "   -json                set output mode to 'json'\n"
   "   -line                set output mode to 'line'\n"
   "   -list                set output mode to 'list'\n"
   "   -lookaside SIZE N    use N entries of SZ bytes for lookaside memory\n"
-#if defined(SQLITE_ENABLE_DESERIALIZE)
+  "   -markdown            set output mode to 'markdown'\n"
+#if !defined(SQLITE_OMIT_DESERIALIZE)
   "   -maxsize N           maximum size for a --deserialize database\n"
 #endif
   "   -memtrace            trace all memory allocations and deallocations\n"
@@ -18386,6 +21719,7 @@ static const char zOptions[] =
   "   -multiplex           enable the multiplexor VFS\n"
 #endif
   "   -newline SEP         set output row separator. Default: '\\n'\n"
+  "   -nofollow            refuse to open symbolic links to database files\n"
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
   "   -pagecache SIZE N    use N slots of SZ bytes each for page cache memory\n"
   "   -quote               set output mode to 'quote'\n"
@@ -18395,6 +21729,8 @@ static const char zOptions[] =
   "   -sorterref SIZE      sorter references threshold size\n"
 #endif
   "   -stats               print memory stats before each finalize\n"
+  "   -table               set output mode to 'table'\n"
+  "   -tabs                set output mode to 'tabs'\n"
   "   -version             show SQLite version\n"
   "   -vfs NAME            use NAME as the default VFS\n"
 #ifdef SQLITE_ENABLE_VFSTRACE
@@ -18452,14 +21788,18 @@ static void main_init(ShellState *data) {
 */
 #ifdef _WIN32
 static void printBold(const char *zText){
+#if !SQLITE_OS_WINRT
   HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
   CONSOLE_SCREEN_BUFFER_INFO defaultScreenInfo;
   GetConsoleScreenBufferInfo(out, &defaultScreenInfo);
   SetConsoleTextAttribute(out,
          FOREGROUND_RED|FOREGROUND_INTENSITY
   );
+#endif
   printf("%s", zText);
+#if !SQLITE_OS_WINRT
   SetConsoleTextAttribute(out, defaultScreenInfo.wAttributes);
+#endif
 }
 #else
 static void printBold(const char *zText){
@@ -18481,7 +21821,8 @@ static char *cmdline_option_value(int argc, char **argv, int i){
 }
 
 #ifndef SQLITE_SHELL_IS_UTF8
-#  if (defined(_WIN32) || defined(WIN32)) && defined(_MSC_VER)
+#  if (defined(_WIN32) || defined(WIN32)) \
+   && (defined(_MSC_VER) || (defined(UNICODE) && defined(__GNUC__)))
 #    define SQLITE_SHELL_IS_UTF8          (0)
 #  else
 #    define SQLITE_SHELL_IS_UTF8          (1)
@@ -18514,6 +21855,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   stdin_is_interactive = isatty(0);
   stdout_is_console = isatty(1);
 
+#ifdef SQLITE_DEBUG
+  registerOomSimulator();
+#endif
+
 #if !defined(_WIN32_WCE)
   if( getenv("SQLITE_DEBUG_BREAK") ){
     if( isatty(0) && isatty(2) ){
@@ -18523,7 +21868,11 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       fgetc(stdin);
     }else{
 #if defined(_WIN32) || defined(WIN32)
+#if SQLITE_OS_WINRT
+      __debugbreak();
+#else
       DebugBreak();
+#endif
 #elif defined(SIGTRAP)
       raise(SIGTRAP);
 #endif
@@ -18640,11 +21989,14 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       (void)cmdline_option_value(argc, argv, ++i);
 #endif
     }else if( strcmp(z,"-pagecache")==0 ){
-      int n, sz;
-      sz = (int)integerValue(cmdline_option_value(argc,argv,++i));
+      sqlite3_int64 n, sz;
+      sz = integerValue(cmdline_option_value(argc,argv,++i));
       if( sz>70000 ) sz = 70000;
       if( sz<0 ) sz = 0;
-      n = (int)integerValue(cmdline_option_value(argc,argv,++i));
+      n = integerValue(cmdline_option_value(argc,argv,++i));
+      if( sz>0 && n>0 && 0xffffffffffffLL/sz<n ){
+        n = 0xffffffffffffLL/sz;
+      }
       sqlite3_config(SQLITE_CONFIG_PAGECACHE,
                     (n>0 && sz>0) ? malloc(n*sz) : 0, sz, n);
       data.shellFlgs |= SHFLG_Pagecache;
@@ -18688,7 +22040,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
     }else if( strcmp(z,"-append")==0 ){
       data.openMode = SHELL_OPEN_APPENDVFS;
-#ifdef SQLITE_ENABLE_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
     }else if( strcmp(z,"-deserialize")==0 ){
       data.openMode = SHELL_OPEN_DESERIALIZE;
     }else if( strcmp(z,"-maxsize")==0 && i+1<argc ){
@@ -18696,6 +22048,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
     }else if( strcmp(z,"-readonly")==0 ){
       data.openMode = SHELL_OPEN_READONLY;
+    }else if( strcmp(z,"-nofollow")==0 ){
+      data.openFlags = SQLITE_OPEN_NOFOLLOW;
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
     }else if( strncmp(z, "-A",2)==0 ){
       /* All remaining command-line arguments are passed to the ".archive"
@@ -18704,6 +22058,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
     }else if( strcmp(z, "-memtrace")==0 ){
       sqlite3MemTraceActivate(stderr);
+    }else if( strcmp(z,"-bail")==0 ){
+      bail_on_error = 1;
     }
   }
   verify_uninitialized();
@@ -18778,10 +22134,20 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.mode = MODE_List;
     }else if( strcmp(z,"-quote")==0 ){
       data.mode = MODE_Quote;
+      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator, SEP_Comma);
+      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator, SEP_Row);
     }else if( strcmp(z,"-line")==0 ){
       data.mode = MODE_Line;
     }else if( strcmp(z,"-column")==0 ){
       data.mode = MODE_Column;
+    }else if( strcmp(z,"-json")==0 ){
+      data.mode = MODE_Json;
+    }else if( strcmp(z,"-markdown")==0 ){
+      data.mode = MODE_Markdown;
+    }else if( strcmp(z,"-table")==0 ){
+      data.mode = MODE_Table;
+    }else if( strcmp(z,"-box")==0 ){
+      data.mode = MODE_Box;
     }else if( strcmp(z,"-csv")==0 ){
       data.mode = MODE_Csv;
       memcpy(data.colSeparator,",",2);
@@ -18791,7 +22157,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
     }else if( strcmp(z,"-append")==0 ){
       data.openMode = SHELL_OPEN_APPENDVFS;
-#ifdef SQLITE_ENABLE_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
     }else if( strcmp(z,"-deserialize")==0 ){
       data.openMode = SHELL_OPEN_DESERIALIZE;
     }else if( strcmp(z,"-maxsize")==0 && i+1<argc ){
@@ -18799,12 +22165,16 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
     }else if( strcmp(z,"-readonly")==0 ){
       data.openMode = SHELL_OPEN_READONLY;
+    }else if( strcmp(z,"-nofollow")==0 ){
+      data.openFlags |= SQLITE_OPEN_NOFOLLOW;
     }else if( strcmp(z,"-ascii")==0 ){
       data.mode = MODE_Ascii;
-      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,
-                       SEP_Unit);
-      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,
-                       SEP_Record);
+      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator, SEP_Unit);
+      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator, SEP_Record);
+    }else if( strcmp(z,"-tabs")==0 ){
+      data.mode = MODE_List;
+      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator, SEP_Tab);
+      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator, SEP_Row);
     }else if( strcmp(z,"-separator")==0 ){
       sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,
                        "%s",cmdline_option_value(argc,argv,++i));
@@ -18836,7 +22206,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       */
       ShellSetFlag(&data, SHFLG_Backslash);
     }else if( strcmp(z,"-bail")==0 ){
-      bail_on_error = 1;
+      /* No-op.  The bail_on_error flag should already be set. */
     }else if( strcmp(z,"-version")==0 ){
       printf("%s %s\n", sqlite3_libversion(), sqlite3_sourceid());
       return 0;
@@ -18924,20 +22294,25 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     for(i=0; i<nCmd; i++){
       if( azCmd[i][0]=='.' ){
         rc = do_meta_command(azCmd[i], &data);
-        if( rc ) return rc==2 ? 0 : rc;
+        if( rc ){
+          free(azCmd);
+          return rc==2 ? 0 : rc;
+        }
       }else{
         open_db(&data, 0);
         rc = shell_exec(&data, azCmd[i], &zErrMsg);
-        if( zErrMsg!=0 ){
-          utf8_printf(stderr,"Error: %s\n", zErrMsg);
+        if( zErrMsg || rc ){
+          if( zErrMsg!=0 ){
+            utf8_printf(stderr,"Error: %s\n", zErrMsg);
+          }else{
+            utf8_printf(stderr,"Error: unable to process SQL: %s\n", azCmd[i]);
+          }
+          sqlite3_free(zErrMsg);
+          free(azCmd);
           return rc!=0 ? rc : 1;
-        }else if( rc!=0 ){
-          utf8_printf(stderr,"Error: unable to process SQL: %s\n", azCmd[i]);
-          return rc;
         }
       }
     }
-    free(azCmd);
   }else{
     /* Run commands received from standard input
     */
@@ -18983,6 +22358,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       rc = process_input(&data);
     }
   }
+  free(azCmd);
   set_table_name(&data, 0);
   if( data.db ){
     session_close_all(&data);
@@ -18997,6 +22373,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   for(i=0; i<argcToFree; i++) free(argvToFree[i]);
   free(argvToFree);
 #endif
+  free(data.colWidth);
   /* Clear the global data structure so that valgrind will detect memory
   ** leaks */
   memset(&data, 0, sizeof(data));

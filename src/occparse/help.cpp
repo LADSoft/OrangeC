@@ -1262,6 +1262,48 @@ bool lvalue(EXPRESSION* exp)
             return false;
     }
 }
+static EXPRESSION* msilThunkSubStructs(EXPRESSION* exps, EXPRESSION* expsym, SYMBOL* fieldsp, int offset)
+{
+    if (fieldsp->sb->parentClass->sb->parentClass)
+    {
+        bool done = false;
+        TYPE* tp = expsym->v.sp->tp;
+        while (!done)
+        {
+            while (ispointer(tp))
+            {
+                tp = tp->btp;
+            }
+            offset %= tp->size; // in case of array
+            if (isstructured(tp))
+            {
+                for (auto hr = basetype(tp)->syms->table[0]; hr; hr = hr->next)
+                    if (offset >= hr->p->sb->offset && offset < hr->p->sb->offset + hr->p->tp->size)
+                    {
+                        if (ismemberdata(hr->p))
+                        {
+                            if (isstructured(hr->p->tp))
+                            {
+                                offset -= hr->p->sb->offset;
+                                exps = exprNode(en_structadd, exps, varNode(en_structelem, hr->p));
+                                tp = hr->p->tp;
+                            }
+                            else
+                            {
+                                done = true;
+                            }
+                            break;
+                        }
+                    }
+            }
+            else
+            {
+                done = true;
+            }
+        }
+    }
+    return exps;
+}
 EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, INITIALIZER* init,
                                     EXPRESSION* thisptr, bool isdest)
 {
@@ -1596,6 +1638,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     {
                         exps = exprNode(en_add, exps, init->fieldoffs);
                     }
+                    exps = msilThunkSubStructs(exps, expsym, init->fieldsp, init->offset);
                     exps = exprNode(en_structadd, exps, varNode(en_structelem, init->fieldsp));
                 }
                 else if (init->offset ||

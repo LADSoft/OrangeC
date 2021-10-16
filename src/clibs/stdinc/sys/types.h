@@ -69,15 +69,17 @@ typedef int dev_t;
 #    endif
 #endif
 
-#if !defined(__ino_t_defined) && !defined(_INO_T_)
+#if !defined(__ino_t_defined) && !defined(_INO_T_) && !defined(INO_T_DEFINED)
 #define __ino_t_defined
 #define _INO_T_
+#define INO_T_DEFINED
 typedef short ino_t;
 #endif
 
-#if !defined(__mode_t_defined) && !defined(_MODE_T_)
+#if !defined(__mode_t_defined) && !defined(_MODE_T_) && !defined(MODE_T_DEFINED)
 #define __mode_t_defined
 #define _MODE_T_
+#define MODE_T_DEFINED
 typedef short mode_t;
 #endif
 

@@ -6945,7 +6945,12 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                             }
                                             else
                                             {
-                                                st = stmtNode(hold, block, st_expr);
+                                                STATEMENT **bd = &block->head;
+                                                st = stmtNode(hold, nullptr, st_expr);
+                                                st->next = *bd;
+                                                if (!*bd)
+                                                     block->tail = st;
+                                                *bd = st;
                                             }
                                             st->select = exprNode(en__initobj, varNode(en_auto, sp), nullptr);
                                         }

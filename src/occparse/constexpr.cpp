@@ -765,7 +765,11 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, ArgArray>& a
     {
         if (exp->left->type == en_auto)
         {
-            int n = exp->left->v.sp->tp->size / exp->left->v.sp->tp->btp->size;
+            int n;
+            if (exp->left->v.sp->tp->array)
+                n = exp->left->v.sp->tp->size / exp->left->v.sp->tp->btp->size;
+            else
+                n = exp->left->v.sp->tp->size;
             argmap[exp->left->v.sp] = { n, Allocate<EXPRESSION*>(n) };
             rv = true;
         }

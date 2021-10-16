@@ -57,13 +57,7 @@ LIBFLAGS= -! --noexports
 IMPLIB=oimplib
 IMPLIBFLAGS= -!
 
-ifdef OLDSGL
-else
-ifdef STLPORT
-else
 CCFLAGS := $(CCFLAGS) /DSTD_NEWHANDLER
-endif
-endif
 
 CFLAGS := $(CCFLAGS)
 CXXFLAGS := $(CCFLAGS)

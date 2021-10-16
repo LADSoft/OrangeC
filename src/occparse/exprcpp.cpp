@@ -704,6 +704,12 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                 callDestructor(basetype(*tp)->sp, nullptr, &exp1, nullptr, true, false, false, true);
                 if (Optimizer::architecture == ARCHITECTURE_MSIL)
                     *exp = exprNode(en_void, *exp, exp2);
+                else if (!funcparams->arguments) // empty parens means value constructed, e.g. set the thing to zero...
+                {
+                    EXPRESSION* clr = exprNode(en_blockclear, exp2, nullptr);
+                    clr->size = sym->tp->size;
+                    *exp = exprNode(en_void, clr, *exp);
+                }
                 initInsert(&sym->sb->dest, *tp, exp1, 0, true);
                 //                if (flags & _F_SIZEOF)
                 //                    sym->sb->destructed = true; // in case we don't actually use this instantiation

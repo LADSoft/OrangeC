@@ -136,31 +136,13 @@ ifdef DISTMAKE
 	 	include $(DISTMAKE)
 
 DISTRIBUTE:
-ifdef OLDSGL
-	$(COPYDIR) cpp\stdinc\%. $(DISTINC)
-	$(COPYDIR) cpp\stdinc\%.h $(DISTINC)
-	$(COPYDIR) cpp\sgiinc\%. $(DISTINC)
-	$(COPYDIR) cpp\sgiinc\%.h $(DISTINC)
-	$(COPYDIR) cpp\sgiinc\stl\%. $(DISTINC)\stl
-	$(COPYDIR) cpp\sgiinc\stl\%.h $(DISTINC)\stl
-else
-ifdef STLPORT
-	$(COPYDIR) cpp\stlport-5.2.1\stlport\%.% $(DISTROOT)\stlport
-	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\%.% $(DISTROOT)\stlport\stl
-	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\config\%.% $(DISTROOT)\stlport\stl\config
-	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\debug\%.% $(DISTROOT)\stlport\stl\debug
-	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\pointers\%.% $(DISTROOT)\stlport\stl\pointers
-	$(COPYDIR) cpp\stlport-5.2.1\stlport\using\%.% $(DISTROOT)\stlport\using
-	$(COPYDIR) cpp\stlport-5.2.1\stlport\using\h\%.% $(DISTROOT)\stlport\using\h
-else
 	$(COPYDIR) cpp\libcxx\include\%. $(DISTINC)
 	$(COPYDIR) cpp\libcxx\include\%.h $(DISTINC)
 	$(COPYDIR) cpp\libcxx\include\support\win32\%. $(DISTINC)\support\win32
 	$(COPYDIR) cpp\libcxx\include\support\win32\%.h $(DISTINC)\support\win32
 	$(COPYDIR) cpp\stdinc_libcxx\%. $(DISTINC)
 	$(COPYDIR) cpp\stdinc_libcxx\%.h $(DISTINC)
-endif
-endif
+
 	$(COPYDIR) stdinc\%.h $(DISTINC)\c
 	$(COPYDIR) stdinc\sys\%.h $(DISTINC)\c\sys
 	$(COPYDIR) platform\win32\wininc\%.h $(DISTINC)\c

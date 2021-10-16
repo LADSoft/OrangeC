@@ -2856,6 +2856,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                                         }
                                     }
                                     exp1->left->v.func->returnEXP = exp;
+                                    exp1->v.t.thisptr = exp;
                                 }
                             }
                             return exp1;

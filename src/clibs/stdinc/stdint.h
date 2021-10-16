@@ -116,7 +116,7 @@ typedef uint64_t uintmax_t;
 #    define UINT_LEAST32_MAX 0xffffffff
 #    define UINT_FAST32_MAX 0xffffffff
 
-#    if __STDC_VERSION__ >= 199901L
+#    if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
 
 #        define INT64_MIN (-0x7fffffffffffffffLL - 1)
 #        define INT64_MAX 0x7fffffffffffffffLL
@@ -149,7 +149,7 @@ typedef uint64_t uintmax_t;
 #    define SIG_ATOMIC_MAX INT_MAX
 
 #    define WINT_MIN WCHAR_MIN
-#    define WINT_MAX WCHAR_MAX
+#    define WINT_MAX (~((wint_t)(0)))
 
 #    define INT8_C(x) ((int_least8_t)x)
 #    define UINT8_C(x) ((uint_least8_t)x##U)

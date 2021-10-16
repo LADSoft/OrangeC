@@ -164,9 +164,9 @@ void libcxx_builtins(void)
         preProcessor->Define("__has___nullptr","0");
         preProcessor->Define("__has__Atomic","1");
         preProcessor->Define("__has___is_aggregate","0");
-        preProcessor->Define("__has__builtin__isnan","0");
-        preProcessor->Define("__has__builtin__isinf","0");
-        preProcessor->Define("__has__builtin__isfinite","0");
+        preProcessor->Define("__has__builtin_isnan","0");
+        preProcessor->Define("__has__builtin_isinf","0");
+        preProcessor->Define("__has__builtin_isfinite","0");
         preProcessor->Define("__has__atomic_load_n","1");
         preProcessor->Define("__has__atomic_add_fetch","1");
         preProcessor->Define("__has__atomic_exchange_n", "1");

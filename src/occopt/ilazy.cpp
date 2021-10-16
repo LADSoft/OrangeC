@@ -1066,13 +1066,6 @@ static void CopyExpressionTree(QUAD* after, QUAD* ocppoint, int tn)
     if (!isset(ocppoint->uses, termMap[tn]))
     {
         QUAD* p = (QUAD*)(tempInfo[tn]->idefines->data);
-        if (!(p->temps & TEMP_LEFT) || !p->dc.left->offset->sp->pushedtotemp)
-        {
-            if (p->temps & TEMP_RIGHT)
-                CopyExpressionTree(after, ocppoint, p->dc.right->offset->sp->i);
-            if (p->temps & TEMP_LEFT)
-                CopyExpressionTree(after, ocppoint, p->dc.left->offset->sp->i);
-        }
         QUAD* ins = Allocate<QUAD>();
         *ins = *p;
         ins->uses = nullptr;
@@ -1167,8 +1160,8 @@ static void SortOCP(QUAD* head)
                 if (!insertionPoint)
                     insertionPoint = tail->back;
                 queue.push_back(tail);
-                tail->fwd->back = tail->back;
                 tail->back->fwd = tail->fwd;
+                tail->fwd->back = tail->back;
             }
         } while (!tail->OCP && (tail->ignoreMe || tail->OCPInserted || tail->dc.opcode == i_label));
     }

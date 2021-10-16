@@ -4467,17 +4467,39 @@ static void WeedTemplates(SYMBOL** table, int count, FUNCTIONCALL* args, TYPE* a
         TemplatePartialOrdering(table, count, args, atp, false, true);
         // now we out nonspecializations if specializations are present
         int i;
-        for (i=0; i < count; i++)
+        for (i = 0; i < count; i++)
         {
             if (table[i] && table[i]->sb->specialized)
                 break;
         }
         if (i < count)
         {
-            for (int i=0; i < count; i++)
+            for (int i = 0; i < count; i++)
             {
                 if (table[i] && !table[i]->sb->specialized)
-                    table[i] = 0;            
+                    table[i] = 0;
+            }
+        }
+        int argCount = INT_MAX;
+        int counts[256];
+        //choose the template with the smallest argument count
+        for (int i = 0; i < count; i++)
+        {
+            if (table[i])
+            {
+                int count = 0;
+                for (auto templ = table[i]->templateParams; templ; templ = templ->next, count++);
+                counts[i] = count;
+                if (count < argCount)
+                    argCount = count;
+            }
+        }
+        for (int i = 0; i < count; i++)
+        {
+            if (table[i])
+            {
+                if (counts[i] > argCount)
+                    table[i] = 0;
             }
         }
     }
@@ -4713,6 +4735,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
         // pass 3 - the actual argument-based resolution
         if (gather)
         {
+
             Optimizer::LIST* lst2;
             int n = 0;
             INITLIST* argl = args->arguments;
@@ -4928,9 +4951,13 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
             else if (found1 && found2)
             {
                 if (toErr)
+                {
                     errorsym2(ERR_AMBIGUITY_BETWEEN, found1, found2);
+                }
                 else
+                {
                     found1 = found2 = nullptr;
+                }
             }
             else if (found1->sb->deleted && !templateNestingCount)
             {

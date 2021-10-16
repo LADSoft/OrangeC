@@ -34,7 +34,7 @@
  * 
  */
 
-#include <math.h>
+#include <c/math.h>
 #include <stdio.h>
 bool _RTL_FUNC (fpclassify)(float x)
 {

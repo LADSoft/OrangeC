@@ -51,6 +51,7 @@ enum class kw
     comma,
     openbr,
     closebr,
+    semi, 
     // must be after punctuation
     ACCELERATORS,
     ALT,

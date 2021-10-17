@@ -73,6 +73,8 @@ class RCFile
 
   protected:
     Resource* GetRes();
+    void SkimStructOrEnum();
+    void SkimTypedef();
 
   private:
     PreProcessor& pp;

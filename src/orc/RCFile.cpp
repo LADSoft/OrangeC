@@ -74,7 +74,7 @@ kw RCFile::GetTokenId()
     kw rv = (kw)0;
     if (IsKeyword())
     {
-        rv = GetToken()->GetKeyword();
+	        rv = GetToken()->GetKeyword();
         NextToken();
     }
     return rv;
@@ -186,6 +186,55 @@ std::string RCFile::GetFileName()
         return rv;
     }
 }
+void RCFile::SkimStructOrEnum()
+{
+     if (GetToken()->IsIdentifier())
+         NextToken();
+     NeedBegin();
+
+     int count = 0;
+     while ((count > 0 || GetToken()->GetKeyword() != kw::END) && !AtEof())
+     {
+         switch (GetToken()->GetKeyword())
+         {
+             case kw::BEGIN:
+                 count++;
+                 break;
+             case kw::END:
+                 count--;
+                 break;
+         }
+         if (count < 0)
+             break;
+         NextToken();
+     }
+     NeedEnd();
+     if (GetToken()->IsIdentifier())
+         NextToken();
+     if (GetToken()->IsKeyword() && GetToken()->GetKeyword() == kw::semi)
+        NextToken();
+     else
+        throw std::runtime_error("semicolon expected");
+}
+void RCFile::SkimTypedef()
+{
+     if (GetToken()->GetId() == "struct" || GetToken()->GetId() == "enum" || GetToken()->GetId() == "union")
+     {
+         NextToken();
+         SkimStructOrEnum();
+     }
+     else
+     {
+         while (GetToken()->GetKeyword() != kw::semi && !AtEof())
+         {
+             NextToken();
+         }
+         if (GetToken()->IsKeyword() && GetToken()->GetKeyword() == kw::semi)
+             NextToken();
+         else
+             throw std::runtime_error("semicolon expected");
+     }
+}
 Resource* RCFile::GetRes()
 {
     kw type;
@@ -243,6 +292,22 @@ Resource* RCFile::GetRes()
         else
         {
             id.ReadRC(*this);
+            if (id.IsNamed())
+            {
+                std::wstring firstToken = id.GetName();
+                if (firstToken == L"STRUCT" || firstToken == L"ENUM" || firstToken == L"UNION")
+                {
+                     SkimStructOrEnum();
+                     done = false;
+                     continue;
+                } 
+                else if (firstToken == L"TYPEDEF")
+                {
+                     SkimTypedef();
+                     done = false;
+                     continue;
+                }
+            }
             if (GetToken()->IsKeyword())
             {
                 type = GetToken()->GetKeyword();

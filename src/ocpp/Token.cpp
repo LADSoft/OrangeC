@@ -596,6 +596,7 @@ void KeywordToken::Parse(std::string& line)
     *p = 0;
     if (keywordTable)
     {
+        bool found = false;
         for (int j = i; j > 0; j--)
         {
             buf[j] = 0;
@@ -605,8 +606,15 @@ void KeywordToken::Parse(std::string& line)
                 SetChars(line.substr(0, j));
                 line.erase(0, j);
                 keyValue = (int)it->second;
+                found = true;
                 break;
             }
+        }
+        if (!found)
+        {
+            SetChars(line.substr(0, 1));
+            line.erase(0, 1);
+            keyValue = (int)kw::UNKNOWN;
         }
     }
 }

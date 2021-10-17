@@ -55,6 +55,7 @@ KeywordHash Lexer::hash = {
     {",", kw::comma},
     {"{", kw::BEGIN},  // openbr},
     {"}", kw::END},    // closebr},
+    {";", kw::semi}, 
     {"ACCELERATORS", kw::ACCELERATORS},
     {"ALT", kw::ALT},
     {"ASCII", kw::ASCII},

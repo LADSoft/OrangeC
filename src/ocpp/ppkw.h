@@ -103,6 +103,6 @@ enum class kw
     IDEFINE,
     IASSIGN,
     IMACRO,
-    WARNING
-
+    WARNING,
+    UNKNOWN = 10000
 };

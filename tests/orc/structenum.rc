@@ -1,0 +1,37 @@
+aa bitmap "hi.bmp"
+struct aa1 {
+    int r,s,t ;
+    struct {
+       int t;
+       char x;
+    } bb;
+};
+cc bitmap "hi.bmp"
+enum aa2 {
+
+    r0,
+    r1 = 5,
+    r2 = 6,
+    r3
+};
+typedef int aa3;
+typedef struct aa4{
+	char v;
+	int mm;
+} hi;
+
+bb bitmap "hi.bmp"
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -188,8 +188,14 @@ std::string RCFile::GetFileName()
 }
 void RCFile::SkimStructOrEnum()
 {
-     if (GetToken()->IsIdentifier())
+     while (GetToken()->GetKeyword() != kw::semi && GetToken()->GetKeyword() != kw::BEGIN && !AtEof())
          NextToken();
+     if (GetToken()->GetKeyword() == kw::semi)
+     {
+         NextToken();
+         return;
+     }
+
      NeedBegin();
 
      int count = 0;
@@ -399,7 +405,19 @@ Resource* RCFile::GetRes()
                     name[i] = toupper(name[i]);
                 if (!id.IsNamed() || IsGenericResource())
                     rv = new GenericResource(ResourceId(name), id, info);
-                else
+                else if (name == L"TYPEDEF")
+                {
+                    SkimTypedef();
+                    done = false;
+                    continue;
+                }
+                else if (name == L"STRUCT" || name == L"UNION" || name == L"ENUM")
+                {
+                    SkimStructOrEnum();
+                    done = false;
+                    continue;
+                }
+                else // assumeprototype
                 {
                     SkimPrototype();
                     done = false;

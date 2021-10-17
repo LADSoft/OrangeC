@@ -7,6 +7,7 @@ struct aa1 {
     } bb;
 };
 cc bitmap "hi.bmp"
+EXPORT void ff(int a, int b);
 enum aa2 {
 
     r0,
@@ -15,6 +16,7 @@ enum aa2 {
     r3
 };
 typedef int aa3;
+dd bitmap "hi.bmp"
 typedef struct aa4{
 	char v;
 	int mm;
@@ -22,16 +24,6 @@ typedef struct aa4{
 
 bb bitmap "hi.bmp"
 
-
-
-
-
-
-
-
-
-
-
-
-
+xx nn "hi.bmp"
+xx1 nn { 1 , 2, 3, 4 }
 

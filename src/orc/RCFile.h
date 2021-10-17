@@ -75,6 +75,8 @@ class RCFile
     Resource* GetRes();
     void SkimStructOrEnum();
     void SkimTypedef();
+    bool IsGenericResource();
+    void SkimPrototype();
 
   private:
     PreProcessor& pp;

@@ -243,7 +243,7 @@ void RCFile::SkimTypedef()
 }
 bool RCFile::IsGenericResource()
 {
-    int n = (int)GetToken()->GetKeyword();
+    kw n = GetToken()->GetKeyword();
     if (GetToken()->IsString())
         return true;
     switch (n)

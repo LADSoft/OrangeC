@@ -88,13 +88,20 @@ void Utils::banner(const char* progName)
     if (!have_version)
         for (int i = 1; i < __argc && __argv[i]; i++)
             if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
+            {
                 if (__argv[i][1] == '!' || !strcmp(__argv[i], "--nologo"))
+                {
                     return;
+                }
                 else if (!strncmp(&__argv[i][1], "print", 5) || !strncmp(&__argv[i][1], "dump", 4))
+                {
                     return;
+                }
                 else if (!strncmp(&__argv[i][1], "-print", 6) || !strncmp(&__argv[i][1], "-dump", 5))
+                {
                     return;
-
+                }
+            }
 #endif
     printf("%s (OrangeC) Version " STRING_VERSION "\n" COPYRIGHT "\n", ShortName(progName));
     if (have_version)

@@ -165,7 +165,7 @@ class LinkManager
         warnings++;
     }
 
-    FILE* LinkManager::GetLibraryPath(const std::string& stem, std::string& name);
+    FILE* GetLibraryPath(const std::string& stem, std::string& name);
 
     bool IsExternal(ObjString& name)
     {

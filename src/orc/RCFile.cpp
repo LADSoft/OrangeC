@@ -74,7 +74,7 @@ kw RCFile::GetTokenId()
     kw rv = (kw)0;
     if (IsKeyword())
     {
-        rv = GetToken()->GetKeyword();
+	        rv = GetToken()->GetKeyword();
         NextToken();
     }
     return rv;
@@ -186,6 +186,120 @@ std::string RCFile::GetFileName()
         return rv;
     }
 }
+void RCFile::SkimStructOrEnum()
+{
+     while (GetToken()->GetKeyword() != kw::semi && GetToken()->GetKeyword() != kw::BEGIN && !AtEof())
+         NextToken();
+     if (GetToken()->GetKeyword() == kw::semi)
+     {
+         NextToken();
+         return;
+     }
+
+     NeedBegin();
+
+     int count = 0;
+     while ((count > 0 || GetToken()->GetKeyword() != kw::END) && !AtEof())
+     {
+         switch (GetToken()->GetKeyword())
+         {
+             case kw::BEGIN:
+                 count++;
+                 break;
+             case kw::END:
+                 count--;
+                 break;
+         }
+         if (count < 0)
+             break;
+         NextToken();
+     }
+     NeedEnd();
+     if (GetToken()->IsIdentifier())
+         NextToken();
+     if (GetToken()->IsKeyword() && GetToken()->GetKeyword() == kw::semi)
+        NextToken();
+     else
+        throw std::runtime_error("semicolon expected");
+}
+void RCFile::SkimTypedef()
+{
+     if (GetToken()->GetId() == "struct" || GetToken()->GetId() == "enum" || GetToken()->GetId() == "union")
+     {
+         NextToken();
+         SkimStructOrEnum();
+     }
+     else
+     {
+         while (GetToken()->GetKeyword() != kw::semi && !AtEof())
+         {
+             NextToken();
+         }
+         if (GetToken()->IsKeyword() && GetToken()->GetKeyword() == kw::semi)
+             NextToken();
+         else
+             throw std::runtime_error("semicolon expected");
+     }
+}
+bool RCFile::IsGenericResource()
+{
+    int n = (int)GetToken()->GetKeyword();
+    if (GetToken()->IsString())
+        return true;
+    switch (n)
+    {
+        case kw::BEGIN:
+        case kw::DISCARDABLE:
+        case kw::PURE:
+        case kw::PRELOAD:
+        case kw::MOVEABLE:
+        case kw::LOADONCALL:
+        case kw::NONDISCARDABLE:
+        case kw::IMPURE:
+        case kw::FIXED:
+        case kw::LANGUAGE:
+        case kw::VERSION:
+        case kw::CHARACTERISTICS:
+            return true;
+        default:
+            return false;
+    }
+}
+void RCFile::SkimPrototype()
+{
+    int count = 0;
+    while (GetToken()->GetKeyword() != kw::openpa && !AtEof())
+    {
+        NextToken();   
+    }
+    if (GetToken()->IsKeyword() && GetToken()->GetKeyword() == kw::openpa)
+        NextToken();
+    else
+        throw std::runtime_error("open paren expected");
+    while ((count > 0 || GetToken()->GetKeyword() != kw::closepa) && !AtEof())
+    {
+        switch (GetToken()->GetKeyword())
+        {
+            case kw::openpa:
+                count++;
+                break;
+            case kw::closepa:
+                count--;
+                break;
+        }
+        if (count < 0)
+            break;
+        NextToken();
+     }
+    if (GetToken()->IsKeyword() && GetToken()->GetKeyword() == kw::closepa)
+        NextToken();
+    else
+        throw std::runtime_error("close parenthesis expected");
+     if (GetToken()->IsKeyword() && GetToken()->GetKeyword() == kw::semi)
+         NextToken();
+     else
+         throw std::runtime_error("semicolon expected");
+}
 Resource* RCFile::GetRes()
 {
     kw type;
@@ -243,6 +357,22 @@ Resource* RCFile::GetRes()
         else
         {
             id.ReadRC(*this);
+            if (id.IsNamed())
+            {
+                std::wstring firstToken = id.GetName();
+                if (firstToken == L"STRUCT" || firstToken == L"ENUM" || firstToken == L"UNION")
+                {
+                     SkimStructOrEnum();
+                     done = false;
+                     continue;
+                } 
+                else if (firstToken == L"TYPEDEF")
+                {
+                     SkimTypedef();
+                     done = false;
+                     continue;
+                }
+            }
             if (GetToken()->IsKeyword())
             {
                 type = GetToken()->GetKeyword();
@@ -273,7 +403,26 @@ Resource* RCFile::GetRes()
             case (kw)-1:
                 for (int i = 0; i < name.size(); i++)
                     name[i] = toupper(name[i]);
-                rv = new GenericResource(ResourceId(name), id, info);
+                if (!id.IsNamed() || IsGenericResource())
+                    rv = new GenericResource(ResourceId(name), id, info);
+                else if (name == L"TYPEDEF")
+                {
+                    SkimTypedef();
+                    done = false;
+                    continue;
+                }
+                else if (name == L"STRUCT" || name == L"UNION" || name == L"ENUM")
+                {
+                    SkimStructOrEnum();
+                    done = false;
+                    continue;
+                }
+                else // assumeprototype
+                {
+                    SkimPrototype();
+                    done = false;
+                    continue;
+                }
                 break;
             case (kw)-2:
                 rv = new GenericResource(ResourceId(val), id, info);

@@ -88,7 +88,7 @@ namespace Util = OrangeC::Utils;
 // Maps GCC warning names to OCC warning numbers using the FNV algorithm because the string constructor is a strlen call which is expensive
 static const std::unordered_map<const char*, int, Util::fnv1a64, Util::str_eql> error_name_map
 {
-#define ERRWITHWARNFFLAG(x, y, z, a, b) {b, y},
+#define ERRWITHWARNFLAG(x, y, z, a, b) {b, y},
 #define ERRWTIHWARNFLAGHELP(x, y, z, a, b, c) {b, y},
 #include "errorlist.h"
 };
@@ -109,27 +109,27 @@ void DumpErrorNameMap()
     printf("Error name to number map:\n");
     for(auto a : error_name_map)
     {
-        printf("%s: %d", a.first, a.second);
+        printf("%s: %d\n", a.first, a.second);
     }
-    printf("Name to number map end");
+    printf("Name to number map end.\n");
 }
 void DumpErrorNumToHelpMap()
 {
     printf("Error number to help map:\n");
     for(auto a : error_help_map)
     {
-        printf("%d: %s", a.first, a.second.c_str());
+        printf("%d: %s\n", a.first, a.second.c_str());
     }
-    printf("Number to help map end.");
+    printf("Number to help map end.\n");
 }
 void DumpErrorNameToHelpMap()
 {
     printf("Error name to help map:\n");
     for(auto a : error_name_help_map)
     {
-        printf("%s: %s", a.first, a.second.c_str());
+        printf("%s: %s\n", a.first, a.second.c_str());
     }
-    printf("Name to help map end.");
+    printf("Name to help map end.\n");
 }
 
 void EnterInstantiation(LEXLIST* lex, SYMBOL *sym)

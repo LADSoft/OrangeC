@@ -737,7 +737,6 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
             related = ls;
         else if (!ignoreFirstGoal && !notMain)
         {
-            size_t n;
             std::string aa = ls;
             Maker::SetFirstGoal(Eval::ExtractFirst(aa, " "));
         }

@@ -299,7 +299,7 @@ void Parser::TagClasses(std::string& cclass, std::string coding, std::map<std::s
         if (values->size())
             nodes.back()->values = values;
     }
-    delete b;
+    delete[] b;
 }
 void Parser::EnterInTokenTree(TokenNode* root, std::deque<TokenNode*>& nodes)
 {

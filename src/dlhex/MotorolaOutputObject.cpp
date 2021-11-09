@@ -87,7 +87,7 @@ void MotorolaOutputObject::putendrec(std::fstream& stream)
 }
 void MotorolaOutputObject::putheaderrec(std::fstream& stream)
 {
-    int cs = 0, i;
+    int cs = 0;
     int len = name.size() + 5;
     cs += len;
     stream << "S0" << ObjUtil::ToHex(len, 2) << "0000";

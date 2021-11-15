@@ -4026,22 +4026,19 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     {
                         if (hr->p->sb->thisPtr)
                             hr = hr->next;
-                        if (!hr->next || (hr->next->p)->sb->init)
+                        TYPE* tp = hr->p->tp;
+                        if (isref(tp))
                         {
-                            TYPE* tp = hr->p->tp;
-                            if (isref(tp))
+                            initializerRef = true;
+                            tp = basetype(tp)->btp;
+                        }
+                        if (isstructured(tp))
+                        {
+                            SYMBOL* sym = (basetype(tp)->sp);
+                            if (sym->sb->initializer_list && sym->sb->templateLevel)
                             {
-                                initializerRef = true;
-                                tp = basetype(tp)->btp;
-                            }
-                            if (isstructured(tp))
-                            {
-                                SYMBOL* sym = (basetype(tp)->sp);
-                                if (sym->sb->initializer_list && sym->sb->templateLevel)
-                                {
-                                    initializerListTemplate = sym->tp;
-                                    initializerListType = sym->templateParams->next->p->byClass.val;
-                                }
+                                initializerListTemplate = sym->tp;
+                                initializerListType = sym->templateParams->next->p->byClass.val;
                             }
                         }
                     }
@@ -4063,9 +4060,11 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                             return lex;
                         }
                     }
+                    auto next = (*lptr)->next;
                     CreateInitializerList(initializerListTemplate, initializerListType, lptr, operands, initializerRef);
+                    (*lptr)->next = next;
                     if (hr->next)
-                        AdjustParams(funcparams->sp, hr->next, &(*lptr)->next, operands, true);
+                        AdjustParams(funcparams->sp, hr->next, & (*lptr)->next, operands, true);
                 }
                 else
                 {

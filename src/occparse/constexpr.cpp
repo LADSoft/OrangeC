@@ -49,7 +49,7 @@
 
 namespace Parser
 {
-static int functionnestingcount = 0;
+static int functionNestingCount = 0;
 
 struct ConstExprThisPtr
 {
@@ -69,7 +69,7 @@ std::deque<EXPRESSION*> clearedInitializations;
 
 static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<SYMBOL*, ArgArray>& argmap, EXPRESSION* ths);
 static bool ExactExpression(EXPRESSION* exp1, EXPRESSION* exp2);
-static EXPRESSION* LookupThis(EXPRESSION* exp, std::unordered_map<SYMBOL*, ArgArray> argmap);
+static EXPRESSION* LookupThis(EXPRESSION* exp, const std::unordered_map<SYMBOL*, ArgArray>& argmap);
 bool hascshim(EXPRESSION* node);
 
 void constexprinit()
@@ -78,7 +78,7 @@ void constexprinit()
     localMap.clear();
     while (!nestedMaps.empty())
         nestedMaps.pop();
-    functionnestingcount = 0;
+    functionNestingCount = 0;
 }
 void constexprfunctioninit(bool start)
 {
@@ -353,7 +353,7 @@ static bool ExactExpression(EXPRESSION* exp1, EXPRESSION* exp2)
     }
     return true;
 }
-static EXPRESSION* LookupThis(EXPRESSION* exp, std::unordered_map<SYMBOL*, ArgArray> argmap)
+static EXPRESSION* LookupThis(EXPRESSION* exp, const std::unordered_map<SYMBOL*, ArgArray>& argmap)
 {
     if (!exp)
         return nullptr;
@@ -619,6 +619,8 @@ static EXPRESSION* HandleAssign(EXPRESSION* exp, std::unordered_map<SYMBOL*, Arg
     }
     else if (exp->type == en_assign)
     {
+        if (((int)exp->right & 0xffff) == 0xaedc)
+            printf("hi");
         rv = EvaluateExpression(exp->right, argmap, ths, retblk, false);
         optimize_for_constants(&rv);
         EXPRESSION* exp1 = exp->left;
@@ -674,6 +676,8 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, ArgArray>& a
         auto exp1 = exp;
         if (lvalue(exp1->left))
             exp1 = exp1->left;
+        if (exp1->left->type == en_autoinc || exp1->left->type == en_autodec)
+            exp1->left = EvaluateExpression(exp1->left, argmap, ths, retblk, false);
         if (ths && exp1->left->type == en_structadd && exp1->left->left->type == en_l_p && exp1->left->left->left->type == en_auto && exp1->left->left->left->v.sp->sb->thisPtr)
         {
             int i = exp1->left->right->v.i;
@@ -695,84 +699,96 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, ArgArray>& a
                 rv = true;
             }
         }
-        else if (exp1->left->type == en_add && exp1->left->left->type == en_auto)
+        else if (exp1->left->type == en_add)
         {
-            auto val = EvaluateExpression(exp1->left->right, argmap, ths, retblk, false);
-            optimize_for_constants(&val);
-            if (isintconst(val) && val->v.i < exp1->left->left->v.sp->tp->size)
+            auto exp2 = exp1->left->left;
+            while (castvalue(exp2))
+                exp2 = exp2->left;
+            if (exp2->type == en_auto)
             {
-                auto n = val->v.i / exp1->left->left->v.sp->tp->btp->size;
-                auto xx = argmap[exp1->left->left->v.sp].data;
-                if (xx)
+                auto val = EvaluateExpression(exp1->left->right, argmap, ths, retblk, false);
+                optimize_for_constants(&val);
+                if (isintconst(val) && val->v.i < exp2->v.sp->tp->size)
                 {
-                    auto node1 = xx[n];
-                    if (node1)
-                    {
-                        exp1->left->type = en_cshimref;
-                        exp1->left->v.exp = node1;
-                        exp1->left->left = nullptr;
-                        rv = true;
-                    }
+                    auto n = val->v.i / exp2->v.sp->tp->btp->size;
+auto xx = argmap[exp2->v.sp].data;
+if (xx)
+{
+    auto node1 = xx[n];
+    if (node1)
+    {
+        exp1->left->type = en_cshimref;
+        exp1->left->v.exp = node1;
+        exp1->left->left = nullptr;
+        rv = true;
+    }
+}
                 }
             }
         }
         else if (exp1->left && exp1->left->type == en_auto)
         {
-            auto xx = argmap[exp1->left->v.sp].data;
-            if (xx)
+        auto xx = argmap[exp1->left->v.sp].data;
+        if (xx)
+        {
+            auto node1 = xx[0];
+            if (node1)
             {
-                auto node1 = xx[0];
-                if (node1)
+                if (node1->type == en_void && node1->left->type == en_assign && node1->right->type == en_auto &&
+                    node1->right->v.sp->sb->constexpression && IsConstantExpression(node1->left->right, true, true))
                 {
-                    if (node1->type == en_void && node1->left->type == en_assign && node1->right->type == en_auto &&
-                        node1->right->v.sp->sb->constexpression && IsConstantExpression(node1->left->right, true, true))
-                    {
-                        // an argument which has been made into a temp variable
-                        // we have to shim it up so that we can handle the upcoming dereference
-                        exp1->type = en_cshimref;
-                        exp1->v.exp = node1->left->right;
-                        exp1->left = nullptr;
-                        optimize_for_constants(&exp1->v.exp);
-                    }
-                    else
-                    {
-                        *exp1 = *node1;
-                    }
-                    rv = true;
+                    // an argument which has been made into a temp variable
+                    // we have to shim it up so that we can handle the upcoming dereference
+                    exp1->type = en_cshimref;
+                    exp1->v.exp = node1->left->right;
+                    exp1->left = nullptr;
+                    optimize_for_constants(&exp1->v.exp);
                 }
+                else if (IsConstantExpression(node1, true, true))
+                {
+                    node1 = copy_expression(node1);
+                    optimize_for_constants(&node1);
+                    *exp1 = *node1;
+                }
+                else
+                {
+                    *exp1 = *node1;
+                }
+                rv = true;
             }
+        }
         }
     }
     else if (exp->type == en_auto)
     {
-        auto xx = argmap[exp->v.sp].data;
-        if (xx && xx[0])
+    auto xx = argmap[exp->v.sp].data;
+    if (xx && xx[0])
+    {
+        if (arg)
         {
-            if (arg)
-            {
-                exp->type = en_cshimref;
-                exp->v.exp = xx[0];
-                exp->left = nullptr;
-            }
-            else
-            {
-                *exp = *(xx[0]);
-            }
-            rv = true;
+            exp->type = en_cshimref;
+            exp->v.exp = xx[0];
+            exp->left = nullptr;
         }
+        else
+        {
+            *exp = *(xx[0]);
+        }
+        rv = true;
+    }
     }
     else if (exp->type == en_blockclear)
     {
-        if (exp->left->type == en_auto)
-        {
-            int n;
-            if (exp->left->v.sp->tp->array)
-                n = exp->left->v.sp->tp->size / exp->left->v.sp->tp->btp->size;
-            else
-                n = exp->left->v.sp->tp->size;
-            argmap[exp->left->v.sp] = { n, Allocate<EXPRESSION*>(n) };
-            rv = true;
-        }
+    if (exp->left->type == en_auto)
+    {
+        int n;
+        if (exp->left->v.sp->tp->array)
+            n = exp->left->v.sp->tp->size / exp->left->v.sp->tp->btp->size;
+        else
+            n = exp->left->v.sp->tp->size;
+        argmap[exp->left->v.sp] = { n, Allocate<EXPRESSION*>(n) };
+        rv = true;
+    }
     }
     else if (exp->type == en_func)
     {
@@ -783,14 +799,25 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, ArgArray>& a
         INITLIST* args = func->arguments;
         func->arguments = nullptr;
         INITLIST** list = &func->arguments;
+        bool failed = false;
         while (args)
         {
             *list = Allocate<INITLIST>();
             **list = *args;
-            (*list)->exp = EvaluateExpression(args->exp, argmap, ths, retblk, true);
-            if (!(*list)->exp)
-                return false;
-            optimize_for_constants(&(*list)->exp);
+            auto exp2 = args->exp;
+            if (exp2->type == en_stackblock)
+            {
+                (*list)->exp = exp2->left;
+            }
+            if ((*list)->exp->type != en_auto || !isstructured((*list)->exp->v.sp->tp) || !basetype((*list)->exp->v.sp->tp)->sp->sb->initializer_list)
+            {
+                (*list)->exp = EvaluateExpression((*list)->exp, argmap, ths, retblk, true);
+                if (!(*list)->exp)
+                    return false;
+                optimize_for_constants(&(*list)->exp);
+            }
+            if ((*list)->exp->type == en_thisref || (*list)->exp->type == en_func)
+                failed = true;
             while ((*list)->exp->type == en_void && (*list)->exp->right)
                 (*list)->exp = (*list)->exp->right;
             list = &(*list)->next;
@@ -815,10 +842,9 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, ArgArray>& a
                     xx->v.sp->sb->constexpression = true;
             }
         }
-        if (!strcmp(func->sp->name, "minmax"))
-            printf("hi");
-        optimize_for_constants(&temp1);
-        if (temp1->type != en_func || (!hascshim(temp1) && temp1->v.sp != exp->v.sp))
+        if (!failed)
+            optimize_for_constants(&temp1);
+        if (temp1->type != en_func || (!hascshim(temp1) && temp1->v.func->sp != exp->v.func->sp))
         {
             *exp = *temp1;
             rv = true;
@@ -867,9 +893,21 @@ static EXPRESSION* EvaluateExpression(EXPRESSION* node, std::unordered_map<SYMBO
             }
             else
             {
-                stk.push(root->right);
-                stk.push(root);
-                root = root->left;
+                if (root->type != en_func)
+                {
+                    stk.push(root->right);
+                    stk.push(root);
+                    root = root->left;
+                }
+                else
+                {
+                    if (!stk.empty() && stk.top() && stk.top()->type == en_thisref)
+                    {
+                        stk.pop();
+                        stk.pop();
+                    }
+                    root = nullptr;
+                }
             }
         }
         if (stk.empty())
@@ -971,6 +1009,10 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
             case st_select:
             case st_notselect:
             {
+                if (!strcmp(node->v.func->sp->name, "minmax"))
+                {
+                    printf("hi");
+                }
                 if (Optimizer::cparams.prm_debug)
                     return false;
                 auto node1 = EvaluateExpression(stmt->select, argmap, ths, retblk, false);
@@ -1025,6 +1067,11 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
                 stmt = stmt->lower;
                 continue;
             case st_expr:
+//                if (!strcmp(node->v.func->sp->name, "minmax"))
+                {
+                    if (stmt->line == 0xad9)
+                        printf("hi");
+                }
                 if (stmt->select)
                 {
                     if (Optimizer::cparams.prm_debug)
@@ -1036,12 +1083,21 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
             case st_return:
                 if (stmt->select)
                 {
+                    if (!strcmp(node->v.func->sp->name, "$bequ"))
+                    {
+                        printf("hi");
+                    }
+                    if (!strcmp(node->v.func->sp->name, "minmax"))
+                    {
+                        printf("hi");
+                    }
                     if (node->v.func->returnEXP)
                     {
 //                        ConstExprRetBlock(node->v.func->sp, node->v.func->returnEXP);
                     }
                     auto node1 = EvaluateExpression(stmt->select, argmap, ths, node->v.func->returnEXP, false);
                     optimize_for_constants(&node1);
+                 
                     if (node->v.func->sp->sb->isConstructor)
                     {
                         auto newNode = InstantiateStructure(node->v.func->thisptr, argmap, ths);
@@ -1068,8 +1124,16 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
 }
 bool EvaluateConstexprFunction(EXPRESSION*&node)
 {
+    bool in = false;
     if (!strcmp(node->v.func->sp->name, "$bequ"))
+    {
         printf("hi");
+    }
+    if (!strcmp(node->v.func->sp->name, "minmax"))
+    {
+        in = true;
+        printf("hi");
+    }
     if (node->v.func->sp->sb->isConstructor)
     {
         // we don't support constexpr constructors for classes with base classes right now...
@@ -1083,8 +1147,10 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
     {
         int offset = 0;
         exp = relptr(exp->left, offset);
-        if (exp && (exp->v.sp->sb->thisPtr || exp->v.sp->sb->retblk))
+        if (exp && (exp->v.sp->sb->thisPtr || (!functionNestingCount && exp->v.sp->sb->retblk)))
+        {
             return false;
+        }
     }
     if (exp && exp->type == en_auto)
     {
@@ -1159,13 +1225,14 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
                 stmt = stmt->next;
             if (stmt && stmt->type == st_block && stmt->lower)
             {
-                if (++functionnestingcount >= 1000)
+                if (++functionNestingCount >= 1000)
                 {
                     diag("EvaluateConstexprFunction: recursion level too high");
                 }
                 else
                 {
                     std::unordered_map<SYMBOL*, ArgArray> argmap;
+                    std::unordered_map<SYMBOL*, ArgArray> tempmap;
                     if (!nestedMaps.empty())
                     {
                         auto&& o = *nestedMaps.top();
@@ -1183,14 +1250,34 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
                     auto arglist = node->v.func->arguments;
                     while (hr && arglist)
                     {
-                        argmap[hr->p] = { 1, Allocate<EXPRESSION*>() };
-                        argmap[hr->p].data[0] = arglist->exp;
-                        if (arglist->nested)
-                            pushArray(hr->p, arglist->nested, argmap);
+                        if (arglist->exp && arglist->exp->type == en_auto && isstructured(arglist->exp->v.sp->tp) && basetype(arglist->exp->v.sp->tp)->sp->sb->initializer_list && argmap.find(arglist->exp->v.sp) != argmap.end())
+                        {
+                            argmap[hr->p] = argmap[arglist->exp->v.sp];
+                        }
+                        else if (arglist->exp && arglist->exp->type == en_auto && localMap.find(arglist->exp) != localMap.end())
+                        {
+                            argmap[hr->p] = localMap[arglist->exp];
+                        }
                         else
-                            pushArray(arglist->exp, argmap);
+                        {
+                            argmap[hr->p] = { 1, Allocate<EXPRESSION*>() };
+                            argmap[hr->p].data[0] = arglist->exp;
+                        }
+                        if (arglist->nested)
+                            pushArray(hr->p, arglist->nested, tempmap);
+                        else
+                            pushArray(arglist->exp, tempmap);
                         hr = hr->next;
                         arglist = arglist->next;
+                    }
+                    for (auto s : tempmap)
+                    {
+                        //      if (s.first->sb->storage_class != sc_parameter)
+                        {
+                            argmap[s.first] = s.second;
+                            if (!nestedMaps.empty())
+                                (*nestedMaps.top())[s.first] = s.second;
+                        }
                     }
                     nestedMaps.push(&argmap);
                     EXPRESSION* ths = nullptr;
@@ -1213,10 +1300,12 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
 
                     nestedMaps.pop();
                 }
-                --functionnestingcount;
+                --functionNestingCount;
             }
         }
     }
+    if (in)
+        printf("hi");
     return rv;
 }
 }  // namespace Parser

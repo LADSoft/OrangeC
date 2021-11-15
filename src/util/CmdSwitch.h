@@ -48,7 +48,7 @@ class CmdSwitchBase
     const std::deque<std::string>& GetLongNames() const { return longNames; }
     void SetExists(bool val = true) { exists = val; }
     bool GetExists() const { return exists; }
-    virtual void SetArgNum(int an) {}
+    virtual void SetArgNum(int) {}
 
   private:
     bool exists;

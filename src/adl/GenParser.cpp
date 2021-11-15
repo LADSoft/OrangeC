@@ -965,7 +965,7 @@ bool GenParser::GenerateTokenTables()
         (*file) << "}," << std::endl;
     }
     (*file) << "};" << std::endl;
-    delete vals;
+    delete[] vals;
     (*file) << std::endl;
     return true;
 }
@@ -1265,7 +1265,7 @@ bool GenParser::GenerateOpcodes()
         (*file) << "};";
         (*file) << std::endl;
     }
-    delete codingNames;
+    delete[] codingNames;
     return true;
 }
 void GenParser::GenerateCoding(const std::string coding, const std::string name)

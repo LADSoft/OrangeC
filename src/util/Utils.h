@@ -43,7 +43,7 @@ class Utils
   public:
     static void banner(const char* progName);
     static void usage(const char* progName, const char* text);
-    static void fatal(const char* format)
+    [[noreturn]] static void fatal(const char* format)
     {
         fprintf(stderr, "Fatal error: ");
         fputs(format, stderr);
@@ -52,7 +52,7 @@ class Utils
         exit(1);
     }
     template <typename... Args>  // templates are MUCH more portable than varargs
-    static void fatal(const char* format, Args... arg)
+    [[noreturn]] static void fatal(const char* format, Args... arg)
     {
         fprintf(stderr, "Fatal error: ");
         fprintf(stderr, format, arg...);
@@ -61,9 +61,9 @@ class Utils
             cleanup();
         exit(1);
     }
-    static void fatal(const std::string& format) { fatal(format.c_str()); }
+    [[noreturn]] static void fatal(const std::string& format) { fatal(format.c_str()); }
     template <typename... Args>
-    static void fatal(const std::string& format, Args... arg)
+    [[noreturn]] static void fatal(const std::string& format, Args... arg)
     {
         fatal(format.c_str(), arg...);
     }

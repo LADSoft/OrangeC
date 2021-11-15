@@ -549,6 +549,27 @@ static void ParamTransfer(char* name)
             Optimizer::cparams.prm_maxerr = n;
         DisableTrivialWarnings();
     }
+    if(prm_Werror.GetExists())
+    {
+        const std::string& string = prm_Werror.GetValue();
+        size_t errstart = 0;
+        while (true)
+        {
+            size_t commaloc = string.find_first_of(',');
+            if (commaloc != std::string::npos)
+            {
+                std::string thing = string.substr(errstart, commaloc);
+                WarningAsError(thing.c_str());
+                errstart = commaloc;
+            }
+            else
+            {
+                std::string thing = string.substr(errstart);
+                WarningAsError(thing.c_str());
+                break;
+            }
+        }
+    }
     checks = Utils::split(prm_warning.GetValue());
     for (auto&& v : checks)
     {

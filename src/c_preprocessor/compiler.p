@@ -819,8 +819,12 @@ char *litlate(char *name);
 LCHAR *wlitlate(LCHAR *name);
 
                               /* Osutil.c */
-
-void fatal(char *fmt, ...);
+#if defined(__cplusplus) && __cplusplus >= 201103L
+#define noreturn_macro [[noreturn]]
+#else
+#define noreturn_macro
+#endif
+noreturn_macro void fatal(char *fmt, ...);
 void banner(char *fmt, ...);
 void usage(char *prog_name);
 void AddExt(char *buffer, char *ext);

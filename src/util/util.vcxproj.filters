@@ -71,6 +71,9 @@
     <ClInclude Include="SharedMemory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FNV_hash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />

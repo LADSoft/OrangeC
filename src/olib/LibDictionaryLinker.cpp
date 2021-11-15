@@ -67,7 +67,7 @@ ObjInt LibDictionary::Lookup(FILE* stream, ObjInt dictionaryOffset, ObjInt dicti
         // attempt to shut up coverity
         if (feof(stream))
             return -1;
-        char sig[4] = {'1', '0', 0, 0}, sig1[4];
+        char sig[4] = {'1', '0', 0, 0};
         if (!memcmp(sig, q, 4))
         {
             int len;

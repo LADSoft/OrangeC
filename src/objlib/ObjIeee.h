@@ -205,13 +205,16 @@ class ObjIeeeBinary : public ObjIOBase
     bool ModuleEnd(const ObjByte* buffer, eParseType ParseType);
     bool ModuleAttributes(const ObjByte* buffer, eParseType ParseType);
     bool ModuleDate(const ObjByte* buffer, eParseType ParseType);
+#ifndef __ORANGEC__
+    [[noreturn]] // Satisfy the analyzer for MSVC so it shuts up on a bunch of other functions, but because of errors from OrangeC this actually doesn't work, and it needs to be bool here to satisfy a function thing...
+#endif
     bool ThrowSyntax(const ObjByte* buffer, eParseType ParseType)
     {
         (void)buffer;
         (void)ParseType;
         SyntaxError e(lineno);
         throw e;
-        return false;
+        return false; // In case exceptions are disabled, return *SOMETHING*
     }
 
     bool Parse(const ObjByte* buffer, eParseType ParseType);
@@ -447,6 +450,9 @@ class ObjIeeeAscii : public ObjIOBase
     bool ModuleEnd(const char* buffer, eParseType ParseType);
     bool ModuleAttributes(const char* buffer, eParseType ParseType);
     bool ModuleDate(const char* buffer, eParseType ParseType);
+    #ifndef __ORANGEC__
+    [[noreturn]] // Same as above
+    #endif
     bool ThrowSyntax(const char* buffer, eParseType ParseType)
     {
         (void)buffer;

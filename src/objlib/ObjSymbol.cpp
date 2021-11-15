@@ -28,7 +28,9 @@
 #include <cstdio>
 #include <cstring>
 #include "Utils.h"
-
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 static const char* unmangle(char* val, const char* name);
 
 ObjString ObjSymbol::GetDisplayName()

@@ -26,6 +26,9 @@ enum ERROR_LIST
 {
 #define ERRLIST(x, y, z, a) x = y,
 #define ERRSCHEMA(x, y, z, a) x = y,
+#define ERRWITHWARNFLAG(x, y, ...) x = y,
+#define ERRWITHHELP(x, y, ...) x = y,
+#define ERRWITHWARNFLAGHELP(x, y, ...) x = y,
 #include "errorlist.h"
 };
 void diag(const char* fmt, ...);
@@ -80,6 +83,7 @@ void DisableWarning(int num);
 void EnableWarning(int num);
 void WarningOnlyOnce(int num);
 void WarningAsError(int num);
+void WarningAsError(const char* str);
 void AllWarningsAsError(void);
 void AllWarningsDisable(void);
 void PushWarnings(void);

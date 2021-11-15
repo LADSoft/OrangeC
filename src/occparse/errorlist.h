@@ -1,8 +1,30 @@
+// VALUES: 
+// x = error name in enumeration
+// y = number of the error, exists purely because there's two errors that map to the same thing but have different semantics
+// z = The error text for easy searching
+// a = ERROR LEVEL
+// b = mapped GCC -> OrangeC error name
+// c = Mapped help categories
+// FURTHER POSSIBLE UPDATES INCLUDE:
+// LISTING THE ERROR CATEGORY SUCH THAT WE KNOW WHEN SOMETHING IS ACTIVATED BY -Wall AND CAN ADD/REMOVE EASILY
+// The above may be done by just having a "-Wall" list or the like that lists all numbers/warnings activated when doing "-Wall" or "-Wextra"
 #ifndef ERRLIST
+// In the normal list of errors
 #    define ERRLIST(x, y, z, a)
 #endif
 #ifndef ERRSCHEMA
+// In the list of errors that uses the same errc as another error
 #    define ERRSCHEMA(x, y, z, a)
+#endif
+#ifndef ERRWITHHELP
+// ERRLIST but with an extra flag so that you don't need to just know error number, and -W from GCC works
+#    define ERRWITHHELP(x, y, z, a, b)
+#endif
+#ifndef ERRWITHWARNFLAG
+#    define ERRWITHWARNFLAG(x, y, z, a, b)
+#endif
+#ifndef ERRWITHWARNFLAGHELP
+#    define ERRWITHWARNFLAGHELP(x, y, z, a, b, c)
 #endif
 ERRLIST(ERR_UNKNOWN, 0, "Unknown error", ERROR)
 ERRLIST(ERR_TOO_MANY_ERRORS, 1, "Too many errors or warnings", ERROR)
@@ -115,7 +137,7 @@ ERRLIST(ERR_VOID_ONLY_PARAMETER, 106, "Type void must be unnamed and the only pa
 ERRLIST(ERR_INLINE_NOT_ALLOWED, 107, "'inline' not allowed here", ERROR)
 ERRLIST(ERR_MAIN_CANNOT_BE_INLINE_FUNC, 108, "'main' may not be declared as inline", ERROR)
 ERRLIST(ERR_FUNCTION_TAKES_NO_PARAMETERS, 109, "Function takes no arguments", ERROR)
-ERRLIST(ERR_CALL_FUNCTION_NO_PROTO, 110, "Call to function '%s' without a prototype", TRIVIALWARNING)
+ERRWITHWARNFLAG(ERR_CALL_FUNCTION_NO_PROTO, 110, "Call to function '%s' without a prototype", TRIVIALWARNING, "missing-prototypes")
 ERRLIST(ERR_PARAMETER_LIST_TOO_LONG, 111, "Argument list too long in call to '%s'", ERROR)
 ERRLIST(ERR_PARAMETER_LIST_TOO_SHORT, 112, "Argument list too short in call to '%s'", ERROR)
 ERRLIST(ERR_CALL_OF_NONFUNCTION, 113, "Call of nonfunction", ERROR)
@@ -145,15 +167,15 @@ ERRLIST(ERR_DEREF, 136, "Invalid indirection", ERROR)
 ERRLIST(ERR_USED_WITHOUT_ASSIGNMENT, 137, "'%s' used without prior assignment", WARNING)
 ERRLIST(ERR_POSSIBLE_INCORRECT_ASSIGNMENT, 138, "Possible incorrect assignment", WARNING)
 ERRLIST(ERR_ANSI_FORBIDS_IMPLICIT_CONVERSION_FROM_VOID, 139, "Ansi forbids automatic conversion from void in assignment", ERROR)
-ERRLIST(ERR_SYM_ASSIGNED_VALUE_NEVER_USED, 140, "'%s' assigned a value that is never used", TRIVIALWARNING)
-ERRLIST(ERR_UNUSED_PARAMETER, 141, "Parameter '%s' unused", TRIVIALWARNING)
-ERRLIST(ERR_UNUSED_VARIABLE, 142, "'%s' unused", TRIVIALWARNING)
+ERRWITHWARNFLAG(ERR_SYM_ASSIGNED_VALUE_NEVER_USED, 140, "'%s' assigned a value that is never used", TRIVIALWARNING, "unused-but-set-variable")
+ERRWITHWARNFLAG(ERR_UNUSED_PARAMETER, 141, "Parameter '%s' unused", TRIVIALWARNING, "unused-parameter")
+ERRWITHWARNFLAG(ERR_UNUSED_VARIABLE, 142, "'%s' unused", TRIVIALWARNING, "unused-variable")
 ERRLIST(ERR_UNUSED_STATIC, 143, "static object '%s' is unused", TRIVIALWARNING)
-ERRLIST(ERR_VARIABLE_OBSCURES_VARIABLE_AT_HIGHER_SCOPE, 144, "'%s' hides declaration at outer scope", WARNING)
+ERRWITHWARNFLAG(ERR_VARIABLE_OBSCURES_VARIABLE_AT_HIGHER_SCOPE, 144, "'%s' hides declaration at outer scope", WARNING, "shadow")
 ERRLIST(ERR_NOT_AN_ALLOWED_TYPE, 145, "Cannot use 'void' value here", ERROR)
 ERRLIST(ERR_CANNOT_MODIFY_CONST_OBJECT, 146, "Cannot modify a const object", ERROR)
 ERRLIST(ERR_EXPRESSION_SYNTAX, 147, "Expression syntax error", ERROR)
-ERRLIST(ERR_SIGNED_UNSIGNED_MISMATCH_RELAT, 148, "signed/unsigned mismatch in '%s' comparison", TRIVIALWARNING)
+ERRWITHWARNFLAG(ERR_SIGNED_UNSIGNED_MISMATCH_RELAT, 148, "signed/unsigned mismatch in '%s' comparison", TRIVIALWARNING, "sign-compare")
 ERRLIST(ERR_SIZEOF_NO_FUNCTION, 149, "sizeof may not be used with a function designator", ERROR)
 ERRLIST(ERR_ILL_STRUCTURE_ASSIGNMENT, 150, "Invalid structure assignment", ERROR)
 ERRLIST(ERR_ILL_STRUCTURE_OPERATION, 151, "Invalid structure operation", ERROR)
@@ -195,7 +217,7 @@ ERRLIST(ERR_RETURN_MUST_RETURN_VALUE, 186, "Return statement should have value",
 ERRLIST(ERR_CANNOT_RETURN_VOID_VALUE, 187, "Attempt to return a value of type void", ERROR)
 ERRLIST(ERR_RETURN_NO_VALUE, 188, "Value specified in return of function with return type 'void'", WARNING)
 ERRLIST(ERR_RETMISMATCH, 189, "Type mismatch in return statement", WARNING)
-ERRLIST(ERR_FUNCTION_RETURNING_ADDRESS_STACK_VARIABLE, 190, "Returning address of a local variable", WARNING)
+ERRWITHWARNFLAG(ERR_FUNCTION_RETURNING_ADDRESS_STACK_VARIABLE, 190, "Returning address of a local variable", WARNING, "return-local-addr")
 ERRLIST(ERR_EXPRESSION_HAS_NO_EFFECT, 191, "Expression has no effect", WARNING)
 ERRLIST(ERR_UNEXPECTED_END_OF_BLOCKDATA, 192, "Unexpected block end marker", ERROR) /* fixme */
 ERRLIST(ERR_UNREACHABLE_CODE, 193, "Unreachable code", TRIVIALWARNING)
@@ -296,7 +318,7 @@ ERRLIST(ERR_GENERIC_MISSING_EXPRESSION, 284, "Invalid expression in generic expr
 ERRLIST(ERR_GENERIC_NOTHING_SELECTED, 285, "Could not find a match for generic expression", ERROR)
 ERRLIST(ERR_THREAD_LOCAL_INVALID_STORAGE_CLASS, 286, "Invalid storage class for thread local variable", ERROR)
 ERRLIST(ERR_THREAD_LOCAL_NOT_AUTO, 287, "Thread local variable cannot have auto or register storage class", ERROR)
-ERRLIST(ERR_FUNC_NOT_THREAD_LOCAL, 288, "Functions cannot be thread local", WARNING)
+ERRLIST(ERR_FUNC_NOT_THREAD_LOCAL, 288, "Functions cannot be thread local", ERROR)
 ERRLIST(ERR_THREAD_LOCAL_MUST_ALWAYS_APPEAR, 289, "Mismatched thread_local storage class specifier", ERROR)
 ERRLIST(ERR_ATOMIC_TYPE_SPECIFIER_NO_QUALS, 290, "Qualifiers not allowed with atomic type specifier", WARNING)
 ERRLIST(ERR_ATOMIC_NO_FUNCTION_OR_ARRAY, 291, "Function or array not allowed as atomic type", ERROR)
@@ -384,7 +406,7 @@ ERRLIST(ERR_CANNOT_USE_ARRAY_OF_STRUCTURES_AS_FUNC_ARG, 370, "Cannot use array o
 ERRLIST(ERR_ANONYMOUS_UNION_NO_FUNCTION_OR_TYPE, 371, "Anonymous union cannot contain function or nested type", ERROR)
 ERRLIST(ERR_ANONYMOUS_UNION_PUBLIC_MEMBERS, 372, "Anonymous union must contain only public members", ERROR)
 ERRLIST(ERR_ANONYMOUS_UNION_NONSTATIC_MEMBERS, 373, "Anonymous union must contain only nonstatic data members", ERROR)
-ERRLIST(ERR_GOTO_BYPASSES_INITIALIZATION, 374, "Goto on line %s bypasses initialization", CPLUSPLUSERROR | WARNING)
+ERRWITHWARNFLAG(ERR_GOTO_BYPASSES_INITIALIZATION, 374, "Goto on line %s bypasses initialization", CPLUSPLUSERROR | WARNING, "jump-misses-init")
 ERRLIST(ERR_EXPECTED_TRY_BLOCK, 375, "Try keyword requires compound statement", ERROR)
 ERRLIST(ERR_EXPECTED_CATCH_CLAUSE, 376, "One or more catch handlers expected", ERROR)
 ERRLIST(ERR_EXPECTED_CATCH_BLOCK, 377, "Catch handler requires compound statement", ERROR)
@@ -509,7 +531,7 @@ ERRLIST(ERR_ATTEMPING_TO_REDEFINE_DLL_LINKAGE, 485, "%s: attempting to redefine 
 ERRLIST(ERR_IGNORING__ATTRIBUTE, 486, "Ignoring __attribute__ specifier", WARNING)
 ERRLIST(ERR_IGNORING__DECLSPEC, 487, "Ignoring __declspec specifier", WARNING)
 ERRLIST(ERR_INVALID_ALIGNMENT, 488, "Invalid alignment value", ERROR)
-ERRLIST(ERR_INVALID_CHARACTER_STRING_CONVERSION, 489, "Conversion of character string to 'char *' deprecated", WARNING)
+ERRWITHWARNFLAG(ERR_INVALID_CHARACTER_STRING_CONVERSION, 489, "Conversion of character string to 'char *' deprecated", WARNING, "write-strings")
 ERRLIST(ERR_FUNCTION_CALL_NEEDS_ARGUMENT_LIST, 490, "Function call needs argument list", WARNING)
 ERRLIST(ERR_REF_RETURN_TEMPORARY, 491, "Return value would require a temporary variable", ERROR)
 ERRLIST(ERR_CONFLICTS_WITH, 492, "Declaration of '%s' conflicts with previous declaration", ERROR)
@@ -525,7 +547,7 @@ ERRLIST(ERR_NULL_TERMINATED_STRING_REQUIRED, 500, "Null terminated string requir
 ERRLIST(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, 501, "Attribute namespace '%s' is not an attribute", ERROR)
 ERRLIST(ERR_ATTRIBUTE_DOES_NOT_EXIST, 502, "Attribute '%s' does not exist", ERROR)
 ERRLIST(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, 503, "Attribute '%s' does not exist in attribute namespace '%s'", ERROR)
-ERRLIST(ERR_STATIC_FUNCTION_USED_BUT_NOT_DEFINED, 504, "static function '%s' is declared but never defined", TRIVIALWARNING)
+ERRWITHWARNFLAG(ERR_STATIC_FUNCTION_USED_BUT_NOT_DEFINED, 504, "static function '%s' is declared but never defined", TRIVIALWARNING, "unused-function")
 ERRLIST(ERR_REFERENCED_IN_INSTANTIATION, 505, "Referenced in instantiation of '%s'", NOTE)
 ERRLIST(ERR_TYPEDEFS_CANNOT_BE_TEMPLATES, 506, "typedef templates not allowed", ERROR)
 ERRLIST(ERR_DEPENDENT_TYPE_NEEDS_TYPENAME, 507, "Missing 'typename' in front of dependent type '%s'", ERROR)
@@ -539,3 +561,6 @@ ERRLIST(ERR_CONSTEXPR_NO_STRUCT, 514, "'constexpr' specifier cannot be used with
 ERRLIST(ERR_CONSTEXPR_MUST_INITIALIZE, 515, "constexpr constructor does not initialize '%s'", ERROR) 
 #undef ERRLIST
 #undef ERRSCHEMA
+#undef ERRWITHHELP
+#undef ERRWITHWARNFLAG
+#undef ERRWITHWARNFLAGHELP

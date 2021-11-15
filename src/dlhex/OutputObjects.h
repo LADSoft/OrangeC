@@ -87,8 +87,8 @@ class BinaryOutputObject : public OutputObject
     virtual ~BinaryOutputObject() {}
 
     virtual int Write(std::fstream& stream, char* data, int line, int firstAddress);
-    virtual int WriteHeader(std::fstream& stream) { return 0; }
-    virtual int WriteTrailer(std::fstream& stream) { return 0; }
+    virtual int WriteHeader(std::fstream&) { return 0; }
+    virtual int WriteTrailer(std::fstream&) { return 0; }
     virtual std::ios::openmode GetOpenFlags() { return std::ios::out | std::ios::binary; }
 };
 

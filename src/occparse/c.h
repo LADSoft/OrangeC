@@ -290,6 +290,12 @@ typedef struct
 
 #define _F_NOCHECKAUTO 0x80
 
+struct ConstExprArgArray
+{
+    int size;
+    struct expr** data;
+};
+
 typedef struct expr
 {
     struct expr *left, *right;
@@ -307,7 +313,7 @@ typedef struct expr
             struct
             {
                 struct sym* sp;   /* sym will be defined later */
-                struct expr** constexprData;
+                struct ConstExprArgArray constexprData;
             };
             const char* name; /* name during base class processing */
             struct functioncall* func;

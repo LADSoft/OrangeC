@@ -46,7 +46,7 @@
 #include "stmt.h"
 #include "lex.h"
 #include "beinterf.h"
-
+#include "iexpr.h"
 namespace Parser
 {
 static int functionNestingCount = 0;
@@ -56,20 +56,15 @@ struct ConstExprThisPtr
     EXPRESSION* oldval;
     EXPRESSION* newval;
 };
-struct ArgArray
-{
-    int size;
-    EXPRESSION** data;
-};
 std::deque<ConstExprThisPtr> globalMap;
 
 std::deque<std::deque<ConstExprThisPtr>> localMap;
-std::stack<std::unordered_map<SYMBOL*, ArgArray>*> nestedMaps;
+std::stack<std::unordered_map<SYMBOL*, ConstExprArgArray>*> nestedMaps;
 std::deque<EXPRESSION*> clearedInitializations;
 
-static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<SYMBOL*, ArgArray>& argmap, EXPRESSION* ths);
+static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<SYMBOL*, ConstExprArgArray>& argmap, EXPRESSION* ths);
 static bool ExactExpression(EXPRESSION* exp1, EXPRESSION* exp2);
-static EXPRESSION* LookupThis(EXPRESSION* exp, const std::unordered_map<SYMBOL*, ArgArray>& argmap);
+static EXPRESSION* LookupThis(EXPRESSION* exp, const std::unordered_map<SYMBOL*, ConstExprArgArray>& argmap);
 bool hascshim(EXPRESSION* node);
 
 void constexprinit()
@@ -263,7 +258,7 @@ void ConstExprPromote(EXPRESSION* node, bool isconst)
                     }
             if (found)
             {
-                std::unordered_map<SYMBOL*, ArgArray> argmap;
+                std::unordered_map<SYMBOL*, ConstExprArgArray> argmap;
                 clearedInitializations.push_back(InstantiateStructure(node, argmap, found));
             }
         }
@@ -276,11 +271,11 @@ void ConstExprStructElemEval(EXPRESSION** node)
         auto node1 = (*node)->left;
         if (node1->type == en_structadd)
         {
-            std::unordered_map<SYMBOL*, ArgArray> argmap;
+            std::unordered_map<SYMBOL*, ConstExprArgArray> argmap;
             auto node2 = LookupThis(node1->left, argmap);
             if (node2 && node2 != (EXPRESSION*)-1)
             {
-                node2 = node2->v.constexprData[node1->right->v.i];
+                node2 = node2->v.constexprData.data[node1->right->v.i];
                 if (node2)
                 {
                     *node = node2;
@@ -353,7 +348,7 @@ static bool ExactExpression(EXPRESSION* exp1, EXPRESSION* exp2)
     }
     return true;
 }
-static EXPRESSION* LookupThis(EXPRESSION* exp, const std::unordered_map<SYMBOL*, ArgArray>& argmap)
+static EXPRESSION* LookupThis(EXPRESSION* exp, const std::unordered_map<SYMBOL*, ConstExprArgArray>& argmap)
 {
     if (!exp)
         return nullptr;
@@ -382,7 +377,7 @@ static EXPRESSION* LookupThis(EXPRESSION* exp, const std::unordered_map<SYMBOL*,
                 EXPRESSION* exp1 = Allocate<EXPRESSION>();
                 exp1->type = en_cshimthis;
                 exp1->v.sp = nullptr;
-                exp1->v.constexprData = t.second.data;
+                exp1->v.constexprData = t.second;
                 localMap.back().push_back(ConstExprThisPtr{ exp, exp1 });
                 return exp1;
             }
@@ -390,19 +385,19 @@ static EXPRESSION* LookupThis(EXPRESSION* exp, const std::unordered_map<SYMBOL*,
     }
     return nullptr;
 }
-static EXPRESSION* EvaluateExpression(EXPRESSION* node, std::unordered_map<SYMBOL*, ArgArray>& argmap, EXPRESSION* ths, EXPRESSION* retblk, bool arg);
-static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, INITLIST* args, std::unordered_map<SYMBOL*, ArgArray>& argmap)
+static EXPRESSION* EvaluateExpression(EXPRESSION* node, std::unordered_map<SYMBOL*, ConstExprArgArray>& argmap, EXPRESSION* ths, EXPRESSION* retblk, bool arg);
+static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, INITLIST* args, std::unordered_map<SYMBOL*, ConstExprArgArray>& argmap)
 {
     EXPRESSION* exp = Allocate<EXPRESSION>();
     exp->type = en_cshimthis;
     exp->v.sp = sym;
-    exp->v.constexprData = Allocate<EXPRESSION*>(sym->sb->parentClass->tp->size);
+    exp->v.constexprData = { sym->sb->parentClass->tp->size, Allocate<EXPRESSION*>(sym->sb->parentClass->tp->size) } ;
     auto hr = sym->sb->parentClass->tp->syms->table[0];
     while (hr)
     {
         if (ismemberdata(hr->p) && hr->p->sb->init)
         {
-            exp->v.constexprData[hr->p->sb->offset] = EvaluateExpression(hr->p->sb->init->exp, argmap, exp, nullptr, false);
+            exp->v.constexprData.data[hr->p->sb->offset] = EvaluateExpression(hr->p->sb->init->exp, argmap, exp, nullptr, false);
         }
         hr = hr->next;
     }
@@ -414,7 +409,7 @@ static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, 
             SYMBOL* sp = search(m->name, sym->sb->parentClass->tp->syms);
             if (sp)
             {
-                exp->v.constexprData[sp->sb->offset] = EvaluateExpression(m->init->exp, argmap, exp, nullptr, false);
+                exp->v.constexprData.data[sp->sb->offset] = EvaluateExpression(m->init->exp, argmap, exp, nullptr, false);
             }
         }
         m = m->next;
@@ -435,7 +430,7 @@ EXPRESSION* ConstExprRetBlock(SYMBOL* sym, EXPRESSION* node)
     EXPRESSION* exp = Allocate<EXPRESSION>();
     exp->type = en_cshimthis;
     exp->v.sp = sym;
-    exp->v.constexprData = Allocate<EXPRESSION*>(sym->tp->size);
+    exp->v.constexprData = { sym->tp->size, Allocate<EXPRESSION*>(sym->tp->size) };
     if (localMap.size())
     {
         localMap.back().push_back(ConstExprThisPtr{ node, exp });
@@ -484,7 +479,7 @@ static void ReplaceShimref(EXPRESSION** node)
         }
     }
 }
-static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<SYMBOL*, ArgArray>& argmap, EXPRESSION* ths)
+static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<SYMBOL*, ConstExprArgArray>& argmap, EXPRESSION* ths)
 {
     if (thisptr->type == en_auto && thisptr->v.sp->sb->stackblock)
     {
@@ -504,7 +499,7 @@ static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<
         {
             EXPRESSION* next = exprNode(en_structadd, varptr, intNode(en_c_i, hr->p->sb->offset));
             deref(hr->p->tp, &next);
-            next = exprNode(en_assign, next, EvaluateExpression(ths->v.constexprData[hr->p->sb->offset], argmap, ths, nullptr, false));
+            next = exprNode(en_assign, next, EvaluateExpression(ths->v.constexprData.data[hr->p->sb->offset], argmap, ths, nullptr, false));
             if (next->right == nullptr || !IsConstantExpression(next->right, false, false))
                 return nullptr;
             inConstantExpression++;
@@ -522,35 +517,67 @@ static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<
         *last = exprNode(en_void, *last, thisptr);
     return rv;
 }
-static void pushArray(EXPRESSION *exp, std::unordered_map<SYMBOL*, ArgArray>& argmap)
+static void pushArray(SYMBOL* arg, EXPRESSION *exp, std::unordered_map<SYMBOL*, ConstExprArgArray>& argmap)
 {
-    std::stack<EXPRESSION*> stk;
-    stk.push(exp);
-    while (!stk.empty())
+    SYMBOL* finalsym = nullptr;
+    if (exp->type == en_stackblock && exp->left->type == en_void)
     {
-        auto node = stk.top();
-        stk.pop();
-        if (node->right)
-            stk.push(node->right);
-        if (node->left)
-            stk.push(node->left);
-        if (node->type == en_auto || node->type == en_global)
+        auto exp2 = exp->left;
+        while (exp2->type == en_void && exp2->right)
+            exp2 = exp2->right;
+        if (exp2->type == en_auto)
+            finalsym = exp2->v.sp;
+        if (finalsym && strstr(finalsym->name, "41"))
+            printf("hi");
+    }
+    if (finalsym && isstructured(finalsym->tp) && basetype(finalsym->tp)->sp->sb->initializer_list && finalsym
+        ->sb->init)
+    {
+        std::deque<INITIALIZER*> queue;
+        for (auto t = finalsym->sb->init; t; t = t->next)
+            queue.push_back(t);
+        auto arr = Allocate<EXPRESSION*>(queue.size() + 1);
+        argmap[finalsym] = { (int)queue.size(), arr };
+        if (arg)
+            argmap[arg] = argmap[finalsym];
+        auto init = finalsym->sb->init;
+        int i = 0;
+        for (auto t : queue) arr[i++] = t->exp;
+    }
+    else
+    {
+        std::stack<EXPRESSION*> stk;
+     
+   stk.push(exp);
+        while (!stk.empty())
         {
-            if (isarray(node->v.sp->tp))
+            auto node = stk.top();
+            stk.pop();
+            if (node->right)
+                stk.push(node->right);
+            if (node->left)
+                stk.push(node->left);
+            if (node->type == en_auto || node->type == en_global)
             {
-                int n = node->v.sp->tp->size / node->v.sp->tp->btp->size;
-                auto arr = Allocate<EXPRESSION*>(n+1);
-                argmap[node->v.sp] = { n, arr };
-                auto init = node->v.sp->sb->init;
-                for (int i=0; i < n && init; i++, init = init->next)
+
+                if (isarray(node->v.sp->tp) && node->v.sp->sb->init)
                 {
-                    arr[i] = init->exp;
+                    int n = node->v.sp->tp->size / node->v.sp->tp->btp->size;
+                    auto arr = Allocate<EXPRESSION*>(n + 1);
+                    argmap[node->v.sp] = { n, arr };
+                    if (finalsym)
+                        argmap[finalsym] = { n, arr };
+                    auto init = node->v.sp->sb->init;
+                    for (int i = 0; i < n && init; i++, init = init->next)
+                    {
+                        arr[i] = init->exp;
+                    }
                 }
             }
         }
     }
 }
-static void pushArray(SYMBOL* arg, INITLIST* il, std::unordered_map<SYMBOL*, ArgArray>& argmap)
+static void pushArray(SYMBOL* arg, INITLIST* il, std::unordered_map<SYMBOL*, ConstExprArgArray>& argmap)
 {
     int n = 0;
     INITLIST* ilx = il;
@@ -591,7 +618,7 @@ static void pushArray(SYMBOL* arg, INITLIST* il, std::unordered_map<SYMBOL*, Arg
         p = &(*p)->next;
     }
 }
-static EXPRESSION* HandleAssign(EXPRESSION* exp, std::unordered_map<SYMBOL*, ArgArray>& argmap, EXPRESSION* ths, EXPRESSION* retblk)
+static EXPRESSION* HandleAssign(EXPRESSION* exp, std::unordered_map<SYMBOL*, ConstExprArgArray>& argmap, EXPRESSION* ths, EXPRESSION* retblk)
 {
     EXPRESSION* rv = nullptr;
     if (exp->type == en_autoinc || exp->type == en_autodec)
@@ -604,11 +631,11 @@ static EXPRESSION* HandleAssign(EXPRESSION* exp, std::unordered_map<SYMBOL*, Arg
         if (ths && exp1->left->type == en_structadd && exp1->left->left->type == en_l_p && exp1->left->left->left->type == en_auto && exp1->left->left->left->v.sp->sb->thisPtr)
         {
             int i = exp1->left->right->v.i;
-            ths->v.constexprData[i] = inced;
+            ths->v.constexprData.data[i] = inced;
         }
         else if (ths && exp1->left->type == en_auto && exp1->left->v.sp->sb->thisPtr)
         {
-            ths->v.constexprData[0] = inced;
+            ths->v.constexprData.data[0] = inced;
         }
         else if (exp1->left && exp1->left->type == en_auto)
         {
@@ -629,7 +656,7 @@ static EXPRESSION* HandleAssign(EXPRESSION* exp, std::unordered_map<SYMBOL*, Arg
         if (ths && exp1->left->type == en_structadd && exp1->left->left->type == en_l_p && exp1->left->left->left->type == en_auto && exp1->left->left->left->v.sp->sb->thisPtr)
         {
             int i = exp1->left->right->v.i;
-            ths->v.constexprData[i] = rv;
+            ths->v.constexprData.data[i] = rv;
         }
         else if (exp1->left->type == en_structadd && exp1->left->left->type == en_auto)
         {
@@ -638,12 +665,12 @@ static EXPRESSION* HandleAssign(EXPRESSION* exp, std::unordered_map<SYMBOL*, Arg
             auto ths1 = LookupThis(exp1->left->left, argmap);
             if (ths1)
             {
-                ths1->v.constexprData[val->v.i] = rv;
+                ths1->v.constexprData.data[val->v.i] = rv;
             }
         }
         else if (ths && exp1->left->type == en_auto && exp1->left->v.sp->sb->thisPtr)
         {
-            ths->v.constexprData[0] = rv;
+            ths->v.constexprData.data[0] = rv;
         }
         else if (exp1->left->type == en_add && exp1->left->left->type == en_auto)
         {
@@ -668,7 +695,7 @@ static EXPRESSION* HandleAssign(EXPRESSION* exp, std::unordered_map<SYMBOL*, Arg
     }
     return rv;
 }
-static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, ArgArray>& argmap, EXPRESSION* ths, EXPRESSION* retblk, bool arg)
+static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, ConstExprArgArray>& argmap, EXPRESSION* ths, EXPRESSION* retblk, bool arg)
 {
     bool rv = false;
     if (exp->left && lvalue(exp))
@@ -681,20 +708,20 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, ArgArray>& a
         if (ths && exp1->left->type == en_structadd && exp1->left->left->type == en_l_p && exp1->left->left->left->type == en_auto && exp1->left->left->left->v.sp->sb->thisPtr)
         {
             int i = exp1->left->right->v.i;
-            if (ths->v.constexprData[i])
+            if (ths->v.constexprData.data[i])
             {
                 exp1->left->type = en_cshimref;
-                exp1->left->v.exp = ths->v.constexprData[i];
+                exp1->left->v.exp = ths->v.constexprData.data[i];
                 exp1->left->left = nullptr;
                 rv = true;
             }
         }
         else if (ths && exp1->left->type == en_auto && exp1->left->v.sp->sb->thisPtr)
         {
-            if (ths->v.constexprData[0])
+            if (ths->v.constexprData.data[0])
             {
                 exp1->type = en_cshimref;
-                exp1->v.exp = ths->v.constexprData[0];
+                exp1->v.exp = ths->v.constexprData.data[0];
                 exp1->left = nullptr;
                 rv = true;
             }
@@ -805,12 +832,15 @@ if (xx)
             *list = Allocate<INITLIST>();
             **list = *args;
             auto exp2 = args->exp;
+            bool initlist = false;
             if (exp2->type == en_stackblock)
             {
                 (*list)->exp = exp2->left;
+                initlist = true;
             }
-            if ((*list)->exp->type != en_auto || !isstructured((*list)->exp->v.sp->tp) || !basetype((*list)->exp->v.sp->tp)->sp->sb->initializer_list)
+            if (!initlist || exp2->left->type != en_auto || !isstructured(exp2->left->v.sp->tp) || !basetype(exp2->left->v.sp->tp)->sp->sb->initializer_list)
             {
+                
                 (*list)->exp = EvaluateExpression((*list)->exp, argmap, ths, retblk, true);
                 if (!(*list)->exp)
                     return false;
@@ -872,7 +902,7 @@ if (xx)
     }
     return rv;
 }
-static EXPRESSION* EvaluateExpression(EXPRESSION* node, std::unordered_map<SYMBOL*, ArgArray>& argmap, EXPRESSION* ths, EXPRESSION* retblk, bool arg)
+static EXPRESSION* EvaluateExpression(EXPRESSION* node, std::unordered_map<SYMBOL*, ConstExprArgArray>& argmap, EXPRESSION* ths, EXPRESSION* retblk, bool arg)
 {
     EXPRESSION* rv = copy_expression(node);
     std::stack<EXPRESSION*> stk;
@@ -953,7 +983,7 @@ static EXPRESSION* EvaluateExpression(EXPRESSION* node, std::unordered_map<SYMBO
     } while (!stk.empty());
     return rv;
 }
-static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordered_map<SYMBOL*, ArgArray>& argmap, EXPRESSION* ths, EXPRESSION* retblk)
+static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordered_map<SYMBOL*, ConstExprArgArray>& argmap, EXPRESSION* ths, EXPRESSION* retblk)
 {
     std::unordered_map<int, STATEMENT*> labels;
     std::stack<STATEMENT*> stk;
@@ -1067,11 +1097,6 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
                 stmt = stmt->lower;
                 continue;
             case st_expr:
-//                if (!strcmp(node->v.func->sp->name, "minmax"))
-                {
-                    if (stmt->line == 0xad9)
-                        printf("hi");
-                }
                 if (stmt->select)
                 {
                     if (Optimizer::cparams.prm_debug)
@@ -1231,8 +1256,8 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
                 }
                 else
                 {
-                    std::unordered_map<SYMBOL*, ArgArray> argmap;
-                    std::unordered_map<SYMBOL*, ArgArray> tempmap;
+                    std::unordered_map<SYMBOL*, ConstExprArgArray> argmap;
+                    std::unordered_map<SYMBOL*, ConstExprArgArray> tempmap;
                     if (!nestedMaps.empty())
                     {
                         auto&& o = *nestedMaps.top();
@@ -1250,23 +1275,21 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
                     auto arglist = node->v.func->arguments;
                     while (hr && arglist)
                     {
-                        if (arglist->exp && arglist->exp->type == en_auto && isstructured(arglist->exp->v.sp->tp) && basetype(arglist->exp->v.sp->tp)->sp->sb->initializer_list && argmap.find(arglist->exp->v.sp) != argmap.end())
+                        auto exp = arglist->exp;
+                        if (exp && exp->type == en_auto && isstructured(exp->v.sp->tp) && basetype(exp->v.sp->tp)->sp->sb->initializer_list && argmap.find(exp->v.sp) != argmap.end())
                         {
-                            argmap[hr->p] = argmap[arglist->exp->v.sp];
-                        }
-                        else if (arglist->exp && arglist->exp->type == en_auto && localMap.find(arglist->exp) != localMap.end())
-                        {
-                            argmap[hr->p] = localMap[arglist->exp];
+                            argmap[hr->p] = argmap[exp->v.sp];
                         }
                         else
                         {
                             argmap[hr->p] = { 1, Allocate<EXPRESSION*>() };
-                            argmap[hr->p].data[0] = arglist->exp;
+                            argmap[hr->p].data[0] = exp;
                         }
+
                         if (arglist->nested)
                             pushArray(hr->p, arglist->nested, tempmap);
                         else
-                            pushArray(arglist->exp, tempmap);
+                            pushArray(hr->p, exp, tempmap);
                         hr = hr->next;
                         arglist = arglist->next;
                     }

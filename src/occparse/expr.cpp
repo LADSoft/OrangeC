@@ -2702,6 +2702,7 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
             callDestructor(initializerListType->sp, nullptr, &exp, elms, true, false, false, true);
             initInsert(&data->v.sp->sb->dest, tp, exp, 0, false);
         }
+        std::deque<EXPRESSION*> listOfScalars;
         for (i = 0; i < count; i++, lptr = &(*lptr)->next)
         {
             EXPRESSION* node;
@@ -2821,6 +2822,7 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
                         auto pos = exprNode(en_structadd, dest, intNode(en_c_i, count1++ * initializerListType->size));
                         deref(initializerListType, &pos);
                         auto node1 = exprNode(en_assign, pos, arg->exp);
+                        listOfScalars.push_back(arg->exp);
                         if (node)
                         {
                             *list = exprNode(en_void, *list, node1);
@@ -2853,6 +2855,17 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
         }
         initList = anonymousVar(sc_auto, initializerListTemplate);
         initList->v.sp->sb->constexpression = true;
+        if (inConstantExpression && !listOfScalars.empty())
+        {
+            INITIALIZER** last = &initList->v.sp->sb->init;
+            for (auto t : listOfScalars)
+            {
+                *last = Allocate<INITIALIZER>();
+                (*last)->exp = t;
+                last = &(*last)->next;
+            }
+        
+        }
         dest = exprNode(en_structadd, initList, intNode(en_c_i, begin->sb->offset));
         deref(&stdpointer, &dest);
         dest = exprNode(en_assign, dest, data);

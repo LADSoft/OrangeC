@@ -47,6 +47,8 @@
 #include "lex.h"
 #include "beinterf.h"
 #include "iexpr.h"
+#include "floatconv.h"
+
 namespace Parser
 {
 static int functionNestingCount = 0;
@@ -378,7 +380,7 @@ static EXPRESSION* LookupThis(EXPRESSION* exp, const std::unordered_map<SYMBOL*,
                 exp1->type = en_cshimthis;
                 exp1->v.sp = nullptr;
                 exp1->v.constexprData = t.second;
-                localMap.back().push_back(ConstExprThisPtr{ exp, exp1 });
+                localMap.back().push_front(ConstExprThisPtr{ exp, exp1 });
                 return exp1;
             }
         }
@@ -417,7 +419,7 @@ static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, 
     }
     if (localMap.size())
     {
-        localMap.back().push_back(ConstExprThisPtr{ thisptr, exp });
+        localMap.back().push_front(ConstExprThisPtr{ thisptr, exp });
     }
     else
     {
@@ -433,7 +435,7 @@ EXPRESSION* ConstExprRetBlock(SYMBOL* sym, EXPRESSION* node)
     exp->v.constexprData = { sym->tp->size, Allocate<EXPRESSION*>(sym->tp->size) };
     if (localMap.size())
     {
-        localMap.back().push_back(ConstExprThisPtr{ node, exp });
+        localMap.back().push_front(ConstExprThisPtr{ node, exp });
     }
     else
     {
@@ -536,19 +538,20 @@ static void pushArray(SYMBOL* arg, EXPRESSION *exp, std::unordered_map<SYMBOL*, 
         std::deque<INITIALIZER*> queue;
         for (auto t = finalsym->sb->init; t; t = t->next)
             queue.push_back(t);
-        auto arr = Allocate<EXPRESSION*>(queue.size() + 1);
-        argmap[finalsym] = { (int)queue.size(), arr };
+        int n = finalsym->tp->sp->templateParams->next->p->byClass.val->size;
+        auto arr = Allocate<EXPRESSION*>(queue.size() * n + 1);
+        argmap[finalsym] = { (int)queue.size() * n, arr };
         if (arg)
             argmap[arg] = argmap[finalsym];
         auto init = finalsym->sb->init;
         int i = 0;
-        for (auto t : queue) arr[i++] = t->exp;
+        for (auto t : queue) arr[i++*n] = t->exp;
     }
     else
     {
         std::stack<EXPRESSION*> stk;
      
-   stk.push(exp);
+        stk.push(exp);
         while (!stk.empty())
         {
             auto node = stk.top();
@@ -750,7 +753,7 @@ if (xx)
         rv = true;
     }
 }
-                }
+                } 
             }
         }
         else if (exp1->left && exp1->left->type == en_auto)
@@ -839,8 +842,7 @@ if (xx)
                 initlist = true;
             }
             if (!initlist || exp2->left->type != en_auto || !isstructured(exp2->left->v.sp->tp) || !basetype(exp2->left->v.sp->tp)->sp->sb->initializer_list)
-            {
-                
+            {                
                 (*list)->exp = EvaluateExpression((*list)->exp, argmap, ths, retblk, true);
                 if (!(*list)->exp)
                     return false;
@@ -1047,8 +1049,14 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
                     return false;
                 auto node1 = EvaluateExpression(stmt->select, argmap, ths, retblk, false);
                 optimize_for_constants(&node1);
-                if (!IsConstantExpression(node1, false, false))
+                if (!isarithmeticconst(node1))
                     return false;
+                if (!isintconst(node1))
+                {
+                    node1->v.i = reint(node1->left);
+                    node1->type = en_c_i;
+                    node1->left = nullptr;
+                }
                 if ((node1->v.i && stmt->type == st_notselect) || (!node1->v.i && stmt->type == st_select))
                     break;
                 stmt = labels[stmt->label];
@@ -1072,7 +1080,7 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
                     return false;
                 auto node1 = EvaluateExpression(stmt->select, argmap, ths, retblk, false);
                 optimize_for_constants(&node1);
-                if (!IsConstantExpression(node1, false, false))
+                if (!isintconst(node1))
                     return false;
                 int label = stmt->label;
                 auto c = stmt->cases;
@@ -1097,6 +1105,10 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
                 stmt = stmt->lower;
                 continue;
             case st_expr:
+                if (!strcmp(node->v.func->sp->name, "minmax"))
+                {
+                    printf("hi");
+                }
                 if (stmt->select)
                 {
                     if (Optimizer::cparams.prm_debug)

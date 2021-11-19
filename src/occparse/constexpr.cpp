@@ -529,8 +529,6 @@ static void pushArray(SYMBOL* arg, EXPRESSION *exp, std::unordered_map<SYMBOL*, 
             exp2 = exp2->right;
         if (exp2->type == en_auto)
             finalsym = exp2->v.sp;
-        if (finalsym && strstr(finalsym->name, "41"))
-            printf("hi");
     }
     if (finalsym && isstructured(finalsym->tp) && basetype(finalsym->tp)->sp->sb->initializer_list && finalsym
         ->sb->init)
@@ -649,8 +647,6 @@ static EXPRESSION* HandleAssign(EXPRESSION* exp, std::unordered_map<SYMBOL*, Con
     }
     else if (exp->type == en_assign)
     {
-        if (((int)exp->right & 0xffff) == 0xaedc)
-            printf("hi");
         rv = EvaluateExpression(exp->right, argmap, ths, retblk, false);
         optimize_for_constants(&rv);
         EXPRESSION* exp1 = exp->left;
@@ -983,6 +979,12 @@ static EXPRESSION* EvaluateExpression(EXPRESSION* node, std::unordered_map<SYMBO
             }
         }
     } while (!stk.empty());
+    if (rv->type == en_add && isintconst(rv->left))
+    {
+        auto exp2 = rv->left;
+        rv->left = rv->right;
+        rv->right = exp2;
+    }
     return rv;
 }
 static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordered_map<SYMBOL*, ConstExprArgArray>& argmap, EXPRESSION* ths, EXPRESSION* retblk)
@@ -1041,10 +1043,6 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
             case st_select:
             case st_notselect:
             {
-                if (!strcmp(node->v.func->sp->name, "minmax"))
-                {
-                    printf("hi");
-                }
                 if (Optimizer::cparams.prm_debug)
                     return false;
                 auto node1 = EvaluateExpression(stmt->select, argmap, ths, retblk, false);
@@ -1105,10 +1103,6 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
                 stmt = stmt->lower;
                 continue;
             case st_expr:
-                if (!strcmp(node->v.func->sp->name, "minmax"))
-                {
-                    printf("hi");
-                }
                 if (stmt->select)
                 {
                     if (Optimizer::cparams.prm_debug)
@@ -1120,14 +1114,6 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
             case st_return:
                 if (stmt->select)
                 {
-                    if (!strcmp(node->v.func->sp->name, "$bequ"))
-                    {
-                        printf("hi");
-                    }
-                    if (!strcmp(node->v.func->sp->name, "minmax"))
-                    {
-                        printf("hi");
-                    }
                     if (node->v.func->returnEXP)
                     {
 //                        ConstExprRetBlock(node->v.func->sp, node->v.func->returnEXP);
@@ -1161,16 +1147,6 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
 }
 bool EvaluateConstexprFunction(EXPRESSION*&node)
 {
-    bool in = false;
-    if (!strcmp(node->v.func->sp->name, "$bequ"))
-    {
-        printf("hi");
-    }
-    if (!strcmp(node->v.func->sp->name, "minmax"))
-    {
-        in = true;
-        printf("hi");
-    }
     if (node->v.func->sp->sb->isConstructor)
     {
         // we don't support constexpr constructors for classes with base classes right now...
@@ -1339,8 +1315,6 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
             }
         }
     }
-    if (in)
-        printf("hi");
     return rv;
 }
 }  // namespace Parser

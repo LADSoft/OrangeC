@@ -2859,6 +2859,34 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                                     exp1->v.t.thisptr = exp;
                                 }
                             }
+                            else if (exp1->type == en_void)
+                            {
+                                // from constexpr
+                                constructed = true;
+                                EXPRESSION* oldthis;
+                                for (oldthis = exp1; oldthis->right && oldthis->type == en_void; oldthis = oldthis->right);
+                                std::stack<EXPRESSION*> stk;
+                                stk.push(exp1);
+                                while (!stk.empty())
+                                {
+                                    auto top = stk.top();
+                                    stk.pop();
+                                    if (top->left)
+                                    {
+                                        if (top->left == oldthis)
+                                            top->left = exp;
+                                        else
+                                            stk.push(top->left);
+                                    }
+                                    if (top->right)
+                                    {
+                                        if (top->right == oldthis)
+                                            top->right = exp;
+                                        else
+                                            stk.push(top->right);
+                                    }
+                                }
+                            }
                             return exp1;
                         });
                     if (isautotype(tp1))

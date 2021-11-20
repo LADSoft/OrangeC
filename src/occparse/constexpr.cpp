@@ -994,7 +994,7 @@ static EXPRESSION* EvaluateExpression(EXPRESSION* node, std::unordered_map<SYMBO
             }
         }
     } while (!stk.empty());
-    if (rv->type == en_add && isintconst(rv->left))
+    if (rv && (rv->type == en_add && isintconst(rv->left)))
     {
         auto exp2 = rv->left;
         rv->left = rv->right;

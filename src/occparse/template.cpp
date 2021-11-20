@@ -7966,7 +7966,9 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
         if (data->sb->instantiated && TemplateInstantiationMatch(data, sym) && matchOverload(sym->tp, data->tp, true))
         {
             if (data->sb->attribs.inheritable.linkage4 == lk_virtual || isExtern)
+            {
                 return data;
+            }
             if (!data->sb->deferredCompile && sym->sb->deferredCompile)
             {
                 data->sb->deferredCompile = sym->sb->deferredCompile;
@@ -9620,6 +9622,7 @@ static TEMPLATEPARAMLIST* ResolveTemplateSelector(SYMBOL* sp, TEMPLATEPARAMLIST*
                             else
                             {
                                 tx = &rv->p->byClass.dflt;
+                                rv->p->byClass.val = nullptr;
                             }
                             tp = args->p->byClass.dflt;
                             while (tp->type != bt_templateselector)

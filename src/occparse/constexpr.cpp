@@ -380,7 +380,8 @@ static EXPRESSION* LookupThis(EXPRESSION* exp, const std::unordered_map<SYMBOL*,
                 exp1->type = en_cshimthis;
                 exp1->v.sp = nullptr;
                 exp1->v.constexprData = t.second;
-                localMap.back().push_front(ConstExprThisPtr{ exp, exp1 });
+                if (nestedMaps.size() <= 1)
+                    localMap.back().push_front(ConstExprThisPtr{ exp, exp1 });
                 return exp1;
             }
         }
@@ -533,17 +534,31 @@ static void pushArray(SYMBOL* arg, EXPRESSION *exp, std::unordered_map<SYMBOL*, 
     if (finalsym && isstructured(finalsym->tp) && basetype(finalsym->tp)->sp->sb->initializer_list && finalsym
         ->sb->init)
     {
-        std::deque<INITIALIZER*> queue;
+        int n = 0;
         for (auto t = finalsym->sb->init; t; t = t->next)
-            queue.push_back(t);
-        int n = finalsym->tp->sp->templateParams->next->p->byClass.val->size;
-        auto arr = Allocate<EXPRESSION*>(queue.size() * n + 1);
-        argmap[finalsym] = { (int)queue.size() * n, arr };
+            n++;
+        auto tp = Allocate<TYPE>();
+        tp->type = bt_pointer;
+        tp->btp = finalsym->tp->sp->templateParams->next->p->byClass.val;
+        tp->size = n * tp->btp->size;
+        tp->array = true;
+        auto sym = makeID(sc_global, tp, nullptr, AnonymousName());
+        sym->sb->constexpression = true;
+        sym->sb->init = finalsym->sb->init;
+        auto listDeclarator = Allocate<EXPRESSION*>(getSize(bt_pointer) + getSize(bt_int));
+
+        listDeclarator[0] = varNode(en_auto, sym);
+        listDeclarator[getSize(bt_pointer)] = intNode(en_c_i, n);
+
+        argmap[finalsym] = { getSize(bt_pointer) + getSize(bt_int), listDeclarator };
         if (arg)
             argmap[arg] = argmap[finalsym];
-        auto init = finalsym->sb->init;
-        int i = 0;
-        for (auto t : queue) arr[i++*n] = t->exp;
+        for (auto t = finalsym->sb->init; t; t = t->next)
+        {
+            t->basetp = tp->btp;
+            cast(t->basetp, &t->exp);
+            optimize_for_constants(&t->exp);
+        }
     }
     else
     {

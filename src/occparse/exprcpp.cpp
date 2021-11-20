@@ -1883,6 +1883,13 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
                 callConstructor(&tpf, exp, initializers, false, arrSize, true, false, false, true, false, false, true);
                 PromoteConstructorArgs(initializers->sp, initializers);
             }
+            if (!initializers->arguments)
+            {
+                // empty arguments means value construct...
+                EXPRESSION* clr = exprNode(en_blockclear, val, nullptr);
+                clr->size = (*tp)->size;
+                *exp = exprNode(en_void, clr, *exp);
+            }
         }
         else
         {

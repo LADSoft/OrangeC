@@ -111,6 +111,7 @@ static void inlineBindThis(SYMBOL* funcsp, SYMLIST* hr, EXPRESSION* thisptr)
                               : inlineGetThisPtr(thisptr);
                 simpleSym = Optimizer::SymbolManager::Get(sym = makeID(sc_auto, sym->tp, nullptr, AnonymousName()));
                 simpleSym->allocate = true;
+                simpleSym->anonymous = true;
                 simpleSym->inAllocTable = true;
                 Optimizer::temporarySymbols.push_back(simpleSym);
                 dest = varNode(en_auto, sym);

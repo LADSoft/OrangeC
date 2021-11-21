@@ -614,22 +614,24 @@ static void pushArray(SYMBOL* arg, INITLIST* il, std::unordered_map<SYMBOL*, Con
     listDeclarator[getSize(bt_pointer)] = intNode(en_c_i, n);
 
     argmap[arg] = { getSize(bt_pointer) + getSize(bt_int), listDeclarator };
-
+    argmap[sym] = { n, Allocate<EXPRESSION*>(tp->size) };
     INITIALIZER** p = &sym->sb->init;
     int offs = 0;
     tp = il->tp;
     EXPRESSION* exp = il->exp;
+    n = 0;
     while (il)
     {
         *p = Allocate<INITIALIZER>();
         (*p)->basetp = tp;
         (*p)->offset = offs;
-        offs += tp->size;
+        offs += il->tp->size;
         (*p)->exp = il->exp;
         if (il->exp->type != exp->type)
         {
             cast(tp, &(*p)->exp);
         }
+        argmap[sym].data[n++] = (*p)->exp;
         il = il->next;
         p = &(*p)->next;
     }
@@ -717,11 +719,14 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, ConstExprArg
         auto exp1 = exp;
         if (lvalue(exp1->left))
             exp1 = exp1->left;
-        if (exp1->left->type == en_autoinc || exp1->left->type == en_autodec)
+        auto exp3 = exp1->left;
+        while (castvalue(exp3))
+            exp3 = exp3->left;
+        if (exp3->type == en_autoinc || exp3->type == en_autodec)
             exp1->left = EvaluateExpression(exp1->left, argmap, ths, retblk, false);
-        if (ths && exp1->left->type == en_structadd && exp1->left->left->type == en_l_p && exp1->left->left->left->type == en_auto && exp1->left->left->left->v.sp->sb->thisPtr)
+        if (ths && exp3->type == en_structadd && exp3->left->type == en_l_p && exp3->left->left->type == en_auto && exp3->left->left->v.sp->sb->thisPtr)
         {
-            int i = exp1->left->right->v.i;
+            int i = exp3->right->v.i;
             if (ths->v.constexprData.data[i])
             {
                 exp1->left->type = en_cshimref;
@@ -730,7 +735,7 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, ConstExprArg
                 rv = true;
             }
         }
-        else if (ths && exp1->left->type == en_auto && exp1->left->v.sp->sb->thisPtr)
+        else if (ths && exp3->type == en_auto && exp3->v.sp->sb->thisPtr)
         {
             if (ths->v.constexprData.data[0])
             {
@@ -740,14 +745,14 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, ConstExprArg
                 rv = true;
             }
         }
-        else if (exp1->left->type == en_add)
+        else if (exp3->type == en_add)
         {
-            auto exp2 = exp1->left->left;
+            auto exp2 = exp3->left;
             while (castvalue(exp2))
                 exp2 = exp2->left;
             if (exp2->type == en_auto)
             {
-                auto val = EvaluateExpression(exp1->left->right, argmap, ths, retblk, false);
+                auto val = EvaluateExpression(exp3->right, argmap, ths, retblk, false);
                 optimize_for_constants(&val);
                 if (isintconst(val) && val->v.i < exp2->v.sp->tp->size)
                 {
@@ -767,9 +772,9 @@ if (xx)
                 } 
             }
         }
-        else if (exp1->left && exp1->left->type == en_auto)
+        else if (exp3 && exp3->type == en_auto)
         {
-        auto xx = argmap[exp1->left->v.sp].data;
+        auto xx = argmap[exp3->v.sp].data;
         if (xx)
         {
             auto node1 = xx[0];
@@ -1162,12 +1167,15 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
 }
 bool EvaluateConstexprFunction(EXPRESSION*&node)
 {
+    if (!strcmp(node->v.func->sp->name, "minmax"))
+        printf("hi");
     if (node->v.func->sp->sb->isConstructor)
     {
         // we don't support constexpr constructors for classes with base classes right now...
         if (node->v.func->sp->sb->parentClass->sb->baseClasses)
             return false;
     }
+
     auto exp = node->v.func->thisptr;
     if (exp && exp->type == en_add)
         exp = exp->left;
@@ -1320,8 +1328,14 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
                     }
                     else
                     {
+
                         if (!ths || !getStructureDeclaration())
                             rv = EvaluateStatements(node, stmt->lower, argmap, ths, nullptr);
+                        if (rv && nestedMaps.size() == 1)
+                        {
+                            node = EvaluateExpression(node, argmap, ths, nullptr, false);
+                            optimize_for_constants(&node);
+                        }
                     }
 
                     nestedMaps.pop();

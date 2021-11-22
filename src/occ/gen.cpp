@@ -5731,7 +5731,7 @@ void asm_atomic(Optimizer::QUAD* q)
                     getAmodes(q, &opa, q->ans, &apal, &apah);
                     int lab = beGetLabel;
                     int regflagsa = makeregflags(apal);
-                    int regflagsl = regflagsa | makeregflags(aprl);
+                    int regflagsl = regflagsa | makeregflags(aprl) | makeregflags(apll);
                     int reg1=0, reg2=0, reg3 = 0;
                     bool pushreg1 = false, pushreg2= false, pushreg3;
                     if (aprl->mode == am_immed)

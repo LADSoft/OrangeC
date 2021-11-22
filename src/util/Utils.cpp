@@ -440,9 +440,9 @@ bool Utils::HasExt(const char* buffer, const char* ext)
 bool Utils::FileExists(const char* buffer)
 {
 #ifdef _WIN32
-    return GetFileAttributesA(buffer) != 0xffffffff;
+    return !(GetFileAttributesA(buffer) & FILE_ATTRIBUTE_DIRECTORY);
 #else
-    return access(buffer, 0) == 0;
+    return access(buffer, 4) == 0;
 #endif
 }
 std::vector<std::string> Utils::split(std::string strToSplit, char delimeter)

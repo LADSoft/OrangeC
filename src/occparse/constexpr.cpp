@@ -1173,10 +1173,6 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
         if (node->v.func->sp->sb->parentClass->sb->baseClasses)
             return false;
     }
-    if (!strcmp(node->v.func->sp->name, "$bequ"))
-        printf("hi");
-    if (!strcmp(node->v.func->sp->name, "minmax"))
-        printf("hi");
 
     auto exp = node->v.func->thisptr;
     if (exp && exp->type == en_add)

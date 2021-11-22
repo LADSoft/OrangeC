@@ -83,6 +83,7 @@ typedef struct atomic_flag
     unsigned char: ATOMIC_CHAR_LOCK_FREE == 2,   \
     short: ATOMIC_SHORT_LOCK_FREE == 2,   \
     unsigned short: ATOMIC_SHORT_LOCK_FREE == 2,   \
+    wchar_t: ATOMIC_WCHAR_T_LOCK_FREE == 2,   \
     int: ATOMIC_INT_LOCK_FREE == 2,   \
     unsigned int: ATOMIC_INT_LOCK_FREE == 2,   \
     long: ATOMIC_LONG_LOCK_FREE == 2,   \

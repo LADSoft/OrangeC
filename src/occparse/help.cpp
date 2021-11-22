@@ -1890,10 +1890,14 @@ static TYPE* inttype(enum e_bt t1)
             return &stdchar;
         case bt_unsigned_char:
             return &stdunsignedchar;
+        case bt_signed_char:
+            return &stdsignedchar;
         case bt_short:
             return &stdshort;
         case bt_unsigned_short:
             return &stdunsignedshort;
+        case bt_wchar_t:
+            return &stdwidechar;
         default:
         case bt_int:
         case bt_inative:

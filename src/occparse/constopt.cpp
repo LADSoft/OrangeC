@@ -381,6 +381,7 @@ long long MaxOut(enum e_bt size, long long value)
             bits = getSize(bt_short) * 8 - 1;
             break;
         case bt_unsigned_short:
+        case bt_wchar_t:
             bits = getSize(bt_short) * 8;
             break;
         default:

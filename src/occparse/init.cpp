@@ -380,6 +380,7 @@ static int dumpBits(INITIALIZER** init)
             Optimizer::genint(resolver);
             break;
         case bt_char16_t:
+        case bt_wchar_t:
             Optimizer::genuint16(resolver);
             break;
         case bt_char32_t:

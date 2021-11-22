@@ -464,6 +464,7 @@ Optimizer::st_type Optimizer::SymbolManager::Get(enum Parser::e_bt type)
     switch (type)
     {
         case bt_char:
+        case bt_signed_char:
         case bt_bool:
         case bt_short:
         case bt_int:

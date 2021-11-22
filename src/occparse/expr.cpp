@@ -5335,6 +5335,7 @@ static LEXLIST* expression___typeid(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXP
                     id = 1;
                     break;
                 case bt_unsigned_short:
+                case bt_wchar_t:
                     id = 2;
                     break;
                 case bt_unsigned:

@@ -1,5 +1,64 @@
 Release notes:
 
+version 6.0.51:
+* add proper support for evaluating constexpr functions* 
+* finish 'algorithm' part of libcxx tests
+* support free embarcadero compiler
+* do some fixes for the VS2022 analyzer
+* occ: perform function argument lookup for overloaded functions properly
+* occ: take out an ambiguous function reference when converting with a cast operator
+* occ: would crash when using an undefined symbol as a function return type
+* occ: fix some crashes
+* occ: handle difference between two return values better, when both values are template selectors
+* occ: when constructing a structured parameter, don't need to consider the const/volatile status of the original structure for purposes of parameter matching
+* occ: handle template argument matching when the function param is nullptr, a little better.
+* occ: allow conversions of integer types, while in nested template parsing
+* occ: clean up declval handling
+* occ: handle pointer/array matching in arguments a little better
+* occ: fix bug when using address of a templated function as an argument
+* occ: nonstatic member data can't be constexpr
+* occ: fix problem where a function was mis-marked as a specialization
+* occ: is_constructible and friends should return false, when the constructor is inaccessible 
+* occ: fix various bugs when compiling std::min, std::max, and std::minmax
+* occ: fix various bugs with initializer_lists
+* occ: add gcc-style command line options for printing various compiler-related data 
+* occ: add a custom hash function for use with backend function lookups
+* occ: change debug flag from /v to /g, /v gives version info
+* occ: use stdout for banner and version info
+* occ: void* and nullptr_t are different types for purposes of template substitution
+* occ: ignore -fPIC
+* occ: /w+ crashed the compiler
+* occ: add /Wall and /Wextra
+* occ: add some long-options compatibility with gnu make
+* occ: fix -M and add friends
+* occ: location of 'previous' definition is displayed with the duplicate definition error
+* occ: allow more customization in error list
+* occ: update to latest version of sqlite3, fix bugs when compiling it
+* occ: handle floating point match builtin guards for libcxx properly
+* occ: disambiguate pow() templates properly
+* occ: fix complex version of pow() template not to crash
+* occ: a = b() where b is a structure type should value-initialize a
+* occ: fix bug when generating rtti for structured return values
+* occ: fix crash when using a member function but forgetting the parenthesis
+* occ: fix bug where __unwrap_ref_decay would not work properly when used on multiple
+* *  arguments of the same template function
+* occ: fix optimizer bug that caused excess code movement
+* orc: parse c-like types, enums, function prototypes
+* ocpp: add dependency generation
+* omake: allow ad-hoc specification of variables on the command line in addition to the current switches
+* rtl: fwrite, don't do divide on return if incoming size == 1 (speed optimization)
+* rtl: buffer stdout and stderr (speed optimization)
+* rtl: fix stdint.h include guards to work with C++
+* rtl: add CONSOLE_SCREEN_BUFFER_INFOEX
+* rtl: add sndAlias macro and fix some problems with the related macros
+* rtl: add various include guards to be compatible with other compilers, e.g. to sys/types.h
+* rtl: include mmsystem.h in windows.h
+* rtl: add _lseeki64 and _commit
+* appveyor: bump compiler up to VS2019
+* appveyor: fix appveyor build to fail more gracefully
+* appveyor: miscellaneous build cleanup
+* git rid of various dead code from the repository
+
 version 6.0.50:
 * various projects: fix various GCC warnings
 * various projects: add a diagnostic when an output file cannot be opened or created

@@ -1167,14 +1167,16 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
 }
 bool EvaluateConstexprFunction(EXPRESSION*&node)
 {
-    if (!strcmp(node->v.func->sp->name, "minmax"))
-        printf("hi");
     if (node->v.func->sp->sb->isConstructor)
     {
         // we don't support constexpr constructors for classes with base classes right now...
         if (node->v.func->sp->sb->parentClass->sb->baseClasses)
             return false;
     }
+    if (!strcmp(node->v.func->sp->name, "$bequ"))
+        printf("hi");
+    if (!strcmp(node->v.func->sp->name, "minmax"))
+        printf("hi");
 
     auto exp = node->v.func->thisptr;
     if (exp && exp->type == en_add)

@@ -2638,7 +2638,7 @@ static bool cloneTempExpr(EXPRESSION** expr, SYMBOL** found, SYMBOL** replace)
     }
     return rv;
 }
-void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListType, INITLIST** lptr, bool operands, bool asref)
+void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* initializerListType, INITLIST** lptr, bool operands, bool asref)
 {
     (void)operands;
     INITLIST** initial = lptr;
@@ -2855,7 +2855,7 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
         }
         initList = anonymousVar(sc_auto, initializerListTemplate);
         initList->v.sp->sb->constexpression = true;
-        if (inConstantExpression && !listOfScalars.empty())
+        if (func->sb->constexpression && !listOfScalars.empty())
         {
             INITIALIZER** last = &initList->v.sp->sb->init;
             for (auto t : listOfScalars)
@@ -4074,7 +4074,9 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                         }
                     }
                     auto next = (*lptr)->next;
-                    CreateInitializerList(initializerListTemplate, initializerListType, lptr, operands, initializerRef);
+                    if ((*lptr)->nested)
+                        (*lptr)->next = nullptr;
+                    CreateInitializerList(funcparams->sp, initializerListTemplate, initializerListType, lptr, operands, initializerRef);
                     (*lptr)->next = next;
                     if (hr->next)
                         AdjustParams(funcparams->sp, hr->next, & (*lptr)->next, operands, true);

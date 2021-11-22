@@ -3670,7 +3670,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
             }
             if (initializerListType)
             {
-                CreateInitializerList(initializerListTemplate, initializerListType, &params->arguments, false, initializerRef);
+                CreateInitializerList(cons1, initializerListTemplate, initializerListType, &params->arguments, false, initializerRef);
                 if (basetype(cons1->tp)->syms->table[0]->next->next)
                     AdjustParams(cons1, basetype(cons1->tp)->syms->table[0]->next->next, &params->arguments->next, false,
                                  implicit && !cons1->sb->isExplicit);

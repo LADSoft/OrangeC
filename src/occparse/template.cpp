@@ -4036,8 +4036,16 @@ static bool HasUnevaluatedTemplateSelectors(EXPRESSION* exp)
 }
 TYPE* TemplateLookupTypeFromDeclType(TYPE* tp)
 {
+    static int nested;
+    if (nested >= 10)
+    {
+        return nullptr;
+    }
+    nested++;
     EXPRESSION* exp = tp->templateDeclType;
-    return LookupTypeFromExpression(exp, nullptr, false);
+    auto rv = LookupTypeFromExpression(exp, nullptr, false);
+    nested--;
+    return rv;
 }
 TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
 {
@@ -11076,7 +11084,12 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEP
     }
     else if (tp->type == bt_templatedecltype)
     {
+        static int nested;
+        if (nested >= 10)
+            return rv;
+        nested++;
         tp->templateDeclType = SpecifyArgInt(sym, tp->templateDeclType, orig, args, origTemplate, origUsing);
+        nested--;
     }
     else if (basetype(tp)->type == bt_templateselector)
     {

@@ -664,6 +664,8 @@ static EXPRESSION* HandleAssign(EXPRESSION* exp, std::unordered_map<SYMBOL*, Con
     }
     else if (exp->type == en_assign)
     {
+        if (!lvalue(exp->left))
+            return nullptr;
         rv = EvaluateExpression(exp->right, argmap, ths, retblk, false);
         optimize_for_constants(&rv);
         EXPRESSION* exp1 = exp->left;

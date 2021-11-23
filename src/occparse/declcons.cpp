@@ -3604,6 +3604,18 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
 
     if (cons1 && isfunction(cons1->tp))
     {
+        // quick check that we didn't find a constructor of the form:
+        // A(A<U>) where A and A<U> are the same specialization
+        if (cons && basetype(stp)->sp->sb->templateLevel)
+        {
+            SYMLIST* srch = cons1->tp->syms->table[0];
+            while (srch)
+            {
+                if (isstructured(srch->p->tp) && basetype(srch->p->tp)->sp->sb->templateLevel && sameTemplate(stp, basetype(srch->p->tp)))
+                    return false;
+                srch = srch->next;
+            }
+        }
         CheckCalledException(cons1, params->thisptr);
 
         if (cons1->sb->castoperator)

@@ -3062,7 +3062,15 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         p->exp = thisptr;
                         auto old = p->next;
                         p->next = nullptr;
-                        callConstructor(&ctype, &p->exp, params, false, nullptr, true, false, true, false, true, false, true);
+                        if (params->arguments->tp == nullptr)
+                        {
+                            p->tp = &stdint;
+                            p->exp = intNode(en_c_i, 0);
+                        }
+                        else
+                        {
+                            callConstructor(&ctype, &p->exp, params, false, nullptr, true, false, true, false, true, false, true);
+                        }
                         p->next = old;
                         if (!isref(sym->tp))
                         {
@@ -3194,6 +3202,12 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         TYPE* tpx = p->tp;
                         if (isref(tpx))
                             tpx = basetype(tpx)->btp;
+                        if (tpx->type == bt_templateparam)
+                        {
+                            tpx = tpx->templateParam->p->byClass.val;
+                            if (!tpx)
+                                tpx = basetype(sym->tp)->btp;
+                        }
                         if ((!isconst(basetype(sym->tp)->btp) && !isconst(sym->tp) &&
                              (sym->tp->type != bt_rref &&
                               (!func->sb->templateLevel &&
@@ -7915,8 +7929,11 @@ void GetLogicalDestructors(EXPRESSION* top, EXPRESSION* cur)
         {
             // it is going to be a local symbol if we get here...
             EXPRESSION* exp = cur->v.func->thisptr;
-            SYMBOL* sym = exp->v.sp;
-            if (!sym->sb->destructed && sym->sb->dest && sym->sb->dest->exp)
+            int offset;
+            SYMBOL* sym = nullptr;
+            exp = relptr(exp, offset, true);
+            if (exp) sym = exp->v.sp;
+            if (sym && !sym->sb->destructed && sym->sb->dest && sym->sb->dest->exp)
             {
                 Optimizer::LIST* listitem;
                 sym->sb->destructed = true;

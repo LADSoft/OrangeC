@@ -1220,127 +1220,130 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
     if (!args || (node->v.func->sp->sb->isConstructor && (matchesCopy(node->v.func->sp, false) || matchesCopy(node->v.func->sp, true))))
     {
         SYMBOL* found1 = node->v.func->sp;
-        if (!node->v.func->sp->sb->inlineFunc.stmt && node->v.func->sp->sb->deferredCompile)
+        if (isfunction(found1->tp))
         {
-            if (found1->sb->templateLevel && (found1->templateParams || found1->sb->isDestructor))
+            if (!node->v.func->sp->sb->inlineFunc.stmt && node->v.func->sp->sb->deferredCompile)
             {
-                found1 = found1->sb->mainsym;
-                if (found1->sb->castoperator)
+                if (found1->sb->templateLevel && (found1->templateParams || found1->sb->isDestructor))
                 {
-                    found1 = detemplate(found1, nullptr, basetype(node->v.func->thistp)->btp);
-                }
-                else
-                {
-                    found1 = detemplate(found1, node->v.func, nullptr);
-                }
-            }
-            if (found1)
-            {
-                if (found1->sb->templateLevel && !templateNestingCount && node->v.func->templateParams)
-                {
-                    int pushCount = pushContext(found1, false);
-                    found1 = TemplateFunctionInstantiate(found1, false, false);
-                    while (pushCount--)
-                        dropStructureDeclaration();
-                }
-                else
-                {
-                    if (found1->templateParams)
-                        instantiatingTemplate++;
-                    deferredCompileOne(found1);
-                    if (found1->templateParams)
-                        instantiatingTemplate--;
-                }
-            }
-        }
-        if (found1 && found1->sb->inlineFunc.stmt)
-        {
-            int i;
-            STATEMENT* stmt = found1->sb->inlineFunc.stmt;
-            while (stmt && stmt->type == st_expr)
-                stmt = stmt->next;
-            if (stmt && stmt->type == st_block && stmt->lower)
-            {
-                if (++functionNestingCount >= 1000)
-                {
-                    diag("EvaluateConstexprFunction: recursion level too high");
-                }
-                else
-                {
-                    std::unordered_map<SYMBOL*, ConstExprArgArray> argmap;
-                    std::unordered_map<SYMBOL*, ConstExprArgArray> tempmap;
-                    if (!nestedMaps.empty())
+                    found1 = found1->sb->mainsym;
+                    if (found1->sb->castoperator)
                     {
-                        auto&& o = *nestedMaps.top();
-                        for (auto s : o)
+                        found1 = detemplate(found1, nullptr, basetype(node->v.func->thistp)->btp);
+                    }
+                    else
+                    {
+                        found1 = detemplate(found1, node->v.func, nullptr);
+                    }
+                }
+                if (found1)
+                {
+                    if (found1->sb->templateLevel && !templateNestingCount && node->v.func->templateParams)
+                    {
+                        int pushCount = pushContext(found1, false);
+                        found1 = TemplateFunctionInstantiate(found1, false, false);
+                        while (pushCount--)
+                            dropStructureDeclaration();
+                    }
+                    else
+                    {
+                        if (found1->templateParams)
+                            instantiatingTemplate++;
+                        deferredCompileOne(found1);
+                        if (found1->templateParams)
+                            instantiatingTemplate--;
+                    }
+                }
+            }
+            if (found1 && found1->sb->inlineFunc.stmt)
+            {
+                int i;
+                STATEMENT* stmt = found1->sb->inlineFunc.stmt;
+                while (stmt && stmt->type == st_expr)
+                    stmt = stmt->next;
+                if (stmt && stmt->type == st_block && stmt->lower)
+                {
+                    if (++functionNestingCount >= 1000)
+                    {
+                        diag("EvaluateConstexprFunction: recursion level too high");
+                    }
+                    else
+                    {
+                        std::unordered_map<SYMBOL*, ConstExprArgArray> argmap;
+                        std::unordered_map<SYMBOL*, ConstExprArgArray> tempmap;
+                        if (!nestedMaps.empty())
                         {
-                      //      if (s.first->sb->storage_class != sc_parameter)
+                            auto&& o = *nestedMaps.top();
+                            for (auto s : o)
                             {
-                                argmap[s.first] = s.second;
+                                //      if (s.first->sb->storage_class != sc_parameter)
+                                {
+                                    argmap[s.first] = s.second;
+                                }
                             }
                         }
-                    }
-                    auto hr = basetype(found1->tp)->syms->table[0];
-                    if (hr->p->sb->thisPtr)
-                        hr = hr->next;
-                    auto arglist = node->v.func->arguments;
-                    while (hr && arglist)
-                    {
-                        auto exp = arglist->exp;
-                        if (exp && exp->type == en_auto && isstructured(exp->v.sp->tp) && basetype(exp->v.sp->tp)->sp->sb->initializer_list && argmap.find(exp->v.sp) != argmap.end())
+                        auto hr = basetype(found1->tp)->syms->table[0];
+                        if (hr->p->sb->thisPtr)
+                            hr = hr->next;
+                        auto arglist = node->v.func->arguments;
+                        while (hr && arglist)
                         {
-                            argmap[hr->p] = argmap[exp->v.sp];
+                            auto exp = arglist->exp;
+                            if (exp && exp->type == en_auto && isstructured(exp->v.sp->tp) && basetype(exp->v.sp->tp)->sp->sb->initializer_list && argmap.find(exp->v.sp) != argmap.end())
+                            {
+                                argmap[hr->p] = argmap[exp->v.sp];
+                            }
+                            else
+                            {
+                                argmap[hr->p] = { 1, Allocate<EXPRESSION*>() };
+                                argmap[hr->p].data[0] = exp;
+                            }
+
+                            if (arglist->nested)
+                                pushArray(hr->p, arglist->nested, tempmap);
+                            else
+                                pushArray(hr->p, exp, tempmap);
+                            hr = hr->next;
+                            arglist = arglist->next;
+                        }
+                        for (auto s : tempmap)
+                        {
+                            //      if (s.first->sb->storage_class != sc_parameter)
+                            {
+                                argmap[s.first] = s.second;
+                                if (!nestedMaps.empty())
+                                    (*nestedMaps.top())[s.first] = s.second;
+                            }
+                        }
+                        nestedMaps.push(&argmap);
+                        EXPRESSION* ths = nullptr;
+                        if (found1->sb->isConstructor)
+                            ths = ConstExprInitializeMembers(found1, node->v.func->thisptr, node->v.func->arguments, argmap);
+                        else
+                            ths = LookupThis(node->v.func->thisptr, argmap);
+                        if (ths == (EXPRESSION*)-1)
+                        {
+                            // cant do constexpr on nonstatic global struct instances
+                            // but don't know the difference between static and nonstatic here
+                            // so we just don't do constexpr on global struct instances...
+                            rv = false;
                         }
                         else
                         {
-                            argmap[hr->p] = { 1, Allocate<EXPRESSION*>() };
-                            argmap[hr->p].data[0] = exp;
+
+                            if (!ths || !getStructureDeclaration())
+                                rv = EvaluateStatements(node, stmt->lower, argmap, ths, nullptr);
+                            if (rv && nestedMaps.size() == 1)
+                            {
+                                node = EvaluateExpression(node, argmap, ths, nullptr, false);
+                                optimize_for_constants(&node);
+                            }
                         }
 
-                        if (arglist->nested)
-                            pushArray(hr->p, arglist->nested, tempmap);
-                        else
-                            pushArray(hr->p, exp, tempmap);
-                        hr = hr->next;
-                        arglist = arglist->next;
+                        nestedMaps.pop();
                     }
-                    for (auto s : tempmap)
-                    {
-                        //      if (s.first->sb->storage_class != sc_parameter)
-                        {
-                            argmap[s.first] = s.second;
-                            if (!nestedMaps.empty())
-                                (*nestedMaps.top())[s.first] = s.second;
-                        }
-                    }
-                    nestedMaps.push(&argmap);
-                    EXPRESSION* ths = nullptr;
-                    if (found1->sb->isConstructor)
-                        ths = ConstExprInitializeMembers(found1, node->v.func->thisptr, node->v.func->arguments, argmap);
-                    else
-                        ths = LookupThis(node->v.func->thisptr, argmap);
-                    if (ths == (EXPRESSION*)-1)
-                    {
-                        // cant do constexpr on nonstatic global struct instances
-                        // but don't know the difference between static and nonstatic here
-                        // so we just don't do constexpr on global struct instances...
-                        rv = false;
-                    }
-                    else
-                    {
-
-                        if (!ths || !getStructureDeclaration())
-                            rv = EvaluateStatements(node, stmt->lower, argmap, ths, nullptr);
-                        if (rv && nestedMaps.size() == 1)
-                        {
-                            node = EvaluateExpression(node, argmap, ths, nullptr, false);
-                            optimize_for_constants(&node);
-                        }
-                    }
-
-                    nestedMaps.pop();
+                    --functionNestingCount;
                 }
-                --functionNestingCount;
             }
         }
     }

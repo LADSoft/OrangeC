@@ -7305,48 +7305,18 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
             xsym = psym->p->byClass.val;
             switch (porig->p->type)
             {
-                case kw_typename:
+            case kw_typename:
+            {
+                if (porig->p->packed != psym->p->packed)
+                    return false;
+                if (porig->p->packed)
                 {
-                    if (porig->p->packed != psym->p->packed)
-                        return false;
-                    if (porig->p->packed)
+                    TEMPLATEPARAMLIST* packorig = porig->p->byPack.pack;
+                    TEMPLATEPARAMLIST* packsym = psym->p->byPack.pack;
+                    while (packorig && packsym)
                     {
-                        TEMPLATEPARAMLIST* packorig = porig->p->byPack.pack;
-                        TEMPLATEPARAMLIST* packsym = psym->p->byPack.pack;
-                        while (packorig && packsym)
-                        {
-                            TYPE* torig = (TYPE*)packorig->p->byClass.val;
-                            TYPE* tsym = (TYPE*)packsym->p->byClass.val;
-                            if (basetype(torig)->nullptrType != basetype(tsym)->nullptrType)
-                                return false;
-                            if (isref(torig) != isref(tsym))
-                                return false;
-                            if (basetype(torig)->array != basetype(tsym)->array)
-                                return false;
-                            if (basetype(torig)->array && !!basetype(torig)->esize != !!basetype(tsym)->esize)
-                                return false;
-                            if ((basetype(torig)->type == bt_enum) != (basetype(tsym)->type == bt_enum))
-                                return false;
-                            if (tsym->type == bt_templateparam)
-                                tsym = tsym->templateParam->p->byClass.val;
-                            if (!templatecomparetypes(torig, tsym, true) && !sameTemplate(torig, tsym, true))
-                                return false;
-                            if (isref(torig))
-                                torig = basetype(torig)->btp;
-                            if (isref(tsym))
-                                tsym = basetype(tsym)->btp;
-                            if (isconst(torig) != isconst(tsym) || isvolatile(torig) != isvolatile(tsym))
-                                return false;
-                            packorig = packorig->next;
-                            packsym = packsym->next;
-                        }
-                        if (packorig || packsym)
-                            return false;
-                    }
-                    else
-                    {
-                        TYPE* torig = (TYPE*)xorig;
-                        TYPE* tsym = (TYPE*)xsym;
+                        TYPE* torig = (TYPE*)packorig->p->byClass.val;
+                        TYPE* tsym = (TYPE*)packsym->p->byClass.val;
                         if (basetype(torig)->nullptrType != basetype(tsym)->nullptrType)
                             return false;
                         if (isref(torig) != isref(tsym))
@@ -7357,10 +7327,9 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                             return false;
                         if ((basetype(torig)->type == bt_enum) != (basetype(tsym)->type == bt_enum))
                             return false;
-                        if ((!templatecomparetypes(torig, tsym, true) || !templatecomparetypes(tsym, torig, true)) &&
-                            !sameTemplate(torig, tsym, true))
-                            return false;
-                        if (!comparePointerTypes(torig, tsym))
+                        if (tsym->type == bt_templateparam)
+                            tsym = tsym->templateParam->p->byClass.val;
+                        if (!templatecomparetypes(torig, tsym, true) && !sameTemplate(torig, tsym, true))
                             return false;
                         if (isref(torig))
                             torig = basetype(torig)->btp;
@@ -7368,49 +7337,80 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                             tsym = basetype(tsym)->btp;
                         if (isconst(torig) != isconst(tsym) || isvolatile(torig) != isvolatile(tsym))
                             return false;
-                        if (basetype(tsym)->type == bt_enum || basetype(tsym)->enumConst)
-                        {
-                            if (basetype(torig)->sp != basetype(tsym)->sp)
-                                return false;
-                        }
+                        packorig = packorig->next;
+                        packsym = packsym->next;
                     }
-                    break;
+                    if (packorig || packsym)
+                        return false;
                 }
-                case kw_template:
-                    if (xorig != xsym)
+                else if (xorig && xsym)
+                {
+                    TYPE* torig = (TYPE*)xorig;
+                    TYPE* tsym = (TYPE*)xsym;
+                    if (basetype(torig)->nullptrType != basetype(tsym)->nullptrType)
                         return false;
-                    break;
-                case kw_int:
-                    if (porig->p->packed != psym->p->packed)
+                    if (isref(torig) != isref(tsym))
                         return false;
-                    if (porig->p->packed)
+                    if (basetype(torig)->array != basetype(tsym)->array)
+                        return false;
+                    if (basetype(torig)->array && !!basetype(torig)->esize != !!basetype(tsym)->esize)
+                        return false;
+                    if ((basetype(torig)->type == bt_enum) != (basetype(tsym)->type == bt_enum))
+                        return false;
+                    if ((!templatecomparetypes(torig, tsym, true) || !templatecomparetypes(tsym, torig, true)) &&
+                        !sameTemplate(torig, tsym, true))
+                        return false;
+                    if (!comparePointerTypes(torig, tsym))
+                        return false;
+                    if (isref(torig))
+                        torig = basetype(torig)->btp;
+                    if (isref(tsym))
+                        tsym = basetype(tsym)->btp;
+                    if (isconst(torig) != isconst(tsym) || isvolatile(torig) != isvolatile(tsym))
+                        return false;
+                    if (basetype(tsym)->type == bt_enum || basetype(tsym)->enumConst)
                     {
-                        TEMPLATEPARAMLIST* packorig = porig->p->byPack.pack;
-                        TEMPLATEPARAMLIST* packsym = psym->p->byPack.pack;
-                        while (packorig && packsym)
-                        {
-                            EXPRESSION* torig = (EXPRESSION*)packorig->p->byClass.val;
-                            EXPRESSION* tsym = (EXPRESSION*)packsym->p->byClass.val;
-                            if (!templatecomparetypes(packorig->p->byNonType.tp, packsym->p->byNonType.tp, true))
-                                return false;
-                            if (tsym && !equalTemplateIntNode((EXPRESSION*)torig, (EXPRESSION*)tsym))
-                                return false;
-                            packorig = packorig->next;
-                            packsym = packsym->next;
-                        }
-                        if (packorig || packsym)
+                        if (basetype(torig)->sp != basetype(tsym)->sp)
                             return false;
                     }
-                    else
+                }
+                break;
+            }
+            case kw_template:
+                if (xorig != xsym)
+                    return false;
+                break;
+            case kw_int:
+                if (porig->p->packed != psym->p->packed)
+                    return false;
+                if (porig->p->packed)
+                {
+                    TEMPLATEPARAMLIST* packorig = porig->p->byPack.pack;
+                    TEMPLATEPARAMLIST* packsym = psym->p->byPack.pack;
+                    while (packorig && packsym)
                     {
-                        if (!templatecomparetypes(porig->p->byNonType.tp, psym->p->byNonType.tp, true))
+                        EXPRESSION* torig = (EXPRESSION*)packorig->p->byClass.val;
+                        EXPRESSION* tsym = (EXPRESSION*)packsym->p->byClass.val;
+                        if (!templatecomparetypes(packorig->p->byNonType.tp, packsym->p->byNonType.tp, true))
                             return false;
-                        if (xsym && xorig && !equalTemplateIntNode((EXPRESSION*)xorig, (EXPRESSION*)xsym))
+                        if (tsym && !equalTemplateIntNode((EXPRESSION*)torig, (EXPRESSION*)tsym))
                             return false;
+                        packorig = packorig->next;
+                        packsym = packsym->next;
                     }
-                    break;
-                default:
-                    break;
+                    if (packorig || packsym)
+                        return false;
+                }
+                else
+                {
+                    if (!templatecomparetypes(porig->p->byNonType.tp, psym->p->byNonType.tp, true))
+                        return false;
+                    if (xsym && xorig && !equalTemplateIntNode((EXPRESSION*)xorig, (EXPRESSION*)xsym))
+                        return false;
+                }
+                break;
+            default:
+                break;
             }
             porig = porig->next;
             psym = psym->next;

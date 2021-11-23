@@ -4338,7 +4338,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                         getSingleConversion(initializerListType, a ? a->tp : ((SYMBOL*)(*hrt)->p)->tp, a ? a->exp : nullptr, &m,
                                             seq, sym, userFunc ? &userFunc[n] : nullptr, true);
                     }
-                    else
+                    else if (a->tp && a->exp) // might be an empty initializer list...
                     {
                         getSingleConversion((basetype(tp1)->sp)->tp, a ? a->tp : ((SYMBOL*)(*hrt)->p)->tp, a ? a->exp : nullptr, & m,
                             seq, sym, userFunc ? &userFunc[n] : nullptr, true);

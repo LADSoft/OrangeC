@@ -2152,6 +2152,13 @@ static void free_desc(AGGREGATE_DESCRIPTOR** descin, AGGREGATE_DESCRIPTOR** cach
         *cache = temp;
     }
 }
+static bool atend(AGGREGATE_DESCRIPTOR* desc)
+{
+    if (isstructured(desc->tp))
+        return !desc->hr;
+    else
+        return desc->tp->size && desc->reloffset >= desc->tp->size;
+}
 static void unwrap_desc(AGGREGATE_DESCRIPTOR** descin, AGGREGATE_DESCRIPTOR** cache, INITIALIZER** dest)
 {
     if (!Optimizer::cparams.prm_cplusplus)
@@ -2161,24 +2168,27 @@ static void unwrap_desc(AGGREGATE_DESCRIPTOR** descin, AGGREGATE_DESCRIPTOR** ca
         // this won't work with the declarator syntax in C++20
         if (Optimizer::cparams.prm_cplusplus && dest)
         {
-            SYMBOL* sym = ((SYMBOL*)((*descin)->hr->p));
-            if (sym->sb->init)
+            if ((*descin)->hr)
             {
-                INITIALIZER* list = sym->sb->init;
-                while (list)
+                SYMBOL* sym = ((SYMBOL*)((*descin)->hr->p));
+                if (sym->sb->init)
                 {
-                    if (list->basetp && list->exp)
+                    INITIALIZER* list = sym->sb->init;
+                    while (list)
                     {
-                        SYMBOL* fieldsp;
-                        initInsert(dest, list->basetp, list->exp, list->offset + (*descin)->offset + (*descin)->reloffset, false);
-                        if (ismember(sym))
+                        if (list->basetp && list->exp)
                         {
-                            (*dest)->fieldsp = sym;
-                            (*dest)->fieldoffs = intNode(en_c_i, (*descin)->offset);
+                            SYMBOL* fieldsp;
+                            initInsert(dest, list->basetp, list->exp, list->offset + (*descin)->offset + (*descin)->reloffset, false);
+                            if (ismember(sym))
+                            {
+                                (*dest)->fieldsp = sym;
+                                (*dest)->fieldoffs = intNode(en_c_i, (*descin)->offset);
+                            }
+                            dest = &(*dest)->next;
                         }
-                        dest = &(*dest)->next;
+                        list = list->next;
                     }
-                    list = list->next;
                 }
             }
             increment_desc(descin, cache);
@@ -2332,13 +2342,6 @@ static bool designator(LEXLIST** lex, SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** des
     }
     return false;
 }
-static bool atend(AGGREGATE_DESCRIPTOR* desc)
-{
-    if (isstructured(desc->tp))
-        return !desc->hr;
-    else
-        return desc->tp->size && desc->reloffset >= desc->tp->size;
-}
 static void increment_desc(AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** cache)
 {
     while (*desc)
@@ -2403,7 +2406,9 @@ static void increment_desc(AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** c
                 free_desc(desc, cache);
             }
             else
+            {
                 break;
+            }
         }
     }
 }

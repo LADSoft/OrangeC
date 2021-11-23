@@ -868,36 +868,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         select = anonymousVar(sc_auto, &stdint);
                         begin = end = select;
                     }
-                    SYMBOL* sym = namespacesearch("std", globalNameSpace, false, false);
-                    if (sym && sym->sb->storage_class == sc_namespace)
-                    {
-                        sym = namespacesearch("initializer_list", sym->sb->nameSpaceValues, true, false);
-                        if (sym)
-                        {
-                            TEMPLATEPARAMLIST* tpl = Allocate<TEMPLATEPARAMLIST>();
-                            tpl->p = Allocate<TEMPLATEPARAM>();
-                            tpl->p->type = kw_typename;
-                            tpl->p->byClass.dflt = matchtp;
-                            auto sym1 = GetClassTemplate(sym, tpl, true);
-                            if (sym1)
-                            {
-                                sym1 = TemplateClassInstantiate(sym1, tpl,false, sc_auto);
-                                if (sym1)
-                                    sym = sym1;
-                            }
-                        }
-                    }
-                    if (sym)
-                    {
-                        selectTP = sym->tp;
-                    }
-                    else
-                    {
-                        selectTP = Allocate<TYPE>();
-                        selectTP->type = bt_struct;
-                        selectTP->sp = makeID(sc_type, selectTP, nullptr, "initializer_list");
-                        selectTP->sp->sb->initializer_list = true;
-                    }
+                    selectTP = InitializerListType(matchtp);
                     INITIALIZER* init;
                     initInsert(&init, &stdpointer, begin, 0, false);
                     initInsert(&init->next, &stdpointer, end, stdpointer.size, false);

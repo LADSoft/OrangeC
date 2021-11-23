@@ -2638,6 +2638,41 @@ static bool cloneTempExpr(EXPRESSION** expr, SYMBOL** found, SYMBOL** replace)
     }
     return rv;
 }
+TYPE* InitializerListType(TYPE* arg)
+{
+    SYMBOL* sym = namespacesearch("std", globalNameSpace, false, false);
+    if (sym && sym->sb->storage_class == sc_namespace)
+    {
+        sym = namespacesearch("initializer_list", sym->sb->nameSpaceValues, true, false);
+        if (sym)
+        {
+            TEMPLATEPARAMLIST* tpl = Allocate<TEMPLATEPARAMLIST>();
+            tpl->p = Allocate<TEMPLATEPARAM>();
+            tpl->p->type = kw_typename;
+            tpl->p->byClass.dflt = arg;
+            auto sym1 = GetClassTemplate(sym, tpl, true);
+            if (sym1)
+            {
+                sym1 = TemplateClassInstantiate(sym1, tpl, false, sc_auto);
+                if (sym1)
+                    sym = sym1;
+            }
+        }
+    }
+    TYPE* rtp;
+    if (sym)
+    {
+        rtp = sym->tp;
+    }
+    else
+    {
+        rtp = Allocate<TYPE>();
+        rtp->type = bt_struct;
+        rtp->sp = makeID(sc_type, rtp, nullptr, "initializer_list");
+        rtp->sp->sb->initializer_list = true;
+    }
+    return rtp;
+}
 void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* initializerListType, INITLIST** lptr, bool operands, bool asref)
 {
     (void)operands;
@@ -2855,7 +2890,7 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
         }
         initList = anonymousVar(sc_auto, initializerListTemplate);
         initList->v.sp->sb->constexpression = true;
-        if (func->sb->constexpression && !listOfScalars.empty())
+        if (func && func->sb->constexpression && !listOfScalars.empty())
         {
             INITIALIZER** last = &initList->v.sp->sb->init;
             for (auto t : listOfScalars)
@@ -3059,18 +3094,28 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         TYPE* ctype = sp->tp;
                         EXPRESSION* dexp = thisptr;
                         params->thisptr = thisptr;
+                        if (pinit && pinit->next || !pinit && !p->tp && !p->exp) // empty initializer list)
+                        {
+                            TYPE* tp;
+                            auto old = p->next;
+                            if (!pinit)
+                            {
+                                p->next = nullptr;
+                                tp = &stdint;
+                            }
+                            else
+                            {
+                                tp = pinit->tp;
+                            }
+                            p->tp = InitializerListType(tp);
+                            CreateInitializerList(nullptr, p->tp, tp, lptr, true, isref(sym->tp));
+                            p->next = old;
+                            p->nested = nullptr;
+                        }
                         p->exp = thisptr;
                         auto old = p->next;
                         p->next = nullptr;
-                        if (params->arguments->tp == nullptr)
-                        {
-                            p->tp = &stdint;
-                            p->exp = intNode(en_c_i, 0);
-                        }
-                        else
-                        {
-                            callConstructor(&ctype, &p->exp, params, false, nullptr, true, false, true, false, true, false, true);
-                        }
+                        callConstructor(&ctype, &p->exp, params, false, nullptr, true, false, true, false, true, false, true);
                         p->next = old;
                         if (!isref(sym->tp))
                         {

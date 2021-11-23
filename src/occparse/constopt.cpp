@@ -427,11 +427,13 @@ void dooper(EXPRESSION** node, int mode)
     {
         if (hasFloats(ep1))
         {
+            auto f = Allocate<FPF>();
             if (isunsignedexpr(ep2))
-                (*ep2->v.f) = (unsigned long long)ep2->v.i;
+                *f = (unsigned long long)ep2->v.i;
             else
-                (*ep2->v.f) = (long long)ep2->v.i;
+                *f = (long long)ep2->v.i;
             ep2->type = en_c_d;
+            ep2->v.f = f;
             refloat(ep2);
         }
         return;

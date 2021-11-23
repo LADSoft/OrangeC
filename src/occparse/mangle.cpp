@@ -994,6 +994,9 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage, bool isTemplateDefinition)
     switch (linkage)
     {
         case lk_auto:
+            if (sym->sb->parent)
+                if (sym->sb->uniqueID == 0)
+                    sym->sb->uniqueID = uniqueID++;            
             p = mangleClasses(p, theCurrentFunc);
             Optimizer::my_sprintf(p, "@%s", sym->name);
 

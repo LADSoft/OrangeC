@@ -2974,7 +2974,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
         }
         if (!*lptr)
         {
-            EXPRESSION* q = sym->sb->init->exp;
+            EXPRESSION* q = sym->sb->init ? sym->sb->init->exp : intNode(en_c_i, 0);
             optimize_for_constants(&q);
             *lptr = Allocate<INITLIST>();
             (*lptr)->exp = q;

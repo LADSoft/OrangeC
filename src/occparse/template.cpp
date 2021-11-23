@@ -7433,8 +7433,8 @@ static void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
 {
     if (newCls->tp->syms && (!newCls->templateParams || !newCls->templateParams->p->bySpecialization.types))
     {
-        SYMLIST* ns = newCls->tp->syms->table[0];
-        SYMLIST* os = tmpl->tp->syms->table[0];
+        SYMLIST* ns = newCls->tp->syms ? newCls->tp->syms->table[0] : nullptr;
+        SYMLIST* os = tmpl->tp->syms ? tmpl->tp->syms->table[0] : nullptr;
         while (ns && os)
         {
             SYMBOL* ss = (SYMBOL*)ns->p;
@@ -7482,8 +7482,8 @@ static void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
             ns = ns->next;
             os = os->next;
         }
-        ns = newCls->tp->tags->table[0]->next;
-        os = tmpl->tp->tags->table[0]->next;
+        ns = newCls->tp->tags ? newCls->tp->tags->table[0]->next : nullptr;
+        os = tmpl->tp->tags ? tmpl->tp->tags->table[0]->next : nullptr;
         while (ns && os)
         {
             SYMBOL* ss = (SYMBOL*)ns->p;
@@ -8569,7 +8569,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
         ClearArgValues(sp->templateParams, sp->sb->specialized);
         for (auto a = args; a; a = a->next)
         {
-            if (a->p->type == kw_template && a->p->byTemplate.dflt)
+            if (a->p->type == kw_template && a->p->byTemplate.dflt && a->p->byTemplate.dflt->sb)
                 ClearArgValues(a->p->byTemplate.dflt->templateParams, a->p->byTemplate.dflt->sb->specialized);
         }
         std::stack<TEMPLATEPARAMLIST*> tis;

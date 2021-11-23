@@ -4072,7 +4072,19 @@ static void getInitListConversion(TYPE* tp, INITLIST* list, TYPE* tpp, int* n, e
     {
         while (a)
         {
-            getSingleConversion(tp, a->tp, a->exp, n, seq, candidate, userFunc, true);
+            if (a->nested)
+            {
+                auto b = a->nested;
+                while (b)
+                {
+                    getSingleConversion(tp, b->tp, b->exp, n, seq, candidate, userFunc, true);
+                    b = b->next;
+                }
+            }
+            else
+            {
+                getSingleConversion(tp, a->tp, a->exp, n, seq, candidate, userFunc, true);
+            }
             a = a->next;
         }
     }

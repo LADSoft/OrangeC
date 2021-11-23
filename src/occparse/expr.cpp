@@ -3195,7 +3195,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         if (isref(tpx))
                             tpx = basetype(tpx)->btp;
                         if ((!isconst(basetype(sym->tp)->btp) && !isconst(sym->tp) &&
-                             (sym->tp->type != bt_rref ||
+                             (sym->tp->type != bt_rref &&
                               (!func->sb->templateLevel &&
                                (!func->sb->parentClass || !func->sb->parentClass->sb->templateLevel) /*forward*/)) &&
                              isconst(tpx)) ||

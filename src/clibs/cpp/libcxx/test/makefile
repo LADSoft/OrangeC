@@ -36,9 +36,6 @@ localization:
 numerics:
 	$(B) std/numerics
 
-pstl:
-	$(B) std/pstl
-
 re:
 	$(B) std/re
 

@@ -1014,7 +1014,7 @@ TYPE* PerformDeferredInitialization(TYPE* tp, SYMBOL* funcsp)
             }
         }
         else if (sym->sb->templateLevel && (!sym->sb->instantiated || sym->sb->attribs.inheritable.linkage4 != lk_virtual) &&
-                 sym->templateParams && allTemplateArgsSpecified(sym, sym->templateParams->next))
+                 sym->templateParams && allTemplateArgsSpecified(sym, sym->templateParams->next, false, true))
         {
             sym = TemplateClassInstantiateInternal(sym, nullptr, false);
             if (sym)
@@ -1023,7 +1023,7 @@ TYPE* PerformDeferredInitialization(TYPE* tp, SYMBOL* funcsp)
         else if (!sym->sb->templateLevel && sym->sb->parentClass && sym->sb->parentClass->sb->templateLevel &&
                  (!sym->sb->instantiated || sym->sb->attribs.inheritable.linkage4 != lk_virtual) &&
                  sym->sb->parentClass->templateParams &&
-                 allTemplateArgsSpecified(sym->sb->parentClass, sym->sb->parentClass->templateParams->next))
+                 allTemplateArgsSpecified(sym->sb->parentClass, sym->sb->parentClass->templateParams->next, false, true))
         {
             TEMPLATEPARAMLIST* tpl = sym->sb->parentClass->templateParams;
             sym->templateParams = tpl;
@@ -3288,7 +3288,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                     bool notype = false;
                     bool oldTemplateType = inTemplateType;
 
-                    lex = getBeforeType(lex, nullptr, &tp, &sp, nullptr, nullptr, false, storage_class, &linkage, &linkage2, &linkage3, false, false,
+                    lex = getBeforeType(lex, nullptr, &tp, &sp, nullptr, nullptr, false, storage_class, &linkage, &linkage2, &linkage3, nullptr, false, false,
                         true, false); /* fixme at file scope init */
                 }
                 else

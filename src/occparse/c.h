@@ -605,6 +605,7 @@ typedef struct sym
         unsigned long long ccStructId;            /* code completion struct id */
         struct _ccNamespaceData* ccNamespaceData; /* namespace data for code completion */
         unsigned declaring : 1;             /* currently being declared */
+        unsigned declaringRecursive : 1;    /* structure is recursively declared */
         unsigned compilerDeclared : 1;      /* compiler declared this */
         unsigned hasproto : 1;              /* C/90 language prototype was encountered */
         unsigned intagtable : 1;            /* it is in a tag table */

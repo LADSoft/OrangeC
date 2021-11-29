@@ -479,11 +479,18 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* t
             }
             else
             {
-                STRUCTSYM s;
-                s.str = strSym;
-                addStructureDeclaration(&s);
-                sp = classsearch(buf, false, false);
-                dropStructureDeclaration();
+                if (structLevel && !templateNestingCount && strSym->sb->templateLevel && (!strSym->sb->instantiated || strSym->sb->attribs.inheritable.linkage4 != lk_virtual))
+                {
+                    sp = nullptr;
+                }
+                else
+                {
+                    STRUCTSYM s;
+                    s.str = strSym;
+                    addStructureDeclaration(&s);
+                    sp = classsearch(buf, false, false);
+                    dropStructureDeclaration();
+                }
                 if (!sp)// && templateNestingCount)
                 {
                     *last = Allocate<TEMPLATESELECTOR>();

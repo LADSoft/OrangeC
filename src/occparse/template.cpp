@@ -1232,6 +1232,13 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPL
                 noTypeNameError--;
                 if (!tp)
                     tp = &stdint;
+                if (structLevel && isstructured(tp))
+                {
+                    if (!basetype(tp)->sp->sb->templateLevel && (basetype(tp)->sp->sb->declaring))
+                    {
+                        basetype(tp)->sp->sb->declaringRecursive = true;
+                    }
+                }
                 if (!templateNestingCount && tp->type == bt_any)
                 {
                     error(ERR_UNKNOWN_TYPE_TEMPLATE_ARG);
@@ -2474,7 +2481,7 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg
             // get type qualifiers
             if (!ISID(lex) && !MATCHKW(lex, ellipse))
             {
-                lex = getBeforeType(lex, funcsp, &tp, &sp, nullptr, nullptr, false, sc_cast, &linkage, &linkage2, &linkage3, false,
+                lex = getBeforeType(lex, funcsp, &tp, &sp, nullptr, nullptr, false, sc_cast, &linkage, &linkage2, &linkage3, nullptr, false,
                     false, true, false); /* fixme at file scope init */
             }
             if (MATCHKW(lex, ellipse))
@@ -2483,7 +2490,7 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg
                 lex = getsym();
             }
             // get the name
-            lex = getBeforeType(lex, funcsp, &tp, &sp, nullptr, nullptr, false, sc_cast, &linkage, &linkage2, &linkage3, false,
+            lex = getBeforeType(lex, funcsp, &tp, &sp, nullptr, nullptr, false, sc_cast, &linkage, &linkage2, &linkage3, nullptr, false,
                 false, false, false); /* fixme at file scope init */
             sizeQualifiers(tp);
             if (!tp || notype)
@@ -8956,7 +8963,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
     }
     return rv;
 }
-static bool checkArgType(TYPE* tp, bool checkDeduced)
+static bool checkArgType(TYPE* tp, bool checkDeduced, bool checkDeclaring)
 {
     while (ispointer(tp) || isref(tp))
         tp = basetype(tp)->btp;
@@ -8964,14 +8971,14 @@ static bool checkArgType(TYPE* tp, bool checkDeduced)
     {
         SYMLIST* hr;
         SYMBOL* sym = basetype(tp)->sp;
-        if (!checkArgType(basetype(tp)->btp, checkDeduced))
+        if (!checkArgType(basetype(tp)->btp, checkDeduced, checkDeclaring))
             return false;
         if (sym->tp->syms)
         {
             hr = sym->tp->syms->table[0];
             while (hr)
             {
-                if (!checkArgType(hr->p->tp, checkDeduced))
+                if (!checkArgType(hr->p->tp, checkDeduced, checkDeclaring))
                     return false;
                 hr = hr->next;
             }
@@ -8981,12 +8988,14 @@ static bool checkArgType(TYPE* tp, bool checkDeduced)
     {
         if (basetype(tp)->sp->sb)
         {
-            if (basetype(tp)->sp->sb->instantiated)
+            if (basetype(tp)->sp->sb->instantiated && basetype(tp)->sp->sb->attribs.inheritable.linkage4 == lk_virtual)
                 return true;
             if (basetype(tp)->sp->sb->templateLevel)
             {
-                return allTemplateArgsSpecified(basetype(tp)->sp, basetype(tp)->sp->templateParams->next, checkDeduced);
+                return allTemplateArgsSpecified(basetype(tp)->sp, basetype(tp)->sp->templateParams->next, checkDeduced, checkDeclaring);
             }
+            if (checkDeclaring && basetype(tp)->sp->sb->declaringRecursive)
+                return false;
         }
     }
     else if (basetype(tp)->type == bt_templateparam)
@@ -9002,14 +9011,14 @@ static bool checkArgType(TYPE* tp, bool checkDeduced)
     }
     else if (basetype(tp)->type == bt_memberptr)
     {
-        if (!checkArgType(basetype(tp)->sp->tp, checkDeduced))
+        if (!checkArgType(basetype(tp)->sp->tp, checkDeduced, checkDeclaring))
             return false;
-        if (!checkArgType(basetype(tp)->btp, checkDeduced))
+        if (!checkArgType(basetype(tp)->btp, checkDeduced, checkDeclaring))
             return false;
     }
     return true;
 }
-static bool checkArgSpecified(TEMPLATEPARAMLIST* args, bool checkDeduced)
+static bool checkArgSpecified(TEMPLATEPARAMLIST* args, bool checkDeduced, bool checkDeclaring)
 {
     if (!args->p->byClass.val)
         return false;
@@ -9061,20 +9070,20 @@ static bool checkArgSpecified(TEMPLATEPARAMLIST* args, bool checkDeduced)
         }
         case kw_typename:
         {
-            return checkArgType(args->p->byClass.val, checkDeduced);
+            return checkArgType(args->p->byClass.val, checkDeduced, checkDeclaring);
         }
         default:
             break;
     }
     return true;
 }
-bool allTemplateArgsSpecified(SYMBOL* sym, TEMPLATEPARAMLIST* args, bool checkDeduced)
+bool allTemplateArgsSpecified(SYMBOL* sym, TEMPLATEPARAMLIST* args, bool checkDeduced, bool checkDeclaring)
 {
     while (args)
     {
         if (args->p->packed)
         {
-            if ((templateNestingCount && !instantiatingTemplate && !args->p->byPack.pack) || !allTemplateArgsSpecified(sym, args->p->byPack.pack, checkDeduced))
+            if ((templateNestingCount && !instantiatingTemplate && !args->p->byPack.pack) || !allTemplateArgsSpecified(sym, args->p->byPack.pack, checkDeduced, checkDeclaring))
                 return false;
         }
         else
@@ -9090,7 +9099,7 @@ bool allTemplateArgsSpecified(SYMBOL* sym, TEMPLATEPARAMLIST* args, bool checkDe
                         return false;
                 }
             }
-            if (!checkArgSpecified(args, checkDeduced))
+            if (!checkArgSpecified(args, checkDeduced, checkDeclaring))
             {
                 return false;
             }
@@ -12456,7 +12465,7 @@ LEXLIST* TemplateDeclaration(LEXLIST* lex, SYMBOL* funcsp, enum e_ac access, enu
             lex = getBasicType(lex, funcsp, &tp, &strSym, true, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3,
                                ac_public, &notype, &defd, &consdest, nullptr, false, true, false, false, false);
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
-            lex = getBeforeType(lex, funcsp, &tp, &sym, &strSym, &nsv, true, sc_cast, &linkage, &linkage2, &linkage3, false,
+            lex = getBeforeType(lex, funcsp, &tp, &sym, &strSym, &nsv, true, sc_cast, &linkage, &linkage2, &linkage3, nullptr, false,
                                 consdest, false, false);
             sizeQualifiers(tp);
             if (!sym)

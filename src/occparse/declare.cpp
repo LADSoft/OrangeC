@@ -420,7 +420,7 @@ LEXLIST* get_type_id(LEXLIST* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_
     lex = getBasicType(lex, funcsp, tp, nullptr, false, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public,
                        &notype, &defd, nullptr, nullptr, false, false, inUsing, false, false);
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, nullptr);
-    lex = getBeforeType(lex, funcsp, tp, &sp, nullptr, nullptr, false, storage_class, &linkage, &linkage2, &linkage3, false, false,
+    lex = getBeforeType(lex, funcsp, tp, &sp, nullptr, nullptr, false, storage_class, &linkage, &linkage2, &linkage3, &notype, false, false,
                         beforeOnly, false); /* fixme at file scope init */
     sizeQualifiers(*tp);
     if (notype)
@@ -887,13 +887,22 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
     for (i = 0; i < n; i++)
     {
         SYMBOL* sp = syms[i];
+        sp->sb->declaringRecursive = false;
         if (!sp->sb->performedStructInitialization)
         {
             if (!templateNestingCount)
             {
                 for (auto s = sp->tp->syms->table[0]; s; s = s->next)
                 {
-                    if (!istype(s->p))
+                    if (s->p->tp->type == bt_aggregate)
+                    {
+                        for (auto f = s->p->tp->syms->table[0]; f; f = f->next)
+                        {
+                            basetype(f->p->tp)->btp = ResolveTemplateSelectors(f->p, basetype(f->p->tp)->btp);
+                            basetype(f->p->tp)->btp = PerformDeferredInitialization(basetype(f->p->tp)->btp, funcsp);
+                        }
+                    }
+                    else if (!istype(s->p))
                     {
                         s->p->tp = ResolveTemplateSelectors(s->p, s->p->tp);
                         s->p->tp = PerformDeferredInitialization(s->p->tp, funcsp);
@@ -962,6 +971,7 @@ static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac c
     lex = getsym(); 
     sl.str = sp;
     addStructureDeclaration(&sl);
+    sp->sb->declaring = true;
     while (lex && KW(lex) != end)
     {
         FlushLineData(lex->data->errfile, lex->data->linedata->lineno);
@@ -990,6 +1000,7 @@ static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac c
                 break;
         }
     }
+    sp->sb->declaring = false;
     dropStructureDeclaration();
     sp->sb->hasvtab = usesVTab(sp);
     calculateStructOffsets(sp);
@@ -1083,7 +1094,6 @@ LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
     if (sp->sb->attribs.inheritable.structAlign == 0)
         sp->sb->attribs.inheritable.structAlign = 1;
     structLevel++;
-    sp->sb->declaring = true;
     if (hasBody)
     {
         if (sp->tp->syms || sp->tp->tags)
@@ -1122,7 +1132,6 @@ LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
         inTemplateBody--;
         TemplateGetDeferred(sp);
     }
-    sp->sb->declaring = false;
     --structLevel;
     parsingDefaultTemplateArgs = oldParsingTemplateArgs;
     return lex;
@@ -3672,7 +3681,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                     lex = prevsym(cur);
                 }
                 lex = getBeforeType(lex, funcsp, &tp1, &spi, nullptr, nullptr, false, storage_class, &linkage, &linkage2, &linkage3,
-                                    false, false, false, false);
+                                    nullptr, false, false, false, false);
                 if (!templateNestingCount && !structLevel)
                 {
                     tp1 = PerformDeferredInitialization(tp1, funcsp);
@@ -3977,7 +3986,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                     TYPE* tpx = tp1;
                     spi = nullptr;
                     lex = getBeforeType(lex, funcsp, &tpx, &spi, nullptr, nullptr, false, sc_parameter, &linkage, &linkage2,
-                                        &linkage3, false, false, false, false);
+                                        &linkage3, nullptr, false, false, false, false);
                     sizeQualifiers(tpx);
                     if (!spi || spi->sb->anonymous)
                     {
@@ -4547,7 +4556,7 @@ static void stripfarquals(TYPE** tp)
 }
 LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMBOL** strSym, NAMESPACEVALUELIST** nsv,
                       bool inTemplate, enum e_sc storage_class, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3,
-                      bool asFriend, int consdest, bool beforeOnly, bool funcptr)
+                      bool* notype, bool asFriend, int consdest, bool beforeOnly, bool funcptr)
 {
     SYMBOL* sp;
     TYPE* ptype = nullptr;
@@ -4596,10 +4605,21 @@ LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SY
             inTemplateSpecialization = oldTemplateSpecialization;
             if (strSymX)
             {
-                if (strSym)
-                    *strSym = strSymX;
-                s1.str = strSymX;
-                addStructureDeclaration(&s1);
+                if (structLevel && strSymX->tp->type == bt_templateselector && !MATCHKW(lex, star) && !MATCHKW(lex, complx))
+                {
+                    *tp = strSymX->tp;
+                    strSymX = nullptr;
+                    lex = getsym();
+                    if (notype)
+                        *notype = false;
+                }
+                else
+                {
+                    if (strSym)
+                        *strSym = strSymX;
+                    s1.str = strSymX;
+                    addStructureDeclaration(&s1);
+                }
             }
             if (nsv)
                 *nsv = nsvX;
@@ -4630,7 +4650,7 @@ LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SY
                 if (nsv)
                     *nsv = nullptr;
                 lex = getBeforeType(lex, funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2, linkage3,
-                                    asFriend, false, beforeOnly, false);
+                    nullptr, asFriend, false, beforeOnly, false);
                 if (*tp && (ptype != *tp && isref(*tp)))
                 {
                     error(ERR_NO_REF_POINTER_REF);
@@ -4846,7 +4866,7 @@ LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SY
                     ParseAttributeSpecifiers(&lex, funcsp, true);
                     lex = getQualifiers(lex, tp, linkage, linkage2, linkage3, nullptr);
                     lex = getBeforeType(lex, funcsp, &ptype, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
-                                        linkage3, asFriend, false, beforeOnly, true);
+                                        linkage3, nullptr, asFriend, false, beforeOnly, true);
                     basisAttribs = oldAttribs;
                     if (!ptype ||
                         (!isref(ptype) && !ispointer(ptype) && !isfunction(ptype) && basetype(ptype)->type != bt_memberptr))
@@ -4953,7 +4973,7 @@ LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SY
                 *tp = ptype;
                 lex = getQualifiers(lex, tp, linkage, linkage2, linkage3, nullptr);
                 lex = getBeforeType(lex, funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2, linkage3,
-                                    asFriend, false, beforeOnly, false);
+                    nullptr, asFriend, false, beforeOnly, false);
                 if (inparen)
                 {
                     if (!needkw(&lex, closepa))
@@ -4973,7 +4993,7 @@ LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SY
                     ParseAttributeSpecifiers(&lex, funcsp, true);
                     lex = getQualifiers(lex, tp, linkage, linkage2, linkage3, nullptr);
                     lex = getBeforeType(lex, funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2, linkage3,
-                                        asFriend, false, beforeOnly, false);
+                        nullptr, asFriend, false, beforeOnly, false);
                     break;
                 }
                 // using the C++ reference operator as the ref keyword...
@@ -5001,7 +5021,7 @@ LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SY
                     ParseAttributeSpecifiers(&lex, funcsp, true);
                     lex = getQualifiers(lex, tp, linkage, linkage2, linkage3, nullptr);
                     lex = getBeforeType(lex, funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2, linkage3,
-                                        asFriend, false, beforeOnly, false);
+                        nullptr, asFriend, false, beforeOnly, false);
                     if (storage_class != sc_typedef && !isfunction(*tp) && !templateNestingCount && !instantiatingTemplate)
                     {
                         tp2 = *tp;
@@ -5623,7 +5643,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                     }
                     lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, &asFriend);
                     lex = getBeforeType(lex, funcsp, &tp1, &sp, &strSym, &nsv, inTemplate, storage_class, &linkage, &linkage2,
-                                        &linkage3, asFriend, consdest, false, false);
+                                        &linkage3, &notype, asFriend, consdest, false, false);
                     if (linkage2 == lk_import)
                         if (storage_class == sc_global)
                             storage_class = sc_external;

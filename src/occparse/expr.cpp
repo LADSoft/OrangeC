@@ -4085,9 +4085,9 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                 {
                     if (!strcmp(funcparams->sp->name, "setjmp"))
                         Optimizer::setjmp_used = true;
-                    if (funcparams->sp->sb->attribs.inheritable.linkage3 == lk_noreturn)
-                        isCallNoreturnFunction = true;
                 }
+                if (funcparams->sp->sb->attribs.inheritable.linkage3 == lk_noreturn)
+                    isCallNoreturnFunction = true;
                 TYPE* tp1 = funcparams->sp->tp;
                 if (ispointer(tp1))
                     tp1 = basetype(tp1)->btp;

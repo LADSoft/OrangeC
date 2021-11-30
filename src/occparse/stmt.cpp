@@ -2649,13 +2649,6 @@ static LEXLIST* statement_expr(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             }
         }
     }
-    else
-    {
-        if (select->type == en_func && select->v.func->sp && select->v.func->sp->sb->attribs.inheritable.linkage3 == lk_noreturn)
-        {
-            parent->needlabel = true;
-        }
-    }
     return lex;
 }
 static LEXLIST* asm_declare(LEXLIST* lex)

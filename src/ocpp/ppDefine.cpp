@@ -187,8 +187,6 @@ ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& val
     Definition* d = new Definition(name1, value, args, permanent);
     if (value[1] == REPLACED_TOKENIZING)
         d->DefinedError("macro definition begins with tokenizing token");
-    else if (value[value.size() - 2] == REPLACED_TOKENIZING || value[value.size() - 2] == '#')
-        d->DefinedError("macro definition ends with tokenizing or stringizing token");
     d->SetCaseInsensitive(caseInsensitive);
     d->SetLocation(include->GetRealFile(), include->GetRealLineNo());
     if (varargs)

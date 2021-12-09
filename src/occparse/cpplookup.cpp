@@ -3531,7 +3531,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         {
             seq[(*n)++] = CV_QUALS;
         }
-        if ((isconst(tpa) &&! isconst(tppp)) || (isvolatile(tpa) &&! isvolatile(tppp)))
+        if (((isconst(tpa) || isconst(tpax)) && !isconst(tppp)) || ((isvolatile(tpa) || isvolatile(tpax)) && !isvolatile(tppp)))
         {
             if (tpp->type != bt_rref)
                 seq[(*n)++] = CV_NONE;

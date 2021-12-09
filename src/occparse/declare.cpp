@@ -3374,7 +3374,8 @@ static void matchFunctionDeclaration(LEXLIST* lex, SYMBOL* sp, SYMBOL* spo, bool
                 !comparetypes(basetype(spo->tp)->btp, basetype(sp->tp)->btp, true) &&
                 !sameTemplatePointedTo(basetype(spo->tp)->btp, basetype(sp->tp)->btp))
             {
-                preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->sb->declfile, spo->sb->declline);
+                if (!templateNestingCount || instantiatingTemplate)
+                    preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->sb->declfile, spo->sb->declline);
             }
             else
             {
@@ -6307,7 +6308,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                 {
                                     preverrorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp, spi->sb->declfile, spi->sb->declline);
                                 }
-                                else if (!sameQuals(sp, spi))
+                                else if (!sameQuals(sp, spi) && (!templateNestingCount || instantiatingTemplate))
                                 {
                                     errorsym(ERR_DECLARATION_DIFFERENT_QUALIFIERS, sp);
                                 }

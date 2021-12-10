@@ -1336,6 +1336,10 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
     }
     else
     {
+        if (asfriend && sp->sb->templateLevel)
+        {
+            sp = sp->sb->parentTemplate;
+        }
         // primarily for the type_info definition when building LSCRTL.DLL
         if (linkage1 != lk_none && linkage1 != sp->sb->attribs.inheritable.linkage)
         {

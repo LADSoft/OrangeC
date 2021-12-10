@@ -897,10 +897,13 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                 {
                     if (s->p->tp->type == bt_aggregate)
                     {
-                        for (auto f = s->p->tp->syms->table[0]; f; f = f->next)
+                        if (recursive)
                         {
-                            basetype(f->p->tp)->btp = ResolveTemplateSelectors(f->p, basetype(f->p->tp)->btp);
-                            basetype(f->p->tp)->btp = PerformDeferredInitialization(basetype(f->p->tp)->btp, funcsp);
+                            for (auto f = s->p->tp->syms->table[0]; f; f = f->next)
+                            {
+                                basetype(f->p->tp)->btp = ResolveTemplateSelectors(f->p, basetype(f->p->tp)->btp);
+                                basetype(f->p->tp)->btp = PerformDeferredInitialization(basetype(f->p->tp)->btp, funcsp);
+                            }
                         }
                     }
                     else if (!istype(s->p))

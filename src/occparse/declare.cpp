@@ -887,6 +887,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
     for (i = 0; i < n; i++)
     {
         SYMBOL* sp = syms[i];
+        bool recursive = sp->sb->declaringRecursive;
         sp->sb->declaringRecursive = false;
         if (!sp->sb->performedStructInitialization)
         {
@@ -908,6 +909,10 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                         s->p->tp = PerformDeferredInitialization(s->p->tp, funcsp);
                     }
                 }
+            }
+            if (recursive)
+            {
+                calculateStructOffsets(sp);
             }
         }
     }

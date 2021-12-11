@@ -43,8 +43,6 @@
 
 int __Inflate(char* out, char* in);
 
-#pragma startup expand 225
-
 wchar_t _RTL_DATA* __ctype_u;
 const wchar_t* __ctype_u_tolower; /* Case conversions.  */
 const wchar_t* __ctype_u_toupper; /* Case conversions.  */
@@ -69,6 +67,7 @@ static void expand(void)
 
 int _RTL_FUNC iswctype(wint_t wc, wctype_t desc)
 {
+    if (!__ctype_u) expand();
     if (wc != WEOF && wc < 0x10000)
         return __ctype_u[wc] & desc;
     return 0;
@@ -106,6 +105,7 @@ int _RTL_FUNC(iswblank)(wint_t __wc) { return iswctype(__wc, _IS_BLK); }
 
 wctrans_t _RTL_FUNC wctrans(const char* s)
 {
+    if (!__ctype_u) expand();
     if (!strcmp(s, "tolower"))
         return __ctype_u_tolower;
     if (!strcmp(s, "toupper"))
@@ -123,5 +123,5 @@ wint_t _RTL_FUNC towctrans(wint_t __wc, wctrans_t prop)
     }
     return __wc;
 }
-wint_t _RTL_FUNC(towlower)(wint_t __wc) { return towctrans(__wc, __ctype_u_toupper); }
+wint_t _RTL_FUNC(towlower)(wint_t __wc) { return towctrans(__wc, __ctype_u_tolower); }
 wint_t _RTL_FUNC(towupper)(wint_t __wc) { return towctrans(__wc, __ctype_u_toupper); }

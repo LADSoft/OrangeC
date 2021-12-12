@@ -784,6 +784,7 @@ typedef struct _memberInitializers
     struct lexlist* initData;
     int packed : 1;
     int delegating : 1;
+    int valueInit : 1;
 } MEMBERINITIALIZERS;
 
 typedef struct _baseClass

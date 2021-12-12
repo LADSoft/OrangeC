@@ -1826,6 +1826,13 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
         if (member->sb->init->exp)
         {
             exp = convertInitToExpression(member->tp, member, nullptr, nullptr, member->sb->init, thisptr, false);
+            if (mi->valueInit)
+            {
+                auto ths = exprNode(en_add, thisptr, intNode(en_c_i, member->sb->offset));
+                auto clr = exprNode(en_blockclear, ths, 0);
+                clr->size = member->tp->size;
+                exp = exprNode(en_void, clr, exp);
+            }
         }
         else
         {
@@ -1939,6 +1946,12 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
                 }
                 if (!callConstructor(&ctype, &exp, funcparams, false, nullptr, top, false, false, false, false, false, true))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
+                if (mi->sp && !mi->init)
+                {
+                    EXPRESSION* clr = exprNode(en_blockclear, exp, nullptr);
+                    clr->size = mi->sp->tp->size;
+                    exp = exprNode(en_void, clr, exp);
+                }
                 // previously, callConstructor can return false here, meaning that funcparams->sp is null
                 // This used to create a nullptr dereference in PromoteConstructorArgs
                 // Why this is only being found NOW is somewhat dumb, but it is.
@@ -2269,6 +2282,14 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                 }
                 else
                 {
+                    bool empty = false;
+                    if (MATCHKW(lex, openpa))
+                    {
+                        lex = getsym();
+                        if (MATCHKW(lex, closepa))
+                            empty = true;
+                        lex = backupsym();
+                    }
                     if (MATCHKW(lex, openpa) && basetype(init->sp->tp)->sp->sb->trivialCons)
                     {
                         init->init = nullptr;
@@ -2286,6 +2307,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                         if (init->packed)
                             error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                     }
+                    init->valueInit = empty;
                 }
                 SetAlternateLex(nullptr);
             }

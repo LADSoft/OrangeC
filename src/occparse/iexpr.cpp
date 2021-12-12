@@ -1603,6 +1603,8 @@ static EXPRESSION* getAddress(EXPRESSION* exp)
 static EXPRESSION* getFunc(EXPRESSION* exp)
 {
     EXPRESSION* rv = nullptr;
+    while (exp->type == en_void && exp->right)
+        exp = exp->right;
     if (exp->type == en_thisref)
         exp = exp->left;
     if (exp->type == en_add)

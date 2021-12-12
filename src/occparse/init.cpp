@@ -2830,15 +2830,17 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                     TYPE* tp1 = nullptr;
                     EXPRESSION* exp1;
                     lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, false, [&exp, &constructed](EXPRESSION* exp1, TYPE* tp) 
-                        { 
-                            if (exp1->type == en_thisref)
+                        {
+                            EXPRESSION* oldthis;
+                            for (oldthis = exp1; oldthis->right && oldthis->type == en_void; oldthis = oldthis->right);
+                            if (oldthis->type == en_thisref)
                             {
                                 constructed = true;
-                                if (exp1->left->v.func->thisptr || !exp1->left->v.func->returnEXP)
+                                if (oldthis->left->v.func->thisptr || !oldthis->left->v.func->returnEXP)
                                 {
-                                    if (!lvalue(exp1->left->v.func->thisptr))
+                                    if (!lvalue(oldthis->left->v.func->thisptr))
                                     {
-                                        EXPRESSION* exp2 = exp1->left->v.func->thisptr;
+                                        EXPRESSION* exp2 = oldthis->left->v.func->thisptr;
                                         while (exp2->left)
                                             exp2 = exp2->left;
                                         if (exp2->type == en_auto)
@@ -2847,13 +2849,15 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                                         }
                                     }
 
-                                    exp1->left->v.func->thisptr = exp;
+                                    auto ths = oldthis->left->v.func->thisptr;
+                                    oldthis->left->v.func->thisptr = exp;
+                                    oldthis = ths;
                                 }
                                 else
                                 {
-                                    if (!lvalue(exp1->left->v.func->returnEXP))
+                                    if (!lvalue(oldthis->left->v.func->returnEXP))
                                     {
-                                        EXPRESSION* exp2 = exp1->left->v.func->returnEXP;
+                                        EXPRESSION* exp2 = oldthis->left->v.func->returnEXP;
                                         while (exp2->left)
                                             exp2 = exp2->left;
                                         if (exp2->type == en_auto)
@@ -2861,16 +2865,16 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                                             exp2->v.sp->sb->dest = nullptr;
                                         }
                                     }
-                                    exp1->left->v.func->returnEXP = exp;
-                                    exp1->v.t.thisptr = exp;
+                                    auto ths = oldthis->left->v.func->returnEXP;
+                                    oldthis->left->v.func->returnEXP = exp;
+                                    oldthis->v.t.thisptr = exp;
+                                    oldthis = ths;
                                 }
                             }
-                            else if (exp1->type == en_void)
+                            if (exp1->type == en_void)
                             {
                                 // from constexpr
                                 constructed = true;
-                                EXPRESSION* oldthis;
-                                for (oldthis = exp1; oldthis->right && oldthis->type == en_void; oldthis = oldthis->right);
                                 std::stack<EXPRESSION*> stk;
                                 stk.push(exp1);
                                 while (!stk.empty())
@@ -3631,6 +3635,12 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIA
                     sym = classdata(find->name, spo, nullptr, false, false);
                     if (sym == (SYMBOL*)-1)
                         sym = nullptr;
+                    if (sym && find->isTemplate)
+                    {
+                        sym = GetClassTemplate(sym, find->templateParams, false);
+                        if (sym)
+                            sym->tp = PerformDeferredInitialization(sym->tp, funcsp);
+                    }
                 }
                 find = find->next;
             }

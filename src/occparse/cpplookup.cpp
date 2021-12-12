@@ -491,7 +491,7 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* t
                     sp = classsearch(buf, false, false);
                     dropStructureDeclaration();
                 }
-                if (!sp)// && templateNestingCount)
+                if (!sp)
                 {
                     *last = Allocate<TEMPLATESELECTOR>();
                     (*last)->sp = nullptr;
@@ -704,7 +704,9 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* t
                     }
                 }
                 if (sp && !deferred)
+                {
                     sp->tp = PerformDeferredInitialization(sp->tp, nullptr);
+                }
                 if (sp && (!sp->sb || (sp->sb->storage_class != sc_namespace && (!isstructured(sp->tp) || sp->templateParams))))
                     pastClassSel = true;
                 lex = getsym();

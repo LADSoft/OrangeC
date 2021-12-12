@@ -473,13 +473,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
             listerr = "WARNING";
         }
     }
-    if (0 && !(errors[err].level & NOTE) && theCurrentFunc && err != ERR_TOO_MANY_ERRORS && err != ERR_PREVIOUS && err != ERR_TEMPLATE_INSTANTIATION_STARTED_IN)
-    {
-        strcpy(infunc, " in function ");
-        unmangle(infunc + strlen(infunc), theCurrentFunc->sb->decoratedName);
-    }
-    else
-        infunc[0] = 0;
+    infunc[0] = 0;
     if (!Optimizer::cparams.prm_quiet)
         printf(" %s(%d):  %s%s\n", name, line, buf, infunc);
     if (Optimizer::cparams.prm_errfile)

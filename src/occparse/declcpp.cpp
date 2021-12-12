@@ -2686,15 +2686,6 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         {
                             errorstr(ERR_OPERATOR_NEEDS_NO_PARAMETERS, overloadXlateTab[sp->sb->operatorId]);
                         }
-                        else
-                        {
-                            TYPE* tp = basetype(sp->tp)->btp;
-                            if (!ispointer(tp) && !isref(tp))
-                            {
-                                if (!templateNestingCount)
-                                    errorstr(ERR_OPERATOR_RETURN_REFERENCE_OR_POINTER, overloadXlateTab[sp->sb->operatorId]);
-                            }
-                        }
                         break;
                     case quot:
                         errorsym(ERR_OPERATOR_LITERAL_NAMESPACE_SCOPE, sp);
@@ -2892,7 +2883,6 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
         }
     }
 }
-static int count4;
 LEXLIST* handleStaticAssert(LEXLIST* lex)
 {
     if (!needkw(&lex, openpa))

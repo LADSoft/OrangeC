@@ -126,7 +126,7 @@
 # else
 #   define TEST_CONSTEXPR_CXX14
 # endif
-# if TEST_STD_VER > 14
+# if TEST_STD_VER >= 11 // DAL
 #   define TEST_THROW_SPEC(...)
 # else
 #   define TEST_THROW_SPEC(...) throw(__VA_ARGS__)

@@ -100,8 +100,10 @@ copyfiles: mkdir
 	-mkdir ..\..\include\c\win32 2> NUL
 	-mkdir ..\..\include\support 2> NUL
 	-mkdir ..\..\include\support\win32 2> NUL
+	-mkdir ..\..\include\support\orangec 2> NUL
 	-copy  cpp\libcxx\include ..\..\include 2>NUL
 	-copy  cpp\libcxx\include\support\win32 ..\..\include\support\win32 2>NUL
+	-copy  cpp\libcxx\include\support\orangec ..\..\include\support\orangec 2>NUL
 	-copy  cpp\stdinc_libcxx ..\..\include 2>NUL
 	-copy  stdinc ..\..\include\c 2>NUL
 	-copy  stdinc\sys ..\..\include\c\sys 2>NUL

@@ -68,7 +68,9 @@ public:
 #pragma GCC system_header
 #endif
 
-#if defined(_LIBCPP_ABI_VCRUNTIME)
+#if defined(__ORANGEC__)
+#include <support/orangec/orangec_typeinfo>
+#elif defined(_LIBCPP_ABI_VCRUNTIME)
 #include <vcruntime_typeinfo.h>
 #else
 

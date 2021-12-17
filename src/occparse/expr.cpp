@@ -3250,11 +3250,6 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         esp->sb->stackblock = true;
                         esp->sb->constexpression = true;
                         callConstructorParam(&ctype, &consexp, p->tp, paramexp, true, true, implicit, false, true);
-                        if (paramexp == p->exp) // recursive call to constructor A<U>(A<U>)
-                        {
-                            if (p->exp->type == en_thisref && p->exp->left->v.func->thisptr->type == en_auto)
-                                p->exp->left->v.func->thisptr = consexp;
-                        }
                         if (consexp->type == en_thisref)
                             esp->sb->constexpression = false;
                         p->exp = consexp;

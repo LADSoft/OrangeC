@@ -1468,7 +1468,7 @@ static bool IsFriend(SYMBOL* cls, SYMBOL* frnd)
             if (sym == frnd || sym == frnd->sb->parentTemplate)
                 return true;
             if (isfunction(sym->tp) && sym->sb->parentClass == frnd->sb->parentClass && 
-                !strcmp(sym->name, frnd->name) && searchOverloads(frnd, sym->sb->overloadName->tp->syms))
+                !strcmp(sym->name, frnd->name) && sym->sb->overloadName && searchOverloads(frnd, sym->sb->overloadName->tp->syms))
                 return true;
             if (sym->sb->templateLevel)
             {

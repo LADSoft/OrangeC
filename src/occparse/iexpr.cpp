@@ -1604,7 +1604,12 @@ static EXPRESSION* getFunc(EXPRESSION* exp)
 {
     EXPRESSION* rv = nullptr;
     while (exp->type == en_void && exp->right)
+    {
+        rv = getFunc(exp->left);
+        if (rv)
+            return rv;
         exp = exp->right;
+    }
     if (exp->type == en_thisref)
         exp = exp->left;
     if (exp->type == en_add)

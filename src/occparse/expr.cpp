@@ -3218,22 +3218,43 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         esp = consexp->v.sp;
                         esp->sb->stackblock = true;
                         consexp = varNode(en_auto, esp);
-                        paramexp = temp->v.func->returnEXP ? temp->v.func->returnEXP : p->exp;
+                        paramexp = p->exp;
                         paramexp = DerivedToBase(sym->tp, tpx, paramexp, _F_VALIDPOINTER);
-                        callConstructorParam(&ctype, &consexp, sym->tp, paramexp, true, true, implicit, false, true);
-                        if (paramexp != p->exp)
-                            p->exp = exprNode(en_void, p->exp, consexp);
+                        auto exp = consexp;
+                        callConstructorParam(&ctype, &exp, sym->tp, paramexp, true, true, implicit, false, true);
+                        if (exp->type == en_auto) // recursive call to constructor A<U>(A<U>)
+                        {
+                            if (temp->v.func->returnEXP)
+                            {
+                                temp->v.func->returnEXP = consexp;
+                            }
+                            else
+                            {
+                                if (p->exp->type == en_thisref && p->exp->left->v.func->thisptr->type == en_auto)
+                                    p->exp->left->v.func->thisptr = consexp;
+                                p->exp = paramexp;
+                            }
+                        }
                         else
-                            p->exp = consexp;
+                        {
+                            p->exp = exp;
+                        }
+                        p->exp = exprNode(en_void, p->exp, consexp);
                     }
                     else
                     {
                         TYPE* ctype = basetype(sym->tp = PerformDeferredInitialization(sym->tp, nullptr));
                         EXPRESSION* consexp = anonymousVar(sc_auto, ctype);  // sc_parameter to push it...
                         SYMBOL* esp = consexp->v.sp;
+                        EXPRESSION* paramexp = p->exp;
                         esp->sb->stackblock = true;
                         esp->sb->constexpression = true;
-                        callConstructorParam(&ctype, &consexp, p->tp, p->exp, true, true, implicit, false, true);
+                        callConstructorParam(&ctype, &consexp, p->tp, paramexp, true, true, implicit, false, true);
+                        if (paramexp == p->exp) // recursive call to constructor A<U>(A<U>)
+                        {
+                            if (p->exp->type == en_thisref && p->exp->left->v.func->thisptr->type == en_auto)
+                                p->exp->left->v.func->thisptr = consexp;
+                        }
                         if (consexp->type == en_thisref)
                             esp->sb->constexpression = false;
                         p->exp = consexp;

@@ -2,7 +2,7 @@
 
 #include "x64Instructions.h"
 
-const char * const opcodeTable[630] = {
+const char * const opcodeTable[631] = {
 	"",
 	"",
 	"",
@@ -473,6 +473,7 @@ const char * const opcodeTable[630] = {
 	"maxsd",
 	"maxss",
 	"mfence",
+	"pause",
 	"minpd",
 	"minps",
 	"minsd",

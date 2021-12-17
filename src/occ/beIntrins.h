@@ -45,5 +45,6 @@ bool handleCLZ(void);
 bool handleBSWAP16(void);
 bool handleBSWAP32(void);
 bool handleBSWAP64(void);
+bool handlePAUSE(void);
 bool BackendIntrinsic(Optimizer::QUAD* q);
 }  // namespace occx86

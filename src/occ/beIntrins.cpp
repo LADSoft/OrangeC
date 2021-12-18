@@ -210,6 +210,11 @@ bool handleBSWAP64()
     gen_code(op_bswap, makedreg(EDX), nullptr);
     return true;
 }
+bool handlePAUSE()
+{
+    gen_code(op_pause, nullptr, nullptr);
+    return true;
+}
 // for __fastcall, first arg is in ECX, second arg is in EDX and third arg is in EAX
 // more args will be pushed on the stack, but if you do that you have to leave them there so they can get cleaned up properly.
 //
@@ -219,7 +224,7 @@ bool BackendIntrinsic(Optimizer::QUAD* q)
 {
     const char* name = q->dc.left->offset->sp->name;
     auto thing = builtin_map.find(name);
-    if(thing != builtin_map.end())
+    if (thing != builtin_map.end())
     {
         return thing->second();
     }

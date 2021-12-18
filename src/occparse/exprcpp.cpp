@@ -359,7 +359,7 @@ void castToArithmetic(bool integer, TYPE** tp, EXPRESSION** exp, enum e_kw kw, T
             if (kw >= kw_new && kw <= complx)
             {
                 // LHS, put up an operator whatever message
-                char buf[256];
+                char buf[4096];
                 char tbuf[4096];
                 memset(tbuf, 0, sizeof(tbuf));
                 tbuf[0] = 0;

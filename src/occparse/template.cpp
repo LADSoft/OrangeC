@@ -5060,11 +5060,11 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
                     {
                     }
                     exp = change ? &to->p->byNonType.val : &to->p->byNonType.temp;
+                    if (TA->p->byNonType.val && to->p->byNonType.val &&
+                        !equalTemplateIntNode(to->p->byNonType.val, *exp))
+                        return false;
                     to->p->deduced = true;
                     *exp = TA->p->byNonType.val;
-                    if (to->p->byNonType.dflt && to->p->byNonType.val &&
-                        !equalTemplateIntNode(to->p->byNonType.dflt, *exp))
-                        return false;
                     break;
                 }
                 default:
@@ -8424,6 +8424,11 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* v
         if (!params->p->byClass.val)
             params->p->byClass.val = val->p->byClass.val;
     }
+    else if (!val->p->packed && val->p->type == kw_int && val->p->byNonType.dflt && val->p->byNonType.val && val->p->byNonType.dflt->type == en_templateparam)
+    {
+        if (!params->p->byNonType.val)
+            params->p->byNonType.val = val->p->byNonType.val;
+    }
     else if (!val->p->packed && val->p->type == kw_typename && val->p->byClass.dflt && val->p->byClass.val && isstructured(val->p->byClass.dflt) &&
         isstructured(val->p->byClass.val))
     {
@@ -10962,6 +10967,7 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEP
         tp->sp = clonesym(tp->sp);
         auto tpr = &tp->sp->templateParams;
         auto temp = tp->sp->templateParams;
+        auto tps = tp->sp->sb->mainsym->templateParams;
         while (temp)
         {
             *tpr = Allocate<TEMPLATEPARAMLIST>();
@@ -10993,9 +10999,22 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEP
             }
             else
             {
+                if ((*tpr)->p->type != kw_new && !(*tpr)->p->byClass.dflt && !(*tpr)->p->byClass.val)
+                {
+                    for (auto t = args; t; t = t->next)
+                    {
+                        if (t->argsym && !strcmp(t->argsym->name, (*tpr)->argsym->name))
+                        {
+                            (*tpr)->p->byClass.dflt = t->p->byClass.dflt;
+                            (*tpr)->argsym->name = tps->argsym->name;
+                            break;
+                        }
+                    }
+                }
                 SpecifyOneArg(sym, (*tpr), args, origTemplate, origUsing);
             }
             tpr = &(*tpr)->next;
+            tps = tps->next;
             temp = temp->next;
         }
         auto sp = GetTypeAliasSpecialization(rv->sp, tp->sp->templateParams->next);

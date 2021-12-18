@@ -2752,7 +2752,9 @@ founddecltype:
                         }
                         else
                         {
+                            auto oldsp = sp;
                             sp = clonesym(sp);
+                            sp->sb->mainsym = oldsp;
                             TYPE *tp1 = Allocate<TYPE>();
                             *tp1 = *sp->tp;
                             sp->tp = tp1;

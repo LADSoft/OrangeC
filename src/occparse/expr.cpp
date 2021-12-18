@@ -3250,9 +3250,16 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         esp->sb->stackblock = true;
                         esp->sb->constexpression = true;
                         callConstructorParam(&ctype, &consexp, p->tp, paramexp, true, true, implicit, false, true);
-                        if (consexp->type == en_thisref)
-                            esp->sb->constexpression = false;
-                        p->exp = consexp;
+                        if (consexp->type == en_auto) // recursive call to constructor A<U>(A<U>)
+                        {
+                            p->exp = paramexp;
+                        }
+                        else
+                        {
+                            if (consexp->type == en_thisref)
+                                esp->sb->constexpression = false;
+                            p->exp = consexp;
+                        }
                     }
                     p->tp = sym->tp;
                 }
@@ -3966,6 +3973,11 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     TEMPLATEPARAMLIST* tplo = sym->sb->parentTemplate->templateParams->next;
                     while (tpln && tplo)
                     {
+                        if (tplo->p->packed)
+                        {
+                            tpln = nullptr;
+                            break;
+                        }
                         tpln = tpln->next;
                         tplo = tplo->next;
                     }

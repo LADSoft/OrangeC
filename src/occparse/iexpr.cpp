@@ -1633,11 +1633,18 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE *argtp, 
     int temp;
     int rv = 0;
     EXPRESSION* exp = getFunc(ep);
-    if (exp || ep->type == en_blockassign || ep->type == en_blockclear)
+    if (!exp && ep->type == en_void)
+    {
+        exp = ep->left;
+        if (exp && exp->type != en_blockassign && exp->type != en_blockclear)
+            exp = nullptr;
+    }
+    if (exp)
     {
         EXPRESSION* ep1 = exp;
-        if (exp)
+        if (exp->type == en_func)
         {
+
             exp = ep1->v.func->returnEXP;
             if (!exp)
                 exp = ep1->v.func->thisptr;
@@ -1650,7 +1657,7 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE *argtp, 
         }
         else
         {
-            exp = ep->left;
+            exp = exp->left;
         }
         if (exp && exp->type == en_auto && exp->v.sp->sb->stackblock)
         {

@@ -2384,6 +2384,7 @@
     <Opcode Name="maxsd" mand="0xf2:8" op="0x0f:8 0x5f:8" Class="ssemmxrm"/>
     <Opcode Name="maxss" mand="0xf3:8" op="0x0f:8 0x5f:8" Class="ssemmxrm"/>
     <Opcode Name="mfence" op="0x0f:8 0xae:8 0xf0:8" Class="single"/>
+    <Opcode Name="pause"  op="0xf3:8 0x90:8" Class="single"/>
     <Opcode Name="minpd" mand="0x66:8" op="0x0f:8 0x5d:8" Class="ssemmxrm"/>
     <Opcode Name="minps" mand="" op="0x0f:8 0x5d:8" Class="ssemmxrm"/>
     <Opcode Name="minsd" mand="0xf2:8" op="0x0f:8 0x5d:8" Class="ssemmxrm"/>
@@ -2599,7 +2600,6 @@
     <Opcode Name="unpcklps" mand="" op="0x0f:8 0x14:8" Class="ssemmxrm"/>
     <Opcode Name="xorpd" mand="0x66:8" op="0x0f:8 0x57:8" Class="ssemmxrm"/>
     <Opcode Name="xorps" mand="" op="0x0f:8 0x57:8" Class="ssemmxrm"/>
-
 
 
     <Opcode Name="invept"/> <!-- fixme -->

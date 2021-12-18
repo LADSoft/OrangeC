@@ -876,7 +876,7 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                 }
                 else if (!funcparams.arguments->next->next)
                 {
-                    rv = comparetypes(tp2, funcparams.arguments->next->tp, true);
+                    rv = comparetypes(tp2, funcparams.arguments->next->tp, false);
                 }
             }
             else if (isstructured(tp2))

@@ -70,6 +70,7 @@ Source: "C:\orangec\include\c\sys\*.*"; DestDir: "{app}\include\c\sys"; Flags: I
 Source: "C:\orangec\include\c\*.*"; DestDir: "{app}\include\c"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\include\c\win32\*.*"; DestDir: "{app}\include\c\win32\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\include\support\win32\*.*"; DestDir: "{app}\include\support\win32\"; Flags: IgnoreVersion; Components: main
+Source: "C:\orangec\include\support\orangec\*.*"; DestDir: "{app}\include\support\orangec\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\lib\*.*"; DestDir: "{app}\lib\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\lib\startup\*.*"; DestDir: "{app}\lib\startup\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\doc\*.*"; DestDir: "{app}\doc\"; Flags: IgnoreVersion; Components: main

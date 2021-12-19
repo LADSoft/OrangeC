@@ -3031,7 +3031,7 @@ static TYPE* SynthesizeStructure(TYPE* tp_in, TEMPLATEPARAMLIST* enclosing)
                             break;
                         l = l->next;
                     }
-                    if (l && !TemplateParseDefaultArgs(sp, l, l, l))
+                    if (l && !TemplateParseDefaultArgs(sp, nullptr, l, l, l))
                         return nullptr;
                 }
                 if (!allTemplateArgsSpecified(sp, sp->templateParams->next))
@@ -6023,7 +6023,7 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
                 dontRegisterTemplate += templateNestingCount != 0;
                 lex = SetAlternateLex(sp->sb->deferredCompile);
                 sp->sb->init = nullptr;
-                lex = initialize(lex, func, sp, sc_parameter, true, _F_TEMPLATEARGEXPANSION);
+                lex = initialize(lex, func, sp, sc_parameter, true, false, _F_TEMPLATEARGEXPANSION);
                 SetAlternateLex(nullptr);
                 dontRegisterTemplate -= templateNestingCount != 0;
                 if (sp->sb->init && sp->sb->init->exp && !ValidExp(&sp->sb->init->exp))
@@ -6347,7 +6347,7 @@ static void SwapDefaultNames(TEMPLATEPARAMLIST* params, Optimizer::LIST* origNam
         origNames = origNames->next;
     }
 }
-bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPLATEPARAMLIST* src,
+bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* dest, TEMPLATEPARAMLIST* src,
                                      TEMPLATEPARAMLIST* enclosing)
 {
     TEMPLATEPARAMLIST *primaryList = nullptr, *primaryDefaultList = nullptr;
@@ -6375,7 +6375,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
     parsingDefaultTemplateArgs++;
     while (src && dest)
     {
-        if (!dest->p->byClass.val && !dest->p->packed && (!primaryList || !primaryList->p->packed))
+        if (!args && !dest->p->byClass.val && !dest->p->packed && (!primaryList || !primaryList->p->packed))
         {
             int oldErrors = templateInstantiationError;
             templateInstantiationError = 0;
@@ -6552,6 +6552,8 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
             nestedInstantiations.pop_back();
             templateInstantiationError = oldErrors;
         }
+        if (args)
+            args = args->next;
         if (primaryList)
             primaryList = primaryList->next;
         src = src->next;
@@ -6850,7 +6852,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
         // set up default values for non-deduced and non-initialized args
         params = nparams->next;
 
-        if (TemplateParseDefaultArgs(sym, params, params, params))
+        if (TemplateParseDefaultArgs(sym, nullptr, params, params, params))
             if ((rv = ValidateArgsSpecified(sym->templateParams->next, sym, arguments, nparams)))
             {
                 return rv;
@@ -6874,7 +6876,7 @@ SYMBOL* TemplateDeduceWithoutArgs(SYMBOL* sym)
     TEMPLATEPARAMLIST* nparams = sym->templateParams;
     TEMPLATEPARAMLIST* params = nparams->next;
     SYMBOL* rv;
-    if (TemplateParseDefaultArgs(sym, params, params, params) && (rv = ValidateArgsSpecified(sym->templateParams->next, sym, nullptr, nparams)))
+    if (TemplateParseDefaultArgs(sym,  nullptr, params, params, params) && (rv = ValidateArgsSpecified(sym->templateParams->next, sym, nullptr, nparams)))
     {
         return rv;
     }
@@ -6958,7 +6960,7 @@ SYMBOL* TemplateDeduceArgsFromType(SYMBOL* sym, TYPE* tp)
         {
             SYMBOL* rv;
             params = nparams->next;
-            if (TemplateParseDefaultArgs(sym, params, params, params) &&
+            if (TemplateParseDefaultArgs(sym, nullptr, params, params, params) &&
                 (rv = ValidateArgsSpecified(sym->templateParams->next, sym, nullptr, nparams)))
             {
                 return rv;
@@ -8847,7 +8849,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
         if ((!templateNestingCount || instantiatingTemplate || (inTemplateHeader && templateNestingCount == 1)) && (inTemplateArgs < 1 || !primary))
         {
             primary = spsyms ? spsyms : nparams->next;
-            if (!TemplateParseDefaultArgs(sp, origParams, primary, primary))
+            if (!TemplateParseDefaultArgs(sp, args, origParams, primary, primary))
                 rv = nullptr;
             if (spsyms)
             {
@@ -11386,7 +11388,7 @@ static bool ParseTypeAliasDefaults(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLATE
             tplp = &(*tplp)->next;
             tpl = tpl->next;
         }
-        if (!templateNestingCount && !TemplateParseDefaultArgs(sp, sp->templateParams->next, sp->templateParams->next, sp->templateParams->next))
+        if (!templateNestingCount && !TemplateParseDefaultArgs(sp, nullptr, sp->templateParams->next, sp->templateParams->next, sp->templateParams->next))
         {
             return false;
         }

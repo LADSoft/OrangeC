@@ -2882,7 +2882,6 @@ founddecltype:
                                     }
                                     else
                                     {
-                                        SpecializationError(sp);
                                         tn = sp->tp;
                                     }
                                 }
@@ -3848,7 +3847,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                                 sym = anonymousVar(sc_auto, tp2)->v.sp;
                                 anonymousNotAlloc--;
                                 sym->sb->stackblock = !isref(spi->tp);
-                                lex = initialize(lex, funcsp, sym, sc_auto, true, 0); /* also reserves space */
+                                lex = initialize(lex, funcsp, sym, sc_auto, true, false, 0); /* also reserves space */
                                 spi->sb->init = sym->sb->init;
                                 if (spi->sb->init->exp->type == en_thisref)
                                 {
@@ -3859,7 +3858,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                             }
                             else
                             {
-                                lex = initialize(lex, funcsp, spi, sc_auto, true, 0); /* also reserves space */
+                                lex = initialize(lex, funcsp, spi, sc_auto, true, false, 0); /* also reserves space */
                             }
                             if (spi->sb->init)
                             {
@@ -6930,7 +6929,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                                                    // sc_global)->tp;
                                     }
                                 }
-                                lex = initialize(lex, funcsp, sp, storage_class_in, asExpression, 0); /* also reserves space */
+                                lex = initialize(lex, funcsp, sp, storage_class_in, asExpression, inTemplate, 0); /* also reserves space */
                                 if (sp->sb->parentClass && sp->sb->storage_class == sc_global)
                                 {
                                     if (sp->templateParams && !sp->templateParams->next)

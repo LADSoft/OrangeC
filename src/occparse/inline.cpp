@@ -243,7 +243,7 @@ void dumpInlines(void)
                                 int n = PushTemplateNamespace(pc);
                                 lex = SetAlternateLex(origsym->sb->deferredCompile);
                                 sym->sb->init = nullptr;
-                                lex = initialize(lex, nullptr, sym, sc_global, true, 0);
+                                lex = initialize(lex, nullptr, sym, sc_global, true, false, 0);
                                 SetAlternateLex(nullptr);
                                 PopTemplateNamespace(n);
                                 dropStructureDeclaration();

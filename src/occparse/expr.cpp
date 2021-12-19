@@ -2986,7 +2986,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                 sym2 = anonymousVar(sc_auto, tp2)->v.sp;
                 anonymousNotAlloc--;
                 sym2->sb->stackblock = !isref(sym->tp);
-                lex = initialize(lex, theCurrentFunc, sym2, sc_auto, false, 0); /* also reserves space */
+                lex = initialize(lex, theCurrentFunc, sym2, sc_auto, false, false, 0); /* also reserves space */
                 sym->sb->init = sym2->sb->init;
                 if (sym->sb->init->exp->type == en_thisref)
                 {
@@ -2997,7 +2997,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
             }
             else
             {
-                lex = initialize(lex, theCurrentFunc, sym, sc_member, false, 0);
+                lex = initialize(lex, theCurrentFunc, sym, sc_member, false, false, 0);
             }
             SetAlternateLex(nullptr);
             sym->sb->deferredCompile = nullptr;

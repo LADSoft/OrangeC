@@ -891,7 +891,7 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
                                         sym = anonymousVar(sc_auto, tp2)->v.sp;
                                         anonymousNotAlloc--;
                                         sym->sb->stackblock = !isref(sp2->tp);
-                                        lex = initialize(lex, theCurrentFunc, sym, sc_auto, false, 0); /* also reserves space */
+                                        lex = initialize(lex, theCurrentFunc, sym, sc_auto, false, false, 0); /* also reserves space */
                                         sp2->sb->init = sym->sb->init;
                                         sym->sb->allocate = false;
                                         if (sp2->sb->init->exp->type == en_thisref)
@@ -903,7 +903,7 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
                                     }
                                     else
                                     {
-                                        lex = initialize(lex, theCurrentFunc, sp2, sc_member, false, 0);
+                                        lex = initialize(lex, theCurrentFunc, sp2, sc_member, false, false, 0);
                                     }
                                     SetAlternateLex(nullptr);
                                     sp2->sb->deferredCompile = nullptr;
@@ -959,7 +959,7 @@ void deferredInitializeStructMembers(SYMBOL* cur)
         {
             lex = SetAlternateLex(sp->sb->deferredCompile);
             sp->sb->deferredCompile = nullptr;
-            lex = initialize(lex, theCurrentFunc, sp, sc_member, false, 0);
+            lex = initialize(lex, theCurrentFunc, sp, sc_member, false, false, 0);
             SetAlternateLex(nullptr);
         }
         hr = hr->next;

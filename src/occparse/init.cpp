@@ -3857,7 +3857,7 @@ void RecalculateVariableTemplateInitializers(INITIALIZER** in, INITIALIZER*** ou
         (*out) = &(**out)->next;
     }
 }
-LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, int flags)
+LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, bool inTemplate, int flags)
 {
     auto sp = basetype(sym->tp)->sp;
     if (sp && isstructured(sp->tp) && sp->sb && sp->sb->attribs.uninheritable.deprecationText)
@@ -4316,8 +4316,8 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
                 }
             }
         }
-        else if (sym->sb->init && sym->sb->init->exp && (sym->sb->constexpression || isint(sym->tp) || basetype(sym->tp)->type == bt_enum))
-        {
+        else if (sym->sb->init && !inTemplate && sym->sb->init->exp && (sym->sb->constexpression || isint(sym->tp) || basetype(sym->tp)->type == bt_enum))
+        {              
             if (sym->sb->storage_class != sc_static && !Optimizer::cparams.prm_cplusplus && !funcsp)
                 insertInitSym(sym);
             sym->sb->storage_class = sc_constant;

@@ -72,5 +72,5 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIA
                  SYMBOL* sym, bool arrayMember, int flags);
 bool InitVariableMatches(SYMBOL* left, SYMBOL* right);
 void RecalculateVariableTemplateInitializers(INITIALIZER** in, INITIALIZER*** out, TYPE* tp, int offset);
-LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, int flags);
+LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, bool inTemplate, int flags);
 }  // namespace Parser

@@ -1446,7 +1446,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         {
                             if (isstructured(declSP->tp) && !basetype(declSP->tp)->sp->sb->trivialCons)
                             {
-                                lex = initialize(lex, funcsp, declSP, sc_auto, false, 0);
+                                lex = initialize(lex, funcsp, declSP, sc_auto, false, false, 0);
                             }
                             else
                             {
@@ -2136,6 +2136,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
                         else
                         {
                             // not there try an lref version of the constructor
+                            ctype = tp;
                             basetype(tp1)->rref = false;
                             basetype(tp1)->lref = true;
                             callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, false, false, false, false, true);
@@ -3281,7 +3282,7 @@ static bool isvoidreturntype(TYPE *tp, SYMBOL* funcsp)
         {
             TEMPLATEPARAMLIST param = *tp->templateParam;
             param.next = nullptr;
-            if (TemplateParseDefaultArgs(funcsp, &param, tp->templateParam, tp->templateParam))
+            if (TemplateParseDefaultArgs(funcsp, nullptr, &param, tp->templateParam, tp->templateParam))
             {
                 if (param.p->byClass.val)
                 {

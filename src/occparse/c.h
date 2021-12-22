@@ -32,6 +32,7 @@ namespace Parser
 #define CI_CAST 2
 #define CI_NEW 3
 #define CI_DELETE 4
+#define CI_ASSIGN (assign + 3)
 #define CI_FUNC (openpa + 3)
 #define CI_NEWA (complx + 1 + 3)
 #define CI_DELETEA (complx + 2 + 3)
@@ -284,6 +285,9 @@ typedef struct
 #define _F_NOEVAL 2048
 #define _F_SCOPEDENUM 4096
 #define _F_MEMBER 8192
+#define _F_IS_NOTHROW 16384
+#define _F_RETURN_DELETED 32768
+#define _F_NOGEN 65536
 
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2

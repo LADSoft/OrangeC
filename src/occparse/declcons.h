@@ -25,6 +25,7 @@
 
 namespace Parser
 {
+extern bool noExcept;
 
 void ConsDestDeclarationErrors(SYMBOL* sp, bool notype);
 void ConstexprMembersNotInitializedErrors(SYMBOL* sym);

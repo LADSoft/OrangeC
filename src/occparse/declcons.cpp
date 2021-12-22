@@ -51,6 +51,7 @@
 namespace Parser
 {
     std::set<SYMBOL*> defaultRecursionMap;
+    bool noExcept = true;
 
 static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPRESSION* thisptr, EXPRESSION* other, bool move,
                        bool isconst);
@@ -924,10 +925,6 @@ static bool checkMoveCons(SYMBOL* sp, SYMBOL* base, enum e_ac access)
             return true;
         if (!isAccessible(sp, dflt->sb->parentClass, dflt, nullptr, access, false))
             return true;
-    }
-    else
-    {
-        return true;
     }
     return false;
 }
@@ -2705,6 +2702,7 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
         codeLabel = oldCodeLabel;
     return thisptr;
 }
+#if 0
 static e_xc DefaultConstructorExceptionMode(STATEMENT* block);
 static e_xc DefaultConstructorExceptionModeExpr(EXPRESSION* node)
 {
@@ -3030,6 +3028,7 @@ static e_xc DefaultConstructorExceptionMode(STATEMENT* block)
     }
     return rv;
 }
+#endif
 static bool DefaultConstructorConstExpression(SYMBOL *sp)
 {
     if (sp->sb->constexpression)
@@ -3075,6 +3074,8 @@ void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
     BLOCKDATA b = {};
     STATEMENT* st;
     EXPRESSION* thisptr;
+    bool oldNoExcept = noExcept;
+    noExcept = true;
     b.type = begin;
     syms = localNameSpace->valueData->syms;
     localNameSpace->valueData->syms = basetype(consfunc->tp)->syms;
@@ -3091,17 +3092,36 @@ void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
         //    consfunc->sb->inlineFunc.stmt->blockTail = b.tail;
         InsertInline(consfunc);
         defaultRecursionMap.clear();
-        consfunc->sb->xcMode = DefaultConstructorExceptionMode(b.head);
-        consfunc->sb->noExcept = consfunc->sb->xcMode == xc_none;
+        if (noExcept)
+        {
+//            consfunc->sb->xcMode = DefaultConstructorExceptionMode(b.head);
+//            consfunc->sb->noExcept = consfunc->sb->xcMode == xc_none;
+            consfunc->sb->xcMode = xc_none;
+            consfunc->sb->noExcept = true;
+        }
+        else
+        {
+            consfunc->sb->xcMode = xc_unspecified;
+            consfunc->sb->noExcept = false;
+        }
     }
     else
     {
         defaultRecursionMap.clear();
-        e_xc mode = DefaultConstructorExceptionMode(b.head);
-        consfunc->sb->noExcept = mode == xc_none;
+        if (noExcept)
+        {
+//            e_xc mode = DefaultConstructorExceptionMode(b.head);
+//            consfunc->sb->noExcept = mode == xc_none;
+            consfunc->sb->noExcept = true;
+        }
+        else
+        {
+            consfunc->sb->noExcept = false;
+        }
     }
     consfunc->sb->constexpression = DefaultConstructorConstExpression(sp) || matchesCopy(consfunc, false) || matchesCopy(consfunc, true);
     localNameSpace->valueData->syms = syms;
+    noExcept &= oldNoExcept;
 }
 void asnVirtualBases(BLOCKDATA* b, SYMBOL* sp, VBASEENTRY* vbe, EXPRESSION* thisptr, EXPRESSION* other, bool move, bool isconst)
 {
@@ -3203,6 +3223,8 @@ static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPR
         }
         if (asn1->sb->defaulted && !asn1->sb->inlineFunc.stmt)
             createAssignment(base, asn1);
+        noExcept &= asn1->sb->noExcept;
+        
         params->functp = asn1->tp;
         params->sp = asn1;
         params->ascall = true;
@@ -3271,6 +3293,8 @@ void createAssignment(SYMBOL* sym, SYMBOL* asnfunc)
     // because we only get here for 'default' functions and that is the only one
     // that can be defaulted...
     HASHTABLE* syms;
+    bool oldNoExcept = noExcept;
+    noExcept = true;
     BLOCKDATA b = {};
     bool move = basetype(((SYMBOL*)basetype(asnfunc->tp)->syms->table[0]->next->p)->tp)->type == bt_rref;
     bool isConst = isconst(((SYMBOL*)basetype(asnfunc->tp)->syms->table[0]->next->p)->tp);
@@ -3286,16 +3310,35 @@ void createAssignment(SYMBOL* sym, SYMBOL* asnfunc)
         //    asnfunc->sb->inlineFunc.stmt->blockTail = b.tail;
         InsertInline(asnfunc);
         defaultRecursionMap.clear();
-        asnfunc->sb->xcMode = DefaultConstructorExceptionMode(b.head);
-        asnfunc->sb->noExcept = asnfunc->sb->xcMode == xc_none;
+        if (noExcept)
+        {
+//            asnfunc->sb->xcMode = DefaultConstructorExceptionMode(b.head);
+//            asnfunc->sb->noExcept = asnfunc->sb->xcMode == xc_none;
+            asnfunc->sb->xcMode = xc_none;
+            asnfunc->sb->noExcept = true;
+        }
+        else
+        {
+            asnfunc->sb->xcMode = xc_unspecified;
+            asnfunc->sb->noExcept = false;
+        }
     }
     else
     {
         defaultRecursionMap.clear();
-        enum e_xc mode = DefaultConstructorExceptionMode(b.head);
-        asnfunc->sb->noExcept = mode == xc_none;
+        if (noExcept)
+        {
+//            enum e_xc mode = DefaultConstructorExceptionMode(b.head);
+//            asnfunc->sb->noExcept = mode == xc_none;
+            asnfunc->sb->noExcept = true;
+        }
+        else
+        {
+            asnfunc->sb->noExcept = false;
+        }
     }
     localNameSpace->valueData->syms = syms;
+    noExcept &= oldNoExcept;
 }
 static void genDestructorCall(BLOCKDATA* b, SYMBOL* sp, SYMBOL* against, EXPRESSION* base, EXPRESSION* arrayElms, int offset,
                               bool top)
@@ -3411,22 +3454,38 @@ void createDestructor(SYMBOL* sp)
 {
     HASHTABLE* syms;
     SYMBOL* dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
+    bool oldNoExcept = noExcept;
+    noExcept = true;
     BLOCKDATA b = {};
     b.type = begin;
     dest = (SYMBOL*)basetype(dest->tp)->syms->table[0]->p;
     syms = localNameSpace->valueData->syms;
     localNameSpace->valueData->syms = basetype(dest->tp)->syms;
     thunkDestructorTail(&b, sp, dest, basetype(dest->tp)->syms, true);
-    dest->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-    dest->sb->inlineFunc.stmt->lower = b.head;
-    dest->sb->inlineFunc.syms = basetype(dest->tp)->syms;
-    dest->sb->retcount = 1;
-    dest->sb->attribs.inheritable.isInline = dest->sb->attribs.inheritable.linkage2 != lk_export;
-    dest->sb->xcMode = xc_none;
-    dest->sb->noExcept = true;
+    if (!inNoExceptHandler)
+    {
+        dest->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+        dest->sb->inlineFunc.stmt->lower = b.head;
+        dest->sb->inlineFunc.syms = basetype(dest->tp)->syms;
+        dest->sb->retcount = 1;
+        dest->sb->attribs.inheritable.isInline = dest->sb->attribs.inheritable.linkage2 != lk_export;
+        InsertInline(dest);
+    }
+    if (dest->sb->defaulted || noExcept)
+    {
+//        dest->sb->xcMode = DefaultConstructorExceptionMode(b.head);
+//        dest->sb->noExcept = dest->sb->xcMode == xc_none;
+        dest->sb->xcMode = xc_none;
+        dest->sb->noExcept = true;
+    }
+    else
+    {
+        dest->sb->xcMode = xc_unspecified;
+        dest->sb->noExcept = false;
+    }
     //    dest->sb->inlineFunc.stmt->blockTail = b.tail;
-    InsertInline(dest);
     localNameSpace->valueData->syms = syms;
+    noExcept &= oldNoExcept;
 }
 void makeArrayConsDest(TYPE** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, EXPRESSION* count)
 {
@@ -3517,6 +3576,8 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
             deref(&stdpointer, &exp_in);
             params->fcall = exp_in;
         }
+        if (dest1)
+            noExcept &= dest1->sb->noExcept;
     }
     else
         params->fcall = varNode(en_pc, dest1);
@@ -3719,6 +3780,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
             params->ascall = true;
             if (cons1->sb->defaulted && !cons1->sb->inlineFunc.stmt)
                 createConstructor(sp, cons1);
+            noExcept &= cons1->sb->noExcept;
             if (arrayElms)
             {
                 SYMBOL* dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);

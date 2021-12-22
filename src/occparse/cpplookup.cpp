@@ -53,7 +53,7 @@ namespace Parser
 {
 int inGetUserConversion;
 
-static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, Optimizer::LIST* gather, FUNCTIONCALL* args, TYPE* atp);
+static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, Optimizer::LIST* gather, FUNCTIONCALL* args, TYPE* atp, int flags);
 
 #define DEBUG
 
@@ -4554,7 +4554,7 @@ SYMBOL* GetOverloadedTemplate(SYMBOL* sp, FUNCTIONCALL* args)
     lenList = Allocate<int*>(n);
     funcList = Allocate<SYMBOL**>(n);
 
-    n = insertFuncs(spList, spFilterList, &gather, args, nullptr);
+    n = insertFuncs(spList, spFilterList, &gather, args, nullptr, 0);
     if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor))
     {
         if (args->ascall)
@@ -4601,7 +4601,7 @@ void weedgathering(Optimizer::LIST** gather)
         gather = &(*gather)->next;
     }
 }
-static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, Optimizer::LIST* gather, FUNCTIONCALL* args, TYPE* atp)
+static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, Optimizer::LIST* gather, FUNCTIONCALL* args, TYPE* atp, int flags)
 {
     int n = 0;
     while (gather)
@@ -4639,14 +4639,17 @@ static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, Optimizer::LIST* 
         }
         gather = gather->next;
     }
-    int i;
-    for ( i = 0; i < n; i++)
-        if (spList[i] && !spList[i]->sb->deleted)
-            break;
-    if (i < n)
-        for (int i = 0; i < n; i++)
-            if (spList[i] && spList[i]->sb->deleted)
-                spList[i] = nullptr;
+    if (!(flags & _F_RETURN_DELETED))
+    {
+        int i;
+        for ( i = 0; i < n; i++)
+            if (spList[i] && !spList[i]->sb->deleted)
+                break;
+        if (i < n)
+            for (int i = 0; i < n; i++)
+                if (spList[i] && spList[i]->sb->deleted)
+                    spList[i] = nullptr;
+    }
     return n;
 }
 static void doNames(SYMBOL* sym)
@@ -4839,7 +4842,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 icsList = Allocate<e_cvsrn*>(n);
                 lenList = Allocate<int*>(n);
                 funcList = Allocate<SYMBOL**>(n);
-                n = insertFuncs(spList, spFilterList, gather, args, atp);
+                n = insertFuncs(spList, spFilterList, gather, args, atp, flags);
                 if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor && !spList[0]->sb->specialized2))
                 {
                     if (atp || args->ascall)
@@ -4866,7 +4869,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     {
                         memset(spFilterList, 0, sizeof(SYMBOL*) * n);
 
-                        n = insertFuncs(spList, spFilterList, gather, args, atp);
+                        n = insertFuncs(spList, spFilterList, gather, args, atp, flags);
                         if (atp || args->ascall)
                         {
                             GatherConversions(sp, spList, n, args, atp, icsList, lenList, argCount, funcList, flags & _F_INITLIST);
@@ -4984,14 +4987,14 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
             {
                 if (toErr)
                     errorsym(ERR_DELETED_FUNCTION_REFERENCED, found1);
-                else
+                else if (!(flags & _F_RETURN_DELETED))
                     found1 = nullptr;
             }
             if (found1)
             {
                 if (found1->sb->attribs.uninheritable.deprecationText)
                     deprecateMessage(found1);
-                if (!(flags & _F_SIZEOF))
+                if (!(flags & _F_SIZEOF) || ((flags & _F_IS_NOTHROW) && found1->sb->deferredNoexcept != 0 && found1->sb->deferredNoexcept != (LEXLIST*)-1))
                 {
                     if (theCurrentFunc && !found1->sb->constexpression)
                     {
@@ -5021,32 +5024,31 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         CollapseReferences(hr->p->tp);
                     }
                     CollapseReferences(basetype(found1->tp)->btp);
-                    if (!inNoExceptHandler)
+                    if (found1->sb->templateLevel && (!templateNestingCount || instantiatingTemplate) && found1->templateParams)
                     {
-                        if (found1->sb->templateLevel && (!templateNestingCount || instantiatingTemplate) && found1->templateParams)
+                        found1 = TemplateFunctionInstantiate(found1, false, false);
+                    }
+                    else
+                    {
+                        if (toInstantiate && found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt)
                         {
-                            found1 = TemplateFunctionInstantiate(found1, false, false);
+                            if (found1->templateParams)
+                                instantiatingTemplate++;
+                            if (found1->sb->templateLevel || (found1->sb->parentClass && found1->sb->parentClass->sb->templateLevel))
+                                EnterInstantiation(nullptr, found1);
+                            deferredCompileOne(found1);
+                            if (found1->sb->templateLevel || (found1->sb->parentClass && found1->sb->parentClass->sb->templateLevel))
+                                LeaveInstantiation();
+                            if (found1->templateParams)
+                                instantiatingTemplate--;
                         }
                         else
                         {
-                            if (toInstantiate && found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt)
-                            {
-                                if (found1->templateParams)
-                                    instantiatingTemplate++;
-                                if (found1->sb->templateLevel || (found1->sb->parentClass && found1->sb->parentClass->sb->templateLevel))
-                                    EnterInstantiation(nullptr, found1);
-                                deferredCompileOne(found1);
-                                if (found1->sb->templateLevel || (found1->sb->parentClass && found1->sb->parentClass->sb->templateLevel))
-                                    LeaveInstantiation();
-                                if (found1->templateParams)
-                                    instantiatingTemplate--;
-                            }
-                            else
-                            {
-                                InsertInline(found1);
-                            }
+                            InsertInline(found1);
                         }
                     }
+                    if (found1->sb->inlineFunc.stmt)
+                        noExcept &= found1->sb->noExcept;
                 }
                 else
                 {

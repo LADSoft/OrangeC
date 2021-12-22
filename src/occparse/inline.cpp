@@ -45,6 +45,7 @@
 #include "declcpp.h"
 #include "inline.h"
 #include "ioptimizer.h"
+#include "libcxx.h"
 
 namespace Parser
 {

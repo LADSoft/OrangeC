@@ -4257,13 +4257,56 @@ LEXLIST* getExceptionSpecifiers(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e
             if (MATCHKW(lex, openpa))
             {
                 lex = getsym();
-                lex = getDeferredData(lex, &sp->sb->deferredNoexcept, false);
+                
+                if (!templateNestingCount || instantiatingTemplate)
+                {
+                    LEXLIST* current = lex;
+                    TYPE* tp = nullptr; 
+                    EXPRESSION* expr = nullptr;
+                    inDeduceArgs++;
+                    if (!strcmp(sp->name, "$bctr"))
+                    {
+                        SYMBOL* s = getStructureDeclaration();
+                    }
+                    int old = templateInstantiationError;
+                    inNoExceptHandler++;
+                    lex = optimized_expression(lex, funcsp, nullptr, &tp, &expr, true);
+                    inNoExceptHandler--;
+                    inDeduceArgs--;
+                    if (tp && isintconst(expr) && old == templateInstantiationError)
+                    {
+                        if (expr->v.i)
+                        {
+                            sp->sb->xcMode = xc_none;
+                            sp->sb->noExcept = true;
+                        }
+                        else
+                        {
+                            sp->sb->xcMode = xc_unspecified;
+                            sp->sb->noExcept = false;
+                        }
+                        if (!sp->sb->xc)
+                            sp->sb->xc = Allocate<xcept>();
+                        sp->sb->deferredNoexcept = (LEXLIST*) -1;
+                    }
+                    else
+                    {
+                        lex = prevsym(current);
+                        lex = getDeferredData(lex, &sp->sb->deferredNoexcept, false);
+                    }
+                    templateInstantiationError = old;
+                }
+                else
+                {
+                   lex = getDeferredData(lex, &sp->sb->deferredNoexcept, false);
+                }
                 needkw(&lex, closepa);
             }
             else
             {
                 sp->sb->xcMode = xc_none;
                 sp->sb->noExcept = true;
+                sp->sb->deferredNoexcept = (LEXLIST*) -1;
                 if (!sp->sb->xc)
                     sp->sb->xc = Allocate<xcept>();
             }
@@ -5936,7 +5979,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         if (inTemplate &&
                             (!sp->templateParams || MATCHKW(lex, colon) || MATCHKW(lex, begin) || MATCHKW(lex, kw_try)))
                             sp->templateParams = TemplateGetParams(sp);
-                        if (sp->sb->isDestructor && sp->sb->xcMode == xc_unspecified)
+                        if (sp->sb->isDestructor && sp->sb->xcMode == xc_unspecified && !sp->sb->deferredNoexcept)
                         {
                             sp->sb->noExcept = true;
                             sp->sb->xcMode = xc_none;

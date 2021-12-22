@@ -6596,8 +6596,7 @@ void PushPopTemplateArgs(SYMBOL* func, bool push)
         TYPE* tp = ((SYMBOL*)templateArgs->p)->tp;
         while (isref(tp) || ispointer(tp))
             tp = basetype(tp)->btp;
-        if (isstructured(tp) && basetype(tp)->sp->templateParams && !basetype(tp)->sp->sb->instantiated &&
-            !basetype(tp)->sp->sb->declaring)
+        if (isstructured(tp) && basetype(tp)->sp->templateParams &&!basetype(tp)->sp->sb->declaring)
             PushPopValues(basetype(tp)->sp->templateParams, push);
         templateArgs = templateArgs->next;
     }
@@ -8039,7 +8038,8 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
         if (ok)
         {
             SYMLIST* hr = sym->sb->overloadName->tp->syms->table[0];
-            insertOverload(sym, sym->sb->overloadName->tp->syms);
+            if (!inNoExceptHandler)
+                insertOverload(sym, sym->sb->overloadName->tp->syms);
             while (hr)
             {
                 if (matchOverload(sym->tp, hr->p->tp, true))
@@ -8083,7 +8083,8 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             linesHead = linesTail = nullptr;
             if (sym->sb->storage_class != sc_member && sym->sb->storage_class != sc_mutable && sym->sb->storage_class != sc_virtual)
                 sym->sb->storage_class = sc_global;
-            sym->sb->attribs.inheritable.linkage4 = lk_virtual;
+            if (!inNoExceptHandler)
+                sym->sb->attribs.inheritable.linkage4 = lk_virtual;
             sym->sb->xc = nullptr;
             sym->sb->maintemplate = orig;
             sym->sb->redeclared = false;
@@ -8541,8 +8542,18 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* v
     // here to support return types, templateselectors would otherwise be resolved by now
     else
     {
-        if (dflt->argsym)
+        if (dflt->argsym && params && !params->p->byNonType.val)
         {
+            if (params && params->p->type == kw_int)
+            {
+                 for (auto param1 = dflt; param1; param1 = param1->next)
+                     if (param1->p->type == kw_int && param1->p->byNonType.dflt && param1->p->byNonType.dflt->type == en_templateparam)
+                         if (!strcmp(params->argsym->name, param1->p->byNonType.dflt->v.sp->tp->templateParam->argsym->name))
+                         {
+                             params->p->byNonType.val = param1->p->byNonType.val;
+                             return;
+                         }
+            }
             while (params)
             {
                 if (params->argsym && !strcmp(dflt->argsym->name, params->argsym->name))

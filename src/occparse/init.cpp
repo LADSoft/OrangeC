@@ -2790,7 +2790,6 @@ EXPRESSION* getThisNode(SYMBOL* sym)
 static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* base, int offset, enum e_sc sc, TYPE* itype,
                                          INITIALIZER** init, INITIALIZER** dest, bool arrayMember, int flags)
 {
-
     INITIALIZER *data = nullptr, **next = &data;
     AGGREGATE_DESCRIPTOR *desc = nullptr, *cache = nullptr;
     bool c99 = false;

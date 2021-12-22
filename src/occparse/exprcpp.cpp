@@ -2320,7 +2320,8 @@ static bool noexceptExpression(EXPRESSION* node)
             fp = node->v.func;
             {
                 SYMBOL* sym = fp->sp;
-                rv = sym->sb->xcMode == xc_none || (sym->sb->xcMode == xc_dynamic && (!sym->sb->xc || !sym->sb->xc->xcDynamic));
+//rv = sym->sb->xcMode == xc_none || (sym->sb->xcMode == xc_dynamic && (!sym->sb->xc || !sym->sb->xc->xcDynamic));
+                rv = sym->sb->noExcept;
             }
             break;
         case en_stmt:
@@ -2394,7 +2395,7 @@ LEXLIST* expression_noexcept(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION
     lex = getsym();
     if (needkw(&lex, openpa))
     {
-        lex = expression_no_check(lex, funcsp, nullptr, tp, exp, _F_SIZEOF);
+        lex = expression_no_check(lex, funcsp, nullptr, tp, exp, _F_SIZEOF | _F_IS_NOTHROW);
         *exp = intNode(en_c_i, noexceptExpression(*exp));
         *tp = &stdbool;
 

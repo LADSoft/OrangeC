@@ -61,7 +61,7 @@
 #include "stmt.h"
 #include "optmodules.h"
 #include "constexpr.h"
-
+#include "libcxx.h"
 
 #define MAX_INLINE_EXPRESSIONS 3
 
@@ -3445,7 +3445,9 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
             insertXCInfo(funcsp);
         }
         if (!strcmp(funcsp->name, overloadNameTab[CI_DESTRUCTOR]))
+        {
             thunkDestructorTail(blockstmt, funcsp->sb->parentClass, funcsp, basetype(funcsp->tp)->syms, false);
+        }
     }
     if (Optimizer::cparams.prm_cplusplus)
         HandleEndOfSwitchBlock(blockstmt);
@@ -3771,7 +3773,7 @@ static void handleInlines(SYMBOL* funcsp)
 }
 void parseNoexcept(SYMBOL* funcsp)
 {
-    if (funcsp->sb->deferredNoexcept)
+    if (funcsp->sb->deferredNoexcept && funcsp->sb->deferredNoexcept != (LEXLIST*)-1)
     {
         LEXLIST* lex = SetAlternateLex(funcsp->sb->deferredNoexcept);
         STRUCTSYM s, t;
@@ -3834,7 +3836,9 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     bool oldHasFuncCall = hasFuncCall;
     int oldExpressionCount = expressions;
     int oldControlSequences = controlSequences;
+    bool oldNoExcept = noExcept;
     constexprfunctioninit(true);
+    noExcept = true;
     expressions = 0;
     controlSequences = 0;
     Optimizer::LIST* oldGlobal = globalNameSpace->valueData->usingDirectives;
@@ -3854,114 +3858,124 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
         templateNestingCount--;
     checkUndefinedStructures(funcsp);
     parseNoexcept(funcsp);
-    FlushLineData(funcsp->sb->declfile, funcsp->sb->realdeclline);
-    if (!funcsp->sb->linedata)
+    if (!inNoExceptHandler)
     {
-        startStmt = currentLineData(nullptr, lex, 0);
-        if (startStmt)
-            funcsp->sb->linedata = startStmt->lineData;
-    }
-    funcsp->sb->declaring = true;
-    labelSyms = CreateHashTable(1);
-    assignParameterSizes(lex, funcsp, block);
-    funcsp->sb->startLine = lex->data->errline;
-    lex = compound(lex, funcsp, block, true);
-    if (isstructured(basetype(funcsp->tp)->btp))
+        FlushLineData(funcsp->sb->declfile, funcsp->sb->realdeclline);
+        if (!funcsp->sb->linedata)
+        {
+            startStmt = currentLineData(nullptr, lex, 0);
+            if (startStmt)
+                funcsp->sb->linedata = startStmt->lineData;
+        }
+        funcsp->sb->declaring = true;
+        labelSyms = CreateHashTable(1);
         assignParameterSizes(lex, funcsp, block);
-    refreshBackendParams(funcsp);
-    checkUnlabeledReferences(block);
-    checkGotoPastVLA(block->head, true);
-    if (isautotype(basetype(funcsp->tp)->btp) && !templateNestingCount)
-        basetype(funcsp->tp)->btp = &stdvoid;  // return value for auto function without return statements
-    if (Optimizer::cparams.prm_cplusplus)
-    {
-        if (!funcsp->sb->constexpression)
-            funcsp->sb->nonConstVariableUsed = true;
-        else
-            funcsp->sb->nonConstVariableUsed |= !MatchesConstFunction(funcsp);
+        funcsp->sb->startLine = lex->data->errline;
+        lex = compound(lex, funcsp, block, true);
+        if (isstructured(basetype(funcsp->tp)->btp))
+            assignParameterSizes(lex, funcsp, block);
+        refreshBackendParams(funcsp);
+        checkUnlabeledReferences(block);
+        checkGotoPastVLA(block->head, true);
+        if (isautotype(basetype(funcsp->tp)->btp) && !templateNestingCount)
+            basetype(funcsp->tp)->btp = &stdvoid;  // return value for auto function without return statements
+        if (Optimizer::cparams.prm_cplusplus)
+        {
+            if (funcsp->sb->noExcept && !funcsp->sb->deferredNoexcept && !noExcept)
+            {
+                // destructor needs to be demoted
+                funcsp->sb->noExcept = false;
+                funcsp->sb->xcMode = xc_unspecified;
+            }
+            if (!funcsp->sb->constexpression)
+                funcsp->sb->nonConstVariableUsed = true;
+            else
+                funcsp->sb->nonConstVariableUsed |= !MatchesConstFunction(funcsp);
 
-        if (funcsp->sb->xcMode == xc_none && !funcsp->sb->anyTry && !hasFuncCall)
-        {
-            funcsp->sb->xcMode = xc_unspecified;
-            Optimizer::SymbolManager::Get(funcsp)->xc = false;
-            funcsp->sb->xc = nullptr;
-            if (funcsp->sb->mainsym)
+            if (funcsp->sb->xcMode == xc_none && !funcsp->sb->anyTry && !hasFuncCall)
             {
-                funcsp->sb->mainsym->sb->xcMode = xc_unspecified;
-                funcsp->sb->mainsym->sb->xc = nullptr;
-            }
-            hasXCInfo = false;
-        }
-        funcsp->sb->canThrow = functionCanThrow;
-    }
-    if (expressions <= MAX_INLINE_EXPRESSIONS && !controlSequences)
-    {
-        funcsp->sb->simpleFunc = true;
-    }
-    funcsp->sb->labelCount = codeLabel - INT_MIN;
-    n1 = codeLabel;
-    if (!funcsp->sb->templateLevel || funcsp->sb->instantiated)
-    {
-        funcsp->sb->inlineFunc.stmt = stmtNode(lex, nullptr, st_block);
-        funcsp->sb->inlineFunc.stmt->lower = block->head;
-        funcsp->sb->inlineFunc.stmt->blockTail = block->blockTail;
-        funcsp->sb->declaring = false;
-        if (funcsp->sb->attribs.inheritable.isInline && (Optimizer::functionHasAssembly || funcsp->sb->attribs.inheritable.linkage2 == lk_export))
-            funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
-        if (!Optimizer::cparams.prm_allowinline)
-            funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
-        // if it is variadic don't allow it to be inline
-        if (funcsp->sb->attribs.inheritable.isInline)
-        {
-            SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
-            if (hr)
-            {
-                while (hr->next)
-                    hr = hr->next;
-                if (hr->p->tp->type == bt_ellipse)
-                    funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
-            }
-        }
-        if (funcsp->sb->attribs.inheritable.linkage4 == lk_virtual || funcsp->sb->attribs.inheritable.isInline)
-        {
-            if (funcsp->sb->attribs.inheritable.isInline)
-                funcsp->sb->attribs.inheritable.linkage2 = lk_none;
-            InsertInline(funcsp);
-            if (!Optimizer::cparams.prm_cplusplus && funcsp->sb->storage_class != sc_static)
-                Optimizer::SymbolManager::Get(funcsp);
-        }
-        else if (!funcsp->sb->constexpression && IsCompiler())
-        {
-            bool isTemplate = false;
-            SYMBOL* spt = funcsp;
-            while (spt && !isTemplate)
-            {
-                if (spt->sb->templateLevel)
-                    isTemplate = true;
-                else
-                    spt = spt->sb->parentClass;
-            }
-
-            if (!isTemplate)
-            {
-                if (!TotalErrors())
+                funcsp->sb->xcMode = xc_unspecified;
+                Optimizer::SymbolManager::Get(funcsp)->xc = false;
+                funcsp->sb->xc = nullptr;
+                if (funcsp->sb->mainsym)
                 {
-                    int oldstartlab = startlab;
-                    int oldretlab = retlab;
-                    startlab = Optimizer::nextLabel++;
-                    retlab = Optimizer::nextLabel++;
-                    genfunc(funcsp, true);
-                    retlab = oldretlab;
-                    startlab = oldstartlab;
+                    funcsp->sb->mainsym->sb->xcMode = xc_unspecified;
+                    funcsp->sb->mainsym->sb->xc = nullptr;
+                }
+                hasXCInfo = false;
+            }
+            funcsp->sb->canThrow = functionCanThrow;
+        }
+        if (expressions <= MAX_INLINE_EXPRESSIONS && !controlSequences)
+        {
+            funcsp->sb->simpleFunc = true;
+        }
+        funcsp->sb->labelCount = codeLabel - INT_MIN;
+        n1 = codeLabel;
+        if (!funcsp->sb->templateLevel || funcsp->sb->instantiated)
+        {
+            funcsp->sb->inlineFunc.stmt = stmtNode(lex, nullptr, st_block);
+            funcsp->sb->inlineFunc.stmt->lower = block->head;
+            funcsp->sb->inlineFunc.stmt->blockTail = block->blockTail;
+            funcsp->sb->declaring = false;
+            if (funcsp->sb->attribs.inheritable.isInline && (Optimizer::functionHasAssembly || funcsp->sb->attribs.inheritable.linkage2 == lk_export))
+                funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
+            if (!Optimizer::cparams.prm_allowinline)
+                funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
+            // if it is variadic don't allow it to be inline
+            if (funcsp->sb->attribs.inheritable.isInline)
+            {
+                SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
+                if (hr)
+                {
+                    while (hr->next)
+                        hr = hr->next;
+                    if (hr->p->tp->type == bt_ellipse)
+                        funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
                 }
             }
-        }
+            if (funcsp->sb->attribs.inheritable.linkage4 == lk_virtual || funcsp->sb->attribs.inheritable.isInline)
+            {
+                if (funcsp->sb->attribs.inheritable.isInline)
+                    funcsp->sb->attribs.inheritable.linkage2 = lk_none;
+                InsertInline(funcsp);
+                if (!Optimizer::cparams.prm_cplusplus && funcsp->sb->storage_class != sc_static)
+                    Optimizer::SymbolManager::Get(funcsp);
+            }
+            else if (!funcsp->sb->constexpression && IsCompiler())
+            {
+                bool isTemplate = false;
+                SYMBOL* spt = funcsp;
+                while (spt && !isTemplate)
+                {
+                    if (spt->sb->templateLevel)
+                        isTemplate = true;
+                    else
+                        spt = spt->sb->parentClass;
+                }
 
+                if (!isTemplate)
+                {
+                    if (!TotalErrors())
+                    {
+                        int oldstartlab = startlab;
+                        int oldretlab = retlab;
+                        startlab = Optimizer::nextLabel++;
+                        retlab = Optimizer::nextLabel++;
+                        genfunc(funcsp, true);
+                        retlab = oldretlab;
+                        startlab = oldstartlab;
+                    }
+                }
+            }
+
+        }
+        if (IsCompiler() && funcNesting == 1)  // top level function
+            localFree();
+        handleInlines(funcsp);
     }
-    if (IsCompiler() && funcNesting == 1)  // top level function
-        localFree();
-    handleInlines(funcsp);
     constexprfunctioninit(false);
+    noExcept = oldNoExcept;
     controlSequences = oldControlSequences;
     expressions = oldExpressionCount;
     globalNameSpace->valueData->usingDirectives = oldGlobal;

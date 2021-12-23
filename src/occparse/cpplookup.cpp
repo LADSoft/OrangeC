@@ -4341,6 +4341,8 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                         getInitListConversion(initializerListType, a->nested, nullptr, &m, seq, sym,
                                               userFunc ? &userFunc[n] : nullptr);
                         a->nested->next = next;
+                        if (a->initializer_list && a->nested->nested)
+                            hr = &(*hr)->next;
                     }
                     else if (a->initializer_list)
                     {
@@ -4355,8 +4357,24 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                 }
                 else if (a && (a->nested || (!a->tp && !a->exp)))
                 {
-                    seq[m++] = CV_QUALS;  // have to make a distinction between an initializer list and the same func without one...
-                    getInitListConversion(basetype(tp), a->nested, nullptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr);
+                    if (a->nested)
+                    {
+                        seq[m++] = CV_QUALS;  // have to make a distinction between an initializer list and the same func without one...
+                        if (a->next || (isstructured(tp1) && ( !sym->sb->isConstructor || (!comparetypes(basetype(tp1), sym->sb->parentClass->tp, true) && ! sameTemplate(basetype(tp1), sym->sb->parentClass->tp)))))
+                        {
+                            initializerListType = basetype(tp1);
+                            getInitListConversion(basetype(tp1), a->nested, nullptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr);
+                        }
+                        else
+                        {
+                            a = a->nested;
+                            if (a)
+                            {
+                                getSingleConversion(tp1, a ? a->tp : ((SYMBOL*)(*hrt)->p)->tp, a ? a->exp : nullptr, &m,
+                                    seq, sym, userFunc ? &userFunc[n] : nullptr, true);
+                            }
+                        }
+                    }
                 }
                 else
                 {

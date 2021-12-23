@@ -3815,6 +3815,7 @@ void parseNoexcept(SYMBOL* funcsp)
                 dropStructureDeclaration();
             dropStructureDeclaration();
         }
+	funcsp->sb->deferredNoexcept = (LEXLIST*)-1;
     }
 }
 LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)

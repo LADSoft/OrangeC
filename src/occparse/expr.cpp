@@ -2803,7 +2803,7 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
                     while (arg)
                     {
                         TYPE* ctype = initializerListType;
-                        auto pos = exprNode(en_add, dest, intNode(en_c_i, count1++ * initializerListType->size));
+                        auto pos = copy_expression(exprNode(en_add, dest, intNode(en_c_i, count1++ * initializerListType->size)));
                         FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
                         params->ascall = true;
                         params->thisptr = pos;
@@ -3069,7 +3069,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                     if (basetype(stype)->sp->sb->trivialCons)
                     {
                         INITIALIZER *init = nullptr, **it = &init;
-                        SYMLIST* hr = stype->syms->table[0];
+                        SYMLIST* hr = basetype(stype)->syms->table[0];
                         while (pinit && hr)
                         {
                             SYMBOL* shr = hr->p;
@@ -3109,8 +3109,10 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             }
                             p->tp = InitializerListType(tp);
                             CreateInitializerList(nullptr, p->tp, tp, lptr, true, isref(sym->tp));
+                            (*lptr)->tp = sym->tp;
                             p->next = old;
                             p->nested = nullptr;
+                            params->arguments = (*lptr);
                         }
                         p->exp = thisptr;
                         auto old = p->next;

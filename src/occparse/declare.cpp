@@ -6112,7 +6112,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                         ScrubTemplateValues(hr->p);
                                     hr = hr->next;
                                 }
-                                sym = searchOverloads(sp, spi->tp->syms);
+                                if (!sp->sb->parentClass || !sp->sb->parentClass->sb->declaring)
+                                    sym = searchOverloads(sp, spi->tp->syms);
                                 if (sp->sb->attribs.inheritable.linkage == lk_c ||
                                     (sym && sym->sb->attribs.inheritable.linkage == lk_c))
                                     if (!sym || !sameNameSpace(sp->sb->parentNameSpace, sym->sb->parentNameSpace))

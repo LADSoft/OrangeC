@@ -3546,9 +3546,19 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
                 lref = true;
             }
         }
-        if ((isconst(tpax) != isconst(tppp)) || (isvolatile(tpax) != isvolatile(tppp)))
+        if (isref(tpax))
         {
-            seq[(*n)++] = CV_QUALS;
+            if ((isconst(tpa) != isconst(tppp)) || (isvolatile(tpa) != isvolatile(tppp)))
+            {
+                seq[(*n)++] = CV_QUALS;
+            }
+        }
+        else
+        {
+            if ((isconst(tpax) != isconst(tppp)) || (isvolatile(tpax) != isvolatile(tppp)))
+            {
+                seq[(*n)++] = CV_QUALS;
+            }
         }
         if (((isconst(tpa) || isconst(tpax)) && !isconst(tppp)) || ((isvolatile(tpa) || isvolatile(tpax)) && !isvolatile(tppp) && !isconst(tppp)))
         {

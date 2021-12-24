@@ -78,7 +78,6 @@ int instantiatingClass;
 int parsingDefaultTemplateArgs;
 
 static int inTemplateArgs;
-static std::deque<SYMBOL*> nestedInstantiations;
 static std::map<std::string, std::map<std::string, SYMBOL*>> instantiations;
 static std::map<std::string, SYMBOL*> emptyInstantiations;
 
@@ -2657,7 +2656,7 @@ TYPE* SolidifyType(TYPE* tp)
             TYPE *rv = nullptr, **last = &rv;
             for (auto v = tp; v; v = v->btp)
             {
-                *last = Allocate<TYPE>();
+                *last = Allocate<TYPE>();   
                 **last = *v;
                 last = &(*last)->btp;
             }
@@ -6377,9 +6376,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPL
     {
         if (!args && !dest->p->byClass.val && !dest->p->packed && (!primaryList || !primaryList->p->packed))
         {
-            int oldErrors = templateInstantiationError;
-            templateInstantiationError = 0;
-            nestedInstantiations.push_back(nullptr);
             LEXLIST* lex;
             int n, pushCount;
             if (!src->p->byClass.txtdflt)
@@ -6387,8 +6383,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPL
                 parsingDefaultTemplateArgs--;
                 dropStructureDeclaration();
                 instantiatingMemberFuncClass = oldMemberClass;
-                nestedInstantiations.pop_back();
-                templateInstantiationError = oldErrors;
                 return false;
             }
             SwapDefaultNames(enclosing, src->p->byClass.txtargs);
@@ -6439,8 +6433,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPL
                         SetAlternateLex(nullptr);
                         dropStructureDeclaration();
                         instantiatingMemberFuncClass = oldMemberClass;
-                        nestedInstantiations.pop_back();
-                        templateInstantiationError = oldErrors;
                         return false;
                     }
                     break;
@@ -6461,8 +6453,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPL
                         SetAlternateLex(nullptr);
                         dropStructureDeclaration();
                         instantiatingMemberFuncClass = oldMemberClass;
-                        nestedInstantiations.pop_back();
-                        templateInstantiationError = oldErrors;
                         return false;
                     }
                 }
@@ -6494,8 +6484,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPL
                             SetAlternateLex(nullptr);
                             dropStructureDeclaration();
                             instantiatingMemberFuncClass = oldMemberClass;
-                            nestedInstantiations.pop_back();
-                            templateInstantiationError = oldErrors;
                             return false;
                         }
                         dest->p->byNonType.tp = tp1;
@@ -6519,8 +6507,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPL
                             SetAlternateLex(nullptr);
                             dropStructureDeclaration();
                             instantiatingMemberFuncClass = oldMemberClass;
-                            nestedInstantiations.pop_back();
-                            templateInstantiationError = oldErrors;
                             return false;
                         }  
                     }
@@ -6535,8 +6521,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPL
                         SetAlternateLex(nullptr);
                         dropStructureDeclaration();
                         instantiatingMemberFuncClass = oldMemberClass;
-                        nestedInstantiations.pop_back();
-                        templateInstantiationError = oldErrors;
                         return false;
                     }
                 }
@@ -6549,8 +6533,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPL
                 dropStructureDeclaration();
             PopTemplateNamespace(n);
             SetAlternateLex(nullptr);
-            nestedInstantiations.pop_back();
-            templateInstantiationError = oldErrors;
         }
         if (args)
             args = args->next;
@@ -7201,10 +7183,13 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
                             {
                                 Optimizer::LIST* lst = Allocate<Optimizer::LIST>();
                                 TYPE* tp = Allocate<TYPE>();
+                                *tp = *params->argsym->tp;
+                                /*
                                 tp->type = bt_class;
                                 tp->sp = params->argsym;
                                 tp->size = tp->sp->tp->size;
                                 tp->rootType = tp;
+                                */
                                 params->p->byClass.temp = tp;
                                 lst->data = tp;
                                 lst->next = types;
@@ -7821,8 +7806,6 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             int oldintypedef = inTypedef;
             int oldTypeNameError = noTypeNameError;
             instantiatingClass++;
-            nestedInstantiations.push_back(cls);
-            templateInstantiationError = 0;
             
             noTypeNameError = 0;
             inTypedef = 0;
@@ -7874,16 +7857,6 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             lex = SetAlternateLex(lex);
             lex = innerDeclStruct(lex, nullptr, cls, false, cls->tp->type == bt_class ? ac_private : ac_public, cls->sb->isfinal,
                                   &defd);
-            if (templateInstantiationError)
-            {
-                for (auto sym : nestedInstantiations)
-                {
-                    if (!sym)
-                        break;
-                    sym->sb->instantiationError = true;
-                }
-            }
-            nestedInstantiations.pop_back();
             SetAlternateLex(nullptr);
             SwapMainTemplateArgs(cls);
             lex = reinstateLex;

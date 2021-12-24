@@ -4257,49 +4257,7 @@ LEXLIST* getExceptionSpecifiers(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e
             if (MATCHKW(lex, openpa))
             {
                 lex = getsym();
-                
-                if (!templateNestingCount || instantiatingTemplate)
-                {
-                    LEXLIST* current = lex;
-                    TYPE* tp = nullptr; 
-                    EXPRESSION* expr = nullptr;
-                    inDeduceArgs++;
-                    if (!strcmp(sp->name, "$bctr"))
-                    {
-                        SYMBOL* s = getStructureDeclaration();
-                    }
-                    int old = templateInstantiationError;
-                    inNoExceptHandler++;
-                    lex = optimized_expression(lex, funcsp, nullptr, &tp, &expr, true);
-                    inNoExceptHandler--;
-                    inDeduceArgs--;
-                    if (tp && isintconst(expr) && old == templateInstantiationError)
-                    {
-                        if (expr->v.i)
-                        {
-                            sp->sb->xcMode = xc_none;
-                            sp->sb->noExcept = true;
-                        }
-                        else
-                        {
-                            sp->sb->xcMode = xc_unspecified;
-                            sp->sb->noExcept = false;
-                        }
-                        if (!sp->sb->xc)
-                            sp->sb->xc = Allocate<xcept>();
-                        sp->sb->deferredNoexcept = (LEXLIST*) -1;
-                    }
-                    else
-                    {
-                        lex = prevsym(current);
-                        lex = getDeferredData(lex, &sp->sb->deferredNoexcept, false);
-                    }
-                    templateInstantiationError = old;
-                }
-                else
-                {
-                   lex = getDeferredData(lex, &sp->sb->deferredNoexcept, false);
-                }
+                lex = getDeferredData(lex, &sp->sb->deferredNoexcept, false);
                 needkw(&lex, closepa);
             }
             else

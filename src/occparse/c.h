@@ -692,7 +692,6 @@ typedef struct sym
         unsigned delegated : 1;                          // construct is delegated to another constructor
         unsigned hasBody : 1;                            // function has a body
         unsigned forcedefault : 1;                       // defaulted internal function needs instantiation
-        unsigned instantiationError : 1;                 // error while instantiating...
         unsigned noExcept : 1;                           // tagged as noexcept or default determined as noexcept
         unsigned explicitlyInstantiated : 1;              // explicitly instantiated
         unsigned retblk : 1;                             // is a return block address

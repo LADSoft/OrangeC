@@ -58,7 +58,6 @@ namespace Parser
 
 int currentErrorLine;
 SYMBOL* theCurrentFunc;
-int templateInstantiationError;
 
 enum e_kw skim_end[] = {end, kw_none};
 enum e_kw skim_closepa[] = {closepa, semicolon, end, kw_none};
@@ -381,8 +380,6 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     if (Optimizer::cparams.prm_makestubs || inDeduceArgs || (templateNestingCount && ignoreErrtemplateNestingCount(err)))
         if (err != ERR_STATIC_ASSERT && !(errors[err].level & NOTE))
         {
-            if (!templateNestingCount && instantiatingClass && !inNoExceptHandler && (errors[err].level & ERROR))
-                templateInstantiationError++;
             return false;
         }
     if (!file)

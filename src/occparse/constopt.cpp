@@ -2571,7 +2571,7 @@ int opt0(EXPRESSION** node)
                 if (sym)
                 {
                     sym = basetype(PerformDeferredInitialization(sym->tp, nullptr))->sp;
-                    if (sym && !sym->sb->instantiationError)
+                    if (sym)
                     {
                         while (find && sym)
                         {

@@ -717,7 +717,6 @@ static bool is_class(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPR
     *tp = &stdint;
     return true;
 }
-int count3;
 static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;

@@ -1491,6 +1491,8 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                 lex = getsym();
                 sp2->sb->attribs.inheritable.used = true;
                 *tp = sp2->tp;
+                while ((*tp)->type == bt_typedef)
+                    (*tp) = (*tp)->btp;
                 tpb = basetype(*tp);
                 if (sp2->sb->storage_class == sc_overloads)
                 {

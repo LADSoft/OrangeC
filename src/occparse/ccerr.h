@@ -66,7 +66,6 @@ typedef struct vlaShim
 
 extern int diagcount;
 extern int currentErrorLine;
-extern int templateInstantiationError;
 
 extern SYMBOL* theCurrentFunc;
 extern enum e_kw skim_end[];

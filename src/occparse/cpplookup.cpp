@@ -2040,6 +2040,23 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
                 break;
             l++, r++;
         }
+        // special check, const zero to pointer is higher pref than int
+        if (expa && isconstzero(ltype, expa))
+        {
+            auto lt2 = ltype;
+            if (isref(lt2))
+            {
+                lt2 = basetype(lt2)->btp;
+                if (ispointer(lt2))
+                {
+                    lt2 = rtype;
+                    if (isref(lt2))
+                        lt2 = basetype(lt2)->btp;
+                    if (isint(lt2))
+                        return -1;
+                }
+            }
+        }
         while (l < lenl && seql[l] == CV_IDENTITY)
             l++;
         while (r < lenr && seqr[r] == CV_IDENTITY)
@@ -4357,9 +4374,9 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                 }
                 else if (a && (a->nested || (!a->tp && !a->exp)))
                 {
+                    seq[m++] = CV_QUALS;  // have to make a distinction between an initializer list and the same func without one...
                     if (a->nested)
                     {
-                        seq[m++] = CV_QUALS;  // have to make a distinction between an initializer list and the same func without one...
                         if (a->next || (isstructured(tp1) && ( !sym->sb->isConstructor || (!comparetypes(basetype(tp1), sym->sb->parentClass->tp, true) && ! sameTemplate(basetype(tp1), sym->sb->parentClass->tp)))))
                         {
                             initializerListType = basetype(tp1);

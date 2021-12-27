@@ -68,6 +68,8 @@ Optimizer::LIST* nameSpaceList;
 char anonymousNameSpaceName[512];
 int noNeedToSpecialize;
 
+int parsingUsing;
+
 static bool MustSpecialize(const char *name)
 {
     if (noNeedToSpecialize || (templateNestingCount && !instantiatingTemplate))
@@ -3349,7 +3351,9 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                 {
                     if (pulledtypename)
                         lex = backupsym();
+                    parsingUsing++;
                     lex = get_type_id(lex, &tp, nullptr, sc_cast, false, true, true);
+                    parsingUsing--;
                 }
                 if (!tp)
                 {

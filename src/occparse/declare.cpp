@@ -100,6 +100,7 @@ void declare_init(void)
     symbolKey = 0;
     noNeedToSpecialize = 0;
     inConstantExpression = 0;
+    parsingUsing = 0;
 }
 
 void InsertGlobal(SYMBOL* sp) { Optimizer::globalCache.push_back(Optimizer::SymbolManager::Get(sp)); }
@@ -4815,7 +4816,7 @@ LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SY
                 start = lex;
                 lex = getsym();
                 /* in a parameter, open paren followed by a type is an  unnamed function */
-                if (storage_class == sc_parameter &&
+                if ((storage_class == sc_parameter || parsingUsing) &&
                     (MATCHKW(lex, closepa) || (startOfType(lex, nullptr, false) && (!ISKW(lex) || !(lex->data->kw->tokenTypes & TT_LINKAGE)))))
                 {
                     TYPE* tp1;
@@ -4829,12 +4830,19 @@ LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SY
                     }
                     *tp = (*spi)->tp;
                     lex = prevsym(start);
-                    lex = getFunctionParams(lex, funcsp, spi, tp, inTemplate, storage_class, false);
                     tp1 = *tp;
-                    *tp = (*tp)->btp;
+                    if (!parsingUsing)
+                    {
+                        lex = getFunctionParams(lex, funcsp, spi, tp, inTemplate, storage_class, false);
+                        tp1 = *tp;
+                        *tp = (*tp)->btp;
+                    }
                     lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, false);
-                    tp1->btp = *tp;
-                    *tp = tp1;
+                    if (!parsingUsing)
+                    {
+                        tp1->btp = *tp;
+                        *tp = tp1;
+                    }
                     UpdateRootTypes(tp1);
                     return lex;
                 }

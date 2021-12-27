@@ -7805,6 +7805,10 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             int oldFuncLevel = funcLevel;
             int oldintypedef = inTypedef;
             int oldTypeNameError = noTypeNameError;
+            int oldParsingUsing = parsingUsing;
+
+            parsingUsing = 0;
+
             instantiatingClass++;
             
             noTypeNameError = 0;
@@ -7869,6 +7873,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             if (old.tp->syms)
                 TemplateTransferClassDeferred(cls, &old);
             PopTemplateNamespace(nsl);
+            parsingUsing = oldParsingUsing;
             noTypeNameError = oldTypeNameError;
             inTypedef = oldintypedef;
             dontRegisterTemplate = oldRegisterTemplate;
@@ -8046,6 +8051,9 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             int oldintypedef = inTypedef;
             int oldTypeNameError = noTypeNameError;
             int oldClass = instantiatingClass;
+            int oldParsingUsing = parsingUsing;
+            parsingUsing = 0;
+
             instantiatingClass = 0;
             noTypeNameError = 0;
             inTypedef = 0;
@@ -8083,10 +8091,11 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             lex = body(lex, sym);
 
             Optimizer::SymbolManager::Get(sym)->xc = false;
-            templateHeaderCount = oldHeaderCount;
             lex = sym->sb->deferredCompile;
             SetAlternateLex(nullptr);
             PopTemplateNamespace(nsl);
+            parsingUsing = oldParsingUsing;
+            templateHeaderCount = oldHeaderCount;
             noTypeNameError = oldTypeNameError;
             inTypedef = oldintypedef;
             argument_nesting = oldArgumentNesting;

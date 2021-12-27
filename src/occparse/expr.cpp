@@ -2958,59 +2958,11 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
         SYMBOL* sym = hr->p;
         INITLIST* p;
 
-        if (sym->sb->deferredCompile && !sym->sb->init)
-        {
-            LEXLIST* lex;
-            STRUCTSYM l, n;
-            TYPE* tp2;
-            int count = 0;
-            int tns = PushTemplateNamespace(func);
-            l.str = func;
-            addStructureDeclaration(&l);
-            count++;
-
-            if (func->templateParams)
-            {
-                n.tmpl = func->templateParams;
-                addTemplateDeclaration(&n);
-                count++;
-            }
-            sym->tp = PerformDeferredInitialization(sym->tp, nullptr);
-            lex = SetAlternateLex(sym->sb->deferredCompile);
-
-            tp2 = sym->tp;
-            if (isref(tp2))
-                tp2 = basetype(tp2)->btp;
-            if (isstructured(tp2))
-            {
-                SYMBOL* sym2;
-                anonymousNotAlloc++;
-                sym2 = anonymousVar(sc_auto, tp2)->v.sp;
-                anonymousNotAlloc--;
-                sym2->sb->stackblock = !isref(sym->tp);
-                lex = initialize(lex, theCurrentFunc, sym2, sc_auto, false, false, 0); /* also reserves space */
-                sym->sb->init = sym2->sb->init;
-                if (sym->sb->init->exp->type == en_thisref)
-                {
-                    EXPRESSION** expr = &sym->sb->init->exp->left->v.func->thisptr;
-                    if ((*expr)->type == en_add && isconstzero(&stdint, (*expr)->right))
-                        sym->sb->init->exp->v.t.thisptr = (*expr) = (*expr)->left;
-                }
-            }
-            else
-            {
-                lex = initialize(lex, theCurrentFunc, sym, sc_member, false, false, 0);
-            }
-            SetAlternateLex(nullptr);
-            sym->sb->deferredCompile = nullptr;
-            while (count--)
-            {
-                dropStructureDeclaration();
-            }
-            PopTemplateNamespace(tns);
-        }
         if (!*lptr)
         {
+            deferredInitializeDefaultArg(sym, func);
+            if ((!templateNestingCount || instantiatingTemplate) &&!hr->p->sb->init)
+                Utils::fatal("hi");
             EXPRESSION* q = sym->sb->init ? sym->sb->init->exp : intNode(en_c_i, 0);
             optimize_for_constants(&q);
             *lptr = Allocate<INITLIST>();

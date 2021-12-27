@@ -464,7 +464,7 @@ static bool hasConstFunc(SYMBOL* sp, int type, bool move)
         {
             SYMBOL* func = hr->p;
             SYMLIST* hra = basetype(func->tp)->syms->table[0]->next;
-            if (hra && (!hra->next || (hra->next->p)->sb->init))
+            if (hra && (!hra->next || (hra->next->p)->sb->init) || (hra->next->p)->sb->deferredCompile)
             {
                 SYMBOL* arg = (SYMBOL*)hra->p;
                 if (isref(arg->tp))
@@ -635,7 +635,7 @@ static bool matchesDefaultConstructor(SYMBOL* sp)
     if (hr)
     {
         SYMBOL* arg1 = hr->p;
-        if (arg1->tp->type == bt_void || arg1->sb->init)
+        if (arg1->tp->type == bt_void || arg1->sb->init || arg1->sb->deferredCompile)
             return true;
     }
     return false;
@@ -646,7 +646,7 @@ bool matchesCopy(SYMBOL* sp, bool move)
     if (hr)
     {
         SYMBOL* arg1 = hr->p;
-        if (!hr->next || (hr->next->p)->sb->init || (hr->next->p)->sb->constop)
+        if (!hr->next || (hr->next->p)->sb->init || (hr->next->p)->sb->deferredCompile || (hr->next->p)->sb->constop)
         {
             if (basetype(arg1->tp)->type == (move ? bt_rref : bt_lref))
             {
@@ -740,7 +740,7 @@ SYMBOL* getCopyCons(SYMBOL* base, bool move)
             {
                 sym1 = (SYMBOL*)hrArgs->next->p;
             }
-            if (hrArgs && (!sym1 || sym1->sb->init))
+            if (hrArgs && (!sym1 || sym1->sb->init || sym1->sb->deferredCompile))
             {
                 TYPE* tp = basetype(sym->tp);
                 if (tp->type == (move ? bt_rref : bt_lref))
@@ -787,7 +787,7 @@ static SYMBOL* GetCopyAssign(SYMBOL* base, bool move)
             {
                 sym1 = (SYMBOL*)hrArgs->next->p;
             }
-            if (hrArgs && (!sym1 || sym1->sb->init))
+            if (hrArgs && (!sym1 || sym1->sb->init || sym1->sb->deferredCompile))
             {
                 TYPE* tp = basetype(sym->tp);
                 if (tp->type == (move ? bt_rref : bt_lref))
@@ -1468,72 +1468,76 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
     if (match)
     {
         hr = basetype(match->tp)->syms->table[0];
-        if (hr->next && (hr->next->p)->sb->init)
+        if (hr->next && ((hr->next->p)->sb->init || (hr->next->p)->sb->deferredCompile))
         {
-            // will match a default constructor but has defaulted args
-            SYMBOL* consfunc = declareConstructor(sp, true, false);  // default
-            HASHTABLE* syms;
-            BLOCKDATA b = {};
-            STATEMENT* st;
-            EXPRESSION* thisptr = varNode(en_auto, hr->p);
-            EXPRESSION* e1;
-            FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
-            hr->p->sb->offset = Optimizer::chosenAssembler->arch->retblocksize;
-            deref(&stdpointer, &thisptr);
-            b.type = begin;
-            syms = localNameSpace->valueData->syms;
-            localNameSpace->valueData->syms = basetype(consfunc->tp)->syms;
-            params->thisptr = thisptr;
-            params->thistp = Allocate<TYPE>();
-            params->thistp->type = bt_pointer;
-            params->thistp->btp = sp->tp;
-            params->thistp->rootType = params->thistp;
-            params->thistp->size = getSize(bt_pointer);
-            params->fcall = varNode(en_pc, match);
-            params->functp = match->tp;
-            params->sp = match;
-            params->ascall = true;
-            AdjustParams(match, basetype(match->tp)->syms->table[0], &params->arguments, false, true);
-            if (sp->sb->vbaseEntries)
+            if (allTemplateArgsSpecified(sp, sp->templateParams))
             {
-                INITLIST *x = Allocate<INITLIST>(), **p;
-                x->tp = Allocate<TYPE>();
-                x->tp->type = bt_int;
-                x->tp->rootType = x->tp;
-                x->tp->size = getSize(bt_int);
-                x->exp = intNode(en_c_i, 1);
-                p = &params->arguments;
-                while (*p)
-                    p = &(*p)->next;
-                *p = x;
+                // will match a default constructor but has defaulted args
+                SYMBOL* consfunc = declareConstructor(sp, true, false);  // default
+                HASHTABLE* syms;
+                BLOCKDATA b = {};
+                STATEMENT* st;
+                EXPRESSION* thisptr = varNode(en_auto, hr->p);
+                EXPRESSION* e1;
+                FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
+                hr->p->sb->offset = Optimizer::chosenAssembler->arch->retblocksize;
+                deref(&stdpointer, &thisptr);
+                b.type = begin;
+                syms = localNameSpace->valueData->syms;
+                localNameSpace->valueData->syms = basetype(consfunc->tp)->syms;
+                params->thisptr = thisptr;
+                params->thistp = Allocate<TYPE>();
+                params->thistp->type = bt_pointer;
+                params->thistp->btp = sp->tp;
+                params->thistp->rootType = params->thistp;
+                params->thistp->size = getSize(bt_pointer);
+                params->fcall = varNode(en_pc, match);
+                params->functp = match->tp;
+                params->sp = match;
+                params->ascall = true;
+                AdjustParams(match, basetype(match->tp)->syms->table[0], &params->arguments, false, true);
+                if (sp->sb->vbaseEntries)
+                {
+                    INITLIST* x = Allocate<INITLIST>(), ** p;
+                    x->tp = Allocate<TYPE>();
+                    x->tp->type = bt_int;
+                    x->tp->rootType = x->tp;
+                    x->tp->size = getSize(bt_int);
+                    x->exp = intNode(en_c_i, 1);
+                    p = &params->arguments;
+                    while (*p)
+                        p = &(*p)->next;
+                    *p = x;
+                }
+                e1 = varNode(en_func, nullptr);
+                e1->v.func = params;
+                if (e1)  // could probably remove this, only null if ran out of memory.
+                {
+                    e1 = exprNode(en_thisref, e1, nullptr);
+                    e1->v.t.thisptr = params->thisptr;
+                    e1->v.t.tp = sp->tp;
+                    // hasXCInfo = true;
+                }
+                st = stmtNode(nullptr, &b, st_return);
+                st->select = e1;
+                consfunc->sb->xcMode = cons->sb->xcMode;
+                if (consfunc->sb->xc)
+                    consfunc->sb->xc->xcDynamic = cons->sb->xc->xcDynamic;
+                consfunc->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+                consfunc->sb->inlineFunc.stmt->lower = b.head;
+                consfunc->sb->inlineFunc.syms = basetype(consfunc->tp)->syms;
+                consfunc->sb->retcount = 1;
+                consfunc->sb->attribs.inheritable.isInline = true;
+                InsertInline(consfunc);
+                // now get rid of the first default arg
+                // leave others so the old constructor can be considered
+                // under other circumstances
+                hr = hr->next;
+                hr->p->sb->init = nullptr;
+                if (match->sb->deferredCompile && !match->sb->inlineFunc.stmt)
+                    deferredCompileOne(match);
+                localNameSpace->valueData->syms = syms;
             }
-            e1 = varNode(en_func, nullptr);
-            e1->v.func = params;
-            if (e1)  // could probably remove this, only null if ran out of memory.
-            {
-                e1 = exprNode(en_thisref, e1, nullptr);
-                e1->v.t.thisptr = params->thisptr;
-                e1->v.t.tp = sp->tp;
-                // hasXCInfo = true;
-            }
-            st = stmtNode(nullptr, &b, st_return);
-            st->select = e1;
-            consfunc->sb->xcMode = cons->sb->xcMode;
-            consfunc->sb->xc->xcDynamic = cons->sb->xc->xcDynamic;
-            consfunc->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-            consfunc->sb->inlineFunc.stmt->lower = b.head;
-            consfunc->sb->inlineFunc.syms = basetype(consfunc->tp)->syms;
-            consfunc->sb->retcount = 1;
-            consfunc->sb->attribs.inheritable.isInline = true;
-            InsertInline(consfunc);
-            // now get rid of the first default arg
-            // leave others so the old constructor can be considered
-            // under other circumstances
-            hr = hr->next;
-            hr->p->sb->init = nullptr;
-            if (match->sb->deferredCompile && !match->sb->inlineFunc.stmt)
-                deferredCompileOne(match);
-            localNameSpace->valueData->syms = syms;
         }
     }
 }
@@ -3407,7 +3411,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                 SYMLIST* hr = basetype(cons1->tp)->syms->table[0];
                 if (hr->p->sb->thisPtr)
                     hr = hr->next;
-                if (!hr->next || (hr->next->p)->sb->init)
+                if (!hr->next || (hr->next->p)->sb->init || (hr->next->p)->sb->deferredCompile)
                 {
                     TYPE* tp = hr->p->tp;
                     if (isref(tp))

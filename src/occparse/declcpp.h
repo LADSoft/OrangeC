@@ -48,6 +48,7 @@ void CheckCalledException(SYMBOL* cst, EXPRESSION* exp);
 void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, VTABENTRY** pos, int offset);
 void calculateVirtualBaseOffsets(SYMBOL* sym);
 void deferredCompileOne(SYMBOL* cur);
+void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func);
 void deferredInitializeStructFunctions(SYMBOL* cur);
 void deferredInitializeStructMembers(SYMBOL* cur);
 TYPE* PerformDeferredInitialization(TYPE* tp, SYMBOL* funcsp);

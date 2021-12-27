@@ -838,6 +838,87 @@ static void RecalcArraySize(TYPE* tp)
         RecalcArraySize(basetype(tp)->btp);
     tp->size = basetype(basetype(tp)->btp)->size * basetype(tp)->esize->v.i;
 }
+void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
+{
+    if (!templateNestingCount || instantiatingTemplate)
+    {
+        if (arg->sb->deferredCompile && !arg->sb->init)
+        {
+            bool initted = false;
+            int oldInstantiatingTemplate;
+            auto str = func->sb->parentClass;
+            if (str && str->templateParams && !allTemplateArgsSpecified(str, str->templateParams->next))
+            {
+                initted = true;
+                oldInstantiatingTemplate = instantiatingTemplate;
+                instantiatingTemplate = 0;
+                templateNestingCount++;
+            }
+            LEXLIST* lex;
+            STRUCTSYM l, n, q;
+            TYPE* tp2;
+            int count = 0;
+            int tns = PushTemplateNamespace(str ? str : func);
+            if (str)
+            {
+                l.str = str;
+                addStructureDeclaration(&l);
+                count++;
+                if (str->templateParams)
+                {
+                    n.tmpl = str->templateParams;
+                    addTemplateDeclaration(&n);
+                    count++;
+                }
+            }
+            if (func->templateParams)
+            {
+                q.tmpl = func->templateParams;
+                addTemplateDeclaration(&q);
+                count++;
+            }
+            //        func->tp = PerformDeferredInitialization(func->tp, nullptr);
+            lex = SetAlternateLex(arg->sb->deferredCompile);
+
+            arg->tp = PerformDeferredInitialization(arg->tp, nullptr);
+            tp2 = arg->tp;
+            if (isref(tp2))
+                tp2 = basetype(tp2)->btp;
+            if (isstructured(tp2))
+            {
+                SYMBOL* sym2;
+                anonymousNotAlloc++;
+                sym2 = anonymousVar(sc_auto, tp2)->v.sp;
+                anonymousNotAlloc--;
+                sym2->sb->stackblock = !isref(arg->tp);
+                lex = initialize(lex, theCurrentFunc, sym2, sc_auto, false, false, 0); /* also reserves space */
+                arg->sb->init = sym2->sb->init;
+                if (arg->sb->init->exp->type == en_thisref)
+                {
+                    EXPRESSION** expr = &arg->sb->init->exp->left->v.func->thisptr;
+                    if ((*expr)->type == en_add && isconstzero(&stdint, (*expr)->right))
+                        arg->sb->init->exp->v.t.thisptr = (*expr) = (*expr)->left;
+                }
+            }
+            else
+            {
+                lex = initialize(lex, theCurrentFunc, arg, sc_member, false, false, 0);
+            }
+            SetAlternateLex(nullptr);
+            arg->sb->deferredCompile = nullptr;
+            while (count--)
+            {
+                dropStructureDeclaration();
+            }
+            PopTemplateNamespace(tns);
+            if (initted)
+            {
+                templateNestingCount--;
+                instantiatingTemplate = oldInstantiatingTemplate;
+            }
+        }
+    }
+}
 void deferredInitializeStructFunctions(SYMBOL* cur)
 {
     SYMLIST* hr;
@@ -884,29 +965,12 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
                                     tp2 = sp2->tp;
                                     if (isref(tp2))
                                         tp2 = basetype(tp2)->btp;
-                                    if (isstructured(tp2))
-                                    {
-                                        SYMBOL* sym;
-                                        anonymousNotAlloc++;
-                                        sym = anonymousVar(sc_auto, tp2)->v.sp;
-                                        anonymousNotAlloc--;
-                                        sym->sb->stackblock = !isref(sp2->tp);
-                                        lex = initialize(lex, theCurrentFunc, sym, sc_auto, false, false, 0); /* also reserves space */
-                                        sp2->sb->init = sym->sb->init;
-                                        sym->sb->allocate = false;
-                                        if (sp2->sb->init->exp->type == en_thisref)
-                                        {
-                                            EXPRESSION** expr = &sp2->sb->init->exp->left->v.func->thisptr;
-                                            if ((*expr)->type == en_add && isconstzero(&stdint, (*expr)->right))
-                                                sp2->sb->init->exp->v.t.thisptr = (*expr) = (*expr)->left;
-                                        }
-                                    }
-                                    else
+                                    if (!isstructured(tp2))
                                     {
                                         lex = initialize(lex, theCurrentFunc, sp2, sc_member, false, false, 0);
+                                        sp2->sb->deferredCompile = nullptr;
                                     }
                                     SetAlternateLex(nullptr);
-                                    sp2->sb->deferredCompile = nullptr;
                                 }
                             }
                             hr2 = hr2->next;

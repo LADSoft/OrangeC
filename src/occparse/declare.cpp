@@ -940,7 +940,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
             if (Optimizer::cparams.prm_cplusplus)
                 deferredInitializeStructMembers(sp);
         }
-    }
+    }   
     for (i = 0; i < n; i++)
     {
         if (!syms[i]->sb->performedStructInitialization)
@@ -3436,16 +3436,19 @@ static void matchFunctionDeclaration(LEXLIST* lex, SYMBOL* sp, SYMBOL* spo, bool
                         {
                             SYMBOL* so = (SYMBOL*)hro1->p;
                             SYMBOL* s = (SYMBOL*)hr1->p;
-                            if (so != s && so->sb->init && s->sb->init)
+                            if (so != s && (so->sb->init || so->sb->deferredCompile) && (s->sb->init || s->sb->deferredCompile))
                                 errorsym(ERR_CANNOT_REDECLARE_DEFAULT_ARGUMENT, so);
-                            if (!err && last && last->sb->init && !(so->sb->init || s->sb->init))
+                            if (!err && last && last->sb->init && !(so->sb->init || s->sb->init || so->sb->deferredCompile || s->sb->deferredCompile))
                             {
                                 err = true;
                                 errorsym(ERR_MISSING_DEFAULT_ARGUMENT, last);
                             }
                             last = so;
-                            if (so->sb->init)
+                            if (so->sb->init || so->sb->deferredCompile)
+                            {
                                 s->sb->init = so->sb->init;
+                                s->sb->deferredCompile = so->sb->deferredCompile;
+                            }
                             if (MATCHKW(lex, colon) || MATCHKW(lex, kw_try) || MATCHKW(lex, begin))
                                 hro1->p = hr1->p;
                             else

@@ -2961,8 +2961,6 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
         if (!*lptr)
         {
             deferredInitializeDefaultArg(sym, func);
-            if ((!templateNestingCount || instantiatingTemplate) &&!hr->p->sb->init)
-                Utils::fatal("hi");
             EXPRESSION* q = sym->sb->init ? sym->sb->init->exp : intNode(en_c_i, 0);
             optimize_for_constants(&q);
             *lptr = Allocate<INITLIST>();

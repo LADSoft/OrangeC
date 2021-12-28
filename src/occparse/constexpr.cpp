@@ -1197,6 +1197,8 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
             return false;
         }
     }
+    if (exp && exp->type == en_global)
+        return false;
     bool rv = false;
     auto args = node->v.func->arguments;
     while (args)

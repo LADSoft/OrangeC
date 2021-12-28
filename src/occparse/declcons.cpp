@@ -3433,18 +3433,21 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
             if (initializerListType)
             {
                 auto old = params->arguments->next;
-                if (params->arguments && params->arguments->nested && params->arguments->nested->nested)
+                if (params->arguments && params->arguments->nested && params->arguments->nested->nested && !params->arguments->initializer_list)
                     params->arguments->next = nullptr;
+                auto temp = params->arguments;
+                if (!params->arguments->initializer_list)
+                    params->arguments = params->arguments->nested;
                 CreateInitializerList(cons1, initializerListTemplate, initializerListType, &params->arguments, false, initializerRef);
-                if (params->arguments && params->arguments->nested && params->arguments->nested->nested)
-                    params->arguments->next = old;
+                if (temp && temp->nested && temp->nested->nested && !temp->initializer_list)
+                    temp->next = old;
                 if (basetype(cons1->tp)->syms->table[0]->next->next)
                     AdjustParams(cons1, basetype(cons1->tp)->syms->table[0]->next->next, &params->arguments->next, false,
                                  implicit && !cons1->sb->isExplicit);
             }
             else
             {
-                if (params->arguments && params->arguments->nested)
+                if (params->arguments && params->arguments->nested && !params->arguments->initializer_list)
                     params->arguments = params->arguments->nested;
                 AdjustParams(cons1, basetype(cons1->tp)->syms->table[0], &params->arguments, false,
                              implicit && !cons1->sb->isExplicit);

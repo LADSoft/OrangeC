@@ -4060,6 +4060,7 @@ static void getInitListConversion(TYPE* tp, INITLIST* list, TYPE* tpp, int* n, e
             }
             else
             {
+                std::deque<EXPRESSION*> hold;
                 EXPRESSION exp, *expp = &exp;
                 TYPE* ctype = cons->tp;
                 TYPE thistp;
@@ -4347,12 +4348,12 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                 }
                 m = 0;
                 TYPE* tp1 = tp;
-                if (basetype(tp1)->type == bt_lref)
+                if (isref(tp1))
                     tp1 = basetype(tp1)->btp;
                 initializerListType = nullptr;
                 if (isstructured(tp1))
                 {
-                    SYMBOL* sym1 = (basetype(tp1)->sp);
+                    SYMBOL* sym1 = basetype(tp1)->sp;
                     if (sym1->sb->initializer_list && sym1->sb->templateLevel)
                     {
                         initializerListType = sym1->templateParams->next->p->byClass.val;
@@ -4362,19 +4363,38 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                 {
                     if (a && a->nested)
                     {
-                        INITLIST* next = a->nested->next;
-                        if (!a->initializer_list)
-                            a->nested->next = nullptr;
-                        getInitListConversion(initializerListType, a->nested, nullptr, &m, seq, sym,
-                                              userFunc ? &userFunc[n] : nullptr);
-                        a->nested->next = next;
-                        if (a->initializer_list && a->nested->nested)
-                            hr = &(*hr)->next;
+                        if (isstructured(initializerListType))
+                        {
+                            INITLIST* next = a->next, *next2 = nullptr;
+                            a->next = nullptr;
+                            if (!a->initializer_list)
+                            {
+                                next2 = a->nested->next;
+                                a->nested->next = nullptr;
+                            }
+                            getInitListConversion(initializerListType, a->nested, nullptr, &m, seq, sym,
+                                userFunc ? &userFunc[n] : nullptr);
+                            if (!a->initializer_list)
+                                a->nested->next = next2;
+                            a->next = next;
+                        }
+                        else
+                        {
+                            INITLIST* next = a->nested->next;
+                            if (!a->initializer_list)
+                                a->nested->next = nullptr;
+                            getInitListConversion(initializerListType, a->nested, nullptr, &m, seq, sym,
+                                userFunc ? &userFunc[n] : nullptr);
+                            if (!a->initializer_list)
+                                a->nested->next = next;
+                            if (a->initializer_list && a->nested->nested)
+                                hr = &(*hr)->next;
+                        }
                     }
                     else if (a->initializer_list)
                     {
                         getSingleConversion(initializerListType, a ? a->tp : ((SYMBOL*)(*hrt)->p)->tp, a ? a->exp : nullptr, &m,
-                                            seq, sym, userFunc ? &userFunc[n] : nullptr, true);
+                            seq, sym, userFunc ? &userFunc[n] : nullptr, true);
                     }
                     else if (a->tp && a->exp) // might be an empty initializer list...
                     {
@@ -4387,17 +4407,32 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                     seq[m++] = CV_QUALS;  // have to make a distinction between an initializer list and the same func without one...
                     if (a->nested)
                     {
-                        if (a->next || (isstructured(tp1) && ( !sym->sb->isConstructor || (!comparetypes(basetype(tp1), sym->sb->parentClass->tp, true) && ! sameTemplate(basetype(tp1), sym->sb->parentClass->tp)))))
+                        if (a->nested->initializer_list || a->initializer_list || a->next || (isstructured(tp1) && ( !sym->sb->isConstructor || (!comparetypes(basetype(tp1), sym->sb->parentClass->tp, true) && ! sameTemplate(basetype(tp1), sym->sb->parentClass->tp)))))
                         {
                             initializerListType = basetype(tp1);
-                            getInitListConversion(basetype(tp1), a->nested, nullptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr);
+                            if (!matchesCopy(sym, false) && !matchesCopy(sym, true))
+                            {
+                                if (a->initializer_list)
+                                {
+                                    getInitListConversion(basetype(tp1), a->nested, nullptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr);
+                                    hr = &(*hr)->next;
+                                }
+                                else
+                                {
+                                    getInitListConversion(basetype(tp1), a->nested, nullptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr);
+                                }
+                            }
+                            else
+                            {
+                                seq[m++] = CV_NONE;
+                            }
                         }
                         else
                         {
                             a = a->nested;
                             if (a)
                             {
-                                getSingleConversion(tp1, a ? a->tp : ((SYMBOL*)(*hrt)->p)->tp, a ? a->exp : nullptr, &m,
+                                getSingleConversion(tp1, a ? a->tp : hrt ? ((SYMBOL*)(*hrt)->p)->tp : tp1, a ? a->exp : nullptr, &m,
                                     seq, sym, userFunc ? &userFunc[n] : nullptr, true);
                             }
                         }

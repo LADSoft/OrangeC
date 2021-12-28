@@ -3000,7 +3000,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
         if (Optimizer::cparams.prm_cplusplus)
         {
             bool done = false;
-            if (!done && !p->tp)
+            if (!done && !p->tp && isstructured(sym->tp) && basetype(sym->tp)->sp->sb->initializer_list)
             {
                 // initlist
                 INITLIST* pinit = p->nested;
@@ -3142,23 +3142,46 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                     }
                 }
             }
-            if (!done && p->exp)
+            if (!done && (p->exp || p->nested))
             {
+
                 if (isstructured(sym->tp))
                 {
                     bool sameType = false;
                     EXPRESSION* temp = p->exp;
                     TYPE* tpx = p->tp;
                     sym->tp = PerformDeferredInitialization(sym->tp, nullptr);
+                    if (!tpx)
+                        tpx = sym->tp;
                     if (isref(tpx))
                         tpx = basetype(tpx)->btp;
                     // result of a nested constructor
-                    if (temp->type == en_thisref)
+                    if (temp && temp->type == en_thisref)
                     {
                         temp = p->exp->left;
                     }
+                    if (p->nested)
+                    {
+                        FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
+                        params->ascall = true;
+                        params->arguments = p->nested;
+                        TYPE* ctype = basetype(sym->tp);
+                        EXPRESSION* consexp = anonymousVar(sc_auto, ctype);  // sc_parameter to push it...
+                        SYMBOL* esp = consexp->v.sp;
+                        p->exp = consexp;
+                        esp->sb->stackblock = true;
+                        callConstructor(&ctype, &p->exp, params, false, nullptr, true, false, false, false, 0, false, true);
+                        if (p->exp->type == en_thisref)
+                        {
+                            TYPE* tpx = basetype(p->exp->left->v.func->sp->tp);
+                            if (isfunction(tpx) && tpx->sp && tpx->sp->sb->castoperator)
+                            {
+                                p->tp = tpx->btp;
+                            }
+                        }
+                    }
                     // use constructor or conversion function and push on stack ( no destructor)
-                    if (temp->type == en_func && basetype(temp->v.func->sp->tp)->btp &&
+                    else if (temp->type == en_func && basetype(temp->v.func->sp->tp)->btp &&
                         !isref(basetype(temp->v.func->sp->tp)->btp) &&
                         ((sameType = comparetypes(sym->tp, tpx, true)) ||
                          classRefCount(basetype(sym->tp)->sp, basetype(tpx)->sp) == 1))
@@ -3219,9 +3242,15 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                 }
                 else if (isref(sym->tp))
                 {
+                    bool nested = false;
+                    TYPE* tpx1 = p->tp;
+                    if (!tpx1)
+                    {
+                        tpx1 = sym->tp;
+                    }
                     if (isstructured(basetype(sym->tp)->btp))
                     {
-                        TYPE* tpx = p->tp;
+                        TYPE* tpx = tpx1;
                         if (isref(tpx))
                             tpx = basetype(tpx)->btp;
                         if (tpx->type == bt_templateparam)
@@ -3230,7 +3259,27 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             if (!tpx)
                                 tpx = basetype(sym->tp)->btp;
                         }
-                        if ((!isconst(basetype(sym->tp)->btp) && !isconst(sym->tp) &&
+                        if (p->nested)
+                        {
+                            nested = true;
+                            FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
+                            params->ascall = true;
+                            params->arguments = p->nested;
+                            TYPE* ctype = basetype(sym->tp)->btp;
+                            EXPRESSION* consexp = anonymousVar(sc_auto, basetype(sym->tp)->btp);  // sc_parameter to push it...
+                            SYMBOL* esp = consexp->v.sp;
+                            p->exp = consexp;
+                            callConstructor(&ctype, &p->exp, params, false, nullptr, true, false, false, false, 0, false, true);
+                            if (p->exp->type == en_thisref)
+                            {
+                                TYPE* tpx = basetype(p->exp->left->v.func->sp->tp);
+                                if (isfunction(tpx) && tpx->sp && tpx->sp->sb->castoperator)
+                                {
+                                    p->tp = tpx->btp;
+                                }
+                            }
+                        }
+                        else if ((!isconst(basetype(sym->tp)->btp) && !isconst(sym->tp) &&
                              (sym->tp->type != bt_rref &&
                               (!func->sb->templateLevel &&
                                (!func->sb->parentClass || !func->sb->parentClass->sb->templateLevel) /*forward*/)) &&
@@ -3253,37 +3302,11 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                                     p->tp = tpx->btp;
                                 }
                             }
-                            /*
-                            if (p->exp->type == en_func)
-                            {
-                                SYMBOL* spx = p->exp->v.func->sp;
-                                TYPE* tpx = basetype(spx->tp);
-                                TYPE *tpx1, *tpx2;
-                                if (spx->sb->castoperator)
-                                {
-                                    tpx1 = spx->sb->parentClass->tp;
-                                    tpx2 = tpx->btp;
-                                    if (isref(tpx2))
-                                        tpx2 = basetype(tpx2)->btp;
-                                }
-                                else
-                                {
-                                    tpx1 = ((SYMBOL*)tpx->syms->table[0]->next->p)->tp;
-                                    tpx2 = spx->sb->parentClass->tp;
-                                }
-                                esp->tp = tpx1;  // guaranteed to be a structured type or reference to one
-                                p->exp->v.func->thisptr = DerivedToBase(tpx1, p->tp, p->exp->v.func->thisptr, _F_VALIDPOINTER);
-                                if (isstructured(tpx2) || (isref(tpx2) && isstructured(basetype(tpx2)->btp)))
-                                    p->exp = DerivedToBase(sym->tp, tpx2, p->exp, 0);
-                                else
-                                    cast(sym->tp, &p->exp);
-                            }
-                            */
                         }
                         else
                         {
-                            if (!comparetypes(sym->tp, p->tp, true))
-                                p->exp = DerivedToBase(sym->tp, p->tp, p->exp, 0);
+                            if (!comparetypes(sym->tp, tpx, true))
+                                p->exp = DerivedToBase(sym->tp, tpx, p->exp, 0);
                         }
                         ConstExprPromote(p->exp, isconst(basetype(sym->tp)->btp));
                     }
@@ -3389,8 +3412,8 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         // make numeric temp and perform cast
                         p->exp = createTemporary(sym->tp, p->exp);
                     }
-                    if (!isref(p->tp) &&
-                        ((isconst(p->tp) && !isconst(basetype(sym->tp)->btp)) || (isvolatile(p->tp) && !isvolatile(basetype(sym->tp)->btp))))
+                    if (!isref(tpx1) &&
+                        ((isconst(tpx1) && !isconst(basetype(sym->tp)->btp)) || (isvolatile(tpx1) && !isvolatile(basetype(sym->tp)->btp))))
                         if (basetype(sym->tp)->type != bt_rref) // converting const lref to rref is ok...
                             if (!isstructured(basetype(sym->tp)->btp)) // structure constructor is ok
                                 error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);

@@ -268,7 +268,7 @@ bool templatecomparetypes(TYPE* tp1, TYPE* tp2, bool exact)
         if (basetype(tp1)->type == bt_templateselector || basetype(tp2)->type == bt_templateselector)
             return true;
     }
-    if (!comparetypes(tp1, tp2, exact))
+    if (!comparetypes(tp1, tp2, exact) && !sameTemplate(tp1, tp2))
         return false;
     if (isint(tp1) && basetype(tp1)->btp && basetype(tp1)->btp->type == bt_enum)
         tp1 = basetype(tp1)->btp;
@@ -7240,8 +7240,10 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
                     if (table[j])
                     {
                         int which = TemplatePartialDeduceArgsFromType(asClass ? table[i] : table[i]->sb->parentTemplate,
-                                                                      asClass ? table[j] : table[j]->sb->parentTemplate, typetab[i],
-                                                                      typetab[j], funcparams);
+                                                                      asClass ? table[j] : table[j]->sb->parentTemplate, 
+                                                                      asClass || !basetype(typetab[i])->sp->sb->parentTemplate ? typetab[i] : basetype(typetab[i])->sp->sb->parentTemplate->tp,
+                                                                      asClass || !typetab[j]->sp->sb->parentTemplate ? typetab[j] : basetype(typetab[j])->sp->sb->parentTemplate->tp,
+                                                                      funcparams);
                         if (which < 0)
                         {
                             table[i] = 0;

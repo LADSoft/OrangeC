@@ -363,11 +363,11 @@ void castToArithmetic(bool integer, TYPE** tp, EXPRESSION** exp, enum e_kw kw, T
                 char tbuf[4096];
                 memset(tbuf, 0, sizeof(tbuf));
                 tbuf[0] = 0;
-                typeToString(tbuf, *tp);
+                typeToString(tbuf, basetype(*tp));
                 if (other)
                 {
                     strcat(tbuf, ", ");
-                    typeToString(tbuf + strlen(tbuf), other);
+                    typeToString(tbuf + strlen(tbuf), basetype(other));
                 }
                 Optimizer::my_sprintf(buf, "operator %s(%s)", overloadXlateTab[kw - kw_new + CI_NEW], tbuf);
                 errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, buf);

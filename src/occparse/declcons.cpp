@@ -3411,22 +3411,19 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                 SYMLIST* hr = basetype(cons1->tp)->syms->table[0];
                 if (hr->p->sb->thisPtr)
                     hr = hr->next;
-                if (!hr->next || (hr->next->p)->sb->init || (hr->next->p)->sb->deferredCompile)
+                TYPE* tp = hr->p->tp;
+                if (isref(tp))
                 {
-                    TYPE* tp = hr->p->tp;
-                    if (isref(tp))
+                    initializerRef = true;
+                    tp = basetype(tp)->btp;
+                }
+                if (isstructured(tp))
+                {
+                    SYMBOL* sym = (basetype(tp)->sp);
+                    if (sym->sb->initializer_list && sym->sb->templateLevel)
                     {
-                        initializerRef = true;
-                        tp = basetype(tp)->btp;
-                    }
-                    if (isstructured(tp))
-                    {
-                        SYMBOL* sym = (basetype(tp)->sp);
-                        if (sym->sb->initializer_list && sym->sb->templateLevel)
-                        {
-                            initializerListTemplate = sym->tp;
-                            initializerListType = sym->templateParams->next->p->byClass.val;
-                        }
+                        initializerListTemplate = sym->tp;
+                        initializerListType = sym->templateParams->next->p->byClass.val;
                     }
                 }
             }

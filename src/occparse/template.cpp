@@ -7753,7 +7753,6 @@ void SwapMainTemplateArgs(SYMBOL* cls)
 SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, bool isExtern)
 {
     (void)args;
-    (void)args;
     LEXLIST* lex = nullptr;
     SYMBOL* cls = sym;
     int pushCount;

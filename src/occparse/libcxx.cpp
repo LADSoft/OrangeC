@@ -906,6 +906,7 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
             }
             else if (isstructured(tp2))
             {
+                tp2 = basetype(tp2)->sp->tp;
                 if (funcparams.arguments->next && isstructured(funcparams.arguments->next->tp) &&
                     (comparetypes(tp2, funcparams.arguments->next->tp, true) || sameTemplate(tp2, funcparams.arguments->next->tp)))
                 {

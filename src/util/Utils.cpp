@@ -21,9 +21,9 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
-
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
-
+#endif
 #include <cstdio>
 #include <fstream>
 #include <cstdlib>

@@ -1190,6 +1190,7 @@ bool constructedInt(LEXLIST* lex, SYMBOL* funcsp)
     lex = prevsym(placeholder);
     return rv;
 }
+static int count3;
 LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLATEPARAMLIST** lst)
 {
     TEMPLATEPARAMLIST **start = lst;
@@ -8870,7 +8871,6 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                                 if (params->p->byClass.dflt->type != bt_templateparam &&
                                     params->p->byClass.dflt->type != bt_templateselector &&
                                     params->p->byClass.dflt->type != bt_templatedecltype &&
-                                    (!isstructured(params->p->byClass.dflt) || !basetype(params->p->byClass.dflt)->sp->templateParams) &&
                                     !templatecomparetypes(params->p->byClass.val, params->p->byClass.dflt, true))
                                     rv = nullptr;
                                 break;

@@ -6541,7 +6541,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                             {
                                 if (sp->sb->constexpression && sp->sb->storage_class == sc_global)
                                     sp->sb->storage_class = sc_static;
-                                if (!asFriend || !templateNestingCount || inTemplate)
+                                if (!asFriend || !templateNestingCount || instantiatingTemplate || inTemplate)
                                 {
                                     if (sp->sb->storage_class == sc_external ||
                                         (asFriend && !MATCHKW(lex, begin) && !MATCHKW(lex, colon)))

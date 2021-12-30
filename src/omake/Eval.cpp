@@ -140,7 +140,7 @@ std::string Eval::GetVPATH(const std::string& goal)
     }
     if (!goal.empty())
     {
-        for (auto path : vpaths)
+        for (auto&& path : vpaths)
         {
             size_t start;
             size_t len;
@@ -967,7 +967,7 @@ std::string Eval::sort(const std::string& arglist)
         sortList.insert(ExtractFirst(working, " "));
     }
     std::string rv;
-    for (auto strng : sortList)
+    for (auto&& strng : sortList)
     {
         if (!rv.empty())
             rv += " ";
@@ -1576,7 +1576,7 @@ std::string Eval::error(const std::string& arglist, const std::string fileOverri
     {
         os << "Error: " << arglist << std::endl;
     }
-    OS::WriteConsole(os.str());
+    OS::WriteToConsole(os.str());
     errcount++;
     return "";
 }
@@ -1585,7 +1585,7 @@ std::string Eval::errorx(const std::string& arglist)
     Eval a(arglist, false, nullptr, nullptr);
     std::ostringstream os;
     std::cout << "Error " << file << "(" << lineno << "): " << a.Evaluate() << std::endl;
-    OS::WriteConsole(os.str());
+    OS::WriteToConsole(os.str());
     errcount++;
     return "";
 }
@@ -1604,7 +1604,7 @@ std::string Eval::warning(const std::string& arglist, const std::string fileOver
     {
         os << "Warning: " << arglist << std::endl;
     }
-    OS::WriteConsole(os.str());
+    OS::WriteToConsole(os.str());
     return "";
 }
 std::string Eval::warningx(const std::string& arglist)
@@ -1612,7 +1612,7 @@ std::string Eval::warningx(const std::string& arglist)
     Eval a(arglist, false, nullptr, nullptr);
     std::ostringstream os;
     os << "Warning " << file << "(" << lineno << "): " << a.Evaluate() << std::endl;
-    OS::WriteConsole(os.str());
+    OS::WriteToConsole(os.str());
     return "";
 }
 
@@ -1621,7 +1621,7 @@ std::string Eval::info(const std::string& arglist)
     Eval a(arglist, false, ruleList, rule);
     std::ostringstream os;
     os << a.Evaluate() << std::endl;
-    OS::WriteConsole(os.str());
+    OS::WriteToConsole(os.str());
     return "";
 }
 std::string Eval::exists(const std::string& arglist)

@@ -104,7 +104,7 @@ bool Include::Parse(const std::string& name, bool ignoreOk, bool MakeFiles)
         if (!in.fail())
         {
             in.seekg(0, std::ios::end);
-            size_t len = in.tellg();
+            std::streamoff len = in.tellg();
             in.seekg(0);
             if (!in.fail())
             {
@@ -185,12 +185,12 @@ bool Include::AddFileList(const std::string& name, bool ignoreOk, bool MakeFile)
 bool Include::MakeMakefiles(bool Silent, OutputType outputType, bool& didSomething)
 {
     Maker maker(Silent, false, false, false, outputType);
-    for (auto goal : *this)
+    for (auto&& goal : *this)
     {
         if (goal != "-")
             maker.AddGoal(goal);
     }
-    for (auto file : ignoredFiles)
+    for (auto&& file : ignoredFiles)
     {
         maker.SetIgnoreFailed(file);
     }

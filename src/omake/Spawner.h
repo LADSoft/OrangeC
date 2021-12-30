@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef SPAWNER_H
@@ -27,7 +27,10 @@
 
 #include <string>
 #include <list>
-
+#include <atomic>
+#include <future>
+#include "JobServerAwareThread.h"
+#include <vector>
 #include "os.h"
 #ifdef _WIN32
 #    define WINFUNC __stdcall
@@ -89,6 +92,7 @@ class Spawner
     }
     ~Spawner() {}
     static unsigned WINFUNC Thread(void* cls);
+    static void thread_run(std::promise<int> ret, Spawner* spawner, std::shared_ptr<std::atomic<int>> done_val);
     int InternalRun();
     void Run(Command& Commands, OutputType Type, RuleList* RuleList = nullptr, Rule* Rule = nullptr);
     static void Stop() { stopAll = true; }
@@ -98,7 +102,11 @@ class Spawner
 
     bool IsDone() const { return done; }
 
-    int RetVal() const { return retVal; }
+    int RetVal()
+    {
+        return retVal;
+        // return retVal2.get();
+    }
 
     static void WaitForDone();
     static const char escapeStart;
@@ -111,6 +119,14 @@ class Spawner
     void RetVal(int val) { retVal = val; }
 
   private:
+    static void KillDone()
+    {
+        for (auto&& threadHolder : listedThreads)
+        {
+            if (threadHolder.done && !threadHolder.returnVal.valid())
+                threadHolder.thread.join();
+        }
+    }
     std::deque<std::string> output;
     Command* commands;
     RuleList* ruleList;
@@ -127,8 +143,21 @@ class Spawner
     int tempNum;
     bool done;
     int retVal;
+    std::future<int> retVal2;
     OutputType outputType;
-    static long runningProcesses;
+    static std::atomic<long> runningProcesses;
     static bool stopAll;
+    // We need to keep this list to terminate everything at the end of the make run
+    struct SpawnerTracker
+    {
+        OMAKE::JobServerAwareThread thread;
+        std::future<int> returnVal;
+        std::shared_ptr<std::atomic<int>> done;
+        SpawnerTracker(OMAKE::JobServerAwareThread&& thread, std::future<int>&& returnVal, std::shared_ptr<std::atomic<int>>&& done) :
+            thread(std::move(thread)), returnVal(std::move(returnVal)), done(done)
+        {
+        }
+    };
+    static std::vector<SpawnerTracker> listedThreads;
 };
 #endif

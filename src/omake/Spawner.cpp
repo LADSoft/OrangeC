@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Spawner.h"
@@ -34,45 +34,68 @@
 #include "Utils.h"
 #include <algorithm>
 #include <chrono>
+#include <future>
+#include <memory>
 #ifdef HAVE_UNISTD_H
 #else
 #    include <windows.h>
 #    undef WriteConsole
 #    undef Yield
 #endif
+class OSTakeJobIfNotMake
+{
+    bool take_job = false;
+
+  public:
+    OSTakeJobIfNotMake(bool take_job = false) : take_job(take_job)
+    {
+        if (take_job)
+        {
+            OS::TakeJob();
+        }
+    }
+    ~OSTakeJobIfNotMake()
+    {
+        if (take_job)
+        {
+            OS::GiveJob();
+        }
+    }
+};
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
-long Spawner::runningProcesses;
+std::atomic<long> Spawner::runningProcesses;
 bool Spawner::stopAll;
-
+std::vector<Spawner::SpawnerTracker> Spawner::listedThreads = std::vector<Spawner::SpawnerTracker>();
 unsigned WINFUNC Spawner::Thread(void* cls)
 {
     Spawner* ths = (Spawner*)cls;
-#ifdef HAVE_UNISTD_H
-
-    ++runningProcesses;
-#else
-    InterlockedIncrement(&runningProcesses);
-#endif
+    // Running processes is atomic so it works no matter what
+    runningProcesses++;
     ths->RetVal(ths->InternalRun());
-#ifdef HAVE_UNISTD_H
-    --runningProcesses;
-#else
-    InterlockedDecrement(&runningProcesses);
-#endif
+    runningProcesses--;
     ths->done = true;
     return 0;
 }
+// Next-gen Spawner::Thread where we use std::promise and std::future to communicate instead of a pre-c++14 version of it.
+void Spawner::thread_run(std::promise<int> ret, Spawner* spawner, std::shared_ptr<std::atomic<int>> done_val)
+{
+    runningProcesses++;
+    int value = spawner->InternalRun();
+    ret.set_value_at_thread_exit(value);
+    runningProcesses--;
+    spawner->done = true;
+    *done_val = 1;
+}
 void Spawner::WaitForDone()
 {
-    auto begin = std::chrono::system_clock::now();
-    while (runningProcesses > 0 &&
-           std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - begin).count() < 30)
+    KillDone();
+    for (auto&& val : listedThreads)
     {
-        OS::Yield();
+        if (val.done && val.returnVal.valid())
+        {
+        }
     }
-    if (runningProcesses > 0)
-        std::cout << "omake: aborting due to timeout" << std::endl;
 }
 void Spawner::Run(Command& Commands, OutputType Type, RuleList* RuleListx, Rule* Rulex)
 {
@@ -87,7 +110,19 @@ void Spawner::Run(Command& Commands, OutputType Type, RuleList* RuleListx, Rule*
     }
     else
     {
-        OS::CreateThread((void*)&Spawner::Thread, this);
+        bool use_new_threading = false;
+        if (use_new_threading)
+        {
+            std::promise<int> promise;
+            std::shared_ptr<std::atomic<int>> doneAtomic = std::make_shared<std::atomic<int>>(0);
+            std::future<int> prom_future = promise.get_future();
+            OMAKE::JobServerAwareThread thrd = OS::CreateThread(Spawner::thread_run, std::move(promise), this, doneAtomic);
+            listedThreads.emplace_back(SpawnerTracker{std::move(thrd), std::move(prom_future), std::move(doneAtomic)});
+        }
+        else
+        {
+            OS::CreateThread((void*)&Spawner::Thread, (void*)this);
+        }
     }
 }
 int Spawner::InternalRun()
@@ -203,7 +238,7 @@ int Spawner::InternalRun()
     }
     if (!stopAll)
         OS::ToConsole(output);
-    for (auto f : tempFiles)
+    for (auto&& f : tempFiles)
         OS::RemoveFile(f);
     return rv;
 }
@@ -224,11 +259,8 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
     }
     if (oneShell)
     {
-        if (!make)
-            OS::TakeJob();
+        OSTakeJobIfNotMake lockJob(!make);
         int rv = OS::Spawn(cmd, environment, nullptr);
-        if (!make)
-            OS::GiveJob();
         return rv;
     }
     else if (!split(cmd))
@@ -239,32 +271,31 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
     else
     {
         int rv = 0;
-        for (auto command : cmdList)
+        for (auto&& command : cmdList)
         {
             bool make1 = make;
             //            if (command.find("omake") != std::string::npos)
             //                make1 = true;
-            if (!make1)
-                OS::TakeJob();
+            OSTakeJobIfNotMake lockJob(!make1);
+
             if (!stopAll)
             {
                 if (!silent)
                 {
-                    OS::WriteConsole(OS::JobName() + command + "\n");
+                    OS::WriteToConsole(OS::JobName() + command + "\n");
                 }
                 int rv1;
                 if (!dontrun)
                 {
                     std::string str;
-                    rv1 = OS::Spawn(command, environment, outputType != o_none && (outputType != o_recurse || !make) ? &str : nullptr);
+                    rv1 = OS::Spawn(command, environment,
+                                    outputType != o_none && (outputType != o_recurse || !make) ? &str : nullptr);
                     if (outputType != o_none && !str.empty())
                         output.push_back(str);
                     if (!rv)
                         rv = rv1;
                 }
             }
-            if (!make1)
-                OS::GiveJob();
             if (rv && posix)
                 return rv;
             if (stopAll)

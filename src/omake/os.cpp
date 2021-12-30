@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 // This file contains a lot of comments that use mutexes, this is because OrangeC currently does not have C++ mutexes but once it
@@ -29,6 +29,7 @@
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #    define _SH_DENYNO 0
+#    include <xmmintrin.h>
 #else
 #    include <windows.h>
 #    include <process.h>
@@ -43,9 +44,9 @@
 #    ifndef _SH_DENYNO
 #        define _SH_DENYNO 0
 #    endif
-#ifndef BORLAND
-#    define chdir _chdir
-#endif
+#    ifndef BORLAND
+#        define chdir _chdir
+#    endif
 #endif
 #include <string.h>
 #undef WriteConsole
@@ -67,28 +68,61 @@
 #include <sys/stat.h>
 //#include <mutex>
 #include "semaphores.h"
+#include "JobServer.h"
 //#define DEBUG
 static Semaphore sema;
 static Semaphore processIdSem;
 #ifdef _WIN32
 static CRITICAL_SECTION consoleSync;
 static CRITICAL_SECTION evalSync;
+static CRITICAL_SECTION DirectorySync;
 #endif
 // static std::recursive_mutex consoleMut;
+// This is required because GetFullPathName and SetCurrentDirectory and GetCurrentDirectory are
+// all non-safe in multithreaded environments, in order to make this safe, we *MUST* lower ourselves into making these a mutex-gated
+// system, this will enforce ordering at the possibility of incorrectness
+// static std::mutex DirectoryMutex;
 std::deque<int> OS::jobCounts;
 bool OS::isSHEXE;
 int OS::jobsLeft;
 std::string OS::jobName = "\t";
 std::string OS::jobFile;
+// Literally exists for the ProcessIdSemaphore because this semaphore is actually a *MUTEX* in hiding because POSIX lacks named
+// semaphores, so the correct thing to do would be to create a jobserer with the pipe stuff *AGAIN* with a special class to do this
+// but because we are doing this in an extensively weird way I can't do that since we use a named semaphore atm, the correct thing
+// to do would be completely drop semaphore support from Linux and just deal with semaphores on Windows because I actually can't
+// deal with the BS from POSIX semaphores anymore, because they were standardized well before anyone got the correct idea that
+// having hanging semaphores lying around in memory is bad but before they thought to add tracking to the various systems
+class TakePostSemaphore
+{
+    Semaphore sema;
 
+  public:
+    TakePostSemaphore(Semaphore sema) : sema(sema) { sema.Wait(); }
+    ~TakePostSemaphore() { sema.Post(); }
+};
+// This acts as a cross-platform *NAMED MUTEX*, because currently we use a named semaphore to do this, it's annoying that POSIX
+// doesn't have named mutexes because a mutex would be theoretically some percent more efficient than this job-pipe-server
+// shenanigans but this is good enough I guess
+class TakingJobServer
+{
+    // hold onto a reference since we actually just can't have a class because this is an abstracted type ;)
+    OMAKE::JobServer& server;
+
+  public:
+    TakingJobServer(OMAKE::JobServer& referenced_server) : server(referenced_server)
+    {
+        server.TakeNewJob();
+    }  // literally do this so we have a mutex to do this with
+    ~TakingJobServer() { server.ReleaseJob(); }
+};
 static std::set<HANDLE> processIds;
 
 void OS::TerminateAll()
 {
-    processIdSem.Wait();
+    TakePostSemaphore proc(processIdSem);
     for (auto a : processIds)
-       TerminateProcess(a, 0);
-    processIdSem.Post();
+        TerminateProcess(a, 0);
 }
 std::string OS::QuoteCommand(std::string exe, std::string command)
 {
@@ -156,7 +190,7 @@ void OS::Init()
 #endif
 }
 
-void OS::WriteConsole(std::string string)
+void OS::WriteToConsole(std::string string)
 {
     // std::lock_guard<decltype(consoleMut)> lg(consoleMut);
 #ifdef _WIN32
@@ -175,9 +209,9 @@ void OS::ToConsole(std::deque<std::string>& strings)
 #ifdef _WIN32
     EnterCriticalSection(&consoleSync);
 #endif
-    for (auto s : strings)
+    for (auto&& s : strings)
     {
-        WriteConsole(s);
+        WriteToConsole(s);
     }
     strings.clear();
 #ifdef _WIN32
@@ -211,6 +245,29 @@ bool OS::TakeJob()
     return false;
 }
 void OS::GiveJob() { sema.Post(); }
+std::string OS::GetFullPath(const std::string& fullname)
+{
+    // std::lock_gaurd <decltype(DirectoryMutex)> lg(DirectoryMutex);
+    std::string recievingbuffer;
+#ifdef _WIN32
+    EnterCriticalSection(&DirectorySync);
+#endif
+    DWORD return_val = GetFullPathNameA(fullname.c_str(), 0, nullptr, nullptr);
+    if (!return_val)
+    {
+        // Do error handling somewhere
+    }
+    recievingbuffer.reserve(return_val);
+    return_val = GetFullPathNameA(fullname.c_str(), recievingbuffer.size(), const_cast<char*>(recievingbuffer.c_str()), NULL);
+    if (!return_val)
+    {
+        // Do error handling somewhere
+    }
+#ifdef _WIN32
+    LeaveCriticalSection(&DirectorySync);
+#endif
+    return recievingbuffer;
+}
 std::string OS::JobName() { return jobName; }
 void OS::JobInit()
 {
@@ -249,7 +306,7 @@ void OS::JobInit()
     {
         char tempfile[260];
         tempfile[0] = 0;
-        char *temp = tempnam(tempfile, "hi");
+        char* temp = tempnam(tempfile, "hi");
         if (tempfile[1] == ':')
         {
             char* p = strrchr(tempfile, '\\');
@@ -415,7 +472,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         startup.hStdError = GetStdHandle(STD_ERROR_HANDLE);
     }
     int n = 0;
-    for (auto env : environment)
+    for (auto&& env : environment)
     {
         n += env.name.size() + env.value.size() + 2;
     }
@@ -423,7 +480,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     std::unique_ptr<char[]> env = std::make_unique<char[]>(n);
     char* p = env.get();
     memset(p, 0, sizeof(char) * n);  // !!!
-    for (auto env : environment)
+    for (auto&& env : environment)
     {
         memcpy(p, env.name.c_str(), env.name.size());
         p += env.name.size();
@@ -455,17 +512,19 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     // try as an app first
     if (asapp && CreateProcess(nullptr, (char*)command1.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
     {
-        processIdSem.Wait();
-        processIds.insert(pi.hProcess);
-        processIdSem.Post();
+        {
+            TakePostSemaphore proc(processIdSem);
+            processIds.insert(pi.hProcess);
+        }
         WaitForSingleObject(pi.hProcess, INFINITE);
-        processIdSem.Wait();
-        processIds.erase(pi.hProcess);
-        processIdSem.Post();
-        
+        {
+            TakePostSemaphore proc(processIdSem);
+            processIds.erase(pi.hProcess);
+        }
+
         if (output)
         {
-            
+
             DWORD avail = 0;
             PeekNamedPipe(pipeRead, nullptr, 0, nullptr, &avail, nullptr);
             if (avail > 0)
@@ -489,13 +548,15 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         // not found, try running a shell to handle it...
         if (CreateProcess(nullptr, (char*)cmd.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
         {
-            processIdSem.Wait();
-            processIds.insert(pi.hProcess);
-            processIdSem.Post();
+            {
+                TakePostSemaphore proc(processIdSem);
+                processIds.insert(pi.hProcess);
+            }
             WaitForSingleObject(pi.hProcess, INFINITE);
-            processIdSem.Wait();
-            processIds.erase(pi.hProcess);
-            processIdSem.Post();
+            {
+                TakePostSemaphore proc(processIdSem);
+                processIds.erase(pi.hProcess);
+            }
             if (output)
             {
                 DWORD avail = 0;
@@ -640,7 +701,6 @@ Time OS::GetFileTime(const std::string fileName)
 void OS::SetFileTime(const std::string fileName, Time time)
 {
 #ifdef _WIN32
-    FILETIME cr, ac, mod;
     HANDLE h =
         CreateFile(fileName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
@@ -721,6 +781,6 @@ void OS::CreateThread(void* func, void* data)
 void OS::Yield()
 {
 #ifdef _WIN32
-    ::Sleep(10);
+    std::this_thread::yield();
 #endif
 }

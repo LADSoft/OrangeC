@@ -107,7 +107,7 @@ bool Maker::CreateDependencyTree()
     {
         intermediate = v->GetValue();
     }
-    for (auto goal : goals)
+    for (auto&& goal : goals)
     {
         Time tv1, tv2;
         dependsNesting = 0;
@@ -579,7 +579,6 @@ int Maker::RunCommands(bool keepGoing)
     bool stop = false;
     EnvironmentStrings env;
     GetEnvironment(env);
-    int count;
     Runner runner(silent, displayOnly, ignoreResults, touch, outputType, keepResponseFiles, firstGoal, filePaths);
 
     for (auto it = depends.begin(); it != depends.end(); ++it)

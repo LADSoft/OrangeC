@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <thread>
 #include <stdexcept>
-
+#include <sstream>
 namespace OMAKE
 {
 std::shared_ptr<JobServer> JobServer::job_server_instance = nullptr;
@@ -131,11 +131,21 @@ POSIXJobServer::POSIXJobServer(int read, int write)
     readfd = read;
     writefd = write;
 }
+std::string POSIXJobServer::PassThroughCommandString()
+{
+    std::stringstream stream;
+    stream << "--jobserver-auth=" << readfd << ',' << writefd;
+    return stream.str();
+}
 WINDOWSJobServer::WINDOWSJobServer(const string_type& server_name)
 {
     throw std::runtime_error("Windows job servers are unavailable on POSIX");
 }
 WINDOWSJobServer::WINDOWSJobServer(const string_type& server_name, int max_jobs)
+{
+    throw std::runtime_error("Windows job servers are unavailable on POSIX");
+}
+std::string WINDOWSJobServer::PassThroughCommandString()
 {
     throw std::runtime_error("Windows job servers are unavailable on POSIX");
 }

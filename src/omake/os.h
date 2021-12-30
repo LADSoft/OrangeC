@@ -88,10 +88,12 @@ class OS
     static bool SetWorkingDir(const std::string name);
     static void RemoveFile(const std::string name);
     static std::string NormalizeFileName(const std::string name);
+    // Moving to make this version of CreateThread vestigal in nature so that everything is done as minimally as possible
     static void CreateThread(void* func, void* data);
     template <class Function, class... Args>
     static OMAKE::JobServerAwareThread CreateThread(Function&& f, Args&&... args)
     {
+        // Always use the JobServer as the *SOURCE OF TRUTH* for everything, we have one instance, we can use it well
         return OMAKE::JobServer::GetJobServer()->CreateNewThread(std::forward<Function>(f), std::forward<Args>(args)...);
     }
     static void Yield();

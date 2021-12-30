@@ -44,6 +44,7 @@ class JobServer : public IJobServer
             ReleaseJob();
         }
     }
+    virtual std::string PassThroughCommandString() = 0;
     // The JobServerAwareThread is aware of the calling jobserver, thus having a wrapper in the job server allows us to create
     // threads which will update our worker numbers easily
     template <class Function, class... Args>
@@ -110,6 +111,7 @@ class POSIXJobServer : public JobServer
   public:
     POSIXJobServer(int max_jobs);
     POSIXJobServer(int read, int write);
+    std::string PassThroughCommandString();
     int get_read_fd() { return readfd; }
     int get_write_fd() { return writefd; }
     int TakeNewJob();
@@ -142,6 +144,7 @@ class WINDOWSJobServer : public JobServer
     WINDOWSJobServer(const string_type& server_name, int max_jobs);
     // Interprocess semaphores require names
     WINDOWSJobServer(const string_type& server_name);
+    std::string PassThroughCommandString();
     int TakeNewJob();
     int ReleaseJob();
     void ReleaseAllJobs();

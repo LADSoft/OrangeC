@@ -90,12 +90,25 @@ void Spawner::thread_run(std::promise<int> ret, Spawner* spawner, std::shared_pt
 void Spawner::WaitForDone()
 {
     KillDone();
-    for (auto&& val : listedThreads)
+    bool thrd_alive = false;
+    do
     {
-        if (val.done && val.returnVal.valid())
+        thrd_alive = false;
+        for (auto& thrd : listedThreads)
         {
+            if (!thrd.done)
+            {
+                thrd_alive = true;
+            }
         }
-    }
+        if (thrd_alive)
+        {
+            // Yield our execution fairly to any threads so we don't spinloop, we may want to reconsider this after profiling and
+            // moving to an _mm_pause()
+            std::this_thread::yield();
+        }
+    } while (thrd_alive);
+    KillDone();
 }
 void Spawner::Run(Command& Commands, OutputType Type, RuleList* RuleListx, Rule* Rulex)
 {
@@ -115,8 +128,9 @@ void Spawner::Run(Command& Commands, OutputType Type, RuleList* RuleListx, Rule*
         {
             std::promise<int> promise;
             std::shared_ptr<std::atomic<int>> doneAtomic = std::make_shared<std::atomic<int>>(0);
-            std::future<int> prom_future = promise.get_future();
-            OMAKE::JobServerAwareThread thrd = OS::CreateThread(Spawner::thread_run, std::move(promise), this, doneAtomic);
+            std::shared_future<int> prom_future = promise.get_future();
+            retVal2 = prom_future;
+            std::thread thrd = std::thread(Spawner::thread_run, std::move(promise), this, doneAtomic);
             listedThreads.emplace_back(SpawnerTracker{std::move(thrd), std::move(prom_future), std::move(doneAtomic)});
         }
         else

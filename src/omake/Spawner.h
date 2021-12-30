@@ -123,8 +123,12 @@ class Spawner
     {
         for (auto&& threadHolder : listedThreads)
         {
-            if (threadHolder.done && !threadHolder.returnVal.valid())
+            // If the thread is completed, join, otherwise, die, theoretically what we should do is wait for all threads to complete
+            // unless an early termination is performed, in which case we should detach all threads and release all jobs
+            if (threadHolder.done)
+            {
                 threadHolder.thread.join();
+            }
         }
     }
     std::deque<std::string> output;
@@ -143,21 +147,24 @@ class Spawner
     int tempNum;
     bool done;
     int retVal;
-    std::future<int> retVal2;
+    std::shared_future<int> retVal2;
     OutputType outputType;
     static std::atomic<long> runningProcesses;
     static bool stopAll;
     // We need to keep this list to terminate everything at the end of the make run
     struct SpawnerTracker
     {
-        OMAKE::JobServerAwareThread thread;
-        std::future<int> returnVal;
+        std::thread thread;
+        std::shared_future<int> returnVal;
         std::shared_ptr<std::atomic<int>> done;
-        SpawnerTracker(OMAKE::JobServerAwareThread&& thread, std::future<int>&& returnVal, std::shared_ptr<std::atomic<int>>&& done) :
-            thread(std::move(thread)), returnVal(std::move(returnVal)), done(done)
+        SpawnerTracker(std::thread&& thread, std::shared_future<int>&& returnVal,
+                       std::shared_ptr<std::atomic<int>>&& done) :
+            thread(std::move(thread)), returnVal(std::move(returnVal)), done(std::move(done))
         {
         }
     };
+    // static thread list for the entire spawner to track what threads are currently in use vs what threads are dead. Used mainly on
+    // cleanup
     static std::vector<SpawnerTracker> listedThreads;
 };
 #endif

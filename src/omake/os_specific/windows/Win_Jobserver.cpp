@@ -61,8 +61,17 @@ void WINDOWSJobServer::ReleaseAllJobs()
     }
     semaphore.Post(current_jobs - 1);
 }
+std::string WINDOWSJobServer::PassThroughCommandString()
+{
+    std::string defaultStr = std::string("--jobserver-auth=");
+    return defaultStr + server_name;
+}
 POSIXJobServer::POSIXJobServer(int max_jobs) { throw std::runtime_error("POSIX jobservers are not supported on windows"); }
 POSIXJobServer::POSIXJobServer(int read, int write) { throw std::runtime_error("POSIX jobservers are not supported on windows"); }
 int POSIXJobServer::ReleaseJob() { throw std::runtime_error("POSIX jobservers are not supported on windows"); }
 int POSIXJobServer::TakeNewJob() { throw std::runtime_error("POSIX jobservers are not supported on windows"); }
+std::string POSIXJobServer::PassThroughCommandString()
+{
+    throw std::runtime_error("POSIX jobservers are not supported on windows");
+}
 }  // namespace OMAKE

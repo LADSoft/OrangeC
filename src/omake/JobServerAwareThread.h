@@ -16,27 +16,27 @@ class JobServerAwareThread
     // This is private so we can't prematurely release the job server data, same with it being a *shared pointer*, so that the
     // JobServer that we choose is alive until we no longer need it to be
     std::shared_ptr<IJobServer> callback;
+    // Use an underlying thread so that we don't get any inheritance shenanigans, theoretically, we could handle inheriting from
+    // std::thread, which was my original plan, but I scrapped that during a bug hunt to see if it fixed a bug
     std::thread underlying_thread;
 
   public:
     // We need this to allow for creation of vectors of threads so that we don't get yelled at, so we can do thread pooling with the
     // threads spawned by the job server, useful, I know
     JobServerAwareThread() {}
-    // It doesn't like when I try to std::forward these arguments for some reason :/
-    // Either way, this just gives us an easy way to gain the callback, we will be using this either way
+    // Easy callback method, we pass in the callback class first to ensure that the args don't catch it accidentally
     template <class Function, class... Args>
     explicit JobServerAwareThread(std::shared_ptr<IJobServer> callback_class, Function&& f, Args&&... args) :
         underlying_thread(std::forward<Function>(f), std::forward<Args>(args)...), callback(callback_class)
     {
-        if(callback)
+        // This *used* to be done beofer the underlying thread was created, now, we do it slightly after, should *not* affect things
+        if (callback)
         {
             callback->TakeNewJob();
         }
     }
-    // A wrapper around thread::join because we want to use the join call as a finalized callback to release the data, if this were
-    // C++20 I'd actually recommend doing one *EXTREMELY* important thing: inherit from std::jthread so that *NO MATTER WHAT* join()
-    // gets called, alas, this is written in C++14, and as such, no std::jthread so we can't confirm that this is called no matter
-    // what, and I don't want to check if this dies...
+    // Get an id so that if anyone needs the underlying thread id for any reason they can get it
+    std::thread::id get_id() { return underlying_thread.get_id(); }
     // A way of testing if this is joined is to run this program under the original GNU make and have it do multithreaded stuff,
     // since the original make on the main exit will check if all the jobs are taken or not and then complain at us if there are
     // jobs that haven't been returned, we should also implement this functionality but as of right now we don't, what could be done
@@ -47,9 +47,11 @@ class JobServerAwareThread
     {
         // Call the parent join so this actually works properly as a "join" call
         underlying_thread.join();
-        // We never actually checked if the callback was valid until now...
+        // We never know if the callback is valid or not, probably should be checked manually
         if (callback)
+        {
             callback->ReleaseJob();
+        }
     }
 };
 }  // namespace OMAKE

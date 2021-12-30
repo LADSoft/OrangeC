@@ -106,15 +106,16 @@ class TakePostSemaphore
 // shenanigans but this is good enough I guess
 class TakingJobServer
 {
-    // hold onto a reference since we actually just can't have a class because this is an abstracted type ;)
-    OMAKE::JobServer& server;
+    // Hold on to a shared pointer of the job server, we don't want the job server somehow dying while we hold onto it here as we
+    // still have a job to release
+    std::shared_ptr<OMAKE::JobServer> server;
 
   public:
-    TakingJobServer(OMAKE::JobServer& referenced_server) : server(referenced_server)
+    TakingJobServer(std::shared_ptr<OMAKE::JobServer> referenced_server) : server(referenced_server)
     {
-        server.TakeNewJob();
+        server->TakeNewJob();
     }  // literally do this so we have a mutex to do this with
-    ~TakingJobServer() { server.ReleaseJob(); }
+    ~TakingJobServer() { server->ReleaseJob(); }
 };
 static std::set<HANDLE> processIds;
 
@@ -241,10 +242,10 @@ void OS::PopJobCount()
 }
 bool OS::TakeJob()
 {
-    sema.Wait();
+    OMAKE::JobServer::GetJobServer()->TakeNewJob();
     return false;
 }
-void OS::GiveJob() { sema.Post(); }
+void OS::GiveJob() { OMAKE::JobServer::GetJobServer()->ReleaseJob(); }
 std::string OS::GetFullPath(const std::string& fullname)
 {
     // std::lock_gaurd <decltype(DirectoryMutex)> lg(DirectoryMutex);
@@ -299,6 +300,8 @@ void OS::JobInit()
     }
     v->SetExport(true);
     name = std::string("OMAKE") + name;
+    // Initialize the job server, or grabs an existing job server, doesn't matter which
+    OMAKE::JobServer::GetJobServer(name, jobsLeft);
     sema = Semaphore(name, jobsLeft);
     processIdSem = Semaphore(std::string("OMAKE1") + name, 1);
 
@@ -778,9 +781,4 @@ void OS::CreateThread(void* func, void* data)
 #    endif
 #endif
 }
-void OS::Yield()
-{
-#ifdef _WIN32
-    std::this_thread::yield();
-#endif
-}
+void OS::Yield() { std::this_thread::yield(); }

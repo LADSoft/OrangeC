@@ -67,6 +67,7 @@
 #include <functional>
 #include <sys/stat.h>
 #include <mutex>
+#include <memory>
 #include "semaphores.h"
 #include "JobServer.h"
 //#define DEBUG
@@ -86,7 +87,7 @@ bool OS::isSHEXE;
 int OS::jobsLeft;
 std::string OS::jobName = "\t";
 std::string OS::jobFile;
-std::shared_ptr<OMAKE::JobServer> localJobServer = nullptr;
+std::shared_ptr<OMAKE::JobServer> OS::localJobServer = nullptr;
 // This acts as a cross-platform *NAMED MUTEX*, because currently we use a named semaphore to do this, it's annoying that POSIX
 // doesn't have named mutexes because a mutex would be theoretically some percent more efficient than this job-pipe-server
 // shenanigans but this is good enough I guess

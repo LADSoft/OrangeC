@@ -178,7 +178,7 @@ bool Include::AddFileList(const std::string& name, bool ignoreOk, bool MakeFile)
             v->SetValue(v->GetValue() + " " + (*it));
         }
         files.push_back((*it));
-        rv &= Parse((*it), ignoreOk | MakeFile, MakeFile);
+        rv &= Parse((*it), ignoreOk || MakeFile, MakeFile);
     }
     return rv;
 }

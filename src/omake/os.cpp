@@ -66,12 +66,14 @@
 #include <array>
 #include <functional>
 #include <sys/stat.h>
-//#include <mutex>
+#include <mutex>
 #include "semaphores.h"
 #include "JobServer.h"
 //#define DEBUG
 static Semaphore sema;
-static Semaphore processIdSem;
+// processIdSem to the best of my knowledge is an inter-process mutex????
+// I don't know *WHY* because the std::set is never touched inter-process and we're already gaurded by the processId here
+static std::mutex processIdMutex;
 #ifdef _WIN32
 static CRITICAL_SECTION consoleSync;
 static CRITICAL_SECTION evalSync;
@@ -87,20 +89,6 @@ bool OS::isSHEXE;
 int OS::jobsLeft;
 std::string OS::jobName = "\t";
 std::string OS::jobFile;
-// Literally exists for the ProcessIdSemaphore because this semaphore is actually a *MUTEX* in hiding because POSIX lacks named
-// semaphores, so the correct thing to do would be to create a jobserer with the pipe stuff *AGAIN* with a special class to do this
-// but because we are doing this in an extensively weird way I can't do that since we use a named semaphore atm, the correct thing
-// to do would be completely drop semaphore support from Linux and just deal with semaphores on Windows because I actually can't
-// deal with the BS from POSIX semaphores anymore, because they were standardized well before anyone got the correct idea that
-// having hanging semaphores lying around in memory is bad but before they thought to add tracking to the various systems
-class TakePostSemaphore
-{
-    Semaphore sema;
-
-  public:
-    TakePostSemaphore(Semaphore sema) : sema(sema) { sema.Wait(); }
-    ~TakePostSemaphore() { sema.Post(); }
-};
 // This acts as a cross-platform *NAMED MUTEX*, because currently we use a named semaphore to do this, it's annoying that POSIX
 // doesn't have named mutexes because a mutex would be theoretically some percent more efficient than this job-pipe-server
 // shenanigans but this is good enough I guess
@@ -121,7 +109,7 @@ static std::set<HANDLE> processIds;
 
 void OS::TerminateAll()
 {
-    TakePostSemaphore proc(processIdSem);
+    std::lock_gaurd<decltype(processIdMutex)> guard(processIdMutex);
     for (auto a : processIds)
         TerminateProcess(a, 0);
 }
@@ -303,7 +291,6 @@ void OS::JobInit()
     // Initialize the job server, or grabs an existing job server, doesn't matter which
     OMAKE::JobServer::GetJobServer(name, jobsLeft);
     sema = Semaphore(name, jobsLeft);
-    processIdSem = Semaphore(std::string("OMAKE1") + name, 1);
 
     if (MakeMain::printDir.GetValue() && jobName == "\t")
     {
@@ -388,7 +375,6 @@ void OS::JobInit()
 void OS::JobRundown()
 {
     sema.~Semaphore();
-    processIdSem.~Semaphore();
     if (jobFile.size())
         RemoveFile(jobFile);
 }
@@ -516,12 +502,12 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     if (asapp && CreateProcess(nullptr, (char*)command1.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
     {
         {
-            TakePostSemaphore proc(processIdSem);
+            std::lock_gaurd<decltype(processIdMutex)> guard(processIdMutex);
             processIds.insert(pi.hProcess);
         }
         WaitForSingleObject(pi.hProcess, INFINITE);
         {
-            TakePostSemaphore proc(processIdSem);
+            std::lock_gaurd<decltype(processIdMutex)> guard(processIdMutex);
             processIds.erase(pi.hProcess);
         }
 
@@ -552,12 +538,14 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         if (CreateProcess(nullptr, (char*)cmd.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
         {
             {
-                TakePostSemaphore proc(processIdSem);
+                std::lock_gaurd<decltype(processIdMutex)> guard(processIdMutex);
+
                 processIds.insert(pi.hProcess);
             }
             WaitForSingleObject(pi.hProcess, INFINITE);
             {
-                TakePostSemaphore proc(processIdSem);
+                std::lock_gaurd<decltype(processIdMutex)> guard(processIdMutex);
+
                 processIds.erase(pi.hProcess);
             }
             if (output)

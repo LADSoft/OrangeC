@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <algorithm>
+#include <unordered_set>
 std::unordered_map<std::string, Depends*> Depends::all;
 std::string Maker::firstGoal;
 std::unordered_map<std::string, std::string> Maker::filePaths;
@@ -62,19 +63,42 @@ Maker::Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, Outp
 Maker::~Maker() {}
 void Maker::SetFirstGoal(const std::string& name)
 {
+    static std::unordered_set<std::string> InvalidCandidates
+    {
+        ".SUFFIXES",
+        ".DEFAULT",
+        ".EXPORT_ALL_VARIABLES",
+        ".INTERMEDIATE",
+        ".PRECIOUS",
+        ".SECONDARY",
+        ".SILENT",
+        ".IGNORE",
+        ".SECONDEXPANSION",
+        ".PHONY",
+        ".DELTE_ON_ERROR",
+        ".LOW_RESOLUTION_TIME",
+        ".NOTPARALLEL",
+        ".ONESHELL",
+        ".POSIX",
+        ".RECURSIVE",
+        ".MAIN",
+        ".BEGIN",
+        ".END",
+        ".INCLUDES",
+        ".INTERRUPT",
+        ".LIBS",
+        ".MAKEFILEDEPS",
+        ".MFLAGS",
+        ".MAKEFLAGS",
+        ".NOTPARALLEL",
+        ".ORDER",
+        ".SHELL",
+        ".WARN"
+    };
     if (firstGoal.empty())
     {
-        if (name != ".SUFFIXES" && name != ".DEFAULT" && name != ".EXPORT_ALL_VARIABLES")
-            if (name != ".INTERMEDIATE" && name != ".PRECIOUS" && name != ".SECONDARY")
-                if (name != ".SILENT" && name != ".IGNORE" && name != ".SECONDEXPANSION")
-                    if (name != ".PHONY" && name != ".DELETE_ON_ERROR")
-                        if (name != ".LOW_RESOLUTION_TIME" && name != ".NOTPARALLEL")
-                            if (name != ".ONESHELL" && name != ".POSIX")
-                                if (name != ".RECURSIVE" && name != ".MAIN")
-                                    if (name != ".BEGIN" && name != ".END" && name != ".INCLUDES" && name != ".INTERRUPT" &&
-                                        name != ".LIBS" && name != ".MAKEFILEDEPS" && name != ".MAKEFLAGS" && name != ".MFLAGS" &&
-                                        name != ".NOTPARALLEL" && name != ".ORDER" && name != ".SHELL" && name != ".WARN")
-                                        firstGoal = name;
+        if(InvalidCandidates.find(name) == InvalidCandidates.end())
+            firstGoal = name;
     }
 }
 bool Maker::CreateDependencyTree()

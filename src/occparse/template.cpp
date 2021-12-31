@@ -242,7 +242,7 @@ bool templateselectorcompare(TEMPLATESELECTOR* tsin1, TEMPLATESELECTOR* tsin2)
     }
     return true;
 }
-bool templatecomparetypes(TYPE* tp1, TYPE* tp2, bool exact)
+bool templatecomparetypes(TYPE* tp1, TYPE* tp2, bool exact, bool sameType)
 {
     if (!tp1 || !tp2)
         return false;
@@ -268,7 +268,7 @@ bool templatecomparetypes(TYPE* tp1, TYPE* tp2, bool exact)
         if (basetype(tp1)->type == bt_templateselector || basetype(tp2)->type == bt_templateselector)
             return true;
     }
-    if (!comparetypes(tp1, tp2, exact) && !sameTemplate(tp1, tp2))
+    if (!comparetypes(tp1, tp2, exact) && (!sameType || !sameTemplate(tp1, tp2)))
         return false;
     if (isint(tp1) && basetype(tp1)->btp && basetype(tp1)->btp->type == bt_enum)
         tp1 = basetype(tp1)->btp;
@@ -3863,10 +3863,41 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
             {
                 while (isref(tp1))
                     tp1 = basetype(tp1)->btp;
-                // there probably ought to be a bunch of such sanity checks throughout this function,
-                // this is the minimum to make LIBCXX happy.
                 if (isconst(tp1))
                     return nullptr;
+                if (isstructured(tp1))
+                {
+                    SYMBOL* cons = search(overloadNameTab[CI_ASSIGN], basetype(tp1)->syms);
+                    if (!cons)
+                        return nullptr;
+                    TYPE* tp2 = LookupTypeFromExpression(exp->left, enclosing, alt);
+                    TYPE* ctype = cons->tp;
+                    TYPE thistp = { } ;
+                    FUNCTIONCALL funcparams = { };
+                    INITLIST a = { };
+                    EXPRESSION x = { }, *xx = &x;
+                    x.type = en_auto;
+                    x.v.sp = cons;
+                    a.tp = tp2;
+                    a.exp = &x;
+                    funcparams.arguments = &a;
+                    thistp.type = bt_pointer;
+                    thistp.btp = basetype(tp1);
+                    thistp.rootType = &thistp;
+                    thistp.size = getSize(bt_pointer);
+                    funcparams.thistp = &thistp;
+                    funcparams.thisptr = &x;
+                    funcparams.ascall = true;
+                    cons = GetOverloadedFunction(&ctype, &xx, cons, &funcparams, nullptr, false, true, true, _F_SIZEOF);
+                    if (!cons || cons->sb->deleted)
+                    {
+                        return nullptr;
+                    }
+                    tp1 = basetype(cons->tp)->btp;
+                    while (isref(tp1))
+                        tp1 = basetype(tp1)->btp;
+
+                }
             }
             return tp1;
         }
@@ -7338,7 +7369,7 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                             return false;
                         if (tsym->type == bt_templateparam)
                             tsym = tsym->templateParam->p->byClass.val;
-                        if (!templatecomparetypes(torig, tsym, true) && !sameTemplate(torig, tsym, true))
+                        if (!templatecomparetypes(torig, tsym, true, false) && !sameTemplate(torig, tsym, true))
                             return false;
                         if (isref(torig))
                             torig = basetype(torig)->btp;
@@ -7366,7 +7397,7 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                         return false;
                     if ((basetype(torig)->type == bt_enum) != (basetype(tsym)->type == bt_enum))
                         return false;
-                    if ((!templatecomparetypes(torig, tsym, true) || !templatecomparetypes(tsym, torig, true)) &&
+                    if ((!templatecomparetypes(torig, tsym, true, false) || !templatecomparetypes(tsym, torig, true, false)) &&
                         !sameTemplate(torig, tsym, true))
                         return false;
                     if (!comparePointerTypes(torig, tsym))

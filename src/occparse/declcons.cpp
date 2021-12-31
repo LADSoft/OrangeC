@@ -1157,11 +1157,11 @@ static bool isCopyAssignmentDeleted(SYMBOL* sp)
         {
             if (isref(sp1->tp))
                 return true;
-            if (!isstructured(sp1->tp) && isconst(sp1->tp) && sp1->tp->type != bt_aggregate)
-                return true;
             m = sp1->tp;
             if (isarray(m))
                 m = basetype(sp1->tp)->btp;
+            if (!isstructured(m) && isconst(m) && m->type != bt_aggregate)
+                return true;
             if (isstructured(m))
             {
                 if (checkCopyAssign(sp, basetype(m)->sp, ac_public))

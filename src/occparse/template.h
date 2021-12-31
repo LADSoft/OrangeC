@@ -47,7 +47,7 @@ EXPRESSION* GetSymRef(EXPRESSION* n);
 bool equalTemplateIntNode(EXPRESSION* exp1, EXPRESSION* exp2);
 bool templatecompareexpressions(EXPRESSION* exp1, EXPRESSION* exp2);
 bool templateselectorcompare(TEMPLATESELECTOR* tsin1, TEMPLATESELECTOR* tsin2);
-bool templatecomparetypes(TYPE* tp1, TYPE* tp2, bool exact);
+bool templatecomparetypes(TYPE* tp1, TYPE* tp2, bool exact, bool sameType = true);
 void TemplateGetDeferred(SYMBOL* sym);
 TEMPLATEPARAMLIST* TemplateLookupSpecializationParam(const char* name);
 TEMPLATEPARAMLIST* TemplateGetParams(SYMBOL* sym);

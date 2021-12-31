@@ -4352,7 +4352,13 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
     }
     else
     {
+
         lex = expression_no_check(lex, nullptr, nullptr, &(*tn), &exp, _F_SIZEOF);
+        if (exp->type == en_func && exp->v.func->sp->sb->deleted)
+        {
+            *tn = &stdany;
+            return lex;
+        }
         if ((*tn) && (*tn)->type == bt_aggregate && exp->type == en_func)
         {
             SYMLIST* hr = (*tn)->syms->table[0];

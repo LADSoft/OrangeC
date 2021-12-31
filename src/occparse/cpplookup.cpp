@@ -4061,13 +4061,10 @@ static void getInitListConversion(TYPE* tp, INITLIST* list, TYPE* tpp, int* n, e
             else
             {
                 std::deque<EXPRESSION*> hold;
-                EXPRESSION exp, *expp = &exp;
+                EXPRESSION exp = {}, * expp = &exp;
                 TYPE* ctype = cons->tp;
-                TYPE thistp;
-                FUNCTIONCALL funcparams;
-                memset(&exp, 0, sizeof(exp));
-                memset(&funcparams, 0, sizeof(funcparams));
-                memset(&thistp, 0, sizeof(thistp));
+                TYPE thistp = {};
+                FUNCTIONCALL funcparams = {};
                 funcparams.arguments = a;
                 exp.type = en_c_i;
                 thistp.type = bt_pointer;

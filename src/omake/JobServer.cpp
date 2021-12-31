@@ -1,4 +1,7 @@
 #include "JobServer.h"
+#include <random>
+#include <array>
+#include <algorithm>
 namespace OMAKE
 {
 std::shared_ptr<JobServer> JobServer::GetJobServer(int max_jobs)
@@ -30,5 +33,26 @@ std::shared_ptr<JobServer> JobServer::GetJobServer(const std::string& auth_strin
 std::shared_ptr<JobServer> JobServer::GetJobServer(const std::string& auth_string, int max_jobs)
 {
     return std::make_shared<WINDOWSJobServer>(auth_string, max_jobs);
+}
+std::shared_ptr<JobServer> JobServer::GetJobServer(int max_jobs, bool ignored)
+{
+    (void)ignored;
+    std::array<unsigned char, 10> rnd;
+
+    std::uniform_int_distribution<int> distribution('0', '9');
+    // note that there will be minor problems if the implementation of random_device
+    // uses a prng with constant seed for the random_device implementation.
+    // that shouldn't be a problem on OS we are interested in.
+    std::random_device dev;
+    std::mt19937 engine(dev());
+    auto generator = std::bind(distribution, engine);
+
+    std::generate(rnd.begin(), rnd.end(), generator);
+    std::string generatedName = "OMAKE";
+    for (auto v : rnd)
+    {
+        generatedName += v;
+    }
+    return JobServer::GetJobServer(generatedName, max_jobs);
 }
 }  // namespace OMAKE

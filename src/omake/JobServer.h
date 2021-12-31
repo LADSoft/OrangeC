@@ -30,6 +30,7 @@ class JobServer : public IJobServer
     // The current job count, starts at one and goes up, protected so that we know how many we need to release, and all calls assume
     // that you have the minimum number of jobs (1) thus, current_jobs starts at 1
     std::atomic<int> current_jobs;
+
   public:
     // This is *REALLY* ineffecient, but is the only *easy* way to do this on POSIX without taking an unfathomably long amount of
     // extra time AFAICT
@@ -58,6 +59,11 @@ class JobServer : public IJobServer
     // temporary GetJobServer for compatibility reasons with old code, instead of moving things into JobServer here, we're moving
     // them out
     static std::shared_ptr<JobServer> GetJobServer(const std::string& auth_string, int max_jobs);
+    // Creates an OMAKE compatible job server, allowing for the main class to move out when needed
+    static std::shared_ptr<JobServer> GetJobServer(int max_jobs, bool ignored);
+    // Thin layer to allow us to create windows-type semaphores as a stop-gap before compartmentalising the entire thing, used
+    // during testing
+    static std::shared_ptr<JobServer> GetJobServer(const std::string& jobserver_name, bool ignored);
 };
 // Use composition to our advantage: if we have a JobServer and we know it's either one of these, we can use the same code
 // without having to worry if it's POSIX or Windows except at the calling barrier

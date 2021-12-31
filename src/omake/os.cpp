@@ -70,7 +70,6 @@
 #include "semaphores.h"
 #include "JobServer.h"
 //#define DEBUG
-static Semaphore sema;
 static std::mutex processIdMutex;
 #ifdef _WIN32
 static CRITICAL_SECTION consoleSync;
@@ -87,6 +86,7 @@ bool OS::isSHEXE;
 int OS::jobsLeft;
 std::string OS::jobName = "\t";
 std::string OS::jobFile;
+std::shared_ptr<OMAKE::JobServer> localJobServer = nullptr;
 // This acts as a cross-platform *NAMED MUTEX*, because currently we use a named semaphore to do this, it's annoying that POSIX
 // doesn't have named mutexes because a mutex would be theoretically some percent more efficient than this job-pipe-server
 // shenanigans but this is good enough I guess
@@ -259,36 +259,23 @@ std::string OS::JobName() { return jobName; }
 void OS::JobInit()
 {
     bool first = false;
-    std::string name;
+    std::string name, command;
     Variable* v = VariableContainer::Instance()->Lookup(".OMAKESEM");
     if (v)
     {
         name = v->GetValue();
+        OS::WriteToConsole("The job server name is: " + name);
+        localJobServer = OMAKE::JobServer::GetJobServer(name);
     }
     else
     {
-        std::array<unsigned char, 10> rnd;
-
-        std::uniform_int_distribution<int> distribution('0', '9');
-        // note that there will be minor problems if the implementation of random_device
-        // uses a prng with constant seed for the random_device implementation.
-        // that shouldn't be a problem on OS we are interested in.
-        std::random_device dev;
-        std::mt19937 engine(dev());
-        auto generator = std::bind(distribution, engine);
-
-        std::generate(rnd.begin(), rnd.end(), generator);
-        for (auto v : rnd)
-            name += v;
+        localJobServer = OMAKE::JobServer::GetJobServer(jobsLeft);
+        name = localJobServer->PassThroughCommandString();
         v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
         *VariableContainer::Instance() += v;
         first = true;
     }
     v->SetExport(true);
-    name = std::string("OMAKE") + name;
-    // Initialize the job server, or grabs an existing job server, doesn't matter which
-    OMAKE::JobServer::GetJobServer(name, jobsLeft);
-    sema = Semaphore(name, jobsLeft);
 
     if (MakeMain::printDir.GetValue() && jobName == "\t")
     {
@@ -372,7 +359,6 @@ void OS::JobInit()
 }
 void OS::JobRundown()
 {
-    sema.~Semaphore();
     if (jobFile.size())
         RemoveFile(jobFile);
 }

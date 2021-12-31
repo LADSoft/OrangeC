@@ -1420,7 +1420,7 @@ static LEXLIST* initialize_bool_type(LEXLIST* lex, SYMBOL* funcsp, int offset, e
     }
     return lex;
 }
-static LEXLIST* initialize_arithmetic_type(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
+static LEXLIST* initialize_arithmetic_type(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init, int flags)
 {
 
     TYPE* tp = nullptr;
@@ -3193,7 +3193,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
             TYPE* tp2;
             c99 |= designator(&lex, funcsp, &desc, &cache);
             tp2 = nexttp(desc);
-
+            bool hasSome = false;
             while (tp2 && (tp2->type == bt_aggregate || isarray(tp2) ||
                            (isstructured(tp2) && (!Optimizer::cparams.prm_cplusplus || !basetype(tp2)->sp->sb->hasUserCons))))
             {
@@ -3206,23 +3206,48 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                     if (MATCHKW(lex, begin))
                     {
                         lex = getsym();
-                        allocate_desc(tp2, desc->offset + desc->reloffset, &desc, &cache);
-                        desc->stopgap = true;
-                        c99 |= designator(&lex, funcsp, &desc, &cache);
+                        if (MATCHKW(lex, end))
+                        {
+                            lex = getsym();
+                            increment_desc(&desc, &cache);
+                        }
+                        else
+                        {
+                            hasSome = true;
+                            allocate_desc(tp2, desc->offset + desc->reloffset, &desc, &cache);
+                            desc->stopgap = true;
+                            c99 |= designator(&lex, funcsp, &desc, &cache);
+                        }
                     }
                     else
                     {
                         if (!atend(desc))
+                        {
+                            hasSome = true;
                             allocate_desc(tp2, desc->offset + desc->reloffset, &desc, &cache);
+                        }
                         else
+                        {
                             break;
+                        }
                     }
                 }
                 tp2 = nexttp(desc);
             }
             if (atend(desc))
             {
-                toomany = true;
+                toomany = hasSome;
+                if (!toomany)
+                {
+                    unwrap_desc(&desc, &cache, next);
+                    free_desc(&desc, &cache);
+                    while (MATCHKW(lex, end))
+                    {
+                        lex = getsym();
+                        unwrap_desc(&desc, &cache, next);
+                        free_desc(&desc, &cache);
+                    }
+                }
                 break;
             }
             /* when we get here, DESC has an aggregate with an element that isn't
@@ -3692,7 +3717,7 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIA
         case bt_enum:
         case bt_templateparam:
         case bt_wchar_t:
-            return initialize_arithmetic_type(lex, funcsp, offset, sc, tp, init);
+            return initialize_arithmetic_type(lex, funcsp, offset, sc, tp, init, flags);
         case bt_lref:
         case bt_rref:
             return initialize_reference_type(lex, funcsp, offset, sc, tp, init, flags, sym);
@@ -4110,7 +4135,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
             while (isarray(z))
                 z = basetype(z)->btp;
             z = basetype(z);
-            if (isstructured(z) && !z->sp->sb->trivialCons)
+            if (isstructured(z) && !z->sp->sb->trivialCons && !sym->sb->parentClass)
             {
                 INITIALIZER *init = nullptr, *it = nullptr;
                 int n = sym->tp->size / (z->size);

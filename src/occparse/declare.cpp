@@ -6282,12 +6282,21 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                     {
                                         spi->templateParams =
                                             TemplateMatching(lex, spi->sb->parentTemplate->templateParams, templateParams, spi,
-                                                             MATCHKW(lex, begin) || MATCHKW(lex, colon));
+                                                            MATCHKW(lex, begin) || MATCHKW(lex, colon));
                                     }
                                     else
                                     {
-                                        spi->templateParams = TemplateMatching(lex, spi->templateParams, templateParams, spi,
-                                                                               MATCHKW(lex, begin) || MATCHKW(lex, colon));
+                                        if (!asFriend || MATCHKW(lex, begin) || MATCHKW(lex, colon))
+                                        {
+                                            auto temp = TemplateMatching(lex, spi->templateParams, templateParams, spi,
+                                                MATCHKW(lex, begin) || MATCHKW(lex, colon));
+                                            spi->templateParams = temp;
+                                        }
+                                        else
+                                        {
+                                            auto temp = TemplateMatching(lex, spi->templateParams, templateParams, spi,
+                                                true);
+                                        }
                                     }
                                 }
                             }

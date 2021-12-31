@@ -6824,8 +6824,10 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                     if (special)
                     {
                         TEMPLATEPARAMLIST* tpl = sym->templateParams->p->bySpecialization.types ? sym->templateParams->p->bySpecialization.types : sym->templateParams->next;
-                            for ( ; tpl; tpl = tpl->next)
-                                TransferClassTemplates(special, special, tpl);
+                        for (; tpl; tpl = tpl->next)
+                        {
+                            TransferClassTemplates(special, special, tpl);
+                        }
                     }
                 }
                 hr = hr->next;
@@ -6972,6 +6974,8 @@ int TemplatePartialDeduceFromType(TYPE* orig, TYPE* sym, bool byClass)
     A = RemoveCVQuals(A);
     P = RemoveCVQuals(P);
     if (!Deduce(P, A, true, byClass, false, false))
+        return 0;
+    if (comparetypes(P, A, false))
         return 0;
     return which;
 }
@@ -7243,7 +7247,7 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
                         int which = TemplatePartialDeduceArgsFromType(asClass ? table[i] : table[i]->sb->parentTemplate,
                                                                       asClass ? table[j] : table[j]->sb->parentTemplate, 
                                                                       asClass || !basetype(typetab[i])->sp->sb->parentTemplate ? typetab[i] : basetype(typetab[i])->sp->sb->parentTemplate->tp,
-                                                                      asClass || !typetab[j]->sp->sb->parentTemplate ? typetab[j] : basetype(typetab[j])->sp->sb->parentTemplate->tp,
+                                                                      asClass || !basetype(typetab[j])->sp->sb->parentTemplate ? typetab[j] : basetype(typetab[j])->sp->sb->parentTemplate->tp,
                                                                       funcparams);
                         if (which < 0)
                         {
@@ -7442,7 +7446,7 @@ bool TemplateInstantiationMatch(SYMBOL* orig, SYMBOL* sym)
     }
     return false;
 }
-static void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
+void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
 {
     if (newCls->tp->syms && (!newCls->templateParams || !newCls->templateParams->p->bySpecialization.types))
     {
@@ -7875,6 +7879,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             if (old.tp->syms)
                 TemplateTransferClassDeferred(cls, &old);
             PopTemplateNamespace(nsl);
+            instantiatingClass--;
             parsingUsing = oldParsingUsing;
             noTypeNameError = oldTypeNameError;
             inTypedef = oldintypedef;
@@ -8528,7 +8533,7 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* v
     {
         if (dflt->argsym && params && !params->p->byNonType.val)
         {
-            if (params && params->p->type == kw_int)
+            if (params->p->type == kw_int)
             {
                  for (auto param1 = dflt; param1; param1 = param1->next)
                      if (param1->p->type == kw_int && param1->p->byNonType.dflt && param1->p->byNonType.dflt->type == en_templateparam)

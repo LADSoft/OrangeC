@@ -4155,7 +4155,8 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
                 }
             }
         }
-    }    switch (sym->sb->storage_class)
+    }    
+    switch (sym->sb->storage_class)
     {
         case sc_parameter:
             sym->sb->assigned = true;

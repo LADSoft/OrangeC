@@ -4405,6 +4405,10 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                 else if (a && (a->nested || (!a->tp && !a->exp)))
                 {
                     seq[m++] = CV_QUALS;  // have to make a distinction between an initializer list and the same func without one...
+                    if (basetype(tp)->type == bt_lref)
+                    {
+                        seq[m++] = CV_LVALUETORVALUE;
+                    }
                     if (a->nested)
                     {
                         if (a->nested->initializer_list || a->initializer_list || a->next || (isstructured(tp1) && ( !sym->sb->isConstructor || (!comparetypes(basetype(tp1), sym->sb->parentClass->tp, true) && ! sameTemplate(basetype(tp1), sym->sb->parentClass->tp)))))
@@ -4633,7 +4637,6 @@ SYMBOL* GetOverloadedTemplate(SYMBOL* sp, FUNCTIONCALL* args)
     icsList = Allocate<e_cvsrn*>(n);
     lenList = Allocate<int*>(n);
     funcList = Allocate<SYMBOL**>(n);
-
     n = insertFuncs(spList, spFilterList, &gather, args, nullptr, 0);
     if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor))
     {

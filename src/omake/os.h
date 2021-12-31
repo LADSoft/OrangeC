@@ -28,7 +28,6 @@
 #include <list>
 #include <string>
 #include <deque>
-#include "JobServerAwareThread.h"
 #include "JobServer.h"
 #undef GetCurrentTime
 #undef Yield
@@ -99,8 +98,10 @@ class OS
     static void Yield();
     static std::string GetFullPath(const std::string& filename);
     static int JobCount() { return jobsLeft; }
+    static int GetProcessId();
 
   private:
+    static std::shared_ptr<OMAKE::JobServer> localJobServer;
     static int jobsLeft;
     static std::deque<int> jobCounts;
     static bool isSHEXE;

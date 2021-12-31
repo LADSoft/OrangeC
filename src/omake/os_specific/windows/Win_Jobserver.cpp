@@ -4,7 +4,6 @@
 
 namespace OMAKE
 {
-std::shared_ptr<JobServer> JobServer::job_server_instance = nullptr;
 // Notes and assumptions:
 // A null name for a job server means that we didn't initialize the server
 WINDOWSJobServer::WINDOWSJobServer(const string_type& server_name, int max_jobs)

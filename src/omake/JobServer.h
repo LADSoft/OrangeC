@@ -30,10 +30,6 @@ class JobServer : public IJobServer
     // The current job count, starts at one and goes up, protected so that we know how many we need to release, and all calls assume
     // that you have the minimum number of jobs (1) thus, current_jobs starts at 1
     std::atomic<int> current_jobs;
-    // Create a singleton so that we can use this to pass to our spawned threads our instance, when we get destructed, we destruct
-    // this and it *SHOULD* work... An interesting solution to a dumb problem
-    static std::shared_ptr<JobServer> job_server_instance;
-
   public:
     // This is *REALLY* ineffecient, but is the only *easy* way to do this on POSIX without taking an unfathomably long amount of
     // extra time AFAICT
@@ -55,60 +51,20 @@ class JobServer : public IJobServer
         // that the thread itself does this(?))
         return JobServerAwareThread(job_server_instance, std::forward<Function>(f), std::forward<Args>(args)...);
     }
-    // A region of GetJobServer overloads, which all allow for the static creation of the Windows and POSIX job server types,
-    // theoretically these classes *SHOULD* be private to the namespace but I'm not sure C++ allows this and we can technically let
-    // this roam free
-#pragma region GetJobServerOverloads
-    static std::shared_ptr<JobServer> GetJobServer(int max_jobs)
-    {
-        if (!job_server_instance)
-        {
-            job_server_instance = std::reinterpret_pointer_cast<JobServer>(std::make_shared<POSIXJobServer>(max_jobs));
-        }
-        return job_server_instance;
-    }
-    static std::shared_ptr<JobServer> GetJobServer(int readfd, int writefd)
-    {
-        if (!job_server_instance)
-        {
-            job_server_instance = std::reinterpret_pointer_cast<JobServer>(std::make_shared<POSIXJobServer>(readfd, writefd));
-        }
-        return job_server_instance;
-    }
-    static std::shared_ptr<JobServer> GetJobServer(const std::string& server_name, int max_jobs)
-    {
-        if (!job_server_instance)
-        {
-            job_server_instance =
-                std::reinterpret_pointer_cast<JobServer>(std::make_shared<WINDOWSJobServer>(server_name, max_jobs));
-        }
-        return job_server_instance;
-    }
-    static std::shared_ptr<JobServer> GetJobServer(const std::string& server_name)
-    {
-        if (!job_server_instance)
-        {
-            job_server_instance = std::reinterpret_pointer_cast<JobServer>(std::make_shared<WINDOWSJobServer>(server_name));
-        }
-        return job_server_instance;
-    }
-    static std::shared_ptr<JobServer> GetJobServer()
-    {
-        if (!job_server_instance)
-        {
-            throw std::runtime_error("Job server attempted to be created or gotten without first initializing a job server");
-        }
-        return job_server_instance;
-    }
-#pragma endregion
+    // Creates a job server with a maximum number of jobs
+    static std::shared_ptr<JobServer> GetJobServer(int max_jobs);
+    // Opens a job server with a specified authorization code, this is *AFAR* parsing the --jobserver-auth string
+    static std::shared_ptr<JobServer> GetJobServer(const std::string& auth_string);
+    // temporary GetJobServer for compatibility reasons with old code, instead of moving things into JobServer here, we're moving
+    // them out
+    static std::shared_ptr<JobServer> GetJobServer(const std::string& auth_string, int max_jobs);
 };
 // Use composition to our advantage: if we have a JobServer and we know it's either one of these, we can use the same code
 // without having to worry if it's POSIX or Windows except at the calling barrier
 class POSIXJobServer : public JobServer
 {
+    friend class JobServer;
     int readfd = -1, writefd = -1;
-
-  public:
     POSIXJobServer(int max_jobs);
     POSIXJobServer(int read, int write);
     std::string PassThroughCommandString();
@@ -119,7 +75,7 @@ class POSIXJobServer : public JobServer
 };
 class WINDOWSJobServer : public JobServer
 {
-  public:
+    friend class JobServer;
 #ifdef _WIN32
 #    ifdef UNICODE
     // Use a consistent strategy so that windows doesn't yell at us, I know we don't work in wide strings except in obrc often

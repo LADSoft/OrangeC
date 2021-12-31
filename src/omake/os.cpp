@@ -71,8 +71,6 @@
 #include "JobServer.h"
 //#define DEBUG
 static Semaphore sema;
-// processIdSem to the best of my knowledge is an inter-process mutex????
-// I don't know *WHY* because the std::set is never touched inter-process and we're already gaurded by the processId here
 static std::mutex processIdMutex;
 #ifdef _WIN32
 static CRITICAL_SECTION consoleSync;
@@ -109,7 +107,7 @@ static std::set<HANDLE> processIds;
 
 void OS::TerminateAll()
 {
-    std::lock_gaurd<decltype(processIdMutex)> guard(processIdMutex);
+    std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
     for (auto a : processIds)
         TerminateProcess(a, 0);
 }
@@ -230,13 +228,13 @@ void OS::PopJobCount()
 }
 bool OS::TakeJob()
 {
-    OMAKE::JobServer::GetJobServer()->TakeNewJob();
+    localJobServer->TakeNewJob();
     return false;
 }
-void OS::GiveJob() { OMAKE::JobServer::GetJobServer()->ReleaseJob(); }
+void OS::GiveJob() { localJobServer->ReleaseJob(); }
 std::string OS::GetFullPath(const std::string& fullname)
 {
-    // std::lock_gaurd <decltype(DirectoryMutex)> lg(DirectoryMutex);
+    // std::lock_guard <decltype(DirectoryMutex)> lg(DirectoryMutex);
     std::string recievingbuffer;
 #ifdef _WIN32
     EnterCriticalSection(&DirectorySync);
@@ -502,12 +500,12 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     if (asapp && CreateProcess(nullptr, (char*)command1.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
     {
         {
-            std::lock_gaurd<decltype(processIdMutex)> guard(processIdMutex);
+            std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
             processIds.insert(pi.hProcess);
         }
         WaitForSingleObject(pi.hProcess, INFINITE);
         {
-            std::lock_gaurd<decltype(processIdMutex)> guard(processIdMutex);
+            std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
             processIds.erase(pi.hProcess);
         }
 
@@ -538,13 +536,13 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         if (CreateProcess(nullptr, (char*)cmd.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
         {
             {
-                std::lock_gaurd<decltype(processIdMutex)> guard(processIdMutex);
+                std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
 
                 processIds.insert(pi.hProcess);
             }
             WaitForSingleObject(pi.hProcess, INFINITE);
             {
-                std::lock_gaurd<decltype(processIdMutex)> guard(processIdMutex);
+                std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
 
                 processIds.erase(pi.hProcess);
             }
@@ -770,3 +768,4 @@ void OS::CreateThread(void* func, void* data)
 #endif
 }
 void OS::Yield() { std::this_thread::yield(); }
+int OS::GetProcessId() { return getpid(); }

@@ -8,7 +8,6 @@
 #include <sstream>
 namespace OMAKE
 {
-std::shared_ptr<JobServer> JobServer::job_server_instance = nullptr;
 int POSIXJobServer::TakeNewJob()
 {
     if (writefd == -1 || readfd == -1)

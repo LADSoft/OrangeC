@@ -1446,7 +1446,7 @@ static LEXLIST* initialize_arithmetic_type(LEXLIST* lex, SYMBOL* funcsp, int off
         else
         {
             ResolveTemplateVariable(&tp, &exp, itype, nullptr);
-            if (itype->type != bt_templateparam && !templateNestingCount)
+            if (itype->type != bt_templateparam && tp->type != bt_templateselector && !templateNestingCount)
             {
                 EXPRESSION** exp2;
                 exp2 = &exp;

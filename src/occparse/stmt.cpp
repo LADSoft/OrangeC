@@ -3775,6 +3775,7 @@ void parseNoexcept(SYMBOL* funcsp)
 {
     if (funcsp->sb->deferredNoexcept && funcsp->sb->deferredNoexcept != (LEXLIST*)-1)
     {
+        dontRegisterTemplate++;
         LEXLIST* lex = SetAlternateLex(funcsp->sb->deferredNoexcept);
         STRUCTSYM s, t;
         if (funcsp->sb->parentClass)
@@ -3815,7 +3816,8 @@ void parseNoexcept(SYMBOL* funcsp)
                 dropStructureDeclaration();
             dropStructureDeclaration();
         }
-	funcsp->sb->deferredNoexcept = (LEXLIST*)-1;
+    	funcsp->sb->deferredNoexcept = (LEXLIST*)-1;
+        dontRegisterTemplate--;
     }
 }
 LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)

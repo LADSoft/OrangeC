@@ -1190,7 +1190,6 @@ bool constructedInt(LEXLIST* lex, SYMBOL* funcsp)
     lex = prevsym(placeholder);
     return rv;
 }
-static int count3;
 LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLATEPARAMLIST** lst)
 {
     TEMPLATEPARAMLIST **start = lst;
@@ -1234,7 +1233,8 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPL
                     tp = &stdint;
                 if (structLevel && isstructured(tp))
                 {
-                    if (!basetype(tp)->sp->sb->templateLevel && (basetype(tp)->sp->sb->declaring))
+                    if ((!basetype(tp)->sp->sb->templateLevel || basetype(tp)->sp->sb->instantiating)
+                        && basetype(tp)->sp->sb->declaring)
                     {
                         basetype(tp)->sp->sb->declaringRecursive = true;
                     }
@@ -7896,8 +7896,10 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             dontRegisterTemplate = templateNestingCount != 0;
             SwapMainTemplateArgs(cls);
             lex = SetAlternateLex(lex);
+            cls->sb->instantiating = true;
             lex = innerDeclStruct(lex, nullptr, cls, false, cls->tp->type == bt_class ? ac_private : ac_public, cls->sb->isfinal,
                                   &defd);
+            cls->sb->instantiating = false;
             SetAlternateLex(nullptr);
             SwapMainTemplateArgs(cls);
             lex = reinstateLex;

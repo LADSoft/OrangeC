@@ -920,7 +920,23 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
             }
         }
     }
-           
+    if (!templateNestingCount || instantiatingTemplate)
+    {
+        for (i = 0; i < n; i++)
+        {
+            SYMBOL* sp = syms[i];
+            SYMLIST* hr = sp->tp->syms->table[0];
+            while (hr)
+            {
+                SYMBOL* sym = hr->p;
+                if (sym->sb->storage_class == sc_global && isconst(sym->tp) && isint(sym->tp) && sym->sb->init && sym->sb->init->exp->type == en_templateselector)
+                {
+                    optimize_for_constants(&sym->sb->init->exp);
+                }
+                hr = hr->next;
+            }
+        }
+    }
     for (i = 0; i < n; i++)
     {
         SYMBOL* sp = syms[i];
@@ -5866,7 +5882,6 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         }
                     }
                     else
-
                     {
                         SYMBOL* ssp = nullptr;
                         SYMBOL* spi;

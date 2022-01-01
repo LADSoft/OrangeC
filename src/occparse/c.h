@@ -674,6 +674,7 @@ typedef struct sym
         unsigned specialized2 : 1;     // specialization of a template class nontemplate func
         unsigned instantiated : 1;     // instantiated template
         unsigned dontinstantiate : 1;  // don't instantiate this template (is extern)
+        unsigned instantiating : 1;    // template is currently being instantiated
         unsigned copiedTemplateFunction : 1;
         unsigned instantiatedInlineInClass : 1;  // function instantiated inside a class body
         unsigned dumpInlineToFile : 1;           /* inline function needs to be placed in the output file */

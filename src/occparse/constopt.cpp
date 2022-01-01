@@ -2548,7 +2548,7 @@ int opt0(EXPRESSION** node)
                         if (!ts)
                             break;
                     }
-                    if (tsl->next->isTemplate)
+                    if (tsl->next->isTemplate && tsl->next->templateParams)
                     {
                         TEMPLATEPARAMLIST* current = SolidifyTemplateParams(tsl->next->templateParams);
                         if (ts->sb->storage_class == sc_typedef)

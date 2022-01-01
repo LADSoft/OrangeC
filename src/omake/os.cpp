@@ -72,16 +72,12 @@
 #include "JobServer.h"
 //#define DEBUG
 static std::mutex processIdMutex;
-#ifdef _WIN32
-static CRITICAL_SECTION consoleSync;
-static CRITICAL_SECTION evalSync;
-static CRITICAL_SECTION DirectorySync;
-#endif
-// static std::recursive_mutex consoleMut;
+static std::recursive_mutex evalSync;
+static std::recursive_mutex consoleMut;
 // This is required because GetFullPathName and SetCurrentDirectory and GetCurrentDirectory are
 // all non-safe in multithreaded environments, in order to make this safe, we *MUST* lower ourselves into making these a mutex-gated
 // system, this will enforce ordering at the possibility of incorrectness
-// static std::mutex DirectoryMutex;
+static std::mutex DirectoryMutex;
 std::deque<int> OS::jobCounts;
 bool OS::isSHEXE;
 int OS::jobsLeft;
@@ -154,52 +150,32 @@ bool Time::operator>=(const Time& last)
     return (this->seconds == last.seconds && this->ms == last.ms && (this->seconds != 0 || this->ms != 0)) || *this > last;
 }
 
-void OS::Init()
-{
-#ifdef _WIN32
-    InitializeCriticalSection(&consoleSync);
-    InitializeCriticalSection(&evalSync);
-#endif
-}
+void OS::Init() {}
 
 void OS::WriteToConsole(std::string string)
 {
-    // std::lock_guard<decltype(consoleMut)> lg(consoleMut);
+    std::lock_guard<decltype(consoleMut)> lg(consoleMut);
 #ifdef _WIN32
-    EnterCriticalSection(&consoleSync);
 
     DWORD written;
     WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), string.c_str(), string.size(), &written, nullptr);
-    LeaveCriticalSection(&consoleSync);
 #else
     printf("%s\n", string.c_str());
 #endif
 }
 void OS::ToConsole(std::deque<std::string>& strings)
 {
-// std::lock_guard<decltype(consoleMut)> lg(consoleMut);
-#ifdef _WIN32
-    EnterCriticalSection(&consoleSync);
-#endif
+    std::lock_guard<decltype(consoleMut)> lg(consoleMut);
     for (auto&& s : strings)
     {
         WriteToConsole(s);
     }
     strings.clear();
-#ifdef _WIN32
-    LeaveCriticalSection(&consoleSync);
-#endif
 }
 void OS::AddConsole(std::deque<std::string>& strings, std::string string)
 {
-// std::lock_guard<decltype(consoleMut)> lg(consoleMut);
-#ifdef _WIN32
-    EnterCriticalSection(&consoleSync);
-#endif
+    std::lock_guard<decltype(consoleMut)> lg(consoleMut);
     strings.push_back(string);
-#ifdef _WIN32
-    LeaveCriticalSection(&consoleSync);
-#endif
 }
 void OS::PushJobCount(int jobs)
 {
@@ -219,11 +195,9 @@ bool OS::TakeJob()
 void OS::GiveJob() { localJobServer->ReleaseJob(); }
 std::string OS::GetFullPath(const std::string& fullname)
 {
-    // std::lock_guard <decltype(DirectoryMutex)> lg(DirectoryMutex);
+    std::lock_guard<decltype(DirectoryMutex)> lg(DirectoryMutex);
     std::string recievingbuffer;
-#ifdef _WIN32
-    EnterCriticalSection(&DirectorySync);
-#endif
+
     DWORD return_val = GetFullPathNameA(fullname.c_str(), 0, nullptr, nullptr);
     if (!return_val)
     {
@@ -235,16 +209,13 @@ std::string OS::GetFullPath(const std::string& fullname)
     {
         // Do error handling somewhere
     }
-#ifdef _WIN32
-    LeaveCriticalSection(&DirectorySync);
-#endif
     return recievingbuffer;
 }
 std::string OS::JobName() { return jobName; }
 void OS::JobInit()
 {
     bool first = false;
-    std::string name, command;
+    std::string name;
     Variable* v = VariableContainer::Instance()->Lookup(".OMAKESEM");
     if (v)
     {
@@ -348,30 +319,10 @@ void OS::JobRundown()
     if (jobFile.size())
         RemoveFile(jobFile);
 }
-void OS::Take()
-{
-#ifdef _WIN32
-    EnterCriticalSection(&consoleSync);
-#endif
-}
-void OS::Give()
-{
-#ifdef _WIN32
-    LeaveCriticalSection(&consoleSync);
-#endif
-}
-void OS::EvalTake()
-{
-#ifdef _WIN32
-    EnterCriticalSection(&evalSync);
-#endif
-}
-void OS::EvalGive()
-{
-#ifdef _WIN32
-    LeaveCriticalSection(&evalSync);
-#endif
-}
+void OS::Take() { consoleMut.lock(); }
+void OS::Give() { consoleMut.unlock(); }
+void OS::EvalTake() { evalSync.lock(); }
+void OS::EvalGive() { evalSync.unlock(); }
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
 {
 #ifdef _WIN32

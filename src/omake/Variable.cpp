@@ -25,7 +25,7 @@
 #include "Variable.h"
 
 bool Variable::environmentHasPriority = false;
-std::shared_ptr<VariableContainer> VariableContainer::instance = nullptr;
+std::shared_ptr<VariableContainer> VariableContainer::instance;
 
 Variable::Variable(const std::string& Name, const std::string& Value, Flavor oFlavor, Origin oOrigin) :
     name(Name),

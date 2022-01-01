@@ -101,12 +101,10 @@ class VariableContainer
     const PatternIterator PatternBegin() { return patternVariables.begin(); }
     const PatternIterator PatternEnd() { return patternVariables.end(); }
 
-  protected:
-    VariableContainer() {}
-
   private:
     std::map<const std::string*, std::unique_ptr<Variable>, vlt> variables;
     std::list<std::unique_ptr<Variable>> patternVariables;
+    friend class std::shared_ptr<VariableContainer>;
     static std::shared_ptr<VariableContainer> instance;
 };
 

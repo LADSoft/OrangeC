@@ -71,13 +71,15 @@ class POSIXJobServer : public JobServer
 {
     friend class JobServer;
     int readfd = -1, writefd = -1;
-    POSIXJobServer(int max_jobs);
-    POSIXJobServer(int read, int write);
     std::string PassThroughCommandString();
     int get_read_fd() { return readfd; }
     int get_write_fd() { return writefd; }
     int TakeNewJob();
     int ReleaseJob();
+    // Need these to be public in order to do std::make_shared on em'
+  public:
+    POSIXJobServer(int max_jobs);
+    POSIXJobServer(int read, int write);
 };
 class WINDOWSJobServer : public JobServer
 {
@@ -100,14 +102,15 @@ class WINDOWSJobServer : public JobServer
     // HANDLE, this way we can also elide calls in this place and theoretically an optimization pass could bring the entire object
     // into the class in the future should anyone choose to research inserting an underlying object into another object
     Semaphore semaphore;
-
-    // Since we use semaphores we want a name because these are interprocess named semaphores
-    WINDOWSJobServer(const string_type& server_name, int max_jobs);
-    // Interprocess semaphores require names
-    WINDOWSJobServer(const string_type& server_name);
     std::string PassThroughCommandString();
     int TakeNewJob();
     int ReleaseJob();
     void ReleaseAllJobs();
+    // Need these to be public in order to do std::make_shared on em'
+  public:
+    // Since we use semaphores we want a name because these are interprocess named semaphores
+    WINDOWSJobServer(const string_type& server_name, int max_jobs);
+    // Interprocess semaphores require names
+    WINDOWSJobServer(const string_type& server_name);
 };
 }  // namespace OMAKE

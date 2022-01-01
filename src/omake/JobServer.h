@@ -101,7 +101,6 @@ class WINDOWSJobServer : public JobServer
     // into the class in the future should anyone choose to research inserting an underlying object into another object
     Semaphore semaphore;
 
-  public:
     // Since we use semaphores we want a name because these are interprocess named semaphores
     WINDOWSJobServer(const string_type& server_name, int max_jobs);
     // Interprocess semaphores require names

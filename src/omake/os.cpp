@@ -321,8 +321,6 @@ void OS::JobRundown()
 }
 void OS::Take() { consoleMut.lock(); }
 void OS::Give() { consoleMut.unlock(); }
-void OS::EvalTake() { evalSync.lock(); }
-void OS::EvalGive() { evalSync.unlock(); }
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
 {
 #ifdef _WIN32

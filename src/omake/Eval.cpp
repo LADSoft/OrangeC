@@ -54,7 +54,7 @@ std::set<std::string> Eval::macroset;
 std::string Eval::GPath;
 int Eval::errcount;
 std::vector<std::string> Eval::callArgs;
-
+std::mutex Eval::evalLock;
 std::unordered_map<std::string, Eval::StringFunc> Eval::builtins = {
                                                                 {"subst", &Eval::subst},
                                                                 {"patsubst", &Eval::patsubst},
@@ -102,14 +102,13 @@ Eval::Eval(const std::string name, bool ExpandWildcards, RuleList* RuleList, Rul
 }
 void Eval::Clear()
 {
+    std::lock_guard<decltype(evalLock)> lk(evalLock);
     vpaths.clear();
     VPath = "";
     GPath = "";
     internalWarnings = false;
-    OS::EvalTake();
     ruleStack.clear();
     foreachVars.clear();
-    OS::EvalGive();
     macroset.clear();
     errcount = 0;
 }
@@ -286,7 +285,8 @@ std::string Eval::ParseMacroLine(const std::string& in)
 Variable* Eval::LookupVariable(const std::string& name)
 {
     Variable* v = nullptr;
-    OS::EvalTake();
+    std::lock_guard<decltype(evalLock)> lk(evalLock);
+
     for (auto it = foreachVars.begin(); it != foreachVars.end() && v == nullptr; ++it)
     {
         if ((*it)->GetName() == name)
@@ -304,7 +304,6 @@ Variable* Eval::LookupVariable(const std::string& name)
     {
         v = VariableContainer::Instance()->Lookup(name);
     }
-    OS::EvalGive();
     return v;
 }
 bool Eval::AutomaticVar(const std::string& name, std::string& rv)

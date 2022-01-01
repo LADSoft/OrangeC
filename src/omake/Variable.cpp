@@ -25,7 +25,7 @@
 #include "Variable.h"
 
 bool Variable::environmentHasPriority = false;
-VariableContainer* VariableContainer::instance = nullptr;
+std::shared_ptr<VariableContainer> VariableContainer::instance = nullptr;
 
 Variable::Variable(const std::string& Name, const std::string& Value, Flavor oFlavor, Origin oOrigin) :
     name(Name),
@@ -57,10 +57,10 @@ void Variable::AssignValue(const std::string& Value, Origin oOrigin, bool doover
     }
 }
 
-VariableContainer* VariableContainer::Instance()
+std::shared_ptr<VariableContainer> VariableContainer::Instance()
 {
     if (!instance)
-        instance = new VariableContainer;
+        instance = std::make_shared<VariableContainer>();
     return instance;
 }
 Variable* VariableContainer::Lookup(const std::string& name)

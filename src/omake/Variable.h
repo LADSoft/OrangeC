@@ -82,7 +82,7 @@ class Rule;
 class VariableContainer
 {
   public:
-    static VariableContainer* Instance();
+    static std::shared_ptr<VariableContainer> Instance();
     ~VariableContainer() {}
     Variable* Lookup(const std::string& name);
     void operator+(Variable* variable);
@@ -107,7 +107,7 @@ class VariableContainer
   private:
     std::map<const std::string*, std::unique_ptr<Variable>, vlt> variables;
     std::list<std::unique_ptr<Variable>> patternVariables;
-    static VariableContainer* instance;
+    static std::shared_ptr<VariableContainer> instance;
 };
 
 #endif

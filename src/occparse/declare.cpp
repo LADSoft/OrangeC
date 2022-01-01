@@ -6526,7 +6526,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                             spi->sb->promotedToInline |= sp->sb->promotedToInline;
 
                             spi->sb->parentClass = sp->sb->parentClass;
-
+                            spi->sb->externShim = false;
                             sp->sb->mainsym = spi;
 
                             sp = spi;

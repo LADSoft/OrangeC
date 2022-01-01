@@ -3707,7 +3707,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
         {
             TYPE* rv;
             EXPRESSION* exp1 = nullptr;
-            if (basetype(exp->v.func->functp)->type != bt_aggregate && !isstructured(exp->v.func->functp))
+            if (basetype(exp->v.func->functp)->type != bt_aggregate && !isstructured(exp->v.func->functp) && !basetype(exp->v.func->functp)->sp->sb->externShim)
             {
                 if (exp->v.func->asaddress)
                 {

@@ -1066,6 +1066,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                 sym->tp->btp->size = getSize(bt_int);
                 sym->tp->rootType = sym->tp;
                 sym->tp->btp->rootType = sym->tp->btp;
+                sym->sb->externShim = !!(flags & _F_INDECLTYPE);
                 funcparams = Allocate<FUNCTIONCALL>();
                 funcparams->sp = sym;
                 funcparams->functp = sym->tp;

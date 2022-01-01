@@ -4353,7 +4353,7 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
     else
     {
 
-        lex = expression_no_check(lex, nullptr, nullptr, &(*tn), &exp, _F_SIZEOF);
+        lex = expression_no_check(lex, nullptr, nullptr, &(*tn), &exp, _F_SIZEOF | _F_INDECLTYPE);
         if (exp->type == en_func && exp->v.func->sp->sb->deleted)
         {
             *tn = &stdany;

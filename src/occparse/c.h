@@ -287,7 +287,8 @@ typedef struct
 #define _F_MEMBER 8192
 #define _F_IS_NOTHROW 16384
 #define _F_RETURN_DELETED 32768
-#define _F_NOGEN 65536
+#define _F_NOGEN 0x10000
+#define _F_INDECLTYPE 0x20000
 
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2
@@ -697,6 +698,7 @@ typedef struct sym
         unsigned explicitlyInstantiated : 1;              // explicitly instantiated
         unsigned retblk : 1;                             // is a return block address
         unsigned initializer_list : 1;                   // struct is initializer_list
+        unsigned externShim : 1;                         // symbol is an automatically generated external
         int __func__label;                               /* label number for the __func__ keyword */
         int labelCount;                                  /* number of code labels within a function body */
         int offset;                                      /* address offset of data in the given seg, or optimize register */

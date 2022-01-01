@@ -88,22 +88,6 @@ int OS::jobsLeft;
 std::string OS::jobName = "\t";
 std::string OS::jobFile;
 std::shared_ptr<OMAKE::JobServer> OS::localJobServer = nullptr;
-// This acts as a cross-platform *NAMED MUTEX*, because currently we use a named semaphore to do this, it's annoying that POSIX
-// doesn't have named mutexes because a mutex would be theoretically some percent more efficient than this job-pipe-server
-// shenanigans but this is good enough I guess
-class TakingJobServer
-{
-    // Hold on to a shared pointer of the job server, we don't want the job server somehow dying while we hold onto it here as we
-    // still have a job to release
-    std::shared_ptr<OMAKE::JobServer> server;
-
-  public:
-    TakingJobServer(std::shared_ptr<OMAKE::JobServer> referenced_server) : server(referenced_server)
-    {
-        server->TakeNewJob();
-    }  // literally do this so we have a mutex to do this with
-    ~TakingJobServer() { server->ReleaseJob(); }
-};
 static std::set<HANDLE> processIds;
 
 void OS::TerminateAll()
@@ -272,6 +256,7 @@ void OS::JobInit()
     {
         localJobServer = OMAKE::JobServer::GetJobServer(jobsLeft);
         name = localJobServer->PassThroughCommandString();
+        name = name.substr(std::string("--jobserver-auth=").length());
         v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
         *VariableContainer::Instance() += v;
         first = true;

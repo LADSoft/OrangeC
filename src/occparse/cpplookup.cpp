@@ -4411,7 +4411,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                         if (a->nested->initializer_list || a->initializer_list || a->next || (isstructured(tp1) && ( !sym->sb->isConstructor || (!comparetypes(basetype(tp1), sym->sb->parentClass->tp, true) && ! sameTemplate(basetype(tp1), sym->sb->parentClass->tp)))))
                         {
                             initializerListType = basetype(tp1);
-                            if (!matchesCopy(sym, false) && !matchesCopy(sym, true))
+                            if (!sym->sb->parentClass || (!matchesCopy(sym, false) && !matchesCopy(sym, true)))
                             {
                                 if (a->initializer_list)
                                 {

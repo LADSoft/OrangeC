@@ -165,6 +165,8 @@ bool equalTemplateIntNode(EXPRESSION* exp1, EXPRESSION* exp2)
         if (isintconst(exp1) && isintconst(exp2) && exp1->v.i == exp2->v.i)
             return true;
     }
+    if (!exp1 && !exp2)
+        return true;
     return false;
 }
 bool templatecompareexpressions(EXPRESSION* exp1, EXPRESSION* exp2)

@@ -274,13 +274,35 @@ void ConstExprStructElemEval(EXPRESSION** node)
         if (node1->type == en_structadd)
         {
             std::unordered_map<SYMBOL*, ConstExprArgArray> argmap;
-            auto node2 = LookupThis(node1->left, argmap);
+            EXPRESSION* spe, * i;
+            if (isintconst(node1->left))
+            {
+                spe = node1->right;
+                i = node1->left;
+            }
+            else
+            {
+                spe = node1->left;
+                i = node1->right;
+            }
+            auto node2 = LookupThis(spe, argmap);
             if (node2 && node2 != (EXPRESSION*)-1)
             {
-                node2 = node2->v.constexprData.data[node1->right->v.i];
+                node2 = node2->v.constexprData.data[i->v.i];
                 if (node2)
                 {
                     *node = node2;
+                }
+            }
+            else if (spe->type == en_auto && spe->v.sp->sb->constexpression && spe->v.sp->sb->init)
+            {
+                for (auto t = spe->v.sp->sb->init; t; t = t->next)
+                {
+                    if (t->offset == i->v.i)
+                    {
+                        *node = t->exp;
+                        break;
+                    }
                 }
             }
         }
@@ -575,7 +597,6 @@ static void pushArray(SYMBOL* arg, EXPRESSION *exp, std::unordered_map<SYMBOL*, 
                 stk.push(node->left);
             if (node->type == en_auto || node->type == en_global)
             {
-
                 if (isarray(node->v.sp->tp) && node->v.sp->sb->init)
                 {
                     int n = node->v.sp->tp->size / node->v.sp->tp->btp->size;
@@ -1224,7 +1245,7 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
         SYMBOL* found1 = node->v.func->sp;
         if (isfunction(found1->tp))
         {
-            if (!node->v.func->sp->sb->inlineFunc.stmt && node->v.func->sp->sb->deferredCompile)
+            if (!found1->sb->inlineFunc.stmt && found1->sb->deferredCompile)
             {
                 if (found1->sb->templateLevel && (found1->templateParams || found1->sb->isDestructor))
                 {

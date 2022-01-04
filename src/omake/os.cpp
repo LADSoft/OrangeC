@@ -212,7 +212,7 @@ std::string OS::GetFullPath(const std::string& fullname)
     return recievingbuffer;
 }
 std::string OS::JobName() { return jobName; }
-void OS::JobInit()
+void OS::InitJobServer()
 {
     bool first = false;
     std::string name;
@@ -227,13 +227,18 @@ void OS::JobInit()
     {
         localJobServer = OMAKE::JobServer::GetJobServer(jobsLeft);
         name = localJobServer->PassThroughCommandString();
-        name = name.substr(std::string("--jobserver-auth=").length());
+        name = name.substr(name.find_last_of('='));
         v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
         *VariableContainer::Instance() += v;
         first = true;
     }
     v->SetExport(true);
-
+}
+bool OS::first = false;
+void OS::JobInit()
+{
+    std::string jobServerName = localJobServer->PassThroughCommandString();
+    std::string name = jobServerName.substr(jobServerName.find_last_of('='));
     if (MakeMain::printDir.GetValue() && jobName == "\t")
     {
         char tempfile[260];
@@ -277,7 +282,7 @@ void OS::JobInit()
             Utils::StrCpy(tempfile, ".\\");
 #endif
         Utils::StrCpy(tempfile, (name + ".flg").c_str());
-
+        OS::WriteToConsole("Flag file name: " + name + ".flg");
         int fil = -1;
         if (first)
         {

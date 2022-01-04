@@ -93,6 +93,7 @@ class OS
         // Always use the JobServer as the *SOURCE OF TRUTH* for everything, we have one instance, we can use it well
         return OMAKE::JobServer::GetJobServer()->CreateNewThread(std::forward<Function>(f), std::forward<Args>(args)...);
     }
+    static void InitJobServer();
     static void Yield();
     static std::string GetFullPath(const std::string& filename);
     static int JobCount() { return jobsLeft; }
@@ -105,5 +106,6 @@ class OS
     static bool isSHEXE;
     static std::string jobName;
     static std::string jobFile;
+    static bool first;
 };
 #endif

@@ -104,7 +104,6 @@ class VariableContainer
   private:
     std::map<const std::string*, std::unique_ptr<Variable>, vlt> variables;
     std::list<std::unique_ptr<Variable>> patternVariables;
-    friend class std::shared_ptr<VariableContainer>;
     static std::shared_ptr<VariableContainer> instance;
 };
 

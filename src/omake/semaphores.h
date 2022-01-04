@@ -42,7 +42,7 @@ class Semaphore
         handle = &sem;
 #endif
     }
-    Semaphore(string_type name, int value) : named(true), semaphoreName(name)
+    Semaphore(string_type name, int value) : named(true), semaphoreName(name), null(false)
     {
 #ifdef _WIN32
         handle = CreateSemaphore(nullptr, value, value, name.c_str());
@@ -50,7 +50,7 @@ class Semaphore
         handle = sem_open(name.c_str(), O_CREAT, O_RDWR, value);
 #endif
     }
-    Semaphore(const string_type& name) : named(true), semaphoreName(name)
+    Semaphore(const string_type& name) : named(true), semaphoreName(name), null(false)
     {
 #ifdef _WIN32
         handle = OpenSemaphore(EVENT_ALL_ACCESS, false, name.c_str());

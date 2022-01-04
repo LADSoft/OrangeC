@@ -334,7 +334,7 @@ void MakeMain::ShowRule(RuleList* ruleList)
         std::cout << "\t\t" << rule->GetOrderPrerequisites() << std::endl;
         std::cout << "\tCommands:" << std::endl;
         Command* commands = rule->GetCommands();
-        for (auto command : *rule->GetCommands())
+        for (auto&& command : *rule->GetCommands())
         {
             std::cout << "\t\t" << command << std::endl;
         }
@@ -428,7 +428,7 @@ void MakeMain::LoadEquates(int& argc, char** argv)
 }
 void MakeMain::RunEquates()
 {
-    for (auto e : equates)
+    for (auto&& e : equates)
     {
         Parser p(e, "<eval>", 1, false, Variable::o_default);
         p.SetAutoExport();
@@ -492,6 +492,7 @@ int MakeMain::Run(int argc, char** argv)
     }
 
     LoadJobArgs();
+    OS::InitJobServer(); 
 
     bool done = false;
     Eval::SetWarnings(warnUndef.GetValue());

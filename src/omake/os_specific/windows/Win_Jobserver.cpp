@@ -16,7 +16,7 @@ WINDOWSJobServer::WINDOWSJobServer(const string_type& server_name, int max_jobs)
     {
         throw std::invalid_argument("max_jobs cannot be less than one");
     }
-    semaphore = Semaphore(server_name, max_jobs);
+    this->semaphore = std::move(Semaphore(server_name, max_jobs));
     this->server_name = server_name;
 }
 WINDOWSJobServer::WINDOWSJobServer(const string_type& server_name)
@@ -25,7 +25,7 @@ WINDOWSJobServer::WINDOWSJobServer(const string_type& server_name)
     {
         throw std::invalid_argument("server_name cannot be null");
     }
-    semaphore = Semaphore(server_name);
+    this->semaphore = std::move(Semaphore(server_name));
     this->server_name = server_name;
 }
 int WINDOWSJobServer::TakeNewJob()

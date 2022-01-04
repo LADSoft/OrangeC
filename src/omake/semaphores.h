@@ -7,6 +7,7 @@
 #    pragma error "Your platform is currently not supported, contact author with semaphore implementation to get it in"
 #endif
 #include <string>
+#include <iostream>
 class Semaphore
 {
 
@@ -25,41 +26,68 @@ class Semaphore
 #else
     using string_type = std::string;
 #endif
-    semaphore_pointer_type handle;
-    bool named;
-    bool null = true;
+    semaphore_pointer_type handle = nullptr;
+    bool named = false;
+    bool null = false;
     string_type semaphoreName;
+    int count = 0;
 
   public:
-    Semaphore() : null(true), handle(nullptr), named(false), semaphoreName() {}
-    Semaphore(int value) : named(false), semaphoreName()
+    Semaphore() : null(true), semaphoreName()
     {
+        std::cout << "Default constructor" << std::endl;
+    }
+    Semaphore(int value) : semaphoreName()
+    {
+        std::cout << "Unnamed constructor" << std::endl;
+        count--;
+
 #ifdef _WIN32
         handle = CreateSemaphore(nullptr, value, value, nullptr);
+        if (!handle)
+        {
+            throw std::runtime_error("CreateSemaphore failed, Error code: " + GetLastError());
+        }
 #elif defined(__linux__)
         semaphore_type sem;
         sem_init(&sem, 0, value);
         handle = &sem;
 #endif
     }
-    Semaphore(string_type name, int value) : named(true), semaphoreName(name), null(false)
+    Semaphore(string_type name, int value) : named(true), semaphoreName(name)
     {
+        count--;
+        std::cout << "Named and initialize constructor" << std::endl;
+
 #ifdef _WIN32
         handle = CreateSemaphore(nullptr, value, value, name.c_str());
+        if (!handle)
+        {
+            throw std::runtime_error("CreateSemaphore failed, Error code: " + GetLastError());
+        }
 #elif defined(__linux__)
         handle = sem_open(name.c_str(), O_CREAT, O_RDWR, value);
 #endif
     }
-    Semaphore(const string_type& name) : named(true), semaphoreName(name), null(false)
+    Semaphore(const string_type& name) : named(true), semaphoreName(name)
     {
+        count--;
+        std::cout << "Named constructor" << std::endl;
+
 #ifdef _WIN32
         handle = OpenSemaphore(EVENT_ALL_ACCESS, false, name.c_str());
+        if (!handle)
+        {
+            throw std::runtime_error("OpenSemaphore failed, Error code: " + GetLastError());
+        }
 #endif
     }
     ~Semaphore()
     {
+        count++;
         if (null)
             return;
+        std::cout << std::to_string((intptr_t)handle) << ", " << count << std::endl;
 #ifdef _WIN32
         CloseHandle(handle);
 #elif defined(__linux__)

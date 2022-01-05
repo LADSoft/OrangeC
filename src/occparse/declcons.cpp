@@ -1827,7 +1827,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
         if (member->sb->init->exp)
         {
             exp = convertInitToExpression(member->tp, member, nullptr, nullptr, member->sb->init, thisptr, false);
-            if (mi->valueInit)
+            if (mi && mi->valueInit)
             {
                 auto ths = exprNode(en_add, thisptr, intNode(en_c_i, member->sb->offset));
                 auto clr = exprNode(en_blockclear, ths, 0);

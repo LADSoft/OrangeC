@@ -45,7 +45,7 @@ class JobServer : public IJobServer
     // The JobServerAwareThread is aware of the calling jobserver, thus having a wrapper in the job server allows us to create
     // threads which will update our worker numbers easily
     template <class Function, class... Args>
-    JobServerAwareThread CreateNewThread(Function&& f, Args&&... args)
+    JobServerAwareThread CreateNewThread(std::shared_ptr<JobServer> job_server_instance, Function&& f, Args&&... args)
     {
         // Threads start upon creation, thus we need to take a job before the thread is created to reserve the slot before work
         // starts *NO MATTER WHAT*, also prevents us from having to have 2 things in the IJobServer... (Could be changed to work so

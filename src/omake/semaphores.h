@@ -30,35 +30,13 @@ class Semaphore
     bool named = false;
     bool null = false;
     string_type semaphoreName;
-    int count = 0;
 
   public:
     Semaphore() : null(true), semaphoreName()
     {
-        std::cout << "Default constructor" << std::endl;
-    }
-    Semaphore(int value) : semaphoreName()
-    {
-        std::cout << "Unnamed constructor" << std::endl;
-        count--;
-
-#ifdef _WIN32
-        handle = CreateSemaphore(nullptr, value, value, nullptr);
-        if (!handle)
-        {
-            throw std::runtime_error("CreateSemaphore failed, Error code: " + GetLastError());
-        }
-#elif defined(__linux__)
-        semaphore_type sem;
-        sem_init(&sem, 0, value);
-        handle = &sem;
-#endif
     }
     Semaphore(string_type name, int value) : named(true), semaphoreName(name)
     {
-        count--;
-        std::cout << "Named and initialize constructor" << std::endl;
-
 #ifdef _WIN32
         handle = CreateSemaphore(nullptr, value, value, name.c_str());
         if (!handle)
@@ -71,9 +49,6 @@ class Semaphore
     }
     Semaphore(const string_type& name) : named(true), semaphoreName(name)
     {
-        count--;
-        std::cout << "Named constructor" << std::endl;
-
 #ifdef _WIN32
         handle = OpenSemaphore(EVENT_ALL_ACCESS, false, name.c_str());
         if (!handle)
@@ -82,12 +57,23 @@ class Semaphore
         }
 #endif
     }
+    Semaphore& operator=(const Semaphore& other)
+    {
+        if (this != &other)
+        {
+            semaphoreName = other.semaphoreName;
+            this->null = other.null;
+            if (!this->null)
+            {
+                handle = OpenSemaphore(EVENT_ALL_ACCESS, false, semaphoreName.c_str());
+            }
+        }
+        return *this;
+    }
     ~Semaphore()
     {
-        count++;
         if (null)
             return;
-        std::cout << std::to_string((intptr_t)handle) << ", " << count << std::endl;
 #ifdef _WIN32
         CloseHandle(handle);
 #elif defined(__linux__)

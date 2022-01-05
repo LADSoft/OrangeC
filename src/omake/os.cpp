@@ -72,7 +72,6 @@
 #include "JobServer.h"
 //#define DEBUG
 static std::mutex processIdMutex;
-static std::recursive_mutex evalSync;
 static std::recursive_mutex consoleMut;
 // This is required because GetFullPathName and SetCurrentDirectory and GetCurrentDirectory are
 // all non-safe in multithreaded environments, in order to make this safe, we *MUST* lower ourselves into making these a mutex-gated

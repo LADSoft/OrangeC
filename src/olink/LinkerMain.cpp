@@ -74,7 +74,7 @@ CmdSwitchBool LinkerMain::CaseSensitive(SwitchParser, 'c', true);
 CmdSwitchCombo LinkerMain::Map(SwitchParser, 'm', "x");
 CmdSwitchBool LinkerMain::DebugInfo(SwitchParser, 'v', false);
 CmdSwitchBool LinkerMain::DebugInfo2(SwitchParser, 'g', false);
-CmdSwitchBool LinkerMain::LinkOnly(SwitchParser, 'l', false);
+CmdSwitchCombineString LinkerMain::LinkOnly(SwitchParser, 'l', ';');
 CmdSwitchBool LinkerMain::RelFile(SwitchParser, 'r', false);
 CmdSwitchFile LinkerMain::File(SwitchParser, '@');
 CmdSwitchCombineString LinkerMain::Specification(SwitchParser, 's');
@@ -91,11 +91,11 @@ const char* LinkerMain::usageText =
     "\n"
     "/Dxxx=val Define something           /Lpath         Set Library Path\n"
     "/T:xxx    Target configuration       /V, --version  Show version and date\n"
-    "/c+       Case sensitive link        /l             link only\n"
+    "/c+       Case sensitive link        /g             pass debug info\n"
+    "/l        link only                  /lxxx          link against xxx\n"
     "/m[x]     Generate Map file          /oxxx          Set output file\n"
     "/r+       Relative output file       /sxxx          Read specification file\n"
-    "/v or /g  Pass debug info            /y[...]        Verbose\n"
-    "/!, --nologo   No logo\n"
+    "/y[...]   Verbose                    /!, --nologo   No logo\n"
     "\n"
     " --output-def filename    create a .def file for DLLs\n"
     " --shared                 create a dll\n"
@@ -223,6 +223,37 @@ bool LinkerMain::DoPrintFileName(LinkManager& linker)
     }
     return false;
 }
+void LinkerMain::ParseSpecifiedLibFiles(CmdFiles& files, LinkManager& manager)
+{
+    auto splt = Utils::split(LinkOnly.GetValue());
+    if (splt.size() != 0)
+    {
+        for (auto&& s : splt)
+        {
+            std::string y = s;
+            if (s.find(".") == std::string::npos)
+            {
+                y += ".l";
+            }
+            auto file = manager.GetLibraryPath(y, y);
+            if (!file)
+            {
+                y = "lib" + y;
+                file = manager.GetLibraryPath(y, y);                
+            }
+            if (file)
+            {
+                files.Add(y);
+                fclose(file);
+            }
+            else
+            {
+                // should generate an error later on...
+                files.Add(s);
+            }
+        }
+    }
+}
 int LinkerMain::Run(int argc, char** argv)
 {
     bool showBanner = true;
@@ -319,6 +350,7 @@ int LinkerMain::Run(int argc, char** argv)
     LinkManager linker(SpecFileContents(specificationFile), CaseSensitive.GetValue(), outputFile,
                        !RelFile.GetValue() && !TargetConfig.GetRelFile(), TargetConfig.GetDebugPassThrough(), debugFile);
     linker.SetLibPath(LibPath.GetValue());
+    ParseSpecifiedLibFiles(files, linker);
     if (DoPrintFileName(linker))
         exit(0);
     linker.SetIndexManager(&im1);
@@ -342,7 +374,7 @@ int LinkerMain::Run(int argc, char** argv)
             LinkMap mapper(LinkMap::ePublic, (LinkMap::eMapMode)TargetConfig.GetMapMode(), mapFile, &linker);
             mapper.WriteMap();
         }
-        if (LinkOnly.GetValue())
+        if (LinkOnly.GetExists() && LinkOnly.GetValue() == "")
         {
             return 0;
         }

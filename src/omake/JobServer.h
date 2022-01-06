@@ -42,16 +42,6 @@ class JobServer : public IJobServer
         }
     }
     virtual std::string PassThroughCommandString() = 0;
-    // The JobServerAwareThread is aware of the calling jobserver, thus having a wrapper in the job server allows us to create
-    // threads which will update our worker numbers easily
-    template <class Function, class... Args>
-    JobServerAwareThread CreateNewThread(std::shared_ptr<JobServer> job_server_instance, Function&& f, Args&&... args)
-    {
-        // Threads start upon creation, thus we need to take a job before the thread is created to reserve the slot before work
-        // starts *NO MATTER WHAT*, also prevents us from having to have 2 things in the IJobServer... (Could be changed to work so
-        // that the thread itself does this(?))
-        return JobServerAwareThread(job_server_instance, std::forward<Function>(f), std::forward<Args>(args)...);
-    }
     // Creates a job server with a maximum number of jobs
     static std::shared_ptr<JobServer> GetJobServer(int max_jobs);
     // Opens a job server with a specified authorization code, this is *AFAR* parsing the --jobserver-auth string

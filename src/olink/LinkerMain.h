@@ -43,7 +43,7 @@ class LinkerMain
     std::string SpecFileContents(const std::string& specFile);
     void RewriteArgs(int argc, char **argv);
     bool DoPrintFileName(LinkManager& linker);
-    void LinkerMain::ParseSpecifiedLibFiles(CmdFiles& files, LinkManager& manager);
+    void ParseSpecifiedLibFiles(CmdFiles& files, LinkManager& manager);
 
   private:
     static CmdSwitchParser SwitchParser;

@@ -6646,9 +6646,6 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
         {
             dest->p->byNonType.dflt = src->p->byNonType.dflt;
             dest->p->byNonType.val = src->p->byNonType.val;
-            dest->p->byNonType.txtdflt = src->p->byNonType.txtdflt;
-            dest->p->byNonType.txtargs = src->p->byNonType.txtargs;
-            dest->p->byNonType.txttype = src->p->byNonType.txttype;
             dest->p->byNonType.temp = src->p->byNonType.temp;
             dest->p->byNonType.tp = src->p->byNonType.tp;
             src = src->next;

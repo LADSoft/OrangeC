@@ -93,6 +93,7 @@ void expr_init(void)
     packIndex = -1;
     importThunks = nullptr;
     inGetUserConversion = 0;
+    argFriend = nullptr;
 }
 void thunkForImportTable(EXPRESSION** exp)
 {
@@ -2948,6 +2949,8 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
 }
 void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, bool implicit)
 {
+    auto old = argFriend;
+    argFriend = func;
     (void)operands;
     if (func->sb->storage_class == sc_overloads)
         return;
@@ -3663,6 +3666,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
         }
         lptr = &(*lptr)->next;
     }
+    argFriend = old;
 }
 static TEMPLATEPARAMLIST* LiftTemplateParams(TEMPLATEPARAMLIST* tpl)
 {

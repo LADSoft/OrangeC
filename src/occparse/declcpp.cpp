@@ -779,7 +779,11 @@ void deferredCompileOne(SYMBOL* cur)
     // function body
     if (!cur->sb->inlineFunc.stmt && (!cur->sb->templateLevel || !cur->templateParams || cur->sb->instantiated))
     {
-        int tns = PushTemplateNamespace(cur->sb->parentClass);
+        int tns;
+        if (cur->sb->parentClass)
+            tns = PushTemplateNamespace(cur->sb->parentClass);
+        else
+            tns = PushTemplateNamespace(cur);
         Optimizer::LINEDATA *linesHeadOld = linesHead, *linesTailOld = linesTail;
         linesHead = linesTail = nullptr;
 

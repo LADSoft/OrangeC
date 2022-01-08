@@ -52,7 +52,7 @@
 namespace Parser
 {
 int inGetUserConversion;
-
+SYMBOL* argFriend;
 static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, Optimizer::LIST* gather, FUNCTIONCALL* args, TYPE* atp, int flags);
 
 #define DEBUG
@@ -1504,6 +1504,8 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
     }
     if (IsFriend(derived, funcsp) || (funcsp && IsFriend(derived, funcsp->sb->parentClass)) || IsFriend(derived, ssp) ||
         IsFriend(member->sb->parentClass, funcsp) || IsFriend(member->sb->parentClass, derived))
+        return true;
+    if (argFriend && IsFriend(currentBase, argFriend))
         return true;
     if (!basetype(currentBase->tp)->syms)
         return false;
@@ -2969,7 +2971,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                                 else if (isfuncptr(tppp))
                                 {
                                     int n77 = n3;
-                                    getSingleConversion(basetype(candidate->tp)->btp, tppp, lref ? nullptr : &exp, &n3, seq3 + n2,
+                                    getSingleConversion(tppp, basetype(candidate->tp)->btp, lref ? nullptr : &exp, &n3, seq3 + n2,
                                                         candidate, nullptr, true);
                                     if (n77 != n3 - 1 || seq3[n2 + n77] != CV_IDENTITY)
                                     {
@@ -2993,7 +2995,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                                                 }
                                                 spf = GetTypeAliasSpecialization(spf, args);
                                                 spf->tp = SynthesizeType(spf->tp, nullptr, false);
-                                                getSingleConversion(basetype(candidate->tp)->btp, spf->tp, lref ? nullptr : &exp,
+                                                getSingleConversion(spf->tp, basetype(candidate->tp)->btp, lref ? nullptr : &exp,
                                                                     &n3, seq3 + n2, candidate, nullptr, true);
                                                 srch = args;
                                                 count = 0;
@@ -3011,14 +3013,14 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                                         }
                                         else
                                         {
-                                            getSingleConversion(basetype(candidate->tp)->btp, tppp, lref ? nullptr : &exp, &n3,
+                                            getSingleConversion(tppp, basetype(candidate->tp)->btp, lref ? nullptr : &exp, &n3,
                                                                 seq3 + n2, candidate, nullptr, true);
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    getSingleConversion(basetype(candidate->tp)->btp, tppp, lref ? nullptr : &exp, &n3, seq3 + n2,
+                                    getSingleConversion(tppp, basetype(candidate->tp)->btp, lref ? nullptr : &exp, &n3, seq3 + n2,
                                                         candidate, nullptr, true);
                                 }
                                 inGetUserConversion++;

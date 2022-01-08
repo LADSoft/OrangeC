@@ -221,7 +221,7 @@ static LEXLIST* getTypeList(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr)
         {
             *lptr = Allocate<INITLIST>();
             (*lptr)->tp = tp;
-            (*lptr)->exp = intNode(en_c_i, 0);
+            (*lptr)->exp = intNode(en_c_i, 1);
             lptr = &(*lptr)->next;
         }
         else
@@ -237,7 +237,7 @@ static LEXLIST* getTypeList(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr)
                     {
                         *lptr = Allocate<INITLIST>();
                         (*lptr)->tp = tpl->p->byClass.val;
-                        (*lptr)->exp = intNode(en_c_i, 0);
+                        (*lptr)->exp = intNode(en_c_i, 1);
                         lptr = &(*lptr)->next;
                     }
                     tpl = tpl->next;
@@ -249,7 +249,7 @@ static LEXLIST* getTypeList(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr)
                 {
                     *lptr = Allocate<INITLIST>();
                     (*lptr)->tp = tp->templateParam->p->byClass.val;
-                    (*lptr)->exp = intNode(en_c_i, 0);
+                    (*lptr)->exp = intNode(en_c_i, 1);
                     lptr = &(*lptr)->next;
                 }
             }
@@ -911,9 +911,6 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                 if (funcparams.arguments->next)
                 {
                     tp3 = funcparams.arguments->next->tp;
-                    if (isref(tp3))
-                        tp3 = basetype(tp3)->btp;
-                    tp3 = basetype(tp3);
                 }
                 if (tp3 && isstructured(tp3) &&
                     (comparetypes(tp2, tp3, true) || sameTemplate(tp2, tp3)))
@@ -972,8 +969,8 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                                 PushPopTemplateArgs(spl->p, true);
                             }
                         }
-                        auto sym = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, nullptr, false, false, false, _F_SIZEOF | _F_RETURN_DELETED);
-                        rv = sym && sym->sb->access == ac_public && !sym->sb->deleted;
+                        auto sym = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, nullptr, false, false, false, _F_SIZEOF);
+                        rv = sym && sym->sb->access == ac_public;
 
                         while (stk.size())
                         {

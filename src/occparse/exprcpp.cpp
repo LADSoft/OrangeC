@@ -638,18 +638,29 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
             sym = anonymousVar(sc_auto, *tp)->v.sp;
 
             lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, *tp, sym, false, flags);
-            *exp = convertInitToExpression(*tp, sym, nullptr, funcsp, init, nullptr, false);
-            if (sym)
+            if (init && !init->next && init->exp->type == en_thisref)
             {
-                EXPRESSION** e1 = exp;
-                if (*e1)
+                *exp = init->exp;
+                if (sym)
                 {
-                    while ((*e1)->type == en_void && (*e1)->right)
-                        e1 = &(*e1)->right;
-                    if ((*e1)->type == en_void)
-                        e1 = &(*e1)->left;
-                    *e1 = exprNode(en_void, *e1, varNode(en_auto, sym));
                     sym->sb->dest = dest;
+                }
+            }
+            else
+            {
+                *exp = convertInitToExpression(*tp, sym, nullptr, funcsp, init, nullptr, false);
+                if (sym)
+                {
+                    EXPRESSION** e1 = exp;
+                    if (*e1)
+                    {
+                        while ((*e1)->type == en_void && (*e1)->right)
+                            e1 = &(*e1)->right;
+                        if ((*e1)->type == en_void)
+                            e1 = &(*e1)->left;
+                        *e1 = exprNode(en_void, *e1, varNode(en_auto, sym));
+                        sym->sb->dest = dest;
+                    }
                 }
             }
         }

@@ -906,9 +906,17 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
             }
             else if (isstructured(tp2))
             {
+                TYPE* tp3 = NULL;
                 tp2 = basetype(tp2)->sp->tp;
-                if (funcparams.arguments->next && isstructured(funcparams.arguments->next->tp) &&
-                    (comparetypes(tp2, funcparams.arguments->next->tp, true) || sameTemplate(tp2, funcparams.arguments->next->tp)))
+                if (funcparams.arguments->next)
+                {
+                    tp3 = funcparams.arguments->next->tp;
+                    if (isref(tp3))
+                        tp3 = basetype(tp3)->btp;
+                    tp3 = basetype(tp3);
+                }
+                if (tp3 && isstructured(tp3) &&
+                    (comparetypes(tp2, tp3, true) || sameTemplate(tp2, tp3)))
                 {
                     rv = true;
                 }

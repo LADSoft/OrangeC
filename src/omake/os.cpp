@@ -72,7 +72,6 @@
 #include "JobServer.h"
 //#define DEBUG
 static std::mutex processIdMutex;
-static std::recursive_mutex consoleMut;
 // This is required because GetFullPathName and SetCurrentDirectory and GetCurrentDirectory are
 // all non-safe in multithreaded environments, in order to make this safe, we *MUST* lower ourselves into making these a mutex-gated
 // system, this will enforce ordering at the possibility of incorrectness
@@ -84,7 +83,7 @@ std::string OS::jobName = "\t";
 std::string OS::jobFile;
 std::shared_ptr<OMAKE::JobServer> OS::localJobServer = nullptr;
 static std::set<HANDLE> processIds;
-
+std::recursive_mutex OS::consoleMutex;
 void OS::TerminateAll()
 {
     std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
@@ -153,7 +152,7 @@ void OS::Init() {}
 
 void OS::WriteToConsole(std::string string)
 {
-    std::lock_guard<decltype(consoleMut)> lg(consoleMut);
+    std::lock_guard<decltype(consoleMutex)> lg(consoleMutex);
 #ifdef _WIN32
 
     DWORD written;
@@ -164,7 +163,7 @@ void OS::WriteToConsole(std::string string)
 }
 void OS::ToConsole(std::deque<std::string>& strings)
 {
-    std::lock_guard<decltype(consoleMut)> lg(consoleMut);
+    std::lock_guard<decltype(consoleMutex)> lg(consoleMutex);
     for (auto&& s : strings)
     {
         WriteToConsole(s);
@@ -173,7 +172,7 @@ void OS::ToConsole(std::deque<std::string>& strings)
 }
 void OS::AddConsole(std::deque<std::string>& strings, std::string string)
 {
-    std::lock_guard<decltype(consoleMut)> lg(consoleMut);
+    std::lock_guard<decltype(consoleMutex)> lg(consoleMutex);
     strings.push_back(string);
 }
 void OS::PushJobCount(int jobs)
@@ -323,8 +322,8 @@ void OS::JobRundown()
     if (jobFile.size())
         RemoveFile(jobFile);
 }
-void OS::Take() { consoleMut.lock(); }
-void OS::Give() { consoleMut.unlock(); }
+void OS::Take() { consoleMutex.lock(); }
+void OS::Give() { consoleMutex.unlock(); }
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
 {
 #ifdef _WIN32

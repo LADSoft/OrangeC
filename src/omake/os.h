@@ -29,6 +29,7 @@
 #include <string>
 #include <deque>
 #include "JobServer.h"
+#include <mutex>
 #undef GetCurrentTime
 #undef Yield
 
@@ -98,7 +99,7 @@ class OS
     static std::string GetFullPath(const std::string& filename);
     static int JobCount() { return jobsLeft; }
     static int GetProcessId();
-
+    static std::recursive_mutex& GetConsoleMutex() { return consoleMutex; }
   private:
     static std::shared_ptr<OMAKE::JobServer> localJobServer;
     static int jobsLeft;
@@ -107,5 +108,6 @@ class OS
     static std::string jobName;
     static std::string jobFile;
     static bool first;
+    static std::recursive_mutex consoleMutex;
 };
 #endif

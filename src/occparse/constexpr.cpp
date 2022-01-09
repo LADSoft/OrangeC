@@ -285,23 +285,34 @@ void ConstExprStructElemEval(EXPRESSION** node)
                 spe = node1->left;
                 i = node1->right;
             }
-            auto node2 = LookupThis(spe, argmap);
-            if (node2 && node2 != (EXPRESSION*)-1)
+            if (spe->type == en_cshimthis)
             {
-                node2 = node2->v.constexprData.data[i->v.i];
-                if (node2)
+                spe = spe->v.constexprData.data[i->v.i];
+                if (spe)
                 {
-                    *node = node2;
+                    *node = spe;
                 }
             }
-            else if (spe->type == en_auto && spe->v.sp->sb->constexpression && spe->v.sp->sb->init)
+            else
             {
-                for (auto t = spe->v.sp->sb->init; t; t = t->next)
+                auto node2 = LookupThis(spe, argmap);
+                if (node2 && node2 != (EXPRESSION*)-1)
                 {
-                    if (t->offset == i->v.i)
+                    node2 = node2->v.constexprData.data[i->v.i];
+                    if (node2)
                     {
-                        *node = t->exp;
-                        break;
+                        *node = node2;
+                    }
+                }
+                else if (spe->type == en_auto && spe->v.sp->sb->constexpression && spe->v.sp->sb->init)
+                {
+                    for (auto t = spe->v.sp->sb->init; t; t = t->next)
+                    {
+                        if (t->offset == i->v.i)
+                        {
+                            *node = t->exp;
+                            break;
+                        }
                     }
                 }
             }
@@ -434,7 +445,15 @@ static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, 
             SYMBOL* sp = search(m->name, sym->sb->parentClass->tp->syms);
             if (sp)
             {
-                exp->v.constexprData.data[sp->sb->offset] = EvaluateExpression(m->init->exp, argmap, exp, nullptr, false);
+                auto init = m->init;
+                while (init)
+                {
+                    if (init->exp)
+                    {
+                        exp->v.constexprData.data[sp->sb->offset + init->offset] = EvaluateExpression(init->exp, argmap, exp, nullptr, false);
+                    }
+                    init = init->next;
+                }
             }
         }
         m = m->next;
@@ -584,30 +603,63 @@ static void pushArray(SYMBOL* arg, EXPRESSION *exp, std::unordered_map<SYMBOL*, 
     }
     else
     {
-        std::stack<EXPRESSION*> stk;
-     
-        stk.push(exp);
-        while (!stk.empty())
+        if (exp->type == en_void && isintconst(exp->left))
         {
-            auto node = stk.top();
-            stk.pop();
-            if (node->right)
-                stk.push(node->right);
-            if (node->left)
-                stk.push(node->left);
-            if (node->type == en_auto || node->type == en_global)
+            TYPE* tp = basetype(arg->tp);
+            if (isref(tp))
+                tp = basetype(tp->btp);
+            int n = tp->size;
+            auto arr = Allocate<EXPRESSION*>(n + 1);
+            argmap[arg] = { n, arr };
+            auto hr = tp->syms->table[0];
+            while (exp->right)
             {
-                if (isarray(node->v.sp->tp) && node->v.sp->sb->init)
+                while (hr && !ismember(hr->p))
+                    hr = hr->next;
+                if (isarray(hr->p->tp))
                 {
-                    int n = node->v.sp->tp->size / node->v.sp->tp->btp->size;
-                    auto arr = Allocate<EXPRESSION*>(n + 1);
-                    argmap[node->v.sp] = { n, arr };
-                    if (finalsym)
-                        argmap[finalsym] = { n, arr };
-                    auto init = node->v.sp->sb->init;
-                    for (int i = 0; i < n && init; i++, init = init->next)
+                    int ofs = basetype(hr->p->tp)->btp->size;
+                    n = basetype(hr->p->tp)->size;
+                    for (int i = 0; i < n && exp->right; i += ofs)
                     {
-                        arr[i] = init->exp;
+                        arr[i + hr->p->sb->offset] = exp->left;
+                        exp = exp->right;
+                    }
+                }
+                else
+                {
+                    arr[hr->p->sb->offset] = exp->left;
+                    exp = exp->right;
+                }
+            }
+        }
+        else
+        {
+            std::stack<EXPRESSION*> stk;
+
+            stk.push(exp);
+            while (!stk.empty())
+            {
+                auto node = stk.top();
+                stk.pop();
+                if (node->right)
+                    stk.push(node->right);
+                if (node->left)
+                    stk.push(node->left);
+                if (node->type == en_auto || node->type == en_global)
+                {
+                    if (isarray(node->v.sp->tp) && node->v.sp->sb->init)
+                    {
+                        int n = node->v.sp->tp->size / node->v.sp->tp->btp->size;
+                        auto arr = Allocate<EXPRESSION*>(n + 1);
+                        argmap[node->v.sp] = { n, arr };
+                        if (finalsym)
+                            argmap[finalsym] = { n, arr };
+                        auto init = node->v.sp->sb->init;
+                        for (int i = 0; i < n && init; i++, init = init->next)
+                        {
+                            arr[i] = init->exp;
+                        }
                     }
                 }
             }
@@ -760,12 +812,38 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, ConstExprArg
         }
         else if (ths && exp3->type == en_auto && exp3->v.sp->sb->thisPtr)
         {
-            if (ths->v.constexprData.data[0])
+            if (exp1->type == en_l_p)
+            {
+                exp1->type = en_cshimthis;
+                exp1->v.constexprData = ths->v.constexprData;
+                exp1->left = nullptr;
+                rv = true;
+            }
+            else if (ths->v.constexprData.data[0])
             {
                 exp1->type = en_cshimref;
                 exp1->v.exp = ths->v.constexprData.data[0];
                 exp1->left = nullptr;
                 rv = true;
+            }
+        }
+        else if (exp3->type == en_structadd)
+        {
+            if (exp3->left->type == en_cshimthis)
+            {
+                if (isintconst(exp3->right))
+                {
+                    *exp1 = *exp3->left->v.constexprData.data[exp3->right->v.i];
+                    rv = true;
+                }
+            }
+            else if (exp3->right->type == en_cshimthis)
+            {
+                if (isintconst(exp3->left))
+                {
+                    *exp1 = *exp3->right->v.constexprData.data[exp3->left->v.i];
+                    rv = true;
+                }
             }
         }
         else if (exp3->type == en_add)
@@ -797,35 +875,45 @@ if (xx)
         }
         else if (exp3 && exp3->type == en_auto)
         {
-        auto xx = argmap[exp3->v.sp].data;
-        if (xx)
-        {
-            auto node1 = xx[0];
-            if (node1)
+            if (exp1->type == en_l_ref && argmap[exp3->v.sp].size > 1)
             {
-                if (node1->type == en_void && node1->left->type == en_assign && node1->right->type == en_auto &&
-                    node1->right->v.sp->sb->constexpression && IsConstantExpression(node1->left->right, true, true))
-                {
-                    // an argument which has been made into a temp variable
-                    // we have to shim it up so that we can handle the upcoming dereference
-                    exp1->type = en_cshimref;
-                    exp1->v.exp = node1->left->right;
-                    exp1->left = nullptr;
-                    optimize_for_constants(&exp1->v.exp);
-                }
-                else if (IsConstantExpression(node1, true, true))
-                {
-                    node1 = copy_expression(node1);
-                    optimize_for_constants(&node1);
-                    *exp1 = *node1;
-                }
-                else
-                {
-                    *exp1 = *node1;
-                }
+                exp1->type = en_cshimthis;
+                exp1->v.constexprData = argmap[exp3->v.sp];
+                exp1->left = nullptr;
                 rv = true;
             }
-        }
+            else
+            {
+                auto xx = argmap[exp3->v.sp].data;
+                if (xx)
+                {
+                    auto node1 = xx[0];
+                    if (node1)
+                    {
+                        if (node1->type == en_void && node1->left->type == en_assign && node1->right->type == en_auto &&
+                            node1->right->v.sp->sb->constexpression && IsConstantExpression(node1->left->right, true, true))
+                        {
+                            // an argument which has been made into a temp variable
+                            // we have to shim it up so that we can handle the upcoming dereference
+                            exp1->type = en_cshimref;
+                            exp1->v.exp = node1->left->right;
+                            exp1->left = nullptr;
+                            optimize_for_constants(&exp1->v.exp);
+                        }
+                        else if (IsConstantExpression(node1, true, true))
+                        {
+                            node1 = copy_expression(node1);
+                            optimize_for_constants(&node1);
+                            *exp1 = *node1;
+                        }
+                        else
+                        {
+                            *exp1 = *node1;
+                        }
+                        rv = true;
+                    }
+                }
+            }
         }
     }
     else if (exp->type == en_auto)

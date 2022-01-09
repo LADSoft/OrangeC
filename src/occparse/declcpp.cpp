@@ -67,7 +67,6 @@ attributes basisAttribs;
 Optimizer::LIST* nameSpaceList;
 char anonymousNameSpaceName[512];
 int noNeedToSpecialize;
-
 int parsingUsing;
 
 static bool MustSpecialize(const char *name)
@@ -4356,7 +4355,6 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
     }
     else
     {
-
         lex = expression_no_check(lex, nullptr, nullptr, &(*tn), &exp, _F_SIZEOF | _F_INDECLTYPE);
         if (exp->type == en_func && exp->v.func->sp->sb->deleted)
         {
@@ -4415,6 +4413,24 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
             error(ERR_IDENTIFIER_EXPECTED);
             errskim(&lex, skim_semi_declare);
             return lex;
+        }
+        if ((*tn)->lref)
+        {
+            TYPE* tp2 = Allocate<TYPE>();
+            tp2->type = bt_lref;
+            tp2->size = getSize(bt_pointer);
+            tp2->btp = (*tn);
+            tp2->rootType = tp2;
+            (*tn) = tp2;
+        }
+        else if ((*tn)->rref)
+        {
+            TYPE* tp2 = Allocate<TYPE>();
+            tp2->type = bt_rref;
+            tp2->size = getSize(bt_pointer);
+            tp2->btp = (*tn);
+            tp2->rootType = tp2;
+            (*tn) = tp2;
         }
         if (extended && lvalue(exp) && exp->left->type == en_auto)
         {

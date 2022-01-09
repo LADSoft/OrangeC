@@ -63,6 +63,7 @@ static std::string cppbuiltin =
     "class __type_pack_element_cls; "
     "template <size_t _Idx, class ..._Types> using __type_pack_element = __type_pack_element_cls::type; "
     "extern \"C\" {"
+    "[[noreturn]] void __rtllinkage __builtin_unreachable(); "
     "constexpr int __rtllinkage __builtin_ctz(unsigned x);"
     "constexpr int __rtllinkage __builtin_ctzl(unsigned long x);"
     "constexpr int __rtllinkage __builtin_ctzll(unsigned long long x);"

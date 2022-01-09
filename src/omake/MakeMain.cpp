@@ -257,6 +257,10 @@ void MakeMain::LoadJobArgs()
     if (jobs.GetExists())
     {
         jobCount = jobs.GetValue();
+        if(jobCount == INT_MAX)
+        {
+            jobCount = std::thread::hardware_concurrency();
+        }
     }
     OS::PushJobCount(jobCount);
     if (jobOutputMode.GetExists())

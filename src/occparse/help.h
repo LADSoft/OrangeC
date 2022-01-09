@@ -44,6 +44,7 @@ bool isarithmetic(TYPE* tp);
 bool ismsil(TYPE* tp);
 bool isconstraw(const TYPE* tp);
 bool isconst(const TYPE* tp);
+bool isconstexpr(const EXPRESSION* expa);
 bool isvolatile(const TYPE* tp);
 bool islrqual(TYPE* tp);
 bool isrrqual(TYPE* tp);

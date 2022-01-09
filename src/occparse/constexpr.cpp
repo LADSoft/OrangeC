@@ -1429,9 +1429,32 @@ bool EvaluateConstexprFunction(EXPRESSION*&node)
                         nestedMaps.push(&argmap);
                         EXPRESSION* ths = nullptr;
                         if (found1->sb->isConstructor)
+                        {
                             ths = ConstExprInitializeMembers(found1, node->v.func->thisptr, node->v.func->arguments, argmap);
-                        else
+                        }
+                        else if (node->v.func->thisptr)
+                        {
                             ths = LookupThis(node->v.func->thisptr, argmap);
+                            if (!ths)
+                            {
+                                if (node->v.func->thisptr->type == en_auto && node->v.func->thisptr->v.sp->sb->init)
+                                {
+                                    ths = Allocate<EXPRESSION>();
+                                    ths->type = en_cshimthis;
+                                    ths->v.sp = found1;
+                                    ths->v.constexprData = { found1->sb->parentClass->tp->size, Allocate<EXPRESSION*>(found1->sb->parentClass->tp->size) };
+                                    auto init = node->v.func->thisptr->v.sp->sb->init;
+                                    while (init)
+                                    {
+                                        if (init->exp)
+                                        {
+                                            ths->v.constexprData.data[init->offset] = EvaluateExpression(init->exp, argmap, exp, nullptr, false);
+                                        }
+                                        init = init->next;
+                                    }
+                                }
+                            }
+                        }
                         if (ths == (EXPRESSION*)-1)
                         {
                             // cant do constexpr on nonstatic global struct instances

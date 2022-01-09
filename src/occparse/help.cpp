@@ -376,6 +376,23 @@ bool isconstraw(const TYPE* tp)
     return rv;
 }
 bool isconst(const TYPE* tp) { return isconstraw(tp); }
+//prefer a const function when the expression is a constexpression variable
+bool isconstexpr(const EXPRESSION* expa)
+{
+    if (expa)
+    {
+        switch (expa->type)
+        {
+        case en_global:
+        case en_auto:
+        case en_absolute:
+        case en_pc:
+        case en_threadlocal:
+            return expa->v.sp->sb->constexpression;
+        }
+    }
+    return false;
+}
 bool isvolatile(const TYPE* tp)
 {
     while (tp)

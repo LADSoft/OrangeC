@@ -94,6 +94,7 @@ static int controlSequences;
 static int expressions;
 
 static LEXLIST* autodeclare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, BLOCKDATA* parent, int asExpression);
+static LEXLIST* nononconststatement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontrol);
 
 static BLOCKDATA* caseDestructBlock;
 
@@ -640,7 +641,7 @@ static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     do
     {
         lastLabelStmt = dostmt->tail;
-        lex = statement(lex, funcsp, dostmt, true);
+        lex = nononconststatement(lex, funcsp, dostmt, true);
     } while (lex && dostmt->tail != lastLabelStmt && dostmt->tail->purelabel);
     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
     {
@@ -1345,7 +1346,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         do
                         {
                             lastLabelStmt = forstmt->tail;
-                            lex = statement(lex, funcsp, forstmt, true);
+                            lex = nononconststatement(lex, funcsp, forstmt, true);
                         } while (lex && forstmt->tail != lastLabelStmt && forstmt->tail->purelabel);
                         FreeLocalContext(forstmt, funcsp, codeLabel++);
                         if (declDest)
@@ -1534,7 +1535,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     do
                     {
                         lastLabelStmt = forstmt->tail;
-                        lex = statement(lex, funcsp, forstmt, true);
+                        lex = nononconststatement(lex, funcsp, forstmt, true);
                     } while (lex && forstmt->tail != lastLabelStmt && forstmt->tail->purelabel);
                     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
                     {
@@ -1629,7 +1630,7 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             do
             {
                 lastLabelStmt = parent->tail;
-                lex = statement(lex, funcsp, parent, true);
+                lex = nononconststatement(lex, funcsp, parent, true);
             } while (lex && parent->tail != lastLabelStmt && parent->tail->purelabel);
             needlabelif = parent->needlabel;
             if (MATCHKW(lex, kw_else))
@@ -1675,7 +1676,7 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 do
                 {
                     lastLabelStmt = parent->tail;
-                    lex = statement(lex, funcsp, parent, true);
+                    lex = nononconststatement(lex, funcsp, parent, true);
                 } while (lex && parent->tail != lastLabelStmt && parent->tail->purelabel);
                 if ((Optimizer::cparams.prm_optimize_for_speed || Optimizer::cparams.prm_optimize_for_size) && !optimized)
                 {
@@ -2441,7 +2442,7 @@ static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
             st = stmtNode(lex, switchstmt, st_switch);
             st->select = select;
             st->breaklabel = switchstmt->breaklabel;
-            lex = statement(lex, funcsp, switchstmt, true);
+            lex = nononconststatement(lex, funcsp, switchstmt, true);
             EndOfCaseGroup(funcsp, parent);
             st->cases = switchstmt->cases;
             st->label = switchstmt->defaultlabel;
@@ -2538,7 +2539,7 @@ static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             do
             {
                 lastLabelStmt = whilestmt->tail;
-                lex = statement(lex, funcsp, whilestmt, true);
+                lex = nononconststatement(lex, funcsp, whilestmt, true);
             } while (lex && whilestmt->tail != lastLabelStmt && whilestmt->tail->purelabel);
             if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
             {
@@ -2998,6 +2999,14 @@ bool resolveToDeclaration(LEXLIST* lex, bool structured)
     prevsym(placeholder);
     return true;
 }
+static LEXLIST* nononconststatement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontrol)
+{
+    int old = funcsp->sb->nonConstVariableUsed;
+    auto rv = statement(lex, funcsp, parent, viacontrol);
+    funcsp->sb->nonConstVariableUsed = old;
+    return rv;
+}
+
 LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontrol)
 {
     LEXLIST* start = lex;
@@ -3082,7 +3091,7 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacont
                     HandleStartOfCase(parent);
             }
             StartOfCaseGroup(funcsp, parent);
-            lex = statement(lex, funcsp, parent, false);
+            lex = nononconststatement(lex, funcsp, parent, false);
             parent->nosemi = true;
             return lex;
             break;
@@ -3094,7 +3103,7 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacont
             if (Optimizer::cparams.prm_cplusplus)
                 HandleStartOfCase(parent);
             StartOfCaseGroup(funcsp, parent);
-            lex = statement(lex, funcsp, parent, false);
+            lex = nononconststatement(lex, funcsp, parent, false);
             parent->nosemi = true;
             return lex;
             break;

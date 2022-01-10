@@ -92,7 +92,7 @@ class OS
     static OMAKE::JobServerAwareThread CreateThread(Function&& f, Args&&... args)
     {
         // Always use the JobServer as the *SOURCE OF TRUTH* for everything, we have one instance, we can use it well
-        return OMAKE::JobServer::GetJobServer()->CreateNewThread(std::forward<Function>(f), std::forward<Args>(args)...);
+        return OMAKE::JobServerAwareThread(localJobServer, std::forward<Function>(f), std::forward<Args>(args)...);
     }
     static void InitJobServer();
     static void Yield();
@@ -100,6 +100,7 @@ class OS
     static int JobCount() { return jobsLeft; }
     static int GetProcessId();
     static std::recursive_mutex& GetConsoleMutex() { return consoleMutex; }
+
   private:
     static std::shared_ptr<OMAKE::JobServer> localJobServer;
     static int jobsLeft;

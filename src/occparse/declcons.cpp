@@ -3427,7 +3427,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                     }
                 }
             }
-            if (initializerListType)
+            if (initializerListType && (!params->arguments->tp || !isstructured(params->arguments->tp) || !basetype(params->arguments->tp)->sp->sb->initializer_list))
             {
                 auto old = params->arguments->next;
                 if (params->arguments && params->arguments->nested && params->arguments->nested->nested && !params->arguments->initializer_list)

@@ -3211,7 +3211,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             }
                             else
                             {
-                                if (p->exp->type == en_thisref && p->exp->left->v.func->thisptr->type == en_auto)
+                                if (p->exp->type == en_thisref && p->exp->left->v.func->thisptr)
                                     p->exp->left->v.func->thisptr = consexp;
                                 p->exp = paramexp;
                             }

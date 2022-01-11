@@ -95,7 +95,6 @@ class WINDOWSJobServer : public JobServer
     std::string PassThroughCommandString();
     int TakeNewJob();
     int ReleaseJob();
-    void ReleaseAllJobs();
     // Need these to be public in order to do std::make_shared on em'
   public:
     // Since we use semaphores we want a name because these are interprocess named semaphores

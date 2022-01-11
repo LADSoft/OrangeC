@@ -62,14 +62,6 @@ int WINDOWSJobServer::ReleaseJob()
     current_jobs--;  // Wait until after the job is done to release it
     return 0;
 }
-void WINDOWSJobServer::ReleaseAllJobs()
-{
-    if (server_name.length() == 0)
-    {
-        throw std::runtime_error("Job server used without initializing the underlying parameters");
-    }
-    semaphore.Post(current_jobs - 1);
-}
 std::string WINDOWSJobServer::PassThroughCommandString()
 {
     std::string defaultStr = std::string("--jobserver-auth=");

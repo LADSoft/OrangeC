@@ -34,7 +34,14 @@ int WINDOWSJobServer::TakeNewJob()
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
     }
-    semaphore.Wait();  // Wait until you have a job to claim it
+    // If we have no jobs running, we're allowed precisely *ONE* job, since this is atomic, we should be ensured (enough on a
+    // completely sqt_cst CPU) that this is good enough for now to ensure no funny business
+    if (current_jobs != 0)
+    {
+        current_jobs++;
+        semaphore.Wait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
+        return 0;
+    }
     current_jobs++;
     return 0;
 }
@@ -44,11 +51,14 @@ int WINDOWSJobServer::ReleaseJob()
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
     }
-    if (current_jobs == 1)
+    if (current_jobs == 0)
     {
-        return -1;
+        throw std::runtime_error("Job server has returned more jobs than it has consumed");
     }
-    semaphore.Post();
+    else if (current_jobs != 1)
+    {
+        semaphore.Post();
+    }
     current_jobs--;  // Wait until after the job is done to release it
     return 0;
 }

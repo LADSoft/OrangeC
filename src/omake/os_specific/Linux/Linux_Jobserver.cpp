@@ -14,34 +14,34 @@ int POSIXJobServer::TakeNewJob()
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
     }
-    int err = 0;
-    char only_buffer;
-    ssize_t bytes_read;
-try_again:
-    // Wait while we can't get our own
-    while ((bytes_read = read(readfd, &only_buffer, 1)) == 0)
+    if (current_jobs != 0)
     {
-        // Yield our thread to other executions while we're waiting for a thread to actually execute and take up time
-        std::this_thread::yield();
-    }
-    if (bytes_read == -1)
-    {
-        switch (err = errno)
+        int err = 0;
+        char only_buffer;
+        ssize_t bytes_read;
+    try_again:
+        // Wait while we can't get our own
+        while ((bytes_read = read(readfd, &only_buffer, 1)) == 0)
         {
-            case EAGAIN:
+            // Yield our thread to other executions while we're waiting for a thread to actually execute and take up time
+            std::this_thread::yield();
+        }
+        if (bytes_read == -1)
+        {
+            switch (err = errno)
+            {
+                case EAGAIN:
 #if EAGAIN != EWOULDBLOCK
-            case EWOULDBLOCK:
+                case EWOULDBLOCK:
 #endif
-                goto try_again;
-                break;
-            default:
-                return err;
+                    goto try_again;
+                    break;
+                default:
+                    return err;
+            }
         }
     }
-    else
-    {
-        current_jobs++;
-    }
+    current_jobs++;
     return 0;
 }
 int POSIXJobServer::ReleaseJob()
@@ -50,36 +50,41 @@ int POSIXJobServer::ReleaseJob()
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
     }
-    if (current_jobs == 1)
+    if (current_jobs == 0)
     {
-        return -1;
+        throw std::runtime_error("Job server has returned more jobs than it has consumed");
     }
-    int err = 0;
-    char write_buffer = '1';
-    ssize_t bytes_written = 0;
-try_again:
-    if ((bytes_written = write(writefd, &write_buffer, 1)) != -1)
+    else if (current_jobs != 1)
     {
-        return 0;
-    }
-    else
-    {
-        current_jobs--;
-        switch (err = errno)
+        int err = 0;
+        char write_buffer = '1';
+        ssize_t bytes_written = 0;
+    try_again:
+        if ((bytes_written = write(writefd, &write_buffer, 1)) != -1)
         {
-            case EAGAIN:
+            return 0;
+        }
+        else
+        {
+            switch (err = errno)
+            {
+                case EAGAIN:
 #if EAGAIN != EWOULDBLOCK
-            case EWOULDBLOCK:
+                case EWOULDBLOCK:
 #endif
-                // yield execution in hopes that it's not blocked next time, this is recommended
-                // practice for spinloops
-                std::this_thread::yield();
-                goto try_again;
-                break;
-            default:
-                return err;
+                    // yield execution in hopes that it's not blocked next time, this is recommended
+                    // practice for spinloops
+                    std::this_thread::yield();
+                    goto try_again;
+                    break;
+                default:
+                    current_jobs--;
+                    return err;
+            }
         }
     }
+    current_jobs--;
+    return 0;
 }
 // Populates the write pipe with the maximum number of jobs available in the pipe, only used on the first construction of the pipe
 static int populate_pipe(int writefd, int max_jobs)

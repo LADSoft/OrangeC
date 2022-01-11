@@ -547,7 +547,7 @@ static SYMBOL* declareConstructor(SYMBOL* sp, bool deflt, bool move)
         tpx->size = getSize(bt_pointer);
         tpx->btp = Allocate<TYPE>();
         tpx = tpx->btp;
-        if (constCopyConstructor(sp))
+        if (!move && constCopyConstructor(sp))
         {
             tpx->type = bt_const;
             tpx->size = getSize(bt_pointer);
@@ -1859,8 +1859,6 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
             else
             {
                 EXPRESSION* other = exprNode(en_add, otherptr, intNode(en_c_i, memberOffs));
-                if (basetype(parentCons->tp)->type == bt_rref)
-                    other = exprNode(en_not_lvalue, other, nullptr);
 
                 TYPE* tp = Allocate<TYPE>();
                 tp->type = bt_lref;
@@ -1892,8 +1890,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
             else
             {
                 EXPRESSION* other = exprNode(en_add, otherptr, intNode(en_c_i, memberOffs));
-                if (basetype(parentCons->tp)->type == bt_rref)
-                    other = exprNode(en_not_lvalue, other, nullptr);
+                other = exprNode(en_not_lvalue, other, nullptr);
                 TYPE* tp = Allocate<TYPE>();
                 tp->type = bt_rref;
                 tp->size = getSize(bt_pointer);
@@ -1963,7 +1960,6 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
                 if (!callConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false, true))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
             }
-            matchesCopy(parentCons, false);
         }
         st = stmtNode(nullptr, b, st_expr);
         optimize_for_constants(&exp);

@@ -672,9 +672,13 @@ void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
     char buf[10000];
     if (declsp->sb->anonymous)
         Optimizer::my_sprintf(argbuf, "%d", argnum);
-    else
+    else if (declsp->sb->decoratedName)
     {
         unmangle(argbuf, declsp->sb->decoratedName);
+    }
+    else
+    {
+        strcpy(argbuf, declsp->name);
     }
     unmangle(buf, funcsp->sb->decoratedName);
     currentErrorLine = 0;

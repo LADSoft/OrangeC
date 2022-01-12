@@ -375,7 +375,7 @@ bool Maker::ExistsOrMentioned(const std::string& stem, RuleList* ruleList, const
             std::string thisOne = dir + Eval::ExtractFirst(working, " ");
             thisOne = Eval::ReplaceStem(stem, thisOne);
             Time theTime;
-            if (RuleContainer::Instance()->find(&thisOne) != RuleContainer::Instance()->end())
+            if (RuleContainer::Instance()->find(thisOne) != RuleContainer::Instance()->end())
             {
                 // mentioned in makefile, the rule may be valid...
             }

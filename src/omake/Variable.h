@@ -89,11 +89,7 @@ class VariableContainer
     void operator+=(Variable* variable) { operator+(variable); }
     void Clear();
 
-    struct vlt
-    {
-        bool operator()(const std::string* one, const std::string* two) const { return *one < *two; }
-    };
-    typedef std::map<std::string, std::unique_ptr<Variable>, vlt>::iterator iterator;
+    typedef std::map<std::string, std::unique_ptr<Variable>>::iterator iterator;
     const iterator begin() { return variables.begin(); }
     const iterator end() { return variables.end(); }
 

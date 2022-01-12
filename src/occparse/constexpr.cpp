@@ -450,7 +450,7 @@ static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, 
                 {
                     if (init->exp)
                     {
-                        exp->v.constexprData.data[sp->sb->offset + init->offset] = EvaluateExpression(init->exp, argmap, exp, nullptr, false);
+                        exp->v.constexprData.data[sp->sb->offset + init->offset] = EvaluateExpression(init->exp, argmap, nullptr, nullptr, false);
                     }
                     init = init->next;
                 }
@@ -831,13 +831,13 @@ static bool HandleLoad(EXPRESSION* exp, std::unordered_map<SYMBOL*, ConstExprArg
         {
             if (exp3->left->type == en_cshimthis)
             {
-                if (isintconst(exp3->right))
+                if (isintconst(exp3->right) && exp3->left->v.constexprData.data[exp3->right->v.i])
                 {
                     *exp1 = *exp3->left->v.constexprData.data[exp3->right->v.i];
                     rv = true;
                 }
             }
-            else if (exp3->right->type == en_cshimthis)
+            else if (exp3->right->type == en_cshimthis && exp3->right->v.constexprData.data[exp3->left->v.i])
             {
                 if (isintconst(exp3->left))
                 {

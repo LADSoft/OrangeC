@@ -97,8 +97,8 @@ class Spawner
     void Run(Command& Commands, OutputType Type, RuleList* RuleList = nullptr, Rule* Rule = nullptr);
     static void Stop() { stopAll = true; }
     std::string shell(const std::string& command);
-    void SetLineLength(int length) { lineLength = length; }
-    bool GetLineLength() const { return lineLength; }
+    void SetLineLength(size_t length) { lineLength = length; }
+    size_t GetLineLength() const { return lineLength; }
 
     bool IsDone() const { return done; }
 
@@ -135,7 +135,7 @@ class Spawner
     Command* commands;
     RuleList* ruleList;
     Rule* rule;
-    int lineLength;
+    size_t lineLength;
     std::list<std::string> cmdList;
     EnvironmentStrings environment;
     bool ignoreErrors;

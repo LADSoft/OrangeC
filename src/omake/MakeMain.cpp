@@ -346,7 +346,7 @@ void MakeMain::ShowRule(RuleList* ruleList)
     std::cout << "\tTargetVariables:" << std::endl;
     for (auto it = ruleList->VariableBegin(); it != ruleList->VariableEnd(); ++it)
     {
-        std::cout << std::setw(25) << std::setfill(' ') << std::right << (*it->first);
+        std::cout << std::setw(25) << std::setfill(' ') << std::right << (it->first);
         if (it->second->GetFlavor() == Variable::f_recursive)
             std::cout << " =  ";
         else

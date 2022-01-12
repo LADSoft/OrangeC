@@ -167,7 +167,7 @@ int Spawner::InternalRun()
             std::lock_guard<decltype(OS::GetConsoleMutex())> lck(OS::GetConsoleMutex());
             Eval c(cmd, false, ruleList, rule);
             cmd = c.Evaluate();  // deferred evaluation
-            int i;
+            size_t i;
             for (i = 0; i < cmd.size(); i++)
                 if (cmd[i] == '+')
                     curDontRun = false;
@@ -330,22 +330,22 @@ bool Spawner::split(const std::string& cmd)
         std::string first = cmd.substr(0, n);
         std::string last = cmd.substr(m);
         std::string middle = cmd.substr(n, m);
-        int z = middle.find_first_of(escapeStart);
+        size_t z = middle.find_first_of(escapeStart);
         if (z != std::string::npos)
             rv = cmd.size() < lineLength;
         z = last.find_first_of(escapeStart);
         if (z != std::string::npos)
             rv = cmd.size() < lineLength;
 
-        int sz = first.size() + last.size();
-        int szmiddle = lineLength - sz;
+        size_t sz = first.size() + last.size();
+        size_t szmiddle = lineLength - sz;
         while (middle.size() >= szmiddle)
         {
             std::string p = middle.substr(0, szmiddle);
             int lsp = middle.find_last_of(' ');
             if (lsp != std::string::npos)
             {
-                p.replace(lsp, p.size() - lsp, "");
+                p.replace(lsp, p.size() - lsp, ""); 
                 middle.replace(0, lsp + 1, "");
                 cmdList.push_back(first + p + last);
             }

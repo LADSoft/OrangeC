@@ -68,7 +68,7 @@ class Eval
         if (internalWarnings)
             warning(Warning);
     }
-    static size_t MacroSpan(const std::string iline, int pos);
+    static size_t MacroSpan(const std::string iline, size_t pos);
     std::string ParseMacroLine(const std::string& in);
     static Variable* LookupVariable(const std::string& name);
     bool AutomaticVar(const std::string& name, std::string& rv);

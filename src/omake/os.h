@@ -72,8 +72,6 @@ class OS
     static void JobRundown();
     static bool TakeJob();
     static void GiveJob();
-    static void Take();
-    static void Give();
     static void WriteToConsole(std::string string);
     static void ToConsole(std::deque<std::string>& strings);
     static void AddConsole(std::deque<std::string>& strings, std::string string);

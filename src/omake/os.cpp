@@ -227,10 +227,10 @@ void OS::InitJobServer()
         name = localJobServer->PassThroughCommandString();
         name = name.substr(name.find_last_of('='));
         v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
+        v->SetExport(true);
         *VariableContainer::Instance() += v;
         first = true;
     }
-    v->SetExport(true);
 }
 bool OS::first = false;
 void OS::JobInit()
@@ -322,8 +322,6 @@ void OS::JobRundown()
     if (jobFile.size())
         RemoveFile(jobFile);
 }
-void OS::Take() { consoleMutex.lock(); }
-void OS::Give() { consoleMutex.unlock(); }
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
 {
 #ifdef _WIN32

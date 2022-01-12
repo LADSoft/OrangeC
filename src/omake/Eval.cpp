@@ -507,7 +507,7 @@ std::string Eval::ExpandMacro(const std::string& name)
         {
             if (!rv.empty())
                 rv += " ";
-            rv += *(var.first);
+            rv += var.first;
         }
     }
     else if (name[0] == '$')

@@ -360,7 +360,7 @@ void MakeMain::ShowDatabase()
     std::cout << "Variables:" << std::endl;
     for (auto& var : *VariableContainer::Instance())
     {
-        std::cout << std::setw(25) << std::setfill(' ') << std::right << (*var.first);
+        std::cout << std::setw(25) << std::setfill(' ') << std::right << (var.first);
         if (var.second->GetFlavor() == Variable::f_recursive)
             std::cout << " =  ";
         else

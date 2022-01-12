@@ -79,7 +79,7 @@ Variable* VariableContainer::Lookup(const std::string& name)
     }
     else
     {
-        auto it = variables.find(&name);
+        auto it = variables.find(name);
         if (it != variables.end())
         {
             rv = it->second.get();
@@ -96,7 +96,7 @@ void VariableContainer::operator+(Variable* variable)
     }
     else
     {
-        variables[&variable->GetName()] = std::move(temp);
+        variables[variable->GetName()] = std::move(temp);
     }
 }
 void VariableContainer::Clear()

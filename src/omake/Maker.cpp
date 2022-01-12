@@ -591,7 +591,7 @@ void Maker::GetEnvironment(EnvironmentStrings& env)
     {
         if (exportAll || var.second->GetExport())
         {
-            EnvEntry a(*(var.first), var.second->GetValue());
+            EnvEntry a((var.first), var.second->GetValue());
             env.push_back(a);
         }
     }

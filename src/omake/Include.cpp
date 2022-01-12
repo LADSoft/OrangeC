@@ -39,12 +39,12 @@
 #    include <io.h>
 #endif
 
-Include* Include::instance = nullptr;
+std::shared_ptr<Include> Include::instance = nullptr;
 
-Include* Include::Instance()
+std::shared_ptr<Include> Include::Instance()
 {
     if (!instance)
-        instance = new Include;
+        instance = std::shared_ptr<Include>(new Include);
     return instance;
 }
 void Include::Clear()

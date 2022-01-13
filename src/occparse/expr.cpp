@@ -3064,6 +3064,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                                 tp = pinit->tp;
                             }
                             p->tp = InitializerListType(tp);
+                            p->exp = intNode(en_c_i, 0);
                             CreateInitializerList(nullptr, p->tp, tp, lptr, true, isref(sym->tp));
                             (*lptr)->tp = sym->tp;
                             p->next = old;
@@ -3349,18 +3350,23 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         }
                         p->tp = sym->tp;
                     }
-                    else if (comparetypes(sym->tp, p->tp, true))
+                    else if (comparetypes(sym->tp, p->tp ? p->tp : p->nested->tp, true))
                     {
-                        if (isarithmeticconst(p->exp) ||
-                            (basetype(sym->tp)->type != bt_rref && !isconst(basetype(sym->tp)->btp) && isconst(p->tp)))
+                        INITLIST* p1;
+                        if (p->tp)
+                            p1 = p;
+                        else
+                            p1 = p->nested;
+                        if (isarithmeticconst(p1->exp) ||
+                            (basetype(sym->tp)->type != bt_rref && !isconst(basetype(sym->tp)->btp) && isconst(p1->tp)))
                         {
                             // make numeric temp and perform cast
-                            p->exp = createTemporary(sym->tp, p->exp);
+                            p->exp = createTemporary(sym->tp, p1->exp);
                         }
                         else
                         {
                             // pass address
-                            EXPRESSION* exp = p->exp;
+                            EXPRESSION* exp = p1->exp;
                             while (castvalue(exp) || exp->type == en_not_lvalue)
                                 exp = exp->left;
                             if (exp->type != en_l_ref)

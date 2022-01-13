@@ -461,7 +461,13 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     genreturn(0, f->sp, 1, 0, nullptr);
     ap3 = returnImode;
     if (!ap3)
+    {
         ap3 = Optimizer::tempreg(ISZ_UINT, 0);
+        // this is to make sure the return value gets carried into the optimization code
+        // we might be doing a by-ref return value from some presumably unreachable function
+        // that elided the return value
+        gen_icode(Optimizer::i_assn, ap3, Optimizer::make_immed(-ISZ_UINT, 0), nullptr);
+    }
     inlineUnbindArgs(basetype(f->sp->tp)->syms->table[0]);
     FreeLocalContext(nullptr, funcsp, Optimizer::nextLabel++);
     returnImode = oldReturnImode;

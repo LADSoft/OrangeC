@@ -214,22 +214,37 @@ void OS::InitJobServer()
 {
     bool first = false;
     std::string name;
-    Variable* v = VariableContainer::Instance()->Lookup(".OMAKESEM");
-    if (v)
+    if (!localJobServer)
     {
-        name = v->GetValue();
-        OS::WriteToConsole("The job server name is: " + name);
-        localJobServer = OMAKE::JobServer::GetJobServer(name);
+        Variable* v = VariableContainer::Instance()->Lookup(".OMAKESEM");
+        if (v)
+        {
+            name = v->GetValue();
+            OS::WriteToConsole("The job server name is: " + name);
+            localJobServer = OMAKE::JobServer::GetJobServer(name);
+        }
+        else
+        {
+            localJobServer = OMAKE::JobServer::GetJobServer(jobsLeft);
+            name = localJobServer->PassThroughCommandString();
+            name = name.substr(name.find_first_of('=') + 1);
+            v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
+            v->SetExport(true);
+            *VariableContainer::Instance() += v;
+            first = true;
+        }
     }
     else
     {
-        localJobServer = OMAKE::JobServer::GetJobServer(jobsLeft);
-        name = localJobServer->PassThroughCommandString();
-        name = name.substr(name.find_last_of('='));
-        v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
-        v->SetExport(true);
-        *VariableContainer::Instance() += v;
-        first = true;
+        std::cout << "Retry" << std::endl;
+        if (!VariableContainer::Instance()->Lookup(".OMAKESEM"))
+        {
+            name = localJobServer->PassThroughCommandString();
+            name = name.substr(name.find_first_of('=') + 1);
+            Variable* v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
+            v->SetExport(true);
+            *VariableContainer::Instance() += v;
+        }
     }
 }
 bool OS::first = false;

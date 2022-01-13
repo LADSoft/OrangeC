@@ -496,7 +496,6 @@ int MakeMain::Run(int argc, char** argv)
     }
 
     LoadJobArgs();
-    OS::InitJobServer(); 
 
     bool done = false;
     Eval::SetWarnings(warnUndef.GetValue());
@@ -509,6 +508,7 @@ int MakeMain::Run(int argc, char** argv)
         LoadEnvironment();
         LoadCmdDefines();
         RunEquates();
+        OS::InitJobServer(); 
         SetVariable("MAKE", argv[0], Variable::o_environ, false);
         Variable* v = VariableContainer::Instance()->Lookup("SHELL");
         if (!v)

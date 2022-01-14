@@ -1,3 +1,38 @@
+/* Software License Agreement
+ * 
+ *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ * 
+ *     This file is part of the Orange C Compiler package.
+ * 
+ *     The Orange C Compiler package is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ * 
+ *     The Orange C Compiler package is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ * 
+ *     You should have received a copy of the GNU General Public License
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ *     As a special exception, if other files instantiate templates or
+ *     use macros or inline functions from this file, or you compile
+ *     this file and link it with other works to produce a work based
+ *     on this file, this file does not by itself cause the resulting
+ *     work to be covered by the GNU General Public License. However
+ *     the source code for this file must still be made available in
+ *     accordance with section (3) of the GNU General Public License.
+ *     
+ *     This exception does not invalidate any other reasons why a work
+ *     based on this file might be covered by the GNU General Public
+ *     License.
+ * 
+ *     contact information:
+ *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
+ */
 #include <windows.h>
 #include <stdio.h>
 #include "PEHeader.h"
@@ -503,57 +538,52 @@ __declspec(dllexport) void CALLBACK StackTrace(char* text, char* prog, PCONTEXT 
 
     char dbname[MAX_PATH];
     DWORD* sp = regs->Ebp;
-    BOOL first = TRUE;
 
-    while ((DWORD)sp > regs->Esp && (DWORD)sp < stacktop)
+    unsigned xbase = 0;
+    char name[4096];
+    char unmangled[4096];
+    int type;
+    strcat(buf, "\nStack trace:\n");
+    GetModuleName(name, regs->Eip, &xbase);
+    if (xbase != currentBase)
+    {
+        DBClose(db);
+        if (DebugFileName(dbname, (BYTE*)xbase))
+        {
+            db = DBOpen(dbname, &linkbase);
+        }
+        else
+        {
+            db = NULL;
+        }
+        currentBase = xbase;
+    }
+    sprintf(buf + strlen(buf), "\t%15s ", name);
+    sprintf(buf + strlen(buf), "%x", regs->Eip);
+    DWORD funcaddr = GetGlobalName(db, name, &type, regs->Eip - xbase + linkbase, 0);
+    if (funcaddr)
+    {
+        unmangle(unmangled, name);
+        sprintf(buf + strlen(buf), ": %s + 0x%x", unmangled, regs->Eip - xbase + linkbase - funcaddr);
+        int linenum = 0;
+        GetEqualsBreakpoint(db, regs->Eip - xbase + linkbase, name, &linenum);
+        if (linenum)
+        {
+            char* p = strrchr(name, '\\');
+            if (p)
+                p++;
+            else
+                p = name;
+            sprintf(buf + strlen(buf), "  module: %s, line: %d", p, linenum);
+        }
+    }
+    strcat(buf, "\n");
+    while ((DWORD)sp >= regs->Esp && (DWORD)sp < stacktop)
     {
         if (strlen(buf) > sizeof(buf) - 1000)
-            break;
+            break; 
         if (sp[1])
         {
-            unsigned xbase = 0;
-            char name[4096];
-            char unmangled[4096];
-            int type;
-            if (first)
-            {
-                strcat(buf, "\nStack trace:\n");
-                GetModuleName(name, regs->Eip, &xbase);
-                if (xbase != currentBase)
-                {
-                    DBClose(db);
-                    if (DebugFileName(dbname, (BYTE*)xbase))
-                    {
-                        db = DBOpen(dbname, &linkbase);
-                    }
-                    else
-                    {
-                        db = NULL;
-                    }
-                    currentBase = xbase;
-                }
-                sprintf(buf + strlen(buf), "\t%15s ", name);
-                sprintf(buf + strlen(buf), "%x", regs->Eip);
-                DWORD funcaddr = GetGlobalName(db, name, &type, regs->Eip - xbase + linkbase, 0);
-                if (funcaddr)
-                {
-                    unmangle(unmangled, name);
-                    sprintf(buf + strlen(buf), ": %s + 0x%x", unmangled, regs->Eip - xbase + linkbase - funcaddr);
-                    int linenum = 0;
-                    GetEqualsBreakpoint(db, regs->Eip - xbase + linkbase, name, &linenum);
-                    if (linenum)
-                    {
-                        char* p = strrchr(name, '\\');
-                        if (p)
-                            p++;
-                        else
-                            p = name;
-                        sprintf(buf + strlen(buf), "  module: %s, line: %d", p, linenum);
-                    }
-                }
-                strcat(buf, "\n");
-            }
-            first = FALSE;
             GetModuleName(name, sp[1], &xbase);
             if (xbase != currentBase)
             {

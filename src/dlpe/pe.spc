@@ -10,6 +10,7 @@ partition {
     __TLSINITEND = $;
 	IMPORTTHUNKS = $;
 	region {} importThunks [align = 4, size = IMPORTCOUNT * 6 ];
+    _CODEEND = $;
 	CODESIZE = $ - CODEBASE;
   } .text;
 } pt1 [addr=IMAGEBASE + OBJECTALIGN, fill = 0x90];

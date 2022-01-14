@@ -769,7 +769,7 @@ void oa_put_code(OCODE* cd)
     {
         nmexp = Optimizer::GetSymRef(apd->offset);
     }
-    if (nmexp && nmexp->type == Optimizer::se_pc)
+    if (nmexp && nmexp->type == Optimizer::se_pc && nmexp->sp->tp->type == Optimizer::st_func)
     {
         AsmOutput(" ; %s", ObjSymbol(nmexp->sp->outputName, ObjSymbol::eGlobal, 0).GetDisplayName().c_str());
     }
@@ -787,6 +787,8 @@ void oa_gen_strlab(Optimizer::SimpleSymbol* sym)
     strcpy(buf, sym->outputName);
     if (Optimizer::cparams.prm_asmfile)
     {
+        if (sym && sym->tp->type == Optimizer::st_func)
+            AsmOutput("; %s\n", ObjSymbol(sym->outputName, ObjSymbol::eGlobal, 0).GetDisplayName().c_str());
         if (oa_currentSeg == Optimizer::dataseg || oa_currentSeg == Optimizer::bssxseg)
         {
             newlabel = true;
@@ -1488,7 +1490,7 @@ void oa_gen_virtual(Optimizer::SimpleSymbol* sym, int data)
         {
             oa_globaldef(sym);
         }
-        if (strncmp(sym->outputName, "@$xc", 4))
+        if (sym && sym->tp->type == Optimizer::st_func)
             AsmOutput("; %s\n", ObjSymbol(sym->outputName, ObjSymbol::eGlobal, 0).GetDisplayName().c_str());
         AsmOutput("%s:\n", sym->outputName);
     }

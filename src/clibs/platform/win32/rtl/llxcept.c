@@ -49,8 +49,9 @@ extern char** _argv;
 extern DWORD __unaligned_stacktop;
 extern HINSTANCE __hInstance;
 extern unsigned _isDLL;
+extern unsigned char CODESTART[], CODEEND[];
 
-typedef void CALLBACK trace_func(char* text, char* filename, PCONTEXT p, void* hInstance, void* stacktop);
+typedef void CALLBACK trace_func(char* text, char* filename, PCONTEXT p, void* hInstance, void* stacktop, void *codestart, void *codeend);
 
 static int* _xceptblkptr;
 /*static*/ PCONTEXT xxctxt;
@@ -59,9 +60,9 @@ static int* _xceptblkptr;
     HMODULE hmod = LoadLibrary("lsdbghelper");
     if (hmod)
     {
-        trace_func* f = (trace_func*)GetProcAddress(hmod, "StackTrace");
+        trace_func* f = (trace_func*)GetProcAddress(hmod, "StackTraceWithCode");
         if (f)
-            f(text, _argv[0], p, (void*)__hInstance, (void*)__unaligned_stacktop);
+            f(text, _argv[0], p, (void*)__hInstance, (void*)__unaligned_stacktop, CODESTART, CODEEND);
         FreeLibrary(hmod);
         if (f)
             return;

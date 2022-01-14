@@ -514,7 +514,7 @@ BOOL IsConsoleApp()
     dbgBase = *(DWORD*)(base + 0x3c);
     return ((struct PEHeader*)(base + dbgBase))->subsystem == PE_SUBSYS_CONSOLE;
 }
-__declspec(dllexport) void CALLBACK StackTrace(char* text, char* prog, PCONTEXT regs, void* base, void* stacktop)
+__declspec(dllexport) void CALLBACK StackTraceWithCode(char* text, char* prog, PCONTEXT regs, void* base, void* stacktop, void *codestart, void *codeend)
 {
     sqlite3* db = NULL;
     unsigned currentBase = 0;
@@ -578,7 +578,7 @@ __declspec(dllexport) void CALLBACK StackTrace(char* text, char* prog, PCONTEXT 
         }
     }
     strcat(buf, "\n");
-    while ((DWORD)sp >= regs->Esp && (DWORD)sp < stacktop)
+    while ((DWORD)sp >= regs->Esp && (DWORD)sp < stacktop && sp[1] >= codestart && sp[1] < codeend)
     {
         if (strlen(buf) > sizeof(buf) - 1000)
             break; 

@@ -2623,10 +2623,11 @@ static LEXLIST* statement_expr(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     linesHead = linesTail = nullptr;
     (void)parent;
 
-    lex = optimized_expression(lex, funcsp, nullptr, &tp, &select, true);
+    auto prevlex = lex;
+    lex = optimized_expression(prevlex, funcsp, nullptr, &tp, &select, true);
     linesHead = oldLineHead;
     linesTail = oldLineTail;
-    currentLineData(parent, lex, 0);
+    currentLineData(parent, prevlex, 0);
     st = stmtNode(lex, parent, st_expr);
     st->select = select;
     if (!tp)

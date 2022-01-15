@@ -54,7 +54,11 @@ int CmdSwitchInt::Parse(const char* data)
     int cnt = 0;
     char number[256];
     if (data[0] == ':')
+    {
         data++, cnt++;
+        if (data[0] == 0)
+            return INT_MAX;
+    }
     strncpy(number, data, 255);
     number[255] = 0;
 
@@ -375,19 +379,45 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
                 {
                     if (!argv[1])
                     {
-                        std::cerr << "switch '" << swtch << "' requires argument" << std::endl;
-                        return false;
+                        if (b->RequiresArgument())
+                        {
+                            std::cerr << "switch '" << swtch << "' requires argument" << std::endl;
+                            return false;
+                        }
                     }
                     shifted = true;
                     // use next arg as the value
-                    memmove(argv, argv + 1, (*argc - i) * sizeof(char*));
-                    (*argc)--;
-                    data = &argv[0][0];
-                    n = b->Parse(data);
+                    if (argv[1])
+                    {
+                        data = &argv[1][0];
+                        if (data[0])
+                        {
+                            n = b->Parse(data);
+                            if (n == -1)
+                            {
+                                data = "\0";
+                                n = 0;
+                            }
+                            else
+                            {
+                                memmove(argv, argv + 1, (*argc - i) * sizeof(char*));
+                                (*argc)--;
+                            }
+                        }
+                        else
+                        {
+                            data = "\0";
+                            n = 0;
+                        }
+                    }
+                    else
+                    {
+                        data = "\0";
+                        n = 0;
+                    }
                 }
                 if (n < 0)
                     return false;
-
                 data += n;
             }
             // use next arg as the value

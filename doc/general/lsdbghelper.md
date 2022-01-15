@@ -1,6 +1,7 @@
 # lsdbghelper.dll
 
-lsdbghelper.dll is a helper dll that resides in the %ORANGE%\bin directory.   When present, it will be used if a program crashes, to generate a stack trace.    The stack trace will be slightly different, depending on how the program was compiled.
+lsdbghelper.dll is a helper dll that resides in the `%ORANGE%\bin` directory.   When present and in `%PATH%`, it will be used if a program crashes, to generate a stack trace.    
+The stack trace will be slightly different, depending on how the program was compiled.
 
 We will use this program, t14.cpp, as an example:
 
@@ -39,7 +40,7 @@ main()
 }
 ```
 
-For a normal compilation, the stack trace will just give addresses.   Following is an an example of a program, t14.cpp, with a crash in main():
+For a normal compilation, the stack trace will just give addresses.   Following is an an example of a program, t14.cpp, with a crash in `main()`:
 
 ```
 Access Violation:(C:\orangec\src\occparse\temp\t14.exe)
@@ -57,9 +58,9 @@ Stack trace:
 
 Here the first address is where it crashed; this will always be valid.   There may be more addresses given if the crash is nested inside multiple function calls.   But bear in release mode the compiler aggressively optimizes EBP and this may cause the stack trace to be incomplete.
 
-There may not be more than one address here.   Causes could be a crash in an external dll; or it is in main(); or EBP has been used for something other than marking stack frames.
+There may not be more than one address here.   Causes could be a crash in an external dll; or it is in `main()`; or EBP has been used for something other than marking stack frames.
 
-Compiling the program with the compiler switch _-pl-mx_ results in a detailed map file t14.map.  The first few lines of the 'Publics By Name' section of the file are as follows:
+Compiling the program with the compiler switch _`-pl-mx`_ results in a detailed map file t14.map.  The first few lines of the 'Publics By Name' section of the file are as follows:
 
 ```
 Publics By Value
@@ -74,13 +75,13 @@ Publics By Value
 401374 X __crtexit
 ```
 
-The failing address in the stack trace is between main() and aa1(), so, the failure is in the main() you can use a debugger to hone in on exactly where the crash is if you want.
+The failing address in the stack trace is between `main()` and `a1()`, so, the failure is in the `main()` you can use a debugger to hone in on exactly where the crash is if you want.
 
-Compiling with /C-E turns off the EBP optimizations, and gives a more accurate stack trace.
+Compiling with _`/C-E`_ turns off the EBP optimizations, and gives a more accurate stack trace.
 
-To get more detail, compile with _-g_ (debugging) enabled.   This will turn off inlining and other optimizations, and make it easier to hone in on the problem.
+To get more detail, compile with _`-g`_ or _`/g`_ (debugging) enabled.   This will turn off inlining and other optimizations, and make it easier to hone in on the problem.
 
-When t14.cpp is compiled with _-g_ the output is:
+When t14.cpp is compiled with _`-g`_ the output is:
 
 ```
 Access Violation:(C:\orangec\src\occparse\temp\t14.exe)
@@ -101,12 +102,12 @@ Stack trace:
                         40128f: __startup + 0x1bb
 ```
 
-here there are multiple addresses, because compiling with /g turned off inlining and used
+here there are multiple addresses, because compiling with _`-g`_ turned off inlining and used
 the expanded versions of the functions.
 
 here you can see that the stack trace has additional information about the crash.
 
-if we want we can look at the map file again (use the _-pl-mx_ compiler switch)
+if we want we can look at the map file again (use the _`-pl-mx`_ compiler switch)
 
 ```
 Publics By Value
@@ -119,4 +120,4 @@ Publics By Value
 40107c   main
 ```
 
-here we can see that the first address, where the crash occurs, fits in the a1() function.
+here we can see that the first address, where the crash occurs, fits in the `a1()` function.

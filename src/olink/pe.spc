@@ -3,15 +3,17 @@ partition {
     _CODESTART = $;
 	CODEBASE = $;
     region {} code [ align = 2];
+    region {} text [ align = 2];
     region {} vsc* [ align = 2];
     __TLSINITSTART = $;
     region {} tls [align = 8];
     __TLSINITEND = $;
 	IMPORTTHUNKS = $;
 	region {} importThunks [align = 4, size = IMPORTCOUNT * 6 ];
+    _CODEEND = $;
 	CODESIZE = $ - CODEBASE;
   } .text;
-} pt1 [addr=IMAGEBASE + OBJECTALIGN];
+} pt1 [addr=IMAGEBASE + OBJECTALIGN, fill = 0x90];
 
 partition {
   overlay {
@@ -25,6 +27,12 @@ partition {
 	_EXITSTART = $;
 	region {} crundown [ align = 2];
 	_EXITEND = $;
+        _TLSINITSTART = $;
+	region {} tstartup [ align = 2];
+        _TLSINITEND = $;
+        _TLSEXITSTART = $;
+	region {} trundown [ align = 2];
+        _TLSEXITEND = $;
     region {} string [ align = 2];
 	INITSIZE = $ - RAMBASE;
 	_BSSSTART = $;

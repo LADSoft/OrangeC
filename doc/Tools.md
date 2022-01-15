@@ -43,6 +43,9 @@
 * [OBRC](general/Obrc.md) Orange C Browse Compiler
 * [OCCPR](general/Occpr.md) Orange C Code Completion compiler
 
+## Debugging without a debugger
+
+* [lsdbghelper.dll](general/lsdbghelper.md) is used to create a stack trace
 
 ## Tools Setup
  

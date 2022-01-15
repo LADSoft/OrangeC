@@ -122,7 +122,7 @@ void thunkForImportTable(EXPRESSION** exp)
         {
             SYMBOL* newThunk;
             char buf[2048];
-            Optimizer::my_sprintf(buf, "@$%s", sym->sb->decoratedName);
+            Optimizer::my_sprintf(buf, "@@%s", sym->sb->decoratedName);
             newThunk = makeID(sc_global, &stdpointer, nullptr, litlate(buf));
             newThunk->sb->decoratedName = newThunk->name;
             newThunk->sb->mainsym = sym;  // mainsym is the symbol this was derived from

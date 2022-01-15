@@ -39,4 +39,8 @@ CIL_DEPENDENCIES = $(wildcard *.c) $(wildcard cil/*.c)
 H_FILES=$(wildcard *.h)
 
 all: $(DEPENDENCIES)
+
+dtoa.o: dtoa.c
+	$(CC) /! /c /C+E $(STDINCLUDE) $(BUILDING_DLL) /D_LIBCPP_BUILDING_LIBRARY /9 -o$(OBJECT)\$@ $^
+
 $(eval $(FORMATTER))

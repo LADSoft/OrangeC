@@ -4723,17 +4723,6 @@ static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, Optimizer::LIST* 
         }
         gather = gather->next;
     }
-    if (!(flags & _F_RETURN_DELETED))
-    {
-        int i;
-        for ( i = 0; i < n; i++)
-            if (spList[i] && !spList[i]->sb->deleted)
-                break;
-        if (i < n)
-            for (int i = 0; i < n; i++)
-                if (spList[i] && spList[i]->sb->deleted)
-                    spList[i] = nullptr;
-    }
     return n;
 }
 static void doNames(SYMBOL* sym)
@@ -4929,6 +4918,15 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 n = insertFuncs(spList, spFilterList, gather, args, atp, flags);
                 if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor && !spList[0]->sb->specialized2))
                 {
+                    std::unordered_map<int, SYMBOL*> storage;
+                    for (int i = 0; i < n; i++)
+                    {
+                        if (spList[i] && spList[i]->sb->deleted)
+                        {
+                            storage[i] = spList[i];
+                            spList[i] = nullptr;
+                        }
+                    }
                     if (atp || args->ascall)
                     {
                         GatherConversions(sp, spList, n, args, atp, icsList, lenList, argCount, funcList, flags & _F_INITLIST);
@@ -4944,6 +4942,31 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                             if (spList[j] && found1 != spList[j] && !sameTemplate(found1->tp, spList[j]->tp))
                             {
                                 found2 = spList[j];
+                            }
+                        }
+                    }
+                    if (!found1 && storage.size())
+                    {
+                        // there were no matches.   But there are deleted functions
+                        // see if we can find a match among them...
+                        for (auto v : storage)
+                            spList[v.first] = v.second;
+                        if (atp || args->ascall)
+                        {
+                            GatherConversions(sp, spList, n, args, atp, icsList, lenList, argCount, funcList, flags & _F_INITLIST);
+                            SelectBestFunc(spList, icsList, lenList, args, argCount, n, funcList);
+                        }
+                        WeedTemplates(spList, n, args, atp);
+                        for (i = 0; i < n && !found1; i++)
+                        {
+                            int j;
+                            found1 = spList[i];
+                            for (j = i + 1; j < n && found1 && !found2; j++)
+                            {
+                                if (spList[j] && found1 != spList[j] && !sameTemplate(found1->tp, spList[j]->tp))
+                                {
+                                    found2 = spList[j];
+                                }
                             }
                         }
                     }

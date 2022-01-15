@@ -45,13 +45,6 @@
 #include "libcxx.h"
 #include "FNV_hash.h"
 #include <cstdio>
-#define ERROR 1
-#define WARNING 2
-#define TRIVIALWARNING 4
-#define ANSIERROR 8
-#define ANSIWARNING 16
-#define CPLUSPLUSERROR 32
-#define NOTE 64
 
 namespace Parser
 {
@@ -73,11 +66,7 @@ static Optimizer::LIST* listErrors;
 static const char* currentErrorFile;
 static bool disabledNote;
 
-static struct
-{
-    const char* name;
-    int level;
-} errors[] = {
+ErrorNamesAndLevels errors[] = {
 #define ERRLIST(x, y, z, a) {z, a},
 #define ERRWITHWARNFLAG(x, y, z, a, b) {z, a},
 #include "errorlist.h"
@@ -161,7 +150,7 @@ static bool ValidateWarning(int num)
 {
     if (num && num < sizeof(errors) / sizeof(errors[0]))
     {
-        if (!(errors[num].level & ERROR))
+        if (!(errors[num].level & CE_ERROR))
         {
             return true;
         }
@@ -175,7 +164,7 @@ static bool ValidateWarning(const char* str)
     if (thing != error_name_map.end())
     {
         auto val = thing->second;
-        if(!(errors[val].level & ERROR))
+        if(!(errors[val].level & CE_ERROR))
         {
             return true;
         }
@@ -241,7 +230,7 @@ void DisableTrivialWarnings()
             Warning::Instance()->SetFlag(i, Warning::Disable);
     if (!Optimizer::cparams.prm_extwarning)
         for (int i = 0; i < sizeof(errors) / sizeof(errors[0]); i++)
-            if (errors[i].level & TRIVIALWARNING)
+            if (errors[i].level & CE_TRIVIALWARNING)
                 Warning::Instance()->SetFlag(i, Warning::Disable);
 }
 static int total_errors;
@@ -360,6 +349,8 @@ static bool ignoreErrtemplateNestingCount(int err)
 }
 bool printerrinternal(int err, const char* file, int line, va_list args)
 {
+    if (!errors[err].level)
+        return false;
     if (!file)
     {
         if (currentLex)
@@ -378,7 +369,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     const char* listerr;
     char nameb[265], *name = nameb;
     if (Optimizer::cparams.prm_makestubs || inDeduceArgs || (templateNestingCount && ignoreErrtemplateNestingCount(err)))
-        if (err != ERR_STATIC_ASSERT && !(errors[err].level & NOTE))
+        if (err != ERR_STATIC_ASSERT && !(errors[err].level & CE_NOTE))
         {
             return false;
         }
@@ -402,7 +393,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     }
     if (TotalErrors() > Optimizer::cparams.prm_maxerr)
         return false;
-    if (!(errors[err].level & NOTE) && !alwaysErr(err) && currentErrorFile && !strcmp(currentErrorFile, preProcessor->GetRealFile().c_str()) &&
+    if (!(errors[err].level & CE_NOTE) && !alwaysErr(err) && currentErrorFile && !strcmp(currentErrorFile, preProcessor->GetRealFile().c_str()) &&
         preProcessor->GetRealLineNo() == currentErrorLine)
     {
         disabledNote = true;
@@ -416,7 +407,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     {
         vsprintf(buf, errors[err].name, args);
     }
-    if (errors[err].level & NOTE)
+    if (errors[err].level & CE_NOTE)
     {
         if (!disabledNote)
         {
@@ -426,14 +417,14 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
                 fprintf(errFile, "note:   ");
         }
     }
-    else if (IsReturnErr(err) || (errors[err].level & ERROR) || (Optimizer::cparams.prm_ansi && (errors[err].level & ANSIERROR)) ||
-        (Optimizer::cparams.prm_cplusplus && (errors[err].level & CPLUSPLUSERROR)))
+    else if (IsReturnErr(err) || (errors[err].level & CE_ERROR) || (Optimizer::cparams.prm_ansi && (errors[err].level & CE_ANSIERROR)) ||
+        (Optimizer::cparams.prm_cplusplus && (errors[err].level & CE_CPLUSPLUSERROR)))
     {
         if (!Optimizer::cparams.prm_quiet)
             printf("Error(%3d)   ", err);
         if (Optimizer::cparams.prm_errfile)
             fprintf(errFile, "Error   ");
-        listerr = "ERROR";
+        listerr = "CE_ERROR";
         total_errors++;
         currentErrorFile = preProcessor->GetRealFile().c_str();
         currentErrorLine = preProcessor->GetRealLineNo();
@@ -455,7 +446,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
                 printf("Error(%3d)   ", err);
             if (Optimizer::cparams.prm_errfile)
                 fprintf(errFile, "Error   ");
-            listerr = "ERROR";
+            listerr = "CE_ERROR";
             total_errors++;
             currentErrorFile = preProcessor->GetRealFile().c_str();
             currentErrorLine = preProcessor->GetRealLineNo();
@@ -467,7 +458,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
                 printf("Warning(%3d) ", err);
             if (Optimizer::cparams.prm_errfile)
                 fprintf(errFile, "Warning ");
-            listerr = "WARNING";
+            listerr = "CE_WARNING";
         }
     }
     infunc[0] = 0;
@@ -480,7 +471,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         error(ERR_TOO_MANY_ERRORS);
         exit(IsCompiler() ? 1 : 0);
     }
-    if (!(errors[err].level & NOTE))
+    if (!(errors[err].level & CE_NOTE))
     {
         DumpInstantiations();
     }

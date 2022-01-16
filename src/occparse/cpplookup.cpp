@@ -4285,7 +4285,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                             return false;
                     }
                     m = 0;
-                    if (isconstexpr(f->thisptr) && !isconst(sym->tp))
+                    if (((f->thisptr && isconstexpr(f->thisptr)) || (!f->thisptr && f->arguments && isconstexpr(f->arguments->exp))) && !isconst(sym->tp))
                         seq[m++] = CV_QUALS;
                     getSingleConversion(tpp, tpthis, f->thisptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr, true);
                     m1 = m;

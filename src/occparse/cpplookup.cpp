@@ -5013,7 +5013,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 {
                     if (*tp && isstructured(*tp))
                     {
-                        char buf[4096], *p;
+                        char *buf = (char *)alloca(4096), *p;
                         int n;
                         INITLIST* a;
                         memset(buf, 0, sizeof(buf));

@@ -54,10 +54,6 @@
 #include "libcxx.h"
 #include "constexpr.h"
 
-#ifdef HAVE_UNISTD_H
-#    define _alloca alloca
-#endif
-
 namespace Parser
 {
 
@@ -7182,10 +7178,10 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
             if (table[i] && table[i]->sb->templateLevel)
                 len++;
         Optimizer::LIST *types = nullptr, *exprs = nullptr, *classes = nullptr;
-        TYPE** typetab = (TYPE**)_alloca(sizeof(TYPE*) * count);
-        SYMBOL* allocedSyms = (SYMBOL*)_alloca(sizeof(SYMBOL) * len);
-        sym::_symbody* allocedBodies = (sym::_symbody*)_alloca(sizeof(sym::_symbody) * len);
-        TYPE* allocedTypes = (TYPE*)_alloca(sizeof(TYPE) * len);
+        TYPE** typetab = (TYPE**)alloca(sizeof(TYPE*) * count);
+        SYMBOL* allocedSyms = (SYMBOL*)alloca(sizeof(SYMBOL) * len);
+        sym::_symbody* allocedBodies = (sym::_symbody*)alloca(sizeof(sym::_symbody) * len);
+        TYPE* allocedTypes = (TYPE*)alloca(sizeof(TYPE) * len);
         int j = 0;
         if (save)
             saveParams(table, count);

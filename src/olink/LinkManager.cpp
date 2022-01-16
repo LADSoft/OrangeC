@@ -491,7 +491,7 @@ std::unique_ptr<LinkLibrary> LinkManager::OpenLibrary(const ObjString& name)
             rv.release();
         }
     }
-    return std::move(rv);
+    return rv;
 }
 void LinkManager::LoadLibraries()
 {

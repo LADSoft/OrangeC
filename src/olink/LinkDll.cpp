@@ -136,5 +136,5 @@ std::unique_ptr<LinkLibrary> LinkDll::LoadLibrary(bool isstdcall)
             }
         }
     }
-	return std::move(rv);
+    return rv;
 }

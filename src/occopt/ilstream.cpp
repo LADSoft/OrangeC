@@ -437,6 +437,7 @@ static void StreamInstruction(QUAD* q)
                     StreamIndex(i);
                     for (auto v = (LINEDATA*)q->dc.left; v; v = v->next)
                     {
+                        StreamIndex(v->fileindex);
                         StreamIndex(v->lineno);
                         StreamTextIndex(v->line);
                     }

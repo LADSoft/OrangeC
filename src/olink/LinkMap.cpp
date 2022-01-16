@@ -31,6 +31,7 @@
 #include "ObjExpression.h"
 #include "ObjFile.h"
 #include "ObjSection.h"
+#include "ObjSymbol.h"
 #include "Utils.h"
 #include <iomanip>
 #include <set>
@@ -119,7 +120,10 @@ void LinkMap::ShowRegionLine(std::fstream& stream, LinkRegion* region, ObjInt of
 }
 void LinkMap::ShowFileLine(std::fstream& stream, LinkRegion::OneSection* data, ObjInt n)
 {
-    stream << "      File: " << data->file->GetName() << "(" << data->section->GetName() << ") ";
+    ObjString sectionName = data->section->GetName();
+    if (sectionName.substr(0,4) == "vsc@" && sectionName.substr(0,7) != "vsc@$xt" && sectionName.substr(0,7) != "vsc@$xc" && sectionName.find("_$vt") == std::string::npos)
+        sectionName = ObjSymbol(sectionName.c_str() + 3, ObjSymbol::eGlobal, 0).GetDisplayName();
+    stream << "      File: " << data->file->GetName() << "(" << sectionName << ") ";
     stream << "addr=" << std::setw(6) << std::setfill('0') << std::hex << data->section->GetOffset()->Eval(0) /*+ n*/ << " ";
     stream << "size=" << std::setw(4) << std::setfill('0') << std::hex << data->section->GetSize()->Eval(0) << " ";
     stream << std::endl;
@@ -127,11 +131,11 @@ void LinkMap::ShowFileLine(std::fstream& stream, LinkRegion::OneSection* data, O
 void LinkMap::ShowSymbol(std::fstream& stream, const MapSymbolData& symbol)
 {
     Address(stream, symbol.base, symbol.abs - symbol.base, symbol.group);
-    if (symbol.sym->GetUsed())
+    if (symbol.used)
         stream << "   ";
     else
         stream << " X ";
-    stream << symbol.sym->GetSymbol()->GetDisplayName() << std::setw(1) << std::endl;
+    stream << symbol.displayName << std::setw(1) << std::endl;
 }
 void LinkMap::NormalSections(std::fstream& stream)
 {
@@ -211,8 +215,70 @@ void LinkMap::Publics(std::fstream& stream)
         int group;
         ObjInt base = PublicBase((*it)->GetSymbol()->GetOffset(), group);
         int ofs = (*it)->GetSymbol()->GetOffset()->Eval(0);
-        byName.insert(MapSymbolData((*it), ofs + base, base, group));
-        byValue.insert(MapSymbolData((*it), ofs + base, base, group));
+        byName.insert(MapSymbolData((*it)->GetSymbol()->GetDisplayName(), (*it)->GetUsed(), ofs + base, base, group));
+        byValue.insert(MapSymbolData((*it)->GetSymbol()->GetDisplayName(), (*it)->GetUsed(), ofs + base, base, group));
+    }
+    int group = 1;
+    for (auto it = manager->PartitionBegin(); it != manager->PartitionEnd(); ++it)
+    {
+        if ((*it)->GetPartition())
+        {
+            for (auto itc = (*it)->GetPartition()->OverlayBegin(); itc != (*it)->GetPartition()->OverlayEnd(); ++itc)
+            {
+                if ((*itc)->GetOverlay())
+                {
+                    ObjInt base = (*itc)->GetOverlay()->GetAttribs().GetAddress();
+                    for (auto itr = (*itc)->GetOverlay()->RegionBegin(); itr != (*itc)->GetOverlay()->RegionEnd(); ++itr)
+                    {
+                        if ((*itr)->GetRegion())
+                        {
+                            if ((*itr)->GetRegion()->GetName() == " vsc* " || (*itr)->GetRegion()->GetName() == " vsd* " || (*itr)->GetRegion()->GetName() == " vsb* ")
+                            {
+                                int base = (*itc)->GetOverlay()->GetAttribs().GetAddress();
+                                for (auto it = (*itr)->GetRegion()->NowDataBegin(); it != (*itr)->GetRegion()->NowDataEnd(); ++it)
+                                {
+                                    for (auto sect : (*it)->sections)
+                                    {
+                                        ObjInt ofs = sect.section->GetOffset()->GetValue();
+                                        ObjString sectionName = sect.section->GetName();
+                                        if (sectionName.substr(0, 4) == "vsc@" && sectionName.substr(0, 7) != "vsc@$xt" && sectionName.substr(0, 7) != "vsc@$xc" && sectionName.find("_$vt") == std::string::npos)
+                                            sectionName = ObjSymbol(sectionName.c_str() + 3, ObjSymbol::eGlobal, 0).GetDisplayName();
+                                        byName.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
+                                        byValue.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
+                                    }
+                                }
+                                for (auto it = (*itr)->GetRegion()->NormalDataBegin(); it != (*itr)->GetRegion()->NormalDataEnd(); ++it)
+                                {
+                                    for (auto sect : (*it)->sections)
+                                    {
+                                        ObjInt ofs = sect.section->GetOffset()->GetValue();
+                                        ObjString sectionName = sect.section->GetName();
+                                        if (sectionName.substr(0, 4) == "vsc@" && sectionName.substr(0, 7) != "vsc@$xt" && sectionName.substr(0, 7) != "vsc@$xc" && sectionName.find("_$vt") == std::string::npos)
+                                            sectionName = ObjSymbol(sectionName.c_str() + 3, ObjSymbol::eGlobal, 0).GetDisplayName();
+                                        byName.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
+                                        byValue.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
+                                    }
+                                }
+                                for (auto it = (*itr)->GetRegion()->PostponeDataBegin(); it != (*itr)->GetRegion()->PostponeDataEnd();
+                                    ++it)
+                                {
+                                    for (auto sect : (*it)->sections)
+                                    {
+                                        ObjInt ofs = sect.section->GetOffset()->GetValue();
+                                        ObjString sectionName = sect.section->GetName();
+                                        if (sectionName.substr(0, 4) == "vsc@" && sectionName.substr(0, 7) != "vsc@$xt" && sectionName.substr(0, 7) != "vsc@$xc" && sectionName.find("_$vt") == std::string::npos)
+                                            sectionName = ObjSymbol(sectionName.c_str() + 3, ObjSymbol::eGlobal, 0).GetDisplayName();
+                                        byName.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
+                                        byValue.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            group++;
+        }
     }
     stream << std::endl << "Publics By Name" << std::endl << std::endl;
     for (auto sym : byName)

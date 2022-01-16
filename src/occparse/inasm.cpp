@@ -56,7 +56,7 @@ static LEXLIST* lex;
 static SYMBOL* lastsym;
 static enum e_opcode op;
 
-static const char* errors[] = {"Lable expected",
+static const char* assembler_errors[] = {"Lable expected",
                                "Illegal address mode",
                                "Address mode expected",
                                "Invalid opcode",
@@ -167,7 +167,7 @@ static void inasm_err(int errnum)
 {
     //    *lptr = 0;
     //    lastch = ' ';
-    errorstr(ERR_ASM, errors[errnum]);
+    errorstr(ERR_ASM, assembler_errors[errnum]);
     lex = getsym();
 }
 

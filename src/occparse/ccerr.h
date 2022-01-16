@@ -22,6 +22,15 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
+
+#define CE_ERROR 1
+#define CE_WARNING 2
+#define CE_TRIVIALWARNING 4
+#define CE_ANSIERROR 8
+#define CE_ANSIWARNING 16
+#define CE_CPLUSPLUSERROR 32
+#define CE_NOTE 64
+
 enum ERROR_LIST
 {
 #define ERRLIST(x, y, z, a) x = y,
@@ -35,6 +44,12 @@ void diag(const char* fmt, ...);
 
 namespace Parser
 {
+struct ErrorNamesAndLevels
+{
+    const char* name;
+    int level;
+};
+
 enum _vlaTypes
 {
     v_label,
@@ -64,6 +79,7 @@ typedef struct vlaShim
     const char* file;
 } VLASHIM;
 
+extern ErrorNamesAndLevels errors[];
 extern int diagcount;
 extern int currentErrorLine;
 

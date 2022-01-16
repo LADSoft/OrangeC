@@ -64,8 +64,8 @@ class LinkMap
   private:
     struct MapSymbolData
     {
-        MapSymbolData(LinkSymbolData* Sym, ObjInt Abs, ObjInt Base, int Group) : sym(Sym), base(Base), abs(Abs), group(Group), used(false) {}
-        LinkSymbolData* sym;
+        MapSymbolData(ObjString DisplayName, bool Used, ObjInt Abs, ObjInt Base, int Group) : displayName(DisplayName), used(Used), base(Base), abs(Abs), group(Group) {}
+        ObjString displayName;
         ObjInt base;
         ObjInt abs;
         int group;
@@ -90,7 +90,7 @@ class LinkMap
     {
         bool operator()(const MapSymbolData& left, const MapSymbolData& right) const
         {
-            return left.sym->GetSymbol()->GetName() < right.sym->GetSymbol()->GetName();
+            return left.displayName < right.displayName;
         }
     };
     struct linkltcomparebyvalue

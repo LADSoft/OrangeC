@@ -107,7 +107,7 @@ static char* LambdaName(void)
         while ((p = strchr(lambdaQualifier, '.')) != 0)
             *p = '_';
     }
-    Optimizer::my_sprintf(buf, "$$LambdaClosure%d%s", lambdaIndex++, lambdaQualifier);
+    Optimizer::my_sprintf(buf, "@LambdaClosure%d%s", lambdaIndex++, lambdaQualifier);
     return litlate(buf);
 }
 static const char* AnonymousLambdaName(void)

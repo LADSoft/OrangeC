@@ -50,6 +50,7 @@ class CmdSwitchBase
     bool GetExists() const { return exists; }
     virtual void SetArgNum(int) {}
 
+    virtual bool RequiresArgument() { return true; }
   private:
     bool exists;
     char switchChar;
@@ -88,7 +89,7 @@ class CmdSwitchInt : public CmdSwitchBase
     virtual int Parse(const char* data) override;
     int GetValue() const { return value; }
     void SetValue(int val) { value = val; }
-
+    bool RequiresArgument() override { return false; }
   private:
     int value;
     int lowLimit;

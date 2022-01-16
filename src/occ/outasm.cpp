@@ -26,6 +26,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include "ObjSymbol.h"
 #include "be.h"
 #include "Instruction.h"
 #include "beinterfdefs.h"
@@ -37,6 +38,7 @@
 #include "outasm.h"
 #include "memory.h"
 #include "stdarg.h"
+#include "symfuncs.h"
 #define IEEE
 
 namespace occx86
@@ -758,6 +760,19 @@ void oa_put_code(OCODE* cd)
             oa_putamode(op, aps->length, ap3);
         }
     }
+    Optimizer::SimpleExpression* nmexp = nullptr;
+    if (aps && aps->offset)
+    {
+        nmexp = Optimizer::GetSymRef(aps->offset);
+    }
+    else if (!nmexp && apd && apd->offset)
+    {
+        nmexp = Optimizer::GetSymRef(apd->offset);
+    }
+    if (nmexp && nmexp->type == Optimizer::se_pc && nmexp->sp->tp->type == Optimizer::st_func)
+    {
+        AsmOutput(" ; %s", ObjSymbol(nmexp->sp->outputName, ObjSymbol::eGlobal, 0).GetDisplayName().c_str());
+    }
     AsmOutput("\n");
 }
 
@@ -772,6 +787,8 @@ void oa_gen_strlab(Optimizer::SimpleSymbol* sym)
     strcpy(buf, sym->outputName);
     if (Optimizer::cparams.prm_asmfile)
     {
+        if (sym && sym->tp->type == Optimizer::st_func)
+            AsmOutput("; %s\n", ObjSymbol(sym->outputName, ObjSymbol::eGlobal, 0).GetDisplayName().c_str());
         if (oa_currentSeg == Optimizer::dataseg || oa_currentSeg == Optimizer::bssxseg)
         {
             newlabel = true;
@@ -1473,6 +1490,8 @@ void oa_gen_virtual(Optimizer::SimpleSymbol* sym, int data)
         {
             oa_globaldef(sym);
         }
+        if (sym && sym->tp->type == Optimizer::st_func)
+            AsmOutput("; %s\n", ObjSymbol(sym->outputName, ObjSymbol::eGlobal, 0).GetDisplayName().c_str());
         AsmOutput("%s:\n", sym->outputName);
     }
     outcode_start_virtual_seg(sym, data);

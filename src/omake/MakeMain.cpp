@@ -66,7 +66,7 @@ CmdSwitchBool MakeMain::printDir(switchParser, 'w', false, { "print-directory" }
 CmdSwitchBool MakeMain::warnUndef(switchParser, 'u');
 CmdSwitchBool MakeMain::treeBuild(switchParser, 'T');
 CmdSwitchBool MakeMain::keepResponseFiles(switchParser, 'K');
-CmdSwitchInt MakeMain::jobs(switchParser, 'j', INT_MAX, 1, INT_MAX);
+CmdSwitchInt MakeMain::jobs(switchParser, 'j', 1, 1, INT_MAX);
 CmdSwitchCombineString MakeMain::jobOutputMode(switchParser, 'O');
 
 const char* MakeMain::usageText =

@@ -4135,7 +4135,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
             while (isarray(z))
                 z = basetype(z)->btp;
             z = basetype(z);
-            if (isstructured(z) && !z->sp->sb->trivialCons && !sym->sb->parentClass)
+            if (isstructured(z) && !z->sp->sb->trivialCons)// && !sym->sb->parentClass)
             {
                 INITIALIZER *init = nullptr, *it = nullptr;
                 int n = sym->tp->size / (z->size);
@@ -4143,40 +4143,45 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
                 EXPRESSION* sz = n > 1 ? intNode(en_c_i, n) : nullptr;
                 EXPRESSION* baseexp = getThisNode(sym);
                 EXPRESSION* exp = baseexp;
-                callConstructor(&ctype, &exp, nullptr, true, sz, true, false, false, false, false, false, true);
-                initInsert(&it, z, exp, 0, true);
-                if (storage_class_in != sc_auto && storage_class_in != sc_localstatic && storage_class_in != sc_parameter &&
-                    storage_class_in != sc_member && storage_class_in != sc_mutable)
+                errors[ERR_NO_OVERLOAD_MATCH_FOUND].level = 0;
+                bool test = callConstructor(&ctype, &exp, nullptr, true, sz, true, false, false, false, false, false, true);
+                errors[ERR_NO_OVERLOAD_MATCH_FOUND].level = CE_ERROR;
+                if (test)
                 {
-                    insertDynamicInitializer(sym, it);
-                }
-                else
-                {
-                    sym->sb->init = it;
-                }
-                exp = baseexp;
-                callDestructor(z->sp, nullptr, &exp, sz, true, false, false, true);
-                initInsert(&init, z, exp, 0, true);
-                if (storage_class_in != sc_auto && storage_class_in != sc_parameter && storage_class_in != sc_member &&
-                    storage_class_in != sc_mutable)
-                {
-                    insertDynamicDestructor(sym, init);
-                }
-                else
-                {
-                    sym->sb->dest = init;
-                }
-                if (sym->sb->init)
-                {
-                    INITIALIZER** init = &sym->sb->init;
-                    while (*init)
+                    initInsert(&it, z, exp, 0, true);
+                    if (storage_class_in != sc_auto && storage_class_in != sc_localstatic && storage_class_in != sc_parameter &&
+                        storage_class_in != sc_member && storage_class_in != sc_mutable)
                     {
-                        if (!(*init)->basetp)
-                            break;
-                        init = &(*init)->next;
+                        insertDynamicInitializer(sym, it);
                     }
-                    if (!*init)
-                        initInsert(init, nullptr, nullptr, sym->tp->size, false);
+                    else
+                    {
+                        sym->sb->init = it;
+                    }
+                    exp = baseexp;
+                    callDestructor(z->sp, nullptr, &exp, sz, true, false, false, true);
+                    initInsert(&init, z, exp, 0, true);
+                    if (storage_class_in != sc_auto && storage_class_in != sc_parameter && storage_class_in != sc_member &&
+                        storage_class_in != sc_mutable)
+                    {
+                        insertDynamicDestructor(sym, init);
+                    }
+                    else
+                    {
+                        sym->sb->dest = init;
+                    }
+                    if (sym->sb->init)
+                    {
+                        INITIALIZER** init = &sym->sb->init;
+                        while (*init)
+                        {
+                            if (!(*init)->basetp)
+                                break;
+                            init = &(*init)->next;
+                        }
+                        if (!*init)
+                            initInsert(init, nullptr, nullptr, sym->tp->size, false);
+                    }
                 }
             }
         }

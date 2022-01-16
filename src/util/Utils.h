@@ -120,6 +120,7 @@ class Utils
     static void StripExt(char* buffer);
     static bool HasExt(const char* buffer, const char* ext);
     static bool FileExists(const char* buffer);
+    static std::string FindOnPath(const std::string& name, const std::string& path);
     static std::vector<std::string> split(std::string strToSplit, char delimeter = ';');
 
     static bool NamedPipe(int* fds, const std::string& name);

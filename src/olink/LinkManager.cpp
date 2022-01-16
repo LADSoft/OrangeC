@@ -36,6 +36,7 @@
 #include "LinkRemapper.h"
 #include "LinkLibrary.h"
 #include "LinkDebugFile.h"
+#include "LinkDll.h"
 #include "Utils.h"
 #include <memory>
 #include <fstream>
@@ -474,33 +475,7 @@ std::unique_ptr<LinkLibrary> LinkManager::OpenLibrary(const ObjString& name)
     if (!rv || !rv->IsOpen())
     {
         rv.release();
-        std::string hold = libPath;
-        std::string next;
-        while (!hold.empty())
-        {
-            size_t npos = hold.find(";");
-            if (npos == std::string::npos)
-            {
-                next = hold;
-                hold = "";
-            }
-            else
-            {
-                next = hold.substr(0, npos);
-                if (npos + 1 < hold.size())
-                    hold = hold.substr(npos + 1);
-                else
-                    hold = "";
-            }
-            std::string name1 = Utils::FullPath(next, name);
-            FILE* infile = fopen(name1.c_str(), "rb");
-            if (infile)
-            {
-                hold = "";
-                fclose(infile);
-            }
-        }
-        rv = std::make_unique<LinkLibrary>(Utils::FullPath(next, name), caseSensitive);
+        rv = std::make_unique<LinkLibrary>(Utils::FindOnPath(name, libPath), caseSensitive);
     }
     if (rv)
     {
@@ -522,14 +497,42 @@ void LinkManager::LoadLibraries()
 {
     for (auto it = libFiles.FileNameBegin(); it != libFiles.FileNameEnd(); ++it)
     {
-        std::unique_ptr<LinkLibrary> newLibrary = std::move(OpenLibrary((*it)));
-        if (newLibrary)
+        LinkDll checker((*it), libPath, true);
+        if (checker.IsDll())
         {
-            dictionaries.push_back(std::move(newLibrary));
+             if (checker.MatchesArchitecture())
+             {
+                 // stdcall version preferred
+                 auto temp = std::move(checker.LoadLibrary(true));
+                 if (!temp)
+                     LinkError("Internal error while processing '" + (*it) + "'");
+                 else
+                 {
+                     dictionaries.push_back(std::move(temp));
+                     // will fall back to C version              
+                     temp = std::move(checker.LoadLibrary(false));
+                     if (!temp)
+                         LinkError("Internal error while processing '" + (*it) + "'");
+                     else
+                         dictionaries.push_back(std::move(temp));
+                 }
+             }
+             else
+             {
+                LinkError("Dll Library '" + (*it) + "' doesn't match architecture");
+             }
         }
         else
         {
-            LinkError("Library '" + (*it) + "' does not exist or is not a library");
+            std::unique_ptr<LinkLibrary> newLibrary = std::move(OpenLibrary((*it)));
+            if (newLibrary)
+            {
+                dictionaries.push_back(std::move(newLibrary));
+            }
+            else
+            {
+                LinkError("Library '" + (*it) + "' does not exist or is not a library");
+            }
         }
     }
 }

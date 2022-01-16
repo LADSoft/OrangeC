@@ -456,3 +456,34 @@ std::vector<std::string> Utils::split(std::string strToSplit, char delimeter)
     }
     return splittedStrings;
 }
+
+std::string Utils::FindOnPath(const std::string& name, const std::string& path)
+{
+    std::string hold = path;
+    std::string next;
+    while (!hold.empty())
+    {
+        size_t npos = hold.find(";");
+        if (npos == std::string::npos)
+        {
+            next = hold;
+            hold = "";
+        }
+        else
+        {
+            next = hold.substr(0, npos);
+            if (npos + 1 < hold.size())
+                hold = hold.substr(npos + 1);
+            else
+                hold = "";
+        }
+        std::string name1 = Utils::FullPath(next, name);
+        FILE* infile = fopen(name1.c_str(), "rb");
+        if (infile)
+        {
+            fclose(infile);
+            return name1;
+        }
+    }
+    return "";
+}

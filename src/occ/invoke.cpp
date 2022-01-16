@@ -121,7 +121,7 @@ int InsertExternalFile(const char* name, bool primary)
         InsertFile(&asmlist, name, 0, primary);
         return 1; /* compiler shouldn't process it*/
     }
-    else if (Utils::HasExt(name, ".l") || Utils::HasExt(name, ".a") || Utils::HasExt(name, ".lib"))
+    else if (Utils::HasExt(name, ".l") || Utils::HasExt(name, ".a") || Utils::HasExt(name, ".lib") || Utils::HasExt(name, ".dll"))
     {
         InsertFile(&liblist, name, 0, primary);
         return 1;

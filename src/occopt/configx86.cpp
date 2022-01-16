@@ -493,7 +493,7 @@ ARCH_ASM x86AssemblerInterface[] = {
         "1",                                   /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
         ".s",                                  /* extension for assembly files */
         ".o",                                  /* extension for object files, nullptr = has no object mode */
-        ".l;.lib;.a;.rc;.res;.o;.asm;.nas;.s", /* extensions for files that should be passed to the backend*/
+        ".l;.lib;.a;.rc;.res;.o;.asm;.nas;.s;.dll", /* extensions for files that should be passed to the backend*/
         "occ",                                 /* name of an environment variable to parse, or 0 */
         "occ",                                 /* name of the program, for usage */
         "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */

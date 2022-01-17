@@ -3342,8 +3342,8 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
     }
     if (PL && PA)
     {
-        std::stack<TEMPLATEPARAMLIST*> pls;
-        std::stack<TEMPLATEPARAMLIST*> pas;
+        static std::stack<TEMPLATEPARAMLIST*> pls;
+        static std::stack<TEMPLATEPARAMLIST*> pas;
         while (PL && PA)
         {
             if (PL->p->packed != PA->p->packed)
@@ -3405,7 +3405,7 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
             }
             PL = PL->next;
             PA = PA->next;
-            if (!PL && !PA && pls.size() && pas.size())
+            if (!PL && !PA && !pls.empty() && !pas.empty())
             {
                 PL = pls.top();
                 pls.pop();

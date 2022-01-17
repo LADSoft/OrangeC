@@ -41,6 +41,7 @@
 #include <fstream>
 #include <cstdio>
 #include <cstring>
+#include <algorithm>
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #else
@@ -148,14 +149,17 @@ void LinkerMain::AddFile(LinkManager& linker, std::string& name)
 {
     if (!TargetConfig.InterceptFile(name))
     {
-        bool found = false;
+        bool foundLibrary = false;
         size_t n = name.find_last_of(".");
         if (n != std::string::npos)
         {
             ObjString match = name.substr(n);
-            found = match == ".l" || match == ".L" || match == ".a" || match == ".lib";
+            std::transform(match.begin(), match.end(), match.begin(),
+                [](unsigned char c){ return std::tolower(c); });    
+
+            foundLibrary = match == ".l" || match == ".a" || match == ".lib" || match == ".dll";
         }
-        if (found)
+        if (foundLibrary)
             linker.AddLibrary(name);
         else
             linker.AddObject(name);

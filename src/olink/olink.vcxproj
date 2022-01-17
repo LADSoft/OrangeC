@@ -86,7 +86,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3;..\olib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3;..\olib;..\exefmt</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -120,7 +120,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3;..\olib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3;..\olib;..\exefmt</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -163,6 +163,7 @@
     <ClCompile Include="LinkAttribs.cpp" />
     <ClCompile Include="LinkDebugAux.cpp" />
     <ClCompile Include="LinkDebugFile.cpp" />
+    <ClCompile Include="LinkDll.cpp" />
     <ClCompile Include="LinkerMain.cpp" />
     <ClCompile Include="LinkExpression.cpp" />
     <ClCompile Include="LinkManager.cpp" />
@@ -181,6 +182,7 @@
     <ClInclude Include="LinkAttribs.h" />
     <ClInclude Include="LinkDebugAux.h" />
     <ClInclude Include="LinkDebugFile.h" />
+    <ClInclude Include="LinkDll.h" />
     <ClInclude Include="LinkerMain.h" />
     <ClInclude Include="LinkExpression.h" />
     <ClInclude Include="LinkLibrary.h" />

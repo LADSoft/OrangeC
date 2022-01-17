@@ -61,6 +61,7 @@
 #include "libcxx.h"
 #include "constexpr.h"
 
+
 namespace Parser
 {
 
@@ -1038,7 +1039,7 @@ static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac c
         calculateVTabEntries(sp, sp, &sp->sb->vtabEntries, 0);
         if (sp->sb->vtabEntries)
         {
-            char buf[4096];
+            char *buf = (char *)alloca(4096);
             //            InsertInline(sp);
             Optimizer::my_sprintf(buf, "%s@_$vt", sp->sb->decoratedName);
             sp->sb->vtabsp = makeID(sc_static, &stdvoid, nullptr, litlate(buf));

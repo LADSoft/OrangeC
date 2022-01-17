@@ -443,6 +443,7 @@ static Optimizer::QUAD* UnstreamInstruction(FunctionData& fd)
                     for (; i; i--)
                     {
                         *p = Allocate<LINEDATA>();
+                        (*p)->fileindex = UnstreamIndex();
                         (*p)->lineno = UnstreamIndex();
                         (*p)->line = (const char*)UnstreamTextIndex();
                         p = &(*p)->next;

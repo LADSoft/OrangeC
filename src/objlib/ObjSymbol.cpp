@@ -231,7 +231,7 @@ char* unmangleExpression(char* dest, const char** name)
         }
         else
         {
-            char buf[5000];
+            char* buf = (char *)alloca(10000);
             memcpy(buf, *name, n);
             buf[n] = 0;
             unmangle(dest, buf);

@@ -3342,8 +3342,8 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
     }
     if (PL && PA)
     {
-        std::stack<TEMPLATEPARAMLIST*> pls;
-        std::stack<TEMPLATEPARAMLIST*> pas;
+        static std::stack<TEMPLATEPARAMLIST*> pls;
+        static std::stack<TEMPLATEPARAMLIST*> pas;
         while (PL && PA)
         {
             if (PL->p->packed != PA->p->packed)
@@ -3405,7 +3405,7 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
             }
             PL = PL->next;
             PA = PA->next;
-            if (!PL && !PA && pls.size() && pas.size())
+            if (!PL && !PA && !pls.empty() && !pas.empty())
             {
                 PL = pls.top();
                 pls.pop();
@@ -4285,7 +4285,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                             return false;
                     }
                     m = 0;
-                    if (isconstexpr(f->thisptr) && !isconst(sym->tp))
+                    if (((f->thisptr && isconstexpr(f->thisptr)) || (!f->thisptr && f->arguments && isconstexpr(f->arguments->exp))) && !isconst(sym->tp))
                         seq[m++] = CV_QUALS;
                     getSingleConversion(tpp, tpthis, f->thisptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr, true);
                     m1 = m;

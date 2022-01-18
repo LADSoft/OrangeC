@@ -148,7 +148,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                         char buf[512];
                         SYMBOL* localsp;
                         strcpy(buf, sym->sb->decoratedName);
-                        Optimizer::my_sprintf(buf + strlen(buf), "_$%c%d", count % 26 + 'A', count / 26);
+                        Optimizer::my_sprintf(buf + strlen(buf), "_@%c%d", count % 26 + 'A', count / 26);
 
                         thunks[count].entry = entry;
                         if (vf->func->sb->attribs.inheritable.linkage2 == lk_import)

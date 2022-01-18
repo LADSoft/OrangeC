@@ -4981,7 +4981,7 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
             TP = TP->p->bySpecialization.types;
         else
             TP = TP->next;
-        std::stack<TEMPLATEPARAMLIST*> tas;
+        static std::stack<TEMPLATEPARAMLIST*> tas;
         while (TP && TA)
         {
             TEMPLATEPARAMLIST* to = TP;
@@ -5016,7 +5016,7 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
             }
             if (!TA)
             {
-                if (tas.size())
+                if (!tas.empty())
                 {
                     TA = tas.top();
                     tas.pop();
@@ -5102,7 +5102,7 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
             TP = TP->next;
             TA = TA->next;
         }
-        std::stack<TEMPLATEPARAMLIST*> tps;
+        static std::stack<TEMPLATEPARAMLIST*> tps;
         while (!tas.empty())
             tas.pop();
         if (TP && TP->p->packed)
@@ -5188,7 +5188,7 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
                         }
                         TP = TP->next;
                         TA = TA->next;
-                        if (!TP && !TA && tps.size() && tas.size())
+                        if (!TP && !TA && !tps.empty() && !tas.empty())
                         {
                             TP = tps.top();
                             tps.pop();
@@ -5221,7 +5221,7 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
                         newList = &(*newList)->next;
                         TA = TA->next;
                     }
-                    if (!TA && tas.size())
+                    if (!TA && !tas.empty())
                     {
                         TA = tas.top();
                         tas.pop();

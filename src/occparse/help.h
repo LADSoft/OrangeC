@@ -22,9 +22,54 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
-
+#include <stack>
+#include <unordered_map>
 namespace Parser
 {
+
+template <class T> class NestedStack;
+template <class T>
+class StackList
+{
+private:
+    template <class> friend class NestedStack;
+    std::stack<T>& Get()
+    {
+        if (pos == stacks.size())
+            stacks[pos] = std::stack<T>();
+        pos++;
+        return stacks[pos - 1];
+    }
+    void Release()
+    {
+        if (pos)
+        {
+            std::stack<T>& stk = stacks[pos - 1];
+            while (!stk.empty())   stk.pop();
+            pos--;
+        }
+    }
+           
+	std::unordered_map<int, std::stack<T>> stacks;
+	int pos = 0;
+};
+
+template <class T>
+class NestedStack
+{
+public:
+    NestedStack(StackList<T>& stacklist) : list(stacklist), thisStack(stacklist.Get()) { }
+    ~NestedStack() { list.Release(); }
+    T &top() { return thisStack.top(); }
+    void push (const T& val) { thisStack.push(val); }
+    void pop() { thisStack.pop(); }
+    bool empty() { return thisStack.empty(); }
+
+private:
+    std::stack<T>& thisStack;
+    StackList<T>& list;
+};
+
 extern int anonymousNotAlloc;
 void helpinit(void);
 void deprecateMessage(SYMBOL* sym);

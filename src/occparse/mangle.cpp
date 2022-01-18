@@ -516,7 +516,8 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
         strcat(buf, "$");
         buf += strlen(buf);
     }
-    std::stack<TEMPLATEPARAMLIST*> tps;
+    static StackList<TEMPLATEPARAMLIST*> nestedStack;
+    NestedStack<TEMPLATEPARAMLIST*> tps(nestedStack);
 
     while (params)
     {
@@ -612,7 +613,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
                 break;
         }
         params = params->next;
-        if (!params && tps.size())
+        if (!params && !tps.empty())
         {
             params = tps.top();
             tps.pop();

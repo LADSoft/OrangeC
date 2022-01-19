@@ -1463,8 +1463,11 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
                         else
                         {
                             bcsym = GetClassTemplate(bcsym, lst, true);
-                            if (bcsym && allTemplateArgsSpecified(bcsym, bcsym->templateParams->next))
-                                bcsym = TemplateClassInstantiateInternal(bcsym, bcsym->templateParams->next, false);
+                            if (bcsym && bcsym->sb->attribs.inheritable.linkage4 != lk_virtual && allTemplateArgsSpecified(bcsym, bcsym->templateParams->next))
+                            {
+                                bcsym->tp = TemplateClassInstantiateInternal(bcsym, bcsym->templateParams->next, false)->tp;
+                                bcsym->tp->sp = bcsym;
+                            }
                         }
                     }
                 }

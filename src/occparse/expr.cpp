@@ -7958,32 +7958,26 @@ static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYP
     }
     return lex;
 }
-void GetLogicalDestructors(EXPRESSION* top, EXPRESSION* cur)
+void GetLogicalDestructors(Optimizer::LIST** rv, EXPRESSION* cur)
 {
     if (!cur || cur->type == en_land || cur->type == en_lor || cur->type == en_cond)
         return;
     // nots are genned with a branch, so, get past them...
-    while (top->type == en_not)
-        top = top->left;
+    while (cur->type == en_not)
+        cur = cur->left;
     if (cur->type == en_func)
     {
-        INITLIST* args = cur->v.func->arguments;
-        while (args)
-        {
-            GetLogicalDestructors(top, args->exp);
-            args = args->next;
-        }
         if (cur->v.func->returnSP)
         {
             SYMBOL* sym = cur->v.func->returnSP;
-            if (!sym->sb->destructed && sym->sb->dest && sym->sb->dest->exp)
+            if (!sym->sb->destructed && sym->sb->dest && sym->sb->dest->exp && !basetype(sym->tp)->sp->sb->trivialCons)
             {
                 Optimizer::LIST* listitem;
                 sym->sb->destructed = true;
                 listitem = Allocate<Optimizer::LIST>();
                 listitem->data = sym->sb->dest->exp;
-                listitem->next = top->destructors;
-                top->destructors = listitem;
+                listitem->next = *rv;
+                *rv = listitem;
             }
         }
         else if (cur->v.func->sp->sb->isConstructor)
@@ -8000,20 +7994,21 @@ void GetLogicalDestructors(EXPRESSION* top, EXPRESSION* cur)
                 sym->sb->destructed = true;
                 listitem = Allocate<Optimizer::LIST>();
                 listitem->data = sym->sb->dest->exp;
-                listitem->next = top->destructors;
-                top->destructors = listitem;
+                listitem->next = *rv;
+                *rv = listitem;
             }
         }
     }
     if (cur->left)
     {
-        GetLogicalDestructors(top, cur->left);
+        GetLogicalDestructors(rv, cur->left);
     }
     if (cur->right)
     {
-        GetLogicalDestructors(top, cur->right);
+        GetLogicalDestructors(rv, cur->right);
     }
 }
+
 static LEXLIST* binop(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, enum e_kw kw, enum e_node type,
                       LEXLIST*(nextFunc)(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable,
                                          int flags),
@@ -8027,10 +8022,12 @@ static LEXLIST* binop(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRES
     {
         TYPE* tp1 = nullptr;
         EXPRESSION* exp1 = nullptr;
-        if (first)
+        Optimizer::LIST* logicaldestructorsleft = nullptr;
+        Optimizer::LIST* logicaldestructorsright = nullptr;
+        if (first && (kw == land || kw == lor))
         {
             first = false;
-            GetLogicalDestructors(*exp, *exp);
+            GetLogicalDestructors(&logicaldestructorsleft, *exp);
         }
         lex = getsym();
         lex = (*nextFunc)(lex, funcsp, atp, &tp1, &exp1, nullptr, flags);
@@ -8039,7 +8036,8 @@ static LEXLIST* binop(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRES
             *tp = nullptr;
             break;
         }
-        GetLogicalDestructors(exp1, exp1);
+        if (kw == land || kw == lor)
+            GetLogicalDestructors(&logicaldestructorsright, exp1);
         if (Optimizer::cparams.prm_cplusplus &&
             insertOperatorFunc(kw == lor || kw == land ? ovcl_binary_numericptr : ovcl_binary_int, kw, funcsp, tp, exp, tp1, exp1,
                                nullptr, flags))
@@ -8096,6 +8094,8 @@ static LEXLIST* binop(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRES
             exp1->size = (tp1)->size;
         }
         *exp = exprNode(type, *exp, exp1);
+        (*exp)->v.logicaldestructors.left = logicaldestructorsleft;
+        (*exp)->v.logicaldestructors.right = logicaldestructorsright;
     }
     return lex;
 }
@@ -8130,7 +8130,8 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
         TYPE *tph = nullptr, *tpc = nullptr;
         EXPRESSION *eph = nullptr, *epc = nullptr;
         castToArithmetic(false, tp, exp, (enum e_kw) - 1, &stdint, true);
-        GetLogicalDestructors(*exp, *exp);
+        Optimizer::LIST* logicaldestructors = nullptr;
+        GetLogicalDestructors(&logicaldestructors, *exp);
         LookupSingleAggregate(*tp, exp);
 
         if (isstructured(*tp))
@@ -8263,6 +8264,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                     *tp = tpc;
                 }
                 *exp = exprNode(en_cond, *exp, exprNode(en_void, eph, epc));
+                (*exp)->v.logicaldestructors.left = logicaldestructors;
                 // when assigning a structure to itself, need an intermediate copy
                 // this always puts it in...
                 if (Optimizer::cparams.prm_cplusplus && isstructured(*tp) && atp)

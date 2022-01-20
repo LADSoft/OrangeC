@@ -71,6 +71,6 @@ void gen_compare(EXPRESSION* node, SYMBOL* funcsp, Optimizer::i_ops btype, int l
 Optimizer::IMODE* gen_set(EXPRESSION* node, SYMBOL* funcsp, Optimizer::i_ops btype);
 Optimizer::IMODE* defcond(EXPRESSION* node, SYMBOL* funcsp);
 Optimizer::IMODE* gen_relat(EXPRESSION* node, SYMBOL* funcsp);
-void truejp(EXPRESSION* node, SYMBOL* funcsp, int label);
-void falsejp(EXPRESSION* node, SYMBOL* funcsp, int label);
+void truejmp(EXPRESSION* node, SYMBOL* funcsp, int label);
+void falsejmp(EXPRESSION* node, SYMBOL* funcsp, int label);
 }  // namespace Parser

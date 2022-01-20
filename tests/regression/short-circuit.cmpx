@@ -1,0 +1,56 @@
+simple
+false && false: good
+true && false: good
+false && true: good
+true && true: good
+!(false && false): good
+!(true && false): good
+!(false && true): good
+!(true && true): good
+false || false: good
+true || false: good
+false || true: good
+true || true: good
+!(false || false): good
+!(true || false): good
+!(false || true): good
+!(true || true): good
+
+complex
+false && false: bbdestgood
+true && false: bbdestccdestgood
+false && true: bbdestgood
+true && true: bbdestccdestgood
+!(false && false): bbdestgood
+!(true && false): bbdestccdestgood
+!(false && true): bbdestgood
+!(true && true): bbdestccdestgood
+false || false: bbdestccdestgood
+true || false: bbdestgood
+false || true: bbdestccdestgood
+true || true: bbdestgood
+!(false || false): bbdestccdestgood
+!(true || false): bbdestgood
+!(false || true): bbdestccdestgood
+!(true || true): bbdestgood
+
+mixed
+false && false: ccdestbbdestgood
+true && false: ccdestbbdesteedestdddestgood
+false && true: ccdestbbdestgood
+true && true: ccdestbbdesteedestdddestgood
+!(false && false): ccdestbbdestgood
+!(true && false): ccdestbbdesteedestdddestgood
+!(false && true): ccdestbbdestgood
+!(true && true): ccdestbbdesteedestdddestgood
+false || false: ccdestbbdesteedestdddestgood
+true || false: ccdestbbdestgood
+false || true: ccdestbbdesteedestdddestgood
+true || true: ccdestbbdestgood
+!(false || false): ccdestbbdesteedestdddestgood
+!(true || false): ccdestbbdestgood
+!(false || true): ccdestbbdesteedestdddestgood
+!(true || true): ccdestbbdestgood
+
+done
+eedestdddestccdestbbdest

@@ -339,12 +339,16 @@ typedef struct expr
                 struct typ* tp;
                 struct lexlist *deferred;
             } construct;
+            struct
+            {
+                Optimizer::LIST* left;
+                Optimizer::LIST* right;
+            } logicaldestructors;
         };
         struct _templateParamList* templateParam;
         struct _templateSelector* templateSelector;
     } v;
     struct _string* string;
-    Optimizer::LIST* destructors;  // for &&  and ||
     int xcInit, xcDest;
     int lockOffset;
     int r, s, t, q;
@@ -655,6 +659,7 @@ typedef struct sym
         unsigned throughClass : 1;     /* last search was found through a class */
         unsigned hasUserCons : 1;      /* has user-defined constructors */
         unsigned trivialCons : 1;      /* constructor is trivial */
+        unsigned trivialDest : 1;      /* destructor is trivial */
         unsigned internallyGenned : 1; /* constructor declaration was made by the compiler */
         unsigned stackblock : 1;       // stacked structure in C++ mode
         unsigned islambda : 1;         // lambda closure struct

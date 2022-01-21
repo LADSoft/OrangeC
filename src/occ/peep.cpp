@@ -948,19 +948,22 @@ void peep_mov(OCODE* ip)
     }
     if (ip1 && ip1->opcode == op_and && ip1->oper1->mode == am_dreg  && equal_address(ip->oper1, ip1->oper1))
     {
-        if (ip->oper1->length == ip1->oper1->length )
+        if (ip->oper1->length == ip1->oper1->length && ip1->oper2->mode == am_immed)
         {
             OCODE* ip2 = ip1->fwd;
             if (ip2->opcode == op_cmp && equal_address(ip2->oper1, ip1->oper1) && ip2->oper2->mode == am_immed)
             {
                 if (ip2->oper2->offset->type == Optimizer::se_i && ip2->oper2->offset->i == 0)
                 {
-                    ip->opcode = op_test;
-                    ip->oper1 = ip->oper2;
-                    ip->oper2 = ip1->oper2;
-                    remove_peep_entry(ip1);
-                    remove_peep_entry(ip2);
-                    return;
+                    if (!live(ip2->oper1->liveRegs, ip2->oper1->preg))
+                    {
+                        ip->opcode = op_test;
+                        ip->oper1 = ip->oper2;
+                        ip->oper2 = ip1->oper2;
+                        remove_peep_entry(ip1);
+                        remove_peep_entry(ip2);
+                        return;
+                    }
                 }
             }
         }

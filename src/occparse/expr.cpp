@@ -7967,6 +7967,11 @@ void GetLogicalDestructors(Optimizer::LIST** rv, EXPRESSION* cur)
         cur = cur->left;
     if (cur->type == en_func)
     {
+        for (auto t = cur->v.func->arguments; t; t = t->next)
+            if (isref(t->tp))
+                GetLogicalDestructors(rv, t->exp);
+        if (cur->v.func->thisptr)
+            GetLogicalDestructors(rv, cur->v.func->thisptr);
         if (cur->v.func->returnSP)
         {
             SYMBOL* sym = cur->v.func->returnSP;

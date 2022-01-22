@@ -12069,6 +12069,7 @@ void propagateTemplateDefinition(SYMBOL* sym)
                                     if (t.tmpl)
                                         dropStructureDeclaration();
                                 }
+                                break;
                             }
                         }
                         hr = hr->next;

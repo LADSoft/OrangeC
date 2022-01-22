@@ -3365,6 +3365,9 @@ uninitialized_move_n(_InputIt __first, _Size __n, _ForwardIt __first_res) {
 #   define _LIBCPP_HAS_BUILTIN_ATOMIC_SUPPORT
 #elif defined(_LIBCPP_COMPILER_GCC)
 #   define _LIBCPP_HAS_BUILTIN_ATOMIC_SUPPORT
+#elif defined(_LIBCPP_COMPILER_ORANGEC) && defined(__ATOMIC_RELAXED)                  \
+                                        && defined(__ATOMIC_ACQ_REL)
+#   define _LIBCPP_HAS_BUILTIN_ATOMIC_SUPPORT
 #endif
 
 template <class _Tp>

@@ -7311,7 +7311,7 @@ static bool comparePointerTypes(TYPE* tpo, TYPE* tps)
     }
     return tpo == tps;
 }
-static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLATEPARAMLIST* psym)
+static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLATEPARAMLIST* psym, bool dflt)
 {
     if (porig && psym)
     {
@@ -7335,8 +7335,18 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
         while (porig && psym)
         {
             void *xorig, *xsym;
-            xorig = porig->p->byClass.val;
-            xsym = psym->p->byClass.val;
+            if (dflt)
+            {
+                xorig = porig->p->byClass.dflt;
+                xsym = psym->p->byClass.dflt;
+                if (!xsym)
+                    xsym = psym->p->byClass.val;
+            }
+            else
+            {
+                xorig = porig->p->byClass.val;
+                xsym = psym->p->byClass.val;
+            }
             switch (porig->p->type)
             {
             case kw_typename:
@@ -7349,8 +7359,20 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                     TEMPLATEPARAMLIST* packsym = psym->p->byPack.pack;
                     while (packorig && packsym)
                     {
-                        TYPE* torig = (TYPE*)packorig->p->byClass.val;
-                        TYPE* tsym = (TYPE*)packsym->p->byClass.val;
+                        TYPE* torig;
+                        TYPE* tsym;
+                        if (dflt)
+                        {
+                            torig = packorig->p->byClass.dflt;
+                            tsym = packsym->p->byClass.dflt;
+                            if (!tsym)
+                                tsym = packsym->p->byClass.val;
+                        }
+                        else
+                        {
+                            torig = packorig->p->byClass.val;
+                            tsym = packsym->p->byClass.val;
+                        }
                         if (basetype(torig)->nullptrType != basetype(tsym)->nullptrType)
                             return false;
                         if (isref(torig) != isref(tsym))
@@ -7408,6 +7430,10 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                             return false;
                     }
                 }
+                else
+                {
+                    return false;
+                }
                 break;
             }
             case kw_template:
@@ -7423,8 +7449,20 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                     TEMPLATEPARAMLIST* packsym = psym->p->byPack.pack;
                     while (packorig && packsym)
                     {
-                        EXPRESSION* torig = (EXPRESSION*)packorig->p->byClass.val;
-                        EXPRESSION* tsym = (EXPRESSION*)packsym->p->byClass.val;
+                        EXPRESSION* torig;
+                        EXPRESSION* tsym;
+                        if (dflt)
+                        {
+                            torig = packorig->p->byNonType.dflt;
+                            tsym = packsym->p->byNonType.dflt;
+                            if (!tsym)
+                                tsym = packsym->p->byNonType.val;
+                        }
+                        else
+                        {
+                            torig = packorig->p->byNonType.val;
+                            tsym = packsym->p->byNonType.val;
+                        }
                         if (!templatecomparetypes(packorig->p->byNonType.tp, packsym->p->byNonType.tp, true))
                             return false;
                         if (tsym && !equalTemplateIntNode((EXPRESSION*)torig, (EXPRESSION*)tsym))
@@ -7458,7 +7496,7 @@ bool TemplateInstantiationMatch(SYMBOL* orig, SYMBOL* sym)
 {
     if (orig && orig->sb->parentTemplate == sym->sb->parentTemplate)
     {
-        if (!TemplateInstantiationMatchInternal(orig->templateParams, sym->templateParams))
+        if (!TemplateInstantiationMatchInternal(orig->templateParams, sym->templateParams, false))
             return false;
         while (orig->sb->parentClass && sym->sb->parentClass)
         {
@@ -7484,7 +7522,7 @@ static bool TemplateInstantiationMatch2(SYMBOL* orig, SYMBOL* sym, TEMPLATEPARAM
 
         if (oldShim.next != nullptr && args != nullptr)
         {
-            if (!TemplateInstantiationMatchInternal(&oldShim, &newShim))
+            if (!TemplateInstantiationMatchInternal(&oldShim, &newShim, true))
                 return false;
             while (orig->sb->parentClass && sym->sb->parentClass)
             {
@@ -10093,12 +10131,6 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
     TEMPLATEPARAMLIST* search = args;
     int count = 0;
     SYMLIST* l;
-    if (!strcmp(sp->name, "__underlying_type_impl"))
-        printf("hi");
-    if (!templateNestingCount && strcmp(sp->name, "underlying_type") == 0)
-        if (args->p->byClass.dflt && basetype(args->p->byClass.dflt)->type == bt_enum)
-            if (strstr(basetype(args->p->byClass.dflt)->sp->name, "memory_order"))
-                printf("hi");
     noErr |= matchOverloadLevel;
     args = ResolveClassTemplateArgs(sp, args);
 
@@ -10304,7 +10336,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
             instants->p = found1;
             instants->next = parent->sb->instantiations;
             parent->sb->instantiations = instants;
-//            InsertMatch2Args(found1, args);
+            InsertMatch2Args(found1, args);
         }
         else
         {

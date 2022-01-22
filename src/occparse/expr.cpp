@@ -6437,8 +6437,6 @@ static LEXLIST* expression_postfix(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
             case kw_static_cast:
                 oldType = nullptr;
                 lex = GetCastInfo(lex, funcsp, tp, &oldType, exp, (flags & _F_PACKABLE));
-                if (lex->data->errline == 930 && strstr(lex->data->errfile, "atomic"))
-                    printf("hi");
                 if (*tp && !doStaticCast(tp, oldType, exp, funcsp, true))
                     if (!typeHasTemplateArg(*tp))
                         errortype(ERR_CANNOT_CAST_TYPE, oldType, *tp);

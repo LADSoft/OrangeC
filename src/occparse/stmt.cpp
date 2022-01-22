@@ -1976,7 +1976,6 @@ static void MatchReturnTypes(SYMBOL* funcsp, TYPE* tp1, TYPE* tp2)
         }
     }
 }
-static int aa;
 static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT* st;

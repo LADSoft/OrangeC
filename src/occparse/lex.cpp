@@ -44,6 +44,8 @@
 #include "browse.h"
 #include "help.h"
 #include "expr.h"
+#include "template.h"
+
 //#define TESTANNOTATE
 
 namespace Parser
@@ -1972,7 +1974,9 @@ long long ParseExpression(std::string& line)
     SetAlternateParse(true, line);
     LEXLIST* lex = getsym();
     parsingPreprocessorConstant = true;
+    dontRegisterTemplate++;
     lex = expression_no_comma(lex, nullptr, nullptr, &tp, &exp, nullptr, 0);
+    dontRegisterTemplate--;
     if (tp)
     {
         if (Optimizer::architecture == ARCHITECTURE_MSIL)

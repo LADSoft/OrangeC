@@ -352,7 +352,6 @@ typedef struct
     unsigned precolored : 1;
     unsigned liveAcrossFunctionCall : 1;
     unsigned liveAcrossBlock : 1;
-    unsigned dontoptimize : 1;
     unsigned inductionInitVar : 1;
     unsigned inUse : 1;
     unsigned iuTemp : 1;

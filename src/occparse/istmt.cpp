@@ -339,9 +339,9 @@ void genselect(STATEMENT* stmt, SYMBOL* funcsp, bool jmptrue)
         //		Optimizer::intermed_tail->dc.opcode = Optimizer::i_skipcompare;
     }
     if (jmptrue)
-        truejp(stmt->select, funcsp, stmt->label + codeLabelOffset);
+        truejmp(stmt->select, funcsp, stmt->label + codeLabelOffset);
     else
-        falsejp(stmt->select, funcsp, stmt->label + codeLabelOffset);
+        falsejmp(stmt->select, funcsp, stmt->label + codeLabelOffset);
     if (stmt->altlabel + codeLabelOffset)
     {
         //		Optimizer::gen_label(stmt->altlabel + codeLabelOffset);

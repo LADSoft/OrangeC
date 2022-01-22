@@ -1586,6 +1586,8 @@ void createDefaultConstructors(SYMBOL* sp)
         }
         if (!base)
         {
+            bool trivialCons = true;
+            bool trivialDest = true;
             SYMLIST* p = basetype(sp->tp)->syms->table[0];
             while (p)
             {
@@ -1597,11 +1599,11 @@ void createDefaultConstructors(SYMBOL* sp)
                     pcls->sb->storage_class == sc_overloads)
                 {
                     if (pcls->sb->memberInitializers)
-                        break;
+                        trivialCons = false;
                     if (isstructured(tp))
                     {
                         if (!basetype(tp)->sp->sb->trivialCons)
-                            break;
+                            trivialCons = false;
                     }
                     else if (pcls->sb->storage_class == sc_overloads)
                     {
@@ -1615,21 +1617,21 @@ void createDefaultConstructors(SYMBOL* sp)
                                 err |= s->sb->isConstructor && !s->sb->defaulted;
                                 err |= s->sb->deleted;
                                 err |= s->sb->access != ac_public;
+                                if (s->sb->isDestructor && !s->sb->defaulted)
+                                    trivialDest = false;
                             }
                             p = p->next;
                         }
                         if (err)
-                            break;
+                            trivialCons = false;
                     }
                     else if (pcls->sb->access != ac_public)
-                        break;
+                        trivialCons = false;
                 }
                 p = p->next;
             }
-            if (!p)
-            {
-                sp->sb->trivialCons = true;
-            }
+            sp->sb->trivialCons = trivialCons;
+            sp->sb->trivialDest = trivialDest;
         }
     }
     if (newcons)

@@ -83,11 +83,12 @@ static int push_nesting;
 static EXPRESSION* this_bound;
 static int inline_level;
 static int stackblockOfs;
+
 Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size);
 Optimizer::IMODE* gen_void(EXPRESSION* node, SYMBOL* funcsp);
 Optimizer::IMODE* gen_relat(EXPRESSION* node, SYMBOL* funcsp);
-void truejp(EXPRESSION* node, SYMBOL* funcsp, int label);
-void falsejp(EXPRESSION* node, SYMBOL* funcsp, int label);
+void truejmp(EXPRESSION* node, SYMBOL* funcsp, int label);
+void falsejmp(EXPRESSION* node, SYMBOL* funcsp, int label);
 
 void iexpr_init(void)
 {
@@ -116,15 +117,6 @@ void DumpIncDec(SYMBOL* funcsp)
     {
         gen_void((EXPRESSION*)l->data, funcsp);
         l = l->next;
-    }
-}
-void DumpLogicalDestructors(EXPRESSION* node, SYMBOL* funcsp)
-{
-    Optimizer::LIST* listitem = node->destructors;
-    while (listitem)
-    {
-        gen_void((EXPRESSION*)listitem->data, funcsp);
-        listitem = listitem->next;
     }
 }
 Optimizer::IMODE* LookupExpression(enum Optimizer::i_ops op, int size, Optimizer::IMODE* left, Optimizer::IMODE* right)
@@ -697,7 +689,6 @@ Optimizer::IMODE* gen_asrhd(SYMBOL* funcsp, EXPRESSION* node, int flags, int siz
     if (ap2 != ap3)
         Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
     DumpIncDec(funcsp);
-    DumpLogicalDestructors(node, funcsp);
     Optimizer::gen_icgoto(Optimizer::i_jge, lab, ap, Optimizer::make_immed(ap->size, 0));
     Optimizer::gen_icode(Optimizer::i_add, ap, ap, Optimizer::make_immed(ISZ_UINT, n));
     Optimizer::gen_label(lab);
@@ -1067,7 +1058,15 @@ Optimizer::IMODE* gen_pmul(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
 }
 
 /*-------------------------------------------------------------------------*/
-
+static void DumpLogicalDestructors(SYMBOL*funcsp, Optimizer::LIST* list)
+{
+    while (list)
+    {
+        EXPRESSION* node = (EXPRESSION*)list->data;
+        gen_void(node, funcsp);
+        list = list->next;
+    }
+}
 Optimizer::IMODE* gen_hook(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
 /*
  *      generate code to evaluate a condition operator node (?:)
@@ -1082,7 +1081,7 @@ Optimizer::IMODE* gen_hook(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
     if (Optimizer::architecture == ARCHITECTURE_MSIL)
         flags &= ~F_NOVALUE;
     DumpIncDec(funcsp);
-    falsejp(node->left, funcsp, false_label);
+    falsejmp(node->left, funcsp, false_label);
     node = node->right;
     ap1 = Optimizer::tempreg(natural_size(node), 0);
     ap1->offset->sp->pushedtotemp = true;  // needed to make the global opts happy
@@ -1103,6 +1102,8 @@ Optimizer::IMODE* gen_hook(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
     Optimizer::intermed_tail->hook = true;
     DumpIncDec(funcsp);
     Optimizer::gen_label(end_label);
+    if (node->v.logicaldestructors.left)
+        DumpLogicalDestructors(funcsp, node->v.logicaldestructors.left);
     return ap1;
 }
 
@@ -3702,7 +3703,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             */
         case en_voidnz:
             lab0 = Optimizer::nextLabel++;
-            falsejp(node->left->left, funcsp, lab0);
+            falsejmp(node->left->left, funcsp, lab0);
             gen_void(node->left->right, funcsp);
             Optimizer::gen_label(lab0);
             ap3 = gen_expr(funcsp, node->right, 0, ISZ_UINT);
@@ -4135,7 +4136,6 @@ void gen_compare(EXPRESSION* node, SYMBOL* funcsp, Optimizer::i_ops btype, int l
             ap2 = ap3;
         }
         DumpIncDec(funcsp);
-        DumpLogicalDestructors(node, funcsp);
     }
     if (Optimizer::chosenAssembler->arch->preferopts & OPT_REVERSESTORE)
         Optimizer::gen_icgoto(btype, label, ap2, ap1);
@@ -4246,7 +4246,7 @@ static Optimizer::IMODE* truerelat(EXPRESSION* node, SYMBOL* funcsp)
             ap1 = Optimizer::tempreg(ISZ_UINT, 0);
             lab0 = Optimizer::nextLabel++;
             lab1 = Optimizer::nextLabel++;
-            truejp(node, funcsp, lab0);
+            truejmp(node, funcsp, lab0);
             ap3 = Optimizer::make_immed(ISZ_UINT, 0);
             Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
             Optimizer::intermed_tail->hook = true;
@@ -4280,7 +4280,7 @@ Optimizer::IMODE* gen_relat(EXPRESSION* node, SYMBOL* funcsp)
         ap1 = Optimizer::tempreg(ISZ_UINT, 0);
         ap1->offset->sp->pushedtotemp = true;  // don't lazily optimize this temp...
         lab1 = Optimizer::nextLabel++, lab2 = Optimizer::nextLabel++;
-        truejp(node, funcsp, lab1);
+        truejmp(node, funcsp, lab1);
         Optimizer::gen_iiconst(ap1, 0);
         Optimizer::intermed_tail->hook = true;
         Optimizer::gen_igoto(Optimizer::i_goto, lab2);
@@ -4293,8 +4293,26 @@ Optimizer::IMODE* gen_relat(EXPRESSION* node, SYMBOL* funcsp)
 }
 
 /*-------------------------------------------------------------------------*/
-
-void truejp(EXPRESSION* node, SYMBOL* funcsp, int label)
+static void DoInit(Optimizer::IMODE* loadVar, Optimizer::IMODE* var, int val)
+{
+    var->offset->sp->pushedtotemp = true;
+    gen_icode(Optimizer::i_assn, loadVar, Optimizer::make_immed(ISZ_UINT, val), nullptr);
+    gen_icode(Optimizer::i_assn, var, loadVar, nullptr);
+}
+static void DoOr(Optimizer::IMODE* loadVar, Optimizer::IMODE* var, int val)
+{
+    gen_icode(Optimizer::i_assn, loadVar, var, nullptr);
+    gen_icode(Optimizer::i_or, loadVar, loadVar, Optimizer::make_immed(ISZ_UINT, val));
+    gen_icode(Optimizer::i_assn, var, loadVar, nullptr);
+}
+static void DoTest(Optimizer::IMODE* var, int lab, int val)
+{
+    Optimizer::IMODE* loadVar = Optimizer::tempreg(var->size, 0);
+    gen_icode(Optimizer::i_assn, loadVar, var, nullptr);
+    gen_icode(Optimizer::i_and, loadVar, loadVar, Optimizer::make_immed(ISZ_UCHAR, val));
+    gen_icgoto(Optimizer::i_je, lab, loadVar, Optimizer::make_immed(ISZ_UCHAR, 0));
+}
+void truejmp(EXPRESSION* node, SYMBOL* funcsp, int label)
 /*
  *      generate a jump to label if the node passed evaluates to
  *      a true condition.
@@ -4302,7 +4320,7 @@ void truejp(EXPRESSION* node, SYMBOL* funcsp, int label)
 {
     Optimizer::IMODE *ap1, *ap2, *ap3, *ap4;
     int siz1, siz2;
-    int lab0;
+    int lab0, lab1, lab2;
     int i;
     if (node == 0)
         return;
@@ -4339,17 +4357,79 @@ void truejp(EXPRESSION* node, SYMBOL* funcsp, int label)
             gen_compare(node, funcsp, Optimizer::i_jnc, label);
             break;
         case en_land:
-            lab0 = Optimizer::nextLabel++;
-            falsejp(node->left, funcsp, lab0);
-            truejp(node->right, funcsp, label);
-            Optimizer::gen_label(lab0);
+            if (node->v.logicaldestructors.left || node->v.logicaldestructors.right)
+            {
+                auto loadVar = Optimizer::tempreg(ISZ_UCHAR, 0);
+                auto hold = Optimizer::tempreg(ISZ_UCHAR, 0);
+                DoInit(loadVar, hold, 0);
+                lab0 = Optimizer::nextLabel++;
+                lab1 = Optimizer::nextLabel++;
+                lab2 = Optimizer::nextLabel++;
+                falsejmp(node->left, funcsp, lab0);
+                if (node->v.logicaldestructors.right)
+                {
+                    DoOr(loadVar, hold, 2);
+                } 
+                truejmp(node->right, funcsp, lab1);
+
+                Optimizer::gen_label(lab0);
+                // acceptable
+                DoOr(loadVar, hold, 1);
+                Optimizer::gen_label(lab1);
+                if (node->v.logicaldestructors.left)
+                    DumpLogicalDestructors(funcsp, node->v.logicaldestructors.left);
+                if (node->v.logicaldestructors.right)
+                {
+                    DoTest(hold, lab2, 2);
+                    DumpLogicalDestructors(funcsp, node->v.logicaldestructors.right);
+                    Optimizer::gen_label(lab2);
+                }
+                DoTest(hold, label, 1);
+            }
+            else
+            {
+                lab0 = Optimizer::nextLabel++;
+                falsejmp(node->left, funcsp, lab0);
+                truejmp(node->right, funcsp, label);
+                Optimizer::gen_label(lab0);
+            }
             break;
         case en_lor:
-            truejp(node->left, funcsp, label);
-            truejp(node->right, funcsp, label);
+            if (node->v.logicaldestructors.left || node->v.logicaldestructors.right)
+            {
+                auto loadVar = Optimizer::tempreg(ISZ_UCHAR, 0);
+                auto hold = Optimizer::tempreg(ISZ_UCHAR, 0);
+                DoInit(loadVar, hold, 0);
+                lab0 = Optimizer::nextLabel++;
+                lab1 = Optimizer::nextLabel++;
+                lab2 = Optimizer::nextLabel++;
+                truejmp(node->left, funcsp, lab0);
+                if (node->v.logicaldestructors.right)
+                {
+                    DoOr(loadVar, hold, 2);
+                } 
+                truejmp(node->right, funcsp, lab0);
+                // acceptable
+                DoOr(loadVar, hold, 1);
+                Optimizer::gen_label(lab0);
+                if (node->v.logicaldestructors.left)
+                    DumpLogicalDestructors(funcsp, node->v.logicaldestructors.left);
+                if (node->v.logicaldestructors.right)
+                {
+                    DoTest(hold, lab2, 2);
+                    DumpLogicalDestructors(funcsp, node->v.logicaldestructors.right);
+                    Optimizer::gen_label(lab2);
+                } 
+                DoTest(hold, label, 1);
+            }
+            else
+            {
+                truejmp(node->left, funcsp, label);
+                truejmp(node->right, funcsp, label);
+            }
             break;
         case en_not:
-            falsejp(node->left, funcsp, label);
+            falsejmp(node->left, funcsp, label);
             break;
         case en_mp_compare:
             lab0 = Optimizer::nextLabel++;
@@ -4362,7 +4442,6 @@ void truejp(EXPRESSION* node, SYMBOL* funcsp, int label)
             ap1 = Optimizer::tempreg(ISZ_UINT, 0);
             Optimizer::gen_icode(Optimizer::i_assn, ap1, ap2, 0);
             DumpIncDec(funcsp);
-            DumpLogicalDestructors(node, funcsp);
             for (i = 0; i < siz1 / siz2 - 1; i++)
             {
                 ap4 = Optimizer::indnode(ap3, ap3->size);
@@ -4387,7 +4466,6 @@ void truejp(EXPRESSION* node, SYMBOL* funcsp, int label)
             ap3 = Optimizer::tempreg(ISZ_UINT, 0);
             Optimizer::gen_icode(Optimizer::i_assn, ap3, ap2, 0);
             DumpIncDec(funcsp);
-            DumpLogicalDestructors(node, funcsp);
             for (i = 0; i < siz1 / siz2; i++)
             {
                 ap2 = Optimizer::indnode(ap3, ap3->size);
@@ -4407,7 +4485,6 @@ void truejp(EXPRESSION* node, SYMBOL* funcsp, int label)
             if (ap1 != ap3)
                 Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
             DumpIncDec(funcsp);
-            DumpLogicalDestructors(node, funcsp);
             Optimizer::gen_icgoto(Optimizer::i_jne, label, ap1, Optimizer::make_immed(ap1->size, 0));
             break;
     }
@@ -4415,7 +4492,7 @@ void truejp(EXPRESSION* node, SYMBOL* funcsp, int label)
 
 /*-------------------------------------------------------------------------*/
 
-void falsejp(EXPRESSION* node, SYMBOL* funcsp, int label)
+void falsejmp(EXPRESSION* node, SYMBOL* funcsp, int label)
 /*
  *      generate code to execute a jump to label if the expression
  *      passed is false.
@@ -4423,7 +4500,7 @@ void falsejp(EXPRESSION* node, SYMBOL* funcsp, int label)
 {
     Optimizer::IMODE *ap, *ap1, *ap2, *ap3, *ap4;
     int siz1, siz2;
-    int lab0;
+    int lab0, lab1, lab2;
     int i;
     if (node == 0)
         return;
@@ -4460,17 +4537,79 @@ void falsejp(EXPRESSION* node, SYMBOL* funcsp, int label)
             gen_compare(node, funcsp, Optimizer::i_jc, label);
             break;
         case en_land:
-            falsejp(node->left, funcsp, label);
-            falsejp(node->right, funcsp, label);
+            if (node->v.logicaldestructors.left || node->v.logicaldestructors.right)
+            {
+                auto loadVar = Optimizer::tempreg(ISZ_UCHAR, 0);
+                auto hold = Optimizer::tempreg(ISZ_UCHAR, 0);
+                DoInit(loadVar, hold, 0);
+                lab0 = Optimizer::nextLabel++;
+                lab1 = Optimizer::nextLabel++;
+                lab2 = Optimizer::nextLabel++;
+                falsejmp(node->left, funcsp, lab0);
+                if (node->v.logicaldestructors.right)
+                {
+                    DoOr(loadVar, hold, 2);
+                } 
+                falsejmp(node->right, funcsp, lab0);
+                // acceptable
+                DoOr(loadVar, hold, 1);
+                Optimizer::gen_label(lab0);
+                if (node->v.logicaldestructors.left)
+                    DumpLogicalDestructors(funcsp, node->v.logicaldestructors.left);
+                if (node->v.logicaldestructors.right)
+                {
+                    DoTest(hold, lab2, 2);
+                    DumpLogicalDestructors(funcsp, node->v.logicaldestructors.right);
+                    Optimizer::gen_label(lab2);
+                } 
+                DoTest(hold, label, 1);
+            }
+            else
+            {
+                falsejmp(node->left, funcsp, label);
+                falsejmp(node->right, funcsp, label);
+            }
             break;
         case en_lor:
-            lab0 = Optimizer::nextLabel++;
-            truejp(node->left, funcsp, lab0);
-            falsejp(node->right, funcsp, label);
-            Optimizer::gen_label(lab0);
+            if (node->v.logicaldestructors.left || node->v.logicaldestructors.right)
+            {
+                auto loadVar = Optimizer::tempreg(ISZ_UCHAR, 0);
+                auto hold = Optimizer::tempreg(ISZ_UCHAR, 0);
+                DoInit(loadVar, hold, 0);
+                lab0 = Optimizer::nextLabel++;
+                lab1 = Optimizer::nextLabel++;
+                lab2 = Optimizer::nextLabel++;
+                truejmp(node->left, funcsp, lab0);
+                if (node->v.logicaldestructors.right)
+                {
+                    DoOr(loadVar, hold, 2);
+                } 
+                falsejmp(node->right, funcsp, lab1);
+
+                Optimizer::gen_label(lab0);
+                // acceptable
+                DoOr(loadVar, hold, 1);
+                Optimizer::gen_label(lab1);
+                if (node->v.logicaldestructors.left)
+                    DumpLogicalDestructors(funcsp, node->v.logicaldestructors.left);
+                if (node->v.logicaldestructors.right)
+                {
+                    DoTest(hold, lab2, 2);
+                    DumpLogicalDestructors(funcsp, node->v.logicaldestructors.right);
+                    Optimizer::gen_label(lab2);
+                }
+                DoTest(hold, label, 1);
+            }
+            else
+            {
+                lab0 = Optimizer::nextLabel++;
+                truejmp(node->left, funcsp, lab0);
+                falsejmp(node->right, funcsp, label);
+                Optimizer::gen_label(lab0);
+            }
             break;
         case en_not:
-            truejp(node->left, funcsp, label);
+            truejmp(node->left, funcsp, label);
             break;
         case en_mp_compare:
             siz1 = node->size;
@@ -4482,7 +4621,6 @@ void falsejp(EXPRESSION* node, SYMBOL* funcsp, int label)
             ap1 = Optimizer::tempreg(ISZ_UINT, 0);
             Optimizer::gen_icode(Optimizer::i_assn, ap1, ap2, 0);
             DumpIncDec(funcsp);
-            DumpLogicalDestructors(node, funcsp);
             for (i = 0; i < siz1 / siz2; i++)
             {
                 ap4 = Optimizer::indnode(ap3, ap3->size);
@@ -4507,7 +4645,6 @@ void falsejp(EXPRESSION* node, SYMBOL* funcsp, int label)
             ap3 = Optimizer::tempreg(ISZ_UINT, 0);
             Optimizer::gen_icode(Optimizer::i_assn, ap3, ap2, 0);
             DumpIncDec(funcsp);
-            DumpLogicalDestructors(node, funcsp);
             for (i = 0; i < siz1 / siz2 - 1; i++)
             {
                 ap2 = Optimizer::indnode(ap3, ap3->size);
@@ -4527,7 +4664,6 @@ void falsejp(EXPRESSION* node, SYMBOL* funcsp, int label)
             if (ap != ap3)
                 Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
             DumpIncDec(funcsp);
-            DumpLogicalDestructors(node, funcsp);
             Optimizer::gen_icgoto(Optimizer::i_je, label, ap, Optimizer::make_immed(ap->size, 0));
             break;
     }

@@ -1516,7 +1516,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
             Optimizer::LIST aa{ nullptr, tpClean->sp->sb->parentNameSpace };
             tpClean->sp->sb->templateNameSpace = aa.data ? &aa : nullptr;
             int n = PushTemplateNamespace(basetype(tpClean)->sp);  // used for more than just templates here
-            s5 = namespacesearch(name, globalNameSpace, false, false);
+            s4 = namespacesearch(name, globalNameSpace, false, false);
             PopTemplateNamespace(n);
             tpClean->sp->sb->templateNameSpace = nullptr;
         }

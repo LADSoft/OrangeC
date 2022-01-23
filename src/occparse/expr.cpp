@@ -2350,7 +2350,7 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
                         *lptr = p;
                         lptr = &(*lptr)->next;
                     }
-                    else if (p->exp && p->exp->type != en_packedempty)
+                    else if (p->exp && p->exp->type != en_packedempty && p->tp->type != bt_any)
                     {
                         if (!isstructured(p->tp) && !p->tp->templateParam)
                             checkPackedExpression(p->exp);
@@ -8409,6 +8409,7 @@ LEXLIST* expression_throw(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** 
             (*exp)->v.func = parms;
         }
     }
+    isCallNoreturnFunction = true;
     return lex;
 }
 static void ReplaceThisAssign(EXPRESSION** init, SYMBOL* sym, EXPRESSION* exp)

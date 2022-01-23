@@ -414,6 +414,8 @@ LEXLIST* get_type_id(LEXLIST* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_
     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     bool defd = false;
     SYMBOL* sp = nullptr;
+    SYMBOL* strSym = nullptr;
+    NAMESPACEVALUELIST* nsv = nullptr;
     bool notype = false;
     bool oldTemplateType = inTemplateType;
     *tp = nullptr;
@@ -422,7 +424,7 @@ LEXLIST* get_type_id(LEXLIST* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_
     lex = getBasicType(lex, funcsp, tp, nullptr, false, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public,
                        &notype, &defd, nullptr, nullptr, false, false, inUsing, false, false);
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, nullptr);
-    lex = getBeforeType(lex, funcsp, tp, &sp, nullptr, nullptr, false, storage_class, &linkage, &linkage2, &linkage3, &notype, false, false,
+    lex = getBeforeType(lex, funcsp, tp, &sp, &strSym, &nsv, false, storage_class, &linkage, &linkage2, &linkage3, &notype, false, false,
                         beforeOnly, false); /* fixme at file scope init */
     sizeQualifiers(*tp);
     if (notype)
@@ -4798,7 +4800,7 @@ LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SY
                 addTemplateDeclaration(&s);
             }
         }
-        if (nsvX)
+        if (nsvX && nsvX->valueData->name)
         {
             Optimizer::LIST* nlist;
 
@@ -4809,6 +4811,10 @@ LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SY
 
             nsvX->valueData->name->sb->nameSpaceValues->next = globalNameSpace;
             globalNameSpace = nsvX->valueData->name->sb->nameSpaceValues;
+        }
+        else
+        {
+            nsvX = nullptr;
         }
         ParseAttributeSpecifiers(&lex, funcsp, true);
         if (!doneAfter)
@@ -6806,6 +6812,10 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                     if (sp->sb->constexpression && sp->sb->isConstructor)
                                         ConstexprMembersNotInitializedErrors(sp);
                                     lex = body(lex, sp);
+                                    if (!inTemplate && sp->sb->parentClass && sp->sb->parentClass->sb->templateLevel)
+                                    {
+                                        Optimizer::SymbolManager::Get(sp)->genreffed = true;
+                                    }
                                 }
                                 else if (storage_class_in == sc_member || storage_class_in == sc_mutable ||
                                          templateNestingCount == 1 || (asFriend && templateNestingCount == 2))

@@ -55,8 +55,6 @@ int inGetUserConversion;
 SYMBOL* argFriend;
 static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, Optimizer::LIST* gather, FUNCTIONCALL* args, TYPE* atp, int flags);
 
-#define DEBUG
-
 static const int rank[] = {0, 1, 1, 1, 1, 2, 2, 3, 4, 4, 4, 4, 4, 4, 5, 5, 6, 7, 8, 8, 9};
 static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate_in,
                                  SYMBOL** userFunc, bool honorExplicit);
@@ -3315,7 +3313,7 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
     // this next if stmt is a horrible hack.
     PL = P->sp->templateParams;
     PA = A->sp->templateParams;
-    if (!PL || !PA || (!P->sp->sb->specialized && A->sp->sb->specialized))  // errors
+    if (!PL || !PA)
     {
         if (P->size == 0 && !strcmp(P->sp->sb->decoratedName, A->sp->sb->decoratedName))
             return true;
@@ -4970,7 +4968,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                             }
                         }
                     }
-#ifdef DEBUG
+#if !NDEBUG
                     // this block to aid in debugging unfound functions...
                     if (toErr && (!found1 || (found1 && found2)) && !templateNestingCount)
                     {
@@ -5004,79 +5002,94 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
         {
             if (!found1)
             {
-                if (args && args->arguments && !args->arguments->next  // one arg
-                    && sp && sp->sb->isConstructor)                    // conversion constructor
-                {
-                    errortype(ERR_CANNOT_CONVERT_TYPE, args->arguments->tp, sp->sb->parentClass->tp);
-                }
-                else if (!sp)
-                {
-                    if (*tp && isstructured(*tp))
-                    {
-                        char *buf = (char *)alloca(4096), *p;
-                        int n;
-                        INITLIST* a;
-                        memset(buf, 0, sizeof(buf));
-                        unmangle(buf, basetype(*tp)->sp->sb->decoratedName);
-                        n = strlen(buf);
-                        p = strrchr(buf, ':');
-                        if (p)
-                            p++;
-                        else
-                            p = buf;
-                        strcpy(buf + n + 2, p);
-                        buf[n] = buf[n + 1] = ':';
-                        strcat(buf, "(");
-                        a = args->arguments;
-                        while (a)
-                        {
-                            typeToString(buf + strlen(buf), a->tp);
-                            if (a->next)
-                                strcat(buf, ",");
-                            a = a->next;
-                        }
-                        strcat(buf, ")");
-                        errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, buf);
-                    }
-                    else
-                    {
-                        errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, "unknown");
-                    }
-                }
-                else
-                {
-                    SYMBOL* sym = SymAlloc();
-                    sym->sb->parentClass = sp->sb->parentClass;
-                    sym->name = sp->name;
-                    if (atp)
-                    {
-                        sym->tp = atp;
-                    }
-                    else
-                    {
-                        int v = 1;
-                        INITLIST* a = args->arguments;
-                        sym->tp = Allocate<TYPE>();
-                        sym->tp->type = bt_func;
-                        sym->tp->size = getSize(bt_pointer);
-                        sym->tp->btp = &stdint;
-                        sym->tp->rootType = sym->tp;
-                        sym->tp->syms = CreateHashTable(1);
-                        sym->tp->sp = sym;
-                        while (a)
-                        {
-                            SYMBOL* sym1 = SymAlloc();
-                            char nn[10];
-                            Optimizer::my_sprintf(nn, "%d", v++);
-                            sym1->name = litlate(nn);
-                            sym1->tp = a->tp;
-                            insert(sym1, sym->tp->syms);
-                            a = a->next;
-                        }
-                    }
-                    SetLinkerNames(sym, lk_cpp);
+                bool doit = true;
 
-                    errorsym(ERR_NO_OVERLOAD_MATCH_FOUND, sym);
+                // if we are in an argument list and there is an empty packed argument
+                // don't generate an error on the theory there will be an ellipsis...
+                if (flags & (_F_INARGS | _F_INCONSTRUCTOR))
+                {
+                    for (auto arg = args->arguments; arg; arg = arg->next)
+                    {
+                        if (arg->tp->type == bt_templateparam && arg->tp->templateParam->p->packed)
+                            doit = !!arg->tp->templateParam->p->byPack.pack;
+                    }
+                }
+                if (doit)
+                {
+                    if (args && args->arguments && !args->arguments->next  // one arg
+                        && sp && sp->sb->isConstructor)                    // conversion constructor
+                    {
+                        errortype(ERR_CANNOT_CONVERT_TYPE, args->arguments->tp, sp->sb->parentClass->tp);
+                    }
+                    else if (!sp)
+                    {
+                        if (*tp && isstructured(*tp))
+                        {
+                            char* buf = (char*)alloca(4096), * p;
+                            int n;
+                            INITLIST* a;
+                            memset(buf, 0, sizeof(buf));
+                            unmangle(buf, basetype(*tp)->sp->sb->decoratedName);
+                            n = strlen(buf);
+                            p = strrchr(buf, ':');
+                            if (p)
+                                p++;
+                            else
+                                p = buf;
+                            strcpy(buf + n + 2, p);
+                            buf[n] = buf[n + 1] = ':';
+                            strcat(buf, "(");
+                            a = args->arguments;
+                            while (a)
+                            {
+                                typeToString(buf + strlen(buf), a->tp);
+                                if (a->next)
+                                    strcat(buf, ",");
+                                a = a->next;
+                            }
+                            strcat(buf, ")");
+                            errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, buf);
+                        }
+                        else
+                        {
+                            errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, "unknown");
+                        }
+                    }
+                    else
+                    {
+                        SYMBOL* sym = SymAlloc();
+                        sym->sb->parentClass = sp->sb->parentClass;
+                        sym->name = sp->name;
+                        if (atp)
+                        {
+                            sym->tp = atp;
+                        }
+                        else
+                        {
+                            int v = 1;
+                            INITLIST* a = args->arguments;
+                            sym->tp = Allocate<TYPE>();
+                            sym->tp->type = bt_func;
+                            sym->tp->size = getSize(bt_pointer);
+                            sym->tp->btp = &stdint;
+                            sym->tp->rootType = sym->tp;
+                            sym->tp->syms = CreateHashTable(1);
+                            sym->tp->sp = sym;
+                            while (a)
+                            {
+                                SYMBOL* sym1 = SymAlloc();
+                                char nn[10];
+                                Optimizer::my_sprintf(nn, "%d", v++);
+                                sym1->name = litlate(nn);
+                                sym1->tp = a->tp;
+                                insert(sym1, sym->tp->syms);
+                                a = a->next;
+                            }
+                        }
+                        SetLinkerNames(sym, lk_cpp);
+
+                        errorsym(ERR_NO_OVERLOAD_MATCH_FOUND, sym);
+                    }
                 }
             }
             else if (found1 && found2)

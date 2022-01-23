@@ -1976,7 +1976,6 @@ static void MatchReturnTypes(SYMBOL* funcsp, TYPE* tp1, TYPE* tp2)
         }
     }
 }
-static int aa;
 static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT* st;
@@ -2073,7 +2072,10 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
                     if (tp1 && isstructured(tp1))
                     {
                         if (sameTemplate(tp, tp1))
+                        {
+                            ctype = tp = tp1;
                             basetype(funcsp->tp)->btp = tp1;
+                        }
                         if (basetype(tp1)->sp->sb->templateLevel && basetype(tp1)->sp->templateParams &&
                             !basetype(tp1)->sp->sb->instantiated && !templateNestingCount)
                         {
@@ -2584,6 +2586,8 @@ static bool checkNoEffect(EXPRESSION* exp)
 {
     if (exp->noexprerr)
         return false;
+    while (castvalue(exp) || lvalue(exp))
+        exp = exp->left;
     switch (exp->type)
     {
         case en_func:

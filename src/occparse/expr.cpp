@@ -4338,7 +4338,19 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
             }
             else
             {
-                if (!templateNestingCount)
+                bool doit = true;
+
+                // if we are in an argument list and there is an empty packed argument
+                // don't generate an error on the theory there will be an ellipsis...
+                if (flags & (_F_INARGS | _F_INCONSTRUCTOR))
+                {
+                    for (auto arg = funcparams->arguments; arg; arg = arg->next)
+                    {
+                        if (arg->tp->type == bt_templateparam && arg->tp->templateParam->p->packed)
+                            doit = !!arg->tp->templateParam->p->byPack.pack;
+                    }
+                }
+                if (doit && !templateNestingCount)
                     error(ERR_CALL_OF_NONFUNCTION);
                 *tp = &stdvoid;
             }

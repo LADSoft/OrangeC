@@ -289,6 +289,7 @@ typedef struct
 #define _F_RETURN_DELETED 32768
 #define _F_NOGEN 0x10000
 #define _F_INDECLTYPE 0x20000
+#define _F_INCONSTRUCTOR 0x40000
 
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2

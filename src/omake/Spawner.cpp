@@ -123,7 +123,7 @@ void Spawner::Run(Command& Commands, OutputType Type, RuleList* RuleListx, Rule*
     }
     else
     {
-        bool use_new_threading = false;
+        bool use_new_threading = true;
         if (use_new_threading)
         {
             std::promise<int> promise;
@@ -131,7 +131,7 @@ void Spawner::Run(Command& Commands, OutputType Type, RuleList* RuleListx, Rule*
             std::shared_future<int> prom_future = promise.get_future();
             retVal2 = prom_future;
             std::thread thrd = std::thread(Spawner::thread_run, std::move(promise), this, doneAtomic);
-            listedThreads.emplace_back(SpawnerTracker{std::move(thrd), std::move(prom_future), std::move(doneAtomic)});
+            listedThreads.emplace_back(SpawnerTracker{std::move(thrd), prom_future, doneAtomic});
         }
         else
         {

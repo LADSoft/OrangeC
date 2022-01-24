@@ -104,8 +104,11 @@ class Spawner
 
     int RetVal()
     {
-        return retVal;
-        // return retVal2.get();
+        if (retVal2.valid())
+        {
+            return retVal2.get();
+        }
+        return 0;
     }
 
     static void WaitForDone();
@@ -157,9 +160,8 @@ class Spawner
         std::thread thread;
         std::shared_future<int> returnVal;
         std::shared_ptr<std::atomic<int>> done;
-        SpawnerTracker(std::thread&& thread, std::shared_future<int>&& returnVal,
-                       std::shared_ptr<std::atomic<int>>&& done) :
-            thread(std::move(thread)), returnVal(std::move(returnVal)), done(std::move(done))
+        SpawnerTracker(std::thread&& thread, std::shared_future<int> returnVal, std::shared_ptr<std::atomic<int>> done) :
+            thread(std::move(thread)), returnVal(returnVal), done(done)
         {
         }
     };

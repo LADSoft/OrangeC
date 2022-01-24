@@ -895,6 +895,7 @@ SYMBOL* classdata(const char* name, SYMBOL* cls, SYMBOL* last, bool isvirtual, b
 }
 SYMBOL* templatesearch(const char* name, TEMPLATEPARAMLIST* arg)
 {
+    auto old = arg->p->type == kw_new ? arg->p->bySpecialization.next : nullptr;
     while (arg)
     {
         if (arg->argsym && !strcmp(arg->argsym->name, name))
@@ -910,6 +911,10 @@ SYMBOL* templatesearch(const char* name, TEMPLATEPARAMLIST* arg)
             }
         }
         arg = arg->next;
+    }
+    if (old)
+    {
+        return templatesearch(name, old);
     }
     return nullptr;
 }
@@ -4734,7 +4739,6 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
 {
     STRUCTSYM s;
     s.tmpl = 0;
-
     if (atp && ispointer(atp))
         atp = basetype(atp)->btp;
     if (atp && !isfunction(atp))

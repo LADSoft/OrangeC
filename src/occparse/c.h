@@ -1132,7 +1132,7 @@ typedef struct lexContext
 struct templateListData
 {
     TEMPLATEPARAMLIST* args;  // list of templateparam lists
-    TEMPLATEPARAMLIST **ptail, **plast;
+    TEMPLATEPARAMLIST **ptail, **plast, **phold;
     LEXLIST *head, *tail;
     LEXLIST *bodyHead, *bodyTail;
     SYMBOL* sp;

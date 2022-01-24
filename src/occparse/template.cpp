@@ -266,6 +266,8 @@ bool templatecomparetypes(TYPE* tp1, TYPE* tp2, bool exact, bool sameType)
         if (basetype(tp1)->type == bt_templateselector || basetype(tp2)->type == bt_templateselector)
             return true;
     }
+    if (sameType && (isref(tp1) != isref(tp2) || (isref(tp1) && basetype(tp1)->type != basetype(tp2)->type)))
+        return false;
     if (!comparetypes(tp1, tp2, exact) && (!sameType || !sameTemplate(tp1, tp2)))
         return false;
     if (isint(tp1) && basetype(tp1)->btp && basetype(tp1)->btp->type == bt_enum)
@@ -12024,16 +12026,22 @@ void propagateTemplateDefinition(SYMBOL* sym)
                                         dest = dest->next;
                                     }
                                 }
+                                if (cur->templateParams && sym->templateParams)
                                 {
-                                    STRUCTSYM t, s, r;
+                                    auto src = cur->templateParams;
+                                    auto dest = sym->templateParams;
+                                    while (src && dest)
+                                    {
+                                        if (src->argsym && dest->argsym)
+                                            dest->argsym->name = src->argsym->name;
+                                        src = src->next;
+                                        dest = dest->next;
+                                    }
+                                }
+                                {
+                                    STRUCTSYM t, s;
                                     SYMBOL* thsprospect = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
                                     t.tmpl = nullptr;
-                                    r.tmpl = nullptr;
-                                    if (cur->templateParams)
-                                    {
-                                        r.tmpl = cur->templateParams;
-                                        addTemplateDeclaration(&r);
-                                    }
                                     if (thsprospect && thsprospect->sb->thisPtr)
                                     {
                                         SYMBOL* spt = basetype(basetype(thsprospect->tp)->btp)->sp;
@@ -12045,8 +12053,6 @@ void propagateTemplateDefinition(SYMBOL* sym)
                                     addStructureDeclaration(&s);
                                     deferredCompileOne(sym);
                                     dropStructureDeclaration();
-                                    if (r.tmpl)
-                                        dropStructureDeclaration();
                                     if (t.tmpl)
                                         dropStructureDeclaration();
                                 }
@@ -12375,6 +12381,10 @@ LEXLIST* TemplateDeclaration(LEXLIST* lex, SYMBOL* funcsp, enum e_ac access, enu
             l.bodyHead = l.bodyTail = nullptr;
             currents = &l;
         }
+
+        static std::stack<TEMPLATEPARAMLIST**> currentHold;
+
+        currentHold.push(currents->plast);
         currents->plast = currents->ptail;
         templateNestingCount++;
         instantiatingTemplate = 0;
@@ -12448,6 +12458,8 @@ LEXLIST* TemplateDeclaration(LEXLIST* lex, SYMBOL* funcsp, enum e_ac access, enu
         templateHeaderCount = lasttemplateHeaderCount;
         (*currents->plast) = nullptr;
         currents->ptail = currents->plast;
+        currents->plast = currentHold.top();
+        currentHold.pop();
         if (templateNestingCount == 0)
             currents = nullptr;
     }

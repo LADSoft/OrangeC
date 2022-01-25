@@ -385,6 +385,7 @@ int InvokeParser(int argc, char** argv, SharedMemory* parserMem)
         std::string curArg = argv[i];
         if (curArg[curArg.size() - 1] == '\\')
             curArg += "\\";
+        Utils::ReplaceAll(curArg, "\"", "\\\"");             
         args += std::string("\"") + curArg + "\"";
     }
 

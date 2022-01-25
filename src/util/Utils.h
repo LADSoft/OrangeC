@@ -122,6 +122,7 @@ class Utils
     static bool FileExists(const char* buffer);
     static std::string FindOnPath(const std::string& name, const std::string& path);
     static std::vector<std::string> split(std::string strToSplit, char delimeter = ';');
+    static void ReplaceAll(std::string& str, const std::string& from, const std::string& to);
 
     static bool NamedPipe(int* fds, const std::string& name);
     static bool PipeWrite(int fileno, const std::string& data);

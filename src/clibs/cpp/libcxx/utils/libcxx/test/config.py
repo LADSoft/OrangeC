@@ -746,7 +746,7 @@ class Configuration(object):
                                       'filesystem_dynamic_test_helper.py')
         assert os.path.isfile(dynamic_helper)
 
-        self.cxx.compile_flags += ['-DLIBCXX_FILESYSTEM_DYNAMIC_TEST_HELPER="%s %s"'
+        self.cxx.compile_flags += ['-DLIBCXX_FILESYSTEM_DYNAMIC_TEST_HELPER=\"%s %s\"' #DAL
                                    % (sys.executable, dynamic_helper)]
 
 

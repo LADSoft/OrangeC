@@ -807,10 +807,9 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* t
             errorstr(ERR_DEPENDENT_TYPE_NEEDS_TYPENAME, buf);
         }
     }
-    if (!pastClassSel && typeName && !inTypedef && (!templateNestingCount || instantiatingTemplate))
+    if (!pastClassSel && typeName && !dependentType && !inTypedef && (!templateNestingCount || instantiatingTemplate))
     {
-        error(ERR_NO_TYPENAME_HERE);
-         
+        error(ERR_NO_TYPENAME_HERE);         
     }
     lex = prevsym(finalPos);
     if (templateSelector)

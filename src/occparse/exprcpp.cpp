@@ -724,8 +724,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                     *exp = exprNode(en_void, clr, *exp);
                 }
                 initInsert(&sym->sb->dest, *tp, exp1, 0, true);
-                //                if (flags & _F_SIZEOF)
-                //                    sym->sb->destructed = true; // in case we don't actually use this instantiation
+                funcparams->objectCreation = true;
             }
             else
                 *exp = intNode(en_c_i, 0);
@@ -1528,6 +1527,26 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
             int n = PushTemplateNamespace(basetype(tp1)->sp);  // used for more than just templates here
             s5 = namespacesearch(name, globalNameSpace, false, false);
             PopTemplateNamespace(n);
+            auto exp3 = exp1;
+            while (exp3->type == en_void)
+                exp3 = exp3->right;
+            if (exp3->type == en_thisref)
+                exp3 = exp3->left;
+            if (exp3->type == en_func && exp3->v.func->objectCreation)
+            {
+                auto tp2 = & tp1;
+                auto tp3 = tp1;
+                while (tp3)
+                {
+                    *tp2 = Allocate<TYPE>();
+                    **tp2 = *tp3;
+                    tp2 = &(*tp2)->btp;
+                    tp3 = tp3->btp;
+                }
+                UpdateRootTypes(tp1);
+                basetype(tp1)->lref = false;
+                basetype(tp1)->rref = true;
+            }
         }
         else if (tp1->sp)// enum
         {

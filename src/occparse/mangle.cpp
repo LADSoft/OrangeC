@@ -122,6 +122,8 @@ char* mangleNameSpaces(char* in, SYMBOL* sym)
     if (!sym)
         return in;
     in = mangleNameSpaces(in, sym->sb->parentNameSpace);
+    if (sym->sb->parentNameSpace && !strcmp(sym->name, "__1")  && !strcmp(sym->sb->parentNameSpace->name, "std"))
+        return in;
     Optimizer::my_sprintf(in, "@%s", sym->name);
     return in + strlen(in);
 }
@@ -655,7 +657,8 @@ static char* getName(char* in, SYMBOL* sym)
     {
         int i;
         char buf[4096], *p;
-        p = mangleClasses(buf, sym->sb->parentClass);
+        p = mangleNameSpaces(buf, sym->sb->parentNameSpace);
+        p = mangleClasses(p, sym->sb->parentClass);
         if (p != buf)
             *p++ = '@';
         if (sym->sb->templateLevel && sym->templateParams)

@@ -144,7 +144,7 @@ extern int uncaught_exceptions() noexcept;
    inline bool operator==(const exception_ptr& left, nullptr_t right) { return left.exc == nullptr; }
    inline bool operator!=(const exception_ptr& left, nullptr_t right) { return operator==(left, nullptr); }
 
-   [[noreturn]] void _RTL_FUNC rethrow_exception(exception_ptr& arg);
+   [[noreturn]] void _RTL_FUNC rethrow_exception(exception_ptr arg);
 
 
    __exceptionInternal* __make_exception_ptr(void*, int, void*, void*);

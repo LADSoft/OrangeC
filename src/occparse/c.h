@@ -289,6 +289,7 @@ typedef struct
 #define _F_RETURN_DELETED 32768
 #define _F_NOGEN 0x10000
 #define _F_INDECLTYPE 0x20000
+#define _F_INCONSTRUCTOR 0x40000
 
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2
@@ -959,6 +960,7 @@ typedef struct functioncall
     int noobject : 1;
     int asaddress : 1;
     int vararg : 1;
+    int objectCreation : 1;
 } FUNCTIONCALL;
 
 #define MAX_STRLEN 16384
@@ -1131,7 +1133,7 @@ typedef struct lexContext
 struct templateListData
 {
     TEMPLATEPARAMLIST* args;  // list of templateparam lists
-    TEMPLATEPARAMLIST **ptail, **plast;
+    TEMPLATEPARAMLIST **ptail, **plast, **phold;
     LEXLIST *head, *tail;
     LEXLIST *bodyHead, *bodyTail;
     SYMBOL* sp;

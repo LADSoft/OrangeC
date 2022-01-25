@@ -3348,7 +3348,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     params->thistp->rootType = params->thistp;
     params->thistp->size = getSize(bt_pointer);
     params->ascall = true;
-    cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, nullptr, toErr, maybeConversion, true, usesInitList);
+    cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, nullptr, toErr, maybeConversion, true, usesInitList | _F_INCONSTRUCTOR);
 
     if (cons1 && isfunction(cons1->tp))
     {

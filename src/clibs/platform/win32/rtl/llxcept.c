@@ -43,6 +43,8 @@
 #include <wchar.h>
 #include <locale.h>
 #include <libp.h>
+#include <stdbool.h>
+
 int __raise(int signum, int code, void* addr);
 extern int _win32;
 extern char** _argv;
@@ -50,6 +52,7 @@ extern DWORD __unaligned_stacktop;
 extern HINSTANCE __hInstance;
 extern unsigned _isDLL;
 extern unsigned char CODESTART[], CODEEND[];
+extern bool ___rtl_initted;
 
 typedef void CALLBACK trace_func(char* text, char* filename, PCONTEXT p, void* hInstance, void* stacktop, void *codestart, void *codeend);
 
@@ -180,12 +183,14 @@ LONG ___xceptionhandle(PEXCEPTION_RECORD p, void* record, PCONTEXT context, void
             addr = p->ExceptionInformation[2];
         }
     }
-
     xxctxt = context;
     if (signum != -1)
+    {
+        if (!___rtl_initted)
+            ExitProcess(3);
         if (!_isDLL && !__raise(signum, code, addr))
             return 0;  // continue execution
-
+    }
     return 1;  // continue search
 }
 void PASCAL __xceptinit(int* block)

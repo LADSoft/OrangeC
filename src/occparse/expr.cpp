@@ -2350,7 +2350,7 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
                         *lptr = p;
                         lptr = &(*lptr)->next;
                     }
-                    else if (p->exp && p->exp->type != en_packedempty)
+                    else if (p->exp && p->exp->type != en_packedempty && p->tp->type != bt_any)
                     {
                         if (!isstructured(p->tp) && !p->tp->templateParam)
                             checkPackedExpression(p->exp);
@@ -4338,7 +4338,19 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
             }
             else
             {
-                if (!templateNestingCount)
+                bool doit = true;
+
+                // if we are in an argument list and there is an empty packed argument
+                // don't generate an error on the theory there will be an ellipsis...
+                if (flags & (_F_INARGS | _F_INCONSTRUCTOR))
+                {
+                    for (auto arg = funcparams->arguments; arg; arg = arg->next)
+                    {
+                        if (arg->tp->type == bt_templateparam && arg->tp->templateParam->p->packed)
+                            doit = !!arg->tp->templateParam->p->byPack.pack;
+                    }
+                }
+                if (doit && !templateNestingCount)
                     error(ERR_CALL_OF_NONFUNCTION);
                 *tp = &stdvoid;
             }
@@ -8397,6 +8409,7 @@ LEXLIST* expression_throw(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** 
             (*exp)->v.func = parms;
         }
     }
+    isCallNoreturnFunction = true;
     return lex;
 }
 static void ReplaceThisAssign(EXPRESSION** init, SYMBOL* sym, EXPRESSION* exp)

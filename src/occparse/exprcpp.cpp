@@ -59,6 +59,8 @@ namespace Parser
  */
 void checkscope(TYPE* tp1, TYPE* tp2)
 {
+    tp1 = basetype(tp1);
+    tp2 = basetype(tp2);
     if (tp1->scoped != tp2->scoped)
     {
         error(ERR_SCOPED_TYPE_MISMATCH);
@@ -722,8 +724,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                     *exp = exprNode(en_void, clr, *exp);
                 }
                 initInsert(&sym->sb->dest, *tp, exp1, 0, true);
-                //                if (flags & _F_SIZEOF)
-                //                    sym->sb->destructed = true; // in case we don't actually use this instantiation
+                funcparams->objectCreation = true;
             }
             else
                 *exp = intNode(en_c_i, 0);
@@ -1455,6 +1456,10 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
     TYPE*tp1Clean = tp1;
     if (tp1Clean && isref(tp1Clean))
        tp1Clean = basetype(tp1Clean)->btp;
+    if (tpClean && tpClean->scoped && basetype(tpClean)->type != bt_enum)
+        tpClean = tpClean->btp;
+    if (tp1Clean && tp1Clean->scoped && basetype(tp1Clean)->type != bt_enum)
+        tp1Clean = tp1Clean->btp;
     if (!isstructured(tpClean) && basetype(tpClean)->type != bt_enum &&
         ((!tp1Clean && !args) || (tp1Clean && !isstructured(tp1Clean) && basetype(tp1Clean)->type != bt_enum)))
         return false;
@@ -1505,12 +1510,53 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
     else
     {
         l.str = nullptr;
+        if (basetype(tpClean)->type == bt_enum && tpClean->sp)
+        {
+            Optimizer::LIST aa{ nullptr, tpClean->sp->sb->parentNameSpace };
+            tpClean->sp->sb->templateNameSpace = aa.data ? &aa : nullptr;
+            int n = PushTemplateNamespace(basetype(tpClean)->sp);  // used for more than just templates here
+            s4 = namespacesearch(name, globalNameSpace, false, false);
+            PopTemplateNamespace(n);
+            tpClean->sp->sb->templateNameSpace = nullptr;
+        }
     }
-    if (tp1 && isstructured(tp1))
+    if (tp1)
     {
-        int n = PushTemplateNamespace(basetype(tp1)->sp);  // used for more than just templates here
-        s5 = namespacesearch(name, globalNameSpace, false, false);
-        PopTemplateNamespace(n);
+        if (isstructured(tp1))
+        {
+            int n = PushTemplateNamespace(basetype(tp1)->sp);  // used for more than just templates here
+            s5 = namespacesearch(name, globalNameSpace, false, false);
+            PopTemplateNamespace(n);
+            auto exp3 = exp1;
+            while (exp3->type == en_void)
+                exp3 = exp3->right;
+            if (exp3->type == en_thisref)
+                exp3 = exp3->left;
+            if (exp3->type == en_func && exp3->v.func->objectCreation)
+            {
+                auto tp2 = & tp1;
+                auto tp3 = tp1;
+                while (tp3)
+                {
+                    *tp2 = Allocate<TYPE>();
+                    **tp2 = *tp3;
+                    tp2 = &(*tp2)->btp;
+                    tp3 = tp3->btp;
+                }
+                UpdateRootTypes(tp1);
+                basetype(tp1)->lref = false;
+                basetype(tp1)->rref = true;
+            }
+        }
+        else if (tp1->sp)// enum
+        {
+            Optimizer::LIST aa{ nullptr, tp1->sp->sb->parentNameSpace };
+            tp1->sp->sb->templateNameSpace = aa.data ? &aa : nullptr;
+            int n = PushTemplateNamespace(basetype(tp1)->sp);  // used for more than just templates here
+            s5 = namespacesearch(name, globalNameSpace, false, false);
+            PopTemplateNamespace(n);
+            tp1->sp->sb->templateNameSpace = nullptr;
+        }
     }
     // quit if there are no matches because we will use the default...
     if (!s1 && !s2 && !s4 && !s5)
@@ -1652,7 +1698,8 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
     }
     funcparams->ascall = true;
     s30 = s3;
-    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, nullptr, F_GOFDELETEDERR, false, true, flags);
+    TYPE* ctype = *tp;
+    s3 = GetOverloadedFunction(&ctype, &funcparams->fcall, s3, funcparams, nullptr, F_GOFDELETEDERR, false, true, flags);
     if (s3)
     {
         if (!isExpressionAccessible(nullptr, s3, funcsp, funcparams->thisptr, false))
@@ -1689,6 +1736,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
                 break;
             }
         }
+        *tp = ctype;
         if (ismember(s3))
         {
             funcparams->arguments = funcparams->arguments->next;

@@ -7387,8 +7387,9 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                             return false;
                         if (tsym->type == bt_templateparam)
                             tsym = tsym->templateParam->p->byClass.val;
-                        if (!templatecomparetypes(torig, tsym, true, false) && !sameTemplate(torig, tsym, true))
-                            return false;
+                        if ((!templatecomparetypes(torig, tsym, true, false) || !templatecomparetypes(tsym, torig, true, false)) &&
+                            !sameTemplate(torig, tsym, true))
+                            break;
                         if (isref(torig))
                             torig = basetype(torig)->btp;
                         if (isref(tsym))
@@ -7456,6 +7457,8 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                         if (dflt)
                         {
                             torig = packorig->p->byNonType.dflt;
+                            if (!torig)
+                                torig = packsym->p->byNonType.val;
                             tsym = packsym->p->byNonType.dflt;
                             if (!tsym)
                                 tsym = packsym->p->byNonType.val;
@@ -7546,7 +7549,11 @@ static bool TemplateInstantiationMatch2(SYMBOL* orig, SYMBOL* sym, TEMPLATEPARAM
 static void InsertMatch2Args(SYMBOL* found1, TEMPLATEPARAMLIST* args)
 {
     assert(originalArgs.find(found1) == originalArgs.end());
-    originalArgs[found1] = copyParams(args, false);
+    auto tpx = copyParams(args, false);
+    for (auto tpl = tpx; tpl; tpl = tpl->next)
+        if (tpl->p->packed && tpl->p->byPack.pack)
+            tpl->p->byPack.pack = copyParams(tpl->p->byPack.pack, false);
+    originalArgs[found1] = tpx;
 }
 void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
 {
@@ -10318,6 +10325,8 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
             }
             found1 = clonesym(&test);
             found1->sb->maintemplate = sym;
+  
+            
             found1->tp = Allocate<TYPE>();
             *found1->tp = *sym->tp;
             UpdateRootTypes(found1->tp);

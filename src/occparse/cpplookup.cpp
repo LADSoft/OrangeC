@@ -464,7 +464,7 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* t
                         }
                         else
                         {
-                            SYMBOL* sp1 = clonesym(sp);
+                            SYMBOL* sp1 = CopySymbol(sp);
                             sp1->sb->mainsym = sp;
                             sp1->tp = sp->tp->btp;
                             sp = sp1;
@@ -537,7 +537,7 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* t
                     }
                     else
                     {
-                        SYMBOL* sp1 = clonesym(sp);
+                        SYMBOL* sp1 = CopySymbol(sp);
                         sp1->sb->mainsym = sp;
                         sp1->tp = sp->tp->btp;
                         sp = sp1;

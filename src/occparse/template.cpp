@@ -2001,7 +2001,7 @@ SYMBOL* LookupSpecialization(SYMBOL* sym, TEMPLATEPARAMLIST* templateParams)
     }
     if (!lst)
     {
-        candidate = clonesym(sym);
+        candidate = CopySymbol(sym);
         candidate->tp = CopyType(sym->tp);
         candidate->tp->sp = candidate;
         UpdateRootTypes(candidate->tp);
@@ -2632,7 +2632,7 @@ TYPE* SolidifyType(TYPE* tp)
                 if (isstructured(v))
                 {
                     SYMBOL* old = basetype(v)->sp;
-                    basetype(v)->sp = clonesym(old);
+                    basetype(v)->sp = CopySymbol(old);
                     SYMBOL* sym = basetype(v)->sp;
                     if (!sym->sb->mainsym)
                         sym->sb->mainsym = old;
@@ -2679,7 +2679,7 @@ TEMPLATEPARAMLIST* copyParams(TEMPLATEPARAMLIST* t, bool alsoSpecializations)
             *last = Allocate<TEMPLATEPARAMLIST>();
             (*last)->p = Allocate<TEMPLATEPARAM>();
             *((*last)->p) = *(parse->p);
-            (*last)->argsym = parse->argsym ? clonesym(parse->argsym) : nullptr;
+            (*last)->argsym = parse->argsym ? CopySymbol(parse->argsym) : nullptr;
             sp = (*last)->argsym;
             if (sp)
             {
@@ -2700,7 +2700,7 @@ TEMPLATEPARAMLIST* copyParams(TEMPLATEPARAMLIST* t, bool alsoSpecializations)
                 *last = Allocate<TEMPLATEPARAMLIST>();
                 (*last)->p = Allocate<TEMPLATEPARAM>();
                 *((*last)->p) = *(parse->p);
-                (*last)->argsym = parse->argsym ? clonesym(parse->argsym) : nullptr;
+                (*last)->argsym = parse->argsym ? CopySymbol(parse->argsym) : nullptr;
                 last = &(*last)->next;
                 parse = parse->next;
             }
@@ -3028,7 +3028,7 @@ static TYPE* SynthesizeStructure(TYPE* tp_in, TEMPLATEPARAMLIST* enclosing)
             else
             {
                 TEMPLATEPARAMLIST* params = paramsToDefault(sp->templateParams->next);
-                SYMBOL* sp1 = clonesym(sp);
+                SYMBOL* sp1 = CopySymbol(sp);
                 sp1->tp = CopyType(sp->tp);
                 UpdateRootTypes(sp1->tp);
                 sp1->tp->sp = sp1;
@@ -4322,7 +4322,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                                 }
                                 while (templateParams)
                                 {
-                                    SYMBOL* clone = clonesym(sp);
+                                    SYMBOL* clone = CopySymbol(sp);
                                     TYPE* tp1;
                                     clone->tp = SynthesizeType(templateParams->p->byClass.val, enclosing, alt);
                                     if (!first)
@@ -4358,7 +4358,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                             }
                             else
                             {
-                                SYMBOL* clone = clonesym(sp);
+                                SYMBOL* clone = CopySymbol(sp);
                                 clone->tp = SynthesizeType(&stdany, enclosing, alt);
                                 clone->tp->templateParam = sp->tp->templateParam;
                                 insert(clone, func->syms);
@@ -4367,7 +4367,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                     }
                     else
                     {
-                        SYMBOL* clone = clonesym(sp);
+                        SYMBOL* clone = CopySymbol(sp);
                         TYPE* tp1;
                         insert(clone, func->syms);
                         clone->tp = SynthesizeType(clone->tp, enclosing, alt);
@@ -4470,7 +4470,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                 {
                     TEMPLATEPARAMLIST *p = nullptr, **pt = &p, *tpl;
                     tp_in = CopyType(tp);
-                    tp_in->sp = clonesym(tp_in->sp);
+                    tp_in->sp = CopySymbol(tp_in->sp);
                     tpl = tp_in->sp->templateParams;
                     while (tpl)
                     {
@@ -4569,7 +4569,7 @@ static SYMBOL* SynthesizeParentClass(SYMBOL* sym)
                         diag("SynthesizeParentClass mismatch 1");
                         return sym;
                     }
-                    found = clonesym(found);
+                    found = CopySymbol(found);
                     found->templateParams = copyParams(found->templateParams, true);
                     found->sb->parentClass = last;
                     last = found;
@@ -4600,7 +4600,7 @@ static SYMBOL* SynthesizeParentClass(SYMBOL* sym)
 }
 SYMBOL* SynthesizeResult(SYMBOL* sym, TEMPLATEPARAMLIST* params)
 {
-    SYMBOL* rsv = clonesym(sym);
+    SYMBOL* rsv = CopySymbol(sym);
     STRUCTSYM s, s1;
 
     if (sym->sb->parentClass)
@@ -7865,7 +7865,7 @@ SYMBOL* TemplateClassInstantiate(SYMBOL* sym, TEMPLATEPARAMLIST* args, bool isEx
             tpm->p = Allocate<TEMPLATEPARAM>();
             tpm->p->type = kw_new;
             tpm->next = args;
-            sym1 = clonesym(sym1);
+            sym1 = CopySymbol(sym1);
             sym1->templateParams = tpm;
             tpx = &sym1->tp;
             while (tp)
@@ -9942,7 +9942,7 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
     {
         SYMBOL* hold = dest->argsym;
         TYPE *tp = CopyType(src->argsym->tp);
-        dest->argsym = clonesym(src->argsym);
+        dest->argsym = CopySymbol(src->argsym);
         dest->argsym->tp = tp;
         if (hold)
         {
@@ -10153,7 +10153,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
                 }
                 instants = instants->next;
             }
-            found1 = clonesym(&test);
+            found1 = CopySymbol(&test);
             found1->sb->maintemplate = sym;
   
             
@@ -10180,7 +10180,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
         }
         else
         {
-            found1 = clonesym(found1);
+            found1 = CopySymbol(found1);
             found1->sb->maintemplate = sym;
             found1->tp = CopyType(sym->tp);
             UpdateRootTypes(found1->tp);
@@ -10358,7 +10358,7 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args)
                 }
                 instants = instants->next;
             }
-            found1 = clonesym(&test);
+            found1 = CopySymbol(&test);
             found1->sb->maintemplate = sym;
             found1->tp = CopyType(sym->tp);
             UpdateRootTypes(found1->tp);
@@ -10391,7 +10391,7 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args)
         }
         else
         {
-            found1 = clonesym(found1);
+            found1 = CopySymbol(found1);
             found1->sb->maintemplate = sym;
             found1->tp = CopyType(sym->tp);
             UpdateRootTypes(found1->tp);
@@ -10563,7 +10563,7 @@ void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool
                     }
                     else
                     {
-                        (*rvs)->sp = clonesym((*rvs)->sp);
+                        (*rvs)->sp = CopySymbol((*rvs)->sp);
                         tpl = (*rvs)->sp->templateParams;
                         (*rvs)->sp->templateParams = nullptr;
                         x = &(*rvs)->sp->templateParams;
@@ -10841,7 +10841,7 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEP
         tp = basetype(tp)->btp;
     if (tp->type == bt_typedef && tp->sp->templateParams)
     {
-        tp->sp = clonesym(tp->sp);
+        tp->sp = CopySymbol(tp->sp);
         auto tpr = &tp->sp->templateParams;
         auto temp = tp->sp->templateParams;
         auto tps = tp->sp->sb->mainsym->templateParams;
@@ -10927,7 +10927,7 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEP
     {
         if (basetype(tp)->sp->sb->templateLevel && !basetype(tp)->sp->sb->instantiated)
         {
-            basetype(tp)->sp = clonesym(basetype(tp)->sp);
+            basetype(tp)->sp = CopySymbol(basetype(tp)->sp);
             TEMPLATEPARAMLIST *tpl = basetype(tp)->sp->templateParams;
             TEMPLATEPARAMLIST *args1 = nullptr, **x = &args1;
             while (tpl)
@@ -11015,7 +11015,7 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEP
     else if (basetype(tp)->type == bt_templateselector)
     {
         TEMPLATEPARAMLIST **tplp = nullptr;
-        basetype(tp)->sp = clonesym(basetype(tp)->sp);
+        basetype(tp)->sp = CopySymbol(basetype(tp)->sp);
         TEMPLATESELECTOR **rvs = &basetype(tp)->sp->sb->templateSelector;
         TEMPLATESELECTOR* old = *rvs;
         *rvs = nullptr;
@@ -11466,7 +11466,7 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
     TYPE* basetp = sp->tp->btp;
     if (basetp->type == bt_templatedecltype)
     {
-        rv = clonesym(sp);
+        rv = CopySymbol(sp);
         rv->sb->mainsym = sp;
         if (!templateNestingCount)
         {
@@ -11478,7 +11478,7 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
     }
     else if (basetp->type == bt_templateselector)
     {
-        rv = clonesym(sp);
+        rv = CopySymbol(sp);
         rv->sb->mainsym = sp;
         if (!ParseTypeAliasDefaults(rv, args, sp->templateParams, sp->sb->typeAlias))
         {
@@ -11527,7 +11527,7 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
     else
     {
         TEMPLATEPARAMLIST *orig = sp->templateParams->next;
-        rv = clonesym(sp);
+        rv = CopySymbol(sp);
         rv->sb->mainsym = sp;
         rv->tp = rv->tp->btp;
         TYPE **tp = &rv->tp;

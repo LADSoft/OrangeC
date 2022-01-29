@@ -1868,7 +1868,7 @@ bool isconstaddress(EXPRESSION* exp)
             return false;
     }
 }
-SYMBOL*(clonesym)(SYMBOL* sym_in, bool full)
+SYMBOL*(CopySymbol)(SYMBOL* sym_in, bool full)
 {
     SYMBOL* rv = nzAllocate<SYMBOL>();
     *rv = *sym_in;

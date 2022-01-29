@@ -284,7 +284,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
                         LAMBDASP* ins = Allocate<LAMBDASP>();
                         ins->name = sym->name;
                         ins->parent = sym;
-                        sym = clonesym(sym);
+                        sym = CopySymbol(sym);
                         sym->sb->lambdaMode = mode == cmNone ? current->captureMode : mode;
                         sym->tp = lambda_type(sym->tp, sym->sb->lambdaMode);
                         sym->sb->storage_class = sc_member;
@@ -309,7 +309,7 @@ static TYPE* cloneFuncType(SYMBOL* funcin)
     TYPE* tp_in = funcin->tp;
     TYPE** tp;
     SYMLIST **dest, *src;
-    SYMBOL* func = clonesym(funcin);
+    SYMBOL* func = CopySymbol(funcin);
     tp = &func->tp;
     while (tp_in)
     {
@@ -324,7 +324,7 @@ static TYPE* cloneFuncType(SYMBOL* funcin)
     while (src)
     {
         *dest = Allocate<SYMLIST>();
-        (*dest)->p = (SYMBOL*)clonesymfalse((SYMBOL*)src->p);
+        (*dest)->p = (SYMBOL*)CopySymbolfalse((SYMBOL*)src->p);
         dest = &(*dest)->next;
         src = src->next;
     }
@@ -425,7 +425,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
         SYMBOL* sym = (SYMBOL*)hr->p;
         if (sym->tp->type == bt_void)
             break;
-        sym = clonesym(sym);
+        sym = CopySymbol(sym);
         sym->sb->offset -= getSize(bt_pointer);
         *argptr = Allocate<INITLIST>();
         if (isstructured(sym->tp) && !isref(sym->tp))

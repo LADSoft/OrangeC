@@ -2563,7 +2563,7 @@ static bool cloneTempExpr(EXPRESSION** expr, SYMBOL** found, SYMBOL** replace)
                         if (!found[i])
                         {
                             found[i] = sym;
-                            replace[i] = clonesym(sym);
+                            replace[i] = CopySymbol(sym);
                             if (theCurrentFunc)
                                 replace[i]->sb->value.i = theCurrentFunc->sb->value.i;
                             replace[i]->name = AnonymousName();
@@ -6151,7 +6151,7 @@ static LEXLIST* expression_ampersand(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TY
                     bool done = false;
                     SYMBOL* spold = sym;
                     sym->sb->label = Optimizer::nextLabel++;
-                    sym = clonesym(sym);
+                    sym = CopySymbol(sym);
                     spold->sb->indecltable = true;
                     tp = sym->tp;
                     tpb = basetype(tp);

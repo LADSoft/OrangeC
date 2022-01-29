@@ -1208,7 +1208,7 @@ LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
         if (Optimizer::cparams.prm_cplusplus)
         {
             sp->tp->tags = CreateHashTable(1);
-            injected = clonesym(sp);
+            injected = CopySymbol(sp);
             injected->sb->mainsym = sp;      // for constructor/destructor matching
             insert(injected, sp->tp->tags);  // inject self
             injected->sb->access = ac_public;
@@ -2831,7 +2831,7 @@ founddecltype:
                         else
                         {
                             auto oldsp = sp;
-                            sp = clonesym(sp);
+                            sp = CopySymbol(sp);
                             sp->sb->mainsym = oldsp;
                             sp->tp = CopyType(sp->tp);
                             sp->tp->sp = sp;
@@ -2904,7 +2904,7 @@ founddecltype:
                                     else if (templateNestingCount)
                                     {
                                         TEMPLATEPARAMLIST *told, **tnew;
-                                        sp1 = clonesym(sp);
+                                        sp1 = CopySymbol(sp);
                                         sp1->tp = CopyType(sp->tp);
                                         sp1->tp->sp = sp1;
                                         sp1->tp->templateParam =
@@ -3817,7 +3817,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                             {
                                 while (templateParams)
                                 {
-                                    SYMBOL* clone = clonesym(spi);
+                                    SYMBOL* clone = CopySymbol(spi);
 
                                     clone->tp = CopyType(clone->tp, true, [templateParams](TYPE*& old, TYPE*& newx) {
                                         if (old->type == bt_templateparam)
@@ -3854,7 +3854,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                             }
                             else
                             {
-                                SYMBOL* clone = clonesym(spi);
+                                SYMBOL* clone = CopySymbol(spi);
                                 clone->tp = CopyType(clone->tp);
                                 clone->tp->templateParam = tp1->templateParam;
                                 SetLinkerNames(clone, lk_none);

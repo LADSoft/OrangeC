@@ -1202,7 +1202,7 @@ BASECLASS* innerBaseClass(SYMBOL* declsym, SYMBOL* bcsym, bool isvirtual, enum e
     //
     if (!t)
     {
-        SYMBOL* injected = clonesym(bcsym);
+        SYMBOL* injected = CopySymbol(bcsym);
         injected->name = injected->sb->decoratedName;  // for nested templates
         injected->sb->mainsym = bcsym;
         injected->sb->parentClass = declsym;
@@ -3393,7 +3393,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                         {
                             SYMBOL* ssp = getStructureDeclaration(), * ssp1;
                             SYMBOL* sp = (SYMBOL*)(*hr)->p;
-                            SYMBOL* sp1 = clonesym(sp);
+                            SYMBOL* sp1 = CopySymbol(sp);
                             sp1->sb->wasUsing = true;
                             ssp1 = sp1->sb->parentClass;
                             if (ssp && ismember(sp1))
@@ -3411,7 +3411,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                     else
                     {
                         SYMBOL* ssp = getStructureDeclaration(), * ssp1;
-                        SYMBOL* sp1 = clonesym(sp);
+                        SYMBOL* sp1 = CopySymbol(sp);
                         sp1->sb->wasUsing = true;
                         sp1->sb->mainsym = sp;
                         sp1->sb->access = access;

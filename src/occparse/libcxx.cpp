@@ -1561,7 +1561,7 @@ static SYMBOL* MakeIntegerSeqType(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 }
 SYMBOL* MakeIntegerSeq(SYMBOL* sym, TEMPLATEPARAMLIST* args)
 {
-    SYMBOL* rv = clonesym(sym);
+    SYMBOL* rv = CopySymbol(sym);
     rv->sb->mainsym = sym;
     auto rs = MakeIntegerSeqType(sym, args);
     if (rs)
@@ -1623,12 +1623,12 @@ static TYPE* TypePackElementType(SYMBOL* sym, TEMPLATEPARAMLIST* args)
 }
 SYMBOL* TypePackElementCls(SYMBOL* sym, TEMPLATEPARAMLIST* args)
 {
-    SYMBOL* rv = clonesym(sym);
+    SYMBOL* rv = CopySymbol(sym);
     rv->sb->mainsym = sym;
     rv->tp = CopyType(sym->tp);
     rv->tp->syms = CreateHashTable(1);
     rv->tp->syms->table[0] = Allocate<SYMLIST>();
-    rv->tp->syms->table[0]->p = clonesym(rv);
+    rv->tp->syms->table[0]->p = CopySymbol(rv);
     rv->tp->syms->table[0]->next = Allocate<SYMLIST>();
     auto tp1 = MakeType(bt_typedef, TypePackElementType(sym, args));
     auto sym1 = makeID(sc_typedef, tp1, nullptr, "type");
@@ -1637,7 +1637,7 @@ SYMBOL* TypePackElementCls(SYMBOL* sym, TEMPLATEPARAMLIST* args)
 }
 SYMBOL* TypePackElement(SYMBOL* sym, TEMPLATEPARAMLIST* args)
 {
-    SYMBOL* rv = clonesym(sym);
+    SYMBOL* rv = CopySymbol(sym);
     rv->sb->mainsym = sym;
     rv->tp = TypePackElementType(sym, args);
     return rv;

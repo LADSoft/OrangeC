@@ -22,6 +22,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
+#include <functional>
 
 #define CT_NONE 0
 #define CT_CONS 1
@@ -49,6 +50,9 @@ const char* AnonymousTypeName(void);
 SYMBOL* SymAlloc(void);
 SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name);
 SYMBOL* makeUniqueID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name);
+TYPE *MakeType(TYPE& tp, enum e_bt type, TYPE *base = nullptr);
+TYPE *MakeType(enum e_bt type, TYPE *base = nullptr);
+TYPE* CopyType(TYPE* tp, bool deep = false, std::function<void(TYPE*&, TYPE*&)> callback = nullptr);
 void addStructureDeclaration(STRUCTSYM* decl);
 void addTemplateDeclaration(STRUCTSYM* decl);
 void dropStructureDeclaration(void);

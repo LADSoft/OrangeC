@@ -133,22 +133,11 @@ static TYPE* lambda_type(TYPE* tp, enum e_cm mode)
 {
     if (mode == cmRef)
     {
-        TYPE* tp1;
         tp = basetype(tp);
-        if (isref(tp))
-        {
-            tp = tp->btp;
-        }
-        tp1 = Allocate<TYPE>();
-        tp1->type = bt_lref;
-        tp1->size = getSize(bt_pointer);
-        tp1->btp = tp;
-        tp1->rootType = tp1;
-        tp = tp1;
+        tp = MakeType(bt_lref, isref(tp) ? tp->btp : tp);
     }
     else  // cmValue
     {
-        TYPE* tp1;
         tp = basetype(tp);
         if (isref(tp))
         {
@@ -157,12 +146,7 @@ static TYPE* lambda_type(TYPE* tp, enum e_cm mode)
         tp = basetype(tp);
         if (!lambdas->isMutable)
         {
-            tp1 = Allocate<TYPE>();
-            tp1->type = bt_const;
-            tp1->size = tp->size;
-            tp1->btp = tp;
-            tp1->rootType = tp->rootType;
-            tp = tp1;
+            tp = MakeType(bt_const, tp);
         }
     }
     return tp;
@@ -329,8 +313,7 @@ static TYPE* cloneFuncType(SYMBOL* funcin)
     tp = &func->tp;
     while (tp_in)
     {
-        *tp = Allocate<TYPE>();
-        **tp = *(tp_in);
+        *tp = CopyType(tp_in);
         tp_in = tp_in->btp;
         tp = &(*tp)->btp;
     }
@@ -361,10 +344,8 @@ static void cloneTemplateParams(SYMBOL* func)
         SYMBOL* arg = (SYMBOL*)(hr->p);
         if (!arg->sb->thisPtr)
         {
-            TYPE* tpn = Allocate<TYPE>();
-            *tpn = *arg->tp;
-            arg->tp = tpn;
-            UpdateRootTypes(tpn);
+            arg->tp = CopyType(arg->tp);
+            UpdateRootTypes(arg->tp);
             (*tplp) = Allocate<TEMPLATEPARAMLIST>();
             (*tplp)->p = Allocate<TEMPLATEPARAM>();
             (*tplp)->argsym = Allocate<SYMBOL>();
@@ -400,8 +381,7 @@ static void convertCallToTemplate(SYMBOL* func)
             (*tplholder)->argsym = Allocate<SYMBOL>();
             *(*tplholder)->argsym = *arg;
             (*tplholder)->argsym->sb = nullptr;
-            arg->tp = Allocate<TYPE>();
-            arg->tp->type = bt_templateparam;
+            arg->tp = MakeType(bt_templateparam);
             arg->tp->templateParam = *tplholder;
             (*tplholder)->p->type = kw_typename;
             (*tplholder)->p->index = index++;
@@ -515,19 +495,12 @@ static void createConverter(SYMBOL* self)
 {
     SYMBOL* caller = createPtrToCaller(self);
     TYPE* args = cloneFuncType(lambdas->func);
-    SYMBOL* func = makeID(sc_member, Allocate<TYPE>(), NULL, overloadNameTab[CI_CAST]);
+    SYMBOL* func = makeID(sc_member, MakeType(bt_func, MakeType(bt_pointer, args)), NULL, overloadNameTab[CI_CAST]);
     BLOCKDATA block1, block2;
     STATEMENT* st;
     EXPRESSION* exp;
     SYMBOL* sym = makeID(sc_parameter, &stdvoid, NULL, AnonymousName());
     SYMLIST* hr = Allocate<SYMLIST>();
-    func->tp->type = bt_func;
-    func->tp->btp = Allocate<TYPE>();
-    func->tp->btp->type = bt_pointer;
-    func->tp->btp->size = getSize(bt_pointer);
-    func->tp->btp->btp = args;
-    func->tp->rootType = func->tp;
-    func->tp->btp->rootType = func->tp->btp;
     func->tp->syms = CreateHashTable(1);
     func->sb->parentClass = lambdas->cls;
     func->sb->attribs.inheritable.linkage4 = lk_virtual;
@@ -568,8 +541,7 @@ static void createConverter(SYMBOL* self)
         func->templateParams = caller->templateParams;
         func->sb->templateLevel = templateNestingCount;
         func->sb->parentTemplate = func;
-        basetype(func->tp)->btp = Allocate<TYPE>();
-        basetype(func->tp)->btp->type = bt_templatedecltype;
+        basetype(func->tp)->btp = MakeType(bt_templatedecltype);
         basetype(func->tp)->btp->templateDeclType = exprNode(en_func, NULL, NULL);
         basetype(func->tp)->btp->templateDeclType->v.func = f;
         hr = basetype(caller->tp)->syms->table[0];
@@ -629,13 +601,9 @@ static bool lambda_get_template_state(SYMBOL* func)
 }
 static void finishClass(void)
 {
-    TYPE* tps = Allocate<TYPE>();
+    TYPE* tps = MakeType(bt_pointer, lambdas->cls->tp);
     SYMBOL* self = makeID(sc_static, tps, NULL, "___self");
     SYMLIST* lst;
-    tps->type = bt_pointer;
-    tps->size = getSize(bt_pointer);
-    tps->btp = lambdas->cls->tp;
-    tps->rootType = tps;
     self->sb->access = ac_private;
 
     if (lambdas->captureThis && lambdas->next)
@@ -666,17 +634,8 @@ static void finishClass(void)
     if (!lambdas->isMutable)
     {
         SYMBOL* ths = (SYMBOL*)lambdas->func->tp->syms->table[0]->p;
-        TYPE* tp2 = Allocate<TYPE>();
-        tp2->type = bt_const;
-        tp2->size = lambdas->func->tp->size;
-        tp2->btp = lambdas->func->tp;
-        tp2->rootType = lambdas->func->tp->rootType;
-        lambdas->func->tp = tp2;
-        tp2 = Allocate<TYPE>();
-        tp2->type = bt_const;
-        tp2->size = basetype(ths->tp)->btp->size;
-        tp2->btp = basetype(ths->tp)->btp;
-        basetype(ths->tp)->btp = tp2;
+        lambdas->func->tp = MakeType(bt_const, lambdas->func->tp);
+        basetype(ths->tp)->btp = MakeType(bt_const, basetype(ths->tp->btp));
         UpdateRootTypes(ths->tp);
     }
 }
@@ -848,12 +807,10 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     if (funcsp)
         funcsp->sb->noinline = true;
     self = Allocate<LAMBDA>();
-    ltp = Allocate<TYPE>();
-    ltp->type = bt_struct;
+    ltp = MakeType(bt_struct);
     ltp->syms = CreateHashTable(1);
     ltp->tags = CreateHashTable(1);
     ltp->size = 0;
-    ltp->rootType = ltp;
     self->captured = CreateHashTable(1);
     self->oldSyms = localNameSpace->valueData->syms;
     self->oldTags = localNameSpace->valueData->tags;
@@ -1103,19 +1060,12 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     }
     else
     {
-        TYPE* tp1 = Allocate<TYPE>();
+        self->func->tp = MakeType(bt_func, &stdvoid);
+        self->func->tp->sp = self->func;
         SYMBOL* spi;
-        tp1->type = bt_func;
-        tp1->size = getSize(bt_pointer);
-        tp1->btp = &stdvoid;
-        tp1->rootType = tp1;
-        tp1->sp = self->func;
-        self->func->tp = tp1;
-        spi = makeID(sc_parameter, tp1, NULL, AnonymousName());
+        spi = makeID(sc_parameter, self->func->tp, NULL, AnonymousName());
         spi->sb->anonymous = true;
-        spi->tp = Allocate<TYPE>();
-        spi->tp->type = bt_void;
-        spi->tp->rootType = spi->tp;
+        spi->tp = MakeType(bt_void);
         insert(spi, localNameSpace->valueData->syms);
         SetLinkerNames(spi, lk_cpp);
         self->func->tp->syms = localNameSpace->valueData->syms;

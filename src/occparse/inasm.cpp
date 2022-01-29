@@ -249,9 +249,7 @@ static EXPRESSION* inasm_ident(void)
             sym->sb->realdeclline = lex->data->linedata->lineno;
             sym->sb->declfilenum = lex->data->linedata->fileindex;
             sym->sb->attribs.inheritable.used = true;
-            sym->tp = beLocalAllocate<TYPE>();
-            sym->tp->type = bt_unsigned;
-            sym->tp->bits = sym->tp->startbit = -1;
+            sym->tp = MakeType(bt_unsigned);
             sym->sb->offset = codeLabel++;
             insert(sym, labelSyms);
             node = intNode(en_labcon, sym->sb->offset);
@@ -334,9 +332,7 @@ static EXPRESSION* inasm_label(void)
         sym->sb->declline = sym->sb->origdeclline = lex->data->errline;
         sym->sb->realdeclline = lex->data->linedata->lineno;
         sym->sb->declfilenum = lex->data->linedata->fileindex;
-        sym->tp = beLocalAllocate<TYPE>();
-        sym->tp->type = bt_unsigned;
-        sym->tp->bits = sym->tp->startbit = -1;
+        sym->tp = MakeType(bt_unsigned);
         sym->sb->offset = codeLabel++;
         SetLinkerNames(sym, lk_none);
         insert(sym, labelSyms);

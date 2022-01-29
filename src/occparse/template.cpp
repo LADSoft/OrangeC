@@ -982,6 +982,7 @@ static TEMPLATEPARAMLIST *nextExpand(TEMPLATEPARAMLIST* in, int n)
             while (tpl && n--)
                 tpl = tpl->next;
             (*last)->p = Allocate<TEMPLATEPARAM>();
+            (*last)->p->type = in->p->type;
             (*last)->p->packed = true;
             if (tpl)
             {
@@ -7202,6 +7203,8 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                         if (dflt)
                         {
                             torig = packorig->p->byClass.dflt;
+                            if (!torig)
+                                torig = packorig->p->byClass.val;
                             tsym = packsym->p->byClass.dflt;
                             if (!tsym)
                                 tsym = packsym->p->byClass.val;

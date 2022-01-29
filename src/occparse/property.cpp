@@ -60,10 +60,8 @@ static SYMBOL* CreateSetterPrototype(SYMBOL* sym)
     value = makeID(sc_parameter, sym->tp, nullptr, "value");
     value->sb->attribs.inheritable.used = true;  // to avoid unused variable errors
     rv->sb->access = ac_public;
-    rv->tp = Allocate<TYPE>();
+    rv->tp = MakeType(bt_func, &stdvoid);
     rv->tp->sp = rv;
-    rv->tp->type = bt_func;
-    rv->tp->btp = &stdvoid;
     rv->tp->syms = CreateHashTable(1);
     SetLinkerNames(value, lk_cdecl);
     insert(value, rv->tp->syms);
@@ -78,10 +76,8 @@ static SYMBOL* CreateGetterPrototype(SYMBOL* sym)
     rv = makeID(sym->sb->storage_class, nullptr, nullptr, litlate(name));
     nullparam = makeID(sc_parameter, &stdvoid, nullptr, "__void");
     rv->sb->access = ac_public;
-    rv->tp = Allocate<TYPE>();
+    rv->tp = MakeType(bt_func, sym->tp);
     rv->tp->sp = rv;
-    rv->tp->type = bt_func;
-    rv->tp->btp = sym->tp;
     rv->tp->syms = CreateHashTable(1);
     SetLinkerNames(nullparam, lk_cdecl);
     insert(nullparam, rv->tp->syms);
@@ -97,9 +93,7 @@ static void insertfunc(SYMBOL* in, HASHTABLE* syms)
         funcs = (SYMBOL*)((*hr)->p);
     if (!funcs)
     {
-        TYPE* tp = Allocate<TYPE>();
-        tp->type = bt_aggregate;
-        tp->rootType = tp;
+        auto tp = MakeType(bt_aggregate);
         funcs = makeID(sc_overloads, tp, 0, litlate(in->name));
         tp->sp = funcs;
         SetLinkerNames(funcs, lk_cdecl);

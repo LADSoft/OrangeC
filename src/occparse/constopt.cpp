@@ -2445,11 +2445,7 @@ int opt0(EXPRESSION** node)
                     FUNCTIONCALL *func = Allocate<FUNCTIONCALL>();
                     *func = *next->v.func;
                     func->sp = sym;
-                    TYPE *thistp = Allocate<TYPE>();
-                    thistp->type = bt_pointer;
-                    thistp->size = getSize(bt_pointer);
-                    thistp->btp = tp;
-                    func->thistp = thistp;
+                    func->thistp = MakeType(bt_pointer, tp);
                     func->thisptr = newExpr;
                     sym =
                         GetOverloadedFunction(&ctype, &func->fcall, sym, func, nullptr, true, false, true, 0);

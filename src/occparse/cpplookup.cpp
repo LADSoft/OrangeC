@@ -198,10 +198,8 @@ SYMBOL* namespacesearch(const char* name, NAMESPACEVALUELIST* ns, bool qualified
             if (!a)
             {
                 SYMLIST** dest;
-                TYPE* tp = Allocate<TYPE>();
+                TYPE* tp = MakeType(bt_aggregate);
                 SYMBOL* sym = makeID(sc_overloads, tp, nullptr, ((SYMBOL*)lst->data)->name);
-                tp->type = bt_aggregate;
-                tp->rootType = tp;
                 tp->sp = sym;
                 tp->syms = CreateHashTable(1);
                 a = lst;
@@ -466,7 +464,7 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* t
                         }
                         else
                         {
-                            SYMBOL* sp1 = clonesym(sp);
+                            SYMBOL* sp1 = CopySymbol(sp);
                             sp1->sb->mainsym = sp;
                             sp1->tp = sp->tp->btp;
                             sp = sp1;
@@ -539,7 +537,7 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* t
                     }
                     else
                     {
-                        SYMBOL* sp1 = clonesym(sp);
+                        SYMBOL* sp1 = CopySymbol(sp);
                         sp1->sb->mainsym = sp;
                         sp1->tp = sp->tp->btp;
                         sp = sp1;
@@ -814,9 +812,7 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* t
     lex = prevsym(finalPos);
     if (templateSelector)
     {
-        TYPE* tp = Allocate<TYPE>();
-        tp->type = bt_templateselector;
-        tp->rootType = tp;
+        auto tp = MakeType(bt_templateselector);
         *sym = makeID(sc_global, tp, nullptr, AnonymousName());
         (*sym)->sb->templateSelector = templateSelector;
         tp->sp = *sym;
@@ -1963,15 +1959,9 @@ static bool ismem(EXPRESSION* exp)
 }
 static TYPE* toThis(TYPE* tp)
 {
-    TYPE* tpx;
     if (ispointer(tp))
         return tp;
-    tpx = Allocate<TYPE>();
-    tpx->type = bt_pointer;
-    tpx->size = getSize(bt_pointer);
-    tpx->btp = tp;
-    tpx->rootType = tpx;
-    return tpx;
+    return MakeType(bt_pointer, tp);
 }
 static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seql, enum e_cvsrn* seqr, TYPE* ltype, TYPE* rtype,
                               TYPE* atype, EXPRESSION* expa, SYMBOL* funcl, SYMBOL* funcr, int lenl, int lenr, bool fromUser)
@@ -2862,10 +2852,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
             funcparams.ascall = true;
             funcparams.thisptr = expa;
             funcparams.thistp = &thistp;
-            thistp.btp = tpp;
-            thistp.rootType = &thistp;
-            thistp.type = bt_pointer;
-            thistp.size = getSize(bt_pointer);
+            MakeType(thistp, bt_pointer, tpp);
             while (lst2)
             {
                 SYMLIST** hr = ((SYMBOL*)lst2->data)->tp->syms->table;
@@ -2959,10 +2946,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                                     if (basetype(tpn)->type == bt_lref)
                                         lref = true;
                                 }
-                                thistp.btp = tpa;
-                                thistp.rootType = &thistp;
-                                thistp.type = bt_pointer;
-                                thistp.size = getSize(bt_pointer);
+                                MakeType(thistp, bt_pointer, tpa);
                                 getSingleConversion(((SYMBOL*)args->p)->tp, &thistp, &exp, &n2, seq3, candidate, nullptr, true);
                                 seq3[n2 + n3++] = CV_USER;
                                 inGetUserConversion--;
@@ -4071,10 +4055,7 @@ static void getInitListConversion(TYPE* tp, INITLIST* list, TYPE* tpp, int* n, e
                 FUNCTIONCALL funcparams = {};
                 funcparams.arguments = a;
                 exp.type = en_c_i;
-                thistp.type = bt_pointer;
-                thistp.btp = basetype(tp);
-                thistp.rootType = &thistp;
-                thistp.size = getSize(bt_pointer);
+                MakeType(thistp, bt_pointer, basetype(tp));
                 funcparams.thistp = &thistp;
                 funcparams.thisptr = &exp;
                 funcparams.ascall = true;
@@ -4177,10 +4158,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
         pos += m;
         hr = &(*hr)->next;
         tpp = argsym->tp;
-        tpx.type = bt_pointer;
-        tpx.size = getSize(bt_pointer);
-        tpx.btp = f->arguments->tp;
-        tpx.rootType = &tpx;
+        MakeType(tpx, bt_pointer, f->arguments->tp);
         m = 0;
         getSingleConversion(tpp, &tpx, f->thisptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr, true);
         m1 = m;
@@ -4229,10 +4207,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                     if (sym->sb->castoperator || (tpthis && f->thistp == nullptr))
                     {
                         tpthis = &tpx;
-                        tpx.type = bt_pointer;
-                        tpx.size = getSize(bt_pointer);
-                        tpx.btp = f->arguments->tp;
-                        tpx.rootType = &tpx;
+                        MakeType(tpx, bt_pointer, f->arguments->tp);
                     }
                     else if (theCurrentFunc &&
                              (f->thisptr && f->thisptr->type == en_l_p && f->thisptr->left->type == en_auto &&
@@ -4243,19 +4218,13 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                              (isconst(theCurrentFunc->tp) || isvolatile(theCurrentFunc->tp)))
                     {
                         tpthis = &tpx;
-                        tpx.type = bt_pointer;
-                        tpx.size = getSize(bt_pointer);
-                        tpx.btp = basetype(f->thistp)->btp;
-                        tpx.rootType = &tpx;
+                        MakeType(tpx, bt_pointer, basetype(f->thistp)->btp);
                         qualifyForFunc(theCurrentFunc, &tpx.btp, false);
                     }
                     else if (sym->sb->isDestructor)
                     {
                         tpthis = &tpx;
-                        tpx.type = bt_pointer;
-                        tpx.size = getSize(bt_pointer);
-                        tpx.btp = basetype(basetype(f->thistp)->btp);
-                        tpx.rootType = &tpx;
+                        MakeType(tpx, bt_pointer, basetype(basetype(f->thistp)->btp));
                     }
                     if (islrqual(sym->tp) || isrrqual(sym->tp))
                     {
@@ -5071,11 +5040,8 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         {
                             int v = 1;
                             INITLIST* a = args->arguments;
-                            sym->tp = Allocate<TYPE>();
-                            sym->tp->type = bt_func;
+                            sym->tp = MakeType(bt_func, &stdint);
                             sym->tp->size = getSize(bt_pointer);
-                            sym->tp->btp = &stdint;
-                            sym->tp->rootType = sym->tp;
                             sym->tp->syms = CreateHashTable(1);
                             sym->tp->sp = sym;
                             while (a)
@@ -5239,11 +5205,7 @@ SYMBOL* MatchOverloadedFunction(TYPE* tp, TYPE** mtp, SYMBOL* sym, EXPRESSION** 
     }
     else if (tp->type == bt_memberptr)
     {
-        fpargs.thistp = Allocate<TYPE>();
-        fpargs.thistp->type = bt_pointer;
-        fpargs.thistp->size = getSize(bt_pointer);
-        fpargs.thistp->btp = tp->sp->tp;
-        fpargs.thistp->rootType = fpargs.thistp;
+        fpargs.thistp = MakeType(bt_pointer, tp->sp->tp);
         fpargs.thisptr = intNode(en_c_i, 0);
     }
     while (hrp)

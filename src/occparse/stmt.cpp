@@ -781,11 +781,9 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         if (isref(matchtp))
                             matchtp = basetype(matchtp)->btp;
 
-                        TYPE* valueList = Allocate<TYPE>();
-                        valueList->type = bt_pointer;
+                        auto valueList = MakeType(bt_pointer, matchtp);
                         valueList->array = true;
                         valueList->size = n * matchtp->size;
-                        valueList->btp = matchtp;
 
                         EXPRESSION* val = anonymousVar(sc_auto, valueList);
 
@@ -873,11 +871,9 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     INITIALIZER* init;
                     initInsert(&init, &stdpointer, begin, 0, false);
                     initInsert(&init->next, &stdpointer, end, stdpointer.size, false);
-                    TYPE* tp2 = Allocate<TYPE>();
-                    tp2->type = bt_pointer;
+                    TYPE* tp2 = MakeType(bt_pointer, &stdpointer);
                     tp2->size = 2 * stdpointer.size;
                     tp2->array = true;
-                    tp2->btp = &stdpointer;
                     EXPRESSION* val = anonymousVar(sc_auto, tp2);
                     select = convertInitToExpression(tp2, nullptr, val, funcsp, init, nullptr, false);
                     st = stmtNode(lex, forstmt, st_expr);
@@ -897,8 +893,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     EXPRESSION *ibegin = nullptr, *iend = nullptr;
                     SYMBOL *sbegin = nullptr, *send = nullptr;
                     TYPE* iteratorType = nullptr;
-                    TYPE* tpref = Allocate<TYPE>();
-                    tpref->rootType = tpref;
+                    TYPE* tpref = MakeType(bt_rref, selectTP);
                     EXPRESSION* rangeExp = anonymousVar(sc_auto, tpref);
                     SYMBOL* rangeSP = rangeExp->v.sp;
                     if (isstructured(selectTP))
@@ -909,10 +904,6 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         select = select->left;
                     if (lvalue(select) && select->type != en_l_ref && !isstructured(selectTP))
                         select = select->left;
-                    tpref->size = getSize(bt_pointer);
-                    tpref->type = bt_rref;
-                    tpref->btp = selectTP;
-                    tpref->rootType = tpref;
                     st = stmtNode(lex, forstmt, st_expr);
                     st->select = exprNode(en_assign, rangeExp, select);
                     if (!isstructured(selectTP))
@@ -934,12 +925,8 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     else
                     {
                         // try to lookup in structure
-                        TYPE thisTP;
-                        memset(&thisTP, 0, sizeof(thisTP));
-                        thisTP.type = bt_pointer;
-                        thisTP.size = getSize(bt_pointer);
-                        thisTP.btp = rangeSP->tp->btp;
-                        thisTP.rootType = &thisTP;
+                        TYPE thisTP = {};
+                        MakeType(thisTP, bt_pointer, rangeSP->tp->btp);
                         sbegin = search("begin", basetype(selectTP)->syms);
                         send = search("end", basetype(selectTP)->syms);
                         if (sbegin && send)
@@ -1110,11 +1097,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         }
                                         else
                                         {
-                                            fc->arguments->tp = Allocate<TYPE>();
-                                            fc->arguments->tp->type = bt_lref;
-                                            fc->arguments->tp->size = getSize(bt_pointer);
-                                            fc->arguments->tp->btp = fcb.arguments->tp;
-                                            fc->arguments->tp->rootType = fc->arguments->tp;
+                                            fc->arguments->tp = MakeType(bt_lref, fcb.arguments->tp);
                                         }
                                         ibegin = exprNode(en_func, nullptr, nullptr);
                                         ibegin->v.func = fc;
@@ -1141,11 +1124,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         }
                                         else
                                         {
-                                            fc->arguments->tp = Allocate<TYPE>();
-                                            fc->arguments->tp->type = bt_lref;
-                                            fc->arguments->tp->size = getSize(bt_pointer);
-                                            fc->arguments->tp->btp = fce.arguments->tp;
-                                            fc->arguments->tp->rootType = fc->arguments->tp;
+                                            fc->arguments->tp = MakeType(bt_lref, fce.arguments->tp);
                                         }
                                         iend = exprNode(en_func, nullptr, nullptr);
                                         iend->v.func = fc;
@@ -1182,10 +1161,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         }
                         else
                         {
-                            TYPE *tpx = Allocate<TYPE>();
-                            tpx->type = bt_pointer;
-                            tpx->size = getSize(bt_pointer);
-                            tpx->btp = iteratorType;
+                            TYPE *tpx = MakeType(bt_pointer, iteratorType);
                             eBegin = anonymousVar(sc_auto, tpx);
                             eEnd = anonymousVar(sc_auto, tpx);
                             deref(&stdpointer, &eBegin);

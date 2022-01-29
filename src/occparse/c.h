@@ -25,8 +25,8 @@
 namespace Parser
 {
 /*      compiler header file    */
-#define clonesym(x) (clonesym)(x, true)
-#define clonesymfalse(x) (clonesym)(x, false)
+#define CopySymbol(x) (CopySymbol)(x, true)
+#define CopySymbolfalse(x) (CopySymbol)(x, false)
 #define CI_CONSTRUCTOR 0
 #define CI_DESTRUCTOR 1
 #define CI_CAST 2

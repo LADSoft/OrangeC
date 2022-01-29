@@ -1202,7 +1202,7 @@ BASECLASS* innerBaseClass(SYMBOL* declsym, SYMBOL* bcsym, bool isvirtual, enum e
     //
     if (!t)
     {
-        SYMBOL* injected = clonesym(bcsym);
+        SYMBOL* injected = CopySymbol(bcsym);
         injected->name = injected->sb->decoratedName;  // for nested templates
         injected->sb->mainsym = bcsym;
         injected->sb->parentClass = declsym;
@@ -1463,8 +1463,11 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
                         else
                         {
                             bcsym = GetClassTemplate(bcsym, lst, true);
-                            if (bcsym && allTemplateArgsSpecified(bcsym, bcsym->templateParams->next))
-                                bcsym = TemplateClassInstantiateInternal(bcsym, bcsym->templateParams->next, false);
+                            if (bcsym && bcsym->sb->attribs.inheritable.linkage4 != lk_virtual && allTemplateArgsSpecified(bcsym, bcsym->templateParams->next))
+                            {
+                                bcsym->tp = TemplateClassInstantiateInternal(bcsym, bcsym->templateParams->next, false)->tp;
+                                bcsym->tp->sp = bcsym;
+                            }
                         }
                     }
                 }
@@ -1845,12 +1848,6 @@ void GatherTemplateParams(int *count, SYMBOL** arg, TEMPLATEPARAMLIST* tpl)
     {
         if (tpl->p->packed && tpl->argsym)
         {
-            /*
-            SYMBOL* sym = clonesym(tpl->argsym);
-            sym->tp = Allocate<TYPE>();
-            sym->tp->type = bt_templateparam;
-            sym->tp->templateParam = tpl;
-            */
             arg[(*count)++] = /*sym*/tpl->argsym;
             NormalizePacked(tpl->argsym->tp);
         }
@@ -2034,9 +2031,7 @@ TYPE* ReplicatePackedTypes(int count, SYMBOL** arg, TYPE* tp, int index)
     {
         if (tp->type == bt_templateselector)
         {
-            TYPE* tp1 = Allocate<TYPE>();
-            *tp1 = *tp;
-            tp = tp1;
+            tp = CopyType(tp);
             auto old = tp->sp->sb->templateSelector;
             auto tsl = &tp->sp->sb->templateSelector;
             while (old)
@@ -2055,18 +2050,10 @@ TYPE* ReplicatePackedTypes(int count, SYMBOL** arg, TYPE* tp, int index)
         {
             if (basetype(tp)->sp->sb->templateLevel)
             {
-                TYPE *tp1, **last = &tp1;
-                while (tp != basetype(tp))
-                {
-                    last = &(*last)->btp;
-                    tp = tp->btp;
-                    *last = Allocate<TYPE>();
-                    **last = *tp;
-                }
-                *last = Allocate<TYPE>();
-                **last = *tp;
-                (*last)->sp->templateParams =  ReplicateTemplateParams(count, arg, (*last)->sp->templateParams, index);
-                tp = tp1;
+                tp = CopyType(tp, true, [count, arg, index](TYPE*& old, TYPE*& newx) {
+                    if (old->rootType == old)
+                        newx->sp->templateParams = ReplicateTemplateParams(count, arg, newx->sp->templateParams, index);
+                    });
             }
         }
     }
@@ -3062,9 +3049,7 @@ LEXLIST* insertNamespace(LEXLIST* lex, enum e_lk linkage, enum e_sc storage_clas
                                 return lex;
                             }
                         }
-                        tp = Allocate<TYPE>();
-                        tp->type = bt_void;
-                        tp->rootType = tp;
+                        tp = MakeType(bt_void);
                         sym = makeID(sc_namespacealias, tp, nullptr, litlate(buf));
                         if (nameSpaceList)
                         {
@@ -3130,10 +3115,7 @@ LEXLIST* insertNamespace(LEXLIST* lex, enum e_lk linkage, enum e_sc storage_clas
     hr = LookupName(buf, globalNameSpace->valueData->syms);
     if (!hr)
     {
-        TYPE* tp = Allocate<TYPE>();
-        tp->type = bt_void;
-        tp->rootType = tp;
-        sym = makeID(sc_namespace, tp, nullptr, litlate(buf));
+        sym = makeID(sc_namespace, MakeType(bt_void), nullptr, litlate(buf));
         sym->sb->nameSpaceValues = Allocate<NAMESPACEVALUELIST>();
         sym->sb->nameSpaceValues->valueData = Allocate<NAMESPACEVALUEDATA>();
         sym->sb->nameSpaceValues->valueData->syms = CreateHashTable(GLOBALHASHSIZE);
@@ -3365,12 +3347,8 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                 checkauto(tp, ERR_AUTO_NOT_ALLOWED_IN_USING_STATEMENT);
                 sp = makeID(sc_typedef, tp, nullptr, litlate(idsym->data->value.s.a));
                 sp->sb->attribs = basisAttribs;
-                TYPE* tp1 = Allocate<TYPE>();
-                tp1->type = bt_typedef;
-                tp1->btp = tp;
-                tp1->sp = sp;
-                UpdateRootTypes(tp1);
-                sp->tp = tp1;
+                sp->tp = MakeType(bt_typedef, tp);
+                sp->tp->sp = sp;
                 sp->sb->access = access;
                 if (inTemplate)
                 {
@@ -3415,7 +3393,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                         {
                             SYMBOL* ssp = getStructureDeclaration(), * ssp1;
                             SYMBOL* sp = (SYMBOL*)(*hr)->p;
-                            SYMBOL* sp1 = clonesym(sp);
+                            SYMBOL* sp1 = CopySymbol(sp);
                             sp1->sb->wasUsing = true;
                             ssp1 = sp1->sb->parentClass;
                             if (ssp && ismember(sp1))
@@ -3433,7 +3411,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                     else
                     {
                         SYMBOL* ssp = getStructureDeclaration(), * ssp1;
-                        SYMBOL* sp1 = clonesym(sp);
+                        SYMBOL* sp1 = CopySymbol(sp);
                         sp1->sb->wasUsing = true;
                         sp1->sb->mainsym = sp;
                         sp1->sb->access = access;
@@ -3505,13 +3483,9 @@ TYPE* AttributeFinish(SYMBOL* sym, TYPE* tp)
             int m = sym->sb->attribs.inheritable.vectorSize / tp->size;
             if (n || m > 0x10000 || (m & (m - 1)) != 0)
                 error(ERR_INVALID_VECTOR_SIZE);
-            TYPE* tp1 = Allocate<TYPE>();
-            tp1->type = bt_pointer;
-            tp1->rootType = tp1;
-            tp1->size = sym->sb->attribs.inheritable.vectorSize;
-            tp1->array = true;
-            tp1->btp = tp;
-            tp = tp1;
+            tp = MakeType(bt_pointer, tp);
+            tp->size = sym->sb->attribs.inheritable.vectorSize;
+            tp->array = true;
         }
         else
         {
@@ -4348,8 +4322,8 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
         }
         if (extended)
             needkw(&lex, closepa);
-        (*tn) = Allocate<TYPE>();
-        (*tn)->type = bt_auto;
+        (*tn) = MakeType(bt_auto);
+        (*tn)->size = 0;
         (*tn)->decltypeauto = true;
         (*tn)->decltypeautoextended = extended;
     }
@@ -4369,19 +4343,17 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
             exp->v.func->sp = hr->p;
             if (hasAmpersand)
             {
-                (*tn) = Allocate<TYPE>();
                 if (ismember(exp->v.func->sp))
                 {
-                    (*tn)->type = bt_memberptr;
+                    (*tn) = MakeType(bt_memberptr, exp->v.func->sp->tp);
                     (*tn)->sp = exp->v.func->sp->sb->parentClass;
                 }
                 else
                 {
-                    (*tn)->type = bt_pointer;
+                    (*tn) = MakeType(bt_pointer, exp->v.func->sp->tp);
                     (*tn)->size = getSize(bt_pointer);
                 }
-                (*tn)->btp = exp->v.func->functp = exp->v.func->sp->tp;
-                (*tn)->rootType = (*tn);
+                exp->v.func->functp = (*tn)->btp;
             }
             else
             {
@@ -4400,11 +4372,8 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
             optimize_for_constants(&exp);
             if (templateNestingCount && !instantiatingTemplate)
             {
-                TYPE* tp2 = Allocate<TYPE>();
-                tp2->type = bt_templatedecltype;
-                tp2->rootType = tp2;
-                tp2->templateDeclType = exp;
-                (*tn) = tp2;
+                (*tn) = MakeType(bt_templatedecltype);
+                (*tn)->templateDeclType = exp;
             }
         }
         exp2 = exp;
@@ -4416,58 +4385,32 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
         }
         if ((*tn)->lref)
         {
-            TYPE* tp2 = Allocate<TYPE>();
-            tp2->type = bt_lref;
-            tp2->size = getSize(bt_pointer);
-            tp2->btp = (*tn);
-            tp2->rootType = tp2;
-            (*tn) = tp2;
+            (*tn) = MakeType(bt_lref, *tn);
         }
         else if ((*tn)->rref)
         {
-            TYPE* tp2 = Allocate<TYPE>();
-            tp2->type = bt_rref;
-            tp2->size = getSize(bt_pointer);
-            tp2->btp = (*tn);
-            tp2->rootType = tp2;
-            (*tn) = tp2;
+            (*tn) = MakeType(bt_rref, *tn);
         }
         if (extended && lvalue(exp) && exp->left->type == en_auto)
         {
             if (!lambdas && xvalue(exp))
             {
-                TYPE* tp2 = Allocate<TYPE>();
                 if (isref((*tn)))
                     (*tn) = basetype((*tn))->btp;
-                tp2->type = bt_rref;
-                tp2->size = getSize(bt_pointer);
-                tp2->btp = (*tn);
-                tp2->rootType = tp2;
-                (*tn) = tp2;
+                (*tn) = MakeType(bt_rref, *tn);
             }
             else if (lvalue(exp))
             {
-                TYPE* tp2 = Allocate<TYPE>();
                 if (isref((*tn)))
                     (*tn) = basetype((*tn))->btp;
+                (*tn) = MakeType(bt_lref, *tn);
                 if (lambdas && !lambdas->isMutable)
                 {
-                    tp2->type = bt_const;
-                    tp2->size = (*tn)->size;
-                    tp2->btp = (*tn);
-                    tp2->rootType = (*tn)->rootType;
-                    (*tn) = tp2;
-                    tp2 = Allocate<TYPE>();
+                    (*tn)->btp = MakeType(bt_const, (*tn)->btp);
                 }
-                tp2->type = bt_lref;
-                tp2->size = getSize(bt_pointer);
-                tp2->btp = (*tn);
-                tp2->rootType = (*tn)->rootType;
-                (*tn) = tp2;
             }
         }
     }
-    //    if (!MATCHKW(lex, closepa))
     needkw(&lex, closepa);
     return lex;
 }

@@ -3642,6 +3642,29 @@ static void checkUndefinedStructures(SYMBOL* funcsp)
         TYPE* tp = basetype(sym->tp);
         if (isstructured(tp) && !basetype(tp)->sp->tp->syms)
         {
+            if (basetype(tp)->sp->sb->templateLevel)
+            {
+                auto sym1 = basetype(tp)->sp;
+                static std::stack<TEMPLATEPARAMLIST*> stk;
+                while (!stk.empty()) stk.pop();
+                for (auto tpl = sym1->templateParams; tpl; tpl = tpl->next)
+                {
+                    if (tpl->p->packed)
+                    {
+                        stk.push(tpl);
+                        tpl = tpl->p->byPack.pack;
+                    }
+                    tpl->p->byClass.dflt = tpl->p->byClass.val;
+                    if (!tpl->next && !stk.empty())
+                    {
+                        tpl = stk.top();
+                        stk.pop();
+                    }
+                }
+                sym1 = GetClassTemplate(sym1, sym1->templateParams->next, false);
+                if (sym1)
+                    basetype(tp)->sp = sym1;
+            }
             tp = PerformDeferredInitialization(tp, funcsp);
             if (!basetype(tp)->sp->tp->syms)
             {

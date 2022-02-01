@@ -97,7 +97,7 @@ void declare_init(void)
     structLevel = 0;
     inDefaultParam = 0;
     openStructs = nullptr;
-    argument_nesting = 0;
+    argumentNesting = 0;
     symbolKey = 0;
     noNeedToSpecialize = 0;
     inConstantExpression = 0;
@@ -1351,7 +1351,6 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
 
     if (inTemplate)
         inTemplateSpecialization--;
-
 
     if (!asfriend && charindex != -1 && Optimizer::cparams.prm_cplusplus && openStructs && MATCHKW(lex, semicolon))
     {

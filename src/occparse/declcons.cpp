@@ -2207,9 +2207,9 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                         {
                             needkw(&lex, openpa);
                             init->init = nullptr;
-                            argument_nesting++;
+                            argumentNesting++;
                             lex = initType(lex, cons, 0, sc_auto, &init->init, nullptr, init->sp->tp, init->sp, false, 0);
-                            argument_nesting--;
+                            argumentNesting--;
                             done = true;
                             needkw(&lex, closepa);
                         }
@@ -2228,9 +2228,9 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                     if (MATCHKW(lex, openpa) && basetype(init->sp->tp)->sp->sb->trivialCons)
                     {
                         init->init = nullptr;
-                        argument_nesting++;
+                        argumentNesting++;
                         lex = initType(lex, cons, 0, sc_auto, &init->init, nullptr, init->sp->tp, init->sp, false, 0);
-                        argument_nesting--;
+                        argumentNesting--;
                         done = true;
                         if (init->packed || MATCHKW(lex, ellipse))
                             error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);

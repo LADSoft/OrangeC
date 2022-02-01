@@ -960,7 +960,6 @@ typedef struct functioncall
     int noobject : 1;
     int asaddress : 1;
     int vararg : 1;
-    int objectCreation : 1;
 } FUNCTIONCALL;
 
 #define MAX_STRLEN 16384

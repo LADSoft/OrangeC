@@ -7755,7 +7755,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             NAMESPACEVALUELIST* oldNext = localNameSpace->next;
             HASHTABLE* oldTags = localNameSpace->valueData->tags;
             int oldInArgs = inTemplateArgs;
-            int oldArgumentNesting = argument_nesting;
+            int oldArgumentNesting = argumentNesting;
             int oldFuncLevel = funcLevel;
             int oldintypedef = inTypedef;
             int oldTypeNameError = noTypeNameError;
@@ -7768,7 +7768,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             noTypeNameError = 0;
             inTypedef = 0;
             funcLevel = 0;
-            argument_nesting = 0;
+            argumentNesting = 0;
             inTemplateArgs = 0;
             expandingParams = 0;
             localNameSpace->valueData->syms = nullptr;
@@ -7843,7 +7843,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             localNameSpace->valueData->syms = oldSyms;
             localNameSpace->valueData->tags = oldTags;
             inTemplateArgs = oldInArgs;
-            argument_nesting = oldArgumentNesting;
+            argumentNesting = oldArgumentNesting;
             expandingParams = oldExpandingParams;
             funcLevel = oldFuncLevel;
             templateHeaderCount = oldHeaderCount;
@@ -8002,11 +8002,14 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             int oldPackIndex = packIndex;
             int oldExpandingParams = expandingParams;
             int nsl = PushTemplateNamespace(sym);
-            int oldArgumentNesting = argument_nesting;
+            int oldArgumentNesting = argumentNesting;
             int oldintypedef = inTypedef;
             int oldTypeNameError = noTypeNameError;
             int oldClass = instantiatingClass;
             int oldParsingUsing = parsingUsing;
+            int oldInTemplateArgs = inTemplateArgs;
+
+            inTemplateArgs = 0;
             parsingUsing = 0;
 
             instantiatingClass = 0;
@@ -8014,7 +8017,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             inTypedef = 0;
             expandingParams = 0;
             instantiatingFunction++;
-            argument_nesting = 0;
+            argumentNesting = 0;
             packIndex = -1;
             linesHead = linesTail = nullptr;
             if (sym->sb->storage_class != sc_member && sym->sb->storage_class != sc_mutable && sym->sb->storage_class != sc_virtual)
@@ -8049,11 +8052,13 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             lex = sym->sb->deferredCompile;
             SetAlternateLex(nullptr);
             PopTemplateNamespace(nsl);
+
+            inTemplateArgs = oldInTemplateArgs;
             parsingUsing = oldParsingUsing;
             templateHeaderCount = oldHeaderCount;
             noTypeNameError = oldTypeNameError;
             inTypedef = oldintypedef;
-            argument_nesting = oldArgumentNesting;
+            argumentNesting = oldArgumentNesting;
             packIndex = oldPackIndex;
             inTemplateType = oldTemplateType;
             linesHead = oldLinesHead;
@@ -10179,7 +10184,9 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
             instants->p = found1;
             instants->next = parent->sb->instantiations;
             parent->sb->instantiations = instants;
-            InsertMatch2Args(found1, args);
+            if (found1->sb->deferredCompile || (found1->sb->maintemplate && found1->sb->maintemplate->sb->deferredCompile)
+                || (found1->sb->parentTemplate && found1->sb->parentTemplate->sb->deferredCompile))
+                InsertMatch2Args(found1, args);
         }
         else
         {

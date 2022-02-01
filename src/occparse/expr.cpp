@@ -74,7 +74,7 @@ namespace Parser
 {
 int packIndex;
 
-int argument_nesting;
+int argumentNesting;
 
 Optimizer::LIST* importThunks;
 /* lvaule */
@@ -2258,7 +2258,22 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
             if ((!templateNestingCount || instantiatingTemplate) && p->tp && p->tp->type == bt_templateselector)
                 p->tp = LookupTypeFromExpression(p->exp, nullptr, false);
             if (finish != closepa)
+            {
                 assignmentUsages(p->exp, false);
+            }
+            else if (isstructured(p->tp))
+            {
+                auto exp3 = p->exp;
+                while (exp3->type == en_void)
+                    exp3 = exp3->right;
+                if (exp3->type == en_thisref)
+                {
+                    p->tp = CopyType(p -> tp);
+                    p->tp->lref = false;
+                    p->tp->rref = true;
+                }
+
+            }
             if (p->tp)
             {
                 if (p->exp && p->exp->type == en_func && p->exp->v.func->sp->sb->parentClass && !p->exp->v.func->ascall &&
@@ -2296,7 +2311,7 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
                 }
                 else
                 {
-                    if (toErr && argument_nesting <= 1)
+                    if (toErr && argumentNesting <= 1)
                         checkUnpackedExpression(p->exp);
                     *lptr = p;
                     lptr = &(*lptr)->next;
@@ -2327,25 +2342,25 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
 }
 LEXLIST* getInitList(LEXLIST* lex, SYMBOL* funcsp, INITLIST** owner)
 {
-    argument_nesting++;
+    argumentNesting++;
     auto rv = getInitInternal(lex, funcsp, owner, end, false, true, true, 0);
-    argument_nesting--;
+    argumentNesting--;
     return rv;
 }
 LEXLIST* getArgs(LEXLIST* lex, SYMBOL* funcsp, FUNCTIONCALL* funcparams, enum e_kw finish, bool allowPack, int flags)
 {
     LEXLIST* rv;
-    argument_nesting++;
-    rv = getInitInternal(lex, funcsp, &funcparams->arguments, finish, true, allowPack, argument_nesting == 1, flags);
-    argument_nesting--;
+    argumentNesting++;
+    rv = getInitInternal(lex, funcsp, &funcparams->arguments, finish, true, allowPack, argumentNesting == 1, flags);
+    argumentNesting--;
     return rv;
 }
 LEXLIST* getMemberInitializers(LEXLIST* lex, SYMBOL* funcsp, FUNCTIONCALL* funcparams, enum e_kw finish, bool allowPack)
 {
     LEXLIST* rv;
-    argument_nesting++;
+    argumentNesting++;
     rv = getInitInternal(lex, funcsp, &funcparams->arguments, finish, true, allowPack, false, 0);
-    argument_nesting--;
+    argumentNesting--;
     return rv;
 }
 static int simpleDerivation(EXPRESSION* exp)
@@ -2611,6 +2626,7 @@ TYPE* InitializerListType(TYPE* arg)
     }
     return rtp;
 }
+int count3;
 void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* initializerListType, INITLIST** lptr, bool operands, bool asref)
 {
     (void)operands;
@@ -3774,7 +3790,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         lex = getArgs(lex, funcsp, funcparams, closepa, true, flags);
     }
 
-    if (funcparams->astemplate && argument_nesting)
+    if (funcparams->astemplate && argumentNesting)
     {
         // if we hit a packed template param here, then this is going to be a candidate
         // for some other function's packed expression
@@ -5536,7 +5552,7 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                     }
                     else
                     {
-                        if (argument_nesting <= 1)
+                        if (argumentNesting <= 1)
                             checkUnpackedExpression(*exp);
                     }
                     needkw(&lex, closepa);

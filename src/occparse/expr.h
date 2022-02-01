@@ -27,7 +27,7 @@ namespace Parser
 {
 extern int packIndex;
 
-extern int argument_nesting;
+extern int argumentNesting;
 
 extern Optimizer::LIST* importThunks;
 

@@ -10,7 +10,7 @@
  *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
  *
- *     The Orange C Compiler package is distributed in the hope that it will be useful,
+ *     The Orange C Compiler package is disis_nothrowtributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
@@ -570,6 +570,34 @@ static bool __is_nothrow(TYPE* tp, INITLIST* args, SYMBOL* ovl)
     EXPRESSION* cexp = nullptr;
     if (ovl)
     {
+        if (isref(tp))
+        {
+            tp = basetype(tp)->btp;
+            if (args->next && !args->next->next)
+            {
+                TYPE* tpy = args->next->tp;
+                if (isref(tpy))
+                    tpy = basetype(tpy)->btp;
+                if (isconst(tpy) && !isconst(tp) || isvolatile(tpy) && !isvolatile(tp))
+                {
+                    return false;
+                }
+                if (isstructured(tp))
+                {
+                    if (isstructured(tpy))
+                    {
+                        SYMBOL* sp2 = basetype(tp)->sp;
+                        SYMBOL* spy = basetype(tpy)->sp;
+                        if (sp2->sb->mainsym)
+                            sp2 = sp2->sb->mainsym;
+                        if (spy->sb->mainsym)
+                            spy = spy->sb->mainsym;
+                        return sp2 == spy || sameTemplate(sp2->tp, spy->tp);
+                    }
+                    return true;
+                }
+            }
+        }
         FUNCTIONCALL funcparams = {};
         funcparams.thisptr = intNode(en_c_i, 0);
         funcparams.thistp = MakeType(bt_pointer, basetype(tp));
@@ -581,23 +609,21 @@ static bool __is_nothrow(TYPE* tp, INITLIST* args, SYMBOL* ovl)
         {
             while (temp->tp->type == bt_typedef)
                 temp->tp = temp->tp->btp;
-            bool rref = basetype(temp->tp)->type == bt_rref;
+            bool rref = isstructured(temp->tp);
             if (isref(temp->tp) && !isstructured(basetype(temp->tp)->btp))
                 temp->tp = basetype(temp->tp)->btp;
             holdl[i] = temp->tp->lref;
             holdr[i] = temp->tp->rref;
-            if (!temp->tp->rref && !rref)
-            {
-                temp->tp->lref = true;
-                temp->tp->rref = false;
-            }
-            else if (rref)
+            if (rref)
             {
                 temp->tp->rref = true;
                 temp->tp->lref = false;
             }
-            temp->tp->lref = false;
-            temp->tp->rref = false;
+            else
+            {
+                temp->tp->lref = false;
+                temp->tp->rref = false;
+            }
             i++;
             temp = temp->next;
         }
@@ -612,7 +638,7 @@ static bool __is_nothrow(TYPE* tp, INITLIST* args, SYMBOL* ovl)
         }
         int oldSpecialize = inTemplateSpecialization;
         inTemplateSpecialization = 0;
-        SYMBOL *sp = GetOverloadedFunction(&tp, &funcparams.fcall, ovl, &funcparams, nullptr, false, false, true, _F_SIZEOF | _F_IS_NOTHROW |_F_RETURN_DELETED);
+        SYMBOL *sp = GetOverloadedFunction(&tp, &funcparams.fcall, ovl, &funcparams, nullptr, false, false, false, _F_SIZEOF | _F_IS_NOTHROW |_F_RETURN_DELETED);
         inTemplateSpecialization = oldSpecialize;
         while (stk.size())
         {
@@ -759,7 +785,8 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                         return true;
                     }
                     if (isstructured(tp2))
-                    {                        
+                    {            
+                        bool rv = true;
                         if (isstructured(tpy))
                         {
                             SYMBOL* sp2 = basetype(tp2)->sp;
@@ -772,7 +799,7 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                         }
                         *exp = intNode(en_c_i, rv);
                         *tp = &stdint;
-                        return true;
+                        return rv;
                     }
                 }
             }
@@ -904,12 +931,14 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                 {
                     tp3 = funcparams.arguments->next->tp;
                 }
+#if 0
                 if (tp3 && isstructured(tp3) &&
                     (comparetypes(tp2, tp3, true) || sameTemplate(tp2, tp3)))
                 {
                     rv = true;
                 }
                 else
+#endif
                 {
                     int i = 0;
                     char holdl[100], holdr[100];
@@ -928,23 +957,21 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                         {
                             while (temp->tp->type == bt_typedef)
                                 temp->tp = temp->tp->btp;
-                            bool rref = basetype(temp->tp)->type == bt_rref;
+                            bool rref = isstructured(temp->tp);
                             if (isref(temp->tp) && !isstructured(basetype(temp->tp)->btp))
                                 temp->tp = basetype(temp->tp)->btp;
                             holdl[i] = temp->tp->lref;
                             holdr[i] = temp->tp->rref;
-                            if (!temp->tp->rref && !rref)
-                            {
-                                temp->tp->lref = true;
-                                temp->tp->rref = false;
-                            }
-                            else if (rref)
+                            if (rref)
                             {
                                 temp->tp->rref = true;
                                 temp->tp->lref = false;
                             }
-                            temp->tp->lref = false;
-                            temp->tp->rref = false;
+                            else
+                            {
+                                temp->tp->lref = false;
+                                temp->tp->rref = false;
+                            }
                             i++;
                             temp = temp->next;
                         }

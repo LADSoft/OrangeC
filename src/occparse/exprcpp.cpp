@@ -693,7 +693,6 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                     *exp = exprNode(en_void, clr, *exp);
                 }
                 initInsert(&sym->sb->dest, *tp, exp1, 0, true);
-                funcparams->objectCreation = true;
             }
             else
                 *exp = intNode(en_c_i, 0);
@@ -1473,13 +1472,10 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
             while (exp3->type == en_void)
                 exp3 = exp3->right;
             if (exp3->type == en_thisref)
-                exp3 = exp3->left;
-            if (exp3->type == en_func && exp3->v.func->objectCreation)
             {
-                tp1 = CopyType(tp1, true);
-                UpdateRootTypes(tp1);
-                basetype(tp1)->lref = false;
-                basetype(tp1)->rref = true;
+                tp1 = CopyType(tp1);
+                tp1->lref = false;
+                tp1->rref = true;
             }
         }
         else if (tp1->sp)// enum

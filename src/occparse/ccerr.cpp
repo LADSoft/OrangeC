@@ -421,7 +421,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         (Optimizer::cparams.prm_cplusplus && (errors[err].level & CE_CPLUSPLUSERROR)))
     {
         if (!Optimizer::cparams.prm_quiet)
-            printf("Error(%3d)   ", err);
+            printf("Error(%3d)   ", err);   
         if (Optimizer::cparams.prm_errfile)
             fprintf(errFile, "Error   ");
         listerr = "CE_ERROR";

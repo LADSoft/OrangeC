@@ -2952,7 +2952,7 @@ LEXLIST* handleStaticAssert(LEXLIST* lex)
         char buf[5000];
         TYPE* tp;
         EXPRESSION *expr = nullptr, *expr2 = nullptr;
-        inConstantExpression++;
+        inConstantExpression++; 
         lex = expression_no_comma(lex, nullptr, nullptr, &tp, &expr, nullptr, 0);
         expr2 = Allocate<EXPRESSION>();
         expr2->type = en_x_bool;

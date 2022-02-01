@@ -2090,7 +2090,7 @@ static LEXLIST* initialize_reference_type(LEXLIST* lex, SYMBOL* funcsp, int offs
                 lref = true;
             }
             if (lref)
-                errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype->btp, tp);
+                errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype, tp);
         }
     }
     initInsert(init, itype, exp, offset, false);

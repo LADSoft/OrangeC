@@ -2546,6 +2546,40 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
         // if qualifiers are mismatched, choose a matching argument
         if (tl && tr)
         {
+            if (ta && (isref(tl) || isref(tr)))
+            {
+                bool ll = false;
+                bool lr = false;
+                if (basetype(tl)->type == bt_rref)
+                    lr = true;
+                else
+                    ll = true;
+                bool rl = false;
+                bool rr = false;
+                if (basetype(tr)->type == bt_rref)
+                    rr = true;
+                else
+                    rl = true;
+                if (ll != rl)
+                {
+                    bool lref = !isref(ta) || basetype(ta)->type == bt_lref;
+                    if (ll)
+                    {
+                        if (lref)
+                            return -1;
+                        else
+                            return 1;
+                    }
+                    else
+                    {
+                        if (lref)
+                            return 1;
+                        else
+                            return -1;
+                    }
+
+                }
+            }
             if (isref(tl))
                 tl = basetype(tl)->btp;
             if (isref(tr))
@@ -2563,7 +2597,7 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
             }
             else if (vl == vr && cl != cr)
             {
-                if (l)
+                if (cl)
                     return 1;
                 else
                     return -1;
@@ -2592,32 +2626,9 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
         {
             if (spList[j])
             {
-                bool leftPacked = false;
-                bool rightPacked = false;
-                SYMLIST* hrleft = basetype(spList[i]->tp)->syms->table[0];
-                SYMLIST* hrright = basetype(spList[j]->tp)->syms->table[0];
-                while (hrleft)
-                {
-                    if (((SYMBOL*)hrleft->p)->packed && !((SYMBOL*)hrleft->p)->synthesized)
-                        leftPacked = true;
-                    hrleft = hrleft->next;
-                }
-                while (hrright)
-                {
-                    if (((SYMBOL*)hrright->p)->packed && !((SYMBOL*)hrright->p)->synthesized)
-                        rightPacked = true;
-                    hrright = hrright->next;
-                }
-                if (leftPacked && !rightPacked)
-                {
-                    spList[i] = 0;
-                }
-                else if (rightPacked && !leftPacked)
-                {
-                    spList[j] = 0;
-                }
                 if (spList[i] && spList[j])
                 {
+                    int bothCast = spList[i]->sb->castoperator && spList[j]->sb->castoperator;
                     int left = 0, right = 0;
                     int l = 0, r = 0;
                     int k = 0;
@@ -2626,7 +2637,7 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                     SYMLIST* hrr = basetype(spList[j]->tp)->syms->table[0];
                     memset(arr, 0, sizeof(arr));
                     for (k = 0; k < argCount; k++)
-                    {
+                    {                  
                         enum e_cvsrn* seql = &icsList[i][l];
                         enum e_cvsrn* seqr = &icsList[j][r];
                         int lenl = lenList[i][k];
@@ -2683,6 +2694,14 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                                                             funcList ? funcList[j][k] : nullptr, lenl, lenr, false);
                             else
                                 arr[k] = 0;
+                            if (bothCast)
+                            {
+                                tpl = basetype(spList[i]->tp)->btp;
+                                tpr = basetype(spList[j]->tp)->btp;
+                                arr[k+1] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, args ? args->tp : 0,
+                                                            args ? args->exp : 0, funcList ? funcList[i][k] : nullptr,
+                                                            funcList ? funcList[j][k] : nullptr, lenl, lenr, false);
+                            }
                             if (hrl)
                                 hrl = hrl->next;
                             if (hrr)
@@ -2693,7 +2712,7 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                         l += lenList[i][k];
                         r += lenList[j][k];
                     }
-                    for (k = 0; k < argCount; k++)
+                    for (k = 0; k < argCount + bothCast; k++)
                     {
                         if (arr[k] > 0)
                             right++;

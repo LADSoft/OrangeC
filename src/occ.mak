@@ -51,7 +51,7 @@ DEBUGFLAG := /g
 endif
 
 ifeq "$(VIAASSEMBLY)" ""
-CCFLAGS = /c /E- /! $(DEBUGFLAG) /t
+CCFLAGS = /c /E- /! $(DEBUGFLAG)
 else
 CCFLAGS = /S /E- /!
 endif

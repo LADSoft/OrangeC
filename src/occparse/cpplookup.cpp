@@ -1463,7 +1463,7 @@ static bool IsFriend(SYMBOL* cls, SYMBOL* frnd)
         while (l)
         {
             SYMBOL* sym = (SYMBOL*)l->data;
-            if (sym == frnd || sym == frnd->sb->parentTemplate)
+            if (sym == frnd || sym->sb->maintemplate == frnd || sym == frnd->sb->parentTemplate)
                 return true;
             if (isfunction(sym->tp) && sym->sb->parentClass == frnd->sb->parentClass && 
                 !strcmp(sym->name, frnd->name) && sym->sb->overloadName && searchOverloads(frnd, sym->sb->overloadName->tp->syms))

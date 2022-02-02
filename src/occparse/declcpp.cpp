@@ -227,9 +227,33 @@ void dumpVTab(SYMBOL* sym)
 }
 void internalClassRefCount(SYMBOL* base, SYMBOL* derived, int* vcount, int* ccount, bool isVirtual)
 {
+    bool ok = false;
     if (base == derived || (base && derived && sameTemplate(derived->tp, base->tp)))
-        (*ccount)++;
-    else
+    {
+
+        if (!templateNestingCount || instantiatingTemplate)
+        {
+            if (base->templateParams && derived->templateParams && base->templateParams->p->bySpecialization.types && derived->templateParams->p->bySpecialization.types)
+            {
+                if (exactMatchOnTemplateArgs(derived->templateParams->p->bySpecialization.types, base->templateParams->p->bySpecialization.types))
+                {
+                    (*ccount)++;
+                    ok = true;
+                }
+            }
+            else
+            {
+                (*ccount)++;
+                ok = true;
+            }
+        }
+        else
+        {
+            (*ccount)++;
+            ok = true;
+        }
+    }
+    if (!ok)
     {
         if (base && derived && derived->sb)
         {

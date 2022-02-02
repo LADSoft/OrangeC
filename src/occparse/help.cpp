@@ -575,14 +575,8 @@ void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
                 if (!nt->rref && basetype(nt)->type != bt_rref && !isarithmeticconst(exp))
                 {
                     // lref
-                    *pat = Allocate<TYPE>();
-                    (*pat)->type = bt_lref;
-                    (*pat)->size = getSize(bt_pointer);
-                    (*pat)->rootType = (*pat);
                     TYPE* t = basetype(nt);
-                    if (isref(t))
-                        t = t->btp;
-                    (*pat)->btp = t;
+                    *pat = MakeType(bt_lref, isref(t) ? t->btp : t);
                     return;
                 }
                 else
@@ -594,14 +588,7 @@ void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
                     else
                         tp1 = basetype(nt);
                     // rref
-                    *pat = Allocate<TYPE>();
-                    (*pat)->type = bt_rref;
-                    (*pat)->size = getSize(bt_pointer);
-                    (*pat)->rootType = (*pat);
-                    TYPE* t = tp1;
-                    if (isref(t))
-                        t = t->btp;
-                    (*pat)->btp = t;
+                    *pat = MakeType(bt_lref, isref(tp1) ? tp1->btp : tp1);
                     return;
                 }
             }
@@ -630,10 +617,7 @@ void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
             if ((*pat)->decltypeauto)
                 if ((*pat)->decltypeautoextended)
                 {
-                    *pat = Allocate<TYPE>();
-                    (*pat)->type = bt_lref;
-                    (*pat)->size = getSize(bt_pointer);
-                    (*pat)->btp = nt;
+                    *pat = MakeType(bt_lref, nt);
                 }
                 else
                 {
@@ -1884,7 +1868,7 @@ bool isconstaddress(EXPRESSION* exp)
             return false;
     }
 }
-SYMBOL*(clonesym)(SYMBOL* sym_in, bool full)
+SYMBOL*(CopySymbol)(SYMBOL* sym_in, bool full)
 {
     SYMBOL* rv = nzAllocate<SYMBOL>();
     *rv = *sym_in;

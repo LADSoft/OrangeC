@@ -74,7 +74,7 @@ namespace Parser
 {
 int packIndex;
 
-int argument_nesting;
+int argumentNesting;
 
 Optimizer::LIST* importThunks;
 /* lvaule */
@@ -934,8 +934,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                     deref(*tp, exp);
                     while (isref(tp1))
                         tp1 = basetype(tp1)->btp;
-                    *tp = Allocate<TYPE>();
-                    **tp = *tp1;
+                    *tp = CopyType(tp1);
                     UpdateRootTypes(*tp);
                 }
                 if (sym->sb && sym->sb->storage_class != sc_overloads)
@@ -1024,8 +1023,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             if (Optimizer::cparams.prm_cplusplus)
             {
                 sym->sb->storage_class = sc_overloads;
-                (*tp) = Allocate<TYPE>();
-                (*tp)->type = bt_aggregate;
+                (*tp) = MakeType(bt_aggregate);
                 UpdateRootTypes(*tp);
                 (*tp)->sp = sym;
             }
@@ -1034,17 +1032,10 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                 /* no prototype error will be added later */
                 sym->sb->storage_class = sc_external;
                 sym->sb->attribs.inheritable.linkage = lk_c;
-                sym->tp = Allocate<TYPE>();
-                sym->tp->type = bt_func;
-                sym->tp->size = getSize(bt_pointer);
+                sym->tp = MakeType(bt_func, CopyType(&stdint));
                 sym->tp->syms = CreateHashTable(1);
                 sym->tp->sp = sym;
-                sym->tp->btp = Allocate<TYPE>();
-                sym->tp->rootType = sym->tp;
-                sym->tp->btp->rootType = sym->tp->btp;
                 sym->sb->oldstyle = true;
-                sym->tp->btp->type = bt_int;
-                sym->tp->btp->size = getSize(bt_int);
                 SetLinkerNames(sym, lk_c);
                 *tp = sym->tp;
             }
@@ -1056,17 +1047,10 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             }
             else
             {
-                sym->tp = Allocate<TYPE>();
-                sym->tp->type = bt_func;
-                sym->tp->size = getSize(bt_pointer);
+                sym->tp = MakeType(bt_func, MakeType(bt_int));
                 sym->tp->syms = CreateHashTable(1);
                 sym->tp->sp = sym;
-                sym->tp->btp = Allocate<TYPE>();
                 sym->sb->oldstyle = true;
-                sym->tp->btp->type = bt_int;
-                sym->tp->btp->size = getSize(bt_int);
-                sym->tp->rootType = sym->tp;
-                sym->tp->btp->rootType = sym->tp->btp;
                 sym->sb->externShim = !!(flags & _F_INDECLTYPE);
                 funcparams = Allocate<FUNCTIONCALL>();
                 funcparams->sp = sym;
@@ -1084,8 +1068,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                 SYMBOL* sym = nullptr;
                 // this code was written this way before I fixed the unitialized variable.   Did we really never get here?
                 sym->sb->storage_class = sc_overloads;
-                (*tp) = Allocate<TYPE>();
-                (*tp)->type = bt_aggregate;
+                (*tp) = MakeType(bt_aggregate);
                 UpdateRootTypes(*tp);
                 (*tp)->sp = sym;
                 funcparams = Allocate<FUNCTIONCALL>();
@@ -1106,9 +1089,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             else
             {
                 sym->sb->storage_class = funcsp ? sc_auto : sc_global;
-                sym->tp = Allocate<TYPE>();
-                sym->tp->type = bt_any;
-                sym->tp->rootType = sym->tp;
+                sym->tp = MakeType(bt_any);
                 sym->sb->parentClass = strSym;
                 *tp = sym->tp;
                 deref(&stdint, exp);
@@ -1336,8 +1317,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
             }
             else
             {
-                *tp = Allocate<TYPE>();
-                (*tp)->type = bt_templatedecltype;
+                *tp = MakeType(bt_templatedecltype);
                 (*tp)->templateDeclType = *exp;
             }
         }
@@ -1421,11 +1401,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                         EXPRESSION* exp1 = nullptr;
                         lex = getArgs(lex, funcsp, funcparams, closepa, true, flags);
                         funcparams->thisptr = intNode(en_c_i, 0);
-                        funcparams->thistp = Allocate<TYPE>();
-                        funcparams->thistp->type = bt_pointer;
-                        funcparams->thistp->size = getSize(bt_pointer);
-                        funcparams->thistp->btp = *tp;
-                        funcparams->thistp->rootType = funcparams->thistp;
+                        funcparams->thistp = MakeType(bt_pointer, *tp);
                         funcparams->ascall = true;
                         match = GetOverloadedFunction(&tp1, &exp1, sp2, funcparams, nullptr, true, false, true, flags);
                         if (match)
@@ -1532,11 +1508,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                     }
                     funcparams->sp = sp2;
                     funcparams->thisptr = *exp;
-                    funcparams->thistp = Allocate<TYPE>();
-                    funcparams->thistp->size = getSize(bt_pointer);
-                    funcparams->thistp->type = bt_pointer;
-                    funcparams->thistp->btp = basetp;
-                    funcparams->thistp->rootType = funcparams->thistp;
+                    funcparams->thistp = MakeType(bt_pointer, basetp);
 
                     if (!points && (*exp)->type != en_l_ref)
                         funcparams->novtab = true;
@@ -1688,34 +1660,6 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                         error(ERR_LVALUE);
             }
         }
-        /* members inherit qualifiers from their parent
-         * this mechanism will automatically recurse
-         * we don't encode this in the actual type so we don't have to dup
-         * types all over the place
-         */
-        if (points && ispointer(typein))
-            typein = basetype(typein)->btp;
-
-        /*
-                if (isconst(typein) && !isconst(*tp))
-                {
-                    TYPE* p = Allocate<TYPE>();
-                    p->type = bt_const;
-                    p->btp = *tp;
-                    p->rootType = (*tp)->rootType;
-                    p->size = p->btp->size;
-                    (*tp) = p;
-                }
-                if (isvolatile(typein) && !isvolatile(*tp))
-                {
-                    TYPE* p = Allocate<TYPE>();
-                    p->type = bt_volatile;
-                    p->btp = *tp;
-                    p->rootType = (*tp)->rootType;
-                    p->size = p->btp->size;
-                    (*tp) = p;
-                }
-        */
     }
     return lex;
 }
@@ -1728,12 +1672,8 @@ TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr)
             hr->p->sb->storage_class != sc_external)
         {
             EXPRESSION* rv;
-            TYPE* tpq = Allocate<TYPE>();
-            tpq->type = bt_memberptr;
-            tpq->btp = hr->p->tp;
-            tpq->rootType = tpq;
-            tpq->sp = hr->p->sb->parentClass;
-            tp = tpq;
+            tp = MakeType(bt_memberptr, hr->p->tp);
+            tp->sp = hr->p->sb->parentClass;
             *exp = varNode(en_memberptr, hr->p);
             (*exp)->isfunc = true;
         }
@@ -2219,14 +2159,9 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                 else if (list->tp->vla)
                 {
                     // cast to a regular pointer if there is no declared param
-                    TYPE* tpx = Allocate<TYPE>();
-                    tpx->type = bt_pointer;
-                    tpx->rootType = tpx;
-                    tpx->size = getSize(bt_pointer);
-                    tpx->btp = list->tp;
-                    while (tpx->btp->vla)
-                        tpx->btp = tpx->btp->btp;
-                    list->tp = tpx;
+                    list->tp = MakeType(bt_pointer, list->tp);
+                    while (list->tp->btp->vla)
+                        list->tp->btp = list->tp->btp->btp;
                 }
                 else if (isint(list->tp))
                 {
@@ -2323,7 +2258,22 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
             if ((!templateNestingCount || instantiatingTemplate) && p->tp && p->tp->type == bt_templateselector)
                 p->tp = LookupTypeFromExpression(p->exp, nullptr, false);
             if (finish != closepa)
+            {
                 assignmentUsages(p->exp, false);
+            }
+            else if (isstructured(p->tp))
+            {
+                auto exp3 = p->exp;
+                while (exp3->type == en_void)
+                    exp3 = exp3->right;
+                if (exp3->type == en_thisref)
+                {
+                    p->tp = CopyType(p -> tp);
+                    p->tp->lref = false;
+                    p->tp->rref = true;
+                }
+
+            }
             if (p->tp)
             {
                 if (p->exp && p->exp->type == en_func && p->exp->v.func->sp->sb->parentClass && !p->exp->v.func->ascall &&
@@ -2350,7 +2300,7 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
                         *lptr = p;
                         lptr = &(*lptr)->next;
                     }
-                    else if (p->exp && p->exp->type != en_packedempty)
+                    else if (p->exp && p->exp->type != en_packedempty && p->tp->type != bt_any)
                     {
                         if (!isstructured(p->tp) && !p->tp->templateParam)
                             checkPackedExpression(p->exp);
@@ -2361,7 +2311,7 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
                 }
                 else
                 {
-                    if (toErr && argument_nesting <= 1)
+                    if (toErr && argumentNesting <= 1)
                         checkUnpackedExpression(p->exp);
                     *lptr = p;
                     lptr = &(*lptr)->next;
@@ -2392,25 +2342,25 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
 }
 LEXLIST* getInitList(LEXLIST* lex, SYMBOL* funcsp, INITLIST** owner)
 {
-    argument_nesting++;
+    argumentNesting++;
     auto rv = getInitInternal(lex, funcsp, owner, end, false, true, true, 0);
-    argument_nesting--;
+    argumentNesting--;
     return rv;
 }
 LEXLIST* getArgs(LEXLIST* lex, SYMBOL* funcsp, FUNCTIONCALL* funcparams, enum e_kw finish, bool allowPack, int flags)
 {
     LEXLIST* rv;
-    argument_nesting++;
-    rv = getInitInternal(lex, funcsp, &funcparams->arguments, finish, true, allowPack, argument_nesting == 1, flags);
-    argument_nesting--;
+    argumentNesting++;
+    rv = getInitInternal(lex, funcsp, &funcparams->arguments, finish, true, allowPack, argumentNesting == 1, flags);
+    argumentNesting--;
     return rv;
 }
 LEXLIST* getMemberInitializers(LEXLIST* lex, SYMBOL* funcsp, FUNCTIONCALL* funcparams, enum e_kw finish, bool allowPack)
 {
     LEXLIST* rv;
-    argument_nesting++;
+    argumentNesting++;
     rv = getInitInternal(lex, funcsp, &funcparams->arguments, finish, true, allowPack, false, 0);
-    argument_nesting--;
+    argumentNesting--;
     return rv;
 }
 static int simpleDerivation(EXPRESSION* exp)
@@ -2628,7 +2578,7 @@ static bool cloneTempExpr(EXPRESSION** expr, SYMBOL** found, SYMBOL** replace)
                         if (!found[i])
                         {
                             found[i] = sym;
-                            replace[i] = clonesym(sym);
+                            replace[i] = CopySymbol(sym);
                             if (theCurrentFunc)
                                 replace[i]->sb->value.i = theCurrentFunc->sb->value.i;
                             replace[i]->name = AnonymousName();
@@ -2670,13 +2620,13 @@ TYPE* InitializerListType(TYPE* arg)
     }
     else
     {
-        rtp = Allocate<TYPE>();
-        rtp->type = bt_struct;
+        rtp = MakeType(bt_struct);
         rtp->sp = makeID(sc_type, rtp, nullptr, "initializer_list");
         rtp->sp->sb->initializer_list = true;
     }
     return rtp;
 }
+int count3;
 void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* initializerListType, INITLIST** lptr, bool operands, bool asref)
 {
     (void)operands;
@@ -2684,7 +2634,6 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
     EXPRESSION *rv = nullptr, **pos = &rv;
     int count = 0, i;
     INITLIST* searchx = *lptr;
-    TYPE* tp = Allocate<TYPE>();
     EXPRESSION *data, *initList;
     SYMBOL *begin, *size;
     EXPRESSION* dest;
@@ -2697,11 +2646,7 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
         *initial = Allocate<INITLIST>();
         if (asref)
         {
-            (*initial)->tp = Allocate<TYPE>();
-            (*initial)->tp->size = getSize(bt_pointer);
-            (*initial)->tp->type = bt_lref;
-            (*initial)->tp->btp = initializerListTemplate;
-            (*initial)->tp->rootType = (*initial)->tp;
+            (*initial)->tp = MakeType(bt_lref, initializerListTemplate);
             (*initial)->exp = searchx->exp;
         }
         else
@@ -2713,12 +2658,10 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
     }
     else
     {
-        tp->type = bt_pointer;
-        tp->array = true;
         while (searchx)
             count++, searchx = searchx->next;
-        tp->btp = initializerListType;
-        tp->rootType = tp;
+        TYPE* tp = MakeType(bt_pointer, initializerListType);
+        tp->array = true;
         tp->size = count * (initializerListType->size);
         tp->esize = intNode(en_c_i, count);
         data = anonymousVar(sc_auto, tp);
@@ -2932,11 +2875,7 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
         *initial = Allocate<INITLIST>();
         if (asref)
         {
-            (*initial)->tp = Allocate<TYPE>();
-            (*initial)->tp->size = getSize(bt_pointer);
-            (*initial)->tp->type = bt_lref;
-            (*initial)->tp->btp = initializerListTemplate;
-            (*initial)->tp->rootType = (*initial)->tp;
+            (*initial)->tp = MakeType(bt_lref, initializerListTemplate);
             (*initial)->exp = exprNode(en_void, rv, initList);
         }
         else
@@ -3106,18 +3045,16 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                     }
                     if (!isarray(sym->tp))
                     {
-                        TYPE* gtype = Allocate<TYPE>();
                         INITLIST* xx = pinit;
-                        *gtype = *sym->tp;
-                        UpdateRootTypes(gtype);
-                        gtype->array = true;
-                        gtype->esize = intNode(en_c_i, n);
+                        sym->tp = CopyType(sym->tp);
+                        sym->tp->array = true;
+                        sym->tp->esize = intNode(en_c_i, n);
+                        UpdateRootTypes(sym->tp);
                         while (xx)
                         {
                             n++;
                             xx = xx->next;
                         }
-                        sym->tp = gtype;
                         sym->tp->size = btp->size * n;
                     }
                     n = 0;
@@ -3380,10 +3317,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                                         if (isarray(tp1))
                                         {
                                             TYPE tp2 = {};
-                                            tp2.type = bt_lref;
-                                            tp2.size = getSize(bt_pointer);
-                                            tp2.btp = &stdpointer;
-                                            tp2.rootType = &tp2;
+                                            MakeType(tp2, bt_lref, &stdpointer);
                                             exp = createTemporary(&tp2, exp);
                                         }
                                         else
@@ -3856,7 +3790,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         lex = getArgs(lex, funcsp, funcparams, closepa, true, flags);
     }
 
-    if (funcparams->astemplate && argument_nesting)
+    if (funcparams->astemplate && argumentNesting)
     {
         // if we hit a packed template param here, then this is going to be a candidate
         // for some other function's packed expression
@@ -3901,28 +3835,20 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         // add this ptr
         if (!funcparams->thisptr && funcparams->sp->sb->parentClass && !isfuncptr(funcparams->sp->tp))
         {
-            TYPE *tp = Allocate<TYPE>(), *tpx;
+            TYPE *tp = MakeType(bt_pointer, funcparams->sp->sb->parentClass->tp);
             funcparams->thisptr = getMemberBase(funcparams->sp, nullptr, funcsp, false);
             funcparams->thistp = tp;
-            tp->type = bt_pointer;
-            tp->size = getSize(bt_pointer);
-            tpx = tp;
             if (funcsp)
             {
                 if (isconst(funcsp->tp))
                 {
-                    tpx = tpx->btp = Allocate<TYPE>();
-                    tpx->size = basetype(funcparams->sp->sb->parentClass->tp)->size;
-                    tpx->type = bt_const;
+                    tp->btp = MakeType(bt_const, tp->btp);
                 }
                 if (isvolatile(funcsp->tp))
                 {
-                    tpx = tpx->btp = Allocate<TYPE>();
-                    tpx->size = basetype(funcparams->sp->sb->parentClass->tp)->size;
-                    tpx->type = bt_volatile;
+                    tp->btp = MakeType(bt_volatile, tp->btp);
                 }
             }
-            tpx->btp = funcparams->sp->sb->parentClass->tp;
             UpdateRootTypes(tp);
             addedThisPointer = true;
         }
@@ -3988,31 +3914,20 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                         }
                         else if (funcsp->sb->storage_class == sc_member || funcsp->sb->storage_class == sc_virtual)
                         {
-                            TYPE** cur;
                             funcparams->thisptr = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);
                             deref(&stdpointer, &funcparams->thisptr);
                             funcparams->thisptr =
                                 DerivedToBase(sym->sb->parentClass->tp, basetype(funcparams->thisptr->left->v.sp->tp)->btp,
                                               funcparams->thisptr, _F_VALIDPOINTER);
-                            funcparams->thistp = Allocate<TYPE>();
-                            cur = &funcparams->thistp->btp;
-                            funcparams->thistp->type = bt_pointer;
-                            funcparams->thistp->size = getSize(bt_pointer);
+                            funcparams->thistp = MakeType(bt_pointer, sym->sb->parentClass->tp);
                             if (isconst(sym->tp))
                             {
-                                (*cur) = Allocate<TYPE>();
-                                (*cur)->type = bt_const;
-                                (*cur)->size = sym->sb->parentClass->tp->size;
-                                cur = &(*cur)->btp;
+                                funcparams->thistp->btp = MakeType(bt_const, funcparams->thistp->btp);
                             }
                             if (isvolatile(sym->tp))
                             {
-                                (*cur) = Allocate<TYPE>();
-                                (*cur)->type = bt_volatile;
-                                (*cur)->size = sym->sb->parentClass->tp->size;
-                                cur = &(*cur)->btp;
+                                funcparams->thistp->btp = MakeType(bt_volatile, funcparams->thistp->btp);
                             }
-                            *cur = sym->sb->parentClass->tp;
                             UpdateRootTypes(funcparams->thistp->btp);
                             cppCast(((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p)->tp, &funcparams->thistp,
                                     &funcparams->thisptr);
@@ -4212,13 +4127,10 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                 funcparams->ascall = true;
                 funcparams->functp = *tp;
                 {
-                    TYPE** tp1;
                     *tp = ResolveTemplateSelectors(basetype(*tp)->sp, basetype(*tp)->btp);
                     if (isref(*tp))
                     {
-                        TYPE* tp1 = *tp;
-                        *tp = Allocate<TYPE>();
-                        **tp = *(tp1->btp);
+                        *tp = CopyType((*tp)->btp);
                         UpdateRootTypes(*tp);
                         if ((*tp)->type == bt_rref)
                         {
@@ -4233,14 +4145,12 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     }
                     else if (ispointer(*tp) && (*tp)->array)
                     {
-                        TYPE* tp1 = *tp;
-                        *tp = Allocate<TYPE>();
-                        **tp = *tp1;
+                        *tp = CopyType(*tp);
                         UpdateRootTypes(*tp);
                         (*tp)->lref = true;
                         (*tp)->rref = false;
                     }
-                    tp1 = tp;
+                    auto tp1 = tp;
                     while (ispointer(*tp1) || basetype(*tp1)->type == bt_memberptr)
                         tp1 = &basetype(*tp1)->btp;
                     while ((*tp1)->btp)
@@ -4309,12 +4219,10 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                 if (funcparams->sp && isfunction(funcparams->sp->tp) && isref(basetype(funcparams->sp->tp)->btp))
                 {
                     TYPE** tp1;
-                    TYPE* tp2 = Allocate<TYPE>();
                     deref(basetype(basetype(funcparams->sp->tp)->btp)->btp, exp);
                     tp1 = &basetype(funcparams->sp->tp)->btp;
-                    *tp2 = *basetype(*tp1)->btp;
-                    UpdateRootTypes(tp2);
-                    *tp = tp2;
+                    *tp = CopyType(basetype(*tp1)->btp);
+                    UpdateRootTypes(*tp);
                     if (basetype(*tp1)->type == bt_rref)
                     {
                         (*tp)->rref = true;
@@ -4332,13 +4240,24 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
             else if (templateNestingCount && !instantiatingTemplate && (*tp)->type == bt_aggregate)
             {
                 *exp = exprNode(en_funcret, *exp, nullptr);
-                *tp = Allocate<TYPE>();
-                (*tp)->type = bt_templatedecltype;
+                *tp = MakeType(bt_templatedecltype);
                 (*tp)->templateDeclType = *exp;
             }
             else
             {
-                if (!templateNestingCount)
+                bool doit = true;
+
+                // if we are in an argument list and there is an empty packed argument
+                // don't generate an error on the theory there will be an ellipsis...
+                if (flags & (_F_INARGS | _F_INCONSTRUCTOR))
+                {
+                    for (auto arg = funcparams->arguments; arg; arg = arg->next)
+                    {
+                        if (arg->tp->type == bt_templateparam && arg->tp->templateParam->p->packed)
+                            doit = !!arg->tp->templateParam->p->byPack.pack;
+                    }
+                }
+                if (doit && !templateNestingCount)
                     error(ERR_CALL_OF_NONFUNCTION);
                 *tp = &stdvoid;
             }
@@ -4589,15 +4508,16 @@ static LEXLIST* expression_string(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
         }
         errorstr(ERR_COULD_NOT_FIND_A_MATCH_FOR_LITERAL_SUFFIX, data->suffix);
     }
-    *tp = Allocate<TYPE>();
     if (data->strtype == l_msilstr)
-        **tp = std__string;
+    {
+        *tp = CopyType(&std__string);
+        (*tp)->rootType = *tp;
+    }
     else
     {
-        (*tp)->type = bt_pointer;
+        *tp = MakeType(bt_pointer);
         (*tp)->array = true;
         (*tp)->stringconst = true;
-        (*tp)->rootType = (*tp);
         (*tp)->esize = intNode(en_c_i, elems + 1);
         switch (data->strtype)
         {
@@ -4616,7 +4536,6 @@ static LEXLIST* expression_string(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                 break;
         }
     }
-    (*tp)->rootType = (*tp);
     if ((*tp)->type == bt___string)
         (*tp)->size = 1;
     else
@@ -5495,12 +5414,7 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                             SYMBOL* ths = search("$this", lambdas->cls->tp->syms);
                             if (ths)
                             {
-                                TYPE* t1 = Allocate<TYPE>();
-                                t1->type = bt_pointer;
-                                t1->size = getSize(bt_pointer);
-                                t1->btp = basetype(lambdas->lthis->tp)->btp;
-                                t1->rootType = t1;
-                                *tp = t1;
+                                *tp = MakeType(bt_pointer, basetype(lambdas->lthis->tp)->btp);
                                 *exp = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);  // this ptr
                                 deref(&stdpointer, exp);
                                 *exp = exprNode(en_structadd, *exp, intNode(en_c_i, ths->sb->offset));
@@ -5556,12 +5470,7 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                     {
                         if (!isvolatile((*exp)->v.sp->tp))
                         {
-                            auto tp1 = Allocate<TYPE>();
-                            tp1->type = bt_volatile;
-                            tp1->btp = (*exp)->v.sp->tp;
-                            tp1->size = tp1->btp->size;
-                            tp1->rootType = tp1->btp->rootType;
-                            (*exp)->v.sp->tp = tp1;
+                            (*exp)->v.sp->tp = MakeType(bt_volatile, (*exp)->v.sp->tp);
                         }
                     }
                     *exp = intNode(en_c_i, 0);
@@ -5643,7 +5552,7 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                     }
                     else
                     {
-                        if (argument_nesting <= 1)
+                        if (argumentNesting <= 1)
                             checkUnpackedExpression(*exp);
                     }
                     needkw(&lex, closepa);
@@ -6258,14 +6167,13 @@ static LEXLIST* expression_ampersand(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TY
                     bool done = false;
                     SYMBOL* spold = sym;
                     sym->sb->label = Optimizer::nextLabel++;
-                    sym = clonesym(sym);
+                    sym = CopySymbol(sym);
                     spold->sb->indecltable = true;
                     tp = sym->tp;
                     tpb = basetype(tp);
                     do
                     {
-                        *tpnp = Allocate<TYPE>();
-                        **tpnp = *tp;
+                        *tpnp = CopyType(tp);
                         UpdateRootTypes(*tpnp);
                         tpnp = &(*tpnp)->btp;
                         if (tp != tpb)
@@ -6289,12 +6197,7 @@ static LEXLIST* expression_ampersand(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TY
             {
                 *exp = varNode(en_global, sym);
             }
-            tp1 = Allocate<TYPE>();
-            tp1->type = bt_pointer;
-            tp1->size = getSize(bt_pointer);
-            tp1->btp = *tp;
-            tp1->rootType = tp1;
-            *tp = tp1;
+            *tp = MakeType(bt_pointer, *tp);
         }
         else if (!isfunction(*tp) && (*tp)->type != bt_aggregate)
         {
@@ -6336,12 +6239,7 @@ static LEXLIST* expression_ampersand(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TY
                 exp2 = &(*exp2)->left;
             if (basetype(btp)->type != bt_memberptr)
             {
-                tp1 = Allocate<TYPE>();
-                tp1->type = bt_pointer;
-                tp1->size = getSize(bt_pointer);
-                tp1->btp = *tp;
-                tp1->rootType = tp1;
-                *tp = tp1;
+                *tp = MakeType(bt_pointer, *tp);
                 if (expasn)
                     *exp2 = exprNode(en_void, expasn, exp1);
                 else
@@ -7198,11 +7096,7 @@ static LEXLIST* expression_pm(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
                     funcparams->fcall = exp1;
                     deref(&stdpointer, &funcparams->fcall);
                     funcparams->thisptr = *exp;
-                    funcparams->thistp = Allocate<TYPE>();
-                    funcparams->thistp->size = getSize(bt_pointer);
-                    funcparams->thistp->type = bt_pointer;
-                    funcparams->thistp->btp = *tp;
-                    funcparams->thistp->rootType = funcparams->thistp;
+                    funcparams->thistp = MakeType(bt_pointer, *tp);
                     *exp = varNode(en_func, nullptr);
                     (*exp)->v.func = funcparams;
                     *tp = basetype(tp1);
@@ -8134,7 +8028,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
     {
         TYPE *tph = nullptr, *tpc = nullptr;
         EXPRESSION *eph = nullptr, *epc = nullptr;
-        castToArithmetic(false, tp, exp, (enum e_kw) - 1, &stdint, true);
+        castToArithmetic(false, tp, exp, (enum e_kw) - 1, &stdint, false);
         Optimizer::LIST* logicaldestructors = nullptr;
         GetLogicalDestructors(&logicaldestructors, *exp);
         LookupSingleAggregate(*tp, exp);
@@ -8397,6 +8291,7 @@ LEXLIST* expression_throw(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** 
             (*exp)->v.func = parms;
         }
     }
+    isCallNoreturnFunction = true;
     return lex;
 }
 static void ReplaceThisAssign(EXPRESSION** init, SYMBOL* sym, EXPRESSION* exp)

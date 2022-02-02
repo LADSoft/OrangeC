@@ -25,8 +25,8 @@
 namespace Parser
 {
 /*      compiler header file    */
-#define clonesym(x) (clonesym)(x, true)
-#define clonesymfalse(x) (clonesym)(x, false)
+#define CopySymbol(x) (CopySymbol)(x, true)
+#define CopySymbolfalse(x) (CopySymbol)(x, false)
 #define CI_CONSTRUCTOR 0
 #define CI_DESTRUCTOR 1
 #define CI_CAST 2
@@ -289,6 +289,7 @@ typedef struct
 #define _F_RETURN_DELETED 32768
 #define _F_NOGEN 0x10000
 #define _F_INDECLTYPE 0x20000
+#define _F_INCONSTRUCTOR 0x40000
 
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2
@@ -1131,7 +1132,7 @@ typedef struct lexContext
 struct templateListData
 {
     TEMPLATEPARAMLIST* args;  // list of templateparam lists
-    TEMPLATEPARAMLIST **ptail, **plast;
+    TEMPLATEPARAMLIST **ptail, **plast, **phold;
     LEXLIST *head, *tail;
     LEXLIST *bodyHead, *bodyTail;
     SYMBOL* sp;

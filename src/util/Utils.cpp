@@ -456,6 +456,15 @@ std::vector<std::string> Utils::split(std::string strToSplit, char delimeter)
     }
     return splittedStrings;
 }
+void Utils::ReplaceAll(std::string& str, const std::string& from, const std::string& to) 
+{
+    size_t pos(0);
+    while((pos = str.find(from, pos)) != std::string::npos) 
+    {
+        str.replace(pos, from.length(), to);
+        pos += to.length(); 
+    }
+}
 
 std::string Utils::FindOnPath(const std::string& name, const std::string& path)
 {

@@ -578,9 +578,7 @@ static void pushArray(SYMBOL* arg, EXPRESSION *exp, std::unordered_map<SYMBOL*, 
         int n = 0;
         for (auto t = finalsym->sb->init; t; t = t->next)
             n++;
-        auto tp = Allocate<TYPE>();
-        tp->type = bt_pointer;
-        tp->btp = finalsym->tp->sp->templateParams->next->p->byClass.val;
+        auto tp = MakeType(bt_pointer, finalsym->tp->sp->templateParams->next->p->byClass.val);
         tp->size = n * tp->btp->size;
         tp->array = true;
         auto sym = makeID(sc_global, tp, nullptr, AnonymousName());
@@ -674,11 +672,9 @@ static void pushArray(SYMBOL* arg, INITLIST* il, std::unordered_map<SYMBOL*, Con
     {
         n++, ilx = ilx->next;
     }
-    auto tp = Allocate<TYPE>();
-    tp->type = bt_pointer;
+    auto tp = MakeType(bt_pointer, il->tp);
     tp->size = n * il->tp->size;
     tp->array = true;
-    tp->btp = il->tp;
     auto sym = makeID(sc_global, tp, nullptr, AnonymousName());
     sym->sb->constexpression = true;
     auto listDeclarator = Allocate<EXPRESSION*>(getSize(bt_pointer) + getSize(bt_int));

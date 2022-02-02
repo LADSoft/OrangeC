@@ -347,9 +347,7 @@ SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl)
         SetLinkerNames(ovl, lk_cdecl);
     if (!funcs)
     {
-        TYPE* tp = Allocate<TYPE>();
-        tp->type = bt_aggregate;
-        tp->rootType = tp;
+        TYPE* tp = MakeType(bt_aggregate);
         funcs = makeID(sc_overloads, tp, 0, ovl->name);
         funcs->sb->parentClass = sp;
         tp->sp = funcs;
@@ -393,16 +391,10 @@ static SYMBOL* declareDestructor(SYMBOL* sp)
 {
     SYMBOL* rv;
     SYMBOL *func, *sp1;
-    TYPE* tp = Allocate<TYPE>();
+    TYPE* tp = MakeType(bt_func, MakeType(bt_void));
     VBASEENTRY* e;
     BASECLASS* b;
     SYMLIST* hr;
-    tp->type = bt_func;
-    tp->size = getSize(bt_pointer);
-    tp->btp = Allocate<TYPE>();
-    tp->btp->type = bt_void;
-    tp->rootType = tp;
-    tp->btp->rootType = tp->btp;
     func = makeID(BaseWithVirtualDestructor(sp) ? sc_virtual : sc_member, tp, nullptr, overloadNameTab[CI_DESTRUCTOR]);
     func->sb->xcMode = xc_none;
     func->sb->noExcept = true;
@@ -520,13 +512,7 @@ static bool constCopyConstructor(SYMBOL* sp)
 static SYMBOL* declareConstructor(SYMBOL* sp, bool deflt, bool move)
 {
     SYMBOL *func, *sp1;
-    TYPE* tp = Allocate<TYPE>();
-    tp->type = bt_func;
-    tp->size = getSize(bt_pointer);
-    tp->btp = Allocate<TYPE>();
-    tp->btp->type = bt_void;
-    tp->rootType = tp;
-    tp->btp->rootType = tp->btp;
+    TYPE* tp = MakeType(bt_func, MakeType(bt_void));
     func = makeID(sc_member, tp, nullptr, overloadNameTab[CI_CONSTRUCTOR]);
     func->sb->isConstructor = true;
 //    func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
@@ -534,27 +520,17 @@ static SYMBOL* declareConstructor(SYMBOL* sp, bool deflt, bool move)
     tp->syms = CreateHashTable(1);
     tp->syms->table[0] = Allocate<SYMLIST>();
     tp->syms->table[0]->p = (SYMBOL*)sp1;
-    sp1->tp = Allocate<TYPE>();
     if (deflt)
     {
-        sp1->tp->type = bt_void;
-        sp1->tp->rootType = sp1->tp;
+        sp1->tp = MakeType(bt_void);
     }
     else
     {
-        TYPE* tpx = sp1->tp;
-        tpx->type = move ? bt_rref : bt_lref;
-        tpx->size = getSize(bt_pointer);
-        tpx->btp = Allocate<TYPE>();
-        tpx = tpx->btp;
+        sp1->tp = MakeType(move ? bt_rref : bt_lref, basetype(sp->tp));
         if (!move && constCopyConstructor(sp))
         {
-            tpx->type = bt_const;
-            tpx->size = getSize(bt_pointer);
-            tpx->btp = Allocate<TYPE>();
-            tpx = tpx->btp;
+            sp1->tp->btp = MakeType(bt_const, sp1->tp->btp);
         }
-        *tpx = *basetype(sp->tp);
     }
     UpdateRootTypes(sp1->tp);
     return insertFunc(sp, func);
@@ -593,39 +569,23 @@ static bool constAssignmentOp(SYMBOL* sp, bool move)
 static SYMBOL* declareAssignmentOp(SYMBOL* sp, bool move)
 {
     SYMBOL *func, *sp1;
-    TYPE* tp = Allocate<TYPE>();
+    TYPE* tp = MakeType(bt_func, basetype(sp->tp));
     TYPE* tpx;
-    tp->type = bt_func;
-    tp->size = getSize(bt_pointer);
-    tp->btp = Allocate<TYPE>();
-    tpx = tp->btp = Allocate<TYPE>();
     if (isstructured(sp->tp))
     {
-        tpx->type = move ? bt_rref : bt_lref;
-        tpx->size = getSize(bt_pointer);
-        tpx = tpx->btp = Allocate<TYPE>();
+        tp->btp = MakeType(move ? bt_rref : bt_lref, tp->btp);
     }
-    *(tpx) = *basetype(sp->tp);
     UpdateRootTypes(tp);
     func = makeID(sc_member, tp, nullptr, overloadNameTab[assign - kw_new + CI_NEW]);
-//    func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
     sp1 = makeID(sc_parameter, nullptr, nullptr, AnonymousName());
     tp->syms = CreateHashTable(1);
     tp->syms->table[0] = Allocate<SYMLIST>();
     tp->syms->table[0]->p = (SYMBOL*)sp1;
-    sp1->tp = Allocate<TYPE>();
-    tpx = sp1->tp;
-    tpx->type = move ? bt_rref : bt_lref;
-    tpx->btp = Allocate<TYPE>();
-    tpx = tpx->btp;
+    sp1->tp = MakeType(move ? bt_rref : bt_lref, basetype(sp->tp));
     if (constAssignmentOp(sp, move))
     {
-        tpx->type = bt_const;
-        tpx->size = getSize(bt_pointer);
-        tpx->btp = Allocate<TYPE>();
-        tpx = tpx->btp;
+        sp1->tp->btp = MakeType(bt_const, sp1->tp->btp);
     }
-    *tpx = *basetype(sp->tp);
     UpdateRootTypes(sp1->tp);
     return insertFunc(sp, func);
 }
@@ -1486,11 +1446,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
                 syms = localNameSpace->valueData->syms;
                 localNameSpace->valueData->syms = basetype(consfunc->tp)->syms;
                 params->thisptr = thisptr;
-                params->thistp = Allocate<TYPE>();
-                params->thistp->type = bt_pointer;
-                params->thistp->btp = sp->tp;
-                params->thistp->rootType = params->thistp;
-                params->thistp->size = getSize(bt_pointer);
+                params->thistp = MakeType(bt_pointer, sp->tp);
                 params->fcall = varNode(en_pc, match);
                 params->functp = match->tp;
                 params->sp = match;
@@ -1499,10 +1455,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
                 if (sp->sb->vbaseEntries)
                 {
                     INITLIST* x = Allocate<INITLIST>(), ** p;
-                    x->tp = Allocate<TYPE>();
-                    x->tp->type = bt_int;
-                    x->tp->rootType = x->tp;
-                    x->tp->size = getSize(bt_int);
+                    x->tp = MakeType(bt_int);
                     x->exp = intNode(en_c_i, 1);
                     p = &params->arguments;
                     while (*p)
@@ -1862,20 +1815,12 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
             {
                 EXPRESSION* other = exprNode(en_add, otherptr, intNode(en_c_i, memberOffs));
 
-                TYPE* tp = Allocate<TYPE>();
-                tp->type = bt_lref;
+                TYPE* tp = MakeType(bt_lref, member->tp);
                 tp->size = getSize(bt_pointer);
 
                 if (isconst(((SYMBOL*)basetype(parentCons->tp)->syms->table[0]->next->p)->tp->btp))
                 {
-                    tp->btp = Allocate<TYPE>();
-                    tp->btp->type = bt_const;
-                    tp->btp->size = basetype(member->tp)->size;
-                    tp->btp->btp = member->tp;
-                }
-                else
-                {
-                    tp->btp = member->tp;
+                    tp->btp = MakeType(bt_const, tp->btp);
                 }
                 UpdateRootTypes(tp);
                 if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false, true))
@@ -1893,20 +1838,11 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
             {
                 EXPRESSION* other = exprNode(en_add, otherptr, intNode(en_c_i, memberOffs));
                 other = exprNode(en_not_lvalue, other, nullptr);
-                TYPE* tp = Allocate<TYPE>();
-                tp->type = bt_rref;
-                tp->size = getSize(bt_pointer);
+                TYPE* tp = MakeType(bt_rref, member->tp);
 
                 if (isconst(((SYMBOL*)basetype(parentCons->tp)->syms->table[0]->next->p)->tp->btp))
                 {
-                    tp->btp = Allocate<TYPE>();
-                    tp->btp->type = bt_const;
-                    tp->btp->size = basetype(member->tp)->size;
-                    tp->btp->btp = member->tp;
-                }
-                else
-                {
-                    tp->btp = member->tp;
+                    tp->btp = MakeType(bt_const, tp->btp);
                 }
                 UpdateRootTypes(tp);
                 if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false, true))
@@ -2271,9 +2207,9 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                         {
                             needkw(&lex, openpa);
                             init->init = nullptr;
-                            argument_nesting++;
+                            argumentNesting++;
                             lex = initType(lex, cons, 0, sc_auto, &init->init, nullptr, init->sp->tp, init->sp, false, 0);
-                            argument_nesting--;
+                            argumentNesting--;
                             done = true;
                             needkw(&lex, closepa);
                         }
@@ -2292,9 +2228,9 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                     if (MATCHKW(lex, openpa) && basetype(init->sp->tp)->sp->sb->trivialCons)
                     {
                         init->init = nullptr;
-                        argument_nesting++;
+                        argumentNesting++;
                         lex = initType(lex, cons, 0, sc_auto, &init->init, nullptr, init->sp->tp, init->sp, false, 0);
-                        argument_nesting--;
+                        argumentNesting--;
                         done = true;
                         if (init->packed || MATCHKW(lex, ellipse))
                             error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
@@ -2832,7 +2768,7 @@ static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPR
     EXPRESSION* exp = nullptr;
     STATEMENT* st;
     FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
-    TYPE* tp = Allocate<TYPE>();
+    TYPE* tp = CopyType(base->tp);
     SYMBOL* asn1;
     SYMBOL* cons = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(base->tp)->syms);
     EXPRESSION* left = exprNode(en_add, thisptr, intNode(en_c_i, offset));
@@ -2843,14 +2779,7 @@ static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPR
     }
     if (isconst)
     {
-        tp->type = bt_const;
-        tp->size = base->tp->size;
-        tp->btp = base->tp;
-        tp->rootType = base->tp->rootType;
-    }
-    else
-    {
-        *tp = *base->tp;
+        tp = MakeType(bt_const, tp);
     }
     if (move)
     {
@@ -2866,11 +2795,7 @@ static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPR
     params->arguments->tp = tp;
     params->arguments->exp = right;
     params->thisptr = left;
-    params->thistp = Allocate<TYPE>();
-    params->thistp->type = bt_pointer;
-    params->thistp->size = getSize(bt_pointer);
-    params->thistp->btp = base->tp;
-    params->thistp->rootType = params->thistp;
+    params->thistp = MakeType(bt_pointer, base->tp);
     params->ascall = true;
     asn1 = GetOverloadedFunction(&tp, &params->fcall, cons, params, nullptr, true, false, true, 0);
 
@@ -2881,12 +2806,7 @@ static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPR
         parm = (SYMBOL*)basetype(asn1->tp)->syms->table[0]->next->p;
         if (parm && isref(parm->tp))
         {
-            TYPE* tp1 = Allocate<TYPE>();
-            tp1->type = bt_lref;
-            tp1->size = getSize(bt_lref);
-            tp1->btp = params->arguments->tp;
-            tp1->rootType = tp1;
-            params->arguments->tp = tp1;
+            params->arguments->tp = MakeType(bt_lref, params->arguments->tp);
         }
         if (!isAccessible(base, base, asn1, nullptr, ac_protected, false))
         {
@@ -3223,11 +3143,7 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
         diag("callDestructor: no this pointer");
     }
     params->thisptr = *exp;
-    params->thistp = Allocate<TYPE>();
-    params->thistp->type = bt_pointer;
-    params->thistp->size = getSize(bt_pointer);
-    params->thistp->btp = sp->tp;
-    params->thistp->rootType = params->thistp;
+    params->thistp = MakeType(bt_pointer, sp->tp);
     params->ascall = true;
     dest1 = basetype(dest->tp)->syms->table[0]->p;
     if (!dest1 || !dest1->sb->defaulted || dest1->sb->storage_class == sc_virtual)
@@ -3270,10 +3186,7 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
             if (sp->sb->vbaseEntries)
             {
                 INITLIST *x = Allocate<INITLIST>(), **p;
-                x->tp = Allocate<TYPE>();
-                x->tp->type = bt_int;
-                x->tp->size = getSize(bt_int);
-                x->tp->rootType = x->tp;
+                x->tp = MakeType(bt_int);
                 x->exp = intNode(en_c_i, top);
                 p = &params->arguments;
                 while (*p)
@@ -3342,13 +3255,9 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
         }
     }
     params->thisptr = *exp;
-    params->thistp = Allocate<TYPE>();
-    params->thistp->type = bt_pointer;
-    params->thistp->btp = sp->tp;
-    params->thistp->rootType = params->thistp;
-    params->thistp->size = getSize(bt_pointer);
+    params->thistp = MakeType(bt_pointer, sp->tp);
     params->ascall = true;
-    cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, nullptr, toErr, maybeConversion, true, usesInitList);
+    cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, nullptr, toErr, maybeConversion, true, usesInitList | _F_INCONSTRUCTOR);
 
     if (cons1 && isfunction(cons1->tp))
     {
@@ -3377,11 +3286,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                 error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
             oparams->fcall = params->fcall;
             oparams->thisptr = params->arguments->exp;
-            oparams->thistp = Allocate<TYPE>();
-            oparams->thistp->type = bt_pointer;
-            oparams->thistp->size = getSize(bt_pointer);
-            oparams->thistp->btp = cons1->sb->parentClass->tp;
-            oparams->thistp->rootType = oparams->thistp;
+            oparams->thistp = MakeType(bt_pointer, cons1->sb->parentClass->tp);
             oparams->functp = cons1->tp;
             oparams->sp = cons1;
             oparams->ascall = true;
@@ -3465,11 +3370,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                     diag("callDestructor: no this pointer");
                 }
                 params->thisptr = *exp;
-                params->thistp = Allocate<TYPE>();
-                params->thistp->type = bt_pointer;
-                params->thistp->size = getSize(bt_pointer);
-                params->thistp->btp = sp->tp;
-                params->thistp->rootType = params->thistp;
+                params->thistp = MakeType(bt_pointer, sp->tp);
                 params->ascall = true;
                 dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, nullptr, true, false, true, 0);
                 if (dest1 &&
@@ -3490,10 +3391,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                 if (sp->sb->vbaseEntries)
                 {
                     INITLIST *x = Allocate<INITLIST>(), **p;
-                    x->tp = Allocate<TYPE>();
-                    x->tp->type = bt_int;
-                    x->tp->rootType = x->tp;
-                    x->tp->size = getSize(bt_int);
+                    x->tp = MakeType(bt_int);
                     x->exp = intNode(en_c_i, top);
                     p = &params->arguments;
                     while (*p)

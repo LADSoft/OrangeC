@@ -333,7 +333,7 @@ TYPE* typenum(char* buf, TYPE* tp)
     switch (tp->type)
     {
         case bt_typedef:
-            strcpy(buf, tp->sp->name);
+            return typenum(buf, tp->btp);
             break;
         case bt_aggregate:
             if (!tp->syms)

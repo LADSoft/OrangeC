@@ -70,35 +70,15 @@ void inlineinit(void)
     inlineVTabHead = nullptr;
     inlineDataHead = nullptr;
     vc1Thunks = CreateHashTable(1);
-    didInlines.clear();  // = CreateHashTable(32);
+    didInlines.clear();
 }
 static bool inSearch(SYMBOL* sp)
 {
     return didInlines.find(sp->sb->decoratedName) != didInlines.end();
-    /*
-    SYMLIST** hr = GetHashLink(didInlines, sp->sb->decoratedName);
-    while (*hr)
-    {
-        SYMBOL* sym = (SYMBOL*)(*hr)->p;
-        if (!strcmp(sym->sb->decoratedName, sp->sb->decoratedName))
-            return sym;
-        hr = &(*hr)->next;
-    }
-    return nullptr;
-    */
 }
 static void inInsert(SYMBOL* sym)
 {
     didInlines.insert(sym->sb->decoratedName);
-    /*
-// assumes the symbol isn't already there...
-SYMLIST** hr = GetHashLink(didInlines, sym->sb->decoratedName);
-SYMLIST* added = Allocate<SYMLIST>();
-//    sym->sb->mainsym = nullptr;
-added->p = (SYMBOL*)sym;
-added->next = *hr;
-*hr = added;
-*/
 }
 static void UndoPreviousCodegen(SYMBOL* sym) {}
 void dumpInlines(void)

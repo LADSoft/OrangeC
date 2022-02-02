@@ -59,6 +59,8 @@ namespace Parser
  */
 void checkscope(TYPE* tp1, TYPE* tp2)
 {
+    tp1 = basetype(tp1);
+    tp2 = basetype(tp2);
     if (tp1->scoped != tp2->scoped)
     {
         error(ERR_SCOPED_TYPE_MISMATCH);
@@ -173,32 +175,17 @@ void qualifyForFunc(SYMBOL* sym, TYPE** tp, bool isMutable)
     {
         if (isconst(sym->tp) && !isMutable)
         {
-            TYPE* tp1 = Allocate<TYPE>();
-            tp1->size = (*tp)->size;
-            tp1->type = bt_const;
-            tp1->btp = *tp;
-            tp1->rootType = (*tp)->rootType;
-            *tp = tp1;
+            *tp = MakeType(bt_const, *tp);
         }
         if (isvolatile(sym->tp))
         {
-            TYPE* tp1 = Allocate<TYPE>();
-            tp1->size = (*tp)->size;
-            tp1->type = bt_volatile;
-            tp1->btp = *tp;
-            tp1->rootType = (*tp)->rootType;
-            *tp = tp1;
+            *tp = MakeType(bt_volatile, *tp);
         }
     }
 }
 void getThisType(SYMBOL* sym, TYPE** tp)
 {
-    *tp = Allocate<TYPE>();
-    (*tp)->size = stdpointer.size;
-    (*tp)->type = bt_pointer;
-    (*tp)->size = getSize(bt_pointer);
-    (*tp)->btp = sym->sb->parentClass->tp;
-    (*tp)->rootType = (*tp);
+    *tp = MakeType(bt_pointer, sym->sb->parentClass->tp);
     qualifyForFunc(sym, tp, false);
 }
 EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, bool toError)
@@ -281,12 +268,8 @@ EXPRESSION* getMemberPtr(SYMBOL* memberSym, SYMBOL* strSym, TYPE** tp, SYMBOL* f
 {
     (void)strSym;
     EXPRESSION* rv;
-    TYPE* tpq = Allocate<TYPE>();
-    tpq->type = bt_memberptr;
-    tpq->btp = memberSym->tp;
-    tpq->rootType = tpq;
-    tpq->sp = memberSym->sb->parentClass;
-    *tp = tpq;
+    *tp = MakeType(bt_memberptr, memberSym->tp);
+    (*tp)->sp = memberSym->sb->parentClass;
     rv = varNode(en_memberptr, memberSym);
     rv->isfunc = true;
     if (!isExpressionAccessible(nullptr, memberSym, funcsp, nullptr, true))
@@ -314,11 +297,7 @@ bool castToArithmeticInternal(bool integer, TYPE** tp, EXPRESSION** exp, enum e_
             EXPRESSION* e1;
             params->fcall = varNode(en_pc, cst);
             params->thisptr = *exp;
-            params->thistp = Allocate<TYPE>();
-            params->thistp->type = bt_pointer;
-            params->thistp->btp = cst->sb->parentClass->tp;
-            params->thistp->rootType = params->thistp;
-            params->thistp->size = getSize(bt_pointer);
+            params->thistp = MakeType(bt_pointer, cst->sb->parentClass->tp);
             params->functp = cst->tp;
             params->sp = cst;
             params->ascall = true;
@@ -417,11 +396,7 @@ bool castToPointer(TYPE** tp, EXPRESSION** exp, enum e_kw kw, TYPE* other)
                 *exp = DerivedToBase(cst->sb->parentClass->tp, *tp, *exp, 0);
                 params->fcall = varNode(en_pc, cst);
                 params->thisptr = *exp;
-                params->thistp = Allocate<TYPE>();
-                params->thistp->type = bt_pointer;
-                params->thistp->btp = cst->sb->parentClass->tp;
-                params->thistp->rootType = params->thistp;
-                params->thistp->size = getSize(bt_pointer);
+                params->thistp = MakeType(bt_pointer, cst->sb->parentClass->tp);
                 params->functp = cst->tp;
                 params->sp = cst;
                 params->ascall = true;
@@ -467,11 +442,7 @@ bool cppCast(TYPE* src, TYPE** tp, EXPRESSION** exp)
                 *exp = DerivedToBase(cst->sb->parentClass->tp, src, *exp, 0);
                 params->fcall = varNode(en_pc, cst);
                 params->thisptr = *exp;
-                params->thistp = Allocate<TYPE>();
-                params->thistp->type = bt_pointer;
-                params->thistp->size = getSize(bt_pointer);
-                params->thistp->btp = cst->sb->parentClass->tp;
-                params->thistp->rootType = params->thistp;
+                params->thistp = MakeType(bt_pointer, cst->sb->parentClass->tp);
                 params->functp = cst->tp;
                 params->sp = cst;
                 params->ascall = true;
@@ -722,8 +693,6 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                     *exp = exprNode(en_void, clr, *exp);
                 }
                 initInsert(&sym->sb->dest, *tp, exp1, 0, true);
-                //                if (flags & _F_SIZEOF)
-                //                    sym->sb->destructed = true; // in case we don't actually use this instantiation
             }
             else
                 *exp = intNode(en_c_i, 0);
@@ -1025,25 +994,14 @@ bool doStaticCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* funcs
         if (callConstructorParam(&ctype, exp, oldType, *exp, true, true, false, false, false))
         {
             EXPRESSION* exp2 = anonymousVar(sc_auto, *newType);
-            TYPE* type2 = Allocate<TYPE>();
-            type2->type = bt_pointer;
-            type2->size = getSize(bt_pointer);
-            type2->btp = *newType;
+            TYPE* type2 = MakeType(bt_pointer, *newType);
             if (isconst(oldType))
             {
-                TYPE* type3 = Allocate<TYPE>();
-                type3->type = bt_const;
-                type3->size = getSize(bt_const);
-                type3->btp = type2;
-                type2 = type3;
+                type2 = MakeType(bt_const, type2);
             }
             if (isvolatile(oldType))
             {
-                TYPE* type3 = Allocate<TYPE>();
-                type3->type = bt_const;
-                type3->size = getSize(bt_volatile);
-                type3->btp = type2;
-                type2 = type3;
+                type2 = MakeType(bt_volatile, type2);
             }
             (*exp)->left->v.func->thistp = type2;
             (*exp)->left->v.func->thisptr = exp2;
@@ -1258,10 +1216,7 @@ LEXLIST* GetCastInfo(LEXLIST* lex, SYMBOL* funcsp, TYPE** newType, TYPE** oldTyp
                         auto sym = searchOverloads(basetype(tp)->sp, (*oldType)->syms);
                         if (sym)
                         {
-                            *oldType = Allocate<TYPE>();
-                            (*oldType)->type = bt_pointer;
-                            (*oldType)->size = getSize(bt_pointer);
-                            (*oldType)->btp = sym->tp;
+                            *oldType = MakeType(bt_pointer, sym->tp);
                             UpdateRootTypes(*oldType);
                             (*oldExp)->v.func->sp = sym;
                             (*oldExp)->v.func->functp = sym->tp;
@@ -1309,12 +1264,9 @@ LEXLIST* expression_typeid(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION**
                 INITLIST* arg2 = Allocate<INITLIST>();
                 SYMBOL* rtti;
                 SYMBOL* val;
-                TYPE* valtp = Allocate<TYPE>();  // space for the virtual pointer and a pointer to the class data
-                valtp->type = bt_pointer;
+                TYPE* valtp = MakeType(bt_pointer, &stdpointer);  // space for the virtual pointer and a pointer to the class data
                 valtp->array = true;
-                valtp->size = 2 * stdpointer.size;
-                valtp->btp = &stdpointer;
-                valtp->rootType = valtp;
+                valtp->size = 2 * getSize(bt_pointer);
                 valtp->esize = intNode(en_c_i, 2);
                 val = makeID(sc_auto, valtp, nullptr, AnonymousName());
                 val->sb->allocate = true;
@@ -1351,11 +1303,7 @@ LEXLIST* expression_typeid(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION**
                     {
                         if (!sym->tp->syms)
                             error(ERR_NEED_TYPEINFO_H);
-                        *tp = Allocate<TYPE>();
-                        (*tp)->type = bt_const;
-                        (*tp)->size = sym->tp->size;
-                        (*tp)->btp = sym->tp;
-                        (*tp)->rootType = sym->tp->rootType;
+                        *tp = MakeType(bt_const, sym->tp);
                     }
                 }
             }
@@ -1379,11 +1327,7 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
         addStructureDeclaration(&l);
         s2 = classsearch(name, false, true);
         dropStructureDeclaration();
-        funcparams->thistp = Allocate<TYPE>();
-        funcparams->thistp->type = bt_pointer;
-        funcparams->thistp->size = getSize(bt_pointer);
-        funcparams->thistp->btp = basetype(*tp);
-        funcparams->thistp->rootType = funcparams->thistp;
+        funcparams->thistp = MakeType(bt_pointer, basetype(*tp));
         funcparams->thisptr = *exp;
     }
     // quit if there are no matches because we will use the default...
@@ -1394,9 +1338,7 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
         return false;
     }
     // finally make a shell to put all this in and add shims for any builtins we want to try
-    tpx = Allocate<TYPE>();
-    tpx->type = bt_aggregate;
-    tpx->rootType = tpx;
+    tpx = MakeType(bt_aggregate);
     s3 = makeID(sc_overloads, tpx, nullptr, name);
     tpx->sp = s3;
     SetLinkerNames(s3, lk_c);
@@ -1455,6 +1397,10 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
     TYPE*tp1Clean = tp1;
     if (tp1Clean && isref(tp1Clean))
        tp1Clean = basetype(tp1Clean)->btp;
+    if (tpClean && tpClean->scoped && basetype(tpClean)->type != bt_enum)
+        tpClean = tpClean->btp;
+    if (tp1Clean && tp1Clean->scoped && basetype(tp1Clean)->type != bt_enum)
+        tp1Clean = tp1Clean->btp;
     if (!isstructured(tpClean) && basetype(tpClean)->type != bt_enum &&
         ((!tp1Clean && !args) || (tp1Clean && !isstructured(tp1Clean) && basetype(tp1Clean)->type != bt_enum)))
         return false;
@@ -1505,12 +1451,42 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
     else
     {
         l.str = nullptr;
+        if (basetype(tpClean)->type == bt_enum && tpClean->sp)
+        {
+            Optimizer::LIST aa{ nullptr, tpClean->sp->sb->parentNameSpace };
+            tpClean->sp->sb->templateNameSpace = aa.data ? &aa : nullptr;
+            int n = PushTemplateNamespace(basetype(tpClean)->sp);  // used for more than just templates here
+            s4 = namespacesearch(name, globalNameSpace, false, false);
+            PopTemplateNamespace(n);
+            tpClean->sp->sb->templateNameSpace = nullptr;
+        }
     }
-    if (tp1 && isstructured(tp1))
+    if (tp1)
     {
-        int n = PushTemplateNamespace(basetype(tp1)->sp);  // used for more than just templates here
-        s5 = namespacesearch(name, globalNameSpace, false, false);
-        PopTemplateNamespace(n);
+        if (isstructured(tp1))
+        {
+            int n = PushTemplateNamespace(basetype(tp1)->sp);  // used for more than just templates here
+            s5 = namespacesearch(name, globalNameSpace, false, false);
+            PopTemplateNamespace(n);
+            auto exp3 = exp1;
+            while (exp3->type == en_void)
+                exp3 = exp3->right;
+            if (exp3->type == en_thisref)
+            {
+                tp1 = CopyType(tp1);
+                tp1->lref = false;
+                tp1->rref = true;
+            }
+        }
+        else if (tp1->sp)// enum
+        {
+            Optimizer::LIST aa{ nullptr, tp1->sp->sb->parentNameSpace };
+            tp1->sp->sb->templateNameSpace = aa.data ? &aa : nullptr;
+            int n = PushTemplateNamespace(basetype(tp1)->sp);  // used for more than just templates here
+            s5 = namespacesearch(name, globalNameSpace, false, false);
+            PopTemplateNamespace(n);
+            tp1->sp->sb->templateNameSpace = nullptr;
+        }
     }
     // quit if there are no matches because we will use the default...
     if (!s1 && !s2 && !s4 && !s5)
@@ -1520,9 +1496,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         return false;
     }
     // finally make a shell to put all this in and add shims for any builtins we want to try
-    tpx = Allocate<TYPE>();
-    tpx->type = bt_aggregate;
-    tpx->rootType = tpx;
+    tpx  = MakeType(bt_aggregate);
     s3 = makeID(sc_overloads, tpx, nullptr, name);
     tpx->sp = s3;
     SetLinkerNames(s3, lk_c);
@@ -1652,7 +1626,8 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
     }
     funcparams->ascall = true;
     s30 = s3;
-    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, nullptr, F_GOFDELETEDERR, false, true, flags);
+    TYPE* ctype = *tp;
+    s3 = GetOverloadedFunction(&ctype, &funcparams->fcall, s3, funcparams, nullptr, F_GOFDELETEDERR, false, true, flags);
     if (s3)
     {
         if (!isExpressionAccessible(nullptr, s3, funcsp, funcparams->thisptr, false))
@@ -1689,14 +1664,11 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
                 break;
             }
         }
+        *tp = ctype;
         if (ismember(s3))
         {
             funcparams->arguments = funcparams->arguments->next;
-            funcparams->thistp = Allocate<TYPE>();
-            funcparams->thistp->type = bt_pointer;
-            funcparams->thistp->size = getSize(bt_pointer);
-            funcparams->thistp->btp = tpin;
-            funcparams->thistp->rootType = funcparams->thistp;
+            funcparams->thistp = MakeType(bt_pointer, tpin);
             funcparams->thisptr = *exp;
         }
         s3->sb->throughClass = s3->sb->parentClass != nullptr;
@@ -1959,12 +1931,9 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
             }
             if (arrSize)
             {
-                tp1 = Allocate<TYPE>();
+                tp1 = MakeType(bt_pointer, *tp);
                 tp1->size = 0;
                 tp1->array = 1;
-                tp1->type = bt_pointer;
-                tp1->btp = *tp;
-                tp1->rootType = tp1;
                 tp1->esize = arrSize;
             }
             lex = initType(lex, funcsp, 0, sc_auto, &init, nullptr, tp1, sym, false, 0);
@@ -2014,12 +1983,7 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
             callConstructor(&tpf, exp, nullptr, false, arrSize, true, false, false, true, false, false, true);
         }
     }
-    tpf = Allocate<TYPE>();
-    tpf->type = bt_pointer;
-    tpf->size = getSize(bt_pointer);
-    tpf->btp = *tp;
-    tpf->rootType = tpf;
-    *tp = tpf;
+    *tp = MakeType(bt_pointer, *tp);
 
     if (val && newfunc)
     {

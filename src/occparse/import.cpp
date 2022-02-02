@@ -165,9 +165,7 @@ TYPE* Importer::TranslateType(Type* in)
         {
             if (in->ArrayLevel() > 1)  // this is because with the current version of dotnetpelib we don't know the index ranges
                 return NULL;
-            *last = Allocate<TYPE>();
-            (*last)->type = bt_pointer;
-            (*last)->rootType = (*last);
+            *last = MakeType(bt_pointer);
             (*last)->array = true;
             (*last)->msil = true;  // arrays are always MSIL when imported from an assembly
 
@@ -180,8 +178,7 @@ TYPE* Importer::TranslateType(Type* in)
                 return nullptr;
             if (in->ArrayLevel())
             {
-                (*last) = Allocate<TYPE>();
-                **last = *sp->tp;
+                (*last) = CopyType(sp->tp);
                 (*last)->msil = true;
             }
             else
@@ -194,8 +191,7 @@ TYPE* Importer::TranslateType(Type* in)
             tp = translatedTypes[in->GetBasicType()];
             if (tp == bt_void && in->GetBasicType() != Type::Void)
                 return nullptr;
-            (*last) = Allocate<TYPE>();
-            (*last)->type = tp;
+            (*last) = MakeType(tp);
             (*last)->size = 1;
             if (in->ArrayLevel() || tp == bt___string || tp == bt___object)
             {
@@ -204,20 +200,11 @@ TYPE* Importer::TranslateType(Type* in)
         }
         for (int i = 0; i < in->PointerLevel(); i++)
         {
-            TYPE* tp1 = Allocate<TYPE>();
-            tp1->type = bt_pointer;
-            tp1->rootType = tp1;
-            tp1->size = getSize(bt_int);
-            tp1->btp = rv;
-            rv = tp1;
+            rv = MakeType(bt_pointer, rv);
         }
         if (in->ByRef())
         {
-            TYPE* tp1 = Allocate<TYPE>();
-            tp1->type = bt_lref;
-            tp1->size = getSize(bt_int);
-            tp1->btp = rv;
-            rv = tp1;
+            rv = MakeType(bt_lref, rv);
         }
     }
     UpdateRootTypes(rv);
@@ -248,9 +235,7 @@ bool Importer::EnterNamespace(const Namespace* nameSpace)
     SYMBOL* sp;
     if (!hr)
     {
-        TYPE* tp = Allocate<TYPE>();
-        tp->type = bt_void;
-        tp->rootType = tp;
+        TYPE* tp = MakeType(bt_void);
         sp = makeID(sc_namespace, tp, NULL, litlate((char*)nameSpace->Name().c_str()));
         sp->sb->nameSpaceValues = Allocate<NAMESPACEVALUELIST>();
         sp->sb->nameSpaceValues->valueData = Allocate<NAMESPACEVALUEDATA>();
@@ -323,16 +308,13 @@ bool Importer::EnterClass(const Class* cls)
             sp = SymAlloc();
             sp->name = litlate((char*)cls->Name().c_str());
             sp->sb->storage_class = sc_type;
-            sp->tp = Allocate<TYPE>();
             if (typeid(*cls) == typeid(Enum))
             {
-                sp->tp->type = bt_enum;
-                sp->tp->size = getSize(bt_int);
-                sp->tp->btp = &stdint;
+                sp->tp = MakeType(bt_enum, &stdint);
             }
             else
             {
-                sp->tp->type = bt_struct;
+                sp->tp = MakeType(bt_struct);
                 sp->tp->size = 1;  // needs to be NZ but we don't really care what is is in the MSIL compiler
                 sp->sb->trivialCons = true;
             }
@@ -473,11 +455,9 @@ bool Importer::EnterMethod(const Method* method)
             structures_.back()->sb->trivialCons = false;
             structures_.back()->sb->hasUserCons = true;
         }
-        TYPE* tp = Allocate<TYPE>();
+        TYPE* tp = MakeType(bt_func, TranslateType(method->Signature()->ReturnType()));
         std::vector<TYPE*> args;
         std::vector<std::string> names;
-        tp->type = bt_func;
-        tp->btp = TranslateType(method->Signature()->ReturnType());
         if (tp->btp)
         {
             int n = 0;
@@ -532,10 +512,7 @@ bool Importer::EnterMethod(const Method* method)
             sp->sb->isConstructor = ctor;
             if (!args.size())
             {
-                TYPE* tp1 = Allocate<TYPE>();
-                tp1->type = bt_void;
-                tp1->rootType = tp1;
-                args.push_back(tp1);
+                args.push_back(MakeType(bt_void));
                 names.push_back("$$void");
             }
             if (sp->sb->storage_class == sc_member || sp->sb->storage_class == sc_virtual)
@@ -544,11 +521,7 @@ bool Importer::EnterMethod(const Method* method)
                 sp1->name = litlate("$$this");
                 sp1->sb->storage_class = sc_parameter;
                 sp1->sb->thisPtr = true;
-                sp1->tp = Allocate<TYPE>();
-                sp1->tp->type = bt_pointer;
-                sp1->tp->rootType = sp1->tp;
-                sp1->tp->size = getSize(bt_int);
-                sp1->tp->btp = structures_.back()->tp;
+                sp1->tp = MakeType(bt_pointer, structures_.back()->tp);
                 sp1->sb->declfile = sp1->sb->origdeclfile = "[import]";
                 sp1->sb->access = ac_public;
                 sp1->sb->parent = sp;
@@ -572,8 +545,7 @@ bool Importer::EnterMethod(const Method* method)
                 SYMBOL* sp1 = SymAlloc();
                 sp1->name = litlate((char*)"$$vararg");
                 sp1->sb->storage_class = sc_parameter;
-                sp1->tp = Allocate<TYPE>();
-                sp1->tp->type = bt_ellipse;
+                sp1->tp = MakeType(bt_ellipse);
                 sp1->sb->declfile = sp1->sb->origdeclfile = "[import]";
                 sp1->sb->access = ac_public;
                 sp1->sb->parent = sp;
@@ -588,9 +560,7 @@ bool Importer::EnterMethod(const Method* method)
                 funcs = (SYMBOL*)((*hr)->p);
             if (!funcs)
             {
-                TYPE* tp = Allocate<TYPE>();
-                tp->type = bt_aggregate;
-                tp->rootType = tp;
+                TYPE* tp = MakeType(bt_aggregate);
                 funcs = makeID(sc_overloads, tp, 0, litlate((char*)method->Signature()->Name().c_str()));
                 funcs->sb->parentClass = structures_.back();
                 tp->sp = funcs;

@@ -388,7 +388,7 @@ void _RTL_FUNC _CatchCleanup(void* r)
     thrownExceptions.pop_back();
 }
 
-[[noreturn]] void std::rethrow_exception(std::exception_ptr& arg)
+[[noreturn]] void std::rethrow_exception(std::exception_ptr arg)
 {
     if (thrownExceptions.size() == 0)
         __call_terminate();

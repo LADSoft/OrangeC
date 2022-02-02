@@ -184,7 +184,7 @@ static int basesize(Optimizer::ARCH_SIZING* p, TYPE* tp)
             else if (tp->alignment)
                 return tp->alignment;
             else
-                return tp->sp->sb->attribs.inheritable.structAlign ? tp->sp->sb->attribs.inheritable.structAlign : 1;
+                return tp->sp ? (tp->sp->sb->attribs.inheritable.structAlign ? tp->sp->sb->attribs.inheritable.structAlign : 1) : 0;
         default:
             /*            diag("basesize: unknown type");*/
             return 1;

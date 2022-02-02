@@ -2064,15 +2064,9 @@ Optimizer::SimpleExpression *CreateMsilVarargs(SYMBOL* funcsp, FUNCTIONCALL* f)
         }  
         if (count)
         {
-            TYPE* tp = Allocate<TYPE>();
-            tp->type = bt_pointer;
+            auto tp = MakeType(bt_pointer, MakeType(bt___object));
             tp->size = 0;
             tp->array = tp->msil = true;
-            tp->rootType = tp;
-            tp->btp = Allocate<TYPE>();
-            tp->btp->type = bt___object;
-            tp->btp->size = getSize(bt_pointer);
-            tp->btp->rootType = tp->btp;
             rv = Optimizer::SymbolManager::Get(anonymousVar(sc_auto, tp));
             Optimizer::cacheTempSymbol(rv->sp);
             rv->sp->anonymous = false;

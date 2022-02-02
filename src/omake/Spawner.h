@@ -128,7 +128,7 @@ class Spawner
         {
             // If the thread is completed, join, otherwise, die, theoretically what we should do is wait for all threads to complete
             // unless an early termination is performed, in which case we should detach all threads and release all jobs
-            if (threadHolder.done)
+            if (threadHolder.done && threadHolder.thread.joinable())
             {
                 threadHolder.thread.join();
             }

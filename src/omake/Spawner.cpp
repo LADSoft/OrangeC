@@ -82,7 +82,7 @@ void Spawner::thread_run(std::promise<int> ret, Spawner* spawner, std::shared_pt
 {
     runningProcesses++;
     int value = spawner->InternalRun();
-    ret.set_value_at_thread_exit(value);
+    ret.set_value(value);
     runningProcesses--;
     spawner->done = true;
     *done_val = 1;

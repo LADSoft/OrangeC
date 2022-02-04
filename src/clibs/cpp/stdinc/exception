@@ -140,9 +140,9 @@ extern int uncaught_exceptions() noexcept;
 
    inline bool operator!(const exception_ptr& e) { return !e.exc; }
    inline bool operator==(const exception_ptr& left, const exception_ptr& right) { return left.exc == right.exc; }
-   inline bool operator!=(const exception_ptr& left, const exception_ptr& right) { return operator==(left, right); }
+   inline bool operator!=(const exception_ptr& left, const exception_ptr& right) { return !operator==(left, right); }
    inline bool operator==(const exception_ptr& left, nullptr_t right) { return left.exc == nullptr; }
-   inline bool operator!=(const exception_ptr& left, nullptr_t right) { return operator==(left, nullptr); }
+   inline bool operator!=(const exception_ptr& left, nullptr_t right) { return !operator==(left, nullptr); }
 
    [[noreturn]] void _RTL_FUNC rethrow_exception(exception_ptr arg);
 

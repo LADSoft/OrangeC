@@ -113,7 +113,7 @@ int getreg(AMODE *apll, int regflags, bool& pushed)
         gen_codes(op_push, ISZ_UINT, makedreg(reg), nullptr);
         pushlevel += 4;
     }
-    else if (reg >= 4)
+    else if (reg >= 3)
     {
         pushed = true;
         gen_codes(op_push, ISZ_UINT, makedreg(reg), nullptr);

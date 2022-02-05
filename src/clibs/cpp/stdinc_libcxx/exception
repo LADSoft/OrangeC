@@ -68,6 +68,7 @@ extern int uncaught_exceptions() noexcept;
       void* baseinstance;
       void* instance;
       void* cons;
+      void* thrd;
       struct _rtti* thrownxt;
       int elems;
       bool inprocess;
@@ -123,9 +124,7 @@ extern int uncaught_exceptions() noexcept;
               FreeExceptionObject(temp);
           }
       }
-
       friend __exceptionInternal* __getxc(const exception_ptr& p);
-
       private:
           void FreeExceptionObject(__exceptionInternal *);
           void increment() {if (exc) ++exc->referenceCount; }

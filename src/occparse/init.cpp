@@ -2993,7 +2993,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                 *init = it;
             }
             exp = baseexp;
-            if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
+            if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable && sc != sc_localstatic && !arrayMember)
             {
                 callDestructor(basetype(itype)->sp, nullptr, &exp, nullptr, true, false, false, true);
                 initInsert(&it, itype, exp, offset, true);

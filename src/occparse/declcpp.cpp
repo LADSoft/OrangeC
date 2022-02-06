@@ -54,7 +54,11 @@
 #include "declare.h"
 #include "constopt.h"
 #include "constexpr.h"
-
+#include "optmain.h"
+#include "iexpr.h"
+#include "iblock.h"
+#include "istmt.h"
+#include "iinline.h"
 namespace CompletionCompiler
 {
 void ccInsertUsing(Parser::SYMBOL* ns, Parser::SYMBOL* parentns, const char* file, int line);
@@ -4469,5 +4473,77 @@ void CollapseReferences(TYPE* tp_in)
         *tp_in = stdvoid;
         tp_in->rootType = tp_in;
     }
+}
+EXPRESSION* addLocalDestructor(EXPRESSION*exp, SYMBOL* decl)
+{
+    if (decl->sb->dest)
+    {
+        auto atexitfunc = namespacesearch("atexit", globalNameSpace, false, false);
+        if (atexitfunc)
+        {
+            atexitfunc = atexitfunc->tp->syms->table[0]->p;
+            EXPRESSION **last = &exp;
+            while (*last && (*last)->type == en_void)
+                last = &(*last)->right;
+            if (*last)
+            {
+                *last = exprNode(en_void, *last, nullptr);
+                last = &(*last)->right;
+            }
+            auto newFunc = makeID(sc_global, &stdfunc, nullptr, litlate((std::string(decl->sb->decoratedName) + "_dest").c_str()));
+            SetLinkerNames(newFunc, lk_c);
+            auto body = decl->sb->dest->exp;
+
+            Optimizer::temporarySymbols.clear();
+            structret_imode = 0;
+            Optimizer::tempCount = 0;
+            Optimizer::blockCount = 0;
+            Optimizer::blockMax = 0;
+            Optimizer::exitBlock = 0;
+            consIndex = 0;
+            retcount = 0;
+            auto oldCurrentFunction = currentFunction;
+            currentFunction = Optimizer::SymbolManager::Get(newFunc);
+            currentFunction->initialized = true;
+
+            newFunc->sb->attribs.inheritable.linkage4 = lk_virtual;
+            iexpr_func_init();
+            gen_func(varNode(en_global, newFunc), 1);
+            Optimizer::gen_virtual(currentFunction, false);
+            Optimizer::addblock(-1);
+            Optimizer::gen_icode(Optimizer::i_prologue, 0, 0, 0);
+
+            codeLabelOffset = Optimizer::nextLabel - INT_MIN;
+            Optimizer::nextLabel += 2;
+
+            Optimizer::gen_label(Optimizer::nextLabel - 2);
+            noinline++;
+            optimize_for_constants(&decl->sb->dest->exp);
+            gen_expr(newFunc, decl->sb->dest->exp, F_NOVALUE, ISZ_UINT); 
+            noinline--;
+            Optimizer::gen_label(Optimizer::nextLabel - 1);
+
+            Optimizer::gen_icode(Optimizer::i_epilogue, 0, 0, 0);
+
+            gen_icode(Optimizer::i_ret, nullptr, Optimizer::make_immed(ISZ_UINT, 0), nullptr);
+
+            Optimizer::AddFunction();
+            Optimizer::gen_endvirtual(currentFunction);
+            Optimizer::intermed_head = nullptr;
+            currentFunction = oldCurrentFunction;
+
+            EXPRESSION* callexp = exprNode(en_func, nullptr, nullptr);
+            callexp->v.func = Allocate<FUNCTIONCALL>();
+            callexp->v.func->sp = atexitfunc;
+            callexp->v.func->functp = atexitfunc->tp;
+            callexp->v.func->fcall = varNode(en_pc, atexitfunc);
+            callexp->v.func->ascall = true;
+            callexp->v.func->arguments = Allocate<INITLIST>();
+            callexp->v.func->arguments->tp = &stdpointer;
+            callexp->v.func->arguments->exp = varNode(en_pc, newFunc);
+            *last = callexp;
+        }
+    }
+    return exp;
 }
 }  // namespace Parser

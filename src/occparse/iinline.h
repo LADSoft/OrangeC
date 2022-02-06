@@ -25,6 +25,7 @@
 
 namespace Parser
 {
+extern int noinline;
 
 extern int inlinesym_count;
 extern EXPRESSION* inlinesym_thisptr[MAX_INLINE_NESTING];

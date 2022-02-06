@@ -83,5 +83,5 @@ bool isConstexprConstructor(SYMBOL* sym);
 bool MatchesConstFunction(SYMBOL* sym);
 LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn);
 void CollapseReferences(TYPE* tp_in);
-
+EXPRESSION* addLocalDestructor(EXPRESSION*exp, SYMBOL* decl);
 }  // namespace Parser

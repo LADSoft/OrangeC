@@ -603,7 +603,6 @@ typedef struct sym
         struct sym* parentNameSpace;
         NAMESPACEVALUELIST* nameSpaceValues; /* for a namespace SP */
         struct sym* vtabsp;
-        EXPRESSION* localInitGuard;
         Optimizer::LINEDATA* linedata;
         enum e_sc storage_class; /* storage class */
         enum e_ac access;        /* c++ access rights for members */

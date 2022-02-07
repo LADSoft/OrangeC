@@ -43,6 +43,7 @@
 
 namespace Parser
 {
+int noinline;
 int inlinesym_count;
 EXPRESSION* inlinesym_thisptr[1000];
 #undef MAX_INLINE_NESTING
@@ -312,6 +313,8 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     EXPRESSION* oldthis = inlinesym_thisptr[inlinesym_count];
     //    return nullptr;
 
+    if (noinline)
+        return nullptr;
     if (Optimizer::chosenAssembler->arch->denyopts & DO_NOINLINE)
         return nullptr;
 

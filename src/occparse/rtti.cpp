@@ -903,8 +903,7 @@ static int evalofs(EXPRESSION* exp, SYMBOL* funcsp)
         case en_c_ul:
             return exp->v.i;
         case en_auto:
-            return 0;
-            //            return exp->v.sp->sb->offset + (exp->v.sp->sb->offset > 0 ? funcsp->sb->retblockparamadjust : 0);
+            return exp->v.sp->sb->offset > 0 ? Optimizer::chosenAssembler->arch->retblockparamadjust : 0;
         case en_structelem:
             return exp->v.sp->sb->offset;
         default:

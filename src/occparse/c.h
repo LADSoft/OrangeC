@@ -603,7 +603,6 @@ typedef struct sym
         struct sym* parentNameSpace;
         NAMESPACEVALUELIST* nameSpaceValues; /* for a namespace SP */
         struct sym* vtabsp;
-        EXPRESSION* localInitGuard;
         Optimizer::LINEDATA* linedata;
         enum e_sc storage_class; /* storage class */
         enum e_ac access;        /* c++ access rights for members */
@@ -715,7 +714,6 @@ typedef struct sym
         short paramsize;                                 /* Size of parameter list for stdcall functions */
         short accessibleTemplateArgument;                /* something used as a template argument was validated for
                                                           * accessibility before instantiating the template */
-        short retblockparamadjust;                       /* Adjustment for retblock parameters */
         short retcount;                                  /* number of return statements in a function */
         /* Also name for CPP overload lists */
         /* also default for template parameters, is a TYP */

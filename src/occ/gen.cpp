@@ -113,7 +113,7 @@ int getreg(AMODE *apll, int regflags, bool& pushed)
         gen_codes(op_push, ISZ_UINT, makedreg(reg), nullptr);
         pushlevel += 4;
     }
-    else if (reg >= 4)
+    else if (reg >= 3)
     {
         pushed = true;
         gen_codes(op_push, ISZ_UINT, makedreg(reg), nullptr);
@@ -5008,7 +5008,6 @@ void asm_cppini(Optimizer::QUAD* q) /* cplusplus initialization (historic)*/ { (
  */
 void asm_prologue(Optimizer::QUAD* q) /* function prologue */
 {
-    Optimizer::chosenAssembler->arch->retblockparamadjust = usingEsp ? 0 : 4;
     inframe =
         !!(beGetIcon(q->dc.left) & FRAME_FLAG_NEEDS_FRAME) || Optimizer::cparams.prm_debug || Optimizer::cparams.prm_stackalign;
     if (inframe)

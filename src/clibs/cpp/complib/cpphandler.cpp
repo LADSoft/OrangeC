@@ -334,6 +334,10 @@ void _RTL_FUNC _ThrowException(void* irecord, void* instance, int arraySize, voi
     cls->inprocess = true;
     cls->thrownxt = xceptBlock;
     cls->cons = cons;
+    void *temp;
+    asm mov eax,[gs:0]
+    asm mov [temp],eax
+    cls->thrd = temp;
     cls->baseinstance = malloc(cls->thrownxt->size * cls->elems);
     if (!cls->baseinstance)
         __call_terminate();
@@ -390,17 +394,31 @@ void _RTL_FUNC _CatchCleanup(void* r)
 
 [[noreturn]] void std::rethrow_exception(std::exception_ptr arg)
 {
-    if (thrownExceptions.size() == 0)
-        __call_terminate();
-    auto e1 = thrownExceptions.back();
-    thrownExceptions.pop_back();
-    thrownExceptions.push_back(arg);
-    XCTAB* record = currentFrame;
     ULONG_PTR params[1];
-    __asm mov eax, [record];
-    __asm mov [fs:0], eax;
+    void *thrd;
+    XCTAB* cur;
+    asm mov eax,[gs:0]
+    asm mov [thrd], eax
+    if (thrd != __getxc(arg)->thrd || thrownExceptions.size() == 0)
+    {
+        asm mov eax,[fs:0]
+        asm mov [cur], eax
+
+        auto cls = __getxc(arg);
+        params[0] = (ULONG_PTR)cur;
+        thrownExceptions.push_back(arg);
+    }
+    else
+    {
+        auto e1 = thrownExceptions.back();
+        thrownExceptions.pop_back();
+        thrownExceptions.push_back(arg);
+        XCTAB* record = currentFrame;
+        __asm mov eax, [record];
+        __asm mov [fs:0], eax;
+        params[0] = (ULONG_PTR)currentFrame;
+    }
     uninstantiate(__getxc(arg), false);
-    params[0] = (ULONG_PTR)currentFrame;
     RaiseException(OUR_CPP_EXC_CODE, EXCEPTION_CONTINUABLE, 1, (ULONG_PTR*)&params[0]);
 }
 
@@ -412,8 +430,13 @@ std::__exceptionInternal* _RTL_FUNC std::__make_exception_ptr(void* instance, in
     cls->thrownxt = (RTTI*) xceptBlock_in;
     cls->cons = cons;
     cls->baseinstance = malloc(cls->thrownxt->size * cls->elems);
+    void *temp;
+    asm mov eax,[gs:0]
+    asm mov [temp],eax
+    cls->thrd = temp;
     if (!cls)
         __call_terminate();
+
     instantiate(cls, (BYTE*)instance, (BYTE*)cls->baseinstance);
     return (void*) cls;
 }

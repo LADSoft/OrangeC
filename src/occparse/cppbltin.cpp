@@ -54,6 +54,8 @@ static std::string cppbuiltin =
     "void __rtllinkage _InitializeException(void *, void *); "
     "void __rtllinkage _RundownException(); "
     "void __rtllinkage __arrCall(void *, void *, void *, int, int); "
+    "extern \"C\" bool __rtllinkage __static_guard(void *); "
+    "extern \"C\" void __rtllinkage atexit(void (*__func)(void)); "
     "namespace std { "
     "class type_info; "
     "} "

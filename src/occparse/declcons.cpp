@@ -1692,7 +1692,7 @@ void destructBlock(EXPRESSION** exp, SYMLIST* hr, bool mainDestruct)
     while (hr)
     {
         SYMBOL* sp = hr->p;
-        if (sp->sb->allocate && !sp->sb->destructed && !isref(sp->tp))
+        if ((sp->sb->allocate || sp->sb->storage_class == sc_parameter) && !sp->sb->destructed && !isref(sp->tp))
         {
             sp->sb->destructed = mainDestruct;
             if (sp->sb->storage_class == sc_parameter)
@@ -1700,15 +1700,17 @@ void destructBlock(EXPRESSION** exp, SYMLIST* hr, bool mainDestruct)
                 if (isstructured(sp->tp))
                 {
                     EXPRESSION* iexp = getThisNode(sp);
-                    callDestructor(basetype(sp->tp)->sp, nullptr, &iexp, nullptr, true, false, false, true);
-                    optimize_for_constants(&iexp);
-                    if (*exp)
+                    if (callDestructor(basetype(sp->tp)->sp, nullptr, &iexp, nullptr, true, false, false, true))
                     {
-                        *exp = exprNode(en_void, iexp, *exp);
-                    }
-                    else
-                    {
-                        *exp = iexp;
+                        optimize_for_constants(&iexp);
+                        if (*exp)
+                        {
+                            *exp = exprNode(en_void, iexp, *exp);
+                        }
+                        else
+                        {
+                           *exp = iexp;
+                        }
                     }
                 }
             }
@@ -3119,10 +3121,10 @@ void makeArrayConsDest(TYPE** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, 
         (*exp)->v.func = params;
     }
 }
-void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* arrayElms, bool top, bool pointer, bool skipAccess, bool novtab)
+bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* arrayElms, bool top, bool pointer, bool skipAccess, bool novtab)
 {
     if (!sp)
-        return;
+        return false;
     SYMBOL* dest;
     SYMBOL* dest1;
     TYPE *tp = nullptr, *stp;
@@ -3136,7 +3138,7 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
     // if it isn't already defined get out, there will be an error from somewhere else..
     if (!basetype(sp->tp)->syms || !dest)
-        return;
+        return false;
     sym = basetype(sp->tp)->sp;
     if (!*exp)
     {
@@ -3208,6 +3210,7 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
                 hasXCInfo = true;
         }
     }
+    return true;
 }
 bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool checkcopy, EXPRESSION* arrayElms, bool top,
                      bool maybeConversion, bool implicit, bool pointer, bool usesInitList, bool isAssign, bool toErr)

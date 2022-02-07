@@ -1079,7 +1079,6 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
         Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(funcsp));
 
     AllocateLocalContext(nullptr, funcsp, Optimizer::nextLabel);
-    funcsp->sb->retblockparamadjust = Optimizer::chosenAssembler->arch->retblockparamadjust;
     XTDumpTab(funcsp);
     FreeLocalContext(nullptr, funcsp, Optimizer::nextLabel);
 

@@ -79,6 +79,7 @@ int inTypedef;
 static int unnamed_tag_id, unnamed_id;
 static char* importFile;
 static unsigned symbolKey;
+static int nameshim;
 
 static LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType,
                                  enum e_sc* storage_class, enum e_sc* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
@@ -149,8 +150,9 @@ const char* AnonymousTypeName(void)
 {
     char buf[512];
     std::string name = preProcessor->GetRealFile();
+    int index = name == "" ? unnamed_id++ : preProcessor->GetAnonymousIndex();
     sprintf(buf, "__anontype_%08x_%04d", Utils::CRC32((const unsigned char*)name.c_str(), name.size()),
-            preProcessor->GetAnonymousIndex());
+            index);
     return litlate(buf);
 }
 SYMBOL* SymAlloc()
@@ -1421,6 +1423,8 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
         sp->sb->uuid = uuid;
         if (sp->sb->attribs.inheritable.linkage2 == lk_none)
             sp->sb->attribs.inheritable.linkage2 = linkage2;
+        if (asfriend)
+            sp->sb->parentClass = nullptr;
         SetLinkerNames(sp, lk_cdecl);
         if (inTemplate && templateNestingCount)
         {
@@ -1432,7 +1436,6 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
             SetLinkerNames(sp, lk_cdecl);
         }
         browse_variable(sp);
-
         insert(sp, Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass ? globalNameSpace->valueData->tags : table);
     }
     else

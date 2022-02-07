@@ -42,7 +42,8 @@
 #include "beinterf.h"
 #include "declcons.h"
 #include "help.h"
-
+#include "declcpp.h"
+#include "ildata.h"
 namespace Parser
 {
 
@@ -1688,26 +1689,6 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
         }
         init = init->next;
     }
-    if (sym && sym->sb->storage_class == sc_localstatic && !(Optimizer::architecture == ARCHITECTURE_MSIL))
-    {
-        if (isdest)
-        {
-            rv = exprNode(en_voidnz, exprNode(en_void, sym->sb->localInitGuard, rv), intNode(en_c_i, 0));
-        }
-        else
-        {
-            EXPRESSION* guard = anonymousVar(sc_localstatic, &stdint);
-            insertInitSym(guard->v.sp);
-            deref(&stdpointer, &guard);
-            optimize_for_constants(&rv);
-            rv = destructLocal(rv);
-            rv = exprNode(en_voidnz,
-                          exprNode(en_void, exprNode(en_not, guard, nullptr),
-                                   exprNode(en_void, rv, exprNode(en_autoinc, guard, intNode(en_c_i, 1)))),
-                          intNode(en_c_i, 0));
-            sym->sb->localInitGuard = guard;
-        }
-    }
     // plop in a clear block if necessary
     if ((sym || expsymin) && !noClear && !isdest &&
         (isarray(tp) ||
@@ -1722,6 +1703,35 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
         exp = exprNode(en_blockclear, fexp, nullptr);
         exp->size = tp->size;
         rv = exprNode(en_void, exp, rv);
+    }
+    if (sym && sym->sb->storage_class == sc_localstatic && !(Optimizer::architecture == ARCHITECTURE_MSIL))
+    {
+        SYMBOL* guardfunc = namespacesearch("__static_guard", globalNameSpace, false, false);
+        if (guardfunc)
+        {
+            guardfunc = guardfunc->tp->syms->table[0]->p;
+            EXPRESSION* guard = anonymousVar(sc_localstatic, &stdint);
+            insertInitSym(guard->v.sp);
+            deref(&stdpointer, &guard);
+            optimize_for_constants(&rv);
+            rv = destructLocal(rv);
+            rv = addLocalDestructor(rv, sym);
+            EXPRESSION* guardexp = exprNode(en_func, nullptr, nullptr);
+            guardexp->v.func = Allocate<FUNCTIONCALL>();
+            guardexp->v.func->sp = guardfunc;
+            guardexp->v.func->functp = guardfunc->tp;
+            guardexp->v.func->fcall = varNode(en_pc, guardfunc);
+            guardexp->v.func->ascall = true;
+            guardexp->v.func->arguments = Allocate<INITLIST>();
+            guardexp->v.func->arguments->tp = &stdpointer;
+            guardexp->v.func->arguments->exp = guard->left;
+            rv = exprNode(en_voidnz,
+                          exprNode(en_void, exprNode(en_land, 
+                                                     exprNode(en_ne, guard, intNode(en_c_i, -1)),
+                                                     exprNode(en_ne, guardexp, intNode(en_c_i, 0))),
+                                   exprNode(en_void, rv, exprNode(en_assign, guard, intNode(en_c_i, -1)))),
+                          intNode(en_c_i, 0));
+        }
     }
     if (isstructured(tp))
     {

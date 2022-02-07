@@ -49,7 +49,7 @@ bool _RTL_FUNC __static_guard(DWORD* mem)
     {
         while (atomic_load(mem) != -1)
         {
-            asm pause;
+            _mm_pause();
         }     
         return false;   
     }

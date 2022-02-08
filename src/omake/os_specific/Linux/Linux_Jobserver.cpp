@@ -138,7 +138,7 @@ POSIXJobServer::POSIXJobServer(int read, int write)
 std::string POSIXJobServer::PassThroughCommandString()
 {
     std::stringstream stream;
-    stream << "--jobserver-auth=" << readfd << ',' << writefd;
+    stream << readfd << ',' << writefd;
     return stream.str();
 }
 WINDOWSJobServer::WINDOWSJobServer(const string_type& server_name)

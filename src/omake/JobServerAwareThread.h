@@ -27,13 +27,14 @@ class JobServerAwareThread
     // Easy callback method, we pass in the callback class first to ensure that the args don't catch it accidentally
     template <class Function, class... Args>
     explicit JobServerAwareThread(std::shared_ptr<IJobServer> callback_class, Function&& f, Args&&... args) :
-        underlying_thread(std::forward<Function>(f), std::forward<Args>(args)...), callback(callback_class)
+        callback(callback_class)
     {
-        // This *used* to be done beofer the underlying thread was created, now, we do it slightly after, should *not* affect things
         if (callback)
         {
             callback->TakeNewJob();
         }
+        // make sure we take a job before we actually spawn the thread
+        underlying_thread = std::thread(std::forward<Function>(f), std::forward<Args>(args)...);
     }
     // Get an id so that if anyone needs the underlying thread id for any reason they can get it
     std::thread::id get_id() { return underlying_thread.get_id(); }

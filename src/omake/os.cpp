@@ -22,8 +22,6 @@
  *
  */
 
-// This file contains a lot of comments that use mutexes, this is because OrangeC currently does not have C++ mutexes but once it
-// does it'll be done
 #define _CRT_SECURE_NO_WARNINGS
 
 #ifdef HAVE_UNISTD_H
@@ -68,7 +66,6 @@
 #include <sys/stat.h>
 #include <mutex>
 #include <memory>
-#include "semaphores.h"
 #include "JobServer.h"
 //#define DEBUG
 static std::mutex processIdMutex;
@@ -216,42 +213,28 @@ void OS::InitJobServer()
     std::string name;
     if (!localJobServer)
     {
-        Variable* v = VariableContainer::Instance()->Lookup(".OMAKESEM");
-        if (v)
+        if (MakeMain::jobServer.GetExists())
         {
-            name = v->GetValue();
-            OS::WriteToConsole("The job server name is: " + name);
+            name = MakeMain::jobServer.GetValue();
             localJobServer = OMAKE::JobServer::GetJobServer(name);
         }
         else
         {
             localJobServer = OMAKE::JobServer::GetJobServer(jobsLeft);
             name = localJobServer->PassThroughCommandString();
-            name = name.substr(name.find_first_of('=') + 1);
-            v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
-            v->SetExport(true);
-            *VariableContainer::Instance() += v;
+            MakeMain::jobServer.SetValue(name);
             first = true;
         }
     }
     else
     {
-        std::cout << "Retry" << std::endl;
-        if (!VariableContainer::Instance()->Lookup(".OMAKESEM"))
-        {
-            name = localJobServer->PassThroughCommandString();
-            name = name.substr(name.find_first_of('=') + 1);
-            Variable* v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
-            v->SetExport(true);
-            *VariableContainer::Instance() += v;
-        }
+        std::cerr << "An attempt to remake a job server has been performed, this should not happen, please contact the developers if this message appears" << std::endl;
     }
 }
 bool OS::first = false;
 void OS::JobInit()
 {
-    std::string jobServerName = localJobServer->PassThroughCommandString();
-    std::string name = jobServerName.substr(jobServerName.find_last_of('='));
+    std::string name = MakeMain::jobServer.GetValue();
     if (MakeMain::printDir.GetValue() && jobName == "\t")
     {
         char tempfile[260];
@@ -692,17 +675,6 @@ std::string OS::NormalizeFileName(const std::string file)
         }
     }
     return name;
-}
-void OS::CreateThread(void* func, void* data)
-{
-#ifdef _WIN32
-#    ifdef BCC32c
-    DWORD tid;
-    CloseHandle(::CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)func, data, 0, &tid));
-#    else
-    CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, nullptr));
-#    endif
-#endif
 }
 void OS::Yield() { std::this_thread::yield(); }
 int OS::GetProcessId() { return getpid(); }

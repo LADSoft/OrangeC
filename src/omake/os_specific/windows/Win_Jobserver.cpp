@@ -64,8 +64,7 @@ int WINDOWSJobServer::ReleaseJob()
 }
 std::string WINDOWSJobServer::PassThroughCommandString()
 {
-    std::string defaultStr = std::string("--jobserver-auth=");
-    return defaultStr + server_name;
+    return server_name;
 }
 POSIXJobServer::POSIXJobServer(int max_jobs) { throw std::runtime_error("POSIX jobservers are not supported on windows"); }
 POSIXJobServer::POSIXJobServer(int read, int write) { throw std::runtime_error("POSIX jobservers are not supported on windows"); }

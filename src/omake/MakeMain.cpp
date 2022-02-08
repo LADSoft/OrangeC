@@ -66,7 +66,8 @@ CmdSwitchBool MakeMain::printDir(switchParser, 'w', false, { "print-directory" }
 CmdSwitchBool MakeMain::warnUndef(switchParser, 'u');
 CmdSwitchBool MakeMain::treeBuild(switchParser, 'T');
 CmdSwitchBool MakeMain::keepResponseFiles(switchParser, 'K');
-CmdSwitchInt MakeMain::jobs(switchParser, 'j', 1, 1, INT_MAX);
+CmdSwitchInt MakeMain::jobs(switchParser, 'j', INT_MAX, 1, INT_MAX);
+CmdSwitchString MakeMain::jobServer(switchParser, 0, 0, {"jobserver-auth"});
 CmdSwitchCombineString MakeMain::jobOutputMode(switchParser, 'O');
 
 const char* MakeMain::usageText =
@@ -87,6 +88,7 @@ const char* MakeMain::usageText =
     "/t    Touch                   /u    Debug warnings\n"
     "/w    Print make status       --eval=STRING evaluate a statement\n"
     "/!    No logo                 /? or --help  this help\n"
+    "--jobserver-auth=xxxx               Name a jobserver to use for getting jobs\n"
     "--version show version info\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
 const char* MakeMain::builtinVars = "";
@@ -223,17 +225,15 @@ void MakeMain::SetMakeFlags()
     if (jobs.GetExists())
     {
         int n = jobs.GetValue();
-        char buf[256];
-        if (jobs.GetValue() != INT_MAX)
-            sprintf(buf, "%d", jobs.GetValue());
-        else
-            buf[0] = 0;
-        ;
-        vals += std::string(" -j:") + buf;
+        vals += std::string(" -j") + (n != INT_MAX ? (std::string(":") + std::to_string(n)) : "");
     }
     if (jobOutputMode.GetExists())
     {
         vals += std::string(" -O") + jobOutputMode.GetValue();
+    }
+    if (jobServer.GetExists())
+    {
+        vals += " --jobserver-auth=" + jobServer.GetValue();
     }
     if (!includes.GetValue().empty())
     {
@@ -257,10 +257,6 @@ void MakeMain::LoadJobArgs()
     if (jobs.GetExists())
     {
         jobCount = jobs.GetValue();
-        if(jobCount == INT_MAX)
-        {
-            jobCount = std::thread::hardware_concurrency();
-        }
     }
     OS::PushJobCount(jobCount);
     if (jobOutputMode.GetExists())

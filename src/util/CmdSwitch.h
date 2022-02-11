@@ -68,7 +68,7 @@ class CmdSwitchBool : public CmdSwitchBase
     CmdSwitchBool(const CmdSwitchBool& orig) = default;
     virtual int Parse(const char* data) override;
     bool GetValue() const { return value; }
-    void SetValue(bool flag) { value = flag; }
+    void SetValue(bool flag) { value = flag; SetExists(); }
 
   private:
     bool value;
@@ -88,7 +88,7 @@ class CmdSwitchInt : public CmdSwitchBase
 
     virtual int Parse(const char* data) override;
     int GetValue() const { return value; }
-    void SetValue(int val) { value = val; }
+    void SetValue(int val) { value = val; SetExists(); }
     bool RequiresArgument() override { return false; }
   private:
     int value;
@@ -129,7 +129,7 @@ class CmdSwitchString : public CmdSwitchBase
     CmdSwitchString() : value(""), concat(0) {}
     virtual int Parse(const char* data) override;
     const std::string& GetValue() const { return value; }
-    void SetValue(std::string val) { value = val; }
+    void SetValue(std::string val) { value = val; SetExists(); }
     std::string operator+=(const char* c)
     {
         value += c;

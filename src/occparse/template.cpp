@@ -6197,7 +6197,7 @@ static bool TemplateDeduceArgList(SYMLIST* funcArgs, SYMLIST* templateArgs, INIT
         }
         templateArgs = templateArgs->next;
     }
-    return rv && !symArgs;
+    return rv && (!symArgs || symArgs->tp->type == bt_templateparam && symArgs->tp->templateParam->p->packed && !symArgs->tp->templateParam->p->byPack.pack);
 }
 static void SwapDefaultNames(TEMPLATEPARAMLIST* params, Optimizer::LIST* origNames)
 {

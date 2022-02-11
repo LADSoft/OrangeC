@@ -4486,7 +4486,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                 return true;
             return false;
         }
-        return a == nullptr;
+        return a == nullptr || (a->tp->type == bt_templateparam && a->tp->templateParam->p->packed && !a->tp->templateParam->p->byPack.pack);
     }
 }
 SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, TYPE* atp)

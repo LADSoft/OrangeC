@@ -4191,15 +4191,17 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     {
                         if (!basetype(funcparams->returnSP->tp)->sp->sb->trivialCons)
                         {
-                            EXPRESSION* expx;
                             exp_in = exprNode(en_thisref, exp_in, nullptr);
                             exp_in->v.t.thisptr = funcparams->returnEXP;
                             exp_in->v.t.tp = funcparams->returnSP->tp;
 
-                            expx = funcparams->returnEXP;
-                            callDestructor(basetype(funcparams->returnSP->tp)->sp, nullptr, &expx, nullptr, true, false, true,
-                                           true);
-                            initInsert(&funcparams->returnSP->sb->dest, funcparams->returnSP->tp, expx, 0, true);
+                            if (isstructured(funcparams->returnSP->tp))
+                            {
+                                EXPRESSION* expx = funcparams->returnEXP;
+                                callDestructor(basetype(funcparams->returnSP->tp)->sp, nullptr, &expx, nullptr, true, false, true,
+                                    true);
+                                initInsert(&funcparams->returnSP->sb->dest, funcparams->returnSP->tp, expx, 0, true);
+                            }
                         }
                     }
                     if (exp_in)

@@ -121,6 +121,7 @@ int init_backend()
         stdwcharptr.size = getSize(bt_pointer);
         stdchar16tptr.size = getSize(bt_pointer);
         stdchar32tptr.size = getSize(bt_pointer);
+        stdfunc.size = getSize(bt_pointer);
 
         stdpointer.rootType = &stdpointer;
         stdnullpointer.rootType = &stdnullpointer;

@@ -520,7 +520,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
     {
         gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
     }
-    if (ap && (inlinesym_count || !isvoid(basetype(funcsp->tp)->btp)))
+    if (ap && (inlinesym_count || !isvoid(basetype(funcsp->tp)->btp) || funcsp->sb->isConstructor))
     {
         bool needsOCP = false;
         if (returnImode)

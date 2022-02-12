@@ -3299,6 +3299,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     currentLineData(blockstmt, lex, 0);
     AllocateLocalContext(blockstmt, funcsp, codeLabel++);
     parent->needlabel = false;
+
     if (first)
     {
         SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
@@ -3870,6 +3871,7 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     declareAndInitialize = false;
     block->type = funcsp->sb->hasTry ? kw_try : begin;
     theCurrentFunc = funcsp;
+    basetype(funcsp->tp)->btp = ResolveTemplateSelectors(funcsp, basetype(funcsp->tp)->btp);
     if (inTemplateHeader)
         templateNestingCount--;
     checkUndefinedStructures(funcsp);

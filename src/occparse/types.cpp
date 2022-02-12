@@ -135,7 +135,7 @@ bool comparetypes(TYPE* typ1, TYPE* typ2, int exact)
             typ1 = basetype(typ1)->btp;
         if (ispointer(typ2))
             typ2 = basetype(typ2)->btp;
-        if (!comparetypes(typ1->btp, typ2->btp, exact))
+        if (isref(typ1->btp) != isref(typ2->btp) || !comparetypes(typ1->btp, typ2->btp, exact))
             return false;
         if (!matchOverload(typ1, typ2, true))
             return false;

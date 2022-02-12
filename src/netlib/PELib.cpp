@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "DotNetPELib.h"
@@ -58,9 +58,10 @@ AssemblyDef* PELib::EmptyWorkingAssembly(const std::string& AssemblyName)
 bool PELib::DumpOutputFile(const std::string& file, OutputMode mode, bool gui)
 {
     bool rv;
-    outputStream_ = std::unique_ptr<std::iostream>( new std::fstream(file.c_str(), std::ios::in | std::ios::out | std::ios::trunc |
-                     (mode == ilasm || mode == object ? std::ios::in : std::ios::binary)) );
- 
+    outputStream_ = std::unique_ptr<std::iostream>(
+        new std::fstream(file.c_str(), std::ios::in | std::ios::out | std::ios::trunc |
+                                           (mode == ilasm || mode == object ? std::ios::in : std::ios::binary)));
+
     switch (mode)
     {
         case ilasm:
@@ -176,7 +177,7 @@ void PELib::SplitPath(std::vector<std::string>& split, std::string path)
             }
     }
 }
-PELib::eFindType PELib::Find(std::string path, void **result, std::deque<Type*>* generics, AssemblyDef *assembly)
+PELib::eFindType PELib::Find(std::string path, void** result, std::deque<Type*>* generics, AssemblyDef* assembly)
 {
     if (path.size() && path[0] == '[')
     {
@@ -306,23 +307,23 @@ PELib::eFindType PELib::Find(std::string path, void **result, std::deque<Type*>*
 }
 Class* PELib::FindOrCreateGeneric(std::string name, std::deque<Type*>& generics)
 {
-    void *result = nullptr;
+    void* result = nullptr;
     if (Find(name, &result, &generics) == s_class)
     {
-        return static_cast<Class *>(result);
+        return static_cast<Class*>(result);
     }
     if (Find(name, &result) == s_class)
     {
         Class* rv = AllocateClass(static_cast<Class*>(result));
         rv->Generic() = generics;
         rv->GenericParent(static_cast<Class*>(result));
-        static_cast<Class *>(result)->Parent()->Add(rv);
+        static_cast<Class*>(result)->Parent()->Add(rv);
         rv->Clear();
         for (auto m : static_cast<Class*>(result)->Methods())
         {
             // only doing methods right now...
-            Method *old = static_cast<Method*>(m);
-            MethodSignature *m1 = AllocateMethodSignature(old->Signature());
+            Method* old = static_cast<Method*>(m);
+            MethodSignature* m1 = AllocateMethodSignature(old->Signature());
             m1->SetContainer(rv);
             Method* nm = AllocateMethod(m1, old->Flags());
             rv->Add(nm);
@@ -332,7 +333,8 @@ Class* PELib::FindOrCreateGeneric(std::string name, std::deque<Type*>& generics)
     return nullptr;
 }
 
-PELib::eFindType PELib::Find(std::string path, Method **result, std::vector<Type *> args, Type* rv, std::deque<Type*>* generics, AssemblyDef *assembly, bool matchArgs)
+PELib::eFindType PELib::Find(std::string path, Method** result, std::vector<Type*> args, Type* rv, std::deque<Type*>* generics,
+                             AssemblyDef* assembly, bool matchArgs)
 {
     if (path.size() && path[0] == '[')
     {
@@ -393,7 +395,8 @@ PELib::eFindType PELib::Find(std::string path, Method **result, std::vector<Type
     {
         for (auto it = foundMethod.begin(); it != foundMethod.end();)
         {
-            if (!(*it)->Signature()->Matches(args) || (rv && !(*it)->Signature()->MatchesType((*it)->Signature()->ReturnType(), rv)))
+            if (!(*it)->Signature()->Matches(args) ||
+                (rv && !(*it)->Signature()->MatchesType((*it)->Signature()->ReturnType(), rv)))
                 it = foundMethod.erase(it);
             else
                 ++it;

@@ -1,4 +1,4 @@
-// VALUES: 
+// VALUES:
 // x = error name in enumeration
 // y = number of the error, exists purely because there's two errors that map to the same thing but have different semantics
 // z = The error text for easy searching
@@ -7,7 +7,8 @@
 // c = Mapped help categories
 // FURTHER POSSIBLE UPDATES INCLUDE:
 // LISTING THE ERROR CATEGORY SUCH THAT WE KNOW WHEN SOMETHING IS ACTIVATED BY -Wall AND CAN ADD/REMOVE EASILY
-// The above may be done by just having a "-Wall" list or the like that lists all numbers/warnings activated when doing "-Wall" or "-Wextra"
+// The above may be done by just having a "-Wall" list or the like that lists all numbers/warnings activated when doing "-Wall" or
+// "-Wextra"
 #ifndef ERRLIST
 // In the normal list of errors
 #    define ERRLIST(x, y, z, a)
@@ -137,7 +138,8 @@ ERRLIST(ERR_VOID_ONLY_PARAMETER, 106, "Type void must be unnamed and the only pa
 ERRLIST(ERR_INLINE_NOT_ALLOWED, 107, "'inline' not allowed here", CE_ERROR)
 ERRLIST(ERR_MAIN_CANNOT_BE_INLINE_FUNC, 108, "'main' may not be declared as inline", CE_ERROR)
 ERRLIST(ERR_FUNCTION_TAKES_NO_PARAMETERS, 109, "Function takes no arguments", CE_ERROR)
-ERRWITHWARNFLAG(ERR_CALL_FUNCTION_NO_PROTO, 110, "Call to function '%s' without a prototype", CE_TRIVIALWARNING, "missing-prototypes")
+ERRWITHWARNFLAG(ERR_CALL_FUNCTION_NO_PROTO, 110, "Call to function '%s' without a prototype", CE_TRIVIALWARNING,
+                "missing-prototypes")
 ERRLIST(ERR_PARAMETER_LIST_TOO_LONG, 111, "Argument list too long in call to '%s'", CE_ERROR)
 ERRLIST(ERR_PARAMETER_LIST_TOO_SHORT, 112, "Argument list too short in call to '%s'", CE_ERROR)
 ERRLIST(ERR_CALL_OF_NONFUNCTION, 113, "Call of nonfunction", CE_ERROR)
@@ -167,7 +169,8 @@ ERRLIST(ERR_DEREF, 136, "Invalid indirection", CE_ERROR)
 ERRLIST(ERR_USED_WITHOUT_ASSIGNMENT, 137, "'%s' used without prior assignment", CE_WARNING)
 ERRLIST(ERR_POSSIBLE_INCORRECT_ASSIGNMENT, 138, "Possible incorrect assignment", CE_WARNING)
 ERRLIST(ERR_ANSI_FORBIDS_IMPLICIT_CONVERSION_FROM_VOID, 139, "Ansi forbids automatic conversion from void in assignment", CE_ERROR)
-ERRWITHWARNFLAG(ERR_SYM_ASSIGNED_VALUE_NEVER_USED, 140, "'%s' assigned a value that is never used", CE_TRIVIALWARNING, "unused-but-set-variable")
+ERRWITHWARNFLAG(ERR_SYM_ASSIGNED_VALUE_NEVER_USED, 140, "'%s' assigned a value that is never used", CE_TRIVIALWARNING,
+                "unused-but-set-variable")
 ERRWITHWARNFLAG(ERR_UNUSED_PARAMETER, 141, "Parameter '%s' unused", CE_TRIVIALWARNING, "unused-parameter")
 ERRWITHWARNFLAG(ERR_UNUSED_VARIABLE, 142, "'%s' unused", CE_TRIVIALWARNING, "unused-variable")
 ERRLIST(ERR_UNUSED_STATIC, 143, "static object '%s' is unused", CE_TRIVIALWARNING)
@@ -175,7 +178,8 @@ ERRWITHWARNFLAG(ERR_VARIABLE_OBSCURES_VARIABLE_AT_HIGHER_SCOPE, 144, "'%s' hides
 ERRLIST(ERR_NOT_AN_ALLOWED_TYPE, 145, "Cannot use 'void' value here", CE_ERROR)
 ERRLIST(ERR_CANNOT_MODIFY_CONST_OBJECT, 146, "Cannot modify a const object", CE_ERROR)
 ERRLIST(ERR_EXPRESSION_SYNTAX, 147, "Expression syntax error", CE_ERROR)
-ERRWITHWARNFLAG(ERR_SIGNED_UNSIGNED_MISMATCH_RELAT, 148, "signed/unsigned mismatch in '%s' comparison", CE_TRIVIALWARNING, "sign-compare")
+ERRWITHWARNFLAG(ERR_SIGNED_UNSIGNED_MISMATCH_RELAT, 148, "signed/unsigned mismatch in '%s' comparison", CE_TRIVIALWARNING,
+                "sign-compare")
 ERRLIST(ERR_SIZEOF_NO_FUNCTION, 149, "sizeof may not be used with a function designator", CE_ERROR)
 ERRLIST(ERR_ILL_STRUCTURE_ASSIGNMENT, 150, "Invalid structure assignment", CE_ERROR)
 ERRLIST(ERR_ILL_STRUCTURE_OPERATION, 151, "Invalid structure operation", CE_ERROR)
@@ -217,7 +221,8 @@ ERRLIST(ERR_RETURN_MUST_RETURN_VALUE, 186, "Return statement should have value",
 ERRLIST(ERR_CANNOT_RETURN_VOID_VALUE, 187, "Attempt to return a value of type void", CE_ERROR)
 ERRLIST(ERR_RETURN_NO_VALUE, 188, "Value specified in return of function with return type 'void'", CE_WARNING)
 ERRLIST(ERR_RETMISMATCH, 189, "Type mismatch in return statement", CE_WARNING)
-ERRWITHWARNFLAG(ERR_FUNCTION_RETURNING_ADDRESS_STACK_VARIABLE, 190, "Returning address of a local variable", CE_WARNING, "return-local-addr")
+ERRWITHWARNFLAG(ERR_FUNCTION_RETURNING_ADDRESS_STACK_VARIABLE, 190, "Returning address of a local variable", CE_WARNING,
+                "return-local-addr")
 ERRLIST(ERR_EXPRESSION_HAS_NO_EFFECT, 191, "Expression has no effect", CE_WARNING)
 ERRLIST(ERR_UNEXPECTED_END_OF_BLOCKDATA, 192, "Unexpected block end marker", CE_ERROR) /* fixme */
 ERRLIST(ERR_UNREACHABLE_CODE, 193, "Unreachable code", CE_TRIVIALWARNING)
@@ -264,7 +269,8 @@ ERRLIST(ERR_OVERLOAD_DIFFERS_ONLY_IN_RETURN_TYPE, 231, "Overload of '%s' differs
 ERRLIST(ERR_NO_OVERLOAD_MATCH_FOUND, 232, "Could not find a match for '%s'", CE_ERROR)
 ERRLIST(ERR_CANNOT_REDECLARE_DEFAULT_ARGUMENT, 233, "Redeclaration of default argument for '%s' not allowed", CE_ERROR)
 ERRLIST(ERR_NO_LOCAL_VAR_OR_PARAMETER_DEFAULT_ARGUMENT, 234, "Default argument may not be a parameter or local variable", CE_ERROR)
-ERRLIST(ERR_NO_POINTER_TO_FUNCTION_DEFAULT_ARGUMENT, 235, "Default argument may not be a pointer or reference to function", CE_ERROR)
+ERRLIST(ERR_NO_POINTER_TO_FUNCTION_DEFAULT_ARGUMENT, 235, "Default argument may not be a pointer or reference to function",
+        CE_ERROR)
 ERRLIST(ERR_NO_DEFAULT_ARGUMENT_IN_TYPEDEF, 236, "Default argument not allowed in typedef", CE_ERROR)
 ERRLIST(ERR_NO_THIS_DEFAULT_ARGUMENT, 237, "Default argument may not use 'this'", CE_ERROR)
 ERRLIST(ERR_MISSING_DEFAULT_ARGUMENT, 238, "Default argument missing after parameter '%s'", CE_ERROR)
@@ -406,7 +412,8 @@ ERRLIST(ERR_CANNOT_USE_ARRAY_OF_STRUCTURES_AS_FUNC_ARG, 370, "Cannot use array o
 ERRLIST(ERR_ANONYMOUS_UNION_NO_FUNCTION_OR_TYPE, 371, "Anonymous union cannot contain function or nested type", CE_ERROR)
 ERRLIST(ERR_ANONYMOUS_UNION_PUBLIC_MEMBERS, 372, "Anonymous union must contain only public members", CE_ERROR)
 ERRLIST(ERR_ANONYMOUS_UNION_NONSTATIC_MEMBERS, 373, "Anonymous union must contain only nonstatic data members", CE_ERROR)
-ERRWITHWARNFLAG(ERR_GOTO_BYPASSES_INITIALIZATION, 374, "Goto on line %s bypasses initialization", CE_CPLUSPLUSERROR | CE_WARNING, "jump-misses-init")
+ERRWITHWARNFLAG(ERR_GOTO_BYPASSES_INITIALIZATION, 374, "Goto on line %s bypasses initialization", CE_CPLUSPLUSERROR | CE_WARNING,
+                "jump-misses-init")
 ERRLIST(ERR_EXPECTED_TRY_BLOCK, 375, "Try keyword requires compound statement", CE_ERROR)
 ERRLIST(ERR_EXPECTED_CATCH_CLAUSE, 376, "One or more catch handlers expected", CE_ERROR)
 ERRLIST(ERR_EXPECTED_CATCH_BLOCK, 377, "Catch handler requires compound statement", CE_ERROR)
@@ -436,7 +443,8 @@ ERRLIST(ERR_TYPE_NONTYPE_TEMPLATE_PARAMETER_DEFAULT_TYPE_MISMATCH, 398,
 ERRLIST(ERR_NOT_A_TEMPLATE, 399, "'%s' was not previously declared as a template", CE_ERROR)
 ERRLIST(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, 400, "'%s' was previously declared as a template", CE_ERROR)
 ERRLIST(ERR_TEMPLATE_DEFINITION_MISMATCH, 401, "Template parameters do not agree with previous declaration", CE_ERROR)
-ERRLIST(ERR_MISSING_DEFAULT_VALUES_IN_TEMPLATE_DECLARATION, 402, "Missing default values in template declaration after '%s'", CE_ERROR)
+ERRLIST(ERR_MISSING_DEFAULT_VALUES_IN_TEMPLATE_DECLARATION, 402, "Missing default values in template declaration after '%s'",
+        CE_ERROR)
 ERRLIST(ERR_MULTIPLE_DEFAULT_VALUES_IN_TEMPLATE_DECLARATION, 403,
         "Redefinition of default value for '%s' in template redeclaration", CE_ERROR)
 ERRLIST(ERR_TEMPLATE_TEMPLATE_PARAMETER_MUST_NAME_CLASS, 404, "'Template' template parameter must name a class", CE_ERROR)
@@ -510,7 +518,8 @@ ERRLIST(ERR_MUST_DECLARE_PROPERTY_GETTER, 465, "Must define getter for property 
 ERRLIST(ERR_CANNOT_MODIFY_PROPERTY_WITHOUT_SETTER, 466, "Cannot modify property '%s' because there is no setter", CE_ERROR)
 ERRLIST(ERR_CANNOT_TAKE_ADDRESS_OF_PROPERTY, 467, "Cannot take address of property '%s'", CE_ERROR)
 ERRLIST(ERR_ENTRYPOINT_FUNC_ONLY, 468, "__entrypoint cannot be used on non-function '%s'", CE_ERROR)
-ERRLIST(ERR_RETURN_TYPE_MISMATCH_FOR_AUTO_FUNCTION, 469, "Mismatched return types for function '%s' with auto return type", CE_ERROR)
+ERRLIST(ERR_RETURN_TYPE_MISMATCH_FOR_AUTO_FUNCTION, 469, "Mismatched return types for function '%s' with auto return type",
+        CE_ERROR)
 ERRLIST(ERR_AUTO_FUNCTION_RETURN_TYPE_NOT_DEFINED, 470, "Function '%s' with auto return type not fully defined yet", CE_ERROR)
 ERRLIST(ERR_DECLTYPE_AUTO_NO_REFERENCE, 471, "Cannot use referenced auto as decltype argument", CE_ERROR)
 ERRLIST(ERR_CONSTEXPR_FUNC_NO_GOTO, 472, "constexpr function uses goto statement", CE_ERROR)
@@ -531,7 +540,8 @@ ERRLIST(ERR_ATTEMPING_TO_REDEFINE_DLL_LINKAGE, 485, "%s: attempting to redefine 
 ERRLIST(ERR_IGNORING__ATTRIBUTE, 486, "Ignoring __attribute__ specifier", CE_WARNING)
 ERRLIST(ERR_IGNORING__DECLSPEC, 487, "Ignoring __declspec specifier", CE_WARNING)
 ERRLIST(ERR_INVALID_ALIGNMENT, 488, "Invalid alignment value", CE_ERROR)
-ERRWITHWARNFLAG(ERR_INVALID_CHARACTER_STRING_CONVERSION, 489, "Conversion of character string to 'char *' deprecated", CE_WARNING, "write-strings")
+ERRWITHWARNFLAG(ERR_INVALID_CHARACTER_STRING_CONVERSION, 489, "Conversion of character string to 'char *' deprecated", CE_WARNING,
+                "write-strings")
 ERRLIST(ERR_FUNCTION_CALL_NEEDS_ARGUMENT_LIST, 490, "Function call needs argument list", CE_WARNING)
 ERRLIST(ERR_REF_RETURN_TEMPORARY, 491, "Return value would require a temporary variable", CE_ERROR)
 ERRLIST(ERR_CONFLICTS_WITH, 492, "Declaration of '%s' conflicts with previous declaration", CE_ERROR)
@@ -547,7 +557,8 @@ ERRLIST(ERR_NULL_TERMINATED_STRING_REQUIRED, 500, "Null terminated string requir
 ERRLIST(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, 501, "Attribute namespace '%s' is not an attribute", CE_ERROR)
 ERRLIST(ERR_ATTRIBUTE_DOES_NOT_EXIST, 502, "Attribute '%s' does not exist", CE_ERROR)
 ERRLIST(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, 503, "Attribute '%s' does not exist in attribute namespace '%s'", CE_ERROR)
-ERRWITHWARNFLAG(ERR_STATIC_FUNCTION_USED_BUT_NOT_DEFINED, 504, "static function '%s' is declared but never defined", CE_TRIVIALWARNING, "unused-function")
+ERRWITHWARNFLAG(ERR_STATIC_FUNCTION_USED_BUT_NOT_DEFINED, 504, "static function '%s' is declared but never defined",
+                CE_TRIVIALWARNING, "unused-function")
 ERRLIST(ERR_REFERENCED_IN_INSTANTIATION, 505, "Referenced in instantiation of '%s'", CE_NOTE)
 ERRLIST(ERR_TYPEDEFS_CANNOT_BE_TEMPLATES, 506, "typedef templates not allowed", CE_ERROR)
 ERRLIST(ERR_DEPENDENT_TYPE_NEEDS_TYPENAME, 507, "Missing 'typename' in front of dependent type '%s'", CE_ERROR)
@@ -558,7 +569,7 @@ ERRLIST(ERR_UNKNOWN_TYPE_TEMPLATE_ARG, 511, "Unknown type in template argument",
 ERRLIST(ERR_CONSTEXPR_MEMBER_MUST_BE_STATIC, 512, "Members qualified with constexpr must also be static", CE_ERROR)
 ERRLIST(ERR_CONSTEXPR_NO_PARAM, 513, "'constexpr' specifier cannot be used with a function parameter", CE_ERROR)
 ERRLIST(ERR_CONSTEXPR_NO_STRUCT, 514, "'constexpr' specifier cannot be used with a structure", CE_ERROR)
-ERRLIST(ERR_CONSTEXPR_MUST_INITIALIZE, 515, "constexpr constructor does not initialize '%s'", CE_ERROR) 
+ERRLIST(ERR_CONSTEXPR_MUST_INITIALIZE, 515, "constexpr constructor does not initialize '%s'", CE_ERROR)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

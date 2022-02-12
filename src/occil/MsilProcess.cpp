@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -196,7 +196,7 @@ bool IsPointedStruct(Optimizer::SimpleType* tp)
         tp = tp->btp;
     return tp->type == Optimizer::st_struct || tp->type == Optimizer::st_union;
 }
-static const char *fieldname(const char *name)
+static const char* fieldname(const char* name)
 {
     static char buff[512];
     Utils::StrCpy(buff, name);
@@ -206,20 +206,20 @@ static const char *fieldname(const char *name)
     }
     else if (name[0] == '@')
     {
-        const char *p = strchr(buff, '_');
+        const char* p = strchr(buff, '_');
 
         if (p)
         {
             memmove(buff, p + 1, strlen(p + 1) + 1);
         }
         p = strchr(buff, '$');
-        if (p)	
+        if (p)
         {
-             const char *q = strchr(p, '_');
-             if (q)
-             {
-                   memmove((void *)p, q, strlen(q)+1);
-             }
+            const char* q = strchr(p, '_');
+            if (q)
+            {
+                memmove((void*)p, q, strlen(q) + 1);
+            }
         }
         return buff;
     }
@@ -249,20 +249,20 @@ Field* GetField(Optimizer::SimpleSymbol* sp)
         return field;
     }
 }
-static const char *methodname(const char *name)
+static const char* methodname(const char* name)
 {
-    if (name[0] =='_')
+    if (name[0] == '_')
     {
         return name + 1;
     }
     else if (name[0] == '@')
     {
         static char rv[512];
-        char *p = rv;
-        name ++;
+        char* p = rv;
+        name++;
         while (*name && *name != '$')
         {
-             *p++ = *name++;
+            *p++ = *name++;
         }
         *p = 0;
         return rv;
@@ -291,7 +291,7 @@ MethodSignature* GetMethodSignature(Optimizer::SimpleType* tp, bool pinvoke)
         rv = peLib->AllocateMethodSignature(buf, flags, pinvoke ? NULL : mainContainer);
     }
     else if (sp->storage_class != Optimizer::scc_localstatic && sp->storage_class != Optimizer::scc_constant &&
-        sp->storage_class != Optimizer::scc_static)
+             sp->storage_class != Optimizer::scc_static)
     {
         if (sp->msil_rtl && !Optimizer::cparams.no_default_libs)
         {
@@ -348,7 +348,7 @@ MethodSignature* GetMethodSignature(Optimizer::SimpleType* tp, bool pinvoke)
             }
             break;
         }
-        Type * type = GetType(sym->tp, true, true, pinvoke);
+        Type* type = GetType(sym->tp, true, true, pinvoke);
         rv->AddParam(peLib->AllocateParam(sym->name, type));
         hr = hr->next;
     }
@@ -702,7 +702,7 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
     {
         std::string name = GetArrayName(tp, byref, pinned);
         std::map<std::string, Type*>::iterator it = typeList.find(name);
-        if (it != typeList.end() )
+        if (it != typeList.end())
             return it->second;
         if (commit)
         {
@@ -711,8 +711,8 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
             if (n != std::string::npos)
                 name1 = name1.substr(0, n);
             it = typeList.find(name1);
-            Class *cls;
-            Type *type;
+            Class* cls;
+            Type* type;
             if (it == typeList.end())
             {
                 cls = peLib->AllocateClass(name1, Qualifiers::Public | Qualifiers::ClassClass, -1, tp->size == 0 ? 1 : tp->size);
@@ -727,7 +727,7 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
             }
             else
             {
-                cls = (Class *)it->second->GetClass();
+                cls = (Class*)it->second->GetClass();
                 type = peLib->AllocateType(cls);
             }
             typeList[name] = type;
@@ -742,7 +742,7 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
     }
     else if (tp->type == Optimizer::st_pointer && tp->btp->type == Optimizer::st_func)
     {
-        Type *type =  peLib->AllocateType(Type::Void, 1);  // pointer to void
+        Type* type = peLib->AllocateType(Type::Void, 1);  // pointer to void
         type->Pinned(pinned);
         return type;
     }
@@ -804,10 +804,10 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
             {-ISZ_UCHAR, Type::i8},        {ISZ_UCHAR, Type::u8},        {-ISZ_USHORT, Type::i16},   {ISZ_USHORT, Type::u16},
             {ISZ_WCHAR, Type::u16},        {ISZ_U16, Type::u16},         {-ISZ_UINT, Type::i32},     {ISZ_UINT, Type::u32},
             {-ISZ_UNATIVE, Type::inative}, {ISZ_UNATIVE, Type::unative}, {-ISZ_ULONG, Type::i32},    {ISZ_ULONG, Type::u32},
-            {ISZ_U32, Type::u32},          {-ISZ_ULONGLONG, Type::i64},  {ISZ_ULONGLONG, Type::u64}, {ISZ_ADDR, Type::inative}, 
-            {ISZ_STRING, Type::string},    {ISZ_OBJECT, Type::object},    {ISZ_FLOAT, Type::r32},       {ISZ_DOUBLE, Type::r64},    
-            {ISZ_LDOUBLE, Type::r64},      {ISZ_IFLOAT, Type::r32},       {ISZ_IDOUBLE, Type::r64},     {ISZ_ILDOUBLE, Type::r64},  
-            {ISZ_CFLOAT, Type::r32}, {ISZ_CDOUBLE, Type::r64},      {ISZ_CLDOUBLE, Type::r64},
+            {ISZ_U32, Type::u32},          {-ISZ_ULONGLONG, Type::i64},  {ISZ_ULONGLONG, Type::u64}, {ISZ_ADDR, Type::inative},
+            {ISZ_STRING, Type::string},    {ISZ_OBJECT, Type::object},   {ISZ_FLOAT, Type::r32},     {ISZ_DOUBLE, Type::r64},
+            {ISZ_LDOUBLE, Type::r64},      {ISZ_IFLOAT, Type::r32},      {ISZ_IDOUBLE, Type::r64},   {ISZ_ILDOUBLE, Type::r64},
+            {ISZ_CFLOAT, Type::r32},       {ISZ_CDOUBLE, Type::r64},     {ISZ_CLDOUBLE, Type::r64},
         };
         Type* rv = peLib->AllocateType(typeNames[tp->sizeFromType], 0);
         rv->ByRef(byref);
@@ -1036,8 +1036,7 @@ Value* GetFieldData(Optimizer::SimpleSymbol* sp)
             case Optimizer::scc_auto:
             case Optimizer::scc_register:
                 return localList[sp->offset];
-            case Optimizer::scc_parameter:
-            {
+            case Optimizer::scc_parameter: {
                 std::map<Optimizer::SimpleSymbol*, Param*, byName>::iterator it = paramList.find(sp);
                 if (it != paramList.end())
                     return it->second;
@@ -1045,8 +1044,7 @@ Value* GetFieldData(Optimizer::SimpleSymbol* sp)
             break;
             case Optimizer::scc_static:
             case Optimizer::scc_localstatic:
-            case Optimizer::scc_constant:
-            {
+            case Optimizer::scc_constant: {
                 std::map<Optimizer::SimpleSymbol*, Value*, byLabel>::iterator it = staticList.find(sp);
                 if (it != staticList.end())
                     return it->second;
@@ -1056,8 +1054,7 @@ Value* GetFieldData(Optimizer::SimpleSymbol* sp)
                     return it->second;
                 break;
             }
-            default:
-            {
+            default: {
                 std::map<Optimizer::SimpleSymbol*, Value*, byName>::iterator it = globalList.find(sp);
                 if (it != globalList.end())
                     return it->second;
@@ -1370,7 +1367,7 @@ Type* GetStringType(int lab, int type)
     if (Optimizer::pinning)
     {
         char buf[256];
-        sprintf(buf,"L_%d_%x", lab, uniqueId);
+        sprintf(buf, "L_%d_%x", lab, uniqueId);
         name += buf;
     }
     else
@@ -1669,8 +1666,7 @@ static void mainInit(void)
         }
         currentMethod->AddInstruction(
             peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
-        currentMethod->AddInstruction(
-            peLib->AllocateInstruction(Instruction::i_conv_u4, nullptr));
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_conv_u4, nullptr));
         currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_dup));
         field = LookupField("__stdin");
         if (!field)
@@ -1695,7 +1691,6 @@ static void mainInit(void)
         currentMethod->AddInstruction(
             peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
 
-
         currentMethod->AddInstruction(
             peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)64, Operand::any)));
         currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_add));
@@ -1712,49 +1707,38 @@ static void mainInit(void)
 }
 static void InitializeByte(Local* var, int pos, int data)
 {
-    currentMethod->AddInstruction(
-        peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(var)));
+    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(var)));
     currentMethod->AddInstruction(
         peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)pos, Operand::any)));
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_add));
     currentMethod->AddInstruction(
         peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)data, Operand::any)));
-    currentMethod->AddInstruction(
-        peLib->AllocateInstruction(Instruction::i_stind_i1, nullptr));
-
+    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stind_i1, nullptr));
 }
-static void InitializeString(Local*pinned, Local* var, Field *field, Byte* data)
+static void InitializeString(Local* pinned, Local* var, Field* field, Byte* data)
 {
     currentMethod->AddInstruction(
         peLib->AllocateInstruction(Instruction::i_ldsflda, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
-    currentMethod->AddInstruction(
-        peLib->AllocateInstruction(Instruction::i_stloc, peLib->AllocateOperand(pinned)));
-    currentMethod->AddInstruction(
-        peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(pinned)));
-    currentMethod->AddInstruction(
-        peLib->AllocateInstruction(Instruction::i_conv_u, nullptr));
-    currentMethod->AddInstruction(
-        peLib->AllocateInstruction(Instruction::i_stloc, peLib->AllocateOperand(var)));
-    currentMethod->AddInstruction(
-        peLib->AllocateInstruction(Instruction::i_nop, nullptr));
- //   currentMethod->AddInstruction(
-//        peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(var)));
+    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stloc, peLib->AllocateOperand(pinned)));
+    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(pinned)));
+    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_conv_u, nullptr));
+    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stloc, peLib->AllocateOperand(var)));
+    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_nop, nullptr));
+    //   currentMethod->AddInstruction(
+    //        peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(var)));
     for (int i = 0; i < ((Class*)field->FieldType()->GetClass())->size(); i++)
     {
         InitializeByte(var, i, data[i]);
     }
-    currentMethod->AddInstruction(
-        peLib->AllocateInstruction(Instruction::i_nop, nullptr));
+    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_nop, nullptr));
     currentMethod->AddInstruction(
         peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::any)));
-    currentMethod->AddInstruction(
-        peLib->AllocateInstruction(Instruction::i_conv_u, nullptr));
-    currentMethod->AddInstruction(
-        peLib->AllocateInstruction(Instruction::i_stloc, peLib->AllocateOperand(pinned)));
+    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_conv_u, nullptr));
+    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stloc, peLib->AllocateOperand(pinned)));
 }
 void CreateStringFunction()
 {
-    auto it = stringInitializers.begin(); 
+    auto it = stringInitializers.begin();
     for (int counter = 0; it != stringInitializers.end(); counter++)
     {
         char buf[256];
@@ -1762,8 +1746,8 @@ void CreateStringFunction()
         std::string name = buf;
         auto signature = peLib->AllocateMethodSignature(name, MethodSignature::Managed, mainContainer);
         signature->ReturnType(peLib->AllocateType(Type::Void, 0));
-        currentMethod->AddInstruction(peLib->AllocateInstruction(
-            Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+        currentMethod->AddInstruction(
+            peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
 
         auto oldCurrent = currentMethod;
         currentMethod = peLib->AllocateMethod(signature, Qualifiers::ManagedFunc | Qualifiers::Public, false);
@@ -1779,12 +1763,11 @@ void CreateStringFunction()
         auto pinnedvar = peLib->AllocateLocal("pinned", tp);
         pinnedvar->Index(1);
         currentMethod->AddLocal(pinnedvar);
-        for (int innerCount =0; innerCount < 100 && it != stringInitializers.end(); innerCount++, ++it)
+        for (int innerCount = 0; innerCount < 100 && it != stringInitializers.end(); innerCount++, ++it)
         {
             InitializeString(pinnedvar, var, it->first, it->second);
         }
-        currentMethod->AddInstruction(
-            peLib->AllocateInstruction(Instruction::i_ret, nullptr));
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ret, nullptr));
         currentMethod->Optimize(*peLib);
         currentMethod = oldCurrent;
     }

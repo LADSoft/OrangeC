@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -52,8 +52,6 @@
 #    include <unistd.h>
 #endif
 
-
-
 extern bool IsSymbolCharRoutine(const char*, bool);
 bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
 
@@ -63,30 +61,23 @@ Optimizer::SimpleSymbol* currentFunction;
 void diag(const char*, ...) {}
 void regInit() {}
 
-
 namespace Parser
 {
-    int anonymousNotAlloc;
-    char outFile[260];
-    InstructionParser* instructionParser;
-    bool IsCompiler() {
-        return true;
-    }
-}
+int anonymousNotAlloc;
+char outFile[260];
+InstructionParser* instructionParser;
+bool IsCompiler() { return true; }
+}  // namespace Parser
 namespace Optimizer
 {
-    unsigned termCount;
-void SymbolManager::clear()
-{
-    globalSymbols.clear();
-}
-};
+unsigned termCount;
+void SymbolManager::clear() { globalSymbols.clear(); }
+};  // namespace Optimizer
 
 namespace occx86
 {
 
 char infile[260];
-
 
 static const char* occ_verbosity = nullptr;
 static Optimizer::FunctionData* lastFunc;
@@ -385,7 +376,7 @@ int InvokeParser(int argc, char** argv, SharedMemory* parserMem)
         std::string curArg = argv[i];
         if (curArg[curArg.size() - 1] == '\\')
             curArg += "\\";
-        Utils::ReplaceAll(curArg, "\"", "\\\"");             
+        Utils::ReplaceAll(curArg, "\"", "\\\"");
         args += std::string("\"") + curArg + "\"";
     }
 
@@ -400,7 +391,7 @@ int main(int argc, char* argv[])
 {
     using namespace occx86;
     bool showBanner = true;
-    for (int i=0; i < argc; i++)
+    for (int i = 0; i < argc; i++)
         if (argv[i][0] == '-' || argv[i][0] == '/')
             if (!strcmp(&argv[i][1], "M") || !strcmp(&argv[i][1], "MM"))
             {
@@ -486,12 +477,12 @@ int main(int argc, char* argv[])
         if (Optimizer::cparams.prm_displaytiming)
         {
             stopTime = clock();
-            printf("occ timing: %d.%03d\n", (stopTime - startTime)/1000, (stopTime - startTime)% 1000); 
+            printf("occ timing: %d.%03d\n", (stopTime - startTime) / 1000, (stopTime - startTime) % 1000);
         }
         rv = RunExternalFiles();
     }
     delete optimizerMem;
-    if (rv == 255) // means don't run the optimizer or backend
+    if (rv == 255)  // means don't run the optimizer or backend
         rv = 0;
     return rv;
 }

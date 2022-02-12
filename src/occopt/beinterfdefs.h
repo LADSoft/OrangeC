@@ -1,26 +1,26 @@
 #pragma once
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "browsedefs.h"
@@ -42,11 +42,11 @@ extern int architecture;
 /* Common compiler parameters */
 typedef struct
 {
-    int prm_maxerr;     /* number of errors at which the compiler stops*/
-    int prm_stackalign; /* stack alignment */
-    int optimizer_modules; // optimizer module selection
+    int prm_maxerr;         /* number of errors at which the compiler stops*/
+    int prm_stackalign;     /* stack alignment */
+    int optimizer_modules;  // optimizer module selection
     int icd_flags;
-    int verbosity; // verbosity level
+    int verbosity;  // verbosity level
     bool prm_optimize_for_speed;
     bool prm_optimize_for_size;
     bool prm_optimize_float_access;
@@ -134,7 +134,7 @@ typedef struct
     char a_fcomplexpad;
     char a_rcomplexpad;
     char a_lrcomplexpad;
-    char a_alignedstruct; // __attribute((__aligned__))
+    char a_alignedstruct;  // __attribute((__aligned__))
 } ARCH_SIZING;
 
 /* floating point characteristics */
@@ -199,7 +199,7 @@ typedef struct
     int (*align)(int size);      /* custom alignment routine */
     ARCH_SIZING* type_sizes;     /* sizes */
     ARCH_SIZING* type_needsLock; /* needs atomic lock */
-    int isLockFreeSize;           /* maximum value for __c11_atomic_is_lock_free */
+    int isLockFreeSize;          /* maximum value for __c11_atomic_is_lock_free */
     int (*param_offs)(int size); /* routine is called in case parameters less than paramwidth need offsets */
     int compatibleIntSize;       /* size compatible to an integer */
     int compatibleAddrSize;      /* size compatible to an address */

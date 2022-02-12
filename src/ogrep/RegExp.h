@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef REGEXP_H
@@ -55,12 +55,7 @@ class RegExpMatch
         M_END = 146
     };
     RegExpMatch(UBYTE ch, bool caseSensitive = true) :
-        matchStart(false),
-        matchEnd(false),
-        matchRange(-1),
-        rl(-1),
-        rh(-1),
-        invalid(false)
+        matchStart(false), matchEnd(false), matchRange(-1), rl(-1), rh(-1), invalid(false)
     {
         memset(matches, 0, sizeof(matches));
         SetChar(ch, caseSensitive);
@@ -72,23 +67,13 @@ class RegExpMatch
             SetAll();
     }
     RegExpMatch(const char** name, bool caseSensitive) :
-        matchStart(false),
-        matchEnd(false),
-        matchRange(-1),
-        rl(-1),
-        rh(-1),
-        invalid(false)
+        matchStart(false), matchEnd(false), matchRange(-1), rl(-1), rh(-1), invalid(false)
     {
         memset(matches, 0, sizeof(matches));
         SetSet(name, caseSensitive);
     }
     RegExpMatch(int type, int range, bool caseSensitive) :
-        matchStart(false),
-        matchEnd(false),
-        matchRange(range),
-        rl(-1),
-        rh(-1),
-        invalid(false)
+        matchStart(false), matchEnd(false), matchRange(range), rl(-1), rh(-1), invalid(false)
     {
         memset(matches, 0, sizeof(matches));
         SetChar(type, caseSensitive);
@@ -166,11 +151,7 @@ class RegExpContext
 
   public:
     RegExpContext(const char* exp, bool regular, bool caseSensitive, bool matchesWord) :
-        caseSensitive(true),
-        m_so(0),
-        m_eo(0),
-        invalid(false),
-        beginning(nullptr)
+        caseSensitive(true), m_so(0), m_eo(0), invalid(false), beginning(nullptr)
     {
         matchStackTop = 0;
         Parse(exp, regular, caseSensitive, matchesWord);

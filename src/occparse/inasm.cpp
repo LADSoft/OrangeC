@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -57,18 +57,18 @@ static SYMBOL* lastsym;
 static enum e_opcode op;
 
 static const char* assembler_errors[] = {"Lable expected",
-                               "Illegal address mode",
-                               "Address mode expected",
-                               "Invalid opcode",
-                               "Invalid instruction size",
-                               "Invalid index mode",
-                               "Invalid scale specifier",
-                               "Use LEA to take address of auto variable",
-                               "Too many segment specifiers",
-                               "Syntax error while parsing instruction",
-                               "Unknown operand",
-                               "Invalid combination of operands",
-                               "Invalid use of instruction"
+                                         "Illegal address mode",
+                                         "Address mode expected",
+                                         "Invalid opcode",
+                                         "Invalid instruction size",
+                                         "Invalid index mode",
+                                         "Invalid scale specifier",
+                                         "Use LEA to take address of auto variable",
+                                         "Too many segment specifiers",
+                                         "Syntax error while parsing instruction",
+                                         "Unknown operand",
+                                         "Invalid combination of operands",
+                                         "Invalid use of instruction"
 
 };
 static Optimizer::ASMNAME directiveLst[] = {{"db", op_reserved, ISZ_UCHAR, 0},
@@ -272,8 +272,7 @@ static EXPRESSION* inasm_ident(void)
                 case sc_localstatic:
                 case sc_global:
                 case sc_external:
-                case sc_static:
-                {
+                case sc_static: {
                     Optimizer::SimpleSymbol* sym1 = Optimizer::SymbolManager::Get(sym);
                     sym1->genreffed = true;
                     node = varNode(en_global, sym);
@@ -788,7 +787,8 @@ static AMODE* inasm_amode(int nosegreg)
                         if (MATCHKW(lex, openpa))
                         {
                             inasm_getsym();
-                            if (!lex || (lex->data->type != l_i && lex->data->type != l_ui) || lex->data->value.i < 0 || lex->data->value.i > 7)
+                            if (!lex || (lex->data->type != l_i && lex->data->type != l_ui) || lex->data->value.i < 0 ||
+                                lex->data->value.i > 7)
                             {
                                 inasm_err(ERR_ILLEGAL_ADDRESS_MODE);
                                 return 0;
@@ -1077,25 +1077,25 @@ static void AssembleInstruction(OCODE* ins)
             delete newIns;
             switch (err)
             {
-            case AERR_NONE:
-                break;
-            case AERR_SYNTAX:
-                inasm_err(ERR_SYNTAX);
-                break;
-            case AERR_OPERAND:
-                inasm_err(ERR_UNKNOWN_OP);
-                break;
-            case AERR_BADCOMBINATIONOFOPERANDS:
-                inasm_err(ERR_BAD_OPERAND_COMBO);
-                break;
-            case AERR_UNKNOWNOPCODE:
-                inasm_err(ERR_INVALID_OPCODE);
-                break;
-            case AERR_INVALIDINSTRUCTIONUSE:
-                inasm_err(ERR_INVALID_USE_OF_INSTRUCTION);
-                break;
-            default:
-                break;
+                case AERR_NONE:
+                    break;
+                case AERR_SYNTAX:
+                    inasm_err(ERR_SYNTAX);
+                    break;
+                case AERR_OPERAND:
+                    inasm_err(ERR_UNKNOWN_OP);
+                    break;
+                case AERR_BADCOMBINATIONOFOPERANDS:
+                    inasm_err(ERR_BAD_OPERAND_COMBO);
+                    break;
+                case AERR_UNKNOWNOPCODE:
+                    inasm_err(ERR_INVALID_OPCODE);
+                    break;
+                case AERR_INVALIDINSTRUCTIONUSE:
+                    inasm_err(ERR_INVALID_USE_OF_INSTRUCTION);
+                    break;
+                default:
+                    break;
             }
         }
     }

@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "DotNetPELib.h"
@@ -180,8 +180,7 @@ void Operand::ObjOut(PELib& peLib, int pass) const
         case t_int:
             peLib.Out() << "," << sz_ << "," << intValue_;
             break;
-        case t_real:
-        {
+        case t_real: {
             Byte buf[8];
             int sz1, i;
             if (sz_ == r4)
@@ -240,8 +239,7 @@ Operand* Operand::ObjIn(PELib& peLib)
                 peLib.ObjError(oe_syntax);
             rv = peLib.AllocateOperand(peLib.ObjInt(), sz);
             break;
-        case t_real:
-        {
+        case t_real: {
             ch = peLib.ObjChar();
             if (ch != ',')
                 peLib.ObjError(oe_syntax);
@@ -277,8 +275,7 @@ Operand* Operand::ObjIn(PELib& peLib)
             }
         }
         break;
-        case t_string:
-        {
+        case t_string: {
             ch = peLib.ObjChar();
             if (ch != ',')
                 peLib.ObjError(oe_syntax);
@@ -286,8 +283,7 @@ Operand* Operand::ObjIn(PELib& peLib)
             rv = peLib.AllocateOperand(test, true);
         }
         break;
-        case t_label:
-        {
+        case t_label: {
             ch = peLib.ObjChar();
             if (ch != ',')
                 peLib.ObjError(oe_syntax);
@@ -342,8 +338,7 @@ size_t Operand::Render(PELib& peLib, int opcode, int operandType, Byte* result)
                     break;
             }
             break;
-        case t_string:
-        {
+        case t_string: {
             wchar_t* buf = new wchar_t[stringValue_.size() + 1];
             for (int i = 0; i < stringValue_.size() + 1; i++)
                 buf[i] = stringValue_.c_str()[i];

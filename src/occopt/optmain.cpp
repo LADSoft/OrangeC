@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ioptimizer.h"
@@ -62,16 +62,14 @@ int usingEsp;
 Optimizer::SimpleSymbol* currentFunction;
 namespace Parser
 {
-    int anonymousNotAlloc;
-    bool IsCompiler() {
-        return true;
-    }
-}
+int anonymousNotAlloc;
+bool IsCompiler() { return true; }
+}  // namespace Parser
 
 namespace Optimizer
 {
 CmdSwitchParser SwitchParser;
-CmdSwitchBool single(SwitchParser, 's', false, { "single" });
+CmdSwitchBool single(SwitchParser, 's', false, {"single"});
 CmdSwitchBool WriteIcdFile(SwitchParser, 'Y', false);
 CmdSwitchCombineString output(SwitchParser, 'o');
 CmdSwitchBool displayTiming(SwitchParser, 't');
@@ -91,11 +89,8 @@ const char* usageText =
     "Ox           optimization control\n"
     "-S use shared memory\n"
     "-Y output icd file\n"
-    "\nOptimization control:\n"
-    OPTIMIZATION_DESCRIPTION
-    "\nFlags:\n"
-    OPTMODULES_DESCRIPTION
-    "\nTime: " __TIME__ "  Date: " __DATE__;
+    "\nOptimization control:\n" OPTIMIZATION_DESCRIPTION "\nFlags:\n" OPTMODULES_DESCRIPTION "\nTime: " __TIME__
+    "  Date: " __DATE__;
 
 bool InputIntermediate(SharedMemory* mem);
 void OutputIntermediate(SharedMemory* mem);
@@ -124,7 +119,7 @@ void PreColor(QUAD* head)
             break;
     }
 }
-void FastcallColor(QUAD *head)
+void FastcallColor(QUAD* head)
 {
     switch (architecture)
     {
@@ -185,8 +180,7 @@ void CreateTempsAndBlocks(FunctionData* fd)
                         case i_direct:
                             im->offset->sp->imvalue = im;
                             break;
-                        case i_ind:
-                        {
+                        case i_ind: {
                             IMODELIST* iml = Allocate<IMODELIST>();
                             iml->next = im->offset->sp->imind;
                             iml->im = im;
@@ -365,7 +359,7 @@ void SaveFile(std::string& name, SharedMemory* optimizerMem)
     localFree();
     globalFree();
 }
-void ParseParams(char *argv[])
+void ParseParams(char* argv[])
 {
     std::vector<std::string> checks = Utils::split(prm_optimize.GetValue());
     for (auto&& v : checks)
@@ -398,9 +392,9 @@ int main(int argc, char* argv[])
     bool fileMode = true;
     if (useSharedMemory.GetValue())
     {
-            if (argc != 3)
-                Utils::usage(argv[0], usageText);
-            fileMode = false;
+        if (argc != 3)
+            Utils::usage(argv[0], usageText);
+        fileMode = false;
     }
     else if (argc != 2)
     {
@@ -490,7 +484,7 @@ int main(int argc, char* argv[])
     if (Optimizer::cparams.prm_displaytiming || displayTiming.GetValue())
     {
         stopTime = clock();
-        printf("occopt timing: %d.%03d\n", (stopTime - startTime)/1000, (stopTime - startTime)% 1000); 
+        printf("occopt timing: %d.%03d\n", (stopTime - startTime) / 1000, (stopTime - startTime) % 1000);
     }
     return 0;
 }

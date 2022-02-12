@@ -1,26 +1,27 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
+
 #include "optmodules.h"
 #include "ioptimizer.h"
 #include "ildata.h"
@@ -30,23 +31,18 @@ namespace Optimizer
 {
 struct OptimizerParam
 {
-    const char *paramName;
+    const char* paramName;
     unsigned optMask;
 };
-std::vector<OptimizerParam> Params
-{
-    { "reshape", OPT_RESHAPE },
-    { "constant", OPT_CONSTANT },
-    { "loop-strength", OPT_LSTRENGTH },
-    { "move-invariants", OPT_INVARIANT },
-    { "gcse", OPT_GCSE },
+std::vector<OptimizerParam> Params{
+    {"reshape", OPT_RESHAPE},           {"constant", OPT_CONSTANT}, {"loop-strength", OPT_LSTRENGTH},
+    {"move-invariants", OPT_INVARIANT}, {"gcse", OPT_GCSE},
 };
 
-std::vector<OptimizerParam> IcdParams
-{
-    { "gcse", ICD_OCP },
-    { "qe", ICD_QUITEARLY },
-    { "ssa", ICD_STAYSSA },
+std::vector<OptimizerParam> IcdParams{
+    {"gcse", ICD_OCP},
+    {"qe", ICD_QUITEARLY},
+    {"ssa", ICD_STAYSSA},
 };
 
 void optimize_setup(char select, const char* string)
@@ -67,7 +63,7 @@ void optimize_setup(char select, const char* string)
         if (*string == '0')
         {
             Optimizer::cparams.prm_optimize_for_speed = Optimizer::cparams.prm_optimize_for_size =
-               Optimizer::cparams.prm_optimize_float_access = false;
+                Optimizer::cparams.prm_optimize_float_access = false;
         }
         else if (*string == 'f')
             Optimizer::cparams.prm_optimize_float_access = true;
@@ -84,7 +80,6 @@ void optimize_setup(char select, const char* string)
     }
 }
 
-
 std::string ParseOptimizerParams(std::string in)
 {
     std::string rv;
@@ -95,8 +90,8 @@ std::string ParseOptimizerParams(std::string in)
         bool icd = false;
         if (a.substr(0, 4) == "opt-")
             working = true;
-        else if (a.substr(0,4) == "icd-")
-            working = icd = true;       
+        else if (a.substr(0, 4) == "icd-")
+            working = icd = true;
 
         if (working)
         {
@@ -110,7 +105,7 @@ std::string ParseOptimizerParams(std::string in)
             auto test = a.substr(offs);
             bool found = false;
 
-            for (auto && v : icd ? IcdParams : Params)
+            for (auto&& v : icd ? IcdParams : Params)
             {
                 if (v.paramName && test == v.paramName)
                 {
@@ -148,4 +143,4 @@ std::string ParseOptimizerParams(std::string in)
     }
     return rv;
 }
-}
+}  // namespace Optimizer

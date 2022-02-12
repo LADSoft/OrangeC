@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "LinkManager.h"
@@ -40,7 +40,7 @@
 
 std::fstream& LinkMap::Address(std::fstream& stream, ObjInt base, ObjInt offset, int group)
 {
-    std::ios_base::fmtflags f( stream.flags() );
+    std::ios_base::fmtflags f(stream.flags());
     switch (mode)
     {
         default:
@@ -56,7 +56,7 @@ std::fstream& LinkMap::Address(std::fstream& stream, ObjInt base, ObjInt offset,
                    << std::hex << (offset + (base & 15));
             break;
     }
-    stream.flags( f );
+    stream.flags(f);
     return stream;
 }
 ObjInt LinkMap::PublicBase(ObjExpression* exp, int& group)
@@ -121,7 +121,8 @@ void LinkMap::ShowRegionLine(std::fstream& stream, LinkRegion* region, ObjInt of
 void LinkMap::ShowFileLine(std::fstream& stream, LinkRegion::OneSection* data, ObjInt n)
 {
     ObjString sectionName = data->section->GetName();
-    if (sectionName.substr(0,4) == "vsc@" && sectionName.substr(0,7) != "vsc@$xt" && sectionName.substr(0,7) != "vsc@$xc" && sectionName.find("_$vt") == std::string::npos)
+    if (sectionName.substr(0, 4) == "vsc@" && sectionName.substr(0, 7) != "vsc@$xt" && sectionName.substr(0, 7) != "vsc@$xc" &&
+        sectionName.find("_$vt") == std::string::npos)
         sectionName = ObjSymbol(sectionName.c_str() + 3, ObjSymbol::eGlobal, 0).GetDisplayName();
     stream << "      File: " << data->file->GetName() << "(" << sectionName << ") ";
     stream << "addr=" << std::setw(6) << std::setfill('0') << std::hex << data->section->GetOffset()->Eval(0) /*+ n*/ << " ";
@@ -232,7 +233,8 @@ void LinkMap::Publics(std::fstream& stream)
                     {
                         if ((*itr)->GetRegion())
                         {
-                            if ((*itr)->GetRegion()->GetName() == " vsc* " || (*itr)->GetRegion()->GetName() == " vsd* " || (*itr)->GetRegion()->GetName() == " vsb* ")
+                            if ((*itr)->GetRegion()->GetName() == " vsc* " || (*itr)->GetRegion()->GetName() == " vsd* " ||
+                                (*itr)->GetRegion()->GetName() == " vsb* ")
                             {
                                 int base = (*itc)->GetOverlay()->GetAttribs().GetAddress();
                                 for (auto it = (*itr)->GetRegion()->NowDataBegin(); it != (*itr)->GetRegion()->NowDataEnd(); ++it)
@@ -241,33 +243,40 @@ void LinkMap::Publics(std::fstream& stream)
                                     {
                                         ObjInt ofs = sect.section->GetOffset()->GetValue();
                                         ObjString sectionName = sect.section->GetName();
-                                        if (sectionName.substr(0, 4) == "vsc@" && sectionName.substr(0, 7) != "vsc@$xt" && sectionName.substr(0, 7) != "vsc@$xc" && sectionName.find("_$vt") == std::string::npos)
-                                            sectionName = ObjSymbol(sectionName.c_str() + 3, ObjSymbol::eGlobal, 0).GetDisplayName();
+                                        if (sectionName.substr(0, 4) == "vsc@" && sectionName.substr(0, 7) != "vsc@$xt" &&
+                                            sectionName.substr(0, 7) != "vsc@$xc" && sectionName.find("_$vt") == std::string::npos)
+                                            sectionName =
+                                                ObjSymbol(sectionName.c_str() + 3, ObjSymbol::eGlobal, 0).GetDisplayName();
                                         byName.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
                                         byValue.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
                                     }
                                 }
-                                for (auto it = (*itr)->GetRegion()->NormalDataBegin(); it != (*itr)->GetRegion()->NormalDataEnd(); ++it)
+                                for (auto it = (*itr)->GetRegion()->NormalDataBegin(); it != (*itr)->GetRegion()->NormalDataEnd();
+                                     ++it)
                                 {
                                     for (auto sect : (*it)->sections)
                                     {
                                         ObjInt ofs = sect.section->GetOffset()->GetValue();
                                         ObjString sectionName = sect.section->GetName();
-                                        if (sectionName.substr(0, 4) == "vsc@" && sectionName.substr(0, 7) != "vsc@$xt" && sectionName.substr(0, 7) != "vsc@$xc" && sectionName.find("_$vt") == std::string::npos)
-                                            sectionName = ObjSymbol(sectionName.c_str() + 3, ObjSymbol::eGlobal, 0).GetDisplayName();
+                                        if (sectionName.substr(0, 4) == "vsc@" && sectionName.substr(0, 7) != "vsc@$xt" &&
+                                            sectionName.substr(0, 7) != "vsc@$xc" && sectionName.find("_$vt") == std::string::npos)
+                                            sectionName =
+                                                ObjSymbol(sectionName.c_str() + 3, ObjSymbol::eGlobal, 0).GetDisplayName();
                                         byName.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
                                         byValue.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
                                     }
                                 }
-                                for (auto it = (*itr)->GetRegion()->PostponeDataBegin(); it != (*itr)->GetRegion()->PostponeDataEnd();
-                                    ++it)
+                                for (auto it = (*itr)->GetRegion()->PostponeDataBegin();
+                                     it != (*itr)->GetRegion()->PostponeDataEnd(); ++it)
                                 {
                                     for (auto sect : (*it)->sections)
                                     {
                                         ObjInt ofs = sect.section->GetOffset()->GetValue();
                                         ObjString sectionName = sect.section->GetName();
-                                        if (sectionName.substr(0, 4) == "vsc@" && sectionName.substr(0, 7) != "vsc@$xt" && sectionName.substr(0, 7) != "vsc@$xc" && sectionName.find("_$vt") == std::string::npos)
-                                            sectionName = ObjSymbol(sectionName.c_str() + 3, ObjSymbol::eGlobal, 0).GetDisplayName();
+                                        if (sectionName.substr(0, 4) == "vsc@" && sectionName.substr(0, 7) != "vsc@$xt" &&
+                                            sectionName.substr(0, 7) != "vsc@$xc" && sectionName.find("_$vt") == std::string::npos)
+                                            sectionName =
+                                                ObjSymbol(sectionName.c_str() + 3, ObjSymbol::eGlobal, 0).GetDisplayName();
                                         byName.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
                                         byValue.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
                                     }

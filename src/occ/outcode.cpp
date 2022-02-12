@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -63,9 +63,8 @@ namespace occx86
 
 static Section* currentSection;
 
-static const char* segnames[] = {0,         "code",     "data",     "bss",        "string",     "const",
-                                 "tls",     "cstartup", "crundown", "tstartup", "trundown", "codefix",
-                                 "datafix", "lines",    "types",    "symbols",    "browse"};
+static const char* segnames[] = {0,          "code",     "data",    "bss",     "string", "const", "tls",     "cstartup", "crundown",
+                                 "tstartup", "trundown", "codefix", "datafix", "lines",  "types", "symbols", "browse"};
 
 static int segAlignsDefault[] = {1, 2, 8, 8, 2, 8, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 static int segFlags[] = {0,
@@ -283,22 +282,19 @@ void HandleDebugInfo(ObjFactory& factory, Section* sect, Instruction* ins)
         std::unique_ptr<ObjMemory::DebugTagContainer> dc = std::make_unique<ObjMemory::DebugTagContainer>();
         switch (d->type)
         {
-            case e_ad_blockdata:
-            {
+            case e_ad_blockdata: {
                 ObjDebugTag* tag = factory.MakeDebugTag(d->start);
                 dc->push_back(tag);
                 objSection->GetMemoryManager().Add(std::move(dc));
             }
             break;
-            case e_ad_funcdata:
-            {
+            case e_ad_funcdata: {
                 ObjDebugTag* tag = factory.MakeDebugTag(objGlobals[d->v.sp], d->start);
                 dc->push_back(tag);
                 objSection->GetMemoryManager().Add(std::move(dc));
             }
             break;
-            case e_ad_vfuncdata:
-            {
+            case e_ad_vfuncdata: {
                 Section* s = (Section*)d->v.section;
                 n = sect->GetSect();
                 if (n < Optimizer::MAX_SEGS)
@@ -310,8 +306,7 @@ void HandleDebugInfo(ObjFactory& factory, Section* sect, Instruction* ins)
                 objSection->GetMemoryManager().Add(std::move(dc));
             }
             break;
-            case e_ad_linedata:
-            {
+            case e_ad_linedata: {
                 ObjLineNo* line = factory.MakeLineNo(sourceFiles[d->v.ld->fileindex], d->v.ld->lineno);
                 ObjDebugTag* tag = factory.MakeDebugTag(line);
                 dc->push_back(tag);
@@ -930,7 +925,8 @@ void AddFixup(Instruction* newIns, OCODE* ins, const std::list<Numeric*>& operan
         for (auto operand : operands)
         {
             if (operand->used && operand->size &&
-                (((AsmExprNode*)operand->node)->GetType() == AsmExprNode::LABEL || ((AsmExprNode*)operand->node)->GetType() == AsmExprNode::SUB ||
+                (((AsmExprNode*)operand->node)->GetType() == AsmExprNode::LABEL ||
+                 ((AsmExprNode*)operand->node)->GetType() == AsmExprNode::SUB ||
                  ((AsmExprNode*)operand->node)->GetType() == AsmExprNode::ADD))
             {
                 if (newIns->Lost() && operand->pos)
@@ -938,7 +934,8 @@ void AddFixup(Instruction* newIns, OCODE* ins, const std::list<Numeric*>& operan
                 int n = operand->relOfs;
                 if (n < 0)
                     n = -n;
-                Fixup* f = new Fixup((AsmExprNode*)operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
+                Fixup* f =
+                    new Fixup((AsmExprNode*)operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
                 f->SetInsOffs((operand->pos + 7) / 8);
                 newIns->Add(f);
             }
@@ -1030,14 +1027,12 @@ void outcode_AssembleIns(OCODE* ins)
             case op_genword:
                 outcode_genbyte(ins->oper1->offset->i);
                 break;
-            case op_align:
-            {
+            case op_align: {
                 Instruction* newIns = new Instruction(ins->oper1->offset->i);
                 InsertInstruction(newIns);
                 break;
             }
-            case op_dd:
-            {
+            case op_dd: {
                 int i = 0;
                 Instruction* newIns = new Instruction(&i, 4, true);
                 const std::list<Numeric*> operands;

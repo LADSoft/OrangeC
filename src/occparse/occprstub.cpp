@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -21,22 +21,21 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
+
 #include "compiler.h"
 
 namespace Parser
 {
-    bool IsCompiler() { return true; }
-}
+bool IsCompiler() { return true; }
+}  // namespace Parser
 
 namespace CompletionCompiler
 {
-    void ccInsertUsing(Parser::SYMBOL* ns, Parser::SYMBOL* parentns, const char* file, int line) { }
-    void ccDumpSymbols(void) { }
-    std::string ccNewFile(char* fileName, bool main) {
-        return "";
-    }
-    void ccCloseFile(FILE* handle) { }
-    int ccDBOpen(const char* name) { return 0; }
-    void ccSetSymbol(Parser::SYMBOL* sp) { }
-    Parser::HASHTABLE* ccHash = nullptr;
-}
+void ccInsertUsing(Parser::SYMBOL* ns, Parser::SYMBOL* parentns, const char* file, int line) {}
+void ccDumpSymbols(void) {}
+std::string ccNewFile(char* fileName, bool main) { return ""; }
+void ccCloseFile(FILE* handle) {}
+int ccDBOpen(const char* name) { return 0; }
+void ccSetSymbol(Parser::SYMBOL* sp) {}
+Parser::HASHTABLE* ccHash = nullptr;
+}  // namespace CompletionCompiler

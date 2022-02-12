@@ -179,7 +179,7 @@ volatile char* copyright_notice(void)
 /* To use, include this statement somewhere in the final code:
 
     copyright_notice();
-    
+
 It has no real effect at run time.
 Thanks to Phil Zimmerman for this idea.
 */
@@ -1449,7 +1449,7 @@ DIGIT_T mpShortDiv(DIGIT_T q[], const DIGIT_T u[], DIGIT_T v, size_t ndigits)
         and r, v are single precision digits.
 
         Makes no assumptions about normalisation.
-        
+
         Ref: Knuth Vol 2 Ch 4.3.1 Exercise 16 p625
     */
     size_t j;

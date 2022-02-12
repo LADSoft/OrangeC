@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -53,7 +53,7 @@ static SharedMemory* sharedRegion;
 static int outputPos;
 static int outputSize;
 static unsigned char* streamPointer;
- 
+
 static size_t TextName(const std::string& name)
 {
     if (name[0] == 0)
@@ -296,8 +296,8 @@ static void StreamExpression(SimpleExpression* exp)
                     StreamType(exp->msilArrayTP);
                     break;
                 case Optimizer::se_typeref:
-                     StreamType(exp->tp);
-                     break;
+                    StreamType(exp->tp);
+                    break;
                 case Optimizer::se_msil_array_init:
                     StreamType(exp->tp);
                     break;
@@ -847,8 +847,7 @@ static void StreamData()
                         StreamIndex(data->diff.l1);
                         StreamIndex(data->diff.l2);
                         break;
-                    case DT_STRING:
-                    {
+                    case DT_STRING: {
                         bool instring = false;
                         StreamIndex(data->astring.i);
                         for (int i = 0; i < data->astring.i; i++)
@@ -1020,17 +1019,17 @@ void OutputIntermediate(SharedMemory* mem)
 }
 void WriteMappingFile(SharedMemory* mem, FILE* fil)
 {
-     int pos = 0;
-     unsigned char *p = mem->GetMapping();
-     while(outputPos > 0)
-     {
-          int n = mem->ViewWindowSize();
-          if (outputPos < n)
-              n = outputPos;
-          fwrite(p + pos, n, 1, fil);
-          pos += n;
-          outputPos -= n;
-          p = mem->GetMapping(pos);
-     }
+    int pos = 0;
+    unsigned char* p = mem->GetMapping();
+    while (outputPos > 0)
+    {
+        int n = mem->ViewWindowSize();
+        if (outputPos < n)
+            n = outputPos;
+        fwrite(p + pos, n, 1, fil);
+        pos += n;
+        outputPos -= n;
+        p = mem->GetMapping(pos);
+    }
 }
 }  // namespace Optimizer

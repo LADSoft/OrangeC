@@ -6,10 +6,7 @@ int LinkerColumnsWithNameVirtualTable::id;
 
 LinkerColumnsWithNameVirtualTable::LinkerColumnsWithNameVirtualTable(std::vector<sqlite3_int64>& Data,
                                                                      std::vector<ObjString>& Names, int Columns, bool primary) :
-    data(Data),
-    names(Names),
-    columns(Columns),
-    rows(names.size())
+    data(Data), names(Names), columns(Columns), rows(names.size())
 {
     char buf[1000];
     sprintf(buf, "lkwnvt%d", id++);

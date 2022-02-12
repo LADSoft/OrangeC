@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -1260,43 +1260,41 @@ EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add)
     EXPRESSION* rv;
     switch (node->type)
     {
-    case en_global:
-    case en_auto:
-    case en_threadlocal:
-        return node;
-    case en_add:
-    {
-        auto rv1 = relptr(node->left, offset, true);
-        auto rv2 = relptr(node->right, offset, true);
-        if (rv1)
-            return rv1;
-        else
-            return rv2;
-        break;
-    }
-    case en_sub:
-    {
-        auto rv1 = rv = relptr(node->left, offset, false);
-        auto rv2 = relptr(node->right, offset, false);
-        if (rv1)
-            return rv1;
-        else
-            return rv2;
-        break;
-    }
-    default:
-        if (castvalue(node))
-        {
-            return relptr(node->left, offset, add);
-        }
-        if (isintconst(node))
-        {
-            if (add)
-                offset += node->v.i;
+        case en_global:
+        case en_auto:
+        case en_threadlocal:
+            return node;
+        case en_add: {
+            auto rv1 = relptr(node->left, offset, true);
+            auto rv2 = relptr(node->right, offset, true);
+            if (rv1)
+                return rv1;
             else
-                offset -= node->v.i;
+                return rv2;
+            break;
         }
-        return nullptr;
+        case en_sub: {
+            auto rv1 = rv = relptr(node->left, offset, false);
+            auto rv2 = relptr(node->right, offset, false);
+            if (rv1)
+                return rv1;
+            else
+                return rv2;
+            break;
+        }
+        default:
+            if (castvalue(node))
+            {
+                return relptr(node->left, offset, add);
+            }
+            if (isintconst(node))
+            {
+                if (add)
+                    offset += node->v.i;
+                else
+                    offset -= node->v.i;
+            }
+            return nullptr;
     }
     return rv;
 }
@@ -1364,14 +1362,13 @@ int opt0(EXPRESSION** node)
         case en_l_dc:
         case en_l_ldc:
         case en_l_string:
-        case en_l_object:
-        {
+        case en_l_object: {
             rv |= opt0(&((*node)->left));
             ConstExprStructElemEval(node);
             if (lvalue(*node) && !(*node)->left->init && inConstantExpression)
             {
                 int offset = 0;
-     
+
                 auto ref = relptr((*node)->left, offset);
                 if (ref)
                 {
@@ -1400,7 +1397,7 @@ int opt0(EXPRESSION** node)
                 }
             }
         }
-            break;
+        break;
         case en_x_bool:
         case en_x_bit:
         case en_x_wc:
@@ -1966,8 +1963,7 @@ int opt0(EXPRESSION** node)
                     case en_threadlocal:
                     case en_global:
                     case en_labcon:
-                    case en_auto:
-                    {
+                    case en_auto: {
                     join_land:
                         rv |= opt0(&(ep->right));
                         if (isintconst(ep->right))
@@ -2023,8 +2019,7 @@ int opt0(EXPRESSION** node)
                         *node = intNode(en_c_i, 1);
                         rv = true;
                         break;
-                    default:
-                    {
+                    default: {
                     join_lor:
                         rv |= opt0(&(ep->right));
                         if (isintconst(ep->right))
@@ -2078,7 +2073,7 @@ int opt0(EXPRESSION** node)
             switch (mode)
             {
                 case 1:
-                    *node = intNode(en_c_i, (ep->left->v.i == ep->right->v.i)); 
+                    *node = intNode(en_c_i, (ep->left->v.i == ep->right->v.i));
                     rv = true;
 
                     break;
@@ -2086,8 +2081,7 @@ int opt0(EXPRESSION** node)
                     *node = intNode(en_c_i, (*ep->left->v.f == *ep->right->v.f));
                     rv = true;
                     break;
-                default:
-                {
+                default: {
                     int offset1 = 0, offset2 = 0;
                     auto rv1 = relptr(ep->left, offset1, true);
                     auto rv2 = relptr(ep->right, offset2, true);
@@ -2120,8 +2114,7 @@ int opt0(EXPRESSION** node)
                     *node = intNode(en_c_i, (*ep->left->v.f != *ep->right->v.f));
                     rv = true;
                     break;
-                default:
-                {
+                default: {
                     int offset1 = 0, offset2 = 0;
                     auto rv1 = relptr(ep->left, offset1, true);
                     auto rv2 = relptr(ep->right, offset2, true);
@@ -2155,8 +2148,7 @@ int opt0(EXPRESSION** node)
                     *node = intNode(en_c_i, (*ep->left->v.f < *ep->right->v.f));
                     rv = true;
                     break;
-                default:
-                {
+                default: {
                     int offset1 = 0, offset2 = 0;
                     auto rv1 = relptr(ep->left, offset1, true);
                     auto rv2 = relptr(ep->right, offset2, true);
@@ -2165,7 +2157,6 @@ int opt0(EXPRESSION** node)
                         *node = intNode(en_c_i, offset1 < offset2);
                         rv = true;
                     }
-
                 }
                 break;
             }
@@ -2184,8 +2175,7 @@ int opt0(EXPRESSION** node)
                     *node = intNode(en_c_i, (*ep->left->v.f <= *ep->right->v.f));
                     rv = true;
                     break;
-                default:
-                {
+                default: {
                     int offset1 = 0, offset2 = 0;
                     auto rv1 = relptr(ep->left, offset1, true);
                     auto rv2 = relptr(ep->right, offset2, true);
@@ -2194,7 +2184,6 @@ int opt0(EXPRESSION** node)
                         *node = intNode(en_c_i, offset1 <= offset2);
                         rv = true;
                     }
-
                 }
                 break;
             }
@@ -2209,8 +2198,7 @@ int opt0(EXPRESSION** node)
                     *node = intNode(en_c_i, ((unsigned long long)ep->left->v.i > (unsigned long long)ep->right->v.i));
                     rv = true;
                     break;
-                default:
-                {
+                default: {
                     int offset1 = 0, offset2 = 0;
                     auto rv1 = relptr(ep->left, offset1, true);
                     auto rv2 = relptr(ep->right, offset2, true);
@@ -2219,7 +2207,6 @@ int opt0(EXPRESSION** node)
                         *node = intNode(en_c_i, offset1 > offset2);
                         rv = true;
                     }
-
                 }
                 break;
             }
@@ -2234,8 +2221,7 @@ int opt0(EXPRESSION** node)
                     *node = intNode(en_c_i, ((unsigned long long)ep->left->v.i >= (unsigned long long)ep->right->v.i));
                     rv = true;
                     break;
-                default:
-                {
+                default: {
                     int offset1 = 0, offset2 = 0;
                     auto rv1 = relptr(ep->left, offset1, true);
                     auto rv2 = relptr(ep->right, offset2, true);
@@ -2244,7 +2230,6 @@ int opt0(EXPRESSION** node)
                         *node = intNode(en_c_i, offset1 >= offset2);
                         rv = true;
                     }
-
                 }
                 break;
             }
@@ -2259,8 +2244,7 @@ int opt0(EXPRESSION** node)
                     *node = intNode(en_c_i, ((unsigned long long)ep->left->v.i < (unsigned long long)ep->right->v.i));
                     rv = true;
                     break;
-                default:
-                {
+                default: {
                     int offset1 = 0, offset2 = 0;
                     auto rv1 = relptr(ep->left, offset1, true);
                     auto rv2 = relptr(ep->right, offset2, true);
@@ -2269,7 +2253,6 @@ int opt0(EXPRESSION** node)
                         *node = intNode(en_c_i, offset1 < offset2);
                         rv = true;
                     }
-
                 }
                 break;
             }
@@ -2284,8 +2267,7 @@ int opt0(EXPRESSION** node)
                     *node = intNode(en_c_i, ((unsigned long long)ep->left->v.i <= (unsigned long long)ep->right->v.i));
                     rv = true;
                     break;
-                default:
-                {
+                default: {
                     int offset1 = 0, offset2 = 0;
                     auto rv1 = relptr(ep->left, offset1, true);
                     auto rv2 = relptr(ep->right, offset2, true);
@@ -2312,8 +2294,7 @@ int opt0(EXPRESSION** node)
                     *node = intNode(en_c_i, (*ep->left->v.f > *ep->right->v.f));
                     rv = true;
                     break;
-                default:
-                {
+                default: {
                     int offset1 = 0, offset2 = 0;
                     auto rv1 = relptr(ep->left, offset1, true);
                     auto rv2 = relptr(ep->right, offset2, true);
@@ -2322,7 +2303,6 @@ int opt0(EXPRESSION** node)
                         *node = intNode(en_c_i, offset1 > offset2);
                         rv = true;
                     }
-
                 }
                 break;
             }
@@ -2341,8 +2321,7 @@ int opt0(EXPRESSION** node)
                     *node = intNode(en_c_i, (*ep->left->v.f > *ep->right->v.f));
                     rv = true;
                     break;
-                default:
-                {
+                default: {
                     int offset1 = 0, offset2 = 0;
                     auto rv1 = relptr(ep->left, offset1, true);
                     auto rv2 = relptr(ep->right, offset2, true);
@@ -2408,89 +2387,88 @@ int opt0(EXPRESSION** node)
             break;
         case en_dot:
         case en_pointsto:
-        if (!templateNestingCount || instantiatingTemplate)
-        {
-            EXPRESSION *newExpr = ep->left;
-            EXPRESSION *next = ep->right;
-            TYPE* tp = LookupTypeFromExpression(ep->left, nullptr, false);
-            while (ep->type == en_dot || ep->type == en_pointsto)
+            if (!templateNestingCount || instantiatingTemplate)
             {
-                rv |= opt0(&(ep->right));
-                rv |= opt0(&(ep->left));
-                if (ep->type == en_pointsto)
+                EXPRESSION* newExpr = ep->left;
+                EXPRESSION* next = ep->right;
+                TYPE* tp = LookupTypeFromExpression(ep->left, nullptr, false);
+                while (ep->type == en_dot || ep->type == en_pointsto)
                 {
-                    if (!ispointer(tp))
-                        break;
-                    tp = basetype(tp->btp);
-                    deref(&stdpointer, &newExpr);
-                }
-                if (!isstructured(tp))
-                    break;
-                if (next->type == en_dot || next->type == en_pointsto)
-                {
-                    next = next->left;
-                }
-                STRUCTSYM s;
-                s.str = basetype(tp)->sp;
-                addStructureDeclaration(&s);
-                if (next->type == en_func)
-                {
-                    TYPE *ctype = tp;
-                    SYMBOL *sym = classsearch(next->v.func->sp->name, false, false);
-                    if (!sym)
+                    rv |= opt0(&(ep->right));
+                    rv |= opt0(&(ep->left));
+                    if (ep->type == en_pointsto)
                     {
-                        dropStructureDeclaration();
-                        break;
+                        if (!ispointer(tp))
+                            break;
+                        tp = basetype(tp->btp);
+                        deref(&stdpointer, &newExpr);
                     }
-                    FUNCTIONCALL *func = Allocate<FUNCTIONCALL>();
-                    *func = *next->v.func;
-                    func->sp = sym;
-                    func->thistp = MakeType(bt_pointer, tp);
-                    func->thisptr = newExpr;
-                    sym =
-                        GetOverloadedFunction(&ctype, &func->fcall, sym, func, nullptr, true, false, true, 0);
-                    if (!sym)
+                    if (!isstructured(tp))
+                        break;
+                    if (next->type == en_dot || next->type == en_pointsto)
                     {
-                        dropStructureDeclaration();
-                        break;
+                        next = next->left;
                     }
-                    EXPRESSION* temp = varNode(en_func, sym);
-                    temp->v.func = next->v.func;
-                    temp = exprNode(en_thisref, temp, nullptr);
-                    temp->v.t.thisptr = newExpr;
-                    temp->v.t.tp = tp;
-                    newExpr = temp;
-                    tp = basetype(sym->tp)->btp;
+                    STRUCTSYM s;
+                    s.str = basetype(tp)->sp;
+                    addStructureDeclaration(&s);
+                    if (next->type == en_func)
+                    {
+                        TYPE* ctype = tp;
+                        SYMBOL* sym = classsearch(next->v.func->sp->name, false, false);
+                        if (!sym)
+                        {
+                            dropStructureDeclaration();
+                            break;
+                        }
+                        FUNCTIONCALL* func = Allocate<FUNCTIONCALL>();
+                        *func = *next->v.func;
+                        func->sp = sym;
+                        func->thistp = MakeType(bt_pointer, tp);
+                        func->thisptr = newExpr;
+                        sym = GetOverloadedFunction(&ctype, &func->fcall, sym, func, nullptr, true, false, true, 0);
+                        if (!sym)
+                        {
+                            dropStructureDeclaration();
+                            break;
+                        }
+                        EXPRESSION* temp = varNode(en_func, sym);
+                        temp->v.func = next->v.func;
+                        temp = exprNode(en_thisref, temp, nullptr);
+                        temp->v.t.thisptr = newExpr;
+                        temp->v.t.tp = tp;
+                        newExpr = temp;
+                        tp = basetype(sym->tp)->btp;
+                    }
+                    else
+                    {
+                        SYMBOL* sym = classsearch(GetSymRef(next)->v.sp->name, false, false);
+                        if (!sym)
+                        {
+                            dropStructureDeclaration();
+                            break;
+                        }
+                        EXPRESSION* temp = intNode(en_c_i, 0);
+                        if (sym->sb->parentClass != basetype(tp)->sp)
+                        {
+                            temp = baseClassOffset(basetype(tp)->sp, sym->sb->parentClass, temp);
+                        }
+                        newExpr = exprNode(en_structadd, newExpr, temp);
+                        if (!isstructured(sym->tp))
+                            deref(sym->tp, &newExpr);
+                        tp = sym->tp;
+                    }
+                    dropStructureDeclaration();
+                    ep = ep->right;
                 }
+                if (ep->type == en_dot || ep->type == en_pointsto)
+                    rv = false;
                 else
-                {
-                    SYMBOL *sym = classsearch(GetSymRef(next)->v.sp->name, false, false);
-                    if (!sym)
-                    {
-                        dropStructureDeclaration();
-                        break;
-                    }
-                    EXPRESSION *temp = intNode(en_c_i, 0);
-                    if (sym->sb->parentClass != basetype(tp)->sp)
-                    {
-                        temp = baseClassOffset(basetype(tp)->sp, sym->sb->parentClass, temp);
-                    }
-                    newExpr = exprNode(en_structadd, newExpr, temp);
-                    if (!isstructured(sym->tp))
-                        deref(sym->tp, &newExpr);
-                    tp = sym->tp;
-                }
-                dropStructureDeclaration();
-                ep = ep->right;
+                    *node = newExpr;
             }
-            if (ep->type == en_dot || ep->type == en_pointsto)
-                rv = false;
-            else
-                *node = newExpr;
-        }
-        break;
+            break;
         case en_func:
-            //rv |= opt0(&((*node)->v.func->fcall));
+            // rv |= opt0(&((*node)->v.func->fcall));
             if ((*node)->v.func->thisptr)
                 rv |= opt0(&((*node)->v.func->thisptr));
             return rv;
@@ -2520,7 +2498,7 @@ int opt0(EXPRESSION** node)
             }
             break;
         case en_templateselector:
-           if (!templateNestingCount || instantiatingTemplate)
+            if (!templateNestingCount || instantiatingTemplate)
             {
                 TEMPLATESELECTOR* tsl = (*node)->v.templateSelector;
                 SYMBOL* ts = tsl->next->sp;
@@ -2528,7 +2506,7 @@ int opt0(EXPRESSION** node)
                 TEMPLATESELECTOR* find = tsl->next->next;
                 if (tsl->next->isDeclType)
                 {
-                    TYPE *tp = TemplateLookupTypeFromDeclType(tsl->next->tp);
+                    TYPE* tp = TemplateLookupTypeFromDeclType(tsl->next->tp);
                     if (tp && isstructured(tp))
                         sym = basetype(tp)->sp;
                     else
@@ -2599,7 +2577,7 @@ int opt0(EXPRESSION** node)
             }
             break;
         case en_templateparam:
-            if ((!templateNestingCount  || instantiatingTemplate) && (*node)->v.sp->tp->templateParam->p->type == kw_int)
+            if ((!templateNestingCount || instantiatingTemplate) && (*node)->v.sp->tp->templateParam->p->type == kw_int)
             {
                 SYMBOL* sym = (*node)->v.sp;
                 TEMPLATEPARAMLIST* found = (*node)->v.sp->tp->templateParam;
@@ -3085,7 +3063,7 @@ int fold_const(EXPRESSION* node)
         case en__initblk:
         case en__cpblk:
         case en_dot:
-        case en_pointsto:       
+        case en_pointsto:
             rv |= fold_const(node->right);
         case en_blockclear:
         case en_argnopush:
@@ -3105,25 +3083,25 @@ int fold_const(EXPRESSION* node)
             if (node->left->type != en_func && node->left->type != en_funcret)
                 *node = *node->left;
             break;
-        case en_construct:
-        {
+        case en_construct: {
             node->v.construct.tp = SynthesizeType(node->v.construct.tp, nullptr, false);
             LEXLIST* lex = SetAlternateLex(node->v.construct.deferred);
             if (isarithmetic(node->v.construct.tp))
             {
-                INITIALIZER* init = nullptr, *dest = nullptr;
+                INITIALIZER *init = nullptr, *dest = nullptr;
                 lex = initType(lex, nullptr, 0, sc_auto, &init, &dest, node->v.construct.tp, nullptr, false, 0);
                 if (init)
                     *node = *init->exp;
             }
             else
             {
-                EXPRESSION *exp = anonymousVar(sc_auto, node->v.construct.tp);
-                lex = initType(lex, nullptr, 0, sc_auto, &exp->v.sp->sb->init, &exp->v.sp->sb->dest, node->v.construct.tp, exp->v.sp, false, 0);
+                EXPRESSION* exp = anonymousVar(sc_auto, node->v.construct.tp);
+                lex = initType(lex, nullptr, 0, sc_auto, &exp->v.sp->sb->init, &exp->v.sp->sb->dest, node->v.construct.tp,
+                               exp->v.sp, false, 0);
             }
             SetAlternateLex(nullptr);
         }
-            break;
+        break;
         case en_func:
             if (node->v.func->sp && node->v.func->sp->sb->constexpression)
             {
@@ -3688,7 +3666,7 @@ int typedconsts(EXPRESSION* node1)
 }
 bool toConsider(EXPRESSION* exp1, EXPRESSION* exp2)
 {
-    switch( exp2->type)
+    switch (exp2->type)
     {
         case en_add:
             // fixme : without the (architecture == ARCHITECTURE_MSIL) some complex expressions inside loops
@@ -3706,7 +3684,7 @@ bool toConsider(EXPRESSION* exp1, EXPRESSION* exp2)
         case en_eq:
         case en_ne:
             return true;
-        default: 
+        default:
             return false;
     }
 }
@@ -3735,7 +3713,7 @@ void rebalance(EXPRESSION** exp)
         *exp = Rebalance(*exp, toConsider);
     }
 }
-bool msilConstant(EXPRESSION *exp)
+bool msilConstant(EXPRESSION* exp)
 {
     if (Optimizer::architecture == ARCHITECTURE_MSIL)
     {
@@ -3767,7 +3745,7 @@ bool msilConstant(EXPRESSION *exp)
     }
     return false;
 }
-void RemoveSizeofOperators(EXPRESSION *constant)
+void RemoveSizeofOperators(EXPRESSION* constant)
 {
     if (constant->left)
         RemoveSizeofOperators(constant->left);
@@ -3775,7 +3753,7 @@ void RemoveSizeofOperators(EXPRESSION *constant)
         RemoveSizeofOperators(constant->right);
     if (constant->type == en__sizeof)
     {
-        TYPE *tp = constant->left->v.tp;
+        TYPE* tp = constant->left->v.tp;
         constant->type = en_c_ui;
         constant->left = nullptr;
         constant->v.i = tp->size;

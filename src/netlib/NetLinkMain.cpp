@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "NetLinkMain.h"
@@ -114,8 +114,9 @@ const std::string& NetLinkMain::GetOutputFile(CmdFiles& files)
         std::cout << "Nothing to do." << std::endl;
         exit(1);
     }
-    outputFile =
-        Utils::QualifiedFile(outputFile.c_str(), AssemblyFile.GetValue() ? ".il" : LibraryFile.GetValue() ? ".dll" : ".exe");
+    outputFile = Utils::QualifiedFile(outputFile.c_str(), AssemblyFile.GetValue()  ? ".il"
+                                                          : LibraryFile.GetValue() ? ".dll"
+                                                                                   : ".exe");
     return outputFile;
 }
 bool NetLinkMain::LoadImage(CmdFiles& files)
@@ -316,8 +317,8 @@ bool NetLinkMain::Validate()
 MethodSignature* NetLinkMain::LookupSignature(const char* name)
 {
     Method* result;
-    PELib::eFindType rv =
-        peLib->Find(const_cast<char*>((namespaceAndClass + name).c_str()), &result, std::vector<Type*>{}, nullptr, nullptr, nullptr, false);
+    PELib::eFindType rv = peLib->Find(const_cast<char*>((namespaceAndClass + name).c_str()), &result, std::vector<Type*>{}, nullptr,
+                                      nullptr, nullptr, false);
     if (rv == PELib::s_method)
     {
         return result->Signature();
@@ -677,7 +678,9 @@ bool NetLinkMain::AddRTLThunks()
 bool NetLinkMain::CreateExecutable(CmdFiles& files)
 {
     return peLib->DumpOutputFile(GetOutputFile(files).c_str(),
-                                 AssemblyFile.GetValue() ? PELib::ilasm : LibraryFile.GetValue() ? PELib::pedll : PELib::peexe,
+                                 AssemblyFile.GetValue()  ? PELib::ilasm
+                                 : LibraryFile.GetValue() ? PELib::pedll
+                                                          : PELib::peexe,
                                  GUIApp.GetValue());
 }
 int NetLinkMain::Run(int argc, char** argv)
@@ -733,8 +736,8 @@ int NetLinkMain::Run(int argc, char** argv)
     }
     if (!Validate())
     {
-//        delete peLib;
-//        return 1;
+        //        delete peLib;
+        //        return 1;
     }
     if (!CreateExecutable(files))
     {

@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -50,8 +50,8 @@
 #include "libcxx.h"
 namespace Parser
 {
-    std::set<SYMBOL*> defaultRecursionMap;
-    bool noExcept = true;
+std::set<SYMBOL*> defaultRecursionMap;
+bool noExcept = true;
 
 static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPRESSION* thisptr, EXPRESSION* other, bool move,
                        bool isconst);
@@ -98,7 +98,6 @@ static bool HasConstexprConstructorInternal(SYMBOL* sym)
         }
     }
     return false;
-
 }
 static bool HasConstexprConstructor(TYPE* tp)
 {
@@ -117,7 +116,7 @@ static bool HasConstexprConstructor(TYPE* tp)
 void ConstexprMembersNotInitializedErrors(SYMBOL* cons)
 {
     if (!templateNestingCount || instantiatingTemplate)
-{
+    {
         auto hrcons = cons->tp->syms->table[0];
         while (hrcons)
         {
@@ -371,7 +370,7 @@ SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl)
     SetParams(ovl);
     return ovl;
 }
-static bool BaseWithVirtualDestructor(SYMBOL *sp)
+static bool BaseWithVirtualDestructor(SYMBOL* sp)
 {
     BASECLASS* b = sp->sb->baseClasses;
     while (b)
@@ -380,10 +379,10 @@ static bool BaseWithVirtualDestructor(SYMBOL *sp)
         if (dest)
         {
             dest = dest->tp->syms->table[0]->p;
-	    if (dest->sb->storage_class == sc_virtual)
+            if (dest->sb->storage_class == sc_virtual)
                 return true;
         }
-        b= b->next;
+        b = b->next;
     }
     return false;
 }
@@ -398,7 +397,7 @@ static SYMBOL* declareDestructor(SYMBOL* sp)
     func = makeID(BaseWithVirtualDestructor(sp) ? sc_virtual : sc_member, tp, nullptr, overloadNameTab[CI_DESTRUCTOR]);
     func->sb->xcMode = xc_none;
     func->sb->noExcept = true;
-//    func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
+    //    func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
     tp->syms = CreateHashTable(1);
     sp1 = makeID(sc_parameter, tp->btp, nullptr, AnonymousName());
     insert(sp1, tp->syms);
@@ -515,7 +514,7 @@ static SYMBOL* declareConstructor(SYMBOL* sp, bool deflt, bool move)
     TYPE* tp = MakeType(bt_func, MakeType(bt_void));
     func = makeID(sc_member, tp, nullptr, overloadNameTab[CI_CONSTRUCTOR]);
     func->sb->isConstructor = true;
-//    func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
+    //    func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
     sp1 = makeID(sc_parameter, nullptr, nullptr, AnonymousName());
     tp->syms = CreateHashTable(1);
     tp->syms->table[0] = Allocate<SYMLIST>();
@@ -1454,7 +1453,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
                 AdjustParams(match, basetype(match->tp)->syms->table[0], &params->arguments, false, true);
                 if (sp->sb->vbaseEntries)
                 {
-                    INITLIST* x = Allocate<INITLIST>(), ** p;
+                    INITLIST *x = Allocate<INITLIST>(), **p;
                     x->tp = MakeType(bt_int);
                     x->exp = intNode(en_c_i, 1);
                     p = &params->arguments;
@@ -1709,7 +1708,7 @@ void destructBlock(EXPRESSION** exp, SYMLIST* hr, bool mainDestruct)
                         }
                         else
                         {
-                           *exp = iexp;
+                            *exp = iexp;
                         }
                     }
                 }
@@ -1936,7 +1935,7 @@ static void virtualBaseThunks(BLOCKDATA* b, SYMBOL* sp, EXPRESSION* thisptr)
         st->select = first;
     }
 }
-static void HandleEntries(EXPRESSION **pos, VTABENTRY* entries, EXPRESSION* thisptr, EXPRESSION* vtabBase, bool isvirtual)
+static void HandleEntries(EXPRESSION** pos, VTABENTRY* entries, EXPRESSION* thisptr, EXPRESSION* vtabBase, bool isvirtual)
 {
     VTABENTRY* children = entries->children;
     while (entries)
@@ -1969,14 +1968,14 @@ static void HandleEntries(EXPRESSION **pos, VTABENTRY* entries, EXPRESSION* this
 static void dovtabThunks(BLOCKDATA* b, SYMBOL* sym, EXPRESSION* thisptr, bool isvirtual)
 {
     VTABENTRY* entries = sym->sb->vtabEntries;
-    EXPRESSION *first = nullptr;
+    EXPRESSION* first = nullptr;
     STATEMENT* st;
     SYMBOL* localsp;
     localsp = sym->sb->vtabsp;
     EXPRESSION* vtabBase = varNode(en_global, localsp);
     if (localsp->sb->attribs.inheritable.linkage2 == lk_import)
         deref(&stdpointer, &vtabBase);
-    HandleEntries(&first, entries,thisptr, vtabBase, isvirtual);
+    HandleEntries(&first, entries, thisptr, vtabBase, isvirtual);
     if (first)
     {
         st = stmtNode(nullptr, b, st_expr);
@@ -2530,7 +2529,8 @@ static void releaseInitializers(SYMBOL* cls, SYMBOL* cons)
         hr = hr->next;
     }
 }
-EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTABLE* syms, bool parseInitializers, bool doCopy, bool defaulted)
+EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTABLE* syms, bool parseInitializers, bool doCopy,
+                                 bool defaulted)
 {
     BASECLASS* bc;
     SYMLIST* hr = syms->table[0];
@@ -2642,7 +2642,7 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
         codeLabel = oldCodeLabel;
     return thisptr;
 }
-static bool DefaultConstructorConstExpression(SYMBOL *sp)
+static bool DefaultConstructorConstExpression(SYMBOL* sp)
 {
     if (sp->sb->constexpression)
         return true;
@@ -2728,7 +2728,8 @@ void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
             consfunc->sb->noExcept = false;
         }
     }
-    consfunc->sb->constexpression = DefaultConstructorConstExpression(sp) || matchesCopy(consfunc, false) || matchesCopy(consfunc, true);
+    consfunc->sb->constexpression =
+        DefaultConstructorConstExpression(sp) || matchesCopy(consfunc, false) || matchesCopy(consfunc, true);
     localNameSpace->valueData->syms = syms;
     noExcept &= oldNoExcept;
 }
@@ -2817,7 +2818,7 @@ static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPR
         if (asn1->sb->defaulted && !asn1->sb->inlineFunc.stmt)
             createAssignment(base, asn1);
         noExcept &= asn1->sb->noExcept;
-        
+
         params->functp = asn1->tp;
         params->sp = asn1;
         params->ascall = true;
@@ -3121,7 +3122,8 @@ void makeArrayConsDest(TYPE** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, 
         (*exp)->v.func = params;
     }
 }
-bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* arrayElms, bool top, bool pointer, bool skipAccess, bool novtab)
+bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* arrayElms, bool top, bool pointer, bool skipAccess,
+                    bool novtab)
 {
     if (!sp)
         return false;
@@ -3260,7 +3262,8 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     params->thisptr = *exp;
     params->thistp = MakeType(bt_pointer, sp->tp);
     params->ascall = true;
-    cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, nullptr, toErr, maybeConversion, true, usesInitList | _F_INCONSTRUCTOR);
+    cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, nullptr, toErr, maybeConversion, true,
+                                  usesInitList | _F_INCONSTRUCTOR);
 
     if (cons1 && isfunction(cons1->tp))
     {
@@ -3271,7 +3274,8 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
             SYMLIST* srch = basetype(cons1->tp)->syms->table[0];
             while (srch)
             {
-                if (isstructured(srch->p->tp) && basetype(srch->p->tp)->sp->sb->templateLevel && sameTemplate(stp, basetype(srch->p->tp)))
+                if (isstructured(srch->p->tp) && basetype(srch->p->tp)->sp->sb->templateLevel &&
+                    sameTemplate(stp, basetype(srch->p->tp)))
                     return false;
                 srch = srch->next;
             }
@@ -3281,7 +3285,8 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
         if (cons1->sb->castoperator)
         {
             FUNCTIONCALL* oparams = Allocate<FUNCTIONCALL>();
-            if (!inNoExceptHandler && !isAccessible(cons1->sb->parentClass, cons1->sb->parentClass, cons1, nullptr, ac_public, false))
+            if (!inNoExceptHandler &&
+                !isAccessible(cons1->sb->parentClass, cons1->sb->parentClass, cons1, nullptr, ac_public, false))
             {
                 errorsym(ERR_CANNOT_ACCESS, cons1);
             }
@@ -3304,12 +3309,12 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
         }
         else
         {
-            if (!inNoExceptHandler && !isAccessible(against, sp, cons1, theCurrentFunc,
-                              top ? (theCurrentFunc && theCurrentFunc->sb->parentClass == sp ? ac_private : ac_public)
-                                  : ac_private,
+            if (!inNoExceptHandler &&
+                !isAccessible(against, sp, cons1, theCurrentFunc,
+                              top ? (theCurrentFunc && theCurrentFunc->sb->parentClass == sp ? ac_private : ac_public) : ac_private,
                               false))
             {
-                    errorsym(ERR_CANNOT_ACCESS, cons1);
+                errorsym(ERR_CANNOT_ACCESS, cons1);
             }
             if (cons1->sb->isExplicit && implicit)
                 error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
@@ -3333,15 +3338,18 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                     }
                 }
             }
-            if (initializerListType && (!params->arguments->tp || !isstructured(params->arguments->tp) || !basetype(params->arguments->tp)->sp->sb->initializer_list))
+            if (initializerListType && (!params->arguments->tp || !isstructured(params->arguments->tp) ||
+                                        !basetype(params->arguments->tp)->sp->sb->initializer_list))
             {
                 auto old = params->arguments->next;
-                if (params->arguments && params->arguments->nested && params->arguments->nested->nested && !params->arguments->initializer_list)
+                if (params->arguments && params->arguments->nested && params->arguments->nested->nested &&
+                    !params->arguments->initializer_list)
                     params->arguments->next = nullptr;
                 auto temp = params->arguments;
                 if (!params->arguments->initializer_list)
                     params->arguments = params->arguments->nested;
-                CreateInitializerList(cons1, initializerListTemplate, initializerListType, &params->arguments, false, initializerRef);
+                CreateInitializerList(cons1, initializerListTemplate, initializerListType, &params->arguments, false,
+                                      initializerRef);
                 if (temp && temp->nested && temp->nested->nested && !temp->initializer_list)
                     temp->next = old;
                 if (basetype(cons1->tp)->syms->table[0]->next->next)
@@ -3422,7 +3430,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
             *exp = exprNode(en_thisref, *exp, nullptr);
             (*exp)->v.t.thisptr = params->thisptr;
             (*exp)->v.t.tp = sp->tp;
-            optimize_for_constants(exp); // for constexpr constructors
+            optimize_for_constants(exp);  // for constexpr constructors
             // hasXCInfo = true;
         }
 

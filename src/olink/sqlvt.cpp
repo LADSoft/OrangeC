@@ -188,9 +188,7 @@ int SQL3VirtualTable::iEof(void* userCursor) { return Eof(userCursor); }
 int SQL3VirtualTable::iColumn(void* userCursor, sqlite3_context* ctx, int i) { return Column(userCursor, ctx, i); }
 int SQL3VirtualTable::iRowid(void* userCursor, sqlite_int64* pRowid) { return RowId(userCursor, pRowid); }
 IntegerColumnsVirtualTable::IntegerColumnsVirtualTable(std::vector<sqlite3_int64>& Data, int Columns, bool primary) :
-    data(Data),
-    columns(Columns),
-    rows(Data.size() / Columns)
+    data(Data), columns(Columns), rows(Data.size() / Columns)
 {
     char buf[1000];
     sprintf(buf, "icvt%d", id++);

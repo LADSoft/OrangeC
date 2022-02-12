@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "DotNetPELib.h"
@@ -29,7 +29,7 @@
 
 namespace DotNetPELib
 {
-bool MethodSignature::MatchesType(Type *tpa, Type *tpp)
+bool MethodSignature::MatchesType(Type* tpa, Type* tpp)
 {
     if (!tpp)
     {
@@ -54,7 +54,8 @@ bool MethodSignature::MatchesType(Type *tpa, Type *tpp)
     {
         return false;
     }
-    if ((tpa->PointerLevel() != tpp->PointerLevel() && tpp->PointerLevel() != 1 && tpp->GetBasicType() != Type::Void) || tpa->ArrayLevel() != tpp->ArrayLevel())
+    if ((tpa->PointerLevel() != tpp->PointerLevel() && tpp->PointerLevel() != 1 && tpp->GetBasicType() != Type::Void) ||
+        tpa->ArrayLevel() != tpp->ArrayLevel())
         return false;
     return true;
 }
@@ -428,7 +429,6 @@ void MethodSignature::ILSignatureDump(PELib& peLib)
     else
     {
         peLib.Out() << Qualifiers::GetName(name_, container_);
-
     }
     peLib.Out() << "(";
     for (std::list<Param*>::const_iterator it = params.begin(); it != params.end();)
@@ -470,7 +470,7 @@ bool MethodSignature::PEDump(PELib& peLib, bool asType)
             }
             size_t sz;
             if (generic_.size())
-            {                
+            {
                 genericParent_->PEDump(peLib, false);
                 Byte* sig = SignatureGenerator::MethodSpecSig(this, sz);
                 size_t methodSignature = peLib.PEOut().HashBlob(sig, sz);
@@ -490,7 +490,8 @@ bool MethodSignature::PEDump(PELib& peLib, bool asType)
                 Byte* sig = SignatureGenerator::MethodRefSig(this, sz);
                 size_t methodSignature = peLib.PEOut().HashBlob(sig, sz);
                 delete[] sig;
-                MemberRefParent memberRef(cls && cls->Generic().size() ? MemberRefParent::TypeSpec : MemberRefParent::TypeRef, container_->PEIndex());
+                MemberRefParent memberRef(cls && cls->Generic().size() ? MemberRefParent::TypeSpec : MemberRefParent::TypeRef,
+                                          container_->PEIndex());
                 TableEntryBase* table = new MemberRefTableEntry(memberRef, function, methodSignature);
                 peIndexCallSite_ = peLib.PEOut().AddTableEntry(table);
             }
@@ -583,7 +584,7 @@ void MethodSignature::Load(PELib& lib, AssemblyDef& assembly, PEReader& reader, 
 }
 std::string MethodSignature::AdornGenerics(PELib& peLib, bool names) const
 {
-    std::unique_ptr<std::iostream> hold( new std::stringstream() );
+    std::unique_ptr<std::iostream> hold(new std::stringstream());
     peLib.Swap(hold);
     if (generic_.size())
     {
@@ -611,4 +612,4 @@ std::string MethodSignature::AdornGenerics(PELib& peLib, bool names) const
     peLib.Swap(hold);
     return static_cast<std::stringstream&>(*hold).str();
 }
-} // namespace DotNetPELib
+}  // namespace DotNetPELib

@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ObjFile.h"
@@ -399,8 +399,7 @@ bool LinkDebugFile::WriteVariableTypes()
                 v.push_back(0);
                 n.push_back("");
                 break;
-            case ObjType::eFunction:
-            {
+            case ObjType::eFunction: {
                 ObjFunction* func = static_cast<ObjFunction*>(type);
                 v.push_back(func->GetIndex());
                 v.push_back(ObjType::eFunction);
@@ -430,8 +429,7 @@ bool LinkDebugFile::WriteVariableTypes()
                 break;
             case ObjType::eStruct:
             case ObjType::eUnion:
-            case ObjType::eEnum:
-            {
+            case ObjType::eEnum: {
                 v.push_back(type->GetIndex());
                 v.push_back(type->GetType());
                 v.push_back(type->GetSize());
@@ -486,8 +484,7 @@ bool LinkDebugFile::WriteVariableTypes()
         ObjType* type = *it;
         switch (type->GetType())
         {
-            case ObjType::eFunction:
-            {
+            case ObjType::eFunction: {
                 ObjFunction* func = static_cast<ObjFunction*>(type);
                 int order = 0;
                 for (auto it = func->ParameterBegin(); it != func->ParameterEnd(); ++it)
@@ -514,8 +511,7 @@ bool LinkDebugFile::WriteVariableTypes()
         {
             case ObjType::eStruct:
             case ObjType::eUnion:
-            case ObjType::eEnum:
-            {
+            case ObjType::eEnum: {
                 int order = 0;
                 for (auto it = type->FieldBegin(); it != type->FieldEnd(); ++it)
                 {
@@ -728,8 +724,7 @@ bool LinkDebugFile::WriteAutosTable()
 
                             currentContext->vars[(*it2)->GetSymbol()] = currentLine;
                             break;
-                        case ObjDebugTag::eVirtualFunctionStart:
-                        {
+                        case ObjDebugTag::eVirtualFunctionStart: {
                             ObjSection* func = (*it2)->GetSection();
                             funcId = sectionMap[func->GetName()];
                         }
@@ -756,8 +751,7 @@ bool LinkDebugFile::WriteAutosTable()
                             break;
                         case ObjDebugTag::eVirtualFunctionEnd:
                         case ObjDebugTag::eBlockEnd:
-                        case ObjDebugTag::eFunctionEnd:
-                        {
+                        case ObjDebugTag::eFunctionEnd: {
 
                             int end = currentLine->GetLineNumber();
                             // this next line is a safety, used to use start line

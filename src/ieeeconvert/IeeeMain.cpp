@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "IeeeMain.h"
@@ -46,7 +46,7 @@ int main(int argc, char** argv)
     }
     catch (ObjIeeeBinary::SyntaxError e)
     {
-       std::cout << e.what() << std::endl;
+        std::cout << e.what() << std::endl;
     }
 }
 void IeeeMain::usage(const char* prog_name, const char* text, int retcode)
@@ -69,7 +69,7 @@ int IeeeMain::Run(int argc, char** argv)
     {
         if ((*it).find(".oa") != std::string::npos)
         {
-            FILE *fil = fopen((*it).c_str(), "r");
+            FILE* fil = fopen((*it).c_str(), "r");
             if (fil)
             {
                 std::string othername = (*it).substr(0, (*it).size() - 1);
@@ -87,12 +87,12 @@ int IeeeMain::Run(int argc, char** argv)
                         output_obj.SetStartAddress(finput_obj, input_obj.GetStartAddress());
                         if (!output_obj.Write(outfile, finput_obj, &factory))
                         {
-                           Utils::fatal("Cannot write %s", othername.c_str());
+                            Utils::fatal("Cannot write %s", othername.c_str());
                         }
                     }
                     else
                     {
-                           Utils::fatal("Cannot read %s", (*it).c_str());
+                        Utils::fatal("Cannot read %s", (*it).c_str());
                     }
                     fclose(outfile);
                 }
@@ -100,7 +100,7 @@ int IeeeMain::Run(int argc, char** argv)
                 {
                     Utils::fatal("Cannot open '%s' for write", othername.c_str());
                 }
-                fclose(fil);                
+                fclose(fil);
             }
             else
             {
@@ -110,7 +110,7 @@ int IeeeMain::Run(int argc, char** argv)
         }
         else if ((*it).find(".o") != std::string::npos)
         {
-            FILE *fil = fopen((*it).c_str(), "rb");
+            FILE* fil = fopen((*it).c_str(), "rb");
             if (fil)
             {
                 std::string othername = (*it) + "a";
@@ -128,12 +128,12 @@ int IeeeMain::Run(int argc, char** argv)
                         output_obj.SetStartAddress(finput_obj, input_obj.GetStartAddress());
                         if (!output_obj.Write(outfile, finput_obj, &factory))
                         {
-                           Utils::fatal("Cannot write %s", othername.c_str());
+                            Utils::fatal("Cannot write %s", othername.c_str());
                         }
                     }
                     else
                     {
-                           Utils::fatal("Cannot read %s", (*it).c_str());
+                        Utils::fatal("Cannot read %s", (*it).c_str());
                     }
                     fclose(outfile);
                 }

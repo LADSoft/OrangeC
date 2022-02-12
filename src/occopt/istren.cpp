@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -51,7 +51,7 @@
 
 namespace Optimizer
 {
-    static std::unordered_map<int, IMODE*> loadTemps;
+static std::unordered_map<int, IMODE*> loadTemps;
 
 static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int match, ILIST* vars)
 {
@@ -178,7 +178,7 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
                     tempInfo[v->data]->sl = s1;
                     s1->multiplier = multiplier;
                     s1->strengthName = n;
-//                    tempInfo[n]->enode->sp->pushedtotemp = true;
+                    //                    tempInfo[n]->enode->sp->pushedtotemp = true;
                     tempInfo[n]->inductionLoop = tempInfo[v->data]->inductionLoop;
                     tempInfo[n]->oldInductionVar = v->data;
                     v = v->next;
@@ -246,7 +246,7 @@ void ReplaceOneUses(QUAD* head, IMODE** im)
         }
         else
         {
-            Utils::fatal("unexpected indirect node in ReplaceUses"); 
+            Utils::fatal("unexpected indirect node in ReplaceUses");
             IMODELIST* iml = tempInfo[n]->enode->sp->imind;
             while (iml)
             {
@@ -599,7 +599,7 @@ static void Sort(BLOCK* b, QUAD* head, QUAD* tail)
     // the algorithm interleaves the addition sequences,
     // rather than rewrite it we are just going to sort them
     // so that things that go together are.
-    QUAD* prev = head->back;        
+    QUAD* prev = head->back;
     QUAD* next = tail->fwd;
     prev->fwd = next;
     next->back = prev;
@@ -658,7 +658,7 @@ static void ReduceStrength(BLOCK* b)
     head = b->head;
     while (head != b->tail->fwd)
     {
-        QUAD* begin = head->back, *end = begin;
+        QUAD *begin = head->back, *end = begin;
         bool toContinue = true;
         while (toContinue && head != b->tail->fwd)
         {
@@ -743,7 +743,6 @@ void ReduceLoopStrength(void)
                             }
                         }
                     }
-
                 }
                 head = head->fwd;
             }

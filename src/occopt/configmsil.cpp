@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -39,28 +39,28 @@
 
 namespace Optimizer
 {
-    static char usage_text[] =
-        "[options] [@response file] files\n"
-        "\n"
-        "/1        - C1x mode                  /8        - c89 mode\n"
-        "/9        - C99 mode                  /c        - compile only\n"
-        "-d        - don't allow extensions    +e        - dump errors to file\n"
-        "+i        - dump preprocessed file    +l        - dump listing file\n"
-        "/oname    - specify output file name\n"
-        "+A        - disable extensions        /Dxxx     - define something\n"
-        "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
-        "/Kfile    - set strong name key       /Lxxx     - set dlls to import from\n"
-        "/M        - generate make stubs       /Nns.cls  - set namespace and class\n"
-        "/O-       - disable optimizations     /P        - replace PInvokes\n"
-        "+Q        - quiet mode                /T        - translate trigraphs\n"
-        "/Vx.x.x.x - set assembly version      /!        - No logo\n"
-        "--version - show version info\n"
-        "\nCodegen parameters: (/C[+][-][params])\n"
-        "  +a   - use delegate for func ptr    +d   - display diagnostics\n"
-        "  -b   - no BSS                       +f   - generated pinned addresses\n"
-        "  +I   - initialize scalars           -l   - no C source in ASM file\n"
-        "  -m   - no leading underscores       +s   - use native string literals\n"
-        "  +u   - 'char' type is unsigned\n"
+static char usage_text[] =
+    "[options] [@response file] files\n"
+    "\n"
+    "/1        - C1x mode                  /8        - c89 mode\n"
+    "/9        - C99 mode                  /c        - compile only\n"
+    "-d        - don't allow extensions    +e        - dump errors to file\n"
+    "+i        - dump preprocessed file    +l        - dump listing file\n"
+    "/oname    - specify output file name\n"
+    "+A        - disable extensions        /Dxxx     - define something\n"
+    "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
+    "/Kfile    - set strong name key       /Lxxx     - set dlls to import from\n"
+    "/M        - generate make stubs       /Nns.cls  - set namespace and class\n"
+    "/O-       - disable optimizations     /P        - replace PInvokes\n"
+    "+Q        - quiet mode                /T        - translate trigraphs\n"
+    "/Vx.x.x.x - set assembly version      /!        - No logo\n"
+    "--version - show version info\n"
+    "\nCodegen parameters: (/C[+][-][params])\n"
+    "  +a   - use delegate for func ptr    +d   - display diagnostics\n"
+    "  -b   - no BSS                       +f   - generated pinned addresses\n"
+    "  +I   - initialize scalars           -l   - no C source in ASM file\n"
+    "  -m   - no leading underscores       +s   - use native string literals\n"
+    "  +u   - 'char' type is unsigned\n"
     "\nWarning Control:\n"
     " /w      - display no warnings         /wx or /werror - display warnings as errors\n"
     " /woxxx  - only display warning once   /wexxx         - display warning xxx as error\n"
@@ -127,8 +127,8 @@ static ARCH_SIZING sizes = {
     4,  /*char a_int;*/
     4,  /*char a_long;*/
     8,  /*char a_longlong;*/
-    2, /*char a_char16_t;*/
-    4, /*char a_char32_t;*/
+    2,  /*char a_char16_t;*/
+    4,  /*char a_char32_t;*/
     4,  /*char a_addr;*/
     8,  /*char a_farptr;*/
     2,  /*char a_farseg;*/
@@ -160,10 +160,10 @@ static ARCH_SIZING alignments = {
     4, /*char a_memberptr;    */
     0, /*char a_struct;  alignment only */
     /* imaginary same as real */
-    4, /*char a_float;*/
-    8, /*char a_double;*/
-    8, /*char a_longdouble;*/
-    8,                    // char a_alignedstruct; // __attribute((__aligned__))
+    4,  /*char a_float;*/
+    8,  /*char a_double;*/
+    8,  /*char a_longdouble;*/
+    8,  // char a_alignedstruct; // __attribute((__aligned__))
 };
 static ARCH_SIZING locks = {
     0, /*char a_bool; */
@@ -188,24 +188,24 @@ static ARCH_SIZING locks = {
     1,                  /*char a_fcomplexpad; */
     1,                  /*char a_rcomplexpad; */
     1,                  /*char a_lrcomplexpad; */
-    0,                    // char a_alignedstruct; // __attribute((__aligned__))
+    0,                  // char a_alignedstruct; // __attribute((__aligned__))
 };
 static ARCH_FLOAT aflt = {-126, 126, 128, 24};
 static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};
 static ARCH_FLOAT aldbl = {-1022, 1022, 1024, 53};
 static ARCH_PEEP peeps[] = {0};
 static ARCH_CHARACTERISTICS architecture_characteristics = {
-    &alignments, /* alignments */
-    0,           /* custom alignment routine */
-    &sizes,      /* sizes */
-    &locks,      /* atomic locks */
-    4,           /* maximum value for __c11_atomic_is_lock_free */
-    0,           /* routine is called in case parameters less than paramwidth need offsets */
-    ISZ_ULONG,   /* size compatible to an integer */
-    ISZ_ULONG,   /* size compatible to an address */
-    ISZ_ULONGLONG,/* size compatible with the register width */
-    8,           /* default packing level */
-    8,           /* alignment of malloc() out of RTL */
+    &alignments,   /* alignments */
+    0,             /* custom alignment routine */
+    &sizes,        /* sizes */
+    &locks,        /* atomic locks */
+    4,             /* maximum value for __c11_atomic_is_lock_free */
+    0,             /* routine is called in case parameters less than paramwidth need offsets */
+    ISZ_ULONG,     /* size compatible to an integer */
+    ISZ_ULONG,     /* size compatible to an address */
+    ISZ_ULONGLONG, /* size compatible with the register width */
+    8,             /* default packing level */
+    8,             /* alignment of malloc() out of RTL */
     /* floating point characteristics not fully implemented */
     &aflt,                                                                        /* characteristics of 'float' keyword */
     &adbl,                                                                        /* characteristics of 'double' keyword */
@@ -219,8 +219,9 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     0,                                                                            /* register list for regs used in fastcall */
 
     OPT_REVERSESTORE | OPT_REVERSEPARAM | OPT_ARGSTRUCTREF | OPT_EXPANDSWITCH | OPT_THUNKRETVAL, /* preferred optimizations */
-    DO_NOGCSE | DO_NOLCSE | DO_NOREGALLOC | DO_NOADDRESSINIT | DO_NOPARMADJSIZE | DO_NOLOADSTACK | DO_NOENTRYIF | DO_NOALIAS | DO_NOCONST |
-        DO_NOOPTCONVERSION | DO_NOINLINE | DO_UNIQUEIND | DO_NOFASTDIV | DO_NODEADPUSHTOTEMP | DO_MIDDLEBITS | DO_NOBRANCHTOBRANCH | DO_NOMULTOSHIFT,
+    DO_NOGCSE | DO_NOLCSE | DO_NOREGALLOC | DO_NOADDRESSINIT | DO_NOPARMADJSIZE | DO_NOLOADSTACK | DO_NOENTRYIF | DO_NOALIAS |
+        DO_NOCONST | DO_NOOPTCONVERSION | DO_NOINLINE | DO_UNIQUEIND | DO_NOFASTDIV | DO_NODEADPUSHTOTEMP | DO_MIDDLEBITS |
+        DO_NOBRANCHTOBRANCH | DO_NOMULTOSHIFT,
     /* optimizations we don't want */
     EO_RETURNASERR,    /* error options */
     false,             /* true if has floating point regs */
@@ -387,23 +388,23 @@ static ARCH_GEN outputfunctions = {
 
 ARCH_ASM msilAssemblerInterface[] = {
     {
-        "ilasm",         /* assembler name */
-        0,               /* backend data (compiler ignores) */
-        "1",             /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-        ".il",           /* extension for assembly files */
-        ".ilo",          /* extension for object files, NULL = has no object mode */
-        ".rc;.res;.ilo", /* extensions for files that should be passed to the backend*/
-        "occil",         /* name of an environment variable to parse, or 0 */
-        "occil",         /* name of the program, for usage */
-        "occil",         /* name of a config file if you want to use one, or NULL (sans extension) */
-        usage_text,      /* pointer to usage text */
-        "",                                    /* lib file */
-        "msil-w32-occil",                      /* machine string */
-        nullptr,         // args,                           /* extra args */
-        0,               // sizeof(args) / sizeof(args[0]), /* number of args */
-        0,               // prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-        defines,         /* defines list to create at compile time, or null */
-        &dbgStruct[0],   /* debug structure, or NULL */
+        "ilasm",          /* assembler name */
+        0,                /* backend data (compiler ignores) */
+        "1",              /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
+        ".il",            /* extension for assembly files */
+        ".ilo",           /* extension for object files, NULL = has no object mode */
+        ".rc;.res;.ilo",  /* extensions for files that should be passed to the backend*/
+        "occil",          /* name of an environment variable to parse, or 0 */
+        "occil",          /* name of the program, for usage */
+        "occil",          /* name of a config file if you want to use one, or NULL (sans extension) */
+        usage_text,       /* pointer to usage text */
+        "",               /* lib file */
+        "msil-w32-occil", /* machine string */
+        nullptr,          // args,                           /* extra args */
+        0,                // sizeof(args) / sizeof(args[0]), /* number of args */
+        0,                // prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
+        defines,          /* defines list to create at compile time, or null */
+        &dbgStruct[0],    /* debug structure, or NULL */
         &architecture_characteristics, /* architecture characteristics */
         &outputfunctions,              /* pointer to backend function linkages */
 #if 0
@@ -435,7 +436,7 @@ ARCH_ASM msilAssemblerInterface[] = {
     },
     {0}};
 
-int parse_msil_codegen(bool v, const char *string)
+int parse_msil_codegen(bool v, const char* string)
 {
     if (string[0] == ';')
         return 1;

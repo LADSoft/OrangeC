@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -476,23 +476,23 @@ SYMBOL* RTTIDumpType(TYPE* tp)
                 {
                     switch (basetype(tp)->type)
                     {
-                    case bt_lref:
-                    case bt_rref:
-                        RTTIDumpRef(xtSym, tp);
-                        break;
-                    case bt_pointer:
-                        if (isarray(tp))
-                            RTTIDumpArray(xtSym, tp);
-                        else
-                            RTTIDumpPointer(xtSym, tp);
-                        break;
-                    case bt_struct:
-                    case bt_class:
-                        RTTIDumpStruct(xtSym, tp);
-                        break;
-                    default:
-                        RTTIDumpArithmetic(xtSym, tp);
-                        break;
+                        case bt_lref:
+                        case bt_rref:
+                            RTTIDumpRef(xtSym, tp);
+                            break;
+                        case bt_pointer:
+                            if (isarray(tp))
+                                RTTIDumpArray(xtSym, tp);
+                            else
+                                RTTIDumpPointer(xtSym, tp);
+                            break;
+                        case bt_struct:
+                        case bt_class:
+                            RTTIDumpStruct(xtSym, tp);
+                            break;
+                        default:
+                            RTTIDumpArithmetic(xtSym, tp);
+                            break;
                     }
                 }
             }
@@ -517,8 +517,8 @@ SYMBOL* RTTIDumpType(TYPE* tp)
     }
     return xtSym;
 }
-static void XCStmt(STATEMENT* block, std::map<int, std::map<int, __xclist*>> & lst);
-static void XCExpression(EXPRESSION* node, std::map<int, std::map<int, __xclist*>> & lst)
+static void XCStmt(STATEMENT* block, std::map<int, std::map<int, __xclist*>>& lst);
+static void XCExpression(EXPRESSION* node, std::map<int, std::map<int, __xclist*>>& lst)
 {
     FUNCTIONCALL* fp;
     if (node == 0)
@@ -693,7 +693,7 @@ static void XCExpression(EXPRESSION* node, std::map<int, std::map<int, __xclist*
         case en_mp_compare:
         case en_dot:
         case en_pointsto:
-                break;
+            break;
         case en_void:
         case en_voidnz:
             /*		case en_array: */
@@ -734,7 +734,7 @@ static void XCExpression(EXPRESSION* node, std::map<int, std::map<int, __xclist*
             break;
     }
 }
-static void XCStmt(STATEMENT* block, std::map<int, std::map<int, __xclist*>> & lst)
+static void XCStmt(STATEMENT* block, std::map<int, std::map<int, __xclist*>>& lst)
 {
     while (block != nullptr)
     {
@@ -745,8 +745,7 @@ static void XCStmt(STATEMENT* block, std::map<int, std::map<int, __xclist*>> & l
             case st_catch:
             case st___catch:
             case st___finally:
-            case st___fault:
-            {
+            case st___fault: {
                 __xclist* temp = Allocate<__xclist>();
                 temp->stmt = block;
                 temp->byStmt = true;
@@ -926,7 +925,7 @@ void XTDumpTab(SYMBOL* funcsp)
 {
     if (funcsp->sb->xc && funcsp->sb->xc->xctab && Optimizer::cparams.prm_xcept)
     {
-        XCLIST* list = nullptr, * p, *last = nullptr;
+        XCLIST *list = nullptr, *p, *last = nullptr;
         SYMBOL* throwSym;
         XCStmt(funcsp->sb->inlineFunc.stmt, rttiStatements);
         // this is done this way because the nested maps form a natural sorting mechanism...
@@ -936,7 +935,7 @@ void XTDumpTab(SYMBOL* funcsp)
                 p = e.second;
                 if (last)
                     last->next = p;
-                else 
+                else
                     list = p;
                 last = p;
             }
@@ -991,7 +990,7 @@ void XTDumpTab(SYMBOL* funcsp)
             else
             {
                 if (p->xtSym && !p->exp->dest && allocatedXC(p->exp->v.t.thisptr))
-                {        
+                {
                     XCLIST* q = p;
                     while (q)
                     {

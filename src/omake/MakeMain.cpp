@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -41,28 +41,28 @@
 #include <algorithm>
 
 CmdSwitchParser MakeMain::switchParser;
-CmdSwitchCombineString MakeMain::specifiedFiles(switchParser, 'f', ' ', { "file" });
-CmdSwitchBool MakeMain::displayOnly(switchParser, 'n', false, { "dry-run" });
-CmdSwitchBool MakeMain::touch(switchParser, 't', false, { "touch" });
-CmdSwitchBool MakeMain::query(switchParser, 'q', false, { "question" });
-CmdSwitchBool MakeMain::keepGoing(switchParser, 'k', false, { "keep-going" });
-CmdSwitchBool MakeMain::ignoreErrors(switchParser, 'i', false, { "ignore-errors" });
-CmdSwitchDefine MakeMain::defines(switchParser, 'D', { "eval" });
-CmdSwitchBool MakeMain::rebuild(switchParser, 'B', false, { "always-make" });
-CmdSwitchCombineString MakeMain::newFiles(switchParser, 'W', ' ', { "assume-new" });
-CmdSwitchCombineString MakeMain::oldFiles(switchParser, 'o', ' ', { "assume-old" });
-CmdSwitchCombineString MakeMain::dir(switchParser, 'C', '+', { "directory" });
+CmdSwitchCombineString MakeMain::specifiedFiles(switchParser, 'f', ' ', {"file"});
+CmdSwitchBool MakeMain::displayOnly(switchParser, 'n', false, {"dry-run"});
+CmdSwitchBool MakeMain::touch(switchParser, 't', false, {"touch"});
+CmdSwitchBool MakeMain::query(switchParser, 'q', false, {"question"});
+CmdSwitchBool MakeMain::keepGoing(switchParser, 'k', false, {"keep-going"});
+CmdSwitchBool MakeMain::ignoreErrors(switchParser, 'i', false, {"ignore-errors"});
+CmdSwitchDefine MakeMain::defines(switchParser, 'D', {"eval"});
+CmdSwitchBool MakeMain::rebuild(switchParser, 'B', false, {"always-make"});
+CmdSwitchCombineString MakeMain::newFiles(switchParser, 'W', ' ', {"assume-new"});
+CmdSwitchCombineString MakeMain::oldFiles(switchParser, 'o', ' ', {"assume-old"});
+CmdSwitchCombineString MakeMain::dir(switchParser, 'C', '+', {"directory"});
 CmdSwitchBool MakeMain::debug(switchParser, 'd');  // not implemented
-CmdSwitchBool MakeMain::environOverride(switchParser, 'e', false, { "environment-overrides" });
+CmdSwitchBool MakeMain::environOverride(switchParser, 'e', false, {"environment-overrides"});
 CmdSwitchBool MakeMain::help(switchParser, 'h');
-CmdSwitchBool MakeMain::help2(switchParser, '?', false, { "help" });
-CmdSwitchCombineString MakeMain::includes(switchParser, 'I', ';', { "include-dir" });
-CmdSwitchBool MakeMain::showDatabase(switchParser, 'p', false, { "print-data-base" });
-CmdSwitchBool MakeMain::noBuiltinRules(switchParser, 'r', false, { "no-builtin-rules" });
-CmdSwitchBool MakeMain::noBuiltinVars(switchParser, 'R', false, { "no-builtin-variables" });
-CmdSwitchBool MakeMain::silent(switchParser, 's', false, { "quiet" });
-CmdSwitchBool MakeMain::cancelKeep(switchParser, 'S', false, { "no-keep-going" });
-CmdSwitchBool MakeMain::printDir(switchParser, 'w', false, { "print-directory" });
+CmdSwitchBool MakeMain::help2(switchParser, '?', false, {"help"});
+CmdSwitchCombineString MakeMain::includes(switchParser, 'I', ';', {"include-dir"});
+CmdSwitchBool MakeMain::showDatabase(switchParser, 'p', false, {"print-data-base"});
+CmdSwitchBool MakeMain::noBuiltinRules(switchParser, 'r', false, {"no-builtin-rules"});
+CmdSwitchBool MakeMain::noBuiltinVars(switchParser, 'R', false, {"no-builtin-variables"});
+CmdSwitchBool MakeMain::silent(switchParser, 's', false, {"quiet"});
+CmdSwitchBool MakeMain::cancelKeep(switchParser, 'S', false, {"no-keep-going"});
+CmdSwitchBool MakeMain::printDir(switchParser, 'w', false, {"print-directory"});
 CmdSwitchBool MakeMain::warnUndef(switchParser, 'u');
 CmdSwitchBool MakeMain::treeBuild(switchParser, 'T');
 CmdSwitchBool MakeMain::keepResponseFiles(switchParser, 'K');
@@ -104,7 +104,7 @@ void MakeMain::Dispatch(const char* data)
 {
     int max = 10;
     argcx = 1;
-    argvx = std::make_unique<char* []>(max + 1);
+    argvx = std::make_unique<char*[]>(max + 1);
     argvx[0] = (char*)"";
     while (*data)
     {
@@ -112,8 +112,8 @@ void MakeMain::Dispatch(const char* data)
         if (argcx == max)
         {
             max += 10;
-            std::unique_ptr<char* []> p(argvx.release());
-            argvx = std::make_unique<char* []>(max + 1);
+            std::unique_ptr<char*[]> p(argvx.release());
+            argvx = std::make_unique<char*[]>(max + 1);
             memcpy(argvx.get(), p.get(), argcx * sizeof(char*));
         }
     }
@@ -411,8 +411,8 @@ void MakeMain::SetTreePath(std::string& files)
 }
 void MakeMain::LoadEquates(int& argc, char** argv)
 {
-    int j=1;
-    for (int i=1; i < argc; i++)
+    int j = 1;
+    for (int i = 1; i < argc; i++)
     {
         if (argv[i][0] != '-' && argv[i][0] != '/' && strchr(argv[i], '=') != 0)
         {

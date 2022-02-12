@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "LinkDll.h"
@@ -33,14 +33,15 @@
 #include <cstdlib>
 struct TempFileDeleter
 {
-        ~TempFileDeleter()
-        {
-            for (auto q : list)
-               unlink(q.c_str());
-        }
-	void Add(const std::string& name) { list.push_back(name); }
-private:
-	std::deque<std::string> list;
+    ~TempFileDeleter()
+    {
+        for (auto q : list)
+            unlink(q.c_str());
+    }
+    void Add(const std::string& name) { list.push_back(name); }
+
+  private:
+    std::deque<std::string> list;
 };
 
 TempFileDeleter deleter;
@@ -49,9 +50,8 @@ void LinkDll::LoadDll()
     if (name.length() < 5)
         return;
     std::string data = name;
-    std::transform(data.begin(), data.end(), data.begin(),
-        [](unsigned char c){ return std::tolower(c); });    
-    if (data.substr(data.size()-4) == ".dll")
+    std::transform(data.begin(), data.end(), data.begin(), [](unsigned char c) { return std::tolower(c); });
+    if (data.substr(data.size() - 4) == ".dll")
     {
         auto fil = fopen(name.c_str(), "rb");
         if (fil)
@@ -99,7 +99,7 @@ void LinkDll::LoadDll()
                                 if (peh.flags & PE_FILE_32BIT)
                                     matchesArchitecture = true;
                             }
-            			}
+                        }
                     }
                 }
             }
@@ -109,8 +109,8 @@ void LinkDll::LoadDll()
 std::unique_ptr<LinkLibrary> LinkDll::LoadLibrary(bool isstdcall)
 {
     auto rv = std::unique_ptr<LinkLibrary>(nullptr);
-	std::string fileName;
-	auto fil = Utils::TempName(fileName);
+    std::string fileName;
+    auto fil = Utils::TempName(fileName);
     if (fil)
     {
         fileName += ".l";

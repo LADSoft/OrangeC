@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Eval.h"
@@ -55,49 +55,45 @@ std::string Eval::GPath;
 int Eval::errcount;
 std::vector<std::string> Eval::callArgs;
 
-std::unordered_map<std::string, Eval::StringFunc> Eval::builtins = {
-                                                                {"subst", &Eval::subst},
-                                                                {"patsubst", &Eval::patsubst},
-                                                                {"strip", &Eval::strip},
-                                                                {"findstring", &Eval::findstring},
-                                                                {"filter", &Eval::filter},
-                                                                {"filter-out", &Eval::filterout},
-                                                                {"sort", &Eval::sort},
-                                                                {"word", &Eval::word},
-                                                                {"wordlist", &Eval::wordlist},
-                                                                {"words", &Eval::words},
-                                                                {"firstword", &Eval::firstword},
-                                                                {"lastword", &Eval::lastword},
-                                                                {"dir", &Eval::dir},
-                                                                {"notdir", &Eval::notdir},
-                                                                {"suffix", &Eval::suffix},
-                                                                {"basename", &Eval::basename},
-                                                                {"addsuffix", &Eval::addsuffix},
-                                                                {"addprefix", &Eval::addprefix},
-                                                                {"wildcard", &Eval::wildcard},
-                                                                {"join", &Eval::join},
-                                                                {"realpath", &Eval::realpath},
-                                                                {"abspath", &Eval::abspath},
-                                                                {"if", &Eval::condIf},
-                                                                {"or", &Eval::condOr},
-                                                                {"and", &Eval::condAnd},
-                                                                {"foreach", &Eval::foreach},
-                                                                {"call", &Eval::call},
-                                                                {"value", &Eval::value},
-                                                                {"eval", &Eval::eval},
-                                                                {"origin", &Eval::origin},
-                                                                {"flavor", &Eval::flavor},
-                                                                {"shell", &Eval::shell},
-                                                                {"error", &Eval::errorx},
-                                                                {"warning", &Eval::warningx},
-                                                                {"info", &Eval::info},
-                                                                {"exists", &Eval::exists}};
+std::unordered_map<std::string, Eval::StringFunc> Eval::builtins = {{"subst", &Eval::subst},
+                                                                    {"patsubst", &Eval::patsubst},
+                                                                    {"strip", &Eval::strip},
+                                                                    {"findstring", &Eval::findstring},
+                                                                    {"filter", &Eval::filter},
+                                                                    {"filter-out", &Eval::filterout},
+                                                                    {"sort", &Eval::sort},
+                                                                    {"word", &Eval::word},
+                                                                    {"wordlist", &Eval::wordlist},
+                                                                    {"words", &Eval::words},
+                                                                    {"firstword", &Eval::firstword},
+                                                                    {"lastword", &Eval::lastword},
+                                                                    {"dir", &Eval::dir},
+                                                                    {"notdir", &Eval::notdir},
+                                                                    {"suffix", &Eval::suffix},
+                                                                    {"basename", &Eval::basename},
+                                                                    {"addsuffix", &Eval::addsuffix},
+                                                                    {"addprefix", &Eval::addprefix},
+                                                                    {"wildcard", &Eval::wildcard},
+                                                                    {"join", &Eval::join},
+                                                                    {"realpath", &Eval::realpath},
+                                                                    {"abspath", &Eval::abspath},
+                                                                    {"if", &Eval::condIf},
+                                                                    {"or", &Eval::condOr},
+                                                                    {"and", &Eval::condAnd},
+                                                                    {"foreach", &Eval::foreach},
+                                                                    {"call", &Eval::call},
+                                                                    {"value", &Eval::value},
+                                                                    {"eval", &Eval::eval},
+                                                                    {"origin", &Eval::origin},
+                                                                    {"flavor", &Eval::flavor},
+                                                                    {"shell", &Eval::shell},
+                                                                    {"error", &Eval::errorx},
+                                                                    {"warning", &Eval::warningx},
+                                                                    {"info", &Eval::info},
+                                                                    {"exists", &Eval::exists}};
 
 Eval::Eval(const std::string name, bool ExpandWildcards, RuleList* RuleList, Rule* Rule) :
-    str(name),
-    expandWildcards(ExpandWildcards),
-    ruleList(RuleList),
-    rule(Rule)
+    str(name), expandWildcards(ExpandWildcards), ruleList(RuleList), rule(Rule)
 {
 }
 void Eval::Clear()

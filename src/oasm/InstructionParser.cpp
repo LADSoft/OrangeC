@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "InstructionParser.h"
@@ -312,13 +312,12 @@ Instruction* InstructionParser::Parse(const std::string& args, int PC)
             Instruction* s = nullptr;
             switch (rv)
             {
-                case AERR_NONE:
-                {
+                case AERR_NONE: {
                     unsigned char buf[32];
                     bits.GetBytes(buf, 32);
 #ifdef XXXXX
                     std::cout << std::hex << bits.GetBits() << " ";
-                    for (int i = 0; i<bits.GetBits()>> 3; i++)
+                    for (int i = 0; i < bits.GetBits() >> 3; i++)
                         std::cout << std::hex << (int)buf[i] << " ";
                     std::cout << std::endl;
 #endif
@@ -330,15 +329,16 @@ Instruction* InstructionParser::Parse(const std::string& args, int PC)
                     {
                         if (operand->used && operand->size)
                         {
-                            if (((AsmExprNode*)operand->node)->GetType() != AsmExprNode::IVAL && ((AsmExprNode*)operand->node)->GetType() != AsmExprNode::FVAL)
+                            if (((AsmExprNode*)operand->node)->GetType() != AsmExprNode::IVAL &&
+                                ((AsmExprNode*)operand->node)->GetType() != AsmExprNode::FVAL)
                             {
                                 if (s->Lost() && operand->pos)
                                     operand->pos -= 8;
                                 int n = operand->relOfs;
                                 if (n < 0)
                                     n = -n;
-                                Fixup* f =
-                                    new Fixup((AsmExprNode*)operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
+                                Fixup* f = new Fixup((AsmExprNode*)operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n,
+                                                     operand->relOfs > 0);
                                 f->SetInsOffs((operand->pos + 7) / 8);
                                 f->SetFileName(errName);
                                 f->SetErrorLine(errLine);

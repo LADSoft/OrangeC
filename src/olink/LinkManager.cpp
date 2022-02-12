@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ObjSection.h"
@@ -500,27 +500,27 @@ void LinkManager::LoadLibraries()
         LinkDll checker((*it), libPath, true);
         if (checker.IsDll())
         {
-             if (checker.MatchesArchitecture())
-             {
-                 // stdcall version preferred
-                 auto temp = std::move(checker.LoadLibrary(true));
-                 if (!temp)
-                     LinkError("Internal error while processing '" + (*it) + "'");
-                 else
-                 {
-                     dictionaries.push_back(std::move(temp));
-                     // will fall back to C version              
-                     temp = std::move(checker.LoadLibrary(false));
-                     if (!temp)
-                         LinkError("Internal error while processing '" + (*it) + "'");
-                     else
-                         dictionaries.push_back(std::move(temp));
-                 }
-             }
-             else
-             {
+            if (checker.MatchesArchitecture())
+            {
+                // stdcall version preferred
+                auto temp = std::move(checker.LoadLibrary(true));
+                if (!temp)
+                    LinkError("Internal error while processing '" + (*it) + "'");
+                else
+                {
+                    dictionaries.push_back(std::move(temp));
+                    // will fall back to C version
+                    temp = std::move(checker.LoadLibrary(false));
+                    if (!temp)
+                        LinkError("Internal error while processing '" + (*it) + "'");
+                    else
+                        dictionaries.push_back(std::move(temp));
+                }
+            }
+            else
+            {
                 LinkError("Dll Library '" + (*it) + "' doesn't match architecture");
-             }
+            }
         }
         else
         {
@@ -817,8 +817,9 @@ void LinkManager::AddGlobalsForVirtuals(ObjFile* file)
             LinkExpressionSymbol* sym = LinkExpression::FindSymbol(s->GetName());
             if (sym)
             {
-                ObjExpression* exp = new ObjExpression(ObjExpression::eAdd, new ObjExpression(sym->GetValue()->GetUnresolvedSection()),
-                                                       new ObjExpression(sym->GetValue()->GetUnresolvedSection()->GetBase()));
+                ObjExpression* exp =
+                    new ObjExpression(ObjExpression::eAdd, new ObjExpression(sym->GetValue()->GetUnresolvedSection()),
+                                      new ObjExpression(sym->GetValue()->GetUnresolvedSection()->GetBase()));
                 s->SetIndex(index++);
                 s->SetOffset(exp);
                 file->Add(s);

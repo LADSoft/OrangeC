@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -89,7 +89,7 @@ void AliasInit(void)
     uivBytes = nullptr;
     cachedTempCount = tempCount;
     processBits = nullptr;
-    processCount =0 ;
+    processCount = 0;
     changed = false;
 }
 void AliasRundown(void) { aFree(); }
@@ -381,8 +381,7 @@ static ALIASADDRESS* LookupAddress(ALIASNAME* name, int offset)
         case se_auto:
             //			if (im->offset->sp->storage_class != scc_parameter)
             break;
-        case se_global:
-        {
+        case se_global: {
             ALIASLIST* l = aAllocate<ALIASLIST>();
             l->address = addr;
             AliasUnion(&parmList, l);
@@ -1219,11 +1218,12 @@ void AliasGosub(QUAD* tail, BITINT* parms, BITINT* bits, int n)
                 if (tempInfo[n]->indTerms)
                     andmap(parms, tempInfo[n]->indTerms);
             }
-            else if (tail->dc.left->mode == i_immed && !isintconst(tail->dc.left->offset) && !isfloatconst(tail->dc.left->offset) && !iscomplexconst(tail->dc.left->offset) && tail->dc.left->offset->type != se_labcon)
+            else if (tail->dc.left->mode == i_immed && !isintconst(tail->dc.left->offset) && !isfloatconst(tail->dc.left->offset) &&
+                     !iscomplexconst(tail->dc.left->offset) && tail->dc.left->offset->type != se_labcon)
             {
                 SimpleType* tp = tail->dc.left->offset->sp->tp;
                 while (tp->type == st_pointer)
-                   tp = tp->btp;
+                    tp = tp->btp;
                 if (tail->dc.left->offset->sp->tp->isarray || tp->type == st_struct || tp->type == st_union || tp->type == st_class)
                 {
                     ALIASNAME* an = LookupMem(tail->dc.left);
@@ -1237,7 +1237,7 @@ void AliasGosub(QUAD* tail, BITINT* parms, BITINT* bits, int n)
                                 aa = aa->merge;
                             if (aa && aa->modifiedBy)
                             {
-                                 ormap(parms, aa->modifiedBy);
+                                ormap(parms, aa->modifiedBy);
                             }
                             ResetProcessed();
                             scanDepends(parms, aa->pointsto);
@@ -1336,8 +1336,8 @@ void AliasUses(BITINT* bits, IMODE* im, bool rhs)
                         {
                             AliasUses(bits, addr->name->v.uiv->im, true);
                         }
-//                        if (al->address->modifiedBy)
-//                            ormap(bits, al->address->modifiedBy);
+                        //                        if (al->address->modifiedBy)
+                        //                            ormap(bits, al->address->modifiedBy);
                         al = al->next;
                     }
                     clearbit(bits, termMap[im->offset->sp->i]);
@@ -1543,8 +1543,8 @@ void AliasPass2(void)
     MakeAliasLists();
     ScanUIVs();
     ScanMem();
-        if (icdFile)
-            DumpAliases();
+    if (icdFile)
+        DumpAliases();
     complementmap(uivBytes);
 }
 }  // namespace Optimizer

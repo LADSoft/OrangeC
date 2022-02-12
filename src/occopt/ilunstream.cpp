@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
- *     The Orange C Compiler package is free software: you can redistributue it and/or modify
+ *
+ *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <cstdint>
@@ -63,14 +63,14 @@ inline void dothrow()
     std::runtime_error e("");
     throw e;
 }
-inline static int UnstreamByte() 
+inline static int UnstreamByte()
 {
-        if (inputPos >= top)
-        {
-            top += shared->ViewWindowSize();
-            streamPointer = shared->GetMapping(inputPos);
-        }
-	return streamPointer[inputPos++]; 
+    if (inputPos >= top)
+    {
+        top += shared->ViewWindowSize();
+        streamPointer = shared->GetMapping(inputPos);
+    }
+    return streamPointer[inputPos++];
 }
 inline static void UnstreamBlockType(int blockType, bool end)
 {
@@ -274,8 +274,7 @@ static Optimizer::SimpleExpression* UnstreamExpression()
                 case se_labcon:
                     rv->i = UnstreamIndex();
                     break;
-                case se_tempref:
-                {
+                case se_tempref: {
                     int n = UnstreamIndex();
                     rv->sp = GetTempref(n);
                     break;
@@ -289,8 +288,7 @@ static Optimizer::SimpleExpression* UnstreamExpression()
                 case Optimizer::se_typeref:
                     rv->tp = UnstreamType();
                     break;
-                case se_string:
-                {
+                case se_string: {
                     std::string val;
                     int count = UnstreamIndex();
                     val.resize(count, 0);
@@ -436,8 +434,7 @@ static Optimizer::QUAD* UnstreamInstruction(FunctionData& fd)
                 case i_expressiontag:
                     rv->dc.v.label = UnstreamIndex();
                     break;
-                case i_line:
-                {
+                case i_line: {
                     i = UnstreamIndex();
                     LINEDATA *ld = nullptr, **p = &ld;
                     for (; i; i--)
@@ -464,8 +461,7 @@ static Optimizer::QUAD* UnstreamInstruction(FunctionData& fd)
                 case i_dbgblockend:
                 case i_livein:
                     break;
-                case i_func:
-                {
+                case i_func: {
                     rv->dc.v.label = UnstreamIndex();
                     int n = UnstreamIndex();
                     if (n)
@@ -798,8 +794,7 @@ static void UnstreamData()
                         data->diff.l1 = UnstreamIndex();
                         data->diff.l2 = UnstreamIndex();
                         break;
-                    case DT_STRING:
-                    {
+                    case DT_STRING: {
                         bool instring = false;
                         data->astring.i = UnstreamIndex();
                         data->astring.str = (char*)Alloc(data->astring.i + 1);
@@ -1045,8 +1040,7 @@ static void ResolveInstruction(Optimizer::QUAD* q, std::map<int, std::string>& t
         case i_cxcon:
         case i_label:
             break;
-        case i_line:
-        {
+        case i_line: {
             auto ld = (LINEDATA*)q->dc.left;
             while (ld)
             {
@@ -1236,22 +1230,22 @@ bool InputIntermediate(SharedMemory* inputMem)
 }
 void ReadMappingFile(SharedMemory* mem, FILE* fil)
 {
-     int pos = 0;
-     fseek(fil, 0, SEEK_END);
-     int end = ftell(fil);
-     fseek(fil, 0, SEEK_SET);
-     unsigned char *p = mem->GetMapping();
-     mem->EnsureCommitted(end);
-     while(end > 0)
-     {
+    int pos = 0;
+    fseek(fil, 0, SEEK_END);
+    int end = ftell(fil);
+    fseek(fil, 0, SEEK_SET);
+    unsigned char* p = mem->GetMapping();
+    mem->EnsureCommitted(end);
+    while (end > 0)
+    {
 
-          int n = mem->ViewWindowSize();
-          if (n > end)
-               n = end;
-          fread(p + pos, n, 1, fil);
-          pos += n;
-          end -= n;
-          p = mem->GetMapping(pos);
-     }
+        int n = mem->ViewWindowSize();
+        if (n > end)
+            n = end;
+        fread(p + pos, n, 1, fil);
+        pos += n;
+        end -= n;
+        p = mem->GetMapping(pos);
+    }
 }
 }  // namespace Optimizer

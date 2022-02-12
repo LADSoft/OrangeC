@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "InstructionParser.h"
@@ -114,13 +114,12 @@ std::string InstructionParser::FormatInstruction(ocode* ins)
     for (auto t : inputTokens)
     {
         AsmExprNode* val = (AsmExprNode*)t->val;
-        switch(t->type)
+        switch (t->type)
         {
             case InputToken::LABEL:
                 rv += val->label;
                 break;
-            case InputToken::NUMBER:
-            {
+            case InputToken::NUMBER: {
                 if (val->GetType() == AsmExprNode::ADD)
                 {
                     rv += val->GetLeft()->label + "+";
@@ -181,8 +180,7 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
         case op_lock:
             newIns = new Instruction((unsigned char*)"\xf0", 1, true);
             break;
-        default:
-        {
+        default: {
             switch (ins->opcode)
             {
                 case op_ret:
@@ -192,8 +190,7 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
                 case op_lea:
                     ins->oper2->length = 0;
                     break;
-                case op_push:
-                {
+                case op_push: {
                     AMODE* aps = ins->oper1;
                     if (!aps->length)
                         aps->length = ISZ_UINT;
@@ -212,8 +209,7 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
                 case op_and:
                 case op_or:
                 case op_xor:
-                case op_idiv:
-                {
+                case op_idiv: {
                     AMODE* aps = ins->oper1;
                     AMODE* apd = ins->oper2;
                     if (apd)
@@ -237,7 +233,8 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
                         {
                             if (ins->oper1->length == ISZ_UCHAR)
                                 ins->oper2->offset->i &= 0xff;
-                            else if (ins->oper1->length == ISZ_USHORT || ins->oper1->length == ISZ_U16 || ins->oper1->length == ISZ_WCHAR)
+                            else if (ins->oper1->length == ISZ_USHORT || ins->oper1->length == ISZ_U16 ||
+                                     ins->oper1->length == ISZ_WCHAR)
                                 ins->oper2->offset->i &= 0xffff;
                         }
                     }
@@ -378,8 +375,7 @@ int resolveoffset(Optimizer::SimpleExpression* n, int* resolved)
             case Optimizer::se_ui:
                 rv += n->i;
                 break;
-            case Optimizer::se_auto:
-            {
+            case Optimizer::se_auto: {
                 int m = n->sp->offset;
 
                 if (!usingEsp && m > 0)

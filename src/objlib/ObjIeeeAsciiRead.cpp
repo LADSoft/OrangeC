@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -134,8 +134,7 @@ ObjExpression* ObjIeeeAscii::GetExpression(const char* buffer, int* pos)
         {
             case 'I':
             case 'N':
-            case 'X':
-            {
+            case 'X': {
                 int index = ObjUtil::FromHex(buffer, pos);
                 ObjSymbol* sym = FindSymbol(ch, index);
                 if (!sym)
@@ -144,8 +143,7 @@ ObjExpression* ObjIeeeAscii::GetExpression(const char* buffer, int* pos)
                 stack.push(exp);
                 break;
             }
-            case 'R':
-            {
+            case 'R': {
                 int index = ObjUtil::FromHex(buffer, pos);
                 ObjSection* sect = GetSection(index);
                 if (!sect)
@@ -154,8 +152,7 @@ ObjExpression* ObjIeeeAscii::GetExpression(const char* buffer, int* pos)
                 stack.push(exp);
                 break;
             }
-            case 'P':
-            {
+            case 'P': {
                 ObjExpression* exp = factory->MakeExpression(ObjExpression::ePC);
                 stack.push(exp);
                 break;
@@ -163,8 +160,7 @@ ObjExpression* ObjIeeeAscii::GetExpression(const char* buffer, int* pos)
             case '+':
             case '-':
             case '/':
-            case '*':
-            {
+            case '*': {
                 ObjExpression::eOperator type;
                 switch (ch)
                 {
@@ -355,24 +351,21 @@ bool ObjIeeeAscii::GetOffset(const char* buffer, eParseType ParseType)
         case 'G':
             SetStartAddress(file, exp);
             break;
-        case 'S':
-        {
+        case 'S': {
             ObjSection* sect = GetSection(index);
             if (!sect)
                 ThrowSyntax(buffer, ParseType);
             sect->SetSize(exp);
             break;
         }
-        case 'L':
-        {
+        case 'L': {
             ObjSection* sect = GetSection(index);
             if (!sect)
                 ThrowSyntax(buffer, ParseType);
             sect->SetOffset(exp);
             break;
         }
-        default:
-        {
+        default: {
             ObjSymbol* sym = FindSymbol(ch, index);
             if (!sym)
                 ThrowSyntax(buffer, ParseType);
@@ -754,8 +747,7 @@ bool ObjIeeeAscii::TypeSpec(const char* buffer, eParseType ParseType)
         case 'E':
         case 'X':
         case 'N':
-        case 'I':
-        {
+        case 'I': {
             ObjSymbol* symbol = FindSymbol(ch, index);
             if (!symbol)
                 ThrowSyntax(buffer, ParseType);
@@ -774,14 +766,12 @@ bool ObjIeeeAscii::TypeSpec(const char* buffer, eParseType ParseType)
             symbol->SetBaseType(type);
             break;
         }
-        case 'T':
-        {
+        case 'T': {
             DefineType(index, buffer, &pos);
             CheckTerm(buffer + pos);
             break;
         }
-        case 'R':
-        {
+        case 'R': {
             ObjSection* sect = GetSection(index);
             if (!sect)
             {
@@ -847,8 +837,7 @@ bool ObjIeeeAscii::Comment(const char* buffer, eParseType ParseType)
             break;
         case eConfig: /* not supported */
             break;
-        case eDefinition:
-        {
+        case eDefinition: {
             int pos = 0;
             ObjString name = ParseString(data, &pos);
             if (data[pos++] != ',')
@@ -859,8 +848,7 @@ bool ObjIeeeAscii::Comment(const char* buffer, eParseType ParseType)
             file->Add(sym);
             break;
         }
-        case eExport:
-        {
+        case eExport: {
             bool byOrdinal;
             if (data[0] == 'O')
                 byOrdinal = true;
@@ -899,8 +887,7 @@ bool ObjIeeeAscii::Comment(const char* buffer, eParseType ParseType)
             file->Add(sym);
             break;
         }
-        case eImport:
-        {
+        case eImport: {
             bool byOrdinal;
             if (data[0] == 'O')
                 byOrdinal = true;
@@ -937,8 +924,7 @@ bool ObjIeeeAscii::Comment(const char* buffer, eParseType ParseType)
             file->Add(sym);
             break;
         }
-        case eSourceFile:
-        {
+        case eSourceFile: {
             int pos = 0;
             int index = ObjUtil::FromDecimal(data, &pos);
             if (data[pos++] != ',')
@@ -953,8 +939,7 @@ bool ObjIeeeAscii::Comment(const char* buffer, eParseType ParseType)
             PutFile(index, sf);
             break;
         }
-        case eBrowseInfo:
-        {
+        case eBrowseInfo: {
             ObjBrowseInfo::eType type;
             ObjBrowseInfo::eQual qual;
             int pos = 0;
@@ -982,8 +967,7 @@ bool ObjIeeeAscii::Comment(const char* buffer, eParseType ParseType)
             file->Add(bi);
             break;
         }
-        case eLineNo:
-        {
+        case eLineNo: {
             int pos = 0;
             int index = ObjUtil::FromDecimal(data, &pos);
             if (data[pos++] != ',')
@@ -997,8 +981,7 @@ bool ObjIeeeAscii::Comment(const char* buffer, eParseType ParseType)
             currentTags->push_back(tag);
             break;
         }
-        case eVar:
-        {
+        case eVar: {
             int pos = 0;
             int ch = data[pos++];
             int index = ObjUtil::FromHex(data, &pos);
@@ -1009,14 +992,12 @@ bool ObjIeeeAscii::Comment(const char* buffer, eParseType ParseType)
             currentTags->push_back(tag);
             break;
         }
-        case eBlockStart:
-        {
+        case eBlockStart: {
             ObjDebugTag* tag = factory->MakeDebugTag(true);
             currentTags->push_back(tag);
             break;
         }
-        case eBlockEnd:
-        {
+        case eBlockEnd: {
             ObjDebugTag* tag = factory->MakeDebugTag(false);
             currentTags->push_back(tag);
             break;

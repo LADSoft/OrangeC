@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ioptimizer.h"
@@ -121,7 +121,7 @@ static void rvColor(IMODE* ip)
     tempInfo[n]->enode->sp->regmode = 2;
     tempInfo[n]->precolored = true;
 }
-void x86FastcallColor(QUAD *head)
+void x86FastcallColor(QUAD* head)
 {
     if (head->fastcall && head->dc.opcode != i_gosub)
     {
@@ -1697,29 +1697,29 @@ int x86_examine_icode(QUAD* head)
                 else
                 {
                     bool doWorking = true;
-                    // floating point compares on this architecture require to use setae/seta, otherwise the C flag may be set for a nan.
-                    // if it is one of the other values swap the regs and the type
+                    // floating point compares on this architecture require to use setae/seta, otherwise the C flag may be set for a
+                    // nan. if it is one of the other values swap the regs and the type
                     switch (head->dc.opcode)
                     {
-                    case i_setle:
-                        head->dc.opcode = i_sete;
-                        break;
-                    case i_setl:
-                        head->dc.opcode = i_setg;
-                        break;
-                    case i_jge:
-                        head->dc.opcode = i_jle;
-                        break;
-                    case i_jg:
-                        head->dc.opcode = i_jl;
-                        break;
-                    default:
-                        doWorking = false;
-                        break;
+                        case i_setle:
+                            head->dc.opcode = i_sete;
+                            break;
+                        case i_setl:
+                            head->dc.opcode = i_setg;
+                            break;
+                        case i_jge:
+                            head->dc.opcode = i_jle;
+                            break;
+                        case i_jg:
+                            head->dc.opcode = i_jl;
+                            break;
+                        default:
+                            doWorking = false;
+                            break;
                     }
                     if (doWorking)
                     {
-                        IMODE *temp = head->dc.left;
+                        IMODE* temp = head->dc.left;
                         head->dc.left = head->dc.right;
                         head->dc.right = temp;
                         int flags = head->temps & TEMP_ANS;

@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ppMain.h"
@@ -53,15 +53,15 @@ CmdSwitchString ppMain::errorMax(SwitchParser, 'E');
 CmdSwitchFile ppMain::File(SwitchParser, '@');
 CmdSwitchString ppMain::outputPath(SwitchParser, 'o');
 
-CmdSwitchBool ppMain::MakeStubs(SwitchParser, 0, 0, { "M" });
-CmdSwitchBool ppMain::MakeStubsUser(SwitchParser, 0, 0, { "MM" });
-CmdSwitchCombineString ppMain::MakeStubsOutputFile(SwitchParser, 0, ';', { "MF" });
-CmdSwitchBool ppMain::MakeStubsMissingHeaders(SwitchParser, 0, 0, { "MG" });
-CmdSwitchBool ppMain::MakeStubsPhonyTargets(SwitchParser, 0, 0, { "MP" });
-CmdSwitchCombineString ppMain::MakeStubsTargets(SwitchParser, 0, ';', { "MT" });
-CmdSwitchCombineString ppMain::MakeStubsQuotedTargets(SwitchParser, 0, ';', { "MQ" });
-CmdSwitchBool ppMain::MakeStubsContinue(SwitchParser, 0, 0, { "MD" });
-CmdSwitchBool ppMain::MakeStubsContinueUser(SwitchParser, 0, 0, { "MMD" });
+CmdSwitchBool ppMain::MakeStubs(SwitchParser, 0, 0, {"M"});
+CmdSwitchBool ppMain::MakeStubsUser(SwitchParser, 0, 0, {"MM"});
+CmdSwitchCombineString ppMain::MakeStubsOutputFile(SwitchParser, 0, ';', {"MF"});
+CmdSwitchBool ppMain::MakeStubsMissingHeaders(SwitchParser, 0, 0, {"MG"});
+CmdSwitchBool ppMain::MakeStubsPhonyTargets(SwitchParser, 0, 0, {"MP"});
+CmdSwitchCombineString ppMain::MakeStubsTargets(SwitchParser, 0, ';', {"MT"});
+CmdSwitchCombineString ppMain::MakeStubsQuotedTargets(SwitchParser, 0, ';', {"MQ"});
+CmdSwitchBool ppMain::MakeStubsContinue(SwitchParser, 0, 0, {"MD"});
+CmdSwitchBool ppMain::MakeStubsContinueUser(SwitchParser, 0, 0, {"MMD"});
 
 const char* ppMain::usageText =
     "[options] files\n"
@@ -187,11 +187,10 @@ int ppMain::Run(int argc, char* argv[])
                 break;
             }
         }
-        PreProcessor pp((*it), includePath.GetValue(), cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(), 
-                        false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false,
-                        !c99Mode.GetValue() && !c11Mode.GetValue(), !disableExtensions.GetValue(), 
-                        (MakeStubs.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(), 
-                        "");
+        PreProcessor pp((*it), includePath.GetValue(), cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(), false,
+                        trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false, !c99Mode.GetValue() && !c11Mode.GetValue(),
+                        !disableExtensions.GetValue(),
+                        (MakeStubs.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(), "");
         if (c11Mode.GetValue())
         {
             std::string ver = "201112L";
@@ -217,7 +216,7 @@ int ppMain::Run(int argc, char* argv[])
         pp.Define("__need_FILE", "1");
         pp.Define("__need_wint_t", "1");
         pp.Define("__need_malloc_and_calloc", "1");
- 
+
         if (cplusplus)
         {
             pp.Define("__cplusplus", "201402");
@@ -380,7 +379,7 @@ int ppMain::Run(int argc, char* argv[])
                 end1 = -1;
             if (end < end1)
                 end = end1;
-            inFile = inFile.substr(end+1);
+            inFile = inFile.substr(end + 1);
 
             std::string outFile;
             if (MakeStubs.GetValue() || MakeStubsUser.GetValue())
@@ -389,7 +388,7 @@ int ppMain::Run(int argc, char* argv[])
             }
             else if (!outputPath.GetValue().empty())
             {
-                outFile = outputPath.GetValue(); 
+                outFile = outputPath.GetValue();
             }
             else
             {
@@ -399,10 +398,8 @@ int ppMain::Run(int argc, char* argv[])
                     outFile = outFile.substr(0, end);
                 outFile += ".d";
             }
-            ::MakeStubs stubber(pp, MakeStubsUser.GetValue() || MakeStubsContinueUser.GetValue(), 
-                      MakeStubsPhonyTargets.GetValue(),
-                      inFile, outFile, 
-                       MakeStubsTargets.GetValue(), MakeStubsQuotedTargets.GetValue());
+            ::MakeStubs stubber(pp, MakeStubsUser.GetValue() || MakeStubsContinueUser.GetValue(), MakeStubsPhonyTargets.GetValue(),
+                                inFile, outFile, MakeStubsTargets.GetValue(), MakeStubsQuotedTargets.GetValue());
             stubber.Run(MakeStubs.GetValue() || MakeStubsUser.GetValue() ? outstream : nullptr);
         }
         if (outstream != &std::cout)

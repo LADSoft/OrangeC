@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -220,7 +220,7 @@ char* unmangleExpression(char* dest, const char** name)
         }
         else
         {
-            char* buf = (char *)alloca(10000);
+            char* buf = (char*)alloca(10000);
             memcpy(buf, *name, n);
             buf[n] = 0;
             unmangle(dest, buf);
@@ -249,8 +249,7 @@ char* unmangleExpression(char* dest, const char** name)
                 *dest++ = '-';
                 dest = unmangleExpression(dest, name);
                 break;
-            case 'i':
-            {
+            case 'i': {
                 char next = *(*name)++;
                 dest = unmangleExpression(dest, name);
                 if (next == 'p')
@@ -291,8 +290,7 @@ char* unmangleExpression(char* dest, const char** name)
                 *dest++ = '>';
                 dest = unmangleExpression(dest, name);
                 break;
-            case 'h':
-            {
+            case 'h': {
                 char next = *(*name)++;
                 dest = unmangleExpression(dest, name);
                 if (next == 'l')
@@ -315,8 +313,7 @@ char* unmangleExpression(char* dest, const char** name)
                 *dest++ = ':';
                 dest = unmangleExpression(dest, name);
                 break;
-            case 'c':
-            {
+            case 'c': {
                 char next = *(*name)++, next1 = 0;
                 if (next != 'e' && next != 'n')
                 {
@@ -347,8 +344,7 @@ char* unmangleExpression(char* dest, const char** name)
                 dest = unmangleExpression(dest, name);
                 break;
             }
-            case 'b':
-            {
+            case 'b': {
                 char next = *(*name)++;
                 if (next == 'n')
                 {
@@ -374,8 +370,7 @@ char* unmangleExpression(char* dest, const char** name)
                 }
                 break;
             }
-            case 'l':
-            {
+            case 'l': {
                 char next = *(*name)++;
                 if (next == 'n')
                 {
@@ -400,8 +395,7 @@ char* unmangleExpression(char* dest, const char** name)
                 }
                 break;
             }
-            case 't':
-            {
+            case 't': {
                 char next = *(*name)++;
                 if (next == 's')
                 {
@@ -481,8 +475,7 @@ char* unmangleExpression(char* dest, const char** name)
                 }
                 break;
             }
-            case 'f':
-            {
+            case 'f': {
                 int v;
                 if (isdigit(*(*name)))
                 {
@@ -544,8 +537,7 @@ char* unmangleExpression(char* dest, const char** name)
                 break;
             case 'v':
                 break;
-            case 'z':
-            {
+            case 'z': {
                 strcpy(dest, "sizeof...(");
                 dest += strlen(dest);
                 int v;
@@ -1097,7 +1089,7 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
                 strcpy(buf, tn_ellipse);
                 break;
             case 'E':
-                name++; // past ?
+                name++;  // past ?
                 strcpy(buf, "decltype(");
                 buf += strlen(buf);
                 buf = unmangleExpression(buf, &name);
@@ -1165,8 +1157,8 @@ char* unmangle(char* val, const char* name)
     else
     {
         name++;
-        if (name[0] == '@') 
-            name++; // past the extra @ to denote template definitions
+        if (name[0] == '@')
+            name++;  // past the extra @ to denote template definitions
         last = buf;
         while (*name)
         {
@@ -1193,7 +1185,8 @@ char* unmangle(char* val, const char* name)
                     name = unmang_intrins(buf, name, last);
                     buf += strlen(buf);
                 }
-                else {
+                else
+                {
                     const char* find = name + 1;
                     while (*find == 'x' || *find == 'y')
                         find++;

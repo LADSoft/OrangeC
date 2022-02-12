@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -73,29 +73,28 @@ ErrorNamesAndLevels errors[] = {
 
 };
 namespace Util = OrangeC::Utils;
-// Maps GCC warning names to OCC warning numbers using the FNV algorithm because the string constructor is a strlen call which is expensive
-static const std::unordered_map<const char*, int, Util::fnv1a64, Util::str_eql> error_name_map
-{
+// Maps GCC warning names to OCC warning numbers using the FNV algorithm because the string constructor is a strlen call which is
+// expensive
+static const std::unordered_map<const char*, int, Util::fnv1a64, Util::str_eql> error_name_map{
 #define ERRWITHWARNFLAG(x, y, z, a, b) {b, y},
 #define ERRWTIHWARNFLAGHELP(x, y, z, a, b, c) {b, y},
 #include "errorlist.h"
 };
-// The difference between the following two maps is that the one immediately below uses the internal error number while the other uses the GCC name
-static const std::unordered_map<int, std::string> error_help_map
-{
+// The difference between the following two maps is that the one immediately below uses the internal error number while the other
+// uses the GCC name
+static const std::unordered_map<int, std::string> error_help_map{
 #define ERRWITHWARNFLAGHELP(x, y, z, a, b, c) {y, c},
 #define ERRWITHHELP(x, y, z, a, b) {y, b},
 #include "errorlist.h"
 };
-static const std::unordered_map<const char*, std::string, Util::fnv1a64, Util::str_eql> error_name_help_map
-{
+static const std::unordered_map<const char*, std::string, Util::fnv1a64, Util::str_eql> error_name_help_map{
 #define ERRWITHWARNFLAGHELP(x, y, z, a, b, c) {b, c},
 #include "errorlist.h"
 };
 void DumpErrorNameMap()
 {
     printf("Error name to number map:\n");
-    for(auto a : error_name_map)
+    for (auto a : error_name_map)
     {
         printf("%s: %d\n", a.first, a.second);
     }
@@ -104,7 +103,7 @@ void DumpErrorNameMap()
 void DumpErrorNumToHelpMap()
 {
     printf("Error number to help map:\n");
-    for(auto a : error_help_map)
+    for (auto a : error_help_map)
     {
         printf("%d: %s\n", a.first, a.second.c_str());
     }
@@ -113,28 +112,25 @@ void DumpErrorNumToHelpMap()
 void DumpErrorNameToHelpMap()
 {
     printf("Error name to help map:\n");
-    for(auto a : error_name_help_map)
+    for (auto a : error_name_help_map)
     {
         printf("%s: %s\n", a.first, a.second.c_str());
     }
     printf("Name to help map end.\n");
 }
 
-void EnterInstantiation(LEXLIST* lex, SYMBOL *sym)
+void EnterInstantiation(LEXLIST* lex, SYMBOL* sym)
 {
     if (lex)
     {
-        instantiationList.push_front(std::tuple<const char *, int, SYMBOL*>(lex->data->errfile, lex->data->errline, sym));
+        instantiationList.push_front(std::tuple<const char*, int, SYMBOL*>(lex->data->errfile, lex->data->errline, sym));
     }
     else
     {
-        instantiationList.push_front(std::tuple<const char *, int, SYMBOL*>(sym->sb->declfile, sym->sb->declline, sym));
+        instantiationList.push_front(std::tuple<const char*, int, SYMBOL*>(sym->sb->declfile, sym->sb->declline, sym));
     }
 }
-void LeaveInstantiation()
-{
-    instantiationList.pop_front();
-}
+void LeaveInstantiation() { instantiationList.pop_front(); }
 static void DumpInstantiations()
 {
     for (auto i : instantiationList)
@@ -164,7 +160,7 @@ static bool ValidateWarning(const char* str)
     if (thing != error_name_map.end())
     {
         auto val = thing->second;
-        if(!(errors[val].level & CE_ERROR))
+        if (!(errors[val].level & CE_ERROR))
         {
             return true;
         }
@@ -187,7 +183,7 @@ void WarningAsError(const char* str)
     {
         int val = error_name_map.find(str)->second;
         Warning::Instance()->SetFlag(val, Warning::AsError);
-    }   
+    }
 }
 void EnableWarning(int num)
 {
@@ -393,8 +389,8 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     }
     if (TotalErrors() > Optimizer::cparams.prm_maxerr)
         return false;
-    if (!(errors[err].level & CE_NOTE) && !alwaysErr(err) && currentErrorFile && !strcmp(currentErrorFile, preProcessor->GetRealFile().c_str()) &&
-        preProcessor->GetRealLineNo() == currentErrorLine)
+    if (!(errors[err].level & CE_NOTE) && !alwaysErr(err) && currentErrorFile &&
+        !strcmp(currentErrorFile, preProcessor->GetRealFile().c_str()) && preProcessor->GetRealLineNo() == currentErrorLine)
     {
         disabledNote = true;
         return false;
@@ -417,11 +413,12 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
                 fprintf(errFile, "note:   ");
         }
     }
-    else if (IsReturnErr(err) || (errors[err].level & CE_ERROR) || (Optimizer::cparams.prm_ansi && (errors[err].level & CE_ANSIERROR)) ||
-        (Optimizer::cparams.prm_cplusplus && (errors[err].level & CE_CPLUSPLUSERROR)))
+    else if (IsReturnErr(err) || (errors[err].level & CE_ERROR) ||
+             (Optimizer::cparams.prm_ansi && (errors[err].level & CE_ANSIERROR)) ||
+             (Optimizer::cparams.prm_cplusplus && (errors[err].level & CE_CPLUSPLUSERROR)))
     {
         if (!Optimizer::cparams.prm_quiet)
-            printf("Error(%3d)   ", err);   
+            printf("Error(%3d)   ", err);
         if (Optimizer::cparams.prm_errfile)
             fprintf(errFile, "Error   ");
         listerr = "CE_ERROR";
@@ -581,14 +578,8 @@ void errorNotMember(SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char* name)
 }
 void error(int err) { printerr(err, nullptr, 0); }
 void errorint(int err, int val) { printerr(err, nullptr, 0, val); }
-void errorstr(int err, const char* val)
-{
-    printerr(err, nullptr, 0, (char*)val);
-}
-void errorstr2(int err, const char* val, const char* two)
-{
-    printerr(err, nullptr, 0, (char*)val, (char*)two);
-}
+void errorstr(int err, const char* val) { printerr(err, nullptr, 0, (char*)val); }
+void errorstr2(int err, const char* val, const char* two) { printerr(err, nullptr, 0, (char*)val, (char*)two); }
 void errorsym(int err, SYMBOL* sym)
 {
     char buf[5000];
@@ -719,16 +710,16 @@ static void setbalance(LEXLIST* lex, BALANCE** bal, bool assumeTemplate)
                 (*bal) = (*bal)->back;
             break;
         case gt:
-        if (assumeTemplate)
-        {
-            while (*bal && (*bal)->type != BAL_LT)
+            if (assumeTemplate)
             {
-                (*bal) = (*bal)->back;
+                while (*bal && (*bal)->type != BAL_LT)
+                {
+                    (*bal) = (*bal)->back;
+                }
+                if (*bal && !(--(*bal)->count))
+                    (*bal) = (*bal)->back;
+                break;
             }
-            if (*bal && !(--(*bal)->count))
-                (*bal) = (*bal)->back;
-            break;
-        }
         case begin:
             if (!*bal || (*bal)->type != BAL_BEGIN)
                 *bal = newbalance(lex, *bal);
@@ -984,8 +975,7 @@ static VLASHIM* getVLAList(STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, VLAS
     {
         switch (stmt->type)
         {
-            case st_switch:
-            {
+            case st_switch: {
                 bool first = true;
                 CASEDATA* cases = stmt->cases;
                 while (cases)
@@ -1338,13 +1328,14 @@ void findUnusedStatics(NAMESPACEVALUELIST* nameSpace)
                         while (hr1)
                         {
                             SYMBOL* sp1 = (SYMBOL*)hr1->p;
-                            if (sp1->sb->attribs.inheritable.isInline && !sp1->sb->inlineFunc.stmt && !sp1->sb->deferredCompile && !sp1->sb->templateLevel)
+                            if (sp1->sb->attribs.inheritable.isInline && !sp1->sb->inlineFunc.stmt && !sp1->sb->deferredCompile &&
+                                !sp1->sb->templateLevel)
                             {
                                 errorsym(ERR_UNDEFINED_IDENTIFIER, sp1);
                             }
                             else if (sp1->sb->attribs.inheritable.linkage2 == lk_internal ||
-                                    (sp1->sb->storage_class == sc_static && !sp1->sb->inlineFunc.stmt &&
-                                     !(sp1->sb->templateLevel || sp1->sb->instantiated)))
+                                     (sp1->sb->storage_class == sc_static && !sp1->sb->inlineFunc.stmt &&
+                                      !(sp1->sb->templateLevel || sp1->sb->instantiated)))
                             {
                                 if (sp1->sb->attribs.inheritable.used)
                                     errorsym(ERR_UNDEFINED_STATIC_FUNCTION, sp1, eofLine, eofFile);

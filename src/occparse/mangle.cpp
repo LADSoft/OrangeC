@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -122,7 +122,7 @@ char* mangleNameSpaces(char* in, SYMBOL* sym)
     if (!sym)
         return in;
     in = mangleNameSpaces(in, sym->sb->parentNameSpace);
-    if (sym->sb->parentNameSpace && !strcmp(sym->name, "__1")  && !strcmp(sym->sb->parentNameSpace->name, "std"))
+    if (sym->sb->parentNameSpace && !strcmp(sym->name, "__1") && !strcmp(sym->sb->parentNameSpace->name, "std"))
         return in;
     Optimizer::my_sprintf(in, "@%s", sym->name);
     return in + strlen(in);
@@ -378,8 +378,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case en_templateselector:
-            {
+            case en_templateselector: {
                 TEMPLATESELECTOR *tsl = exp->v.templateSelector, *find = tsl->next->next;
                 SYMBOL* ts = tsl->next->sp;
                 *buf++ = 't';
@@ -411,8 +410,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 buf = mangleExpressionInternal(buf, exp->left);
                 *buf = 0;
                 break;
-            case en_func:
-            {
+            case en_func: {
                 if (exp->v.func->ascall)
                 {
                     INITLIST* args = exp->v.func->arguments;
@@ -503,7 +501,8 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
         if (sp)
             sym = sp;
     }
-    if (sym->sb && (sym->sb->isConstructor || sym->sb->isDestructor) && sym->sb->templateLevel == sym->sb->parentClass->sb->templateLevel)
+    if (sym->sb && (sym->sb->isConstructor || sym->sb->isDestructor) &&
+        sym->sb->templateLevel == sym->sb->parentClass->sb->templateLevel)
     {
         strcpy(buf, sym->name);
         while (*buf)
@@ -571,7 +570,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
                 {
                     buf = mangleTemplate(buf, params->p->byTemplate.dflt, params->p->byTemplate.val->templateParams);
                 }
-                else 
+                else
                 */
                 if (sym->sb->instantiated && params->p->byTemplate.val)
                 {
@@ -885,13 +884,13 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     *in++ = 'v';
                     break;
                 case bt_templateparam:
-                    if (inKeyCreation && tp->templateParam->p->type == kw_typename && tp->templateParam->p->byClass.val && basetype(tp->templateParam->p->byClass.val)->type != bt_templateparam)
+                    if (inKeyCreation && tp->templateParam->p->type == kw_typename && tp->templateParam->p->byClass.val &&
+                        basetype(tp->templateParam->p->byClass.val)->type != bt_templateparam)
                         in = mangleType(in, tp->templateParam->p->byClass.val, false);
                     else
                         in = getName(in, tp->templateParam->argsym);
                     break;
-                case bt_templateselector:
-                {
+                case bt_templateselector: {
                     TEMPLATESELECTOR* s = tp->sp->sb->templateSelector;
                     char* p;
                     s = s->next;
@@ -1000,7 +999,7 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage, bool isTemplateDefinition)
         case lk_auto:
             if (sym->sb->parent)
                 if (sym->sb->uniqueID == 0)
-                    sym->sb->uniqueID = uniqueID++;            
+                    sym->sb->uniqueID = uniqueID++;
             p = mangleClasses(p, theCurrentFunc);
             Optimizer::my_sprintf(p, "@%s", sym->name);
 

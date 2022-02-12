@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ObjFactory.h"
@@ -47,25 +47,24 @@ int main()
 {
     try
     {
-printf("A");
+        printf("A");
         ObjIeeeIndexManager im1;
-printf("B");
+        printf("B");
         ObjFactory fact1(&im1);
-printf("C");
+        printf("C");
         FILE* b = fopen("bzip2.o", "rb");
-printf("D");
+        printf("D");
         FILE* c = fopen("q.o", "wb");
-printf("E");
+        printf("E");
         ObjIeee i1("hi");
-printf("1");
+        printf("1");
         ObjFile* fi1 = i1.Read(b, ObjIeee::eAll, &fact1);
-printf("2");
+        printf("2");
         i1.Write(c, fi1, &fact1);
-printf("3");
+        printf("3");
     }
     catch (ObjIeeeBinary::SyntaxError e)
     {
-       std::cout << e.what() << std::endl;
+        std::cout << e.what() << std::endl;
     }
-
 }

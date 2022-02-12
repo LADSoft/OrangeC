@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -377,19 +377,19 @@ bool isconstraw(const TYPE* tp)
     return rv;
 }
 bool isconst(const TYPE* tp) { return isconstraw(tp); }
-//prefer a const function when the expression is a constexpression variable
+// prefer a const function when the expression is a constexpression variable
 bool isconstexpr(const EXPRESSION* expa)
 {
     if (expa)
     {
         switch (expa->type)
         {
-        case en_global:
-        case en_auto:
-        case en_absolute:
-        case en_pc:
-        case en_threadlocal:
-            return expa->v.sp->sb->constexpression;
+            case en_global:
+            case en_auto:
+            case en_absolute:
+            case en_pc:
+            case en_threadlocal:
+                return expa->v.sp->sb->constexpression;
         }
     }
     return false;
@@ -562,7 +562,7 @@ bool isunion(TYPE* tp)
 }
 void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
 {
-    TYPE *patin = *pat;
+    TYPE* patin = *pat;
     TYPE* in = nt;
     if (isautotype(*pat))
     {
@@ -583,7 +583,7 @@ void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
                 else
                 {
                     // rref, get rid of qualifiers and return an rref
-                    TYPE *tp1;
+                    TYPE* tp1;
                     if (nt->type == bt_rref)
                         tp1 = basetype(nt->btp);
                     else
@@ -635,7 +635,7 @@ void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
         }
         else if (ispointer(in))
         {
-             *pat = nt;
+            *pat = nt;
         }
         else
         {
@@ -673,8 +673,8 @@ LEXLIST* concatStringsInternal(LEXLIST* lex, STRING** str, int* elems)
     enum e_lexType type = l_astr;
     STRING* string;
     list = Allocate<Optimizer::SLCHAR*>(count);
-    while (lex &&
-           (lex->data->type == l_astr || lex->data->type == l_wstr || lex->data->type == l_ustr || lex->data->type == l_Ustr || lex->data->type == l_msilstr))
+    while (lex && (lex->data->type == l_astr || lex->data->type == l_wstr || lex->data->type == l_ustr ||
+                   lex->data->type == l_Ustr || lex->data->type == l_msilstr))
     {
         if (lex->data->type == l_msilstr)
             type = l_msilstr;
@@ -1276,7 +1276,7 @@ static EXPRESSION* msilThunkSubStructs(EXPRESSION* exps, EXPRESSION* expsym, SYM
             {
                 tp = tp->btp;
             }
-            offset %= tp->size; // in case of array
+            offset %= tp->size;  // in case of array
             if (isstructured(tp))
             {
                 for (auto hr = basetype(tp)->syms->table[0]; hr; hr = hr->next)
@@ -1376,7 +1376,8 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 case sc_global:
                     if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
                     {
-                        expsym = thisptr;                    }
+                        expsym = thisptr;
+                    }
                     else
                     {
                         local = true;
@@ -1531,14 +1532,14 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                                 EXPRESSION* asn;
                                 if (Optimizer::architecture == ARCHITECTURE_MSIL)
                                 {
-                                    int n = init->offset/btp->size;
+                                    int n = init->offset / btp->size;
                                     asn = exprNode(en__sizeof, typeNode(btp), nullptr);
                                     EXPRESSION* exp4 = intNode(en_c_i, n);
                                     asn = exprNode(en_umul, exp4, asn);
                                 }
                                 else
                                 {
-                                     asn = exprNode(en_add, copy_expression(expsym), intNode(en_c_i, init->offset));
+                                    asn = exprNode(en_add, copy_expression(expsym), intNode(en_c_i, init->offset));
                                 }
                                 deref(init->basetp, &asn);
                                 cast(init->basetp, &right);
@@ -1726,9 +1727,9 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             guardexp->v.func->arguments->tp = &stdpointer;
             guardexp->v.func->arguments->exp = guard->left;
             rv = exprNode(en_voidnz,
-                          exprNode(en_void, exprNode(en_land, 
-                                                     exprNode(en_ne, guard, intNode(en_c_i, -1)),
-                                                     exprNode(en_ne, guardexp, intNode(en_c_i, 0))),
+                          exprNode(en_void,
+                                   exprNode(en_land, exprNode(en_ne, guard, intNode(en_c_i, -1)),
+                                            exprNode(en_ne, guardexp, intNode(en_c_i, 0))),
                                    exprNode(en_void, rv, exprNode(en_assign, guard, intNode(en_c_i, -1)))),
                           intNode(en_c_i, 0));
         }
@@ -1945,7 +1946,7 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         return tp2;
     if (isvoid(tp1) || isvoid(tp2) || ismsil(tp1) || ismsil(tp2))
     {
-        if  (exp1 && exp2)
+        if (exp1 && exp2)
             error(ERR_NOT_AN_ALLOWED_TYPE);
         return tp1;
     }

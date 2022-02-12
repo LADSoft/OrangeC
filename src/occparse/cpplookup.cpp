@@ -48,10 +48,12 @@
 #include "iexpr.h"
 #include "libcxx.h"
 #include "declcons.h"
+#include "template.h"
 
 namespace Parser
 {
 int inGetUserConversion;
+int inSearchingFunctions;
 SYMBOL* argFriend;
 static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, Optimizer::LIST* gather, FUNCTIONCALL* args, TYPE* atp, int flags);
 
@@ -3128,13 +3130,15 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                     {
                         if (found1->sb->templateLevel && !templateNestingCount && found1->templateParams)
                         {
-                            found1 = TemplateFunctionInstantiate(found1, false, false);
+                            if (!inSearchingFunctions || inTemplateArgs)
+                                found1 = TemplateFunctionInstantiate(found1, false, false);
                         }
                         else
                         {
                             if (found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt)
                             {
-                                deferredCompileOne(found1);
+                                if  (!inSearchingFunctions || inTemplateArgs)
+                                    deferredCompileOne(found1);
                             }
                         }
                     }
@@ -4691,6 +4695,7 @@ void weedgathering(Optimizer::LIST** gather)
 }
 static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, Optimizer::LIST* gather, FUNCTIONCALL* args, TYPE* atp, int flags)
 {
+    inSearchingFunctions++;
     int n = 0;
     while (gather)
     {
@@ -4727,6 +4732,7 @@ static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, Optimizer::LIST* 
         }
         gather = gather->next;
     }
+    inSearchingFunctions--;
     return n;
 }
 static void doNames(SYMBOL* sym)
@@ -5127,6 +5133,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     if (found1->sb->templateLevel && (found1->templateParams || found1->sb->isDestructor))
                     {
                         found1 = found1->sb->mainsym;
+                        inSearchingFunctions++;
                         if (found1->sb->castoperator)
                         {
                             found1 = detemplate(found1, nullptr, basetype(args->thistp)->btp);
@@ -5135,6 +5142,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         {
                             found1 = detemplate(found1, args, atp);
                         }
+                        inSearchingFunctions--;
                     }
                     if (isstructured(basetype(found1->tp)->btp))
                     {
@@ -5150,23 +5158,27 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     CollapseReferences(basetype(found1->tp)->btp);
                     if (found1->sb->templateLevel && (!templateNestingCount || instantiatingTemplate) && found1->templateParams)
                     {
-                        found1 = TemplateFunctionInstantiate(found1, false, false);
+                        if (!inSearchingFunctions || inTemplateArgs)
+                            found1 = TemplateFunctionInstantiate(found1, false, false);
                     }
                     else
                     {
                         if (toInstantiate && found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt)
                         {
-                            if (found1->templateParams)
-                                instantiatingTemplate++;
-                            if (found1->sb->templateLevel ||
-                                (found1->sb->parentClass && found1->sb->parentClass->sb->templateLevel))
-                                EnterInstantiation(nullptr, found1);
-                            deferredCompileOne(found1);
-                            if (found1->sb->templateLevel ||
-                                (found1->sb->parentClass && found1->sb->parentClass->sb->templateLevel))
-                                LeaveInstantiation();
-                            if (found1->templateParams)
-                                instantiatingTemplate--;
+                            if (!inSearchingFunctions || inTemplateArgs)
+                            {
+                                if (found1->templateParams)
+                                    instantiatingTemplate++;
+                                if (found1->sb->templateLevel ||
+                                    (found1->sb->parentClass && found1->sb->parentClass->sb->templateLevel))
+                                    EnterInstantiation(nullptr, found1);
+                                deferredCompileOne(found1);
+                                if (found1->sb->templateLevel ||
+                                    (found1->sb->parentClass && found1->sb->parentClass->sb->templateLevel))
+                                    LeaveInstantiation();
+                                if (found1->templateParams)
+                                    instantiatingTemplate--;
+                            }
                         }
                         else
                         {

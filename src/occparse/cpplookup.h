@@ -26,6 +26,7 @@
 namespace Parser
 {
 extern int inGetUserConversion;
+extern int inSearchingFunctions;
 extern SYMBOL* argFriend;
 extern HASHTABLE* CreateHashTable(int size);
 #define F_WITHCONS 1

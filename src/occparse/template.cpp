@@ -73,8 +73,8 @@ int instantiatingFunction;
 int instantiatingClass;
 int parsingDefaultTemplateArgs;
 int count1;
+int inTemplateArgs;
 
-static int inTemplateArgs;
 static std::unordered_map<SYMBOL*, TEMPLATEPARAMLIST*> originalArgs;
 
 struct templateListData* currents;

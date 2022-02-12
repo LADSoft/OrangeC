@@ -93,6 +93,7 @@ void expr_init(void)
     packIndex = -1;
     importThunks = nullptr;
     inGetUserConversion = 0;
+    inSearchingFunctions = 0;
     argFriend = nullptr;
 }
 void thunkForImportTable(EXPRESSION** exp)

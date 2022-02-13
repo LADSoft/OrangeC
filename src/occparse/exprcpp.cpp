@@ -467,12 +467,18 @@ bool cppCast(TYPE* src, TYPE** tp, EXPRESSION** exp)
         else if (isarithmetic(*tp))
         {
             TYPE* tp1 = src;
-            return castToArithmeticInternal(false, &tp1, exp, (enum e_kw) - 1, *tp, false);
+            auto rv =  castToArithmeticInternal(false, &tp1, exp, (enum e_kw) - 1, *tp, false);
+            if (isref(tp1))
+                deref(basetype(tp1)->btp, exp);
+            return rv;
         }
         else if (ispointer(*tp) || basetype(*tp)->type == bt_memberptr)
         {
             TYPE* tp1 = src;
-            return castToPointer(&tp1, exp, (enum e_kw) - 1, *tp);
+            auto rv = castToPointer(&tp1, exp, (enum e_kw) - 1, *tp);
+            if (isref(tp1))
+                deref(basetype(tp1)->btp, exp);
+            return rv;
         }
     }
     return false;

@@ -5833,6 +5833,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         SYMBOL* ssp = nullptr;
                         SYMBOL* spi;
                         bool checkReturn = true;
+                        if (!templateNestingCount && funcsp)
+                            tp1 = ResolveTemplateSelectors(funcsp, tp1);
                         if ((isstructured(tp1) && storage_class != sc_typedef) || (!templateNestingCount && !structLevel))
                             tp1 = PerformDeferredInitialization(tp1, funcsp);
                         ssp = getStructureDeclaration();

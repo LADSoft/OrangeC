@@ -415,6 +415,9 @@ void AllocateStackSpace()
                 val = lc_maxauto % sym->align;
                 if (val != 0)
                     lc_maxauto += sym->align - val;
+                if (sym->tp->type == st_struct || sym->tp->type == st_union || sym->tp->type == st_class)
+                    if (lc_maxauto % chosenAssembler->arch->stackalign)
+                        lc_maxauto += chosenAssembler->arch->stackalign - lc_maxauto % chosenAssembler->arch->stackalign;
                 sym->offset = -lc_maxauto;
                 if (lc_maxauto > max)
                     max = lc_maxauto;

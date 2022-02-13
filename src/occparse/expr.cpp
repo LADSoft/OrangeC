@@ -3350,7 +3350,10 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         TYPE* etp = basetype(sym->tp)->btp;
                         if (cppCast(p->tp, &etp, &p->exp))
                             p->tp = etp;
-                        p->exp = createTemporary(sym->tp, p->exp);
+                        if (lvalue(p->exp))
+                            p->exp = p->exp->left;
+                        else
+                            p->exp = createTemporary(sym->tp, p->exp);
                     }
                     else
                     {

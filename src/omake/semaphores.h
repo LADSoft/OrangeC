@@ -1,5 +1,6 @@
 #pragma once
 #ifdef _WIN32
+#    define NOMINMAX
 #    include <windows.h>
 #elif defined(__linux__)
 #    pragma error "This platform is unsupported due to POSIX semaphores being legitimately several times worse than Windows ones"
@@ -8,6 +9,7 @@
 #endif
 #include <string>
 #include <iostream>
+#include <chrono>
 class Semaphore
 {
 
@@ -32,9 +34,7 @@ class Semaphore
     string_type semaphoreName;
 
   public:
-    Semaphore() : null(true), semaphoreName()
-    {
-    }
+    Semaphore() : null(true), semaphoreName() {}
     Semaphore(string_type name, int value) : named(true), semaphoreName(name)
     {
 #ifdef _WIN32
@@ -86,6 +86,50 @@ class Semaphore
             sem_destroy(handle);
         }
 #endif
+    }
+    template <typename Rep, typename Period>
+    int WaitUntil(std::chrono::duration<Rep, Period> time)
+    {
+        return WaitFor(time - std::chrono::steady_clock::now());
+    }
+    // return 0: success
+    // return -1: failure
+    template <typename Rep, typename Period>
+    int WaitFor(std::chrono::duration<Rep, Period> time)
+    {
+        std::chrono::milliseconds milli = std::chrono::duration_cast(time);
+        if (milli.count() >= INFINITE)
+        {
+            throw std::invalid_argument("The time spent for waiting is too long to handle normally");
+        }
+        int waitTime = milli.count();
+        int ret = WaitForSingleObject(handle, waitTime);
+        switch (ret)
+        {
+            case WAIT_OBJECT_0:
+                return 0;
+            case WAIT_TIMEOUT:
+                return -1;
+            case WAIT_FAILED:
+                throw std::system_error(std::error_code(GetLastError(), std::system_category()));
+            default:
+                return -1;
+        }
+    }
+    int TryWait()
+    {
+        int ret = WaitForSingleObject(handle, 0);
+        switch (ret)
+        {
+            case WAIT_OBJECT_0:
+                return 0;
+            case WAIT_TIMEOUT:
+                return -1;
+            case WAIT_FAILED:
+                throw std::system_error(std::error_code(GetLastError(), std::system_category()));
+            default:
+                return -1;
+        }
     }
     void Wait()
     {

@@ -51,9 +51,6 @@ class JobServer : public IJobServer
     static std::shared_ptr<JobServer> GetJobServer(const std::string& auth_string, int max_jobs);
     // Creates an OMAKE compatible job server, allowing for the main class to move out when needed
     static std::shared_ptr<JobServer> GetJobServer(int max_jobs, bool ignored);
-    // Thin layer to allow us to create windows-type semaphores as a stop-gap before compartmentalising the entire thing, used
-    // during testing
-    static std::shared_ptr<JobServer> GetJobServer(const std::string& jobserver_name, bool ignored);
 };
 // Use composition to our advantage: if we have a JobServer and we know it's either one of these, we can use the same code
 // without having to worry if it's POSIX or Windows except at the calling barrier
@@ -61,13 +58,15 @@ class POSIXJobServer : public JobServer
 {
     friend class JobServer;
     int readfd = -1, writefd = -1;
-    std::string PassThroughCommandString();
     int get_read_fd() { return readfd; }
     int get_write_fd() { return writefd; }
+
+  public:
+    std::string PassThroughCommandString();
     int TakeNewJob();
+    int TryTakeNewJob();
     int ReleaseJob();
     // Need these to be public in order to do std::make_shared on em'
-  public:
     POSIXJobServer(int max_jobs);
     POSIXJobServer(int read, int write);
 };
@@ -92,11 +91,13 @@ class WINDOWSJobServer : public JobServer
     // HANDLE, this way we can also elide calls in this place and theoretically an optimization pass could bring the entire object
     // into the class in the future should anyone choose to research inserting an underlying object into another object
     Semaphore semaphore;
+
+  public:
     std::string PassThroughCommandString();
     int TakeNewJob();
+    int TryTakeNewJob();
     int ReleaseJob();
     // Need these to be public in order to do std::make_shared on em'
-  public:
     // Since we use semaphores we want a name because these are interprocess named semaphores
     WINDOWSJobServer(const string_type& server_name, int max_jobs);
     // Interprocess semaphores require names

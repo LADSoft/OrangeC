@@ -187,6 +187,10 @@ bool OS::TakeJob()
     localJobServer->TakeNewJob();
     return false;
 }
+bool OS::TryTakeJob()
+{
+    return localJobServer->TryTakeNewJob() != -1;
+}
 void OS::GiveJob() { localJobServer->ReleaseJob(); }
 std::string OS::GetFullPath(const std::string& fullname)
 {
@@ -216,10 +220,12 @@ void OS::InitJobServer()
         if (MakeMain::jobServer.GetExists())
         {
             name = MakeMain::jobServer.GetValue();
+            std::cerr << "Job server name: " << name;
             localJobServer = OMAKE::JobServer::GetJobServer(name);
         }
         else
         {
+            std::cerr << "Job server name NEW: " << name;
             localJobServer = OMAKE::JobServer::GetJobServer(jobsLeft);
             name = localJobServer->PassThroughCommandString();
             MakeMain::jobServer.SetValue(name);

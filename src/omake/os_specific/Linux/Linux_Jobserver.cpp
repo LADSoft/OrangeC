@@ -8,6 +8,41 @@
 #include <sstream>
 namespace OMAKE
 {
+int POSIXJobServer::TryTakeNewJob()
+{
+    if (writefd == -1 || readfd == -1)
+    {
+        throw std::runtime_error("Job server used without initializing the underlying parameters");
+    }
+    if (current_jobs != 0)
+    {
+        int err = 0;
+        char only_buffer;
+        ssize_t bytes_read;
+    try_again:
+        // Wait while we can't get our own
+        while ((bytes_read = read(readfd, &only_buffer, 1)) == 0)
+        {
+            // Yield our thread to other executions while we're waiting for a thread to actually execute and take up time
+            std::this_thread::yield();
+        }
+        if (bytes_read == -1)
+        {
+            switch (err = errno)
+            {
+                case EAGAIN:
+#if EAGAIN != EWOULDBLOCK
+                case EWOULDBLOCK:
+#endif
+                    return -1;
+                default:
+                    return err;
+            }
+        }
+    }
+    current_jobs++;
+    return 0;
+}
 int POSIXJobServer::TakeNewJob()
 {
     if (writefd == -1 || readfd == -1)
@@ -153,7 +188,7 @@ std::string WINDOWSJobServer::PassThroughCommandString()
 {
     throw std::runtime_error("Windows job servers are unavailable on POSIX");
 }
-void WINDOWSJobServer::ReleaseAllJobs() { throw std::runtime_error("Windows job servers are unavailable on POSIX"); }
+int WINDOWSJobServer::TryTakeNewJob() { throw std::runtime_error("Windows job servers are unavailable on POSIX"); }
 int WINDOWSJobServer::TakeNewJob() { throw std::runtime_error("Windows job servers are unavailable on POSIX"); }
 int WINDOWSJobServer::ReleaseJob() { throw std::runtime_error("Windows job servers are unavailable on POSIX"); }
 }  // namespace OMAKE

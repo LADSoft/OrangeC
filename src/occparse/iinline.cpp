@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -373,7 +373,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     {
         return nullptr;
     }
-    if (inlinesym_count >= MAX_INLINE_NESTING && ! f->sp->sb->simpleFunc)
+    if (inlinesym_count >= MAX_INLINE_NESTING && !f->sp->sb->simpleFunc)
     {
         f->sp->sb->dumpInlineToFile = true;
         return nullptr;
@@ -385,8 +385,8 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
             if (f->sp->sb->parentClass->sb->trivialCons)
             {
                 Optimizer::IMODE* ap;
-                Optimizer::gen_icode(Optimizer::i_parmstack, ap = Optimizer::tempreg(ISZ_ADDR, 0), Optimizer::make_immed(ISZ_UINT, f->thisptr->v.sp->tp->size),
-                    nullptr);
+                Optimizer::gen_icode(Optimizer::i_parmstack, ap = Optimizer::tempreg(ISZ_ADDR, 0),
+                                     Optimizer::make_immed(ISZ_UINT, f->thisptr->v.sp->tp->size), nullptr);
                 Optimizer::intermed_tail->alwayslive = true;
                 Optimizer::SymbolManager::Get(f->thisptr->v.sp)->imvalue = ap;
             }

@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ObjTypes.h"
@@ -63,7 +63,7 @@ int main(int argc, char** argv)
     }
     catch (ObjIeeeBinary::SyntaxError e)
     {
-       std::cout << e.what() << std::endl;
+        std::cout << e.what() << std::endl;
     }
     Utils::fatal("Fatal Error...");
     return 1;
@@ -83,8 +83,8 @@ CmdSwitchDefine LinkerMain::Defines(SwitchParser, 'D');
 CmdSwitchCombineString LinkerMain::LibPath(SwitchParser, 'L', ';');
 CmdSwitchOutput LinkerMain::OutputFile(SwitchParser, 'o', ".rel");
 CmdSwitchBool LinkerMain::Verbosity(SwitchParser, 'y');
-CmdSwitchCombineString LinkerMain::OutputDefFile(SwitchParser, 0, 0, { "output-def" });
-CmdSwitchCombineString LinkerMain::PrintFileName(SwitchParser, 0, 0, { "print-file-name" });
+CmdSwitchCombineString LinkerMain::OutputDefFile(SwitchParser, 0, 0, {"output-def"});
+CmdSwitchCombineString LinkerMain::PrintFileName(SwitchParser, 0, 0, {"print-file-name"});
 
 SwitchConfig LinkerMain::TargetConfig(SwitchParser, 'T');
 const char* LinkerMain::usageText =
@@ -154,8 +154,7 @@ void LinkerMain::AddFile(LinkManager& linker, std::string& name)
         if (n != std::string::npos)
         {
             ObjString match = name.substr(n);
-            std::transform(match.begin(), match.end(), match.begin(),
-                [](unsigned char c){ return std::tolower(c); });    
+            std::transform(match.begin(), match.end(), match.begin(), [](unsigned char c) { return std::tolower(c); });
 
             foundLibrary = match == ".l" || match == ".a" || match == ".lib" || match == ".dll";
         }
@@ -202,9 +201,9 @@ std::string LinkerMain::SpecFileContents(const std::string& specFile)
     }
     return rv;
 }
-void LinkerMain::RewriteArgs(int argc, char **argv)
+void LinkerMain::RewriteArgs(int argc, char** argv)
 {
-    for (int i=0; i < argc; i++)
+    for (int i = 0; i < argc; i++)
         if (!strcmp(argv[i], "--shared"))
             strcpy(argv[i], "-T:DLL32");
 }
@@ -213,7 +212,7 @@ bool LinkerMain::DoPrintFileName(LinkManager& linker)
     if (PrintFileName.GetExists())
     {
         std::string path;
-        FILE*fil = linker.GetLibraryPath(PrintFileName.GetValue(), path);
+        FILE* fil = linker.GetLibraryPath(PrintFileName.GetValue(), path);
         if (fil)
         {
             fclose(fil);
@@ -243,7 +242,7 @@ void LinkerMain::ParseSpecifiedLibFiles(CmdFiles& files, LinkManager& manager)
             if (!file)
             {
                 y = "lib" + y;
-                file = manager.GetLibraryPath(y, y);                
+                file = manager.GetLibraryPath(y, y);
             }
             if (file)
             {
@@ -264,16 +263,16 @@ int LinkerMain::Run(int argc, char** argv)
     RewriteArgs(argc, argv);
     if (!getenv("OLINK_LEGACY_OPTIONS"))
     {
-        for (int i=0; i < argc; i++)
+        for (int i = 0; i < argc; i++)
         {
             if (!strcmp(argv[i], "-v"))
             {
-                 printf("%s Version " STRING_VERSION, Utils::ShortName(argv[0]));
-                 exit(0);
+                printf("%s Version " STRING_VERSION, Utils::ShortName(argv[0]));
+                exit(0);
             }
             else if (!strcmp(argv[i], "--print-file-name"))
             {
-                 showBanner = false;
+                showBanner = false;
             }
         }
     }

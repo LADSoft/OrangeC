@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "DotNetPELib.h"
@@ -304,8 +304,8 @@ Class* Class::ObjIn(PELib& peLib, bool definition)
     {
         // if we get here it is as an operand
         std::deque<Type*> generics;
-        Class *genericParent;
-        if (peLib.ObjBegin()== 'g')
+        Class* genericParent;
+        if (peLib.ObjBegin() == 'g')
         {
             int n = peLib.ObjInt();
             if (peLib.ObjBegin() != 'c')
@@ -397,7 +397,7 @@ void Class::Load(PELib& lib, AssemblyDef& assembly, PEReader& reader, size_t cls
             MethodSignature* sig = lib.AllocateMethodSignature((char*)buf, MethodSignature::Managed, this);
             SignatureGenerator::TypeFromMethodRef(lib, assembly, reader, sig, entry->signatureIndex_.index_);
             if (entry->flags_ & MethodDefTableEntry::Virtual)
-               entry->flags_ |= Qualifiers::Virtual;       
+                entry->flags_ |= Qualifiers::Virtual;
             Method* method = lib.AllocateMethod(sig, entry->flags_, false);
             Add(method);
             sigs.push_back(sig);
@@ -486,7 +486,7 @@ std::string Class::AdornGenerics(PELib& peLib, bool names) const
                 tp.ShowType();
                 tp.ILSrcDump(peLib);
             }
-            if (count++ != generic_.size()-1)
+            if (count++ != generic_.size() - 1)
                 peLib.Out() << ",";
             else
                 peLib.Out() << ">";
@@ -518,4 +518,4 @@ bool Class::MatchesGeneric(std::deque<Type*>* generics) const
     }
     return false;
 }
-} // namespace DotNetPELib
+}  // namespace DotNetPELib

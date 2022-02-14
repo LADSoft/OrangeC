@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -81,7 +81,7 @@ static BITINT* allocate_bits(int size)
     if (cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY)
         return lallocbit(size);
     else
-        return aallocbit(size); 
+        return aallocbit(size);
 }
 
 static void ormap(BITINT* dest, BITINT* src)
@@ -208,10 +208,7 @@ static void GatherGlobals(void)
 }
 inline static bool isstructptr(SimpleType* tp)
 {
-    return (tp->type == st_pointer) &&
-           ((tp->btp->type == st_union) ||
-            (tp->btp->type == st_class) ||
-            (tp->btp->type == st_struct));
+    return (tp->type == st_pointer) && ((tp->btp->type == st_union) || (tp->btp->type == st_class) || (tp->btp->type == st_struct));
 }
 void SetunMoveableTerms(void)
 {
@@ -273,16 +270,16 @@ void SetunMoveableTerms(void)
                                 bool structptr = false;
                                 switch (head->dc.left->offset->type)
                                 {
-                                case se_auto:
-                                case se_global:
-                                case se_pc:
-                                case se_threadlocal:
-                                    structptr = isstructptr(head->dc.left->offset->sp->tp);
-                                    break;
-                                case se_tempref:
-                                    if (head->dc.left->offset->right)
-                                        structptr = isstructptr(((SimpleSymbol*)head->dc.left->offset->right)->tp);
-                                    break;
+                                    case se_auto:
+                                    case se_global:
+                                    case se_pc:
+                                    case se_threadlocal:
+                                        structptr = isstructptr(head->dc.left->offset->sp->tp);
+                                        break;
+                                    case se_tempref:
+                                        if (head->dc.left->offset->right)
+                                            structptr = isstructptr(((SimpleSymbol*)head->dc.left->offset->right)->tp);
+                                        break;
                                 }
                                 if (structptr)
                                 {
@@ -764,7 +761,7 @@ static void CalculateIsolated(void)
 {
     int i;
     bool changed;
-    setmap(blockArray[exitBlock]->tail ->isolated, true);
+    setmap(blockArray[exitBlock]->tail->isolated, true);
     for (i = 0; i < reverseBlocks; i++)
         setmap(reverseOrder[i]->head->isolated, true);
     do
@@ -863,7 +860,7 @@ static void GatherTerms(void)
                         }
                         if (!tempInfo[l]->terms)
                         {
-                                tempInfo[l]->terms = allocate_bits(termCount);
+                            tempInfo[l]->terms = allocate_bits(termCount);
                         }
                         if (tempInfo[l]->termClear)
                         {
@@ -876,7 +873,7 @@ static void GatherTerms(void)
                         }
                         if (tempInfo[n]->indTerms)
                         {
-//                            andmap(tempInfo[l]->terms, tempInfo[n]->indTerms);
+                            //                            andmap(tempInfo[l]->terms, tempInfo[n]->indTerms);
                         }
                         clearbit(tempInfo[l]->terms, termMap[n]);
                     }
@@ -898,7 +895,7 @@ static void GatherTerms(void)
                         }
                         if (tempInfo[n]->indTerms)
                         {
-//                            andmap(tempInfo[l]->terms, tempInfo[n]->indTerms);
+                            //                            andmap(tempInfo[l]->terms, tempInfo[n]->indTerms);
                         }
                         clearbit(tempInfo[l]->terms, termMap[n]);
                     }
@@ -1004,10 +1001,10 @@ static void GatherTerms(void)
                 {
                     if (p->dc.left->mode == i_immed && p->dc.left->size == ISZ_ADDR && !isintconst(p->dc.left->offset))
                     {
-                         if (immediateTerms[p->dc.left])
-                         {
-                             andmap(tempInfo[l]->indTerms, immediateTerms[p->dc.left]);
-                         }
+                        if (immediateTerms[p->dc.left])
+                        {
+                            andmap(tempInfo[l]->indTerms, immediateTerms[p->dc.left]);
+                        }
                     }
                 }
             }
@@ -1283,7 +1280,7 @@ static void HandleRO(QUAD* after, int tn)
             }
             after = after->back;
 
-        } while (!after->OCP && after->dc.opcode != i_tag); 
+        } while (!after->OCP && after->dc.opcode != i_tag);
 }
 static void MoveExpressions(void)
 {
@@ -1435,7 +1432,7 @@ static int fgc(enum e_fgtype type, BLOCK* parent, BLOCK* b) { return true; }
 void SetGlobalTerms(void)
 {
     int i, j;
-    if (cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY )
+    if (cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY)
     {
         termCount = tempCount;
     }
@@ -1449,7 +1446,7 @@ void SetGlobalTerms(void)
     termMap = Allocate<unsigned short>(tempCount);
     termMapUp = Allocate<unsigned short>(termCount);
     for (i = 0, j = 0; i < tempCount; i++)
-        if (tempInfo[i]->inUse || (cparams.icd_flags & ICD_OCP &~ICD_QUITEARLY))
+        if (tempInfo[i]->inUse || (cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY))
         {
             termMap[i] = j;
             termMapUp[j] = i;
@@ -1458,7 +1455,7 @@ void SetGlobalTerms(void)
 }
 void GlobalOptimization(void)
 {
-    QUAD *head = intermed_head;
+    QUAD* head = intermed_head;
     int i;
     PadBlocks();
     forwardOrder = oAllocate<BLOCK*>(blockCount);

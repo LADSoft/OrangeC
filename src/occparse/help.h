@@ -1,38 +1,41 @@
 #pragma once
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
+
 #include <stack>
 #include <unordered_map>
 namespace Parser
 {
 
-template <class T> class NestedStack;
+template <class T>
+class NestedStack;
 template <class T>
 class StackList
 {
-private:
-    template <class> friend class NestedStack;
+  private:
+    template <class>
+    friend class NestedStack;
     std::stack<T>& Get()
     {
         if (pos == stacks.size())
@@ -45,27 +48,28 @@ private:
         if (pos)
         {
             std::stack<T>& stk = stacks[pos - 1];
-            while (!stk.empty())   stk.pop();
+            while (!stk.empty())
+                stk.pop();
             pos--;
         }
     }
-           
-	std::unordered_map<int, std::stack<T>> stacks;
-	int pos = 0;
+
+    std::unordered_map<int, std::stack<T>> stacks;
+    int pos = 0;
 };
 
 template <class T>
 class NestedStack
 {
-public:
-    NestedStack(StackList<T>& stacklist) : list(stacklist), thisStack(stacklist.Get()) { }
+  public:
+    NestedStack(StackList<T>& stacklist) : list(stacklist), thisStack(stacklist.Get()) {}
     ~NestedStack() { list.Release(); }
-    T &top() { return thisStack.top(); }
-    void push (const T& val) { thisStack.push(val); }
+    T& top() { return thisStack.top(); }
+    void push(const T& val) { thisStack.push(val); }
     void pop() { thisStack.pop(); }
     bool empty() { return thisStack.empty(); }
 
-private:
+  private:
     std::stack<T>& thisStack;
     StackList<T>& list;
 };

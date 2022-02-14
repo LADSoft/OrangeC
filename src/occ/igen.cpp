@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -85,8 +85,8 @@ static void iop_struct(Optimizer::QUAD* q) { asm_add(q); }
 /*-------------------------------------------------------------------------*/
 static void iop_initblk(Optimizer::QUAD* q) { asm_clrblock(q); }
 static void iop_cpblk(Optimizer::QUAD* q) { asm_assnblock(q); }
-static void iop_initobj(Optimizer::QUAD* q) { }
-static void iop_sizeof(Optimizer::QUAD* q) { }
+static void iop_initobj(Optimizer::QUAD* q) {}
+static void iop_sizeof(Optimizer::QUAD* q) {}
 /*-------------------------------------------------------------------------*/
 
 static void iop_asmcond(Optimizer::QUAD* q) {}
@@ -170,13 +170,13 @@ static void iop_functailend(Optimizer::QUAD* q)
 }
 static void iop_gcsestub(Optimizer::QUAD* q) {}
 static void iop_atomic_thread_fence(Optimizer::QUAD* q) { asm_atomic(q); }
-static void iop_atomic_signal_fence(Optimizer::QUAD* q) { }
+static void iop_atomic_signal_fence(Optimizer::QUAD* q) {}
 static void iop_atomic_flag_fence(Optimizer::QUAD* q) { asm_atomic(q); }
 static void iop_atomic_flag_test_and_set(Optimizer::QUAD* q) { asm_atomic(q); }
 static void iop_atomic_flag_clear(Optimizer::QUAD* q) { asm_atomic(q); }
 static void iop_cmpxchgweak(Optimizer::QUAD* q) { asm_atomic(q); }
 static void iop_cmpxchgstrong(Optimizer::QUAD* q) { asm_atomic(q); }
-static void iop_kill_dependency(Optimizer::QUAD* q) { }
+static void iop_kill_dependency(Optimizer::QUAD* q) {}
 static void iop_xchg(Optimizer::QUAD* q) { asm_atomic(q); }
 static void iop_parm(Optimizer::QUAD* q)
 {

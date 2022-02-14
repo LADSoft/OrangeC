@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "DotNetPELib.h"
@@ -89,8 +89,7 @@ size_t SignatureGenerator::EmbedType(int* buf, int offset, Type* tp)
             buf[offset + rv++] = ELEMENT_TYPE_VAR;
             buf[offset + rv++] = tp->VarNum();
             break;
-        case Type::cls:
-        {
+        case Type::cls: {
             Class* cls = static_cast<Class*>(tp->GetClass());
             Class* cls1 = cls;
             if (cls->Generic().size())
@@ -125,8 +124,7 @@ size_t SignatureGenerator::EmbedType(int* buf, int offset, Type* tp)
             }
             break;
         }
-        case Type::method:
-        {
+        case Type::method: {
             MethodSignature* sig = tp->GetMethod();
             buf[offset + rv++] = ELEMENT_TYPE_FNPTR;
             rv += CoreMethod(sig, sig->ParamCount() + sig->VarargParamCount(), buf, offset + rv);
@@ -524,11 +522,11 @@ Type* SignatureGenerator::GetType(PELib& lib, AssemblyDef& assembly, PEReader& r
                 len--;
                 if (len == 0)
                     return nullptr;
-                for (int i=0; i < n; i++)
+                for (int i = 0; i < n; i++)
                 {
-                    Class *cls = static_cast<Class*>(rv->GetClass());
-                    GetType(lib, assembly, reader, data, start, len);       
-                    //                    cls->Generic().push_back(GetType(lib, assembly, reader, data, start, len));       
+                    Class* cls = static_cast<Class*>(rv->GetClass());
+                    GetType(lib, assembly, reader, data, start, len);
+                    //                    cls->Generic().push_back(GetType(lib, assembly, reader, data, start, len));
                 }
             }
             break;
@@ -542,7 +540,7 @@ Type* SignatureGenerator::GetType(PELib& lib, AssemblyDef& assembly, PEReader& r
             index = LoadIndex(data, start, len);
             rv = BasicType(lib, ELEMENT_TYPE_MVAR, index);
             break;
-        break;
+            break;
         case ELEMENT_TYPE_FNPTR:
             start++, len--;
             sig = lib.AllocateMethodSignature("$$unknown", MethodSignature::Managed, nullptr);
@@ -646,14 +644,14 @@ Byte* SignatureGenerator::MethodRefSig(MethodSignature* method, size_t& sz)
     }
     return ConvertToBlob(workArea, size, sz);
 }
-Byte *SignatureGenerator::MethodSpecSig(MethodSignature *signature, size_t &sz)
+Byte* SignatureGenerator::MethodSpecSig(MethodSignature* signature, size_t& sz)
 {
     int size = 0;
-    workArea[size++] = 0x0a; // generic
+    workArea[size++] = 0x0a;  // generic
     workArea[size++] = signature->Generic().size();
     for (auto g : signature->Generic())
     {
-       size += EmbedType(workArea, size, g);
+        size += EmbedType(workArea, size, g);
     }
     return ConvertToBlob(workArea, size, sz);
 }

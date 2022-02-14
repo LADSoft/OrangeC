@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -609,8 +609,7 @@ static void PruneInductionCandidate(int tnum, LOOP* l)
         {
             switch (I->dc.opcode)
             {
-                case i_phi:
-                {
+                case i_phi: {
                     PHIDATA* pd = I->dc.v.phi;
                     struct _phiblock* pb = pd->temps;
                     while (pb)
@@ -715,8 +714,7 @@ static void CalculateInductionCandidates(LOOP* l)
                             }
                         }
                         break;
-                    case i_phi:
-                    {
+                    case i_phi: {
                         PHIDATA* pd = head->dc.v.phi;
                         int tnum = pd->T0;
                         if (tempInfo[tnum]->size < ISZ_FLOAT)
@@ -830,8 +828,7 @@ LIST* strongRegiondfs(int tnum)
         int ux = -1;
         switch (u->ins->dc.opcode)
         {
-            case i_phi:
-            {
+            case i_phi: {
                 PHIDATA* pd = u->ins->dc.v.phi;
                 if (tempInfo[pd->T0]->size < ISZ_FLOAT)
                     ux = pd->T0;

@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -72,19 +72,19 @@ static void ColumnPosition(int n)
 {
     if (n <= linepos)
     {
-       Optimizer::beputc(' ');
-       linepos++;
+        Optimizer::beputc(' ');
+        linepos++;
     }
     else
     {
         char buf[100];
-        memset(buf, ' ',  n - linepos);
+        memset(buf, ' ', n - linepos);
         buf[n - linepos] = 0;
         Optimizer::bePrintf("%s", buf);
         linepos += n - linepos;
     }
 }
-static void AsmOutput(const char *fmt, ...)
+static void AsmOutput(const char* fmt, ...)
 {
     char buf[10000], *p = buf, *q;
     va_list lst;
@@ -123,12 +123,12 @@ void oa_nl(void)
  */
 void outop(const char* name)
 {
-     ColumnPosition(8);
-     while (*name)
-     {
+    ColumnPosition(8);
+    while (*name)
+    {
         Optimizer::beputc(*name++);
         linepos++;
-     }
+    }
 }
 
 /*-------------------------------------------------------------------------*/
@@ -542,7 +542,8 @@ void oa_putamode(int op, int szalt, AMODE* ap)
                     {
                         AsmOutput("byte ");
                     }
-                    else if (ap->length == -ISZ_USHORT || ap->length == ISZ_USHORT || ap->length == ISZ_U16 || ap->length == ISZ_WCHAR)
+                    else if (ap->length == -ISZ_USHORT || ap->length == ISZ_USHORT || ap->length == ISZ_U16 ||
+                             ap->length == ISZ_WCHAR)
                     {
                         AsmOutput("word ");
                     }
@@ -607,8 +608,7 @@ void oa_putamode(int op, int szalt, AMODE* ap)
             Optimizer::beputc(']');
             linepos++;
             break;
-        case am_indispscale:
-        {
+        case am_indispscale: {
             int scale = 1, t = ap->scale;
 
             while (t--)
@@ -814,7 +814,7 @@ void oa_put_label(int lab)
         {
             newlabel = true;
             AsmOutput("\nL_%ld", lab);
-}
+        }
         else
             AsmOutput("L_%ld:\n", lab);
     }
@@ -856,9 +856,9 @@ void oa_genfloat(enum Optimizer::e_gt type, FPF* val)
                 }
                 else
                     ColumnPosition(8);
-                    AsmOutput("dd");
-                    ColumnPosition(16);
-                    AsmOutput("%s\n", buf);
+                AsmOutput("dd");
+                ColumnPosition(16);
+                AsmOutput("%s\n", buf);
                 break;
             case Optimizer::doublegen:
             case Optimizer::longdoublegen:
@@ -1126,7 +1126,7 @@ void oa_genstorage(int nbytes)
             AsmOutput("resb");
             ColumnPosition(16);
             AsmOutput("0%xh\n", nbytes);
-        }        
+        }
         else
         {
             ColumnPosition(8);
@@ -1315,7 +1315,7 @@ void oa_enterseg(enum Optimizer::e_sg seg)
                 AsmOutput("_STRING");
                 ColumnPosition(16);
                 AsmOutput("segment use32 public dword \042STRING\042\n");
-             }
+            }
         }
         else if (seg == Optimizer::dataseg)
         {
@@ -1332,7 +1332,7 @@ void oa_enterseg(enum Optimizer::e_sg seg)
             {
                 ColumnPosition(8);
                 AsmOutput(".DATA\n");
-             }
+            }
         }
         else if (seg == Optimizer::tlsseg)
         {
@@ -1403,7 +1403,7 @@ void oa_enterseg(enum Optimizer::e_sg seg)
             {
                 ColumnPosition(8);
                 AsmOutput(".data?\n");
-             }
+            }
         }
         else if (seg == Optimizer::startupxseg)
         {
@@ -1534,9 +1534,9 @@ void oa_align(int size)
         ColumnPosition(8);
         if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
             Optimizer::cparams.prm_assembler == pa_fasm)
-            /* NASM 0.91 wouldn't let me use parenthesis but this should work
-             * according to the documented precedence levels
-             */
+        /* NASM 0.91 wouldn't let me use parenthesis but this should work
+         * according to the documented precedence levels
+         */
         {
             AsmOutput("times $$-$ & %d nop\n", size - 1);
         }
@@ -1545,7 +1545,7 @@ void oa_align(int size)
             AsmOutput("align");
             ColumnPosition(8);
             AsmOutput("%d\n", size);
-         }
+        }
     }
     else
     {
@@ -1763,7 +1763,7 @@ void oa_header(const char* filename, const char* compiler_version)
         else
         {
             AsmOutput(".model use32 small\n\n");
-        } 
+        }
     }
 }
 void oa_trailer(void)
@@ -1812,7 +1812,7 @@ void oa_globaldef(Optimizer::SimpleSymbol* sym)
             AsmOutput("public");
             ColumnPosition(16);
             AsmOutput("%s\n", buf);
-         }
+        }
     }
     else
         omf_globaldef(sym);

@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -67,7 +67,7 @@ static char usage_text[] =
     "+Q        - quiet mode                /Sasm;dbg - make ASM source file\n"
     "/T        - translate trigraphs       /Uxxx     - undefine something\n"
     "/V,/v,--version - show version/date   /Wxx      - set executable type\n"
-    "/X-       - don't include RTTI info   /Y        - output intermediate code\n"  
+    "/X-       - don't include RTTI info   /Y        - output intermediate code\n"
     "/!,--nologo - No logo\n"
     "\nCodegen parameters: (/C[+][-][params])\n"
     "  +d   - display diagnostics          -b        - no BSS\n"
@@ -93,10 +93,7 @@ static char usage_text[] =
     "    d - dll                             c = crtdll.dll\n"
     "    w - windowing                       m = msvcrtdll.dll\n"
     "\n"
-    "\nOptimization control:\n"
-    OPTIMIZATION_DESCRIPTION
-    "\nFlags:\n"
-    OPTMODULES_DESCRIPTION
+    "\nOptimization control:\n" OPTIMIZATION_DESCRIPTION "\nFlags:\n" OPTMODULES_DESCRIPTION
     "  -fsyntax-only                  compile only, don't produce an output file\n"
     " -std=xxxx                       specify the language standard to use\n"
     "    note for C++, this only changes the definition of __cplusplus\n"
@@ -231,8 +228,8 @@ static ARCH_SIZING sizes = {
     4,  /*char a_int;*/
     4,  /*char a_long;*/
     8,  /*char a_longlong;*/
-    2, /*char a_char16_t;*/
-    4, /*char a_char32_t;*/
+    2,  /*char a_char16_t;*/
+    4,  /*char a_char32_t;*/
     4,  /*char a_addr;*/
     8,  /*char a_farptr;*/
     2,  /*char a_farseg;*/
@@ -264,10 +261,10 @@ static ARCH_SIZING alignments = {
     4, /*char a_memberptr;    */
     0, /*char a_struct;  alignment only */
     /* imaginary same as real */
-    4, /*char a_float;*/
-    8, /*char a_double;*/
-    8, /*char a_longdouble;*/
-    8,                    // char a_alignedstruct; // __attribute((__aligned__))
+    4,  /*char a_float;*/
+    8,  /*char a_double;*/
+    8,  /*char a_longdouble;*/
+    8,  // char a_alignedstruct; // __attribute((__aligned__))
 };
 static ARCH_SIZING locks = {
     0, /*char a_bool; */
@@ -284,15 +281,15 @@ static ARCH_SIZING locks = {
     1, /*char a_farptr; */
     1, /*char a_farseg; */
     1, /*char a_memberptr; */
-    1, /*char a_struct; */ 
+    1, /*char a_struct; */
     /* alignment only */
-    0,                  /*char a_float; */
-    0,                  /*char a_double; */
-    0,                  /*char a_longdouble; */
-    1,                  /*char a_fcomplexpad; */
-    1,                  /*char a_rcomplexpad; */
-    1,                  /*char a_lrcomplexpad; */
-    0,                    // char a_alignedstruct; // __attribute((__aligned__))
+    0,  /*char a_float; */
+    0,  /*char a_double; */
+    0,  /*char a_longdouble; */
+    1,  /*char a_fcomplexpad; */
+    1,  /*char a_rcomplexpad; */
+    1,  /*char a_lrcomplexpad; */
+    0,  // char a_alignedstruct; // __attribute((__aligned__))
 };
 static ARCH_FLOAT aflt = {-126, 126, 128, 24};
 static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};
@@ -488,25 +485,25 @@ static ARCH_GEN outputfunctions = {
 };
 ARCH_ASM x86AssemblerInterface[] = {
     {
-        "oasm",                                /* assembler name */
-        0,                                     /* backend data (compiler ignores) */
-        "1",                                   /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-        ".s",                                  /* extension for assembly files */
-        ".o",                                  /* extension for object files, nullptr = has no object mode */
+        "oasm",                                     /* assembler name */
+        0,                                          /* backend data (compiler ignores) */
+        "1",                                        /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
+        ".s",                                       /* extension for assembly files */
+        ".o",                                       /* extension for object files, nullptr = has no object mode */
         ".l;.lib;.a;.rc;.res;.o;.asm;.nas;.s;.dll", /* extensions for files that should be passed to the backend*/
-        "occ",                                 /* name of an environment variable to parse, or 0 */
-        "occ",                                 /* name of the program, for usage */
-        "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */
-        usage_text,                            /* pointer to usage text */
-        "clwin.l",                             /* lib file */
-        "i686-w32-occ",                        /* machine string */
-        nullptr,                               // args,                           /* extra args */
-        0,                                     // sizeof(args) / sizeof(args[0]), /* number of args */
-        nullptr,                               /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-        defines,                               /* defines list to create at compile time, or null */
-        &dbgStruct[0],                         /* debug structure, or nullptr */
-        &architecture_characteristics,         /* architecture characteristics */
-        &outputfunctions,                      /* pointer to backend function linkages */
+        "occ",                                      /* name of an environment variable to parse, or 0 */
+        "occ",                                      /* name of the program, for usage */
+        "occ",                                      /* name of a config file if you want to use one, or nullptr (sans extension) */
+        usage_text,                                 /* pointer to usage text */
+        "clwin.l",                                  /* lib file */
+        "i686-w32-occ",                             /* machine string */
+        nullptr,                                    // args,                           /* extra args */
+        0,                                          // sizeof(args) / sizeof(args[0]), /* number of args */
+        nullptr,                                    /* specific keywords, e.g. allow a 'bit' keyword and so forth */
+        defines,                                    /* defines list to create at compile time, or null */
+        &dbgStruct[0],                              /* debug structure, or nullptr */
+        &architecture_characteristics,              /* architecture characteristics */
+        &outputfunctions,                           /* pointer to backend function linkages */
 #if 0
             nullptr,                        /* pointer to MSIL-specific data and functions */
 #endif

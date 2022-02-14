@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -177,7 +177,8 @@ int RunExternalFiles()
     {
         verbosityString[0] = '-';
         memset(verbosityString + 1, 'y',
-               Optimizer::cparams.verbosity > sizeof(verbosityString) - 2 ? sizeof(verbosityString) - 2 : Optimizer::cparams.verbosity);
+               Optimizer::cparams.verbosity > sizeof(verbosityString) - 2 ? sizeof(verbosityString) - 2
+                                                                          : Optimizer::cparams.verbosity);
     }
     temp[0] = 0;
     if (Optimizer::inputFiles.size())
@@ -197,8 +198,8 @@ int RunExternalFiles()
                                    Optimizer::outputFileName.c_str(), asm_params ? asm_params : "",
                                    !Optimizer::showBanner ? "-!" : "", (char*)asmlist->data);
         else
-            rv = Utils::ToolInvoke("oasm.exe", Optimizer::cparams.verbosity ? "" : nullptr, "%s %s \"%s\"", asm_params ? asm_params : "",
-                                   !Optimizer::showBanner ? "-!" : "", (char*)asmlist->data);
+            rv = Utils::ToolInvoke("oasm.exe", Optimizer::cparams.verbosity ? "" : nullptr, "%s %s \"%s\"",
+                                   asm_params ? asm_params : "", !Optimizer::showBanner ? "-!" : "", (char*)asmlist->data);
         first = true;
         if (rv)
             return rv;
@@ -215,8 +216,8 @@ int RunExternalFiles()
                                    Optimizer::outputFileName.c_str(), rc_params ? rc_params : "",
                                    !Optimizer::showBanner ? "-!" : "", args, (char*)rclist->data);
         else
-            rv = Utils::ToolInvoke("orc.exe", Optimizer::cparams.verbosity ? "" : nullptr, "-r %s %s %s \"%s\"", rc_params ? rc_params : "",
-                                   !Optimizer::showBanner ? "-!" : "", args, (char*)rclist->data);
+            rv = Utils::ToolInvoke("orc.exe", Optimizer::cparams.verbosity ? "" : nullptr, "-r %s %s %s \"%s\"",
+                                   rc_params ? rc_params : "", !Optimizer::showBanner ? "-!" : "", args, (char*)rclist->data);
         first = true;
         if (rv)
             return rv;
@@ -305,7 +306,8 @@ int RunExternalFiles()
             return rv;
         if (Optimizer::cparams.prm_targettype == WHXDOS)
         {
-            rv = Utils::ToolInvoke("patchpe.exe", Optimizer::cparams.verbosity ? "" : nullptr, "%s", Optimizer::outputFileName.c_str());
+            rv = Utils::ToolInvoke("patchpe.exe", Optimizer::cparams.verbosity ? "" : nullptr, "%s",
+                                   Optimizer::outputFileName.c_str());
             if (rv)
             {
                 printf("Could not spawn patchpe.exe\n");

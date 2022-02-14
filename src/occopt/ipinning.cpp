@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -51,59 +51,60 @@ extern Optimizer::SimpleSymbol* currentFunction;
 //
 namespace Optimizer
 {
-void Register(QUAD* head, IMODE* im, std::string name, std::map<std::string, std::deque<QUAD*>>& map, std::map<std::string, std::deque<QUAD*>>& automap)
+void Register(QUAD* head, IMODE* im, std::string name, std::map<std::string, std::deque<QUAD*>>& map,
+              std::map<std::string, std::deque<QUAD*>>& automap)
 {
     switch (im->offset->type)
     {
-    case se_auto:
-        automap[name].push_back(head);
-        break;
-    case se_global:
-    case se_pc:
-    case se_threadlocal:
-    case se_labcon:
-    case se_structelem:
-        map[name].push_back(head);
-        break;
+        case se_auto:
+            automap[name].push_back(head);
+            break;
+        case se_global:
+        case se_pc:
+        case se_threadlocal:
+        case se_labcon:
+        case se_structelem:
+            map[name].push_back(head);
+            break;
     }
 }
 static void LoadAddresses(std::map<std::string, std::deque<QUAD*>>& map, std::map<std::string, std::deque<QUAD*>>& automap)
 {
-    QUAD *head = intermed_head;
+    QUAD* head = intermed_head;
     while (head)
     {
         if (head->dc.opcode == i_assn && !(head->temps & TEMP_LEFT) && head->dc.left->mode == i_immed)
         {
-            if (head->fwd->dc.opcode != i_add || head->fwd->dc.right->mode != i_direct || head->fwd->dc.right->offset->type != se_structelem)
+            if (head->fwd->dc.opcode != i_add || head->fwd->dc.right->mode != i_direct ||
+                head->fwd->dc.right->offset->type != se_structelem)
             {
                 switch (head->dc.left->offset->type)
                 {
-                case se_auto:
-                case se_global:
-                case se_threadlocal:
-                case se_labcon:
-                {
-                    std::string name;
-                    if (head->dc.left->offset->type == se_labcon)
-                    {
-                        char buf[256];
-                        sprintf(buf, "%d",(int) head->dc.left->offset->i);
-                        name = buf;
+                    case se_auto:
+                    case se_global:
+                    case se_threadlocal:
+                    case se_labcon: {
+                        std::string name;
+                        if (head->dc.left->offset->type == se_labcon)
+                        {
+                            char buf[256];
+                            sprintf(buf, "%d", (int)head->dc.left->offset->i);
+                            name = buf;
+                        }
+                        else
+                        {
+                            name = head->dc.left->offset->sp->outputName;
+                        }
+                        if (head->fwd->dc.opcode == i_add && head->fwd->dc.right->offset->type == se_structelem)
+                        {
+                            name = name + head->fwd->dc.right->offset->sp->outputName;
+                            Register(head->fwd, head->fwd->dc.right, name, map, automap);
+                        }
+                        else
+                        {
+                            Register(head, head->dc.left, name, map, automap);
+                        }
                     }
-                    else
-                    {
-                        name = head->dc.left->offset->sp->outputName;
-                    }
-                    if (head->fwd->dc.opcode == i_add && head->fwd->dc.right->offset->type == se_structelem)
-                    {
-                        name = name + head->fwd->dc.right->offset->sp->outputName;
-                        Register(head->fwd, head->fwd->dc.right, name, map, automap);
-                    }
-                    else
-                    {
-                        Register(head, head->dc.left, name, map, automap);
-                    }
-                }
                 }
             }
         }
@@ -112,26 +113,26 @@ static void LoadAddresses(std::map<std::string, std::deque<QUAD*>>& map, std::ma
 }
 static void LoadDebugBlocks(std::deque<std::pair<QUAD*, QUAD*>>& blocks)
 {
-    QUAD *head = intermed_head;
+    QUAD* head = intermed_head;
     int count = 0;
     while (head)
     {
         head->index = count++;
         switch (head->dc.opcode)
         {
-        case i_dbgblock:
-            blocks.push_back(std::pair<QUAD*, QUAD*>(head, nullptr));
-            break;
-        case i_dbgblockend:
-            for (auto it = blocks.rbegin(); it != blocks.rend(); ++it)
-            {
-                if (it->second == nullptr)
+            case i_dbgblock:
+                blocks.push_back(std::pair<QUAD*, QUAD*>(head, nullptr));
+                break;
+            case i_dbgblockend:
+                for (auto it = blocks.rbegin(); it != blocks.rend(); ++it)
                 {
-                    it->second = head;
-                    break;
+                    if (it->second == nullptr)
+                    {
+                        it->second = head;
+                        break;
+                    }
                 }
-            }
-            break;
+                break;
         }
         head = head->fwd;
     }
@@ -242,8 +243,8 @@ static std::pair<QUAD*, QUAD*> FindDebugBlock(int begin, int end, std::deque<std
     std::pair<QUAD*, QUAD*> rv;
     int spread = INT_MAX;
     for (auto&& block : blocks)
-    { 
-        if (block.first->index <= begin && block.second->index >= end-1)
+    {
+        if (block.first->index <= begin && block.second->index >= end - 1)
         {
             int spread1 = block.second->index - block.first->index;
             if (spread1 < spread)
@@ -273,11 +274,12 @@ static IMODE* pinnedVar(SimpleType* tp)
     ap->size = exp->sizeFromType;
     return ap;
 }
-static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*&managed, IMODE*&unmanaged)
+static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*& managed, IMODE*& unmanaged)
 {
-    while (begin->fwd->dc.opcode == i_label || begin->fwd->dc.opcode == i_line || begin->fwd->dc.opcode == i_blockend || begin->fwd->dc.opcode == i_block)
+    while (begin->fwd->dc.opcode == i_label || begin->fwd->dc.opcode == i_line || begin->fwd->dc.opcode == i_blockend ||
+           begin->fwd->dc.opcode == i_block)
         begin = begin->fwd;
-    IMODE *exp;
+    IMODE* exp;
     if (addresses.front()->dc.opcode == i_add)
     {
         exp = addresses.front()->dc.right;
@@ -286,7 +288,7 @@ static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*&
     {
         exp = addresses.front()->dc.left;
     }
-    SimpleType *tp;
+    SimpleType* tp;
     tp = Allocate<SimpleType>();
     tp->type = st_lref;
     tp->size = sizeFromISZ(ISZ_ADDR);
@@ -314,26 +316,25 @@ static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*&
         }
         */
     }
-    IMODE *ans = pinnedVar(tp);
+    IMODE* ans = pinnedVar(tp);
     ans->size = exp->size;
     managed = ans;
     unmanaged = ans;
 
-
     if (addresses.front()->dc.opcode == i_add)
     {
         // address of something global points to
-        QUAD *one = Allocate<QUAD>();
+        QUAD* one = Allocate<QUAD>();
         *one = *addresses.front()->back;
         InsertInstruction(begin, one);
         begin = begin->fwd;
-        QUAD *two = Allocate<QUAD>();
+        QUAD* two = Allocate<QUAD>();
         *two = *addresses.front();
         InsertInstruction(begin, two);
         begin = begin->fwd;
         exp = two->ans;
     }
-    QUAD *move = Allocate<QUAD>();
+    QUAD* move = Allocate<QUAD>();
     move->ans = ans;
     move->dc.left = exp;
     move->dc.opcode = i_assn;
@@ -354,7 +355,6 @@ static void ReplaceLoads(IMODE* managed, IMODE* unmanaged, std::deque<QUAD*>& ad
         {
             a->dc.left = unmanaged;
         }
-
     }
 }
 static void InsertFinalThunk(IMODE* managed, QUAD* end)
@@ -376,7 +376,7 @@ static void InsertFinalThunk(IMODE* managed, QUAD* end)
     InsertInstruction(load, store);
 }
 
-static bool Matches(std::deque<QUAD*> &group, QUAD* current)
+static bool Matches(std::deque<QUAD*>& group, QUAD* current)
 {
     for (auto g : group)
     {
@@ -396,12 +396,12 @@ static std::deque<std::deque<QUAD*>> Sort(std::deque<QUAD*>& addresses)
         bool found = false;
         for (auto&& b : aa)
         {
-             found = Matches(b, a);
-             if (found)
-             {
-                 b.push_back(a);
-                 break;
-             }
+            found = Matches(b, a);
+            if (found)
+            {
+                b.push_back(a);
+                break;
+            }
         }
         if (!found)
         {
@@ -430,12 +430,12 @@ void RewriteForPinning()
                 int begin = FindDominatingInstruction(a);
                 int end = FindPostDominatingInstruction(a);
                 std::pair<QUAD*, QUAD*> pair = FindDebugBlock(begin, end, blocks);
-                IMODE* managed, *unmanaged;
+                IMODE *managed, *unmanaged;
                 InsertInitialLoad(pair.first, a, managed, unmanaged);
                 ReplaceLoads(managed, unmanaged, a);
                 InsertFinalThunk(managed, pair.second);
-             }
+            }
         }
     }
 }
-}
+}  // namespace Optimizer

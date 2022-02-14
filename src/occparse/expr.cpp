@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -59,7 +59,7 @@
 #include "constexpr.h"
 
 // there is a bug where the compiler needs constant values for the memory order,
-// but parsed code may not provide it directly.   
+// but parsed code may not provide it directly.
 // e.g. when an atomic primitive is called from inside a function.
 //
 // we probably have to force inlining a little better to get around it, but would still need
@@ -93,6 +93,7 @@ void expr_init(void)
     packIndex = -1;
     importThunks = nullptr;
     inGetUserConversion = 0;
+    inSearchingFunctions = 0;
     argFriend = nullptr;
 }
 void thunkForImportTable(EXPRESSION** exp)
@@ -454,8 +455,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             default:
                 break;
         }
-        if (sym->sb && sym->sb->templateLevel && !isfunction(sym->tp) 
-            && sym->sb->storage_class != sc_type && !ismember(sym) &&
+        if (sym->sb && sym->sb->templateLevel && !isfunction(sym->tp) && sym->sb->storage_class != sc_type && !ismember(sym) &&
             MATCHKW(lex, lt))
         {
             lex = getsym();
@@ -481,7 +481,8 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             }
         }
         if ((!sym->sb || sym->sb->storage_class == sc_templateparam) && sym->tp->type == bt_templateparam &&
-             (sym->tp->templateParam->p->type != kw_int || (sym->tp->templateParam->p->type == kw_int && sym->tp->templateParam->p->byNonType.val)))
+            (sym->tp->templateParam->p->type != kw_int ||
+             (sym->tp->templateParam->p->type == kw_int && sym->tp->templateParam->p->byNonType.val)))
         {
             switch (sym->tp->templateParam->p->type)
             {
@@ -521,7 +522,8 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                             int n = packIndex;
                             while (n && p)
                             {
-                                p = p->next; n--;
+                                p = p->next;
+                                n--;
                             }
                             if (p)
                             {
@@ -2268,11 +2270,10 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
                     exp3 = exp3->right;
                 if (exp3->type == en_thisref)
                 {
-                    p->tp = CopyType(p -> tp);
+                    p->tp = CopyType(p->tp);
                     p->tp->lref = false;
                     p->tp->rref = true;
                 }
-
             }
             if (p->tp)
             {
@@ -2627,7 +2628,8 @@ TYPE* InitializerListType(TYPE* arg)
     return rtp;
 }
 int count3;
-void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* initializerListType, INITLIST** lptr, bool operands, bool asref)
+void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* initializerListType, INITLIST** lptr, bool operands,
+                           bool asref)
 {
     (void)operands;
     INITLIST** initial = lptr;
@@ -2846,7 +2848,6 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
                 (*last)->exp = t;
                 last = &(*last)->next;
             }
-        
         }
         dest = exprNode(en_structadd, initList, intNode(en_c_i, begin->sb->offset));
         deref(&stdpointer, &dest);
@@ -2862,7 +2863,7 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
         }
         dest = exprNode(en_structadd, initList, intNode(en_c_i, size->sb->offset));
         deref(&stdpointer, &dest);
-        dest = exprNode(en_assign, dest, intNode(en_c_i, tp->size/initializerListType->size));
+        dest = exprNode(en_assign, dest, intNode(en_c_i, tp->size / initializerListType->size));
         if (rv)
         {
             *pos = exprNode(en_void, *pos, dest);
@@ -2989,7 +2990,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         TYPE* ctype = sp->tp;
                         EXPRESSION* dexp = thisptr;
                         params->thisptr = thisptr;
-                        if (pinit && pinit->next || !pinit && !p->tp && !p->exp) // empty initializer list)
+                        if (pinit && pinit->next || !pinit && !p->tp && !p->exp)  // empty initializer list)
                         {
                             TYPE* tp;
                             auto old = p->next;
@@ -3124,9 +3125,9 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                     }
                     // use constructor or conversion function and push on stack ( no destructor)
                     else if (temp->type == en_func && basetype(temp->v.func->sp->tp)->btp &&
-                        !isref(basetype(temp->v.func->sp->tp)->btp) &&
-                        ((sameType = comparetypes(sym->tp, tpx, true)) ||
-                         classRefCount(basetype(sym->tp)->sp, basetype(tpx)->sp) == 1))
+                             !isref(basetype(temp->v.func->sp->tp)->btp) &&
+                             ((sameType = comparetypes(sym->tp, tpx, true)) ||
+                              classRefCount(basetype(sym->tp)->sp, basetype(tpx)->sp) == 1))
                     {
                         SYMBOL* esp;
                         EXPRESSION* consexp;
@@ -3141,7 +3142,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         paramexp = DerivedToBase(sym->tp, tpx, paramexp, _F_VALIDPOINTER);
                         auto exp = consexp;
                         callConstructorParam(&ctype, &exp, sym->tp, paramexp, true, true, implicit, false, true);
-                        if (exp->type == en_auto) // recursive call to constructor A<U>(A<U>)
+                        if (exp->type == en_auto)  // recursive call to constructor A<U>(A<U>)
                         {
                             if (temp->v.func->returnEXP)
                             {
@@ -3169,7 +3170,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         esp->sb->stackblock = true;
                         esp->sb->constexpression = true;
                         callConstructorParam(&ctype, &consexp, p->tp, paramexp, true, true, implicit, false, true);
-                        if (consexp->type == en_auto) // recursive call to constructor A<U>(A<U>)
+                        if (consexp->type == en_auto)  // recursive call to constructor A<U>(A<U>)
                         {
                             p->exp = paramexp;
                         }
@@ -3222,12 +3223,12 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             }
                         }
                         else if ((!isconst(basetype(sym->tp)->btp) && !isconst(sym->tp) &&
-                             (sym->tp->type != bt_rref &&
-                              (!func->sb->templateLevel &&
-                               (!func->sb->parentClass || !func->sb->parentClass->sb->templateLevel) /*forward*/)) &&
-                             isconst(tpx)) ||
-                            (!comparetypes(sym->tp, tpx, true) && !sameTemplate(sym->tp, tpx) &&
-                             !classRefCount(basetype(basetype(sym->tp)->btp)->sp, basetype(tpx)->sp)))
+                                  (sym->tp->type != bt_rref &&
+                                   (!func->sb->templateLevel &&
+                                    (!func->sb->parentClass || !func->sb->parentClass->sb->templateLevel) /*forward*/)) &&
+                                  isconst(tpx)) ||
+                                 (!comparetypes(sym->tp, tpx, true) && !sameTemplate(sym->tp, tpx) &&
+                                  !classRefCount(basetype(basetype(sym->tp)->btp)->sp, basetype(tpx)->sp)))
                         {
                             // make temp via constructor or conversion function
                             EXPRESSION* consexp = anonymousVar(sc_auto, basetype(sym->tp)->btp);  // sc_parameter to push it...
@@ -3349,17 +3350,20 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         TYPE* etp = basetype(sym->tp)->btp;
                         if (cppCast(p->tp, &etp, &p->exp))
                             p->tp = etp;
-                        p->exp = createTemporary(sym->tp, p->exp);
+                        if (lvalue(p->exp))
+                            p->exp = p->exp->left;
+                        else
+                            p->exp = createTemporary(sym->tp, p->exp);
                     }
                     else
                     {
                         // make numeric temp and perform cast
                         p->exp = createTemporary(sym->tp, p->exp);
                     }
-                    if (!isref(tpx1) &&
-                        ((isconst(tpx1) && !isconst(basetype(sym->tp)->btp)) || (isvolatile(tpx1) && !isvolatile(basetype(sym->tp)->btp))))
-                        if (basetype(sym->tp)->type != bt_rref) // converting const lref to rref is ok...
-                            if (!isstructured(basetype(sym->tp)->btp)) // structure constructor is ok
+                    if (!isref(tpx1) && ((isconst(tpx1) && !isconst(basetype(sym->tp)->btp)) ||
+                                         (isvolatile(tpx1) && !isvolatile(basetype(sym->tp)->btp))))
+                        if (basetype(sym->tp)->type != bt_rref)         // converting const lref to rref is ok...
+                            if (!isstructured(basetype(sym->tp)->btp))  // structure constructor is ok
                                 error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
                     p->tp = sym->tp;
                 }
@@ -3835,7 +3839,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         // add this ptr
         if (!funcparams->thisptr && funcparams->sp->sb->parentClass && !isfuncptr(funcparams->sp->tp))
         {
-            TYPE *tp = MakeType(bt_pointer, funcparams->sp->sb->parentClass->tp);
+            TYPE* tp = MakeType(bt_pointer, funcparams->sp->sb->parentClass->tp);
             funcparams->thisptr = getMemberBase(funcparams->sp, nullptr, funcsp, false);
             funcparams->thistp = tp;
             if (funcsp)
@@ -4066,10 +4070,11 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     auto next = (*lptr)->next;
                     if ((*lptr)->nested)
                         (*lptr)->next = nullptr;
-                    CreateInitializerList(funcparams->sp, initializerListTemplate, initializerListType, lptr, operands, initializerRef);
+                    CreateInitializerList(funcparams->sp, initializerListTemplate, initializerListType, lptr, operands,
+                                          initializerRef);
                     (*lptr)->next = next;
                     if (hr->next)
-                        AdjustParams(funcparams->sp, hr->next, & (*lptr)->next, operands, true);
+                        AdjustParams(funcparams->sp, hr->next, &(*lptr)->next, operands, true);
                 }
                 else
                 {
@@ -4191,15 +4196,17 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     {
                         if (!basetype(funcparams->returnSP->tp)->sp->sb->trivialCons)
                         {
-                            EXPRESSION* expx;
                             exp_in = exprNode(en_thisref, exp_in, nullptr);
                             exp_in->v.t.thisptr = funcparams->returnEXP;
                             exp_in->v.t.tp = funcparams->returnSP->tp;
 
-                            expx = funcparams->returnEXP;
-                            callDestructor(basetype(funcparams->returnSP->tp)->sp, nullptr, &expx, nullptr, true, false, true,
-                                           true);
-                            initInsert(&funcparams->returnSP->sb->dest, funcparams->returnSP->tp, expx, 0, true);
+                            if (isstructured(funcparams->returnSP->tp))
+                            {
+                                EXPRESSION* expx = funcparams->returnEXP;
+                                callDestructor(basetype(funcparams->returnSP->tp)->sp, nullptr, &expx, nullptr, true, false, true,
+                                               true);
+                                initInsert(&funcparams->returnSP->sb->dest, funcparams->returnSP->tp, expx, 0, true);
+                            }
                         }
                     }
                     if (exp_in)
@@ -4809,7 +4816,8 @@ static bool getSuffixedNumber(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
     return false;
 }
 static Parser::LEXLIST* atomic_modify_specific_op(Parser::LEXLIST* lex, Parser::SYMBOL* funcsp, Parser::TYPE** tp,
-                                                  Parser::TYPE** typf, Parser::ATOMICDATA* d, int flags, Parser::e_kw function, bool fetch_first)
+                                                  Parser::TYPE** typf, Parser::ATOMICDATA* d, int flags, Parser::e_kw function,
+                                                  bool fetch_first)
 {
     Parser::TYPE* tpf = *typf;
     lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->address, nullptr, flags);
@@ -4868,8 +4876,9 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
             lex = optimized_expression(lex, funcsp, nullptr, tp, exp, false);
             if (!isint(*tp) || !isintconst(*exp))
                 error(ERR_NEED_INTEGER_TYPE);
-            *tp = & stdint;
-            bool found = (*exp)->v.i > 0 && (*exp)->v.i <= Optimizer::chosenAssembler->arch->isLockFreeSize && ((*exp)->v.i & ((*exp)->v.i - 1)) == 0;
+            *tp = &stdint;
+            bool found = (*exp)->v.i > 0 && (*exp)->v.i <= Optimizer::chosenAssembler->arch->isLockFreeSize &&
+                         ((*exp)->v.i & ((*exp)->v.i - 1)) == 0;
             *exp = intNode(en_c_i, found);
             needkw(&lex, closepa);
         }
@@ -4985,7 +4994,7 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                         d->memoryOrder2 = d->memoryOrder1;
                     *tp = &stdvoid;
                     break;
-                case kw_c11_atomic_thread_fence:  
+                case kw_c11_atomic_thread_fence:
                     lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->memoryOrder1, nullptr, flags);
                     if (!d->memoryOrder2)
                         d->memoryOrder2 = d->memoryOrder1;
@@ -5070,7 +5079,7 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                         d->memoryOrder2 = d->memoryOrder1;
                     d->memoryOrder1 = exprNode(en_add, d->memoryOrder1, intNode(en_c_i, 0x80));
                     break;
-// there's extremely likely a better way to do this, maybe a lookup table for these and using that...
+                    // there's extremely likely a better way to do this, maybe a lookup table for these and using that...
                 case kw_c11_atomic_xchg:
                     lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, assign, true);
                     break;
@@ -5104,8 +5113,7 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
                 case kw_atomic_xorftch:
                     lex = atomic_modify_specific_op(lex, funcsp, tp, &tpf, d, flags, asxor, false);
                     break;
-                case kw_atomic_cmpxchg_n:
-                {
+                case kw_atomic_cmpxchg_n: {
                     bool weak = false;
                     lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->address, nullptr, flags);
                     if (tpf)
@@ -5495,10 +5503,9 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 case kw__cpblk:
                     lex = expression_msilfunc(lex, funcsp, tp, exp, flags);
                     break;
-                case openpa:
-                {
+                case openpa: {
                     lex = getsym();
-                    LEXLIST *start = lex;
+                    LEXLIST* start = lex;
                     lex = expression_comma(lex, funcsp, nullptr, tp, exp, ismutable, flags & ~(_F_INTEMPLATEPARAMS | _F_SELECTOR));
                     if (!*tp)
                         error(ERR_EXPRESSION_SYNTAX);
@@ -5528,7 +5535,7 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                                     INITLIST* p = Allocate<INITLIST>();
                                     LEXLIST* lex = SetAlternateLex(start);
                                     TYPE* tp1;
-                                    EXPRESSION *exp1;
+                                    EXPRESSION* exp1;
                                     packIndex = i;
                                     expression_comma(lex, funcsp, nullptr, &tp1, &exp1, nullptr, _F_PACKABLE);
                                     SetAlternateLex(nullptr);
@@ -7886,7 +7893,8 @@ void GetLogicalDestructors(Optimizer::LIST** rv, EXPRESSION* cur)
             int offset;
             SYMBOL* sym = nullptr;
             exp = relptr(exp, offset, true);
-            if (exp) sym = exp->v.sp;
+            if (exp)
+                sym = exp->v.sp;
             if (sym && !sym->sb->destructed && sym->sb->dest && sym->sb->dest->exp)
             {
                 Optimizer::LIST* listitem;
@@ -8419,7 +8427,7 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             *tp = nullptr;
             return lex;
         }
-        ResolveTemplateVariable(tp, exp, tp1, nullptr);        
+        ResolveTemplateVariable(tp, exp, tp1, nullptr);
         ResolveTemplateVariable(&tp1, &exp1, *tp, nullptr);
         ConstExprPromote(*exp, false);
         if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
@@ -8494,7 +8502,8 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         symRef = (Optimizer::architecture == ARCHITECTURE_MSIL) ? temp : nullptr;
         LookupSingleAggregate(tp1, &exp1);
 
-        if (((*exp)->type == en_const || isconstraw(*tp)) && !localMutable && (!temp || temp->v.sp->sb->storage_class != sc_parameter || !isarray(*tp)) &&
+        if (((*exp)->type == en_const || isconstraw(*tp)) && !localMutable &&
+            (!temp || temp->v.sp->sb->storage_class != sc_parameter || !isarray(*tp)) &&
             ((*exp)->type != en_func || !isconstraw(basetype((*exp)->v.func->sp->tp)->btp)))
             error(ERR_CANNOT_MODIFY_CONST_OBJECT);
         else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate)
@@ -8761,7 +8770,7 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     if (isstructured(*tp) && (!isstructured(tp1) || (!comparetypes(*tp, tp1, true) && !sameTemplate(tp1, *tp))))
                     {
                         if (!((Optimizer::architecture == ARCHITECTURE_MSIL) && basetype(*tp)->sp->sb->msil &&
-                            (isconstzero(tp1, exp1) || basetype(tp1)->nullptrType)))
+                              (isconstzero(tp1, exp1) || basetype(tp1)->nullptrType)))
                         {
                             comparetypes(*tp, tp1, true);
                             sameTemplate(*tp, tp1);

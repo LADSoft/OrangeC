@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -55,14 +55,12 @@ void diag(const char* fmt, ...) {}
 void Import() {}
 namespace Parser
 {
-    int anonymousNotAlloc;
-    bool IsCompiler() {
-        return true;
-    }
-}
+int anonymousNotAlloc;
+bool IsCompiler() { return true; }
+}  // namespace Parser
 namespace Optimizer
 {
-    unsigned termCount;
+unsigned termCount;
 };
 
 using namespace DotNetPELib;
@@ -71,7 +69,7 @@ PELib* peLib;
 namespace occmsil
 {
 CmdSwitchParser SwitchParser;
-CmdSwitchBool single(SwitchParser, 's', false, { "single" });
+CmdSwitchBool single(SwitchParser, 's', false, {"single"});
 
 const char* usageText =
     "[options] inputfile\n"
@@ -205,8 +203,8 @@ void ProcessData(Optimizer::BaseData* v)
             // msil_oa_genpcref(v->symbol.sym, v->symbol.i);
             break;
         case Optimizer::DT_FUNCREF:
-            //Optimizer::gen_funcref(v->symbol.sym);
-            //global(v->symbol.sym, v->symbol.i);
+            // Optimizer::gen_funcref(v->symbol.sym);
+            // global(v->symbol.sym, v->symbol.i);
             break;
         case Optimizer::DT_LABEL:
             Optimizer::gen_labref(v->i);
@@ -403,7 +401,7 @@ int main(int argc, char* argv[])
 {
     using namespace occmsil;
     bool showBanner = true;
-    for (int i=0; i < argc; i++)
+    for (int i = 0; i < argc; i++)
         if (argv[i][0] == '-' || argv[i][0] == '/')
             if (!strcmp(&argv[i][1], "M") || !strcmp(&argv[i][1], "MM"))
             {
@@ -487,7 +485,7 @@ int main(int argc, char* argv[])
         if (Optimizer::cparams.prm_displaytiming)
         {
             stopTime = clock();
-            printf("occ timing: %d.%03d\n", (stopTime - startTime)/1000, (stopTime - startTime)% 1000); 
+            printf("occ timing: %d.%03d\n", (stopTime - startTime) / 1000, (stopTime - startTime) % 1000);
         }
         if (!Optimizer::cparams.prm_compileonly)
         {

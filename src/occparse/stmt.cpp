@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /* declare in select has multiple vars */
@@ -68,7 +68,6 @@
 namespace Parser
 {
 void refreshBackendParams(SYMBOL* funcsp);
-
 
 bool isCallNoreturnFunction;
 
@@ -226,7 +225,7 @@ static void markInitializers(STATEMENT* prev)
     }
 }
 static LEXLIST* selection_expression(LEXLIST* lex, BLOCKDATA* parent, EXPRESSION** exp, SYMBOL* funcsp, enum e_kw kw,
-                                    bool* declaration)
+                                     bool* declaration)
 {
     TYPE* tp = nullptr;
     bool hasAttributes = ParseAttributeSpecifiers(&lex, funcsp, true);
@@ -411,19 +410,18 @@ static void thunkGotoDestructors(EXPRESSION** exp, BLOCKDATA* gotoTab, BLOCKDATA
     }
 }
 static void InSwitch() {}
-static void StartOfCaseGroup(SYMBOL *funcsp, BLOCKDATA* parent)
+static void StartOfCaseGroup(SYMBOL* funcsp, BLOCKDATA* parent)
 {
     caseLevel++;
-    STATEMENT *st = stmtNode(nullptr, parent, st_dbgblock);
+    STATEMENT* st = stmtNode(nullptr, parent, st_dbgblock);
     st->label = 1;
-
 }
-static void EndOfCaseGroup(SYMBOL *funcsp, BLOCKDATA * parent)
+static void EndOfCaseGroup(SYMBOL* funcsp, BLOCKDATA* parent)
 {
     if (caseLevel)
     {
         caseLevel--;
-        STATEMENT *st = stmtNode(nullptr, parent, st_dbgblock);
+        STATEMENT* st = stmtNode(nullptr, parent, st_dbgblock);
         st->label = 0;
     }
 }
@@ -766,7 +764,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 if (MATCHKW(lex, begin))
                 {
                     TYPE* matchtp = &stdint;
-                    EXPRESSION* begin, * end;
+                    EXPRESSION *begin, *end;
                     std::deque<std::pair<TYPE*, EXPRESSION*>> save;
                     INITLIST* lst;
                     lex = getInitList(lex, funcsp, &lst);
@@ -775,7 +773,8 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     if (lst)
                     {
                         int n = 0;
-                        for (auto temp = lst; temp; temp = temp->next, n++);
+                        for (auto temp = lst; temp; temp = temp->next, n++)
+                            ;
 
                         matchtp = lst->tp;
                         if (isref(matchtp))
@@ -815,7 +814,8 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         st = stmtNode(lex, forstmt, st_expr);
                                         st->select = newExp;
                                         newExp = base;
-                                        callDestructor(matchtp->sp, matchtp->sp, &newExp, intNode(en_c_i, offset / sz), true, true, false, true);
+                                        callDestructor(matchtp->sp, matchtp->sp, &newExp, intNode(en_c_i, offset / sz), true, true,
+                                                       false, true);
                                     }
                                 }
                             }
@@ -847,20 +847,19 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 st = stmtNode(lex, forstmt, st_expr);
                                 deref(&stdpointer, &base);
                                 st->select = exprNode(en_assign, base, lst->exp);
-                        
                             }
                             lst = lst->next;
-                        }                        
+                        }
                         if (isstructured(matchtp))
                         {
                             auto newExp = val;
-                            callDestructor(matchtp->sp, matchtp->sp, &newExp, intNode(en_c_i, offset/sz), true, true, false, true);
+                            callDestructor(matchtp->sp, matchtp->sp, &newExp, intNode(en_c_i, offset / sz), true, true, false,
+                                           true);
                             initInsert(&val->v.sp->sb->dest, matchtp, newExp, 0, false);
                         }
 
                         begin = val;
                         end = exprNode(en_add, val, intNode(en_c_i, offset));
-
                     }
                     else
                     {
@@ -1091,8 +1090,8 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             esp->sb->stackblock = true;
                                             funcparams->arguments = Allocate<INITLIST>();
                                             *funcparams->arguments = *fc->arguments;
-                                            callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, false, false, false,
-                                                            false, true);
+                                            callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, false, false,
+                                                            false, false, true);
                                             fc->arguments->exp = consexp;
                                         }
                                         else
@@ -1118,8 +1117,8 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             esp->sb->stackblock = true;
                                             funcparams->arguments = Allocate<INITLIST>();
                                             *funcparams->arguments = *fc->arguments;
-                                            callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, false, false, false,
-                                                            false, true);
+                                            callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, false, false,
+                                                            false, false, true);
                                             fc->arguments->exp = consexp;
                                         }
                                         else
@@ -1161,7 +1160,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         }
                         else
                         {
-                            TYPE *tpx = MakeType(bt_pointer, iteratorType);
+                            TYPE* tpx = MakeType(bt_pointer, iteratorType);
                             eBegin = anonymousVar(sc_auto, tpx);
                             eEnd = anonymousVar(sc_auto, tpx);
                             deref(&stdpointer, &eBegin);
@@ -1264,7 +1263,8 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     funcparams->arguments = args;
                                     args->tp = declSP->tp;
                                     args->exp = eBegin;
-                                    callConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false, true);
+                                    callConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false,
+                                                    true);
                                     st->select = decl;
                                     declDest = declExp;
                                     callDestructor(declSP, nullptr, &declDest, nullptr, true, true, false, true);
@@ -1312,7 +1312,8 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     funcparams->arguments = args;
                                     args->tp = declSP->tp;
                                     args->exp = st->select;
-                                    callConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false, true);
+                                    callConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false,
+                                                    true);
                                     st->select = decl;
                                     declDest = declExp;
                                     callDestructor(declSP, nullptr, &declDest, nullptr, true, true, false, true);
@@ -1365,7 +1366,8 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     st->select->v.func->returnEXP = anonymousVar(sc_auto, ppType);
                                     st->select->v.func->returnSP = st->select->v.func->returnEXP->v.sp;
                                     declDest = st->select->v.func->returnEXP;
-                                    callDestructor(st->select->v.func->returnSP, nullptr, &declDest, nullptr, true, true, false, true);
+                                    callDestructor(st->select->v.func->returnSP, nullptr, &declDest, nullptr, true, true, false,
+                                                   true);
                                     st = stmtNode(lex, forstmt, st_expr);
                                     st->select = declDest;
                                 }
@@ -1471,7 +1473,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     else
                     {
                         optimize_for_constants(&before);
-	                ConstExprPatch(&before);
+                        ConstExprPatch(&before);
                     }
                 }
                 if (!MATCHKW(lex, closepa))
@@ -1908,8 +1910,7 @@ static EXPRESSION* baseNode(EXPRESSION* node)
         case en_tempref:
         case en_threadlocal:
             return node;
-        case en_add:
-        {
+        case en_add: {
             EXPRESSION* rv = baseNode(node->left);
             if (rv)
                 return rv;
@@ -2007,7 +2008,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
                 ((SYMBOL*)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
                 sp->sb->offset = funcsp->sb->paramsize;
             deref(&stdpointer, &en);
-            if (Optimizer::cparams.prm_cplusplus && isstructured(tp))
+            if (Optimizer::cparams.prm_cplusplus && isstructured(tp) && (!basetype(tp)->sp->sb->trivialCons || MATCHKW(lex, begin)))
             {
                 bool implicit = false;
                 if (basetype(tp)->sp->sb->templateLevel && basetype(tp)->sp->templateParams && !basetype(tp)->sp->sb->instantiated)
@@ -2066,11 +2067,10 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
                     EXPRESSION* exptemp = exp1;
                     if (exptemp->type == en_thisref)
                         exptemp = exptemp->left;
-                    if (exptemp->type == en_func && isfunction(exptemp->v.func->sp->tp) &&
-                        exptemp->v.func->thisptr && comparetypes(tp, basetype(exptemp->v.func->thistp)->btp, 0) &&
+                    if (exptemp->type == en_func && isfunction(exptemp->v.func->sp->tp) && exptemp->v.func->thisptr &&
+                        comparetypes(tp, basetype(exptemp->v.func->thistp)->btp, 0) &&
                         (!basetype(tp)->sp->sb->templateLevel || sameTemplate(tp, basetype(exptemp->v.func->thistp)->btp)) &&
-                        exptemp->v.func->thisptr->type == en_auto &&
-                        exptemp->v.func->thisptr->v.sp->sb->anonymous)
+                        exptemp->v.func->thisptr->type == en_auto && exptemp->v.func->thisptr->v.sp->sb->anonymous)
                     {
                         exptemp->v.func->thisptr->v.sp->sb->destructed = true;
                         exptemp->v.func->thisptr = en;
@@ -2096,19 +2096,20 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
                         returntype = tp;
                         implicit = true;
                         // try the rref constructor first
-                        if (callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, false, false, false, false, false))
+                        if (callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, false, false, false,
+                                            false, false))
                         {
                             if (funcparams->sp && matchesCopy(funcparams->sp, true))
                             {
                                 switch (exp1->type)
                                 {
-                                case en_global:
-                                case en_auto:
-                                case en_threadlocal:
-                                    exp1->v.sp->sb->dest = nullptr;
-                                    break;
-                                default:
-                                    break;
+                                    case en_global:
+                                    case en_auto:
+                                    case en_threadlocal:
+                                        exp1->v.sp->sb->dest = nullptr;
+                                        break;
+                                    default:
+                                        break;
                                 }
                             }
                         }
@@ -2118,7 +2119,8 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
                             ctype = tp;
                             basetype(tp1)->rref = false;
                             basetype(tp1)->lref = true;
-                            callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, false, false, false, false, true);
+                            callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, false, false, false,
+                                            false, true);
                         }
                         basetype(tp1)->rref = oldrref;
                         basetype(tp1)->lref = oldlref;
@@ -3122,16 +3124,15 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacont
             error(ERR_SEH_HANDLER_WITHOUT_TRY);
             lex = statement_SEH(lex, funcsp, parent);
             break;
-        default:
-        {
+        default: {
             bool structured = false;
 
             if (((startOfType(lex, &structured, false) &&
                   ((!Optimizer::cparams.prm_cplusplus &&
                     ((Optimizer::architecture != ARCHITECTURE_MSIL) || !Optimizer::cparams.msilAllowExtensions)) ||
                    resolveToDeclaration(lex, structured)))) ||
-                MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_constexpr) ||
-                MATCHKW(lex, kw_decltype) || MATCHKW(lex, kw_static_assert))
+                MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_constexpr) || MATCHKW(lex, kw_decltype) ||
+                MATCHKW(lex, kw_static_assert))
             {
                 if (!Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_cplusplus)
                 {
@@ -3260,7 +3261,7 @@ static void insertXCInfo(SYMBOL* funcsp)
         }
     }
 }
-static bool isvoidreturntype(TYPE *tp, SYMBOL* funcsp)
+static bool isvoidreturntype(TYPE* tp, SYMBOL* funcsp)
 {
     if (isvoid(tp))
         return true;
@@ -3280,7 +3281,6 @@ static bool isvoidreturntype(TYPE *tp, SYMBOL* funcsp)
                     return isvoid(tp);
                 }
             }
-
         }
     }
     return false;
@@ -3299,6 +3299,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     currentLineData(blockstmt, lex, 0);
     AllocateLocalContext(blockstmt, funcsp, codeLabel++);
     parent->needlabel = false;
+
     if (first)
     {
         SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
@@ -3318,7 +3319,8 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
         if (Optimizer::cparams.prm_cplusplus && funcsp->sb->isConstructor && funcsp->sb->parentClass)
         {
             ParseMemberInitializers(funcsp->sb->parentClass, funcsp);
-            thisptr = thunkConstructorHead(blockstmt, funcsp->sb->parentClass, funcsp, basetype(funcsp->tp)->syms, true, false, false);
+            thisptr =
+                thunkConstructorHead(blockstmt, funcsp->sb->parentClass, funcsp, basetype(funcsp->tp)->syms, true, false, false);
         }
     }
     lex = getsym(); /* past { */
@@ -3442,8 +3444,8 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     if (Optimizer::cparams.prm_cplusplus)
         HandleEndOfSwitchBlock(blockstmt);
     FreeLocalContext(blockstmt, funcsp, codeLabel++);
-    if (first && !blockstmt->needlabel && !isvoidreturntype(basetype(funcsp->tp)->btp, funcsp) && basetype(funcsp->tp)->btp->type != bt_auto &&
-        !funcsp->sb->isConstructor)
+    if (first && !blockstmt->needlabel && !isvoidreturntype(basetype(funcsp->tp)->btp, funcsp) &&
+        basetype(funcsp->tp)->btp->type != bt_auto && !funcsp->sb->isConstructor)
     {
         if (funcsp->sb->attribs.inheritable.linkage3 == lk_noreturn)
             error(ERR_NORETURN);
@@ -3646,7 +3648,8 @@ static void checkUndefinedStructures(SYMBOL* funcsp)
             {
                 auto sym1 = basetype(tp)->sp;
                 static std::stack<TEMPLATEPARAMLIST*> stk;
-                while (!stk.empty()) stk.pop();
+                while (!stk.empty())
+                    stk.pop();
                 for (auto tpl = sym1->templateParams; tpl; tpl = tpl->next)
                 {
                     if (tpl->p->packed)
@@ -3829,7 +3832,7 @@ void parseNoexcept(SYMBOL* funcsp)
                 dropStructureDeclaration();
             dropStructureDeclaration();
         }
-    	funcsp->sb->deferredNoexcept = (LEXLIST*)-1;
+        funcsp->sb->deferredNoexcept = (LEXLIST*)-1;
         dontRegisterTemplate--;
     }
 }
@@ -3870,6 +3873,7 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     declareAndInitialize = false;
     block->type = funcsp->sb->hasTry ? kw_try : begin;
     theCurrentFunc = funcsp;
+    basetype(funcsp->tp)->btp = ResolveTemplateSelectors(funcsp, basetype(funcsp->tp)->btp);
     if (inTemplateHeader)
         templateNestingCount--;
     checkUndefinedStructures(funcsp);
@@ -3934,7 +3938,8 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
             funcsp->sb->inlineFunc.stmt->lower = block->head;
             funcsp->sb->inlineFunc.stmt->blockTail = block->blockTail;
             funcsp->sb->declaring = false;
-            if (funcsp->sb->attribs.inheritable.isInline && (Optimizer::functionHasAssembly || funcsp->sb->attribs.inheritable.linkage2 == lk_export))
+            if (funcsp->sb->attribs.inheritable.isInline &&
+                (Optimizer::functionHasAssembly || funcsp->sb->attribs.inheritable.linkage2 == lk_export))
                 funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
             if (!Optimizer::cparams.prm_allowinline)
                 funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
@@ -3947,7 +3952,8 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
                     while (hr->next)
                         hr = hr->next;
                     if (hr->p->tp->type == bt_ellipse)
-                        funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
+                        funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline =
+                            false;
                 }
             }
             if (funcsp->sb->attribs.inheritable.linkage4 == lk_virtual || funcsp->sb->attribs.inheritable.isInline)
@@ -3984,7 +3990,6 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
                     }
                 }
             }
-
         }
         if (IsCompiler() && funcNesting == 1)  // top level function
             localFree();

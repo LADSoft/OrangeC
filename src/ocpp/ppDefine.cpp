@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -78,13 +78,7 @@ ppDefine::Definition::Definition(const Definition& old) : Symbol(old.GetName())
 }
 
 ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, bool C89, bool Asmpp) :
-    expr(false),
-    include(Include),
-    c89(C89),
-    asmpp(Asmpp),
-    ctx(nullptr),
-    macro(nullptr),
-    source_date_epoch((time_t)-1)
+    expr(false), include(Include), c89(C89), asmpp(Asmpp), ctx(nullptr), macro(nullptr), source_date_epoch((time_t)-1)
 {
     char* sde = getenv("SOURCE_DATE_EPOCH");
     if (sde)
@@ -422,7 +416,7 @@ int ppDefine::LookupDefault(std::string& macro, int begin, int end, const std::s
         while (n != std::string::npos)
         {
             errfile.replace(n, 1, "\\\\");
-            n = errfile.find('\\', n+2);
+            n = errfile.find('\\', n + 2);
         }
         insert = std::string("\"") + errfile + "\"";
     }
@@ -477,7 +471,7 @@ std::string ppDefine::defid(const std::string& macroname, int& i, int& j)
             if (quoted)
             {
                 if (macroname[j] != '}')
-                    Errors::Error("Macro substition: expected '}'");    
+                    Errors::Error("Macro substition: expected '}'");
                 else
                     j++;
             }
@@ -494,7 +488,7 @@ void ppDefine::Stringize(std::string& macro)
     int waiting = 0;
     int last = 0, pos;
 
-    for (pos = 0; pos < macro.size(); pos++)    
+    for (pos = 0; pos < macro.size(); pos++)
     {
         if (!waiting && (macro[pos] == '"' || macro[pos] == '\'') && NotSlashed(macro, pos))
         {

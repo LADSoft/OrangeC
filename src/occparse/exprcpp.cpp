@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -467,12 +467,18 @@ bool cppCast(TYPE* src, TYPE** tp, EXPRESSION** exp)
         else if (isarithmetic(*tp))
         {
             TYPE* tp1 = src;
-            return castToArithmeticInternal(false, &tp1, exp, (enum e_kw) - 1, *tp, false);
+            auto rv =  castToArithmeticInternal(false, &tp1, exp, (enum e_kw) - 1, *tp, false);
+            if (isref(tp1))
+                deref(basetype(tp1)->btp, exp);
+            return rv;
         }
         else if (ispointer(*tp) || basetype(*tp)->type == bt_memberptr)
         {
             TYPE* tp1 = src;
-            return castToPointer(&tp1, exp, (enum e_kw) - 1, *tp);
+            auto rv = castToPointer(&tp1, exp, (enum e_kw) - 1, *tp);
+            if (isref(tp1))
+                deref(basetype(tp1)->btp, exp);
+            return rv;
         }
     }
     return false;
@@ -597,7 +603,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
         {
             (*tp) = basetype(*tp)->sp->tp;
             if (!(*tp)->size)
-                errorsym(ERR_STRUCT_NOT_DEFINED, basetype(*tp)->sp);    
+                errorsym(ERR_STRUCT_NOT_DEFINED, basetype(*tp)->sp);
         }
     }
     if (!MATCHKW(lex, openpa))
@@ -680,13 +686,13 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                 sym = exp1->v.sp;
                 sym->sb->constexpression = true;
                 callConstructor(&ctype, exp, funcparams, false, nullptr, true, true, false, false, false, false, true);
-                if ((*exp)->type == en_thisref && ! (*exp)->left->v.func->sp->sb->constexpression)
+                if ((*exp)->type == en_thisref && !(*exp)->left->v.func->sp->sb->constexpression)
                     sym->sb->constexpression = false;
                 PromoteConstructorArgs(funcparams->sp, funcparams);
                 callDestructor(basetype(*tp)->sp, nullptr, &exp1, nullptr, true, false, false, true);
                 if (Optimizer::architecture == ARCHITECTURE_MSIL)
                     *exp = exprNode(en_void, *exp, exp2);
-                else if (!funcparams->arguments) // empty parens means value constructed, e.g. set the thing to zero...
+                else if (!funcparams->arguments)  // empty parens means value constructed, e.g. set the thing to zero...
                 {
                     EXPRESSION* clr = exprNode(en_blockclear, exp2, nullptr);
                     clr->size = sym->tp->size;
@@ -1207,7 +1213,7 @@ LEXLIST* GetCastInfo(LEXLIST* lex, SYMBOL* funcsp, TYPE** newType, TYPE** oldTyp
                 }
                 if ((*oldType)->type == bt_aggregate)
                 {
-                    TYPE *tp = *newType;
+                    TYPE* tp = *newType;
                     if (isref(tp))
                         tp = basetype(tp)->btp;
                     if (isfuncptr(tp))
@@ -1222,7 +1228,7 @@ LEXLIST* GetCastInfo(LEXLIST* lex, SYMBOL* funcsp, TYPE** newType, TYPE** oldTyp
                             (*oldExp)->v.func->functp = sym->tp;
                             (*oldExp)->v.func->fcall = varNode(en_pc, sym);
                         }
-                    }                    
+                    }
                 }
             }
             else
@@ -1391,12 +1397,12 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
     STRUCTSYM l;
     if (!*tp)
         return false;
-    TYPE*tpClean = *tp;
+    TYPE* tpClean = *tp;
     if (isref(tpClean))
-       tpClean = basetype(tpClean)->btp;
-    TYPE*tp1Clean = tp1;
+        tpClean = basetype(tpClean)->btp;
+    TYPE* tp1Clean = tp1;
     if (tp1Clean && isref(tp1Clean))
-       tp1Clean = basetype(tp1Clean)->btp;
+        tp1Clean = basetype(tp1Clean)->btp;
     if (tpClean && tpClean->scoped && basetype(tpClean)->type != bt_enum)
         tpClean = tpClean->btp;
     if (tp1Clean && tp1Clean->scoped && basetype(tp1Clean)->type != bt_enum)
@@ -1405,7 +1411,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         ((!tp1Clean && !args) || (tp1Clean && !isstructured(tp1Clean) && basetype(tp1Clean)->type != bt_enum)))
         return false;
 
-    *tp = PerformDeferredInitialization (*tp, funcsp);
+    *tp = PerformDeferredInitialization(*tp, funcsp);
     // first find some occurrance either in the locals or in the extant global namespace
     // but only if it is binary or unary...
     switch (cls)
@@ -1453,7 +1459,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         l.str = nullptr;
         if (basetype(tpClean)->type == bt_enum && tpClean->sp)
         {
-            Optimizer::LIST aa{ nullptr, tpClean->sp->sb->parentNameSpace };
+            Optimizer::LIST aa{nullptr, tpClean->sp->sb->parentNameSpace};
             tpClean->sp->sb->templateNameSpace = aa.data ? &aa : nullptr;
             int n = PushTemplateNamespace(basetype(tpClean)->sp);  // used for more than just templates here
             s4 = namespacesearch(name, globalNameSpace, false, false);
@@ -1478,9 +1484,9 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
                 tp1->rref = true;
             }
         }
-        else if (tp1->sp)// enum
+        else if (tp1->sp)  // enum
         {
-            Optimizer::LIST aa{ nullptr, tp1->sp->sb->parentNameSpace };
+            Optimizer::LIST aa{nullptr, tp1->sp->sb->parentNameSpace};
             tp1->sp->sb->templateNameSpace = aa.data ? &aa : nullptr;
             int n = PushTemplateNamespace(basetype(tp1)->sp);  // used for more than just templates here
             s5 = namespacesearch(name, globalNameSpace, false, false);
@@ -1496,7 +1502,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         return false;
     }
     // finally make a shell to put all this in and add shims for any builtins we want to try
-    tpx  = MakeType(bt_aggregate);
+    tpx = MakeType(bt_aggregate);
     s3 = makeID(sc_overloads, tpx, nullptr, name);
     tpx->sp = s3;
     SetLinkerNames(s3, lk_c);
@@ -1637,32 +1643,32 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         // which we do by returning false...
         switch (cls)
         {
-        case ovcl_unary_any:
-        case ovcl_unary_prefix:
-        case ovcl_unary_numeric:
-        case ovcl_unary_int:
-        case ovcl_unary_numericptr:
-        case ovcl_unary_postfix:
-        case ovcl_binary_any:
-        case ovcl_binary_numeric:
-        case ovcl_binary_int:
-        case ovcl_binary_numericptr:
-            if (!isstructured(tpClean) && (!tp1Clean || !isstructured(tp1Clean)))
-            {
-                SYMLIST* hr = basetype(s3->tp)->syms->table[0];
-                if (hr->p->sb->thisPtr)
-                    hr = hr->next;
-                TYPE* arg1 = hr->p->tp;
-                TYPE* arg2 = tp1 && hr->next ? hr->next->p->tp : nullptr;
-                if (arg1 && isref(arg1))
-                    arg1 = basetype(arg1)->btp;
-                if (arg2 && isref(arg2))
-                    arg2 = basetype(arg2)->btp;
-                if (((basetype(tpClean)->type == bt_enum) != (basetype(arg1)->type == bt_enum))
-                    || (tp1Clean && ((basetype(tp1Clean)->type == bt_enum) != (basetype(arg2)->type == bt_enum))))
-                    return false;
-                break;
-            }
+            case ovcl_unary_any:
+            case ovcl_unary_prefix:
+            case ovcl_unary_numeric:
+            case ovcl_unary_int:
+            case ovcl_unary_numericptr:
+            case ovcl_unary_postfix:
+            case ovcl_binary_any:
+            case ovcl_binary_numeric:
+            case ovcl_binary_int:
+            case ovcl_binary_numericptr:
+                if (!isstructured(tpClean) && (!tp1Clean || !isstructured(tp1Clean)))
+                {
+                    SYMLIST* hr = basetype(s3->tp)->syms->table[0];
+                    if (hr->p->sb->thisPtr)
+                        hr = hr->next;
+                    TYPE* arg1 = hr->p->tp;
+                    TYPE* arg2 = tp1 && hr->next ? hr->next->p->tp : nullptr;
+                    if (arg1 && isref(arg1))
+                        arg1 = basetype(arg1)->btp;
+                    if (arg2 && isref(arg2))
+                        arg2 = basetype(arg2)->btp;
+                    if (((basetype(tpClean)->type == bt_enum) != (basetype(arg1)->type == bt_enum)) ||
+                        (tp1Clean && ((basetype(tp1Clean)->type == bt_enum) != (basetype(arg2)->type == bt_enum))))
+                        return false;
+                    break;
+                }
         }
         *tp = ctype;
         if (ismember(s3))
@@ -2295,7 +2301,7 @@ static bool noexceptExpression(EXPRESSION* node)
             fp = node->v.func;
             {
                 SYMBOL* sym = fp->sp;
-//rv = sym->sb->xcMode == xc_none || (sym->sb->xcMode == xc_dynamic && (!sym->sb->xc || !sym->sb->xc->xcDynamic));
+                // rv = sym->sb->xcMode == xc_none || (sym->sb->xcMode == xc_dynamic && (!sym->sb->xc || !sym->sb->xc->xcDynamic));
                 rv = sym->sb->noExcept;
             }
             break;

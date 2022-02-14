@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef OBJIEEE_H
@@ -65,8 +65,10 @@ class ObjIeeeBinary : public ObjIOBase
     };
 
   public:
-    ObjIeeeBinary(const ObjString Name, bool CaseSensitive = true) : 
-        ObjIOBase(Name, CaseSensitive), ioBufferLen(0), ioBuffer(0),
+    ObjIeeeBinary(const ObjString Name, bool CaseSensitive = true) :
+        ObjIOBase(Name, CaseSensitive),
+        ioBufferLen(0),
+        ioBuffer(0),
         file(nullptr),
         factory(nullptr),
         sfile(nullptr),
@@ -74,7 +76,8 @@ class ObjIeeeBinary : public ObjIOBase
         currentDataSection(nullptr),
         ioBufferPos(0),
         lineno(0)
-        {}
+    {
+    }
     virtual ~ObjIeeeBinary() {}
     virtual bool Write(FILE* fil, ObjFile* File, ObjFactory* Factory)
     {
@@ -101,8 +104,7 @@ class ObjIeeeBinary : public ObjIOBase
     {
       public:
         SyntaxError(int lineno) :
-            std::domain_error(std::string("Syntax Error in line ") + Utils::NumberToString(lineno)),
-            lineNo(lineno)
+            std::domain_error(std::string("Syntax Error in line ") + Utils::NumberToString(lineno)), lineNo(lineno)
         {
         }
         virtual ~SyntaxError() noexcept {};
@@ -163,9 +165,8 @@ class ObjIeeeBinary : public ObjIOBase
         unsigned rv;
         if (buffer[*pos] & 0x80)
         {
-            rv = (buffer[(*pos)++] & 0x7f) << 8 ;
+            rv = (buffer[(*pos)++] & 0x7f) << 8;
             rv += buffer[(*pos)++] << 0;
-
         }
         else
         {
@@ -206,15 +207,17 @@ class ObjIeeeBinary : public ObjIOBase
     bool ModuleAttributes(const ObjByte* buffer, eParseType ParseType);
     bool ModuleDate(const ObjByte* buffer, eParseType ParseType);
 #ifndef __ORANGEC__
-    [[noreturn]] // Satisfy the analyzer for MSVC so it shuts up on a bunch of other functions, but because of errors from OrangeC this actually doesn't work, and it needs to be bool here to satisfy a function thing...
+    [[noreturn]]  // Satisfy the analyzer for MSVC so it shuts up on a bunch of other functions, but because of errors from OrangeC
+                  // this actually doesn't work, and it needs to be bool here to satisfy a function thing...
 #endif
-    bool ThrowSyntax(const ObjByte* buffer, eParseType ParseType)
+                  bool
+                  ThrowSyntax(const ObjByte* buffer, eParseType ParseType)
     {
         (void)buffer;
         (void)ParseType;
         SyntaxError e(lineno);
         throw e;
-        return false; // In case exceptions are disabled, return *SOMETHING*
+        return false;  // In case exceptions are disabled, return *SOMETHING*
     }
 
     bool Parse(const ObjByte* buffer, eParseType ParseType);
@@ -393,8 +396,7 @@ class ObjIeeeAscii : public ObjIOBase
     {
       public:
         SyntaxError(int lineno) :
-            std::domain_error(std::string("Syntax Error in line ") + Utils::NumberToString(lineno)),
-            lineNo(lineno)
+            std::domain_error(std::string("Syntax Error in line ") + Utils::NumberToString(lineno)), lineNo(lineno)
         {
         }
         virtual ~SyntaxError() noexcept {};
@@ -450,10 +452,11 @@ class ObjIeeeAscii : public ObjIOBase
     bool ModuleEnd(const char* buffer, eParseType ParseType);
     bool ModuleAttributes(const char* buffer, eParseType ParseType);
     bool ModuleDate(const char* buffer, eParseType ParseType);
-    #ifndef __ORANGEC__
-    [[noreturn]] // Same as above
-    #endif
-    bool ThrowSyntax(const char* buffer, eParseType ParseType)
+#ifndef __ORANGEC__
+    [[noreturn]]  // Same as above
+#endif
+    bool
+    ThrowSyntax(const char* buffer, eParseType ParseType)
     {
         (void)buffer;
         (void)ParseType;

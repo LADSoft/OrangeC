@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef AsmExpr_h
@@ -71,14 +71,14 @@ class AsmExprNode : public AdlExprNode
         BASED,
         REG
     };
-    AsmExprNode(Type xType, AsmExprNode* Left = nullptr, AsmExprNode* Right = nullptr) : AdlExprNode(0),
-        type(xType),
-        left(Left),
-        right(Right),
-        sect(nullptr)
+    AsmExprNode(Type xType, AsmExprNode* Left = nullptr, AsmExprNode* Right = nullptr) :
+        AdlExprNode(0), type(xType), left(Left), right(Right), sect(nullptr)
     {
     }
-    AsmExprNode(PPINT Ival, bool reg = false) : AdlExprNode(Ival), type(reg ? REG : IVAL), sect(nullptr), left(nullptr), right(nullptr) {}
+    AsmExprNode(PPINT Ival, bool reg = false) :
+        AdlExprNode(Ival), type(reg ? REG : IVAL), sect(nullptr), left(nullptr), right(nullptr)
+    {
+    }
     AsmExprNode(const FPF& Fval) : AdlExprNode(0), type(FVAL), fval(Fval), sect(nullptr), left(nullptr), right(nullptr) {}
     AsmExprNode(std::string lbl) : AdlExprNode(0), type(LABEL), label(lbl), sect(nullptr), left(nullptr), right(nullptr) {}
     AsmExprNode(Section* Sect, int offs) : AdlExprNode(offs), type(BASED), sect(Sect), left(nullptr), right(nullptr) {}

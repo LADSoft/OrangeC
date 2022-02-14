@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -94,7 +94,7 @@ CmdSwitchBool prm_viaassembly(switchParser, '#');
 CmdSwitchBool displayTiming(switchParser, 't');
 CmdSwitchInt prm_stackalign(switchParser, 's', 16, 0, 2048);
 CmdSwitchString prm_error(switchParser, 'E');
-CmdSwitchString prm_Werror(switchParser, 0, 0, { "Werror" }); // doesn't do anything, just to help the libcxx tests...
+CmdSwitchString prm_Werror(switchParser, 0, 0, {"Werror"});  // doesn't do anything, just to help the libcxx tests...
 CmdSwitchString prm_define(switchParser, 'D', ';');
 CmdSwitchString prm_undefine(switchParser, 'U', ';');
 CmdSwitchFile prm_file(switchParser, '@');
@@ -105,55 +105,55 @@ CmdSwitchString prm_warning(switchParser, 'w', ';');
 CmdSwitchCombineString prm_output(switchParser, 'o');
 CmdSwitchCombineString prm_tool(switchParser, 'p', ';');
 CmdSwitchCombineString prm_language(switchParser, 'x');
-CmdSwitchBool prm_nostdinc(switchParser, 0, false, { "nostdinc" });
-CmdSwitchBool prm_nostdincpp(switchParser, 0, false, { "nostdinc++" });
-CmdSwitchString prm_std(switchParser, 0, 0, { "std" });
+CmdSwitchBool prm_nostdinc(switchParser, 0, false, {"nostdinc"});
+CmdSwitchBool prm_nostdincpp(switchParser, 0, false, {"nostdinc++"});
+CmdSwitchString prm_std(switchParser, 0, 0, {"std"});
 CmdSwitchCombineString prm_library(switchParser, 'l', ';');
-CmdSwitchBool prm_prmSyntaxOnly(switchParser, 0, false, { "fsyntax-only" }); // doesn't do anything yet
+CmdSwitchBool prm_prmSyntaxOnly(switchParser, 0, false, {"fsyntax-only"});  // doesn't do anything yet
 
 CmdSwitchCombineString prm_cinclude(switchParser, 'I', ';');
 CmdSwitchCombineString prm_Csysinclude(switchParser, 'z', ';');
 CmdSwitchCombineString prm_CPPsysinclude(switchParser, 'Z', ';');
 CmdSwitchCombineString prm_libpath(switchParser, 'L', ';');
 CmdSwitchString prm_pipe(switchParser, 'P', ';');
-CmdSwitchCombineString prm_output_def_file(switchParser, 0, 0, { "output-def" });
+CmdSwitchCombineString prm_output_def_file(switchParser, 0, 0, {"output-def"});
 CmdSwitchCombineString prm_flags(switchParser, 'f', ';');
-CmdSwitchBool prm_export_all(switchParser, 0, false, { "export-all-symbols" });
+CmdSwitchBool prm_export_all(switchParser, 0, false, {"export-all-symbols"});
 
 CmdSwitchBool prm_msil_noextensions(switchParser, 'd');
 CmdSwitchString prm_msil_strongnamekeyfile(switchParser, 'K');
 CmdSwitchString prm_msil_namespace(switchParser, 'N');
 CmdSwitchString prm_msil_version(switchParser, 'V');
-CmdSwitchCombineString prm_architecture(switchParser, 0, 0, { "architecture" });
+CmdSwitchCombineString prm_architecture(switchParser, 0, 0, {"architecture"});
 
 CmdSwitchString prm_Winmode(switchParser, 'W');
-CmdSwitchCombineString OutputDefFile(switchParser, 0, 0, { "output-def" });
-CmdSwitchBool ExportAll(switchParser, 0, false, { "export-all-symbols" });
+CmdSwitchCombineString OutputDefFile(switchParser, 0, 0, {"output-def"});
+CmdSwitchBool ExportAll(switchParser, 0, false, {"export-all-symbols"});
 
 CmdSwitchString AssemblerExtension(switchParser, 'a');
 
-CmdSwitchString prmLink(switchParser, 0, 0, { "link" });
-CmdSwitchString prmDll(switchParser, 0, 0, { "dll" });
-CmdSwitchString prmShared(switchParser, 0, 0, { "shared" });
+CmdSwitchString prmLink(switchParser, 0, 0, {"link"});
+CmdSwitchString prmDll(switchParser, 0, 0, {"dll"});
+CmdSwitchString prmShared(switchParser, 0, 0, {"shared"});
 
-CmdSwitchBool prmDumpVersion(switchParser, 0, 0, { "dumpversion" });
-CmdSwitchBool prmDumpMachine(switchParser, 0, 0, { "dumpmachine" });
-CmdSwitchCombineString prmPrintFileName(switchParser, 0, 0, { "print-file-name" });
-CmdSwitchCombineString prmPrintProgName(switchParser, 0, 0, { "print-prog-name" });
+CmdSwitchBool prmDumpVersion(switchParser, 0, 0, {"dumpversion"});
+CmdSwitchBool prmDumpMachine(switchParser, 0, 0, {"dumpmachine"});
+CmdSwitchCombineString prmPrintFileName(switchParser, 0, 0, {"print-file-name"});
+CmdSwitchCombineString prmPrintProgName(switchParser, 0, 0, {"print-prog-name"});
 
-CmdSwitchBool prmPIC(switchParser, 0, 0, { "fPIC" }); // ignored for now
-CmdSwitchBool prmWall(switchParser, 0, 0, { "Wall" }); // ignored for now
-CmdSwitchBool prmWextra(switchParser, 0, 0, { "Wextra" }); // ignored for now
+CmdSwitchBool prmPIC(switchParser, 0, 0, {"fPIC"});       // ignored for now
+CmdSwitchBool prmWall(switchParser, 0, 0, {"Wall"});      // ignored for now
+CmdSwitchBool prmWextra(switchParser, 0, 0, {"Wextra"});  // ignored for now
 
-CmdSwitchBool MakeStubsOption(switchParser, 0, 0, { "M" });
-CmdSwitchBool MakeStubsUser(switchParser, 0, 0, { "MM" });
-CmdSwitchCombineString MakeStubsOutputFile(switchParser, 0, ';', { "MF" });
-CmdSwitchBool MakeStubsMissingHeaders(switchParser, 0, 0, { "MG" });
-CmdSwitchBool MakeStubsPhonyTargets(switchParser, 0, 0, { "MP" });
-CmdSwitchCombineString MakeStubsTargets(switchParser, 0, ';', { "MT" });
-CmdSwitchCombineString MakeStubsQuotedTargets(switchParser, 0, ';', { "MQ" });
-CmdSwitchBool MakeStubsContinue(switchParser, 0, 0, { "MD" });
-CmdSwitchBool MakeStubsContinueUser(switchParser, 0, 0, { "MMD" });
+CmdSwitchBool MakeStubsOption(switchParser, 0, 0, {"M"});
+CmdSwitchBool MakeStubsUser(switchParser, 0, 0, {"MM"});
+CmdSwitchCombineString MakeStubsOutputFile(switchParser, 0, ';', {"MF"});
+CmdSwitchBool MakeStubsMissingHeaders(switchParser, 0, 0, {"MG"});
+CmdSwitchBool MakeStubsPhonyTargets(switchParser, 0, 0, {"MP"});
+CmdSwitchCombineString MakeStubsTargets(switchParser, 0, ';', {"MT"});
+CmdSwitchCombineString MakeStubsQuotedTargets(switchParser, 0, ';', {"MQ"});
+CmdSwitchBool MakeStubsContinue(switchParser, 0, 0, {"MD"});
+CmdSwitchBool MakeStubsContinueUser(switchParser, 0, 0, {"MMD"});
 
 static std::string firstFile;
 
@@ -369,14 +369,14 @@ static int DisplayerParams()
     }
     if (prmPrintFileName.GetExists())
     {
-        char *orangec = getenv("ORANGEC");
-        std::string cmd=std::string(orangec) + "\\bin\\olink --print-file-name " + prmPrintFileName.GetValue();
+        char* orangec = getenv("ORANGEC");
+        std::string cmd = std::string(orangec) + "\\bin\\olink --print-file-name " + prmPrintFileName.GetValue();
         if (prm_libpath.GetExists())
             cmd += " /L " + prm_libpath.GetValue();
         mysystem(cmd.c_str());
         rv = 1;
     }
-    if (prmPrintProgName.GetExists()) 
+    if (prmPrintProgName.GetExists())
     {
         std::string tool = prmPrintProgName.GetValue();
         if (!tool.size())
@@ -384,7 +384,7 @@ static int DisplayerParams()
             printf(" ");
             rv = 1;
         }
-        else 
+        else
         {
             auto splitval = Utils::split(tool);
             if (splitval.size() != 1)
@@ -393,7 +393,7 @@ static int DisplayerParams()
                     if (v == "cpp")
                         tool = v;
             }
-            char *orangec = getenv("ORANGEC");
+            char* orangec = getenv("ORANGEC");
             std::string path;
             if (orangec)
             {
@@ -549,7 +549,7 @@ static void ParamTransfer(char* name)
             Optimizer::cparams.prm_maxerr = n;
         DisableTrivialWarnings();
     }
-    if(prm_Werror.GetExists())
+    if (prm_Werror.GetExists())
     {
         const std::string& string = prm_Werror.GetValue();
         size_t errstart = 0;
@@ -613,8 +613,7 @@ static void ParamTransfer(char* name)
     {
         switch (Optimizer::architecture)
         {
-            case ARCHITECTURE_MSIL:
-            {
+            case ARCHITECTURE_MSIL: {
                 auto v = Utils::split(prm_libpath.GetValue());
                 for (auto&& s : v)
                 {
@@ -739,7 +738,7 @@ void setglbdefs(void)
             case 14:
                 preProcessor->Define("__cplusplus", "201402");
                 break;
-            case 17: 
+            case 17:
                 preProcessor->Define("__cplusplus", "201703");
                 break;
         }
@@ -747,7 +746,10 @@ void setglbdefs(void)
             preProcessor->Define("__RTTI__", "1");
         Optimizer::ARCH_SIZING* local_store_of_locks = Optimizer::chosenAssembler->arch->type_needsLock;
 
-        preProcessor->Define("ATOMIC_BOOL_LOCK_FREE", std::to_string((local_store_of_locks->a_bool == 0) ? 2 : 0)); // In our current system, 0 means always lock free, so change it to conform
+        preProcessor->Define("ATOMIC_BOOL_LOCK_FREE",
+                             std::to_string((local_store_of_locks->a_bool == 0)
+                                                ? 2
+                                                : 0));  // In our current system, 0 means always lock free, so change it to conform
         preProcessor->Define("ATOMIC_CHAR_LOCK_FREE", std::to_string((local_store_of_locks->a_char == 0) ? 2 : 0));
         preProcessor->Define("ATOMIC_WCHAR_T_LOCK_FREE", std::to_string((local_store_of_locks->a_wchar_t == 0) ? 2 : 0));
         preProcessor->Define("ATOMIC_SHORT_LOCK_FREE", std::to_string((local_store_of_locks->a_short == 0) ? 2 : 0));
@@ -756,7 +758,11 @@ void setglbdefs(void)
         preProcessor->Define("ATOMIC_LLONG_LOCK_FREE", std::to_string((local_store_of_locks->a_longlong == 0) ? 2 : 0));
         preProcessor->Define("ATOMIC_POINTER_LOCK_FREE", std::to_string((local_store_of_locks->a_addr == 0) ? 2 : 0));
 
-        preProcessor->Define("ATOMIC_CHAR16_T_LOCK_FREE", std::to_string((local_store_of_locks->a_char16_t == 0) ? 2 : 0)); // temporary since this is how it's done internally, will fix when sizing is fixed
+        preProcessor->Define(
+            "ATOMIC_CHAR16_T_LOCK_FREE",
+            std::to_string((local_store_of_locks->a_char16_t == 0)
+                               ? 2
+                               : 0));  // temporary since this is how it's done internally, will fix when sizing is fixed
         preProcessor->Define("ATOMIC_CHAR32_T_LOCK_FREE", std::to_string((local_store_of_locks->a_char32_t == 0) ? 2 : 0));
         preProcessor->Define("__ATOMIC_RELAXED", std::to_string(Optimizer::e_mo::mo_relaxed));
         preProcessor->Define("__ATOMIC_CONSUME", std::to_string(Optimizer::e_mo::mo_consume));
@@ -781,7 +787,10 @@ void setglbdefs(void)
         preProcessor->Define("__STDC_VERSION__", "201112L");
         Optimizer::ARCH_SIZING* local_store_of_locks = Optimizer::chosenAssembler->arch->type_needsLock;
 
-        preProcessor->Define("ATOMIC_BOOL_LOCK_FREE", std::to_string((local_store_of_locks->a_bool == 0) ? 2 : 0)); // In our current system, 0 means always lock free, so change it to conform
+        preProcessor->Define("ATOMIC_BOOL_LOCK_FREE",
+                             std::to_string((local_store_of_locks->a_bool == 0)
+                                                ? 2
+                                                : 0));  // In our current system, 0 means always lock free, so change it to conform
         preProcessor->Define("ATOMIC_CHAR_LOCK_FREE", std::to_string((local_store_of_locks->a_char == 0) ? 2 : 0));
         preProcessor->Define("ATOMIC_WCHAR_T_LOCK_FREE", std::to_string((local_store_of_locks->a_wchar_t == 0) ? 2 : 0));
         preProcessor->Define("ATOMIC_SHORT_LOCK_FREE", std::to_string((local_store_of_locks->a_short == 0) ? 2 : 0));
@@ -790,7 +799,11 @@ void setglbdefs(void)
         preProcessor->Define("ATOMIC_LLONG_LOCK_FREE", std::to_string((local_store_of_locks->a_longlong == 0) ? 2 : 0));
         preProcessor->Define("ATOMIC_POINTER_LOCK_FREE", std::to_string((local_store_of_locks->a_addr == 0) ? 2 : 0));
 
-        preProcessor->Define("ATOMIC_CHAR16_T_LOCK_FREE", std::to_string((local_store_of_locks->a_char16_t == 0) ? 2 : 0)); // temporary since this is how it's done internally, will fix when sizing is fixed
+        preProcessor->Define(
+            "ATOMIC_CHAR16_T_LOCK_FREE",
+            std::to_string((local_store_of_locks->a_char16_t == 0)
+                               ? 2
+                               : 0));  // temporary since this is how it's done internally, will fix when sizing is fixed
         preProcessor->Define("ATOMIC_CHAR32_T_LOCK_FREE", std::to_string((local_store_of_locks->a_char32_t == 0) ? 2 : 0));
 
         preProcessor->Define("__ATOMIC_RELAXED", std::to_string(Optimizer::e_mo::mo_relaxed));
@@ -807,7 +820,7 @@ void setglbdefs(void)
     else
     {
         preProcessor->Define("__STDC_VERSION__", "199409L");
-    }    
+    }
     /*   preProcessor->Define("__STDC_IEC_599__","1");*/
     /*   preProcessor->Define("__STDC_IEC_599_COMPLEX__","1");*/
     /*   preProcessor->Define("__STDC_ISO_10646__","199712L");*/
@@ -939,11 +952,11 @@ void InsertAnyFile(const char* filename, char* path, int drive)
     struct _finddata_t findbuf;
     size_t n;
     _splitpath(filename, drv, dir, name, ext);
-#ifdef BORLAND
-    n = _findfirst(const_cast<char *>(filename), &findbuf);
-#else
+#    ifdef BORLAND
+    n = _findfirst(const_cast<char*>(filename), &findbuf);
+#    else
     n = _findfirst(filename, &findbuf);
-#endif
+#    endif
     if (n != -1)
     {
         do
@@ -1074,7 +1087,7 @@ int ccinit(int argc, char* argv[])
             else if (!getenv("OCC_LEGACY_OPTIONS") && argv[i][1] == 'v' && argv[i][2] == 0)
             {
                 showVersion = true;
-            } 
+            }
             else if (!strncmp(&argv[i][1], "print", 5) || !strncmp(&argv[i][1], "dump", 4))
             {
                 Optimizer::showBanner = false;
@@ -1103,7 +1116,7 @@ int ccinit(int argc, char* argv[])
     GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
 #else
     strcpy(buffer, argv[0]);
-	#endif
+#endif
 
     if (!getenv("ORANGEC"))
     {

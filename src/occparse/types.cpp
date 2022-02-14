@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -135,7 +135,7 @@ bool comparetypes(TYPE* typ1, TYPE* typ2, int exact)
             typ1 = basetype(typ1)->btp;
         if (ispointer(typ2))
             typ2 = basetype(typ2)->btp;
-        if (!comparetypes(typ1->btp, typ2->btp, exact))
+        if (isref(typ1->btp) != isref(typ2->btp) || !comparetypes(typ1->btp, typ2->btp, exact))
             return false;
         if (!matchOverload(typ1, typ2, true))
             return false;
@@ -582,8 +582,7 @@ TYPE* typenum(char* buf, TYPE* tp)
             unmangle(name, tp->sp->sb->decoratedName ? tp->sp->sb->decoratedName : tp->sp->name);
             strcpy(buf, name);
             break;
-        case bt_templateselector:
-        {
+        case bt_templateselector: {
             TEMPLATESELECTOR* ts = tp->sp->sb->templateSelector->next;
             if (ts->sp)
             {

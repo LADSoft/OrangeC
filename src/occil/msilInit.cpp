@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -107,7 +107,6 @@ MethodSignature* FindMethodSignature(const char* name)
     return NULL;
 }
 
-
 MethodSignature* FindMethodSignature(const char* name, std::vector<Type*>& typeList, Type* rv = nullptr)
 {
     Method* result;
@@ -118,7 +117,6 @@ MethodSignature* FindMethodSignature(const char* name, std::vector<Type*>& typeL
     Utils::fatal("could not find built in method %s", name);
     return NULL;
 }
-
 
 Type* FindType(const char* name, bool toErr)
 {
@@ -177,7 +175,7 @@ static void CreateExternalCSharpReferences()
             ns->Add(pointer);
             MethodSignature* sig =
                 peLib->AllocateMethodSignature("ToPointer", MethodSignature::Managed | MethodSignature::InstanceFlag, pointer);
-            Type *rt = peLib->AllocateType(Type::i8, 1);
+            Type* rt = peLib->AllocateType(Type::i8, 1);
             sig->ReturnType(rt);
             sig->AddParam(peLib->AllocateParam("param", peLib->AllocateType(Type::string, 0)));
         }
@@ -192,17 +190,17 @@ static void CreateExternalCSharpReferences()
 
     if (Optimizer::delegateforfuncptr)
     {
-        delegateInvoker = peLib->AllocateMethodSignature("__OCCMSIL_Invoke",MethodSignature::Vararg, nullptr);
+        delegateInvoker = peLib->AllocateMethodSignature("__OCCMSIL_Invoke", MethodSignature::Vararg, nullptr);
         delegateInvoker->ReturnType(peLib->AllocateType(Type::Void, 1));
         delegateInvoker->AddParam(peLib->AllocateParam("func", peLib->AllocateType(Type::Void, 1)));
         delegateInvoker->AddParam(peLib->AllocateParam("func", peLib->AllocateType(Type::i32, 0)));
-        peLib->AddPInvokeReference(delegateInvoker,"occmsil.dll", true);
+        peLib->AddPInvokeReference(delegateInvoker, "occmsil.dll", true);
         delegateAllocator = FindMethodSignature("lsmsilcrtl.MethodPtr::Allocate");
         delegateFreer = FindMethodSignature("lsmsilcrtl.MethodPtr::Free");
-	    multicastDelegate = static_cast<Class*>(FindType("System.MulticastDelegate", true)->GetClass());
+        multicastDelegate = static_cast<Class*>(FindType("System.MulticastDelegate", true)->GetClass());
     }
     Type* voidStar = peLib->AllocateType(Type::Void, 1);
-    std::vector<Type* > params = {voidStar}; 
+    std::vector<Type*> params = {voidStar};
     toInt = FindMethodSignature("System.IntPtr.op_Explicit", params);
     params.clear();
     params.push_back(intPtr);

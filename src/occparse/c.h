@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 namespace Parser
@@ -318,7 +318,7 @@ typedef struct expr
             _COMPLEX_S* c;
             struct
             {
-                struct sym* sp;   /* sym will be defined later */
+                struct sym* sp; /* sym will be defined later */
                 struct ConstExprArgArray constexprData;
             };
             const char* name; /* name during base class processing */
@@ -338,7 +338,7 @@ typedef struct expr
             struct
             {
                 struct typ* tp;
-                struct lexlist *deferred;
+                struct lexlist* deferred;
             } construct;
             struct
             {
@@ -364,7 +364,7 @@ typedef struct expr
     int isfunc : 1;
     int dest : 1;  // for thisref
     int noexprerr : 1;
-    int init : 1; // for no replacement by a constexpr array
+    int init : 1;  // for no replacement by a constexpr array
 } EXPRESSION;
 
 typedef struct _msilarray
@@ -396,7 +396,7 @@ struct u_val
 {
     union
     {
-        long long i;          /* int val */
+        long long i; /* int val */
         union
         {
             const char* a; /* string val */
@@ -557,21 +557,21 @@ struct attributes
 {
     struct
     {
-        int structAlign;        /* alignment of structures/ unions */
-        int warnAlign;          /* if nz, warn if not aligned */
-        unsigned vectorSize;    /* total size of a vectored attribute */
-        enum e_lk linkage;      /* stdcall */
-        enum e_lk linkage2;     /* export, import, msil */
-        enum e_lk linkage3;     /* used here for noreturn */
-        enum e_lk linkage4;     /* lk_virtual */
-        struct sym* cleanup;    /* cleanup function */
-        bool packed;            /* True if to reset alignment to 1 */
-        bool alignedAttribute;  /* True if alignment came from gcc aligned attribute */
-        unsigned used : 1;      /* value has been fetched */
-        unsigned nonstring : 1; /* value is not a zero terminated string */
-        unsigned zstring : 1;   // (argument) was tagged as a zero terminated string
-        unsigned isInline : 1;  /* function is inlined */
-        unsigned excludeFromExplicitInstantiation : 1; // template member should be instantiated implicitly
+        int structAlign;                                /* alignment of structures/ unions */
+        int warnAlign;                                  /* if nz, warn if not aligned */
+        unsigned vectorSize;                            /* total size of a vectored attribute */
+        enum e_lk linkage;                              /* stdcall */
+        enum e_lk linkage2;                             /* export, import, msil */
+        enum e_lk linkage3;                             /* used here for noreturn */
+        enum e_lk linkage4;                             /* lk_virtual */
+        struct sym* cleanup;                            /* cleanup function */
+        bool packed;                                    /* True if to reset alignment to 1 */
+        bool alignedAttribute;                          /* True if alignment came from gcc aligned attribute */
+        unsigned used : 1;                              /* value has been fetched */
+        unsigned nonstring : 1;                         /* value is not a zero terminated string */
+        unsigned zstring : 1;                           // (argument) was tagged as a zero terminated string
+        unsigned isInline : 1;                          /* function is inlined */
+        unsigned excludeFromExplicitInstantiation : 1;  // template member should be instantiated implicitly
     } inheritable;
     struct
     {
@@ -586,9 +586,9 @@ typedef struct sym
     const char* name;
     TYPE* tp;
     struct _templateParamList* templateParams;
-    unsigned packed : 1;  // packed template param instance
-    unsigned synthesized : 1; // packed template param was synthesized during parsing
-    int parserSet : 1;                        /* sent to parser already*/
+    unsigned packed : 1;       // packed template param instance
+    unsigned synthesized : 1;  // packed template param was synthesized during parsing
+    int parserSet : 1;         /* sent to parser already*/
     struct _symbody
     {
         const char* decoratedName; /* symbol name with decorations, as used in output format */
@@ -609,31 +609,31 @@ typedef struct sym
         int operatorId;          /* operator id, CI + kw for an operator function */
         enum e_cm lambdaMode;
         INLINEFUNC inlineFunc;
-        int overlayIndex; /* differentiating index when function differs only in return type from similar functions */
-        int ccEndLine;                            /* end line for code completion */
-        unsigned long long ccStructId;            /* code completion struct id */
+        int overlayIndex;              /* differentiating index when function differs only in return type from similar functions */
+        int ccEndLine;                 /* end line for code completion */
+        unsigned long long ccStructId; /* code completion struct id */
         struct _ccNamespaceData* ccNamespaceData; /* namespace data for code completion */
-        unsigned declaring : 1;             /* currently being declared */
-        unsigned declaringRecursive : 1;    /* structure is recursively declared */
-        unsigned compilerDeclared : 1;      /* compiler declared this */
-        unsigned hasproto : 1;              /* C/90 language prototype was encountered */
-        unsigned intagtable : 1;            /* it is in a tag table */
-        unsigned dontlist : 1;              /* it is a system include, don't put in list file */
-        unsigned allocate : 1;              /* variable is used, allocate space for it */
-        unsigned indecltable : 1;           /* global already in dump table */
-        unsigned spaceallocated : 1;        /* space has been allocated */
-        unsigned loadds : 1;                /* to load data seg (limited) */
-        unsigned farproc : 1;               /* this procedure should be terminated with retf */
-        unsigned calleenearret : 1;         /* true if callee provided a place for the return
-                     value */
-        unsigned hasunnamed : 1;            /* structure has unnamed substructs */
-        unsigned isunnamed : 1;             /* substructure is unnamed */
-        unsigned recalculateParameters : 1; /* inline func needs its parameters
-             recalculated */
-        unsigned nullsym : 1;               /* if was a callblock return which isn't used */
-        unsigned anonymous : 1;             /* if it is a generated variable */
-        unsigned inasm : 1;                 /* a way to force the local optimizer to leave autos on the stack */
-        unsigned assigned : 1;              /* value has been assigned */
+        unsigned declaring : 1;                   /* currently being declared */
+        unsigned declaringRecursive : 1;          /* structure is recursively declared */
+        unsigned compilerDeclared : 1;            /* compiler declared this */
+        unsigned hasproto : 1;                    /* C/90 language prototype was encountered */
+        unsigned intagtable : 1;                  /* it is in a tag table */
+        unsigned dontlist : 1;                    /* it is a system include, don't put in list file */
+        unsigned allocate : 1;                    /* variable is used, allocate space for it */
+        unsigned indecltable : 1;                 /* global already in dump table */
+        unsigned spaceallocated : 1;              /* space has been allocated */
+        unsigned loadds : 1;                      /* to load data seg (limited) */
+        unsigned farproc : 1;                     /* this procedure should be terminated with retf */
+        unsigned calleenearret : 1;               /* true if callee provided a place for the return
+                           value */
+        unsigned hasunnamed : 1;                  /* structure has unnamed substructs */
+        unsigned isunnamed : 1;                   /* substructure is unnamed */
+        unsigned recalculateParameters : 1;       /* inline func needs its parameters
+                   recalculated */
+        unsigned nullsym : 1;                     /* if was a callblock return which isn't used */
+        unsigned anonymous : 1;                   /* if it is a generated variable */
+        unsigned inasm : 1;                       /* a way to force the local optimizer to leave autos on the stack */
+        unsigned assigned : 1;                    /* value has been assigned */
         unsigned altered : 1;
         unsigned noextern : 1;    /* no external reference needed, it was inlined */
         unsigned gentemplate : 1; /* template instantiation or reference generated */
@@ -686,7 +686,8 @@ typedef struct sym
         unsigned dumpInlineToFile : 1;           /* inline function needs to be placed in the output file */
         unsigned promotedToInline : 1;           /* function wasn't declare inline but was promoted to it */
         unsigned temp : 1;                       // temporary boolean...
-        unsigned pushedTemplateSpecializationDefinition : 1;  // set to true if the current body for the template
+        unsigned
+            pushedTemplateSpecializationDefinition : 1;  // set to true if the current body for the template
                                                          // specialization was pushed from the generalized version of the template
         unsigned destructed : 1;                         // the c++ class instance has had a destructor generated
         unsigned va_typeof : 1;                          // MSIL: a va_typeof symbol
@@ -700,7 +701,7 @@ typedef struct sym
         unsigned hasBody : 1;                            // function has a body
         unsigned forcedefault : 1;                       // defaulted internal function needs instantiation
         unsigned noExcept : 1;                           // tagged as noexcept or default determined as noexcept
-        unsigned explicitlyInstantiated : 1;              // explicitly instantiated
+        unsigned explicitlyInstantiated : 1;             // explicitly instantiated
         unsigned retblk : 1;                             // is a return block address
         unsigned initializer_list : 1;                   // struct is initializer_list
         unsigned externShim : 1;                         // symbol is an automatically generated external
@@ -735,7 +736,7 @@ typedef struct sym
         struct lexlist* deferredNoexcept;
         Optimizer::LIST* templateNameSpace;
         short templateLevel;
-        struct _templateParamList *typeAlias;
+        struct _templateParamList* typeAlias;
         struct _symlist_* specializations;
         struct _symlist_* instantiations;
         const char* msil;                            // MSIL path
@@ -846,9 +847,9 @@ typedef struct _templateParam
     int lref : 1;
     int rref : 1;
     int resolved : 1;  // packed template has already been resolved.
-    int ellipsis : 1; // ellipsis found after this item...
-    int replaced : 1; // replaced during type alias substitution
-    int deduced : 1; // filled in during deduction
+    int ellipsis : 1;  // ellipsis found after this item...
+    int replaced : 1;  // replaced during type alias substitution
+    int deduced : 1;   // filled in during deduction
     SYMBOL* packsym;
     void* hold; /* value held during partial template ordering */
     Optimizer::LIST* stack;
@@ -1048,10 +1049,10 @@ typedef struct kwblk
 #define ISID(lex) (lex && (lex)->data->type == l_id)
 #define ISKW(lex) (lex && (lex)->data->type == l_kw)
 #define MATCHKW(lex, keyWord) (ISKW(lex) && ((lex)->data->kw->key == keyWord))
-#define KWTYPE(lex, types)                                                                                                        \
-    (ISKW(lex) &&                                                                                                                 \
-     (((lex)->data->kw->key == kw_auto ? (Optimizer::cparams.prm_cplusplus ? TT_BASETYPE : TT_STORAGE_CLASS) : (lex)->data->kw->tokenTypes) & \
-      (types)))
+#define KWTYPE(lex, types)                                                                                                \
+    (ISKW(lex) && (((lex)->data->kw->key == kw_auto ? (Optimizer::cparams.prm_cplusplus ? TT_BASETYPE : TT_STORAGE_CLASS) \
+                                                    : (lex)->data->kw->tokenTypes) &                                      \
+                   (types)))
 #define KW(lex) (ISKW(lex) ? (lex)->data->kw->key : kw_none)
 
 enum e_lexType
@@ -1105,7 +1106,7 @@ typedef struct lexeme
     char* suffix;
     Optimizer::LINEDATA* linedata;
     int errline;
-    const char *errfile;
+    const char* errfile;
     int charindex;
     int charindexend;
     int filenum;
@@ -1118,7 +1119,7 @@ typedef struct lexeme
 typedef struct lexlist
 {
     struct lexlist *next, *prev;
-    struct lexeme *data;
+    struct lexeme* data;
 } LEXLIST;
 typedef struct lexContext
 {
@@ -1159,13 +1160,13 @@ constexpr inline bool __isref(TYPE* x) { return (x)->type == bt_lref || (x)->typ
 constexpr inline bool isref(TYPE* x)
 {
     return (__isref(basetype(x)) ||
-        (x)->type == bt_templateparam && (x)->templateParam->p->type == kw_int && __isref((x)->templateParam->p->byNonType.tp));
+            (x)->type == bt_templateparam && (x)->templateParam->p->type == kw_int && __isref((x)->templateParam->p->byNonType.tp));
 }
 constexpr inline bool __ispointer(TYPE* x) { return ((x)->type == bt_pointer || (x)->type == bt_seg); }
 constexpr inline bool ispointer(TYPE* x)
 {
-    return (__ispointer(basetype(x)) ||
-        (x)->type == bt_templateparam && (x)->templateParam->p->type == kw_int && __ispointer((x)->templateParam->p->byNonType.tp));
+    return (__ispointer(basetype(x)) || (x)->type == bt_templateparam && (x)->templateParam->p->type == kw_int &&
+                                            __ispointer((x)->templateParam->p->byNonType.tp));
 }
 
 constexpr inline bool __isfunction(TYPE* x) { return ((x)->type == bt_func || (x)->type == bt_ifunc); }
@@ -1174,7 +1175,6 @@ constexpr inline bool isfunction(TYPE* x) { return (__isfunction(basetype(x))); 
 constexpr inline bool isfuncptr(TYPE* x) { return (ispointer(x) && basetype(x)->btp && isfunction(basetype(x)->btp)); }
 constexpr inline bool __isstructured(TYPE* x) { return ((x)->type == bt_class || (x)->type == bt_struct || (x)->type == bt_union); }
 constexpr inline bool isstructured(TYPE* x) { return (__isstructured(basetype(x))); }
-
 
 }  // namespace Parser
 
@@ -1186,4 +1186,3 @@ constexpr inline bool isstructured(TYPE* x) { return (__isstructured(basetype(x)
 void SetGlobalFlag(bool flag, bool& old);
 void ReleaseGlobalFlag(bool old);
 bool GetGlobalFlag();
-

@@ -1,26 +1,26 @@
 #pragma once
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 namespace Parser
@@ -41,6 +41,7 @@ extern struct templateListData* currents;
 extern int instantiatingFunction;
 extern int instantiatingClass;
 extern int parsingDefaultTemplateArgs;
+extern int inTemplateArgs;
 
 void templateInit(void);
 EXPRESSION* GetSymRef(EXPRESSION* n);
@@ -95,7 +96,7 @@ void PopTemplateNamespace(int n);
 void SwapMainTemplateArgs(SYMBOL* cls);
 TEMPLATEPARAMLIST* copyParams(TEMPLATEPARAMLIST* t, bool alsoSpecializations);
 bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* dest, TEMPLATEPARAMLIST* src,
-                                     TEMPLATEPARAMLIST* enclosing);
+                              TEMPLATEPARAMLIST* enclosing);
 SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, bool isExtern);
 SYMBOL* TemplateClassInstantiate(SYMBOL* sym, TEMPLATEPARAMLIST* args, bool isExtern, enum e_sc storage_class);
 void TemplateDataInstantiate(SYMBOL* sym, bool warning, bool isExtern);
@@ -105,7 +106,7 @@ void DuplicateTemplateParamList(TEMPLATEPARAMLIST** pptr);
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr);
 SYMBOL* GetVariableTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args);
 int pushContext(SYMBOL* cls, bool all);
-TYPE *CloneUsingSyms(TYPE *sp);
+TYPE* CloneUsingSyms(TYPE* sp);
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args);
 void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, NAMESPACEVALUELIST* nsv, SYMBOL* strSym,
                                    TEMPLATEPARAMLIST* templateParams, bool isExtern);

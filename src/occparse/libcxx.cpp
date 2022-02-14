@@ -111,91 +111,90 @@ void libcxx_builtins(void)
 {
     if (Optimizer::cparams.prm_cplusplus)
     {
-        preProcessor->Define("address_sanitizer","0");
-        preProcessor->Define("__has_cxx_access_control_sfinae","0");
-        preProcessor->Define("__has_cxx_alias_templates","1");
-        preProcessor->Define("__has_cxx_alignas","1");
-        preProcessor->Define("__has_cxx_atomic","0");
-        preProcessor->Define("__has_cxx_attributes","1");
-        preProcessor->Define("__has_cxx_auto_type","1");
-        preProcessor->Define("__has_cxx_constexpr","1");
-        preProcessor->Define("__has_cxx_decltype","1");
-        preProcessor->Define("__has_cxx_defaulted_functions","1");
-        preProcessor->Define("__has_cxx_deleted_functions","1");
-        preProcessor->Define("__has_cxx_exceptions","1");
-        preProcessor->Define("__has_cxx_explicit_conversions","1");
-        preProcessor->Define("__has_cxx_generalized_initializers","1");
-        preProcessor->Define("__has_cxx_lambdas","1");
-        preProcessor->Define("__has_cxx_noexcept","1");
-        preProcessor->Define("__has_cxx_nullptr","1");
-        preProcessor->Define("__has_cxx_reference_qualified_functions","1");
-        preProcessor->Define("__has_cxx_relaxed_constexpr","1");
-        preProcessor->Define("__has_cxx_rtti","1");
-        preProcessor->Define("__has_cxx_rvalue_references","1");
-        preProcessor->Define("__has_cxx_static_assert","1");
-        preProcessor->Define("__has_cxx_strong_enums","1");
-        preProcessor->Define("__has_cxx_trailing_return","1");
-        preProcessor->Define("__has_cxx_variadic_templates","1");
-        preProcessor->Define("__has_nothrow_assign","1");
-        preProcessor->Define("__has_nothrow_constructor","0");
-        preProcessor->Define("__has_nothrow_copy","0");
-        preProcessor->Define("__has_trivial_constructor","0");
-        preProcessor->Define("__has_trivial_destructor","0");
-        preProcessor->Define("__has_virtual_destructor_xx","0");
-        preProcessor->Define("__has_is_base_of","1");
-        preProcessor->Define("__has_is_class","1");
-        preProcessor->Define("__has_is_constructible","1");
-        preProcessor->Define("__has_is_convertible_to","1");
-        preProcessor->Define("__has_is_empty","1");
-        preProcessor->Define("__has_is_enum","1");
-        preProcessor->Define("__has_is_final","1");
-        preProcessor->Define("__has_is_literal","1");
-        preProcessor->Define("__has_is_nothrow_constructible","1");
-        preProcessor->Define("__has_is_nothrow_assignable","1");
-        preProcessor->Define("__has_is_pod","1");
-        preProcessor->Define("__has_is_polymorphic","1");
-        preProcessor->Define("__has_is_standard_layout","1");
-        preProcessor->Define("__has_is_trivial","1");
-        preProcessor->Define("__has_is_trivially_assignable","1");
-        preProcessor->Define("__has_is_trivially_constructible","1");
-        preProcessor->Define("__has_is_trivially_copyable","1");
-        preProcessor->Define("__has_is_union","1");
-        preProcessor->Define("__has___reference_binds_to_temporary","0");
-        preProcessor->Define("__has___is_trivially_destructible","0");
-        preProcessor->Define("__has___is_nothrow_constructible","1");
-        preProcessor->Define("__has___is_nothrow_assignable","1");
-        preProcessor->Define("__has___nullptr","0");
-        preProcessor->Define("__has__Atomic","1");
-        preProcessor->Define("__has___is_aggregate","0");
-        preProcessor->Define("__has__builtin_isnan","0");
-        preProcessor->Define("__has__builtin_isinf","0");
-        preProcessor->Define("__has__builtin_isfinite","0");
-        preProcessor->Define("__has__atomic_load_n","1");
-        preProcessor->Define("__has__atomic_add_fetch","1");
+        preProcessor->Define("address_sanitizer", "0");
+        preProcessor->Define("__has_cxx_access_control_sfinae", "0");
+        preProcessor->Define("__has_cxx_alias_templates", "1");
+        preProcessor->Define("__has_cxx_alignas", "1");
+        preProcessor->Define("__has_cxx_atomic", "0");
+        preProcessor->Define("__has_cxx_attributes", "1");
+        preProcessor->Define("__has_cxx_auto_type", "1");
+        preProcessor->Define("__has_cxx_constexpr", "1");
+        preProcessor->Define("__has_cxx_decltype", "1");
+        preProcessor->Define("__has_cxx_defaulted_functions", "1");
+        preProcessor->Define("__has_cxx_deleted_functions", "1");
+        preProcessor->Define("__has_cxx_exceptions", "1");
+        preProcessor->Define("__has_cxx_explicit_conversions", "1");
+        preProcessor->Define("__has_cxx_generalized_initializers", "1");
+        preProcessor->Define("__has_cxx_lambdas", "1");
+        preProcessor->Define("__has_cxx_noexcept", "1");
+        preProcessor->Define("__has_cxx_nullptr", "1");
+        preProcessor->Define("__has_cxx_reference_qualified_functions", "1");
+        preProcessor->Define("__has_cxx_relaxed_constexpr", "1");
+        preProcessor->Define("__has_cxx_rtti", "1");
+        preProcessor->Define("__has_cxx_rvalue_references", "1");
+        preProcessor->Define("__has_cxx_static_assert", "1");
+        preProcessor->Define("__has_cxx_strong_enums", "1");
+        preProcessor->Define("__has_cxx_trailing_return", "1");
+        preProcessor->Define("__has_cxx_variadic_templates", "1");
+        preProcessor->Define("__has_nothrow_assign", "1");
+        preProcessor->Define("__has_nothrow_constructor", "0");
+        preProcessor->Define("__has_nothrow_copy", "0");
+        preProcessor->Define("__has_trivial_constructor", "0");
+        preProcessor->Define("__has_trivial_destructor", "0");
+        preProcessor->Define("__has_virtual_destructor_xx", "0");
+        preProcessor->Define("__has_is_base_of", "1");
+        preProcessor->Define("__has_is_class", "1");
+        preProcessor->Define("__has_is_constructible", "1");
+        preProcessor->Define("__has_is_convertible_to", "1");
+        preProcessor->Define("__has_is_empty", "1");
+        preProcessor->Define("__has_is_enum", "1");
+        preProcessor->Define("__has_is_final", "1");
+        preProcessor->Define("__has_is_literal", "1");
+        preProcessor->Define("__has_is_nothrow_constructible", "1");
+        preProcessor->Define("__has_is_nothrow_assignable", "1");
+        preProcessor->Define("__has_is_pod", "1");
+        preProcessor->Define("__has_is_polymorphic", "1");
+        preProcessor->Define("__has_is_standard_layout", "1");
+        preProcessor->Define("__has_is_trivial", "1");
+        preProcessor->Define("__has_is_trivially_assignable", "1");
+        preProcessor->Define("__has_is_trivially_constructible", "1");
+        preProcessor->Define("__has_is_trivially_copyable", "1");
+        preProcessor->Define("__has_is_union", "1");
+        preProcessor->Define("__has___reference_binds_to_temporary", "0");
+        preProcessor->Define("__has___is_trivially_destructible", "0");
+        preProcessor->Define("__has___is_nothrow_constructible", "1");
+        preProcessor->Define("__has___is_nothrow_assignable", "1");
+        preProcessor->Define("__has___nullptr", "0");
+        preProcessor->Define("__has__Atomic", "1");
+        preProcessor->Define("__has___is_aggregate", "0");
+        preProcessor->Define("__has__builtin_isnan", "0");
+        preProcessor->Define("__has__builtin_isinf", "0");
+        preProcessor->Define("__has__builtin_isfinite", "0");
+        preProcessor->Define("__has__atomic_load_n", "1");
+        preProcessor->Define("__has__atomic_add_fetch", "1");
         preProcessor->Define("__has__atomic_exchange_n", "1");
         preProcessor->Define("__has__atomic_compare_exchange_n", "1");
-        preProcessor->Define("__has__builtin__operator_new","0");
-        preProcessor->Define("__has__builtin__operator_delete","0");
-        preProcessor->Define("__has__make_integer_seq","1");
-        preProcessor->Define("__has__type_pack_element","1");
-        preProcessor->Define("__has__builtin_launder","0");
-        preProcessor->Define("__has__builtin_addressof","0");
-        preProcessor->Define("__has____no_sanitize__","0");
-        preProcessor->Define("__has____type_visibility__","0");
-        preProcessor->Define("__has__internal_linkage","1");
-        preProcessor->Define("__has__exclude_from_explicit_instantiation","1");
-        preProcessor->Define("__has____enable_if__","0");
-        preProcessor->Define("__has__deprecated","1");
-        preProcessor->Define("__has__no_destroy","0");
-        preProcessor->Define("__has__aquire_capability","0");
-        preProcessor->Define("__has__require_constant_initialization","0");
-        preProcessor->Define("__has__diagnose_if","0");
-        preProcessor->Define("__has__fallthrough","0");
-        preProcessor->Define("__has____nodebug__","0");
-        preProcessor->Define("__has__no_thread_safety_analysis","0");
+        preProcessor->Define("__has__builtin__operator_new", "0");
+        preProcessor->Define("__has__builtin__operator_delete", "0");
+        preProcessor->Define("__has__make_integer_seq", "1");
+        preProcessor->Define("__has__type_pack_element", "1");
+        preProcessor->Define("__has__builtin_launder", "0");
+        preProcessor->Define("__has__builtin_addressof", "0");
+        preProcessor->Define("__has____no_sanitize__", "0");
+        preProcessor->Define("__has____type_visibility__", "0");
+        preProcessor->Define("__has__internal_linkage", "1");
+        preProcessor->Define("__has__exclude_from_explicit_instantiation", "1");
+        preProcessor->Define("__has____enable_if__", "0");
+        preProcessor->Define("__has__deprecated", "1");
+        preProcessor->Define("__has__no_destroy", "0");
+        preProcessor->Define("__has__aquire_capability", "0");
+        preProcessor->Define("__has__require_constant_initialization", "0");
+        preProcessor->Define("__has__diagnose_if", "0");
+        preProcessor->Define("__has__fallthrough", "0");
+        preProcessor->Define("__has____nodebug__", "0");
+        preProcessor->Define("__has__no_thread_safety_analysis", "0");
     }
 }
-
 
 bool parseBuiltInTypelistFunc(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
@@ -638,7 +637,8 @@ static bool __is_nothrow(TYPE* tp, INITLIST* args, SYMBOL* ovl)
         }
         int oldSpecialize = inTemplateSpecialization;
         inTemplateSpecialization = 0;
-        SYMBOL *sp = GetOverloadedFunction(&tp, &funcparams.fcall, ovl, &funcparams, nullptr, false, false, false, _F_SIZEOF | _F_IS_NOTHROW |_F_RETURN_DELETED);
+        SYMBOL* sp = GetOverloadedFunction(&tp, &funcparams.fcall, ovl, &funcparams, nullptr, false, false, false,
+                                           _F_SIZEOF | _F_IS_NOTHROW | _F_RETURN_DELETED);
         inTemplateSpecialization = oldSpecialize;
         while (stk.size())
         {
@@ -785,7 +785,7 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                         return true;
                     }
                     if (isstructured(tp2))
-                    {            
+                    {
                         bool rv = true;
                         if (isstructured(tpy))
                         {
@@ -849,7 +849,7 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                             hr = hr->next;
                         }
                         auto spx = GetOverloadedFunction(tp, &funcparams.fcall, bcall, &funcparams, nullptr, false, false, false,
-                                                   _F_SIZEOF | _F_RETURN_DELETED);
+                                                         _F_SIZEOF | _F_RETURN_DELETED);
                         rv = spx && spx->sb->access == ac_public && !spx->sb->deleted;
                     }
                     else
@@ -984,7 +984,8 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                                 PushPopTemplateArgs(spl->p, true);
                             }
                         }
-                        auto sym = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, nullptr, false, false, false, _F_SIZEOF);
+                        auto sym = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, nullptr, false, false, false,
+                                                         _F_SIZEOF);
                         rv = sym && sym->sb->access == ac_public;
 
                         while (stk.size())
@@ -1206,8 +1207,7 @@ static bool is_nothrow_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym,
         }
     }
     *exp = intNode(en_c_i, rv);
-    *tp =
-        &stdint;
+    *tp = &stdint;
     return true;
 }
 static bool is_nothrow_assignable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
@@ -1255,8 +1255,7 @@ static bool is_nothrow_assignable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TY
         }
     }
     *exp = intNode(en_c_i, rv);
-    *tp =
-        &stdint;
+    *tp = &stdint;
     return true;
 }
 static bool is_pod(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
@@ -1433,7 +1432,7 @@ static bool is_union(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPR
     *tp = &stdint;
     return true;
 }
-static bool hasConstexprConstructor(TYPE *tp)
+static bool hasConstexprConstructor(TYPE* tp)
 {
     auto ovl = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp)->syms);
     if (ovl)
@@ -1446,7 +1445,7 @@ static bool hasConstexprConstructor(TYPE *tp)
             hr = hr->next;
         }
     }
-    return false;   
+    return false;
 }
 bool is_literal_type(TYPE* tp);
 static void nonStaticLiteralTypes(TYPE* tp, bool& all, bool& one)
@@ -1454,7 +1453,7 @@ static void nonStaticLiteralTypes(TYPE* tp, bool& all, bool& one)
     auto hr = basetype(tp)->syms->table[0];
     if (hr)
     {
-        hr = hr->next; // skip shim
+        hr = hr->next;  // skip shim
         while (hr)
         {
             auto sym = hr->p;
@@ -1471,11 +1470,11 @@ static void nonStaticLiteralTypes(TYPE* tp, bool& all, bool& one)
                     else
                         all = false;
                 }
-            } 
+            }
             hr = hr->next;
         }
     }
-} 
+}
 bool is_literal_type(TYPE* tp)
 {
     if (isref(tp) || isarithmetic(tp) || isvoid(tp))
@@ -1493,7 +1492,7 @@ bool is_literal_type(TYPE* tp)
                 if (basetype(tp)->type == bt_union && one)
                     return true;
                 else if (all)
-                    return true;               
+                    return true;
             }
         }
     }
@@ -1542,11 +1541,11 @@ static SYMBOL* MakeIntegerSeqType(SYMBOL* sp, TEMPLATEPARAMLIST* args)
     }
     if (e && isintconst(e))
     {
-        SYMBOL *tpl = args->p->byTemplate.dflt;
+        SYMBOL* tpl = args->p->byTemplate.dflt;
         if (tpl->sb->parentTemplate)
             tpl = tpl->sb->parentTemplate;
         int nt = basetype(args->next->p->byClass.dflt)->type + e->v.i;
-        const char *nm = args->p->byTemplate.dflt->name;
+        const char* nm = args->p->byTemplate.dflt->name;
         auto sym = integerSequences[nm][nt];
         if (sym)
             return sym;
@@ -1563,7 +1562,7 @@ static SYMBOL* MakeIntegerSeqType(SYMBOL* sp, TEMPLATEPARAMLIST* args)
         args1->next->next->p->byNonType.tp = args1->next->p->byClass.dflt;
         args1->next->next->p->packed = true;
         auto last = &args1->next->next->p->byPack.pack;
-        for (int i=0; i < n; i++, last = &(*last)->next)
+        for (int i = 0; i < n; i++, last = &(*last)->next)
         {
             *last = Allocate<TEMPLATEPARAMLIST>();
             (*last)->p = Allocate<TEMPLATEPARAM>();
@@ -1594,7 +1593,6 @@ SYMBOL* MakeIntegerSeq(SYMBOL* sym, TEMPLATEPARAMLIST* args)
     if (rs)
         rv->tp = rs->tp;
     return rv;
-
 }
 static TYPE* TypePackElementType(SYMBOL* sym, TEMPLATEPARAMLIST* args)
 {
@@ -1646,7 +1644,6 @@ static TYPE* TypePackElementType(SYMBOL* sym, TEMPLATEPARAMLIST* args)
     {
         return &stdany;
     }
-
 }
 SYMBOL* TypePackElementCls(SYMBOL* sym, TEMPLATEPARAMLIST* args)
 {

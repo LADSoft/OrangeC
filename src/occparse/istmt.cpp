@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -77,7 +77,7 @@ static int breaklab;
 static int contlab;
 static int tryStart, tryEnd;
 static int plabel;
-static Optimizer::IMODE *returnSym;
+static Optimizer::IMODE* returnSym;
 
 Optimizer::IMODE* genstmt(STATEMENT* stmt, SYMBOL* funcsp);
 
@@ -402,8 +402,7 @@ static STATEMENT* gen___try(SYMBOL* funcsp, STATEMENT* stmt)
                     left = Allocate<Optimizer::IMODE>();
                     left->mode = Optimizer::i_direct;
                     left->size = ISZ_OBJECT;
-                    left->offset =
-                        Allocate<Optimizer::SimpleExpression>();
+                    left->offset = Allocate<Optimizer::SimpleExpression>();
                     left->offset->type = Optimizer::se_auto;
                     left->offset->sp = Optimizer::SymbolManager::Get(stmt->sp);
                 }
@@ -520,7 +519,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
     {
         gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
     }
-    if (ap && (inlinesym_count || !isvoid(basetype(funcsp->tp)->btp)))
+    if (ap && (inlinesym_count || !isvoid(basetype(funcsp->tp)->btp) || funcsp->sb->isConstructor))
     {
         bool needsOCP = false;
         if (returnImode)
@@ -563,7 +562,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
         {
             // only one return statement, label isn't needed
             // and get rid of the goto as well...
-            Optimizer::QUAD *find = Optimizer::intermed_tail;
+            Optimizer::QUAD* find = Optimizer::intermed_tail;
             Optimizer::BLOCK* b = find->block;
             while (b == find->block && (find->dc.opcode == Optimizer::i_line || find->ignoreMe))
                 find = find->back;
@@ -734,8 +733,7 @@ Optimizer::IMODE* genstmt(STATEMENT* stmt, SYMBOL* funcsp)
                 gen_try(funcsp, stmt, stmt->label + codeLabelOffset, stmt->endlabel + codeLabelOffset,
                         stmt->breaklabel + codeLabelOffset, stmt->lower);
                 break;
-            case st_catch:
-            {
+            case st_catch: {
                 STATEMENT* last = nullptr;
                 while (stmt && stmt->type == st_catch)
                 {
@@ -920,7 +918,7 @@ void CopyVariables(SYMBOL* funcsp)
         }
     }
 }
-static void SetReturnSym(SYMBOL *funcsp)
+static void SetReturnSym(SYMBOL* funcsp)
 {
     if (Optimizer::architecture == ARCHITECTURE_MSIL && !isvoid(basetype(funcsp->tp)->btp))
     {

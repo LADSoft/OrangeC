@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -63,7 +63,7 @@ LEXCONTEXT* context;
 int charIndex;
 
 LEXLIST* currentLex;
-Optimizer::LINEDATA nullLineData = { 0, 0, "", "", 0, 0 };
+Optimizer::LINEDATA nullLineData = {0, 0, "", "", 0, 0};
 
 static bool valid;
 static unsigned long long llminus1;
@@ -236,7 +236,7 @@ KEYWORD keywords[] = {
     {"__atomic_and_fetch", 18, kw_atomic_andftch, 0, TT_VAR},
     {"__atomic_xor_fetch", 18, kw_atomic_xorftch, 0, TT_VAR},
     {"__atomic_or_fetch", 17, kw_atomic_orftch, 0, TT_VAR},
-    {"__atomic_fetch_add", 22, kw_c11_atomic_ftchadd, 0, TT_VAR}, // c11 keywords were added first so we use em'
+    {"__atomic_fetch_add", 22, kw_c11_atomic_ftchadd, 0, TT_VAR},  // c11 keywords were added first so we use em'
     {"__atomic_fetch_sub", 22, kw_c11_atomic_ftchsub, 0, TT_VAR},
     {"__atomic_fetch_and", 22, kw_c11_atomic_ftchand, 0, TT_VAR},
     {"__atomic_fetch_xor", 22, kw_c11_atomic_ftchxor, 0, TT_VAR},
@@ -274,7 +274,7 @@ KEYWORD keywords[] = {
     {"__string", 8, kw___string, KW_MSIL, TT_BASETYPE},
     {"__try", 5, kw___try, KW_MSIL, TT_CONTROL},
     {"__typeid", 8, kw___typeid, KW_NONANSI | KW_ALL, TT_VAR},
-    {"__underlying_type", 17, kw___underlying_type,  KW_CPLUSPLUS, TT_BASETYPE},
+    {"__underlying_type", 17, kw___underlying_type, KW_CPLUSPLUS, TT_BASETYPE},
     {"__unmanaged", 11, kw__unmanaged, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__uuid", 6, kw__uuid, 0, TT_LINKAGE},
     {"__uuidof", 8, kw__uuidof, 0, TT_VAR},
@@ -618,8 +618,7 @@ int getsch(int bytes, const unsigned char** source) /* return an in-quote charac
         case 'u':
             if (i == 'u')
                 bytes = 2;
-        case 'x':
-        {
+        case 'x': {
             int n = 0;
             while (isxdigit(*(*source)))
             {
@@ -1479,15 +1478,14 @@ void CompilePragma(const unsigned char** linePointer)
         if (**linePointer == '"')
         {
             (*linePointer)++;
-            const char *p = (const char *)*linePointer;
+            const char* p = (const char*)*linePointer;
             while (**linePointer)
                 if (**linePointer == '\\' && (*(*linePointer + 1) == '\\' || *(*linePointer + 1) == '"'))
                     (*linePointer) += 2;
+                else if (**linePointer != '"')
+                    (*linePointer)++;
                 else
-                    if (**linePointer != '"')
-                        (*linePointer)++;
-                    else
-                        break;            
+                    break;
 
             std::string toCompile(p, *linePointer - (const unsigned char*)p);
             ReplaceStringInString(toCompile, "\\\"", "\"");
@@ -1614,8 +1612,8 @@ LEXLIST* getsym(void)
         {
             linesHead = rv->data->linedata;
             linesTail = linesHead;
-//            while (linesTail && linesTail->next)
-//                linesTail = linesTail->next;
+            //            while (linesTail && linesTail->next)
+            //                linesTail = linesTail->next;
         }
         currentLex = rv;
         return rv;
@@ -1687,7 +1685,7 @@ LEXLIST* getsym(void)
         int fileIndex = preProcessor->GetFileIndex();
         if (fileIndex != lastBrowseIndex)
         {
-            browse_startfile(preProcessor->GetRealFile().c_str(),  fileIndex);
+            browse_startfile(preProcessor->GetRealFile().c_str(), fileIndex);
             lastBrowseIndex = fileIndex;
         }
 
@@ -1811,17 +1809,17 @@ LEXLIST* getsym(void)
                     end = p.origEnd;
                 }
                 if (oldend >= p.newEnd)
-                    ++ tokenIterator;
+                    ++tokenIterator;
             }
             else
             {
-                 start -= trailer;
-                 end -= trailer;
+                start -= trailer;
+                end -= trailer;
             }
             lex->data->charindex = start;
             lex->data->charindexend = end;
 #ifdef TESTANNOTATE
-//            printf("%d %d\n", start, end);
+            //            printf("%d %d\n", start, end);
             annotations.push_back(std::pair<int, int>(start, end));
 #endif
         }

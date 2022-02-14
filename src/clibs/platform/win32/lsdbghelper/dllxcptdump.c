@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -33,6 +33,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
+
 #include <windows.h>
 #include <stdio.h>
 #include "PEHeader.h"
@@ -578,7 +579,7 @@ __declspec(dllexport) void CALLBACK StackTraceWithCode(char* text, char* prog, P
         }
     }
     strcat(buf, "\n");
-    while ((DWORD)sp >= regs->Esp && (DWORD)sp < stacktop && sp[1] >= codestart && sp[1] < codeend)
+    while ((DWORD)sp >= regs->Esp /*&&  (DWORD)sp < stacktop && sp[1] >= codestart && sp[1] < codeend*/)
     {
         if (strlen(buf) > sizeof(buf) - 1000)
             break; 

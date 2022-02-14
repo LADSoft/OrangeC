@@ -1,27 +1,28 @@
 #pragma once
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
+
 #include <map>
 #define XD_X_MASK 0x3f /* a count for extension bytes */
 #define XD_ARRAY 0x40
@@ -110,15 +111,15 @@ typedef struct _xctab
     int ebp;               /* ebp of this function */
     XCEPTHEAD* xceptBlock; /* pointer to the function's xception block */
     int funcIndex;         /* index of constructors/destructors, roughly follows EIP, code gen generates this */
-    void *throwninstance;  /* instance being caught, code gen generates this, don't move */
+    void* throwninstance;  /* instance being caught, code gen generates this, don't move */
     // things beyond this are used by throw()
-    int eip;              /* eip this function where the catch occurred */
-    XCEPT* thisxt;        /* pointer to this XT table list in case of throws */
+    int eip;       /* eip this function where the catch occurred */
+    XCEPT* thisxt; /* pointer to this XT table list in case of throws */
 } XCTAB;
 
 typedef struct __xclist
 {
-    struct __xclist *next;
+    struct __xclist* next;
     EXPRESSION* exp;
     STATEMENT* stmt;
     SYMBOL* xtSym;
@@ -126,12 +127,9 @@ typedef struct __xclist
     char used : 1;
 } XCLIST;
 
-
-
 static const int XCTAB_SIZE = 9 * 4;
 static const int XCTAB_INDEX_OFS = 5 * 4;
 static const int XCTAB_INSTANCE_OFS = 6 * 4;
-
 
 extern HASHTABLE* rttiSyms;
 extern std::map<int, std::map<int, __xclist*>> rttiStatements;

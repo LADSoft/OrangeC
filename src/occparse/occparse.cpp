@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -34,8 +34,8 @@
 #include "SharedMemory.h"
 #include "MakeStubs.h"
 
-#    include "x64Operand.h"
-#    include "x64Parser.h"
+#include "x64Operand.h"
+#include "x64Parser.h"
 #include "ccerr.h"
 #include "config.h"
 #include "declare.h"
@@ -89,7 +89,7 @@ class PELib;
 }
 namespace Optimizer
 {
-    unsigned termCount;
+unsigned termCount;
 };
 namespace CompletionCompiler
 {
@@ -371,7 +371,7 @@ int main(int argc, char* argv[])
     */
     /* parse environment variables, command lines, and config files  */
     if (ccinit(argc, argv))
-        return 255; // some sort of noop operation such as a display occurred
+        return 255;  // some sort of noop operation such as a display occurred
 
     if (Optimizer::cparams.prm_displaytiming)
     {
@@ -483,7 +483,7 @@ int main(int argc, char* argv[])
                 Optimizer::cparams.prm_c1x = false;
                 Optimizer::cparams.prm_cplusplus = true;
             }
-            else 
+            else
             {
                 Utils::fatal("value given for 'std' argument unknown: %s", prm_std.GetValue().c_str());
             }
@@ -516,12 +516,12 @@ int main(int argc, char* argv[])
         if (Optimizer::cparams.prm_cplusplus && (Optimizer::architecture == ARCHITECTURE_MSIL))
             Utils::fatal("MSIL compiler does not compile C++ files at this time");
         preProcessor =
-            new PreProcessor(buffer, prm_cinclude.GetValue(), Optimizer::cparams.prm_cplusplus ? prm_CPPsysinclude.GetValue() : prm_Csysinclude.GetValue(), 
-                             true, Optimizer::cparams.prm_trigraph, '#',
-                             Optimizer::cparams.prm_charisunsigned,
+            new PreProcessor(buffer, prm_cinclude.GetValue(),
+                             Optimizer::cparams.prm_cplusplus ? prm_CPPsysinclude.GetValue() : prm_Csysinclude.GetValue(), true,
+                             Optimizer::cparams.prm_trigraph, '#', Optimizer::cparams.prm_charisunsigned,
                              !Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_c1x && !Optimizer::cparams.prm_cplusplus,
-                             !Optimizer::cparams.prm_ansi, 
-                             (MakeStubsOption.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(), 
+                             !Optimizer::cparams.prm_ansi,
+                             (MakeStubsOption.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(),
                              prm_pipe.GetValue() != "+" ? prm_pipe.GetValue() : "");
 
         if (!preProcessor->IsOpen())
@@ -530,7 +530,8 @@ int main(int argc, char* argv[])
         preProcessor->SetPragmaCatchall([](const std::string& kw, const std::string& tag) { Optimizer::bePragma[kw] = tag; });
 
         strcpy(infile, buffer);
-        if (!Optimizer::cparams.prm_makestubs || (MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue()) && (!prm_error.GetExists() || !prm_error.GetValue().empty()))
+        if (!Optimizer::cparams.prm_makestubs || (MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue()) &&
+                                                     (!prm_error.GetExists() || !prm_error.GetValue().empty()))
         {
             if (Optimizer::cparams.prm_cppfile)
             {
@@ -595,12 +596,13 @@ int main(int argc, char* argv[])
             syminit();
             lexini();
             setglbdefs();
-            while (getsym() != nullptr) ;
+            while (getsym() != nullptr)
+                ;
         }
         if (Optimizer::cparams.prm_makestubs)
         {
             std::string inFile;
-            inFile = (char *)clist->data;
+            inFile = (char*)clist->data;
             int end = inFile.find_last_of('/');
             if (end == std::string::npos)
                 end = -1;
@@ -609,7 +611,7 @@ int main(int argc, char* argv[])
                 end1 = -1;
             if (end < end1)
                 end = end1;
-            inFile = inFile.substr(end+1);
+            inFile = inFile.substr(end + 1);
 
             std::string outFile;
             if (MakeStubsOption.GetValue() || MakeStubsUser.GetValue())
@@ -618,7 +620,7 @@ int main(int argc, char* argv[])
             }
             else if (!prm_output.GetValue().empty())
             {
-                outFile = prm_output.GetValue(); 
+                outFile = prm_output.GetValue();
             }
             else
             {
@@ -628,10 +630,9 @@ int main(int argc, char* argv[])
                     outFile = outFile.substr(0, end);
                 outFile += ".d";
             }
-            MakeStubs stubber(*preProcessor, MakeStubsUser.GetValue() || MakeStubsContinueUser.GetValue(), 
-                      MakeStubsPhonyTargets.GetValue(),
-                      inFile, outFile, 
-                       MakeStubsTargets.GetValue(), MakeStubsQuotedTargets.GetValue());
+            MakeStubs stubber(*preProcessor, MakeStubsUser.GetValue() || MakeStubsContinueUser.GetValue(),
+                              MakeStubsPhonyTargets.GetValue(), inFile, outFile, MakeStubsTargets.GetValue(),
+                              MakeStubsQuotedTargets.GetValue());
             stubber.Run(MakeStubsOption.GetValue() || MakeStubsUser.GetValue() ? &std::cout : nullptr);
         }
         if (!IsCompiler())
@@ -663,8 +664,8 @@ int main(int argc, char* argv[])
         if (IsCompiler())
         {
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
-            if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
-                occmsil::msil_end_generation(nullptr);
+                if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
+                    occmsil::msil_end_generation(nullptr);
         }
         clist = clist->next;
     }
@@ -700,9 +701,10 @@ int main(int argc, char* argv[])
     if (Optimizer::cparams.prm_displaytiming)
     {
         stopTime = clock();
-        printf("occparse timing: %d.%03d\n", (stopTime - startTime)/1000, (stopTime - startTime)% 1000); 
+        printf("occparse timing: %d.%03d\n", (stopTime - startTime) / 1000, (stopTime - startTime) % 1000);
     }
-    if (!Optimizer::cparams.prm_makestubs || (MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue()) && (!prm_error.GetExists() || !prm_error.GetValue().empty()))
+    if (!Optimizer::cparams.prm_makestubs || (MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue()) &&
+                                                 (!prm_error.GetExists() || !prm_error.GetValue().empty()))
         rv = IsCompiler() ? !!stoponerr : 0;
     else
         rv = 255;

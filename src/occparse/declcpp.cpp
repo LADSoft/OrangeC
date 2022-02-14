@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -73,7 +73,7 @@ char anonymousNameSpaceName[512];
 int noNeedToSpecialize;
 int parsingUsing;
 
-static bool MustSpecialize(const char *name)
+static bool MustSpecialize(const char* name)
 {
     if (noNeedToSpecialize || (templateNestingCount && !instantiatingTemplate))
         return false;
@@ -223,7 +223,7 @@ void dumpVTab(SYMBOL* sym)
             {
                 Optimizer::gen_virtual(Optimizer::SymbolManager::Get(thunks[i].name), false);
                 Optimizer::gen_vtt(-(int)thunks[i].entry->dataOffset, Optimizer::SymbolManager::Get(thunks[i].func),
-                    Optimizer::SymbolManager::Get(thunks[i].name));
+                                   Optimizer::SymbolManager::Get(thunks[i].name));
                 Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(thunks[i].name));
             }
         }
@@ -237,9 +237,11 @@ void internalClassRefCount(SYMBOL* base, SYMBOL* derived, int* vcount, int* ccou
 
         if (!templateNestingCount || instantiatingTemplate)
         {
-            if (base->templateParams && derived->templateParams && base->templateParams->p->bySpecialization.types && derived->templateParams->p->bySpecialization.types)
+            if (base->templateParams && derived->templateParams && base->templateParams->p->bySpecialization.types &&
+                derived->templateParams->p->bySpecialization.types)
             {
-                if (exactMatchOnTemplateArgs(derived->templateParams->p->bySpecialization.types, base->templateParams->p->bySpecialization.types))
+                if (exactMatchOnTemplateArgs(derived->templateParams->p->bySpecialization.types,
+                                             base->templateParams->p->bySpecialization.types))
                 {
                     (*ccount)++;
                     ok = true;
@@ -1284,7 +1286,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
             name[0] = 0;
             if (ISID(lex))
                 strcpy(name, lex->data->value.s.a);
-            bcsym = nullptr;    
+            bcsym = nullptr;
             lex = nestedSearch(lex, &bcsym, nullptr, nullptr, nullptr, nullptr, false, sc_global, false, false);
             if (bcsym && bcsym->sb && bcsym->sb->storage_class == sc_typedef)
             {
@@ -1317,7 +1319,8 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
                 }
                 bcsym = nullptr;
             }
-            else if (bcsym && (bcsym->sb && bcsym->sb->templateLevel || bcsym->tp->type == bt_templateparam && bcsym->tp->templateParam->p->type == kw_template))
+            else if (bcsym && (bcsym->sb && bcsym->sb->templateLevel ||
+                               bcsym->tp->type == bt_templateparam && bcsym->tp->templateParam->p->type == kw_template))
             {
                 if (bcsym->tp->type == bt_templateparam)
                 {
@@ -1491,7 +1494,8 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
                         else
                         {
                             bcsym = GetClassTemplate(bcsym, lst, true);
-                            if (bcsym && bcsym->sb->attribs.inheritable.linkage4 != lk_virtual && allTemplateArgsSpecified(bcsym, bcsym->templateParams->next))
+                            if (bcsym && bcsym->sb->attribs.inheritable.linkage4 != lk_virtual &&
+                                allTemplateArgsSpecified(bcsym, bcsym->templateParams->next))
                             {
                                 bcsym->tp = TemplateClassInstantiateInternal(bcsym, bcsym->templateParams->next, false)->tp;
                                 bcsym->tp->sp = bcsym;
@@ -1624,7 +1628,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
                     dropStructureDeclaration();
                     return lex;
             }
-endloop:
+    endloop:
         if (!done)
             ParseAttributeSpecifiers(&lex, funcsp, true);
     } while (!done);
@@ -1870,13 +1874,13 @@ void checkUnpackedExpression(EXPRESSION* exp)
 }
 void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp);
 void GatherPackedTypes(int* count, SYMBOL** arg, TYPE* tp);
-void GatherTemplateParams(int *count, SYMBOL** arg, TEMPLATEPARAMLIST* tpl)
+void GatherTemplateParams(int* count, SYMBOL** arg, TEMPLATEPARAMLIST* tpl)
 {
     while (tpl)
     {
         if (tpl->p->packed && tpl->argsym)
         {
-            arg[(*count)++] = /*sym*/tpl->argsym;
+            arg[(*count)++] = /*sym*/ tpl->argsym;
             NormalizePacked(tpl->argsym->tp);
         }
         else if (tpl->p->type == kw_int)
@@ -1907,7 +1911,7 @@ void GatherTemplateParams(int *count, SYMBOL** arg, TEMPLATEPARAMLIST* tpl)
                     TEMPLATEPARAMLIST* tpl1 = tpl->p->byPack.pack;
                     while (tpl1)
                     {
-                        GatherPackedTypes (count, arg, tpl1->p->byClass.dflt);
+                        GatherPackedTypes(count, arg, tpl1->p->byClass.dflt);
                         tpl1 = tpl1->next;
                     }
                 }
@@ -2081,7 +2085,7 @@ TYPE* ReplicatePackedTypes(int count, SYMBOL** arg, TYPE* tp, int index)
                 tp = CopyType(tp, true, [count, arg, index](TYPE*& old, TYPE*& newx) {
                     if (old->rootType == old)
                         newx->sp->templateParams = ReplicateTemplateParams(count, arg, newx->sp->templateParams, index);
-                    });
+                });
             }
         }
     }
@@ -2096,7 +2100,7 @@ EXPRESSION* ReplicatePackedVars(int count, SYMBOL** arg, EXPRESSION* packedExp, 
 
     if (packedExp->type == en_auto && packedExp->v.sp->packed)
     {
-        for (int j=0; j < count; j++)
+        for (int j = 0; j < count; j++)
             if (!strcmp(arg[j]->name, packedExp->v.sp->name))
             {
                 auto tpl = arg[j]->templateParams->p->byPack.pack;
@@ -2108,13 +2112,13 @@ EXPRESSION* ReplicatePackedVars(int count, SYMBOL** arg, EXPRESSION* packedExp, 
     }
     else
     {
-        EXPRESSION *rv = Allocate<EXPRESSION>();
+        EXPRESSION* rv = Allocate<EXPRESSION>();
         *rv = *packedExp;
         packedExp = rv;
         if (packedExp->type == en_global && packedExp->v.sp->sb->parentClass)
         {
             // undefined
-            SYMBOL **spx = &packedExp->v.sp;
+            SYMBOL** spx = &packedExp->v.sp;
 
             while (*spx)
             {
@@ -2134,7 +2138,7 @@ EXPRESSION* ReplicatePackedVars(int count, SYMBOL** arg, EXPRESSION* packedExp, 
         {
             packedExp->v.func->templateParams = ReplicateTemplateParams(count, arg, packedExp->v.func->templateParams, index);
             INITLIST* old = packedExp->v.func->arguments;
-            INITLIST**lst = &packedExp->v.func->arguments;
+            INITLIST** lst = &packedExp->v.func->arguments;
 
             while (old)
             {
@@ -2216,7 +2220,6 @@ INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXLIST* start,
                 (*lptr)->tp = t->p->byNonType.tp;
                 lptr = &(*lptr)->next;
             }
-
         }
     }
     else
@@ -2478,7 +2481,7 @@ MEMBERINITIALIZERS* expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, MEMBERI
         else
         {
             lex = SetAlternateLex(nullptr);
-            SpecializationError((char *)nullptr);
+            SpecializationError((char*)nullptr);
         }
     }
     return *init;
@@ -2784,7 +2787,8 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                 {
                     errortype(ERR_OPERATOR_NONSTATIC, basetype(sp->tp)->btp, nullptr);
                 }
-                else if ((enum e_kw)(sp->sb->operatorId - CI_NEW) != kw_new && (enum e_kw)(sp->sb->operatorId - CI_NEW) != kw_delete) 
+                else if ((enum e_kw)(sp->sb->operatorId - CI_NEW) != kw_new &&
+                         (enum e_kw)(sp->sb->operatorId - CI_NEW) != kw_delete)
                 {
                     errorstr(ERR_OPERATOR_NONSTATIC, overloadXlateTab[sp->sb->operatorId]);
                 }
@@ -2980,7 +2984,7 @@ LEXLIST* handleStaticAssert(LEXLIST* lex)
         char buf[5000];
         TYPE* tp;
         EXPRESSION *expr = nullptr, *expr2 = nullptr;
-        inConstantExpression++; 
+        inConstantExpression++;
         lex = expression_no_comma(lex, nullptr, nullptr, &tp, &expr, nullptr, 0);
         expr2 = Allocate<EXPRESSION>();
         expr2->type = en_x_bool;
@@ -3283,8 +3287,8 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                             globalNameSpace->valueData->usingDirectives = l;
                         }
                         if (!IsCompiler() && lex)
-                            CompletionCompiler::ccInsertUsing(sp, nameSpaceList ? (SYMBOL*)nameSpaceList->data : nullptr, lex->data->errfile,
-                                                              lex->data->errline);
+                            CompletionCompiler::ccInsertUsing(sp, nameSpaceList ? (SYMBOL*)nameSpaceList->data : nullptr,
+                                                              lex->data->errfile, lex->data->errline);
                     }
                 }
                 lex = getsym();
@@ -3311,14 +3315,14 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
             LEXLIST* idsym = lex;
             lex = getsym();
             attributes oldAttribs = basisAttribs;
-            basisAttribs = { 0 };
+            basisAttribs = {0};
             ParseAttributeSpecifiers(&lex, nullptr, true);
             if (MATCHKW(lex, assign))
             {
                 TYPE* tp = nullptr;
                 SYMBOL* sp;
                 lex = getsym();
-                TEMPLATEPARAMLIST *lst = nullptr;
+                TEMPLATEPARAMLIST* lst = nullptr;
                 bool pulledtypename = false;
                 if (MATCHKW(lex, kw_typename))
                 {
@@ -3328,7 +3332,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                 if (inTemplate && (ISID(lex) || MATCHKW(lex, classsel) || MATCHKW(lex, kw_typename)))
                 {
                     SYMBOL *sym = nullptr, *strsym = nullptr;
-                    NAMESPACEVALUELIST *ns =nullptr;
+                    NAMESPACEVALUELIST* ns = nullptr;
                     bool throughClass = false;
                     parsingTrailingReturnOrUsing++;
                     lex = id_expression(lex, nullptr, &sym, &strsym, nullptr, nullptr, false, false, nullptr);
@@ -3337,7 +3341,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                         tp = sym->tp;
                         lex = getsym();
                         if (MATCHKW(lex, lt))
-                        { 
+                        {
                             lex = GetTemplateArguments(lex, nullptr, sym, &lst);
                         }
                     }
@@ -3357,8 +3361,8 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                     bool notype = false;
                     bool oldTemplateType = inTemplateType;
 
-                    lex = getBeforeType(lex, nullptr, &tp, &sp, nullptr, nullptr, false, storage_class, &linkage, &linkage2, &linkage3, nullptr, false, false,
-                        true, false); /* fixme at file scope init */
+                    lex = getBeforeType(lex, nullptr, &tp, &sp, nullptr, nullptr, false, storage_class, &linkage, &linkage2,
+                                        &linkage3, nullptr, false, false, true, false); /* fixme at file scope init */
                 }
                 else
                 {
@@ -3419,7 +3423,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                         SYMLIST** hr = sp->tp->syms->table;
                         while (*hr)
                         {
-                            SYMBOL* ssp = getStructureDeclaration(), * ssp1;
+                            SYMBOL *ssp = getStructureDeclaration(), *ssp1;
                             SYMBOL* sp = (SYMBOL*)(*hr)->p;
                             SYMBOL* sp1 = CopySymbol(sp);
                             sp1->sb->wasUsing = true;
@@ -3438,7 +3442,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                     }
                     else
                     {
-                        SYMBOL* ssp = getStructureDeclaration(), * ssp1;
+                        SYMBOL *ssp = getStructureDeclaration(), *ssp1;
                         SYMBOL* sp1 = CopySymbol(sp);
                         sp1->sb->wasUsing = true;
                         sp1->sb->mainsym = sp;
@@ -3537,26 +3541,22 @@ TYPE* AttributeFinish(SYMBOL* sym, TYPE* tp)
     return tp;
 }
 static const std::unordered_map<std::string, int> gccStyleAttribNames = {
-    {"alias", 1},  // 1 arg, alias name
-    {"aligned",
-     2},  // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
+    {"alias", 1},    // 1 arg, alias name
+    {"aligned", 2},  // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
     {"warn_if_not_aligned", 3},  // arg is the desired minimum alignment
     {"alloc_size", 4},           // implement by ignoring one or two args
-    {"cleanup", 5},  // arg is afunc: similar to a destructor.   Also gets called during exception processing
-                     //                    { "common", 6 }, // no args, decide whether to support
-                     //                    { "nocommon", 7 }, // no args, decide whether to support
-    {"copy",
-     8},  // one arg, varible/func/type, the two variable kinds must match don't copy alias visibility or weak
-    {"deprecated", 9},  // zero or one arg, match C++
-    {"nonstring", 10},  // has no null terminator
-    {"packed",
-     11},  // ignore auto-align on this field
-           //                    { "section", 12 }, // one argument, the section name
-           //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
-    {"unused", 14},  // warning control
-    {"used", 15},    // warning control
-    {"vector_size",
-     16},  // one arg, which must be a power of two multiple of the base size.  implement as fixed-size array
+    {"cleanup", 5},              // arg is afunc: similar to a destructor.   Also gets called during exception processing
+                                 //                    { "common", 6 }, // no args, decide whether to support
+                                 //                    { "nocommon", 7 }, // no args, decide whether to support
+    {"copy", 8},          // one arg, varible/func/type, the two variable kinds must match don't copy alias visibility or weak
+    {"deprecated", 9},    // zero or one arg, match C++
+    {"nonstring", 10},    // has no null terminator
+    {"packed", 11},       // ignore auto-align on this field
+                          //                    { "section", 12 }, // one argument, the section name
+                          //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
+    {"unused", 14},       // warning control
+    {"used", 15},         // warning control
+    {"vector_size", 16},  // one arg, which must be a power of two multiple of the base size.  implement as fixed-size array
     //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't
     //                    support for now as requires linker changes. { "weak", 18 }, // not supporting
     {"dllimport", 19},
@@ -3566,10 +3566,11 @@ static const std::unordered_map<std::string, int> gccStyleAttribNames = {
     {"zstring", 23},  // non-gcc, added to support nonstring
     {"noreturn", 24},
     {"stdcall", 25},
-    {"always_inline", 26}, // we don't really force inline this is still just a suggestion.   in practice the types of functions that get flagged with this will likely always be inlined anyway
+    {"always_inline", 26},  // we don't really force inline this is still just a suggestion.   in practice the types of functions
+                            // that get flagged with this will likely always be inlined anyway
     {"format", 27},
     {"internal_linkage", 28},
-    {"exclude_from_explicit_instantiation", 29 },
+    {"exclude_from_explicit_instantiation", 29},
 };
 void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
 {
@@ -3641,9 +3642,9 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                 else
                                 {
                                     // no argument means use max meaningful size
-                                    basisAttribs.inheritable.structAlign = Optimizer::chosenAssembler->arch->type_align->a_alignedstruct	;
+                                    basisAttribs.inheritable.structAlign =
+                                        Optimizer::chosenAssembler->arch->type_align->a_alignedstruct;
                                     basisAttribs.inheritable.alignedAttribute = true;
-                                    
                                 }
                                 break;
                             case 3:  // warn_if_not_aligned
@@ -3808,22 +3809,22 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                                 basisAttribs.inheritable.linkage = lk_stdcall;
                                 break;
-                            case 26: // always inline
+                            case 26:  // always inline
                                 basisAttribs.inheritable.isInline = true;
                                 break;
-                            case 27: // format
-                                 needkw(lex, openpa);
-                                 while (*lex && !MATCHKW(*lex, closepa))
-                                     *lex = getsym();
-                                 if (lex)
-                                     *lex = getsym();
-                                 break;
-                             case 28: // internal_linkage 
-                                 basisAttribs.inheritable.linkage2 = lk_internal;
-                                 break;
-                             case 29: // exclude_from_explicit_instantiation
-                                 basisAttribs.inheritable.excludeFromExplicitInstantiation = true;
-                                 break;
+                            case 27:  // format
+                                needkw(lex, openpa);
+                                while (*lex && !MATCHKW(*lex, closepa))
+                                    *lex = getsym();
+                                if (lex)
+                                    *lex = getsym();
+                                break;
+                            case 28:  // internal_linkage
+                                basisAttribs.inheritable.linkage2 = lk_internal;
+                                break;
+                            case 29:  // exclude_from_explicit_instantiation
+                                basisAttribs.inheritable.excludeFromExplicitInstantiation = true;
+                                break;
                         }
                     }
                 }
@@ -3843,15 +3844,14 @@ static const std::unordered_map<std::string, int> occCPPStyleAttribNames = {
     {"zstring", 23},  // non-gcc, added to support nonstring
 };
 static const std::unordered_map<std::string, int> clangCPPStyleAttribNames = {
-     {"internal_linkage", 28},
-     {"exclude_from_explicit_instantiation", 29 },
+    {"internal_linkage", 28},
+    {"exclude_from_explicit_instantiation", 29},
 };
 static const std::unordered_map<std::string, int> gccCPPStyleAttribNames = {
-    {"alloc_size",
-     4},  // implement by ignoring one or two args
-          //                    { "common", 6 }, // no args, decide whether to support
-          //                    { "nocommon", 7 }, // no args, decide whether to support
-          //                    { "section", 12 }, // one argument, the section name
+    {"alloc_size", 4},  // implement by ignoring one or two args
+                        //                    { "common", 6 }, // no args, decide whether to support
+                        //                    { "nocommon", 7 }, // no args, decide whether to support
+                        //                    { "section", 12 }, // one argument, the section name
     //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't
     //                    support { "visibility", 17 }, // one arg, 'default' ,'hidden',
     //                    'internal', 'protected.   don't support for now as requires linker
@@ -3859,7 +3859,7 @@ static const std::unordered_map<std::string, int> gccCPPStyleAttribNames = {
     //                    requires linker support { "shared", 22 },
     {"dllexport", 25},
     {"dllimport", 26},
-    {"stdcall", 27} };
+    {"stdcall", 27}};
 bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
 {
     (void)always;
@@ -4474,7 +4474,7 @@ void CollapseReferences(TYPE* tp_in)
         tp_in->rootType = tp_in;
     }
 }
-EXPRESSION* addLocalDestructor(EXPRESSION*exp, SYMBOL* decl)
+EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
 {
     if (decl->sb->dest)
     {
@@ -4482,7 +4482,7 @@ EXPRESSION* addLocalDestructor(EXPRESSION*exp, SYMBOL* decl)
         if (atexitfunc)
         {
             atexitfunc = atexitfunc->tp->syms->table[0]->p;
-            EXPRESSION **last = &exp;
+            EXPRESSION** last = &exp;
             while (*last && (*last)->type == en_void)
                 last = &(*last)->right;
             if (*last)
@@ -4519,7 +4519,7 @@ EXPRESSION* addLocalDestructor(EXPRESSION*exp, SYMBOL* decl)
             Optimizer::gen_label(Optimizer::nextLabel - 2);
             noinline++;
             optimize_for_constants(&decl->sb->dest->exp);
-            gen_expr(newFunc, decl->sb->dest->exp, F_NOVALUE, ISZ_UINT); 
+            gen_expr(newFunc, decl->sb->dest->exp, F_NOVALUE, ISZ_UINT);
             noinline--;
             Optimizer::gen_label(Optimizer::nextLabel - 1);
 

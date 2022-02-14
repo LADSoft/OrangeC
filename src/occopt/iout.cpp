@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -80,11 +80,11 @@ static void iop_phi(Optimizer::QUAD* q)
 {
     PHIDATA* phi = q->dc.v.phi;
     struct _phiblock* pb = phi->temps;
-//    Optimizer::SimpleExpression* enode = tempInfo[phi->T0]->enode;
-//    if (enode->right)
-//        oprintf(icdFile, "\tT%d[%s] = PHI(", phi->T0, ((Optimizer::SimpleSymbol*)(enode->right))->name);
-//    else
-        oprintf(icdFile, "\tT%d = PHI(", phi->T0);
+    //    Optimizer::SimpleExpression* enode = tempInfo[phi->T0]->enode;
+    //    if (enode->right)
+    //        oprintf(icdFile, "\tT%d[%s] = PHI(", phi->T0, ((Optimizer::SimpleSymbol*)(enode->right))->name);
+    //    else
+    oprintf(icdFile, "\tT%d = PHI(", phi->T0);
     while (pb)
     {
         oprintf(icdFile, "T%d(%d),", pb->Tn, pb->block->blocknum + 1);
@@ -250,7 +250,7 @@ static void putunary(Optimizer::QUAD* q, const char* str)
     if (q->atomic)
         oprintf(icdFile, " Atomic= ");
     else
-       oprintf(icdFile, " = ");
+        oprintf(icdFile, " = ");
     oprintf(icdFile, " %s ", str);
     putamode(q, q->dc.left);
 }
@@ -856,8 +856,7 @@ static void (*oplst[])(Optimizer::QUAD* q) = {
     iop_initblk,
     iop_cpblk,
     iop_initobj,
-    iop_sizeof
-};
+    iop_sizeof};
 /*-------------------------------------------------------------------------*/
 
 /*-------------------------------------------------------------------------*/
@@ -1138,9 +1137,9 @@ void putamode(Optimizer::QUAD* q, Optimizer::IMODE* ap)
 static void put_bitarray(const char* msg, BITINT* bits, int termCount)
 {
     int n = (termCount + BITINTBITS - 1) / BITINTBITS;
-    oprintf(icdFile,"%20s: ", msg);
+    oprintf(icdFile, "%20s: ", msg);
     for (int i = 0; i < n; i++)
-        oprintf(icdFile,"%8x ", bits[i]);
+        oprintf(icdFile, "%8x ", bits[i]);
     oputc('\n', icdFile);
 }
 static void put_diagnostics(Optimizer::QUAD* q)
@@ -1288,8 +1287,7 @@ static void PutData(BaseData* data)
             oprintf(icdFile, "\tDC.I L_%d-L_%d", data->diff.l1, data->diff.l2);
             nl();
             break;
-        case DT_STRING:
-        {
+        case DT_STRING: {
             bool instring = false;
             for (int i = 0; i < data->astring.i; i++)
             {

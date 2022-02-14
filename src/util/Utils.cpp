@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
@@ -39,9 +39,9 @@
 #else
 #    include <io.h>
 extern "C" char* getcwd(char*, int);
-#ifdef BORLAND
-#    define _isatty isatty
-#endif
+#    ifdef BORLAND
+#        define _isatty isatty
+#    endif
 #endif
 
 #include "Utils.h"
@@ -118,16 +118,15 @@ int Utils::ScreenHeight()
     return csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
 #else
     struct winsize max;
-    ioctl(0, TIOCGWINSZ , &max);
+    ioctl(0, TIOCGWINSZ, &max);
     return max.ws_row;
 #endif
-
 }
-bool Utils::GetLine(const char **text, std::string& buf)
+bool Utils::GetLine(const char** text, std::string& buf)
 {
     if (!**text)
         return false;
-    char const *start = *text;
+    char const* start = *text;
     auto temp = strchr(*text, '\n');
     if (!temp)
     {
@@ -142,13 +141,13 @@ bool Utils::GetLine(const char **text, std::string& buf)
 }
 void Utils::usage(const char* prog_name, const char* text)
 {
-    
+
     int rows = 10000;
 #ifdef _WIN32
-    if (_isatty(fileno(stderr))) 
+    if (_isatty(fileno(stderr)))
         rows = ScreenHeight();
 #else
-    if (_isatty(STDERR_FILENO)) 
+    if (_isatty(STDERR_FILENO))
         rows = ScreenHeight();
 #endif
     fprintf(stderr, "\nUsage: %s ", ShortName(prog_name));
@@ -263,7 +262,7 @@ char* Utils::FullQualify(char* string)
     if (string[0] == '\\')
     {
         getcwd(buf, 265);
-        Utils::StrCpy(buf + 2, sizeof(buf)-2, string);
+        Utils::StrCpy(buf + 2, sizeof(buf) - 2, string);
         return buf;
     }
     else if (string[1] != ':')
@@ -284,7 +283,7 @@ char* Utils::FullQualify(char* string)
         }
         p++;
         *p++ = '\\';
-        Utils::StrCpy(p, sizeof(buf) - (p-buf), q);
+        Utils::StrCpy(p, sizeof(buf) - (p - buf), q);
         return buf;
     }
     return string;
@@ -386,7 +385,7 @@ FILE* Utils::TempName(std::string& name)
     if (tempFile[0] == '\\')
     {
         // fix for buggy mingw on windows
-        const char *p = getenv("TMP");
+        const char* p = getenv("TMP");
         if (!p)
             p = "";
         StrCpy(tempFile, p);
@@ -456,13 +455,13 @@ std::vector<std::string> Utils::split(std::string strToSplit, char delimeter)
     }
     return splittedStrings;
 }
-void Utils::ReplaceAll(std::string& str, const std::string& from, const std::string& to) 
+void Utils::ReplaceAll(std::string& str, const std::string& from, const std::string& to)
 {
     size_t pos(0);
-    while((pos = str.find(from, pos)) != std::string::npos) 
+    while ((pos = str.find(from, pos)) != std::string::npos)
     {
         str.replace(pos, from.length(), to);
-        pos += to.length(); 
+        pos += to.length();
     }
 }
 

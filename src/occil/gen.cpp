@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -278,8 +278,7 @@ Operand* getOperand(Optimizer::IMODE* oper)
                 rv = make_constant(oper->size, oper->offset);
             }
             break;
-        case Optimizer::i_direct:
-        {
+        case Optimizer::i_direct: {
             if (oper->offset->type == Optimizer::se_structelem)
             {
                 if (oper->offset->sp->isproperty)
@@ -385,8 +384,7 @@ void load_ind(Optimizer::IMODE* im)
         case -ISZ_ULONGLONG:
             op = Instruction::i_ldind_i8;
             break;
-        case ISZ_ADDR:
-        {
+        case ISZ_ADDR: {
             Operand* oper = currentMethod->LastInstruction()->GetOperand();
             // check for __va_arg__ on a pointer type
             if (oper && oper->OperandType() == Operand::t_value && typeid(*oper->GetValue()) == typeid(MethodName))
@@ -681,8 +679,8 @@ void gen_load(Optimizer::IMODE* im, Operand* dest, bool retval)
                 gen_code(Instruction::i_ldftn, dest);
                 if (Optimizer::delegateforfuncptr)
                 {
-                    Operand *ctor;
-                    Operand *operand = GetDelegateAllocator(im->offset->sp->tp, ctor);
+                    Operand* ctor;
+                    Operand* operand = GetDelegateAllocator(im->offset->sp->tp, ctor);
                     gen_code(Instruction::i_newobj, ctor);
                     gen_code(Instruction::i_call, operand);
                 }
@@ -864,23 +862,20 @@ void gen_convert(Operand* dest, Optimizer::IMODE* im, int sz)
         case ISZ_OBJECT:
             box(im);
             return;
-        case ISZ_STRING:
-        {
+        case ISZ_STRING: {
             box(im);
             MethodSignature* sig = toStr;
             Operand* ap = peLib->AllocateOperand(peLib->AllocateMethodName(sig));
             gen_code(Instruction::i_call, ap);
             return;
         }
-        case ISZ_TOINT:
-        {
+        case ISZ_TOINT: {
             MethodSignature* sig = toInt;
             Operand* ap = peLib->AllocateOperand(peLib->AllocateMethodName(sig));
             gen_code(Instruction::i_call, ap);
             return;
         }
-        case ISZ_TOVOIDSTAR:
-        {
+        case ISZ_TOVOIDSTAR: {
             MethodSignature* sig = toVoidStar;
             Operand* ap = peLib->AllocateOperand(peLib->AllocateMethodName(sig));
             gen_code(Instruction::i_call, ap);
@@ -942,9 +937,7 @@ void asm_expressiontag(Optimizer::QUAD* q)
         }
     }
 }
-void asm_tag(Optimizer::QUAD* q)
-{
-}
+void asm_tag(Optimizer::QUAD* q) {}
 void asm_line(Optimizer::QUAD* q) /* line number information and text */
 {
     char buf[10000];
@@ -1012,15 +1005,15 @@ void unbox(int isz)
 }
 void set_xxx(Instruction::iop ins)
 {
-	int lab1 = beGetLabel;
-	int lab2 = beGetLabel;
-        gen_branch(ins, lab1, true);
-        gen_code(Instruction::i_ldc_i4_0, nullptr);
-        gen_branch(Instruction::i_br, lab2, true);
-        msil_oa_gen_label(lab1);
-        gen_code(Instruction::i_ldc_i4_1, nullptr);
-        msil_oa_gen_label(lab2);
-        increment_stack();
+    int lab1 = beGetLabel;
+    int lab2 = beGetLabel;
+    gen_branch(ins, lab1, true);
+    gen_code(Instruction::i_ldc_i4_0, nullptr);
+    gen_branch(Instruction::i_br, lab2, true);
+    msil_oa_gen_label(lab1);
+    gen_code(Instruction::i_ldc_i4_1, nullptr);
+    msil_oa_gen_label(lab2);
+    increment_stack();
 }
 // this implementation won't handle varag functions nested in other varargs...
 void asm_parm(Optimizer::QUAD* q) /* push a parameter*/
@@ -1319,46 +1312,16 @@ void asm_eor(Optimizer::QUAD* q) /* binary exclusive or */
     decrement_stack();
     gen_code(Instruction::i_xor, NULL);
 }
-void asm_setne(Optimizer::QUAD* q) /* evaluate a = b != c */
-{
-    set_xxx(Instruction::i_bne_un);
-}
-void asm_sete(Optimizer::QUAD* q) /* evaluate a = b == c */
-{
-    set_xxx(Instruction::i_beq);
-}
-void asm_setc(Optimizer::QUAD* q) /* evaluate a = b U< c */
-{
-    set_xxx(Instruction::i_blt);
-}
-void asm_seta(Optimizer::QUAD* q) /* evaluate a = b U> c */
-{
-    set_xxx(Instruction::i_bgt);
-}
-void asm_setnc(Optimizer::QUAD* q) /* evaluate a = b U>= c */
-{
-    set_xxx(Instruction::i_bge);
-}
-void asm_setbe(Optimizer::QUAD* q) /* evaluate a = b U<= c */
-{
-    set_xxx(Instruction::i_ble);
-}
-void asm_setl(Optimizer::QUAD* q) /* evaluate a = b S< c */
-{
-    set_xxx(Instruction::i_blt);
-}
-void asm_setg(Optimizer::QUAD* q) /* evaluate a = b s> c */
-{
-    set_xxx(Instruction::i_bgt);
-}
-void asm_setle(Optimizer::QUAD* q) /* evaluate a = b S<= c */
-{
-    set_xxx(Instruction::i_ble);
-}
-void asm_setge(Optimizer::QUAD* q) /* evaluate a = b S>= c */
-{
-    set_xxx(Instruction::i_bge);
-}
+void asm_setne(Optimizer::QUAD* q) /* evaluate a = b != c */ { set_xxx(Instruction::i_bne_un); }
+void asm_sete(Optimizer::QUAD* q) /* evaluate a = b == c */ { set_xxx(Instruction::i_beq); }
+void asm_setc(Optimizer::QUAD* q) /* evaluate a = b U< c */ { set_xxx(Instruction::i_blt); }
+void asm_seta(Optimizer::QUAD* q) /* evaluate a = b U> c */ { set_xxx(Instruction::i_bgt); }
+void asm_setnc(Optimizer::QUAD* q) /* evaluate a = b U>= c */ { set_xxx(Instruction::i_bge); }
+void asm_setbe(Optimizer::QUAD* q) /* evaluate a = b U<= c */ { set_xxx(Instruction::i_ble); }
+void asm_setl(Optimizer::QUAD* q) /* evaluate a = b S< c */ { set_xxx(Instruction::i_blt); }
+void asm_setg(Optimizer::QUAD* q) /* evaluate a = b s> c */ { set_xxx(Instruction::i_bgt); }
+void asm_setle(Optimizer::QUAD* q) /* evaluate a = b S<= c */ { set_xxx(Instruction::i_ble); }
+void asm_setge(Optimizer::QUAD* q) /* evaluate a = b S>= c */ { set_xxx(Instruction::i_bge); }
 void asm_assn(Optimizer::QUAD* q) /* assignment */
 {
     Operand* ap;
@@ -1503,7 +1466,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
             if (sp->tp->type == Optimizer::st_pointer && sp->tp->btp->type == Optimizer::st_func)
             {
                 gen_load(q->ans, ap, q->ans->retval);
-                gen_code(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(delegateFreer)));                
+                gen_code(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(delegateFreer)));
             }
         }
     }
@@ -1660,10 +1623,7 @@ void asm_assnblock(Optimizer::QUAD* q) /* copy block of memory*/
     decrement_stack();
     decrement_stack();
 }
-void asm_clrblock(Optimizer::QUAD* q) /* clear block of memory */
-{
-    asm_initobj(q);
-}
+void asm_clrblock(Optimizer::QUAD* q) /* clear block of memory */ { asm_initobj(q); }
 void asm_initblock(Optimizer::QUAD* q) /* clear block of memory */
 {
     // the 'value' field is loaded by examine_icode...
@@ -1865,8 +1825,5 @@ void asm_loadstack(Optimizer::QUAD* q) /* load the stack pointer from a var */ {
 void asm_savestack(Optimizer::QUAD* q) /* save the stack pointer to a var */ {}
 void asm_functail(Optimizer::QUAD* q, int begin, int size) /* functail start or end */ {}
 void asm_atomic(Optimizer::QUAD* q) {}
-void asm_nop(Optimizer::QUAD* q)
-{
-    gen_code(Instruction::i_nop, 0);
-}
+void asm_nop(Optimizer::QUAD* q) { gen_code(Instruction::i_nop, 0); }
 }  // namespace occmsil

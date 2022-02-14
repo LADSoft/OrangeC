@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -97,7 +97,7 @@ int makeregflags(AMODE* ap)
     }
     return regflags;
 }
-int getreg(AMODE *apll, int regflags, bool& pushed)
+int getreg(AMODE* apll, int regflags, bool& pushed)
 {
     pushed = false;
     int reg = 0;
@@ -143,7 +143,7 @@ AMODE* offsetToHigh(AMODE* low)
     }
     return rv;
 }
-AMODE* atomic_lea(AMODE* apll, AMODE* apa, int regflags, int &reg, bool &pushed)
+AMODE* atomic_lea(AMODE* apll, AMODE* apa, int regflags, int& reg, bool& pushed)
 {
     reg = getreg(apll, regflags, pushed);
     AMODE* apal = makedreg(reg);
@@ -372,8 +372,7 @@ AMODE* make_offset(Optimizer::SimpleExpression* node)
 AMODE* make_stack(int number)
 {
     AMODE* ap = beLocalAllocate<AMODE>();
-    Optimizer::SimpleExpression* ep =
-        beLocalAllocate<Optimizer::SimpleExpression>();
+    Optimizer::SimpleExpression* ep = beLocalAllocate<Optimizer::SimpleExpression>();
     ep->type = Optimizer::se_i;
     ep->i = -number;
     ap->mode = am_indisp;
@@ -1941,7 +1940,7 @@ static void llongatomicmath(e_opcode low, e_opcode high, Optimizer::QUAD* q)
 {
     int lab = 0;
     enum e_opcode opa, opl, opr;
-    AMODE* apal, * apah, * apll, * aplh, * aprl, * aprh;
+    AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
@@ -2086,7 +2085,6 @@ static void llongatomicmath(e_opcode low, e_opcode high, Optimizer::QUAD* q)
         else
             gen_codes(op_pop, ISZ_UINT, makedreg(reg3), nullptr);
         pushlevel -= 4;
-
     }
     if (pushreg2)
     {
@@ -2197,8 +2195,10 @@ static void addsubatomic(e_opcode op, Optimizer::QUAD* q)
 static void logicatomic(e_opcode op, Optimizer::QUAD* q)
 {
     if (((q->ans->size <= ISZ_U32 && q->ans->size != -ISZ_ULONGLONG) || q->ans->size == ISZ_ADDR || q->ans->size == ISZ_FLOAT) ||
-        ((q->dc.left->size <= ISZ_U32 && q->dc.left->size != -ISZ_ULONGLONG) || q->dc.left->size == ISZ_ADDR || q->dc.left->size == ISZ_FLOAT) ||
-        ((q->dc.right->size <= ISZ_U32 && q->dc.right->size != -ISZ_ULONGLONG) || q->dc.right->size == ISZ_ADDR || q->dc.left->size == ISZ_FLOAT))
+        ((q->dc.left->size <= ISZ_U32 && q->dc.left->size != -ISZ_ULONGLONG) || q->dc.left->size == ISZ_ADDR ||
+         q->dc.left->size == ISZ_FLOAT) ||
+        ((q->dc.right->size <= ISZ_U32 && q->dc.right->size != -ISZ_ULONGLONG) || q->dc.right->size == ISZ_ADDR ||
+         q->dc.left->size == ISZ_FLOAT))
     {
         bool pushbp = false;
         enum e_opcode opa, opl, opr;
@@ -2212,8 +2212,8 @@ static void logicatomic(e_opcode op, Optimizer::QUAD* q)
             int regflagsa = makeregflags(apal);
             int regflagsr = makeregflags(aprl);
             int regflagsl = makeregflags(apll);
-            int reg1=0, reg2=0, reg3=0;
-            bool pushreg1 = false, pushreg2= false, pushreg3 = false;
+            int reg1 = 0, reg2 = 0, reg3 = 0;
+            bool pushreg1 = false, pushreg2 = false, pushreg3 = false;
             if (regflagsr & (1 << EAX))
             {
                 if (q->ans->size < 0)
@@ -3728,7 +3728,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
             int reg1 = 0, reg2 = 0;
             int used_mask = (1 << EAX) | (1 << EBX) | (1 << ECX) | (1 << EDX);
             bool pushpair = false;
-            AMODE* aplhold = apl1,* apllold = apl;
+            AMODE *aplhold = apl1, *apllold = apl;
             gen_codes(op_push, ISZ_UINT, makedreg(ECX), nullptr);
             gen_codes(op_push, ISZ_UINT, makedreg(EBX), nullptr);
             pushlevel += 8;
@@ -5424,8 +5424,8 @@ void asm_atomic(Optimizer::QUAD* q)
                 int regflagsr = makeregflags(aprl);
                 int regflags = regflagsa | regflagsl | regflagsr;
                 bool pushreg1 = false;
-                int reg1=0;
-                int used_mask = (1 << EAX) | (1 << EBX) | (1<<ECX) | (1 <<EDX);
+                int reg1 = 0;
+                int used_mask = (1 << EAX) | (1 << EBX) | (1 << ECX) | (1 << EDX);
                 gen_codes(op_push, ISZ_UINT, makedreg(ECX), nullptr);
                 gen_codes(op_push, ISZ_UINT, makedreg(EBX), nullptr);
                 pushlevel += 8;
@@ -5584,7 +5584,7 @@ void asm_atomic(Optimizer::QUAD* q)
                     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
                     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
                     getAmodes(q, &opa, q->ans, &apal, &apah);
-                    AMODE* aprlold = aprl, * aprhold = aprh;
+                    AMODE *aprlold = aprl, *aprhold = aprh;
                     int regflagsa = makeregflags(apal);
                     int regflagsl = makeregflags(apll);
                     int regflagsr = makeregflags(aprl);
@@ -5667,7 +5667,7 @@ void asm_atomic(Optimizer::QUAD* q)
                     gen_codes(op_mov, ISZ_UINT, makedreg(EBX), make_stack(-8));
                     gen_codes(op_mov, ISZ_UINT, makedreg(ECX), make_stack(-12));
                     gen_codes(op_cmpxchg8b, ISZ_NONE, apal, nullptr);
-                    gen_code(op_je, make_label(lab= beGetLabel), NULL);
+                    gen_code(op_je, make_label(lab = beGetLabel), NULL);
                     gen_codes(op_mov, ISZ_UINT, aprh, makedreg(EDX));
                     gen_codes(op_mov, ISZ_UINT, aprl, makedreg(EAX));
                     oa_gen_label(lab);
@@ -5731,8 +5731,8 @@ void asm_atomic(Optimizer::QUAD* q)
                     int lab = beGetLabel;
                     int regflagsa = makeregflags(apal);
                     int regflagsl = regflagsa | makeregflags(aprl) | makeregflags(apll);
-                    int reg1=0, reg2=0, reg3 = 0;
-                    bool pushreg1 = false, pushreg2= false, pushreg3;
+                    int reg1 = 0, reg2 = 0, reg3 = 0;
+                    bool pushreg1 = false, pushreg2 = false, pushreg3;
                     if (aprl->mode == am_immed)
                         aprl->mode = am_direct;
                     if (regflagsa & (1 << EAX))
@@ -5740,7 +5740,6 @@ void asm_atomic(Optimizer::QUAD* q)
                         apal = atomic_lea(apll, apal, regflagsl, reg1, pushreg1);
                         apah = nullptr;
                         regflagsl |= 1 << reg1;
-
                     }
                     if (regflagsl & (1 << EAX))
                     {
@@ -5760,7 +5759,7 @@ void asm_atomic(Optimizer::QUAD* q)
                     }
                     reg3 = getreg(apll, regflagsl | (1 << EAX), pushreg3);
                     if (apll->mode == am_xmmreg)
-                    {           
+                    {
                         gen_code(op_movd, makedreg(reg3), apll);
                     }
                     else
@@ -5786,7 +5785,7 @@ void asm_atomic(Optimizer::QUAD* q)
                     }
                     if (pushreg1)
                     {
-                       gen_codes(op_pop, ISZ_UINT, makedreg(reg1), nullptr);
+                        gen_codes(op_pop, ISZ_UINT, makedreg(reg1), nullptr);
                         pushlevel -= 4;
                     }
                 }

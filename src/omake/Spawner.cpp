@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -337,7 +337,7 @@ bool Spawner::split(const std::string& cmd)
             int lsp = middle.find_last_of(' ');
             if (lsp != std::string::npos)
             {
-                p.replace(lsp, p.size() - lsp, ""); 
+                p.replace(lsp, p.size() - lsp, "");
                 middle.replace(0, lsp + 1, "");
                 cmdList.push_back(first + p + last);
             }

@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2021 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -72,14 +72,8 @@ void inlineinit(void)
     vc1Thunks = CreateHashTable(1);
     didInlines.clear();
 }
-static bool inSearch(SYMBOL* sp)
-{
-    return didInlines.find(sp->sb->decoratedName) != didInlines.end();
-}
-static void inInsert(SYMBOL* sym)
-{
-    didInlines.insert(sym->sb->decoratedName);
-}
+static bool inSearch(SYMBOL* sp) { return didInlines.find(sp->sb->decoratedName) != didInlines.end(); }
+static void inInsert(SYMBOL* sym) { didInlines.insert(sym->sb->decoratedName); }
 static void UndoPreviousCodegen(SYMBOL* sym) {}
 void dumpInlines(void)
 {
@@ -99,11 +93,10 @@ void dumpInlines(void)
                 {
                     SYMBOL* sym = (SYMBOL*)funcList->data;
                     if (((sym->sb->attribs.inheritable.isInline && sym->sb->dumpInlineToFile) ||
-                        (Optimizer::SymbolManager::Test(sym) && Optimizer::SymbolManager::Test(sym)->genreffed)))
+                         (Optimizer::SymbolManager::Test(sym) && Optimizer::SymbolManager::Test(sym)->genreffed)))
                     {
-                        if ((sym->sb->parentClass && sym->sb->parentClass->sb->dontinstantiate && 
-                               !sym->sb->attribs.inheritable.excludeFromExplicitInstantiation && 
-                               !sym->sb->templateLevel))
+                        if ((sym->sb->parentClass && sym->sb->parentClass->sb->dontinstantiate &&
+                             !sym->sb->attribs.inheritable.excludeFromExplicitInstantiation && !sym->sb->templateLevel))
                         {
                             sym->sb->dontinstantiate = true;
                         }
@@ -119,8 +112,8 @@ void dumpInlines(void)
                                 {
                                     propagateTemplateDefinition(sym);
                                 }
-                                if ((sym->sb->attribs.inheritable.isInline || sym->sb->attribs.inheritable.linkage4 == lk_virtual
-                                    || sym->sb->forcedefault) &&
+                                if ((sym->sb->attribs.inheritable.isInline || sym->sb->attribs.inheritable.linkage4 == lk_virtual ||
+                                     sym->sb->forcedefault) &&
                                     sym->sb->inlineFunc.stmt)
                                 {
                                     inInsert(sym);
@@ -588,7 +581,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case en_dot:
         case en_pointsto:
         case en_construct:
-                break;
+            break;
             /*		case en_array: */
             temp->right = inlineexpr(node->right, nullptr);
         case en_mp_as_bool:
@@ -1052,7 +1045,7 @@ static bool sideEffects(EXPRESSION* node)
         case en_mp_compare:
         case en_dot:
         case en_pointsto:
-                break;
+            break;
             /*		case en_array: */
             rv = sideEffects(node->right);
         case en_mp_as_bool:

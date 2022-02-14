@@ -39,8 +39,12 @@ int WINDOWSJobServer::TryTakeNewJob()
     if (current_jobs != 0)
     {
         // Increment beforehand so that we don't accidentally wait too much with this...
-        int ret = semaphore.TryWait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
         current_jobs++;
+        int ret = semaphore.TryWait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
+        if (ret == -1)
+        {
+            current_jobs--;
+        }
         return ret;
     }
     current_jobs++;
@@ -56,8 +60,8 @@ int WINDOWSJobServer::TakeNewJob()
     // completely sqt_cst CPU) that this is good enough for now to ensure no funny business
     if (current_jobs != 0)
     {
-        semaphore.Wait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
         current_jobs++;
+        semaphore.Wait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
         return 0;
     }
     current_jobs++;

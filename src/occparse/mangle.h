@@ -34,6 +34,7 @@ extern int mangledNamesCount;
 void mangleInit(void);
 char* mangleNameSpaces(char* in, SYMBOL* sym);
 char* mangleType(char* in, TYPE* tp, bool first);
+bool GetTemplateArgumentName(TEMPLATEPARAMLIST* params, std::string& result);
 void GetClassKey(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params);
 void SetLinkerNames(SYMBOL* sym, enum e_lk linkage, bool isTemplateDefinition = false);
 }  // namespace Parser

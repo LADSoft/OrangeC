@@ -2,7 +2,7 @@
  *
  *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
  *
- *     This file is part of the Orange C Compiler package.
+ *     This file is part of the Orange C Compilepr package.
  *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -106,7 +106,6 @@ int mangledNamesCount;
 static char* lookupName(char* in, const char* name);
 static int uniqueID;
 static bool inKeyCreation;
-
 void mangleInit()
 {
     uniqueID = 0;
@@ -937,6 +936,163 @@ char* mangleType(char* in, TYPE* tp, bool first)
     *in = 0;
     return in;
 }
+static bool validType(TYPE* tp)
+{
+    tp = basetype(tp);
+    switch (tp->type)
+    {
+    case bt_templateparam:
+    case bt_templateselector:
+    case bt_any:
+    case bt_aggregate:
+        return false;
+    case bt_pointer:
+        if (tp->array)
+        {
+            if (tp->size == 0)
+                return false;
+
+        }
+        if (tp->vla)
+            return false;
+    case bt_lref:
+    case bt_rref:
+        return validType(tp->btp);
+    case bt_func:
+    case bt_ifunc:
+        if (!validType(tp->btp))
+            return false;
+        for (auto t = tp->syms->table[0]; t; t = t->next)
+            if (!validType(t->p->tp))
+                return false;
+        break;
+    case bt_struct:
+    case bt_class:
+    case bt_union:
+        if (tp->sp->templateParams)
+        {
+            for (auto tpl = tp->sp->templateParams; tpl; tpl = tpl->next)
+            {
+                if (tpl->p->type == kw_typename)
+                {
+
+                    if (tpl->p->packed)
+                    {
+                        for (auto tpl2 = tpl->p->byPack.pack; tpl2; tpl2 = tpl2->next)
+                        {
+                            auto dflt = tpl2->p->byClass.dflt;
+                            if (!dflt)
+                                dflt = tpl2->p->byClass.val;
+                            if (!dflt || !validType(dflt))
+                                return false;
+                        }
+                    }
+                    else
+                    {
+                        auto dflt = tpl->p->byClass.dflt;
+                        if (!dflt)
+                            dflt = tpl->p->byClass.val;
+                        if (!dflt || !validType(dflt))
+                            return false;
+                    }
+                }
+            }
+        }
+        break;
+    default:
+    {
+        if (!isarithmetic(tp) && !isref(tp) && !ispointer(tp) && !isstructured(tp) && tp->type != bt_enum && tp->type != bt_void && tp->type != bt_memberptr)
+        {
+            printf("hi");
+        }
+    }
+    }
+    return true;
+}
+bool GetTemplateArgumentName(TEMPLATEPARAMLIST* params, std::string& result)
+{
+    mangledNamesCount = 0;
+    if (!params)
+        result = "v";
+    else
+        result = "";
+    while (params)
+    {
+        char buf[8000];
+        void *dflt = params->p->byClass.dflt;
+        if (!dflt)
+            dflt = params->p->byClass.val;
+        if (!dflt)
+            return false;
+        switch (params->p->type)
+        {
+            case kw_typename:
+                result += 'c';
+                break;
+            case kw_int:
+                result += 'i';
+                break;
+            case kw_template:
+                result += 't';
+                break;
+        }
+        if (params->p->packed)
+        {
+            result += '+';
+             
+            for (auto tpl = params->p->byPack.pack; tpl; tpl = tpl->next)
+            {
+                buf[0] = 0;
+                dflt = tpl->p->byClass.dflt;
+                if (!dflt)
+                    dflt = tpl->p->byClass.val;
+                if (!dflt)
+                    return false;
+                switch (params->p->type)
+                {
+                case kw_typename:
+                    if (!validType((TYPE*)dflt))
+                        return false;
+                    *mangleType(buf, (TYPE*)dflt, true) = 0;
+                    break;
+                case kw_int:
+                    *mangleExpression(buf, (EXPRESSION*)dflt) = 0;
+                    break;
+                case kw_template:
+                    *mangleTemplate(buf, (SYMBOL*)dflt, tpl->p->byTemplate.args) = 0;
+                    break;           
+                }
+                result += buf;
+            }
+        }
+        else
+        {
+            buf[0] = 0;
+            switch (params->p->type)
+            {
+                case kw_typename:
+                    if (!validType((TYPE*)dflt))
+                        return false;
+                    *mangleType(buf, (TYPE*)dflt, true) = 0;
+                    break;
+                case kw_int:
+                    if (((EXPRESSION*)dflt)->type == en_templateparam)
+                        return false;
+                    *mangleExpression(buf, (EXPRESSION*)dflt) = 0;
+                    break;
+                case kw_template:
+                    *mangleTemplate(buf, (SYMBOL*)dflt, params->p->byTemplate.args) = 0;
+                    break;           
+            }
+            result += buf;
+        }
+        if (params->next)
+            result += ';';
+        params = params->next;
+    }
+    return true;
+}
+
 void GetClassKey(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
 {
     inKeyCreation = true;

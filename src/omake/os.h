@@ -70,6 +70,7 @@ class OS
     static void JobInit();
     static void JobRundown();
     static bool TakeJob();
+    static bool TryTakeJob();
     static void GiveJob();
     static void Take();
     static void Give();

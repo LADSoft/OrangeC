@@ -80,7 +80,7 @@ bool OS::isSHEXE;
 int OS::jobsLeft;
 std::string OS::jobName = "\t";
 std::string OS::jobFile;
-
+static bool first;
 static std::set<HANDLE> processIds;
 
 void OS::TerminateAll()
@@ -210,11 +210,15 @@ bool OS::TakeJob()
     sema.Wait();
     return false;
 }
+bool OS::TryTakeJob()
+{
+    return sema.TryWait();
+}
 void OS::GiveJob() { sema.Post(); }
 std::string OS::JobName() { return jobName; }
 void OS::JobInit()
 {
-    bool first = false;
+    first = false;
     std::string name;
     Variable* v = VariableContainer::Instance()->Lookup(".OMAKESEM");
     if (v)
@@ -324,9 +328,13 @@ void OS::JobInit()
         }
         free(temp);
     }
+    if (!first)
+        GiveJob();
 }
 void OS::JobRundown()
 {
+    if (!first)
+        TakeJob();
     sema.~Semaphore();
     processIdSem.~Semaphore();
     if (jobFile.size())

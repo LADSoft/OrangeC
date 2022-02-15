@@ -62,6 +62,13 @@ class Semaphore
         }
 #endif
     }
+    bool TryWait()
+    {
+#ifdef WIN32
+        return WaitForSingleObject(handle, 0) == WAIT_OBJECT_0;           
+#elif defined(__linux__)
+#endif
+    }
     void Wait()
     {
 #ifdef _WIN32

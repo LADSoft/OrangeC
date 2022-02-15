@@ -224,11 +224,7 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
     }
     if (oneShell)
     {
-        if (!make)
-            OS::TakeJob();
         int rv = OS::Spawn(cmd, environment, nullptr);
-        if (!make)
-            OS::GiveJob();
         return rv;
     }
     else if (!split(cmd))
@@ -241,11 +237,6 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
         int rv = 0;
         for (auto command : cmdList)
         {
-            bool make1 = make;
-            //            if (command.find("omake") != std::string::npos)
-            //                make1 = true;
-            if (!make1)
-                OS::TakeJob();
             if (!stopAll)
             {
                 if (!silent)
@@ -264,8 +255,6 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
                         rv = rv1;
                 }
             }
-            if (!make1)
-                OS::GiveJob();
             if (rv && posix)
                 return rv;
             if (stopAll)

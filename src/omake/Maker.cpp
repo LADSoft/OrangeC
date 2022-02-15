@@ -596,12 +596,12 @@ int Maker::RunCommands(bool keepGoing)
         {
             int rv1 = runner.RunOne((*it).get(), env, keepGoing);
             if (rv <= 0 && rv1 != 0)
-                rv = rv1;
+               rv = rv1;
             if (rv > 0)
             {
-                stop = true;
-                if (!keepGoing)
-                {
+               stop = true;
+               if (!keepGoing)
+               {
                     Spawner::Stop();
                     OS::TerminateAll();
                 }

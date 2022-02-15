@@ -1001,10 +1001,7 @@ static bool validType(TYPE* tp)
         break;
     default:
     {
-        if (!isarithmetic(tp) && !isref(tp) && !ispointer(tp) && !isstructured(tp) && tp->type != bt_enum && tp->type != bt_void && tp->type != bt_memberptr)
-        {
-            printf("hi");
-        }
+	break;
     }
     }
     return true;

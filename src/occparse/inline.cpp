@@ -173,15 +173,11 @@ void dumpInlines(void)
                     {
                         SYMBOL* parentTemplate = sym->sb->parentClass->sb->parentTemplate;
                         SYMBOL* origsym;
-                        SYMLIST* instants = parentTemplate->sb->instantiations;
-                        while (instants)
+                        std::string argumentName;
+                        auto found2 = TemplateByValLookup(parentTemplate, sym->sb->parentClass, argumentName);
+                        if (found2)
                         {
-                            if (TemplateInstantiationMatch(instants->p, sym->sb->parentClass))
-                            {
-                                parentTemplate = instants->p;
-                                break;
-                            }
-                            instants = instants->next;
+                            parentTemplate = found2;
                         }
                         origsym = search(sym->name, parentTemplate->tp->syms);
                         //            printf("%s\n", origsym->sb->decoratedName);

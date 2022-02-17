@@ -1154,7 +1154,7 @@ typedef struct _atomicData
     TYPE* tp;
 } ATOMICDATA;
 
-constexpr inline TYPE* basetype(TYPE* x) { return ((x) && (x)->rootType ? (x)->rootType : (x)); }
+constexpr inline TYPE* basetype(TYPE* a) { auto x = a; return ((x) /*&& (x)->rootType*/ ? (x)->rootType : (x)); }
 
 constexpr inline bool __isref(TYPE* x) { return (x)->type == bt_lref || (x)->type == bt_rref; }
 constexpr inline bool isref(TYPE* x)

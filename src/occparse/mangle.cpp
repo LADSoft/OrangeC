@@ -936,13 +936,14 @@ char* mangleType(char* in, TYPE* tp, bool first)
     *in = 0;
     return in;
 }
-static bool validType(TYPE* tp)
+static bool validType(TYPE* tp, bool byVal)
 {
     tp = basetype(tp);
     switch (tp->type)
     {
-    case bt_templateparam:
     case bt_templateselector:
+        return byVal;
+    case bt_templateparam:
     case bt_any:
     case bt_aggregate:
         return false;
@@ -957,13 +958,14 @@ static bool validType(TYPE* tp)
             return false;
     case bt_lref:
     case bt_rref:
-        return validType(tp->btp);
+    case bt_memberptr:
+        return validType(tp->btp, byVal);
     case bt_func:
     case bt_ifunc:
-        if (!validType(tp->btp))
+        if (!validType(tp->btp, byVal))
             return false;
         for (auto t = tp->syms->table[0]; t; t = t->next)
-            if (!validType(t->p->tp))
+            if (!validType(t->p->tp, byVal))
                 return false;
         break;
     case bt_struct:
@@ -983,7 +985,7 @@ static bool validType(TYPE* tp)
                             auto dflt = tpl2->p->byClass.dflt;
                             if (!dflt)
                                 dflt = tpl2->p->byClass.val;
-                            if (!dflt || !validType(dflt))
+                            if (!dflt || !validType(dflt, byVal))
                                 return false;
                         }
                     }
@@ -992,9 +994,8 @@ static bool validType(TYPE* tp)
                         auto dflt = tpl->p->byClass.dflt;
                         if (!dflt)
                             dflt = tpl->p->byClass.val;
-                        if (!dflt || !validType(dflt))
-                            return false;
-                    }
+                        if (!dflt || !validType(dflt, byVal))
+                            return false;                    }
                 }
             }
         }
@@ -1009,7 +1010,7 @@ static bool validType(TYPE* tp)
     }
     return true;
 }
-bool GetTemplateArgumentName(TEMPLATEPARAMLIST* params, std::string& result)
+bool GetTemplateArgumentName(TEMPLATEPARAMLIST* params, std::string& result, bool byVal)
 {
     mangledNamesCount = 0;
     if (!params)
@@ -1019,75 +1020,90 @@ bool GetTemplateArgumentName(TEMPLATEPARAMLIST* params, std::string& result)
     while (params)
     {
         char buf[8000];
-        void *dflt = params->p->byClass.dflt;
-        if (!dflt)
-            dflt = params->p->byClass.val;
-        if (!dflt)
-            return false;
-        switch (params->p->type)
-        {
-            case kw_typename:
-                result += 'c';
-                break;
-            case kw_int:
-                result += 'i';
-                break;
-            case kw_template:
-                result += 't';
-                break;
-        }
+        void *dflt;
         if (params->p->packed)
         {
-            result += '+';
-             
+            if (!params->p->byPack.pack)
+            {
+                return false;
+            }
             for (auto tpl = params->p->byPack.pack; tpl; tpl = tpl->next)
             {
                 buf[0] = 0;
-                dflt = tpl->p->byClass.dflt;
-                if (!dflt)
+                if (byVal)
+                {
                     dflt = tpl->p->byClass.val;
+                    if (!dflt)
+                        dflt = tpl->p->byClass.dflt;
+                }
+                else
+                {
+                    dflt = tpl->p->byClass.dflt;
+                    if (!dflt)
+                        dflt = tpl->p->byClass.val;
+                }
                 if (!dflt)
                     return false;
                 switch (params->p->type)
                 {
                 case kw_typename:
-                    if (!validType((TYPE*)dflt))
+                    if (!validType((TYPE*)dflt, byVal))
                         return false;
-                    *mangleType(buf, (TYPE*)dflt, true) = 0;
+                    result += 'c';
+                    *(mangleType(buf, (TYPE*)dflt, true)) = 0;
+//                    doType(buf, (TYPE*)dflt);
                     break;
                 case kw_int:
+                    result += 'i';
                     *mangleExpression(buf, (EXPRESSION*)dflt) = 0;
                     break;
                 case kw_template:
+                    result += 't';
                     *mangleTemplate(buf, (SYMBOL*)dflt, tpl->p->byTemplate.args) = 0;
                     break;           
                 }
+
                 result += buf;
             }
         }
         else
         {
+            if (byVal)
+            {
+                dflt = params->p->byClass.val;
+                if (!dflt)
+                    dflt = params->p->byClass.dflt;
+            }
+            else
+            {
+                dflt = params->p->byClass.dflt;
+                if (!dflt)
+                    dflt = params->p->byClass.val;
+            }
+            if (!dflt)
+                return false;
             buf[0] = 0;
             switch (params->p->type)
             {
                 case kw_typename:
-                    if (!validType((TYPE*)dflt))
+                    if (!validType((TYPE*)dflt, byVal))
                         return false;
-                    *mangleType(buf, (TYPE*)dflt, true) = 0;
+                    result += 'c';
+                    *(mangleType(buf, (TYPE*)dflt, true)) = 0;
                     break;
                 case kw_int:
                     if (((EXPRESSION*)dflt)->type == en_templateparam)
                         return false;
+                    result += 'i';
                     *mangleExpression(buf, (EXPRESSION*)dflt) = 0;
                     break;
                 case kw_template:
+                    result += 't';
                     *mangleTemplate(buf, (SYMBOL*)dflt, params->p->byTemplate.args) = 0;
                     break;           
             }
             result += buf;
         }
-        if (params->next)
-            result += ';';
         params = params->next;
     }
     return true;

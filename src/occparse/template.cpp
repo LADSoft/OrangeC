@@ -74,8 +74,9 @@ int instantiatingClass;
 int parsingDefaultTemplateArgs;
 int count1;
 int inTemplateArgs;
+std::unordered_map<SYMBOL*, std::deque<SYMBOL*>> classInstantiationMap;
 
-static std::unordered_map<SYMBOL*, std::unordered_map<std::string, SYMBOL*>> classTemplateMap;
+static std::unordered_map<SYMBOL*, std::unordered_map<std::string, SYMBOL*>> classTemplateMap, classTemplateMap2;
 
 struct templateListData* currents;
 
@@ -107,6 +108,8 @@ void templateInit(void)
     parsingDefaultTemplateArgs = 0;
     inDeduceArgs = 0;
     classTemplateMap.clear();
+    classTemplateMap2.clear();
+    classInstantiationMap.clear();
 }
 EXPRESSION* GetSymRef(EXPRESSION* n)
 {
@@ -7234,15 +7237,17 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                     {
                         TYPE* torig = (TYPE*)xorig;
                         TYPE* tsym = (TYPE*)xsym;
-                        if (basetype(torig)->nullptrType != basetype(tsym)->nullptrType)
+                        TYPE* btorig = basetype(torig);
+                        TYPE* btsym = basetype(tsym);
+                        if (btorig->nullptrType != btsym->nullptrType)
                             return false;
                         if (isref(torig) != isref(tsym))
                             return false;
-                        if (basetype(torig)->array != basetype(tsym)->array)
+                        if (btorig->array != btsym->array)
                             return false;
-                        if (basetype(torig)->array && !!basetype(torig)->esize != !!basetype(tsym)->esize)
+                        if (btorig->array && !!btorig->esize != !!btsym->esize)
                             return false;
-                        if ((basetype(torig)->type == bt_enum) != (basetype(tsym)->type == bt_enum))
+                        if ((btorig->type == bt_enum) != (btsym->type == bt_enum))
                             return false;
                         if ((!templatecomparetypes(torig, tsym, true, false) || !templatecomparetypes(tsym, torig, true, false)) &&
                             !sameTemplate(torig, tsym, true))
@@ -7250,14 +7255,14 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                         if (!comparePointerTypes(torig, tsym))
                             return false;
                         if (isref(torig))
-                            torig = basetype(torig)->btp;
+                            torig = btorig->btp;
                         if (isref(tsym))
-                            tsym = basetype(tsym)->btp;
+                            tsym = btsym->btp;
                         if (isconst(torig) != isconst(tsym) || isvolatile(torig) != isvolatile(tsym))
                             return false;
-                        if (basetype(tsym)->type == bt_enum || basetype(tsym)->enumConst)
+                        if (btsym->type == bt_enum || btsym->enumConst)
                         {
-                            if (basetype(torig)->sp != basetype(tsym)->sp)
+                            if (btorig->sp != btsym->sp)
                                 return false;
                         }
                     }
@@ -9915,8 +9920,34 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
         src = src->next;
     }
 }
-static int count3;
-bool cacheCandidate(SYMBOL* sp, TEMPLATEPARAMLIST* args) { return allTemplateArgsSpecified(sp, args); }
+SYMBOL* TemplateByValLookup(SYMBOL* parent, SYMBOL* test, std::string& argumentName)
+{
+    if (GetTemplateArgumentName(test->templateParams->p->bySpecialization.types ? test->templateParams->p->bySpecialization.types : test->templateParams->next, argumentName, true))
+    {
+        auto found2 = classTemplateMap2[parent][argumentName];
+        if (found2)
+            return found2;
+    }
+    else
+    {
+        auto instants = parent->sb->instantiations;
+        for (auto p : classInstantiationMap[parent])
+            if (TemplateInstantiationMatch(p, test))
+                return p;
+        /*
+        while (instants)
+        {
+            if (TemplateInstantiationMatch(instants->p, test))
+            {
+                return instants->p;
+            }
+            instants = instants->next;
+        }
+        */
+        argumentName = "";
+    }
+    return nullptr;
+}
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
     // quick check for non-template
@@ -9936,11 +9967,13 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
         sp = sp->sb->parentTemplate;
 
     std::string argumentName;
-    if (GetTemplateArgumentName(args, argumentName))
+    if (GetTemplateArgumentName(args, argumentName, false))
     {
         SYMBOL* found1 = classTemplateMap[sp][argumentName];
         if (found1)
+        {
             return found1;
+        }
     }
     l = sp->sb->specializations;
     while (l)
@@ -10100,14 +10133,12 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
                     dflts = dflts->next;
                 }
             }
-            while (instants)
+            std::string argumentName2 = "";
+            found2 = TemplateByValLookup(sp, &test, argumentName2);
+            if (found2)
             {
-                if (TemplateInstantiationMatch(instants->p, &test))
-                {
-                    restoreParams(origList, n);
-                    return instants->p;
-                }
-                instants = instants->next;
+                restoreParams(origList, n);
+                return found2;
             }
             found1 = CopySymbol(&test);
             found1->sb->maintemplate = sym;
@@ -10118,6 +10149,10 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
             found1->sb->gentemplate = true;
             found1->sb->instantiated = true;
             found1->sb->performedStructInitialization = false;
+            instants = Allocate<SYMLIST>();
+            instants->p = found1;
+            instants->next = parent->sb->instantiations;
+            parent->sb->instantiations = instants;
             if (!partialCreation)
                 found1->templateParams = copyParams(found1->templateParams, true);
             if (found1->templateParams->p->bySpecialization.types)
@@ -10127,14 +10162,22 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
             }
             copySyms(found1, sym);
             SetLinkerNames(found1, lk_cdecl);
-            instants = Allocate<SYMLIST>();
-            instants->p = found1;
-            instants->next = parent->sb->instantiations;
-            parent->sb->instantiations = instants;
-
-            if (found1->sb->deferredCompile || (found1->sb->maintemplate && found1->sb->maintemplate->sb->deferredCompile) ||
-                (found1->sb->parentTemplate && found1->sb->parentTemplate->sb->deferredCompile))
-                classTemplateMap[sp][argumentName] = found1;
+            TEMPLATEPARAMLIST* t, *t1;
+            for (t = found1->templateParams->next, t1 = args; t && t1; t = t->next, t1= t1->next);
+             
+            if (!t && !t1)
+            {
+                if (found1->sb->deferredCompile || (found1->sb->maintemplate && found1->sb->maintemplate->sb->deferredCompile) ||
+                    (found1->sb->parentTemplate && found1->sb->parentTemplate->sb->deferredCompile))
+                {
+                    classTemplateMap[sp][argumentName] = found1;
+                }
+            }
+            classTemplateMap2[sp][argumentName2] = found1;
+            if (argumentName2.empty())
+            {
+                classInstantiationMap[parent].push_front(found1);
+            }
         }
         else
         {

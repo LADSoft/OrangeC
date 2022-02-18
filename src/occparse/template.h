@@ -103,6 +103,7 @@ void TemplateDataInstantiate(SYMBOL* sym, bool warning, bool isExtern);
 SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern);
 bool allTemplateArgsSpecified(SYMBOL* sym, TEMPLATEPARAMLIST* args, bool checkDeduced = false, bool checkDeclaring = false);
 void DuplicateTemplateParamList(TEMPLATEPARAMLIST** pptr);
+SYMBOL* TemplateByValLookup(SYMBOL* parent, SYMBOL* test, std::string& argumentName);
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr);
 SYMBOL* GetVariableTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args);
 int pushContext(SYMBOL* cls, bool all);

@@ -904,6 +904,11 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
                             *p++ = ':';
                             *p++ = ':';
                         }
+                        else if (*name == '#')
+                        {
+                            name = unmang1(p, name, last, false);
+                            p += strlen(p);
+                        }
                         else
                             *p++ = *name++;
                         *p = 0;

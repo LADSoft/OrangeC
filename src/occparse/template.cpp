@@ -9945,8 +9945,6 @@ SYMBOL* TemplateByValLookup(SYMBOL* parent, SYMBOL* test, std::string& argumentN
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
-    if (!strcmp(sp->name, "TypeList"))
-        printf("hi");
     // quick check for non-template
     if (!sp->sb->templateLevel)
         return sp;

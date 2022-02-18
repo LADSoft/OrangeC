@@ -74,7 +74,6 @@ int instantiatingClass;
 int parsingDefaultTemplateArgs;
 int count1;
 int inTemplateArgs;
-std::unordered_map<SYMBOL*, std::deque<SYMBOL*>> classInstantiationMap;
 
 static std::unordered_map<SYMBOL*, std::unordered_map<std::string, SYMBOL*>> classTemplateMap, classTemplateMap2;
 
@@ -109,7 +108,6 @@ void templateInit(void)
     inDeduceArgs = 0;
     classTemplateMap.clear();
     classTemplateMap2.clear();
-    classInstantiationMap.clear();
 }
 EXPRESSION* GetSymRef(EXPRESSION* n)
 {
@@ -1998,6 +1996,7 @@ SYMBOL* LookupSpecialization(SYMBOL* sym, TEMPLATEPARAMLIST* templateParams)
             exactMatchOnTemplateSpecialization(templateParams->p->bySpecialization.types, candidate->templateParams->next))
         {
             *last = (*last)->next;
+
             break;
         }
         last = &(*last)->next;
@@ -9926,15 +9925,12 @@ SYMBOL* TemplateByValLookup(SYMBOL* parent, SYMBOL* test, std::string& argumentN
     {
         auto found2 = classTemplateMap2[parent][argumentName];
         if (found2)
-            return found2;
+            if (!!test->templateParams->p->bySpecialization.types == !!found2->templateParams->p->bySpecialization.types)
+                return found2;
     }
     else
     {
         auto instants = parent->sb->instantiations;
-        for (auto p : classInstantiationMap[parent])
-            if (TemplateInstantiationMatch(p, test))
-                return p;
-        /*
         while (instants)
         {
             if (TemplateInstantiationMatch(instants->p, test))
@@ -9943,13 +9939,14 @@ SYMBOL* TemplateByValLookup(SYMBOL* parent, SYMBOL* test, std::string& argumentN
             }
             instants = instants->next;
         }
-        */
         argumentName = "";
     }
     return nullptr;
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
+    if (!strcmp(sp->name, "TypeList"))
+        printf("hi");
     // quick check for non-template
     if (!sp->sb->templateLevel)
         return sp;
@@ -10174,10 +10171,6 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
                 }
             }
             classTemplateMap2[sp][argumentName2] = found1;
-            if (argumentName2.empty())
-            {
-                classInstantiationMap[parent].push_front(found1);
-            }
         }
         else
         {

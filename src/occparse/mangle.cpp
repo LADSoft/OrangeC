@@ -995,7 +995,8 @@ static bool validType(TYPE* tp, bool byVal)
                         if (!dflt)
                             dflt = tpl->p->byClass.val;
                         if (!dflt || !validType(dflt, byVal))
-                            return false;                    }
+                            return false;
+                    }
                 }
             }
         }

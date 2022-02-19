@@ -9326,7 +9326,7 @@ static void ChooseMoreSpecialized(SYMBOL** list, int n)
                 else
                 {
                     if (LessParams(list[i], list[j]))
-                        list[j] = nullptr;
+                        list[i] = nullptr;
                     else
                         list[j] = nullptr;
                 }

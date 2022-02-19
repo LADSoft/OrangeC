@@ -2021,6 +2021,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
                 }
                 if (MATCHKW(lex, begin))
                 {
+                    implicit = true;
                     INITIALIZER *init = nullptr, *dest = nullptr;
                     SYMBOL* sym = nullptr;
                     sym = anonymousVar(sc_localstatic, tp)->v.sp;
@@ -2052,6 +2053,10 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
                         {
                             ctype = tp = tp1;
                             basetype(funcsp->tp)->btp = tp1;
+                        }
+                        else if (!comparetypes(tp, tp1, true))
+                        {
+                            implicit = true;
                         }
                         if (basetype(tp1)->sp->sb->templateLevel && basetype(tp1)->sp->templateParams &&
                             !basetype(tp1)->sp->sb->instantiated && !templateNestingCount)
@@ -2094,9 +2099,8 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
                         basetype(tp1)->lref = !basetype(tp1)->rref;
                         maybeConversion = false;
                         returntype = tp;
-                        implicit = true;
                         // try the rref constructor first
-                        if (callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, false, false, false,
+                        if (callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false, false,
                                             false, false))
                         {
                             if (funcparams->sp && matchesCopy(funcparams->sp, true))
@@ -2119,7 +2123,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
                             ctype = tp;
                             basetype(tp1)->rref = false;
                             basetype(tp1)->lref = true;
-                            callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, false, false, false,
+                            callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false, false,
                                             false, true);
                         }
                         basetype(tp1)->rref = oldrref;

@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
       case 6: cv.wait_until(mut, Clock::now() + wait, pred_function); break;
       default: assert(false);
     }
-  } catch (...) {}
+  } catch (...) { std::terminate(); } // DAL added call to terminate to make MSVC happy
   assert(false);
 
   return 0;

@@ -149,7 +149,7 @@ extern int uncaught_exceptions() noexcept;
    __exceptionInternal* __make_exception_ptr(void*, int, void*, void*);
 
    template <class T>
-   T __consptr(const T& t) { return T(t); }
+   void __consptr(T& dest, const T& src) { dest = src; }
 
    // need an overload for arrays<
    template <class E>

@@ -2,6 +2,7 @@
 /readme.txt
 /license.txt
 /src/vcvars32.bat
+VTune Profiler Results/
 *.obj
 *.o
 *.bak

@@ -2627,7 +2627,6 @@ TYPE* InitializerListType(TYPE* arg)
     }
     return rtp;
 }
-int count3;
 void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* initializerListType, INITLIST** lptr, bool operands,
                            bool asref)
 {

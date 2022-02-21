@@ -75,7 +75,7 @@ int parsingDefaultTemplateArgs;
 int count1;
 int inTemplateArgs;
 
-static std::unordered_map<SYMBOL*, TEMPLATEPARAMLIST*> originalArgs;
+static std::unordered_map<SYMBOL*, std::unordered_map<std::string, SYMBOL*>> classTemplateMap;
 
 struct templateListData* currents;
 
@@ -106,7 +106,7 @@ void templateInit(void)
     instantiatingFunction = 0;
     parsingDefaultTemplateArgs = 0;
     inDeduceArgs = 0;
-    originalArgs.clear();
+    classTemplateMap.clear();
 }
 EXPRESSION* GetSymRef(EXPRESSION* n)
 {
@@ -7342,47 +7342,6 @@ bool TemplateInstantiationMatch(SYMBOL* orig, SYMBOL* sym)
     }
     return false;
 }
-static bool TemplateInstantiationMatch2(SYMBOL* orig, SYMBOL* sym, TEMPLATEPARAMLIST* args)
-{
-    if (orig && orig->sb->parentTemplate == sym->sb->parentTemplate)
-    {
-        static TEMPLATEPARAM newShim_p = {kw_new};
-        static TEMPLATEPARAMLIST newShim = {nullptr, nullptr, &newShim_p};
-        static TEMPLATEPARAM oldShim_p = {kw_new};
-        static TEMPLATEPARAMLIST oldShim = {nullptr, nullptr, &oldShim_p};
-        newShim.next = args;
-        oldShim.next = originalArgs[orig];
-
-        if (oldShim.next != nullptr && args != nullptr)
-        {
-            if (!TemplateInstantiationMatchInternal(&oldShim, &newShim, true))
-                return false;
-            while (orig->sb->parentClass && sym->sb->parentClass)
-            {
-                orig = orig->sb->parentClass;
-                sym = sym->sb->parentClass;
-            }
-            if (orig->sb->parentClass || sym->sb->parentClass)
-                return false;
-            count1++;
-            return true;
-        }
-        else if (oldShim.next == args)  // both nullptr
-        {
-            return true;
-        }
-    }
-    return false;
-}
-static void InsertMatch2Args(SYMBOL* found1, TEMPLATEPARAMLIST* args)
-{
-    assert(originalArgs.find(found1) == originalArgs.end());
-    auto tpx = copyParams(args, false);
-    for (auto tpl = tpx; tpl; tpl = tpl->next)
-        if (tpl->p->packed && tpl->p->byPack.pack)
-            tpl->p->byPack.pack = copyParams(tpl->p->byPack.pack, false);
-    originalArgs[found1] = tpx;
-}
 void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
 {
     if (newCls->tp->syms && (!newCls->templateParams || !newCls->templateParams->p->bySpecialization.types))
@@ -9956,6 +9915,7 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
         src = src->next;
     }
 }
+static int count3;
 bool cacheCandidate(SYMBOL* sp, TEMPLATEPARAMLIST* args) { return allTemplateArgsSpecified(sp, args); }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
@@ -9975,15 +9935,12 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
     if (sp->sb->parentTemplate && sp)
         sp = sp->sb->parentTemplate;
 
-    if ((!templateNestingCount || instantiatingTemplate) && strcmp(sp->name, "initializer_list") != 0)
+    std::string argumentName;
+    if (GetTemplateArgumentName(args, argumentName))
     {
-        for (auto instant = sp->sb->instantiations; instant; instant = instant->next)
-        {
-            if (TemplateInstantiationMatch2(instant->p, sp, args))
-            {
-                return instant->p;
-            }
-        }
+        SYMBOL* found1 = classTemplateMap[sp][argumentName];
+        if (found1)
+            return found1;
     }
     l = sp->sb->specializations;
     while (l)
@@ -10174,9 +10131,10 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
             instants->p = found1;
             instants->next = parent->sb->instantiations;
             parent->sb->instantiations = instants;
+
             if (found1->sb->deferredCompile || (found1->sb->maintemplate && found1->sb->maintemplate->sb->deferredCompile) ||
                 (found1->sb->parentTemplate && found1->sb->parentTemplate->sb->deferredCompile))
-                InsertMatch2Args(found1, args);
+                classTemplateMap[sp][argumentName] = found1;
         }
         else
         {

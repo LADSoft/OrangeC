@@ -174,8 +174,8 @@ void libcxx_builtins(void)
         preProcessor->Define("__has__atomic_add_fetch", "1");
         preProcessor->Define("__has__atomic_exchange_n", "1");
         preProcessor->Define("__has__atomic_compare_exchange_n", "1");
-        preProcessor->Define("__has__builtin__operator_new", "0");
-        preProcessor->Define("__has__builtin__operator_delete", "0");
+        preProcessor->Define("__has__builtin_operator_new", "201802L");
+        preProcessor->Define("__has__builtin_operator_delete", "201802L");
         preProcessor->Define("__has__make_integer_seq", "1");
         preProcessor->Define("__has__type_pack_element", "1");
         preProcessor->Define("__has__builtin_launder", "0");
@@ -335,12 +335,12 @@ static bool isStandardLayout(TYPE* tp, SYMBOL** result)
     return false;
     /*
  hasnonon-staticdatamembersoftypenon-standard-layoutclass(orarrayofsuchtypes)orreference,
- � has no virtual functions (10.3) and no virtual base classes (10.1),
- � has the same access control (Clause 11) for all non-static data members,
- � has no non-standard-layout base classes,
- � either has no non-static data members in the most derived class and at most one base class with non-static data members,
+   has no virtual functions (10.3) and no virtual base classes (10.1),
+   has the same access control (Clause 11) for all non-static data members,
+   has no non-standard-layout base classes,
+   either has no non-static data members in the most derived class and at most one base class with non-static data members,
     or has no base classes with non-static data members, and
- � has no base classes of the same type as the ?rst non-static data member.
+   has no base classes of the same type as the ?rst non-static data member.
  */
 }
 static bool trivialFunc(SYMBOL* func, bool move)
@@ -515,11 +515,11 @@ static bool trivialStructure(TYPE* tp)
 }
 /*
 A trivially copyable class is a class that:
-� has no non-trivial copy constructors (12.8),
-� has no non-trivial move constructors (12.8),
-� has no non-trivial copy assignment operators (13.5.3, 12.8),
-� has no non-trivial move assignment operators (13.5.3, 12.8), and
-� has a trivial destructor (12.4).
+  has no non-trivial copy constructors (12.8),
+  has no non-trivial move constructors (12.8),
+  has no non-trivial copy assignment operators (13.5.3, 12.8),
+  has no non-trivial move assignment operators (13.5.3, 12.8), and
+  has a trivial destructor (12.4).
 
 A trivial class is a class that has a trivial default constructor (12.1) and is trivially copyable.
 */

@@ -3750,7 +3750,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                     error(ERR_TYPE_NAME_EXPECTED);
                 else if (isautotype(tp1) && !lambdas)
                     error(ERR_AUTO_NOT_ALLOWED_IN_PARAMETER);
-                else if (Optimizer::cparams.prm_cplusplus && isstructured((*tp)->btp) && MATCHKW(lex, openpa))
+                else if (Optimizer::cparams.prm_cplusplus && isstructured((*tp)->btp) && (MATCHKW(lex, openpa) || MATCHKW(lex, begin)))
                 {
                     LEXLIST* cur = lex;
                     lex = getsym();

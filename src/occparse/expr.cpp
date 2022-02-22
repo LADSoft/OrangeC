@@ -2908,7 +2908,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
             optimize_for_constants(&q);
             *lptr = Allocate<INITLIST>();
             (*lptr)->exp = q;
-            (*lptr)->tp = sym->tp;
+            (*lptr)->tp = basetype(sym->tp);
             if (cloneTempExpr(&(*lptr)->exp, nullptr, nullptr))
             {
                 int i;
@@ -2926,6 +2926,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
             }
             if (isstructured(sym->tp))
             {
+                (*lptr)->exp = exprNode(en_stackblock, (*lptr)->exp, nullptr);
                 hr = hr->next;
                 lptr = &(*lptr)->next;
                 continue;

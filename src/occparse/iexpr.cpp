@@ -1751,12 +1751,30 @@ static int push_stackblock(TYPE* tp, EXPRESSION* ep, SYMBOL* funcsp, int sz, EXP
     Optimizer::IMODE *ap, *ap1, *ap2, *ap3;
     if (!sz)
         return 0;
+    bool allocated = false;
     switch (ep->type)
     {
         case en_imode:
             ap = ep->v.imode;
             break;
         default:
+            if (ep->type == en_void && ep->left->type == en_blockclear)
+            {
+                int offset;
+                auto exp = relptr(ep->left->left, offset);
+                if (exp && exp->type == en_auto && exp->v.sp->sb->stackblock)
+                {
+                    // if we get here we have a parmstack without a constructor
+                    // or a parmstack not used as part of an argument
+                    int rv = exp->v.sp->tp->size;
+                    if (rv % Optimizer::chosenAssembler->arch->stackalign)
+                        rv = rv + Optimizer::chosenAssembler->arch->stackalign - rv % Optimizer::chosenAssembler->arch->stackalign;
+                    Optimizer::gen_icode(Optimizer::i_parmstack, ap = Optimizer::tempreg(ISZ_ADDR, 0), Optimizer::make_immed(ISZ_UINT, rv),
+                        nullptr);
+                    Optimizer::SymbolManager::Get(exp->v.sp)->imvalue = ap;
+                    allocated = true;
+                }
+            }
             ap3 = gen_expr(funcsp, ep, F_ADDR, ISZ_UINT);
             if (ap3->mode != Optimizer::i_direct && (Optimizer::chosenAssembler->arch->preferopts & OPT_ARGSTRUCTREF))
             {
@@ -1770,9 +1788,12 @@ static int push_stackblock(TYPE* tp, EXPRESSION* ep, SYMBOL* funcsp, int sz, EXP
                 Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
             break;
     }
-    Optimizer::gen_nodag(Optimizer::i_parmblock, 0, ap, Optimizer::make_immed(ISZ_UINT, sz));
-    Optimizer::intermed_tail->alttp = Optimizer::SymbolManager::Get(tp);
-    Optimizer::intermed_tail->valist = valist && valist->type == en_l_p;
+    if (!allocated)
+    {
+        Optimizer::gen_nodag(Optimizer::i_parmblock, 0, ap, Optimizer::make_immed(ISZ_UINT, sz));
+        Optimizer::intermed_tail->alttp = Optimizer::SymbolManager::Get(tp);
+        Optimizer::intermed_tail->valist = valist && valist->type == en_l_p;
+    }
     if (sz % Optimizer::chosenAssembler->arch->stackalign)
         sz = sz + Optimizer::chosenAssembler->arch->stackalign - sz % Optimizer::chosenAssembler->arch->stackalign;
     return sz;
@@ -1845,7 +1866,6 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
             // constructor or other function creating a structure on the stack
             ths = a->exp->left->v.func->thisptr;
             ths->v.sp->sb->stackblock = true;
-
             rv = ths->v.sp->tp->size;
             if (rv % Optimizer::chosenAssembler->arch->stackalign)
                 rv = rv + Optimizer::chosenAssembler->arch->stackalign - rv % Optimizer::chosenAssembler->arch->stackalign;

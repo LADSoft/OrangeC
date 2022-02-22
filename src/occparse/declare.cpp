@@ -3750,7 +3750,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                     error(ERR_TYPE_NAME_EXPECTED);
                 else if (isautotype(tp1) && !lambdas)
                     error(ERR_AUTO_NOT_ALLOWED_IN_PARAMETER);
-                else if (Optimizer::cparams.prm_cplusplus && isstructured((*tp)->btp) && MATCHKW(lex, openpa))
+                else if (Optimizer::cparams.prm_cplusplus && isstructured((*tp)->btp) && (MATCHKW(lex, openpa) || MATCHKW(lex, begin)))
                 {
                     LEXLIST* cur = lex;
                     lex = getsym();
@@ -3902,7 +3902,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                                 sym->sb->stackblock = !isref(spi->tp);
                                 lex = initialize(lex, funcsp, sym, sc_auto, true, false, 0); /* also reserves space */
                                 spi->sb->init = sym->sb->init;
-                                if (spi->sb->init->exp->type == en_thisref)
+                                if (spi->sb->init->exp && spi->sb->init->exp->type == en_thisref)
                                 {
                                     EXPRESSION** expr = &spi->sb->init->exp->left->v.func->thisptr;
                                     if (*expr && (*expr)->type == en_add && isconstzero(&stdint, (*expr)->right))

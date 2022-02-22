@@ -614,7 +614,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
             SYMBOL* sym = nullptr;
             sym = anonymousVar(sc_auto, *tp)->v.sp;
 
-            lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, *tp, sym, false, flags);
+            lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, *tp, sym, false, flags | _F_EXPLICIT);
             if (init && !init->next && init->exp->type == en_thisref)
             {
                 *exp = init->exp;

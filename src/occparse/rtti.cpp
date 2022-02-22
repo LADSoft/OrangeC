@@ -997,12 +997,10 @@ void XTDumpTab(SYMBOL* funcsp)
                         if (!q->byStmt && q->exp->dest)
                         {
                             if (equalnode(p->exp->v.t.thisptr, q->exp->v.t.thisptr))
-                                break;
+                                q->used = true;
                         }
                         q = q->next;
                     }
-                    if (q)
-                        q->used = true;
                     auto thsym = evalsp(p->exp->v.t.thisptr);
                     if (thsym && thsym->genreffed)
                     {

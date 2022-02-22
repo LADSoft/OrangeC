@@ -290,7 +290,7 @@ typedef struct
 #define _F_NOGEN 0x10000
 #define _F_INDECLTYPE 0x20000
 #define _F_INCONSTRUCTOR 0x40000
-
+#define _F_EXPLICIT 0x80000
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2
 
@@ -959,6 +959,7 @@ typedef struct functioncall
     int noobject : 1;
     int asaddress : 1;
     int vararg : 1;
+    int resolvedCall : 1;
 } FUNCTIONCALL;
 
 #define MAX_STRLEN 16384

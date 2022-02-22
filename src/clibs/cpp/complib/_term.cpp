@@ -50,16 +50,12 @@ const char _RTL_DATA* __dls_BadException = "Bad Exception";
 
 namespace std
 {
-    terminate_handler __term = std::terminate;
-    unexpected_handler __unexpected = std::unexpected;
+    terminate_handler __term = abort;
+    unexpected_handler __unexpected = std::terminate;
 exception::~exception() throw() {}
 bad_exception::~bad_exception() throw() {}
 };  // namespace std
 
-void _RTL_FUNC std::terminate()
-{
-    abort();
-}
 extern "C" void _RTL_FUNC __call_terminate()
 {
     try
@@ -70,9 +66,8 @@ extern "C" void _RTL_FUNC __call_terminate()
     catch (...)
     {
     }
-    abort();
 }
-void _RTL_FUNC std::unexpected()
+void _RTL_FUNC std::terminate()
 {
     __call_terminate();
 }
@@ -105,4 +100,9 @@ extern "C" void _RTL_FUNC __call_unexpected(std::exception_ptr *e)
     {
     }
     *e = std::current_exception();
+}
+void _RTL_FUNC std::unexpected()
+{
+    std::exception_ptr e;
+    __call_unexpected(&e);
 }

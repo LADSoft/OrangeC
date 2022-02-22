@@ -1511,7 +1511,7 @@ void createDefaultConstructors(SYMBOL* sp)
     {
         bool defaulted = true;
         for (auto hr = cons->tp->syms->table[0]; hr; hr = hr->next)
-            if (!hr->p->sb->defaulted)
+            if (!hr->p->sb->defaulted || hr->p->sb->isExplicit)
             {
                 defaulted = false;
                 break;
@@ -1569,6 +1569,7 @@ void createDefaultConstructors(SYMBOL* sp)
                                 err |= s->sb->isConstructor && !s->sb->defaulted;
                                 err |= s->sb->deleted;
                                 err |= s->sb->access != ac_public;
+                                err |= s->sb->isConstructor && s->sb->isExplicit;
                                 if (s->sb->isDestructor && !s->sb->defaulted)
                                     trivialDest = false;
                             }

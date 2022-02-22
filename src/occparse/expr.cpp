@@ -2904,11 +2904,15 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
         if (!*lptr)
         {
             deferredInitializeDefaultArg(sym, func);
-            EXPRESSION* q = sym->sb->init ? sym->sb->init->exp : intNode(en_c_i, 0);
+            EXPRESSION* q;
+            if (sym->sb->init && sym->sb->init->exp)
+                q = sym->sb->init->exp;
+            else
+                q = intNode(en_c_i, sym->tp->size);
             optimize_for_constants(&q);
             *lptr = Allocate<INITLIST>();
             (*lptr)->exp = q;
-            (*lptr)->tp = sym->tp;
+            (*lptr)->tp = basetype(sym->tp);
             if (cloneTempExpr(&(*lptr)->exp, nullptr, nullptr))
             {
                 int i;
@@ -2926,6 +2930,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
             }
             if (isstructured(sym->tp))
             {
+                (*lptr)->exp = exprNode(en_stackblock, (*lptr)->exp, nullptr);
                 hr = hr->next;
                 lptr = &(*lptr)->next;
                 continue;
@@ -3086,8 +3091,14 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
             }
             if (!done && (p->exp || p->nested))
             {
+                if (sym->tp->type == bt_ellipse)
+                {
 
-                if (isstructured(sym->tp))
+                    if (!isstructured(p->tp) && (p->tp->lref || p->tp->rref))
+                        if (isfunction(p->tp))
+                            p->exp = exprNode(en_l_ref, p->exp, nullptr);
+                }
+                else if (isstructured(sym->tp))
                 {
                     bool sameType = false;
                     EXPRESSION* temp = p->exp;
@@ -3773,14 +3784,28 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
     }
     else
     {
-        SYMBOL* ss = getStructureDeclaration();
-        funcparams = exp_in->v.func;
-        hasThisPtr = funcparams->thisptr != nullptr;
-        if (basetype(*tp)->sp)
-            funcparams->sp = basetype(*tp)->sp;
-        if (ss)
+        if (isfunction(*tp) && (*exp)->type == en_func && (*exp)->v.func->resolvedCall)
         {
-            funcparams->functp = ss->tp;
+            funcparams = Allocate<FUNCTIONCALL>();
+            funcparams->sp = basetype(*tp)->sp;
+            funcparams->functp = basetype(*tp);
+            funcparams->fcall = *exp;
+            if ((*tp)->lref || (*tp)->rref)
+                funcparams->fcall = exprNode(en_l_ref, *exp, nullptr);
+            *exp = varNode(en_func, nullptr);
+            (*exp)->v.func = funcparams;
+        }
+        else
+        {
+            SYMBOL* ss = getStructureDeclaration();
+            funcparams = exp_in->v.func;
+            hasThisPtr = funcparams->thisptr != nullptr;
+            if (basetype(*tp)->sp)
+                funcparams->sp = basetype(*tp)->sp;
+            if (ss)
+            {
+                funcparams->functp = ss->tp;
+            }
         }
     }
 
@@ -4109,6 +4134,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
             }
             if (isfunction(*tp))
             {
+                (*exp)->v.func->resolvedCall = true;
                 if (funcparams->thisptr && !memberPtr)
                 {
                     SYMBOL* base = funcparams->sp->sb->parentClass;

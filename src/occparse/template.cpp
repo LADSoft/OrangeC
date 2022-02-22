@@ -7122,6 +7122,7 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
 }
 static bool comparePointerTypes(TYPE* tpo, TYPE* tps)
 {
+    TYPE* lastIndirect = nullptr;
     while (tpo && tps)
     {
         tpo = basetype(tpo);
@@ -7129,7 +7130,12 @@ static bool comparePointerTypes(TYPE* tpo, TYPE* tps)
         if (!tpo || !tps)
             return false;
         if (tpo->type == bt_templateparam)
+        {
+            if (tpo == lastIndirect)
+                return true;
+            lastIndirect = tpo;
             tpo = tpo->templateParam->p->byClass.dflt;
+        }
         if (tps->type == bt_templateparam)
             tps = tps->templateParam->p->byClass.dflt;
         if (!tpo || !tps || tpo->type == bt_templateparam || tps->type == bt_templateparam)
@@ -9320,7 +9326,7 @@ static void ChooseMoreSpecialized(SYMBOL** list, int n)
                 else
                 {
                     if (LessParams(list[i], list[j]))
-                        list[j] = nullptr;
+                        list[i] = nullptr;
                     else
                         list[j] = nullptr;
                 }

@@ -3430,6 +3430,7 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
 void GetRefs(TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref)
 {
     bool func = false;
+    bool func2 = false;
     bool notlval = false;
     if (expa)
     {
@@ -3447,10 +3448,21 @@ void GetRefs(TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref)
             if (expa->type == en_not_lvalue)
                 notlval = true;
         }
+        else if (isfunction(tpa) || isfuncptr(tpa))
+        {
+            EXPRESSION* expb = expa;
+            if (expb->type == en_thisref)
+               expb = expb->left;
+            if (expb->type == en_func)
+                func2 = !expb->v.func->ascall;
+            else if (expb->type == en_pc)
+                func2 = true;
+		func2 = false;
+        }
     }
     lref = (basetype(tpa)->type == bt_lref || tpa->lref || (isstructured(tpa) && !notlval && !func) || (expa && lvalue(expa))) &&
            !tpa->rref;
-    rref = (basetype(tpa)->type == bt_rref || tpa->rref || notlval || func ||
+    rref = (basetype(tpa)->type == bt_rref || tpa->rref || notlval || func || func2 ||
             (expa && (isarithmeticconst(expa) || !lvalue(expa) && !ismem(expa) && !ismath(expa) && !castvalue(expa)))) &&
            !lref && !tpa->lref;
 }
@@ -4254,22 +4266,28 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                     if (islrqual(sym->tp) || isrrqual(sym->tp))
                     {
                         bool lref = lvalue(f->thisptr);
-                        if (isstructured(basetype(f->thistp)->btp) && f->thisptr->type != en_not_lvalue)
+                        auto strtype = basetype(f->thistp)->btp;
+                        if (isstructured(strtype) && f->thisptr->type != en_not_lvalue)
                         {
-                            EXPRESSION* expx = f->thisptr;
-                            if (expx->type == en_thisref)
-                                expx = expx->left;
-                            if (expx->type == en_func)
-                            {
-                                if (expx->v.func->returnSP)
-                                {
-                                    if (!expx->v.func->returnSP->sb->anonymous)
-                                        lref = true;
-                                }
-                            }
-                            else
-                            {
+                            if (strtype->lref)
                                 lref = true;
+                            else if (!strtype->rref)
+                            {
+                                EXPRESSION* expx = f->thisptr;
+                                if (expx->type == en_thisref)
+                                    expx = expx->left;
+                                if (expx->type == en_func)
+                                {
+                                    if (expx->v.func->returnSP)
+                                    {
+                                        if (!expx->v.func->returnSP->sb->anonymous)
+                                            lref = true;
+                                    }
+                                }
+                                else
+                                {
+                                    lref = true;
+                                }
                             }
                         }
                         if (isrrqual(sym->tp))

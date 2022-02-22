@@ -1751,6 +1751,8 @@ static int push_stackblock(TYPE* tp, EXPRESSION* ep, SYMBOL* funcsp, int sz, EXP
     Optimizer::IMODE *ap, *ap1, *ap2, *ap3;
     if (!sz)
         return 0;
+    if (sz % Optimizer::chosenAssembler->arch->stackalign)
+        sz = sz + Optimizer::chosenAssembler->arch->stackalign - sz % Optimizer::chosenAssembler->arch->stackalign;
     bool allocated = false;
     switch (ep->type)
     {
@@ -1775,27 +1777,41 @@ static int push_stackblock(TYPE* tp, EXPRESSION* ep, SYMBOL* funcsp, int sz, EXP
                     allocated = true;
                 }
             }
-            ap3 = gen_expr(funcsp, ep, F_ADDR, ISZ_UINT);
-            if (ap3->mode != Optimizer::i_direct && (Optimizer::chosenAssembler->arch->preferopts & OPT_ARGSTRUCTREF))
+            if (ep->type == en_c_i)
             {
-                ap = oAllocate<Optimizer::IMODE>();
-                *ap = *ap3;
-                ap3 = ap;
-                ap3->mode = Optimizer::i_direct;
+                // trivial structure
+                allocated = true;
+                Optimizer::gen_icode(Optimizer::i_parmstack , ap = Optimizer::tempreg(ISZ_ADDR, 0), Optimizer::make_immed(ISZ_UINT, sz), nullptr);
+                Optimizer::gen_icode(Optimizer::i_clrblock, nullptr, ap, Optimizer::make_immed(ISZ_UINT, sz));
             }
-            ap = Optimizer::LookupLoadTemp(nullptr, ap3);
-            if (ap != ap3)
-                Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
+            else
+            {
+                // if it would be a parmblock copied from a parmblock mark it as allocated
+                if (ep->type == en_thisref && ep->left->v.func->thisptr->type == en_auto && ep->left->v.func->thisptr->v.sp->sb->stackblock)
+                {
+                    allocated = true;
+                }
+                ap3 = gen_expr(funcsp, ep, F_ADDR, ISZ_UINT);
+                if (ap3->mode != Optimizer::i_direct && (Optimizer::chosenAssembler->arch->preferopts & OPT_ARGSTRUCTREF))
+                {
+                    ap = oAllocate<Optimizer::IMODE>();
+                    *ap = *ap3;
+                    ap3 = ap;
+                    ap3->mode = Optimizer::i_direct;
+                }
+                ap = Optimizer::LookupLoadTemp(nullptr, ap3);
+                if (ap != ap3)
+                    Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
+            }
             break;
     }
     if (!allocated)
     {
+        // nontrivial structure
         Optimizer::gen_nodag(Optimizer::i_parmblock, 0, ap, Optimizer::make_immed(ISZ_UINT, sz));
         Optimizer::intermed_tail->alttp = Optimizer::SymbolManager::Get(tp);
         Optimizer::intermed_tail->valist = valist && valist->type == en_l_p;
     }
-    if (sz % Optimizer::chosenAssembler->arch->stackalign)
-        sz = sz + Optimizer::chosenAssembler->arch->stackalign - sz % Optimizer::chosenAssembler->arch->stackalign;
     return sz;
 }
 

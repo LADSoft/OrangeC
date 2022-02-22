@@ -2904,7 +2904,11 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
         if (!*lptr)
         {
             deferredInitializeDefaultArg(sym, func);
-            EXPRESSION* q = sym->sb->init ? sym->sb->init->exp : intNode(en_c_i, 0);
+            EXPRESSION* q;
+            if (sym->sb->init && sym->sb->init->exp)
+                q = sym->sb->init->exp;
+            else
+                q = intNode(en_c_i, sym->tp->size);
             optimize_for_constants(&q);
             *lptr = Allocate<INITLIST>();
             (*lptr)->exp = q;

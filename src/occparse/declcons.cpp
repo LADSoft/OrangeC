@@ -3276,8 +3276,10 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
             while (srch)
             {
                 if (isstructured(srch->p->tp) && basetype(srch->p->tp)->sp->sb->templateLevel &&
-                    sameTemplate(stp, basetype(srch->p->tp)))
+                    sameTemplate(stp, basetype(srch->p->tp), true))
+                {
                     return false;
+                }
                 srch = srch->next;
             }
         }

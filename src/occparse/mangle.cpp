@@ -545,7 +545,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
                 {
                     buf = mangleType(buf, params->p->byClass.dflt, true);
                 }
-                else if (sym->sb->instantiated && params->p->byClass.val)
+                else if (sym->sb && sym->sb->instantiated && params->p->byClass.val)
                 {
                     buf = mangleType(buf, params->p->byClass.val, true);
                 }

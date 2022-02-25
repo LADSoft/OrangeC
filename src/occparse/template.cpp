@@ -7183,6 +7183,8 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                 xorig = porig->p->byClass.val;
                 xsym = psym->p->byClass.val;
             }
+            if (porig->p->type != psym->p->type)
+                return false;
             switch (porig->p->type)
             {
                 case kw_typename: {

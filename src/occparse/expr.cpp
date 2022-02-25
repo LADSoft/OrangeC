@@ -3171,6 +3171,11 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         }
                         p->exp = exprNode(en_void, p->exp, consexp);
                     }
+                    else if (basetype(sym->tp)->sp->sb->trivialCons)
+                    {
+                        p->exp = exprNode(en_stackblock, p->exp, nullptr);
+                        p->exp->size = basetype(p->tp)->size;
+                    }
                     else
                     {
                         TYPE* ctype = basetype(sym->tp = PerformDeferredInitialization(sym->tp, nullptr));

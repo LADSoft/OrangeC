@@ -4246,18 +4246,6 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                         tpthis = &tpx;
                         MakeType(tpx, bt_pointer, f->arguments->tp);
                     }
-                    else if (theCurrentFunc &&
-                             (f->thisptr && f->thisptr->type == en_l_p && f->thisptr->left->type == en_auto &&
-                              f->thisptr->left->v.sp->sb->thisPtr) &&
-                             (theCurrentFunc->sb->parentClass == sym->sb->parentClass ||
-                              sameTemplate(theCurrentFunc->sb->parentClass->tp, sym->sb->parentClass->tp) ||
-                              classRefCount(sym->sb->parentClass, theCurrentFunc->sb->parentClass) == 1) &&
-                             (isconst(theCurrentFunc->tp) || isvolatile(theCurrentFunc->tp)))
-                    {
-                        tpthis = &tpx;
-                        MakeType(tpx, bt_pointer, basetype(f->thistp)->btp);
-                        qualifyForFunc(theCurrentFunc, &tpx.btp, false);
-                    }
                     else if (sym->sb->isDestructor)
                     {
                         tpthis = &tpx;
@@ -4521,7 +4509,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
             return false;
         }
         return a == nullptr ||
-               (a->tp->type == bt_templateparam && a->tp->templateParam->p->packed && !a->tp->templateParam->p->byPack.pack);
+               (a->tp && a->tp->type == bt_templateparam && a->tp->templateParam->p->packed && !a->tp->templateParam->p->byPack.pack);
     }
 }
 SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, TYPE* atp)
@@ -5040,7 +5028,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 {
                     for (auto arg = args->arguments; arg; arg = arg->next)
                     {
-                        if (arg->tp->type == bt_templateparam && arg->tp->templateParam->p->packed)
+                        if (arg->tp && arg->tp->type == bt_templateparam && arg->tp->templateParam->p->packed)
                             doit = !!arg->tp->templateParam->p->byPack.pack;
                     }
                 }

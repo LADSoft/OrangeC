@@ -2888,6 +2888,9 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
 }
 void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, bool implicit)
 {
+    if (!strcmp(func->name, "insert_after"))
+        if (strstr(currentLex->data->errfile, "t5.cpp"))
+            printf("hi");
     auto old = argFriend;
     argFriend = func;
     (void)operands;
@@ -3013,7 +3016,8 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             (*lptr)->tp = sym->tp;
                             p->next = old;
                             p->nested = nullptr;
-                            params->arguments = (*lptr);
+                            params->arguments = Allocate<INITLIST>();
+                            *params->arguments = **lptr;
                         }
                         p->exp = thisptr;
                         auto old = p->next;
@@ -3868,9 +3872,8 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         // add this ptr
         if (!funcparams->thisptr && funcparams->sp->sb->parentClass && !isfuncptr(funcparams->sp->tp))
         {
-            TYPE* tp = MakeType(bt_pointer, funcparams->sp->sb->parentClass->tp);
             funcparams->thisptr = getMemberBase(funcparams->sp, nullptr, funcsp, false);
-            funcparams->thistp = tp;
+            TYPE* tp = MakeType(bt_pointer, funcparams->sp->sb->parentClass->tp);
             if (funcsp)
             {
                 if (isconst(funcsp->tp))
@@ -3882,6 +3885,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     tp->btp = MakeType(bt_volatile, tp->btp);
                 }
             }
+            funcparams->thistp = tp;
             UpdateRootTypes(tp);
             addedThisPointer = true;
         }

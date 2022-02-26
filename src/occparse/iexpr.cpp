@@ -2205,6 +2205,8 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         }
     }
     {
+        if (!strcmp(f->sp->name, "insert_after"))
+           printf("hi");
         int n = sizeParams(f->arguments, funcsp);
         int v = Optimizer::sizeFromISZ(ISZ_ADDR);
         if (v % Optimizer::chosenAssembler->arch->stackalign)

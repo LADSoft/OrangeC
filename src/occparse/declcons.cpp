@@ -3353,8 +3353,8 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                     params->arguments = params->arguments->nested;
                 CreateInitializerList(cons1, initializerListTemplate, initializerListType, &params->arguments, false,
                                       initializerRef);
-                if (temp && temp->nested && temp->nested->nested && !temp->initializer_list)
-                    temp->next = old;
+                if (temp && (!temp->initializer_list || (temp->nested && temp->nested->nested && !temp->initializer_list)))
+                    params->arguments->next = old;
                 if (basetype(cons1->tp)->syms->table[0]->next->next)
                     AdjustParams(cons1, basetype(cons1->tp)->syms->table[0]->next->next, &params->arguments->next, false,
                                  implicit && !cons1->sb->isExplicit);

@@ -2234,6 +2234,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
 static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, enum e_kw finish, bool allowNesting, bool allowPack,
                                 bool toErr, int flags)
 {
+    INITLIST**first = lptr;
     *lptr = nullptr;
     lex = getsym(); /* past ( */
     while (!MATCHKW(lex, finish))
@@ -2339,6 +2340,7 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
         errskim(&lex, finish == closepa ? skim_closepa : skim_end);
         skip(&lex, finish);
     }
+    DestructParams(*first);
     return lex;
 }
 LEXLIST* getInitList(LEXLIST* lex, SYMBOL* funcsp, INITLIST** owner)
@@ -2888,6 +2890,9 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
 }
 void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, bool implicit)
 {
+    if (!strcmp(func->name, "insert_after"))
+        if (strstr(currentLex->data->errfile, "t5.cpp"))
+            printf("hi");
     auto old = argFriend;
     argFriend = func;
     (void)operands;
@@ -3013,7 +3018,8 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             (*lptr)->tp = sym->tp;
                             p->next = old;
                             p->nested = nullptr;
-                            params->arguments = (*lptr);
+                            params->arguments = Allocate<INITLIST>();
+                            *params->arguments = **lptr;
                         }
                         p->exp = thisptr;
                         auto old = p->next;
@@ -3170,6 +3176,11 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             p->exp = exp;
                         }
                         p->exp = exprNode(en_void, p->exp, consexp);
+                    }
+                    else if (basetype(sym->tp)->sp->sb->trivialCons)
+                    {
+                        p->exp = exprNode(en_stackblock, p->exp, nullptr);
+                        p->exp->size = basetype(p->tp)->size;
                     }
                     else
                     {
@@ -3863,9 +3874,8 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         // add this ptr
         if (!funcparams->thisptr && funcparams->sp->sb->parentClass && !isfuncptr(funcparams->sp->tp))
         {
-            TYPE* tp = MakeType(bt_pointer, funcparams->sp->sb->parentClass->tp);
             funcparams->thisptr = getMemberBase(funcparams->sp, nullptr, funcsp, false);
-            funcparams->thistp = tp;
+            TYPE* tp = MakeType(bt_pointer, funcparams->sp->sb->parentClass->tp);
             if (funcsp)
             {
                 if (isconst(funcsp->tp))
@@ -3877,6 +3887,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     tp->btp = MakeType(bt_volatile, tp->btp);
                 }
             }
+            funcparams->thistp = tp;
             UpdateRootTypes(tp);
             addedThisPointer = true;
         }

@@ -331,8 +331,6 @@ void InsertInline(SYMBOL* sym)
     temp->data = sym;
     if (isfunction(sym->tp))
     {
-        if (!strcmp(sym->name, "$bctr") && strstr(sym->sb->decoratedName, "min_allocator$v") && sym->sb->declline == 420)
-            printf("hi");
         if (inlineHead)
             inlineTail = inlineTail->next = temp;
         else

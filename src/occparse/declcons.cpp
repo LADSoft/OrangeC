@@ -1685,6 +1685,68 @@ EXPRESSION* destructLocal(EXPRESSION* exp)
     }
     return rv;
 }
+void DestructParams(INITLIST* first)
+{
+    if (Optimizer::cparams.prm_cplusplus)
+        while (first)
+        {
+            TYPE* tp = first->tp;
+            if (tp)
+            {
+                bool ref = false;
+                if (isref(tp))
+                {
+                    ref = true;
+                    tp = basetype(tp)->btp;
+                }
+                else if (tp->lref || tp->rref)
+                {
+                    ref = true;
+                }
+                if (ref || !isstructured(tp))
+                {
+                    static std::stack<EXPRESSION*> stk;
+                    
+                    stk.push(first->exp);
+                    while (!stk.empty())
+                    {
+                        auto tst = stk.top();
+                        stk.pop();
+                        if (tst->type == en_thisref)
+                            tst = tst->left;
+                        if (tst->type == en_func)
+                        {
+                            if (tst->v.func->sp->sb->isConstructor)
+                            {
+                                EXPRESSION* iexp = tst->v.func->thisptr;
+                                auto sp = basetype(basetype(tst->v.func->thistp)->btp)->sp;
+                                int offs;
+                                auto xexp = relptr(iexp, offs);
+                                if (xexp)
+                                    xexp->v.sp->sb->destructed = true;
+                                if (callDestructor(sp, nullptr, &iexp, nullptr, true, false, false, true))
+                                {
+                                    optimize_for_constants(&iexp);
+                                    if (first->dest)
+                                        first->dest = exprNode(en_void, iexp, first->dest);
+                                    else
+                                        first->dest = iexp;
+                                }
+                            }
+                        }
+                        else if (tst->type == en_void)
+                        {
+                            if (tst->right)
+                                stk.push(tst->right);
+                            if (tst->left)
+                                stk.push(tst->left);
+                        }
+                    }
+                }
+            }
+            first = first->next;
+        }
+}
 void destructBlock(EXPRESSION** exp, SYMLIST* hr, bool mainDestruct)
 {
     //    if (!cparams.prm_cplusplus)

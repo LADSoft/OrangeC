@@ -2234,6 +2234,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
 static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, enum e_kw finish, bool allowNesting, bool allowPack,
                                 bool toErr, int flags)
 {
+    INITLIST**first = lptr;
     *lptr = nullptr;
     lex = getsym(); /* past ( */
     while (!MATCHKW(lex, finish))
@@ -2339,6 +2340,7 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
         errskim(&lex, finish == closepa ? skim_closepa : skim_end);
         skip(&lex, finish);
     }
+    DestructParams(*first);
     return lex;
 }
 LEXLIST* getInitList(LEXLIST* lex, SYMBOL* funcsp, INITLIST** owner)

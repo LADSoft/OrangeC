@@ -1689,6 +1689,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         if (l.str)
             dropStructureDeclaration();
         CheckCalledException(s3, funcparams->thisptr);
+        DestructParams(funcparams->arguments);
         return true;
     }
     if (l.str)

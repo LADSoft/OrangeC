@@ -1604,30 +1604,6 @@ static EXPRESSION* getAddress(EXPRESSION* exp)
     return rv;
 }
 /*-------------------------------------------------------------------------*/
-static EXPRESSION* getFunc(EXPRESSION* exp)
-{
-    EXPRESSION* rv = nullptr;
-    while (exp->type == en_void && exp->right)
-    {
-        rv = getFunc(exp->left);
-        if (rv)
-            return rv;
-        exp = exp->right;
-    }
-    if (exp->type == en_thisref)
-        exp = exp->left;
-    if (exp->type == en_add)
-    {
-        rv = getFunc(exp->left);
-        if (!rv)
-            rv = getFunc(exp->right);
-    }
-    else if (exp->type == en_func)
-    {
-        return exp;
-    }
-    return rv;
-}
 int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE* argtp, int flags)
 /*
  *      push the operand expression onto the stack.

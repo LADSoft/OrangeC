@@ -5434,6 +5434,21 @@ static bool Deduce(TYPE* P, TYPE* A, EXPRESSION* exp, bool change, bool byClass,
                 {
                     return true;
                 }
+                {
+                    SYMBOL* cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(Pb)->syms);
+                    if (cons)
+                    {
+                        for (auto hr = cons->tp->syms->table[0]; hr; hr = hr->next)
+                        {
+                            auto hr1 = hr->p->tp->syms->table[0];
+                            if (hr1->next && !hr1->next->next)
+                            {
+                                if (comparetypes(hr1->next->p->tp, Ab, true) || sameTemplate(hr1->next->p->tp, Ab))
+                                    return true;
+                            }
+                        }
+                    }
+                }
                 return false;
             default:
 
@@ -6188,28 +6203,6 @@ static bool TemplateDeduceArgList(SYMLIST* funcArgs, SYMLIST* templateArgs, INIT
     return rv && (!symArgs || (symArgs->tp && symArgs->tp->type == bt_templateparam && symArgs->tp->templateParam->p->packed &&
                                !symArgs->tp->templateParam->p->byPack.pack));
 }
-static void SwapDefaultNames(TEMPLATEPARAMLIST* params, Optimizer::LIST* origNames)
-{
-    while (params && origNames)
-    {
-        const char* temp = ((SYMBOL*)origNames->data)->name;
-        if (params->argsym)
-        {
-            ((SYMBOL*)origNames->data)->name = params->argsym->name;
-            params->argsym->name = temp;
-        }
-        else if (params->argsym == (SYMBOL*)origNames->data)
-        {
-            params->argsym = nullptr;
-        }
-        else
-        {
-            params->argsym = (SYMBOL*)origNames->data;
-        }
-        params = params->next;
-        origNames = origNames->next;
-    }
-}
 bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* dest, TEMPLATEPARAMLIST* src,
                               TEMPLATEPARAMLIST* enclosing)
 {
@@ -6249,7 +6242,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPL
                 instantiatingMemberFuncClass = oldMemberClass;
                 return false;
             }
-            SwapDefaultNames(enclosing, src->p->byClass.txtargs);
             n = PushTemplateNamespace(declareSym);
             if (primaryList && primaryList->p->byClass.txtdflt && primaryList->p->byClass.txtdflt == src->p->byClass.txtdflt)
             {
@@ -6290,7 +6282,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPL
                         (!templateNestingCount && dest->p->byClass.val->type == bt_templateselector))
                     {
                         parsingDefaultTemplateArgs--;
-                        SwapDefaultNames(enclosing, src->p->byClass.txtargs);
                         while (pushCount--)
                             dropStructureDeclaration();
                         PopTemplateNamespace(n);
@@ -6309,7 +6300,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPL
                     if (!dest->p->byTemplate.val)
                     {
                         parsingDefaultTemplateArgs--;
-                        SwapDefaultNames(enclosing, src->p->byClass.txtargs);
                         while (pushCount--)
                             dropStructureDeclaration();
                         PopTemplateNamespace(n);
@@ -6339,7 +6329,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPL
                         if (tp1->type == bt_any)
                         {
                             parsingDefaultTemplateArgs--;
-                            SwapDefaultNames(enclosing, src->p->byClass.txtargs);
                             while (pushCount--)
                                 dropStructureDeclaration();
                             PopTemplateNamespace(n);
@@ -6362,7 +6351,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPL
                         if (!ispointer(tp1) && !isint(tp1) && !isconstzero(tp1, exp1))
                         {
                             parsingDefaultTemplateArgs--;
-                            SwapDefaultNames(enclosing, src->p->byClass.txtargs);
                             while (pushCount--)
                                 dropStructureDeclaration();
                             PopTemplateNamespace(n);
@@ -6376,7 +6364,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPL
                     if (!tp2 || tp2->type == bt_any)
                     {
                         parsingDefaultTemplateArgs--;
-                        SwapDefaultNames(enclosing, src->p->byClass.txtargs);
                         while (pushCount--)
                             dropStructureDeclaration();
                         PopTemplateNamespace(n);
@@ -6390,7 +6377,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPL
                 default:
                     break;
             }
-            SwapDefaultNames(enclosing, src->p->byClass.txtargs);
             while (pushCount--)
                 dropStructureDeclaration();
             PopTemplateNamespace(n);
@@ -8663,7 +8649,8 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                         switch (initial->p->type)
                         {
                             case kw_typename:
-                                if (!templatecomparetypes(params->p->byClass.val, (TYPE*)dflt, true))
+                                if (!templatecomparetypes(params->p->byClass.val, (TYPE*)dflt, true) || (isstructured(params->p->byClass.val) && basetype(params->p->byClass.val)->sp->sb->templateLevel && 
+                                    !sameTemplate(params->p->byClass.val, (TYPE*)dflt, true)))
                                     rv = nullptr;
                                 break;
                             case kw_int: {
@@ -9966,6 +9953,8 @@ SYMBOL* TemplateByValLookup(SYMBOL* parent, SYMBOL* test, std::string& argumentN
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
+    if (!strcmp(currentLex->data->errfile, "q2.cpp"))
+        printf("hi");
     // quick check for non-template
     if (!sp->sb->templateLevel)
         return sp;

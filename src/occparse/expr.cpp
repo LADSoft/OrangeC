@@ -2629,6 +2629,30 @@ TYPE* InitializerListType(TYPE* arg)
     }
     return rtp;
 }
+EXPRESSION* getFunc(EXPRESSION* exp)
+{
+    EXPRESSION* rv = nullptr;
+    while (exp->type == en_void && exp->right)
+    {
+        rv = getFunc(exp->left);
+        if (rv)
+            return rv;
+        exp = exp->right;
+    }
+    if (exp->type == en_thisref)
+        exp = exp->left;
+    if (exp->type == en_add)
+    {
+        rv = getFunc(exp->left);
+        if (!rv)
+            rv = getFunc(exp->right);
+    }
+    else if (exp->type == en_func)
+    {
+        return exp;
+    }
+    return rv;
+}
 void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* initializerListType, INITLIST** lptr, bool operands,
                            bool asref)
 {
@@ -2775,6 +2799,20 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
                     }
                     tp->size += (count1 - 1) * (initializerListType->size);
                     tp->esize->v.i += count1 - 1;
+                }
+                else if (!(*lptr)->nested && isstructured(initializerListType) && (comparetypes(initializerListType, (*lptr)->tp, true) || sameTemplate(initializerListType, (*lptr)->tp)))
+                {
+                    int offs;                    
+                    auto exp = getFunc((*lptr)->exp);
+                    if (exp && exp->v.func->thisptr)
+                    {
+                        int offs = 0;
+                        auto exp1 = relptr(exp->v.func->thisptr, offs);
+                        if (exp1)
+                            exp1->v.sp->sb->allocate = false;
+                        exp->v.func->thisptr = dest;
+                    }
+                    node = (*lptr)->exp;
                 }
                 else
                 {
@@ -4105,6 +4143,8 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     auto next = (*lptr)->next;
                     if ((*lptr)->nested)
                         (*lptr)->next = nullptr;
+                    if (funcparams->arguments->nested && funcparams->arguments->nested->nested && !funcparams->arguments->initializer_list)
+                        funcparams->arguments = funcparams->arguments->nested;
                     CreateInitializerList(funcparams->sp, initializerListTemplate, initializerListType, lptr, operands,
                                           initializerRef);
                     (*lptr)->next = next;

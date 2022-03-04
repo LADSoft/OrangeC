@@ -2681,7 +2681,7 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
             while (hr)
             {
                 SYMBOL* sp = hr->p;
-                if ((sp->sb->storage_class == sc_member || sp->sb->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
+                if ((sp->sb->storage_class == sc_member || sp->sb->storage_class == sc_mutable) && sp->tp->type != bt_aggregate && !sp->sb->wasUsing)
                 {
                     if (isstructured(sp->tp))
                     {
@@ -3031,7 +3031,7 @@ static void undoVars(BLOCKDATA* b, SYMLIST* vars, EXPRESSION* base)
         {
             SYMBOL* s = (SYMBOL*)stk.top();
             stk.pop();
-            if ((s->sb->storage_class == sc_member || s->sb->storage_class == sc_mutable))
+            if ((s->sb->storage_class == sc_member || s->sb->storage_class == sc_mutable) && !s->sb->wasUsing)
             {
                 if (isstructured(s->tp))
                 {

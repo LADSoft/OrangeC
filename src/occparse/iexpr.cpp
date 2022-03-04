@@ -2159,7 +2159,16 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         {
             ap = gen_inline(funcsp, node, flags);
             if (ap)
+            {
+                if (has_arg_destructors(f->arguments))
+                {
+                    Optimizer::IMODE* ap1 = Optimizer::tempreg(ap->size, 0);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap1, ap, nullptr);
+                    ap = ap1;
+                }
+                gen_arg_destructors(funcsp, f->arguments);
                 return ap;
+            }
         }
     }
     if ((Optimizer::architecture == ARCHITECTURE_MSIL) &&

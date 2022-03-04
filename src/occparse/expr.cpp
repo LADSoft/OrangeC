@@ -2928,9 +2928,6 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
 }
 void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, bool implicit)
 {
-    if (!strcmp(func->name, "insert_after"))
-        if (strstr(currentLex->data->errfile, "t5.cpp"))
-            printf("hi");
     auto old = argFriend;
     argFriend = func;
     (void)operands;

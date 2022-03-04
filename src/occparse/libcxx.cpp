@@ -174,8 +174,8 @@ void libcxx_builtins(void)
         preProcessor->Define("__has__atomic_add_fetch", "1");
         preProcessor->Define("__has__atomic_exchange_n", "1");
         preProcessor->Define("__has__atomic_compare_exchange_n", "1");
-        preProcessor->Define("__has__builtin_operator_new", "201802L");
-        preProcessor->Define("__has__builtin_operator_delete", "201802L");
+        preProcessor->Define("__has__builtin_operator_new", "0");
+        preProcessor->Define("__has__builtin_operator_delete", "0");
         preProcessor->Define("__has__make_integer_seq", "1");
         preProcessor->Define("__has__type_pack_element", "1");
         preProcessor->Define("__has__builtin_launder", "0");

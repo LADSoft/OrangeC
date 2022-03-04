@@ -37,12 +37,9 @@ namespace Parser
 {
 static std::string cppbuiltin =
     "void * operator new(unsigned); "
-    "void __rtllinkage * __builtin_operator_new(unsigned); "
     "void __rtllinkage * operator new[](unsigned size); "
     "void __rtllinkage * operator new(unsigned size, void *ptr) noexcept; "
     "void __rtllinkage * operator new[](unsigned size, void *ptr) noexcept; "
-    "extern \"C\" void __rtllinkage   free(void*); "
-    "inline void __builtin_operator_delete(void* p) { free(p); } "
     "void __rtllinkage   operator delete  (void *) noexcept; "
     "void __rtllinkage   operator delete[](void *) noexcept; "
     "void __rtllinkage * __dynamic_cast(void *, void *, void *, void *); "

@@ -3791,6 +3791,11 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                         if (sp == (SYMBOL*)-1)
                             sp = nullptr;
                     }
+                    if (sp && sp->sb->access != ac_public)
+                    {
+                        sp = nullptr;
+                        break;
+                    }
                     if (!find->next && sp)
                     {
                         funcparams->astemplate = find->isTemplate;

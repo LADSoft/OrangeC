@@ -1418,6 +1418,8 @@ static void ScanUIVs(void)
                     im = GetLoadTemp(im);
                     if (im)
                         setbit(uivBytes, termMap[im->offset->sp->i]);
+                    if (aa1->modifiedBy)
+                        ormap(uivBytes, aa1->modifiedBy);
                     break;
                 default:
                     break;

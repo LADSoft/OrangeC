@@ -114,7 +114,6 @@ static void inlineBindThis(SYMBOL* funcsp, SYMLIST* hr, EXPRESSION* thisptr)
                 simpleSym->allocate = true;
                 simpleSym->anonymous = true;
                 simpleSym->inAllocTable = true;
-                simpleSym->imvalue = Optimizer::tempreg(ISZ_ADDR, 0);
                 Optimizer::temporarySymbols.push_back(simpleSym);
                 dest = varNode(en_auto, sym);
                 deref(sym->tp, &dest);

@@ -637,7 +637,7 @@ static bool __is_nothrow(TYPE* tp, INITLIST* args, SYMBOL* ovl)
         }
         int oldSpecialize = inTemplateSpecialization;
         inTemplateSpecialization = 0;
-        SYMBOL* sp = GetOverloadedFunction(&tp, &funcparams.fcall, ovl, &funcparams, nullptr, false, false, false,
+        SYMBOL* sp = GetOverloadedFunction(&tp, &funcparams.fcall, ovl, &funcparams, nullptr, false, false, true,
                                            _F_SIZEOF | _F_IS_NOTHROW | _F_RETURN_DELETED);
         inTemplateSpecialization = oldSpecialize;
         while (stk.size())

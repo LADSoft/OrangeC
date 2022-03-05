@@ -4188,6 +4188,11 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                             if (sp == (SYMBOL*)-1)
                                 sp = nullptr;
                         }
+                        if (sp && sp->sb->access != ac_public)
+                        {
+                            sp = nullptr;
+                            break;
+                        }
                         if (sp)
                         {
                             if (rvs->next && rvs->next->isTemplate)
@@ -5578,6 +5583,11 @@ static bool ValidArg(TYPE* tp)
                             sp = classdata(find->name, spo, nullptr, false, false);
                             if (sp == (SYMBOL*)-1)
                                 sp = nullptr;
+                        }
+                        if (sp && sp->sb->access != ac_public)
+                        {
+                            sp = nullptr;
+                            break;
                         }
                         find = find->next;
                     }
@@ -9452,6 +9462,11 @@ static SYMBOL* FindTemplateSelector(TEMPLATESELECTOR* tso)
                             if (sp)
                                 sp->tp = PerformDeferredInitialization(sp->tp, theCurrentFunc);
                         }
+                    }
+                    if (sp && sp->sb->access != ac_public)
+                    {
+                        sp = nullptr;
+                        break;
                     }
                     find = find->next;
                 }

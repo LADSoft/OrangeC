@@ -1412,6 +1412,8 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
             sp->sb->parentClass = getStructureDeclaration();
         if (nsv)
             sp->sb->parentNameSpace = nsv->valueData->name;
+        else
+            sp->sb->parentNameSpace = globalNameSpace->valueData->name;
         if (nsv && nsv->valueData->name && !strcmp(sp->name, "initializer_list") && !strcmp(nsv->valueData->name->name, "std"))
             sp->sb->initializer_list = true;
         if (inTemplate)

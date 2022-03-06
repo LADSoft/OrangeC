@@ -3427,11 +3427,36 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
     }
     return false;
 }
-void GetRefs(TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref)
+void GetRefs(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref)
 {
     bool func = false;
     bool func2 = false;
     bool notlval = false;
+    // if it is going to file a conversion function or constructor it is an rref...
+    if (tpp)
+    {
+        TYPE *tpp1 = tpp;
+        if (isref(tpp1))
+            tpp1 = basetype(tpp1)->btp;
+        if (isstructured(tpp1))
+        {
+            TYPE *tpa1 = tpa;
+            if (isref(tpa1))
+                tpa1 = basetype(tpa1)->btp;
+            if (!isstructured(tpa1))
+            {
+                lref = false;
+                rref = true;
+                return;
+            }
+            else if (classRefCount(basetype(tpp1)->sp, basetype(tpa1)->sp) != 1 && !comparetypes(tpp1, tpa1, true) && !sameTemplate(tpp1, tpa1))
+            {
+                lref = false;
+                rref = true;
+                return;
+            }
+        }
+    }
     if (expa)
     {
         if (isstructured(tpa))
@@ -3502,7 +3527,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         seq[(*n)++] = CV_NONE;
         return;
     }
-    GetRefs(tpa, exp, lref, rref);
+    GetRefs(tpp, tpa, exp, lref, rref);
     if (exp && exp->type == en_thisref)
         exp = exp->left;
     if (exp && exp->type == en_func)

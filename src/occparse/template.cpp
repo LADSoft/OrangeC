@@ -6042,11 +6042,11 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
     inDefaultParam--;
     return rv;
 }
-static TYPE* GetForwardType(TYPE* A, EXPRESSION* exp)
+static TYPE* GetForwardType(TYPE* P, TYPE* A, EXPRESSION* exp)
 {
     bool lref = false;
     bool rref = false;
-    GetRefs(A, exp, lref, rref);
+    GetRefs(P, A, exp, lref, rref);
     if (rref)
     {
         // rvalue to rref, remove reference...
@@ -6081,7 +6081,7 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
             if (exp && !isconst(P) && !isvolatile(P))
             {
                 // unadorned rref in arg, forwarding...
-                A = GetForwardType(A, exp);
+                A = GetForwardType(P, A, exp);
             }
             else if (isref(A))
                 A = basetype(A)->btp;
@@ -6646,7 +6646,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                             (*p)->p->byClass.val = MakeType(bt_const, (*p)->p->byClass.val);
                         if (forward && !templateNestingCount)
                         {
-                            (*p)->p->byClass.val = GetForwardType((*p)->p->byClass.val, symArgs->exp);
+                            (*p)->p->byClass.val = GetForwardType(nullptr, (*p)->p->byClass.val, symArgs->exp);
                             if (isref((*p)->p->byClass.val))
                             {
                                 basetype(basetype((*p)->p->byClass.val)->btp)->rref = false;

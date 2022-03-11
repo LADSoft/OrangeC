@@ -2903,7 +2903,16 @@ founddecltype:
                                         sp1 = GetClassTemplate(sp1, lst, !templateErr);
                                         tn = nullptr;
                                         if (sp1)
-                                            tn = sp1->tp;
+                                        {
+                                            if (sp1->tp->type == bt_typedef)
+                                            {
+                                                tn = SynthesizeType(sp1->tp, nullptr, false);
+                                            }
+                                            else
+                                            {
+                                                tn = sp1->tp;
+                                            }
+                                        }
                                     }
                                     else if (templateNestingCount)
                                     {

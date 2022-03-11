@@ -8850,8 +8850,6 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                         if (!((Optimizer::architecture == ARCHITECTURE_MSIL) && basetype(*tp)->sp->sb->msil &&
                               (isconstzero(tp1, exp1) || basetype(tp1)->nullptrType)))
                         {
-                            comparetypes(*tp, tp1, true);
-                            sameTemplate(*tp, tp1);
                             error(ERR_ILL_STRUCTURE_ASSIGNMENT);
                         }
                     }

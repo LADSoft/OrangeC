@@ -328,6 +328,13 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* t
                     SpecializationError(buf);
                 }
             }
+            if ((!inTemplateType || parsingUsing) && MATCHKW(lex, openpa))
+            {
+                FUNCTIONCALL funcparams = { };
+                lex = getArgs(lex, theCurrentFunc, &funcparams, closepa, true, 0);
+                (*last)->arguments = funcparams.arguments;
+                (*last)->asCall = true;
+            }
             last = &(*last)->next;
             if (!MATCHKW(lex, classsel))
                 break;
@@ -2616,6 +2623,47 @@ static bool ellipsed(SYMBOL* sym)
         hr = hr->next;
     return basetype(hr->p->tp)->type == bt_ellipse;
 }
+static int ChooseLessConstTemplate(SYMBOL* left, SYMBOL* right)
+{
+    if (left->templateParams && right->templateParams)
+    {
+        int lcount = 0, rcount = 0;
+        auto tpl = left->templateParams->p->bySpecialization.types ? left->templateParams->p->bySpecialization.types : left->templateParams->next;
+        auto tpr = right->templateParams->p->bySpecialization.types ? right->templateParams->p->bySpecialization.types : right->templateParams->next;
+        tpl = left->templateParams->next;
+        tpr = right->templateParams->next;
+        while (tpl && tpr)
+        {
+            if (tpl->p->packed || tpr->p->packed)
+                return 0;
+            if (tpl->p->type == tpr->p->type && tpl->p->type == kw_typename)
+            {
+                if (isconst(tpl->p->byClass.val))
+                    lcount++;
+                if (isvolatile(tpl->p->byClass.val))
+                    lcount++;
+                if (isconst(tpr->p->byClass.val))
+                    rcount++;
+                if (isvolatile(tpr->p->byClass.val))
+                    rcount++;
+            }
+            tpl = tpl->next;
+            tpr = tpr->next;
+        }
+        if (!tpl && !tpr)
+        {
+            if (!lcount && rcount)
+            {
+                return -1;
+            }
+            if (!rcount && lcount)
+            {
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
 static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenList, FUNCTIONCALL* funcparams, int argCount,
                            int funcCount, SYMBOL*** funcList)
 {
@@ -2728,6 +2776,18 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                     else if (right && !left)
                     {
                         spList[i] = nullptr;
+                    }
+                    else if (!right && !left)
+                    {
+                        switch (ChooseLessConstTemplate(spList[i], spList[j]))
+                        {
+                            case -1:
+                                spList[j] == nullptr;
+                                break;
+                            case 1:
+                                spList[i] = nullptr;
+                                break;
+                        }
                     }
                 }
             }
@@ -3283,7 +3343,17 @@ static void getPointerConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* exp, int* n, 
                 else
                     t1 = basetype(t1)->btp;
             }
-            if (!comparetypes(t1, t2, true) && !basetype(tpa)->nullptrType)
+            if (basetype(tpa)->nullptrType)
+            {
+                if (!basetype(tpp)->nullptrType)
+                {
+                    if (ispointer(tpa))
+                        seq[(*n)++] = CV_POINTERCONVERSION;
+                    else if (!basetype(tpp)->nullptrType && !isconstzero(basetype(tpa), exp) && exp->type != en_nullptr)
+                        seq[(*n)++] = CV_NONE;
+                }
+            }
+            else if (!comparetypes(t1, t2, true))
             {
                 seq[(*n)++] = CV_NONE;
             }
@@ -4772,6 +4842,7 @@ static void doNames(SYMBOL* sym)
         doNames(sym->sb->parentClass);
     SetLinkerNames(sym, lk_cdecl);
 }
+int count3;
 SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, int toErr,
                               bool maybeConversion, bool toInstantiate, int flags)
 {

@@ -917,8 +917,10 @@ typedef struct _templateSelector
         TYPE* tp;
     };
     TEMPLATEPARAMLIST* templateParams;
+    struct initlist* arguments;
     int isTemplate : 1;
     int isDeclType : 1;
+    int asCall : 1;
 } TEMPLATESELECTOR;
 
 typedef struct _structSym

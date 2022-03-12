@@ -3930,6 +3930,8 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
         }
         else if (sza == ISZ_ULONGLONG)
         {
+            if (!apl1)
+                apl1 = aimmed(0);
             func_axdx(op_mov, apa, apa1, apl, apl1);
         }
         else

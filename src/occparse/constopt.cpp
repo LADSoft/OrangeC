@@ -2560,6 +2560,22 @@ int opt0(EXPRESSION** node)
                                 if (sym == (SYMBOL*)-1)
                                     sym = nullptr;
                             }
+                            if (sym && find->asCall)
+                            {
+                                for (auto i = find->arguments; i; i = i->next)
+                                {
+                                    i->tp = SynthesizeType(i->tp, nullptr, false);
+                                }
+                                TYPE* ctype = sym->tp;
+                                EXPRESSION* exp = intNode(en_c_i, 0);
+                                FUNCTIONCALL funcparams = { };
+                                funcparams.arguments = find->arguments;
+                                auto sp1 = GetOverloadedFunction(&ctype, &exp, sym, &funcparams, nullptr, false, false, false, 0);
+                                if (sp1)
+                                {
+                                    sym = sp1;
+                                }
+                            }
                             find = find->next;
                         }
                         if (!find && sym)

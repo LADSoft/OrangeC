@@ -324,7 +324,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         return nullptr;
     }
     /* measure of complexity */
-    if (!f->sp->sb->simpleFunc && inlineTooComplex(f))
+    if (!f->sp->sb->simpleFunc && (inlineTooComplex(f) || (funcsp->sb->endLine - funcsp->sb->startLine > 400)))
     {
         f->sp->sb->dumpInlineToFile = true;
         return nullptr;

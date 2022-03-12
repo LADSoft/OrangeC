@@ -79,6 +79,7 @@ int OS::jobsLeft;
 std::string OS::jobName = "\t";
 std::string OS::jobFile;
 std::shared_ptr<OMAKE::JobServer> OS::localJobServer = nullptr;
+static bool first;
 static std::set<HANDLE> processIds;
 std::recursive_mutex OS::consoleMutex;
 void OS::TerminateAll()
@@ -213,7 +214,7 @@ std::string OS::GetFullPath(const std::string& fullname)
 std::string OS::JobName() { return jobName; }
 void OS::InitJobServer()
 {
-    bool first = false;
+    first = false;
     std::string name;
     if (!localJobServer)
     {
@@ -320,9 +321,13 @@ void OS::JobInit()
         }
         free(temp);
     }
+    if (!first)
+        GiveJob();
 }
 void OS::JobRundown()
 {
+    if (!first)
+        TakeJob();
     if (jobFile.size())
         RemoveFile(jobFile);
 }

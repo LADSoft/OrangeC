@@ -52,7 +52,47 @@ extern "C" void _RTL_FUNC __call_unexpected(std::exception_ptr *e);
 
 extern "C" LONG ___xceptionhandle(PEXCEPTION_RECORD p, void* record, PCONTEXT context, void* param);
 
-thread_local std::deque<std::exception_ptr> thrownExceptions;
+struct __thrownExceptions
+{
+    struct __thrownExceptions *next;
+    struct __thrownExceptions *prev;
+    std::exception_ptr exception;
+    struct __thrownExceptions* Add(const std::exception_ptr& exc)
+    {
+        auto rv = (__thrownExceptions*) malloc(sizeof(thrownExceptions));
+        if (this)
+        {
+             rv->prev = this;
+             next = rv;
+        }
+        new (&rv->exception) std::exception_ptr(exc);
+        return rv;
+    }
+    struct __thrownExceptions* Remove()
+    {
+        if (this)
+        {
+            auto rv = this->prev;
+            if (rv)
+            	rv->next = nullptr;
+            this->~exception_ptr();
+            free(this);
+            return rv;
+        }
+        return nullptr;
+    }
+};
+struct __thrownExceptionList
+{
+    struct __thrownExceptions* first;
+    struct __thrownExceptions* last; 
+    int count;
+    int size() { return count; }
+    std::exception_ptr& back() { return last->exception; }
+    void push_back(const std::exception_ptr&exc) { last = last->Add(exc); if (!count) { first = last; } count++; } 
+    void pop_back() { if (count) { last = last->Remove(); count--; if (!count)first = nullptr; } }
+};
+thread_local __thrownExceptionList thrownExceptions;
 thread_local XCTAB* currentFrame;
 
 static void uninstantiate(std::__exceptionInternal* exc, bool base);
@@ -73,8 +113,8 @@ void std::exception_ptr::FreeExceptionObject(std::__exceptionInternal* exc)
 int  _RTL_FUNC std::uncaught_exceptions() noexcept
 {
      int rv = 0;
-     for (auto&& e : thrownExceptions)
-         if (__getxc(e)->inprocess)
+     for (auto t = thrownExceptions.first; t; t = t->next)
+         if (__getxc(t->exception)->inprocess)
              rv++;
      return rv;
 }

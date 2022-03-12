@@ -1412,6 +1412,8 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
             sp->sb->parentClass = getStructureDeclaration();
         if (nsv)
             sp->sb->parentNameSpace = nsv->valueData->name;
+        else
+            sp->sb->parentNameSpace = globalNameSpace->valueData->name;
         if (nsv && nsv->valueData->name && !strcmp(sp->name, "initializer_list") && !strcmp(nsv->valueData->name->name, "std"))
             sp->sb->initializer_list = true;
         if (inTemplate)
@@ -2901,7 +2903,16 @@ founddecltype:
                                         sp1 = GetClassTemplate(sp1, lst, !templateErr);
                                         tn = nullptr;
                                         if (sp1)
-                                            tn = sp1->tp;
+                                        {
+                                            if (sp1->tp->type == bt_typedef)
+                                            {
+                                                tn = SynthesizeType(sp1->tp, nullptr, false);
+                                            }
+                                            else
+                                            {
+                                                tn = sp1->tp;
+                                            }
+                                        }
                                     }
                                     else if (templateNestingCount)
                                     {
@@ -3750,7 +3761,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                     error(ERR_TYPE_NAME_EXPECTED);
                 else if (isautotype(tp1) && !lambdas)
                     error(ERR_AUTO_NOT_ALLOWED_IN_PARAMETER);
-                else if (Optimizer::cparams.prm_cplusplus && isstructured((*tp)->btp) && MATCHKW(lex, openpa))
+                else if (Optimizer::cparams.prm_cplusplus && isstructured((*tp)->btp) && (MATCHKW(lex, openpa) || MATCHKW(lex, begin)))
                 {
                     LEXLIST* cur = lex;
                     lex = getsym();
@@ -3902,7 +3913,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                                 sym->sb->stackblock = !isref(spi->tp);
                                 lex = initialize(lex, funcsp, sym, sc_auto, true, false, 0); /* also reserves space */
                                 spi->sb->init = sym->sb->init;
-                                if (spi->sb->init->exp->type == en_thisref)
+                                if (spi->sb->init->exp && spi->sb->init->exp->type == en_thisref)
                                 {
                                     EXPRESSION** expr = &spi->sb->init->exp->left->v.func->thisptr;
                                     if (*expr && (*expr)->type == en_add && isconstzero(&stdint, (*expr)->right))

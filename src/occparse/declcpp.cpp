@@ -2246,7 +2246,7 @@ INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXLIST* start,
                         p->exp = varNode(en_auto, sym);
                         if (isref(p->tp))
                         {
-                            p->exp = exprNode(en_l_p, p->exp, nullptr);
+                            p->exp = exprNode(en_l_ref, p->exp, nullptr);
                             p->tp = basetype(p->tp)->btp;
                         }
                         if (!isstructured(p->tp))

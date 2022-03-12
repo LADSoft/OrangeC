@@ -1,50 +1,52 @@
 B := py \orangec\lit\lit.py --echo-all-commands
 
-all:
+all: copyfiles
 	$(B) std
 
-algorithms:
+algorithms: copyfiles
 	$(B) std/algorithms
 
-atomics:
+atomics: copyfiles
 	$(B) std/atomics
 
-containers:
+containers: copyfiles
 	$(B) std/containers
 
-depr:
+depr: copyfiles
 	$(B) std/depr
 
-diagnostics:
+diagnostics: copyfiles
 	$(B) std/diagnostifcs
 
-experimental:
+experimental: copyfiles
 	$(B) std/experimental
 
-input.output:
+input.output: copyfiles
 	$(B) std/input.output
 
-iterators:
+iterators: copyfiles
 	$(B) std/iterators
 
-language.support:
+language.support: copyfiles
 	$(B) std/language.support
 
-localization:
+localization: copyfiles
 	$(B) std/localization
 
-numerics:
+numerics: copyfiles
 	$(B) std/numerics
 
 re:
 	$(B) std/re
 
-strings:
+strings: copyfiles
 	$(B) std/strings
 
-thread:
+thread: copyfiles
 	$(B) std/thread
 
-utilities:
+utilities: copyfiles
 	$(B) std/utilities
 
+copyfiles:
+	copy $(ORANGEC)\src\clibs\cpp\stdinc_libcxx\exception \orangec\src\clibs\cpp\libcxx\include

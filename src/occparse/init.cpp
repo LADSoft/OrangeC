@@ -2954,6 +2954,8 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
             }
             else if (MATCHKW(lex, openpa) || MATCHKW(lex, begin))
             {
+                if (!(flags & _F_EXPLICIT) && MATCHKW(lex, begin))
+                    implicit = true;
                 bool isbegin = MATCHKW(lex, begin);
                 // conversion constructor params
                 lex = getArgs(lex, funcsp, funcparams, MATCHKW(lex, openpa) ? closepa : end, true, 0);
@@ -2982,11 +2984,11 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                 bool toContinue = true;
                 if (flags & _F_ASSIGNINIT)
                 {
-                    toContinue = !callConstructor(&ctype, &exp, funcparams, false, nullptr, false, maybeConversion, false, false,
+                    toContinue = !callConstructor(&ctype, &exp, funcparams, false, nullptr, false, maybeConversion, implicit, false,
                                                   isList ? _F_INITLIST : 0, true, true);
                 }
                 if (toContinue)
-                    callConstructor(&ctype, &exp, funcparams, false, nullptr, true, maybeConversion, false, false,
+                    callConstructor(&ctype, &exp, funcparams, false, nullptr, true, maybeConversion, implicit, false,
                                     isList ? _F_INITLIST : 0, false, true);
                 if (funcparams->sp)  // may be an error
                     PromoteConstructorArgs(funcparams->sp, funcparams);
@@ -3974,7 +3976,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
                     else
                         assigned = true;
                 }
-                lex = initType(lex, funcsp, 0, sym->sb->storage_class, &sym->sb->init, &sym->sb->dest, t, sym, false, flags);
+                lex = initType(lex, funcsp, 0, sym->sb->storage_class, &sym->sb->init, &sym->sb->dest, t, sym, false, flags | _F_EXPLICIT);
                 /* set up an end tag */
                 if (sym->sb->init || assigned)
                 {
@@ -4005,7 +4007,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
             if (!basetype(tp)->sp->sb->trivialCons)
             {
                 // default constructor without (), or array of structures without an initialization list
-                lex = initType(lex, funcsp, 0, sym->sb->storage_class, &sym->sb->init, &sym->sb->dest, t, sym, false, flags);
+                lex = initType(lex, funcsp, 0, sym->sb->storage_class, &sym->sb->init, &sym->sb->dest, t, sym, false, flags | _F_EXPLICIT);
                 /* set up an end tag */
                 if (sym->sb->init)
                 {

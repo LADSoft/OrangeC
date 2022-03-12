@@ -614,7 +614,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
             SYMBOL* sym = nullptr;
             sym = anonymousVar(sc_auto, *tp)->v.sp;
 
-            lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, *tp, sym, false, flags);
+            lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, *tp, sym, false, flags | _F_EXPLICIT);
             if (init && !init->next && init->exp->type == en_thisref)
             {
                 *exp = init->exp;
@@ -679,11 +679,11 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
             EXPRESSION* exp1;
             ctype = PerformDeferredInitialization(ctype, funcsp);
             lex = getArgs(lex, funcsp, funcparams, closepa, true, flags);
+            EXPRESSION* exp2;
+            exp2 = exp1 = *exp = anonymousVar(sc_auto, unboxed ? unboxed : basetype(*tp)->sp->tp);
+            sym = exp1->v.sp;
             if (!(flags & _F_SIZEOF))
             {
-                EXPRESSION* exp2;
-                exp2 = exp1 = *exp = anonymousVar(sc_auto, unboxed ? unboxed : basetype(*tp)->sp->tp);
-                sym = exp1->v.sp;
                 sym->sb->constexpression = true;
                 callConstructor(&ctype, exp, funcparams, false, nullptr, true, true, false, false, false, false, true);
                 if ((*exp)->type == en_thisref && !(*exp)->left->v.func->sp->sb->constexpression)
@@ -701,7 +701,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                 initInsert(&sym->sb->dest, *tp, exp1, 0, true);
             }
             else
-                *exp = intNode(en_c_i, 0);
+                *exp = exp1;
             if (unboxed)
                 *tp = unboxed;
         }
@@ -1689,6 +1689,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         if (l.str)
             dropStructureDeclaration();
         CheckCalledException(s3, funcparams->thisptr);
+        DestructParams(funcparams->arguments);
         return true;
     }
     if (l.str)

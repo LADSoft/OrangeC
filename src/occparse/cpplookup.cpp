@@ -328,6 +328,13 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* t
                     SpecializationError(buf);
                 }
             }
+            if ((!inTemplateType || parsingUsing) && MATCHKW(lex, openpa))
+            {
+                FUNCTIONCALL funcparams = { };
+                lex = getArgs(lex, theCurrentFunc, &funcparams, closepa, true, 0);
+                (*last)->arguments = funcparams.arguments;
+                (*last)->asCall = true;
+            }
             last = &(*last)->next;
             if (!MATCHKW(lex, classsel))
                 break;
@@ -2616,6 +2623,47 @@ static bool ellipsed(SYMBOL* sym)
         hr = hr->next;
     return basetype(hr->p->tp)->type == bt_ellipse;
 }
+static int ChooseLessConstTemplate(SYMBOL* left, SYMBOL* right)
+{
+    if (left->templateParams && right->templateParams)
+    {
+        int lcount = 0, rcount = 0;
+        auto tpl = left->templateParams->p->bySpecialization.types ? left->templateParams->p->bySpecialization.types : left->templateParams->next;
+        auto tpr = right->templateParams->p->bySpecialization.types ? right->templateParams->p->bySpecialization.types : right->templateParams->next;
+        tpl = left->templateParams->next;
+        tpr = right->templateParams->next;
+        while (tpl && tpr)
+        {
+            if (tpl->p->packed || tpr->p->packed)
+                return 0;
+            if (tpl->p->type == tpr->p->type && tpl->p->type == kw_typename)
+            {
+                if (isconst(tpl->p->byClass.val))
+                    lcount++;
+                if (isvolatile(tpl->p->byClass.val))
+                    lcount++;
+                if (isconst(tpr->p->byClass.val))
+                    rcount++;
+                if (isvolatile(tpr->p->byClass.val))
+                    rcount++;
+            }
+            tpl = tpl->next;
+            tpr = tpr->next;
+        }
+        if (!tpl && !tpr)
+        {
+            if (!lcount && rcount)
+            {
+                return -1;
+            }
+            if (!rcount && lcount)
+            {
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
 static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenList, FUNCTIONCALL* funcparams, int argCount,
                            int funcCount, SYMBOL*** funcList)
 {
@@ -2728,6 +2776,18 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                     else if (right && !left)
                     {
                         spList[i] = nullptr;
+                    }
+                    else if (!right && !left)
+                    {
+                        switch (ChooseLessConstTemplate(spList[i], spList[j]))
+                        {
+                            case -1:
+                                spList[j] == nullptr;
+                                break;
+                            case 1:
+                                spList[i] = nullptr;
+                                break;
+                        }
                     }
                 }
             }
@@ -3283,7 +3343,17 @@ static void getPointerConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* exp, int* n, 
                 else
                     t1 = basetype(t1)->btp;
             }
-            if (!comparetypes(t1, t2, true) && !basetype(tpa)->nullptrType)
+            if (basetype(tpa)->nullptrType)
+            {
+                if (!basetype(tpp)->nullptrType)
+                {
+                    if (ispointer(tpa))
+                        seq[(*n)++] = CV_POINTERCONVERSION;
+                    else if (!basetype(tpp)->nullptrType && !isconstzero(basetype(tpa), exp) && exp->type != en_nullptr)
+                        seq[(*n)++] = CV_NONE;
+                }
+            }
+            else if (!comparetypes(t1, t2, true))
             {
                 seq[(*n)++] = CV_NONE;
             }
@@ -3427,10 +3497,36 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
     }
     return false;
 }
-void GetRefs(TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref)
+void GetRefs(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref)
 {
     bool func = false;
+    bool func2 = false;
     bool notlval = false;
+    // if it is going to file a conversion function or constructor it is an rref...
+    if (tpp)
+    {
+        TYPE *tpp1 = tpp;
+        if (isref(tpp1))
+            tpp1 = basetype(tpp1)->btp;
+        if (isstructured(tpp1))
+        {
+            TYPE *tpa1 = tpa;
+            if (isref(tpa1))
+                tpa1 = basetype(tpa1)->btp;
+            if (!isstructured(tpa1))
+            {
+                lref = false;
+                rref = true;
+                return;
+            }
+            else if (classRefCount(basetype(tpp1)->sp, basetype(tpa1)->sp) != 1 && !comparetypes(tpp1, tpa1, true) && !sameTemplate(tpp1, tpa1))
+            {
+                lref = false;
+                rref = true;
+                return;
+            }
+        }
+    }
     if (expa)
     {
         if (isstructured(tpa))
@@ -3447,10 +3543,21 @@ void GetRefs(TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref)
             if (expa->type == en_not_lvalue)
                 notlval = true;
         }
+        else if (isfunction(tpa) || isfuncptr(tpa))
+        {
+            EXPRESSION* expb = expa;
+            if (expb->type == en_thisref)
+               expb = expb->left;
+            if (expb->type == en_func)
+                func2 = !expb->v.func->ascall;
+            else if (expb->type == en_pc)
+                func2 = true;
+		func2 = false;
+        }
     }
     lref = (basetype(tpa)->type == bt_lref || tpa->lref || (isstructured(tpa) && !notlval && !func) || (expa && lvalue(expa))) &&
            !tpa->rref;
-    rref = (basetype(tpa)->type == bt_rref || tpa->rref || notlval || func ||
+    rref = (basetype(tpa)->type == bt_rref || tpa->rref || notlval || func || func2 ||
             (expa && (isarithmeticconst(expa) || !lvalue(expa) && !ismem(expa) && !ismath(expa) && !castvalue(expa)))) &&
            !lref && !tpa->lref;
 }
@@ -3490,7 +3597,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         seq[(*n)++] = CV_NONE;
         return;
     }
-    GetRefs(tpa, exp, lref, rref);
+    GetRefs(tpp, tpa, exp, lref, rref);
     if (exp && exp->type == en_thisref)
         exp = exp->left;
     if (exp && exp->type == en_func)
@@ -4234,18 +4341,6 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                         tpthis = &tpx;
                         MakeType(tpx, bt_pointer, f->arguments->tp);
                     }
-                    else if (theCurrentFunc &&
-                             (f->thisptr && f->thisptr->type == en_l_p && f->thisptr->left->type == en_auto &&
-                              f->thisptr->left->v.sp->sb->thisPtr) &&
-                             (theCurrentFunc->sb->parentClass == sym->sb->parentClass ||
-                              sameTemplate(theCurrentFunc->sb->parentClass->tp, sym->sb->parentClass->tp) ||
-                              classRefCount(sym->sb->parentClass, theCurrentFunc->sb->parentClass) == 1) &&
-                             (isconst(theCurrentFunc->tp) || isvolatile(theCurrentFunc->tp)))
-                    {
-                        tpthis = &tpx;
-                        MakeType(tpx, bt_pointer, basetype(f->thistp)->btp);
-                        qualifyForFunc(theCurrentFunc, &tpx.btp, false);
-                    }
                     else if (sym->sb->isDestructor)
                     {
                         tpthis = &tpx;
@@ -4254,22 +4349,28 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                     if (islrqual(sym->tp) || isrrqual(sym->tp))
                     {
                         bool lref = lvalue(f->thisptr);
-                        if (isstructured(basetype(f->thistp)->btp) && f->thisptr->type != en_not_lvalue)
+                        auto strtype = basetype(f->thistp)->btp;
+                        if (isstructured(strtype) && f->thisptr->type != en_not_lvalue)
                         {
-                            EXPRESSION* expx = f->thisptr;
-                            if (expx->type == en_thisref)
-                                expx = expx->left;
-                            if (expx->type == en_func)
-                            {
-                                if (expx->v.func->returnSP)
-                                {
-                                    if (!expx->v.func->returnSP->sb->anonymous)
-                                        lref = true;
-                                }
-                            }
-                            else
-                            {
+                            if (strtype->lref)
                                 lref = true;
+                            else if (!strtype->rref)
+                            {
+                                EXPRESSION* expx = f->thisptr;
+                                if (expx->type == en_thisref)
+                                    expx = expx->left;
+                                if (expx->type == en_func)
+                                {
+                                    if (expx->v.func->returnSP)
+                                    {
+                                        if (!expx->v.func->returnSP->sb->anonymous)
+                                            lref = true;
+                                    }
+                                }
+                                else
+                                {
+                                    lref = true;
+                                }
                             }
                         }
                         if (isrrqual(sym->tp))
@@ -4503,7 +4604,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
             return false;
         }
         return a == nullptr ||
-               (a->tp->type == bt_templateparam && a->tp->templateParam->p->packed && !a->tp->templateParam->p->byPack.pack);
+               (a->tp && a->tp->type == bt_templateparam && a->tp->templateParam->p->packed && !a->tp->templateParam->p->byPack.pack);
     }
 }
 SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, TYPE* atp)
@@ -4741,6 +4842,7 @@ static void doNames(SYMBOL* sym)
         doNames(sym->sb->parentClass);
     SetLinkerNames(sym, lk_cdecl);
 }
+int count3;
 SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, int toErr,
                               bool maybeConversion, bool toInstantiate, int flags)
 {
@@ -5022,7 +5124,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 {
                     for (auto arg = args->arguments; arg; arg = arg->next)
                     {
-                        if (arg->tp->type == bt_templateparam && arg->tp->templateParam->p->packed)
+                        if (arg->tp && arg->tp->type == bt_templateparam && arg->tp->templateParam->p->packed)
                             doit = !!arg->tp->templateParam->p->byPack.pack;
                     }
                 }

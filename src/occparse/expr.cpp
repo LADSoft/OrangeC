@@ -2234,6 +2234,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
 static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, enum e_kw finish, bool allowNesting, bool allowPack,
                                 bool toErr, int flags)
 {
+    INITLIST**first = lptr;
     *lptr = nullptr;
     lex = getsym(); /* past ( */
     while (!MATCHKW(lex, finish))
@@ -2339,6 +2340,7 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
         errskim(&lex, finish == closepa ? skim_closepa : skim_end);
         skip(&lex, finish);
     }
+    DestructParams(*first);
     return lex;
 }
 LEXLIST* getInitList(LEXLIST* lex, SYMBOL* funcsp, INITLIST** owner)
@@ -2627,6 +2629,30 @@ TYPE* InitializerListType(TYPE* arg)
     }
     return rtp;
 }
+EXPRESSION* getFunc(EXPRESSION* exp)
+{
+    EXPRESSION* rv = nullptr;
+    while (exp->type == en_void && exp->right)
+    {
+        rv = getFunc(exp->left);
+        if (rv)
+            return rv;
+        exp = exp->right;
+    }
+    if (exp->type == en_thisref)
+        exp = exp->left;
+    if (exp->type == en_add)
+    {
+        rv = getFunc(exp->left);
+        if (!rv)
+            rv = getFunc(exp->right);
+    }
+    else if (exp->type == en_func)
+    {
+        return exp;
+    }
+    return rv;
+}
 void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* initializerListType, INITLIST** lptr, bool operands,
                            bool asref)
 {
@@ -2774,6 +2800,20 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
                     tp->size += (count1 - 1) * (initializerListType->size);
                     tp->esize->v.i += count1 - 1;
                 }
+                else if (!(*lptr)->nested && isstructured(initializerListType) && (comparetypes(initializerListType, (*lptr)->tp, true) || sameTemplate(initializerListType, (*lptr)->tp)))
+                {
+                    int offs;                    
+                    auto exp = getFunc((*lptr)->exp);
+                    if (exp && exp->v.func->thisptr)
+                    {
+                        int offs = 0;
+                        auto exp1 = relptr(exp->v.func->thisptr, offs);
+                        if (exp1)
+                            exp1->v.sp->sb->allocate = false;
+                        exp->v.func->thisptr = dest;
+                    }
+                    node = (*lptr)->exp;
+                }
                 else
                 {
                     TYPE* ctype = initializerListType;
@@ -2904,11 +2944,15 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
         if (!*lptr)
         {
             deferredInitializeDefaultArg(sym, func);
-            EXPRESSION* q = sym->sb->init ? sym->sb->init->exp : intNode(en_c_i, 0);
+            EXPRESSION* q;
+            if (sym->sb->init && sym->sb->init->exp)
+                q = sym->sb->init->exp;
+            else
+                q = intNode(en_c_i, sym->tp->size);
             optimize_for_constants(&q);
             *lptr = Allocate<INITLIST>();
             (*lptr)->exp = q;
-            (*lptr)->tp = sym->tp;
+            (*lptr)->tp = basetype(sym->tp);
             if (cloneTempExpr(&(*lptr)->exp, nullptr, nullptr))
             {
                 int i;
@@ -2926,6 +2970,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
             }
             if (isstructured(sym->tp))
             {
+                (*lptr)->exp = exprNode(en_stackblock, (*lptr)->exp, nullptr);
                 hr = hr->next;
                 lptr = &(*lptr)->next;
                 continue;
@@ -3008,7 +3053,8 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             (*lptr)->tp = sym->tp;
                             p->next = old;
                             p->nested = nullptr;
-                            params->arguments = (*lptr);
+                            params->arguments = Allocate<INITLIST>();
+                            *params->arguments = **lptr;
                         }
                         p->exp = thisptr;
                         auto old = p->next;
@@ -3086,8 +3132,14 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
             }
             if (!done && (p->exp || p->nested))
             {
+                if (sym->tp->type == bt_ellipse)
+                {
 
-                if (isstructured(sym->tp))
+                    if (!isstructured(p->tp) && (p->tp->lref || p->tp->rref))
+                        if (isfunction(p->tp))
+                            p->exp = exprNode(en_l_ref, p->exp, nullptr);
+                }
+                else if (isstructured(sym->tp))
                 {
                     bool sameType = false;
                     EXPRESSION* temp = p->exp;
@@ -3159,6 +3211,11 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             p->exp = exp;
                         }
                         p->exp = exprNode(en_void, p->exp, consexp);
+                    }
+                    else if (basetype(sym->tp)->sp->sb->trivialCons)
+                    {
+                        p->exp = exprNode(en_stackblock, p->exp, nullptr);
+                        p->exp->size = basetype(p->tp)->size;
                     }
                     else
                     {
@@ -3734,6 +3791,11 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                         if (sp == (SYMBOL*)-1)
                             sp = nullptr;
                     }
+                    if (sp && sp->sb->access != ac_public)
+                    {
+                        sp = nullptr;
+                        break;
+                    }
                     if (!find->next && sp)
                     {
                         funcparams->astemplate = find->isTemplate;
@@ -3773,14 +3835,28 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
     }
     else
     {
-        SYMBOL* ss = getStructureDeclaration();
-        funcparams = exp_in->v.func;
-        hasThisPtr = funcparams->thisptr != nullptr;
-        if (basetype(*tp)->sp)
-            funcparams->sp = basetype(*tp)->sp;
-        if (ss)
+        if (isfunction(*tp) && (*exp)->type == en_func && (*exp)->v.func->resolvedCall)
         {
-            funcparams->functp = ss->tp;
+            funcparams = Allocate<FUNCTIONCALL>();
+            funcparams->sp = basetype(*tp)->sp;
+            funcparams->functp = basetype(*tp);
+            funcparams->fcall = *exp;
+            if ((*tp)->lref || (*tp)->rref)
+                funcparams->fcall = exprNode(en_l_ref, *exp, nullptr);
+            *exp = varNode(en_func, nullptr);
+            (*exp)->v.func = funcparams;
+        }
+        else
+        {
+            SYMBOL* ss = getStructureDeclaration();
+            funcparams = exp_in->v.func;
+            hasThisPtr = funcparams->thisptr != nullptr;
+            if (basetype(*tp)->sp)
+                funcparams->sp = basetype(*tp)->sp;
+            if (ss)
+            {
+                funcparams->functp = ss->tp;
+            }
         }
     }
 
@@ -3838,9 +3914,8 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         // add this ptr
         if (!funcparams->thisptr && funcparams->sp->sb->parentClass && !isfuncptr(funcparams->sp->tp))
         {
-            TYPE* tp = MakeType(bt_pointer, funcparams->sp->sb->parentClass->tp);
             funcparams->thisptr = getMemberBase(funcparams->sp, nullptr, funcsp, false);
-            funcparams->thistp = tp;
+            TYPE* tp = MakeType(bt_pointer, funcparams->sp->sb->parentClass->tp);
             if (funcsp)
             {
                 if (isconst(funcsp->tp))
@@ -3852,6 +3927,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     tp->btp = MakeType(bt_volatile, tp->btp);
                 }
             }
+            funcparams->thistp = tp;
             UpdateRootTypes(tp);
             addedThisPointer = true;
         }
@@ -4069,6 +4145,8 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     auto next = (*lptr)->next;
                     if ((*lptr)->nested)
                         (*lptr)->next = nullptr;
+                    if (funcparams->arguments->nested && funcparams->arguments->nested->nested && !funcparams->arguments->initializer_list)
+                        funcparams->arguments = funcparams->arguments->nested;
                     CreateInitializerList(funcparams->sp, initializerListTemplate, initializerListType, lptr, operands,
                                           initializerRef);
                     (*lptr)->next = next;
@@ -4109,6 +4187,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
             }
             if (isfunction(*tp))
             {
+                (*exp)->v.func->resolvedCall = true;
                 if (funcparams->thisptr && !memberPtr)
                 {
                     SYMBOL* base = funcparams->sp->sb->parentClass;
@@ -8771,8 +8850,6 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                         if (!((Optimizer::architecture == ARCHITECTURE_MSIL) && basetype(*tp)->sp->sb->msil &&
                               (isconstzero(tp1, exp1) || basetype(tp1)->nullptrType)))
                         {
-                            comparetypes(*tp, tp1, true);
-                            sameTemplate(*tp, tp1);
                             error(ERR_ILL_STRUCTURE_ASSIGNMENT);
                         }
                     }

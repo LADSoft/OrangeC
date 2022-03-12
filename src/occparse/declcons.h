@@ -39,6 +39,7 @@ bool hasVTab(SYMBOL* sp);
 void createConstructorsForLambda(SYMBOL* sp);
 void createDefaultConstructors(SYMBOL* sp);
 EXPRESSION* destructLocal(EXPRESSION* exp);
+void DestructParams(INITLIST* first);
 void destructBlock(EXPRESSION** exp, SYMLIST* hr, bool mainDestruct);
 SYMBOL* findClassName(const char* name, SYMBOL* cls, BASECLASS* bc, VBASEENTRY* vbase, int* offset);
 void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons);

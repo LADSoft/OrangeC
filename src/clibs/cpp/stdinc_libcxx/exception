@@ -148,14 +148,21 @@ extern int uncaught_exceptions() noexcept;
 
    __exceptionInternal* __make_exception_ptr(void*, int, void*, void*);
 
-   template <class T>
-   T __consptr(const T& t) { return T(t); }
+   template <class __T>
+   void __consptr_scalar(__T& dest, __T& src) { dest = src; }
+   template <class __T>
+   __T __consptr_struct(__T& src) { return __T(src); }
 
    // need an overload for arrays<
    template <class E>
-   std::exception_ptr make_exception_ptr(E& e) 
+   std::exception_ptr make_exception_ptr(E& e, typename enable_if<is_scalar<E>::value>::type *__v = nullptr) 
    {
-        return std::exception_ptr(__make_exception_ptr((void*)&e, 1, (void *)&__consptr<E>, (void*)typeid(E).tpp));
+        return std::exception_ptr(__make_exception_ptr((void*)&e, 1, (void *)&__consptr_scalar<E>, (void*)typeid(E).tpp));
+   }
+   template <class E, class b = typename enable_if<is_class<E>::value>::type>
+   std::exception_ptr make_exception_ptr(E& e,typename enable_if<is_class<E>::value>::type *__v = nullptr) 
+   {
+        return std::exception_ptr(__make_exception_ptr((void*)&e, 1, (void *)&__consptr_struct<E>, (void*)typeid(E).tpp));
    }
 
    std::exception_ptr current_exception() noexcept;

@@ -1511,7 +1511,7 @@ void createDefaultConstructors(SYMBOL* sp)
     {
         bool defaulted = true;
         for (auto hr = cons->tp->syms->table[0]; hr; hr = hr->next)
-            if (!hr->p->sb->defaulted)
+            if (!hr->p->sb->defaulted || hr->p->sb->isExplicit)
             {
                 defaulted = false;
                 break;
@@ -1569,6 +1569,7 @@ void createDefaultConstructors(SYMBOL* sp)
                                 err |= s->sb->isConstructor && !s->sb->defaulted;
                                 err |= s->sb->deleted;
                                 err |= s->sb->access != ac_public;
+                                err |= s->sb->isConstructor && s->sb->isExplicit;
                                 if (s->sb->isDestructor && !s->sb->defaulted)
                                     trivialDest = false;
                             }
@@ -1683,6 +1684,68 @@ EXPRESSION* destructLocal(EXPRESSION* exp)
             rv = exprNode(en_void, rv, sp->sb->dest->exp);
     }
     return rv;
+}
+void DestructParams(INITLIST* first)
+{
+    if (Optimizer::cparams.prm_cplusplus)
+        while (first)
+        {
+            TYPE* tp = first->tp;
+            if (tp)
+            {
+                bool ref = false;
+                if (isref(tp))
+                {
+                    ref = true;
+                    tp = basetype(tp)->btp;
+                }
+                else if (tp->lref || tp->rref)
+                {
+                    ref = true;
+                }
+                if (ref || !isstructured(tp))
+                {
+                    static std::stack<EXPRESSION*> stk;
+                    
+                    stk.push(first->exp);
+                    while (!stk.empty())
+                    {
+                        auto tst = stk.top();
+                        stk.pop();
+                        if (tst->type == en_thisref)
+                            tst = tst->left;
+                        if (tst->type == en_func)
+                        {
+                            if (tst->v.func->sp->sb->isConstructor)
+                            {
+                                EXPRESSION* iexp = tst->v.func->thisptr;
+                                auto sp = basetype(basetype(tst->v.func->thistp)->btp)->sp;
+                                int offs;
+                                auto xexp = relptr(iexp, offs);
+                                if (xexp)
+                                    xexp->v.sp->sb->destructed = true;
+                                if (callDestructor(sp, nullptr, &iexp, nullptr, true, false, false, true))
+                                {
+                                    optimize_for_constants(&iexp);
+                                    if (first->dest)
+                                        first->dest = exprNode(en_void, iexp, first->dest);
+                                    else
+                                        first->dest = iexp;
+                                }
+                            }
+                        }
+                        else if (tst->type == en_void)
+                        {
+                            if (tst->right)
+                                stk.push(tst->right);
+                            if (tst->left)
+                                stk.push(tst->left);
+                        }
+                    }
+                }
+            }
+            first = first->next;
+        }
 }
 void destructBlock(EXPRESSION** exp, SYMLIST* hr, bool mainDestruct)
 {
@@ -2618,7 +2681,7 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
             while (hr)
             {
                 SYMBOL* sp = hr->p;
-                if ((sp->sb->storage_class == sc_member || sp->sb->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
+                if ((sp->sb->storage_class == sc_member || sp->sb->storage_class == sc_mutable) && sp->tp->type != bt_aggregate && !sp->sb->wasUsing)
                 {
                     if (isstructured(sp->tp))
                     {
@@ -2968,7 +3031,7 @@ static void undoVars(BLOCKDATA* b, SYMLIST* vars, EXPRESSION* base)
         {
             SYMBOL* s = (SYMBOL*)stk.top();
             stk.pop();
-            if ((s->sb->storage_class == sc_member || s->sb->storage_class == sc_mutable))
+            if ((s->sb->storage_class == sc_member || s->sb->storage_class == sc_mutable) && !s->sb->wasUsing)
             {
                 if (isstructured(s->tp))
                 {
@@ -3275,8 +3338,10 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
             while (srch)
             {
                 if (isstructured(srch->p->tp) && basetype(srch->p->tp)->sp->sb->templateLevel &&
-                    sameTemplate(stp, basetype(srch->p->tp)))
+                    sameTemplate(stp, basetype(srch->p->tp), true))
+                {
                     return false;
+                }
                 srch = srch->next;
             }
         }
@@ -3350,8 +3415,8 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                     params->arguments = params->arguments->nested;
                 CreateInitializerList(cons1, initializerListTemplate, initializerListType, &params->arguments, false,
                                       initializerRef);
-                if (temp && temp->nested && temp->nested->nested && !temp->initializer_list)
-                    temp->next = old;
+                if (temp && (!temp->initializer_list || (temp->nested && temp->nested->nested && !temp->initializer_list)))
+                    params->arguments->next = old;
                 if (basetype(cons1->tp)->syms->table[0]->next->next)
                     AdjustParams(cons1, basetype(cons1->tp)->syms->table[0]->next->next, &params->arguments->next, false,
                                  implicit && !cons1->sb->isExplicit);

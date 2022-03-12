@@ -47,6 +47,7 @@ LEXLIST* getMemberInitializers(LEXLIST* lex, SYMBOL* funcsp, FUNCTIONCALL* funcp
 EXPRESSION* DerivedToBase(TYPE* tpn, TYPE* tpo, EXPRESSION* exp, int flags);
 bool cloneTempStmt(STATEMENT** block, SYMBOL** found, SYMBOL** replace);
 TYPE* InitializerListType(TYPE* arg);
+EXPRESSION* getFunc(EXPRESSION* exp);
 void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* initializerListType, INITLIST** lptr, bool operands,
                            bool asref);
 void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, bool implicit);

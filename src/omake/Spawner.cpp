@@ -266,6 +266,7 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
     }
     if (oneShell)
     {
+        OSTakeJobIfNotMake lockJob(!make);
         int rv = OS::Spawn(cmd, environment, nullptr);
         return rv;
     }
@@ -279,6 +280,11 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
         int rv = 0;
         for (auto&& command : cmdList)
         {
+            bool make1 = make;
+            //            if (command.find("omake") != std::string::npos)
+            //                make1 = true;
+            OSTakeJobIfNotMake lockJob(!make1);
+
             if (!stopAll)
             {
                 if (!silent)

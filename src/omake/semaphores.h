@@ -127,7 +127,7 @@ class Semaphore
             throw std::invalid_argument("The time spent for waiting is too long to handle normally");
         }
         int waitTime = milli.count();
-        int ret = WaitForSingleObject(handle, waitTime);
+        DWORD ret = WaitForSingleObject(handle, waitTime);
         switch (ret)
         {
             case WAIT_OBJECT_0:
@@ -142,7 +142,7 @@ class Semaphore
     }
     bool TryWait()
     {
-        int ret = WaitForSingleObject(handle, 0);
+        DWORD ret = WaitForSingleObject(handle, 0);
         switch (ret)
         {
             case WAIT_OBJECT_0:

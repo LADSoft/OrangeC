@@ -7778,6 +7778,8 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             int oldTypeNameError = noTypeNameError;
             int oldParsingUsing = parsingUsing;
             int oldSearchingFunctions = inSearchingFunctions;
+            int oldInAssignRHS = inAssignRHS;
+            inAssignRHS = 0;
             inSearchingFunctions = 0;
             parsingUsing = 0;
 
@@ -7847,6 +7849,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
                 TemplateTransferClassDeferred(cls, &old);
             PopTemplateNamespace(nsl);
             instantiatingClass--;
+            inAssignRHS = oldInAssignRHS;
             inSearchingFunctions = oldSearchingFunctions;
             parsingUsing = oldParsingUsing;
             noTypeNameError = oldTypeNameError;
@@ -8028,6 +8031,8 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             int oldParsingUsing = parsingUsing;
             int oldInTemplateArgs = inTemplateArgs;
             int oldSearchingFunctions = inSearchingFunctions;
+            int oldInAssignRHS = inAssignRHS;
+            inAssignRHS = 0;
             inSearchingFunctions = 0;
             inTemplateArgs = 0;
             parsingUsing = 0;
@@ -8073,6 +8078,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             SetAlternateLex(nullptr);
             PopTemplateNamespace(nsl);
 
+            inAssignRHS = oldInAssignRHS;
             inSearchingFunctions = oldSearchingFunctions;
             inTemplateArgs = oldInTemplateArgs;
             parsingUsing = oldParsingUsing;

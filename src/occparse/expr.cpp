@@ -75,6 +75,7 @@ namespace Parser
 int packIndex;
 
 int argumentNesting;
+int inAssignRHS;
 
 Optimizer::LIST* importThunks;
 /* lvaule */
@@ -7998,6 +7999,30 @@ void GetLogicalDestructors(Optimizer::LIST** rv, EXPRESSION* cur)
         GetLogicalDestructors(rv, cur->right);
     }
 }
+static void GetAssignDestructors (Optimizer::LIST **rv, EXPRESSION *exp)
+{
+    while (castvalue(exp) || lvalue(exp) || exp->type == en_thisref)
+        exp = exp->left;
+    if (exp->type == en_assign)
+    {
+        GetAssignDestructors(rv, exp->right);
+        GetAssignDestructors(rv, exp->left);
+    }
+    else if (exp->type == en_func)
+    {
+        for (auto t = exp->v.func->arguments; t; t = t->next)
+        {
+            GetAssignDestructors(rv, t->exp); 
+            if (t->dest)
+            {
+                 *rv = Allocate<Optimizer::LIST>();
+                 (*rv)->data = t->dest;
+                 rv = &(*rv)->next;
+                 t->dest = nullptr;
+            }
+        }
+    }
+}
 
 static LEXLIST* binop(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, enum e_kw kw, enum e_node type,
                       LEXLIST*(nextFunc)(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable,
@@ -8481,7 +8506,9 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     else
                     {
                         lex = getsym();
+                        ++inAssignRHS;
                         lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, nullptr, flags);
+                        --inAssignRHS;
                         if (!needkw(&lex, end))
                         {
                             errskim(&lex, skim_end);
@@ -8491,7 +8518,9 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 }
                 else
                 {
+                    ++inAssignRHS;
                     lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, nullptr, flags);
+                    --inAssignRHS;
                 }
                 break;
             case asplus:
@@ -8499,10 +8528,14 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             case asand:
             case asor:
             case asxor:
+                ++inAssignRHS;
                 lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, nullptr, flags);
+                --inAssignRHS;
                 break;
             default:
+                ++inAssignRHS;
                 lex = expression_assign(lex, funcsp, nullptr, &tp1, &exp1, nullptr, flags);
+                --inAssignRHS;
                 break;
         }
         if (!tp1)
@@ -8517,6 +8550,10 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             insertOperatorFunc(selovcl, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags))
         {
             // unallocated var for destructor
+            if (!inAssignRHS)
+            {
+                GetAssignDestructors(&(*exp)->v.func->destructors, *exp);
+            }
             if (asndest)
             {
                 SYMBOL* sym = anonymousVar(sc_auto, tp1)->v.sp;

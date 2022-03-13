@@ -1966,13 +1966,18 @@ static bool has_arg_destructors(INITLIST* arg)
         return !!arg->dest || has_arg_destructors(arg->next);
     return false;
 }
-static void gen_arg_destructors(SYMBOL* funcsp, INITLIST* arg)
+static void gen_arg_destructors(SYMBOL* funcsp, INITLIST* arg, Optimizer::LIST* assignDestructors)
 {
     if (arg)
     {
-        gen_arg_destructors(funcsp, arg->next);
+        gen_arg_destructors(funcsp, arg->next, nullptr);
         if (arg->dest)
             gen_expr(funcsp, arg->dest, F_NOVALUE, ISZ_UINT);
+    }
+    while (assignDestructors)
+    {
+        gen_expr(funcsp, (EXPRESSION*)assignDestructors->data, F_NOVALUE, ISZ_UINT);
+        assignDestructors = assignDestructors->next;
     }
 }
 static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
@@ -2166,7 +2171,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                     Optimizer::gen_icode(Optimizer::i_assn, ap1, ap, nullptr);
                     ap = ap1;
                 }
-                gen_arg_destructors(funcsp, f->arguments);
+                gen_arg_destructors(funcsp, f->arguments, f->destructors);
                 return ap;
             }
         }
@@ -2533,7 +2538,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         Optimizer::gen_icode(Optimizer::i_assn, ap1, ap, nullptr);
         ap = ap1;
     }
-    gen_arg_destructors(funcsp, f->arguments);
+    gen_arg_destructors(funcsp, f->arguments, f->destructors);
     return ap;
 }
 Optimizer::IMODE* gen_atomic_barrier(SYMBOL* funcsp, ATOMICDATA* ad, Optimizer::IMODE* addr, Optimizer::IMODE* barrier)

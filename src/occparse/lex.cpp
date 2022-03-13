@@ -209,6 +209,7 @@ KEYWORD keywords[] = {
     {"__GS", 4, kw_AC, KW_NONANSI | KW_386, TT_VAR},
     {"__I", 3, kw___I, 0, TT_VAR},
     {"__alignof", 9, kw_alignof, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
+    {"__alignof__", 11, kw_alignof, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
     {"__alloca", 8, kw_alloca, KW_NONANSI | KW_ALL, TT_OPERATOR | TT_UNARY},
     {"__asm", 5, kw_asm, KW_NONANSI | KW_ALL, TT_CONTROL},
     {"__atomic_flag_test_set", 22, kw_atomic_flag_test_set, 0, TT_VAR},

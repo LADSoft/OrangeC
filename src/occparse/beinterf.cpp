@@ -181,8 +181,6 @@ static int basesize(Optimizer::ARCH_SIZING* p, TYPE* tp)
         case bt_union:
             if (p->a_struct)
                 return p->a_struct;
-            else if (tp->alignment)
-                return tp->alignment;
             else
                 return tp->sp ? (tp->sp->sb->attribs.inheritable.structAlign ? tp->sp->sb->attribs.inheritable.structAlign : 1) : 0;
         default:
@@ -228,6 +226,10 @@ int alignment(int sc, TYPE* tp)
 }
 int getAlign(int sc, TYPE* tp)
 {
+    if (tp->alignment)
+        return tp->alignment;
+    while (tp->array)
+        tp = basetype(tp)->btp;
     int align = basesize(Optimizer::chosenAssembler->arch->type_align, tp);
     if (sc != sc_auto)
     {

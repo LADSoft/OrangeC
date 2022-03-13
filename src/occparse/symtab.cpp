@@ -301,7 +301,7 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
         told = basetype(sold->tp);
         if (told->type != bt_any || tnew->type != bt_any)  // packed template param
         {
-            if ((!comparetypes(told, tnew, true) && !sameTemplatePointedTo(told, tnew)) || told->type != tnew->type)
+            if ((!comparetypes(told, tnew, true) && !sameTemplatePointedTo(told, tnew, true) && !sameTemplateSelector(told, tnew)) || told->type != tnew->type)
                 break;
             else
             {

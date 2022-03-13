@@ -1447,7 +1447,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
             if (!sp2)
             {
                 if (!templateNestingCount || !basetype(*tp)->sp->sb->templateLevel)
-                    errorNotMember(basetype(*tp)->sp, nullptr, lex->data->value.s.a);
+                    errorNotMember(basetype(*tp)->sp, nullptr, lex->data->value.s.a ? lex->data->value.s.a : "unknown");
                 lex = getsym();
                 while (ISID(lex))
                 {
@@ -4693,8 +4693,7 @@ static LEXLIST* expression_generic(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                         {
                             if (isconst(next->selector) == isconst(scan->selector) &&
                                 isvolatile(next->selector) == isvolatile(scan->selector) &&
-                                isrestrict(next->selector) == isrestrict(scan->selector) &&
-                                next->selector->alignment == scan->selector->alignment)
+                                isrestrict(next->selector) == isrestrict(scan->selector))
                             {
                                 error(ERR_DUPLICATE_TYPE_IN_GENERIC);
                             }
@@ -4709,8 +4708,7 @@ static LEXLIST* expression_generic(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                         {
                             if (isconst(next->selector) == isconst(selectType) &&
                                 isvolatile(next->selector) == isvolatile(selectType) &&
-                                isrestrict(next->selector) == isrestrict(selectType) &&
-                                next->selector->alignment == selectType->alignment)
+                                isrestrict(next->selector) == isrestrict(selectType))
                             {
                                 if (selectedGeneric && selectedGeneric->selector)
                                     error(ERR_DUPLICATE_TYPE_IN_GENERIC);
@@ -6133,7 +6131,15 @@ static LEXLIST* expression_alignof(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
     lex = getsym();
     if (needkw(&lex, openpa))
     {
-        lex = get_type_id(lex, tp, funcsp, sc_cast, false, true, false);
+        if (startOfType(lex, nullptr, false))
+        {
+            lex = get_type_id(lex, tp, funcsp, sc_cast, false, true, false);
+        }
+        else
+        {
+            EXPRESSION* exp = nullptr;
+            lex = expression(lex, funcsp, nullptr, tp, &exp, 0);
+        }
         needkw(&lex, closepa);
         if (MATCHKW(lex, ellipse))
         {
@@ -6169,9 +6175,9 @@ static LEXLIST* expression_alignof(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
             checkauto(itp, ERR_AUTO_NOT_ALLOWED);
             if (isref(itp))
                 itp = (basetype(itp)->btp);
-            while (itp->array)
-                itp = itp->btp;
-            *exp = intNode(en_c_i, getAlign(sc_global, *tp));
+            itp = basetype(itp);
+
+            *exp = intNode(en_c_i, getAlign(sc_global, itp));
         }
     }
     *tp = &stdint;
@@ -7347,7 +7353,6 @@ static LEXLIST* expression_times(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
     }
     return lex;
 }
-
 static LEXLIST* expression_add(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     /* fixme add vlas */
@@ -8172,7 +8177,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                     // call a constructor?
                     if (isstructured(tph))
                     {
-                        EXPRESSION* rv = eph;
+                        EXPRESSION* rv = anonymousVar(sc_auto, tph);
                         TYPE* ctype = tph;
                         callConstructorParam(&ctype, &rv, tpc, epc, true, false, false, false, true);
                         epc = rv;
@@ -8180,7 +8185,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                     }
                     else
                     {
-                        EXPRESSION* rv = epc;
+                        EXPRESSION* rv = anonymousVar(sc_auto, tpc);
                         TYPE* ctype = tpc;
                         callConstructorParam(&ctype, &rv, tph, eph, true, false, false, false, true);
                         eph = rv;

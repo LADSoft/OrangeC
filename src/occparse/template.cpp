@@ -4200,7 +4200,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                             if (sp == (SYMBOL*)-1)
                                 sp = nullptr;
                         }
-                        if (sp && sp->sb->access != ac_public)
+                        if (0 && sp && sp->sb->access != ac_public)
                         {
                             sp = nullptr;
                             break;
@@ -5623,7 +5623,7 @@ static bool ValidArg(TYPE* tp)
                             if (sp == (SYMBOL*)-1)
                                 sp = nullptr;
                         }
-                        if (sp && sp->sb->access != ac_public)
+                        if (0 && sp && sp->sb->access != ac_public)
                         {
                             sp = nullptr;
                             break;
@@ -9517,7 +9517,7 @@ static SYMBOL* FindTemplateSelector(TEMPLATESELECTOR* tso)
                                 sp->tp = PerformDeferredInitialization(sp->tp, theCurrentFunc);
                         }
                     }
-                    if (sp && sp->sb->access != ac_public)
+                    if (0 && sp && sp->sb->access != ac_public)
                     {
                         sp = nullptr;
                         break;

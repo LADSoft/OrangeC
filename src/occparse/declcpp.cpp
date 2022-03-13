@@ -3494,6 +3494,7 @@ static void balancedAttributeParameter(LEXLIST** lex)
 TYPE* AttributeFinish(SYMBOL* sym, TYPE* tp)
 {
     sym->sb->attribs = basisAttribs;
+    basetype(tp)->alignment = sym->sb->attribs.inheritable.structAlign;
     // should come first to overwrite all other attributes
     if (sym->sb->attribs.uninheritable.copyFrom)
     {

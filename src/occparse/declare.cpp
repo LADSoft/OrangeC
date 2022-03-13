@@ -975,12 +975,20 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                 {
                     if (s->p->tp->type == bt_aggregate)
                     {
-                        if (recursive)
+//                        if (recursive)
                         {
                             for (auto f = s->p->tp->syms->table[0]; f; f = f->next)
                             {
-                                basetype(f->p->tp)->btp = ResolveTemplateSelectors(f->p, basetype(f->p->tp)->btp);
-                                basetype(f->p->tp)->btp = PerformDeferredInitialization(basetype(f->p->tp)->btp, funcsp);
+                                if (!f->p->sb->templateLevel)
+                                {
+                                    basetype(f->p->tp)->btp = ResolveTemplateSelectors(f->p, basetype(f->p->tp)->btp);
+                                    basetype(f->p->tp)->btp = PerformDeferredInitialization(basetype(f->p->tp)->btp, funcsp);
+                                    for (auto a = basetype(f->p->tp)->syms->table[0]; a; a = a->next)
+                                    {
+                                        a->p->tp = ResolveTemplateSelectors(a->p, a->p->tp);
+                                        a->p->tp = PerformDeferredInitialization(a->p->tp, funcsp);
+                                    }
+                                }
                             }
                         }
                     }
@@ -3486,7 +3494,7 @@ static void matchFunctionDeclaration(LEXLIST* lex, SYMBOL* sp, SYMBOL* spo, bool
                     {
                         SYMBOL* spo1 = (SYMBOL*)hro1->p;
                         SYMBOL* sp1 = (SYMBOL*)hr1->p;
-                        if (!comparetypes(spo1->tp, sp1->tp, true) && !sameTemplatePointedTo(spo1->tp, sp1->tp))
+                        if (!comparetypes(spo1->tp, sp1->tp, true) && !sameTemplatePointedTo(spo1->tp, sp1->tp) && !sameTemplateSelector(sp1->tp, spo1->tp))
                         {
                             break;
                         }

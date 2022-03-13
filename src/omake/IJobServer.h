@@ -8,10 +8,10 @@ class IJobServer
   public:
     // these are only possible when we have a system to work on, except release all jobs...
     // Takes a new job, allows you to declare that we are using one more job
-    virtual int TakeNewJob() = 0;
+    virtual bool TakeNewJob() = 0;
     // Attempts to take a new job or returns -1
-    virtual int TryTakeNewJob() = 0;
+    virtual bool TryTakeNewJob() = 0;
     // Releases that job for another worker to use
-    virtual int ReleaseJob() = 0;
+    virtual bool ReleaseJob() = 0;
 };
 }  // namespace OMAKE

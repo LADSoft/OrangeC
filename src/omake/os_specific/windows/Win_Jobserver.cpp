@@ -28,7 +28,7 @@ WINDOWSJobServer::WINDOWSJobServer(const string_type& server_name)
     this->semaphore = std::move(Semaphore(server_name));
     this->server_name = server_name;
 }
-int WINDOWSJobServer::TryTakeNewJob()
+bool WINDOWSJobServer::TryTakeNewJob()
 {
     if (server_name.length() == 0)
     {
@@ -40,17 +40,17 @@ int WINDOWSJobServer::TryTakeNewJob()
     {
         // Increment beforehand so that we don't accidentally wait too much with this...
         current_jobs++;
-        int ret = semaphore.TryWait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
-        if (ret == -1)
+        bool ret = semaphore.TryWait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
+        if (ret == false)
         {
             current_jobs--;
         }
         return ret;
     }
     current_jobs++;
-    return 0;
+    return true;
 }
-int WINDOWSJobServer::TakeNewJob()
+bool WINDOWSJobServer::TakeNewJob()
 {
     if (server_name.length() == 0)
     {
@@ -62,12 +62,12 @@ int WINDOWSJobServer::TakeNewJob()
     {
         current_jobs++;
         semaphore.Wait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
-        return 0;
+        return true;
     }
     current_jobs++;
-    return 0;
+    return true;
 }
-int WINDOWSJobServer::ReleaseJob()
+bool WINDOWSJobServer::ReleaseJob()
 {
     if (server_name.length() == 0)
     {
@@ -82,14 +82,14 @@ int WINDOWSJobServer::ReleaseJob()
         semaphore.Post();
     }
     current_jobs--;  // Wait until after the job is done to release it
-    return 0;
+    return true;
 }
 std::string WINDOWSJobServer::PassThroughCommandString() { return server_name; }
 POSIXJobServer::POSIXJobServer(int max_jobs) { throw std::runtime_error("POSIX jobservers are not supported on windows"); }
 POSIXJobServer::POSIXJobServer(int read, int write) { throw std::runtime_error("POSIX jobservers are not supported on windows"); }
-int POSIXJobServer::ReleaseJob() { throw std::runtime_error("POSIX jobservers are not supported on windows"); }
-int POSIXJobServer::TakeNewJob() { throw std::runtime_error("POSIX jobservers are not supported on windows"); }
-int POSIXJobServer::TryTakeNewJob() { throw std::runtime_error("POSIX jobservers are not supported on windows"); }
+bool POSIXJobServer::ReleaseJob() { throw std::runtime_error("POSIX jobservers are not supported on windows"); }
+bool POSIXJobServer::TakeNewJob() { throw std::runtime_error("POSIX jobservers are not supported on windows"); }
+bool POSIXJobServer::TryTakeNewJob() { throw std::runtime_error("POSIX jobservers are not supported on windows"); }
 std::string POSIXJobServer::PassThroughCommandString()
 {
     throw std::runtime_error("POSIX jobservers are not supported on windows");

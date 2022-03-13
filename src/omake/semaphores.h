@@ -37,6 +37,7 @@ class Semaphore
     Semaphore() : null(true), semaphoreName() {}
     Semaphore(string_type name, int value) : named(true), semaphoreName(name)
     {
+        std::cerr << "Creating job server with name: " << name << std::endl;
 #ifdef _WIN32
         handle = CreateSemaphore(nullptr, value, value, name.c_str());
         if (!handle)
@@ -49,19 +50,22 @@ class Semaphore
     }
     Semaphore(const string_type& name) : named(true), semaphoreName(name)
     {
+        std::cerr << std::endl << "Opening server with name: " << name << std::endl;
 #ifdef _WIN32
-        handle = OpenSemaphore(EVENT_ALL_ACCESS, false, name.c_str());
+        handle = OpenSemaphore(EVENT_ALL_ACCESS, FALSE, name.c_str());
         if (!handle)
         {
-            throw std::runtime_error("OpenSemaphore failed, Error code: " + GetLastError());
+            throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + GetLastError());
         }
 #endif
     }
     Semaphore& operator=(const Semaphore& other)
     {
+        std::cerr << "copy assignment" << std::endl;
         if (this != &other)
         {
             semaphoreName = other.semaphoreName;
+            named = other.named;
             this->null = other.null;
             if (!this->null)
             {
@@ -70,10 +74,30 @@ class Semaphore
         }
         return *this;
     }
+    Semaphore& operator=(Semaphore&& other)
+    {
+        std::cerr << "move assignment" << std::endl;
+        if (this != &other)
+        {
+            CloseHandle(handle);
+            named = other.named;
+            semaphoreName = other.semaphoreName;
+            this->null = other.null;
+            if (!this->null)
+            {
+                handle = OpenSemaphore(EVENT_ALL_ACCESS, false, semaphoreName.c_str());
+            }
+            other.named = false;
+            other.null = true;
+            CloseHandle(other.handle);
+        }
+        return *this;
+    }
     ~Semaphore()
     {
         if (null)
             return;
+        std::cerr << "Closing handle for name: " << semaphoreName << std::endl;
 #ifdef _WIN32
         CloseHandle(handle);
 #elif defined(__linux__)
@@ -88,14 +112,14 @@ class Semaphore
 #endif
     }
     template <typename Rep, typename Period>
-    int WaitUntil(std::chrono::duration<Rep, Period> time)
+    bool WaitUntil(std::chrono::duration<Rep, Period> time)
     {
         return WaitFor(time - std::chrono::steady_clock::now());
     }
     // return 0: success
     // return -1: failure
     template <typename Rep, typename Period>
-    int WaitFor(std::chrono::duration<Rep, Period> time)
+    bool WaitFor(std::chrono::duration<Rep, Period> time)
     {
         std::chrono::milliseconds milli = std::chrono::duration_cast(time);
         if (milli.count() >= INFINITE)
@@ -107,28 +131,28 @@ class Semaphore
         switch (ret)
         {
             case WAIT_OBJECT_0:
-                return 0;
+                return true;
             case WAIT_TIMEOUT:
-                return -1;
+                return false;
             case WAIT_FAILED:
                 throw std::system_error(std::error_code(GetLastError(), std::system_category()));
             default:
-                return -1;
+                return false;
         }
     }
-    int TryWait()
+    bool TryWait()
     {
         int ret = WaitForSingleObject(handle, 0);
         switch (ret)
         {
             case WAIT_OBJECT_0:
-                return 0;
+                return true;
             case WAIT_TIMEOUT:
-                return -1;
+                return false;
             case WAIT_FAILED:
                 throw std::system_error(std::error_code(GetLastError(), std::system_category()));
             default:
-                return -1;
+                return false;
         }
     }
     void Wait()

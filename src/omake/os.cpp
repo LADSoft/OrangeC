@@ -220,14 +220,15 @@ void OS::InitJobServer()
         if (MakeMain::jobServer.GetExists())
         {
             name = MakeMain::jobServer.GetValue();
-            std::cerr << "Job server name: " << name;
+            std::cerr << "Job server name: " << name << std::endl;
             localJobServer = OMAKE::JobServer::GetJobServer(name);
         }
         else
         {
-            std::cerr << "Job server name NEW: " << name;
+            std::cerr << "Creating a new job server" << std::endl;
             localJobServer = OMAKE::JobServer::GetJobServer(jobsLeft);
             name = localJobServer->PassThroughCommandString();
+            std::cerr << "Job server name NEW: " << name << std::endl;
             MakeMain::jobServer.SetValue(name);
             first = true;
         }

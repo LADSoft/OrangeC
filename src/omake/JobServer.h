@@ -63,9 +63,9 @@ class POSIXJobServer : public JobServer
 
   public:
     std::string PassThroughCommandString();
-    int TakeNewJob();
-    int TryTakeNewJob();
-    int ReleaseJob();
+    bool TakeNewJob();
+    bool TryTakeNewJob();
+    bool ReleaseJob();
     // Need these to be public in order to do std::make_shared on em'
     POSIXJobServer(int max_jobs);
     POSIXJobServer(int read, int write);
@@ -94,9 +94,9 @@ class WINDOWSJobServer : public JobServer
 
   public:
     std::string PassThroughCommandString();
-    int TakeNewJob();
-    int TryTakeNewJob();
-    int ReleaseJob();
+    bool TakeNewJob();
+    bool TryTakeNewJob();
+    bool ReleaseJob();
     // Need these to be public in order to do std::make_shared on em'
     // Since we use semaphores we want a name because these are interprocess named semaphores
     WINDOWSJobServer(const string_type& server_name, int max_jobs);

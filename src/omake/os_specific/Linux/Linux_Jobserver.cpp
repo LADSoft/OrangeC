@@ -8,7 +8,7 @@
 #include <sstream>
 namespace OMAKE
 {
-int POSIXJobServer::TryTakeNewJob()
+bool POSIXJobServer::TryTakeNewJob()
 {
     if (writefd == -1 || readfd == -1)
     {
@@ -34,16 +34,16 @@ int POSIXJobServer::TryTakeNewJob()
 #if EAGAIN != EWOULDBLOCK
                 case EWOULDBLOCK:
 #endif
-                    return -1;
+                    return false;
                 default:
-                    return err;
+                    throw std::system_error(err, std::system_category());
             }
         }
     }
     current_jobs++;
-    return 0;
+    return true;
 }
-int POSIXJobServer::TakeNewJob()
+bool POSIXJobServer::TakeNewJob()
 {
     if (writefd == -1 || readfd == -1)
     {
@@ -72,14 +72,14 @@ int POSIXJobServer::TakeNewJob()
                     goto try_again;
                     break;
                 default:
-                    return err;
+                    throw std::system_error(err, std::system_category());
             }
         }
     }
     current_jobs++;
-    return 0;
+    return true;
 }
-int POSIXJobServer::ReleaseJob()
+bool POSIXJobServer::ReleaseJob()
 {
     if (writefd == -1 || readfd == -1)
     {
@@ -97,7 +97,7 @@ int POSIXJobServer::ReleaseJob()
     try_again:
         if ((bytes_written = write(writefd, &write_buffer, 1)) != -1)
         {
-            return 0;
+            return true;
         }
         else
         {
@@ -113,13 +113,12 @@ int POSIXJobServer::ReleaseJob()
                     goto try_again;
                     break;
                 default:
-                    current_jobs--;
-                    return err;
+                    throw std::system_error(err, std::system_category());
             }
         }
     }
     current_jobs--;
-    return 0;
+    return true;
 }
 // Populates the write pipe with the maximum number of jobs available in the pipe, only used on the first construction of the pipe
 static int populate_pipe(int writefd, int max_jobs)
@@ -132,7 +131,7 @@ static int populate_pipe(int writefd, int max_jobs)
     try_again:
         if ((bytes_written = write(writefd, &write_buffer, 1)) != -1)
         {
-            return 0;
+            return true;
         }
         else
         {
@@ -146,7 +145,7 @@ static int populate_pipe(int writefd, int max_jobs)
                     goto try_again;
                     break;
                 default:
-                    return err;
+                    throw std::system_error(err, std::system_category());
             }
         }
     }
@@ -188,7 +187,7 @@ std::string WINDOWSJobServer::PassThroughCommandString()
 {
     throw std::runtime_error("Windows job servers are unavailable on POSIX");
 }
-int WINDOWSJobServer::TryTakeNewJob() { throw std::runtime_error("Windows job servers are unavailable on POSIX"); }
-int WINDOWSJobServer::TakeNewJob() { throw std::runtime_error("Windows job servers are unavailable on POSIX"); }
-int WINDOWSJobServer::ReleaseJob() { throw std::runtime_error("Windows job servers are unavailable on POSIX"); }
+bool WINDOWSJobServer::TryTakeNewJob() { throw std::runtime_error("Windows job servers are unavailable on POSIX"); }
+bool WINDOWSJobServer::TakeNewJob() { throw std::runtime_error("Windows job servers are unavailable on POSIX"); }
+bool WINDOWSJobServer::ReleaseJob() { throw std::runtime_error("Windows job servers are unavailable on POSIX"); }
 }  // namespace OMAKE

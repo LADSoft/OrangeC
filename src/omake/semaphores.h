@@ -42,7 +42,7 @@ class Semaphore
         handle = CreateSemaphore(nullptr, value, value, name.c_str());
         if (!handle)
         {
-            throw std::runtime_error("CreateSemaphore failed, Error code: " + GetLastError());
+            throw std::runtime_error("CreateSemaphore failed, Error code: " + std::to_string(GetLastError()));
         }
 #elif defined(__linux__)
         handle = sem_open(name.c_str(), O_CREAT, O_RDWR, value);
@@ -55,7 +55,7 @@ class Semaphore
         handle = OpenSemaphore(EVENT_ALL_ACCESS, FALSE, name.c_str());
         if (!handle)
         {
-            throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + GetLastError());
+            throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(GetLastError()));
         }
 #endif
     }

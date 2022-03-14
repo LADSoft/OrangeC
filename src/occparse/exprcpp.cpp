@@ -1111,23 +1111,6 @@ bool doReinterpretCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* 
         if (!checkconst || isconst(tpn) || !isconst(tpo))
         {
             return true;
-            /*
-            SYMBOL*spo = basetype(tpo)->sp;
-            SYMBOL*spn = basetype(tpn)->sp;
-            if (spo == spn)
-            {
-                return true;
-            }
-            if (!isstructured(tpo) || (!spo->sb->hasvtab && !spo->sb->accessspecified && !spo->sb->baseClasses))
-            {
-                if (!isstructured(tpn) || (!spn->sb->hasvtab && !spn->sb->accessspecified && !spn->sb->baseClasses))
-                {
-                    // new alignment has to be the same or more restrictive than old
-                    if (basetype(tpn)->alignment >= basetype(tpo)->alignment)
-                        return true;
-                }
-            }
-            */
         }
     }
     // convert one member pointer to another
@@ -1159,26 +1142,6 @@ bool doReinterpretCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* 
             if (!checkconst || isconst(tpn) || !isconst(tpo))
             {
                 return true;
-                /*
-                SYMBOL*spo = basetype(tpo)->sp;
-                SYMBOL*spn = basetype(tpn)->sp;
-                if (spo == spn)
-                {
-                    return true;
-                }
-                if (!isstructured(tpo) || (!spo->sb->hasvtab && !spo->sb->accessspecified && !spo->sb->baseClasses))
-                {
-                    if (!isstructured(tpn) || (!spn->sb->hasvtab && !spn->sb->accessspecified && !spn->sb->baseClasses))
-                    {
-                        // new alignment has to be the same or more restrictive than old
-                        if (basetype(tpn)->alignment >= basetype(tpo)->alignment)
-                        {
-                            *newType = nt2;
-                            return true;
-                        }
-                    }
-                }
-                */
             }
         }
     }

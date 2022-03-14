@@ -59,7 +59,7 @@ struct __thrownExceptions
     std::exception_ptr exception;
     struct __thrownExceptions* Add(const std::exception_ptr& exc)
     {
-        auto rv = (__thrownExceptions*) malloc(sizeof(thrownExceptions));
+        auto rv = (__thrownExceptions*) calloc(1, sizeof(thrownExceptions));
         if (this)
         {
              rv->prev = this;

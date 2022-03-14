@@ -949,6 +949,7 @@ typedef struct functioncall
     TYPE* functp;
     EXPRESSION* fcall;
     INITLIST* arguments;
+    Optimizer::LIST* destructors;
     SYMBOL* returnSP;
     EXPRESSION* returnEXP;
     EXPRESSION* thisptr;

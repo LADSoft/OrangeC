@@ -258,6 +258,7 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* t
     TYPE* dependentType = nullptr;
     bool typeName = false;
     bool pastClassSel = false;
+    TEMPLATEPARAMLIST* current = nullptr;
 
     if (sym)
         *sym = nullptr;
@@ -349,7 +350,6 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* t
             bool hasTemplateArgs = false;
             bool deferred = false;
             bool istypedef = false;
-            TEMPLATEPARAMLIST* current = nullptr;
             SYMBOL* currentsp = nullptr;
             if (!strSym)
             {
@@ -2221,6 +2221,7 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
                     tr = basetype(tr)->btp;
             }
 
+
             if (ta && isstructured(ta) && isstructured(tl) && isstructured(tr))
             {
                 ta = basetype(ta);
@@ -2630,33 +2631,110 @@ static int ChooseLessConstTemplate(SYMBOL* left, SYMBOL* right)
         int lcount = 0, rcount = 0;
         auto tpl = left->templateParams->p->bySpecialization.types ? left->templateParams->p->bySpecialization.types : left->templateParams->next;
         auto tpr = right->templateParams->p->bySpecialization.types ? right->templateParams->p->bySpecialization.types : right->templateParams->next;
-        tpl = left->templateParams->next;
-        tpr = right->templateParams->next;
         while (tpl && tpr)
         {
             if (tpl->p->packed || tpr->p->packed)
                 return 0;
             if (tpl->p->type == tpr->p->type && tpl->p->type == kw_typename)
             {
-                if (isconst(tpl->p->byClass.val))
-                    lcount++;
-                if (isvolatile(tpl->p->byClass.val))
-                    lcount++;
-                if (isconst(tpr->p->byClass.val))
-                    rcount++;
-                if (isvolatile(tpr->p->byClass.val))
-                    rcount++;
+                auto tppl = tpl->p->byClass.val;
+                auto tppr = tpr->p->byClass.val;
+                if (tppl && tppr)
+                {
+                    bool lptr = false, rptr = false;
+                    while (isref(tppl) || ispointer(tppl))
+                    {
+                        if (isconst(tppl))
+                            lcount++;
+                        if (isvolatile(tppl))
+                            lcount++;
+                        lptr = true;
+                        tppl = basetype(tppl)->btp;
+                    }
+                    while (isref(tppr) || ispointer(tppr))
+                    {
+                        if (isconst(tppr))
+                            rcount++;
+                        if (isvolatile(tppr))
+                            rcount++;
+                        rptr = true;
+                        tppr = basetype(tppr)->btp;
+                    }
+                    if (!lptr)
+                    {
+                        if (isconst(tppl))
+                            lcount++;
+                        if (isvolatile(tppl))
+                            lcount++;
+                    }
+                    if (!rptr)
+                    {
+                        if (isconst(tppr))
+                            rcount++;
+                        if (isvolatile(tppr))
+                            rcount++;
+                    }
+                    if (isstructured(tppl) && isstructured(tppr))
+                    {
+                        switch (ChooseLessConstTemplate(basetype(tppl)->sp, basetype(tppr)->sp))
+                        {
+                        case -1:
+                            lcount++;
+                            break;
+                        case 1:
+                            rcount++;
+                            break;
+                        }
+
+                    }
+                }
             }
             tpl = tpl->next;
             tpr = tpr->next;
         }
         if (!tpl && !tpr)
         {
-            if (!lcount && rcount)
+            if (lcount < rcount)
             {
                 return -1;
             }
-            if (!rcount && lcount)
+            if (rcount < lcount)
+            {
+                return 1;
+            }
+        }
+    }
+    else if (isfunction(left->tp))
+    {
+        int lcount = 0, rcount = 0;
+        auto l = basetype(left->tp)->syms->table[0];
+        auto r = basetype(right->tp)->syms->table[0];
+        for (; l && r; l = l->next, r = r->next)
+        {
+            auto ltp = l->p->tp;
+            auto rtp = r->p->tp;
+            while (isref(ltp) || ispointer(ltp))
+                ltp = basetype(ltp)->btp;
+            while (isref(rtp) || ispointer(rtp))
+                rtp = basetype(rtp)->btp;
+            if (isstructured(ltp) && isstructured(rtp))
+                switch (ChooseLessConstTemplate(basetype(ltp)->sp, basetype(rtp)->sp))
+                {
+                case -1:
+                    lcount++;
+                    break;
+                case 1:
+                    rcount++;
+                    break;
+                }
+        }
+        if (!l && !r)
+        {
+            if (lcount < rcount)
+            {
+                return -1;
+            }
+            if (rcount < lcount)
             {
                 return 1;
             }
@@ -2777,12 +2855,12 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                     {
                         spList[i] = nullptr;
                     }
-                    else if (!right && !left)
+                    else
                     {
                         switch (ChooseLessConstTemplate(spList[i], spList[j]))
                         {
                             case -1:
-                                spList[j] == nullptr;
+                                spList[j] = nullptr;
                                 break;
                             case 1:
                                 spList[i] = nullptr;
@@ -3360,6 +3438,41 @@ static void getPointerConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* exp, int* n, 
         }
         getQualConversion(tpp, tpa, exp, n, seq);
     }
+}
+bool sameTemplateSelector(TYPE* tnew, TYPE* told)
+{
+    while (isref(tnew) && isref(told))
+    {
+        tnew = basetype(tnew)->btp;
+        told = basetype(told)->btp;
+    }
+    while (ispointer(tnew) && ispointer(told))
+    {
+        tnew = basetype(tnew)->btp;
+        told = basetype(told)->btp;
+    }
+    if (tnew->type == bt_templateselector && told->type == bt_templateselector)
+    {
+        auto tsn = tnew->sp->sb->templateSelector->next;
+        auto tso = told->sp->sb->templateSelector->next;
+        // this is kinda loose, ideally we ought to go through template parameters/decltype expressions
+        // looking for equality...  
+        if (tsn->isTemplate || tso->isTemplate)
+            return false;
+        if (tsn->isDeclType || tso->isDeclType)
+            return false;
+        tsn = tsn->next;
+        tso = tso->next;
+        while (tsn && tso)
+        {
+            if (strcmp(tsn->name, tso->name) != 0)
+                return false;
+            tsn = tsn->next;
+            tso = tso->next;
+        }
+        return !tsn && !tso;
+    }
+    return false;
 }
 bool sameTemplatePointedTo(TYPE* tnew, TYPE* told, bool quals)
 {

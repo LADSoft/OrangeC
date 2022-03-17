@@ -3,6 +3,7 @@
 #include <functional>
 #include <thread>
 #include <utility>
+#include <memory>
 namespace OMAKE
 {
 // A wrapper class for threads that exists to take a job when created and to

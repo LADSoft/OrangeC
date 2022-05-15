@@ -92,7 +92,7 @@ class Spawner
     }
     ~Spawner() {}
     static unsigned WINFUNC Thread(void* cls);
-    static void thread_run(std::promise<int> ret, Spawner* spawner, std::shared_ptr<std::atomic<int>> done_val);
+    static void thread_run(std::promise<int>&& ret, Spawner* spawner, std::shared_ptr<std::atomic<int>> done_val);
     int InternalRun();
     void Run(Command& Commands, OutputType Type, RuleList* RuleList = nullptr, Rule* Rule = nullptr);
     static void Stop() { stopAll = true; }

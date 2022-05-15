@@ -78,7 +78,7 @@ unsigned WINFUNC Spawner::Thread(void* cls)
     return 0;
 }
 // Next-gen Spawner::Thread where we use std::promise and std::future to communicate instead of a pre-c++14 version of it.
-void Spawner::thread_run(std::promise<int> ret, Spawner* spawner, std::shared_ptr<std::atomic<int>> done_val)
+void Spawner::thread_run(std::promise<int>&& ret, Spawner* spawner, std::shared_ptr<std::atomic<int>> done_val)
 {
     runningProcesses++;
     int value = spawner->InternalRun();

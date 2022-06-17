@@ -4200,7 +4200,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                             if (sp == (SYMBOL*)-1)
                                 sp = nullptr;
                         }
-                        if (0 && sp && sp->sb->access != ac_public)
+                        if (sp && sp->sb->access != ac_public && !resolvingStructDeclarations)
                         {
                             sp = nullptr;
                             break;
@@ -5623,7 +5623,7 @@ static bool ValidArg(TYPE* tp)
                             if (sp == (SYMBOL*)-1)
                                 sp = nullptr;
                         }
-                        if (0 && sp && sp->sb->access != ac_public)
+                        if (sp && sp->sb->access != ac_public && !resolvingStructDeclarations)
                         {
                             sp = nullptr;
                             break;
@@ -7779,6 +7779,8 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             int oldParsingUsing = parsingUsing;
             int oldSearchingFunctions = inSearchingFunctions;
             int oldInAssignRHS = inAssignRHS;
+            int oldResolvingStructDeclarations = resolvingStructDeclarations;
+            resolvingStructDeclarations = 0;
             inAssignRHS = 0;
             inSearchingFunctions = 0;
             parsingUsing = 0;
@@ -7849,6 +7851,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
                 TemplateTransferClassDeferred(cls, &old);
             PopTemplateNamespace(nsl);
             instantiatingClass--;
+            resolvingStructDeclarations = oldResolvingStructDeclarations;
             inAssignRHS = oldInAssignRHS;
             inSearchingFunctions = oldSearchingFunctions;
             parsingUsing = oldParsingUsing;
@@ -8032,6 +8035,8 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             int oldInTemplateArgs = inTemplateArgs;
             int oldSearchingFunctions = inSearchingFunctions;
             int oldInAssignRHS = inAssignRHS;
+            int oldResolvingStructDeclarations = resolvingStructDeclarations;
+            resolvingStructDeclarations = 0;
             inAssignRHS = 0;
             inSearchingFunctions = 0;
             inTemplateArgs = 0;
@@ -8078,6 +8083,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             SetAlternateLex(nullptr);
             PopTemplateNamespace(nsl);
 
+            resolvingStructDeclarations = oldResolvingStructDeclarations;
             inAssignRHS = oldInAssignRHS;
             inSearchingFunctions = oldSearchingFunctions;
             inTemplateArgs = oldInTemplateArgs;
@@ -9523,7 +9529,7 @@ static SYMBOL* FindTemplateSelector(TEMPLATESELECTOR* tso)
                                 sp->tp = PerformDeferredInitialization(sp->tp, theCurrentFunc);
                         }
                     }
-                    if (0 && sp && sp->sb->access != ac_public)
+                    if (sp && sp->sb->access != ac_public && !resolvingStructDeclarations)
                     {
                         sp = nullptr;
                         break;

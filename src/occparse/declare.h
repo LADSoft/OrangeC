@@ -41,6 +41,7 @@ extern int structLevel;
 extern Optimizer::LIST* openStructs;
 extern int parsingTrailingReturnOrUsing;
 extern int inTypedef;
+extern int resolvingStructDeclarations;
 
 void declare_init(void);
 void InsertGlobal(SYMBOL* sp);

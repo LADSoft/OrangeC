@@ -74,6 +74,7 @@ int structLevel;
 Optimizer::LIST* openStructs;
 int parsingTrailingReturnOrUsing;
 int inTypedef;
+int resolvingStructDeclarations;
 
 static int unnamed_tag_id, unnamed_id;
 static char* importFile;
@@ -962,6 +963,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                 memmove(&syms[i + 1], &syms[i], sizeof(SYMBOL*) * (j - i));
                 syms[i] = x;
             }
+    ++ resolvingStructDeclarations;
     for (i = 0; i < n; i++)
     {
         SYMBOL* sp = syms[i];
@@ -1005,6 +1007,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
             }
         }
     }
+    -- resolvingStructDeclarations;
     if (!templateNestingCount || instantiatingTemplate)
     {
         for (i = 0; i < n; i++)

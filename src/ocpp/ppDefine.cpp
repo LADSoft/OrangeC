@@ -579,8 +579,6 @@ int ppDefine::InsertReplacementString(std::string& macro, int end, int begin, st
     int q;
     static char nullptrTOKEN[] = {TOKENIZING_PLACEHOLDER, 0};
     static char STRINGIZERTOKEN[] = {STRINGIZING_PLACEHOLDER, 0};
-    int p, r;
-    int val;
     int stringizing = false;
     q = end;
     while (q < macro.size() - 1 && isspace(macro[q]))
@@ -728,7 +726,7 @@ void ppDefine::SyntaxError(const std::string& name)
 
 void ppDefine::SetupAlreadyReplaced(std::string& macro)
 {
-    int instr = false;
+    bool instr = false;
     for (int p = 0; p < macro.size(); p++)
     {
         if ((macro[p] == '"' || macro[p] == '\'') && NotSlashed(macro, p))
@@ -760,7 +758,6 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
 
     int orig_end = end;
     int rv;
-    int size;
     int p;
     int insize, rv1;
     int origPos = begin;

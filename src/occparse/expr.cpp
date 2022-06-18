@@ -939,6 +939,8 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                         tp1 = basetype(tp1)->btp;
                     *tp = CopyType(tp1);
                     UpdateRootTypes(*tp);
+                    basetype(*tp)->lref = false;
+                    basetype(*tp)->rref = false;
                 }
                 if (sym->sb && sym->sb->storage_class != sc_overloads)
                 {

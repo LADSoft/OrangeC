@@ -1681,8 +1681,21 @@ bool isExpressionAccessible(SYMBOL* derived, SYMBOL* sym, SYMBOL* funcsp, EXPRES
         }
         else
         {
-            if (!isAccessible(derived, sym->sb->parentClass, sym, funcsp, ac_public, asAddress))
+            if (derived)
+            {
+                while (derived)
+                {
+                    if (isAccessible(derived, sym->sb->parentClass, sym, funcsp, ac_public, asAddress))
+                        return true;
+                    derived = derived->sb->parentClass;
+                }
                 return false;
+            }
+            else
+            {
+                if (!isAccessible(derived, sym->sb->parentClass, sym, funcsp, ac_public, asAddress))
+                    return false;
+            }
         }
     }
     return true;
@@ -1713,10 +1726,24 @@ bool checkDeclarationAccessible(SYMBOL* sp, SYMBOL* derived, SYMBOL* funcsp)
                 }
                 else
                 {
-                    if (!isAccessible(derived, sym->sb->parentClass, sym, funcsp, ac_public, false))
+                    if (derived)
                     {
+                        while (derived)
+                        {
+                            if (isAccessible(derived, sym->sb->parentClass, sym, funcsp, ac_public, false))
+                                return true;
+                            derived = derived->sb->parentClass;
+                        }
                         errorsym(ERR_CANNOT_ACCESS, sym);
                         return false;
+                    }
+                    else
+                    {
+                        if (!isAccessible(derived, sym->sb->parentClass, sym, funcsp, ac_public, false))
+                        {
+                            errorsym(ERR_CANNOT_ACCESS, sym);
+                            return false;
+                        }
                     }
                 }
             }

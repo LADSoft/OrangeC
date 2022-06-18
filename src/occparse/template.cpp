@@ -5276,7 +5276,7 @@ static bool DeduceTemplateParam(TEMPLATEPARAMLIST* Pt, TYPE* P, TYPE* A, EXPRESS
                     q = basetype(q)->btp;
                 }
             }
-            if (TemplateConstExpr(A, exp))
+            if (TemplateConstExpr(A, exp) && !isconst(P))
                 *tp = MakeType(bt_const, A);
             else
                 *tp = A;

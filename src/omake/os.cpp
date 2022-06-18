@@ -647,6 +647,17 @@ std::string OS::GetWorkingDir()
     getcwd(buf, 260);
     return buf;
 }
+void OS::CreateThread(void* func, void* data)
+{
+#ifdef _WIN32
+#    ifdef BCC32c
+    DWORD tid;
+    CloseHandle(::CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)func, data, 0, &tid));
+#    else
+    CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, nullptr));
+#    endif
+#endif
+}
 bool OS::SetWorkingDir(const std::string name) { return !chdir(name.c_str()); }
 void OS::RemoveFile(const std::string name) { unlink(name.c_str()); }
 std::string OS::NormalizeFileName(const std::string file)

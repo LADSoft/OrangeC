@@ -85,6 +85,7 @@ class OS
     static bool SetWorkingDir(const std::string name);
     static void RemoveFile(const std::string name);
     static std::string NormalizeFileName(const std::string name);
+    static void CreateThread(void* func, void* data);
     template <class Function, class... Args>
     static OMAKE::JobServerAwareThread CreateThread(Function&& f, Args&&... args)
     {

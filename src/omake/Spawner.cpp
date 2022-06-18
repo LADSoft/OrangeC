@@ -89,6 +89,7 @@ void Spawner::thread_run(std::promise<int>&& ret, Spawner* spawner, std::shared_
 }
 void Spawner::WaitForDone()
 {
+#ifdef USE_NEW_THREADING
     KillDone();
     bool thrd_alive = false;
     do
@@ -109,6 +110,7 @@ void Spawner::WaitForDone()
         }
     } while (thrd_alive);
     KillDone();
+#endif
 }
 void Spawner::Run(Command& Commands, OutputType Type, RuleList* RuleListx, Rule* Rulex)
 {
@@ -123,12 +125,16 @@ void Spawner::Run(Command& Commands, OutputType Type, RuleList* RuleListx, Rule*
     }
     else
     {
+#ifdef USE_NEW_THREADING
         std::promise<int> promise;
         std::shared_ptr<std::atomic<int>> doneAtomic = std::make_shared<std::atomic<int>>(0);
         std::shared_future<int> prom_future = promise.get_future();
         retVal2 = prom_future;
         std::thread thrd = std::thread(Spawner::thread_run, std::move(promise), this, doneAtomic);
         listedThreads.emplace_back(SpawnerTracker{std::move(thrd), prom_future, doneAtomic});
+#else
+        OS::CreateThread((void*)Spawner::Thread, (void*)this);
+#endif
     }
 }
 int Spawner::InternalRun()

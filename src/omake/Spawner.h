@@ -104,11 +104,15 @@ class Spawner
 
     int RetVal()
     {
+#ifdef USE_NEW_THREADING
         if (retVal2.valid())
         {
             return retVal2.get();
         }
         return 0;
+#else
+        return retVal;
+#endif
     }
 
     static void WaitForDone();
@@ -124,6 +128,7 @@ class Spawner
   private:
     static void KillDone()
     {
+#ifdef USE_NEW_THREADING
         for (auto&& threadHolder : listedThreads)
         {
             // If the thread is completed, join, otherwise, die, theoretically what we should do is wait for all threads to complete
@@ -133,6 +138,7 @@ class Spawner
                 threadHolder.thread.join();
             }
         }
+#endif
     }
     std::deque<std::string> output;
     Command* commands;

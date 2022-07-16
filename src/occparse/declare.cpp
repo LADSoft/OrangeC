@@ -1025,47 +1025,47 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                 hr = hr->next;
             }
         }
-    }
-    for (i = 0; i < n; i++)
-    {
-        SYMBOL* sp = syms[i];
-        if (!sp->sb->performedStructInitialization)
+        for (i = 0; i < n; i++)
         {
-            if (n > 1 && !templateNestingCount)
+            SYMBOL* sp = syms[i];
+            if (!sp->sb->performedStructInitialization)
             {
-                calculateStructOffsets(sp);
+                if (n > 1 && !templateNestingCount)
+                {
+                    calculateStructOffsets(sp);
 
+                    if (Optimizer::cparams.prm_cplusplus)
+                    {
+                        calculateVirtualBaseOffsets(sp);  // undefined in local context
+                        calculateVTabEntries(sp, sp, &sp->sb->vtabEntries, 0);
+                    }
+                }
+                resolveAnonymousUnions(sp);
+                makeFastTable(sp);
+                if (Optimizer::cparams.prm_cplusplus)
+                    deferredInitializeStructMembers(sp);
+            }
+        }
+        for (i = 0; i < n; i++)
+        {
+            if (!syms[i]->sb->performedStructInitialization)
+            {
+                syms[i]->sb->performedStructInitialization = true;
                 if (Optimizer::cparams.prm_cplusplus)
                 {
-                    calculateVirtualBaseOffsets(sp);  // undefined in local context
-                    calculateVTabEntries(sp, sp, &sp->sb->vtabEntries, 0);
-                }
-            }
-            resolveAnonymousUnions(sp);
-            makeFastTable(sp);
-            if (Optimizer::cparams.prm_cplusplus)
-                deferredInitializeStructMembers(sp);
-        }
-    }
-    for (i = 0; i < n; i++)
-    {
-        if (!syms[i]->sb->performedStructInitialization)
-        {
-            syms[i]->sb->performedStructInitialization = true;
-            if (Optimizer::cparams.prm_cplusplus)
-            {
-                if (syms[i]->templateParams && !allTemplateArgsSpecified(syms[i], syms[i]->templateParams->next))
-                {
-                    int oldInstantiatingTemplate = instantiatingTemplate;
-                    instantiatingTemplate = 0;
-                    templateNestingCount++;
-                    deferredInitializeStructFunctions(syms[i]);
-                    templateNestingCount--;
-                    instantiatingTemplate = oldInstantiatingTemplate;
-                }
-                else
-                {
-                    deferredInitializeStructFunctions(syms[i]);
+                    if (syms[i]->templateParams && !allTemplateArgsSpecified(syms[i], syms[i]->templateParams->next))
+                    {
+                        int oldInstantiatingTemplate = instantiatingTemplate;
+                        instantiatingTemplate = 0;
+                        templateNestingCount++;
+                        deferredInitializeStructFunctions(syms[i]);
+                        templateNestingCount--;
+                        instantiatingTemplate = oldInstantiatingTemplate;
+                    }
+                    else
+                    {
+                        deferredInitializeStructFunctions(syms[i]);
+                    }
                 }
             }
         }

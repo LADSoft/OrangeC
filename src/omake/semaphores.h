@@ -37,7 +37,6 @@ class Semaphore
     Semaphore() : null(true), semaphoreName() {}
     Semaphore(string_type name, int value) : named(true), semaphoreName(name)
     {
-        std::cerr << "Creating job server with name: " << name << std::endl;
 #ifdef _WIN32
         handle = CreateSemaphore(nullptr, value, value, name.c_str());
         if (!handle)
@@ -50,7 +49,6 @@ class Semaphore
     }
     Semaphore(const string_type& name) : named(true), semaphoreName(name)
     {
-        std::cerr << std::endl << "Opening server with name: " << name << std::endl;
 #ifdef _WIN32
         handle = OpenSemaphore(EVENT_ALL_ACCESS, FALSE, name.c_str());
         if (!handle)
@@ -61,7 +59,6 @@ class Semaphore
     }
     Semaphore& operator=(const Semaphore& other)
     {
-        std::cerr << "copy assignment" << std::endl;
         if (this != &other)
         {
             semaphoreName = other.semaphoreName;
@@ -76,7 +73,6 @@ class Semaphore
     }
     Semaphore& operator=(Semaphore&& other)
     {
-        std::cerr << "move assignment" << std::endl;
         if (this != &other)
         {
             CloseHandle(handle);
@@ -97,7 +93,6 @@ class Semaphore
     {
         if (null)
             return;
-        std::cerr << "Closing handle for name: " << semaphoreName << std::endl;
 #ifdef _WIN32
         CloseHandle(handle);
 #elif defined(__linux__)

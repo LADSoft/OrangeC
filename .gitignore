@@ -102,7 +102,8 @@ q2.*
 /src/occ/netil/cc386/
 /src/occ/netil/lsmsilcrtl/
 /
-
+/src/*/x64/Debug
+/src/*/x64/Release
 /test/
 /web/
 /xx/

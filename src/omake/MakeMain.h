@@ -75,6 +75,7 @@ class MakeMain
     static CmdSwitchBool keepResponseFiles;
     static CmdSwitchInt jobs;
     static CmdSwitchCombineString jobOutputMode;
+    static CmdSwitchString jobServer;
     static const char* usageText;
     static const char* builtinVars;
     static const char* builtinRules;

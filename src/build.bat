@@ -1,5 +1,5 @@
 @echo off
-     set PARALLEL=4
+     set PARALLEL=%NUMBER_OF_PROCESSORS%
      if "%TRAVIS_OS_NAME%" NEQ "" (
         call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
      )
@@ -9,11 +9,11 @@
          del /Q ..\include\*.*
          del /Q ..\include\win32\*.*
          del /Q ..\include\sys\*.*
-         omake -DCOMPILER=MS clean -j:8
-         omake -DCOMPILER=CLANG clean -j:8
-         omake -DCOMPILER=MINGW64 clean -j:8
+         omake -DCOMPILER=MS clean -j:%NUMBER_OF_PROCESSORS%
+         omake -DCOMPILER=CLANG clean -j:%NUMBER_OF_PROCESSORS%
+         omake -DCOMPILER=MINGW64 clean -j:%NUMBER_OF_PROCESSORS%
          set BUILD_PROFILE=MS
-         set PARALLEL=8
+         set PARALLEL=%NUMBER_OF_PROCESSORS%
      )
               cd c:\orangec\src
               echo WScript.Echo(Math.floor(new Date().getTime()/1000)); > %temp%\time.js

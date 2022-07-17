@@ -21,9 +21,9 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
-
+#endif
 #include "CmdSwitch.h"
 #include "Utils.h"
 #include <cctype>
@@ -291,7 +291,7 @@ CmdSwitchBase* CmdSwitchParser::Find(const char* name, bool useLongName, bool to
         {
             for (auto s : switches)
             {
-                for (auto s1 : s->GetLongNames())
+                for (auto&& s1 : s->GetLongNames())
                 {
                     if (!strnicmp(name, s1.c_str(), i))
                     {
@@ -460,7 +460,6 @@ void CmdSwitchParser::ScanEnv(char* output, size_t len, const char* string)
 bool CmdSwitchParser::Parse(const std::string& val, int* argc, char* argv[])
 {
     char output[1024], *string = output;
-    int rv, i;
     if (val.size() == 0)
         return true;
     ScanEnv(output, sizeof(output), val.c_str());

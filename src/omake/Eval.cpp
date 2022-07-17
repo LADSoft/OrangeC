@@ -54,7 +54,7 @@ std::set<std::string> Eval::macroset;
 std::string Eval::GPath;
 int Eval::errcount;
 std::vector<std::string> Eval::callArgs;
-
+std::mutex Eval::evalLock;
 std::unordered_map<std::string, Eval::StringFunc> Eval::builtins = {{"subst", &Eval::subst},
                                                                     {"patsubst", &Eval::patsubst},
                                                                     {"strip", &Eval::strip},
@@ -98,14 +98,13 @@ Eval::Eval(const std::string name, bool ExpandWildcards, RuleList* RuleList, Rul
 }
 void Eval::Clear()
 {
+    std::lock_guard<decltype(evalLock)> lk(evalLock);
     vpaths.clear();
     VPath = "";
     GPath = "";
     internalWarnings = false;
-    OS::EvalTake();
     ruleStack.clear();
     foreachVars.clear();
-    OS::EvalGive();
     macroset.clear();
     errcount = 0;
 }
@@ -136,7 +135,7 @@ std::string Eval::GetVPATH(const std::string& goal)
     }
     if (!goal.empty())
     {
-        for (auto path : vpaths)
+        for (auto&& path : vpaths)
         {
             size_t start;
             size_t len;
@@ -194,10 +193,10 @@ void Eval::StripLeadingSpaces(std::string& value)
     if (n != 0)
         value.replace(0, n, "");
 }
-size_t Eval::MacroSpan(const std::string line, int pos)
+size_t Eval::MacroSpan(const std::string line, size_t pos)
 {
     std::list<char> stack;
-    int pos1 = pos;
+    size_t pos1 = pos;
     while (line[pos1] == '$')
         pos1++;
     if (line[pos1] != '(' && line[pos1] != '{')
@@ -240,7 +239,7 @@ std::string Eval::ParseMacroLine(const std::string& in)
             {
                 rv += "$(";
                 std::string temp = in.substr(n + 2, m - 3);
-                for (int q = 0; q < temp.size() - 1; q++)
+                for (size_t q = 0; q < temp.size() - 1; q++)
                 {
                     if (temp[q] == '$')
                     {
@@ -282,7 +281,8 @@ std::string Eval::ParseMacroLine(const std::string& in)
 Variable* Eval::LookupVariable(const std::string& name)
 {
     Variable* v = nullptr;
-    OS::EvalTake();
+    std::lock_guard<decltype(evalLock)> lk(evalLock);
+
     for (auto it = foreachVars.begin(); it != foreachVars.end() && v == nullptr; ++it)
     {
         if ((*it)->GetName() == name)
@@ -300,7 +300,6 @@ Variable* Eval::LookupVariable(const std::string& name)
     {
         v = VariableContainer::Instance()->Lookup(name);
     }
-    OS::EvalGive();
     return v;
 }
 bool Eval::AutomaticVar(const std::string& name, std::string& rv)
@@ -504,7 +503,7 @@ std::string Eval::ExpandMacro(const std::string& name)
         {
             if (!rv.empty())
                 rv += " ";
-            rv += *(var.first);
+            rv += var.first;
         }
     }
     else if (name[0] == '$')
@@ -689,11 +688,11 @@ std::string Eval::ReplaceStem(const std::string& stem, const std::string& patter
 size_t Eval::MatchesPattern(const std::string& name, const std::string& pattern, size_t& start, size_t begin)
 {
     size_t rv = std::string::npos;
-    int m = FindPercent(pattern, begin);
+    size_t m = FindPercent(pattern, begin);
     if (m != std::string::npos)
     {
-        int m1 = m;
-        int m2 = m;
+        size_t m1 = m;
+        size_t m2 = m;
         while (m1 && pattern[m1 - 1] != ' ')
             m1--;
         while (m2 < pattern.size() && pattern[m2] != ' ')
@@ -782,7 +781,7 @@ bool Eval::ThreeArgs(const std::string& line, std::string& one, std::string& two
 int Eval::GetNumber(const std::string& line)
 {
     int rv = 0;
-    int i;
+    size_t i;
     size_t n = line.find_first_not_of(' ');
     size_t m = line.find_last_not_of(' ');
     if (m == std::string::npos)
@@ -963,7 +962,7 @@ std::string Eval::sort(const std::string& arglist)
         sortList.insert(ExtractFirst(working, " "));
     }
     std::string rv;
-    for (auto strng : sortList)
+    for (auto&& strng : sortList)
     {
         if (!rv.empty())
             rv += " ";
@@ -1572,7 +1571,7 @@ std::string Eval::error(const std::string& arglist, const std::string fileOverri
     {
         os << "Error: " << arglist << std::endl;
     }
-    OS::WriteConsole(os.str());
+    OS::WriteToConsole(os.str());
     errcount++;
     return "";
 }
@@ -1581,7 +1580,7 @@ std::string Eval::errorx(const std::string& arglist)
     Eval a(arglist, false, nullptr, nullptr);
     std::ostringstream os;
     std::cout << "Error " << file << "(" << lineno << "): " << a.Evaluate() << std::endl;
-    OS::WriteConsole(os.str());
+    OS::WriteToConsole(os.str());
     errcount++;
     return "";
 }
@@ -1600,7 +1599,7 @@ std::string Eval::warning(const std::string& arglist, const std::string fileOver
     {
         os << "Warning: " << arglist << std::endl;
     }
-    OS::WriteConsole(os.str());
+    OS::WriteToConsole(os.str());
     return "";
 }
 std::string Eval::warningx(const std::string& arglist)
@@ -1608,7 +1607,7 @@ std::string Eval::warningx(const std::string& arglist)
     Eval a(arglist, false, nullptr, nullptr);
     std::ostringstream os;
     os << "Warning " << file << "(" << lineno << "): " << a.Evaluate() << std::endl;
-    OS::WriteConsole(os.str());
+    OS::WriteToConsole(os.str());
     return "";
 }
 
@@ -1617,7 +1616,7 @@ std::string Eval::info(const std::string& arglist)
     Eval a(arglist, false, ruleList, rule);
     std::ostringstream os;
     os << a.Evaluate() << std::endl;
-    OS::WriteConsole(os.str());
+    OS::WriteToConsole(os.str());
     return "";
 }
 std::string Eval::exists(const std::string& arglist)

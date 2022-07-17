@@ -31,6 +31,7 @@
 #include <list>
 #include <set>
 #include "os.h"
+#include <mutex>
 class RuleList;
 class Rule;
 class Variable;
@@ -48,15 +49,13 @@ class Eval
     static void RemoveAllVPaths() { vpaths.clear(); }
     static void PushruleStack(RuleList* ruleList)
     {
-        OS::EvalTake();
+        std::lock_guard<decltype(evalLock)> lk(evalLock);
         ruleStack.push_front(ruleList);
-        OS::EvalGive();
     }
     static void PopruleStack()
     {
-        OS::EvalTake();
+        std::lock_guard<decltype(evalLock)> lk(evalLock);
         ruleStack.pop_front();
-        OS::EvalGive();
     }
     static void SetWarnings(bool flag) { internalWarnings = flag; }
     static bool GetWarnings() { return internalWarnings; }
@@ -69,7 +68,7 @@ class Eval
         if (internalWarnings)
             warning(Warning);
     }
-    static size_t MacroSpan(const std::string iline, int pos);
+    static size_t MacroSpan(const std::string iline, size_t pos);
     std::string ParseMacroLine(const std::string& in);
     static Variable* LookupVariable(const std::string& name);
     bool AutomaticVar(const std::string& name, std::string& rv);
@@ -140,6 +139,7 @@ class Eval
     static std::set<std::string> macroset;
     static std::string GPath;
     static std::vector<std::string> callArgs;
+    static std::mutex evalLock;
     std::string str;
     Rule* rule;
     RuleList* ruleList;

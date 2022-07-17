@@ -152,12 +152,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="Depends.cpp" />
     <ClCompile Include="Eval.cpp" />
     <ClCompile Include="Include.cpp" />
+    <ClCompile Include="JobServer.cpp" />
     <ClCompile Include="MakeMain.cpp" />
     <ClCompile Include="Maker.cpp" />
     <ClCompile Include="os.cpp" />
@@ -166,6 +164,7 @@
     <ClCompile Include="Runner.cpp" />
     <ClCompile Include="Spawner.cpp" />
     <ClCompile Include="Variable.cpp" />
+    <ClCompile Include="os_specific/windows/Win_Jobserver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Depends.h" />
@@ -178,6 +177,9 @@
     <ClInclude Include="Rule.h" />
     <ClInclude Include="Spawner.h" />
     <ClInclude Include="Variable.h" />
+    <ClInclude Include="IJobServer.h" />
+    <ClInclude Include="JobServer.h" />
+    <ClInclude Include="JobServerAwareThread.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\util\util.vcxproj">

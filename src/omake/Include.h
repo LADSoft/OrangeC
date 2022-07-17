@@ -33,7 +33,7 @@
 class Include
 {
   public:
-    static Include* Instance();
+    static std::shared_ptr<Include> Instance();
     ~Include() {}
     void Clear();
 
@@ -52,6 +52,6 @@ class Include
     std::list<std::string> files;
     std::set<std::string> ignoredFiles;
 
-    static Include* instance;
+    static std::shared_ptr<Include> instance;
 };
 #endif

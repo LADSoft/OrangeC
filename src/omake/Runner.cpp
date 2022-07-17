@@ -83,11 +83,6 @@ int Runner::RunOne(Depends* depend, EnvironmentStrings& env, bool keepGoing)
             Eval::PopruleStack();
             return 0;
         }
-        if (depend->GetRule() && depend->GetRule()->GetCommands() && !OS::TryTakeJob())
-        {
-            Eval::PopruleStack();
-            return -1;
-        }
         if (touch)
         {
             rl->Touch(OS::GetCurrentTime());
@@ -160,7 +155,6 @@ int Runner::RunOne(Depends* depend, EnvironmentStrings& env, bool keepGoing)
         }
         delete rl->GetSpawner();
         rl->SetSpawner((Spawner*)-1);
-        OS::GiveJob();
     }
     Eval::PopruleStack();
     return rv;

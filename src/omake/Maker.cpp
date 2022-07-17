@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <algorithm>
+#include <unordered_set>
 std::unordered_map<std::string, Depends*> Depends::all;
 std::string Maker::firstGoal;
 std::unordered_map<std::string, std::string> Maker::filePaths;
@@ -62,19 +63,42 @@ Maker::Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, Outp
 Maker::~Maker() {}
 void Maker::SetFirstGoal(const std::string& name)
 {
+    static std::unordered_set<std::string> InvalidCandidates
+    {
+        ".SUFFIXES",
+        ".DEFAULT",
+        ".EXPORT_ALL_VARIABLES",
+        ".INTERMEDIATE",
+        ".PRECIOUS",
+        ".SECONDARY",
+        ".SILENT",
+        ".IGNORE",
+        ".SECONDEXPANSION",
+        ".PHONY",
+        ".DELTE_ON_ERROR",
+        ".LOW_RESOLUTION_TIME",
+        ".NOTPARALLEL",
+        ".ONESHELL",
+        ".POSIX",
+        ".RECURSIVE",
+        ".MAIN",
+        ".BEGIN",
+        ".END",
+        ".INCLUDES",
+        ".INTERRUPT",
+        ".LIBS",
+        ".MAKEFILEDEPS",
+        ".MFLAGS",
+        ".MAKEFLAGS",
+        ".NOTPARALLEL",
+        ".ORDER",
+        ".SHELL",
+        ".WARN"
+    };
     if (firstGoal.empty())
     {
-        if (name != ".SUFFIXES" && name != ".DEFAULT" && name != ".EXPORT_ALL_VARIABLES")
-            if (name != ".INTERMEDIATE" && name != ".PRECIOUS" && name != ".SECONDARY")
-                if (name != ".SILENT" && name != ".IGNORE" && name != ".SECONDEXPANSION")
-                    if (name != ".PHONY" && name != ".DELETE_ON_ERROR")
-                        if (name != ".LOW_RESOLUTION_TIME" && name != ".NOTPARALLEL")
-                            if (name != ".ONESHELL" && name != ".POSIX")
-                                if (name != ".RECURSIVE" && name != ".MAIN")
-                                    if (name != ".BEGIN" && name != ".END" && name != ".INCLUDES" && name != ".INTERRUPT" &&
-                                        name != ".LIBS" && name != ".MAKEFILEDEPS" && name != ".MAKEFLAGS" && name != ".MFLAGS" &&
-                                        name != ".NOTPARALLEL" && name != ".ORDER" && name != ".SHELL" && name != ".WARN")
-                                        firstGoal = name;
+        if(InvalidCandidates.find(name) == InvalidCandidates.end())
+            firstGoal = name;
     }
 }
 bool Maker::CreateDependencyTree()
@@ -107,7 +131,7 @@ bool Maker::CreateDependencyTree()
     {
         intermediate = v->GetValue();
     }
-    for (auto goal : goals)
+    for (auto&& goal : goals)
     {
         Time tv1, tv2;
         dependsNesting = 0;
@@ -351,7 +375,7 @@ bool Maker::ExistsOrMentioned(const std::string& stem, RuleList* ruleList, const
             std::string thisOne = dir + Eval::ExtractFirst(working, " ");
             thisOne = Eval::ReplaceStem(stem, thisOne);
             Time theTime;
-            if (RuleContainer::Instance()->find(&thisOne) != RuleContainer::Instance()->end())
+            if (RuleContainer::Instance()->find(thisOne) != RuleContainer::Instance()->end())
             {
                 // mentioned in makefile, the rule may be valid...
             }
@@ -567,7 +591,7 @@ void Maker::GetEnvironment(EnvironmentStrings& env)
     {
         if (exportAll || var.second->GetExport())
         {
-            EnvEntry a(*(var.first), var.second->GetValue());
+            EnvEntry a((var.first), var.second->GetValue());
             env.push_back(a);
         }
     }
@@ -579,7 +603,6 @@ int Maker::RunCommands(bool keepGoing)
     bool stop = false;
     EnvironmentStrings env;
     GetEnvironment(env);
-    int count;
     Runner runner(silent, displayOnly, ignoreResults, touch, outputType, keepResponseFiles, firstGoal, filePaths);
 
     for (auto it = depends.begin(); it != depends.end(); ++it)
@@ -596,12 +619,12 @@ int Maker::RunCommands(bool keepGoing)
         {
             int rv1 = runner.RunOne((*it).get(), env, keepGoing);
             if (rv <= 0 && rv1 != 0)
-               rv = rv1;
+                rv = rv1;
             if (rv > 0)
             {
-               stop = true;
-               if (!keepGoing)
-               {
+                stop = true;
+                if (!keepGoing)
+                {
                     Spawner::Stop();
                     OS::TerminateAll();
                 }

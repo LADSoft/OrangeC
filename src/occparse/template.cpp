@@ -3424,7 +3424,9 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                     func->thistp = MakeType(bt_pointer, basetype(tp));
                     func->thisptr = intNode(en_c_i, 0);
                     func->arguments = ExpandArguments(next);
+                    auto oldnoExcept = noExcept;
                     sym = GetOverloadedFunction(&ctype, &func->fcall, sym, func, nullptr, true, false, true, 0);
+                    noExcept = oldnoExcept;
                     if (!sym)
                     {
                         dropStructureDeclaration();
@@ -3679,7 +3681,9 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                 TEMPLATEPARAMLIST* oldp = exp->v.func->templateParams;
                 exp->v.func->arguments = ExpandArguments(exp);
                 exp->v.func->templateParams = ExpandParams(exp);
+                auto oldnoExcept = noExcept;
                 sp = GetOverloadedFunction(&tp1, &exp1, exp->v.func->sp, exp->v.func, nullptr, false, false, false, 0);
+                noExcept = oldnoExcept;
                 exp->v.func->arguments = old;
                 exp->v.func->templateParams = oldp;
                 tpl = exp->v.func->templateParams;
@@ -3732,7 +3736,9 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                         if (sym->tp->type != bt_aggregate)
                             sym = sym->sb->overloadName;
                         rv = basetype(rve)->btp;
+                        auto oldnoExcept = noExcept;
                         sym = GetOverloadedFunction(&tp1, &exp1, sym, exp->v.func, nullptr, false, false, false, 0);
+                        noExcept = oldnoExcept;
                         if (!sym)
                             rv = &stdany;
                         else
@@ -3810,7 +3816,9 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                     funcparams.thistp = &thistp;
                     funcparams.thisptr = &x;
                     funcparams.ascall = true;
+                    auto oldnoExcept = noExcept;
                     cons = GetOverloadedFunction(&ctype, &xx, cons, &funcparams, nullptr, false, true, true, _F_SIZEOF);
+                    noExcept = oldnoExcept;
                     if (!cons || cons->sb->deleted)
                     {
                         return nullptr;
@@ -4005,6 +4013,7 @@ TYPE* TemplateLookupTypeFromDeclType(TYPE* tp)
 }
 TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
 {
+    auto oldnoExcept = noExcept;
     TYPE *rv = &stdany, **last = &rv;
     TYPE *qual = nullptr, **lastQual = &qual;
     TYPE* tp_in = tp;
@@ -4217,7 +4226,9 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                                 EXPRESSION* exp = intNode(en_c_i, 0);
                                 FUNCTIONCALL funcparams = { };
                                 funcparams.arguments = rvs->arguments;
+                                auto oldnoExcept = noExcept;
                                 auto sp1 = GetOverloadedFunction(&ctype, &exp, sp, &funcparams, nullptr, false, false, false, 0);
+                                noExcept = oldnoExcept;
                                 if (sp1)
                                 {
                                     tp = basetype(sp1->tp)->btp;
@@ -7780,6 +7791,8 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             int oldSearchingFunctions = inSearchingFunctions;
             int oldInAssignRHS = inAssignRHS;
             int oldResolvingStructDeclarations = resolvingStructDeclarations;
+            int oldBodyIsDestructor = bodyIsDestructor;
+            bodyIsDestructor = 0;
             resolvingStructDeclarations = 0;
             inAssignRHS = 0;
             inSearchingFunctions = 0;
@@ -7851,6 +7864,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
                 TemplateTransferClassDeferred(cls, &old);
             PopTemplateNamespace(nsl);
             instantiatingClass--;
+            bodyIsDestructor = oldBodyIsDestructor;
             resolvingStructDeclarations = oldResolvingStructDeclarations;
             inAssignRHS = oldInAssignRHS;
             inSearchingFunctions = oldSearchingFunctions;

@@ -54,6 +54,7 @@ namespace Parser
 {
 int inGetUserConversion;
 int inSearchingFunctions;
+int inNothrowHandler;
 SYMBOL* argFriend;
 static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, Optimizer::LIST* gather, FUNCTIONCALL* args, TYPE* atp, int flags);
 
@@ -5363,6 +5364,8 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
             }
             if (found1)
             {
+                if (flags & _F_IS_NOTHROW)
+                    inNothrowHandler++;
                 if (found1->sb->attribs.uninheritable.deprecationText)
                     deprecateMessage(found1);
                 if (!(flags & _F_SIZEOF) ||
@@ -5436,6 +5439,8 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 }
                 if (isautotype(basetype(found1->tp)->btp))
                     errorsym(ERR_AUTO_FUNCTION_RETURN_TYPE_NOT_DEFINED, found1);
+                if (flags & _F_IS_NOTHROW)
+                    inNothrowHandler--;
             }
         }
         if (!(toErr & F_GOFERR) && found2)

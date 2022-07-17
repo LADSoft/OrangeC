@@ -138,7 +138,9 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                             hr = hr->next;
                         }
                         fcall.ascall = true;
+                        auto oldnoExcept = noExcept;
                         sp = GetOverloadedFunction(&tp, &exp, sp, &fcall, nullptr, true, false, true, 0);
+                        noExcept = oldnoExcept;
                         if (sp)
                             vf->func = sp;
                     }
@@ -4358,7 +4360,9 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
     }
     else
     {
+        auto oldnoExcept = noExcept;
         lex = expression_no_check(lex, nullptr, nullptr, &(*tn), &exp, _F_SIZEOF | _F_INDECLTYPE);
+        noExcept = oldnoExcept;
         if (exp->type == en_func && exp->v.func->sp->sb->deleted)
         {
             *tn = &stdany;

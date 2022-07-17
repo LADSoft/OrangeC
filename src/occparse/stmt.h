@@ -38,6 +38,7 @@ extern int startlab, retlab;
 extern int codeLabel;
 extern bool declareAndInitialize;
 extern bool functionCanThrow;
+extern int bodyIsDestructor;
 
 extern Optimizer::LINEDATA *linesHead, *linesTail;
 

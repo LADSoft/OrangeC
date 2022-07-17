@@ -48,6 +48,7 @@
 #include "lex.h"
 #include "declcons.h"
 #include "libcxx.h"
+
 namespace Parser
 {
 std::set<SYMBOL*> defaultRecursionMap;
@@ -3124,10 +3125,11 @@ void createDestructor(SYMBOL* sp)
         dest->sb->attribs.inheritable.isInline = dest->sb->attribs.inheritable.linkage2 != lk_export;
         InsertInline(dest);
     }
-    if (dest->sb->defaulted || noExcept)
+    if (noExcept)
     {
         dest->sb->xcMode = xc_none;
         dest->sb->noExcept = true;
+        noExcept = true;
     }
     else
     {
@@ -3215,7 +3217,7 @@ bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     dest1 = basetype(dest->tp)->syms->table[0]->p;
     if (!dest1 || !dest1->sb->defaulted || dest1->sb->storage_class == sc_virtual)
     {
-        dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, nullptr, true, false, true, 0);
+        dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, nullptr, true, false, true, inNothrowHandler ? _F_IS_NOTHROW : 0);
         if (!novtab && dest1 && dest1->sb->storage_class == sc_virtual)
         {
             auto exp_in = params->thisptr;
@@ -3325,8 +3327,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     params->thisptr = *exp;
     params->thistp = MakeType(bt_pointer, sp->tp);
     params->ascall = true;
-    cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, nullptr, toErr, maybeConversion, true,
-                                  usesInitList | _F_INCONSTRUCTOR);
+    cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, nullptr, toErr, maybeConversion, true, usesInitList | _F_INCONSTRUCTOR | (inNothrowHandler ? _F_IS_NOTHROW : 0));
 
     if (cons1 && isfunction(cons1->tp))
     {

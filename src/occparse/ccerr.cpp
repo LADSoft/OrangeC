@@ -43,6 +43,8 @@
 #include "types.h"
 #include "help.h"
 #include "libcxx.h"
+#include "cpplookup.h"
+#include "declcons.h"
 #include "FNV_hash.h"
 #include <cstdio>
 
@@ -343,8 +345,27 @@ static bool ignoreErrtemplateNestingCount(int err)
     }
     return false;
 }
+bool IsNothrowError(int err)
+{
+    switch (err)
+    {
+        case ERR_NO_OVERLOAD_MATCH_FOUND:
+        case ERR_NO_DEFAULT_CONSTRUCTOR:
+        case ERR_NO_APPROPRIATE_CONSTRUCTOR:
+        case ERR_NAME_IS_NOT_A_MEMBER_OF_NAME:
+        case ERR_CALL_OF_NONFUNCTION:
+            return true;
+        default:
+            return false;
+    }
+}
 bool printerrinternal(int err, const char* file, int line, va_list args)
 {
+    if (inNothrowHandler && IsNothrowError(err))
+    {
+        noExcept = false;
+        return false;
+    }
     if (!errors[err].level)
         return false;
     if (!file)

@@ -95,6 +95,7 @@ void expr_init(void)
     importThunks = nullptr;
     inGetUserConversion = 0;
     inSearchingFunctions = 0;
+    inNothrowHandler = 0;
     argFriend = nullptr;
 }
 void thunkForImportTable(EXPRESSION** exp)
@@ -1236,7 +1237,11 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
             SYMBOL* sp2 = search(overloadNameTab[CI_DESTRUCTOR], (basetype(*tp)->sp)->tp->syms);
             if (sp2)
             {
+                if (flags && _F_IS_NOTHROW)
+                    inNothrowHandler++;
                 callDestructor(basetype(*tp)->sp, nullptr, exp, nullptr, true, false, false, !points);
+                if (flags && _F_IS_NOTHROW)
+                    inNothrowHandler--;
             }
             if (needkw(&lex, openpa))
                 needkw(&lex, closepa);

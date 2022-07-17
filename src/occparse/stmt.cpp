@@ -83,6 +83,7 @@ int startlab, retlab;
 int codeLabel;
 bool declareAndInitialize;
 bool functionCanThrow;
+int bodyIsDestructor;
 
 Optimizer::LINEDATA *linesHead, *linesTail;
 
@@ -110,6 +111,7 @@ void statement_ini(bool global)
     controlSequences = 0;
     expressions = 0;
     inLoopOrConditional = 0;
+    bodyIsDestructor = 0;
 }
 bool msilManaged(SYMBOL* s)
 {
@@ -3840,8 +3842,14 @@ void parseNoexcept(SYMBOL* funcsp)
         dontRegisterTemplate--;
     }
 }
+int count4;
 LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
 {
+    int oldNoexcept = funcsp->sb->noExcept;
+    if (bodyIsDestructor)
+        funcsp->sb->noExcept = true;
+    if (funcsp->sb->isDestructor)
+        bodyIsDestructor++;
     int oldNestingCount = templateNestingCount;
     int n1;
     bool oldsetjmp_used = Optimizer::setjmp_used;
@@ -3905,7 +3913,7 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
             basetype(funcsp->tp)->btp = &stdvoid;  // return value for auto function without return statements
         if (Optimizer::cparams.prm_cplusplus)
         {
-            if (funcsp->sb->noExcept && !funcsp->sb->deferredNoexcept && !noExcept)
+            if ((!oldNoexcept || funcsp->sb->isDestructor) && funcsp->sb->noExcept && !funcsp->sb->deferredNoexcept && !noExcept)
             {
                 // destructor needs to be demoted
                 funcsp->sb->noExcept = false;
@@ -4018,6 +4026,8 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     funcLevel--;
     funcNesting--;
     templateNestingCount = oldNestingCount;
+    if (funcsp->sb->isDestructor)
+        bodyIsDestructor--;
     return lex;
 }
 }  // namespace Parser

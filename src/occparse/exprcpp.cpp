@@ -2265,7 +2265,13 @@ static bool noexceptExpression(EXPRESSION* node)
             fp = node->v.func;
             {
                 SYMBOL* sym = fp->sp;
-                // rv = sym->sb->xcMode == xc_none || (sym->sb->xcMode == xc_dynamic && (!sym->sb->xc || !sym->sb->xc->xcDynamic));
+                if (sym->tp->type == bt_aggregate)
+                {
+                    if (!sym->tp->syms->table[0]->next)
+                    {
+                        sym = sym->tp->syms->table[0]->p;
+                    }
+                }
                 rv = sym->sb->noExcept;
             }
             break;

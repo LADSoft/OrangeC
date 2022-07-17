@@ -29,13 +29,13 @@
 #include "Spawner.h"
 #include "CmdFiles.h"
 #include <iostream>
-CommandContainer* CommandContainer::instance = nullptr;
-RuleContainer* RuleContainer::instance = nullptr;
+std::shared_ptr<CommandContainer> CommandContainer::instance = nullptr;
+std::shared_ptr<RuleContainer> RuleContainer::instance = nullptr;
 
-CommandContainer* CommandContainer::Instance()
+std::shared_ptr<CommandContainer> CommandContainer::Instance()
 {
     if (!instance)
-        instance = new CommandContainer;
+        instance = std::shared_ptr<CommandContainer>(new CommandContainer);
     return instance;
 }
 
@@ -83,7 +83,7 @@ RuleList::RuleList(const std::string& Target) :
 RuleList::~RuleList() {}
 Variable* RuleList::Lookup(const std::string& name)
 {
-    auto it = specificVariables.find(&name);
+    auto it = specificVariables.find(name);
     if (it != specificVariables.end())
         return it->second.get();
     else
@@ -120,7 +120,7 @@ void RuleList::InsertFirst(Rule* rule)
 void RuleList::operator+=(Variable* variable)
 {
     std::unique_ptr<Variable> temp(variable);
-    specificVariables[&variable->GetName()] = std::move(temp);
+    specificVariables[variable->GetName()] = std::move(temp);
 }
 void RuleList::SecondaryEval()
 {
@@ -146,15 +146,15 @@ void RuleList::SetBuilt()
             rl->SetBuilt();
     }
 }
-RuleContainer* RuleContainer::Instance()
+std::shared_ptr<RuleContainer> RuleContainer::Instance()
 {
     if (!instance)
-        instance = new RuleContainer;
+        instance = std::shared_ptr<RuleContainer>(new RuleContainer);
     return instance;
 }
 RuleList* RuleContainer::Lookup(const std::string& name)
 {
-    auto it = namedRules.find(&name);
+    auto it = namedRules.find(name);
     if (it != namedRules.end())
         return it->second.get();
     else
@@ -169,7 +169,7 @@ void RuleContainer::operator+=(RuleList* list)
     }
     else
     {
-        namedRules[&list->GetName()] = std::move(temp);
+        namedRules[list->GetName()] = std::move(temp);
     }
 }
 void RuleContainer::operator-=(RuleList* list)
@@ -180,7 +180,7 @@ void RuleContainer::operator-=(RuleList* list)
     }
     else
     {
-        auto it = namedRules.find(&list->GetTarget());
+        auto it = namedRules.find(list->GetTarget());
         if (it != namedRules.end())
         {
             namedRules.erase(it);

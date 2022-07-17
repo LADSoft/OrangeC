@@ -21,9 +21,9 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
-
+#endif
 #include <cstdio>
 #include <fstream>
 #include <cstdlib>
@@ -251,7 +251,7 @@ std::string Utils::QualifiedFile(const char* path, const char* ext)
     char buf[260];
     Utils::StrCpy(buf, path);
     char* p = strrchr(buf, '.');
-    if (!p || p[-1] == '.' || p[1] == '\\')
+    if (!p || (p != buf && p[-1] == '.') || p[1] == '\\')
         p = buf + strlen(buf);
     Utils::StrCpy(p, sizeof(buf) - (p - buf), ext);
     return std::string(buf);

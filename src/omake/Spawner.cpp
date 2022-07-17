@@ -34,45 +34,83 @@
 #include "Utils.h"
 #include <algorithm>
 #include <chrono>
+#include <future>
+#include <memory>
+#include <mutex>
 #ifdef HAVE_UNISTD_H
 #else
 #    include <windows.h>
-#    undef WriteConsole
 #    undef Yield
 #endif
+class OSTakeJobIfNotMake
+{
+    bool take_job = false;
+
+  public:
+    OSTakeJobIfNotMake(bool take_job = false) : take_job(take_job)
+    {
+        if (take_job)
+        {
+            OS::TakeJob();
+        }
+    }
+    ~OSTakeJobIfNotMake()
+    {
+        if (take_job)
+        {
+            OS::GiveJob();
+        }
+    }
+};
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
-long Spawner::runningProcesses;
+std::atomic<long> Spawner::runningProcesses;
 bool Spawner::stopAll;
-
+std::vector<Spawner::SpawnerTracker> Spawner::listedThreads = std::vector<Spawner::SpawnerTracker>();
 unsigned WINFUNC Spawner::Thread(void* cls)
 {
     Spawner* ths = (Spawner*)cls;
-#ifdef HAVE_UNISTD_H
-
-    ++runningProcesses;
-#else
-    InterlockedIncrement(&runningProcesses);
-#endif
+    // Running processes is atomic so it works no matter what
+    runningProcesses++;
     ths->RetVal(ths->InternalRun());
-#ifdef HAVE_UNISTD_H
-    --runningProcesses;
-#else
-    InterlockedDecrement(&runningProcesses);
-#endif
+    runningProcesses--;
     ths->done = true;
     return 0;
 }
+// Next-gen Spawner::Thread where we use std::promise and std::future to communicate instead of a pre-c++14 version of it.
+void Spawner::thread_run(std::promise<int>&& ret, Spawner* spawner, std::shared_ptr<std::atomic<int>> done_val)
+{
+    runningProcesses++;
+    int value = spawner->InternalRun();
+    ret.set_value(value);
+    runningProcesses--;
+    spawner->done = true;
+    *done_val = 1;
+}
 void Spawner::WaitForDone()
 {
-    auto begin = std::chrono::system_clock::now();
-    while (runningProcesses > 0 &&
-           std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - begin).count() < 30)
+#ifdef USE_NEW_THREADING
+    KillDone();
+    bool thrd_alive = false;
+    do
     {
-        OS::Yield();
-    }
-    if (runningProcesses > 0)
-        std::cout << "omake: aborting due to timeout" << std::endl;
+        thrd_alive = false;
+        for (auto& thrd : listedThreads)
+        {
+            if (!thrd.done)
+            {
+                thrd_alive = true;
+            }
+        }
+        if (thrd_alive)
+        {
+            // Yield our execution fairly to any threads so we don't spinloop, we may want to reconsider this after profiling and
+            // moving to an _mm_pause()
+            std::this_thread::yield();
+        }
+    } while (thrd_alive);
+    KillDone();
+#endif
 }
 void Spawner::Run(Command& Commands, OutputType Type, RuleList* RuleListx, Rule* Rulex)
 {
@@ -87,7 +125,16 @@ void Spawner::Run(Command& Commands, OutputType Type, RuleList* RuleListx, Rule*
     }
     else
     {
-        OS::CreateThread((void*)&Spawner::Thread, this);
+#ifdef USE_NEW_THREADING
+        std::promise<int> promise;
+        std::shared_ptr<std::atomic<int>> doneAtomic = std::make_shared<std::atomic<int>>(0);
+        std::shared_future<int> prom_future = promise.get_future();
+        retVal2 = prom_future;
+        std::thread thrd = std::thread(Spawner::thread_run, std::move(promise), this, doneAtomic);
+        listedThreads.emplace_back(SpawnerTracker{std::move(thrd), prom_future, doneAtomic});
+#else
+        OS::CreateThread((void*)Spawner::Thread, (void*)this);
+#endif
     }
 }
 int Spawner::InternalRun()
@@ -113,60 +160,61 @@ int Spawner::InternalRun()
             make = true;
             curDontRun = false;
         }
-        OS::Take();
         std::string cmd = a;
-        Eval c(cmd, false, ruleList, rule);
-        cmd = c.Evaluate();  // deferred evaluation
-        int i;
-        for (i = 0; i < cmd.size(); i++)
-            if (cmd[i] == '+')
-                curDontRun = false;
-            else if (cmd[i] == '@')
-                curSilent = true;
-            else if (cmd[i] == '-')
-                curIgnore = true;
-            else
-                break;
-        cmd = cmd.substr(i);
-        size_t n = cmd.find("&&");
-        std::string makeName;
-        if (shell != "/bin/sh" && n != std::string::npos && n == cmd.size() - 3)
         {
-            char match = cmd[n + 2];
-            cmd.erase(n);
-            makeName = "maketemp.";
-            if (tempNum < 10)
-                makeName = makeName + "00" + Utils::NumberToString(tempNum);
-            else if (tempNum < 100)
-                makeName = makeName + "0" + Utils::NumberToString(tempNum);
-            else
-                makeName = makeName + Utils::NumberToString(tempNum);
-            tempNum++;
-            if (!keepResponseFiles && !makeName.empty())
-                tempFiles.push_back(makeName);
-            std::fstream fil(makeName, std::ios::out);
-            bool done = false;
-            std::string tail;
-            do
+            std::lock_guard<decltype(OS::GetConsoleMutex())> lck(OS::GetConsoleMutex());
+            Eval c(cmd, false, ruleList, rule);
+            cmd = c.Evaluate();  // deferred evaluation
+            size_t i;
+            for (i = 0; i < cmd.size(); i++)
+                if (cmd[i] == '+')
+                    curDontRun = false;
+                else if (cmd[i] == '@')
+                    curSilent = true;
+                else if (cmd[i] == '-')
+                    curIgnore = true;
+                else
+                    break;
+            cmd = cmd.substr(i);
+            size_t n = cmd.find("&&");
+            std::string makeName;
+            if (shell != "/bin/sh" && n != std::string::npos && n == cmd.size() - 3)
             {
-                ++it;
-                std::string current = *it;
-                size_t n = current.find(match);
-                if (n != std::string::npos)
+                char match = cmd[n + 2];
+                cmd.erase(n);
+                makeName = "maketemp.";
+                if (tempNum < 10)
+                    makeName = makeName + "00" + Utils::NumberToString(tempNum);
+                else if (tempNum < 100)
+                    makeName = makeName + "0" + Utils::NumberToString(tempNum);
+                else
+                    makeName = makeName + Utils::NumberToString(tempNum);
+                tempNum++;
+                if (!keepResponseFiles && !makeName.empty())
+                    tempFiles.push_back(makeName);
+                std::fstream fil(makeName, std::ios::out);
+                bool done = false;
+                std::string tail;
+                do
                 {
-                    done = true;
-                    if (n + 1 < current.size())
-                        tail = current.substr(n + 1);
-                    current.erase(n);
-                }
-                Eval ce(current, false, ruleList, rule);
-                fil << ce.Evaluate() << std::endl;
-            } while (!done);
-            fil.close();
-            cmd += makeName + tail;
+                    ++it;
+                    std::string current = *it;
+                    size_t n = current.find(match);
+                    if (n != std::string::npos)
+                    {
+                        done = true;
+                        if (n + 1 < current.size())
+                            tail = current.substr(n + 1);
+                        current.erase(n);
+                    }
+                    Eval ce(current, false, ruleList, rule);
+                    fil << ce.Evaluate() << std::endl;
+                } while (!done);
+                fil.close();
+                cmd += makeName + tail;
+            }
+            cmd = QualifyFiles(cmd);
         }
-        cmd = QualifyFiles(cmd);
-        OS::Give();
         if (oneShell)
         {
             longstr += cmd;
@@ -203,7 +251,7 @@ int Spawner::InternalRun()
     }
     if (!stopAll)
         OS::ToConsole(output);
-    for (auto f : tempFiles)
+    for (auto&& f : tempFiles)
         OS::RemoveFile(f);
     return rv;
 }
@@ -224,6 +272,7 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
     }
     if (oneShell)
     {
+        OSTakeJobIfNotMake lockJob(!make);
         int rv = OS::Spawn(cmd, environment, nullptr);
         return rv;
     }
@@ -235,13 +284,18 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
     else
     {
         int rv = 0;
-        for (auto command : cmdList)
+        for (auto&& command : cmdList)
         {
+            bool make1 = make;
+            //            if (command.find("omake") != std::string::npos)
+            //                make1 = true;
+            OSTakeJobIfNotMake lockJob(!make1);
+
             if (!stopAll)
             {
                 if (!silent)
                 {
-                    OS::WriteConsole(OS::JobName() + command + "\n");
+                    OS::WriteToConsole(OS::JobName() + command + "\n");
                 }
                 int rv1;
                 if (!dontrun)
@@ -274,15 +328,15 @@ bool Spawner::split(const std::string& cmd)
         std::string first = cmd.substr(0, n);
         std::string last = cmd.substr(m);
         std::string middle = cmd.substr(n, m);
-        int z = middle.find_first_of(escapeStart);
+        size_t z = middle.find_first_of(escapeStart);
         if (z != std::string::npos)
             rv = cmd.size() < lineLength;
         z = last.find_first_of(escapeStart);
         if (z != std::string::npos)
             rv = cmd.size() < lineLength;
 
-        int sz = first.size() + last.size();
-        int szmiddle = lineLength - sz;
+        size_t sz = first.size() + last.size();
+        size_t szmiddle = lineLength - sz;
         while (middle.size() >= szmiddle)
         {
             std::string p = middle.substr(0, szmiddle);

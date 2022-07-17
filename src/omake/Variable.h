@@ -29,7 +29,7 @@
 #include <map>
 #include <list>
 #include <memory>
-
+#include <iostream>
 class Variable
 {
   public:
@@ -82,18 +82,14 @@ class Rule;
 class VariableContainer
 {
   public:
-    static VariableContainer* Instance();
+    static std::shared_ptr<VariableContainer> Instance();
     ~VariableContainer() {}
     Variable* Lookup(const std::string& name);
     void operator+(Variable* variable);
     void operator+=(Variable* variable) { operator+(variable); }
     void Clear();
 
-    struct vlt
-    {
-        bool operator()(const std::string* one, const std::string* two) const { return *one < *two; }
-    };
-    typedef std::map<const std::string*, std::unique_ptr<Variable>, vlt>::iterator iterator;
+    typedef std::map<std::string, std::unique_ptr<Variable>>::iterator iterator;
     const iterator begin() { return variables.begin(); }
     const iterator end() { return variables.end(); }
 
@@ -101,13 +97,10 @@ class VariableContainer
     const PatternIterator PatternBegin() { return patternVariables.begin(); }
     const PatternIterator PatternEnd() { return patternVariables.end(); }
 
-  protected:
-    VariableContainer() {}
-
   private:
-    std::map<const std::string*, std::unique_ptr<Variable>, vlt> variables;
+    std::map<std::string, std::unique_ptr<Variable>> variables;
     std::list<std::unique_ptr<Variable>> patternVariables;
-    static VariableContainer* instance;
+    static std::shared_ptr<VariableContainer> instance;
 };
 
 #endif

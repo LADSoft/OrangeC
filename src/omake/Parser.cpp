@@ -169,7 +169,7 @@ size_t Parser::UnfetteredChar(const std::string& line, char ch) const
 {
     int charInWord = 0;
     bool instr = false;
-    for (int i = 0; i < line.size(); i++)
+    for (size_t i = 0; i < line.size(); i++)
     {
         if (instr)
         {
@@ -216,11 +216,11 @@ std::string Parser::FirstWord(const std::string& line, size_t& n)
     n = 0;
     if (s != std::string::npos)
     {
-        int t = s;
+        size_t t = s;
         while (UTF8::IsAlnum(line[t]) || line[t] == '_' || line[t] == '-')
         {
-            int v = UTF8::CharSpan(line.c_str() + t);
-            for (int i = 0; i < v && t < line.size(); i++)
+            size_t v = UTF8::CharSpan(line.c_str() + t);
+            for (size_t i = 0; i < v && t < line.size(); i++)
                 t++;
         }
         rv = line.substr(s, t - s);

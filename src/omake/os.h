@@ -28,7 +28,8 @@
 #include <list>
 #include <string>
 #include <deque>
-
+#include "JobServer.h"
+#include <mutex>
 #undef GetCurrentTime
 #undef Yield
 
@@ -72,11 +73,7 @@ class OS
     static bool TakeJob();
     static bool TryTakeJob();
     static void GiveJob();
-    static void Take();
-    static void Give();
-    static void EvalTake();
-    static void EvalGive();
-    static void WriteConsole(std::string string);
+    static void WriteToConsole(std::string string);
     static void ToConsole(std::deque<std::string>& strings);
     static void AddConsole(std::deque<std::string>& strings, std::string string);
     static int Spawn(const std::string command, EnvironmentStrings& environment, std::string* output);
@@ -89,14 +86,27 @@ class OS
     static void RemoveFile(const std::string name);
     static std::string NormalizeFileName(const std::string name);
     static void CreateThread(void* func, void* data);
+    template <class Function, class... Args>
+    static OMAKE::JobServerAwareThread CreateThread(Function&& f, Args&&... args)
+    {
+        // Always use the JobServer as the *SOURCE OF TRUTH* for everything, we have one instance, we can use it well
+        return OMAKE::JobServerAwareThread(localJobServer, std::forward<Function>(f), std::forward<Args>(args)...);
+    }
+    static void InitJobServer();
     static void Yield();
+    static std::string GetFullPath(const std::string& filename);
     static int JobCount() { return jobsLeft; }
+    static int GetProcessId();
+    static std::recursive_mutex& GetConsoleMutex() { return consoleMutex; }
 
   private:
+    static std::shared_ptr<OMAKE::JobServer> localJobServer;
     static int jobsLeft;
     static std::deque<int> jobCounts;
     static bool isSHEXE;
     static std::string jobName;
     static std::string jobFile;
+    static bool first;
+    static std::recursive_mutex consoleMutex;
 };
 #endif

@@ -22,13 +22,12 @@
  *
  */
 
-// This file contains a lot of comments that use mutexes, this is because OrangeC currently does not have C++ mutexes but once it
-// does it'll be done
 #define _CRT_SECURE_NO_WARNINGS
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #    define _SH_DENYNO 0
+#    include <xmmintrin.h>
 #else
 #    include <windows.h>
 #    include <process.h>
@@ -65,30 +64,28 @@
 #include <array>
 #include <functional>
 #include <sys/stat.h>
-//#include <mutex>
-#include "semaphores.h"
+#include <mutex>
+#include <memory>
+#include "JobServer.h"
 //#define DEBUG
-static Semaphore sema;
-static Semaphore processIdSem;
-#ifdef _WIN32
-static CRITICAL_SECTION consoleSync;
-static CRITICAL_SECTION evalSync;
-#endif
-// static std::recursive_mutex consoleMut;
+static std::mutex processIdMutex;
+// This is required because GetFullPathName and SetCurrentDirectory and GetCurrentDirectory are
+// all non-safe in multithreaded environments, in order to make this safe, we *MUST* lower ourselves into making these a mutex-gated
+// system, this will enforce ordering at the possibility of incorrectness
+static std::mutex DirectoryMutex;
 std::deque<int> OS::jobCounts;
 bool OS::isSHEXE;
 int OS::jobsLeft;
 std::string OS::jobName = "\t";
 std::string OS::jobFile;
-static bool first;
+std::shared_ptr<OMAKE::JobServer> OS::localJobServer = nullptr;
 static std::set<HANDLE> processIds;
-
+std::recursive_mutex OS::consoleMutex;
 void OS::TerminateAll()
 {
-    processIdSem.Wait();
+    std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
     for (auto a : processIds)
         TerminateProcess(a, 0);
-    processIdSem.Post();
 }
 std::string OS::QuoteCommand(std::string exe, std::string command)
 {
@@ -148,52 +145,32 @@ bool Time::operator>=(const Time& last)
     return (this->seconds == last.seconds && this->ms == last.ms && (this->seconds != 0 || this->ms != 0)) || *this > last;
 }
 
-void OS::Init()
-{
-#ifdef _WIN32
-    InitializeCriticalSection(&consoleSync);
-    InitializeCriticalSection(&evalSync);
-#endif
-}
+void OS::Init() {}
 
-void OS::WriteConsole(std::string string)
+void OS::WriteToConsole(std::string string)
 {
-    // std::lock_guard<decltype(consoleMut)> lg(consoleMut);
+    std::lock_guard<decltype(consoleMutex)> lg(consoleMutex);
 #ifdef _WIN32
-    EnterCriticalSection(&consoleSync);
 
     DWORD written;
     WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), string.c_str(), string.size(), &written, nullptr);
-    LeaveCriticalSection(&consoleSync);
 #else
     printf("%s\n", string.c_str());
 #endif
 }
 void OS::ToConsole(std::deque<std::string>& strings)
 {
-// std::lock_guard<decltype(consoleMut)> lg(consoleMut);
-#ifdef _WIN32
-    EnterCriticalSection(&consoleSync);
-#endif
-    for (auto s : strings)
+    std::lock_guard<decltype(consoleMutex)> lg(consoleMutex);
+    for (auto&& s : strings)
     {
-        WriteConsole(s);
+        WriteToConsole(s);
     }
     strings.clear();
-#ifdef _WIN32
-    LeaveCriticalSection(&consoleSync);
-#endif
 }
 void OS::AddConsole(std::deque<std::string>& strings, std::string string)
 {
-// std::lock_guard<decltype(consoleMut)> lg(consoleMut);
-#ifdef _WIN32
-    EnterCriticalSection(&consoleSync);
-#endif
+    std::lock_guard<decltype(consoleMutex)> lg(consoleMutex);
     strings.push_back(string);
-#ifdef _WIN32
-    LeaveCriticalSection(&consoleSync);
-#endif
 }
 void OS::PushJobCount(int jobs)
 {
@@ -207,48 +184,61 @@ void OS::PopJobCount()
 }
 bool OS::TakeJob()
 {
-    sema.Wait();
+    localJobServer->TakeNewJob();
     return false;
 }
 bool OS::TryTakeJob()
 {
-    return sema.TryWait();
+    return localJobServer->TryTakeNewJob() != -1;
 }
-void OS::GiveJob() { sema.Post(); }
-std::string OS::JobName() { return jobName; }
-void OS::JobInit()
+void OS::GiveJob() { localJobServer->ReleaseJob(); }
+std::string OS::GetFullPath(const std::string& fullname)
 {
-    first = false;
-    std::string name;
-    Variable* v = VariableContainer::Instance()->Lookup(".OMAKESEM");
-    if (v)
+    std::lock_guard<decltype(DirectoryMutex)> lg(DirectoryMutex);
+    std::string recievingbuffer;
+
+    DWORD return_val = GetFullPathNameA(fullname.c_str(), 0, nullptr, nullptr);
+    if (!return_val)
     {
-        name = v->GetValue();
+        // Do error handling somewhere
+    }
+    recievingbuffer.reserve(return_val);
+    return_val = GetFullPathNameA(fullname.c_str(), recievingbuffer.size(), const_cast<char*>(recievingbuffer.c_str()), NULL);
+    if (!return_val)
+    {
+        // Do error handling somewhere
+    }
+    return recievingbuffer;
+}
+std::string OS::JobName() { return jobName; }
+void OS::InitJobServer()
+{
+    bool first = false;
+    std::string name;
+    if (!localJobServer)
+    {
+        if (MakeMain::jobServer.GetExists())
+        {
+            name = MakeMain::jobServer.GetValue();
+            localJobServer = OMAKE::JobServer::GetJobServer(name);
+        }
+        else
+        {
+            localJobServer = OMAKE::JobServer::GetJobServer(jobsLeft);
+            name = localJobServer->PassThroughCommandString();
+            MakeMain::jobServer.SetValue(name);
+            first = true;
+        }
     }
     else
     {
-        std::array<unsigned char, 10> rnd;
-
-        std::uniform_int_distribution<int> distribution('0', '9');
-        // note that there will be minor problems if the implementation of random_device
-        // uses a prng with constant seed for the random_device implementation.
-        // that shouldn't be a problem on OS we are interested in.
-        std::random_device dev;
-        std::mt19937 engine(dev());
-        auto generator = std::bind(distribution, engine);
-
-        std::generate(rnd.begin(), rnd.end(), generator);
-        for (auto v : rnd)
-            name += v;
-        v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
-        *VariableContainer::Instance() += v;
-        first = true;
+        std::cerr << "An attempt to remake a job server has been performed, this should not happen, please contact the developers if this message appears" << std::endl;
     }
-    v->SetExport(true);
-    name = std::string("OMAKE") + name;
-    sema = Semaphore(name, jobsLeft);
-    processIdSem = Semaphore(std::string("OMAKE1") + name, 1);
-
+}
+bool OS::first = false;
+void OS::JobInit()
+{
+    std::string name = MakeMain::jobServer.GetValue();
     if (MakeMain::printDir.GetValue() && jobName == "\t")
     {
         char tempfile[260];
@@ -292,7 +282,7 @@ void OS::JobInit()
             Utils::StrCpy(tempfile, ".\\");
 #endif
         Utils::StrCpy(tempfile, (name + ".flg").c_str());
-
+        OS::WriteToConsole("Flag file name: " + name + ".flg");
         int fil = -1;
         if (first)
         {
@@ -328,41 +318,11 @@ void OS::JobInit()
         }
         free(temp);
     }
-    if (!first)
-        GiveJob();
 }
 void OS::JobRundown()
 {
-    if (!first)
-        TakeJob();
-    sema.~Semaphore();
-    processIdSem.~Semaphore();
     if (jobFile.size())
         RemoveFile(jobFile);
-}
-void OS::Take()
-{
-#ifdef _WIN32
-    EnterCriticalSection(&consoleSync);
-#endif
-}
-void OS::Give()
-{
-#ifdef _WIN32
-    LeaveCriticalSection(&consoleSync);
-#endif
-}
-void OS::EvalTake()
-{
-#ifdef _WIN32
-    EnterCriticalSection(&evalSync);
-#endif
-}
-void OS::EvalGive()
-{
-#ifdef _WIN32
-    LeaveCriticalSection(&evalSync);
-#endif
 }
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
 {
@@ -423,7 +383,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         startup.hStdError = GetStdHandle(STD_ERROR_HANDLE);
     }
     int n = 0;
-    for (auto env : environment)
+    for (auto&& env : environment)
     {
         n += env.name.size() + env.value.size() + 2;
     }
@@ -431,7 +391,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     std::unique_ptr<char[]> env = std::make_unique<char[]>(n);
     char* p = env.get();
     memset(p, 0, sizeof(char) * n);  // !!!
-    for (auto env : environment)
+    for (auto&& env : environment)
     {
         memcpy(p, env.name.c_str(), env.name.size());
         p += env.name.size();
@@ -463,13 +423,15 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     // try as an app first
     if (asapp && CreateProcess(nullptr, (char*)command1.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
     {
-        processIdSem.Wait();
-        processIds.insert(pi.hProcess);
-        processIdSem.Post();
+        {
+            std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
+            processIds.insert(pi.hProcess);
+        }
         WaitForSingleObject(pi.hProcess, INFINITE);
-        processIdSem.Wait();
-        processIds.erase(pi.hProcess);
-        processIdSem.Post();
+        {
+            std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
+            processIds.erase(pi.hProcess);
+        }
 
         if (output)
         {
@@ -497,13 +459,17 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         // not found, try running a shell to handle it...
         if (CreateProcess(nullptr, (char*)cmd.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
         {
-            processIdSem.Wait();
-            processIds.insert(pi.hProcess);
-            processIdSem.Post();
+            {
+                std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
+
+                processIds.insert(pi.hProcess);
+            }
             WaitForSingleObject(pi.hProcess, INFINITE);
-            processIdSem.Wait();
-            processIds.erase(pi.hProcess);
-            processIdSem.Post();
+            {
+                std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
+
+                processIds.erase(pi.hProcess);
+            }
             if (output)
             {
                 DWORD avail = 0;
@@ -648,7 +614,6 @@ Time OS::GetFileTime(const std::string fileName)
 void OS::SetFileTime(const std::string fileName, Time time)
 {
 #ifdef _WIN32
-    FILETIME cr, ac, mod;
     HANDLE h =
         CreateFile(fileName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
@@ -678,6 +643,17 @@ std::string OS::GetWorkingDir()
     char buf[260];
     getcwd(buf, 260);
     return buf;
+}
+void OS::CreateThread(void* func, void* data)
+{
+#ifdef _WIN32
+#    ifdef BCC32c
+    DWORD tid;
+    CloseHandle(::CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)func, data, 0, &tid));
+#    else
+    CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, nullptr));
+#    endif
+#endif
 }
 bool OS::SetWorkingDir(const std::string name) { return !chdir(name.c_str()); }
 void OS::RemoveFile(const std::string name) { unlink(name.c_str()); }
@@ -715,20 +691,5 @@ std::string OS::NormalizeFileName(const std::string file)
     }
     return name;
 }
-void OS::CreateThread(void* func, void* data)
-{
-#ifdef _WIN32
-#    ifdef BCC32c
-    DWORD tid;
-    CloseHandle(::CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)func, data, 0, &tid));
-#    else
-    CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, nullptr));
-#    endif
-#endif
-}
-void OS::Yield()
-{
-#ifdef _WIN32
-    ::Sleep(10);
-#endif
-}
+void OS::Yield() { std::this_thread::yield(); }
+int OS::GetProcessId() { return getpid(); }

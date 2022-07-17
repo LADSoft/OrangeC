@@ -24,7 +24,9 @@
 
 #ifndef UTIL_H
 #define UTIL_H
-
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 #include <string>
 #include <stdlib.h>
 #include <string.h>

@@ -165,7 +165,7 @@ AsmExprNode* AsmExpr::Eval(AsmExprNode* n, int pc)
                     fv += xleft->fval;
                     break;
                 case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
-                    fv = xleft->FVAL + xright->FVAL;
+                    fv = xleft->fval + xright->fval;
                     rv = new AsmExprNode(fv);
                     break;
                 default:

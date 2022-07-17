@@ -223,7 +223,6 @@ bool ObjIeeeBinary::Parse(const ObjByte* buffer, eParseType ParseType)
                     return TypeName(buffer, ParseType);
                 default:
                     ThrowSyntax(buffer, eAll);
-                    return false;
             }
         case ecCO:
             return Comment(buffer, ParseType);
@@ -249,7 +248,6 @@ bool ObjIeeeBinary::Parse(const ObjByte* buffer, eParseType ParseType)
             return ModuleEnd(buffer, ParseType);
         default:
             ThrowSyntax(buffer, eAll);
-            return false;
     }
 }
 void ObjIeeeBinary::getline(ObjByte* buf, size_t size)

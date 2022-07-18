@@ -691,5 +691,4 @@ std::string OS::NormalizeFileName(const std::string file)
     }
     return name;
 }
-void OS::Yield() { std::this_thread::yield(); }
 int OS::GetProcessId() { return getpid(); }

@@ -93,7 +93,6 @@ class OS
         return OMAKE::JobServerAwareThread(localJobServer, std::forward<Function>(f), std::forward<Args>(args)...);
     }
     static void InitJobServer();
-    static void Yield();
     static std::string GetFullPath(const std::string& filename);
     static int JobCount() { return jobsLeft; }
     static int GetProcessId();

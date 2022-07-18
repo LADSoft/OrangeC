@@ -630,7 +630,7 @@ int Maker::RunCommands(bool keepGoing)
                 }
             }
         }
-        OS::Yield();
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     } while (rv < 0);
     OS::JobRundown();
     for (auto& d : depends)

@@ -3,6 +3,11 @@ B := py \orangec\lit\lit.py --echo-all-commands
 all: copyfiles
 	$(B) std
 
+current:
+	$(B) std/algorithms
+	$(B) std/atomics
+	$(B) std/thread
+
 algorithms: copyfiles
 	$(B) std/algorithms
 

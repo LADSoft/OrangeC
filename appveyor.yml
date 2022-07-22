@@ -20,6 +20,7 @@ branches:
      - /v\d*\.\d*\.\d*\.\d*/
 
 configuration:
+     - MSVC THEN LIBCXX TEST
      - MSVC THEN WITH STATIC LIB
      - MINGW64 THEN WITH STATIC LIB
      - CLANG THEN WITH STATIC LIB
@@ -28,7 +29,7 @@ configuration:
      - MSVC THEN WITH DEBUG
      - CODE ANALYZER TEST
      - MSIL COMPILER
-     - MS WITH PDB
+     - MSVC WITH PDB
 
 for:
 -
@@ -37,6 +38,7 @@ for:
                 - configuration: MSVC THEN WITH STATIC LIB
       environment:
           BUILD_PROFILE: MS
+          TESTS: TRUE
       deploy:
           release: Orange C-$(APPVEYOR_REPO_TAG_NAME)
           description: 'Current Release'
@@ -70,7 +72,7 @@ for:
 -
       matrix:
             only:
-                - configuration: MS WITH PDB
+                - configuration: MSVC WITH PDB
       environment:
           BUILD_PROFILE: MSDEBUGBUILD
           MSPDB: YES
@@ -101,7 +103,12 @@ for:
                 - configuration: CODE ANALYZER TEST
       environment:
           BUILD_PROFILE: CODEANALYZER
-
+-
+      matrix:
+            only:
+                - configuration: MSVC THEN LIBCXX TEST
+      environment:
+          BUILD_PROFILE: LIBCXXTEST
 
 skip_commits:
   files:

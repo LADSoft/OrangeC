@@ -58,6 +58,7 @@
 #include <string>
 #if defined(_WIN32) || defined(__MINGW32__)
 #include <io.h> // _mktemp_s
+#include <fileapi.h>
 #else
 #include <unistd.h> // close
 #endif
@@ -73,7 +74,7 @@ extern "C" {
 inline
 std::string get_temp_file_name()
 {
-#if defined(__MINGW32__)
+#if defined(__MINGW32__) || defined(__ORANGEC__)
     char Path[MAX_PATH + 1];
     char FN[MAX_PATH + 1];
     do { } while (0 == GetTempPath(MAX_PATH+1, Path));

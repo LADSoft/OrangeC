@@ -7155,8 +7155,8 @@ static LEXLIST* expression_pm(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
         {
             if (isstructured(*tp) && basetype(tp1)->type == bt_memberptr)
             {
-                if ((*tp)->sp != basetype(tp1)->sp && (*tp)->sp->sb->mainsym != basetype(tp1)->sp &&
-                    (*tp)->sp != basetype(tp1)->sp->sb->mainsym)
+                if (basetype(*tp)->sp != basetype(tp1)->sp && basetype(*tp)->sp->sb->mainsym != basetype(tp1)->sp &&
+                    basetype(*tp)->sp != basetype(tp1)->sp->sb->mainsym)
                 {
                     if (classRefCount(basetype(tp1)->sp, (*tp)->sp) != 1)
                     {
@@ -7175,7 +7175,7 @@ static LEXLIST* expression_pm(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
                 if (isfunction(basetype(tp1)->btp))
                 {
                     FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
-                    if ((*tp)->sp->sb->vbaseEntries)
+                    if ((basetype(*tp))->sp->sb->vbaseEntries)
                     {
                         EXPRESSION* ec = exprNode(en_add, exp1, intNode(en_c_i, getSize(bt_pointer) + getSize(bt_int)));
                         EXPRESSION* ec1;

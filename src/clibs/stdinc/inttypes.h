@@ -41,7 +41,7 @@
 #    include <stdint.h>
 #endif
 
-#if !defined(__cplusplus) || defined(__STDC_FORMAT_MACROS)
+#if defined(__cplusplus) || defined(__STDC_FORMAT_MACROS)
 
 #    define PRId8 "hhd"
 #    define PRIi8 "hhi"

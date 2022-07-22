@@ -12,7 +12,8 @@
          omake -DCOMPILER=MS clean -j:%NUMBER_OF_PROCESSORS%
          omake -DCOMPILER=CLANG clean -j:%NUMBER_OF_PROCESSORS%
          omake -DCOMPILER=MINGW64 clean -j:%NUMBER_OF_PROCESSORS%
-         set BUILD_PROFILE=MINGW64
+         set BUILD_PROFILE=MS
+         set TESTS=TRUE
          set PARALLEL=%NUMBER_OF_PROCESSORS%
      )
               cd c:\orangec\src
@@ -26,6 +27,7 @@
               IF "%BUILD_PROFILE%" EQU "OCCIL" goto occil
               IF "%BUILD_PROFILE%" EQU "MSDEBUGBUILD" goto msdebugbuild
               IF "%BUILD_PROFILE%" EQU "CODEANALYZER" goto codeanalyzer
+              IF "%BUILD_PROFILE%" EQU "LIBCXXTEST" goto libcxxtest
               IF "%BUILD_PROFILE%" NEQ "TEST" goto normal
               goto error
 :occil
@@ -58,6 +60,15 @@
                   cd ..\src
                   echo succeeded
                   goto done
+:libcxxtest
+                  REM  Build to test libcxx
+                  c:\orangec\temp\omake /DCOMPILER=MS fullbuild /DORANGEC_ONLY=YES -j:%PARALLEL%
+                  IF %ERRORLEVEL% NEQ 0 (
+                      goto error;
+                  )
+                  c:\orangec\temp\omake test
+                  echo succeeded
+                  goto done
 :codeanalyzer
                   REM  Build to test code analyzer
                   c:\orangec\temp\omake /DCOMPILER=MS fullbuild
@@ -66,7 +77,7 @@
                   )
                   cd ..\tests\occpr
                   REM  generate code
-                  omake
+                  omake -j:1
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
@@ -113,12 +124,16 @@
                   if "%TRAVIS_OS_NAME%" NEQ "" (
                        goto done;
                   )
+                  IF "%TESTS%" EQU "" (
+                       goto notests;
+                  )
                   cd ..\tests
                   omake -B -j:%PARALLEL% /DCOMPILER=OCC
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
                   cd ..\src
+:notests
                   omake /fzip7z.mak
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;

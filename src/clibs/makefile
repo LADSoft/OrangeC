@@ -130,6 +130,8 @@ mkapps:
 	$(MAKE) mklibs
 	$(MAKE) -Cplatform --eval="OBJECT=$(CLIBOBJECT)" --eval="FINAL=1"
 
+test:
+	$(MAKE) -Ccpp\libcxx\test current
 BUILDING_DLL = BUILDING_DLL=-D__BUILDING_LSCRTL_DLL
 
 FORMAT: $(C_FORMAT)

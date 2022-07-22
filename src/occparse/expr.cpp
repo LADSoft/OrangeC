@@ -2272,7 +2272,7 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
             {
                 assignmentUsages(p->exp, false);
             }
-            else if (isstructured(p->tp))
+            else if (p->tp && isstructured(p->tp))
             {
                 auto exp3 = p->exp;
                 while (exp3->type == en_void)

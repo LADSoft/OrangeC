@@ -99,6 +99,9 @@ fullbuild: zip
 format:
 	@$(MAKE) -f $(_TREEROOT) format
 
+test:
+	@$(MAKE) -Cclibs test
+
 else
 # when called from TREETOP.MAK do the below
 

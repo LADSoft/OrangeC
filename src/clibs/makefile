@@ -110,7 +110,7 @@ copyfiles: mkdir
 	-copy  platform\win32\wininc ..\..\include\c 2>NUL
 	-copy  platform\win32\wininc\win32 ..\..\include\c\win32 2>NUL
 
-$(C_CLIBS) : %.clibs : copyfiles
+$(C_CLIBS) : %.clibs :
 	$(MAKE) -C$* --eval="OBJECT=$(CLIBOBJECT)" --eval="$(BUILDING_DLL)"
 
 $(C_FORMAT) : %.formats :
@@ -125,7 +125,9 @@ mklibs: platform
 	-del $(SYSOBJECT)\clwin.l
 	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\clwin.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $(foreach dir, $(WINOBJS), $(WINOBJECT)\$(dir))
 
-mkapps: mklibs
+mkapps:
+	$(MAKE) copyfiles
+	$(MAKE) mklibs
 	$(MAKE) -Cplatform --eval="OBJECT=$(CLIBOBJECT)" --eval="FINAL=1"
 
 BUILDING_DLL = BUILDING_DLL=-D__BUILDING_LSCRTL_DLL

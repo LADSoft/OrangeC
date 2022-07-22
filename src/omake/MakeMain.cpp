@@ -679,6 +679,5 @@ int MakeMain::Run(int argc, char** argv)
     {
         OS::SetWorkingDir(cwd);
     }
-    Spawner::WaitForDone();
     return rv;
 }

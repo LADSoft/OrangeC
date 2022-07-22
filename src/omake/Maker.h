@@ -33,6 +33,7 @@
 #include "Depends.h"
 
 class Variable;
+class Runner;
 
 class Maker
 {
@@ -51,6 +52,7 @@ class Maker
     static std::string GetFullName(std::string name);
 
   protected:
+    static void CallRunner(Runner&& runner, Depends* depend, EnvironmentStrings* env, bool keepGoing, std::promise<int> promise);
     std::unique_ptr<Depends> Dependencies(const std::string& goal, const std::string& preferredPath, Time& timeval, bool err,
                                           std::string file, int line);
     bool ExistsOrMentioned(const std::string& stem, RuleList* ruleList, const std::string& preferredPath, const std::string& dir,

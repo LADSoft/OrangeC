@@ -12,7 +12,7 @@
          omake -DCOMPILER=MS clean -j:%NUMBER_OF_PROCESSORS%
          omake -DCOMPILER=CLANG clean -j:%NUMBER_OF_PROCESSORS%
          omake -DCOMPILER=MINGW64 clean -j:%NUMBER_OF_PROCESSORS%
-         set BUILD_PROFILE=MS
+         set BUILD_PROFILE=MINGW64
          set PARALLEL=%NUMBER_OF_PROCESSORS%
      )
               cd c:\orangec\src

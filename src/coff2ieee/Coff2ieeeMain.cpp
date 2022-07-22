@@ -156,6 +156,5 @@ int Coff2ieeeMain::Run(int argc, char** argv)
             }
         }
     }
-    printf("failed");
     return 1;
 }

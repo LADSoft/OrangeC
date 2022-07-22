@@ -25,10 +25,11 @@
 #ifndef RULE_H
 #define RULE_H
 
+#include "Spawner.h"
+#include "Semaphores.h"
 #include <string>
 #include <list>
 #include <map>
-#include "Spawner.h"
 #include <memory>
 
 class CommandContainer
@@ -71,7 +72,6 @@ class Rule
     bool IsPrecious() const { return precious; }
     std::string File() const { return file; }
     int Line() const { return lineno; }
-
   private:
     std::string target;
     std::string prerequisites;
@@ -122,17 +122,17 @@ class RuleList
     bool IsUpToDate();
     bool IsBuilt() { return isBuilt; }
     void SetBuilt();
-    Spawner* GetSpawner() { return spawner; }
-    void SetSpawner(Spawner* spawner) { this->spawner = spawner; }
+    void Wait() { onHold.Wait(); }
+    void Release() { onHold.Post(60000); }
 
   private:
+    Semaphore onHold;
     std::string targetPatternStem;
     std::string target;
     std::string relatedPatternRules;
     std::list<std::unique_ptr<Rule>> rules;
     std::map<std::string, std::unique_ptr<Variable>> specificVariables;
     std::string newerPrerequisites;
-    Spawner* spawner;
     bool doubleColon;
     bool intermediate;
     bool keep;

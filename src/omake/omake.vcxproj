@@ -175,6 +175,7 @@
     <ClInclude Include="os.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="Rule.h" />
+    <ClInclude Include="Runner.h" />
     <ClInclude Include="Spawner.h" />
     <ClInclude Include="Variable.h" />
     <ClInclude Include="IJobServer.h" />

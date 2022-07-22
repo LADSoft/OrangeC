@@ -77,7 +77,7 @@ void Rule::SecondaryEval(RuleList* ruleList)
     }
 }
 RuleList::RuleList(const std::string& Target) :
-    target(Target), doubleColon(false), intermediate(false), keep(false), isBuilt(false), spawner(nullptr)
+    target(Target), doubleColon(false), intermediate(false), keep(false), isBuilt(false), onHold(60000)
 {
 }
 RuleList::~RuleList() {}

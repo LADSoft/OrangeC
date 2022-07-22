@@ -47,6 +47,19 @@ class Semaphore
         handle = sem_open(name.c_str(), O_CREAT, O_RDWR, value);
 #endif
     }
+    Semaphore(int value)
+    {
+// note this works slightly differently from the other constructor...
+#ifdef _WIN32
+        handle = CreateSemaphore(nullptr, 0, value, nullptr);
+        if (!handle)
+        {
+            throw std::runtime_error("CreateSemaphore failed, Error code: " + std::to_string(GetLastError()));
+        }
+#elif defined(__linux__)
+        handle = sem_open("", O_CREAT, O_RDWR, 0);
+#endif
+    }
     Semaphore(const string_type& name) : named(true), semaphoreName(name)
     {
 #ifdef _WIN32

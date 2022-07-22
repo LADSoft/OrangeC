@@ -64,78 +64,15 @@ class OSTakeJobIfNotMake
 };
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
-std::atomic<long> Spawner::runningProcesses;
 bool Spawner::stopAll;
-std::vector<Spawner::SpawnerTracker> Spawner::listedThreads = std::vector<Spawner::SpawnerTracker>();
-unsigned WINFUNC Spawner::Thread(void* cls)
-{
-    Spawner* ths = (Spawner*)cls;
-    // Running processes is atomic so it works no matter what
-    runningProcesses++;
-    ths->RetVal(ths->InternalRun());
-    runningProcesses--;
-    ths->done = true;
-    return 0;
-}
-// Next-gen Spawner::Thread where we use std::promise and std::future to communicate instead of a pre-c++14 version of it.
-void Spawner::thread_run(std::promise<int>&& ret, Spawner* spawner, std::shared_ptr<std::atomic<int>> done_val)
-{
-    runningProcesses++;
-    int value = spawner->InternalRun();
-    ret.set_value(value);
-    runningProcesses--;
-    spawner->done = true;
-    *done_val = 1;
-}
-void Spawner::WaitForDone()
-{
-#ifdef USE_NEW_THREADING
-    KillDone();
-    bool thrd_alive = false;
-    do
-    {
-        thrd_alive = false;
-        for (auto& thrd : listedThreads)
-        {
-            if (!thrd.done)
-            {
-                thrd_alive = true;
-            }
-        }
-        if (thrd_alive)
-        {
-            // Yield our execution fairly to any threads so we don't spinloop, we may want to reconsider this after profiling and
-            // moving to an _mm_pause()
-            std::this_thread::yield();
-        }
-    } while (thrd_alive);
-    KillDone();
-#endif
-}
+
 void Spawner::Run(Command& Commands, OutputType Type, RuleList* RuleListx, Rule* Rulex)
 {
     commands = &Commands;
     outputType = Type;
     ruleList = RuleListx;
     rule = Rulex;
-    if (OS::JobCount() == 1)
-    {
-        // make sure we go in order if this isn't a parallel job...
-        Thread(this);
-    }
-    else
-    {
-#ifdef USE_NEW_THREADING
-        std::promise<int> promise;
-        std::shared_ptr<std::atomic<int>> doneAtomic = std::make_shared<std::atomic<int>>(0);
-        std::shared_future<int> prom_future = promise.get_future();
-        retVal2 = prom_future;
-        std::thread thrd = std::thread(Spawner::thread_run, std::move(promise), this, doneAtomic);
-        listedThreads.emplace_back(SpawnerTracker{std::move(thrd), prom_future, doneAtomic});
-#else
-        OS::CreateThread((void*)Spawner::Thread, (void*)this);
-#endif
-    }
+    retVal = InternalRun();
 }
 int Spawner::InternalRun()
 {

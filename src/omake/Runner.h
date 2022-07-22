@@ -50,8 +50,11 @@ class Runner
     {
     }
     void DeleteOne(Depends* depend);
-    int RunOne(Depends* depend, EnvironmentStrings& env, bool keepGoing);
+    int RunOne(std::list<RuleList*>* ruleStack, Depends* depend, EnvironmentStrings* env, bool keepGoing);
     void CancelOne(Depends* depend);
+
+  protected:
+    static void CallRunner(Runner* runner, std::list<RuleList*>* ruleStack, Depends* depend, EnvironmentStrings* env, bool keepGoing, std::promise<int> promise);
 
   private:
     OutputType outputType;

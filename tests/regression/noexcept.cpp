@@ -51,7 +51,7 @@ public:
 	aa5(int) { printf("hi"); }
 	int r, s, t;
 };
-main()
+int main()
 {
 	printf("%d", std::is_nothrow_constructible<bb1>::value);
 	printf("%d", std::is_nothrow_constructible<bb2>::value);

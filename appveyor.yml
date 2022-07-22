@@ -90,6 +90,7 @@ for:
       environment:
           BUILD_PROFILE: MS
           LSCRTL: YES
+          TESTS: TRUE
 -
       matrix:
             only:

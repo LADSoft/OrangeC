@@ -29,6 +29,7 @@
 #include <unordered_map>
 #include <list>
 #include <set>
+#include <atomic>
 #include "Rule.h"
 #include <memory>
 class Depends

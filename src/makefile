@@ -49,6 +49,7 @@ export _TREETARGET
 export NOMAKEDIR
 
 tools: 
+	@$(MAKE) -f $(_TREEROOT) createdirs
 	@$(MAKE) -f $(_TREEROOT) library
 	@$(MAKE) -f $(_TREEROOT) exefile
 
@@ -79,6 +80,7 @@ buildenv1:
 	@$(MAKE) -f $(_TREEROOT) distribute_clibs_no_binary
 	-copy orc.exe ..\bin
 tools1: buildenv1 
+	@$(MAKE) -f $(_TREEROOT) createdirs
 	@$(MAKE) -f $(_TREEROOT) library
 	@$(MAKE) -f $(_TREEROOT) exefile
 copyexes1: tools1

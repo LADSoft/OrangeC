@@ -81,7 +81,6 @@ class Spawner
         dontRun(DontRun),
         keepResponseFiles(KeepResponseFiles),
         tempNum(1),
-        done(false),
         lineLength(1024 * 1024),
         outputType(o_none),
         commands(nullptr),
@@ -91,8 +90,6 @@ class Spawner
     {
     }
     ~Spawner() {}
-    static unsigned WINFUNC Thread(void* cls);
-    static void thread_run(std::promise<int>&& ret, Spawner* spawner, std::shared_ptr<std::atomic<int>> done_val);
     int InternalRun();
     void Run(Command& Commands, OutputType Type, RuleList* RuleList = nullptr, Rule* Rule = nullptr);
     static void Stop() { stopAll = true; }
@@ -100,22 +97,11 @@ class Spawner
     void SetLineLength(size_t length) { lineLength = length; }
     size_t GetLineLength() const { return lineLength; }
 
-    bool IsDone() const { return done; }
-
     int RetVal()
     {
-#ifdef USE_NEW_THREADING
-        if (retVal2.valid())
-        {
-            return retVal2.get();
-        }
-        return 0;
-#else
         return retVal;
-#endif
     }
 
-    static void WaitForDone();
     static const char escapeStart;
     static const char escapeEnd;
 
@@ -126,20 +112,6 @@ class Spawner
     void RetVal(int val) { retVal = val; }
 
   private:
-    static void KillDone()
-    {
-#ifdef USE_NEW_THREADING
-        for (auto&& threadHolder : listedThreads)
-        {
-            // If the thread is completed, join, otherwise, die, theoretically what we should do is wait for all threads to complete
-            // unless an early termination is performed, in which case we should detach all threads and release all jobs
-            if (threadHolder.done && threadHolder.thread.joinable())
-            {
-                threadHolder.thread.join();
-            }
-        }
-#endif
-    }
     std::deque<std::string> output;
     Command* commands;
     RuleList* ruleList;
@@ -154,25 +126,9 @@ class Spawner
     bool dontRun;
     bool keepResponseFiles;
     int tempNum;
-    bool done;
     int retVal;
-    std::shared_future<int> retVal2;
     OutputType outputType;
     static std::atomic<long> runningProcesses;
     static bool stopAll;
-    // We need to keep this list to terminate everything at the end of the make run
-    struct SpawnerTracker
-    {
-        std::thread thread;
-        std::shared_future<int> returnVal;
-        std::shared_ptr<std::atomic<int>> done;
-        SpawnerTracker(std::thread&& thread, std::shared_future<int> returnVal, std::shared_ptr<std::atomic<int>> done) :
-            thread(std::move(thread)), returnVal(returnVal), done(done)
-        {
-        }
-    };
-    // static thread list for the entire spawner to track what threads are currently in use vs what threads are dead. Used mainly on
-    // cleanup
-    static std::vector<SpawnerTracker> listedThreads;
 };
 #endif

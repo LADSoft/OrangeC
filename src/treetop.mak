@@ -316,9 +316,9 @@ endif
 $(CDIRS): %.dirs :
 	-$(MKDIR) $*$(PATHEXT2)obj$(PATHEXT2)$(OBJ_IND_PATH) 2> $(NULLDEV)
 
-$(LIBS): %.library : $(CDIRS)
+$(LIBS): %.library :
 	$(MAKE) library compile -f $(_TREEROOT) -C$*
-$(EXES): %.exefile :
+$(EXES): %.exefile : library
 	$(MAKE) exefile link -f $(_TREEROOT) -C$*
 
 distribute_self:  cleanDISTRIBUTE
@@ -334,12 +334,14 @@ distribute_clibs:
 makelibdir:
 	-$(MKDIR)  $(_LIBDIR) 2> $(NULLDEV)
 
-library: makelibdir $(LIBS)
+library: $(LIBS)
 
-exefile: makelibdir $(EXES)
+exefile: $(EXES)
 
-localfiles: makelibdir mkdir compile library exefile link
+createdirs: makelibdir mkdir $(CDIRS)
 
+localfiles: createdirs
+	$(MAKE) exefile -f $(_TREEROOT)
 
 %.xcppf: %.cpp
 	clang-format -style=file $< > $@

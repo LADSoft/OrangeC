@@ -21,7 +21,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-
+#include "MakeMain.h"
 #include "Maker.h"
 #include "Variable.h"
 #include "Runner.h"
@@ -596,10 +596,15 @@ void Maker::GetEnvironment(EnvironmentStrings& env)
         }
     }
 }
+void Maker::CallRunner(Runner&& runner, Depends* depend, EnvironmentStrings* env, bool keepGoing, std::promise<int> promise) {
+    std::list<RuleList*> list;
+    promise.set_value(runner.RunOne(&list, depend, env, keepGoing));
+}
 int Maker::RunCommands(bool keepGoing)
 {
     if (RuleContainer::Instance()->Lookup(".NOTPARALLEL") || RuleContainer::Instance()->Lookup(".NO_PARALLEL"))
         OS::PushJobCount(1);
+
     bool stop = false;
     EnvironmentStrings env;
     GetEnvironment(env);
@@ -610,28 +615,53 @@ int Maker::RunCommands(bool keepGoing)
         runner.CancelOne((*it).get());
     }
 
-    int rv;
     OS::JobInit();
-    do
+    std::list<std::future<int>> workingList;
+    std::list<std::thread> workingThreads;
+    int rv = 0;
+    for (auto& i : depends)
     {
-        rv = 0;
-        for (auto it = depends.begin(); (rv <= 0 || keepGoing) && it != depends.end(); ++it)
+        std::promise<int> promise;
+        workingList.push_back(promise.get_future());
+        auto thrd = std::thread(CallRunner, runner, i.get(), &env, keepGoing, std::move(promise));
+        workingThreads.push_back(std::move(thrd));
+        if (MakeMain::jobs.GetValue() == 1)
         {
-            int rv1 = runner.RunOne((*it).get(), env, keepGoing);
+            int rv1 = workingList.back().get();
             if (rv <= 0 && rv1 != 0)
                 rv = rv1;
             if (rv > 0)
             {
-                stop = true;
                 if (!keepGoing)
                 {
                     Spawner::Stop();
                     OS::TerminateAll();
+                    break;
                 }
             }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    } while (rv < 0);
+    }
+    if (MakeMain::jobs.GetValue() != 1)
+    {
+        for (auto&& w : workingList)
+        {
+            int rv1 = w.get();
+            if (rv <= 0 && rv1 != 0)
+                rv = rv1;
+            if (rv > 0)
+            {
+                if (!keepGoing)
+                {
+                    Spawner::Stop();
+                    OS::TerminateAll();
+                    break;
+                }
+            }
+        }
+    }
+
+    for (auto&& w : workingThreads)
+        w.join();
     OS::JobRundown();
     for (auto& d : depends)
     {

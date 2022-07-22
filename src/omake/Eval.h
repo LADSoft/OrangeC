@@ -47,6 +47,16 @@ class Eval
     static void AddVPath(const std::string& pattern, const std::string& dirs) { vpaths[pattern] = dirs; }
     static void RemoveVPath(const std::string& pattern);
     static void RemoveAllVPaths() { vpaths.clear(); }
+    static void SetRuleStack(std::list<RuleList*>& list)
+    {
+        std::lock_guard<decltype(evalLock)> lk(evalLock);
+        ruleStack = list;
+    }
+    static void ClearRuleStack()
+    {
+        std::lock_guard<decltype(evalLock)> lk(evalLock);
+        ruleStack.clear();
+    }
     static void PushruleStack(RuleList* ruleList)
     {
         std::lock_guard<decltype(evalLock)> lk(evalLock);

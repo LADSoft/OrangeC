@@ -81,6 +81,9 @@
     <ClInclude Include="Spawner.h">
       <Filter>Header</Filter>
     </ClInclude>
+    <ClInclude Include="Runner.h">
+      <Filter>Header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header">

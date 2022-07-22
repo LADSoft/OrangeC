@@ -22,6 +22,7 @@
  *
  */
 
+#include "MakeMain.h"
 #include "Runner.h"
 #include "Depends.h"
 #include "Eval.h"
@@ -41,101 +42,104 @@ void Runner::DeleteOne(Depends* depend)
     if (depend->ShouldDelete())
         OS::RemoveFile(depend->GetGoal());
 }
-int Runner::RunOne(Depends* depend, EnvironmentStrings& env, bool keepGoing)
+void Runner::CallRunner(Runner* runner, std::list<RuleList*>* list, Depends* depend, EnvironmentStrings* env, bool keepGoing, std::promise<int> promise) {
+    auto retval = runner->RunOne(list, depend, env, keepGoing);
+    promise.set_value(retval);
+}
+int Runner::RunOne(std::list<RuleList*>* ruleStack_in, Depends* depend, EnvironmentStrings* env, bool keepGoing)
 {
-    int rv = 0;
     RuleList* rl = depend->GetRuleList();
-    Eval::PushruleStack(rl);
-    if (!rl->GetSpawner())
+    if (rl->IsBuilt())
     {
-        bool stop = false;
-        bool cantbuild = false;
-        for (auto& d : *depend)
+        rl->Wait();
+        return 0;
+    }
+    rl->SetBuilt();
+    auto ruleStack(*ruleStack_in);
+    ruleStack.push_back(rl);
+    std::list<std::future<int>> workingList;
+    std::list<std::thread> workingThreads;
+    int rv = 0;
+    bool stop = false;
+    for (auto& i : *depend)
+    {
+        std::promise<int> promise;
+        workingList.push_back(promise.get_future());
+        auto thrd = std::thread(CallRunner, this, &ruleStack, i.get(), env, keepGoing, std::move(promise));
+        workingThreads.push_back(std::move(thrd));
+        if (MakeMain::jobs.GetValue() == 1)
         {
-            int rv1;
-            if ((rv1 = RunOne(d.get(), env, keepGoing)))
+            int rv1 = workingList.back().get();
+            if (rv <= 0 && rv1 != 0)
+                rv = rv1;
+            if (rv > 0)
             {
-                if (rv <= 0 && rv1 != 0)
-                    rv = rv1;
-                if (rv > 0)
+                if (!keepGoing)
                 {
                     stop = true;
-                    if (!keepGoing)
-                    {
-                        Eval::PopruleStack();
-                        return rv;
-                    }
+                    Spawner::Stop();
+                    OS::TerminateAll();
+                    break;
                 }
             }
         }
-        if (stop)
+    }
+    if (MakeMain::jobs.GetValue() != 1)
+    {
+        for (auto&& w : workingList)
         {
-            Eval::PopruleStack();
-            return 1;
-        }
-        if (rv < 0)
-        {
-            Eval::PopruleStack();
-            return -1;
-        }
-        if (cantbuild || rl->IsBuilt())
-        {
-            Eval::PopruleStack();
-            return 0;
-        }
-        if (touch)
-        {
-            rl->Touch(OS::GetCurrentTime());
-        }
-        bool sil = silent;
-        bool ig = ignoreResults;
-        bool precious = false;
-        bool make = RuleContainer::Instance()->OnList(depend->GetGoal(), ".RECURSIVE");
-        bool oneShell = RuleContainer::Instance()->Lookup(".ONESHELL") != nullptr;
-        bool posix = RuleContainer::Instance()->Lookup(".POSIX") != nullptr;
-        if (!sil)
-            sil = RuleContainer::Instance()->OnList(depend->GetGoal(), ".SILENT") || RuleContainer::Instance()->NoList(".SILENT");
-        if (!ig)
-            ig = RuleContainer::Instance()->OnList(depend->GetGoal(), ".IGNORE") || RuleContainer::Instance()->NoList(".IGNORE");
-        if (depend->GetRule())
-        {
-            ig |= depend->GetRule()->IsIgnore();
-            sil |= depend->GetRule()->IsSilent();
-            precious = depend->GetRule()->IsPrecious();
-            make |= depend->GetRule()->IsMake();
-            if (precious)
-                depend->Precious();
-        }
-        if (depend->GetRule() && depend->GetRule()->GetCommands())
-        {
-            Spawner* sp = new Spawner(env, ig, sil, oneShell, posix, displayOnly && !make, keepResponseFiles);
-            rl->SetSpawner(sp);
-            sp->Run(*depend->GetRule()->GetCommands(), outputType, rl, nullptr);
-            if (sp->IsDone())
-                goto join;
-            rv = -1;
-        }
-        else
-        {
-            rl->SetSpawner((Spawner*)-1);
-            rl->SetBuilt();
-            rv = 0;
+            int rv1 = w.get();
+            if (rv <= 0 && rv1 != 0)
+                rv = rv1;
+            if (rv > 0)
+            {
+                stop = true;
+                if (!keepGoing)
+                {
+                    Spawner::Stop();
+                    OS::TerminateAll();
+                    break;
+                }
+            }
         }
     }
-    else if (rl->GetSpawner() == (Spawner*)-1)
+    for (auto&& w : workingThreads)
+        w.join();
+    if (stop)
     {
-        rv = 0;
-        rl->SetBuilt();
+        return 1;
     }
-    else if (!rl->GetSpawner()->IsDone())
+    if (touch)
     {
-        rv = -1;
+        rl->Touch(OS::GetCurrentTime());
     }
-    else
+    bool sil = silent;
+    bool ig = ignoreResults;
+    bool precious = false;
+    bool make = RuleContainer::Instance()->OnList(depend->GetGoal(), ".RECURSIVE");
+    bool oneShell = RuleContainer::Instance()->Lookup(".ONESHELL") != nullptr;
+    bool posix = RuleContainer::Instance()->Lookup(".POSIX") != nullptr;
+    if (!sil)
+        sil = RuleContainer::Instance()->OnList(depend->GetGoal(), ".SILENT") || RuleContainer::Instance()->NoList(".SILENT");
+    if (!ig)
+        ig = RuleContainer::Instance()->OnList(depend->GetGoal(), ".IGNORE") || RuleContainer::Instance()->NoList(".IGNORE");
+    if (depend->GetRule())
     {
-    join:
-        rl->SetBuilt();
-        rv = rl->GetSpawner()->RetVal();
+        ig |= depend->GetRule()->IsIgnore();
+        sil |= depend->GetRule()->IsSilent();
+        precious = depend->GetRule()->IsPrecious();
+        make |= depend->GetRule()->IsMake();
+        if (precious)
+            depend->Precious();
+    }
+    if (depend->GetRule() && depend->GetRule()->GetCommands())
+    {
+
+        Eval::SetRuleStack(ruleStack);
+        Spawner sp(*env, ig, sil, oneShell, posix, displayOnly && !make, keepResponseFiles);
+        sp.Run(*depend->GetRule()->GetCommands(), outputType, rl, nullptr);
+        Eval::ClearRuleStack();
+        rv = sp.RetVal();
         if (rv)
         {
             std::string b = Utils::NumberToString(rv);
@@ -144,19 +148,21 @@ int Runner::RunOne(Depends* depend, EnvironmentStrings& env, bool keepGoing)
                 OS::RemoveFile(depend->GetGoal());
                 std::cout << std::endl;
                 Eval::error("commands returned error code " + b + " '" + depend->GetGoal() + "' removed",
-                            depend->GetRule()->GetCommands()->GetFile(), depend->GetRule()->GetCommands()->GetLine());
+                    depend->GetRule()->GetCommands()->GetFile(), depend->GetRule()->GetCommands()->GetLine());
             }
             else
             {
                 std::cout << std::endl;
                 Eval::error("commands returned error code " + b, depend->GetRule()->GetCommands()->GetFile(),
-                            depend->GetRule()->GetCommands()->GetLine());
+                    depend->GetRule()->GetCommands()->GetLine());
             }
         }
-        delete rl->GetSpawner();
-        rl->SetSpawner((Spawner*)-1);
     }
-    Eval::PopruleStack();
+    else
+    {
+        rv = 0;
+    }
+    rl->Release();
     return rv;
 }
 void Runner::CancelOne(Depends* depend)

@@ -7,7 +7,7 @@ gen.exe: gen.c
 	gen
 
 clean:
-	$(CLEAN)
+	del *.ods
 
 %.ods: %.c
 	occpr --nologo /Q /w /E999 /z$(ORANGEC)\include\c $^

@@ -1158,7 +1158,7 @@ typedef struct _atomicData
     TYPE* tp;
 } ATOMICDATA;
 
-constexpr inline TYPE* basetype(TYPE* a) { auto x = a; return ((x) /*&& (x)->rootType*/ ? (x)->rootType : (x)); }
+constexpr inline TYPE* basetype(TYPE* a) { auto x = a; return ((x && x->rootType) ? (x)->rootType : (x)); }
 
 constexpr inline bool __isref(TYPE* x) { return (x)->type == bt_lref || (x)->type == bt_rref; }
 constexpr inline bool isref(TYPE* x)
@@ -1178,6 +1178,7 @@ constexpr inline bool isfunction(TYPE* x) { return (__isfunction(basetype(x))); 
 
 constexpr inline bool isfuncptr(TYPE* x) { return (ispointer(x) && basetype(x)->btp && isfunction(basetype(x)->btp)); }
 constexpr inline bool __isstructured(TYPE* x) { return ((x)->type == bt_class || (x)->type == bt_struct || (x)->type == bt_union); }
+
 constexpr inline bool isstructured(TYPE* x) { return (__isstructured(basetype(x))); }
 
 }  // namespace Parser

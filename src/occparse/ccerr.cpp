@@ -354,6 +354,9 @@ bool IsNothrowError(int err)
         case ERR_NO_APPROPRIATE_CONSTRUCTOR:
         case ERR_NAME_IS_NOT_A_MEMBER_OF_NAME:
         case ERR_CALL_OF_NONFUNCTION:
+        case ERR_CANNOT_CONVERT_TYPE:
+        case ERR_ILL_STRUCTURE_ASSIGNMENT:
+        case ERR_ILL_STRUCTURE_OPERATION:
             return true;
         default:
             return false;

@@ -4983,7 +4983,6 @@ static void doNames(SYMBOL* sym)
         doNames(sym->sb->parentClass);
     SetLinkerNames(sym, lk_cdecl);
 }
-int count3;
 SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, int toErr,
                               bool maybeConversion, bool toInstantiate, int flags)
 {

@@ -906,7 +906,10 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
                         }
                         else if (*name == '#')
                         {
-                            name = unmang1(p, name, last, false);
+
+                            auto name1 = unmang1(p, name, last, false);
+                            v -= name1 - name - 1;
+                            name = name1;
                             p += strlen(p);
                         }
                         else

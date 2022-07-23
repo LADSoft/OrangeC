@@ -70,9 +70,10 @@ bool Include::Parse(const std::string& name, bool ignoreOk, bool MakeFiles)
             if (buf[0])
             {
                 inputFile += buf;
+                inputFile += "\n";
             }
         }
-        Parser p(inputFile, name, 1);
+        Parser p(inputFile, "con:", 1);
         if (MakeFiles)
             p.SetIgnoreFirstGoal();
         rv = p.Parse();
@@ -163,7 +164,14 @@ bool Include::AddFileList(const std::string& name, bool ignoreOk, bool MakeFile)
     while (!iname.empty())
     {
         std::string current = Eval::ExtractFirst(iname, seps);
-        cmdFiles.AddFromPath(current, includeDirs);
+        if (current == "-")
+        {
+           cmdFiles.Add(current);
+        }
+        else
+        {
+            cmdFiles.AddFromPath(current, includeDirs);
+        }
     }
     for (auto it = cmdFiles.FileNameBegin(); rv && it != cmdFiles.FileNameEnd(); ++it)
     {

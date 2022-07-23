@@ -2928,11 +2928,6 @@ bool resolveToDeclaration(LEXLIST* lex, bool structured)
                 break;
         }
     lex = getsym();
-    if (MATCHKW(lex, begin))
-    {
-        prevsym(placeholder);
-        return false;
-    }
     while (MATCHKW(lex, classsel))
     {
         lex = getsym();
@@ -2960,6 +2955,11 @@ bool resolveToDeclaration(LEXLIST* lex, bool structured)
             }
             lex = getsym();
         }
+    }
+    if (MATCHKW(lex, begin))
+    {
+        prevsym(placeholder);
+        return false;
     }
     if (MATCHKW(lex, openpa))
     {
@@ -3846,7 +3846,6 @@ void parseNoexcept(SYMBOL* funcsp)
         dontRegisterTemplate--;
     }
 }
-int count4;
 LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
 {
     int oldNoexcept = funcsp->sb->noExcept;

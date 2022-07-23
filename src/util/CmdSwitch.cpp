@@ -300,7 +300,7 @@ CmdSwitchBase* CmdSwitchParser::Find(const char* name, bool useLongName, bool to
                 }
             }
         }
-        if (toErr || longErr)
+        if (toErr || (longErr && max > 1))
         {
             if (toErr || bigmatch.size())
             {

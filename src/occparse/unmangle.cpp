@@ -569,7 +569,6 @@ char* unmangleExpression(char* dest, const char** name)
     *dest = 0;
     return dest;
 }
-int count3;
 static const char* unmangTemplate(char* buf, const char* name, const char* last)
 {
     if (*name == '#')

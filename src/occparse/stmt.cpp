@@ -3846,7 +3846,6 @@ void parseNoexcept(SYMBOL* funcsp)
         dontRegisterTemplate--;
     }
 }
-int count4;
 LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
 {
     int oldNoexcept = funcsp->sb->noExcept;

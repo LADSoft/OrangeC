@@ -1049,7 +1049,6 @@ bool GetTemplateArgumentName(TEMPLATEPARAMLIST* params, std::string& result, boo
                         return false;
                     result += 'c';
                     *(mangleType(buf, (TYPE*)dflt, true)) = 0;
-//                    doType(buf, (TYPE*)dflt);
                     break;
                 case kw_int:
                     result += 'i';

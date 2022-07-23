@@ -256,7 +256,7 @@ class CmdSwitchParser
         return *this;
     }
 
-    CmdSwitchBase* Find(const char* sw, bool useLongNames, bool toErr);
+    CmdSwitchBase* Find(const char* sw, bool useLongNames, bool toErr, bool longErr);
 
   protected:
     void ScanEnv(char* output, size_t len, const char* string);

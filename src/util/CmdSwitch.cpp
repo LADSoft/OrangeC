@@ -275,7 +275,7 @@ char* CmdSwitchFile::GetStr(char* data)
     argv[argc++] = x;
     return data;
 }
-CmdSwitchBase* CmdSwitchParser::Find(const char* name, bool useLongName, bool toErr = true)
+CmdSwitchBase* CmdSwitchParser::Find(const char* name, bool useLongName, bool toErr = true, bool longErr = false)
 {
 
     if (useLongName)
@@ -287,25 +287,25 @@ CmdSwitchBase* CmdSwitchParser::Find(const char* name, bool useLongName, bool to
             s = strchr(name, ',');
         if (s && s - name < max)
             max = s - name;
-        for (int i = max; i >= 1; i--)
+        for (auto s : switches)
         {
-            for (auto s : switches)
+            for (auto&& s1 : s->GetLongNames())
             {
-                for (auto&& s1 : s->GetLongNames())
+                if (!strnicmp(name, s1.c_str(), max))
                 {
-                    if (!strnicmp(name, s1.c_str(), i))
-                    {
-                        if (i == max && s1.size() == max)
-                            return s;
-                        else if (!bigmatch.size())
-                            bigmatch = s1;
-                    }
+                    if (s1.size() == max)
+                        return s;
+                    else if (!bigmatch.size())
+                        bigmatch = s1;
                 }
             }
         }
-        if (toErr)
+        if (toErr || longErr)
         {
-            std::cerr << "Unknown switch '--" << name << "'" << std::endl;
+            if (toErr || bigmatch.size())
+            {
+                std::cerr << "Unknown switch '--" << name << "'" << std::endl;
+            }
             if (bigmatch.size())
             {
                 std::cerr << "   Did you mean '--" << bigmatch << "'?" << std::endl;
@@ -348,7 +348,7 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
             bool longName = data[1] == '-';
             data += 1 + longName;
             // this next line does a preliminary scan of a single-dash arg to see if it is a long name...
-            longName |= !longName && Find(data, true, false);
+            longName |= !longName && Find(data, true, false, true);
             bool shifted = false;
             while (data[0] && !shifted)
             {

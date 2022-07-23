@@ -873,6 +873,14 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
                             *p++ = ':';
                             *p++ = ':';
                         }
+                        else if (*name == '#')
+                        {
+
+                            auto name1 = unmang1(p, name, last, false);
+                            v -= name1 - name - 1;
+                            name = name1;
+                            p += strlen(p);
+                        }
                         else
                             *p++ = *name++;
                         *p = 0;
@@ -903,11 +911,11 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
                 }
                 if (buf3[0])
                 {
-                    sprintf(buf, "%s((%s)%s)", buf1, buf2, buf3);
+                    printf(buf, "%s((%s)%s)", buf1, buf2, buf3);
                 }
                 else
                 {
-                    sprintf(buf, "%s %s", buf1, buf2);
+                    printf(buf, "%s %s", buf1, buf2);
                 }
                 break;
             case 'n':

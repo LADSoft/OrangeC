@@ -33,11 +33,11 @@ typedef std::chrono::nanoseconds ns;
 void f1()
 {
     time_point t0 = Clock::now();
-    assert(m.try_lock_for(ms(300)) == true);
+    assert(m.try_lock_for(ms(1000/*DAL was 300*/)) == true);
     time_point t1 = Clock::now();
     m.unlock();
-    ns d = t1 - t0 - ms(250);
-    assert(d < ms(50));  // within 50ms
+    ns d = t1 - t0 - ms(1000 /*DAL was 250*/);
+    assert(d < ms(1000/*DAL was 50*/));  // within 50ms
 }
 
 void f2()
@@ -46,7 +46,7 @@ void f2()
     assert(m.try_lock_for(ms(250)) == false);
     time_point t1 = Clock::now();
     ns d = t1 - t0 - ms(250);
-    assert(d < ms(50));  // within 50ms
+    assert(d < ms(1000/*DAL was 50*/));  // within 50ms
 }
 
 int main(int, char**)
@@ -61,7 +61,7 @@ int main(int, char**)
     {
         m.lock();
         std::thread t(f2);
-        std::this_thread::sleep_for(ms(300));
+        std::this_thread::sleep_for(ms(1000/*DAL WAS 300*/));
         m.unlock();
         t.join();
     }

@@ -5,7 +5,6 @@ OrangeC Compiler And Tool Chain
 
 Project Build Status:
 [![Build status Appveyor](https://ci.appveyor.com/api/projects/status/4ts7bsgas67osyht?svg=true)](https://ci.appveyor.com/project/LADSoft/orangec)
-[![Build status Travis-CI](https://travis-ci.com/LADSoft/OrangeC.svg?branch=master)](https://travis-ci.com/LADSoft/OrangeC)
 Documentation status: 
 [![Documentation Status](https://readthedocs.org/projects/orangec/badge/?version=latest)](http://orangec.readthedocs.io/en/latest/Tools/)
 
@@ -17,6 +16,9 @@ Orange C is currently a Win32 C++ compiler.   Long term it is going to be retarg
 The Orange C package also includes a C compiler for .Net, which compiles to MSIL/CIL.   It is an offshoot of Orange C that is retargeted for .NET.   Documentation may be found here: [OCCIL documentation](doc/occil.md)
 
 Source Code for Orange C is released under the GNU General Public License version 3.
+
+The tools in this package that aren't specific to this toolchain are also available in standalone repositories.   This includes the [ORC resource compiler](https://www.github.com/LADSoft/ORC), [OMAKE makefile utility](https://www.github.com/LADSoft/OMAKE), and a [C++ library to generate and parse .NET assemblies](https://www.github.com/LADSoft/DotNetPELib).
+ 
 
 This compiler comes in an install package with an IDE suitable for developing WIN32 programs.  Help files are included; the source format for the help files is HELPSCRIBBLE's HSC format.
 

@@ -77,12 +77,12 @@
                   )
                   cd ..\tests\occpr
                   REM  generate code
-                  omake -j:1
+                  omake
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
                   REM  analyze
-                  omake > q
+                  omake -j:1
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )

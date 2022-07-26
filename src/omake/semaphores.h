@@ -3,16 +3,18 @@
 #    define NOMINMAX
 #    include <windows.h>
 #elif defined(__linux__)
-#    pragma error "This platform is unsupported due to POSIX semaphores being legitimately several times worse than Windows ones"
+#    include <semaphore.h>
+#    pragma warning \
+        "This platform is unsupported for named sempahores due to POSIX semaphores (named ones) being legitimately several times worse than Windows ones"
 #else
 #    pragma error "Your platform is currently not supported, contact author with semaphore implementation to get it in"
 #endif
+#include <cassert>
 #include <string>
 #include <iostream>
 #include <chrono>
 class Semaphore
 {
-
 #ifdef _WIN32
     using semaphore_type = HANDLE;
     using semaphore_pointer_type = HANDLE;
@@ -28,7 +30,7 @@ class Semaphore
 #else
     using string_type = std::string;
 #endif
-    semaphore_pointer_type handle = nullptr;
+    semaphore_type handle;
     bool named = false;
     bool null = false;
     string_type semaphoreName;
@@ -49,6 +51,7 @@ class Semaphore
     }
     Semaphore(int value)
     {
+        // TODO: in C++20 move to std::counting_semaphore and banish this away back to pure atomics instead of syscalls
 // note this works slightly differently from the other constructor...
 #ifdef _WIN32
         handle = CreateSemaphore(nullptr, 0, value, nullptr);
@@ -57,7 +60,12 @@ class Semaphore
             throw std::runtime_error("CreateSemaphore failed, Error code: " + std::to_string(GetLastError()));
         }
 #elif defined(__linux__)
-        handle = sem_open("", O_CREAT, O_RDWR, 0);
+        // 0 in this case means this is shared internally, not externally
+        int ret = sem_init(&handle, 0, value);
+        if (!ret)
+        {
+            throw std::runtime_error("Semaphore init failed, errno is: " + std::to_string(errno));
+        }
 #endif
     }
     Semaphore(const string_type& name) : named(true), semaphoreName(name)
@@ -72,6 +80,10 @@ class Semaphore
     }
     Semaphore& operator=(const Semaphore& other)
     {
+        if (!other.named)
+        {
+            throw std::runtime_error("Cannot copy an unnamed semaphore");
+        }
         if (this != &other)
         {
             semaphoreName = other.semaphoreName;
@@ -86,6 +98,10 @@ class Semaphore
     }
     Semaphore& operator=(Semaphore&& other)
     {
+        if (!other.named)
+        {
+            throw std::runtime_error("Cannot move an unnamed semaphore");
+        }
         if (this != &other)
         {
             CloseHandle(handle);

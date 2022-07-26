@@ -89,6 +89,9 @@ std::unexpected_handler _RTL_FUNC std::set_unexpected(std::unexpected_handler __
     }
     return rv;
 }
+std::unexpected_handler _RTL_FUNC std::get_unexpected() {
+    return __unexpected;
+}
 extern "C" void _RTL_FUNC __call_unexpected(std::exception_ptr *e)
 {
     try

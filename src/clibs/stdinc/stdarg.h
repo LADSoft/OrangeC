@@ -73,7 +73,7 @@ typedef void* va_list;
 
 #endif
 
-#if __STDC_VERSION__ >= 199901L
+#if __STDC_VERSION__ >= 199901L || __cplusplus >= 201103L
 #    define va_copy(ap_d, ap_s) (void)(ap_d = ap_s)
 #endif
 

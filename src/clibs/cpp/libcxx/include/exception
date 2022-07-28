@@ -23,6 +23,7 @@ extern void terminate( );
 
 typedef void (*unexpected_handler) ();
 extern unexpected_handler set_unexpected( unexpected_handler f)  __NOTHROW ;
+extern unexpected_handler get_unexpected() __NOTHROW;
 extern void unexpected();
 
 extern bool uncaught_exception();

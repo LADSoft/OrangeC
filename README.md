@@ -17,8 +17,7 @@ The Orange C package also includes a C compiler for .Net, which compiles to MSIL
 
 Source Code for Orange C is released under the GNU General Public License version 3.
 
-The tools in this package that aren't specific to this toolchain are also available in standalone repositories.   This includes the [ORC resource compiler](https://www.github.com/LADSoft/ORC), [OMAKE makefile utility](https://www.github.com/LADSoft/OMAKE), and a [C++ library to generate and parse .NET assemblies](https://www.github.com/LADSoft/DotNetPELib).
- 
+The tools in this package that aren't specific to this toolchain are also available in standalone repositories.   This includes the [ORC resource compiler](https://www.github.com/LADSoft/ORC),[omake makefile utility](https://www.github.com/LADSoft/OMAKE), and a [C++ library to generate and parse .NET assemblies](https://www.github.com/LADSoft/DotNetPELib).
 
 This compiler comes in an install package with an IDE suitable for developing WIN32 programs.  Help files are included; the source format for the help files is HELPSCRIBBLE's HSC format.
 

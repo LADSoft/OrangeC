@@ -38,7 +38,7 @@ class ObjFunction : public ObjType
     // clang-format off
     enum eLinkage { eLabel, eC, eStdcall, ePascal, eMethod };
     // clang-format on
-    ObjFunction(ObjString Name, ObjType* returnType, ObjInt Index) : ObjType(Name, eFunction, returnType, Index), linkage(eLabel) {}
+    ObjFunction(const ObjString& Name, ObjType* returnType, ObjInt Index) : ObjType(Name, eFunction, returnType, Index), linkage(eLabel) {}
     virtual ~ObjFunction() {}
     void Add(ObjType* Param)
     {

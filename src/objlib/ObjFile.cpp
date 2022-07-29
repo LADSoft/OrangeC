@@ -63,7 +63,7 @@ void ObjFile::Add(ObjSymbol* Symbol)
             break;
     }
 }
-ObjSection* ObjFile::FindSection(const ObjString Name)
+ObjSection* ObjFile::FindSection(const ObjString& Name)
 {
     for (auto sect : sections)
         if (sect->GetName() == Name)

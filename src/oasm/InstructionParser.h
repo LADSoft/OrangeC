@@ -80,26 +80,19 @@ class InstructionParser
     static const std::set<std::string>& GetAttExterns() { return attPotentialExterns; }
 
   protected:
-    void RenameRegisters(AsmExprNode* val);
-    AsmExprNode* ExtractReg(AsmExprNode** val);
-    bool MatchesTimes(AsmExprNode* val);
-    AsmExprNode* ExtractTimes(AsmExprNode** val);
-    bool CheckRegs(AsmExprNode* val);
-    void ParseNumeric(int PC);
     bool ParseNumber(int relOfs, int sign, int bits, int needConstant, int tokenPos);
     void Split(const std::string& line, std::vector<std::string>& splt);
     void PreprendSize(std::string& val, int sz);
     std::string RewriteATTArg(const std::string& line);
     std::string RewriteATT(int& op, const std::string& line, int& size1, int& size2);
     bool Tokenize(int& op, int PC, int& size1, int& size2);
-    bool IsNumber();
     enum
     {
         TOKEN_BASE = 0,
         REGISTER_BASE = 1000
     };
     virtual asmError DispatchOpcode(int opcode) = 0;
-    void NextToken(int PC);
+    void InsertTokens(std::string& line, int PC, bool hasBrackets = true);
     enum
     {
         TK_ID = INT_MIN,

@@ -37,6 +37,7 @@
 #include "Token.h"
 
 extern const unsigned BitMasks[32];
+extern bool IsSymbolCharRoutine(const char*, bool);
 
 bool InstructionParser::ParseNumber(int relOfs, int sign, int bits, int needConstant, int tokenPos)
 {
@@ -366,317 +367,6 @@ Instruction* InstructionParser::Parse(const std::string& args, int PC)
     }
     throw new std::runtime_error("Unrecognized opcode");
 }
-void InstructionParser::RenameRegisters(AsmExprNode* val)
-{
-    if (val->GetType() == AsmExprNode::LABEL)
-    {
-        auto test = val->label;
-        std::transform(test.begin(), test.end(), test.begin(), ::tolower);
-        auto it = tokenTable.find(test);
-        if (it != tokenTable.end())
-        {
-            int n = it->second;
-            if (n >= REGISTER_BASE)
-            {
-                val->SetType(AsmExprNode::REG);
-                val->ival = n - REGISTER_BASE;
-            }
-        }
-    }
-    else
-    {
-        if (val->GetLeft())
-            RenameRegisters(val->GetLeft());
-        if (val->GetRight())
-            RenameRegisters(val->GetRight());
-    }
-}
-AsmExprNode* InstructionParser::ExtractReg(AsmExprNode** val)
-{
-    AsmExprNode* rv = nullptr;
-    switch ((*val)->GetType())
-    {
-        case AsmExprNode::REG:
-            rv = *val;
-            *val = nullptr;
-            break;
-        case AsmExprNode::ADD:
-            if ((*val)->GetLeft()->GetType() == AsmExprNode::REG)
-            {
-                rv = (*val)->GetLeft();
-                std::unique_ptr<AsmExprNode> todel(*val);
-                *val = (*val)->GetRight();
-                todel->SetLeft(nullptr);
-                todel->SetRight(nullptr);
-            }
-            else if ((*val)->GetRight()->GetType() == AsmExprNode::REG)
-            {
-                rv = (*val)->GetRight();
-                std::unique_ptr<AsmExprNode> todel(*val);
-                *val = (*val)->GetLeft();
-                todel->SetLeft(nullptr);
-                todel->SetRight(nullptr);
-            }
-            else
-            {
-                AsmExprNode* v = (*val)->GetLeft();
-                if (!(rv = ExtractReg(&v)))
-                {
-                    v = (*val)->GetRight();
-                    rv = ExtractReg(&v);
-                    if (rv)
-                    {
-                        (*val)->SetRight(v);
-                    }
-                }
-                else
-                {
-                    (*val)->SetLeft(v);
-                }
-            }
-            break;
-        case AsmExprNode::SUB:
-            if ((*val)->GetLeft()->GetType() == AsmExprNode::REG)
-            {
-                rv = (*val)->GetLeft();
-                (*val)->SetLeft((*val)->GetRight());
-                (*val)->SetRight(nullptr);
-                (*val)->SetType(AsmExprNode::NEG);
-            }
-            else
-            {
-                AsmExprNode* v = (*val)->GetLeft();
-                rv = ExtractReg(&v);
-                if (rv)
-                {
-                    (*val)->SetLeft(v);
-                }
-            }
-            break;
-        default:
-            break;
-    }
-    return rv;
-}
-bool InstructionParser::MatchesTimes(AsmExprNode* val)
-{
-    bool rv = false;
-    if (val->GetType() == AsmExprNode::MUL)
-    {
-        rv = val->GetLeft()->GetType() == AsmExprNode::REG && val->GetRight()->GetType() == AsmExprNode::IVAL;
-        if (!rv)
-            rv = val->GetRight()->GetType() == AsmExprNode::REG && val->GetLeft()->GetType() == AsmExprNode::IVAL;
-    }
-    return rv;
-}
-AsmExprNode* InstructionParser::ExtractTimes(AsmExprNode** val)
-{
-    AsmExprNode* rv = nullptr;
-    switch ((*val)->GetType())
-    {
-        case AsmExprNode::MUL:
-            if (MatchesTimes(*val))
-            {
-                rv = *val;
-                *val = nullptr;
-            }
-            break;
-        case AsmExprNode::ADD:
-            if (MatchesTimes((*val)->GetLeft()))
-            {
-                rv = (*val)->GetLeft();
-                std::unique_ptr<AsmExprNode> todel(*val);
-                *val = (*val)->GetRight();
-                todel->SetLeft(nullptr);
-                todel->SetRight(nullptr);
-            }
-            else if (MatchesTimes((*val)->GetRight()))
-            {
-                rv = (*val)->GetRight();
-                std::unique_ptr<AsmExprNode> todel(*val);
-                *val = (*val)->GetLeft();
-                todel->SetLeft(nullptr);
-                todel->SetRight(nullptr);
-            }
-            else
-            {
-                AsmExprNode* v = (*val)->GetLeft();
-                if (!(rv = ExtractTimes(&v)))
-                {
-                    v = (*val)->GetRight();
-                    rv = ExtractTimes(&v);
-                    if (rv)
-                    {
-                        (*val)->SetRight(v);
-                    }
-                }
-                else
-                {
-                    (*val)->SetLeft(v);
-                }
-            }
-            break;
-        case AsmExprNode::SUB:
-            if (MatchesTimes((*val)->GetLeft()))
-            {
-                rv = (*val)->GetLeft();
-                (*val)->SetLeft((*val)->GetRight());
-                (*val)->SetRight(nullptr);
-                (*val)->SetType(AsmExprNode::NEG);
-            }
-            else
-            {
-                AsmExprNode* v = (*val)->GetLeft();
-                rv = ExtractTimes(&v);
-                if (rv)
-                {
-                    (*val)->SetLeft(v);
-                }
-            }
-            break;
-        default:
-            break;
-    }
-    return rv;
-}
-bool InstructionParser::CheckRegs(AsmExprNode* val)
-{
-    bool rv = true;
-    if (val->GetType() == AsmExprNode::REG)
-    {
-        rv = false;
-    }
-    else
-    {
-        if (val->GetLeft())
-            rv &= CheckRegs(val->GetLeft());
-        if (val->GetRight())
-            rv &= CheckRegs(val->GetRight());
-    }
-    return rv;
-}
-void InstructionParser::ParseNumeric(int PC)
-{
-    int plus = -1, times = -1;
-    auto it = tokenTable.find("+");
-    if (it != tokenTable.end())
-        plus = it->second;
-    it = tokenTable.find("*");
-    if (it != tokenTable.end())
-        times = it->second;
-    RenameRegisters(val);
-    if (val->GetType() == AsmExprNode::LABEL)
-    {
-        auto test = val->label;
-        std::transform(test.begin(), test.end(), test.begin(), ::tolower);
-        auto it = tokenTable.find(test);
-
-        InputToken* next;
-        if (it != tokenTable.end())
-        {
-            inputTokens.push_back(new InputToken);
-            next = inputTokens.back();
-            next->type = InputToken::TOKEN;
-            next->val = val;
-            val->SetType(AsmExprNode::IVAL);
-            val->ival = it->second;
-        }
-        else
-        {
-            if (val->IsAbsolute())
-                val = AsmExpr::Eval(val, PC);
-            inputTokens.push_back(new InputToken);
-            next = inputTokens.back();
-            next->type = InputToken::NUMBER;
-            next->val = val;
-        }
-    }
-    else
-    {
-        AsmExprNode* cur = ExtractReg(&val);
-        InputToken* next;
-        bool found = false;
-        if (cur)
-        {
-            found = true;
-            inputTokens.push_back(new InputToken);
-            next = inputTokens.back();
-            next->type = InputToken::REGISTER;
-            next->val = cur;
-            cur->SetType(AsmExprNode::IVAL);
-            if (plus != -1)
-            {
-                while (val && (cur = ExtractReg(&val)))
-                {
-                    inputTokens.push_back(new InputToken);
-                    next = inputTokens.back();
-                    next->type = InputToken::TOKEN;
-                    next->val = new AsmExprNode(plus);
-                    inputTokens.push_back(new InputToken);
-                    next = inputTokens.back();
-                    next->type = InputToken::REGISTER;
-                    next->val = cur;
-                    cur->SetType(AsmExprNode::IVAL);
-                }
-            }
-        }
-        if (times != -1)
-        {
-            while (val && (cur = ExtractTimes(&val)))
-            {
-                if (found)
-                {
-                    inputTokens.push_back(new InputToken);
-                    next = inputTokens.back();
-                    next->type = InputToken::TOKEN;
-                    next->val = new AsmExprNode(plus);
-                }
-                found = true;
-                AsmExprNode* reg;
-                AsmExprNode* mul;
-                if (cur->GetLeft()->GetType() == AsmExprNode::REG)
-                {
-                    reg = cur->GetLeft();
-                    mul = cur->GetRight();
-                }
-                else
-                {
-                    reg = cur->GetRight();
-                    mul = cur->GetLeft();
-                }
-                inputTokens.push_back(new InputToken);
-                next = inputTokens.back();
-                next->type = InputToken::REGISTER;
-                next->val = reg;
-                reg->SetType(AsmExprNode::IVAL);
-                inputTokens.push_back(new InputToken);
-                next = inputTokens.back();
-                next->type = InputToken::TOKEN;
-                next->val = new AsmExprNode(times);
-                inputTokens.push_back(new InputToken);
-                next = inputTokens.back();
-                next->type = InputToken::NUMBER;
-                next->val = mul;
-            }
-        }
-        if (val)
-        {
-            if (val->IsAbsolute())
-                val = AsmExpr::Eval(val, PC);
-            if (found)
-            {
-                inputTokens.push_back(new InputToken);
-                next = inputTokens.back();
-                next->type = InputToken::TOKEN;
-                next->val = new AsmExprNode(plus);
-            }
-            inputTokens.push_back(new InputToken);
-            next = inputTokens.back();
-            next->type = InputToken::NUMBER;
-            next->val = val;
-        }
-    }
-}
 void InstructionParser::Split(const std::string& line, std::vector<std::string>& splt)
 {
     int start = 0;
@@ -705,85 +395,315 @@ void InstructionParser::Split(const std::string& line, std::vector<std::string>&
 }
 bool InstructionParser::Tokenize(int& op, int PC, int& size1, int& size2)
 {
-    if (attSyntax)
-        line = RewriteATT(op, line, size1, size2);
-    while (line.size())
-    {
-        NextToken(PC);
-        InputToken* next;
-        switch (id)
-        {
-            case -1:
-                return false;
-            default:
-                inputTokens.push_back(new InputToken);
-                next = inputTokens.back();
-                next->type = InputToken::TOKEN;
-                next->val = new AsmExprNode(id);
-                break;
-            case TK_NUMERIC:
-                ParseNumeric(PC);
-                next = nullptr;
-                if (val && !CheckRegs(val))
-                {
-                    return false;
-                }
-                break;
-        }
-    }
-    return true;
-}
-bool InstructionParser::IsNumber()
-{
-    return line.size() &&
-           (isdigit(line[0]) || line[0] == '+' || line[0] == '-' || line[0] == '~' || line[0] == '!' || line[0] == '(');
-}
-void InstructionParser::NextToken(int PC)
-{
-    id = -1;
-    bool negate = false;
+    auto plus = tokenTable.find("+");
+
     int npos = line.find_first_not_of(" \t\r\n\v");
     if (npos == std::string::npos)
         line = "";
     else if (npos != 0)
         line = line.substr(npos);
-    if (line.size())
+    if (attSyntax)
+        line = RewriteATT(op, line, size1, size2);
+    size_t n = std::string::npos;
+    size_t m = std::string::npos;
+    char quotechar = 0, lastchar = 0;
+    int i = 0;
+    for (auto c : line)
     {
-        int n = 0;
-        std::string tk;
-        if (line[0] == '"' || line[0] == '\'')
+        if (quotechar)
         {
-            int accum = 0;
-            int i;
-            int quote = line[0];
-            for (i = 1; i < line.size(); i++)
+            if (c == quotechar)
+                quotechar = 0;
+        }
+        else
+        {
+            if (c == '[')
+                if (n == std::string::npos)
+                    n = i;
+            if (c == ':' && n != std::string::npos && m == std::string::npos)
+                n = i;
+            if (c == ']' && m == std::string::npos)
+                m = i;
+            if (c == '\'' || c == '"')
+                quotechar = c;
+        }
+        i++;
+        lastchar = c;
+    }
+
+    std::deque<std::string> regs;
+    if (n != std::string::npos)
+    {
+        n++;
+        if (m == std::string::npos)
+            throw new std::runtime_error("missing ']");
+        m = n;
+        while (m < line.size() && line[m] != ']')
+        {
+            while (m < line.size() && isspace(line[m])) m++;
+            if (IsSymbolCharRoutine(line.c_str() + m, true))
             {
-                if (line[i] == quote)
-                    break;
-                if (i < 5)  // endianness & sizing
-                    accum += line[i] << ((i - 1) * 8);
+                // registter candidate
+                size_t q = m+1;
+                while (q < line.size() && IsSymbolCharRoutine(line.c_str() + q, false))
+                    q++;
+
+                std::string potentialreg = line.substr(m, q-m);
+                std::transform(potentialreg.begin(), potentialreg.end(), potentialreg.begin(), ::tolower);
+                auto it = tokenTable.find(potentialreg);
+                if (it != tokenTable.end() && it->second >= REGISTER_BASE)
+                {
+                    // is registera
+                    regs.push_back(potentialreg);
+                    while (q < line.size() && isspace(line[q])) q++;
+                    if (q < line.size() && line[q] == '*')
+                    {
+                        // scaled register, standard format
+                        size_t r = q+1;
+                        while (r < line.size() && isspace(line[r])) r++;
+                        if (r >= line.size() || !isdigit(line[r]))
+                            throw new std::runtime_error("scale specifier required");
+                        while (r < line.size() && isdigit(line[r])) r++;
+                        regs.back() += line.substr(q, r-q);
+                        line.erase(m, r-m);
+                        r = m - 1;
+                        while (r > n && isspace(line[r])) r--;
+                        if (r >= n)
+                        {
+                            if (line[r] != '+' && !isspace(line[r]))
+                                throw new std::runtime_error("register math not allowed");
+                            if (line[r] == '+');
+                            {
+                                line.erase(r, 1);
+                                m--;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        size_t r = m-1;
+                        while (r >= n && isspace(line[r])) r--;
+                        if (r >= n && line[r] == '*')
+                        {
+                            // scaled register, reverse format
+                            r--;
+                            regs.back() += "*";
+                            while (r >= n && isspace(line[r])) r--;
+                            size_t s = r;
+                            if (q < 0 || !isdigit(line[s]))
+                                throw new std::runtime_error("scale specifier required");
+
+                            while (s > 0 && isdigit(line[s - 1])) s--;
+                            regs.back() += line.substr(s, r -s + 1);
+                            line.erase(r, q-r);
+                            m = r;
+
+                            r--;
+                            while (r > n && isspace(line[r])) r--;
+                            if (r >= n)
+                            {
+                                if (line[r] != '+')
+                                    throw new std::runtime_error("register math not allowed");
+                                if (line[r] == '+');
+                                {
+                                    line.erase(r, 1);
+                                    m--;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // just a register
+                            line.erase(m, q - m);
+                            r = m - 1;
+                            while (r > n && isspace(line[r])) r--;
+                            if (r >= n)
+                            {
+                                if (line[r] != '+' && !isspace(line[r]))
+                                    throw new std::runtime_error("register math not allowed");
+                                if (line[r] == '+');
+                                {
+                                    line.erase(r, 1);
+                                    m--;
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // a label name
+                    m = q;
+                }
             }
-            if (i == line.size())
-                throw new std::runtime_error("Expected end quote");
-            if (i == 1)
-                throw new std::runtime_error("Quoted string is empty");
-            line.erase(0, i + 1);
-            id = TK_NUMERIC;
-            val = new AsmExprNode(accum);
-        }
-        else if (Tokenizer::IsSymbolChar(line.c_str(), true) || IsNumber() || line[0] == '$')
-        {
-            val = asmexpr.Build(line);
-            id = TK_NUMERIC;
-        }
-        else if (ispunct(line[0]))
-        {
-            token = line[0];
-            line.erase(0, 1);
-            auto it = tokenTable.find(token);
-            if (it != tokenTable.end())
+            else
             {
-                id = it->second;
+                if (isdigit(line[m]))
+                    while (isalnum(line[m])) m++;
+                else
+                    m++;
+                // any other character
+            }
+        }
+        if (regs.size() > 2)
+            throw new std::runtime_error("too many index registers");
+        if (regs.size() == 2)
+        {
+            if (regs.begin()->find_first_of('*') != std::string::npos || regs.back() == "esp")
+            {
+                // put the scaled index register last or an esp first
+                regs.push_back(regs.front());
+                regs.pop_front();
+            }
+        }
+    }
+    if (n == std::string::npos)
+    {
+        InsertTokens(line, PC, false);
+    }
+    else
+    {
+        InsertTokens(line.substr(0, n), PC);
+        int first = true;
+        for (auto r : regs)
+        {
+            if (!first)
+            {
+                inputTokens.push_back(new InputToken);
+                auto next = inputTokens.back();
+                next->type = InputToken::TOKEN;
+                next->val = new AsmExprNode(plus->second);
+            }
+            first = false;
+            InsertTokens(r, PC);
+        }
+        size_t m = line.find_first_of(']', n);
+        if (m != n)
+        {
+            size_t q = n;
+            while (isspace(line[q])) q++;
+            if (regs.size() && (line[q] != ']' && line[q] != '+' && line[q] != '-'))
+            {
+                line.insert(n, "+");
+                m++;
+            }
+            InsertTokens(line.substr(n, m- n), PC);
+        }
+        InsertTokens(line.substr(m), PC);
+    }
+
+    return true;
+}
+void InstructionParser::InsertTokens(std::string& line, int PC, bool hasBrackets)
+{
+    char lastChar = 0;
+ 
+    while (line.size())
+    {
+        int npos = line.find_first_not_of(" \t\r\n\v");
+        if (npos == std::string::npos)
+            line = "";
+        else if (npos != 0)
+            line = line.substr(npos);
+        if (line.size())
+        {
+            int n = 0;
+            std::string tk;
+            if (line[0] == '"' || line[0] == '\'')
+            {
+                int accum = 0;
+                int i;
+                int quote = line[0];
+                for (i = 1; i < line.size(); i++)
+                {
+                    if (line[i] == quote)
+                        break;
+                    if (i < 5)  // endianness & sizing
+                        accum += line[i] << ((i - 1) * 8);
+                }
+                if (i == line.size())
+                    throw new std::runtime_error("Expected end quote");
+                if (i == 1)
+                    throw new std::runtime_error("Quoted string is empty");
+                line.erase(0, i + 1);
+                inputTokens.push_back(new InputToken);
+                auto next = inputTokens.back();
+                next->type = InputToken::NUMBER;
+                next->val = new AsmExprNode(accum);
+            }
+            else if (IsSymbolCharRoutine(line.c_str(), true))
+            {
+                while (n < line.size() && IsSymbolCharRoutine(line.c_str()+ n, false)) n++;
+                std::string id = line.substr(0, n);
+                std::transform(id.begin(), id.end(), id.begin(), ::tolower);
+                auto it = tokenTable.find(id);
+                if (it != tokenTable.end())
+                {
+                    if (it->second >= 1000)
+                    {
+                        inputTokens.push_back(new InputToken);
+                        auto next = inputTokens.back();
+                        next->type = InputToken::REGISTER;
+                        next->val = new AsmExprNode(it->second - REGISTER_BASE);
+                    }
+                    else
+                    {
+                        inputTokens.push_back(new InputToken);
+                        auto next = inputTokens.back();
+                        next->type = InputToken::TOKEN;
+                        next->val = new AsmExprNode(it->second);
+                    }
+                    line.erase(0, n);
+                }
+                else
+                {
+                    inputTokens.push_back(new InputToken);
+                    auto next = inputTokens.back();
+                    next->type = InputToken::NUMBER;
+                    auto temp = asmexpr.Build(line);
+                    next->val = temp;
+                    if (temp->IsAbsolute())
+                        next->val = asmexpr.Eval(temp, PC);
+                }
+            }
+            else if (isdigit(line[0]) || line[0] == '+' || line[0] == '-' || line[0] == '(' || line[0] == '$' || line[0] == '~')
+            {
+                if ((lastChar != 0 || hasBrackets) && lastChar != ',' && lastChar != '[' && (line[0] == '+' || line[0] == '-'))
+                {
+                    inputTokens.push_back(new InputToken);
+                    auto next = inputTokens.back();
+                    next->type = InputToken::TOKEN;
+                    next->val = new AsmExprNode(tokenTable.find("+")->second);
+                }
+                inputTokens.push_back(new InputToken);
+                auto next = inputTokens.back();
+                next->type = InputToken::NUMBER;
+                auto temp = asmexpr.Build(line);
+                next->val = temp;
+                if (temp->IsAbsolute())
+                    next->val = asmexpr.Eval(temp, PC);
+            }
+            else if (ispunct(line[0]))
+            {
+                lastChar = line[0];
+                std::string token;
+                token += line[0];
+                line.erase(0, 1);
+                auto it = tokenTable.find(token);
+                if (it != tokenTable.end())
+                {
+                    inputTokens.push_back(new InputToken);
+                    auto next = inputTokens.back();
+                    next->type = InputToken::TOKEN;
+                    next->val = new AsmExprNode(it->second);
+                }
+                else {
+                    throw new std::runtime_error(std::string("Unexpected token: ") + std::string(token));
+                }
+            }
+            else
+            {
+                throw new std::runtime_error(std::string("Unexpected character: ") + line[0]);
             }
         }
     }

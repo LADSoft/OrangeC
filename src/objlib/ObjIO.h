@@ -39,7 +39,7 @@ class ObjIOBase
     // clang-format off
     enum eParseType { eMake, eLink, eBrowse, eAll };
     // clang-format on
-    ObjIOBase(const ObjString Name, bool CaseSensitive) :
+    ObjIOBase(const ObjString& Name, bool CaseSensitive) :
         name(Name),
         translatorName(""),
         bitsPerMAU(8),
@@ -56,7 +56,8 @@ class ObjIOBase
     virtual bool Write(FILE* fil, ObjFile* File, ObjFactory* Factory) = 0;
     virtual ObjFile* Read(FILE* fil, eParseType ParseType, ObjFactory* Factory) = 0;
     ObjString GetTranslatorName() { return translatorName; }
-    void SetTranslatorName(ObjString TranslatorName) { translatorName = TranslatorName; }
+    void SetTranslatorName(ObjString& TranslatorName) { translatorName = TranslatorName; }
+    void SetTranslatorName(ObjString&& TranslatorName) { translatorName = TranslatorName; }
     ObjInt GetBitsPerMAU() { return bitsPerMAU; }
     void SetBitsPerMAU(ObjInt BitsPerMAU) { bitsPerMAU = BitsPerMAU; }
     ObjInt GetMAUS() { return MAUS; }

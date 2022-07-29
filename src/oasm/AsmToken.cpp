@@ -41,11 +41,11 @@ bool NumericToken::ansi;
 bool NumericToken::c99;
 
 unsigned llminus1 = -1;
-static bool IsSymbolStartChar(const char* data)
+static inline bool IsSymbolStartChar(const char* data)
 {
     return *data == '@' || *data == '_' || *data == '?' || *data == '.' || UTF8::IsAlpha(data);
 }
-static bool IsSymbolChar(const char* data)
+static inline bool IsSymbolChar(const char* data)
 {
     return *data == '_' || *data == '$' || *data == '#' || *data == '@' || *data == '~' || *data == '?' || *data == '.' ||
            *data == '&' || UTF8::IsAlnum(data);

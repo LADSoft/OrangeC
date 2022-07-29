@@ -38,7 +38,7 @@ class ObjBrowseInfo : public ObjWrapper
                  eBlockEnd, eTypePrototype, eUsage  };
     enum eQual { eGlobal, eStatic, eExternal, eLocal, ePrototype, eTypeval };
     // clang-format on
-    ObjBrowseInfo(eType Type, eQual Qual, ObjLineNo* Line, ObjInt CharPos, ObjString Data) :
+    ObjBrowseInfo(eType Type, eQual Qual, ObjLineNo* Line, ObjInt CharPos, const ObjString& Data) :
         type(Type), qual(Qual), line(Line), charpos(CharPos), data(Data)
     {
     }
@@ -49,8 +49,8 @@ class ObjBrowseInfo : public ObjWrapper
     eType GetType() { return type; }
     eQual GetQual() { return qual; }
     void SetType(eType Type) { type = Type; }
-    ObjString GetData() { return data; }
-    void SetData(ObjString Data) { data = Data; }
+    ObjString& GetData() { return data; }
+    void SetData(ObjString& Data) { data = Data; }
     ObjLineNo* GetLineNo() { return line; }
     void SetLineNo(ObjLineNo* Line) { line = Line; }
     ObjInt GetCharPos() { return charpos; }

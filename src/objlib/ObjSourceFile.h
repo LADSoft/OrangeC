@@ -33,19 +33,19 @@
 class ObjSourceFile : public ObjWrapper
 {
   public:
-    ObjSourceFile(ObjString Name, ObjInt Index) : name(Name), index(Index)
+    ObjSourceFile(const ObjString& Name, ObjInt Index) : name(Name), index(Index)
     {
         memset(&fileTime, 0, sizeof(fileTime));
         RetrieveFileTime(name);
     }
     virtual ~ObjSourceFile() {}
     ObjString& GetName() { return name; }
-    void SetName(ObjString Name) { name = Name; }
+    void SetName(ObjString& Name) { name = Name; }
     ObjInt GetIndex() { return index; }
     void SetIndex(ObjInt Index) { index = Index; }
     std::tm GetFileTime() { return fileTime; }
     void SetFileTime(std::tm FileTime) { fileTime = FileTime; }
-    void RetrieveFileTime(const ObjString name);
+    void RetrieveFileTime(const ObjString& name);
 
   private:
     ObjString name;

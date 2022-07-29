@@ -29,7 +29,7 @@
 #endif
 #include <ctime>
 #include <sys/stat.h>
-void ObjSourceFile::RetrieveFileTime(const ObjString name)
+void ObjSourceFile::RetrieveFileTime(const ObjString& name)
 {
 #ifndef HAVE_UNISTD_H
     //    struct stat xxstat;

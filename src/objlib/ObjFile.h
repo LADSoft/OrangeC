@@ -46,7 +46,7 @@ class ObjFile : public ObjWrapper
     typedef std::vector<ObjSourceFile*> SourceFileContainer;
 
   public:
-    ObjFile(ObjString Name) : name(Name), inputFile(nullptr), bigEndian(false) { memset(&fileTime, 0, sizeof(fileTime)); }
+    ObjFile(const ObjString& Name) : name(Name), inputFile(nullptr), bigEndian(false) { memset(&fileTime, 0, sizeof(fileTime)); }
     virtual ~ObjFile() {}
     void Add(ObjSection* Section)
     {
@@ -71,7 +71,7 @@ class ObjFile : public ObjWrapper
     }
     void ResolveSymbols(ObjFactory* Factory);
     ObjString& GetName() { return name; }
-    void SetName(ObjString Name) { name = Name; }
+    void SetName(ObjString& Name) { name = Name; }
     ObjSourceFile* GetInputFile() { return inputFile; }
     void SetInputFile(ObjSourceFile* InputFile) { inputFile = InputFile; }
     bool GetBigEndian() { return bigEndian; }
@@ -128,7 +128,7 @@ class ObjFile : public ObjWrapper
     SourceFileIterator SourceFileBegin() { return sourceFiles.begin(); }
     SourceFileIterator SourceFileEnd() { return sourceFiles.end(); }
 
-    ObjSection* FindSection(const ObjString Name);
+    ObjSection* FindSection(const ObjString& Name);
     ObjSection* GetSection(int section) { return sections[section]; }
 
   private:

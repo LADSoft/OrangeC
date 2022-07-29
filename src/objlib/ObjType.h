@@ -85,7 +85,7 @@ class ObjType : public ObjWrapper
         bitCount(0)
     {
     }
-    ObjType(ObjString Name, eType Type, ObjType* BaseType, ObjInt Index) :
+    ObjType(const ObjString& Name, eType Type, ObjType* BaseType, ObjInt Index) :
         name(Name),
         type(Type),
         base(0),
@@ -101,7 +101,7 @@ class ObjType : public ObjWrapper
     }
     virtual ~ObjType() {}
     ObjString& GetName() { return name; }
-    void SetName(ObjString Name) { name = Name; }
+    void SetName(ObjString& Name) { name = Name; }
     ObjInt GetIndex() { return index; }
     void SetIndex(ObjInt Index) { index = Index; }
     eType GetType() { return type; }
@@ -153,13 +153,13 @@ class ObjType : public ObjWrapper
 class ObjField : public ObjWrapper
 {
   public:
-    ObjField(ObjString Name, ObjType* Base, ObjInt ConstVal, ObjInt index) :
+    ObjField(const ObjString& Name, ObjType* Base, ObjInt ConstVal, ObjInt index) :
         name(Name), base(Base), constVal(ConstVal), typeIndex(index)
     {
     }
 
     ObjString& GetName() { return name; }
-    void SetName(ObjString Name) { name = Name; }
+    void SetName(ObjString& Name) { name = Name; }
 
     ObjType* GetBase() { return base; }
     void SetBase(ObjType* Base) { base = Base; }

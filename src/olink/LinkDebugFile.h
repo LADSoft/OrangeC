@@ -53,8 +53,8 @@ class LinkDebugFile
     bool DBOpen(char* name);
     bool WriteFileNames();
     bool WriteLineNumbers();
-    void PushCPPName(ObjString name, int n);
-    int GetSQLNameId(ObjString name);
+    void PushCPPName(const ObjString& name, int n);
+    int GetSQLNameId(const ObjString& name);
     bool WriteNamesTable();
     bool WriteVariableTypes();
     bool WriteVariableNames();

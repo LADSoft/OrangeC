@@ -65,7 +65,7 @@ class ObjIeeeBinary : public ObjIOBase
     };
 
   public:
-    ObjIeeeBinary(const ObjString Name, bool CaseSensitive = true) :
+    ObjIeeeBinary(const ObjString&Name, bool CaseSensitive = true) :
         ObjIOBase(Name, CaseSensitive),
         ioBufferLen(0),
         ioBuffer(0),
@@ -241,7 +241,7 @@ class ObjIeeeBinary : public ObjIOBase
     void WriteBrowseInfo();
     void WriteTrailer();
     void RenderCS();
-    ObjString ToString(const ObjString strng);
+    ObjString ToString(const ObjString& strng);
     static int GetTypeIndex(ObjType* Type);
     ObjString GetSymbolName(const ObjByte* buffer, int* index);
     ObjString ToTime(struct tm time);
@@ -313,7 +313,7 @@ class ObjIeeeAscii : public ObjIOBase
     };
 
   public:
-    ObjIeeeAscii(const ObjString Name, bool CaseSensitive = true) :
+    ObjIeeeAscii(const ObjString& Name, bool CaseSensitive = true) :
         ObjIOBase(Name, CaseSensitive),
         ioBufferLen(0),
         ioBuffer(0),
@@ -463,7 +463,7 @@ class ObjIeeeAscii : public ObjIOBase
         GatherCS(cstr);
         bufferup(cstr, strlen(cstr));
     }
-    void RenderString(const ObjString strng) { RenderCstr(strng.c_str()); }
+    void RenderString(const ObjString& strng) { RenderCstr(strng.c_str()); }
     static std::map<const char*, ParseData*, ParseDataLT> parseTree;
     typedef std::vector<ObjSymbol*> SymbolMap;
     typedef std::vector<ObjType*> TypeMap;
@@ -489,7 +489,7 @@ class ObjIeeeAscii : public ObjIOBase
     void WriteBrowseInfo();
     void WriteTrailer();
     void RenderCS();
-    ObjString ToString(const ObjString strng);
+    ObjString ToString(const ObjString& strng);
     ObjString GetTypeIndex(ObjType* Type);
     ObjString GetSymbolName(const char* buffer, int* index);
     ObjString ToTime(struct tm time);
@@ -558,7 +558,7 @@ class ObjIeeeAscii : public ObjIOBase
 class ObjIeee : public ObjIeeeBinary
 {
   public:
-    ObjIeee(const ObjString Name, bool CaseSensitive = true) : ObjIeeeBinary(Name, CaseSensitive) {}
+    ObjIeee(const ObjString& Name, bool CaseSensitive = true) : ObjIeeeBinary(Name, CaseSensitive) {}
     virtual ~ObjIeee() {}
 };
 class ObjIeeeIndexManager : public ObjIndexManager

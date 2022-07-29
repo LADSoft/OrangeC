@@ -55,7 +55,7 @@ class ObjSection : public ObjWrapper
         virt = 0x2000
     };
 
-    ObjSection(ObjString Name, ObjInt Index) :
+    ObjSection(const ObjString& Name, ObjInt Index) :
         name(Name),
         externalName(""),
         alignment(1),
@@ -73,12 +73,12 @@ class ObjSection : public ObjWrapper
     }
     virtual ~ObjSection() {}
     ObjString GetName() const { return name; }
-    void SetName(ObjString Name) { name = Name; }
+    void SetName(ObjString& Name) { name = Name; }
     ObjString GetDisplayName();
     ObjString GetExternalName() { return externalName; }
-    void SetExternalName(ObjString Name) { externalName = Name; }
+    void SetExternalName(ObjString& Name) { externalName = Name; }
     ObjString GetClass() { return sectionClass; }
-    void SetClass(ObjString SectionClass) { sectionClass = SectionClass; }
+    void SetClass(ObjString& SectionClass) { sectionClass = SectionClass; }
     ObjInt GetAlignment() { return alignment; }
     void SetAlignment(ObjInt Alignment) { alignment = Alignment; }
     ObjInt GetQuals() { return quals; }

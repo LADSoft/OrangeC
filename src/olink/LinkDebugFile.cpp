@@ -288,7 +288,7 @@ bool LinkDebugFile::WriteLineNumbers()
     //    linesfull.Stop();
     return true;
 }
-void LinkDebugFile::PushCPPName(ObjString name, int n)
+void LinkDebugFile::PushCPPName(const ObjString& name, int n)
 {
     if (name.find("@") != std::string::npos)
     {
@@ -337,7 +337,7 @@ void LinkDebugFile::PushCPPName(ObjString name, int n)
         }
     }
 }
-int LinkDebugFile::GetSQLNameId(ObjString name)
+int LinkDebugFile::GetSQLNameId(const ObjString& name)
 {
     auto it = names.find(name);
     if (it != names.end())

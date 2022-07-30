@@ -92,7 +92,7 @@ class InstructionParser
         REGISTER_BASE = 1000
     };
     virtual asmError DispatchOpcode(int opcode) = 0;
-    void InsertTokens(std::string& line, int PC, bool hasBrackets = true);
+    void InsertTokens(std::string&& line, int PC, bool hasBrackets = true);
     enum
     {
         TK_ID = INT_MIN,

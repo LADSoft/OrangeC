@@ -559,11 +559,11 @@ bool InstructionParser::Tokenize(int& op, int PC, int& size1, int& size2)
     }
     if (n == std::string::npos)
     {
-        InsertTokens(line, PC, false);
+        InsertTokens(std::move(line), PC, false);
     }
     else
     {
-        InsertTokens(line.substr(0, n), PC);
+        InsertTokens(std::move(line.substr(0, n)), PC);
         int first = true;
         for (auto r : regs)
         {
@@ -575,7 +575,7 @@ bool InstructionParser::Tokenize(int& op, int PC, int& size1, int& size2)
                 next->val = new AsmExprNode(plus->second);
             }
             first = false;
-            InsertTokens(r, PC);
+            InsertTokens(std::move(r), PC);
         }
         size_t m = line.find_first_of(']', n);
         if (m != n)
@@ -587,14 +587,14 @@ bool InstructionParser::Tokenize(int& op, int PC, int& size1, int& size2)
                 line.insert(n, "+");
                 m++;
             }
-            InsertTokens(line.substr(n, m- n), PC);
+            InsertTokens(std::move(line.substr(n, m- n)), PC);
         }
-        InsertTokens(line.substr(m), PC);
+        InsertTokens(std::move(line.substr(m)), PC);
     }
 
     return true;
 }
-void InstructionParser::InsertTokens(std::string& line, int PC, bool hasBrackets)
+void InstructionParser::InsertTokens(std::string&& line, int PC, bool hasBrackets)
 {
     char lastChar = 0;
  

@@ -8,7 +8,6 @@
 //
 // UNSUPPORTED: libcpp-has-no-threads
 // UNSUPPORTED: c++98, c++03, c++11
-
 // FLAKY_TEST.
 
 // <shared_mutex>

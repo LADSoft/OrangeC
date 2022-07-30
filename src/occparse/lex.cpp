@@ -1952,7 +1952,8 @@ void SetAlternateParse(bool set, const std::string& val)
     valid = false;
     if (set)
     {
-        parseStack.push(std::move(ParseHold{std::move(currentLine), (int)(linePointer - (unsigned char*)currentLine.c_str())}));
+        int n = (int)(linePointer - (unsigned char*)currentLine.c_str());
+        parseStack.push(std::move(ParseHold{std::move(currentLine), n}));
         currentLine = val;
         linePointer = (const unsigned char*)currentLine.c_str();
     }

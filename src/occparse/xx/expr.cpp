@@ -95,8 +95,8 @@ void expr_init(void)
     importThunks = nullptr;
     inGetUserConversion = 0;
     inSearchingFunctions = 0;
-    inNothrowHandler = 0;
     argFriend = nullptr;
+    inAssignRHS = 0;
 }
 void thunkForImportTable(EXPRESSION** exp)
 {
@@ -547,6 +547,8 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                         *exp = sym->tp->templateParam->p->byNonType.val;
                     }
                     *tp = sym->tp->templateParam->p->byNonType.tp;
+                    if (!*exp)
+                        *exp = intNode(en_c_i, 0);
                     if ((*tp)->type == bt_templateparam)
                     {
                         TYPE* tp1 = (*tp)->templateParam->p->byClass.val;
@@ -568,9 +570,6 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                                 *tp = rv->tp->templateParam->p->byClass.val;
                         }
                     }
-                    lex = expression_func_type_cast(lex, funcsp, tp, exp, flags | _F_NOEVAL);
-                    if (!*exp)
-                        *exp = intNode(en_c_i, 0);
                     return lex;
                 default:
                     break;
@@ -941,8 +940,6 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                         tp1 = basetype(tp1)->btp;
                     *tp = CopyType(tp1);
                     UpdateRootTypes(*tp);
-                    basetype(*tp)->lref = false;
-                    basetype(*tp)->rref = false;
                 }
                 if (sym->sb && sym->sb->storage_class != sc_overloads)
                 {
@@ -1238,11 +1235,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
             SYMBOL* sp2 = search(overloadNameTab[CI_DESTRUCTOR], (basetype(*tp)->sp)->tp->syms);
             if (sp2)
             {
-                if (flags && _F_IS_NOTHROW)
-                    inNothrowHandler++;
                 callDestructor(basetype(*tp)->sp, nullptr, exp, nullptr, true, false, false, !points);
-                if (flags && _F_IS_NOTHROW)
-                    inNothrowHandler--;
             }
             if (needkw(&lex, openpa))
                 needkw(&lex, closepa);
@@ -1456,7 +1449,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
             if (!sp2)
             {
                 if (!templateNestingCount || !basetype(*tp)->sp->sb->templateLevel)
-                    errorNotMember(basetype(*tp)->sp, nullptr, lex->data->value.s.a ? lex->data->value.s.a : "unknown");
+                    errorNotMember(basetype(*tp)->sp, nullptr, lex->data->value.s.a);
                 lex = getsym();
                 while (ISID(lex))
                 {
@@ -2273,7 +2266,7 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
             {
                 assignmentUsages(p->exp, false);
             }
-            else if (p->tp && isstructured(p->tp))
+            else if (isstructured(p->tp))
             {
                 auto exp3 = p->exp;
                 while (exp3->type == en_void)
@@ -4702,7 +4695,8 @@ static LEXLIST* expression_generic(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                         {
                             if (isconst(next->selector) == isconst(scan->selector) &&
                                 isvolatile(next->selector) == isvolatile(scan->selector) &&
-                                isrestrict(next->selector) == isrestrict(scan->selector))
+                                isrestrict(next->selector) == isrestrict(scan->selector) &&
+                                next->selector->alignment == scan->selector->alignment)
                             {
                                 error(ERR_DUPLICATE_TYPE_IN_GENERIC);
                             }
@@ -4717,7 +4711,8 @@ static LEXLIST* expression_generic(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                         {
                             if (isconst(next->selector) == isconst(selectType) &&
                                 isvolatile(next->selector) == isvolatile(selectType) &&
-                                isrestrict(next->selector) == isrestrict(selectType))
+                                isrestrict(next->selector) == isrestrict(selectType) &&
+                                next->selector->alignment == selectType->alignment)
                             {
                                 if (selectedGeneric && selectedGeneric->selector)
                                     error(ERR_DUPLICATE_TYPE_IN_GENERIC);
@@ -6140,15 +6135,7 @@ static LEXLIST* expression_alignof(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
     lex = getsym();
     if (needkw(&lex, openpa))
     {
-        if (startOfType(lex, nullptr, false))
-        {
-            lex = get_type_id(lex, tp, funcsp, sc_cast, false, true, false);
-        }
-        else
-        {
-            EXPRESSION* exp = nullptr;
-            lex = expression(lex, funcsp, nullptr, tp, &exp, 0);
-        }
+        lex = get_type_id(lex, tp, funcsp, sc_cast, false, true, false);
         needkw(&lex, closepa);
         if (MATCHKW(lex, ellipse))
         {
@@ -6184,9 +6171,9 @@ static LEXLIST* expression_alignof(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
             checkauto(itp, ERR_AUTO_NOT_ALLOWED);
             if (isref(itp))
                 itp = (basetype(itp)->btp);
-            itp = basetype(itp);
-
-            *exp = intNode(en_c_i, getAlign(sc_global, itp));
+            while (itp->array)
+                itp = itp->btp;
+            *exp = intNode(en_c_i, getAlign(sc_global, *tp));
         }
     }
     *tp = &stdint;
@@ -7156,8 +7143,8 @@ static LEXLIST* expression_pm(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
         {
             if (isstructured(*tp) && basetype(tp1)->type == bt_memberptr)
             {
-                if (basetype(*tp)->sp != basetype(tp1)->sp && basetype(*tp)->sp->sb->mainsym != basetype(tp1)->sp &&
-                    basetype(*tp)->sp != basetype(tp1)->sp->sb->mainsym)
+                if ((*tp)->sp != basetype(tp1)->sp && (*tp)->sp->sb->mainsym != basetype(tp1)->sp &&
+                    (*tp)->sp != basetype(tp1)->sp->sb->mainsym)
                 {
                     if (classRefCount(basetype(tp1)->sp, (*tp)->sp) != 1)
                     {
@@ -7176,7 +7163,7 @@ static LEXLIST* expression_pm(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
                 if (isfunction(basetype(tp1)->btp))
                 {
                     FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
-                    if ((basetype(*tp))->sp->sb->vbaseEntries)
+                    if ((*tp)->sp->sb->vbaseEntries)
                     {
                         EXPRESSION* ec = exprNode(en_add, exp1, intNode(en_c_i, getSize(bt_pointer) + getSize(bt_int)));
                         EXPRESSION* ec1;
@@ -7362,6 +7349,7 @@ static LEXLIST* expression_times(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
     }
     return lex;
 }
+
 static LEXLIST* expression_add(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     /* fixme add vlas */
@@ -8031,7 +8019,6 @@ static void GetAssignDestructors (Optimizer::LIST **rv, EXPRESSION *exp)
         }
     }
 }
-
 static LEXLIST* binop(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, enum e_kw kw, enum e_node type,
                       LEXLIST*(nextFunc)(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable,
                                          int flags),
@@ -8210,7 +8197,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                     // call a constructor?
                     if (isstructured(tph))
                     {
-                        EXPRESSION* rv = anonymousVar(sc_auto, tph);
+                        EXPRESSION* rv = eph;
                         TYPE* ctype = tph;
                         callConstructorParam(&ctype, &rv, tpc, epc, true, false, false, false, true);
                         epc = rv;
@@ -8218,7 +8205,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                     }
                     else
                     {
-                        EXPRESSION* rv = anonymousVar(sc_auto, tpc);
+                        EXPRESSION* rv = epc;
                         TYPE* ctype = tpc;
                         callConstructorParam(&ctype, &rv, tph, eph, true, false, false, false, true);
                         eph = rv;
@@ -8514,9 +8501,7 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     else
                     {
                         lex = getsym();
-                        ++inAssignRHS;
                         lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, nullptr, flags);
-                        --inAssignRHS;
                         if (!needkw(&lex, end))
                         {
                             errskim(&lex, skim_end);
@@ -8558,6 +8543,8 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             insertOperatorFunc(selovcl, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags))
         {
             // unallocated var for destructor
+            if (lex && strstr(lex->data->errfile, "q.cpp"))
+                printf("hi");
             if (!inAssignRHS)
             {
                 GetAssignDestructors(&(*exp)->v.func->destructors, *exp);

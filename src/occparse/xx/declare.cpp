@@ -74,7 +74,6 @@ int structLevel;
 Optimizer::LIST* openStructs;
 int parsingTrailingReturnOrUsing;
 int inTypedef;
-int resolvingStructDeclarations;
 
 static int unnamed_tag_id, unnamed_id;
 static char* importFile;
@@ -963,7 +962,6 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                 memmove(&syms[i + 1], &syms[i], sizeof(SYMBOL*) * (j - i));
                 syms[i] = x;
             }
-    ++ resolvingStructDeclarations;
     for (i = 0; i < n; i++)
     {
         SYMBOL* sp = syms[i];
@@ -977,20 +975,12 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                 {
                     if (s->p->tp->type == bt_aggregate)
                     {
-//                        if (recursive)
+                        if (recursive)
                         {
                             for (auto f = s->p->tp->syms->table[0]; f; f = f->next)
                             {
-                                if (!f->p->sb->templateLevel)
-                                {
-                                    basetype(f->p->tp)->btp = ResolveTemplateSelectors(f->p, basetype(f->p->tp)->btp);
-                                    basetype(f->p->tp)->btp = PerformDeferredInitialization(basetype(f->p->tp)->btp, funcsp);
-                                    for (auto a = basetype(f->p->tp)->syms->table[0]; a; a = a->next)
-                                    {
-                                        a->p->tp = ResolveTemplateSelectors(a->p, a->p->tp);
-                                        a->p->tp = PerformDeferredInitialization(a->p->tp, funcsp);
-                                    }
-                                }
+                                basetype(f->p->tp)->btp = ResolveTemplateSelectors(f->p, basetype(f->p->tp)->btp);
+                                basetype(f->p->tp)->btp = PerformDeferredInitialization(basetype(f->p->tp)->btp, funcsp);
                             }
                         }
                     }
@@ -1007,7 +997,6 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
             }
         }
     }
-    -- resolvingStructDeclarations;
     if (!templateNestingCount || instantiatingTemplate)
     {
         for (i = 0; i < n; i++)
@@ -1025,47 +1014,47 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                 hr = hr->next;
             }
         }
-        for (i = 0; i < n; i++)
+    }
+    for (i = 0; i < n; i++)
+    {
+        SYMBOL* sp = syms[i];
+        if (!sp->sb->performedStructInitialization)
         {
-            SYMBOL* sp = syms[i];
-            if (!sp->sb->performedStructInitialization)
+            if (n > 1 && !templateNestingCount)
             {
-                if (n > 1 && !templateNestingCount)
-                {
-                    calculateStructOffsets(sp);
+                calculateStructOffsets(sp);
 
-                    if (Optimizer::cparams.prm_cplusplus)
-                    {
-                        calculateVirtualBaseOffsets(sp);  // undefined in local context
-                        calculateVTabEntries(sp, sp, &sp->sb->vtabEntries, 0);
-                    }
-                }
-                resolveAnonymousUnions(sp);
-                makeFastTable(sp);
-                if (Optimizer::cparams.prm_cplusplus)
-                    deferredInitializeStructMembers(sp);
-            }
-        }
-        for (i = 0; i < n; i++)
-        {
-            if (!syms[i]->sb->performedStructInitialization)
-            {
-                syms[i]->sb->performedStructInitialization = true;
                 if (Optimizer::cparams.prm_cplusplus)
                 {
-                    if (syms[i]->templateParams && !allTemplateArgsSpecified(syms[i], syms[i]->templateParams->next))
-                    {
-                        int oldInstantiatingTemplate = instantiatingTemplate;
-                        instantiatingTemplate = 0;
-                        templateNestingCount++;
-                        deferredInitializeStructFunctions(syms[i]);
-                        templateNestingCount--;
-                        instantiatingTemplate = oldInstantiatingTemplate;
-                    }
-                    else
-                    {
-                        deferredInitializeStructFunctions(syms[i]);
-                    }
+                    calculateVirtualBaseOffsets(sp);  // undefined in local context
+                    calculateVTabEntries(sp, sp, &sp->sb->vtabEntries, 0);
+                }
+            }
+            resolveAnonymousUnions(sp);
+            makeFastTable(sp);
+            if (Optimizer::cparams.prm_cplusplus)
+                deferredInitializeStructMembers(sp);
+        }
+    }
+    for (i = 0; i < n; i++)
+    {
+        if (!syms[i]->sb->performedStructInitialization)
+        {
+            syms[i]->sb->performedStructInitialization = true;
+            if (Optimizer::cparams.prm_cplusplus)
+            {
+                if (syms[i]->templateParams && !allTemplateArgsSpecified(syms[i], syms[i]->templateParams->next))
+                {
+                    int oldInstantiatingTemplate = instantiatingTemplate;
+                    instantiatingTemplate = 0;
+                    templateNestingCount++;
+                    deferredInitializeStructFunctions(syms[i]);
+                    templateNestingCount--;
+                    instantiatingTemplate = oldInstantiatingTemplate;
+                }
+                else
+                {
+                    deferredInitializeStructFunctions(syms[i]);
                 }
             }
         }
@@ -3497,7 +3486,7 @@ static void matchFunctionDeclaration(LEXLIST* lex, SYMBOL* sp, SYMBOL* spo, bool
                     {
                         SYMBOL* spo1 = (SYMBOL*)hro1->p;
                         SYMBOL* sp1 = (SYMBOL*)hr1->p;
-                        if (!comparetypes(spo1->tp, sp1->tp, true) && !sameTemplatePointedTo(spo1->tp, sp1->tp) && !sameTemplateSelector(sp1->tp, spo1->tp))
+                        if (!comparetypes(spo1->tp, sp1->tp, true) && !sameTemplatePointedTo(spo1->tp, sp1->tp))
                         {
                             break;
                         }
@@ -3699,10 +3688,9 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
     bool pastfirst = false;
     bool voiderror = false;
     bool hasellipse = false;
+    HASHTABLE* locals = localNameSpace->valueData->syms;
     LEXLIST* placeholder = lex;
     STRUCTSYM s;
-    NAMESPACEVALUELIST internalNS = {};
-    NAMESPACEVALUEDATA internalNSD = {};
     s.tmpl = nullptr;
     lex = getsym();
     if (*tp == nullptr)
@@ -3711,9 +3699,6 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
     tp1->size = getSize(bt_pointer);
     tp1->sp = sp;
     sp->tp = *tp = tp1;
-    internalNS.next = localNameSpace;
-    internalNS.valueData = &internalNSD;
-    localNameSpace = &internalNS;
     localNameSpace->valueData->syms = tp1->syms = CreateHashTable(1);
     attributes oldAttribs = basisAttribs;
 
@@ -3788,7 +3773,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                             // constructor initialization
                             // will do initialization later...
                         }
-                        localNameSpace = localNameSpace->next;
+                        localNameSpace->valueData->syms = locals;
                         lex = prevsym(placeholder);
                         return lex;
                     }
@@ -4241,7 +4226,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
         }
         skip(&lex, closepa);
     }
-    localNameSpace = localNameSpace->next;
+    localNameSpace->valueData->syms = locals;
     basisAttribs = oldAttribs;
     ParseAttributeSpecifiers(&lex, funcsp, true);
     if (voiderror)
@@ -4451,17 +4436,6 @@ static LEXLIST* getAfterType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** s
                                 parsingTrailingReturnOrUsing++;
                                 lex = get_type_id(lex, &tpx, funcsp, sc_cast, false, true, false);
                                 parsingTrailingReturnOrUsing--;
-                                // weed out temporary syms that were added as part of a decltype; they will be
-                                // reinstated as stackblock syms later
-                                auto hrp = &localNameSpace->valueData->syms->table[0];
-                                while (*hrp)
-                                {
-                                    SYMBOL* sym = (SYMBOL*)(*hrp)->p;
-                                    if (sym->sb->storage_class != sc_parameter)
-                                        *hrp = (*hrp)->next;
-                                    else
-                                        hrp = &(*hrp)->next;
-                                }
                                 if (tpx)
                                 {
                                     if (!isautotype(basetype(*tp)->btp))

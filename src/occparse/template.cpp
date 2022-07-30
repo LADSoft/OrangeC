@@ -6159,6 +6159,30 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
     {
         return true;
     }
+    if (isstructured(P) && !isstructured(A))
+    {
+        // this is basical a poor man's way to do GetOverloadedFunction on a constructor,
+        // with an arithmetic or pointer arg
+        SYMBOL* cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(P)->syms);
+        if (cons)
+        {
+            auto hr = basetype(cons->tp)->syms->table[0];
+            while (hr)
+            {
+                auto hr1 = basetype(hr->p->tp)->syms->table[0];
+                if (hr1->p->sb->thisPtr)
+                {
+                    hr1 = hr1->next;
+                    if (hr1 && (!hr1->next || hr1->next->p->sb->defaulted))
+                    {
+                        if (comparetypes(hr1->p->tp, A, true))
+                            return true;
+                    }
+                }
+                hr = hr->next;
+            }
+        }
+    }
     if (isfuncptr(P) || (isref(P) && isfunction(basetype(P)->btp)))
     {
         if (exp->type == en_func)

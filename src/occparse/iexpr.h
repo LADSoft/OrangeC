@@ -46,7 +46,6 @@ Optimizer::IMODE* make_ioffset(EXPRESSION* node);
 Optimizer::IMODE* make_bf(EXPRESSION* node, Optimizer::IMODE* ap, int size);
 Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags);
 Optimizer::IMODE* gen_unary(SYMBOL* funcsp, EXPRESSION* node, int flags, int size, enum Optimizer::i_ops op);
-Optimizer::IMODE* gen_asrhd(SYMBOL* funcsp, EXPRESSION* node, int flags, int size, enum Optimizer::i_ops op);
 Optimizer::IMODE* gen_binary(SYMBOL* funcsp, EXPRESSION* node, int flags, int size, enum Optimizer::i_ops op);
 Optimizer::IMODE* gen_udivide(SYMBOL* funcsp, EXPRESSION* node, int flags, int size, enum Optimizer::i_ops op, bool mod);
 Optimizer::IMODE* gen_sdivide(SYMBOL* funcsp, EXPRESSION* node, int flags, int size, enum Optimizer::i_ops op, bool mod);

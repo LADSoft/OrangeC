@@ -658,7 +658,6 @@ static void XCExpression(EXPRESSION* node, std::map<int, std::map<int, __xclist*
         case en_lsh:
         case en_arraylsh:
         case en_rsh:
-        case en_rshd:
             /*        case en_dvoid: */
         case en_arraymul:
         case en_arrayadd:

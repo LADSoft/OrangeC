@@ -1928,7 +1928,6 @@ static bool ismath(EXPRESSION* exp)
         case en_lsh:
         case en_arraylsh:
         case en_rsh:
-        case en_rshd:
         case en_arraymul:
         case en_arrayadd:
         case en_arraydiv:

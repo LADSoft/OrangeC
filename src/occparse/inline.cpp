@@ -536,7 +536,6 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case en_lsh:
         case en_arraylsh:
         case en_rsh:
-        case en_rshd:
         case en_assign:
         case en_void:
         case en_voidnz:
@@ -1003,7 +1002,6 @@ static bool sideEffects(EXPRESSION* node)
         case en_lsh:
         case en_arraylsh:
         case en_rsh:
-        case en_rshd:
         case en_void:
         case en_voidnz:
             /*        case en_dvoid: */

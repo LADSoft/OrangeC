@@ -672,32 +672,6 @@ Optimizer::IMODE* gen_unary(SYMBOL* funcsp, EXPRESSION* node, int flags, int siz
 
 /*-------------------------------------------------------------------------*/
 
-Optimizer::IMODE* gen_asrhd(SYMBOL* funcsp, EXPRESSION* node, int flags, int size, enum Optimizer::i_ops op)
-{
-    Optimizer::IMODE *ap, *ap1, *ap2, *ap3;
-    int lab = Optimizer::nextLabel++;
-    long long n;
-    (void)flags;
-    (void)size;
-    n = Optimizer::mod_mask(node->right->v.i);
-    ap = Optimizer::tempreg(natural_size(node->left), 0);
-    ap->offset->sp->pushedtotemp = true;
-    ap3 = gen_expr(funcsp, node->left, F_VOL | F_COMPARE, natural_size(node->left));
-    ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
-    if (ap1 != ap3)
-        Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
-    Optimizer::gen_icode(Optimizer::i_assn, ap, ap1, nullptr);
-    ap3 = gen_expr(funcsp, node->right, F_COMPARE, natural_size(node->right));
-    ap2 = Optimizer::LookupLoadTemp(nullptr, ap3);
-    if (ap2 != ap3)
-        Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
-    DumpIncDec(funcsp);
-    Optimizer::gen_icgoto(Optimizer::i_jge, lab, ap, Optimizer::make_immed(ap->size, 0));
-    Optimizer::gen_icode(Optimizer::i_add, ap, ap, Optimizer::make_immed(ISZ_UINT, n));
-    Optimizer::gen_label(lab);
-    Optimizer::gen_icode(op, ap, ap, ap2);
-    return ap;
-}
 
 /*-------------------------------------------------------------------------*/
 
@@ -3599,9 +3573,6 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
         case en_arraylsh:
             rv = gen_binary(funcsp, node, flags, size, /*Optimizer::i_arraylsh*/ Optimizer::i_lsl);
             break;
-        case en_rshd:
-            rv = gen_asrhd(funcsp, node, flags, size, Optimizer::i_asr);
-            break;
         case en_rsh:
             rv = gen_binary(funcsp, node, flags, size, Optimizer::i_asr);
             break;
@@ -4029,7 +4000,6 @@ int natural_size(EXPRESSION* node)
                 return siz1;
             else
                 return siz0;
-        case en_rshd:
         case en_lsh:
         case en_arraylsh:
         case en_rsh:

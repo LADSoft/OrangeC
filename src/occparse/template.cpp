@@ -7241,11 +7241,11 @@ static bool comparePointerTypes(TYPE* tpo, TYPE* tps)
     }
     return tpo == tps;
 }
-static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLATEPARAMLIST* psym, bool dflt)
+static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLATEPARAMLIST* psym, bool dflt, bool bySpecialization)
 {
     if (porig && psym)
     {
-        if (porig->p->bySpecialization.types)
+        if (bySpecialization && porig->p->bySpecialization.types)
         {
             porig = porig->p->bySpecialization.types;
         }
@@ -7254,7 +7254,7 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
             porig = porig->next;
         }
 
-        if (psym->p->bySpecialization.types)
+        if (bySpecialization && psym->p->bySpecialization.types)
         {
             psym = psym->p->bySpecialization.types;
         }
@@ -7431,11 +7431,11 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
     }
     return !porig && !psym;
 }
-bool TemplateInstantiationMatch(SYMBOL* orig, SYMBOL* sym)
+bool TemplateInstantiationMatch(SYMBOL* orig, SYMBOL* sym, bool bySpecialization)
 {
     if (orig && orig->sb->parentTemplate == sym->sb->parentTemplate)
     {
-        if (!TemplateInstantiationMatchInternal(orig->templateParams, sym->templateParams, false))
+        if (!TemplateInstantiationMatchInternal(orig->templateParams, sym->templateParams, false, bySpecialization))
             return false;
         while (orig->sb->parentClass && sym->sb->parentClass)
         {
@@ -7984,7 +7984,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
     while (hr)
     {
         SYMBOL* data = hr->p;
-        if (data->sb->instantiated && TemplateInstantiationMatch(data, sym) && matchOverload(sym->tp, data->tp, true))
+        if (data->sb->instantiated && TemplateInstantiationMatch(data, sym, true) && matchOverload(sym->tp, data->tp, true))
         {
             if (data->sb->attribs.inheritable.linkage4 == lk_virtual || isExtern)
             {
@@ -10060,9 +10060,11 @@ SYMBOL* TemplateByValLookup(SYMBOL* parent, SYMBOL* test, std::string& argumentN
         auto instants = parent->sb->instantiations;
         while (instants)
         {
-            if (TemplateInstantiationMatch(instants->p, test))
+            if (TemplateInstantiationMatch(instants->p, test, true))
             {
-                return instants->p;
+                if ((!instants->p->templateParams->p->bySpecialization.types || !test->templateParams->p->bySpecialization.types) || 
+                    TemplateInstantiationMatch(instants->p, test, false))
+                    return instants->p;
             }
             instants = instants->next;
         }
@@ -10471,7 +10473,7 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args)
             }
             while (instants)
             {
-                if (TemplateInstantiationMatch(instants->p, &test))
+                if (TemplateInstantiationMatch(instants->p, &test, true))
                 {
                     return instants->p;
                 }

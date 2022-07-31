@@ -3699,9 +3699,10 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
     bool pastfirst = false;
     bool voiderror = false;
     bool hasellipse = false;
-    HASHTABLE* locals = localNameSpace->valueData->syms;
     LEXLIST* placeholder = lex;
     STRUCTSYM s;
+    NAMESPACEVALUELIST internalNS = {};
+    NAMESPACEVALUEDATA internalNSD = {};
     s.tmpl = nullptr;
     lex = getsym();
     if (*tp == nullptr)
@@ -3710,6 +3711,9 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
     tp1->size = getSize(bt_pointer);
     tp1->sp = sp;
     sp->tp = *tp = tp1;
+    internalNS.next = localNameSpace;
+    internalNS.valueData = &internalNSD;
+    localNameSpace = &internalNS;
     localNameSpace->valueData->syms = tp1->syms = CreateHashTable(1);
     attributes oldAttribs = basisAttribs;
 
@@ -3784,7 +3788,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                             // constructor initialization
                             // will do initialization later...
                         }
-                        localNameSpace->valueData->syms = locals;
+                        localNameSpace = localNameSpace->next;
                         lex = prevsym(placeholder);
                         return lex;
                     }
@@ -4237,7 +4241,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
         }
         skip(&lex, closepa);
     }
-    localNameSpace->valueData->syms = locals;
+    localNameSpace = localNameSpace->next;
     basisAttribs = oldAttribs;
     ParseAttributeSpecifiers(&lex, funcsp, true);
     if (voiderror)
@@ -4447,6 +4451,17 @@ static LEXLIST* getAfterType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** s
                                 parsingTrailingReturnOrUsing++;
                                 lex = get_type_id(lex, &tpx, funcsp, sc_cast, false, true, false);
                                 parsingTrailingReturnOrUsing--;
+                                // weed out temporary syms that were added as part of a decltype; they will be
+                                // reinstated as stackblock syms later
+                                auto hrp = &localNameSpace->valueData->syms->table[0];
+                                while (*hrp)
+                                {
+                                    SYMBOL* sym = (SYMBOL*)(*hrp)->p;
+                                    if (sym->sb->storage_class != sc_parameter)
+                                        *hrp = (*hrp)->next;
+                                    else
+                                        hrp = &(*hrp)->next;
+                                }
                                 if (tpx)
                                 {
                                     if (!isautotype(basetype(*tp)->btp))

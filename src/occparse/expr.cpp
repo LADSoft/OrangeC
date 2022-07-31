@@ -547,8 +547,6 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                         *exp = sym->tp->templateParam->p->byNonType.val;
                     }
                     *tp = sym->tp->templateParam->p->byNonType.tp;
-                    if (!*exp)
-                        *exp = intNode(en_c_i, 0);
                     if ((*tp)->type == bt_templateparam)
                     {
                         TYPE* tp1 = (*tp)->templateParam->p->byClass.val;
@@ -570,6 +568,9 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                                 *tp = rv->tp->templateParam->p->byClass.val;
                         }
                     }
+                    lex = expression_func_type_cast(lex, funcsp, tp, exp, flags | _F_NOEVAL);
+                    if (!*exp)
+                        *exp = intNode(en_c_i, 0);
                     return lex;
                 default:
                     break;

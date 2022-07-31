@@ -3375,6 +3375,78 @@ TEMPLATEPARAMLIST* ExpandParams(EXPRESSION* exp)
     }
     return rv;
 }
+static TYPE* LookupUnaryMathFromExpression(EXPRESSION* exp, e_kw kw, TEMPLATEPARAMLIST* enclosing, bool alt) 
+{
+    TYPE* tp1 = LookupTypeFromExpression(exp->left, enclosing, alt);
+    if (!tp1)
+        return nullptr;
+    if (isref(tp1))
+        tp1 = basetype(tp1)->btp;
+    auto exp1 = exp->left;
+    ResolveTemplateVariable(&tp1, &exp1, nullptr, nullptr);
+    if (!insertOperatorFunc(ovcl_binary_numericptr, kw, nullptr, &tp1, &exp1, nullptr, nullptr, nullptr, _F_SIZEOF))
+    {
+        castToArithmetic(false, &tp1, &exp1, kw, nullptr, true);
+        if (isstructured(tp1))
+            return nullptr;
+        if (ispointer(tp1))
+            return nullptr;
+    }
+    return tp1;
+}
+static TYPE* LookupBinaryMathFromExpression(EXPRESSION* exp, e_kw kw, TEMPLATEPARAMLIST* enclosing, bool alt)
+{
+    TYPE* tp1 = LookupTypeFromExpression(exp->left, enclosing, alt);
+    if (!tp1)
+        return nullptr;
+    TYPE* tp2 = LookupTypeFromExpression(exp->right, enclosing, alt);
+    if (!tp2)
+        return nullptr;
+    if (isref(tp1))
+        tp1 = basetype(tp1)->btp;
+    if (isref(tp2))
+        tp2 = basetype(tp2)->btp;
+    auto exp1 = exp->left;
+    auto exp2 = exp->right;
+    ResolveTemplateVariable(&tp1, &exp1, tp2, nullptr);
+    ResolveTemplateVariable(&tp2, &exp2, tp1, nullptr);
+    if (!insertOperatorFunc(ovcl_binary_numericptr, kw, nullptr, &tp1, &exp1, tp2, exp2, nullptr, _F_SIZEOF))
+    {
+        if (kw == leftshift || kw == rightshift)
+        {
+            castToArithmetic(false, &tp1, &exp1, kw, tp2, true);
+            if (isstructured(tp1) || isstructured(tp2))
+                return nullptr;
+            if (ispointer(tp1) || ispointer(tp2))
+                return nullptr;
+        }
+        else if ((kw != plus && kw != minus) || (!ispointer(tp1) && !ispointer(tp2)))
+        {
+            castToArithmetic(false, &tp1, &exp1, kw, tp2, true);
+            castToArithmetic(false, &tp2, &exp2, (enum e_kw) - 1, tp1, true);
+            if (isstructured(tp1) || isstructured(tp2))
+                return nullptr;
+            if (ispointer(tp1) || ispointer(tp2))
+                return nullptr;
+            tp1 = destSize(tp1, tp2, nullptr, nullptr, false, nullptr);
+        }
+        else
+        {
+            if (isstructured(tp1) || isstructured(tp2))
+                return nullptr;
+            if (ispointer(tp1) && ispointer(tp2))
+            {
+                tp1 = &stdint; // ptrdiff_t
+            }
+            else
+            {      
+                if (ispointer(tp2))
+                    tp1 = tp2;
+            }
+        }
+    }
+    return tp1;
+}
 TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bool alt)
 {
     EXPRESSION* funcList[100];
@@ -3765,27 +3837,75 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
             return rv;
         }
         case en_lt:
+        case en_ult:
+        {
+            auto tp = LookupBinaryMathFromExpression(exp, lt, enclosing, alt);
+            if (tp)
+                tp = &stdbool;
+            return tp;
+        }
         case en_le:
-        case en_gt:
-        case en_ge:
-        case en_eq:
-        case en_ne:
-        case en_land:
-        case en_lor:
-        case en_ugt:
-        case en_uge:
         case en_ule:
-        case en_ult: {
-            TYPE* tp1 = LookupTypeFromExpression(exp->left, enclosing, alt);
-            TYPE* tp2 = LookupTypeFromExpression(exp->right, enclosing, alt);
-            return tp1 && tp2 && tp1->type != bt_any && tp2->type != bt_any ? &stdbool : nullptr;
+        {
+            auto tp = LookupBinaryMathFromExpression(exp, leq, enclosing, alt);
+            if (tp)
+                tp = &stdbool;
+            return tp;
+        }
+        case en_gt:
+        case en_ugt:
+        {
+            auto tp = LookupBinaryMathFromExpression(exp, gt, enclosing, alt);
+            if (tp)
+                tp = &stdbool;
+            return tp;
+        }
+        case en_ge:
+        case en_uge:
+        {
+            auto tp = LookupBinaryMathFromExpression(exp, geq, enclosing, alt);
+            if (tp)
+                tp = &stdbool;
+            return tp;
+        }
+        case en_eq:
+        {
+            auto tp = LookupBinaryMathFromExpression(exp, eq, enclosing, alt);
+            if (tp)
+                tp = &stdbool;
+            return tp;
+        }
+        case en_ne:
+        {
+            auto tp = LookupBinaryMathFromExpression(exp, neq, enclosing, alt);
+            if (tp)
+                tp = &stdbool;
+            return tp;
+        }
+        case en_land:
+        {
+            auto tp = LookupBinaryMathFromExpression(exp, land, enclosing, alt);
+            if (tp)
+                tp = &stdbool;
+            return tp;
+        }
+        case en_lor:
+        {
+            auto tp = LookupBinaryMathFromExpression(exp, lor, enclosing, alt);
+            if (tp)
+                tp = &stdbool;
+            return tp;
         }
         case en_uminus:
+            return LookupUnaryMathFromExpression(exp, minus, enclosing, alt);
         case en_not:
+            return LookupUnaryMathFromExpression(exp, notx, enclosing, alt);
         case en_compl:
-        case en_ascompl:
+            return LookupUnaryMathFromExpression(exp, complx, enclosing, alt);
         case en_autoinc:
+            return LookupUnaryMathFromExpression(exp, autoinc, enclosing, alt);
         case en_autodec:
+            return LookupUnaryMathFromExpression(exp, autodec, enclosing, alt);
         case en_bits:
             return LookupTypeFromExpression(exp->left, enclosing, alt);
         case en_assign: {
@@ -3864,39 +3984,16 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
         // the following several work because the front end should have cast both expressions already
         case en_cond:
             return LookupTypeFromExpression(exp->right->left, enclosing, alt);
+        case en_lsh:
+            return LookupBinaryMathFromExpression(exp, leftshift, enclosing, alt);
+        case en_rsh:
+        case en_ursh:
+            return LookupBinaryMathFromExpression(exp, rightshift, enclosing, alt);
         case en_arraymul:
         case en_arraylsh:
         case en_arraydiv:
         case en_arrayadd:
         case en_structadd:
-        case en_lsh:
-        case en_rsh:
-        case en_ursh:
-        case en_rshd:
-        case en_mul:
-        case en_mod:
-        case en_div:
-        case en_and:
-        case en_or:
-        case en_xor:
-        case en_umul:
-        case en_udiv:
-        case en_umod: {
-            TYPE* tp1 = LookupTypeFromExpression(exp->left, enclosing, alt);
-            if (!tp1)
-                return nullptr;
-            TYPE* tp1a = tp1;
-            if (isref(tp1a))
-                tp1a = basetype(tp1a)->btp;
-            TYPE* tp2 = LookupTypeFromExpression(exp->right, enclosing, alt);
-            if (!tp2)
-                return nullptr;
-            TYPE* tp2a = tp2;
-            if (isref(tp2a))
-                tp2a = basetype(tp2a)->btp;
-            return destSize(tp1a, tp2a, nullptr, nullptr, false, nullptr);
-        }
-        case en_add:  // these are a little buggy because of the 'shortening' optimization
         {
             TYPE* tp1 = LookupTypeFromExpression(exp->left, enclosing, alt);
             if (!tp1)
@@ -3910,40 +4007,28 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
             TYPE* tp2a = tp2;
             if (isref(tp2a))
                 tp2a = basetype(tp2a)->btp;
-            if (ispointer(tp1a))
-                return tp1a;
-            else if (ispointer(tp2a))
-                return tp2a;
             return destSize(tp1a, tp2a, nullptr, nullptr, false, nullptr);
+            break;
         }
-        break;
-        case en_sub: {
-            TYPE* tp1 = LookupTypeFromExpression(exp->left, enclosing, alt);
-            if (!tp1)
-                return nullptr;
-            TYPE* tp1a = tp1;
-            if (isref(tp1a))
-                tp1a = basetype(tp1a)->btp;
-            TYPE* tp2 = LookupTypeFromExpression(exp->right, enclosing, alt);
-            if (!tp2)
-                return nullptr;
-            TYPE* tp2a = tp2;
-            if (isref(tp2a))
-                tp2a = basetype(tp2a)->btp;
-            if (ispointer(tp1a))
-            {
-                if (ispointer(tp2a))
-                    return &stdunsigned;
-                else
-                    return tp1a;
-            }
-            else if (ispointer(tp2a))
-            {
-                return tp2a;
-            }
-            return destSize(tp1a, tp2a, nullptr, nullptr, false, nullptr);
-        }
-        break;
+        case en_mul:
+        case en_umul:
+            return LookupBinaryMathFromExpression(exp, star, enclosing, alt);
+        case en_mod:
+        case en_umod:
+            return LookupBinaryMathFromExpression(exp, mod, enclosing, alt);
+        case en_div:
+        case en_udiv:
+            return LookupBinaryMathFromExpression(exp, divide, enclosing, alt);
+        case en_and:
+            return LookupBinaryMathFromExpression(exp, andx, enclosing, alt);
+        case en_or:
+            return LookupBinaryMathFromExpression(exp, orx, enclosing, alt);
+        case en_xor:
+            return LookupBinaryMathFromExpression(exp, uparrow, enclosing, alt);
+        case en_add:
+            return LookupBinaryMathFromExpression(exp, plus, enclosing, alt);
+        case en_sub:
+            return LookupBinaryMathFromExpression(exp, minus, enclosing, alt);
         case en_blockclear:
         case en_stackblock:
         case en_blockassign:
@@ -7241,11 +7326,11 @@ static bool comparePointerTypes(TYPE* tpo, TYPE* tps)
     }
     return tpo == tps;
 }
-static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLATEPARAMLIST* psym, bool dflt)
+static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLATEPARAMLIST* psym, bool dflt, bool bySpecialization)
 {
     if (porig && psym)
     {
-        if (porig->p->bySpecialization.types)
+        if (bySpecialization && porig->p->bySpecialization.types)
         {
             porig = porig->p->bySpecialization.types;
         }
@@ -7254,7 +7339,7 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
             porig = porig->next;
         }
 
-        if (psym->p->bySpecialization.types)
+        if (bySpecialization && psym->p->bySpecialization.types)
         {
             psym = psym->p->bySpecialization.types;
         }
@@ -7431,11 +7516,11 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
     }
     return !porig && !psym;
 }
-bool TemplateInstantiationMatch(SYMBOL* orig, SYMBOL* sym)
+bool TemplateInstantiationMatch(SYMBOL* orig, SYMBOL* sym, bool bySpecialization)
 {
     if (orig && orig->sb->parentTemplate == sym->sb->parentTemplate)
     {
-        if (!TemplateInstantiationMatchInternal(orig->templateParams, sym->templateParams, false))
+        if (!TemplateInstantiationMatchInternal(orig->templateParams, sym->templateParams, false, bySpecialization))
             return false;
         while (orig->sb->parentClass && sym->sb->parentClass)
         {
@@ -7984,7 +8069,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
     while (hr)
     {
         SYMBOL* data = hr->p;
-        if (data->sb->instantiated && TemplateInstantiationMatch(data, sym) && matchOverload(sym->tp, data->tp, true))
+        if (data->sb->instantiated && TemplateInstantiationMatch(data, sym, true) && matchOverload(sym->tp, data->tp, true))
         {
             if (data->sb->attribs.inheritable.linkage4 == lk_virtual || isExtern)
             {
@@ -10060,9 +10145,11 @@ SYMBOL* TemplateByValLookup(SYMBOL* parent, SYMBOL* test, std::string& argumentN
         auto instants = parent->sb->instantiations;
         while (instants)
         {
-            if (TemplateInstantiationMatch(instants->p, test))
+            if (TemplateInstantiationMatch(instants->p, test, true))
             {
-                return instants->p;
+                if ((!instants->p->templateParams->p->bySpecialization.types || !test->templateParams->p->bySpecialization.types) || 
+                    TemplateInstantiationMatch(instants->p, test, false))
+                    return instants->p;
             }
             instants = instants->next;
         }
@@ -10471,7 +10558,7 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args)
             }
             while (instants)
             {
-                if (TemplateInstantiationMatch(instants->p, &test))
+                if (TemplateInstantiationMatch(instants->p, &test, true))
                 {
                     return instants->p;
                 }

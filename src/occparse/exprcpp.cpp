@@ -590,11 +590,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
     bool defd = false;
     int consdest = false;
     bool notype = false;
-    if (flags & _F_NOEVAL)
-    {
-        flags &= ~_F_NOEVAL;
-    }
-    else
+    if (!(flags & _F_NOEVAL))
     {
         *tp = nullptr;
         lex = getBasicType(lex, funcsp, tp, nullptr, false, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd,
@@ -610,6 +606,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
     {
         if (MATCHKW(lex, begin))
         {
+            flags &= ~_F_NOEVAL;
             INITIALIZER *init = nullptr, *dest = nullptr;
             SYMBOL* sym = nullptr;
             sym = anonymousVar(sc_auto, *tp)->v.sp;
@@ -643,9 +640,12 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
         }
         else
         {
-            *exp = intNode(en_c_i, 0);
-            errortype(ERR_IMPROPER_USE_OF_TYPE, *tp, nullptr);
-            errskim(&lex, skim_semi);
+            if (!(flags & _F_NOEVAL))
+            {
+                *exp = intNode(en_c_i, 0);
+                errortype(ERR_IMPROPER_USE_OF_TYPE, *tp, nullptr);
+                errskim(&lex, skim_semi);
+            }
         }
     }
     else if (!Optimizer::cparams.prm_cplusplus &&
@@ -657,6 +657,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
     }
     else
     {
+        flags &= ~_F_NOEVAL;
         TYPE* unboxed = nullptr;
         if (isref(*tp))
             *tp = basetype(basetype(*tp)->btp);
@@ -2209,7 +2210,6 @@ static bool noexceptExpression(EXPRESSION* node)
         case en_lsh:
         case en_arraylsh:
         case en_rsh:
-        case en_rshd:
         case en_void:
         case en_voidnz:
             /*        case en_dvoid: */

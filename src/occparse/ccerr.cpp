@@ -1589,7 +1589,6 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case en_lsh:
         case en_arraylsh:
         case en_rsh:
-        case en_rshd:
         case en_void:
         case en_voidnz:
             /*        case en_dvoid: */
@@ -1817,7 +1816,6 @@ static int checkDefaultExpression(EXPRESSION* node)
         case en_lsh:
         case en_arraylsh:
         case en_rsh:
-        case en_rshd:
         case en_void:
         case en_voidnz:
             /*        case en_dvoid: */

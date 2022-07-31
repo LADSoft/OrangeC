@@ -218,7 +218,6 @@ static bool hasFloats(EXPRESSION* node)
         case en_or:
         case en_xor:
         case en_ursh:
-        case en_rshd:
         case en_lsh:
         case en_arraylsh:
         case en_rsh:
@@ -3045,7 +3044,6 @@ int fold_const(EXPRESSION* node)
             rv |= fold_const(node->v.ad->third);
             break;
         case en_ursh:
-        case en_rshd:
         case en_assign:
         case en_void:
         case en_voidnz:
@@ -3227,7 +3225,6 @@ int typedconsts(EXPRESSION* node1)
         case en_arraylsh:
         case en_ursh:
         case en_rsh:
-        case en_rshd:
         case en_div:
         case en_arraydiv:
         case en_mod:

@@ -285,13 +285,6 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 buf = mangleExpressionInternal(buf, exp->left);
                 *buf = 0;
                 break;
-            case en_ascompl:
-                *buf++ = 'a';
-                *buf++ = 'n';
-                buf = mangleExpressionInternal(buf, exp->left);
-                buf = mangleExpressionInternal(buf, exp->right);
-                *buf = 0;
-                break;
             case en_ult:
             case en_lt:
                 *buf++ = 'c';

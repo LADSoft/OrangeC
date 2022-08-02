@@ -6119,6 +6119,7 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
         }
     }
     std::vector<char> hold;
+    std::vector<TYPE**> tav;
     std::vector<TYPE*> tpp;
     std::stack<TEMPLATEPARAMLIST*> tas;
     for (auto tpl = nparams; tpl; tpl = tpl->next)
@@ -6134,6 +6135,7 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
             {
                 if (tpl->p->byClass.val)
                 {
+                    tav.push_back(&tpl->p->byClass.val);
                     tpp.push_back(tpl->p->byClass.val);
                     hold.push_back(tpl->p->byClass.val->lref);
                     hold.push_back(tpl->p->byClass.val->rref);
@@ -6145,6 +6147,7 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
             {
                 if (tpl->p->byClass.val)
                 {
+                    tav.push_back(&tpl->p->byNonType.tp);
                     tpp.push_back(tpl->p->byNonType.tp);
                     hold.push_back(tpl->p->byNonType.tp->lref);
                     hold.push_back(tpl->p->byNonType.tp->rref);
@@ -6172,6 +6175,11 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
         dropStructureDeclaration();
         inDefaultParam--;
         return nullptr;
+    }
+    for (int i = 0; i < tpp.size(); i++)
+    {
+        TYPE* tp = tpp[i];
+        *(tav[i]) = tp;
     }
     dropStructureDeclaration();
     inDefaultParam--;

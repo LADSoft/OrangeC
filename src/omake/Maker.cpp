@@ -632,6 +632,7 @@ int Maker::RunCommands(bool keepGoing)
                 rv = rv1;
             if (rv > 0)
             {
+                stop = true;
                 if (!keepGoing)
                 {
                     Spawner::Stop();
@@ -650,6 +651,7 @@ int Maker::RunCommands(bool keepGoing)
                 rv = rv1;
             if (rv > 0)
             {
+                stop = true;
                 if (!keepGoing)
                 {
                     Spawner::Stop();

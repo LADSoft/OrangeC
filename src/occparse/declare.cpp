@@ -6114,7 +6114,27 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                     hr = hr->next;
                                 }
                                 if (!sp->sb->parentClass || !sp->sb->parentClass->sb->declaring)
+                                {
                                     sym = searchOverloads(sp, spi->tp->syms);
+                                    TYPE* retVal;
+                                    TEMPLATESELECTOR* tsl = nullptr;
+                                    if (!sym && storage_class_in != sc_member && ((retVal = basetype(sp->tp)->btp)->type == bt_templateselector))
+                                    {
+                                        auto tsl = retVal->sp->sb->templateSelector->next;
+                                        if (tsl->isTemplate)
+                                        {
+                                            auto sp1 = GetClassTemplate(tsl->sp, tsl->templateParams, true);
+                                            if (sp1)
+                                            {
+                                                auto save = tsl->sp;
+                                                tsl->sp = sp1;
+                                                sym = searchOverloads(sp, spi->tp->syms);
+                                                tsl->sp = save;
+                                            }
+                                        }
+                                    }
+                                }
+
                                 if (sp->sb->attribs.inheritable.linkage == lk_c ||
                                     (sym && sym->sb->attribs.inheritable.linkage == lk_c))
                                     if (!sym || !sameNameSpace(sp->sb->parentNameSpace, sym->sb->parentNameSpace))

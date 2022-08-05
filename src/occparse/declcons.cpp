@@ -2893,7 +2893,7 @@ static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPR
     optimize_for_constants(&exp);
     st->select = exp;
 }
-static void thunkAssignments(BLOCKDATA* b, SYMBOL* sym, SYMBOL* asnfunc, HASHTABLE* syms, bool move, bool isconst)
+static EXPRESSION* thunkAssignments(BLOCKDATA* b, SYMBOL* sym, SYMBOL* asnfunc, HASHTABLE* syms, bool move, bool isconst)
 {
     SYMLIST* hr = syms->table[0];
     EXPRESSION* thisptr = varNode(en_auto, hr->p);
@@ -2944,6 +2944,7 @@ static void thunkAssignments(BLOCKDATA* b, SYMBOL* sym, SYMBOL* asnfunc, HASHTAB
     }
     asnfunc->sb->labelCount = codeLabel - INT_MIN;
     codeLabel = oldCodeLabel;
+    return thisptr;
 }
 void createAssignment(SYMBOL* sym, SYMBOL* asnfunc)
 {
@@ -2959,14 +2960,18 @@ void createAssignment(SYMBOL* sym, SYMBOL* asnfunc)
     b.type = begin;
     syms = localNameSpace->valueData->syms;
     localNameSpace->valueData->syms = basetype(asnfunc->tp)->syms;
-    thunkAssignments(&b, sym, asnfunc, basetype(asnfunc->tp)->syms, move, isConst);
+    auto thisptr = thunkAssignments(&b, sym, asnfunc, basetype(asnfunc->tp)->syms, move, isConst);
+    auto st = stmtNode(nullptr, &b, st_return);
+    st->select = thisptr;
     if (!inNoExceptHandler)
     {
         asnfunc->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
         asnfunc->sb->inlineFunc.stmt->lower = b.head;
         asnfunc->sb->inlineFunc.syms = basetype(asnfunc->tp)->syms;
+        asnfunc->sb->attribs.inheritable.isInline = true;
         //    asnfunc->sb->inlineFunc.stmt->blockTail = b.tail;
         InsertInline(asnfunc);
+
         defaultRecursionMap.clear();
         if (noExcept)
         {

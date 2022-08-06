@@ -6330,6 +6330,9 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                 sp->sb->parentClass = strSym;
                                 if (!sp->sb->parentClass && spi->sb->parentClass)  // error handling
                                     sp->sb->parentClass = spi->sb->parentClass;
+                                if (sp->sb->parentClass)
+                                    SetLinkerNames(sp, storage_class == sc_auto && isstructured(sp->tp) ? lk_auto : linkage,
+                                    !!sp->templateParams);
                             }
                             if (sp->sb->constexpression)
                                 spi->sb->constexpression = true;

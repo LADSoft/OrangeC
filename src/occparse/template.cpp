@@ -6009,6 +6009,23 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
     INITLIST* check = args;
     SYMLIST* hr = basetype(func->tp)->syms->table[0];
     STRUCTSYM s, s1;
+    if (func->sb->isConstructor)
+    {
+        // get rid of potential constructor calls
+        // that would involve a by_val template the same class as the constructor is in
+        SYMLIST* hr1 = hr;
+        INITLIST* arg1 = args;
+        if (hr1 && hr1->p->sb->thisPtr)
+            hr1 = hr1->next;
+        while (hr1 && arg1)
+        {
+            if (arg1->tp && isstructured(arg1->tp) && basetype(arg1->tp)->sp->sb->templateLevel && sameTemplate(func->sb->parentClass->tp, arg1->tp, true))
+                return nullptr;
+            hr1 = hr1->next;
+            arg1 = arg1->next;
+        }
+
+    }
     inDefaultParam++;
     if (!valFromDefault(params, usesParams, &args))
     {
@@ -6016,7 +6033,7 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
         return nullptr;
     }
     if (!checkNonTypeTypes(params, params))
-    {
+    {    
         inDefaultParam--;
         return nullptr;
     }

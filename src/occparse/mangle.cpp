@@ -370,6 +370,9 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
+            case en_select:
+                buf = mangleExpressionInternal(buf, exp->left);
+                break;
             case en_templateselector: {
                 TEMPLATESELECTOR *tsl = exp->v.templateSelector, *find = tsl->next->next;
                 SYMBOL* ts = tsl->next->sp;

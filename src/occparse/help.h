@@ -129,4 +129,5 @@ SYMBOL*(CopySymbol)(SYMBOL* sym_in, bool full);
 e_bt btmax(e_bt left, e_bt right);
 TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool minimizeInt, TYPE* atp);
 EXPRESSION* RemoveAutoIncDec(EXPRESSION* exp);
+EXPRESSION* EvaluateDest(EXPRESSION*exp, TYPE* tp);
 }  // namespace Parser

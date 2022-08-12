@@ -1727,11 +1727,10 @@ void DestructParams(INITLIST* first)
                                     xexp->v.sp->sb->destructed = true;
                                 if (callDestructor(sp, nullptr, &iexp, nullptr, true, false, false, true))
                                 {
-                                    optimize_for_constants(&iexp);
-                                    if (first->dest)
-                                        first->dest = exprNode(en_void, iexp, first->dest);
-                                    else
-                                        first->dest = iexp;
+                                    Optimizer::LIST* entry = Allocate<Optimizer::LIST>();
+                                    entry->data = iexp;
+                                    entry->next = first->destructors;
+                                    first->destructors = entry;
                                 }
                             }
                         }
@@ -2251,33 +2250,32 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                 }
                 if (!isstructured(init->sp->tp))
                 {
-                    if (MATCHKW(lex, openpa))
+                    bool bypa = true;
+                    if (MATCHKW(lex, openpa) || MATCHKW(lex, begin))
                     {
-                        if (MATCHKW(lex, openpa))
+                        bypa = MATCHKW(lex, openpa);
+                        lex = getsym();
+                        if ((bypa && MATCHKW(lex, closepa)) || (!bypa && MATCHKW(lex, end)))
                         {
                             lex = getsym();
-                            if (MATCHKW(lex, closepa))
-                            {
-                                lex = getsym();
-                                init->init = nullptr;
-                                initInsert(&init->init, init->sp->tp, intNode(en_c_i, 0), 0 /*init->sp->sb->offset*/, false);
-                                done = true;
-                            }
-                            else
-                            {
-                                lex = backupsym();
-                            }
-                        }
-                        if (!done)
-                        {
-                            needkw(&lex, openpa);
                             init->init = nullptr;
-                            argumentNesting++;
-                            lex = initType(lex, cons, 0, sc_auto, &init->init, nullptr, init->sp->tp, init->sp, false, 0);
-                            argumentNesting--;
+                            initInsert(&init->init, init->sp->tp, intNode(en_c_i, 0), 0, false);
                             done = true;
-                            needkw(&lex, closepa);
                         }
+                        else
+                        {
+                            lex = backupsym();
+                        }
+                    }
+                    if (!done)
+                    {
+                        needkw(&lex, bypa ? openpa : begin);
+                        init->init = nullptr;
+                        argumentNesting++;
+                        lex = initType(lex, cons, 0, sc_auto, &init->init, nullptr, init->sp->tp, init->sp, false, 0);
+                        argumentNesting--;
+                        done = true;
+                        needkw(&lex, bypa ? closepa : end);
                     }
                 }
                 else
@@ -3332,6 +3330,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     params->thisptr = *exp;
     params->thistp = MakeType(bt_pointer, sp->tp);
     params->ascall = true;
+
     cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, nullptr, toErr, maybeConversion, true, usesInitList | _F_INCONSTRUCTOR | (inNothrowHandler ? _F_IS_NOTHROW : 0));
 
     if (cons1 && isfunction(cons1->tp))

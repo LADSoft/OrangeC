@@ -4061,6 +4061,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                 }
             return nullptr;
         case en_thisref:
+        case en_select:
             return LookupTypeFromExpression(exp->left, enclosing, alt);
         default:
             diag("LookupTypeFromExpression: unknown expression type");

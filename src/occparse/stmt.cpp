@@ -203,8 +203,8 @@ static void AddBlock(LEXLIST* lex, BLOCKDATA* parent, BLOCKDATA* newbl)
 }
 static bool isselecttrue(EXPRESSION* exp)
 {
-    if (isintconst(exp))
-        return !!exp->v.i;
+    if (isintconst(exp->left))
+        return !!exp->left->v.i;
     return false;
 }
 static bool isselectfalse(EXPRESSION* exp)
@@ -291,6 +291,8 @@ static LEXLIST* selection_expression(LEXLIST* lex, BLOCKDATA* parent, EXPRESSION
     {
         error(ERR_ILL_STRUCTURE_OPERATION);
     }
+    *exp = exprNode(en_select, *exp, nullptr);
+    GetLogicalDestructors(&(*exp)->v.logicaldestructors.left, *exp);
     return lex;
 }
 static BLOCKDATA* getCommonParent(BLOCKDATA* src, BLOCKDATA* dest)

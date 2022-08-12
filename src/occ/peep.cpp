@@ -162,7 +162,7 @@ OCODE* gen_code(int op, AMODE* ap1, AMODE* ap2)
 /*
  *      generate a code sequence into the peep list.
  */
-{
+{    
     OCODE* newitem;
 
     newitem = beLocalAllocate<OCODE>();

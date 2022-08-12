@@ -1509,7 +1509,7 @@ static unsigned SpillCost(int i)
         QUAD* q = (QUAD*)use->data;
         if (((QUAD*)def->data)->index == q->index - 1)
             if (!(q->temps & TEMP_ANS) && q->dc.opcode == i_assn && q->ans->offset->type != se_add && q->ans->mode == i_direct &&
-                (q->ans->offset->sp->spillVar))
+                (q->ans->offset->sp && q->ans->offset->sp->spillVar))
                 return UINT_MAX;
     }
     //	if (!use)

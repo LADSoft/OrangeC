@@ -2941,7 +2941,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
     argFriend = func;
     (void)operands;
     if (func->sb->storage_class == sc_overloads)
-        return;
+        return;	
     if (hr && hr->p->sb->thisPtr)
         hr = hr->next;
     while (hr && (*lptr || hr->p->sb->init != nullptr ||
@@ -2974,7 +2974,10 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                     {
                         EXPRESSION* exp = ths[i]->sb->dest->exp;
                         cloneTempExpr(&exp, &ths[0], &newval[0]);
-                        (*lptr)->dest = exp;
+                        Optimizer::LIST* entry = Allocate<Optimizer::LIST>();
+                        entry->data = exp;
+                        entry->next =(*lptr)->destructors;
+                        (*lptr)->destructors = entry;
                     }
             }
             if (isstructured(sym->tp))
@@ -2996,6 +2999,8 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
         }
         if (Optimizer::cparams.prm_cplusplus)
         {
+            if (!isstructured(sym->tp) && (p->tp && !isstructured(p->tp)))
+                GetLogicalDestructors(&p->destructors, p->exp);
             bool done = false;
             if (!done && !p->tp && isstructured(sym->tp) && basetype(sym->tp)->sp->sb->initializer_list)
             {
@@ -3070,6 +3075,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         p->next = nullptr;
                         callConstructor(&ctype, &p->exp, params, false, nullptr, true, false, true, false, true, false, true);
                         p->next = old;
+                
                         if (!isref(sym->tp))
                         {
                             sp->sb->stackblock = true;
@@ -3078,7 +3084,10 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         {
                             callDestructor(stype->sp, nullptr, &dexp, nullptr, true, false, false, true);
                             if (dexp)
-                                p->dest = dexp;
+                            {
+                                p->destructors = Allocate<Optimizer::LIST>();
+                                p->destructors->data = dexp;
+                            }
                         }
                         done = true;
                     }
@@ -3286,6 +3295,9 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                                     p->tp = tpx->btp;
                                 }
                             }
+                            EXPRESSION* dexp = consexp;
+                            callDestructor(esp, nullptr, &dexp, nullptr, true, false, false, true);
+                            initInsert(&esp->sb->dest, basetype(sym->tp)->btp, dexp, 0, true);
                         }
                         else if ((!isconst(basetype(sym->tp)->btp) && !isconst(sym->tp) &&
                                   (sym->tp->type != bt_rref &&
@@ -3310,6 +3322,9 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                                     p->tp = tpx->btp;
                                 }
                             }
+                            EXPRESSION* dexp = consexp;
+                            callDestructor(esp, nullptr, &dexp, nullptr, true, false, false, true);
+                            initInsert(&esp->sb->dest, basetype(sym->tp)->btp, dexp, 0, true);
                         }
                         else
                         {
@@ -3506,14 +3521,6 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         p->exp = intNode(en_labcon, lbl);
                         p->exp = exprNode(en_stackblock, p->exp, nullptr);
                         p->exp->size = sym->tp->size;
-                        /*
-                        EXPRESSION *dest = createTemporary(sym->tp, nullptr);
-                        p->exp->v.func->returnSP->sb->allocate = false;
-                        p->exp->v.func->returnEXP = dest;
-                        p->exp = exprNode(en_void, p->exp, dest) ;
-                        p->exp = exprNode(en_stackblock, p->exp, nullptr);
-                        p->exp->size = sym->tp->size;
-                        */
                     }
                     else if (p->exp->type == en_pc)
                     {
@@ -3668,10 +3675,25 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
         {
             p->exp = exprNode(en_stackblock, p->exp, nullptr);
             p->exp->size = p->tp->size;
+            if (Optimizer::cparams.prm_cplusplus)
+            {
+                auto dexp = p->exp;
+                callDestructor(basetype(p->tp)->sp, nullptr, &dexp, nullptr, true, false, false, true);
+                if (dexp)
+                {
+                    p->destructors = Allocate<Optimizer::LIST>();
+                    p->destructors->data = dexp;
+                }
+            }
         }
         else if (p->tp->type == bt_float)
         {
             cast(&stddouble, &p->exp);
+            GetLogicalDestructors(&p->destructors, p->exp);
+        }
+        else
+        {
+            GetLogicalDestructors(&p->destructors, p->exp);
         }
         lptr = &(*lptr)->next;
     }
@@ -6844,6 +6866,7 @@ LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EX
                             }
                             *exp =
                                 exprNode(en_assign, *exp, exprNode(kw == autoinc ? en_add : en_sub, *exp, nodeSizeof(tpx, *exp)));
+                            (*exp)->preincdec = true;
                         }
                         else if (kw == autoinc && basetype(*tp)->type == bt_bool)
                         {
@@ -6862,6 +6885,7 @@ LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EX
                             *exp = RemoveAutoIncDec(*exp);
                             cast(*tp, &exp1);
                             *exp = exprNode(en_assign, dest, exprNode(kw == autoinc ? en_add : en_sub, *exp, exp1));
+                            (*exp)->preincdec = true;
                         }
                         if (exp3)
                             *exp = exprNode(en_void, exp3, *exp);
@@ -7953,6 +7977,7 @@ static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYP
 }
 void GetLogicalDestructors(Optimizer::LIST** rv, EXPRESSION* cur)
 {
+
     if (!cur || cur->type == en_land || cur->type == en_lor || cur->type == en_cond)
         return;
     // nots are genned with a branch, so, get past them...
@@ -8021,12 +8046,12 @@ static void GetAssignDestructors (Optimizer::LIST **rv, EXPRESSION *exp)
         for (auto t = exp->v.func->arguments; t; t = t->next)
         {
             GetAssignDestructors(rv, t->exp); 
-            if (t->dest)
+            if (t->destructors)
             {
-                 *rv = Allocate<Optimizer::LIST>();
-                 (*rv)->data = t->dest;
-                 rv = &(*rv)->next;
-                 t->dest = nullptr;
+                *rv = t->destructors;
+                while (*rv)
+                    rv = &(*rv)->next;
+                t->destructors = nullptr;
             }
         }
     }
@@ -9076,16 +9101,26 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             }
             else
             {
-                EXPRESSION* dest = *exp;
-                *exp = RemoveAutoIncDec(*exp);
+                EXPRESSION* src, *dest;
+                dest = EvaluateDest(*exp, *tp);
+                if (dest)
+                {
+                    src = dest->left;
+                    dest = dest->right;
+                }
+                else
+                {
+                    dest = RemoveAutoIncDec(*exp);
+                    src = *exp;
+                }
                 // we want to optimize the as* operations for the backend
                 // but can't do the optimization for divisions
                 // otherwise it is fine for the processor we are on
                 if (kw == asmod || kw == asdivide || basetype(*tp)->type == bt_bool)
                 {
                     int n = natural_size(*exp);
-                    destSize(*tp, tp1, exp, &exp1, false, nullptr);
-                    *exp = exprNode(op, *exp, exp1);
+                    destSize(*tp, tp1, &src, &exp1, false, nullptr);
+                    *exp = exprNode(op, src, exp1);
                     if (natural_size(exp1) != n)
                         cast((*tp), exp);
                     *exp = exprNode(en_assign, dest, *exp);
@@ -9095,15 +9130,15 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     int n = natural_size(*exp);
                     if (natural_size(exp1) != n)
                         cast(&stdint, &exp1);
-                    *exp = exprNode(op, *exp, exp1);
+                    *exp = exprNode(op, src, exp1);
                     *exp = exprNode(en_assign, dest, *exp);
                 }
                 else
                 {
                     int n = natural_size(*exp);
                     if (natural_size(exp1) != n)
-                        destSize(*tp, tp1, exp, &exp1, false, nullptr);
-                    *exp = exprNode(op, *exp, exp1);
+                        destSize(*tp, tp1, &src, &exp1, false, nullptr);
+                    *exp = exprNode(op, src, exp1);
                     if (natural_size(*exp) != n)
                         cast(*tp, exp);
                     *exp = exprNode(en_assign, dest, *exp);

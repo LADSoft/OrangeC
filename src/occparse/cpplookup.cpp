@@ -1955,6 +1955,7 @@ static bool ismath(EXPRESSION* exp)
         case en_ult:
         case en_ule:
         case en_cond:
+        case en_select:
             return true;
         default:
             return false;
@@ -4982,6 +4983,30 @@ static void doNames(SYMBOL* sym)
         doNames(sym->sb->parentClass);
     SetLinkerNames(sym, lk_cdecl);
 }
+static bool IsMove(SYMBOL* sp)
+{
+    bool rv = false;
+    if (sp->sb->isConstructor)
+    {
+        auto hr = basetype(sp->tp)->syms->table[0];
+        auto thisPtr = hr ? hr->p : nullptr;
+        if (hr && thisPtr->sb->thisPtr)
+            hr = hr->next;
+        if (hr && !hr->next && thisPtr->sb->thisPtr)
+        {
+            if (basetype(hr->p->tp)->type == bt_rref)
+            {
+                auto tp1 = basetype (basetype(hr->p->tp)->btp);
+                auto tp2 = basetype (basetype(thisPtr->tp)->btp);
+                if (isstructured(tp1) && isstructured(tp2))
+                {
+                   rv = comparetypes(tp2, tp1, true) || sameTemplate(tp2, tp1);
+                }                           
+            }
+        }
+    }
+    return rv;
+}
 SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, int toErr,
                               bool maybeConversion, bool toInstantiate, int flags)
 {
@@ -5169,58 +5194,81 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 n = insertFuncs(spList, spFilterList, gather, args, atp, flags);
                 if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor && !spList[0]->sb->specialized2))
                 {
+                    bool hasDest = false;
                     std::unordered_map<int, SYMBOL*> storage;
+                    if (atp || args->ascall)
+                        GatherConversions(sp, spList, n, args, atp, icsList, lenList, argCount, funcList, flags & _F_INITLIST);
                     for (int i = 0; i < n; i++)
                     {
-                        if (spList[i] && spList[i]->sb->deleted)
-                        {
-                            storage[i] = spList[i];
-                            spList[i] = nullptr;
-                        }
+                        storage[i] = spList[i];
+                        hasDest |= spList[i] && spList[i]->sb->deleted;
                     }
                     if (atp || args->ascall)
-                    {
-                        GatherConversions(sp, spList, n, args, atp, icsList, lenList, argCount, funcList, flags & _F_INITLIST);
                         SelectBestFunc(spList, icsList, lenList, args, argCount, n, funcList);
-                    }
                     WeedTemplates(spList, n, args, atp);
                     for (i = 0; i < n && !found1; i++)
                     {
+                        if (spList[i] && !spList[i]->sb->deleted)
+                           found1 = spList[i];
+                    }
+                    for (i = 0; i < n; i++)
+                    {
                         int j;
-                        found1 = spList[i];
-                        for (j = i + 1; j < n && found1 && !found2; j++)
+                        if (!found1)
+                            found1 = spList[i];
+                        for (j = i; j < n && found1; j++)
                         {
                             if (spList[j] && found1 != spList[j] && !sameTemplate(found1->tp, spList[j]->tp))
                             {
                                 found2 = spList[j];
                             }
                         }
+                        if (found1)
+                            break;
                     }
-                    if (!found1 && storage.size())
+                    if ((!found1 || (!IsMove(found1) && found1->sb->deleted)) && hasDest)
                     {
+                        auto found3 = found1;
+                        auto found4 = found2;
                         // there were no matches.   But there are deleted functions
                         // see if we can find a match among them...
+                        found1 = found2 = 0;
                         for (auto v : storage)
-                            spList[v.first] = v.second;
+                            if (!v.second || !v.second->sb->deleted)
+                                spList[v.first] = v.second;
+                            else
+                                spList[v.first] = nullptr;
                         if (atp || args->ascall)
-                        {
-                            GatherConversions(sp, spList, n, args, atp, icsList, lenList, argCount, funcList, flags & _F_INITLIST);
                             SelectBestFunc(spList, icsList, lenList, args, argCount, n, funcList);
-                        }
                         WeedTemplates(spList, n, args, atp);
                         for (i = 0; i < n && !found1; i++)
                         {
+                            if (spList[i] && !spList[i]->sb->deleted)
+                               found1 = spList[i];
+                        }
+                        for (i = 0; i < n; i++)
+                        {
                             int j;
-                            found1 = spList[i];
-                            for (j = i + 1; j < n && found1 && !found2; j++)
+                            if (!found1)
+                                found1 = spList[i];
+                            for (j = i; j < n && found1 && !found2; j++)
                             {
                                 if (spList[j] && found1 != spList[j] && !sameTemplate(found1->tp, spList[j]->tp))
                                 {
                                     found2 = spList[j];
                                 }
                             }
+                            if (found1)
+                                break;
+                        }
+                        if (!found1)
+                        {
+                            found1 = found3;
+                            found2 = found4;
                         }
                     }
+                    if (found1 && found2 && !found1->sb->deleted && found2->sb->deleted)
+                        found2 = nullptr;
 #if !NDEBUG
                     // this block to aid in debugging unfound functions...
                     if (toErr && (!found1 || (found1 && found2)) && !templateNestingCount)

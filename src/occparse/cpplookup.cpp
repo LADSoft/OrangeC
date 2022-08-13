@@ -3418,7 +3418,7 @@ static void getPointerConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* exp, int* n, 
             SYMBOL* base = basetype(basetype(tpp)->btp)->sp;
             SYMBOL* derived = basetype(basetype(tpa)->btp)->sp;
 
-            if (base != derived && !sameTemplate(base->tp, derived->tp))
+            if (base != derived && !comparetypes(base->tp, derived->tp, true) && !sameTemplate(base->tp, derived->tp))
             {
                 int v = classRefCount(base, derived);
                 if (v != 1)

@@ -6,6 +6,7 @@ all: copyfiles
 current:
 	$(B) std/algorithms
 	$(B) std/atomics
+      $(B) std/containers
 	$(B) std/thread
 
 algorithms: copyfiles

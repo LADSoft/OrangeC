@@ -6629,7 +6629,6 @@ void PushPopTemplateArgs(SYMBOL* func, bool push)
     if (isstructured(retval) && retval->sp->templateParams && !retval->sp->sb->instantiated && !retval->sp->sb->declaring)
         PushPopValues(retval->sp->templateParams, push);
 }
-int count3 = 0;
 SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
 {
     TEMPLATEPARAMLIST* nparams = sym->templateParams;

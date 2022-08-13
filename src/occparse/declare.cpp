@@ -351,7 +351,7 @@ void InsertSymbol(SYMBOL* sp, enum e_sc storage_class, enum e_lk linkage, bool a
                         if (!strcmp(sp->sb->decoratedName, ((SYMBOL*)(*hr1)->p)->sb->decoratedName))
                         {
                             n++;
-                            if (comparetypes(basetype(sp->tp)->btp, basetype(((SYMBOL*)(*hr1)->p)->tp)->btp, true))
+                            if (comparetypes(basetype(sp->tp)->btp, basetype(((SYMBOL*)(*hr1)->p)->tp)->btp, true) && sameTemplate(basetype(sp->tp)->btp, basetype(((SYMBOL*)(*hr1)->p)->tp)->btp))
                                 break;
                         }
                         hr1 = &(*hr1)->next;

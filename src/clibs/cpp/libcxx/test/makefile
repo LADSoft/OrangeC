@@ -22,7 +22,7 @@ depr: copyfiles
 	$(B) std/depr
 
 diagnostics: copyfiles
-	$(B) std/diagnostifcs
+	$(B) std/diagnostics
 
 experimental: copyfiles
 	$(B) std/experimental

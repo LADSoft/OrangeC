@@ -6629,6 +6629,7 @@ void PushPopTemplateArgs(SYMBOL* func, bool push)
     if (isstructured(retval) && retval->sp->templateParams && !retval->sp->sb->instantiated && !retval->sp->sb->declaring)
         PushPopValues(retval->sp->templateParams, push);
 }
+int count3 = 0;
 SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
 {
     TEMPLATEPARAMLIST* nparams = sym->templateParams;
@@ -6861,11 +6862,6 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
         else
         {
             bool rv = TemplateDeduceArgList(basetype(sym->tp)->syms->table[0], templateArgs, symArgs, false, true);
-            if (!rv)
-            {
-                if (!allTemplateArgsSpecified(sym, nparams->next, true))
-                    return nullptr;
-            }
             SYMLIST* hr = basetype(sym->tp)->syms->table[0];
             while (hr)
             {
@@ -6891,6 +6887,11 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                     }
                 }
                 hr = hr->next;
+            }
+            if (!rv)
+            {
+                if (!allTemplateArgsSpecified(sym, nparams->next, true))
+                    return nullptr;
             }
         }
         // set up default values for non-deduced and non-initialized args
@@ -8549,13 +8550,13 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* v
     else if (!val->p->packed && val->p->type == kw_typename && val->p->byClass.dflt && val->p->byClass.val &&
              val->p->byClass.dflt->type == bt_templateparam)
     {
-        if (!params->p->byClass.val)
+        if (!params->p->byClass.val && params->p->type == kw_typename)
             params->p->byClass.val = val->p->byClass.val;
     }
     else if (!val->p->packed && val->p->type == kw_int && val->p->byNonType.dflt && val->p->byNonType.val &&
              val->p->byNonType.dflt->type == en_templateparam)
     {
-        if (!params->p->byNonType.val)
+        if (!params->p->byNonType.val && params->p->type == kw_int)
             params->p->byNonType.val = val->p->byNonType.val;
     }
     else if (!val->p->packed && val->p->type == kw_typename && val->p->byClass.dflt && val->p->byClass.val &&
@@ -8673,10 +8674,11 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* v
             if (params->p->type == kw_int)
             {
                 for (auto param1 = dflt; param1; param1 = param1->next)
-                    if (param1->p->type == kw_int && param1->p->byNonType.dflt &&
+                    if (param1->p->type == kw_int && params->p->type == kw_int && param1->p->byNonType.dflt &&
                         param1->p->byNonType.dflt->type == en_templateparam)
                         if (!strcmp(params->argsym->name, param1->p->byNonType.dflt->v.sp->tp->templateParam->argsym->name))
                         {
+                            params->p->deduced = true;
                             params->p->byNonType.val = param1->p->byNonType.val;
                             return;
                         }

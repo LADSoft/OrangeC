@@ -5473,6 +5473,12 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         }
                         else
                         {
+                            if (flags & _F_IS_NOTHROW)
+                            {
+                                if (!found1->sb->deferredCompile && !found1->sb->deferredNoexcept)
+                                    propagateTemplateDefinition(found1);
+                                parseNoexcept(found1);
+                            }
                             InsertInline(found1);
                         }
                     }

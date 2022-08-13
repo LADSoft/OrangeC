@@ -10,7 +10,7 @@
  *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
  *
- *     The Orange C Compiler package is disis_nothrowtributed in the hope that it will be useful,
+ *     The Orange C Compiler package is distributed in the hope that it will be 
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.

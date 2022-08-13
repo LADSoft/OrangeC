@@ -2999,8 +2999,38 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
         }
         if (Optimizer::cparams.prm_cplusplus)
         {
-            if (!isstructured(sym->tp) && (p->tp && !isstructured(p->tp)))
-                GetLogicalDestructors(&p->destructors, p->exp);
+            auto exp2 = p->exp;
+            if (exp2 && exp2->type == en_thisref)
+                exp2 = exp2->left;
+
+            if (!isstructured(sym->tp) && p->tp)
+            {
+                if (isstructured(p->tp))
+                {
+                    TYPE* btp = basetype(func->tp)->btp;
+                    if (btp && (!isref(btp) || !isstructured(basetype(btp)->btp)))
+                    {
+                        SYMBOL* sym = nullptr;
+                        auto exp2 = p->exp;
+                        if (exp2 && exp2->type == en_thisref)
+                            exp2 = exp2->left;
+                        if (exp2 && exp2->type == en_func)
+                            sym = exp2->v.func->returnSP;
+                        if (sym && !sym->sb->destructed && sym->sb->dest && sym->sb->dest->exp && !basetype(sym->tp)->sp->sb->trivialCons )
+                        {
+                            Optimizer::LIST* rd = Allocate<Optimizer::LIST>();
+                            rd->data = exp2->v.func->returnSP->sb->dest->exp;
+                            exp2->v.func->returnSP->sb->destructed = true;
+                            rd->next = p->destructors;
+                            p->destructors = rd;
+                        }
+                    }
+                }
+                else
+                {
+                    GetLogicalDestructors(&p->destructors, p->exp);
+                }
+            }
             bool done = false;
             if (!done && !p->tp && isstructured(sym->tp) && basetype(sym->tp)->sp->sb->initializer_list)
             {

@@ -4334,6 +4334,141 @@ LEXLIST* getExceptionSpecifiers(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e
 
     return lex;
 }
+static LEXLIST* GetFunctionQualifiersAndTrailingReturn(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sp, TYPE** tp, enum e_sc storage_class)
+{
+    bool foundFinal = false;
+    bool foundOverride = false;
+    bool done = false;
+    bool foundConst = false;
+    bool foundVolatile = false;
+    bool foundand = false;
+    bool foundland = false;
+    while (lex != nullptr && !done)
+    {
+        if (ISID(lex))
+        {
+            if (!strcmp(lex->data->value.s.a, "final"))
+            {
+                if (foundFinal)
+                    error(ERR_FUNCTION_CAN_HAVE_ONE_FINAL_OR_OVERRIDE);
+                foundFinal = true;
+                (*sp)->sb->isfinal = true;
+                lex = getsym();
+            }
+            else if (!strcmp(lex->data->value.s.a, "override"))
+            {
+                if (foundOverride)
+                    error(ERR_FUNCTION_CAN_HAVE_ONE_FINAL_OR_OVERRIDE);
+                foundOverride = true;
+                (*sp)->sb->isoverride = true;
+                lex = getsym();
+            }
+            else
+                done = true;
+        }
+        else
+            switch (KW(lex))
+            {
+            case kw_const:
+                foundConst = true;
+                lex = getsym();
+                break;
+            case kw_volatile:
+                foundVolatile = true;
+                lex = getsym();
+                break;
+            case andx:
+                foundand = true;
+                lex = getsym();
+                break;
+            case land:
+                foundland = true;
+                lex = getsym();
+                break;
+            case kw_throw:
+            case kw_noexcept:
+                if (Optimizer::cparams.prm_cplusplus && *sp)
+                {
+                    funcLevel++;
+                    lex = getExceptionSpecifiers(lex, funcsp, *sp, storage_class);
+                    funcLevel--;
+                }
+                break;
+            default:
+                done = true;
+                break;
+            }
+    }
+    if (foundand && foundland)
+        error(ERR_TOO_MANY_QUALIFIERS);
+    if (foundVolatile)
+    {
+        *tp = MakeType(bt_volatile, *tp);
+    }
+    if (foundConst)
+    {
+        *tp = MakeType(bt_const, *tp);
+    }
+    if (foundand)
+    {
+        *tp = MakeType(bt_lrqual, *tp);
+    }
+    else if (foundland)
+    {
+        *tp = MakeType(bt_rrqual, *tp);
+    }
+    ParseAttributeSpecifiers(&lex, funcsp, true);
+    if (MATCHKW(lex, pointsto))
+    {
+        TYPE* tpx = nullptr;
+        HASHTABLE* locals = localNameSpace->valueData->syms;
+        localNameSpace->valueData->syms = basetype(*tp)->syms;
+        funcLevel++;
+        lex = getsym();
+        ParseAttributeSpecifiers(&lex, funcsp, true);
+        parsingTrailingReturnOrUsing++;
+        lex = get_type_id(lex, &tpx, funcsp, sc_cast, false, true, false);
+        parsingTrailingReturnOrUsing--;
+        // weed out temporary syms that were added as part of a decltype; they will be
+        // reinstated as stackblock syms later
+        auto hrp = &localNameSpace->valueData->syms->table[0];
+        while (*hrp)
+        {
+            SYMBOL* sym = (SYMBOL*)(*hrp)->p;
+            if (sym->sb->storage_class != sc_parameter)
+                *hrp = (*hrp)->next;
+            else
+                hrp = &(*hrp)->next;
+        }
+        if (tpx)
+        {
+            if (!isautotype(basetype(*tp)->btp))
+                error(ERR_MULTIPLE_RETURN_TYPES_SPECIFIED);
+            if (isarray(tpx))
+            {
+                TYPE* tpn = MakeType(bt_pointer, basetype(tpx)->btp);
+                if (isconst(tpx))
+                {
+                    tpn = MakeType(bt_const, tpn);
+                }
+                if (isvolatile(tpx))
+                {
+                    tpn = MakeType(bt_volatile, tpn);
+                }
+                basetype(*tp)->btp = tpn;
+                basetype(*tp)->rootType = tpn->rootType;
+            }
+            else
+            {
+                basetype(*tp)->btp = tpx;
+                basetype(*tp)->rootType = tpx->rootType;
+            }
+        }
+        localNameSpace->valueData->syms = locals;
+        funcLevel--;
+    }
+    return lex;
+}
 static LEXLIST* getAfterType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp, bool inTemplate, enum e_sc storage_class,
                              int consdest, bool funcptr)
 {
@@ -4358,137 +4493,7 @@ static LEXLIST* getAfterType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** s
                         *tp = tp1;
                         if (Optimizer::cparams.prm_cplusplus)
                         {
-                            bool foundFinal = false;
-                            bool foundOverride = false;
-                            bool done = false;
-                            bool foundConst = false;
-                            bool foundVolatile = false;
-                            bool foundand = false;
-                            bool foundland = false;
-                            while (lex != nullptr && !done)
-                            {
-                                if (ISID(lex))
-                                {
-                                    if (!strcmp(lex->data->value.s.a, "final"))
-                                    {
-                                        if (foundFinal)
-                                            error(ERR_FUNCTION_CAN_HAVE_ONE_FINAL_OR_OVERRIDE);
-                                        foundFinal = true;
-                                        (*sp)->sb->isfinal = true;
-                                        lex = getsym();
-                                    }
-                                    else if (!strcmp(lex->data->value.s.a, "override"))
-                                    {
-                                        if (foundOverride)
-                                            error(ERR_FUNCTION_CAN_HAVE_ONE_FINAL_OR_OVERRIDE);
-                                        foundOverride = true;
-                                        (*sp)->sb->isoverride = true;
-                                        lex = getsym();
-                                    }
-                                    else
-                                        done = true;
-                                }
-                                else
-                                    switch (KW(lex))
-                                    {
-                                        case kw_const:
-                                            foundConst = true;
-                                            lex = getsym();
-                                            break;
-                                        case kw_volatile:
-                                            foundVolatile = true;
-                                            lex = getsym();
-                                            break;
-                                        case andx:
-                                            foundand = true;
-                                            lex = getsym();
-                                            break;
-                                        case land:
-                                            foundland = true;
-                                            lex = getsym();
-                                            break;
-                                        case kw_throw:
-                                        case kw_noexcept:
-                                            if (Optimizer::cparams.prm_cplusplus && *sp)
-                                            {
-                                                funcLevel++;
-                                                lex = getExceptionSpecifiers(lex, funcsp, *sp, storage_class);
-                                                funcLevel--;
-                                            }
-                                            break;
-                                        default:
-                                            done = true;
-                                            break;
-                                    }
-                            }
-                            if (foundand && foundland)
-                                error(ERR_TOO_MANY_QUALIFIERS);
-                            if (foundVolatile)
-                            {
-                                *tp = MakeType(bt_volatile, *tp);
-                            }
-                            if (foundConst)
-                            {
-                                *tp = MakeType(bt_const, *tp);
-                            }
-                            if (foundand)
-                            {
-                                *tp = MakeType(bt_lrqual, *tp);
-                            }
-                            else if (foundland)
-                            {
-                                *tp = MakeType(bt_rrqual, *tp);
-                            }
-                            ParseAttributeSpecifiers(&lex, funcsp, true);
-                            if (MATCHKW(lex, pointsto))
-                            {
-                                TYPE* tpx = nullptr;
-                                HASHTABLE* locals = localNameSpace->valueData->syms;
-                                localNameSpace->valueData->syms = basetype(*tp)->syms;
-                                funcLevel++;
-                                lex = getsym();
-                                ParseAttributeSpecifiers(&lex, funcsp, true);
-                                parsingTrailingReturnOrUsing++;
-                                lex = get_type_id(lex, &tpx, funcsp, sc_cast, false, true, false);
-                                parsingTrailingReturnOrUsing--;
-                                // weed out temporary syms that were added as part of a decltype; they will be
-                                // reinstated as stackblock syms later
-                                auto hrp = &localNameSpace->valueData->syms->table[0];
-                                while (*hrp)
-                                {
-                                    SYMBOL* sym = (SYMBOL*)(*hrp)->p;
-                                    if (sym->sb->storage_class != sc_parameter)
-                                        *hrp = (*hrp)->next;
-                                    else
-                                        hrp = &(*hrp)->next;
-                                }
-                                if (tpx)
-                                {
-                                    if (!isautotype(basetype(*tp)->btp))
-                                        error(ERR_MULTIPLE_RETURN_TYPES_SPECIFIED);
-                                    if (isarray(tpx))
-                                    {
-                                        TYPE* tpn = MakeType(bt_pointer, basetype(tpx)->btp);
-                                        if (isconst(tpx))
-                                        {
-                                            tpn = MakeType(bt_const, tpn);
-                                        }
-                                        if (isvolatile(tpx))
-                                        {
-                                            tpn = MakeType(bt_volatile, tpn);
-                                        }
-                                        basetype(*tp)->btp = tpn;
-                                        basetype(*tp)->rootType = tpn->rootType;
-                                    }
-                                    else
-                                    {
-                                        basetype(*tp)->btp = tpx;
-                                        basetype(*tp)->rootType = tpx->rootType;
-                                    }
-                                }
-                                localNameSpace->valueData->syms = locals;
-                                funcLevel--;
-                            }
+                            lex = GetFunctionQualifiersAndTrailingReturn(lex, funcsp, sp, tp, storage_class);
                         }
                     }
                     UpdateRootTypes(*tp);

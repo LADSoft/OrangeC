@@ -61,13 +61,13 @@ const char* cpp_funcname_tab[] = {"$bctr",  "$bdtr",   "$bcast",  "$bnew",   "$b
                                   "$basn",  "$basadd", "$bassub", "$basmul", "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand",
                                   "$basor", "$basxor", "$binc",   "$bdec",   "$barray", "$bcall",  "$bstar",  "$barrow",  "$bcomma",
                                   "$blor",  "$bland",  "$bnot",   "$bor",    "$band",   "$bxor",   "$bcpl",   "$bnwa",    "$bdla",
-                                  "$blit",  "$badd",   "$bsub",   "$bmul",   "$band",   0
+                                  "$blit",  "$badd",   "$bsub",   "$bmul",   "$band",
 
 };
 const char* xlate_tab[] = {
     0,    0,   0,    "new", "delete", "+",  "-",  "*",   "/",   "<<",    ">>",       "%",     "==", "!=", "<",  "<=", ">",
     ">=", "=", "+=", "-=",  "*=",     "/=", "%=", "<<=", ">>=", "&=",    "|=",       "^=",    "++", "--", "[]", "()", "->*",
-    "->", ",", "||", "&&",  "!",      "|",  "&",  "^",   "~",   "new[]", "delete[]", "\"\" ", "+",  "-",  "*",  "&",  0};
+    "->", ",", "||", "&&",  "!",      "|",  "&",  "^",   "~",   "new[]", "delete[]", "\"\" ", "+",  "-",  "*",  "&"};
 #define IT_THRESHOLD 3
 #define IT_OV_THRESHOLD 5
 #define IT_SIZE (sizeof(cpp_funcname_tab) / sizeof(char*))
@@ -86,8 +86,15 @@ const char* unmang_intrins(char* buf, const char* name, const char* last)
     char cur[4096], *p = cur;
     int i;
     *p++ = *name++;  // past the '$'
-    while (*name != '@' && *name != '$' && *name)
+    int hashlevel = 0;
+    while (*name != '@' && (*name != '$' || hashlevel) && *name)
+    {
+        if (*name == '#')
+            hashlevel++;
+        else if (*name == '~')
+            hashlevel--;
         *p++ = *name++;
+    }
     *p = 0;
     for (i = 0; i < IT_SIZE; i++)
         if (!strcmp(cur, cpp_funcname_tab[i]))
@@ -582,7 +589,7 @@ static const char* unmangTemplate(char* buf, const char* name, const char* last)
         }
         else
         {
-            while (*name && *name != '$')
+            while (*name && *name != '$')       
                 *buf++ = *name++;
         }
         *buf++ = '<';

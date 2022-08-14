@@ -627,15 +627,18 @@ class Configuration(object):
             self.lit_config.note('using the system cxx headers')
             return
         self.cxx.compile_flags += ['-nostdinc++']
+        self.cxx.compile_flags += ['-nostdinc'] #DAL 
         if cxx_headers is None:
             cxx_headers = os.path.join(self.libcxx_src_root, 'include')
         if not os.path.isdir(cxx_headers):
             self.lit_config.fatal("cxx_headers='%s' is not a directory."
                                   % cxx_headers)
         self.cxx.compile_flags += ['-I' + cxx_headers]
+        self.cxx.compile_flags += ['-I' + os.path.join(self.libcxx_src_root, '..\..\stdinc')] #DAL
         if self.libcxx_obj_root is not None:
             cxxabi_headers = os.path.join(self.libcxx_obj_root, 'include',
                                           'c++build')
+
             if os.path.isdir(cxxabi_headers):
                 self.cxx.compile_flags += ['-I' + cxxabi_headers]
 

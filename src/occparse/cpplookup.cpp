@@ -3190,7 +3190,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                                         }
                                     }
                                 }
-                                else
+                                else if (!comparetypes(basetype(candidate->tp)->btp, tpa, true) && !sameTemplate(basetype(candidate->tp)->btp, tpa))
                                 {
                                     getSingleConversion(tppp, basetype(candidate->tp)->btp, lref ? nullptr : &exp, &n3, seq3 + n2,
                                                         candidate, nullptr, true);
@@ -3865,6 +3865,10 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
                     {
                         seq[(*n)++] = CV_DERIVEDFROMBASE;
                     }
+                    else if (s2->sb->trivialCons)
+                    {
+                        seq[(*n)++] = CV_NONE;
+                    }
                     else
                     {
                         if (allowUser)
@@ -3955,6 +3959,10 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
                 else if (classRefCount(basetype(tpp)->sp, basetype(tpa)->sp) == 1)
                 {
                     seq[(*n)++] = CV_DERIVEDFROMBASE;
+                }
+                else if (basetype(tpp)->sp->sb->trivialCons)
+                {
+                    seq[(*n)++] = CV_NONE;
                 }
                 else
                 {
@@ -4262,18 +4270,37 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
                     }
                     else
                     {
-                        seq[(*n)++] = CV_FLOATINGINTEGRALCONVERSION;
+                        seq[(*n)++] = CV_FLOATINGCONVERSION;
+                        if (basetype(tpp)->type == bt_float)
+                           seq[(*n)++] = CV_FLOATINGCONVERSION;
+                        else if (basetype(tpp)->type == bt_long_double)
+                           seq[(*n)++] = CV_FLOATINGPROMOTION;
                     }
 
                 else /* floating */
                     if (basetype(tpp)->type == bt_bool)
-                    seq[(*n)++] = CV_BOOLCONVERSION;
-                else if (basetype(tpp)->type == bt_double && basetype(tpa)->type == bt_float)
-                    seq[(*n)++] = CV_FLOATINGPROMOTION;
-                else if (isfloat(tpp))
-                    seq[(*n)++] = CV_FLOATINGCONVERSION;
-                else
-                    seq[(*n)++] = CV_FLOATINGINTEGRALCONVERSION;
+                        seq[(*n)++] = CV_BOOLCONVERSION;
+                    else if (isint(tpp))
+                        seq[(*n)++] = CV_FLOATINGINTEGRALCONVERSION;
+                    else if (isfloat(tpp))
+                    {
+                    	if (basetype(tpp)->type == bt_double)
+	                  {    
+                           if (basetype(tpa)->type == bt_float)
+                               seq[(*n)++] = CV_FLOATINGPROMOTION;
+                           else
+                               seq[(*n)++] = CV_FLOATINGCONVERSION;
+                        }
+                        else
+                        {
+                           if (basetype(tpp)->type < basetype(tpa)->type)
+                               seq[(*n)++] = CV_FLOATINGCONVERSION;
+                           else
+                               seq[(*n)++] = CV_FLOATINGPROMOTION;
+                        }
+                    }
+                    else
+                        seq[(*n)++] = CV_NONE;
             }
             else if (!isenumconst)
             {
@@ -5208,8 +5235,13 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     WeedTemplates(spList, n, args, atp);
                     for (i = 0; i < n && !found1; i++)
                     {
-                        if (spList[i] && !spList[i]->sb->deleted)
+                        if (spList[i] && !spList[i]->sb->deleted && !spList[i]->sb->castoperator)
                            found1 = spList[i];
+                    }
+                    for (i = 0; i < n && !found1; i++)
+                    {
+                        if (spList[i] && !spList[i]->sb->deleted)
+                            found1 = spList[i];
                     }
                     for (i = 0; i < n; i++)
                     {
@@ -5218,7 +5250,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                             found1 = spList[i];
                         for (j = i; j < n && found1; j++)
                         {
-                            if (spList[j] && found1 != spList[j] && !sameTemplate(found1->tp, spList[j]->tp))
+                            if (spList[j] && found1 != spList[j] && found1->sb->castoperator == spList[j]->sb->castoperator && !sameTemplate(found1->tp, spList[j]->tp))
                             {
                                 found2 = spList[j];
                             }
@@ -5243,6 +5275,11 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         WeedTemplates(spList, n, args, atp);
                         for (i = 0; i < n && !found1; i++)
                         {
+                            if (spList[i] && !spList[i]->sb->deleted && !spList[i]->sb->castoperator)
+                               found1 = spList[i];
+                        }
+                        for (i = 0; i < n && !found1; i++)
+                        {
                             if (spList[i] && !spList[i]->sb->deleted)
                                found1 = spList[i];
                         }
@@ -5253,7 +5290,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                                 found1 = spList[i];
                             for (j = i; j < n && found1 && !found2; j++)
                             {
-                                if (spList[j] && found1 != spList[j] && !sameTemplate(found1->tp, spList[j]->tp))
+                            if (spList[j] && found1 != spList[j] && found1->sb->castoperator == spList[j]->sb->castoperator && !sameTemplate(found1->tp, spList[j]->tp))
                                 {
                                     found2 = spList[j];
                                 }

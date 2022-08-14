@@ -8697,6 +8697,10 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             error(ERR_LVALUE);
         else if (symRef && symRef->v.sp->sb->attribs.inheritable.linkage2 == lk_property && !symRef->v.sp->sb->has_property_setter)
             errorsym(ERR_CANNOT_MODIFY_PROPERTY_WITHOUT_SETTER, symRef->v.sp);
+        else if (isstructured(*tp) && !basetype(*tp)->sp->sb->trivialCons)
+        {
+            errorsym(ERR_NO_ASSIGNMENT_OPERATOR, basetype(*tp)->sp);
+        }
         else
             switch (kw)
             {

@@ -5887,7 +5887,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         }
                         if (!inTemplate)
                         {
-                            if (isfunction(sp->tp) && hasTemplateParent(sp))
+                            if (basetype(sp->tp) && isfunction(sp->tp) && hasTemplateParent(sp))
                             {
                                 SYMBOL* parent = sp->sb->parentClass;
                                 while (parent)

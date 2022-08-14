@@ -315,7 +315,11 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
     // #include_next basically runs through only these two, and maybe the first, if the 2nd here doesn't run, but it's already an
     // inconsistent feature so
     if (rv.empty())
-        rv = SrchPath(false, name, srchPath, skipFirst, include_files_skipped);
+    {
+        int skipped = include_files_skipped + (sysSrchPath.empty() ? 1 : 0);
+        rv = SrchPath(false, name, srchPath, skipFirst, skipped);
+        include_files_skipped = skipped - (sysSrchPath.empty() ? 1 : 0);
+    }
     // if not there and we haven't searched the system search path, do it now
     if (rv.empty() && !specifiedAsSystem)
     {

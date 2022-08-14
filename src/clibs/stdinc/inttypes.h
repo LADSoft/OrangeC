@@ -190,6 +190,12 @@
 #        define PRIuPTR PRIuPTR32
 #        define PRIxPTR PRIxPTR32
 #        define PRIXPTR PRIXPTR32
+#        define PRIdMAX PRIdMAX32
+#        define PRIiMAX PRIiMAX32
+#        define PRIoMAX PRIoMAX32
+#        define PRIuMAX PRIuMAX32
+#        define PRIxMAX PRIxMAX32
+#        define PRIXMAX PRIXMAX32
 #    else
 #        define PRIdPTR PRIdPTR64
 #        define PRIiPTR PRIiPTR64
@@ -197,6 +203,12 @@
 #        define PRIuPTR PRIuPTR64
 #        define PRIxPTR PRIxPTR64
 #        define PRIXPTR PRIXPTR64
+#        define PRIdMAX PRIdMAX64
+#        define PRIiMAX PRIiMAX64
+#        define PRIoMAX PRIoMAX64
+#        define PRIuMAX PRIuMAX64
+#        define PRIxMAX PRIxMAX64
+#        define PRIXMAX PRIXMAX64
 #    endif
 
 #    define SCNd8 "hhd"
@@ -318,6 +330,30 @@
 #    define SCNoPTR64 "llo"
 #    define SCNuPTR64 "llU"
 #    define SCNxPTR64 "llx"
+
+#    ifdef UINTPTR_MAX == INT32_MAX
+#        define SCNdPTR SCNdPTR32
+#        define SCNiPTR SCNiPTR32
+#        define SCNoPTR SCNoPTR32
+#        define SCNuPTR SCNuPTR32
+#        define SCNxPTR SCNxPTR32
+#        define SCNdMAX SCNdMAX32
+#        define SCNiMAX SCNiMAX32   
+#        define SCNoMAX SCNoMAX32
+#        define SCNuMAX SCNuMAX32
+#        define SCNxMAX SCNxMAX32
+#    else
+#        define SCNdPTR SCNdPTR64
+#        define SCNiPTR SCNiPTR64
+#        define SCNoPTR SCNoPTR64
+#        define SCNuPTR SCNuPTR64
+#        define SCNxPTR SCNxPTR64
+#        define SCNdMAX SCNdMAX64
+#        define SCNiMAX SCNiMAX64
+#        define SCNoMAX SCNoMAX64
+#        define SCNuMAX SCNuMAX64
+#        define SCNxMAX SCNxMAX64
+#    endif
 
 #endif
 

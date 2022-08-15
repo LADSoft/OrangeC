@@ -79,6 +79,11 @@ erf:
     fcomp st1
     fstsw ax
     sahf
+    jnz     erfnz
+    popone
+    fldz
+    ret
+erfnz:
     jb	erfltz
     call	gammp
     jc		xit
@@ -106,6 +111,11 @@ erfc:
     fcomp st1
     fstsw ax
     sahf
+    jnz     erfcnz
+    popone
+    fld1
+    ret
+erfcnz:
     jb	erfcltz
     call	gammp
     jc		xit

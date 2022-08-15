@@ -235,6 +235,7 @@ static bool hasFloats(EXPRESSION* node)
         case en_thisref:
         case en_literalclass:
         case en_lvalue:
+        case en_select:
             return hasFloats(node->left);
         default:
             return 0;
@@ -2382,6 +2383,7 @@ int opt0(EXPRESSION** node)
         case en_funcret:
         case en__initobj:
         case en__sizeof:
+        case en_select:
             rv |= opt0(&(ep->left));
             break;
         case en_dot:
@@ -3085,6 +3087,7 @@ int fold_const(EXPRESSION* node)
         case en_lvalue:
         case en__initobj:
         case en__sizeof:
+        case en_select:
             rv |= fold_const(node->left);
             break;
         case en_funcret:
@@ -3270,6 +3273,7 @@ int typedconsts(EXPRESSION* node1)
         case en_funcret:
         case en__initobj:
         case en__sizeof:
+        case en_select:
             rv |= typedconsts(node1->left);
             break;
         case en_func:
@@ -3774,6 +3778,8 @@ void RemoveSizeofOperators(EXPRESSION* constant)
 }
 void optimize_for_constants(EXPRESSION** expr)
 {
+    if ((*expr)->type == en_select)
+        expr = &(*expr)->left;
     int rv = true, count = 8;
     EXPRESSION* oldasidehead = asidehead;
     EXPRESSION** oldasidetail = asidetail;

@@ -370,6 +370,9 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
+            case en_select:
+                buf = mangleExpressionInternal(buf, exp->left);
+                break;
             case en_templateselector: {
                 TEMPLATESELECTOR *tsl = exp->v.templateSelector, *find = tsl->next->next;
                 SYMBOL* ts = tsl->next->sp;
@@ -536,7 +539,14 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
                 }
                 else if (bySpecial)
                 {
-                    buf = mangleType(buf, params->p->byClass.dflt, true);
+                    if (params->p->byClass.dflt)
+                    {
+                        buf = mangleType(buf, params->p->byClass.dflt, true);
+                    }
+                    else
+                    {
+                        buf = getName(buf, params->argsym);
+                    }
                 }
                 else if (sym->sb && sym->sb->instantiated && params->p->byClass.val)
                 {

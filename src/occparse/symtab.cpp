@@ -508,10 +508,6 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                         }
                         return true;
                     }
-                    else if (tpn->type == bt_templatedecltype && tps->type == bt_templatedecltype)
-                    {
-                        return templatecompareexpressions(tpn->templateDeclType, tps->templateDeclType);
-                    }
                     else if ((tpn->type == bt_templateparam || tps->type == bt_templateparam) && tpn->type != tps->type)
                     {
                         return false;
@@ -541,7 +537,6 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                             return false;
                     }
                     return true;
-                    return templateselectorcompare(tpn->sp->sb->templateSelector, tps->sp->sb->templateSelector);  // unreachable
                 }
             }
             else if (basetype(tnew)->sp->sb->castoperator)

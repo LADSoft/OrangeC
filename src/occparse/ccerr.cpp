@@ -389,7 +389,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     const char* listerr;
     char nameb[265], *name = nameb;
     if (Optimizer::cparams.prm_makestubs || inDeduceArgs || (templateNestingCount && ignoreErrtemplateNestingCount(err)))
-        if (err != ERR_STATIC_ASSERT && !(errors[err].level & CE_NOTE))
+        if (err != ERR_STATIC_ASSERT && err != ERR_DELETED_FUNCTION_REFERENCED && !(errors[err].level & CE_NOTE))
         {
             return false;
         }
@@ -1636,6 +1636,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case en_thisref:
         case en_lvalue:
         case en_funcret:
+        case en_select:
             assignmentUsages(node->left, false);
             break;
         case en_atomic:
@@ -1858,6 +1859,7 @@ static int checkDefaultExpression(EXPRESSION* node)
         case en_not_lvalue:
         case en_thisref:
         case en_lvalue:
+        case en_select:
             rv |= checkDefaultExpression(node->left);
             break;
         case en_atomic:

@@ -40,6 +40,7 @@ EXPRESSION* varNode(enum e_node type, SYMBOL* sym);
 EXPRESSION* typeNode(TYPE* tp);
 EXPRESSION* intNode(enum e_node type, long long val);
 void checkauto(TYPE* tp1, int err);
+void GetLogicalDestructors(Optimizer::LIST** rv, EXPRESSION* cur);
 void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp);
 TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr = false);
 LEXLIST* getInitList(LEXLIST* lex, SYMBOL* funcsp, INITLIST** owner);

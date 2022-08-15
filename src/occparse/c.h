@@ -165,7 +165,7 @@ typedef struct
         en_imode, en_x_p, en_substack, en_alloca, en__cpblk, en__initblk, en__initobj,  en__sizeof,
         en_loadstack, en_savestack, en_stmt, en_atomic, en_placeholder, en_thisshim, en_thisref,
         en_construct, en_literalclass, en_templateparam, en_templateselector, en_packedempty, en_sizeofellipse,
-        en_type, en_pointsto, en_dot,
+        en_type, en_pointsto, en_dot, en_select,
         // stuff that can only appear temporarily in constexpr expressions
         en_cshimref, en_cshimthis
     };
@@ -365,6 +365,7 @@ typedef struct expr
     int dest : 1;  // for thisref
     int noexprerr : 1;
     int init : 1;  // for no replacement by a constexpr array
+    int preincdec : 1;  //  an assignment which is the 'pre' form of autoinc
 } EXPRESSION;
 
 typedef struct _msilarray
@@ -934,7 +935,7 @@ typedef struct initlist
     struct initlist* next;
     TYPE* tp;
     EXPRESSION* exp;
-    EXPRESSION* dest;
+    Optimizer::LIST* destructors;
     struct initlist* nested;
     int byRef : 1;
     int packed : 1;

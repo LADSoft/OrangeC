@@ -81,7 +81,6 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym* sym)
 {
     if (sym && sym->sb)
     {
-
         Optimizer::SimpleSymbol* rv;
         rv = Lookup(sym);
         if (!rv)
@@ -319,6 +318,8 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
             while (list)
             {
                 *p = Allocate<Optimizer::LIST>();
+                if (isfunction(tp) && list->p->sb->parent)
+                    list->p->sb->parent->sb->decoratedName = basetype(tp)->sp->sb->decoratedName;
                 (*p)->data = Get(list->p);
                 if (rv->sp->storage_class == scc_type || rv->sp->storage_class == scc_cast)
                 {

@@ -1727,11 +1727,10 @@ void DestructParams(INITLIST* first)
                                     xexp->v.sp->sb->destructed = true;
                                 if (callDestructor(sp, nullptr, &iexp, nullptr, true, false, false, true))
                                 {
-                                    optimize_for_constants(&iexp);
-                                    if (first->dest)
-                                        first->dest = exprNode(en_void, iexp, first->dest);
-                                    else
-                                        first->dest = iexp;
+                                    Optimizer::LIST* entry = Allocate<Optimizer::LIST>();
+                                    entry->data = iexp;
+                                    entry->next = first->destructors;
+                                    first->destructors = entry;
                                 }
                             }
                         }
@@ -2251,33 +2250,32 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                 }
                 if (!isstructured(init->sp->tp))
                 {
-                    if (MATCHKW(lex, openpa))
+                    bool bypa = true;
+                    if (MATCHKW(lex, openpa) || MATCHKW(lex, begin))
                     {
-                        if (MATCHKW(lex, openpa))
+                        bypa = MATCHKW(lex, openpa);
+                        lex = getsym();
+                        if ((bypa && MATCHKW(lex, closepa)) || (!bypa && MATCHKW(lex, end)))
                         {
                             lex = getsym();
-                            if (MATCHKW(lex, closepa))
-                            {
-                                lex = getsym();
-                                init->init = nullptr;
-                                initInsert(&init->init, init->sp->tp, intNode(en_c_i, 0), 0 /*init->sp->sb->offset*/, false);
-                                done = true;
-                            }
-                            else
-                            {
-                                lex = backupsym();
-                            }
-                        }
-                        if (!done)
-                        {
-                            needkw(&lex, openpa);
                             init->init = nullptr;
-                            argumentNesting++;
-                            lex = initType(lex, cons, 0, sc_auto, &init->init, nullptr, init->sp->tp, init->sp, false, 0);
-                            argumentNesting--;
+                            initInsert(&init->init, init->sp->tp, intNode(en_c_i, 0), 0, false);
                             done = true;
-                            needkw(&lex, closepa);
                         }
+                        else
+                        {
+                            lex = backupsym();
+                        }
+                    }
+                    if (!done)
+                    {
+                        needkw(&lex, bypa ? openpa : begin);
+                        init->init = nullptr;
+                        argumentNesting++;
+                        lex = initType(lex, cons, 0, sc_auto, &init->init, nullptr, init->sp->tp, init->sp, false, 0);
+                        argumentNesting--;
+                        done = true;
+                        needkw(&lex, bypa ? closepa : end);
                     }
                 }
                 else
@@ -2893,7 +2891,7 @@ static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPR
     optimize_for_constants(&exp);
     st->select = exp;
 }
-static void thunkAssignments(BLOCKDATA* b, SYMBOL* sym, SYMBOL* asnfunc, HASHTABLE* syms, bool move, bool isconst)
+static EXPRESSION* thunkAssignments(BLOCKDATA* b, SYMBOL* sym, SYMBOL* asnfunc, HASHTABLE* syms, bool move, bool isconst)
 {
     SYMLIST* hr = syms->table[0];
     EXPRESSION* thisptr = varNode(en_auto, hr->p);
@@ -2944,6 +2942,7 @@ static void thunkAssignments(BLOCKDATA* b, SYMBOL* sym, SYMBOL* asnfunc, HASHTAB
     }
     asnfunc->sb->labelCount = codeLabel - INT_MIN;
     codeLabel = oldCodeLabel;
+    return thisptr;
 }
 void createAssignment(SYMBOL* sym, SYMBOL* asnfunc)
 {
@@ -2959,14 +2958,18 @@ void createAssignment(SYMBOL* sym, SYMBOL* asnfunc)
     b.type = begin;
     syms = localNameSpace->valueData->syms;
     localNameSpace->valueData->syms = basetype(asnfunc->tp)->syms;
-    thunkAssignments(&b, sym, asnfunc, basetype(asnfunc->tp)->syms, move, isConst);
+    auto thisptr = thunkAssignments(&b, sym, asnfunc, basetype(asnfunc->tp)->syms, move, isConst);
+    auto st = stmtNode(nullptr, &b, st_return);
+    st->select = thisptr;
     if (!inNoExceptHandler)
     {
         asnfunc->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
         asnfunc->sb->inlineFunc.stmt->lower = b.head;
         asnfunc->sb->inlineFunc.syms = basetype(asnfunc->tp)->syms;
+        asnfunc->sb->attribs.inheritable.isInline = true;
         //    asnfunc->sb->inlineFunc.stmt->blockTail = b.tail;
         InsertInline(asnfunc);
+
         defaultRecursionMap.clear();
         if (noExcept)
         {
@@ -3327,25 +3330,11 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     params->thisptr = *exp;
     params->thistp = MakeType(bt_pointer, sp->tp);
     params->ascall = true;
+
     cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, nullptr, toErr, maybeConversion, true, usesInitList | _F_INCONSTRUCTOR | (inNothrowHandler ? _F_IS_NOTHROW : 0));
 
     if (cons1 && isfunction(cons1->tp))
     {
-        // quick check that we didn't find a constructor of the form:
-        // A(A<U>) where A and A<U> are the same specialization
-        if (basetype(stp)->sp->sb->templateLevel)
-        {
-            SYMLIST* srch = basetype(cons1->tp)->syms->table[0];
-            while (srch)
-            {
-                if (isstructured(srch->p->tp) && basetype(srch->p->tp)->sp->sb->templateLevel &&
-                    sameTemplate(stp, basetype(srch->p->tp), true))
-                {
-                    return false;
-                }
-                srch = srch->next;
-            }
-        }
         CheckCalledException(cons1, params->thisptr);
 
         if (cons1->sb->castoperator)

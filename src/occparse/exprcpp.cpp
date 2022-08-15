@@ -2256,6 +2256,7 @@ static bool noexceptExpression(EXPRESSION* node)
         case en_lvalue:
         case en_thisref:
         case en_funcret:
+        case en_select:
             rv = noexceptExpression(node->left);
             break;
         case en_atomic:

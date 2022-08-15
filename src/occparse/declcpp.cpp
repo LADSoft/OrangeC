@@ -2990,7 +2990,7 @@ LEXLIST* handleStaticAssert(LEXLIST* lex)
         lex = expression_no_comma(lex, nullptr, nullptr, &tp, &expr, nullptr, 0);
         expr2 = Allocate<EXPRESSION>();
         expr2->type = en_x_bool;
-        expr2->left = expr;
+        expr2->left = expr->type == en_select ? expr->left : expr;
         optimize_for_constants(&expr2);
         inConstantExpression--;
         if (!isarithmeticconst(expr2) && !templateNestingCount)

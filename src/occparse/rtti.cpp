@@ -703,6 +703,7 @@ static void XCExpression(EXPRESSION* node, std::map<int, std::map<int, __xclist*
         case en_not_lvalue:
         case en_lvalue:
         case en_funcret:
+        case en_select:
             XCExpression(node->left, lst);
             break;
         case en_thisref:

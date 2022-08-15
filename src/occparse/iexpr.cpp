@@ -1937,7 +1937,7 @@ Optimizer::IMODE* gen_stmt_from_expr(SYMBOL* funcsp, EXPRESSION* node, int flags
 static bool has_arg_destructors(INITLIST* arg)
 {
     if (arg)
-        return !!arg->dest || has_arg_destructors(arg->next);
+        return !!arg->destructors || has_arg_destructors(arg->next);
     return false;
 }
 static void gen_arg_destructors(SYMBOL* funcsp, INITLIST* arg, Optimizer::LIST* assignDestructors)
@@ -1945,8 +1945,15 @@ static void gen_arg_destructors(SYMBOL* funcsp, INITLIST* arg, Optimizer::LIST* 
     if (arg)
     {
         gen_arg_destructors(funcsp, arg->next, nullptr);
-        if (arg->dest)
-            gen_expr(funcsp, arg->dest, F_NOVALUE, ISZ_UINT);
+        if (arg->destructors)
+        {
+            auto e = arg->destructors;
+            while (e)
+            {
+                gen_expr(funcsp, (EXPRESSION*)e->data, F_NOVALUE, ISZ_UINT);
+                e = e->next;
+            }
+        }
     }
     while (assignDestructors)
     {
@@ -2224,7 +2231,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     else
     {
         int n = 0;
-        if (f->thisptr && f->thisptr->type == en_auto && f->thisptr->v.sp->sb->stackblock)
+        if (f->thisptr && f->thisptr->type == en_auto && f->thisptr->v.sp->sb->stackblock && !f->sp->sb->isDestructor)
         {
             EXPRESSION* exp = f->thisptr;
             // constructor or other function creating a structure on the stack
@@ -2402,36 +2409,6 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         gosub->novalue = -1;
     }
     stackblockOfs = cdeclare;
-    /* undo pars and make a temp for the result */
-    if (Optimizer::chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
-    {
-        int n = f->thisptr ? 1 : 0;
-        INITLIST* args = f->arguments;
-        while (args)
-        {
-            n++;
-            args = args->next;
-        }
-        if (f->returnEXP && !managed)
-            n++;
-        Optimizer::gen_nodag(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(n),
-                             Optimizer::make_parmadj(!isvoid(basetype(f->functp)->btp)));
-    }
-    else
-    {
-        adjust -= fastcallSize;
-        if (adjust < 0)
-            adjust = 0;
-        adjust2 -= fastcallSize;
-        if (adjust2 < 0)
-            adjust2 = 0;
-        if (f->sp->sb->attribs.inheritable.linkage != lk_stdcall && f->sp->sb->attribs.inheritable.linkage != lk_pascal)
-            Optimizer::gen_nodag(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(adjust), Optimizer::make_parmadj(adjust));
-        else
-            Optimizer::gen_nodag(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(adjust2), Optimizer::make_parmadj(adjust));
-    }
-
-    push_nesting -= adjust;
     if (f->returnEXP && managed && isfunction(f->functp) && isstructured(basetype(f->functp)->btp))
     {
         if (!(flags & F_INRETURN))
@@ -2513,6 +2490,36 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         ap = ap1;
     }
     gen_arg_destructors(funcsp, f->arguments, f->destructors);
+    /* undo pars and make a temp for the result */
+    if (Optimizer::chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
+    {
+        int n = f->thisptr ? 1 : 0;
+        INITLIST* args = f->arguments;
+        while (args)
+        {
+            n++;
+            args = args->next;
+        }
+        if (f->returnEXP && !managed)
+            n++;
+        Optimizer::gen_nodag(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(n),
+            Optimizer::make_parmadj(!isvoid(basetype(f->functp)->btp)));
+    }
+    else
+    {
+        adjust -= fastcallSize;
+        if (adjust < 0)
+            adjust = 0;
+        adjust2 -= fastcallSize;
+        if (adjust2 < 0)
+            adjust2 = 0;
+        if (f->sp->sb->attribs.inheritable.linkage != lk_stdcall && f->sp->sb->attribs.inheritable.linkage != lk_pascal)
+            Optimizer::gen_nodag(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(adjust), Optimizer::make_parmadj(adjust));
+        else
+            Optimizer::gen_nodag(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(adjust2), Optimizer::make_parmadj(adjust));
+    }
+
+    push_nesting -= adjust;
     return ap;
 }
 Optimizer::IMODE* gen_atomic_barrier(SYMBOL* funcsp, ATOMICDATA* ad, Optimizer::IMODE* addr, Optimizer::IMODE* barrier)
@@ -3612,6 +3619,10 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             ap1 = gen_relat(node, funcsp);
             rv = ap1;
             break;
+        case en_select:
+            ap1 = gen_expr(funcsp, node->left, flags, size);
+            rv = ap1;
+            break;
         case en_atomic:
             ap1 = gen_atomic(funcsp, node, flags, size);
             rv = ap1;
@@ -4006,6 +4017,7 @@ int natural_size(EXPRESSION* node)
         case en_ursh:
         case en_argnopush:
         case en_thisref:
+        case en_select:
             return natural_size(node->left);
             /*		case en_array:
                         return ISZ_ADDR ;
@@ -4353,6 +4365,23 @@ void truejmp(EXPRESSION* node, SYMBOL* funcsp, int label)
         case en_uge:
             gen_compare(node, funcsp, Optimizer::i_jnc, label);
             break;
+        case en_select:
+            if (node->v.logicaldestructors.left)
+            {
+                siz1 = natural_size(node);
+                ap3 = gen_expr(funcsp, node->left, F_COMPARE, siz1);
+                ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
+                if (ap1 != ap3)
+                    Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+                DumpIncDec(funcsp);
+                DumpLogicalDestructors(funcsp, node->v.logicaldestructors.left);
+                Optimizer::gen_icgoto(Optimizer::i_jne, label, ap1, Optimizer::make_immed(ap1->size, 0));
+            }
+            else
+            {
+                truejmp(node->left, funcsp, label);
+            }
+            break;
         case en_land:
             if (node->v.logicaldestructors.left || node->v.logicaldestructors.right)
             {
@@ -4532,6 +4561,23 @@ void falsejmp(EXPRESSION* node, SYMBOL* funcsp, int label)
             break;
         case en_uge:
             gen_compare(node, funcsp, Optimizer::i_jc, label);
+            break;
+        case en_select:
+            if (node->v.logicaldestructors.left)
+            {
+                siz1 = natural_size(node);
+                ap3 = gen_expr(funcsp, node->left, F_COMPARE, siz1);
+                ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
+                if (ap1 != ap3)
+                    Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+                DumpIncDec(funcsp);
+                DumpLogicalDestructors(funcsp, node->v.logicaldestructors.left);
+                Optimizer::gen_icgoto(Optimizer::i_je, label, ap1, Optimizer::make_immed(ap1->size, 0));
+            }
+            else
+            {
+                falsejmp(node->left, funcsp, label);
+            }
             break;
         case en_land:
             if (node->v.logicaldestructors.left || node->v.logicaldestructors.right)

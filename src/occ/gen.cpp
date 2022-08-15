@@ -2707,6 +2707,7 @@ void asm_parmadj(Optimizer::QUAD* q) /* adjust stack after function call */
     int i = beGetIcon(q->dc.left);
     if (i)
     {
+/*
         if (i == 4)
         {
             gen_codes(op_pop, ISZ_UINT, makedreg(ECX), 0);
@@ -2717,6 +2718,7 @@ void asm_parmadj(Optimizer::QUAD* q) /* adjust stack after function call */
             gen_codes(op_pop, ISZ_UINT, makedreg(ECX), 0);
         }
         else
+*/
         {
             gen_code(op_add, makedreg(ESP), aimmed(i));
         }

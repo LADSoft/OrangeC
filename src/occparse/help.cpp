@@ -2167,7 +2167,7 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
 EXPRESSION* RemoveAutoIncDec(EXPRESSION* exp)
 {
     EXPRESSION* newExp;
-    if (exp->type == en_autoinc || exp->type == en_autodec)
+    if (exp->preincdec || exp->type == en_autoinc || exp->type == en_autodec)
         return RemoveAutoIncDec(exp->left);
     newExp = Allocate<EXPRESSION>();
     *newExp = *exp;
@@ -2176,5 +2176,40 @@ EXPRESSION* RemoveAutoIncDec(EXPRESSION* exp)
     if (newExp->right)
         newExp->right = RemoveAutoIncDec(newExp->right);
     return newExp;
+}
+EXPRESSION* EvaluateDest(EXPRESSION*exp, TYPE* tp)
+{
+    EXPRESSION* result = nullptr;
+    if (!basetype(tp)->hasbits && !castvalue(exp) && lvalue(exp))
+    {
+        bool doit = false;
+        std::stack<EXPRESSION*> stk;
+        stk.push(exp->left);
+        while (stk.size() && !doit)
+        {
+            EXPRESSION* c = stk.top();
+            stk.pop();
+            if (c->type == en_func)
+            {
+                doit = true;
+                break;
+            }
+            if (c->left)
+                stk.push(c->left);
+            if (c->right)
+                stk.push(c->right);
+        }
+        if (doit)
+        {
+            auto exp2 = exp->left;
+            result = anonymousVar(sc_auto, &stdpointer);
+            deref(&stdpointer, &result);
+            exp2 = exprNode(en_assign, result, exp2);
+            exp2 = exprNode(exp->type, exp2, nullptr);
+            result = exprNode(exp->type, result, nullptr);
+            result = exprNode(en_void, exp2, result);
+        }
+    }
+    return result;
 }
 }  // namespace Parser

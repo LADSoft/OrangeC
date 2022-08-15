@@ -1702,7 +1702,7 @@ int x86_examine_icode(QUAD* head)
                     switch (head->dc.opcode)
                     {
                         case i_setle:
-                            head->dc.opcode = i_sete;
+                            head->dc.opcode = i_setge;
                             break;
                         case i_setl:
                             head->dc.opcode = i_setg;

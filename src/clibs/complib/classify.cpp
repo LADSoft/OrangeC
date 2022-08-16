@@ -36,7 +36,7 @@
 
 #include <c/math.h>
 #include <stdio.h>
-bool _RTL_FUNC (fpclassify)(float x)
+int _RTL_FUNC (fpclassify)(float x)
 {
     return fpclassify(x);
 }
@@ -83,7 +83,7 @@ bool _RTL_FUNC (isunordered)(float x, float y)
     return isunordered(x, y);
 }
 
-bool _RTL_FUNC(fpclassify)(double x)
+int _RTL_FUNC(fpclassify)(double x)
 {
     return fpclassify(x);
 }
@@ -130,7 +130,7 @@ bool _RTL_FUNC(isunordered)(double x, double y)
     return isunordered(x, y);
 }
 
-bool _RTL_FUNC(fpclassify)(long double x)
+int _RTL_FUNC(fpclassify)(long double x)
 {
     return fpclassify(x);
 }

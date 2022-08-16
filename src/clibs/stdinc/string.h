@@ -94,12 +94,19 @@ extern "C"
     char* _RTL_FUNC _IMPORT strtok(char* ZSTR restrict __s1, const char* ZSTR restrict __s2);
     char* _RTL_FUNC _IMPORT _strerror(const char* ZSTR __s);
 
+#ifdef __cplusplus
+    const void* _RTL_INTRINS _IMPORT memchr(const void* __s, int __c, size_t __n);
+    const char* _RTL_INTRINS _IMPORT strchr(const char* ZSTR __s, int __c);
+    const char* _RTL_INTRINS _IMPORT strrchr(const char* ZSTR __s, int __c);
+    const char* _RTL_FUNC _IMPORT strpbrk(const char* ZSTR __s1, const char* ZSTR __s2);
+    const char* _RTL_FUNC _IMPORT strstr(const char* ZSTR __s1, const char* ZSTR __s2);
+#else
     void* _RTL_INTRINS _IMPORT memchr(const void* __s, int __c, size_t __n);
     char* _RTL_INTRINS _IMPORT strchr(const char* ZSTR __s, int __c);
     char* _RTL_INTRINS _IMPORT strrchr(const char* ZSTR __s, int __c);
     char* _RTL_FUNC _IMPORT strpbrk(const char* ZSTR __s1, const char* ZSTR __s2);
     char* _RTL_FUNC _IMPORT strstr(const char* ZSTR __s1, const char* ZSTR __s2);
-
+#endif
     int _RTL_FUNC _IMPORT _lstrcoll(const char* ZSTR __s1, const char* ZSTR __s2);
     size_t _RTL_FUNC _IMPORT _lstrxfrm(char* ZSTR restrict __s1, const char* ZSTR restrict __s2, size_t __n);
     int _RTL_FUNC _IMPORT strcoll(const char* ZSTR __s1, const char* ZSTR __s2);

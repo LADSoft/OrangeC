@@ -114,14 +114,22 @@ extern "C"
     size_t _RTL_FUNC wcsxfrm(wchar_t* restrict __s1, const wchar_t* restrict __s2, size_t __n);
 
     wchar_t* _RTL_FUNC wcsdup(const wchar_t* __s);
-
+#ifdef __cplusplus
+    const wchar_t* _RTL_FUNC wcschr(const wchar_t* __wcs, wchar_t __wc);
+    const wchar_t* _RTL_FUNC wcsrchr(const wchar_t* __wcs, wchar_t __wc);
+#else
     wchar_t* _RTL_FUNC wcschr(const wchar_t* __wcs, wchar_t __wc);
     wchar_t* _RTL_FUNC wcsrchr(const wchar_t* __wcs, wchar_t __wc);
-
+#endif
     size_t _RTL_FUNC wcscspn(const wchar_t* __wcs, const wchar_t* __reject);
     size_t _RTL_FUNC wcsspn(const wchar_t* __wcs, const wchar_t* __accept);
+#ifdef __cplusplus
+    const wchar_t* _RTL_FUNC wcspbrk(const wchar_t* __wcs, const wchar_t* __accept);
+    const wchar_t* _RTL_FUNC wcsstr(const wchar_t* __haystack, const wchar_t* __needle);
+#else
     wchar_t* _RTL_FUNC wcspbrk(const wchar_t* __wcs, const wchar_t* __accept);
     wchar_t* _RTL_FUNC wcsstr(const wchar_t* __haystack, const wchar_t* __needle);
+#endif
     wchar_t* _RTL_FUNC wcstok(wchar_t* restrict __s, const wchar_t* restrict __delim, wchar_t** ptr);
 
     wchar_t* _RTL_FUNC wcsupr(wchar_t* __s);
@@ -129,7 +137,11 @@ extern "C"
 
     size_t _RTL_FUNC wcslen(const wchar_t* __s);
 
+#ifdef __cplusplus
+    const wchar_t* _RTL_FUNC wmemchr(const wchar_t* __s, wchar_t __c, size_t __n);
+#else
     wchar_t* _RTL_FUNC wmemchr(const wchar_t* __s, wchar_t __c, size_t __n);
+#endif
     int wmemcmp(const wchar_t* __s1, const wchar_t* __s2, size_t __n);
     wchar_t* _RTL_FUNC wmemcpy(wchar_t* restrict __s1, const wchar_t* restrict __s2, size_t __n);
     wchar_t* _RTL_FUNC wmemmove(wchar_t* __s1, const wchar_t* __s2, size_t __n);

@@ -58,7 +58,7 @@
 #pragma pack(1)
 
 #ifdef __cplusplus
-    bool _RTL_FUNC _IMPORTMM fpclassify(float x);
+    int _RTL_FUNC _IMPORTMM fpclassify(float x);
 
     bool _RTL_FUNC _IMPORTMM isfinite(float x);
     bool _RTL_FUNC _IMPORTMM isinf(float x);
@@ -71,7 +71,7 @@
     bool _RTL_FUNC _IMPORTMM islessequal(float x, float y);
     bool _RTL_FUNC _IMPORTMM islessgreater(float x, float y);
     bool _RTL_FUNC _IMPORTMM isunordered(float x, float y);
-    bool _RTL_FUNC _IMPORTMM fpclassify(double x);
+    int _RTL_FUNC _IMPORTMM fpclassify(double x);
 
     bool _RTL_FUNC _IMPORTMM isfinite(double x);
     bool _RTL_FUNC _IMPORTMM isinf(double x);
@@ -84,7 +84,7 @@
     bool _RTL_FUNC _IMPORTMM islessequal(double x, double y);
     bool _RTL_FUNC _IMPORTMM islessgreater(double x, double y);
     bool _RTL_FUNC _IMPORTMM isunordered(double x, double y);
-    bool _RTL_FUNC _IMPORTMM fpclassify(long double x);
+    int _RTL_FUNC _IMPORTMM fpclassify(long double x);
 
     bool _RTL_FUNC _IMPORTMM isfinite(long double x);
     bool _RTL_FUNC _IMPORTMM isinf(long double x);
@@ -211,9 +211,15 @@ extern "C"
     double _RTL_FUNC _IMPORTMM nan(const char* ZSTR tagp);
     long double _RTL_FUNC _IMPORTMM nanl(const char* ZSTR tagp);
 
+#ifdef __cplusplus
+    bool _RTL_FUNC _IMPORTMM signbitf(float __x);
+    bool _RTL_FUNC _IMPORTMM signbit(double __x);
+    bool _RTL_FUNC _IMPORTMM signbitl(long double __x);
+#else
     int _RTL_FUNC _IMPORTMM signbitf(float __x);
     int _RTL_FUNC _IMPORTMM signbit(double __x);
     int _RTL_FUNC _IMPORTMM signbitl(long double __x);
+#endif
     int _RTL_FUNC _IMPORTMM __nancompare(long double __x, long double __y, int type);
 
 
@@ -229,12 +235,12 @@ extern "C"
 #    define isnan(x) (fpclassify(x) == FP_NAN)
 #    define isnormal(x) (fpclassify(x) == FP_NORMAL)
 
-#    define isgreater(x, y) __nancompare((x), (y), 1)
-#    define isgreaterequal(x, y) __nancompare((x), (y), 2)
-#    define isless(x, y) __nancompare((x), (y), -1)
-#    define islessequal(x, y) __nancompare((x), (y), -2)
-#    define islessgreater(x, y) __nancompare((x), (y), -3)
-#    define isunordered(x, y) __nancompare((x), (y), 0)
+#    define isgreater(x, y) ((x) > (y))
+#    define isgreaterequal(x, y) ((x) >= (y))
+#    define isless(x, y) ((x) < (y))
+#    define islessequal(x, y) ((x) <= (y))
+#    define islessgreater(x, y) ((x) > (y) || (x) < (y))
+#    define isunordered(x, y) (isnan(x) || isnan(y))
 
 #endif
 #ifndef RC_INVOKED

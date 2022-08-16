@@ -47,13 +47,6 @@
 #    include <_defs.h>
 #endif
 
-#ifdef __cplusplus
-namespace std
-{
-typedef decltype(nullptr) nullptr_t;
-}
-#endif
-
 #if defined(__cplusplus) || __STDC_VERSION__ >= 201112L
 typedef long double max_align_t;
 #endif

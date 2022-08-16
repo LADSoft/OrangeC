@@ -340,16 +340,15 @@ extern "C"
 
     /*  The following macros provide for common functions */
 
-#if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL) && !defined(__MSIL__) && !defined(__LSCRTL_DLL)
+#if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL) && !defined(__MSIL__) && !defined(__LSCRTL_DLL) && !defined(__cplusplus)
 #    define ferror(f) ((f)->flags & _F_ERR)
 #    define feof(f) ((f)->flags & _F_EOF)
 #endif
-/*
- * the following four macros are somewhat problematic as they will
- * ignore line buffering...
- */
+
+#ifndef __cplusplus
 #define getc(f) fgetc(f)
 #define putc(c, f) fputc((c), f)
+#endif
 
 #pragma pack()
 

@@ -2896,9 +2896,22 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                         tp1 = itype;
                     if (!tp1 || !comparetypes(basetype(tp1), basetype(itype), true))
                     {
-                        error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
-                        errskim(&lex, skim_semi);
-                        return lex;
+                        SYMBOL* sym = nullptr;
+                        if (isstructured(itype))
+                            sym = getUserConversion(F_CONVERSION | F_WITHCONS, itype, tp1, nullptr, nullptr, nullptr, nullptr, nullptr, false);
+                        if (sym && !sym->sb->isExplicit)
+                        {
+                            funcparams->arguments = Allocate<INITLIST>();
+                            funcparams->arguments->tp = tp1;
+                            funcparams->arguments->exp = exp1;
+
+                        }
+                        else
+                        {
+                            error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                            errskim(&lex, skim_semi);
+                            return lex;
+                        }
                     }
                     else
                     {

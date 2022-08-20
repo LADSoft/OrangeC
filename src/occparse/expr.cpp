@@ -1536,7 +1536,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                     funcparams->thisptr = *exp;
                     funcparams->thistp = MakeType(bt_pointer, basetp);
 
-                    if (!points && (*exp)->type != en_l_ref)
+                    if (!points && (*exp)->type != en_l_ref && !typein->lref && !typein->rref)
                         funcparams->novtab = true;
                     *exp = varNode(en_func, nullptr);
                     (*exp)->v.func = funcparams;

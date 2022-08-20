@@ -59,8 +59,6 @@ SYMBOL* argFriend;
 static int insertFuncs(SYMBOL** spList, Optimizer::LIST* gather, FUNCTIONCALL* args, TYPE* atp, int flags);
 
 static const int rank[] = {0, 1, 1, 1, 1, 2, 2, 3, 4, 4, 4, 4, 4, 4, 5, 5, 6, 7, 8, 8, 9};
-static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate_in,
-                                 SYMBOL** userFunc, bool honorExplicit);
 static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* parent, enum e_cvsrn arr[], int* sizes, int count,
                                SYMBOL** userFunc, bool usesInitList);
 static void WeedTemplates(SYMBOL** table, int count, FUNCTIONCALL* args, TYPE* atp);
@@ -1846,6 +1844,7 @@ static Optimizer::LIST* searchOneArg(SYMBOL* sym, Optimizer::LIST* in, TYPE* tp)
         return searchOneArg(sym, in, basetype(tp)->btp);
     if (isarithmetic(tp))
     {
+        tp = basetype(tp);
         if (tp->btp && tp->btp->type == bt_enum)
             return structuredArg(sym, in, tp);
         return in;
@@ -3126,7 +3125,7 @@ static Optimizer::LIST* GetMemberConstructors(Optimizer::LIST* gather, SYMBOL* s
 }
 void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
                          bool allowUser);
-static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate_in,
+SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate_in,
                                  SYMBOL** userFunc, bool honorExplicit)
 {
     if (inGetUserConversion < 1)

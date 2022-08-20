@@ -405,7 +405,7 @@ fpclassify(_A1 __lcpp_x) _NOEXCEPT
 
 template <typename _A1>
 inline _LIBCPP_INLINE_VISIBILITY
-typename std::enable_if<std::is_floating_point<_A1>::value, bool>::type
+typename std::enable_if<std::is_floating_point<_A1>::value, int>::type
 fpclassify(_A1 __lcpp_x) _NOEXCEPT
 {
   return ::fpclassify(static_cast<typename std::__promote<_A1>::type>(__lcpp_x));

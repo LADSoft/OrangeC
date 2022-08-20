@@ -357,6 +357,7 @@ bool IsNothrowError(int err)
         case ERR_CANNOT_CONVERT_TYPE:
         case ERR_ILL_STRUCTURE_ASSIGNMENT:
         case ERR_ILL_STRUCTURE_OPERATION:
+        case ERR_DELETED_FUNCTION_REFERENCED:
             return true;
         default:
             return false;

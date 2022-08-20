@@ -2121,9 +2121,11 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
         {
             return 1;
         }
-        else  // ranks are same, do same rank comparisons
+        else
         {
-            TYPE *tl = ltype, *tr = rtype, *ta = atype;
+
+            // ranks are same, do same rank comparisons
+            TYPE* tl = ltype, * tr = rtype, * ta = atype;
             // check if one or the other but not both converts a pointer to bool
             rankl = 0;
             for (l = 0; l < lenl; l++)
@@ -2233,13 +2235,48 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
             {
                 if (isref(tl) && isref(tr))
                 {
-                    // const lref is better than rref
-                    int refl = basetype(tl)->type;
-                    int refr = basetype(tr)->type;
+                    enum e_bt refa = bt_rref;
+                    if (ta)
+                    {
+                        if (ta->lref || basetype(ta)->lref)
+                            refa = bt_lref;
+
+                    }
+                    if (refa == bt_rref && expa && !ta->rref && !basetype(ta)->rref)
+                    {
+                        if (expa->type != en_thisref && expa->type != en_func)
+                            refa = bt_lref;
+                    }
+                    // const rref is better than const lref
+                    enum e_bt refl = basetype(tl)->type;
+                    enum e_bt refr = basetype(tr)->type;
                     if (refl == bt_rref && refr == bt_lref && isconst(basetype(tr)->btp))
-                        return 1;
+                    {
+                        if (refa != bt_lref || isconst(basetype(ta)->btp))
+                            return -1;
+                        else
+                            return 1;
+                    }
                     if (refr == bt_rref && refl == bt_lref && isconst(basetype(tl)->btp))
-                        return -1;
+                    {
+                        if (refa != bt_lref || isconst(basetype(ta)->btp))
+                            return 1;
+                        else
+                            return -1;
+                    }
+                    if (ta && !isref(ta))
+                    {
+                        // try to choose a const ref when there are two the same
+                        if (refl == refr)
+                        {
+                            bool lc = isconst(basetype(tl)->btp);
+                            bool rc = isconst(basetype(tr)->btp);
+                            if (lc && !rc)
+                                return -1;
+                            if (rc && !lc)
+                                return 1;
+                        }
+                    }
                 }
                 if (ta && isref(ta))
                     ta = basetype(ta)->btp;
@@ -2792,7 +2829,7 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                     SYMLIST* hrl = basetype(spList[i]->tp)->syms->table[0];
                     SYMLIST* hrr = basetype(spList[j]->tp)->syms->table[0];
                     memset(arr, 0, sizeof(arr));
-                    for (k = 0; k < argCount; k++)
+                    for (k = 0; k < argCount ; k++)
                     {
                         enum e_cvsrn* seql = &icsList[i][l];
                         enum e_cvsrn* seqr = &icsList[j][r];
@@ -2808,7 +2845,21 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                             seqr = &identity;
                             lenr = 1;
                         }
-                        if (k == 0 && funcparams && funcparams->thisptr)
+                        int bl = 0, br = 0;
+                        for (int i = 0; i < lenl; i++)
+                            if (seql[i] == CV_USER)
+                                bl++;
+                        for (int i = 0; i < lenr; i++)
+                            if (seqr[i] == CV_USER)
+                                br++;
+                        if (bl > 1 || br > 1 || !spList[i] || !spList[j])
+                        {
+                            if (bl > 1)
+                                spList[i] = nullptr;
+                            if (br > 1)
+                                spList[j] = nullptr;
+                        }
+                        else if (k == 0 && funcparams && funcparams->thisptr)
                         {
                             TYPE *tpl, *tpr;
                             if (spList[i]->sb->castoperator)
@@ -2883,16 +2934,29 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                     {
                         spList[i] = nullptr;
                     }
-                    else
+                    else if (spList[i] && spList[j])
                     {
-                        switch (ChooseLessConstTemplate(spList[i], spList[j]))
+                        if (spList[i]->sb->castoperator)
                         {
+                            if (!spList[j]->sb->castoperator)
+                                spList[j] = nullptr;
+                        }
+                        else
+                        {
+                            if (spList[j]->sb->castoperator)
+                                spList[i] = nullptr;
+                        }
+                        if (spList[i] && spList[j])
+                        {
+                            switch (ChooseLessConstTemplate(spList[i], spList[j]))
+                            {
                             case -1:
                                 spList[j] = nullptr;
                                 break;
                             case 1:
                                 spList[i] = nullptr;
                                 break;
+                            }
                         }
                     }
                 }
@@ -2977,6 +3041,11 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                                 if (basetype(current)->type <= basetype(target)->type)
                                 {
                                     n++;
+                                }
+                                else if (isint(current) && isint(target))
+                                {
+                                    if (getSize(basetype(current)->type) == getSize(basetype(target)->type))
+                                        n++;
                                 }
                             }
                             else if (!ispointer(current) || !ispointer(target))
@@ -3888,7 +3957,12 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         }
         else
         {
-            if ((isconst(tpax) != isconst(tppp)) || (isvolatile(tpax) != isvolatile(tppp)))
+            if (isconst(tpax) != isconst(tppp))
+            {
+                if (!isconst(tppp) || !rref)
+                    seq[(*n)++] = CV_QUALS;
+            }
+            else if (isvolatile(tpax) != isvolatile(tppp))
             {
                 seq[(*n)++] = CV_QUALS;
             }
@@ -3918,7 +3992,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
                 if (!isconst(tppp))
                     seq[(*n)++] = CV_LVALUETORVALUE;
             }
-            if (isconst(tppp) && !isvolatile(tppp))
+            if (isconst(tppp) && !isvolatile(tppp) && !rref)
                 seq[(*n)++] = CV_QUALS;
         }
         tpa = basetype(tpa);
@@ -4293,8 +4367,15 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
                 }
                 else
                 {
+                    if (tpp->scoped)
+                    {
+                        seq[(*n)++] = CV_NONE;
 
-                    seq[(*n)++] = CV_ENUMINTEGRALCONVERSION;
+                    }
+                    else
+                    {
+                        seq[(*n)++] = CV_ENUMINTEGRALCONVERSION;
+                    }
                 }
             }
             else
@@ -4305,8 +4386,8 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         else
         {
             bool isenumconst = false;
-            if ((isconst(tpax) != isconst(tppx)) || (isvolatile(tpax) != isvolatile(tppx)))
-                seq[(*n)++] = CV_QUALS;
+//            if ((isconst(tpax) != isconst(tppx)) || (isvolatile(tpax) != isvolatile(tppx)))
+//                seq[(*n)++] = CV_QUALS;
             if (tpa->enumConst)
             {
                 seq[(*n)++] = CV_ENUMINTEGRALCONVERSION;
@@ -4332,7 +4413,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
                     else if (isint(tpp))
                     {
                         // this next along with a change in the ranking takes care of the case where
-                        // long is effectively the same as int on some Optimizer::architectures.   It prefers a mapping between the
+                        // long is effectively the same as int on some architectures.   It prefers a mapping between the
                         // two to a mapping between other integer types...
                         if (basetype(tpa)->type == bt_bool || isunsigned(tpa) != isunsigned(tpp) ||
                             getSize(basetype(tpa)->type) != getSize(basetype(tpp)->type))
@@ -4345,10 +4426,10 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
                     {
                         seq[(*n)++] = CV_FLOATINGCONVERSION;
                         if (basetype(tpp)->type == bt_float)
-                           seq[(*n)++] = CV_FLOATINGCONVERSION;
+                            seq[(*n)++] = CV_FLOATINGCONVERSION;
                         else if (basetype(tpp)->type == bt_long_double)
-                           seq[(*n)++] = CV_FLOATINGPROMOTION;
-                    }
+                            seq[(*n)++] = CV_FLOATINGPROMOTION;
+	                    }
 
                 else /* floating */
                     if (basetype(tpp)->type == bt_bool)
@@ -4515,7 +4596,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
         SYMBOL* argsym = (SYMBOL*)(*hr)->p;
         memset(&tpx, 0, sizeof(tpx));
         m = 0;
-        getSingleConversion(parent->tp, basetype(sym->tp)->btp, nullptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr, false);
+        getSingleConversion(parent->tp, basetype(sym->tp)->btp, nullptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr, true);
         m1 = m;
         while (m1 && seq[m1 - 1] == CV_IDENTITY)
             m1--;
@@ -5134,6 +5215,7 @@ static bool IsMove(SYMBOL* sp)
     }
     return rv;
 }
+int count3;
 SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, int toErr,
                               bool maybeConversion, bool toInstantiate, int flags)
 {
@@ -5321,6 +5403,8 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor && !spList[0]->sb->specialized2))
                 {
                     bool hasDest = false;
+           
+                    
                     std::unordered_map<int, SYMBOL*> storage;
                     if (atp || args->ascall)
                         GatherConversions(sp, spList, n, args, atp, icsList, lenList, argCount, funcList, flags & _F_INITLIST);
@@ -5467,7 +5551,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                             memset(buf, 0, sizeof(buf));
                             unmangle(buf, basetype(*tp)->sp->sb->decoratedName);
                             n = strlen(buf);
-                            p = strrchr(buf, ':');
+                            p = (char *)strrchr(buf, ':');
                             if (p)
                                 p++;
                             else
@@ -5527,7 +5611,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
             }
             else if (found1 && found2)
             {
-                if (toErr)
+                if (toErr && !(flags & _F_INDECLTYPE))
                 {
                     errorsym2(ERR_AMBIGUITY_BETWEEN, found1, found2);
                 }

@@ -7,6 +7,7 @@ current:
 	$(B) std/algorithms
 	$(B) std/atomics
 	$(B) std/containers
+	$(B) std/depr
 	$(B) std/thread
 
 algorithms: copyfiles

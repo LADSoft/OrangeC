@@ -3581,6 +3581,12 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                     }
                     p->tp = sym->tp;
                 }
+                else if (isarithmetic(sym->tp) && isarithmetic(p->tp))
+                    if (basetype(sym->tp)->type != basetype(p->tp)->type)
+                    {
+                        p->tp = sym->tp;
+                        cast(p->tp, &p->exp);
+                    }
             }
         }
         else if (Optimizer::architecture == ARCHITECTURE_MSIL)
@@ -4418,15 +4424,15 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                             doit = !!arg->tp->templateParam->p->byPack.pack;
                     }
                 }
-                if (doit && !templateNestingCount)
+                if (doit && !templateNestingCount && !(flags & _F_INDECLTYPE))
                     error(ERR_CALL_OF_NONFUNCTION);
-                *tp = &stdvoid;
+                *tp = &stdany;
             }
         }
         else
         {
             *tp = &stdint;
-            if (!templateNestingCount)
+            if (!templateNestingCount && !(flags & _F_INDECLTYPE))
                 error(ERR_CALL_OF_NONFUNCTION);
         }
     }
@@ -6655,7 +6661,6 @@ static LEXLIST* expression_postfix(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
     */
     return lex;
 }
-int count3;
 LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     bool localMutable = false;
@@ -7917,15 +7922,11 @@ static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYP
             }
             else
             {
-                checkscope(*tp, tp1);
                 castToArithmetic(false, tp, exp, kw, tp1, true);
                 castToArithmetic(false, &tp1, &exp1, (enum e_kw)-1, *tp, true);
             }
         }
-        if (TotalErrors())
-        {
-            insertOperatorFunc(ovcl_binary_numericptr, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags);
-        }
+        checkscope(*tp, tp1);
         if (Optimizer::cparams.prm_cplusplus)
         {
             SYMBOL* funcsp = nullptr;

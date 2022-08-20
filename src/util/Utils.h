@@ -77,8 +77,8 @@ class Utils
         memset(buf, 0, sizeof(buf));
         buf[0] = '"';
         strcpy(buf + 1, GetModuleName());
-        char* p = strrchr(buf, '/');
-        char* p1 = strrchr(buf, '\\');
+        char* p = (char *)strrchr(buf, '/');
+        char* p1 = (char *)strrchr(buf, '\\');
         if (p1 > p)
             p = p1;
         else if (!p)

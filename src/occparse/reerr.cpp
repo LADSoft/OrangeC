@@ -43,7 +43,7 @@ void process(char* name)
             buf[0] = 0;
             fgets(buf, BUFSIZE, fil);
             p = buf;
-            while ((p = strstr(p, "ERR_")))
+            while ((p = (char *)strstr(p, "ERR_")))
             {
                 q = data;
                 while (isalnum(*p) || *p == '_')

@@ -4090,7 +4090,12 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         else if (ispointer(tpp) && basetype(tpp)->nullptrType)
         {
             if ((ispointer(tpa) && basetype(tpa)->nullptrType) || (expa && isconstzero(tpa, expa)))
-                seq[(*n)++] = CV_IDENTITY;
+            {
+                if (basetype(tpa)->type == bt_bool)
+                    seq[(*n)++] = CV_BOOLCONVERSION;
+                else
+                    seq[(*n)++] = CV_IDENTITY;
+            }
             else
                 seq[(*n)++] = CV_NONE;
         }

@@ -8320,24 +8320,96 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                     tph = tpc;
                 else if (tpc->type == bt_void)
                     tpc = tph;
-                if (Optimizer::cparams.prm_cplusplus && (isstructured(tpc) || isstructured(tph)) && !comparetypes(tph, tpc, false))
+                if (Optimizer::cparams.prm_cplusplus && (isstructured(tpc) || isstructured(tph)))
                 {
-                    // call a constructor?
-                    if (isstructured(tph))
+                    if ( ! isstructured(tpc) || !isstructured(tph) || (comparetypes(tph, tpc, false) && !sameTemplate(tph, tpc, false)) || epc->type == en_thisref || epc->type == en_func || eph->type == en_thisref || eph->type == en_func)
                     {
-                        EXPRESSION* rv = anonymousVar(sc_auto, tph);
-                        TYPE* ctype = tph;
-                        callConstructorParam(&ctype, &rv, tpc, epc, true, false, false, false, true);
-                        epc = rv;
-                        tpc = tph;
+                        // structure is result of constructor or return value
+                        // at this point we want to check that both sides
+                        // are the same type; if not make a constructor
+                        EXPRESSION* rv = nullptr;
+                        if (!comparetypes(tph, tpc, false))
+                        {
+                            if (isstructured(tph))
+                            {
+                                rv = anonymousVar(sc_auto, tph);
+                                EXPRESSION* exp = rv;
+                                TYPE* ctype = tph;
+                                callConstructorParam(&ctype, &exp, tpc, epc, true, false, false, false, true);
+                                epc = exp;
+                                tpc = tph;
+                            }
+                            else
+                            {
+                                rv = anonymousVar(sc_auto, tpc);
+                                EXPRESSION* exp = rv;
+                                TYPE* ctype = tpc;
+                                callConstructorParam(&ctype, &exp, tph, eph, true, false, false, false, true);
+                                eph = exp;
+                                tph = tpc;
+                                tph->lref = tph->rref = false;
+                            }
+                        }
+                        // now make sure both sides are in an anonymous variable
+                        if (tph->lref || tph->rref || (eph->type != en_func && eph->type != en_thisref))
+                        {
+                            if (!rv)
+                                rv = anonymousVar(sc_auto, tph);
+                            EXPRESSION* exp = rv;
+                            TYPE* ctype = tph;
+                            callConstructorParam(&ctype, &exp, tph, eph, true, false, false, false, true);
+                            eph = exp;
+                        }
+                        if (tpc->lref || tpc->rref || (epc->type != en_func && epc->type != en_thisref))
+                        {
+                            if (!rv);
+                            rv = anonymousVar(sc_auto, tph);
+                            EXPRESSION* exp = rv;
+                            TYPE* ctype = tpc;
+                            callConstructorParam(&ctype, &exp, tpc, epc, true, false, false, false, true);
+                            epc = exp;
+                        }
+                        // now make sure both sides are using the same anonymous variable
+                        if (!rv)
+                            rv = anonymousVar(sc_auto, tph);
+                        EXPRESSION* dexp = rv;
+                        callDestructor(rv->v.sp, nullptr, &dexp, nullptr, true, false, false, true);
+                        initInsert(&rv->v.sp->sb->dest, rv->v.sp->tp, dexp, 0, true);
+
+                        EXPRESSION* exp = eph;
+                        if (exp->type == en_thisref)
+                            exp = exp->left;
+                        if (exp->v.func->returnSP)
+                        {
+                            if (exp->v.func->returnEXP->type == en_auto && exp->v.func->returnEXP->v.sp != rv->v.sp)
+                                exp->v.func->returnEXP->v.sp->sb->allocate = false;
+                            exp->v.func->returnEXP = rv;
+                        }
+                        else if (exp->v.func->thisptr)
+                        {
+                            if (exp->v.func->thisptr->type == en_auto && exp->v.func->thisptr->v.sp != rv->v.sp)
+                                exp->v.func->thisptr->v.sp->sb->allocate = false;
+                            exp->v.func->thisptr = rv;
+                        }
+                        exp = epc;
+                        if (exp->type == en_thisref)
+                            exp = exp->left;
+                        if (exp->v.func->returnSP)
+                        {
+                            if (exp->v.func->returnEXP->type == en_auto && exp->v.func->returnEXP->v.sp != rv->v.sp)
+                                exp->v.func->returnEXP->v.sp->sb->allocate = false;
+                            exp->v.func->returnEXP = rv;
+                        }
+                        else if (exp->v.func->thisptr)
+                        {
+                            if (exp->v.func->thisptr->type == en_auto && exp->v.func->thisptr->v.sp != rv->v.sp)
+                                exp->v.func->thisptr->v.sp->sb->allocate = false;
+                            exp->v.func->thisptr = rv;
+                        }
                     }
                     else
                     {
-                        EXPRESSION* rv = anonymousVar(sc_auto, tpc);
-                        TYPE* ctype = tpc;
-                        callConstructorParam(&ctype, &rv, tph, eph, true, false, false, false, true);
-                        eph = rv;
-                        tph = tpc;
+                        tpc = tph;
                     }
                 }
                 if (ispointer(tph) || ispointer(tpc))

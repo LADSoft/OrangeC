@@ -3830,7 +3830,21 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
         else if (q->atomic && (q->ans->mode != Optimizer::i_direct || q->ans->offset->type != Optimizer::se_tempref))
         {
             // can't get here with floats...
-            gen_code(op_xchg, apa, apl);
+           if (apl->mode = am_immed)
+           {
+               int regflags = makeregflags(apa);
+               regflags |= apa->liveRegs;
+               bool pushed = false;
+               int reg = getreg(apl, regflags, pushed);
+               gen_codes(op_mov, sza, makedreg(reg), apl); 
+               gen_codes(op_xchg, sza, apa, makedreg(reg));
+               if (pushed)
+                   gen_codes(op_pop, ISZ_UINT, makedreg(reg), nullptr); 
+           }
+           else
+           {
+               gen_code(op_xchg, apa, apl);
+           }
         }
         else if (q->ans->retval && q->ans->size >= ISZ_FLOAT)
         {

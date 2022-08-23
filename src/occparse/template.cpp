@@ -127,10 +127,6 @@ EXPRESSION* GetSymRef(EXPRESSION* n)
             case en_pc:
             case en_threadlocal:
                 return exp;
-            case en_tempref:
-                if (st.empty())
-                    return nullptr;
-                continue;
             default:
                 if (!isintconst(exp) && !isfloatconst(exp))
                 {

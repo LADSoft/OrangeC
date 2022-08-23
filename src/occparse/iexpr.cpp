@@ -341,8 +341,10 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
         case en_l_u32:
             siz1 = ISZ_U32;
             break;
-        case en_l_us:
         case en_l_wc:
+            siz1 = ISZ_WCHAR;
+            break;
+        case en_l_us:
             siz1 = ISZ_USHORT;
             break;
         case en_l_s:
@@ -452,11 +454,10 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
             node = node->left;
         aa1 = gen_expr(funcsp, node->left->left, 0, ISZ_ADDR);
         aa1->msilObject = true;
-        //        if (!aa1->offset || aa1->mode != Optimizer::i_direct || aa1->offset->type != en_tempref)
-        {
-            aa2 = Optimizer::tempreg(aa1->size, 0);
-            Optimizer::gen_icode(Optimizer::i_assn, aa2, aa1, nullptr);
-        }
+
+        aa2 = Optimizer::tempreg(aa1->size, 0);
+        Optimizer::gen_icode(Optimizer::i_assn, aa2, aa1, nullptr);
+
         aa1 = Allocate<Optimizer::IMODE>();
         aa1->offset = Optimizer::SymbolManager::Get(node->left->right);
         aa1->mode = Optimizer::i_direct;
@@ -554,7 +555,11 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                     {
                         EXPRESSION* exp = inlinesym_thisptr[inlinesym_count - 1];
                         if (exp)
+                        {
+                            if (lvalue(exp) && exp->left->type == en_paramsubstitute)
+                                return exp->left->v.imode;
                             return gen_expr(funcsp, exp, 0, natural_size(exp));
+                        }
                     }
                     else if (baseThisPtr)  // for this ptrs inherited in a constructor
                     {
@@ -567,6 +572,11 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                 if (sym->storage_class == Optimizer::scc_parameter && sym->paramSubstitute)
                 {
                     node = sym->paramSubstitute;
+                    if (node->left->type == en_paramsubstitute)
+                    {
+                        ap1 = node->left->v.imode;
+                        break;
+                    }
                     // paramsubstitute is a NORMAL expression which is a derefed auto constant
                     sym = Optimizer::SymbolManager::Get(sym->paramSubstitute->left->v.sp);
                 }
@@ -625,6 +635,9 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                     ap2->startbit = ap1->startbit;
                     ap1 = ap2;
                 }
+                break;
+            case en_paramsubstitute:
+                ap1 = node->left->v.imode;
                 break;
         }
     }
@@ -1392,22 +1405,6 @@ Optimizer::IMODE* gen_assign(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
         ap2->restricted = ap4->restricted;
         ap1->offset->pragmas = ap4->offset->pragmas;
         Optimizer::gen_icode(Optimizer::i_assn, ap1, ap4, nullptr);
-        /*
-        if (ap1->mode != Optimizer::i_direct || ap1->offset->type != en_tempref)
-        {
-            ap3 = Optimizer::tempreg(ap4->size, false);
-            Optimizer::gen_icode(Optimizer::i_assn, ap3, ap4, nullptr);
-            ap4 = ap3;
-        }
-        ap3 = Optimizer::LookupStoreTemp(ap1, ap1);
-        if (ap3 != ap1)
-        {
-            Optimizer::gen_icode(Optimizer::i_assn, ap3, ap4, nullptr);
-            Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
-        }
-        else
-            Optimizer::gen_icode(Optimizer::i_assn, ap1, ap4, nullptr);
-        */
     }
     if (node->left->isatomic)
     {
@@ -2166,7 +2163,6 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             case en_auto:
             case en_pc:
             case en_global:
-            case en_tempref:
             case en_threadlocal:
                 break;
             default:
@@ -3331,6 +3327,10 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             sym->imaddress = ap1;
             sym->addressTaken = true;
             break;
+        case en_paramsubstitute:
+            diag("gen_expr: taking address of paramater temporary");
+            rv = node->v.imode;
+            break;
         case en_labcon:
             ap1 = Allocate<Optimizer::IMODE>();
             ap1->offset = Optimizer::SymbolManager::Get(node);
@@ -3687,11 +3687,8 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 Optimizer::IMODE *aa1, *aa2;
                 aa1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
                 aa1->msilObject = true;
-                //                if (!aa1->offset || aa1->mode != Optimizer::i_direct || aa1->offset->type != en_tempref)
-                {
-                    aa2 = Optimizer::tempreg(aa1->size, 0);
-                    Optimizer::gen_icode(Optimizer::i_assn, aa2, aa1, nullptr);
-                }
+                aa2 = Optimizer::tempreg(aa1->size, 0);
+                Optimizer::gen_icode(Optimizer::i_assn, aa2, aa1, nullptr);
                 aa1 = Allocate<Optimizer::IMODE>();
                 aa1->offset = Optimizer::SymbolManager::Get(node->right);
                 aa1->mode = Optimizer::i_immed;
@@ -3803,6 +3800,8 @@ int natural_size(EXPRESSION* node)
     }
     switch (node->type)
     {
+        case en_paramsubstitute:
+            return node->v.imode->size;
         case en_sizeofellipse:
             return ISZ_UINT;
         case en_pointsto:
@@ -3960,8 +3959,6 @@ int natural_size(EXPRESSION* node)
         case en_absolute:
         case en_labcon:
             return ISZ_ADDR;
-        case en_tempref:
-            return ISZ_UINT;
         case en_l_p:
         case en_x_p:
         case en_l_ref:

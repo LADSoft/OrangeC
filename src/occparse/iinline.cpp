@@ -40,6 +40,7 @@
 #include "iblock.h"
 #include "memory.h"
 #include "symtab.h"
+#include "initbackend.h"
 
 namespace Parser
 {
@@ -104,21 +105,17 @@ static void inlineBindThis(SYMBOL* funcsp, SYMLIST* hr, EXPRESSION* thisptr)
         {
             if (thisptr)
             {
-                Optimizer::SimpleSymbol* simpleSym;
                 Optimizer::IMODE *src, *ap1, *idest;
                 EXPRESSION* dest;
                 thisptr = inlinesym_count == 0 || inlinesym_thisptr[inlinesym_count - 1] == nullptr || !hasRelativeThis(thisptr)
                               ? thisptr
                               : inlineGetThisPtr(thisptr);
-                simpleSym = Optimizer::SymbolManager::Get(sym = makeID(sc_auto, sym->tp, nullptr, AnonymousName()));
-                simpleSym->allocate = true;
-                simpleSym->anonymous = true;
-                simpleSym->inAllocTable = true;
-                Optimizer::temporarySymbols.push_back(simpleSym);
-                dest = varNode(en_auto, sym);
+                dest = exprNode(en_paramsubstitute, nullptr, nullptr);
+                dest->v.imode = Optimizer::tempreg(ISZ_ADDR, false);
+                dest->v.imode->offset->sp->pushedtotemp = true;
                 deref(sym->tp, &dest);
                 inlinesym_thisptr[inlinesym_count] = dest;
-                idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
+                idest = dest->left->v.imode;
                 src = gen_expr(funcsp, thisptr, 0, natural_size(thisptr));
                 ap1 = Optimizer::LookupLoadTemp(nullptr, src);
                 if (ap1 != src)
@@ -163,33 +160,67 @@ static void inlineBindArgs(SYMBOL* funcsp, SYMLIST* hr, INITLIST* args)
             {
                 Optimizer::IMODE *src, *ap1, *idest;
                 EXPRESSION* dest;
-                SYMBOL* sym2;
-                sym2 = makeID(sc_auto, sym->tp, nullptr, AnonymousName());
-                SetLinkerNames(sym2, lk_cdecl);
-                Optimizer::SimpleSymbol* simpleSym = Optimizer::SymbolManager::Get(sym2);
-                Optimizer::temporarySymbols.push_back(simpleSym);
-                simpleSym->allocate = true;
-                simpleSym->inAllocTable = true;
-                dest = varNode(en_auto, sym2);
-                if (isarray(sym->tp))
+                if (sym->sb->addressTaken || basetype(sym->tp)->type == bt_long_long || basetype(sym->tp)->type == bt_unsigned_long_long)
                 {
-                    dest = exprNode(en_l_p, dest, nullptr);
+                    SYMBOL* sym2;
+                    sym2 = makeID(sc_auto, sym->tp, nullptr, AnonymousName());
+                    SetLinkerNames(sym2, lk_cdecl);
+                    Optimizer::SimpleSymbol* simpleSym = Optimizer::SymbolManager::Get(sym2);
+                    Optimizer::temporarySymbols.push_back(simpleSym);
+                    simpleSym->allocate = true;
+                    simpleSym->inAllocTable = true;
+                    dest = varNode(en_auto, sym2);
+                    if (isarray(sym->tp))
+                    {
+                        dest = exprNode(en_l_p, dest, nullptr);
+                    }
+                    else
+                    {
+                        deref(sym->tp, &dest);
+                    }
+
+                    list[cnt++] = dest;
+                    Optimizer::SymbolManager::Get(sym)->paramSubstitute = dest;
+                    idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
+                    src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));
+                    ap1 = Optimizer::LookupLoadTemp(nullptr, src);
+                    if (ap1 != src)
+                    {
+                        Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                        src = ap1;
+                    }
+                    Optimizer::gen_icode(Optimizer::i_assn, idest, src, nullptr);
                 }
                 else
                 {
-                    deref(sym->tp, &dest);
+                    dest = exprNode(en_paramsubstitute, nullptr, nullptr);
+                    dest->v.imode = Optimizer::tempreg(sizeFromType(sym->tp), false);
+                    dest->v.imode->offset->sp->pushedtotemp = true;
+                    if (isarray(sym->tp))
+                    {
+                        dest = exprNode(en_l_p, dest, nullptr);
+                    }
+                    else if (sym->tp->type == bt_templateselector)
+                    {
+                        deref(&stdpointer, &dest);
+                    }
+                    else
+                    {
+                        deref(sym->tp, &dest);
+                    }
+                    list[cnt++] = dest;
+                    Optimizer::SymbolManager::Get(sym)->paramSubstitute = dest;
+                    idest = dest->left->v.imode;
+                    src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));
+                    ap1 = Optimizer::LookupLoadTemp(nullptr, src);
+                    if (ap1 != src)
+                    {
+                        Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                        src = ap1;
+                    }
+                    Optimizer::gen_icode(Optimizer::i_assn, idest, src, nullptr);
+
                 }
-                list[cnt++] = dest;
-                Optimizer::SymbolManager::Get(sym)->paramSubstitute = dest;
-                idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
-                src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));
-                ap1 = Optimizer::LookupLoadTemp(nullptr, src);
-                if (ap1 != src)
-                {
-                    Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
-                    src = ap1;
-                }
-                Optimizer::gen_icode(Optimizer::i_assn, idest, src, nullptr);
             }
             args = args->next;
             hr = hr->next;
@@ -312,7 +343,6 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     int oldOffset = codeLabelOffset;
     EXPRESSION* oldthis = inlinesym_thisptr[inlinesym_count];
     //    return nullptr;
-
     if (noinline)
         return nullptr;
     if (Optimizer::chosenAssembler->arch->denyopts & DO_NOINLINE)

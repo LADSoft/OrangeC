@@ -136,8 +136,6 @@ bool equalnode(EXPRESSION* node1, EXPRESSION* node2)
         case en_c_fc:
         case en_c_ldc:
             return (node1->v.c->r == node2->v.c->r) && (node1->v.c->i == node2->v.c->i);
-        case en_tempref:
-            return node1->v.sp == node2->v.sp;
     }
 }
 

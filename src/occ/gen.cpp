@@ -207,20 +207,15 @@ AMODE* makeSSE(int reg)
     ap->length = 0;
     return ap;
 }
-void make_floatconst(AMODE* ap)
+void make_floatconst(AMODE* ap, int sz)
 {
     int size = ap->length;
     if (isintconst(ap->offset))
     {
         ap->offset->f = (long long)ap->offset->i;
         ap->offset->type = Optimizer::se_f;
-        size = ISZ_DOUBLE;
     }
-    else
-    {
-        size = ap->offset->sizeFromType;
-    }
-    AMODE* ap1 = make_label(queue_floatval(&ap->offset->f, size));
+    AMODE* ap1 = make_label(queue_floatval(&ap->offset->f, sz));
     ap->mode = am_direct;
     ap->length = 0;
     ap->offset = ap1->offset;
@@ -260,7 +255,7 @@ AMODE* moveFP(AMODE* apa, int sza, AMODE* apl, int szl)
     {
         if (apl->mode == am_immed)
         {
-            make_floatconst(apl);
+            make_floatconst(apl, szl);
         }
         if (szl < ISZ_FLOAT)
         {
@@ -493,8 +488,8 @@ void make_complexconst(AMODE* ap, AMODE* api)
                 break;
         }
     }
-    make_floatconst(ap);
-    make_floatconst(api);
+    make_floatconst(ap, ap->offset->sizeFromType);
+    make_floatconst(api, api->offset->sizeFromType);
 }
 void floatchs(AMODE* ap, int sz)
 {
@@ -819,7 +814,7 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
         {
             *apl = beLocalAllocate<AMODE>();
             (*apl)->offset = im->offset;
-            make_floatconst(*apl);
+            make_floatconst(*apl, im->size);
         }
         else if (im->size == ISZ_ULONGLONG || im->size == -ISZ_ULONGLONG)
         {
@@ -846,7 +841,7 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
             {
                 *apl = beLocalAllocate<AMODE>();
                 (*apl)->offset = im->offset;
-                make_floatconst(*apl);
+                make_floatconst(*apl, im->size);
             }
             else
             {
@@ -2264,6 +2259,7 @@ static void logicatomic(e_opcode op, Optimizer::QUAD* q)
                 gen_codes(op_mov, q->ans->size, makedreg(reg3), makedreg(EAX));
                 gen_codes(op, q->ans->size, makedreg(reg3), aprl);
             }
+            apll->length = q->ans->size == ISZ_FLOAT ? ISZ_UINT : q->ans->size;
             gen_codes(op_cmpxchg, q->ans->size == ISZ_FLOAT ? ISZ_UINT : q->ans->size, apll, makedreg(reg3));
             gen_code(op_jne, make_label(lab), NULL);
             if (q->atomicpostfetch)
@@ -3714,7 +3710,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
         node->f = q->dc.v.f;
         apl = beLocalAllocate<AMODE>();
         apl->offset = node;
-        make_floatconst(apl);
+        make_floatconst(apl, apl->offset->sizeFromType);
     }
     else
         diag("asm_assn: unknown opcode");
@@ -3830,7 +3826,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
         else if (q->atomic && (q->ans->mode != Optimizer::i_direct || q->ans->offset->type != Optimizer::se_tempref))
         {
             // can't get here with floats...
-           if (apl->mode = am_immed)
+           if (apl->mode == am_immed)
            {
                int regflags = makeregflags(apa);
                regflags |= apa->liveRegs;
@@ -5749,6 +5745,7 @@ void asm_atomic(Optimizer::QUAD* q)
                     int lab = beGetLabel;
                     int regflagsa = makeregflags(apal);
                     int regflagsl = regflagsa | makeregflags(aprl) | makeregflags(apll);
+                    int regflagsr = makeregflags(aprl);
                     int reg1 = 0, reg2 = 0, reg3 = 0;
                     bool pushreg1 = false, pushreg2 = false, pushreg3;
                     if (aprl->mode == am_immed)
@@ -5759,9 +5756,9 @@ void asm_atomic(Optimizer::QUAD* q)
                         apah = nullptr;
                         regflagsl |= 1 << reg1;
                     }
-                    if (regflagsl & (1 << EAX))
+                    if (regflagsr & (1 << EAX))
                     {
-                        aprl = atomic_lea(apll, aprl, regflagsl, reg2, pushreg1);
+                        aprl = atomic_lea(apll, aprl, regflagsl, reg2, pushreg2);
                         aprh = nullptr;
                         regflagsl |= 1 << reg2;
                     }

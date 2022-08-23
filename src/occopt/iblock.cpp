@@ -359,7 +359,7 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
     node = LookupNVHash((UBYTE*)&newQuad->dc.left, sizeof(void*), name_hash);
     if (node)
     {
-        if (node->dc.opcode == i_assn && node->dc.left->mode == i_immed && !node->ans->offset->sp->storeTemp)
+        if (node->dc.opcode == i_assn && node->dc.left->mode == i_immed && !node->ans->offset->sp->storeTemp && node->dc.left->size == newQuad->dc.left->size)
         {
             newQuad->dc.left = node->dc.left;
             newQuad->livein |= IM_LIVELEFT;
@@ -377,7 +377,7 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
     node = LookupNVHash((UBYTE*)&newQuad->dc.right, sizeof(void*), name_hash);
     if (node)
     {
-        if (node->dc.opcode == i_assn && node->dc.left->mode == i_immed)
+        if (node->dc.opcode == i_assn && node->dc.left->mode == i_immed && node->dc.left->size == newQuad->dc.right->size)
         {
             newQuad->dc.right = node->dc.left;
             newQuad->livein |= IM_LIVERIGHT;

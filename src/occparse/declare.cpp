@@ -3945,6 +3945,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                             }
                             inDefaultParam--;
                         }
+                        spi->sb->defaultarg = true;
                         if (isfuncptr(spi->tp) && spi->sb->init && lvalue(spi->sb->init->exp))
                             error(ERR_NO_POINTER_TO_FUNCTION_DEFAULT_ARGUMENT);
                         if (sp->sb->storage_class == sc_typedef)
@@ -5887,7 +5888,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         }
                         if (!inTemplate)
                         {
-                            if (isfunction(sp->tp) && hasTemplateParent(sp))
+                            if (basetype(sp->tp) && isfunction(sp->tp) && hasTemplateParent(sp))
                             {
                                 SYMBOL* parent = sp->sb->parentClass;
                                 while (parent)
@@ -6230,7 +6231,33 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                 (!strSym || !strSym->sb->templateLevel || sym->sb->templateLevel != sp->sb->templateLevel + 1))
                                 sym = nullptr;
                             if (sym)
+                            {
                                 spi = sym;
+                                if (Optimizer::cparams.prm_cplusplus)
+                                {
+                                    auto hr1 = basetype(spi->tp)->syms->table[0];
+                                    auto hr2 = basetype(sp->tp)->syms->table[0];
+                                    if (hr1 && hr2)
+                                    {
+                                        if (hr1->p->sb->thisPtr)
+                                            hr1 = hr1->next;
+                                        if (hr1->p->tp->type == bt_void)
+                                            hr1 = hr1->next;
+                                        if (hr2->p->sb->thisPtr)
+                                            hr2 = hr2->next;
+                                        if (hr2->p->tp->type == bt_void)
+                                            hr2 = hr2->next;
+                                        while (hr1 && hr2)
+                                        {
+                                            bool b = hr1->p->sb->defaultarg || hr2->p->sb->defaultarg;
+                                            hr1->p->sb->defaultarg = b;
+                                            hr2->p->sb->defaultarg = b;
+                                            hr1 = hr1->next;
+                                            hr2 = hr2->next;
+                                        }
+                                    }
+                                }
+                            }
                             else
                             {
                                 if ((nsv || strSym) && storage_class_in != sc_member && storage_class_in != sc_mutable &&

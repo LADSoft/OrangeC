@@ -1920,7 +1920,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
                 while (mi)
                 {
                     if (mi->sp && isstructured(mi->sp->tp) &&
-                        (basetype(mi->sp->tp)->sp == member || sameTemplate(mi->sp->tp, member->tp)))
+                        (basetype(mi->sp->tp)->sp == member || basetype(mi->sp->tp)->sp == member->sb->maintemplate || sameTemplate(mi->sp->tp, member->tp)))
                     {
                         break;
                     }
@@ -2146,7 +2146,7 @@ SYMBOL* findClassName(const char* name, SYMBOL* cls, BASECLASS* bc, VBASEENTRY* 
     SYMBOL* sp = nullptr;
     int vcount = 0, ccount = 0;
     strcpy(str, name);
-    while ((c = strstr(p, "::")))
+    while ((c = (char *)strstr(p, "::")))
     {
         clslst[n++] = p;
         p = c;

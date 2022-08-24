@@ -62,125 +62,84 @@ nm	db	"nexttoward",0
 ; 3fff
 ;   40
 ; 3fbf
-small_f dd 34000000h
-really_small_f dd 1
-small_d dd 0,3cb00000h
-really_small_d dd 1,0
-small_l dw 0,0,0,8000h,3fc0h
-really_small_l dw 1,0,0,0,0
+
+really_small dd 1,0
 
 SECTION code CLASS=CODE USE32
 _nextafterf:
-    fld	dword [esp+4]
-    fld	dword [esp+8]
-    sub esp,16
-    fstp tword[esp+4]
-    fstp dword[esp]
-    call _nexttowardf
-    add esp,16
-    ret
-_nextafterl:
-_nextafter:
-    fld	qword [esp+4]
-    fld	qword [esp+12]
-    sub esp,20
-    fstp tword[esp+8]
-    fstp qword[esp]
-    call _nexttoward
-    add esp,20
-    ret
+    lea eax,[nm]
+    call clearmath
+    fld dword [esp+4]
+    fld dword [esp+8]
+    jmp join
 _nexttowardf:
     lea eax,[nm]
     call clearmath
-    sub dl,dl
     fld dword [esp+4]
-    fld tword [esp+8]
+    fld qword [esp+8]
+join:
     fcomp st1
     fstsw ax
     sahf
     je wrapmath
+    fld st0
     jc fdown
-    ftst
+    fadd dword [really_small]
+    fxch st1
+    fcomp st1
     fstsw ax
     sahf
-    je frsmall
-    fld st0
-    fxtract
+    jnz wrapmath
     popone
-    fld dword [small_f]
-    fscale
-    fxch
-    popone
-    faddp st1
-    jmp wrapmath
-frsmall:
-    popone
-    fld dword [really_small_f]
+    add dword [esp + 4], 1
+    fld dword [esp + 4]
     jmp wrapmath
 fdown:
-    ftst
+    fsub dword [really_small]
+    fxch st1
+    fcomp st1
     fstsw ax
     sahf
-    je mfrsmall
-    fld st0
-    fxtract
+    jnz wrapmath
     popone
-    fld dword [small_f]
-    fscale
-    fxch
-    popone
-    fsubp st1
-    jmp wrapmath
-mfrsmall:
-    popone
-    fld dword [really_small_f]
-    fchs
+    sub dword [esp + 4],1
+    fld dword [esp + 4]
     jmp wrapmath
 _nexttowardl:
 _nexttoward:
+_nextafterl:
+_nextafter:
     lea eax,[nm]
     call clearmath
     mov dl,1
     fld qword [esp+4]
-    fld tword [esp+12]
+    fld qword [esp+12]
     fcomp st1
     fstsw ax
     sahf
     je wrapmath
+    fld st0
     jc down
-    ftst
+    fadd qword [really_small]
+    fxch st1
+    fcomp st1
     fstsw ax
     sahf
-    je rsmall
-    fld st0
-    fxtract
+    jnz wrapmath
     popone
-    fld qword [small_d]
-    fscale
-    fxch
-    popone
-    faddp st1
-    jmp wrapmath
-rsmall:
-    popone
-    fld qword [really_small_d]
+    add dword [esp + 4], 1
+    adc dword [esp + 8], 0
+    fld qword [esp + 4]
     jmp wrapmath
 down:
-    ftst
+    fsub qword [really_small]
+    fxch st1
+    fcomp st1
     fstsw ax
     sahf
-    je mrsmall
-    fld st0
-    fxtract
+    jnz wrapmath
     popone
-    fld qword [small_d]
-    fscale
-    fxch
-    popone
-    fsubp st1
-    jmp wrapmath
-mrsmall:
-    popone
-    fld qword [really_small_d]
-    fchs
+    sub dword [esp + 4], 1
+    sbb dword [esp + 8], 0
+    fld qword [esp + 4]
     jmp wrapmath

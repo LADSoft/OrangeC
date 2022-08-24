@@ -220,7 +220,7 @@ bool CoffLibrary::ConvertImportMods()
                     break;
                 case 3:  // undecorate
                 {
-                    char* p = strchr(buf, '@');
+                    char* p = (char *)strchr(buf, '@');
                     if (p)
                         *p = 0;
                     if (buf[0] == '@' || buf[0] == '?' || buf[0] == '_')

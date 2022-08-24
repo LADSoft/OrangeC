@@ -386,6 +386,21 @@ EXPRESSION* intNode(enum e_node type, long long val)
     rv->v.i = val;
     return rv;
 }
+static bool isstructuredmath(TYPE* tp1, TYPE* tp2 = nullptr)
+{
+    if (Optimizer::cparams.prm_cplusplus)
+    {
+        if (isstructured(tp1) || basetype(tp1)->type == bt_enum || (isint(tp1) && tp1->scoped))
+        {
+            return true;
+        }
+        if (tp2 && (isstructured(tp2) || basetype(tp2)->type == bt_enum || (isint(tp2) && tp2->scoped)))
+        {
+            return true;
+        }
+    }
+    return false;
+}
 void checkauto(TYPE* tp1, int err)
 {
     if (isautotype(tp1))
@@ -1521,7 +1536,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                     funcparams->thisptr = *exp;
                     funcparams->thistp = MakeType(bt_pointer, basetp);
 
-                    if (!points && (*exp)->type != en_l_ref)
+                    if (!points && (*exp)->type != en_l_ref && !typein->lref && !typein->rref)
                         funcparams->novtab = true;
                     *exp = varNode(en_func, nullptr);
                     (*exp)->v.func = funcparams;
@@ -1763,7 +1778,7 @@ static LEXLIST* expression_bracket(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
         if (tp2)
         {
             LookupSingleAggregate(tp2, &expr2);
-            if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
+            if ((isstructuredmath(*tp, tp2) || Optimizer::architecture == ARCHITECTURE_MSIL) &&
                 insertOperatorFunc(ovcl_openbr, openbr, funcsp, tp, exp, tp2, expr2, nullptr, flags))
             {
             }
@@ -3566,6 +3581,12 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                     }
                     p->tp = sym->tp;
                 }
+                else if (isarithmetic(sym->tp) && isarithmetic(p->tp))
+                    if (basetype(sym->tp)->type != basetype(p->tp)->type)
+                    {
+                        p->tp = sym->tp;
+                        cast(p->tp, &p->exp);
+                    }
             }
         }
         else if (Optimizer::architecture == ARCHITECTURE_MSIL)
@@ -4403,15 +4424,15 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                             doit = !!arg->tp->templateParam->p->byPack.pack;
                     }
                 }
-                if (doit && !templateNestingCount)
+                if (doit && !templateNestingCount && !(flags & _F_INDECLTYPE))
                     error(ERR_CALL_OF_NONFUNCTION);
-                *tp = &stdvoid;
+                *tp = &stdany;
             }
         }
         else
         {
             *tp = &stdint;
-            if (!templateNestingCount)
+            if (!templateNestingCount && !(flags & _F_INDECLTYPE))
                 error(ERR_CALL_OF_NONFUNCTION);
         }
     }
@@ -6259,7 +6280,7 @@ static LEXLIST* expression_ampersand(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TY
         symRef = (Optimizer::architecture == ARCHITECTURE_MSIL) ? GetSymRef(exp1) : nullptr;
         btp = basetype(*tp);
         tp1 = LookupSingleAggregate(btp, &exp1, true);
-        if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
+        if ((isstructuredmath(*tp) || Optimizer::architecture == ARCHITECTURE_MSIL) &&
             insertOperatorFunc(ovcl_unary_any, and_unary, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
         {
             return lex;
@@ -6405,7 +6426,7 @@ static LEXLIST* expression_deref(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
 {
     lex = getsym();
     lex = expression_cast(lex, funcsp, nullptr, tp, exp, nullptr, flags);
-    if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
+    if ((isstructuredmath(*tp) || Optimizer::architecture == ARCHITECTURE_MSIL) &&
         insertOperatorFunc(ovcl_unary_pointer, star_unary, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
     {
         return lex;
@@ -6542,88 +6563,92 @@ static LEXLIST* expression_postfix(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 ConstExprPromote(*exp, false);
                 kw = KW(lex);
                 lex = getsym();
-                if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
-                    insertOperatorFunc(ovcl_unary_postfix, kw, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
+                if (isstructuredmath(*tp))
                 {
-                }
-                else
-                {
-                    castToArithmetic(false, tp, exp, kw, nullptr, true);
-                    if (isconstraw(*tp) && !localMutable)
-                        error(ERR_CANNOT_MODIFY_CONST_OBJECT);
-                    else if (isstructured(*tp))
-                        error(ERR_ILL_STRUCTURE_OPERATION);
-                    else if (!lvalue(*exp) && basetype(*tp)->type != bt_templateparam)
+                    if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
+                        insertOperatorFunc(ovcl_unary_postfix, kw, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
                     {
-                        error(ERR_LVALUE);
+                        continue;
                     }
                     else
                     {
-                        EXPRESSION *exp3 = nullptr, *exp1 = nullptr;
-                        if ((*exp)->left->type == en_func || (*exp)->left->type == en_thisref)
-                        {
-                            EXPRESSION* exp2 = anonymousVar(sc_auto, *tp);
-                            deref(&stdpointer, &exp2);
-                            exp3 = exprNode(en_assign, exp2, (*exp)->left);
-                            deref(*tp, &exp2);
-                            *exp = exp2;
-                        }
-                        if (basetype(*tp)->type == bt_pointer)
-                        {
-                            TYPE* btp = basetype(*tp)->btp;
-                            if (basetype(btp)->type == bt_void)
-                            {
-                                if (Optimizer::cparams.prm_cplusplus)
-                                    error(ERR_ARITHMETIC_WITH_VOID_STAR);
-                                exp1 = nodeSizeof(&stdchar, *exp);
-                            }
-                            else
-                            {
-                                exp1 = nodeSizeof(btp, *exp);
-                            }
-                        }
-                        else
-                        {
-                            if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
-                                error(ERR_NOT_AN_ALLOWED_TYPE);
-                            if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
-                                error(ERR_SCOPED_TYPE_MISMATCH);
-                            if (basetype(*tp)->type == bt_memberptr)
-                                error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-                            exp1 = intNode(en_c_i, 1);
-                        }
-                        if (basetype(*tp)->type == bt_bool)
-                        {
-                            /* autoinc of a bool sets it true.  autodec not allowed in C++
-                             * these aren't spelled out in the C99 standard, we are
-                             * doing the normal thing here...
-                             */
-                            if (kw == autodec)
-                            {
-                                if (Optimizer::cparams.prm_cplusplus)
-                                    error(ERR_CANNOT_USE_bool_HERE);
-                                *exp = exprNode(en_assign, *exp, intNode(en_c_bool, 0));
-                            }
-                            else
-                            {
-                                *exp = exprNode(en_assign, *exp, intNode(en_c_bool, 1));
-                            }
-                        }
-                        else
-                        {
-                            if (ispointer(*tp))
-                                cast(&stdint, &exp1);
-                            else
-                                cast(*tp, &exp1);
-                            *exp = exprNode(kw == autoinc ? en_autoinc : en_autodec, *exp, exp1);
-                        }
-                        if (exp3)
-                            *exp = exprNode(en_void, exp3, *exp);
-                        while (lvalue(exp1))
-                            exp1 = exp1->left;
-                        if (exp1->type == en_auto)
-                            exp1->v.sp->sb->altered = true;
+                        castToArithmetic(false, tp, exp, kw, nullptr, true);
                     }
+                }
+                if (isconstraw(*tp) && !localMutable)
+                    error(ERR_CANNOT_MODIFY_CONST_OBJECT);
+                else if (isstructured(*tp))
+                    error(ERR_ILL_STRUCTURE_OPERATION);
+                else if (!lvalue(*exp) && basetype(*tp)->type != bt_templateparam)
+                {
+                    error(ERR_LVALUE);
+                }
+                else
+                {
+                    EXPRESSION *exp3 = nullptr, *exp1 = nullptr;
+                    if ((*exp)->left->type == en_func || (*exp)->left->type == en_thisref)
+                    {
+                        EXPRESSION* exp2 = anonymousVar(sc_auto, *tp);
+                        deref(&stdpointer, &exp2);
+                        exp3 = exprNode(en_assign, exp2, (*exp)->left);
+                        deref(*tp, &exp2);
+                        *exp = exp2;
+                    }
+                    if (basetype(*tp)->type == bt_pointer)
+                    {
+                        TYPE* btp = basetype(*tp)->btp;
+                        if (basetype(btp)->type == bt_void)
+                        {
+                            if (Optimizer::cparams.prm_cplusplus)
+                                error(ERR_ARITHMETIC_WITH_VOID_STAR);
+                            exp1 = nodeSizeof(&stdchar, *exp);
+                        }
+                        else
+                        {
+                            exp1 = nodeSizeof(btp, *exp);
+                        }
+                    }
+                    else
+                    {
+                        if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
+                            error(ERR_NOT_AN_ALLOWED_TYPE);
+                        if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
+                            error(ERR_SCOPED_TYPE_MISMATCH);
+                        if (basetype(*tp)->type == bt_memberptr)
+                            error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
+                        exp1 = intNode(en_c_i, 1);
+                    }
+                    if (basetype(*tp)->type == bt_bool)
+                    {
+                        /* autoinc of a bool sets it true.  autodec not allowed in C++
+                            * these aren't spelled out in the C99 standard, we are
+                            * doing the normal thing here...
+                            */
+                        if (kw == autodec)
+                        {
+                            if (Optimizer::cparams.prm_cplusplus)
+                                error(ERR_CANNOT_USE_bool_HERE);
+                            *exp = exprNode(en_assign, *exp, intNode(en_c_bool, 0));
+                        }
+                        else
+                        {
+                            *exp = exprNode(en_assign, *exp, intNode(en_c_bool, 1));
+                        }
+                    }
+                    else
+                    {
+                        if (ispointer(*tp))
+                            cast(&stdint, &exp1);
+                        else
+                            cast(*tp, &exp1);
+                        *exp = exprNode(kw == autoinc ? en_autoinc : en_autodec, *exp, exp1);
+                    }
+                    if (exp3)
+                        *exp = exprNode(en_void, exp3, *exp);
+                    while (lvalue(exp1))
+                        exp1 = exp1->left;
+                    if (exp1->type == en_auto)
+                        exp1->v.sp->sb->altered = true;
                 }
                 break;
             default:
@@ -6653,34 +6678,38 @@ LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EX
             lex = expression_cast(lex, funcsp, atp, tp, exp, nullptr, flags);
             if (*tp)
             {
-                if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
-                    insertOperatorFunc(ovcl_unary_numeric, plus_unary, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
+                if (isstructuredmath(*tp))
                 {
+                    if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
+                        insertOperatorFunc(ovcl_unary_numeric, plus_unary, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        LookupSingleAggregate(*tp, exp);
+                        castToArithmetic(false, tp, exp, kw, nullptr, true);
+                    }
                 }
-                else
+                if (isstructured(*tp))
+                    error(ERR_ILL_STRUCTURE_OPERATION);
+                else if (isvoid(*tp) || ismsil(*tp))
+                    error(ERR_NOT_AN_ALLOWED_TYPE);
+                else if (basetype(*tp)->type == bt_memberptr)
+                    error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
+                else if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
+                    error(ERR_SCOPED_TYPE_MISMATCH);
+                else if (ispointer(*tp))
+                    error(ERR_ILL_POINTER_OPERATION);
+                else if (atp && basetype(atp)->type < bt_int)
                 {
-                    LookupSingleAggregate(*tp, exp);
-                    castToArithmetic(false, tp, exp, kw, nullptr, true);
-                    if (isstructured(*tp))
-                        error(ERR_ILL_STRUCTURE_OPERATION);
-                    else if (isvoid(*tp) || ismsil(*tp))
-                        error(ERR_NOT_AN_ALLOWED_TYPE);
-                    else if (basetype(*tp)->type == bt_memberptr)
-                        error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-                    else if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
-                        error(ERR_SCOPED_TYPE_MISMATCH);
-                    else if (ispointer(*tp))
-                        error(ERR_ILL_POINTER_OPERATION);
-                    else if (atp && basetype(atp)->type < bt_int)
-                    {
-                        cast(atp, exp);
-                        *tp = atp;
-                    }
-                    else if (basetype(*tp)->type < bt_int)
-                    {
-                        cast(&stdint, exp);
-                        *tp = &stdint;
-                    }
+                    cast(atp, exp);
+                    *tp = atp;
+                }
+                else if (basetype(*tp)->type < bt_int)
+                {
+                    cast(&stdint, exp);
+                    *tp = &stdint;
                 }
             }
             break;
@@ -6695,39 +6724,43 @@ LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EX
             LookupSingleAggregate(*tp, exp);
             if (*tp)
             {
-                if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
-                    insertOperatorFunc(ovcl_unary_numeric, minus_unary, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
+                if (isstructuredmath(*tp))
                 {
-                }
-                else
-                {
-                    castToArithmetic(false, tp, exp, kw, nullptr, true);
-                    if (isstructured(*tp))
-                        error(ERR_ILL_STRUCTURE_OPERATION);
-                    else if (isvoid(*tp) || ismsil(*tp))
-                        error(ERR_NOT_AN_ALLOWED_TYPE);
-                    else if (basetype(*tp)->type == bt_memberptr)
-                        error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-                    else if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
-                        error(ERR_SCOPED_TYPE_MISMATCH);
-                    else if (ispointer(*tp))
-                        error(ERR_ILL_POINTER_OPERATION);
-                    else if (atp && basetype(atp)->type < bt_int)
+                    if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
+                        insertOperatorFunc(ovcl_unary_numeric, minus_unary, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
                     {
-                        *exp = exprNode(en_uminus, *exp, nullptr);
-                        cast(atp, exp);
-                        *tp = atp;
-                    }
-                    else if (basetype(*tp)->type < bt_int)
-                    {
-                        cast(&stdint, exp);
-                        *exp = exprNode(en_uminus, *exp, nullptr);
-                        *tp = &stdint;
+                        break;
                     }
                     else
                     {
-                        *exp = exprNode(en_uminus, *exp, nullptr);
+                        castToArithmetic(false, tp, exp, kw, nullptr, true);
                     }
+                }
+                if (isstructured(*tp))
+                    error(ERR_ILL_STRUCTURE_OPERATION);
+                else if (isvoid(*tp) || ismsil(*tp))
+                    error(ERR_NOT_AN_ALLOWED_TYPE);
+                else if (basetype(*tp)->type == bt_memberptr)
+                    error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
+                else if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
+                    error(ERR_SCOPED_TYPE_MISMATCH);
+                else if (ispointer(*tp))
+                    error(ERR_ILL_POINTER_OPERATION);
+                else if (atp && basetype(atp)->type < bt_int)
+                {
+                    *exp = exprNode(en_uminus, *exp, nullptr);
+                    cast(atp, exp);
+                    *tp = atp;
+                }
+                else if (basetype(*tp)->type < bt_int)
+                {
+                    cast(&stdint, exp);
+                    *exp = exprNode(en_uminus, *exp, nullptr);
+                    *tp = &stdint;
+                }
+                else
+                {
+                    *exp = exprNode(en_uminus, *exp, nullptr);
                 }
             }
             break;
@@ -6748,37 +6781,33 @@ LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EX
             LookupSingleAggregate(*tp, exp);
             if (*tp)
             {
-                if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
-                    insertOperatorFunc(ovcl_unary_numericptr, notx, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
+                if (isstructuredmath(*tp))
                 {
-                }
-                else
-                {
-                    castToArithmetic(false, tp, exp, kw, nullptr, false);
-                    if (isstructured(*tp))
-                        error(ERR_ILL_STRUCTURE_OPERATION);
-                    else if (isvoid(*tp) || ismsil(*tp))
-                        error(ERR_NOT_AN_ALLOWED_TYPE);
-                    else if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
-                        error(ERR_SCOPED_TYPE_MISMATCH);
-                    /*
-                else
-                    if (basetype(*tp)->type < bt_int)
+                    if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
+                        insertOperatorFunc(ovcl_unary_numericptr, notx, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
                     {
-                        cast(&stdint, exp);
-                        *tp = &stdint;
-                    }
-                    */
-                    if ((*tp)->type == bt_memberptr)
-                    {
-                        *exp = exprNode(en_mp_as_bool, *exp, nullptr);
-                        (*exp)->size = (*tp)->size;
-                        *exp = exprNode(en_not, *exp, nullptr);
+                        break;
                     }
                     else
                     {
-                        *exp = exprNode(en_not, *exp, nullptr);
+                        castToArithmetic(false, tp, exp, kw, nullptr, false);
                     }
+                }
+                if (isstructured(*tp))
+                    error(ERR_ILL_STRUCTURE_OPERATION);
+                else if (isvoid(*tp) || ismsil(*tp))
+                    error(ERR_NOT_AN_ALLOWED_TYPE);
+                else if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
+                    error(ERR_SCOPED_TYPE_MISMATCH);
+                if ((*tp)->type == bt_memberptr)
+                {
+                    *exp = exprNode(en_mp_as_bool, *exp, nullptr);
+                    (*exp)->size = (*tp)->size;
+                    *exp = exprNode(en_not, *exp, nullptr);
+                }
+                else
+                {
+                    *exp = exprNode(en_not, *exp, nullptr);
                 }
                 if (Optimizer::cparams.prm_cplusplus)
                     *tp = &stdbool;
@@ -6797,44 +6826,48 @@ LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EX
             LookupSingleAggregate(*tp, exp);
             if (*tp)
             {
-                if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
-                    insertOperatorFunc(ovcl_unary_int, complx, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
+                if (isstructuredmath(*tp))
                 {
-                }
-                else
-                {
-                    castToArithmetic(true, tp, exp, kw, nullptr, true);
-                    if (isstructured(*tp))
-                        error(ERR_ILL_STRUCTURE_OPERATION);
-                    else if (iscomplex(*tp))
-                        error(ERR_ILL_USE_OF_COMPLEX);
-                    else if (isfloat(*tp) || isimaginary(*tp))
-                        error(ERR_ILL_USE_OF_FLOATING);
-                    else if (ispointer(*tp))
-                        error(ERR_ILL_POINTER_OPERATION);
-                    else if (isvoid(*tp) || ismsil(*tp))
-                        error(ERR_NOT_AN_ALLOWED_TYPE);
-                    else if (basetype(*tp)->type == bt_memberptr)
-                        error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-                    else if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
-                        error(ERR_SCOPED_TYPE_MISMATCH);
-                    else if (atp && basetype(atp)->type < bt_int)
+                    if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
+                        insertOperatorFunc(ovcl_unary_int, complx, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
                     {
-                        *exp = exprNode(en_compl, *exp, nullptr);
-                        cast(atp, exp);
-                        *tp = atp;
-                    }
-                    else if (basetype(*tp)->type < bt_int)
-                    {
-                        cast(&stdint, exp);
-                        *exp = exprNode(en_compl, *exp, nullptr);
-                        *tp = &stdint;
+                        break;
                     }
                     else
                     {
-                        *exp = exprNode(en_compl, *exp, nullptr);
-                        cast(basetype(*tp), exp);
+                        castToArithmetic(true, tp, exp, kw, nullptr, true);
                     }
+                }
+                if (isstructured(*tp))
+                    error(ERR_ILL_STRUCTURE_OPERATION);
+                else if (iscomplex(*tp))
+                    error(ERR_ILL_USE_OF_COMPLEX);
+                else if (isfloat(*tp) || isimaginary(*tp))
+                    error(ERR_ILL_USE_OF_FLOATING);
+                else if (ispointer(*tp))
+                    error(ERR_ILL_POINTER_OPERATION);
+                else if (isvoid(*tp) || ismsil(*tp))
+                    error(ERR_NOT_AN_ALLOWED_TYPE);
+                else if (basetype(*tp)->type == bt_memberptr)
+                    error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
+                else if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
+                    error(ERR_SCOPED_TYPE_MISMATCH);
+                else if (atp && basetype(atp)->type < bt_int)
+                {
+                    *exp = exprNode(en_compl, *exp, nullptr);
+                    cast(atp, exp);
+                    *tp = atp;
+                }
+                else if (basetype(*tp)->type < bt_int)
+                {
+                    cast(&stdint, exp);
+                    *exp = exprNode(en_compl, *exp, nullptr);
+                    *tp = &stdint;
+                }
+                else
+                {
+                    *exp = exprNode(en_compl, *exp, nullptr);
+                    cast(basetype(*tp), exp);
                 }
             }
             break;
@@ -6845,81 +6878,85 @@ LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EX
             ConstExprPromote(*exp, false);
             if (*tp)
             {
-                if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
-                    insertOperatorFunc(ovcl_unary_prefix, kw, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
+                if (isstructuredmath(*tp))
                 {
-                }
-                else
-                {
-                    castToArithmetic(false, tp, exp, kw, nullptr, true);
-                    if (isstructured(*tp))
-                        error(ERR_ILL_STRUCTURE_OPERATION);
-                    else if (iscomplex(*tp))
-                        error(ERR_ILL_USE_OF_COMPLEX);
-                    else if (isconstraw(*tp) && !localMutable)
-                        error(ERR_CANNOT_MODIFY_CONST_OBJECT);
-                    else if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
-                        error(ERR_NOT_AN_ALLOWED_TYPE);
-                    else if (basetype(*tp)->type == bt_memberptr)
-                        error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-                    else if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
-                        error(ERR_SCOPED_TYPE_MISMATCH);
-                    else if (!lvalue(*exp))
+                    if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
+                        insertOperatorFunc(ovcl_unary_prefix, kw, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
                     {
-                        if ((*exp)->type != en_templateparam && basetype(*tp)->type != bt_templateparam &&
-                            basetype(*tp)->type != bt_templateselector && basetype(*tp)->type != bt_templatedecltype)
-                            error(ERR_LVALUE);
+                        break;
                     }
                     else
                     {
-                        EXPRESSION* exp3 = nullptr;
-                        if ((*exp)->left->type == en_func || (*exp)->left->type == en_thisref)
-                        {
-                            EXPRESSION* exp2 = anonymousVar(sc_auto, *tp);
-                            deref(&stdpointer, &exp2);
-                            exp3 = exprNode(en_assign, exp2, (*exp)->left);
-                            deref(*tp, &exp2);
-                            *exp = exp2;
-                        }
-                        if (ispointer(*tp))
-                        {
-                            TYPE* tpx;
-                            if (basetype(basetype(*tp)->btp)->type == bt_void)
-                            {
-                                if (Optimizer::cparams.prm_cplusplus)
-                                    error(ERR_ARITHMETIC_WITH_VOID_STAR);
-                                tpx = &stdchar;
-                            }
-                            else
-                            {
-                                tpx = basetype(*tp)->btp;
-                            }
-                            *exp =
-                                exprNode(en_assign, *exp, exprNode(kw == autoinc ? en_add : en_sub, *exp, nodeSizeof(tpx, *exp)));
-                            (*exp)->preincdec = true;
-                        }
-                        else if (kw == autoinc && basetype(*tp)->type == bt_bool)
-                        {
-                            *exp = exprNode(en_assign, *exp, intNode(en_c_i, 1));  // set to true as per C++
-                        }
-                        else if (kw == autodec && basetype(*tp)->type == bt_bool)
+                        castToArithmetic(false, tp, exp, kw, nullptr, true);
+                    }
+                }
+                if (isstructured(*tp))
+                    error(ERR_ILL_STRUCTURE_OPERATION);
+                else if (iscomplex(*tp))
+                    error(ERR_ILL_USE_OF_COMPLEX);
+                else if (isconstraw(*tp) && !localMutable)
+                    error(ERR_CANNOT_MODIFY_CONST_OBJECT);
+                else if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
+                    error(ERR_NOT_AN_ALLOWED_TYPE);
+                else if (basetype(*tp)->type == bt_memberptr)
+                    error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
+                else if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
+                    error(ERR_SCOPED_TYPE_MISMATCH);
+                else if (!lvalue(*exp))
+                {
+                    if ((*exp)->type != en_templateparam && basetype(*tp)->type != bt_templateparam &&
+                        basetype(*tp)->type != bt_templateselector && basetype(*tp)->type != bt_templatedecltype)
+                        error(ERR_LVALUE);
+                }
+                else
+                {
+                    EXPRESSION* exp3 = nullptr;
+                    if ((*exp)->left->type == en_func || (*exp)->left->type == en_thisref)
+                    {
+                        EXPRESSION* exp2 = anonymousVar(sc_auto, *tp);
+                        deref(&stdpointer, &exp2);
+                        exp3 = exprNode(en_assign, exp2, (*exp)->left);
+                        deref(*tp, &exp2);
+                        *exp = exp2;
+                    }
+                    if (ispointer(*tp))
+                    {
+                        TYPE* tpx;
+                        if (basetype(basetype(*tp)->btp)->type == bt_void)
                         {
                             if (Optimizer::cparams.prm_cplusplus)
-                                error(ERR_CANNOT_USE_bool_HERE);
-
-                            *exp = exprNode(en_assign, *exp, intNode(en_c_i, 0));  // c++ doesn't allow it, set it to true for C.
+                                error(ERR_ARITHMETIC_WITH_VOID_STAR);
+                            tpx = &stdchar;
                         }
                         else
                         {
-                            EXPRESSION *dest = *exp, *exp1 = intNode(en_c_i, 1);
-                            *exp = RemoveAutoIncDec(*exp);
-                            cast(*tp, &exp1);
-                            *exp = exprNode(en_assign, dest, exprNode(kw == autoinc ? en_add : en_sub, *exp, exp1));
-                            (*exp)->preincdec = true;
+                            tpx = basetype(*tp)->btp;
                         }
-                        if (exp3)
-                            *exp = exprNode(en_void, exp3, *exp);
+                        *exp =
+                            exprNode(en_assign, *exp, exprNode(kw == autoinc ? en_add : en_sub, *exp, nodeSizeof(tpx, *exp)));
+                        (*exp)->preincdec = true;
                     }
+                    else if (kw == autoinc && basetype(*tp)->type == bt_bool)
+                    {
+                        *exp = exprNode(en_assign, *exp, intNode(en_c_i, 1));  // set to true as per C++
+                    }
+                    else if (kw == autodec && basetype(*tp)->type == bt_bool)
+                    {
+                        if (Optimizer::cparams.prm_cplusplus)
+                            error(ERR_CANNOT_USE_bool_HERE);
+
+                        *exp = exprNode(en_assign, *exp, intNode(en_c_i, 0));  // c++ doesn't allow it, set it to true for C.
+                    }
+                    else
+                    {
+                        EXPRESSION *dest = *exp, *exp1 = intNode(en_c_i, 1);
+                        *exp = RemoveAutoIncDec(*exp);
+                        cast(*tp, &exp1);
+                        *exp = exprNode(en_assign, dest, exprNode(kw == autoinc ? en_add : en_sub, *exp, exp1));
+                        (*exp)->preincdec = true;
+                    }
+                    if (exp3)
+                        *exp = exprNode(en_void, exp3, *exp);
                 }
             }
             break;
@@ -7028,56 +7065,60 @@ LEXLIST* expression_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
 
                                     kw = KW(lex);
                                     lex = getsym();
-                                    if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
-                                        insertOperatorFunc(ovcl_unary_postfix, kw, funcsp, tp, exp, nullptr, nullptr, nullptr,
-                                                           flags))
+                                    if (isstructuredmath(*tp))
                                     {
-                                    }
-                                    else
-                                    {
-                                        castToArithmetic(false, tp, exp, kw, nullptr, true);
-                                        if (isstructured(*tp))
-                                            error(ERR_ILL_STRUCTURE_OPERATION);
-                                        else if (!lvalue(*exp) && basetype(*tp)->type != bt_templateparam)
-                                            error(ERR_LVALUE);
+                                        if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
+                                            insertOperatorFunc(ovcl_unary_postfix, kw, funcsp, tp, exp, nullptr, nullptr, nullptr,
+                                                flags))
+                                        {
+                                            continue;
+                                        }
                                         else
                                         {
-                                            EXPRESSION* exp1 = nullptr;
-                                            if (basetype(*tp)->type == bt_pointer)
-                                            {
-                                                TYPE* btp = basetype(*tp)->btp;
-                                                exp1 = nodeSizeof(btp, *exp);
-                                            }
-                                            else
-                                            {
-                                                if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
-                                                    error(ERR_NOT_AN_ALLOWED_TYPE);
-                                                if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
-                                                    error(ERR_SCOPED_TYPE_MISMATCH);
-                                                if (basetype(*tp)->type == bt_memberptr)
-                                                    error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-                                                exp1 = intNode(en_c_i, 1);
-                                            }
-                                            if (basetype(*tp)->type == bt_bool)
-                                            {
-                                                /* autoinc of a bool sets it true.  autodec not allowed
-                                                 * these aren't spelled out in the C99 standard, we are
-                                                 * following the C++ standard here
-                                                 */
-                                                if (kw == autodec)
-                                                    error(ERR_CANNOT_USE_bool_HERE);
-                                                *exp = exprNode(en_assign, *exp, intNode(en_c_bool, 1));
-                                            }
-                                            else
-                                            {
-                                                cast(*tp, &exp1);
-                                                *exp = exprNode(kw == autoinc ? en_autoinc : en_autodec, *exp, exp1);
-                                            }
-                                            while (lvalue(exp1))
-                                                exp1 = exp1->left;
-                                            if (exp1->type == en_auto)
-                                                exp1->v.sp->sb->altered = true;
+                                            castToArithmetic(false, tp, exp, kw, nullptr, true);
                                         }
+                                    }
+                                    if (isstructured(*tp))
+                                        error(ERR_ILL_STRUCTURE_OPERATION);
+                                    else if (!lvalue(*exp) && basetype(*tp)->type != bt_templateparam)
+                                        error(ERR_LVALUE);
+                                    else
+                                    {
+                                        EXPRESSION* exp1 = nullptr;
+                                        if (basetype(*tp)->type == bt_pointer)
+                                        {
+                                            TYPE* btp = basetype(*tp)->btp;
+                                            exp1 = nodeSizeof(btp, *exp);
+                                        }
+                                        else
+                                        {
+                                            if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
+                                                error(ERR_NOT_AN_ALLOWED_TYPE);
+                                            if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
+                                                error(ERR_SCOPED_TYPE_MISMATCH);
+                                            if (basetype(*tp)->type == bt_memberptr)
+                                                error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
+                                            exp1 = intNode(en_c_i, 1);
+                                        }
+                                        if (basetype(*tp)->type == bt_bool)
+                                        {
+                                            /* autoinc of a bool sets it true.  autodec not allowed
+                                                * these aren't spelled out in the C99 standard, we are
+                                                * following the C++ standard here
+                                                */
+                                            if (kw == autodec)
+                                                error(ERR_CANNOT_USE_bool_HERE);
+                                            *exp = exprNode(en_assign, *exp, intNode(en_c_bool, 1));
+                                        }
+                                        else
+                                        {
+                                            cast(*tp, &exp1);
+                                            *exp = exprNode(kw == autoinc ? en_autoinc : en_autodec, *exp, exp1);
+                                        }
+                                        while (lvalue(exp1))
+                                            exp1 = exp1->left;
+                                        if (exp1->type == en_auto)
+                                            exp1->v.sp->sb->altered = true;
                                     }
                                     break;
                                 default:
@@ -7174,7 +7215,7 @@ static LEXLIST* expression_pm(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
         EXPRESSION* exp1 = nullptr;
         lex = getsym();
         lex = expression_cast(lex, funcsp, nullptr, &tp1, &exp1, nullptr, flags);
-        if (Optimizer::cparams.prm_cplusplus && kw == pointstar &&
+        if (isstructuredmath(*tp, tp1) && Optimizer::cparams.prm_cplusplus && kw == pointstar &&
             insertOperatorFunc(ovcl_binary_any, pointstar, funcsp, tp, exp, tp1, exp1, nullptr, flags))
         {
             continue;
@@ -7301,117 +7342,122 @@ static LEXLIST* expression_times(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
         }
         ResolveTemplateVariable(tp, exp, tp1, atp);
         ResolveTemplateVariable(&tp1, &exp1, *tp, atp);
-        if (Optimizer::cparams.prm_cplusplus &&
-            insertOperatorFunc(kw == mod ? ovcl_binary_int : ovcl_binary_numeric, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags))
+        if (isstructuredmath(*tp, tp1))
         {
-        }
-        else
-        {
-            castToArithmetic(kw == mod, tp, exp, kw, tp1, true);
-            castToArithmetic(kw == mod, &tp1, &exp1, (enum e_kw) - 1, *tp, true);
-            LookupSingleAggregate(*tp, exp);
-            LookupSingleAggregate(tp1, &exp1);
-            if (isstructured(*tp) || isstructured(tp1))
-                error(ERR_ILL_STRUCTURE_OPERATION);
-            else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
-                error(ERR_NOT_AN_ALLOWED_TYPE);
-            else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
-                error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-            else if ((basetype(*tp)->scoped || basetype(tp1)->scoped) && !(flags & _F_SCOPEDENUM))
-                error(ERR_SCOPED_TYPE_MISMATCH);
-            else if (ispointer(*tp) || ispointer(tp1))
-                error(ERR_ILL_POINTER_OPERATION);
+
+            if (Optimizer::cparams.prm_cplusplus &&
+                insertOperatorFunc(kw == mod ? ovcl_binary_int : ovcl_binary_numeric, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags))
+            {
+                continue;
+            }
             else
             {
-                int m1 = -1, m2 = -1;
-                if (isimaginary(*tp) && isimaginary(tp1))
+                castToArithmetic(kw == mod, tp, exp, kw, tp1, true);
+                castToArithmetic(kw == mod, &tp1, &exp1, (enum e_kw)-1, *tp, true);
+                LookupSingleAggregate(*tp, exp);
+                LookupSingleAggregate(tp1, &exp1);
+            }
+        }
+        if (isstructured(*tp) || isstructured(tp1))
+            error(ERR_ILL_STRUCTURE_OPERATION);
+        else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
+            error(ERR_NOT_AN_ALLOWED_TYPE);
+        else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
+            error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
+        else if ((basetype(*tp)->scoped || basetype(tp1)->scoped) && !(flags & _F_SCOPEDENUM))
+            error(ERR_SCOPED_TYPE_MISMATCH);
+        else if (ispointer(*tp) || ispointer(tp1))
+            error(ERR_ILL_POINTER_OPERATION);
+        else
+        {
+            int m1 = -1, m2 = -1;
+            if (isimaginary(*tp) && isimaginary(tp1))
+            {
+                if (kw == star)
+                    *exp = exprNode(en_uminus, *exp, nullptr);
+                m1 = (*tp)->type - bt_float_imaginary;
+                m2 = tp1->type - bt_float_imaginary;
+                m1 = m1 > m2 ? m1 : m2;
+                switch (m1)
                 {
-                    if (kw == star)
-                        *exp = exprNode(en_uminus, *exp, nullptr);
+                    case 0:
+                        *tp = &stdfloat;
+                        tp1 = &stdfloatimaginary;
+                        break;
+                    case 1:
+                        *tp = &stddouble;
+                        tp1 = &stddoubleimaginary;
+                        break;
+                    case 2:
+                        *tp = &stdlongdouble;
+                        tp1 = &stdlongdoubleimaginary;
+                        break;
+                }
+                cast(tp1, exp);
+                cast(tp1, &exp1);
+            }
+            else
+            {
+                if (isimaginary(*tp) && (isfloat(tp1) || isint(tp1)))
+                {
                     m1 = (*tp)->type - bt_float_imaginary;
-                    m2 = tp1->type - bt_float_imaginary;
+                    m2 = isfloat(tp1) ? tp1->type - bt_float : m1;
+                }
+                else if ((isfloat(*tp) || isint(*tp)) && isimaginary(tp1))
+                {
+                    m1 = tp1->type - bt_float_imaginary;
+                    m2 = isfloat(*tp) ? (*tp)->type - bt_float : m1;
+                }
+                if (m1 >= 0)
+                {
+                    bool b = isimaginary(*tp);
                     m1 = m1 > m2 ? m1 : m2;
                     switch (m1)
                     {
                         case 0:
-                            *tp = &stdfloat;
-                            tp1 = &stdfloatimaginary;
+                            *tp = &stdfloatimaginary;
+                            tp1 = &stdfloat;
                             break;
                         case 1:
-                            *tp = &stddouble;
-                            tp1 = &stddoubleimaginary;
+                            *tp = &stddoubleimaginary;
+                            tp1 = &stddouble;
                             break;
-                        case 2:
-                            *tp = &stdlongdouble;
-                            tp1 = &stdlongdoubleimaginary;
+                        default:
+                            *tp = &stdlongdoubleimaginary;
+                            tp1 = &stdlongdouble;
                             break;
                     }
-                    cast(tp1, exp);
-                    cast(tp1, &exp1);
-                }
-                else
-                {
-                    if (isimaginary(*tp) && (isfloat(tp1) || isint(tp1)))
+                    if (b)
                     {
-                        m1 = (*tp)->type - bt_float_imaginary;
-                        m2 = isfloat(tp1) ? tp1->type - bt_float : m1;
-                    }
-                    else if ((isfloat(*tp) || isint(*tp)) && isimaginary(tp1))
-                    {
-                        m1 = tp1->type - bt_float_imaginary;
-                        m2 = isfloat(*tp) ? (*tp)->type - bt_float : m1;
-                    }
-                    if (m1 >= 0)
-                    {
-                        bool b = isimaginary(*tp);
-                        m1 = m1 > m2 ? m1 : m2;
-                        switch (m1)
-                        {
-                            case 0:
-                                *tp = &stdfloatimaginary;
-                                tp1 = &stdfloat;
-                                break;
-                            case 1:
-                                *tp = &stddoubleimaginary;
-                                tp1 = &stddouble;
-                                break;
-                            default:
-                                *tp = &stdlongdoubleimaginary;
-                                tp1 = &stdlongdouble;
-                                break;
-                        }
-                        if (b)
-                        {
-                            cast(*tp, exp);
-                            cast(tp1, &exp1);
-                        }
-                        else
-                        {
-                            cast(tp1, exp);
-                            cast(*tp, &exp1);
-                        }
+                        cast(*tp, exp);
+                        cast(tp1, &exp1);
                     }
                     else
                     {
-                        *tp = destSize(*tp, tp1, exp, &exp1, false, nullptr);
+                        cast(tp1, exp);
+                        cast(*tp, &exp1);
                     }
                 }
-                switch (kw)
+                else
                 {
-                    case star:
-                        type = en_mul;
-                        break;
-                    case divide:
-                        type = isunsigned(*tp) ? en_udiv : en_div;
-                        break;
-                    case mod:
-                        type = isunsigned(*tp) ? en_umod : en_mod;
-                        break;
-                    default:
-                        break;
+                    *tp = destSize(*tp, tp1, exp, &exp1, false, nullptr);
                 }
-                *exp = exprNode(type, *exp, exp1);
             }
+            switch (kw)
+            {
+                case star:
+                    type = en_mul;
+                    break;
+                case divide:
+                    type = isunsigned(*tp) ? en_udiv : en_div;
+                    break;
+                case mod:
+                    type = isunsigned(*tp) ? en_umod : en_mod;
+                    break;
+                default:
+                    break;
+            }
+            *exp = exprNode(type, *exp, exp1);
         }
     }
     return lex;
@@ -7437,66 +7483,70 @@ static LEXLIST* expression_add(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
         }
         ResolveTemplateVariable(tp, exp, tp1, atp);
         ResolveTemplateVariable(&tp1, &exp1, *tp, atp);
-        if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
-            insertOperatorFunc(ovcl_binary_numericptr, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags))
+        if (isstructuredmath(*tp, tp1))
         {
-            continue;
+
+            if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
+                insertOperatorFunc(ovcl_binary_numericptr, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags))
+            {
+                continue;
+            }
+            else
+            {
+                if (!ispointer(*tp) && !ispointer(tp1))
+                {
+                    castToArithmetic(false, tp, exp, kw, tp1, true);
+                    castToArithmetic(false, &tp1, &exp1, (enum e_kw)-1, *tp, true);
+                }
+                LookupSingleAggregate(*tp, exp);
+                LookupSingleAggregate(tp1, &exp1);
+            }
         }
-        else
+        if ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions && kw == plus &&
+            (basetype(*tp)->type == bt___string || basetype(tp1)->type == bt___string ||
+                (atp && basetype(atp)->type == bt___string)))
         {
-            if (!ispointer(*tp) && !ispointer(tp1))
-            {
-                castToArithmetic(false, tp, exp, kw, tp1, true);
-                castToArithmetic(false, &tp1, &exp1, (enum e_kw) - 1, *tp, true);
-            }
-            LookupSingleAggregate(*tp, exp);
-            LookupSingleAggregate(tp1, &exp1);
-            if ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions && kw == plus &&
-                (basetype(*tp)->type == bt___string || basetype(tp1)->type == bt___string ||
-                 (atp && basetype(atp)->type == bt___string)))
-            {
-                msil = true;
-                if ((*exp)->type == en_labcon && (*exp)->string)
-                    (*exp)->type = en_c_string;
-                else if (!ismsil(*tp))
-                    *exp = exprNode(en_x_object, *exp, nullptr);
-                if (exp1->type == en_labcon && exp1->string)
-                    exp1->type = en_c_string;
-                else if (!ismsil(tp1))
-                    exp1 = exprNode(en_x_object, exp1, nullptr);
-            }
-            else if (kw == plus && ispointer(*tp) && ispointer(tp1))
-                error(ERR_ILL_POINTER_ADDITION);
-            else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
-                error(ERR_NOT_AN_ALLOWED_TYPE);
-            else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
-                error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-            else if ((basetype(*tp)->scoped || basetype(tp1)->scoped) && !(flags & _F_SCOPEDENUM))
-                error(ERR_SCOPED_TYPE_MISMATCH);
-            else if (kw != plus && !ispointer(*tp) && ispointer(tp1))
-                error(ERR_ILL_POINTER_SUBTRACTION);
-            else if (isstructured(*tp) || isstructured(tp1))
-                error(ERR_ILL_STRUCTURE_OPERATION);
-            else if (ispointer(*tp))
-            {
-                if (isarray(*tp) && (*tp)->msil)
-                    error(ERR_MANAGED_OBJECT_NO_ADDRESS);
-                else if (ispointer(tp1) && !comparetypes(*tp, tp1, true) && !comparetypes(tp1, *tp, true))
-                    error(ERR_NONPORTABLE_POINTER_CONVERSION);
-                else if (iscomplex(tp1))
-                    error(ERR_ILL_USE_OF_COMPLEX);
-                else if (isfloat(tp1) || isimaginary(tp1))
-                    error(ERR_ILL_USE_OF_FLOATING);
-            }
-            else if (ispointer(tp1))
-            {
-                if (iscomplex(*tp))
-                    error(ERR_ILL_USE_OF_COMPLEX);
-                else if (isfloat(*tp) || isimaginary(*tp))
-                    error(ERR_ILL_USE_OF_FLOATING);
-                else if (isarray(tp1) && (tp1)->msil)
-                    error(ERR_MANAGED_OBJECT_NO_ADDRESS);
-            }
+            msil = true;
+            if ((*exp)->type == en_labcon && (*exp)->string)
+                (*exp)->type = en_c_string;
+            else if (!ismsil(*tp))
+                *exp = exprNode(en_x_object, *exp, nullptr);
+            if (exp1->type == en_labcon && exp1->string)
+                exp1->type = en_c_string;
+            else if (!ismsil(tp1))
+                exp1 = exprNode(en_x_object, exp1, nullptr);
+        }
+        else if (kw == plus && ispointer(*tp) && ispointer(tp1))
+            error(ERR_ILL_POINTER_ADDITION);
+        else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
+            error(ERR_NOT_AN_ALLOWED_TYPE);
+        else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
+            error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
+        else if ((basetype(*tp)->scoped || basetype(tp1)->scoped) && !(flags & _F_SCOPEDENUM))
+            error(ERR_SCOPED_TYPE_MISMATCH);
+        else if (kw != plus && !ispointer(*tp) && ispointer(tp1))
+            error(ERR_ILL_POINTER_SUBTRACTION);
+        else if (isstructured(*tp) || isstructured(tp1))
+            error(ERR_ILL_STRUCTURE_OPERATION);
+        else if (ispointer(*tp))
+        {
+            if (isarray(*tp) && (*tp)->msil)
+                error(ERR_MANAGED_OBJECT_NO_ADDRESS);
+            else if (ispointer(tp1) && !comparetypes(*tp, tp1, true) && !comparetypes(tp1, *tp, true))
+                error(ERR_NONPORTABLE_POINTER_CONVERSION);
+            else if (iscomplex(tp1))
+                error(ERR_ILL_USE_OF_COMPLEX);
+            else if (isfloat(tp1) || isimaginary(tp1))
+                error(ERR_ILL_USE_OF_FLOATING);
+        }
+        else if (ispointer(tp1))
+        {
+            if (iscomplex(*tp))
+                error(ERR_ILL_USE_OF_COMPLEX);
+            else if (isfloat(*tp) || isimaginary(*tp))
+                error(ERR_ILL_USE_OF_FLOATING);
+            else if (isarray(tp1) && (tp1)->msil)
+                error(ERR_MANAGED_OBJECT_NO_ADDRESS);
         }
         if (msil)
         {
@@ -7645,46 +7695,50 @@ static LEXLIST* expression_shift(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
         }
         ResolveTemplateVariable(tp, exp, tp1, atp);
         ResolveTemplateVariable(&tp1, &exp1, *tp, atp);
-        LookupSingleAggregate(*tp, exp);
-        LookupSingleAggregate(tp1, &exp1);
-        if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
-            insertOperatorFunc(ovcl_binary_int, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags))
+        if (isstructuredmath(*tp, tp1))
         {
-        }
-        else
-        {
-            castToArithmetic(true, tp, exp, kw, tp1, true);
-            castToArithmetic(true, &tp1, &exp1, (enum e_kw) - 1, *tp, true);
-            if (isstructured(*tp) || isstructured(tp1))
-                error(ERR_ILL_STRUCTURE_OPERATION);
-            else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
-                error(ERR_NOT_AN_ALLOWED_TYPE);
-            else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
-                error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-            else if ((basetype(*tp)->scoped || basetype(tp1)->scoped) && !(flags & _F_SCOPEDENUM))
-                error(ERR_SCOPED_TYPE_MISMATCH);
-            else if (ispointer(*tp) || ispointer(tp1))
-                error(ERR_ILL_POINTER_OPERATION);
-            else if (isfloat(*tp) || isfloat(tp1) || isimaginary(*tp) || isimaginary(tp1))
-                error(ERR_ILL_USE_OF_FLOATING);
-            else if (iscomplex(*tp) || iscomplex(tp1))
-                error(ERR_ILL_USE_OF_COMPLEX);
+            LookupSingleAggregate(*tp, exp);
+            LookupSingleAggregate(tp1, &exp1);
+            if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
+                insertOperatorFunc(ovcl_binary_int, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags))
+            {
+                continue;
+            }
             else
             {
-                if (kw == rightshift)
-                    if (isunsigned(*tp))
-                        type = en_ursh;
-                    else
-                        type = en_rsh;
-                else
-                    type = en_lsh;
-                if (basetype(*tp)->type < bt_int)
-                {
-                    *tp = &stdint;
-                    cast(*tp, exp);
-                }
-                *exp = exprNode(type, *exp, exprNode(en_shiftby, exp1, 0));
+                castToArithmetic(true, tp, exp, kw, tp1, true);
+                castToArithmetic(true, &tp1, &exp1, (enum e_kw)-1, *tp, true);
             }
+        }
+        if (isstructured(*tp) || isstructured(tp1))
+            error(ERR_ILL_STRUCTURE_OPERATION);
+        else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
+            error(ERR_NOT_AN_ALLOWED_TYPE);
+        else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
+            error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
+        else if ((basetype(*tp)->scoped || basetype(tp1)->scoped) && !(flags & _F_SCOPEDENUM))
+            error(ERR_SCOPED_TYPE_MISMATCH);
+        else if (ispointer(*tp) || ispointer(tp1))
+            error(ERR_ILL_POINTER_OPERATION);
+        else if (isfloat(*tp) || isfloat(tp1) || isimaginary(*tp) || isimaginary(tp1))
+            error(ERR_ILL_USE_OF_FLOATING);
+        else if (iscomplex(*tp) || iscomplex(tp1))
+            error(ERR_ILL_USE_OF_COMPLEX);
+        else
+        {
+            if (kw == rightshift)
+                if (isunsigned(*tp))
+                    type = en_ursh;
+                else
+                    type = en_rsh;
+            else
+                type = en_lsh;
+            if (basetype(*tp)->type < bt_int)
+            {
+                *tp = &stdint;
+                cast(*tp, exp);
+            }
+            *exp = exprNode(type, *exp, exprNode(en_shiftby, exp1, 0));
         }
     }
     return lex;
@@ -7730,144 +7784,23 @@ static LEXLIST* expression_inequality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, T
             }
             ResolveTemplateVariable(tp, exp, tp1, atp);
             ResolveTemplateVariable(&tp1, &exp1, *tp, atp);
-            if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
-                insertOperatorFunc(ovcl_binary_numericptr, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags))
+            if (isstructuredmath(*tp, tp1))
             {
-            }
-            else
-            {
-                checkscope(*tp, tp1);
-                castToArithmetic(false, tp, exp, kw, tp1, true);
-                castToArithmetic(false, &tp1, &exp1, (enum e_kw) - 1, *tp, true);
+                if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
+                    insertOperatorFunc(ovcl_binary_numericptr, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags))
+                {
+                    continue;
+                }
+                else
+                {
+                    checkscope(*tp, tp1);
+                    castToArithmetic(false, tp, exp, kw, tp1, true);
+                    castToArithmetic(false, &tp1, &exp1, (enum e_kw)-1, *tp, true);
+                }
                 LookupSingleAggregate(*tp, exp);
                 LookupSingleAggregate(tp1, &exp1);
+            }
 
-                if (Optimizer::cparams.prm_cplusplus)
-                {
-                    SYMBOL* funcsp = nullptr;
-                    if ((ispointer(*tp) || basetype(*tp)->type == bt_memberptr) && tp1->type == bt_aggregate)
-                    {
-                        if (tp1->syms->table[0]->next)
-                            errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)tp1->syms->table[0]->p)->name);
-                        exp1 = varNode(en_pc, tp1->syms->table[0]->p);
-                        tp1 = ((SYMBOL*)tp1->syms->table[0]->p)->tp;
-                    }
-                    else if ((ispointer(tp1) || basetype(tp1)->type == bt_memberptr) && (*tp)->type == bt_aggregate)
-                    {
-                        if ((*tp)->syms->table[0]->next)
-                            errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)(*tp)->syms->table[0]->p)->name);
-                        (*exp) = varNode(en_pc, (*tp)->syms->table[0]->p);
-                        (*tp) = ((SYMBOL*)(*tp)->syms->table[0]->p)->tp;
-                    }
-                }
-                if ((*exp)->type == en_pc || ((*exp)->type == en_func && !(*exp)->v.func->ascall))
-                    thunkForImportTable(exp);
-                if (exp1->type == en_pc || (exp1->type == en_func && !exp1->v.func->ascall))
-                    thunkForImportTable(&exp1);
-                if (isstructured(*tp) || isstructured(tp1))
-                    error(ERR_ILL_STRUCTURE_OPERATION);
-                else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
-                    error(ERR_NOT_AN_ALLOWED_TYPE);
-                else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
-                    error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-                else if (ispointer(*tp))
-                {
-                    if (isintconst(exp1))
-                    {
-                        if (!isconstzero(tp1, exp1))
-                            error(ERR_NONPORTABLE_POINTER_COMPARISON);
-                    }
-                    else if (isint(tp1))
-                        error(ERR_NONPORTABLE_POINTER_COMPARISON);
-                    else if (isfloat(tp1) || isimaginary(tp1))
-                        error(ERR_ILL_USE_OF_FLOATING);
-                    else if (iscomplex(tp1))
-                        error(ERR_ILL_USE_OF_COMPLEX);
-                    else if (ispointer(tp1) && !isvoidptr(*tp) && !isvoidptr(tp1) && !comparetypes(*tp, tp1, false))
-                        error(ERR_NONPORTABLE_POINTER_COMPARISON);
-                }
-                else if (ispointer(tp1))
-                {
-                    if (isintconst(*exp))
-                    {
-                        if (!isconstzero(*tp, *exp))
-                            error(ERR_NONPORTABLE_POINTER_COMPARISON);
-                    }
-                    else if (isint(*tp))
-                        error(ERR_NONPORTABLE_POINTER_COMPARISON);
-                    else if (isfloat(*tp) || isimaginary(*tp))
-                        error(ERR_ILL_USE_OF_FLOATING);
-                    else if (iscomplex(*tp))
-                        error(ERR_ILL_USE_OF_COMPLEX);
-                }
-                else if (isint(*tp) && isint(tp1))
-                {
-                    if ((isunsigned(*tp) && !isunsigned(tp1)) || (isunsigned(tp1) && !isunsigned(*tp)))
-                        errorstr(ERR_SIGNED_UNSIGNED_MISMATCH_RELAT, opname);
-                }
-                *tp = destSize(*tp, tp1, exp, &exp1, true, nullptr);
-                switch (kw)
-                {
-                    case gt:
-                        type = isunsigned(*tp) ? en_ugt : en_gt;
-                        break;
-                    case geq:
-                        type = isunsigned(*tp) ? en_uge : en_ge;
-                        break;
-                    case lt:
-                        type = isunsigned(*tp) ? en_ult : en_lt;
-                        break;
-                    case leq:
-                        type = isunsigned(*tp) ? en_ule : en_le;
-                        break;
-                    default:
-                        done = true;
-                        break;
-                }
-                *exp = exprNode(type, *exp, exp1);
-                if (Optimizer::cparams.prm_cplusplus)
-                    *tp = &stdbool;
-                else
-                    *tp = &stdint;
-            }
-        }
-    }
-    return lex;
-}
-static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable,
-                                    int flags)
-{
-    lex = expression_inequality(lex, funcsp, atp, tp, exp, ismutable, flags);
-    if (*tp == nullptr)
-        return lex;
-    while (MATCHKW(lex, eq) || MATCHKW(lex, neq))
-    {
-        bool done = false;
-        TYPE* tp1 = nullptr;
-        EXPRESSION* exp1 = nullptr;
-        enum e_kw kw = KW(lex);
-        lex = getsym();
-        lex = expression_inequality(lex, funcsp, nullptr, &tp1, &exp1, nullptr, flags);
-        if (!tp1)
-        {
-            *tp = nullptr;
-            return lex;
-        }
-        ResolveTemplateVariable(tp, exp, tp1, atp);
-        ResolveTemplateVariable(&tp1, &exp1, *tp, atp);
-        if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
-            insertOperatorFunc(ovcl_binary_numericptr, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags))
-        {
-        }
-        else
-        {
-            checkscope(*tp, tp1);
-            castToArithmetic(false, tp, exp, kw, tp1, true);
-            castToArithmetic(false, &tp1, &exp1, (enum e_kw) - 1, *tp, true);
-            if (TotalErrors())
-            {
-                insertOperatorFunc(ovcl_binary_numericptr, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags);
-            }
             if (Optimizer::cparams.prm_cplusplus)
             {
                 SYMBOL* funcsp = nullptr;
@@ -7891,13 +7824,12 @@ static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYP
             if (exp1->type == en_pc || (exp1->type == en_func && !exp1->v.func->ascall))
                 thunkForImportTable(&exp1);
             if (isstructured(*tp) || isstructured(tp1))
-            {
-                if ((Optimizer::architecture != ARCHITECTURE_MSIL) || (!isconstzero(*tp, *exp) && !isconstzero(tp1, exp1)))
-                    error(ERR_ILL_STRUCTURE_OPERATION);
-            }
+                error(ERR_ILL_STRUCTURE_OPERATION);
             else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
                 error(ERR_NOT_AN_ALLOWED_TYPE);
-            if (ispointer(*tp))
+            else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
+                error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
+            else if (ispointer(*tp))
             {
                 if (isintconst(exp1))
                 {
@@ -7927,81 +7859,207 @@ static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYP
                 else if (iscomplex(*tp))
                     error(ERR_ILL_USE_OF_COMPLEX);
             }
-            else if (basetype(*tp)->type == bt_memberptr)
+            else if (isint(*tp) && isint(tp1))
             {
-                if (basetype(tp1)->type == bt_memberptr)
-                {
-                    if (!comparetypes(basetype(*tp)->btp, basetype(tp1)->btp, true))
-                    {
-                        error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-                    }
-                    *exp = exprNode(en_mp_compare, *exp, exp1);
-                    (*exp)->size = (*tp)->size;
-                    if (kw == neq)
-                        *exp = exprNode(en_not, *exp, nullptr);
-                    done = true;
-                }
-                else if (isconstzero(tp1, exp1))
-                {
-                    *exp = exprNode(en_mp_as_bool, *exp, nullptr);
-                    (*exp)->size = (*tp)->size;
-                    if (kw == eq)
-                        *exp = exprNode(en_not, *exp, nullptr);
-                    done = true;
-                }
-                else if (comparetypes(basetype(*tp)->btp, tp1, true))
-                {
-                    int lbl = dumpMemberPtr(exp1->v.sp, *tp, true);
-                    exp1 = intNode(en_labcon, lbl);
-                    *exp = exprNode(en_mp_compare, *exp, exp1);
-                    (*exp)->size = (*tp)->size;
-                    if (kw == neq)
-                        *exp = exprNode(en_not, *exp, nullptr);
-                    done = true;
-                }
-                else
-                {
-                    error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-                }
+                if ((isunsigned(*tp) && !isunsigned(tp1)) || (isunsigned(tp1) && !isunsigned(*tp)))
+                    errorstr(ERR_SIGNED_UNSIGNED_MISMATCH_RELAT, opname);
             }
-            else if (basetype(tp1)->type == bt_memberptr)
+            *tp = destSize(*tp, tp1, exp, &exp1, true, nullptr);
+            switch (kw)
             {
-                if (isconstzero(*tp, *exp))
-                {
-                    *exp = exprNode(en_mp_as_bool, exp1, nullptr);
-                    (*exp)->size = (tp1)->size;
-                    if (kw == eq)
-                        *exp = exprNode(en_not, *exp, nullptr);
+                case gt:
+                    type = isunsigned(*tp) ? en_ugt : en_gt;
+                    break;
+                case geq:
+                    type = isunsigned(*tp) ? en_uge : en_ge;
+                    break;
+                case lt:
+                    type = isunsigned(*tp) ? en_ult : en_lt;
+                    break;
+                case leq:
+                    type = isunsigned(*tp) ? en_ule : en_le;
+                    break;
+                default:
                     done = true;
-                }
-                else if (comparetypes(*tp, basetype(tp1)->btp, true))
-                {
-                    int lbl = dumpMemberPtr((*exp)->v.sp, tp1, true);
-                    *(exp) = intNode(en_labcon, lbl);
-                    *exp = exprNode(en_mp_compare, *exp, exp1);
-                    (*exp)->size = tp1->size;
-                    if (kw == neq)
-                        *exp = exprNode(en_not, *exp, nullptr);
-                    done = true;
-                }
-                else
-                {
-                    error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-                }
+                    break;
             }
-            if (!done)
-            {
-                if (!(Optimizer::chosenAssembler->arch->preferopts & OPT_BYTECOMPARE) ||
-                    (!fittedConst(*tp, *exp) && !fittedConst(tp1, exp1)) || !isint(*tp) || !isint(tp1))
-                    if (!isstructured(*tp) && !isstructured(tp1))
-                        destSize(*tp, tp1, exp, &exp1, true, nullptr);
-                *exp = exprNode(kw == eq ? en_eq : en_ne, *exp, exp1);
-            }
+            *exp = exprNode(type, *exp, exp1);
             if (Optimizer::cparams.prm_cplusplus)
                 *tp = &stdbool;
             else
                 *tp = &stdint;
         }
+    }
+    return lex;
+}
+static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable,
+                                    int flags)
+{
+    lex = expression_inequality(lex, funcsp, atp, tp, exp, ismutable, flags);
+    if (*tp == nullptr)
+        return lex;
+    while (MATCHKW(lex, eq) || MATCHKW(lex, neq))
+    {
+        bool done = false;
+        TYPE* tp1 = nullptr;
+        EXPRESSION* exp1 = nullptr;
+        enum e_kw kw = KW(lex);
+        lex = getsym();
+        lex = expression_inequality(lex, funcsp, nullptr, &tp1, &exp1, nullptr, flags);
+        if (!tp1)
+        {
+            *tp = nullptr;
+            return lex;
+        }
+        ResolveTemplateVariable(tp, exp, tp1, atp);
+        ResolveTemplateVariable(&tp1, &exp1, *tp, atp);
+        if (isstructuredmath(*tp, tp1))
+        {
+            if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
+                insertOperatorFunc(ovcl_binary_numericptr, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags))
+            {
+                continue;
+            }
+            else
+            {
+                castToArithmetic(false, tp, exp, kw, tp1, true);
+                castToArithmetic(false, &tp1, &exp1, (enum e_kw)-1, *tp, true);
+            }
+        }
+        checkscope(*tp, tp1);
+        if (Optimizer::cparams.prm_cplusplus)
+        {
+            SYMBOL* funcsp = nullptr;
+            if ((ispointer(*tp) || basetype(*tp)->type == bt_memberptr) && tp1->type == bt_aggregate)
+            {
+                if (tp1->syms->table[0]->next)
+                    errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)tp1->syms->table[0]->p)->name);
+                exp1 = varNode(en_pc, tp1->syms->table[0]->p);
+                tp1 = ((SYMBOL*)tp1->syms->table[0]->p)->tp;
+            }
+            else if ((ispointer(tp1) || basetype(tp1)->type == bt_memberptr) && (*tp)->type == bt_aggregate)
+            {
+                if ((*tp)->syms->table[0]->next)
+                    errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)(*tp)->syms->table[0]->p)->name);
+                (*exp) = varNode(en_pc, (*tp)->syms->table[0]->p);
+                (*tp) = ((SYMBOL*)(*tp)->syms->table[0]->p)->tp;
+            }
+        }
+        if ((*exp)->type == en_pc || ((*exp)->type == en_func && !(*exp)->v.func->ascall))
+            thunkForImportTable(exp);
+        if (exp1->type == en_pc || (exp1->type == en_func && !exp1->v.func->ascall))
+            thunkForImportTable(&exp1);
+        if (isstructured(*tp) || isstructured(tp1))
+        {
+            if ((Optimizer::architecture != ARCHITECTURE_MSIL) || (!isconstzero(*tp, *exp) && !isconstzero(tp1, exp1)))
+                error(ERR_ILL_STRUCTURE_OPERATION);
+        }
+        else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
+            error(ERR_NOT_AN_ALLOWED_TYPE);
+        if (ispointer(*tp))
+        {
+            if (isintconst(exp1))
+            {
+                if (!isconstzero(tp1, exp1))
+                    error(ERR_NONPORTABLE_POINTER_COMPARISON);
+            }
+            else if (isint(tp1))
+                error(ERR_NONPORTABLE_POINTER_COMPARISON);
+            else if (isfloat(tp1) || isimaginary(tp1))
+                error(ERR_ILL_USE_OF_FLOATING);
+            else if (iscomplex(tp1))
+                error(ERR_ILL_USE_OF_COMPLEX);
+            else if (ispointer(tp1) && !isvoidptr(*tp) && !isvoidptr(tp1) && !comparetypes(*tp, tp1, false))
+                error(ERR_NONPORTABLE_POINTER_COMPARISON);
+        }
+        else if (ispointer(tp1))
+        {
+            if (isintconst(*exp))
+            {
+                if (!isconstzero(*tp, *exp))
+                    error(ERR_NONPORTABLE_POINTER_COMPARISON);
+            }
+            else if (isint(*tp))
+                error(ERR_NONPORTABLE_POINTER_COMPARISON);
+            else if (isfloat(*tp) || isimaginary(*tp))
+                error(ERR_ILL_USE_OF_FLOATING);
+            else if (iscomplex(*tp))
+                error(ERR_ILL_USE_OF_COMPLEX);
+        }
+        else if (basetype(*tp)->type == bt_memberptr)
+        {
+            if (basetype(tp1)->type == bt_memberptr)
+            {
+                if (!comparetypes(basetype(*tp)->btp, basetype(tp1)->btp, true))
+                {
+                    error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
+                }
+                *exp = exprNode(en_mp_compare, *exp, exp1);
+                (*exp)->size = (*tp)->size;
+                if (kw == neq)
+                    *exp = exprNode(en_not, *exp, nullptr);
+                done = true;
+            }
+            else if (isconstzero(tp1, exp1))
+            {
+                *exp = exprNode(en_mp_as_bool, *exp, nullptr);
+                (*exp)->size = (*tp)->size;
+                if (kw == eq)
+                    *exp = exprNode(en_not, *exp, nullptr);
+                done = true;
+            }
+            else if (comparetypes(basetype(*tp)->btp, tp1, true))
+            {
+                int lbl = dumpMemberPtr(exp1->v.sp, *tp, true);
+                exp1 = intNode(en_labcon, lbl);
+                *exp = exprNode(en_mp_compare, *exp, exp1);
+                (*exp)->size = (*tp)->size;
+                if (kw == neq)
+                    *exp = exprNode(en_not, *exp, nullptr);
+                done = true;
+            }
+            else
+            {
+                error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
+            }
+        }
+        else if (basetype(tp1)->type == bt_memberptr)
+        {
+            if (isconstzero(*tp, *exp))
+            {
+                *exp = exprNode(en_mp_as_bool, exp1, nullptr);
+                (*exp)->size = (tp1)->size;
+                if (kw == eq)
+                    *exp = exprNode(en_not, *exp, nullptr);
+                done = true;
+            }
+            else if (comparetypes(*tp, basetype(tp1)->btp, true))
+            {
+                int lbl = dumpMemberPtr((*exp)->v.sp, tp1, true);
+                *(exp) = intNode(en_labcon, lbl);
+                *exp = exprNode(en_mp_compare, *exp, exp1);
+                (*exp)->size = tp1->size;
+                if (kw == neq)
+                    *exp = exprNode(en_not, *exp, nullptr);
+                done = true;
+            }
+            else
+            {
+                error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
+            }
+        }
+        if (!done)
+        {
+            if (!(Optimizer::chosenAssembler->arch->preferopts & OPT_BYTECOMPARE) ||
+                (!fittedConst(*tp, *exp) && !fittedConst(tp1, exp1)) || !isint(*tp) || !isint(tp1))
+                if (!isstructured(*tp) && !isstructured(tp1))
+                    destSize(*tp, tp1, exp, &exp1, true, nullptr);
+            *exp = exprNode(kw == eq ? en_eq : en_ne, *exp, exp1);
+        }
+        if (Optimizer::cparams.prm_cplusplus)
+            *tp = &stdbool;
+        else
+            *tp = &stdint;
     }
     return lex;
 }
@@ -8116,25 +8174,27 @@ static LEXLIST* binop(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRES
         }
         if (kw == land || kw == lor)
             GetLogicalDestructors(&logicaldestructorsright, exp1);
-        if (Optimizer::cparams.prm_cplusplus &&
-            insertOperatorFunc(kw == lor || kw == land ? ovcl_binary_numericptr : ovcl_binary_int, kw, funcsp, tp, exp, tp1, exp1,
-                               nullptr, flags))
+        if (isstructuredmath(*tp, tp1))
         {
-            continue;
+            if (Optimizer::cparams.prm_cplusplus &&
+                insertOperatorFunc(kw == lor || kw == land ? ovcl_binary_numericptr : ovcl_binary_int, kw, funcsp, tp, exp, tp1, exp1,
+                    nullptr, flags))
+            {
+                continue;
+            }
+            if (kw == land || kw == lor)
+            {
+                castToArithmetic(kw != land && kw != lor, tp, exp, kw, &stdbool, kw != land && kw != lor);
+                castToArithmetic(kw != land && kw != lor, &tp1, &exp1, (enum e_kw)-1, &stdbool, kw != land && kw != lor);
+            }
+            else
+            {
+                castToArithmetic(kw != land && kw != lor, tp, exp, kw, tp1, kw != land && kw != lor);
+                castToArithmetic(kw != land && kw != lor, &tp1, &exp1, (enum e_kw)-1, *tp, kw != land && kw != lor);
+            }
+            LookupSingleAggregate(*tp, exp);
+            LookupSingleAggregate(tp1, &exp1);
         }
-        if (kw == land || kw == lor)
-        {
-            castToArithmetic(kw != land && kw != lor, tp, exp, kw, &stdbool, kw != land && kw != lor);
-            castToArithmetic(kw != land && kw != lor, &tp1, &exp1, (enum e_kw) - 1, &stdbool, kw != land && kw != lor);
-        }
-        else
-        {
-            castToArithmetic(kw != land && kw != lor, tp, exp, kw, tp1, kw != land && kw != lor);
-            castToArithmetic(kw != land && kw != lor, &tp1, &exp1, (enum e_kw) - 1, *tp, kw != land && kw != lor);
-        }
-        LookupSingleAggregate(*tp, exp);
-        LookupSingleAggregate(tp1, &exp1);
-
         if (isstructured(*tp) || isstructured(tp1))
             error(ERR_ILL_STRUCTURE_OPERATION);
         else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
@@ -8260,24 +8320,96 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                     tph = tpc;
                 else if (tpc->type == bt_void)
                     tpc = tph;
-                if (Optimizer::cparams.prm_cplusplus && (isstructured(tpc) || isstructured(tph)) && !comparetypes(tph, tpc, false))
+                if (Optimizer::cparams.prm_cplusplus && (isstructured(tpc) || isstructured(tph)))
                 {
-                    // call a constructor?
-                    if (isstructured(tph))
+                    if ( ! isstructured(tpc) || !isstructured(tph) || (comparetypes(tph, tpc, false) && !sameTemplate(tph, tpc, false)) || epc->type == en_thisref || epc->type == en_func || eph->type == en_thisref || eph->type == en_func)
                     {
-                        EXPRESSION* rv = anonymousVar(sc_auto, tph);
-                        TYPE* ctype = tph;
-                        callConstructorParam(&ctype, &rv, tpc, epc, true, false, false, false, true);
-                        epc = rv;
-                        tpc = tph;
+                        // structure is result of constructor or return value
+                        // at this point we want to check that both sides
+                        // are the same type; if not make a constructor
+                        EXPRESSION* rv = nullptr;
+                        if (!comparetypes(tph, tpc, false))
+                        {
+                            if (isstructured(tph))
+                            {
+                                rv = anonymousVar(sc_auto, tph);
+                                EXPRESSION* exp = rv;
+                                TYPE* ctype = tph;
+                                callConstructorParam(&ctype, &exp, tpc, epc, true, false, false, false, true);
+                                epc = exp;
+                                tpc = tph;
+                            }
+                            else
+                            {
+                                rv = anonymousVar(sc_auto, tpc);
+                                EXPRESSION* exp = rv;
+                                TYPE* ctype = tpc;
+                                callConstructorParam(&ctype, &exp, tph, eph, true, false, false, false, true);
+                                eph = exp;
+                                tph = tpc;
+                                tph->lref = tph->rref = false;
+                            }
+                        }
+                        // now make sure both sides are in an anonymous variable
+                        if (tph->lref || tph->rref || (eph->type != en_func && eph->type != en_thisref))
+                        {
+                            if (!rv)
+                                rv = anonymousVar(sc_auto, tph);
+                            EXPRESSION* exp = rv;
+                            TYPE* ctype = tph;
+                            callConstructorParam(&ctype, &exp, tph, eph, true, false, false, false, true);
+                            eph = exp;
+                        }
+                        if (tpc->lref || tpc->rref || (epc->type != en_func && epc->type != en_thisref))
+                        {
+                            if (!rv);
+                            rv = anonymousVar(sc_auto, tph);
+                            EXPRESSION* exp = rv;
+                            TYPE* ctype = tpc;
+                            callConstructorParam(&ctype, &exp, tpc, epc, true, false, false, false, true);
+                            epc = exp;
+                        }
+                        // now make sure both sides are using the same anonymous variable
+                        if (!rv)
+                            rv = anonymousVar(sc_auto, tph);
+                        EXPRESSION* dexp = rv;
+                        callDestructor(rv->v.sp, nullptr, &dexp, nullptr, true, false, false, true);
+                        initInsert(&rv->v.sp->sb->dest, rv->v.sp->tp, dexp, 0, true);
+
+                        EXPRESSION* exp = eph;
+                        if (exp->type == en_thisref)
+                            exp = exp->left;
+                        if (exp->v.func->returnSP)
+                        {
+                            if (exp->v.func->returnEXP->type == en_auto && exp->v.func->returnEXP->v.sp != rv->v.sp)
+                                exp->v.func->returnEXP->v.sp->sb->allocate = false;
+                            exp->v.func->returnEXP = rv;
+                        }
+                        else if (exp->v.func->thisptr)
+                        {
+                            if (exp->v.func->thisptr->type == en_auto && exp->v.func->thisptr->v.sp != rv->v.sp)
+                                exp->v.func->thisptr->v.sp->sb->allocate = false;
+                            exp->v.func->thisptr = rv;
+                        }
+                        exp = epc;
+                        if (exp->type == en_thisref)
+                            exp = exp->left;
+                        if (exp->v.func->returnSP)
+                        {
+                            if (exp->v.func->returnEXP->type == en_auto && exp->v.func->returnEXP->v.sp != rv->v.sp)
+                                exp->v.func->returnEXP->v.sp->sb->allocate = false;
+                            exp->v.func->returnEXP = rv;
+                        }
+                        else if (exp->v.func->thisptr)
+                        {
+                            if (exp->v.func->thisptr->type == en_auto && exp->v.func->thisptr->v.sp != rv->v.sp)
+                                exp->v.func->thisptr->v.sp->sb->allocate = false;
+                            exp->v.func->thisptr = rv;
+                        }
                     }
                     else
                     {
-                        EXPRESSION* rv = anonymousVar(sc_auto, tpc);
-                        TYPE* ctype = tpc;
-                        callConstructorParam(&ctype, &rv, tph, eph, true, false, false, false, true);
-                        eph = rv;
-                        tph = tpc;
+                        tpc = tph;
                     }
                 }
                 if (ispointer(tph) || ispointer(tpc))
@@ -8609,22 +8741,25 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         ResolveTemplateVariable(tp, exp, tp1, nullptr);
         ResolveTemplateVariable(&tp1, &exp1, *tp, nullptr);
         ConstExprPromote(*exp, false);
-        if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
-            insertOperatorFunc(selovcl, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags))
+        if (isstructuredmath(*tp, tp1))
         {
-            // unallocated var for destructor
-            if (!inAssignRHS)
+            if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
+                insertOperatorFunc(selovcl, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags))
             {
-                GetAssignDestructors(&(*exp)->v.func->destructors, *exp);
-            }
-            if (asndest)
-            {
-                SYMBOL* sym = anonymousVar(sc_auto, tp1)->v.sp;
-                callDestructor(sym, nullptr, &asndest, nullptr, true, false, false, true);
-                initInsert(&sym->sb->dest, tp1, asndest, 0, true);
-            }
+                // unallocated var for destructor
+                if (!inAssignRHS)
+                {
+                    GetAssignDestructors(&(*exp)->v.func->destructors, *exp);
+                }
+                if (asndest)
+                {
+                    SYMBOL* sym = anonymousVar(sc_auto, tp1)->v.sp;
+                    callDestructor(sym, nullptr, &asndest, nullptr, true, false, false, true);
+                    initInsert(&sym->sb->dest, tp1, asndest, 0, true);
+                }
 
-            continue;
+                continue;
+            }
         }
         if (kw == assign && (flags & _F_SELECTOR))
         {
@@ -8697,6 +8832,10 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             error(ERR_LVALUE);
         else if (symRef && symRef->v.sp->sb->attribs.inheritable.linkage2 == lk_property && !symRef->v.sp->sb->has_property_setter)
             errorsym(ERR_CANNOT_MODIFY_PROPERTY_WITHOUT_SETTER, symRef->v.sp);
+        else if (isstructured(*tp) && !basetype(*tp)->sp->sb->trivialCons)
+        {
+            errorsym(ERR_NO_ASSIGNMENT_OPERATOR, basetype(*tp)->sp);
+        }
         else
             switch (kw)
             {

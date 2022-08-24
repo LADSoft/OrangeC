@@ -67,10 +67,11 @@ ffdim:
     fcom st1
     fstsw   ax
     sahf
-    jb  short noxchg 
+    ja  short doxchg 
     poptwo
     fldz
     jmp wrapmath
-noxchg:
+doxchg:
+    fxch  st1
     fsubp st1
     jmp wrapmath

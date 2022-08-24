@@ -2347,13 +2347,14 @@ static void increment_desc(AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** c
                     if (!(*desc)->hr)
                     {
                         if ((*desc)->next && (*desc)->next->inbase)
+
                         {
                             free_desc(desc, cache);
                             (*desc)->currentBase = (*desc)->currentBase->next;
                             if ((*desc)->currentBase)
                             {
                                 allocate_desc((*desc)->currentBase->cls->tp, (*desc)->offset + (*desc)->currentBase->offset, desc,
-                                              cache);
+                                    cache);
                             }
                             offset = -1;
                         }
@@ -2375,6 +2376,8 @@ static void increment_desc(AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** c
                         }
                     }
                 }
+            else
+                (*desc)->hr = nullptr;
             if ((*desc)->hr)
                 (*desc)->reloffset = ((SYMBOL*)((*desc)->hr->p))->sb->offset;
             else
@@ -2893,9 +2896,22 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                         tp1 = itype;
                     if (!tp1 || !comparetypes(basetype(tp1), basetype(itype), true))
                     {
-                        error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
-                        errskim(&lex, skim_semi);
-                        return lex;
+                        SYMBOL* sym = nullptr;
+                        if (isstructured(itype))
+                            sym = getUserConversion(F_CONVERSION | F_WITHCONS, itype, tp1, nullptr, nullptr, nullptr, nullptr, nullptr, false);
+                        if (sym && !sym->sb->isExplicit)
+                        {
+                            funcparams->arguments = Allocate<INITLIST>();
+                            funcparams->arguments->tp = tp1;
+                            funcparams->arguments->exp = exp1;
+
+                        }
+                        else
+                        {
+                            error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                            errskim(&lex, skim_semi);
+                            return lex;
+                        }
                     }
                     else
                     {
@@ -3136,7 +3152,35 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                 if (!tp1)
                     error(ERR_EXPRESSION_SYNTAX);
                 else if (!comparetypes(itype, tp1, true))
-                    error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                {
+                    bool toErr = true;
+                    if (isstructured(tp1))
+                    {
+                        auto sym = lookupSpecificCast(basetype(tp1)->sp, itype);
+                        if (sym)
+                        {
+                            toErr = false;
+                            auto exp2 = exprNode(en_func, nullptr, nullptr);
+                            exp2->v.func = Allocate<FUNCTIONCALL>();
+                            exp2->v.func->sp = sym;
+                            exp2->v.func->functp = sym->tp;
+                            exp2->v.func->fcall = varNode(en_pc, sym);
+                            exp2->v.func->ascall = true;
+                            exp2->v.func->thisptr = exp1;
+                            exp2->v.func->thistp = MakeType(bt_pointer, tp1);
+                            if (isstructured(basetype(sym->tp)->btp))
+                            {
+                                exp2->v.func->returnSP = basetype(basetype(sym->tp)->btp)->sp;
+                                exp2->v.func->returnEXP = anonymousVar(sc_auto, exp2->v.func->returnSP->tp);
+                            }
+                            exp1 = exp2;
+                        }
+                    }
+                    if (toErr)
+                    {
+                        error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                    }
+                }
                 if (exp1)
                 {
                     INITIALIZER* it = nullptr;

@@ -316,7 +316,7 @@ void ppPragma::HandleLibrary(Tokenizer& tk)
         {
             p++;
         } while (isspace(*p));
-        q = strchr(p, ')');
+        q = (char *)strchr(p, ')');
         if (q)
         {
             while (q != p && isspace(q[-1]))

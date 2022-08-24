@@ -91,10 +91,10 @@ static char* LambdaName(void)
     char buf[256];
     if (lambdaIndex == 1)
     {
-        char* p = strrchr(infile, '\\');
+        char* p = (char *)strrchr(infile, '\\');
         if (!p)
         {
-            p = strrchr(infile, '/');
+            p = (char *)strrchr(infile, '/');
             if (!p)
                 p = infile;
             else
@@ -104,7 +104,7 @@ static char* LambdaName(void)
             p++;
 
         sprintf(lambdaQualifier, "__%s__%08x", p, identityValue);
-        while ((p = strchr(lambdaQualifier, '.')) != 0)
+        while ((p = (char *)strchr(lambdaQualifier, '.')) != 0)
             *p = '_';
     }
     Optimizer::my_sprintf(buf, "@LambdaClosure%d%s", lambdaIndex++, lambdaQualifier);

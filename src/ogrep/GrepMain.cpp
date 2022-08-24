@@ -192,7 +192,7 @@ void GrepMain::FindLine(const std::string fileName, int& matchCount, int& matchL
     char* p = *matchPos;
     do
     {
-        p = strchr(p, '\n');
+        p = (char *)strchr(p, '\n');
         if (!p)
             p = *matchPos + strlen(*matchPos);
         if (p <= curpos)
@@ -246,7 +246,7 @@ int GrepMain::OneFile(RegExpContext& regexp, const std::string fileName, std::is
             if (matched)
             {
                 FindLine(fileName, matchCount, matchLine, &matchPos, start, buf + regexp.GetStart(), true);
-                p = strchr((char*)buf + regexp.GetEnd(), '\n');
+                p = (char *)strchr((char*)buf + regexp.GetEnd(), '\n');
             }
             else
             {

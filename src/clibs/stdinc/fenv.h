@@ -48,18 +48,36 @@ extern "C"
 {
 #endif
 #ifndef RC_INVOKED
+#ifdef __cplusplus
+    struct fexcept_t
+#else
     typedef struct
+#endif
     {
-        unsigned short excInvalid : 1;
-        unsigned short excDenormal : 1;
-        unsigned short excZero : 1;
-        unsigned short excOverflow : 1;
-        unsigned short excUnderflow : 1;
-        unsigned short excPrecision : 1;
-        unsigned short excStack : 1;
-        unsigned short errorSummary : 1;
-        unsigned short filler : 8;
-    } fexcept_t;
+#ifdef __cplusplus
+        fexcept_t() : mask(0) { }
+        fexcept_t(unsigned short msk) : mask(msk) { }
+#endif
+        union
+        {
+            unsigned short mask;
+            struct {
+                unsigned short excInvalid : 1;
+                unsigned short excDenormal : 1;
+                unsigned short excZero : 1;
+                unsigned short excOverflow : 1;
+                unsigned short excUnderflow : 1;
+                unsigned short excPrecision : 1;
+                unsigned short excStack : 1;
+                unsigned short errorSummary : 1;
+                unsigned short filler : 8;
+             };
+         };
+    } 
+#ifndef __cplusplus
+       fexcept_t
+#endif
+    ;
 
     typedef struct
     {

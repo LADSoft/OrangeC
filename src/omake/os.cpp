@@ -246,7 +246,7 @@ void OS::JobInit()
         char* temp = tempnam(tempfile, "hi");
         if (tempfile[1] == ':')
         {
-            char* p = strrchr(tempfile, '\\');
+            char* p = (char *)strrchr(tempfile, '\\');
             if (!p)
                 tempfile[0] = 0;
             else

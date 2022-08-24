@@ -43,7 +43,7 @@ static errno_t thunk(char* buffer, size_t size, const char* string, errno_t erro
     if (size == 0)
          return ENOSPC;
     char* str;
-    if (error >= _sys_nerr)
+    if (error >= _sys_nerr || (int)error < 0)
         str = "Unknown error";
     else
         str = _sys_errlist[error];

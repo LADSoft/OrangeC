@@ -101,8 +101,8 @@ void outputfile(char* buf, const char* name, const char* ext, bool obj)
                              !Optimizer::assembling))  // no output file specified, put the output wherever the input was...
     {
         strcpy(buf, name);
-        char* p = strrchr(buf, '\\');
-        char* q = strrchr(buf, '/');
+        char* p = (char *)strrchr(buf, '\\');
+        char* q = (char *)strrchr(buf, '/');
         if (q > p)
             p = q;
         if (p)

@@ -191,7 +191,7 @@ void DefFile::NextToken()
             {
                 if (stream.fail())
                     throw std::runtime_error("I/O error");
-                char* npos = strchr(buf, ';');
+                char* npos = (char *)strchr(buf, ';');
                 if (npos)
                     *npos = 0;
                 tokenizer.Reset(buf);

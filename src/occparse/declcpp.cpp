@@ -518,7 +518,7 @@ static void checkExceptionSpecification(SYMBOL* sp)
                 if (sym1->sb->storage_class == sc_virtual)
                 {
                     BASECLASS* bc = sp->sb->baseClasses;
-                    const char* f1 = strrchr(sym1->sb->decoratedName, '@');
+                    const char* f1 = (char *)strrchr(sym1->sb->decoratedName, '@');
                     while (bc && f1)
                     {
                         SYMBOL* sym2 = search(sym->name, basetype(bc->cls->tp)->syms);
@@ -528,7 +528,7 @@ static void checkExceptionSpecification(SYMBOL* sp)
                             while (hr3)
                             {
                                 SYMBOL* sym3 = (SYMBOL*)hr3->p;
-                                const char* f2 = strrchr(sym3->sb->decoratedName, '@');
+                                const char* f2 = (char *)strrchr(sym3->sb->decoratedName, '@');
                                 if (f2 && !strcmp(f1, f2))
                                 {
                                     checkXT(sym1, sym3, false);
@@ -1353,7 +1353,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
                         TEMPLATEPARAMLIST* lst = nullptr;
                         SYMBOL* sp1;
                         inTemplateSpecialization++;
-                        lex = GetTemplateArguments(lex, funcsp, bcsym, &lst);
+                            lex = GetTemplateArguments(lex, funcsp, bcsym, &lst);
                         inTemplateSpecialization--;
                         sp1 = GetTypeAliasSpecialization(bcsym, lst);
                         if (sp1)
@@ -2306,7 +2306,7 @@ static int GetBaseClassList(const char* name, SYMBOL* cls, BASECLASS* bc, BASECL
     char *p = str, *c;
     int ccount = 0;
     strcpy(str, name);
-    while ((c = strstr(p, "::")))
+    while ((c = (char *)strstr(p, "::")))
     {
         clslst[n++] = p;
         p = c;
@@ -2345,7 +2345,7 @@ static int GetVBaseClassList(const char* name, SYMBOL* cls, VBASEENTRY* vbase, V
     char *p = str, *c;
     int vcount = 0;
     strcpy(str, name);
-    while ((c = strstr(p, "::")))
+    while ((c = (char *)strstr(p, "::")))
     {
         clslst[n++] = p;
         p = c;
@@ -3124,10 +3124,10 @@ LEXLIST* insertNamespace(LEXLIST* lex, enum e_lk linkage, enum e_sc storage_clas
         anon = true;
         if (!anonymousNameSpaceName[0])
         {
-            p = strrchr(infile, '\\');
+            p = (char *)strrchr(infile, '\\');
             if (!p)
             {
-                p = strrchr(infile, '/');
+                p = (char *)strrchr(infile, '/');
                 if (!p)
                     p = infile;
                 else
@@ -3137,7 +3137,7 @@ LEXLIST* insertNamespace(LEXLIST* lex, enum e_lk linkage, enum e_sc storage_clas
                 p++;
 
             sprintf(anonymousNameSpaceName, "__%s__%08x", p, Utils::CRC32((unsigned char*)infile, strlen(infile)));
-            while ((p = strchr(anonymousNameSpaceName, '.')) != 0)
+            while ((p = (char *)strchr(anonymousNameSpaceName, '.')) != 0)
                 *p = '_';
         }
         strcpy(buf, anonymousNameSpaceName);
@@ -4330,7 +4330,7 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
     lex = getsym();
     needkw(&lex, openpa);
     bool extended = MATCHKW(lex, openpa);
-    hasAmpersand = MATCHKW(lex, andx);
+     hasAmpersand = MATCHKW(lex, andx);
     if (extended || hasAmpersand)
     {
         lex = getsym();

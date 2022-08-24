@@ -650,6 +650,7 @@ typedef struct sym
         unsigned castoperator : 1;     /* a cast operator */
         unsigned deleted : 1;          /* function was deleted */
         unsigned defaulted : 1;        /* function was defaulted */
+        unsigned defaultarg : 1;       /* function argument was defaulted */
         unsigned isfinal : 1;          /* class or virtual function is final */
         unsigned isoverride : 1;       /* virtual function marked override */
         unsigned ispure : 1;           /* pure virtual function */

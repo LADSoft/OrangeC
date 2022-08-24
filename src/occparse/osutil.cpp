@@ -175,7 +175,7 @@ void EXEPath(char* buffer, char* filename)
 {
     char* temp;
     strcpy(buffer, filename);
-    if ((temp = strrchr(buffer, '\\')) != 0)
+    if ((temp = (char *)strrchr(buffer, '\\')) != 0)
         *(temp + 1) = 0;
     else
         buffer[0] = 0;
@@ -774,9 +774,9 @@ void setglbdefs(void)
     preProcessor->Define("__STDC__", "1");
 
     // for libcxx 10
-    preProcessor->Define("__need_size_t", "1");
-    preProcessor->Define("__need_FILE", "1");
-    preProcessor->Define("__need_wint_t", "1");
+//    preProcessor->Define("__need_size_t", "1");
+//    preProcessor->Define("__need_FILE", "1");
+//    preProcessor->Define("__need_wint_t", "1");
 
     if (Optimizer::cparams.prm_c99 || Optimizer::cparams.prm_c1x || Optimizer::cparams.prm_cplusplus)
     {
@@ -910,8 +910,8 @@ void InsertOneFile(const char* filename, char* path, int drive)
     if (firstFile.empty())
     {
         char temp[260];
-        char* p = strrchr(buffer, '/');
-        char* q = strrchr(buffer, '\\');
+        char* p = (char *)strrchr(buffer, '/');
+        char* q = (char *)strrchr(buffer, '\\');
         if (q > p)
             p = q;
         if (!p)
@@ -981,8 +981,8 @@ void setfile(char* buf, const char* orgbuf, const char* ext)
  * Get rid of a file path an add an extension to the file name
  */
 {
-    const char* p = strrchr(orgbuf, '\\');
-    const char* p1 = strrchr(orgbuf, '/');
+    const char* p = (char *)strrchr(orgbuf, '\\');
+    const char* p1 = (char *)strrchr(orgbuf, '/');
     if (p1 > p)
         p = p1;
     else if (!p)
@@ -1003,7 +1003,7 @@ void outputfile(char* buf, const char* orgbuf, const char* ext)
 
     if (buf[strlen(buf) - 1] == '\\')
     {
-        const char* p = strrchr(orgbuf, '\\');
+        const char* p = (char *)strrchr(orgbuf, '\\');
         if (p)
             p++;
         else
@@ -1120,11 +1120,11 @@ int ccinit(int argc, char* argv[])
 
     if (!getenv("ORANGEC"))
     {
-        char* p = strrchr(buffer, '\\');
+        char* p = (char *)strrchr(buffer, '\\');
         if (p)
         {
             *p = 0;
-            char* q = strrchr(buffer, '\\');
+            char* q = (char *)strrchr(buffer, '\\');
             if (q)
             {
                 *q = 0;
@@ -1200,7 +1200,7 @@ int ccinit(int argc, char* argv[])
     {
         char temp[260];
         strcpy(temp, buffer);
-        char *p1 = strrchr(temp, '/'), *p2 = strrchr(temp, '\\');
+        char *p1 = (char *)strrchr(temp, '/'), *p2 = (char *)strrchr(temp, '\\');
         if (p2 > p1)
             p1 = p2;
         else if (!p1)

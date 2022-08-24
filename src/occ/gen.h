@@ -35,7 +35,7 @@ AMODE* make_muldivval(AMODE* ap);
 AMODE* make_label(int lab);
 AMODE* makesegreg(int seg);
 AMODE* makeSSE(int reg);
-void make_floatconst(AMODE* ap);
+void make_floatconst(AMODE* ap, int sz);
 AMODE* moveFP(AMODE* apa, int sza, AMODE* apl, int szl);
 AMODE* aimmed(unsigned long long i);
 AMODE* aimmedt(long i, int size);

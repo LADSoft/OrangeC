@@ -379,6 +379,11 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
+    if (f->sp->sb->xc && f->sp->sb->xc->xclab)
+    {
+        f->sp->sb->dumpInlineToFile = true;
+        return nullptr;
+    }
     if (f->sp->sb->allocaUsed)
     {
         f->sp->sb->dumpInlineToFile = true;

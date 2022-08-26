@@ -431,6 +431,14 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 return nullptr;
             }
         }
+        auto ex = f->thisptr;
+        if (lvalue(ex))
+            ex = ex->left;
+        if (ex->type == en_void)
+        {
+            f->sp->sb->dumpInlineToFile = true;
+            return nullptr;
+        }
     }
     if (f->returnEXP && !isref(basetype(f->sp->tp)->btp))
     {

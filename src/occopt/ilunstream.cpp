@@ -76,7 +76,10 @@ inline static void UnstreamBlockType(int blockType, bool end)
 {
     int n = UnstreamByte();
     if (n != blockType + (end ? 0x80 : 0x40))
+    {
+        printf("bt\n");
         dothrow();
+    }
 }
 template <class T>
 inline static void UnstreamBlock(T blockType, std::function<void(void)> blockRenderer)
@@ -224,7 +227,7 @@ static Optimizer::SimpleSymbol* UnstreamSymbol()
     });
     return rv;
 }
-static Optimizer::SimpleSymbol* GetTempref(int n)
+static Optimizer::SimpleSymbol* GetTempref(int n, int size, int sizeFromType)
 {
     if (!temps[n])
     {
@@ -233,6 +236,10 @@ static Optimizer::SimpleSymbol* GetTempref(int n)
         sym->storage_class = scc_temp;
         sprintf(buf, "$$t%d", n);
         sym->name = sym->outputName = litlate(buf);
+        sym->tp = Allocate<Optimizer::SimpleType>();
+        sym->tp->type = st_i;
+        sym->tp->size = size;
+        sym->tp->sizeFromType = sizeFromType;
         sym->i = n;
     }
     return temps[n];
@@ -276,7 +283,9 @@ static Optimizer::SimpleExpression* UnstreamExpression()
                     break;
                 case se_tempref: {
                     int n = UnstreamIndex();
-                    rv->sp = GetTempref(n);
+                    int size = UnstreamIndex();
+                    int sizeFromType = UnstreamIndex();
+                    rv->sp = GetTempref(n, size, sizeFromType);
                     break;
                 }
                 case se_msil_array_access:
@@ -548,10 +557,16 @@ static void UnstreamHeader()
     int vers;
     UnstreamBuffer(newmagic, strlen(magic));
     if (memcmp(newmagic, magic, strlen(magic)) != 0)
+    {
+        printf("magic\n");
         dothrow();
+    }
     UnstreamIntValue(&vers, sizeof(vers));
     if (vers != fileVersion)
+    {
+        printf("fileversion\n");
         dothrow();
+    }
     architecture = UnstreamIndex();
 }
 static void UnstreamParams()

@@ -2408,6 +2408,20 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         gosub->novalue = -1;
     }
     stackblockOfs = cdeclare;
+    if (Optimizer::chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
+    {
+        int n = f->thisptr ? 1 : 0;
+        INITLIST* args = f->arguments;
+        while (args)
+        {
+            n++;
+            args = args->next;
+        }
+        if (f->returnEXP && !managed)
+            n++;
+        Optimizer::gen_nodag(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(n),
+            Optimizer::make_parmadj(!isvoid(basetype(f->functp)->btp)));
+    }
     if (f->returnEXP && managed && isfunction(f->functp) && isstructured(basetype(f->functp)->btp))
     {
         if (!(flags & F_INRETURN))
@@ -2490,21 +2504,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     }
     gen_arg_destructors(funcsp, f->arguments, f->destructors);
     /* undo pars and make a temp for the result */
-    if (Optimizer::chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
-    {
-        int n = f->thisptr ? 1 : 0;
-        INITLIST* args = f->arguments;
-        while (args)
-        {
-            n++;
-            args = args->next;
-        }
-        if (f->returnEXP && !managed)
-            n++;
-        Optimizer::gen_nodag(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(n),
-            Optimizer::make_parmadj(!isvoid(basetype(f->functp)->btp)));
-    }
-    else
+    if (!(Optimizer::chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE))
     {
         adjust -= fastcallSize;
         if (adjust < 0)
@@ -3044,6 +3044,8 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                     Optimizer::gen_nodag(Optimizer::i_expressiontag, 0, 0, 0);
                     Optimizer::intermed_tail->dc.v.label = 1;
                     Optimizer::intermed_tail->ignoreMe = true;
+                    break;
+                case en_select:
                     break;
             }
         }
@@ -3765,6 +3767,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 case en__cpblk:
                 case en__initblk:
                 case en__initobj:
+                case en_select:
                     break;
                 default:
                     Optimizer::gen_nodag(Optimizer::i_expressiontag, 0, 0, 0);

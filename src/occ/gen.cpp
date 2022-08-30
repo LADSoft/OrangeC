@@ -5747,7 +5747,7 @@ void asm_atomic(Optimizer::QUAD* q)
                     int regflagsl = regflagsa | makeregflags(aprl) | makeregflags(apll);
                     int regflagsr = makeregflags(aprl);
                     int reg1 = 0, reg2 = 0, reg3 = 0;
-                    bool pushreg1 = false, pushreg2 = false, pushreg3;
+                    bool pushreg1 = false, pushreg2 = false, pushreg3 = false;
                     if (aprl->mode == am_immed)
                         aprl->mode = am_direct;
                     if (regflagsa & (1 << EAX))
@@ -5772,7 +5772,14 @@ void asm_atomic(Optimizer::QUAD* q)
                         if (q->dc.left->size < ISZ_USHORT)
                             regflagsl |= (1 << ESI) | (1 << EDI);
                     }
-                    reg3 = getreg(apll, regflagsl | (1 << EAX), pushreg3);
+                    if (apll->mode == am_dreg && apll->preg != EAX)
+                    {
+                        reg3 = apll->preg;
+                    }
+                    else
+                    {
+                        reg3 = getreg(apll, regflagsl | (1 << EAX), pushreg3);
+                    }
                     if (apll->mode == am_xmmreg)
                     {
                         gen_code(op_movd, makedreg(reg3), apll);

@@ -40,6 +40,7 @@
 #include "iblock.h"
 #include "memory.h"
 #include "symtab.h"
+#include "initbackend.h"
 
 namespace Parser
 {
@@ -104,29 +105,67 @@ static void inlineBindThis(SYMBOL* funcsp, SYMLIST* hr, EXPRESSION* thisptr)
         {
             if (thisptr)
             {
-                Optimizer::SimpleSymbol* simpleSym;
-                Optimizer::IMODE *src, *ap1, *idest;
-                EXPRESSION* dest;
-                thisptr = inlinesym_count == 0 || inlinesym_thisptr[inlinesym_count - 1] == nullptr || !hasRelativeThis(thisptr)
+                if(Optimizer::architecture == ARCHITECTURE_MSIL)
+                {
+                    Optimizer::SimpleSymbol* simpleSym;
+                    Optimizer::IMODE *src, *ap1, *idest;
+                    EXPRESSION* dest;
+                    thisptr = inlinesym_count == 0 || inlinesym_thisptr[inlinesym_count - 1] == nullptr || !hasRelativeThis(thisptr)
                               ? thisptr
                               : inlineGetThisPtr(thisptr);
-                simpleSym = Optimizer::SymbolManager::Get(sym = makeID(sc_auto, sym->tp, nullptr, AnonymousName()));
-                simpleSym->allocate = true;
-                simpleSym->anonymous = true;
-                simpleSym->inAllocTable = true;
-                Optimizer::temporarySymbols.push_back(simpleSym);
-                dest = varNode(en_auto, sym);
-                deref(sym->tp, &dest);
-                inlinesym_thisptr[inlinesym_count] = dest;
-                idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
-                src = gen_expr(funcsp, thisptr, 0, natural_size(thisptr));
-                ap1 = Optimizer::LookupLoadTemp(nullptr, src);
-                if (ap1 != src)
-                {
-                    Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
-                    src = ap1;
+                    simpleSym = Optimizer::SymbolManager::Get(sym = makeID(sc_auto, sym->tp, nullptr, AnonymousName()));
+                    simpleSym->allocate = true;
+                    simpleSym->anonymous = true;
+                    simpleSym->inAllocTable = true;
+                    Optimizer::temporarySymbols.push_back(simpleSym);
+                    dest = varNode(en_auto, sym);
+                    deref(sym->tp, &dest);
+                    inlinesym_thisptr[inlinesym_count] = dest;
+                    idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
+                    src = gen_expr(funcsp, thisptr, 0, natural_size(thisptr));
+                    ap1 = Optimizer::LookupLoadTemp(nullptr, src);
+                    if (ap1 != src)
+                    {
+                        Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                        src = ap1;
+                    }
+                    Optimizer::gen_icode(Optimizer::i_assn, idest, src, nullptr);
                 }
-                Optimizer::gen_icode(Optimizer::i_assn, idest, src, nullptr);
+                else
+                {
+                    Optimizer::SimpleSymbol* simpleSym;
+                    Optimizer::IMODE *src, *ap1, *idest;
+                    EXPRESSION* dest;
+                    thisptr = inlinesym_count == 0 || inlinesym_thisptr[inlinesym_count - 1] == nullptr || !hasRelativeThis(thisptr)
+                              ? thisptr
+                              : inlineGetThisPtr(thisptr);
+                    dest = exprNode(en_paramsubstitute, nullptr, nullptr);
+                    deref(&stdpointer, &dest);
+                    src = gen_expr(funcsp, thisptr, 0, natural_size(thisptr));
+                    ap1 = Optimizer::LookupLoadTemp(nullptr, src);
+                    if (ap1 != src)
+                    {
+                        Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                        src = ap1;
+                    }
+                    inlinesym_thisptr[inlinesym_count] = dest;
+                    if (src->mode != Optimizer::i_direct || src->offset->type != Optimizer::se_tempref || src->size != ISZ_ADDR || src->offset->sp->loadTemp)
+                    {
+                        if (src->size != ISZ_ADDR)
+                        {
+                            ap1 = Optimizer::tempreg(src->size, false);
+                            Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                            src = ap1;
+                        }
+                        ap1 = Optimizer::tempreg(ISZ_ADDR, false);
+                        Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                        src = ap1;
+                        src->offset->sp->pushedtotemp = true;
+                    }
+                    dest->left->v.imode = Optimizer::tempreg(ISZ_ADDR, 0);
+                    idest = dest->left->v.imode;
+                    gen_icode(Optimizer::i_assn, idest, src, nullptr);
+                }
             }
         }
         else if (inlinesym_count)
@@ -163,33 +202,87 @@ static void inlineBindArgs(SYMBOL* funcsp, SYMLIST* hr, INITLIST* args)
             {
                 Optimizer::IMODE *src, *ap1, *idest;
                 EXPRESSION* dest;
-                SYMBOL* sym2;
-                sym2 = makeID(sc_auto, sym->tp, nullptr, AnonymousName());
-                SetLinkerNames(sym2, lk_cdecl);
-                Optimizer::SimpleSymbol* simpleSym = Optimizer::SymbolManager::Get(sym2);
-                Optimizer::temporarySymbols.push_back(simpleSym);
-                simpleSym->allocate = true;
-                simpleSym->inAllocTable = true;
-                dest = varNode(en_auto, sym2);
-                if (isarray(sym->tp))
+                int n = sizeFromType(sym->tp);
+                int m = natural_size(args->exp);
+                if (sym->sb->addressTaken || n == ISZ_ULONGLONG || n == -ISZ_ULONGLONG || m == ISZ_ULONGLONG || m == -ISZ_ULONGLONG || Optimizer::architecture == ARCHITECTURE_MSIL)
                 {
-                    dest = exprNode(en_l_p, dest, nullptr);
+                    SYMBOL* sym2;
+                    sym2 = makeID(sc_auto, sym->tp, nullptr, AnonymousName());
+                    SetLinkerNames(sym2, lk_cdecl);
+
+                    Optimizer::SimpleSymbol* simpleSym = Optimizer::SymbolManager::Get(sym2);
+                    Optimizer::temporarySymbols.push_back(simpleSym);
+                    simpleSym->allocate = true;
+                    simpleSym->inAllocTable = true;
+                    dest = varNode(en_auto, sym2);
+                    if (isarray(sym->tp))
+                    {
+                        dest = exprNode(en_l_p, dest, nullptr);
+                    }
+                    else
+                    {
+                        deref(sym->tp, &dest);
+                    }
+
+                    list[cnt++] = dest;
+                    idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
+                    src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));
+                    ap1 = Optimizer::LookupLoadTemp(nullptr, src);
+                    if (ap1 != src)
+                    {
+                        Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                        src = ap1;
+                    }
+                    Optimizer::gen_icode(Optimizer::i_assn, idest, src, nullptr);
                 }
                 else
                 {
-                    deref(sym->tp, &dest);
+                    dest = exprNode(en_paramsubstitute, nullptr, nullptr);
+                    if (isarray(sym->tp))
+                    {
+                        dest = exprNode(en_l_p, dest, nullptr);
+                    }
+                    else if (sym->tp->type == bt_templateselector)
+                    {
+                        deref(&stdpointer, &dest);
+                    }
+                    else
+                    {
+                        deref(sym->tp, &dest);
+                    }
+                    list[cnt++] = dest;
+                    src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));
+                    ap1 = Optimizer::LookupLoadTemp(nullptr, src);
+                    if (ap1 != src)
+                    {
+                        Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                        src = ap1;
+                    }
+                    if (src->mode != Optimizer::i_direct || src->offset->type != Optimizer::se_tempref || src->size != n || src->offset->sp->loadTemp)
+                    {
+                        ap1 = Optimizer::tempreg(src->size, false);
+                        Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                        src = ap1;
+                        if (src->size != n)
+                        {
+                            ap1 = Optimizer::tempreg(n, false);
+                            Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                            src = ap1;
+                        }
+                    }
+                    if (!src->retval && !sym->sb->assigned && !sym->sb->altered)
+                    {
+                        dest->left->v.imode = src;
+                    }
+                    else
+                    {
+                        dest->left->v.imode = Optimizer::tempreg(n, false);
+                        idest = dest->left->v.imode;
+                        Optimizer::gen_icode(Optimizer::i_assn, idest, src, nullptr);
+                        if (sym->sb->assigned || sym->sb->altered)
+                            idest->offset->sp->pushedtotemp = true;
+                    }
                 }
-                list[cnt++] = dest;
-                Optimizer::SymbolManager::Get(sym)->paramSubstitute = dest;
-                idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
-                src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));
-                ap1 = Optimizer::LookupLoadTemp(nullptr, src);
-                if (ap1 != src)
-                {
-                    Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
-                    src = ap1;
-                }
-                Optimizer::gen_icode(Optimizer::i_assn, idest, src, nullptr);
             }
             args = args->next;
             hr = hr->next;
@@ -198,7 +291,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SYMLIST* hr, INITLIST* args)
         // in multiple arguments...
 
         // also deals with things like the << and >> operators, where an expression can have arguments chained into the same
-        // operator over and over...
+          // operator over and over...
         hr = hr1;
         cnt = 0;
         while (hr)
@@ -312,7 +405,6 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     int oldOffset = codeLabelOffset;
     EXPRESSION* oldthis = inlinesym_thisptr[inlinesym_count];
     //    return nullptr;
-
     if (noinline)
         return nullptr;
     if (Optimizer::chosenAssembler->arch->denyopts & DO_NOINLINE)
@@ -345,6 +437,11 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         return nullptr;
     }
     if (f->sp->sb->canThrow)
+    {
+        f->sp->sb->dumpInlineToFile = true;
+        return nullptr;
+    }
+    if (f->sp->sb->xc && f->sp->sb->xc->xclab)
     {
         f->sp->sb->dumpInlineToFile = true;
         return nullptr;
@@ -395,6 +492,14 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 f->sp->sb->dumpInlineToFile = true;
                 return nullptr;
             }
+        }
+        auto ex = f->thisptr;
+        if (lvalue(ex))
+            ex = ex->left;
+        if (ex->type == en_void)
+        {
+            f->sp->sb->dumpInlineToFile = true;
+            return nullptr;
         }
     }
     if (f->returnEXP && !isref(basetype(f->sp->tp)->btp))
@@ -470,6 +575,12 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         // we might be doing a by-ref return value from some presumably unreachable function
         // that elided the return value
         gen_icode(Optimizer::i_assn, ap3, Optimizer::make_immed(-ISZ_UINT, 0), nullptr);
+    }
+    else
+    {
+        auto ap4 = LookupLoadTemp(nullptr,ap3);
+        gen_icode(Optimizer::i_assn, ap4, ap3, nullptr);
+        ap3 = ap4;
     }
     inlineUnbindArgs(basetype(f->sp->tp)->syms->table[0]);
     FreeLocalContext(nullptr, funcsp, Optimizer::nextLabel++);

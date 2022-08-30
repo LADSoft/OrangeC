@@ -1911,7 +1911,6 @@ static EXPRESSION* baseNode(EXPRESSION* node)
         case en_auto:
         case en_pc:
         case en_global:
-        case en_tempref:
         case en_threadlocal:
             return node;
         case en_add: {

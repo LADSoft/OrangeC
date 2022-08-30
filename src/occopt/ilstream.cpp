@@ -291,6 +291,8 @@ static void StreamExpression(SimpleExpression* exp)
                     break;
                 case Optimizer::se_tempref:
                     StreamIndex(exp->sp->i);
+                    StreamIndex(exp->sp->tp->size);
+                    StreamIndex(exp->sp->tp->sizeFromType);
                     break;
                 case Optimizer::se_msil_array_access:
                     StreamType(exp->msilArrayTP);

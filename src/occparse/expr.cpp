@@ -3458,6 +3458,10 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                                     else
                                     {
                                         exp = exp->left;  // take address
+                                        if (exp->type == en_auto)
+                                        {
+                                            exp->v.sp->sb->addressTaken = true;
+                                        }
                                     }
                                 }
                                 p->exp = exp;

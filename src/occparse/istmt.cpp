@@ -521,11 +521,10 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
     }
     if (ap && (inlinesym_count || !isvoid(basetype(funcsp->tp)->btp) || funcsp->sb->isConstructor))
     {
-        bool needsOCP = false;
+        bool needsOCP = funcsp->sb->retcount <= 1;
         if (returnImode)
         {
             ap1 = returnImode;
-            needsOCP = true;
         }
         else
         {
@@ -533,11 +532,12 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
             if (!inlinesym_count)
             {
                 ap1->retval = true;
+                needsOCP = false;
             }
             else
             {
                 returnImode = ap1;
-                needsOCP = true;
+                returnImode->offset->sp->pushedtotemp = !needsOCP;
             }
         }
         Optimizer::gen_icode(Optimizer::i_assn, ap1, ap, 0);

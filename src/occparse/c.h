@@ -154,7 +154,7 @@ typedef struct
         en_l_fi, en_l_di, en_l_ldi, en_l_fc, en_l_dc, en_l_ldc, en_l_fp, en_l_sp, en_l_bit,
         en_l_string, en_l_object, en_msil_array_access, en_msil_array_init,
         en_nullptr, en_memberptr, en_mp_as_bool, en_mp_compare,
-        en_trapcall, en_func, en_funcret, en_intcall, en_tempref,
+        en_trapcall, en_func, en_funcret, en_intcall,
         en_arraymul, en_arraylsh, en_arraydiv, en_arrayadd, en_structadd, en_structelem,
         en_add, en_sub, en_mul, en_mod, en_div, en_lsh, en_rsh, en_ursh,
         en_cond, en_assign, en_eq, en_ne,
@@ -167,7 +167,7 @@ typedef struct
         en_construct, en_literalclass, en_templateparam, en_templateselector, en_packedempty, en_sizeofellipse,
         en_type, en_pointsto, en_dot, en_select,
         // stuff that can only appear temporarily in constexpr expressions
-        en_cshimref, en_cshimthis
+        en_cshimref, en_cshimthis, en_paramsubstitute
     };
 // clang-format on
 

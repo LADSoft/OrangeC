@@ -381,6 +381,7 @@ bool Utils::iequal(const std::string& a, const std::string& b, int sz)
 FILE* Utils::TempName(std::string& name)
 {
     char tempFile[260];
+    tempFile[0] = 0;
     tmpnam(tempFile);
     if (tempFile[0] == '\\')
     {

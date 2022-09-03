@@ -27,6 +27,12 @@ endif
 
 include pathext2.mak
 
+ifeq "$(COMPILER)" "gcc-linux"
+NULLDEV := /dev/null
+else
+NULLDEV := NUL
+endif
+
 ifndef _TREEROOT
 ifeq "$(COMPILER)" "gcc-linux"
 CURRENT := $(CURDIR)
@@ -39,6 +45,7 @@ _TREEROOT := $(CURRENT)$(PATHEXT2)treetop.mak
 _TREETARGET := $(CURRENT)
 export _TREEROOT
 export _TREETARGET
+
 
 # by default this makefile just switches omake to 'TREE' mode
 # That will load TREETOP.MAK which will eventually load CONFIG.MAK to 
@@ -106,18 +113,18 @@ else
 # when called from TREETOP.MAK do the below
 
 DISTRIBUTE:
-	$(COPYDIR) examples\%.% $(DISTEXAM)
-	$(COPYDIR) examples\msdos\%.% $(DISTEXAM)\msdos
-	$(COPYDIR) examples\system\%.% $(DISTEXAM)\system
-	$(COPYDIR) examples\win32\%.% $(DISTEXAM)\win32
-	$(COPYDIR) examples\win32\atc\%.% $(DISTEXAM)\win32\atc
-	$(COPYDIR) examples\win32\listview\%.% $(DISTEXAM)\win32\listview
-	$(COPYDIR) examples\win32\xmlview\%.% $(DISTEXAM)\win32\xmlview
-	$(COPYDIR) examples\win32\RCDemo\%.% $(DISTEXAM)\win32\RCDemo
-	$(COPYDIR) examples\win32\Huff\%.% $(DISTEXAM)\win32\Huff
-	copy license.txt $(DISTROOT)
-	copy readme.txt $(DISTROOT)
-	copy occil.txt $(DISTROOT)
-	copy relnotes.txt $(DISTROOT)
-	copy addon.txt $(DISTADDON)
+	$(COPYDIR) examples\%.% $(DISTEXAM) 2> $(NULLDEV)
+	$(COPYDIR) examples\msdos\%.% $(DISTEXAM)\msdos 2> $(NULLDEV)
+	$(COPYDIR) examples\system\%.% $(DISTEXAM)\system 2> $(NULLDEV)
+	$(COPYDIR) examples\win32\%.% $(DISTEXAM)\win32 2> $(NULLDEV)
+	$(COPYDIR) examples\win32\atc\%.% $(DISTEXAM)\win32\atc 2> $(NULLDEV)
+	$(COPYDIR) examples\win32\listview\%.% $(DISTEXAM)\win32\listview 2> $(NULLDEV)
+	$(COPYDIR) examples\win32\xmlview\%.% $(DISTEXAM)\win32\xmlview 2> $(NULLDEV)
+	$(COPYDIR) examples\win32\RCDemo\%.% $(DISTEXAM)\win32\RCDemo 2> $(NULLDEV)
+	$(COPYDIR) examples\win32\Huff\%.% $(DISTEXAM)\win32\Huff 2> $(NULLDEV)
+	copy license.txt $(DISTROOT) 2> $(NULLDEV)
+	copy readme.txt $(DISTROOT) 2> $(NULLDEV)
+	copy occil.txt $(DISTROOT) 2> $(NULLDEV)
+	copy relnotes.txt $(DISTROOT) 2> $(NULLDEV)
+	copy addon.txt $(DISTADDON) 2> $(NULLDEV)
 endif

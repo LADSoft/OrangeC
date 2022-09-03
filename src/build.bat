@@ -4,11 +4,11 @@
         call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
      )
      if "%ORANGEC_HOME%" NEQ "" (
-         del /Q ..\bin\*.*
-         del /Q ..\lib\*.*
-         del /Q ..\include\*.*
-         del /Q ..\include\win32\*.*
-         del /Q ..\include\sys\*.*
+         del /Q ..\bin\*.* 2> NUL
+         del /Q ..\lib\*.* 2> NUL
+         del /Q ..\include\*.* 2> NUL
+         del /Q ..\include\win32\*.* 2> NUL
+         del /Q ..\include\sys\*.* 2> NUL
          omake -DCOMPILER=MS clean -j:%NUMBER_OF_PROCESSORS%
          omake -DCOMPILER=CLANG clean -j:%NUMBER_OF_PROCESSORS%
          omake -DCOMPILER=MINGW64 clean -j:%NUMBER_OF_PROCESSORS%
@@ -102,8 +102,8 @@
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
-                  mkdir c:\orangec\temp2
-                  copy c:\orangec\bin\*.exe c:\orangec\temp2
+                  mkdir c:\orangec\temp2 2> NUL
+                  copy c:\orangec\bin\*.exe c:\orangec\temp2 2> NUL
                   c:\orangec\bin\occ /V
                   copy omake\omake.exe \orangec\temp
                   c:\orangec\temp\omake /DCOMPILER=OCC clean -j:%PARALLEL%

@@ -44,17 +44,22 @@
 #include "io.h"
 #include "libp.h"
 
+void __cpp_tmpnam(char* buf);
+
 char* _RTL_FUNC tmpnam(char* buf)
 {
-    int n = 0;
     if (!buf)
         buf = &__getRtlData()->tmpfilnam;
-    __ll_enter_critical();
+    int n = 0;
     do
     {
-        sprintf(buf, "tmp%05d.$$$", n++);
+#ifdef __MSIL__
+        sprintf(buf, "tmp%05d.$$$", n);
+#else
+	__cpp_tmpnam(buf);
+#endif
+        n++;
     } while (!access(buf, 0) && n <= TMP_MAX);
-    __ll_exit_critical();
     if (n <= TMP_MAX)
         return buf;
     return NULL;
@@ -79,12 +84,16 @@ char* _RTL_FUNC tempnam(char* dir, char* prefix)
     p = s + strlen(s);
     if (p != s && p[-1] != '\\')
         *p++ = '\\';
-    __ll_enter_critical();
     do
     {
-        sprintf(p, "%s%05d", prefix, n++);
+#ifdef __MSIL__
+        sprintf(p, "%s%05d", prefix, n);
+#else
+     strcpy(p, prefix);
+	__cpp_tmpnam(p+strlen(p));
+#endif
+         n++;
     } while (!access(buf, 0) && n <= TMP_MAX);
-    __ll_exit_critical();
     if (n <= TMP_MAX)
         return strdup(buf);
     return NULL;

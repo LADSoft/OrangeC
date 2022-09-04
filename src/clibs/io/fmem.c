@@ -84,7 +84,7 @@ static FILE* _RTL_FUNC basememopen(void* buf, size_t size, int flags, int flags2
             __ll_exit_critical();
             return 0;
         }
-        memset(file->extended, 0, sizeof(file->extended));
+        memset(file->extended, 0, sizeof(*file->extended));
         file->extended->lock = 0;
     }
     file->extended->orient = __or_unspecified;

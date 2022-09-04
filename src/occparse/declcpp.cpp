@@ -145,6 +145,8 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                             vf->func = sp;
                     }
                     InsertInline(vf->func);
+                    if (vf->func->sb->defaulted && !vf->func->sb->inlineFunc.stmt && vf->func->sb->isDestructor)
+                        createDestructor(vf->func->sb->parentClass);
                     if (vf->func->sb->ispure)
                     {
                         Optimizer::genaddress(0);
@@ -1072,7 +1074,7 @@ void deferredInitializeStructMembers(SYMBOL* cur)
     }
     PopTemplateNamespace(tns);
 }
-static bool declaringTemplate(SYMBOL* sym)
+bool declaringTemplate(SYMBOL* sym)
 {
     STRUCTSYM* l = structSyms;
     while (l)
@@ -4551,4 +4553,30 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
     }
     return exp;
 }
+void CheckIsLiteralClass(TYPE *tp)
+{
+return;
+    if (!templateNestingCount || instantiatingTemplate)
+    {
+        if (isref(tp))
+            tp = basetype(tp)->btp;
+        if (isstructured(tp))
+        {
+            if (basetype(tp)->sp->tp->size && !basetype(tp)->sp->sb->literalClass)
+            {
+                errorsym(ERR_CONSTEXPR_CLASS_NOT_LITERAL, basetype(tp)->sp);
+            }
+            else
+            {
+                auto tpl = basetype(tp)->sp->templateParams;
+                while (tpl)
+                {
+                    if (tpl->p->type == kw_typename && tpl->p->byClass.val)
+                        CheckIsLiteralClass(tpl->p->byClass.val);               
+                    tpl = tpl->next;
+                }
+            }
+        }
+    }
+}	
 }  // namespace Parser

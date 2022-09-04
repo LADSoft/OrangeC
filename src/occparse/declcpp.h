@@ -62,6 +62,7 @@ std::stack<EXPRESSION*> iterateToPostOrder(EXPRESSION* exp);
 bool hasPackedExpression(EXPRESSION* exp, bool useAuto);
 void checkPackedExpression(EXPRESSION* exp);
 void checkUnpackedExpression(EXPRESSION* exp);
+bool declaringTemplate(SYMBOL* sym);    
 void GatherPackedTypes(int* count, SYMBOL** arg, TYPE* tp);
 void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp);
 void ReplicatePackedExpression(EXPRESSION* pattern, int count, SYMBOL** arg, TEMPLATEPARAMLIST** dest);
@@ -84,4 +85,5 @@ bool MatchesConstFunction(SYMBOL* sym);
 LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn);
 void CollapseReferences(TYPE* tp_in);
 EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl);
+void CheckIsLiteralClass(TYPE* tp);
 }  // namespace Parser

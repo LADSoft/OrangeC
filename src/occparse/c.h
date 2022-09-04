@@ -676,6 +676,7 @@ typedef struct sym
         unsigned pureDest : 1;         // destructor is pure
         unsigned isConstructor : 1;    // is a constructor
         unsigned isDestructor : 1;     // is  adestructor
+        unsigned literalClass : 1;     // is a literal class
         unsigned xtEntry : 1;          // is an exception table label
         unsigned isExplicit : 1;       // explicit constructor or conversion function
         unsigned specialized : 1;      // is a template specialization
@@ -965,6 +966,7 @@ typedef struct functioncall
     int asaddress : 1;
     int vararg : 1;
     int resolvedCall : 1;
+    int noADL : 1;
 } FUNCTIONCALL;
 
 #define MAX_STRLEN 16384

@@ -140,7 +140,7 @@ EXPRESSION* stringlit(STRING* s)
         while (lp)
         {
             int i;
-            if (s->size == lp->size)
+            if (s->size == lp->size && s->strtype == lp->strtype)
             {
                 /* but it won't get in here if s and lp are the same, but
                  * resulted from different concatenation sequences

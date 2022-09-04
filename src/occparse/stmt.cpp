@@ -2964,6 +2964,7 @@ bool resolveToDeclaration(LEXLIST* lex, bool structured)
     }
     if (MATCHKW(lex, openpa))
     {
+        bool hasStar = false;
         int level = 1;
         lex = getsym();
         while (level && lex != nullptr && !MATCHKW(lex, semicolon))
@@ -2976,9 +2977,13 @@ bool resolveToDeclaration(LEXLIST* lex, bool structured)
             {
                 level--;
             }
+            else if (MATCHKW(lex, star))
+            {
+                hasStar = true;
+            }
             lex = getsym();
         }
-        if (MATCHKW(lex, assign) || (!structured && MATCHKW(lex, openpa)) || MATCHKW(lex, openbr))
+        if (MATCHKW(lex, assign) || ((hasStar || !structured) && MATCHKW(lex, openpa)) || MATCHKW(lex, openbr))
         {
             prevsym(placeholder);
             return true;

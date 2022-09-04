@@ -3862,6 +3862,8 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
     EXPRESSION* exp = expa;
     TYPE* tpax = tpa;
     TYPE* tppx = tpp;
+    if (isarray(tpax))
+        tpax = basetype(tpax);
     tpa = basetype(tpa);
     tpp = basetype(tpp);
     // when evaluating decltype we sometimes come up with these
@@ -4980,6 +4982,43 @@ SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, TYPE* atp)
     inDeduceArgs--;
     return sym;
 }
+static int CompareArgs(SYMBOL* left, SYMBOL* right)
+{
+    int countl = 0, countr = 0;
+    auto hrl = basetype(left->sb->parentTemplate->tp)->syms->table[0];
+    auto hrr = basetype(right->sb->parentTemplate->tp)->syms->table[0];
+    if (hrl->p->sb->thisPtr)
+        hrl = hrl->next;
+    if (hrr->p->sb->thisPtr)
+        hrr = hrl->next;
+    while (hrl && hrr)
+    {
+        auto tpl = hrl->p->tp;
+        auto tpr = hrr->p->tp;
+        if (isref(tpl))
+            tpl = basetype(tpl)->btp;
+        if (isref(tpr))
+            tpr = basetype(tpr)->btp;
+        while (ispointer(tpl) && ispointer(tpr))
+        {
+            tpl = basetype(tpl)->btp;
+            tpr = basetype(tpr)->btp;
+        }
+        tpl = basetype(tpl);
+        tpr = basetype(tpr);
+        if (tpl->type != bt_templateparam && tpl->type != bt_templateselector)
+            countl++;
+        if (tpr->type != bt_templateparam && tpr->type != bt_templateselector)
+            countr++;
+        hrl = hrl->next;
+        hrr = hrr->next;
+    }
+    if (countl > countr)
+        return -1;
+    if (countr > countl)
+        return 1;
+    return 0;
+}
 static void WeedTemplates(SYMBOL** table, int count, FUNCTIONCALL* args, TYPE* atp)
 {
     int i = count;
@@ -5021,8 +5060,9 @@ static void WeedTemplates(SYMBOL** table, int count, FUNCTIONCALL* args, TYPE* a
             }
         }
         int argCount = INT_MAX;
-        int counts[256];
+        int* counts = (int*)alloca(sizeof(int) * count);
         // choose the template with the smallest argument count
+        // on the theory it is more specialized
         for (int i = 0; i < count; i++)
         {
             if (table[i])
@@ -5041,6 +5081,30 @@ static void WeedTemplates(SYMBOL** table, int count, FUNCTIONCALL* args, TYPE* a
             {
                 if (counts[i] > argCount)
                     table[i] = 0;
+            }
+        }
+        // prefer templates that have args with a type that arent templateselectors or templateparams
+        for (int i = 0; i < count - 1; i++)
+        {
+            if (table[i])
+            {
+                for (int j = i + 1; table[i] && j < count; j++)
+                {
+                    if (table[j])
+                    {
+                        switch (CompareArgs(table[i], table[j]))
+                        {
+                        case -1:
+                            table[j] = nullptr;
+                            break;
+                        case 1:
+                            table[i] = nullptr;
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                }
             }
         }
     }
@@ -5255,7 +5319,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
         {
             if (args || atp)
             {
-                if (!sp->tp || (!sp->sb->wasUsing && !sp->sb->parentClass))
+                if ((!sp->tp || (!sp->sb->wasUsing && !sp->sb->parentClass)) && !args->noADL)
                 {
                     // ok the sp is a valid candidate for argument search
                     if (args)

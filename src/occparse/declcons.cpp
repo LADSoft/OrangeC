@@ -1587,6 +1587,14 @@ void createDefaultConstructors(SYMBOL* sp)
             sp->sb->trivialCons = trivialCons;
             sp->sb->trivialDest = trivialDest;
         }
+        auto p = cons->tp->syms->table[0];
+        while (p)
+        {
+            auto s = (SYMBOL*)p->p;
+            if (s->sb->constexpression | s->sb->defaulted)
+                sp->sb->literalClass = true;
+            p = p->next;
+        }
     }
     if (newcons)
         newcons->sb->trivialCons = true;
@@ -2792,6 +2800,7 @@ void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
     }
     consfunc->sb->constexpression =
         DefaultConstructorConstExpression(sp) || matchesCopy(consfunc, false) || matchesCopy(consfunc, true);
+    sp->sb->literalClass |= consfunc->sb->constexpression;
     localNameSpace->valueData->syms = syms;
     noExcept &= oldNoExcept;
 }

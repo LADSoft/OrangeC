@@ -1576,10 +1576,8 @@ void AliasPass2(void)
     ScanUIVs();
     ScanMem();
     FinishScanUIVs();
-    icdFile = stdout;
     if (icdFile)
         DumpAliases();
-    icdFile = nullptr;
     complementmap(uivBytes);
 }
 }  // namespace Optimizer

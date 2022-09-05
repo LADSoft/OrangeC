@@ -178,7 +178,10 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
                     tempInfo[v->data]->sl = s1;
                     s1->multiplier = multiplier;
                     s1->strengthName = n;
-                    //                    tempInfo[n]->enode->sp->pushedtotemp = true;
+                    IMODE* im = InitTempOpt(ans->size, ans->size);
+                    loadTemps[n] = im;
+                    im->offset->sp->loadTemp = true;
+                    tempInfo[n]->enode->sp->pushedtotemp = true;
                     tempInfo[n]->inductionLoop = tempInfo[v->data]->inductionLoop;
                     tempInfo[n]->oldInductionVar = v->data;
                     v = v->next;
@@ -186,7 +189,6 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
                 s = tempInfo[tnum]->sl;
             }
             tempInfo[ans->offset->sp->i]->strengthRename = s->strengthName;
-            tempInfo[s->strengthName]->enode->sp->pushedtotemp = true;
         }
         multiplier = oldMult;
         l = l->next;
@@ -235,8 +237,11 @@ void ReplaceOneUses(QUAD* head, IMODE** im)
                 QUAD* ins = Allocate<QUAD>();
                 ins->dc.opcode = i_assn;
                 ins->dc.left = left;
-                ins->ans = ans;
+                ins->ans = InitTempOpt(left->size, left->size);
+                ins->ans->offset->sp->loadTemp = true;
+                tempInfo[ins->ans->offset->sp->i]->preSSATemp = ans->offset->sp->i;
                 InsertInstruction(head->back, ins);
+                ans = ins->ans;
             }
             else
             {
@@ -430,9 +435,12 @@ static void DoCompare(QUAD* head, IMODE** temp, IMODE** cnst)
                 {
                     QUAD* ins = Allocate<QUAD>();
                     ins->dc.opcode = i_assn;
-                    ins->ans = im;
                     ins->dc.left = tempInfo[sl->strengthName]->enode->sp->imvalue;
+                    ins->ans = InitTempOpt(ins->dc.left->size, ins->dc.left->size);
+                    ins->ans->offset->sp->loadTemp = true;
+                    tempInfo[ins->ans->offset->sp->i]->preSSATemp = im->offset->sp->i;
                     InsertInstruction(head->back, ins);
+                    im = ins->ans;
                 }
                 else
                 {
@@ -538,9 +546,8 @@ static int HandlePhiInitVar(QUAD* insin, USES_STRENGTH* sl, int tnum)
         tempInfo[n]->inductionLoop = insin->block->loopParent->loopnum;
         tempInfo[n]->inductionInitVar = 1;
         tempInfo[tnum]->strengthRename = n;
-        IMODE* im = InitTempOpt(tempInfo[tnum]->size, tempInfo[tnum]->size);
-        loadTemps[n] = im;
         tempInfo[n]->enode->sp->pushedtotemp = true;
+        loadTemps[n] = loadTemps[sl->strengthName];
         return ins->ans->offset->sp->i;
     }
     return rv->offset->sp->i;
@@ -736,7 +743,7 @@ void ReduceLoopStrength(void)
                             {
                                 while (sla && sll)
                                 {
-                                    loadTemps[sll->strengthName] = tempInfo[sla->strengthName]->enode->sp->imvalue;
+                                    loadTemps[sll->strengthName] = loadTemps[sla->strengthName];
                                     sla = sla->next;
                                     sll = sll->next;
                                 }

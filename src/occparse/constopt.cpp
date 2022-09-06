@@ -54,6 +54,8 @@
 #include "dsw.h"
 #include "constexpr.h"
 #include "ccerr.h"
+#include "rtti.h"
+
 namespace Parser
 {
 unsigned long long reint(EXPRESSION* node);
@@ -1495,6 +1497,23 @@ int opt0(EXPRESSION** node)
             rv |= opt0(&(ep->right));
             if (ep->right->type == en_structelem || ep->left->type == en_structadd)
                 break;
+            {
+                auto exp = ep->left;
+                while (castvalue(exp))
+                    exp = exp->left;
+                if (exp->type == en_add)
+                {
+                    auto expr = ep->right;
+                    while (castvalue(expr))
+                        expr = expr->left;
+                    if (equalnode(exp->left, expr))
+                    {
+                        *node = exp->right;
+                        rv = true;
+                        break;
+                    }
+                }
+            }
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {

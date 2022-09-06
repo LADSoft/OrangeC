@@ -1897,6 +1897,8 @@ EXPRESSION* createTemporary(TYPE* tp, EXPRESSION* val)
 {
     EXPRESSION* rv;
     tp = basetype(tp)->btp;
+    if (tp->type == bt_pointer) // to get around arrays not doing a deref...
+        tp = &stdpointer;
     rv = anonymousVar(sc_auto, tp);
     if (val)
     {

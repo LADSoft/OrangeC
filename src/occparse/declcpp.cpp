@@ -4555,7 +4555,6 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
 }
 void CheckIsLiteralClass(TYPE *tp)
 {
-return;
     if (!templateNestingCount || instantiatingTemplate)
     {
         if (isref(tp))

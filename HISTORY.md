@@ -95,6 +95,7 @@ version 6.0.60:
 * rtl: use mm_pause() instead of resorting to adding assembly language
 * rtl: fix bug where invalid input could crash strerror_s
 * rtl: tmpnam and friends, generate the file names randomly
+* rtl: fix fmemopen, left memory in an indeterminate state and didnt zero the buffer
 * documentation: document method for debugging without a debugger
 
 version 6.0.51:

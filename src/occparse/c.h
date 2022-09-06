@@ -352,7 +352,6 @@ typedef struct expr
     struct _string* string;
     int xcInit, xcDest;
     int lockOffset;
-    int r, s, t, q;
     char bits;
     char startbit;
     short treesize;
@@ -1118,7 +1117,6 @@ typedef struct lexeme
     int filenum;
     KEYWORD* kw;
     SYMBOL* typequal;
-    int r, s;
     int registered : 1;
 } LEXEME;
 

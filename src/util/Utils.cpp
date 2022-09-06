@@ -397,6 +397,10 @@ FILE* Utils::TempName(std::string& name)
     {
         StrCpy(tempFile, ".\\");
         tmpnam(tempFile + strlen(tempFile));
+        // this next because it apparently isn't standard how to do the return value of tmpnam
+        const char *p = strrchr(tempFile, '\\');
+        strcpy(tempFile + 2, p);
+
         fil = fopen(tempFile, "w");
         if (!fil)
         {

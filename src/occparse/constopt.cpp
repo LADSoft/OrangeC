@@ -446,6 +446,8 @@ void dooper(EXPRESSION** node, int mode)
             case en_structadd:
                 if (ep->right->type == en_structelem)
                     break;
+                if (ep->right->keepZero)
+                    break;
             case en_add:
             case en_arrayadd:
                 switch (mode)

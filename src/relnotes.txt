@@ -59,6 +59,9 @@ version 6.0.60: 09/03/2022
     occ: fix bugs with generating wrongly sized floating point constant values
     occ: inline processing should not spill to memory as much
     occ: don't inline functions that have try-catch blocks
+    occ: fix pointer aliasing problem with function arguments
+    occ: fix bug with the strength reduction (led to invalid GCSE in some cases)
+    occ: put temporary files in the current directory when TMP environment variable not set correctly
     omake: rewrite the mechanism for handing out task slots
     omake: use futures to improve the internal operations
     omake: fix "-f -" to take input from stdin
@@ -92,6 +95,7 @@ version 6.0.60: 09/03/2022
     rtl: use mm_pause() instead of resorting to adding assembly language
     rtl: fix bug where invalid input could crash strerror_s
     rtl: tmpnam and friends, generate the file names randomly
+    rtl: fix fmemopen, left memory in an indeterminate state and didnt zero the buffer
     documentation: document method for debugging without a debugger
 
 version 6.0.51: 11/22/2021

@@ -365,6 +365,7 @@ typedef struct expr
     int noexprerr : 1;
     int init : 1;  // for no replacement by a constexpr array
     int preincdec : 1;  //  an assignment which is the 'pre' form of autoinc
+    int keepZero : 1;
 } EXPRESSION;
 
 typedef struct _msilarray

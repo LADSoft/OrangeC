@@ -1069,6 +1069,12 @@ static void AliasesOneBlock(BLOCK* b)
         head = head->fwd;
     }
 }
+static void GatherAliases(BLOCK *b)
+{
+    AliasesOneBlock(b);
+    for (auto d = b->dominates; d; d = d->next)
+        AliasesOneBlock(d->block);
+}
 static void GatherAliases(LOOP* lp)
 {
     bool xchanged = changed;
@@ -1563,6 +1569,7 @@ void AliasPass1(void)
     AliasInit();
     // when we get here it is expected we are in SSA mode
     Createaddresses();
+    GatherAliases(blockArray[0]);
     do
     {
         changed = false;

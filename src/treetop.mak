@@ -178,7 +178,7 @@ DISTMAKE := $(realpath $(DISTROOT)$(PATHEXT2)src$(PATHEXT2)dist.mak)
 export DISTMAKE
 
 cleanDISTRIBUTE: copydir.exe restub.exe renseg.exe pepatch.exe
-	-del /Q $(DISTBIN)\*.pdb
+	-del /Q $(DISTBIN)\*.pdb 2> $(NULLDEV)
 ifndef NOMAKEDIR
 	-$(MKDIR) $(DISTROOT) 2> $(NULLDEV)
 #	-del /Q $(DISTROOT) 2> $(NULLDEV)
@@ -256,8 +256,8 @@ endif
 
 
 cleanstart:
-	-del /Q $(_LIBDIR)
-	-rmdir $(_LIBDIR)
+	-del /Q $(_LIBDIR) 2> $(NULLDEV)
+	-rmdir $(_LIBDIR) 2> $(NULLDEV)
 
 $(CLEANS): %.clean :
 	$(MAKE) clean -f $(_TREEROOT) -C$*
@@ -277,7 +277,7 @@ $(CLEANS): %.clean :
 	$(MAKE) clean -f $(_TREEROOT) -C$*
 
 clean: del rmdir $(CLEANS)
-	del *.xcf *.xcppf *.xhf *.pdb
+	-del *.xcf *.xcppf *.xhf *.pdb 2> $(NULLDEV)
 
 distribute: $(DISTS1)
 

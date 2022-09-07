@@ -46,10 +46,14 @@
 #define FILTER_BUF_LEN _DTA_BUF_DEFAULT
 extern int __uiflags[HANDLE_MAX], __uimodes[HANDLE_MAX];
 
+// write is thread-safe so...
+// this needs to not be a local variable, because,
+// when compiled as a DLL it sometimes takes too much stack space and
+// crashes the DLL_PROCESS_DETACH
+static char obuf[FILTER_BUF_LEN];
 int _RTL_FUNC write(int __handle, void* __buf, unsigned __len)
 {
     char* pos = __buf;
-    char obuf[FILTER_BUF_LEN];
     int olen = 0;
     int lenleft = __len, writelen, ohand = __handle;
     int i;

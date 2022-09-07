@@ -1806,6 +1806,8 @@ static void genConsData(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi, SYMBO
     {
         thisptr = exprNode(en_structadd, thisptr, intNode(en_c_i, offset));
         otherptr = exprNode(en_structadd, otherptr, intNode(en_c_i, offset));
+        thisptr->right->keepZero = true;
+        otherptr->right->keepZero = true;
         if (isstructured(member->tp) || isarray(member->tp) || basetype(member->tp)->type == bt_memberptr)
         {
             EXPRESSION* exp = exprNode(en_blockassign, thisptr, otherptr);
@@ -2806,8 +2808,10 @@ void asnVirtualBases(BLOCKDATA* b, SYMBOL* sp, VBASEENTRY* vbe, EXPRESSION* this
 }
 static void genAsnData(BLOCKDATA* b, SYMBOL* cls, SYMBOL* member, int offset, EXPRESSION* thisptr, EXPRESSION* other)
 {
-    EXPRESSION* left = exprNode(en_add, thisptr, intNode(en_c_i, offset));
-    EXPRESSION* right = exprNode(en_add, other, intNode(en_c_i, offset));
+    EXPRESSION* left = exprNode(en_structadd, thisptr, intNode(en_c_i, offset));
+    EXPRESSION* right = exprNode(en_structadd, other, intNode(en_c_i, offset));
+    left->right->keepZero = true;
+    right->right->keepZero = true;
     STATEMENT* st;
     (void)cls;
     if (isstructured(member->tp) || isarray(member->tp))

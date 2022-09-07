@@ -381,6 +381,7 @@ bool Utils::iequal(const std::string& a, const std::string& b, int sz)
 FILE* Utils::TempName(std::string& name)
 {
     char tempFile[260];
+    tempFile[0] = 0;
     tmpnam(tempFile);
     if (tempFile[0] == '\\')
     {
@@ -396,6 +397,10 @@ FILE* Utils::TempName(std::string& name)
     {
         StrCpy(tempFile, ".\\");
         tmpnam(tempFile + strlen(tempFile));
+        // this next because it apparently isn't standard how to do the return value of tmpnam
+        const char *p = strrchr(tempFile, '\\');
+        strcpy(tempFile + 2, p);
+
         fil = fopen(tempFile, "w");
         if (!fil)
         {

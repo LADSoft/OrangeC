@@ -1,5 +1,103 @@
 Release notes:
 
+version 6.0.60: 09/03/2022
+    occ: various template handling fixes
+    occ: various constexpr fixes
+    occ: various noexcept fixes
+    occ: fix various problems with initializer lists
+    occ: fix various problems with the mangling/unmangling
+    occ: various other compiler fixes resulting from working with the libcxx test suite
+    occ: fix various crashes
+    occ: auto variables with the same name should be considered unique by the compiler
+    occ: handle some use cases where a structure could be used as a template argument of itself while compiling the template
+    occ: noreturn member functions were not considered as noreturn for error reporting
+    occ: select the primary class template when a specialization trys to use the primary as a friend
+    occ: recalculate structure offsets properly for recursive structures
+    occ: allow passing a volatile reference to a parameter of type const reference
+    occ: various compiler speedups.
+    occ: fix various bugs when compiling allocators with maps
+    occ: fix problems with value initialization of structures
+    occ: fix crash when using the structured return value of a function as an argument to another function
+    occ: fix is_constructible for various use cases
+    occ: fix various problems where constructors could not be found
+    occ: defer evaluation of constructors that are used in default arguments
+    occ: fix using statements to allow a broader range of function declarations
+    occ: fix some problems with partial function deductions
+    occ: fix unique_ptr/shared ptr iterators to work properly
+    occ: using constructor via open brace could be an rvalue candidate
+    occ: support __builtin_unreachable
+    occ: default for move constructors do not have a 'const' argument
+    occ: add unmangled names as comments in the assembler file output
+    occ: fix bug where line numbers were sometimes missing from the output files
+    occ: don't generate lambda functions with $$ at the beginning of the name
+    occ: fix some bugs when an array is placed inside a structure
+    occ: support DLLs in the command line
+    occ: some internal uses of alloca to reduce stack usage
+    occ: fix problem where debug file names were incorrect
+    occ: fix various problems with destructors in short-circuit expressions
+    occ: fix problems with destructors in arguments
+    occ: fix problems with destructors in conditional statements
+    occ: optimize to generate a TEST instruction in a certain use case
+    occ: fix bug where preprocessor expressions could interfere with template processing
+    occ: various internal refactoring
+    occ: by value arguments where not getting cleaned up at the end of the function
+    occ: fix problems with RTTI table generation
+    occ: fix various problems with atomic code gen
+    occ: change local static guards to be thread safe
+    occ: handle destruction of local statics in a more standard way
+    occ: return structures by value properly in C++ mode
+    occ: two functions don't have the same type if one returns by reference and the other doesn't
+    occ: do a better job of aligning structures on the stack
+    occ: dereference references returned by cast operators
+    occ: don't use a temporary when converting a structure to an arithmetic type in arguments
+    occ: fix corruption in catch blocks
+    occ: fix bug where floating point might not be evaluated correctly in the compiler
+    occ: don't consider overloaded function options for builtin operators that are fed scalars
+    occ: prefer 'bool' to 'nullptr' when passing constant zero or false as an argument
+    occ: fix problems with using structured values in a hook
+    occ: fix lcse bug: constants could be propagated too freely
+    occ: fix bugs with generating wrongly sized floating point constant values
+    occ: inline processing should not spill to memory as much
+    occ: don't inline functions that have try-catch blocks
+    occ: fix pointer aliasing problem with function arguments
+    occ: fix bug with the strength reduction (led to invalid GCSE in some cases)
+    occ: put temporary files in the current directory when TMP environment variable not set correctly
+    omake: rewrite the mechanism for handing out task slots
+    omake: use futures to improve the internal operations
+    omake: fix "-f -" to take input from stdin
+    omake: "-nolog" was exiting without displaying a reason for it
+    onm: read file in binary mode now...
+    oasm: simplify parser by using string processing instead of making an expression tree
+    ocpp: wasn't preprocessing C++ files
+    olink: if can't find a library, try prefixing the name with 'lib' (gcc compatibility)
+    olink: various improvements to map files
+    olink: create libraries on the fly when a DLL is specified on the command line
+    utilities: add support for switches that have optional arguments
+    utilities: bug fixes to command switch handling
+    utilities: rework make files for new omake behavior
+    rtl: fix rethrow_exception in case you want to throw outside a try block or from another thread
+    rtl: fix is_less()
+    rtl: fix fdim limits
+    rtl: fix erf limits
+    rtl: fix nexttoward and nextafter to work
+    rtl: remove stacked buffer from write() function as it interferes with DLL_PROCESS_DETACH
+    rtl: don't flush file buffers all the way to disk on program exit
+    rtl: noreturn should work on non-void functions
+    rtl: fixx std::terminate and std::unexpected to work properly
+    rtl: remove pstl
+    rtl: make_exception_ptr should work for both scalars and structures	
+    rtl: protect runtime from exceptions that happen before it is fully initialized
+    rtl: lazy load the wctypes tables as a performance improvement;
+    rtl: fix bug where towlower actually did towupper
+    rtl: fix various header problems when running the libcxx tests    
+    rtl: improve the stack trace on a crash
+    rtl: fix problem with dtoa not compiling properly
+    rtl: use mm_pause() instead of resorting to adding assembly language
+    rtl: fix bug where invalid input could crash strerror_s
+    rtl: tmpnam and friends, generate the file names randomly
+    rtl: fix fmemopen, left memory in an indeterminate state and didnt zero the buffer
+    documentation: document method for debugging without a debugger
+
 version 6.0.51: 11/22/2021
     add proper support for evaluating constexpr functions    
     finish 'algorithm' part of libcxx tests

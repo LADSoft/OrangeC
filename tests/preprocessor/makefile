@@ -35,7 +35,10 @@ TEST_FILES = n_1.exe \
     stringize1.exe
 
 
-all: af.o $(TEST_FILES)
+all: af.o
+	$(MAKE) tests
+
+tests: $(TEST_FILES)
 
 clean:
 	$(CLEAN)

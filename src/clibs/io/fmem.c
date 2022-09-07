@@ -84,7 +84,7 @@ static FILE* _RTL_FUNC basememopen(void* buf, size_t size, int flags, int flags2
             __ll_exit_critical();
             return 0;
         }
-        memset(file->extended, 0, sizeof(file->extended));
+        memset(file->extended, 0, sizeof(*file->extended));
         file->extended->lock = 0;
     }
     file->extended->orient = __or_unspecified;
@@ -101,7 +101,7 @@ static FILE* _RTL_FUNC basememopen(void* buf, size_t size, int flags, int flags2
     file->hold = 0;
     if (!buf)
     {
-        if ((buf = malloc(size)) == 0)
+        if ((buf = calloc(1, size)) == 0)
         {
             free(file->extended);
             free(file);
@@ -146,13 +146,20 @@ FILE* _RTL_FUNC fmemopen(void* buf, size_t size, const char* mode)
         p++;
     }
     FILE* rv = basememopen(buf, size, flags | _F_BUFFEREDSTRING, 0);
-    if (rv && append && buf)
+    if (rv && buf)
     {
-        for (int i = 0; i < size; i++)
-            if (((char*)buf)[i] == 0)
-                break;
-        rv->curp += size;
-        rv->level += size;
+        if (append)
+        {
+            for (int i = 0; i < size; i++)
+                if (((char*)buf)[i] == 0)
+                    break;
+            rv->curp += size;
+            rv->level += size;
+         }
+         else
+         {
+             memset(buf, 0, size);
+         }
     }
     if (rv && !buf)
     {

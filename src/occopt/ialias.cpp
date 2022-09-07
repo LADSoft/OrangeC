@@ -40,6 +40,7 @@
 #include "ilocal.h"
 #include "memory.h"
 #include "ioptutil.h"
+#include "optmain.h"
 /* This is a partial implementation of the VLLPA algorithm in
  * Practical and Accurate Low-Level Pointer Analysis
  * Bolei Guo, Matthew J. Bridges, Spyridon Triantafyllis
@@ -133,6 +134,7 @@ static void PrintTemps(BITINT* modifiedBy)
 }
 static void DumpAliases(void)
 {
+    oprintf(icdFile, "function: %s\n", currentFunction->name);
     int i;
     oprintf(icdFile, "Alias Dump:\n");
     for (i = 0; i < DAGSIZE; i++)
@@ -1067,6 +1069,12 @@ static void AliasesOneBlock(BLOCK* b)
         head = head->fwd;
     }
 }
+static void GatherAliases(BLOCK *b)
+{
+    AliasesOneBlock(b);
+    for (auto d = b->dominates; d; d = d->next)
+        AliasesOneBlock(d->block);
+}
 static void GatherAliases(LOOP* lp)
 {
     bool xchanged = changed;
@@ -1428,6 +1436,34 @@ static void ScanUIVs(void)
         }
     }
 }
+void FinishScanUIVs()
+{
+    int n = ((termCount) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT);
+    ALIASLIST* al = parmList;
+    while (al)
+    {
+        ALIASADDRESS* aa1 = al->address;
+        while (aa1->merge)
+        {
+            aa1 = aa1->merge;
+        }
+        if (aa1->modifiedBy)
+            ormap(uivBytes, aa1->modifiedBy);
+        auto lst = aa1->pointsto;
+        while (lst)
+        {
+            ALIASADDRESS* aa2 = lst->address;
+            while (aa2->merge)
+            {
+                aa2 = aa2->merge;
+            }
+            if (aa2->modifiedBy)
+                ormap(uivBytes, aa2->modifiedBy);
+            lst = lst->next;
+        }
+        al = al->next;
+    }
+}    
 static void MakeAliasLists(void)
 {
     int i;
@@ -1533,6 +1569,7 @@ void AliasPass1(void)
     AliasInit();
     // when we get here it is expected we are in SSA mode
     Createaddresses();
+    GatherAliases(blockArray[0]);
     do
     {
         changed = false;
@@ -1545,6 +1582,7 @@ void AliasPass2(void)
     MakeAliasLists();
     ScanUIVs();
     ScanMem();
+    FinishScanUIVs();
     if (icdFile)
         DumpAliases();
     complementmap(uivBytes);

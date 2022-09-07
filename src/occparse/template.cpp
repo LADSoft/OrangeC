@@ -4276,7 +4276,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                                 {
                                     return &stdany;
                                 }
-                                sp = tp->sp;
+                                sp = basetype(tp)->sp;
                             }
                             else
                             {
@@ -5699,7 +5699,7 @@ static bool ValidArg(TYPE* tp)
                     tp = basetype(ts->tp)->templateParam->p->byClass.val;
                     if (!tp)
                         return false;
-                    sp = tp->sp;
+                    sp = basetype(tp)->sp;
                 }
                 else if (basetype(ts->tp)->templateParam->p->type == kw_delete)
                 {
@@ -6865,7 +6865,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
         }
         else
         {
-            bool rv = TemplateDeduceArgList(basetype(sym->tp)->syms->table[0], templateArgs, symArgs, false, true);
+            bool rv = TemplateDeduceArgList(basetype(sym->tp)->syms->table[0], templateArgs, symArgs, basetype(sym->tp)->type == bt_templateselector, true);
             SYMLIST* hr = basetype(sym->tp)->syms->table[0];
             while (hr)
             {

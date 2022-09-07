@@ -3424,7 +3424,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                     {
                         INITLIST* p1;
                         if (p->tp)
-                            p1 = p;
+                                p1 = p;
                         else
                             p1 = p->nested;
                         if (isarithmeticconst(p1->exp) ||
@@ -3477,6 +3477,10 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             {
                                 // make numeric temp and perform cast
                                 p->exp = createTemporary(sym->tp, exp);
+                            }
+                            else if (basetype(basetype(sym->tp)->btp)->byRefArray)
+                            {
+                                 p->exp->left = p->exp->left->left;
                             }
                         }
                     }

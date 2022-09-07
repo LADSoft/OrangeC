@@ -366,6 +366,7 @@ typedef struct expr
     int init : 1;  // for no replacement by a constexpr array
     int preincdec : 1;  //  an assignment which is the 'pre' form of autoinc
     int keepZero : 1;
+    int paramArray : 1;
 } EXPRESSION;
 
 typedef struct _msilarray
@@ -417,6 +418,7 @@ typedef struct typ
     int used : 1;          /* type has actually been used in a declaration or cast or expression */
     int array : 1;         /* not a dereferenceable pointer */
     int msil : 1;          /* allocate as an MSIL array */
+    int byRefArray : 1;    /* array base address is a reference type */
     int vla : 1;           /* varriable length array */
     int unsized : 1;       /* type doesn't need a size */
     int hasbits : 1;       /* type is a bit type */

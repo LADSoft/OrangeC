@@ -9,6 +9,7 @@ current:
 	$(B) std/containers
 	$(B) std/depr
 	$(B) std/diagnostics
+	$(B) std/iterators
 	$(B) std/thread
 
 algorithms: copyfiles

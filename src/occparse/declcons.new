@@ -589,7 +589,7 @@ static SYMBOL* declareAssignmentOp(SYMBOL* sp, bool move)
     UpdateRootTypes(sp1->tp);
     return insertFunc(sp, func);
 }
-bool matchesDefaultConstructor(SYMBOL* sp)
+static bool matchesDefaultConstructor(SYMBOL* sp)
 {
     SYMLIST* hr = basetype(sp->tp)->syms->table[0]->next;
     if (hr)
@@ -677,6 +677,35 @@ static bool checkDefaultCons(SYMBOL* sp, HASHTABLE* syms, enum e_ac access)
         }
     }
     return false;
+}
+static SYMBOL* getDestructor(SYMBOL* sp)
+{
+    SYMBOL* ovl = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
+    if (ovl)
+        return ovl->tp->syms->table[0]->p;
+    return nullptr;
+}
+static SYMBOL*  getDefaultCons(SYMBOL* sp, bool)
+{
+    SYMBOL* cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
+    if (cons)
+    {
+        SYMBOL* dflt = nullptr;
+        SYMLIST* hr = basetype(cons->tp)->syms->table[0];
+        while (hr)
+        {
+            SYMBOL* cur = hr->p;
+            if (matchesDefaultConstructor(cur))
+            {
+                if (dflt)
+                    return nullptr; //ambiguity
+                dflt = cur;
+            }
+            hr = hr->next;
+        }
+        return dflt;
+    }
+    return nullptr;
 }
 SYMBOL* getCopyCons(SYMBOL* base, bool move)
 {
@@ -778,7 +807,7 @@ bool hasVTab(SYMBOL* sp)
     }
     return false;
 }
-static bool hasTrivialCopy(SYMBOL* sp, bool move)
+static bool hasTrivialDestructor(SYMBOL* sp)
 {
     SYMLIST* hr;
     SYMBOL* dflt;
@@ -788,10 +817,10 @@ static bool hasTrivialCopy(SYMBOL* sp, bool move)
     base = sp->sb->baseClasses;
     while (base)
     {
-        dflt = getCopyCons(base->cls, move);
+        dflt = getDestructor(base->cls);
         if (!dflt)
             return false;
-        if (!dflt->sb->trivialCons)
+        if (!dflt->sb->trivialDest)
             return false;
         base = base->next;
     }
@@ -799,19 +828,19 @@ static bool hasTrivialCopy(SYMBOL* sp, bool move)
     while (hr)
     {
         SYMBOL* cls = hr->p;
-        if (isstructured(cls->tp))
+        if ((cls->sb->storage_class == sc_member || cls->sb->storage_class == sc_mutable) && isstructured(cls->tp))
         {
-            dflt = getCopyCons(basetype(cls->tp)->sp, move);
+            dflt = getDestructor(basetype(cls->tp)->sp);
             if (!dflt)
                 return false;
-            if (!dflt->sb->trivialCons)
+            if (!dflt->sb->trivialDest)
                 return false;
         }
         hr = hr->next;
     }
     return true;
 }
-static bool hasTrivialAssign(SYMBOL* sp, bool move)
+static bool hasTrivialFunction(SYMBOL* sp, SYMBOL* fetcher(SYMBOL*, bool), bool move)
 {
     SYMLIST* hr;
     SYMBOL* dflt;
@@ -821,7 +850,7 @@ static bool hasTrivialAssign(SYMBOL* sp, bool move)
     base = sp->sb->baseClasses;
     while (base)
     {
-        dflt = GetCopyAssign(base->cls, move);
+        dflt = fetcher(base->cls, move);
         if (!dflt)
             return false;
         if (!dflt->sb->trivialCons)
@@ -832,9 +861,9 @@ static bool hasTrivialAssign(SYMBOL* sp, bool move)
     while (hr)
     {
         SYMBOL* cls = hr->p;
-        if (isstructured(cls->tp))
+        if ((cls->sb->storage_class == sc_member || cls->sb->storage_class == sc_mutable) && isstructured(cls->tp))
         {
-            dflt = getCopyCons(basetype(cls->tp)->sp, move);
+            dflt = fetcher(cls, move);
             if (!dflt)
                 return false;
             if (!dflt->sb->trivialCons)
@@ -900,7 +929,7 @@ static bool checkMoveAssign(SYMBOL* sp, SYMBOL* base, enum e_ac access)
     }
     else
     {
-        if (!hasTrivialAssign(sp, true))
+        if (!hasTrivialFunction(sp, GetCopyAssign, true))
             return true;
     }
     return false;
@@ -1587,22 +1616,17 @@ void createDefaultConstructors(SYMBOL* sp)
             sp->sb->trivialCons = trivialCons;
             sp->sb->trivialDest = trivialDest;
         }
-        auto p = cons->tp->syms->table[0];
-        while (p)
-        {
-            auto s = (SYMBOL*)p->p;
-            if (s->sb->constexpression | s->sb->defaulted)
-                sp->sb->literalClass = true;
-            p = p->next;
-        }
     }
     if (newcons)
-        newcons->sb->trivialCons = true;
+        newcons->sb->trivialCons = hasTrivialFunction(sp, getDefaultCons, false);
+    auto spdest = getDestructor(sp);
+    if (spdest)
+        spdest->sb->trivialDest = spdest->sb->defaulted && hasTrivialDestructor(sp);
     // now if there is no copy constructor or assignment operator declare them
     if (!hasCopy(cons, false))
     {
         SYMBOL* newcons = declareConstructor(sp, false, false);
-        newcons->sb->trivialCons = hasTrivialCopy(sp, false);
+        newcons->sb->trivialCons = hasTrivialFunction(sp, getCopyCons, false);
         if (hasCopy(cons, true) || (asgn && hasCopy(asgn, true)))
             newcons->sb->deleted = true;
         if (!asgn)
@@ -1612,7 +1636,7 @@ void createDefaultConstructors(SYMBOL* sp)
     if (!asgn || !hasCopy(asgn, false))
     {
         SYMBOL* newsp = declareAssignmentOp(sp, false);
-        newsp->sb->trivialCons = hasTrivialAssign(sp, false);
+        newsp->sb->trivialCons = hasTrivialFunction(sp, GetCopyAssign, false);
         if (hasCopy(cons, true) || (asgn && hasCopy(asgn, true)))
             newsp->sb->deleted = true;
         if (!asgn)
@@ -1630,10 +1654,10 @@ void createDefaultConstructors(SYMBOL* sp)
         if (!b)
         {
             newcons = declareConstructor(sp, false, true);
-            newcons->sb->trivialCons = hasTrivialCopy(sp, true);
+            newcons->sb->trivialCons = hasTrivialFunction(sp, getCopyCons, true);
         }
         newcons = declareAssignmentOp(sp, true);
-        newcons->sb->trivialCons = hasTrivialAssign(sp, true);
+        newcons->sb->trivialCons = hasTrivialFunction(sp, GetCopyAssign, true);
         newcons->sb->deleted |= isMoveAssignmentDeleted(sp);
     }
     else
@@ -1814,8 +1838,6 @@ static void genConsData(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi, SYMBO
     {
         thisptr = exprNode(en_structadd, thisptr, intNode(en_c_i, offset));
         otherptr = exprNode(en_structadd, otherptr, intNode(en_c_i, offset));
-        thisptr->right->keepZero = true;
-        otherptr->right->keepZero = true;
         if (isstructured(member->tp) || isarray(member->tp) || basetype(member->tp)->type == bt_memberptr)
         {
             EXPRESSION* exp = exprNode(en_blockassign, thisptr, otherptr);
@@ -2802,7 +2824,6 @@ void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
     }
     consfunc->sb->constexpression =
         DefaultConstructorConstExpression(sp) || matchesCopy(consfunc, false) || matchesCopy(consfunc, true);
-    sp->sb->literalClass |= consfunc->sb->constexpression;
     localNameSpace->valueData->syms = syms;
     noExcept &= oldNoExcept;
 }
@@ -2817,10 +2838,8 @@ void asnVirtualBases(BLOCKDATA* b, SYMBOL* sp, VBASEENTRY* vbe, EXPRESSION* this
 }
 static void genAsnData(BLOCKDATA* b, SYMBOL* cls, SYMBOL* member, int offset, EXPRESSION* thisptr, EXPRESSION* other)
 {
-    EXPRESSION* left = exprNode(en_structadd, thisptr, intNode(en_c_i, offset));
-    EXPRESSION* right = exprNode(en_structadd, other, intNode(en_c_i, offset));
-    left->right->keepZero = true;
-    right->right->keepZero = true;
+    EXPRESSION* left = exprNode(en_add, thisptr, intNode(en_c_i, offset));
+    EXPRESSION* right = exprNode(en_add, other, intNode(en_c_i, offset));
     STATEMENT* st;
     (void)cls;
     if (isstructured(member->tp) || isarray(member->tp))

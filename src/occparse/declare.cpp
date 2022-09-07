@@ -4972,6 +4972,8 @@ LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SY
                         // pointer to func or pointer to memberfunc
                         TYPE* atype = *tp;
                         *tp = ptype;
+                        if (isref(ptype) && basetype(atype)->array)
+                            basetype(atype)->byRefArray = true;
                         while ((isref(ptype) || isfunction(ptype) || ispointer(ptype) || basetype(ptype)->type == bt_memberptr) &&
                                ptype->btp)
                             if (ptype->btp->type == bt_any)
@@ -5000,6 +5002,7 @@ LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SY
                         atype = basetype(*tp);
                         if (atype->type == bt_memberptr && isfunction(atype->btp))
                             atype->size = getSize(bt_int) * 2 + getSize(bt_pointer);
+
                     }
                     if (*spi)
                         (*spi)->tp = *tp;

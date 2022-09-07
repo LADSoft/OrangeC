@@ -286,22 +286,13 @@ static int FindBaseClassWithData(SYMBOL* sym, SYMBOL** result)
     }
     return n;
 }
-/*
-hasnonon-staticdatamembersoftypenon-standard-layoutclass(orarrayofsuchtypes)orreference,
-  has no virtual functions (10.3) and no virtual base classes (10.1),
-  has the same access control (Clause 11) for all non-static data members,
-  has no non-standard-layout base classes,
-  either has no non-static data members in the most derived class and at most one base class with non-static data members,
-   or has no base classes with non-static data members, and
-  has no base classes of the same type as the ?rst non-static data member.
-*/
 static bool isStandardLayout(TYPE* tp, SYMBOL** result)
 {
     if (isstructured(tp) && !hasVTab(basetype(tp)->sp) && !basetype(tp)->sp->sb->vbaseEntries)
     {
         int n;
         int access = -1;
-        SYMBOL* found = nullptr, * first;
+        SYMBOL *found = nullptr, *first;
         SYMLIST* hr;
         n = FindBaseClassWithData(tp->sp, &found);
         if (n > 1)
@@ -344,17 +335,186 @@ static bool isStandardLayout(TYPE* tp, SYMBOL** result)
         return true;
     }
     return false;
+    /*
+ hasnonon-staticdatamembersoftypenon-standard-layoutclass(orarrayofsuchtypes)orreference,
+   has no virtual functions (10.3) and no virtual base classes (10.1),
+   has the same access control (Clause 11) for all non-static data members,
+   has no non-standard-layout base classes,
+   either has no non-static data members in the most derived class and at most one base class with non-static data members,
+    or has no base classes with non-static data members, and
+   has no base classes of the same type as the ?rst non-static data member.
+ */
 }
-static bool trivialDestructible(TYPE* tp)
+static bool trivialFunc(SYMBOL* func, bool move)
 {
-    auto sym = basetype(tp)->sp;
-    for (auto bases = sym->sb->baseClasses; bases; bases = bases->next)
-        if (!bases->cls->sb->trivialDest)
-            return false;
-    auto ovl = search(overloadNameTab[CI_DESTRUCTOR], sym->tp->syms);
-    return ovl->tp->syms->table[0]->p->sb->defaulted;
+    SYMLIST* hr = basetype(func->tp)->syms->table[0];
+    while (hr)
+    {
+        SYMBOL* sym = hr->p;
+        if (matchesCopy(sym, move))
+        {
+            return sym->sb->defaulted;
+        }
+        hr = hr->next;
+    }
+    return true;
 }
+static bool trivialCopyConstructible(TYPE* tp)
+{
+    if (isstructured(tp))
+    {
+        SYMLIST* hr;
+        SYMBOL* ovl;
+        BASECLASS* bc;
+        ovl = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp)->syms);
+        if (ovl)
+        {
+            if (!trivialFunc(ovl, false) || !trivialFunc(ovl, true))
+                return false;
+        }
+        bc = basetype(tp)->sp->sb->baseClasses;
+        while (bc)
+        {
+            if (!trivialCopyConstructible(bc->cls->tp))
+                return false;
+            bc = bc->next;
+        }
+        hr = basetype(tp)->syms->table[0];
+        while (hr)
+        {
+            SYMBOL* sym = hr->p;
+            if (sym->sb->storage_class == sc_mutable || sym->sb->storage_class == sc_member)
+                if (!trivialCopyConstructible(sym->tp))
+                    return false;
+            hr = hr->next;
+        }
+    }
+    return true;
+}
+static bool trivialCopyAssignable(TYPE* tp)
+{
+    if (isstructured(tp))
+    {
+        SYMLIST* hr;
+        SYMBOL* ovl;
+        BASECLASS* bc;
+        ovl = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(tp)->syms);
+        if (ovl)
+        {
+            if (!trivialFunc(ovl, false) || !trivialFunc(ovl, true))
+                return false;
+        }
+        bc = basetype(tp)->sp->sb->baseClasses;
+        while (bc)
+        {
+            if (!trivialCopyAssignable(bc->cls->tp))
+                return false;
+            bc = bc->next;
+        }
+        hr = basetype(tp)->syms->table[0];
+        while (hr)
+        {
+            SYMBOL* sym = hr->p;
+            if (sym->sb->storage_class == sc_mutable || sym->sb->storage_class == sc_member)
+                if (!trivialCopyAssignable(sym->tp))
+                    return false;
+            hr = hr->next;
+        }
+    }
+    return true;
+}
+static bool trivialDestructor(TYPE* tp)
+{
+    if (isstructured(tp))
+    {
+        SYMLIST* hr;
+        SYMBOL* ovl;
+        BASECLASS* bc;
+        ovl = search(overloadNameTab[CI_DESTRUCTOR], basetype(tp)->syms);
+        if (ovl)
+        {
+            ovl = (SYMBOL*)ovl->tp->syms->table[0]->p;
+            if (!ovl->sb->defaulted)
+                return false;
+        }
+        bc = basetype(tp)->sp->sb->baseClasses;
+        while (bc)
+        {
+            if (!trivialDestructor(bc->cls->tp))
+                return false;
+            bc = bc->next;
+        }
+        hr = basetype(tp)->syms->table[0];
+        while (hr)
+        {
+            SYMBOL* sym = hr->p;
+            if (sym->sb->storage_class == sc_mutable || sym->sb->storage_class == sc_member)
+                if (!trivialDestructor(sym->tp))
+                    return false;
+            hr = hr->next;
+        }
+    }
+    return true;
+}
+static bool trivialDefaultConstructor(TYPE* tp)
+{
+    if (isstructured(tp))
+    {
+        SYMLIST* hr;
+        SYMBOL* ovl;
+        BASECLASS* bc;
+        ovl = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp)->syms);
+        if (ovl)
+        {
+            SYMLIST* hr = ovl->tp->syms->table[0];
+            while (hr)
+            {
+                SYMBOL* sym = hr->p;
+                SYMLIST* hr1 = basetype(sym->tp)->syms->table[0];
 
+                if (!hr1->next || !hr1->next->next || (hr1->next->next->p)->tp->type == bt_void)
+                {
+                    if (!sym->sb->defaulted)
+                        return false;
+                    else
+                        break;
+                }
+                hr = hr->next;
+            }
+        }
+        bc = basetype(tp)->sp->sb->baseClasses;
+        while (bc)
+        {
+            if (!trivialDefaultConstructor(bc->cls->tp))
+                return false;
+            bc = bc->next;
+        }
+        hr = basetype(tp)->syms->table[0];
+        while (hr)
+        {
+            SYMBOL* sym = hr->p;
+            if (sym->sb->storage_class == sc_mutable || sym->sb->storage_class == sc_member)
+                if (!trivialDefaultConstructor(sym->tp))
+                    return false;
+            hr = hr->next;
+        }
+    }
+    return true;
+}
+static bool triviallyCopyable(TYPE* tp)
+{
+    return trivialCopyConstructible(tp) && trivialCopyAssignable(tp) && trivialDestructor(tp);
+}
+static bool trivialStructure(TYPE* tp)
+{
+    if (isref(tp))
+        tp = basetype(tp)->btp;
+    if (isstructured(tp))
+    {
+        return triviallyCopyable(tp) && trivialDefaultConstructor(tp);
+    }
+    return false;
+}
 /*
 A trivially copyable class is a class that:
   has no non-trivial copy constructors (12.8),
@@ -362,51 +522,9 @@ A trivially copyable class is a class that:
   has no non-trivial copy assignment operators (13.5.3, 12.8),
   has no non-trivial move assignment operators (13.5.3, 12.8), and
   has a trivial destructor (12.4).
-*/
-static bool trivialStructure(TYPE* tp);
-static bool trivialCopyable(TYPE* tp)
-{
-    for (auto hr = basetype(tp)->syms->table[0]; hr; hr = hr->next)
-    {
-        if (ismemberdata(hr->p))
-        {
-            if (isstructured(hr->p->tp) && !trivialStructure(hr->p->tp))
-                return false;
-        }
-        else if (!strcmp(hr->p->name, overloadNameTab[CI_CONSTRUCTOR]) || !strcmp(hr->p->name, overloadNameTab[CI_ASSIGN]) || !strcmp(hr->p->name, overloadNameTab[CI_DESTRUCTOR]))
-        {
-            for (auto hr1 = hr->p->tp->syms->table[0]; hr1; hr1 = hr1->next)
-            {
-                if ((matchesCopy(hr1->p, false) || matchesCopy(hr1->p, true) || hr1->p->sb->isDestructor) && !hr1->p->sb->defaulted && !hr1->p->sb->constexpression)
-                    return false;
-            }
-        }
-    }
-    return true;
-}
-/*
+
 A trivial class is a class that has a trivial default constructor (12.1) and is trivially copyable.
 */
-static bool trivialStructure(TYPE* tp)
-{
-    if (!trivialCopyable(tp))
-        return false;
-    for (auto hr = basetype(tp)->syms->table[0]; hr; hr = hr->next)
-    {
-        if (!strcmp(hr->p->name, overloadNameTab[CI_CONSTRUCTOR]))
-        {
-            for (auto hr1 = hr->p->tp->syms->table[0]; hr1; hr1 = hr1->next)
-            {
-                if (matchesDefaultConstructor(hr1->p))
-                {
-                    return hr1->p->sb->defaulted || hr1->p->sb->constexpression;
-                }
-            }
-        }
-    }
-    return true;
-}
-
 static bool trivialStructureWithBases(TYPE* tp)
 {
     if (isstructured(tp))
@@ -444,115 +562,6 @@ static bool isPOD(TYPE* tp)
     }
     return false;
 }
-static bool ___is_trivial(TYPE* tp, INITLIST* args, SYMBOL* ovl)
-{
-    // recursion will have been taken care of elsewhere...
-    int i = 0;
-    char holdl[100], holdr[100];
-    INITLIST* temp;
-    EXPRESSION* cexp = nullptr;
-    if (ovl)
-    {
-        if (isref(tp))
-        {
-            tp = basetype(tp)->btp;
-            if (args->next && !args->next->next)
-            {
-                TYPE* tpy = args->next->tp;
-                if (isref(tpy))
-                    tpy = basetype(tpy)->btp;
-                if (isconst(tpy) && !isconst(tp) || isvolatile(tpy) && !isvolatile(tp))
-                {
-                    return false;
-                }
-                if (isstructured(tp))
-                {
-                    if (isstructured(tpy))
-                    {
-                        SYMBOL* sp2 = basetype(tp)->sp;
-                        SYMBOL* spy = basetype(tpy)->sp;
-                        if (sp2->sb->mainsym)
-                            sp2 = sp2->sb->mainsym;
-                        if (spy->sb->mainsym)
-                            spy = spy->sb->mainsym;
-                        return sp2 == spy || sameTemplate(sp2->tp, spy->tp);
-                    }
-                    return true;
-                }
-            }
-        }
-        FUNCTIONCALL funcparams = {};
-        funcparams.thisptr = intNode(en_c_i, 0);
-        funcparams.thistp = MakeType(bt_pointer, basetype(tp));
-        funcparams.ascall = true;
-        funcparams.arguments = args;
-        temp = funcparams.arguments;
-        i = 0;
-        while (temp)
-        {
-            while (temp->tp->type == bt_typedef)
-                temp->tp = temp->tp->btp;
-            bool rref = isstructured(temp->tp);
-            if (isref(temp->tp) && !isstructured(basetype(temp->tp)->btp))
-                temp->tp = basetype(temp->tp)->btp;
-            holdl[i] = temp->tp->lref;
-            holdr[i] = temp->tp->rref;
-            if (rref)
-            {
-                temp->tp->rref = true;
-                temp->tp->lref = false;
-            }
-            else
-            {
-                temp->tp->lref = false;
-                temp->tp->rref = false;
-            }
-            i++;
-            temp = temp->next;
-        }
-        std::stack<SYMBOL*> stk;
-        for (auto spl = ovl->tp->syms->table[0]; spl; spl = spl->next)
-        {
-            if (spl->p->templateParams)
-            {
-                stk.push(spl->p);
-                PushPopTemplateArgs(spl->p, true);
-            }
-        }
-        int oldSpecialize = inTemplateSpecialization;
-        inTemplateSpecialization = 0;
-        SYMBOL* sp = GetOverloadedFunction(&tp, &funcparams.fcall, ovl, &funcparams, nullptr, false, false, true,
-            _F_SIZEOF | _F_IS_NOTHROW | _F_RETURN_DELETED);
-        inTemplateSpecialization = oldSpecialize;
-        while (stk.size())
-        {
-            PushPopTemplateArgs(stk.top(), false);
-            stk.pop();
-        }
-        if (sp && sp->sb->defaulted && !sp->sb->inlineFunc.stmt)
-        {
-            inNoExceptHandler++;
-            if (!strcmp(ovl->name, overloadNameTab[CI_CONSTRUCTOR]))
-                createConstructor(sp->sb->parentClass, sp);
-            else
-                createAssignment(sp->sb->parentClass, sp);
-            inNoExceptHandler--;
-        }
-        temp = funcparams.arguments;
-        i = 0;
-        while (temp)
-        {
-            temp->tp->lref = holdl[i];
-            temp->tp->rref = holdr[i];
-            temp = temp->next;
-            i++;
-        }
-        bool rv = sp && (sp->sb->defaulted || sp->sb->constexpression) && sp->sb->access == ac_public;
-        return rv;
-    }
-    return true;
-}
-
 static bool __is_nothrow(TYPE* tp, INITLIST* args, SYMBOL* ovl)
 {
     // recursion will have been taken care of elsewhere...
@@ -674,22 +683,6 @@ static bool nothrowAssignable(TYPE* tp, INITLIST* args)
     if (isstructured(tp))
     {
         return __is_nothrow(tp, args, search(overloadNameTab[CI_ASSIGN], basetype(tp)->syms));
-    }
-    return true;
-}
-static bool trivialConstructible(TYPE* tp, INITLIST* args)
-{
-    if (isstructured(tp))
-    {
-        return ___is_trivial(tp, args, search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp)->syms));
-    }
-    return true;
-}
-static bool trivialAssignable(TYPE* tp, INITLIST* args)
-{
-    if (isstructured(tp))
-    {
-        return ___is_trivial(tp, args, search(overloadNameTab[CI_ASSIGN], basetype(tp)->syms));
     }
     return true;
 }
@@ -1149,8 +1142,7 @@ static bool is_final(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPR
     *tp = &stdint;
     return true;
 }
-bool is_literal_type(TYPE* tp);
-static bool is_literal_type(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_literal(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
     bool rv = false;
@@ -1161,7 +1153,7 @@ static bool is_literal_type(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
     if (funcparams.arguments && !funcparams.arguments->next)
     {
         // yes references are literal types...
-        rv = is_literal_type(funcparams.arguments->tp);
+        rv = !isstructured(funcparams.arguments->tp);
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
@@ -1372,19 +1364,10 @@ static bool is_trivially_assignable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, 
         lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
         lst = lst->next;
     }
-    if (funcparams.arguments)
+    if (funcparams.arguments && !funcparams.arguments->next)
     {
-        TYPE* tp = funcparams.arguments->tp;
-        if (isref(tp))
-            tp = basetype(tp)->btp;
-        if (isstructured(tp))
-        {
-            rv = trivialStructure(tp) && trivialAssignable(tp, funcparams.arguments->next);
-        }
-        else
-        {
-            rv = !funcparams.arguments->next || !funcparams.arguments->next->next;
-        }
+        if (isstructured(funcparams.arguments->tp))
+            rv = trivialCopyAssignable(funcparams.arguments->tp);
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
@@ -1406,49 +1389,10 @@ static bool is_trivially_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sy
     }
     if (funcparams.arguments)
     {
-        TYPE* tp = funcparams.arguments->tp;
-        if (isref(tp))
-            tp = basetype(tp)->btp;
-        if (isstructured(tp))
-        {
-            rv = trivialStructure(tp) && trivialConstructible(tp, funcparams.arguments->next);
-        }
+        if (funcparams.arguments->next)
+           rv = trivialCopyConstructible(funcparams.arguments->tp);
         else
-        {
-            rv = !funcparams.arguments->next || !funcparams.arguments->next->next;
-        }
-    }
-    *exp = intNode(en_c_i, rv);
-    *tp = &stdint;
-    return true;
-}
-static bool is_trivially_copyable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
-{
-    INITLIST* lst;
-    bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
-    funcparams.sp = sym;
-    *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
-    lst = funcparams.arguments;
-    while (lst)
-    {
-        lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
-        lst = lst->next;
-    }
-    if (funcparams.arguments && !funcparams.arguments->next)
-    {
-        TYPE* tp = funcparams.arguments->tp;
-        if (isref(tp))
-            tp = basetype(tp)->btp;
-        if (isstructured(tp))
-        {
-            rv = trivialCopyable(tp);
-        }
-        else
-        {
-            rv = !funcparams.arguments->next;
-        }
+           rv = trivialDefaultConstructor(funcparams.arguments->tp);
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
@@ -1470,22 +1414,34 @@ static bool is_trivially_destructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym
     }
     if (funcparams.arguments && !funcparams.arguments->next)
     {
-        TYPE* tp = funcparams.arguments->tp;
-        if (isref(tp))
-            tp = basetype(tp)->btp;
-        if (isstructured(tp))
-        {
-            rv = trivialStructure(tp) && trivialDestructible(tp);
-        }
-        else
-        {
-            rv = true;
-        }
+        rv = trivialDestructor(funcparams.arguments->tp);
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
     return true;
-
+}
+static bool is_trivially_copyable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+{
+    INITLIST* lst;
+    bool rv = false;
+    FUNCTIONCALL funcparams;
+    memset(&funcparams, 0, sizeof(funcparams));
+    funcparams.sp = sym;
+    *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
+    lst = funcparams.arguments;
+    while (lst)
+    {
+        lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
+        lst = lst->next;
+    }
+    if (funcparams.arguments && !funcparams.arguments->next)
+    {
+        if (isstructured(funcparams.arguments->tp))
+            rv = triviallyCopyable(funcparams.arguments->tp);
+    }
+    *exp = intNode(en_c_i, rv);
+    *tp = &stdint;
+    return true;
 }
 static bool is_union(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
@@ -1518,6 +1474,7 @@ static bool hasConstexprConstructor(TYPE* tp)
     }
     return false;
 }
+bool is_literal_type(TYPE* tp);
 static void nonStaticLiteralTypes(TYPE* tp, bool& all, bool& one)
 {
     auto hr = basetype(tp)->syms->table[0];
@@ -1553,11 +1510,22 @@ bool is_literal_type(TYPE* tp)
         return is_literal_type(tp->btp);
     if (isstructured(tp))
     {
-        return basetype(tp)->sp->sb->literalClass;
+        if (trivialDestructor(tp))
+        {
+            if (basetype(tp)->sp->sb->trivialCons || hasConstexprConstructor(tp))
+            {
+                bool all = true, one = false;
+                nonStaticLiteralTypes(tp, all, one);
+                if (basetype(tp)->type == bt_union && one)
+                    return true;
+                else if (all)
+                    return true;
+            }
+        }
     }
     return false;
 }
-static bool is_literal(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_literal_type(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     bool rv = false;
     FUNCTIONCALL funcparams;

@@ -359,7 +359,7 @@ static bool trivialFunc(SYMBOL* func, bool move)
     }
     return true;
 }
-static bool trivialCopyConstructible(TYPE* tp)
+static bool trivialCopyConstructible(TYPE* tp, bool rref)
 {
     if (isstructured(tp))
     {
@@ -369,13 +369,13 @@ static bool trivialCopyConstructible(TYPE* tp)
         ovl = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp)->syms);
         if (ovl)
         {
-            if (!trivialFunc(ovl, false) || !trivialFunc(ovl, true))
+            if (!trivialFunc(ovl, rref))
                 return false;
         }
         bc = basetype(tp)->sp->sb->baseClasses;
         while (bc)
         {
-            if (!trivialCopyConstructible(bc->cls->tp))
+            if (!trivialCopyConstructible(bc->cls->tp, rref))
                 return false;
             bc = bc->next;
         }
@@ -384,14 +384,14 @@ static bool trivialCopyConstructible(TYPE* tp)
         {
             SYMBOL* sym = hr->p;
             if (sym->sb->storage_class == sc_mutable || sym->sb->storage_class == sc_member)
-                if (!trivialCopyConstructible(sym->tp))
+                if (!trivialCopyConstructible(sym->tp, rref))
                     return false;
             hr = hr->next;
         }
     }
     return true;
 }
-static bool trivialCopyAssignable(TYPE* tp)
+static bool trivialAssignable(TYPE* tp, bool rref)
 {
     if (isstructured(tp))
     {
@@ -401,13 +401,13 @@ static bool trivialCopyAssignable(TYPE* tp)
         ovl = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(tp)->syms);
         if (ovl)
         {
-            if (!trivialFunc(ovl, false) || !trivialFunc(ovl, true))
+            if (!trivialFunc(ovl, rref))
                 return false;
         }
         bc = basetype(tp)->sp->sb->baseClasses;
         while (bc)
         {
-            if (!trivialCopyAssignable(bc->cls->tp))
+            if (!trivialAssignable(bc->cls->tp, rref))
                 return false;
             bc = bc->next;
         }
@@ -416,7 +416,7 @@ static bool trivialCopyAssignable(TYPE* tp)
         {
             SYMBOL* sym = hr->p;
             if (sym->sb->storage_class == sc_mutable || sym->sb->storage_class == sc_member)
-                if (!trivialCopyAssignable(sym->tp))
+                if (!trivialAssignable(sym->tp, rref))
                     return false;
             hr = hr->next;
         }
@@ -503,7 +503,9 @@ static bool trivialDefaultConstructor(TYPE* tp)
 }
 static bool triviallyCopyable(TYPE* tp)
 {
-    return trivialCopyConstructible(tp) && trivialCopyAssignable(tp) && trivialDestructor(tp);
+    return trivialCopyConstructible(tp, false) && trivialAssignable(tp, false) &&
+        trivialCopyConstructible(tp, true) && trivialAssignable(tp, true) &&
+        trivialDestructor(tp);
 }
 static bool trivialStructure(TYPE* tp)
 {
@@ -1364,10 +1366,16 @@ static bool is_trivially_assignable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, 
         lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
         lst = lst->next;
     }
-    if (funcparams.arguments && !funcparams.arguments->next)
+    if (funcparams.arguments && isstructured(funcparams.arguments->tp))
     {
-        if (isstructured(funcparams.arguments->tp))
-            rv = trivialCopyAssignable(funcparams.arguments->tp);
+        if (funcparams.arguments->next && !funcparams.arguments->next->next)
+        {
+           TYPE* tp1 = funcparams.arguments->next->tp;
+           if (isref(tp1))
+               tp1 = basetype(tp1)->btp;
+           if (comparetypes(tp1, funcparams.arguments->tp, true) || sameTemplate(tp1, funcparams.arguments->tp))
+              rv = trivialAssignable(funcparams.arguments->tp, basetype(funcparams.arguments->next->tp)->type== bt_rref);
+        }
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
@@ -1387,12 +1395,18 @@ static bool is_trivially_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sy
         lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
         lst = lst->next;
     }
-    if (funcparams.arguments)
+    if (funcparams.arguments && isstructured(funcparams.arguments->tp))
     {
-        if (funcparams.arguments->next)
-           rv = trivialCopyConstructible(funcparams.arguments->tp);
-        else
+        if (!funcparams.arguments->next)
            rv = trivialDefaultConstructor(funcparams.arguments->tp);
+        else if (!funcparams.arguments->next->next)
+        {
+           TYPE* tp1 = funcparams.arguments->next->tp;
+           if (isref(tp1))
+               tp1 = basetype(tp1)->btp;
+           if (comparetypes(tp1, funcparams.arguments->tp, true) || sameTemplate(tp1, funcparams.arguments->tp))
+              rv = trivialCopyConstructible(funcparams.arguments->tp, basetype(funcparams.arguments->next->tp)->type== bt_rref);
+        }
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;

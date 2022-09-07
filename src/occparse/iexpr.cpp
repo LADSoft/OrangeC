@@ -302,7 +302,7 @@ static Optimizer::IMODE* gen_bit_mask(Optimizer::IMODE* ap)
 /*-------------------------------------------------------------------------*/
 
 Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
-/*s
+/*
  *      return the addressing mode of a dereferenced node.
  */
 {

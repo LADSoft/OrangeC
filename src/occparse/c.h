@@ -960,6 +960,7 @@ typedef struct functioncall
     EXPRESSION* thisptr;
     TYPE* thistp;
     TEMPLATEPARAMLIST* templateParams;
+    NAMESPACEVALUELIST* nameSpace;
     int callLab;
     int novtab : 1;
     int ascall : 1;
@@ -968,7 +969,6 @@ typedef struct functioncall
     int asaddress : 1;
     int vararg : 1;
     int resolvedCall : 1;
-    int noADL : 1;
 } FUNCTIONCALL;
 
 #define MAX_STRLEN 16384

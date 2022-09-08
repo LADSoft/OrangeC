@@ -5283,7 +5283,6 @@ static bool IsMove(SYMBOL* sp)
     }
     return rv;
 }
-int count3;
 SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, int toErr,
                               bool maybeConversion, bool toInstantiate, int flags)
 {
@@ -5319,7 +5318,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
         {
             if (args || atp)
             {
-                if ((!sp->tp || (!sp->sb->wasUsing && !sp->sb->parentClass)) && !args->noADL)
+                if ((!sp->tp || (!sp->sb->wasUsing && !sp->sb->parentClass)) && !args->nameSpace)
                 {
                     // ok the sp is a valid candidate for argument search
                     if (args)
@@ -5351,19 +5350,27 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
             }
             if (sp->tp)
             {
-                Optimizer::LIST* lst = gather;
-                while (lst)
+                if (args->nameSpace)
                 {
-                    if (lst->data == sp)
-                        break;
-                    lst = lst->next;
+                    unvisitUsingDirectives(args->nameSpace);
+                    gather = tablesearchinline(sp->name, args->nameSpace, gather);
                 }
-                if (!lst)
+                else
                 {
-                    lst = Allocate<Optimizer::LIST>();
-                    lst->data = sp;
-                    lst->next = gather;
-                    gather = lst;
+                    Optimizer::LIST* lst = gather;
+                    while (lst)
+                    {
+                        if (lst->data == sp)
+                            break;
+                        lst = lst->next;
+                    }
+                    if (!lst)
+                    {
+                        lst = Allocate<Optimizer::LIST>();
+                        lst->data = sp;
+                        lst->next = gather;
+                        gather = lst;
+                    }
                 }
             }
             weedgathering(&gather);
@@ -5648,6 +5655,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         SYMBOL* sym = SymAlloc();
                         sym->sb->parentClass = sp->sb->parentClass;
                         sym->name = sp->name;
+                        sym->sb->parentNameSpace = args->nameSpace ? args->nameSpace->valueData->name : nullptr;
                         if (atp)
                         {
                             sym->tp = atp;

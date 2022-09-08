@@ -571,6 +571,7 @@ ERRLIST(ERR_CONSTEXPR_NO_PARAM, 513, "'constexpr' specifier cannot be used with 
 ERRLIST(ERR_CONSTEXPR_NO_STRUCT, 514, "'constexpr' specifier cannot be used with a structure", CE_ERROR)
 ERRLIST(ERR_CONSTEXPR_MUST_INITIALIZE, 515, "constexpr constructor does not initialize '%s'", CE_ERROR)
 ERRLIST(ERR_NO_ASSIGNMENT_OPERATOR, 516, "Cannot find a matching assignment operator for class '%s'", CE_ERROR)
+ERRLIST(ERR_CONSTEXPR_CLASS_NOT_LITERAL, 517, "'%s' is not a literal class", CE_ERROR)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

@@ -3082,7 +3082,7 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
         {
             dofunc = true;
         }
-        if (arguments->tp && arguments->tp->type == bt_templateparam)
+        if (arguments->tp && basetype(arguments->tp)->type == bt_templateparam)
         {
             doparam |= !templateNestingCount || instantiatingTemplate;
         }
@@ -3096,11 +3096,12 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
         TYPE* tp = nullptr;
         while (arguments)
         {
-            if (arguments->tp && arguments->tp->type == bt_templateparam)
+            TYPE* tp1 = basetype(arguments->tp);
+            if (tp1 && tp1->type == bt_templateparam)
             {
-                if (arguments->tp->templateParam->p->packed)
+                if (tp1->templateParam->p->packed)
                 {
-                    auto tpx = arguments->tp->templateParam->p->byPack.pack;
+                    auto tpx = tp1->templateParam->p->byPack.pack;
                     while (tpx)
                     {
                         auto dflt = tpx->p->byClass.val;
@@ -3109,6 +3110,10 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
                         if (dflt)
                         {
                             tp = tpx->p->byClass.val;
+                            if (isconst(arguments->tp))
+                                tp = MakeType(bt_const, tp);
+                            if (isvolatile(arguments->tp))
+                                tp = MakeType(bt_volatile, tp);
                             *last = Allocate<INITLIST>();
                             (*last)->tp = tp;
                             (*last)->exp = intNode(en_c_i, 0);
@@ -3121,9 +3126,13 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
                 {
                     *last = Allocate<INITLIST>();
                     **last = *arguments;
-                    tp = arguments->tp->templateParam->p->byClass.val;
+                    tp = tp1->templateParam->p->byClass.val;
                     if (tp)
                     {
+                        if (isconst(arguments->tp))
+                            tp = MakeType(bt_const, tp);
+                        if (isvolatile(arguments->tp))
+                            tp = MakeType(bt_volatile, tp);
                         (*last)->tp = tp;
                     }
                     last = &(*last)->next;
@@ -3489,7 +3498,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                     FUNCTIONCALL* func = Allocate<FUNCTIONCALL>();
                     *func = *next->v.func;
                     func->sp = sym;
-                    func->thistp = MakeType(bt_pointer, basetype(tp));
+                    func->thistp = MakeType(bt_pointer, tp);
                     func->thisptr = intNode(en_c_i, 0);
                     func->arguments = ExpandArguments(next);
                     auto oldnoExcept = noExcept;
@@ -4267,7 +4276,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                                 {
                                     return &stdany;
                                 }
-                                sp = tp->sp;
+                                sp = basetype(tp)->sp;
                             }
                             else
                             {
@@ -5690,7 +5699,7 @@ static bool ValidArg(TYPE* tp)
                     tp = basetype(ts->tp)->templateParam->p->byClass.val;
                     if (!tp)
                         return false;
-                    sp = tp->sp;
+                    sp = basetype(tp)->sp;
                 }
                 else if (basetype(ts->tp)->templateParam->p->type == kw_delete)
                 {
@@ -6856,7 +6865,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
         }
         else
         {
-            bool rv = TemplateDeduceArgList(basetype(sym->tp)->syms->table[0], templateArgs, symArgs, false, true);
+            bool rv = TemplateDeduceArgList(basetype(sym->tp)->syms->table[0], templateArgs, symArgs, basetype(sym->tp)->type == bt_templateselector, true);
             SYMLIST* hr = basetype(sym->tp)->syms->table[0];
             while (hr)
             {

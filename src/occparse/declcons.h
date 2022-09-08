@@ -33,6 +33,7 @@ LEXLIST* FindClass(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sym);
 MEMBERINITIALIZERS* GetMemberInitializers(LEXLIST** lex2, SYMBOL* funcsp, SYMBOL* sym);
 void SetParams(SYMBOL* cons);
 SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl);
+bool matchesDefaultConstructor(SYMBOL* sp);
 bool matchesCopy(SYMBOL* sp, bool move);
 SYMBOL* getCopyCons(SYMBOL* base, bool move);
 bool hasVTab(SYMBOL* sp);

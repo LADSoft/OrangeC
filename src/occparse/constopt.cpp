@@ -54,6 +54,8 @@
 #include "dsw.h"
 #include "constexpr.h"
 #include "ccerr.h"
+#include "rtti.h"
+
 namespace Parser
 {
 unsigned long long reint(EXPRESSION* node);
@@ -1300,6 +1302,30 @@ EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add)
     }
     return rv;
 }
+static bool expressionHasSideEffects(EXPRESSION *exp)
+{
+    std::stack<EXPRESSION*> stk;
+    stk.push(exp);
+    while (!stk.empty())
+    {
+        auto p = stk.top();
+        stk.pop();
+        switch (p->type)
+        {
+           case en_func:
+           case en_thisref:
+           case en_assign:
+           case en_autoinc:
+           case en_autodec:
+               return true;
+        }
+        if (p->right)
+            stk.push(p->right);
+        if (p->left)
+            stk.push(p->left);
+    }
+    return false;
+}
 int opt0(EXPRESSION** node)
 /*
  *      opt0 - delete useless expressions and combine constants.
@@ -1495,6 +1521,30 @@ int opt0(EXPRESSION** node)
             rv |= opt0(&(ep->right));
             if (ep->right->type == en_structelem || ep->left->type == en_structadd)
                 break;
+            {
+                // this next will normalize expressions of the form:
+                // z = (a + 5) - a
+                // to z = 5;
+                // regardless of whether a can be evaluated
+                auto exp = ep->left;
+                while (castvalue(exp))
+                    exp = exp->left;
+                if (exp->type == en_add)
+                {
+                    if (!expressionHasSideEffects(ep))
+                    {
+                        auto expr = ep->right;
+                        while (castvalue(expr))
+                            expr = expr->left;
+                        if (equalnode(exp->left, expr))
+                        {
+                            *node = exp->right;
+                            rv = true;
+                            break;
+                        }
+                    }
+                }
+            }
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {

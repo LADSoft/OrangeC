@@ -57,6 +57,7 @@
 #include "optmodules.h"
 #include "config.h"
 #include "constexpr.h"
+#include "AsmLexer.h"
 
 // there is a bug where the compiler needs constant values for the memory order,
 // but parsed code may not provide it directly.
@@ -702,6 +703,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                         }
                         if (hr->next || Optimizer::cparams.prm_cplusplus)
                         {
+                            funcparams->noADL = nsv != nullptr;
                             funcparams->ascall = MATCHKW(lex, openpa);
                             funcparams->sp = sym;
                         }
@@ -1010,6 +1012,11 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
         char* name;
         if (strSym && strSym->tp->type == bt_templateselector)
         {
+            SYMBOL* sym = basetype(strSym->tp)->sp->sb->templateSelector->next->sp;
+            if ((!templateNestingCount || instantiatingTemplate) && (sym->sb && sym->sb->instantiated && !declaringTemplate(sym) && (!sym->sb->templateLevel || allTemplateArgsSpecified(sym, strSym->tp->sp->sb->templateSelector->next->templateParams))))
+            {
+                errorNotMember(sym, nsv, ISID(lex) ? lex->data->value.s.a : "__unknown");
+            }
             *exp = exprNode(en_templateselector, nullptr, nullptr);
             (*exp)->v.templateSelector = strSym->tp->sp->sb->templateSelector;
             *tp = strSym->tp;
@@ -3417,7 +3424,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                     {
                         INITLIST* p1;
                         if (p->tp)
-                            p1 = p;
+                                p1 = p;
                         else
                             p1 = p->nested;
                         if (isarithmeticconst(p1->exp) ||
@@ -3471,6 +3478,10 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                                 // make numeric temp and perform cast
                                 p->exp = createTemporary(sym->tp, exp);
                             }
+                            else if (basetype(basetype(sym->tp)->btp)->byRefArray)
+                            {
+                                 p->exp->left = p->exp->left->left;
+                            }
                         }
                     }
                     else if (isstructured(p->tp))
@@ -3493,7 +3504,8 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                                          (isvolatile(tpx1) && !isvolatile(basetype(sym->tp)->btp))))
                         if (basetype(sym->tp)->type != bt_rref)         // converting const lref to rref is ok...
                             if (!isstructured(basetype(sym->tp)->btp))  // structure constructor is ok
-                                error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
+                                if (!isarray(tpx1))
+                                    error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
                     p->tp = sym->tp;
                 }
                 else if (isstructured(p->tp))

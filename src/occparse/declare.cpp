@@ -3172,9 +3172,18 @@ founddecltype:
                 //                else
                 //                    tn = nullptr;
                 if (!tn || tn->type == bt_any || basetype(tn)->type == bt_templateparam)
+                {
+                    SYMBOL* sym = basetype(strSym->tp)->sp->sb->templateSelector->next->sp;
+                    if ((!templateNestingCount || instantiatingTemplate) && isstructured(sym->tp) && (sym->sb && sym->sb->instantiated && !declaringTemplate(sym) && (!sym->sb->templateLevel || allTemplateArgsSpecified(sym, strSym->tp->sp->sb->templateSelector->next->templateParams))))
+                    {
+                        errorNotMember(sym, nsv, strSym->tp->sp->sb->templateSelector->next->next->name);
+                    }
                     tn = strSym->tp;
+                }
                 else
+                {
                     tn = PerformDeferredInitialization(tn, funcsp);
+                }
                 foundsomething = true;
                 lex = getsym();
             }
@@ -4963,6 +4972,8 @@ LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SY
                         // pointer to func or pointer to memberfunc
                         TYPE* atype = *tp;
                         *tp = ptype;
+                        if (isref(ptype) && basetype(atype)->array)
+                            basetype(atype)->byRefArray = true;
                         while ((isref(ptype) || isfunction(ptype) || ispointer(ptype) || basetype(ptype)->type == bt_memberptr) &&
                                ptype->btp)
                             if (ptype->btp->type == bt_any)
@@ -4991,6 +5002,7 @@ LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SY
                         atype = basetype(*tp);
                         if (atype->type == bt_memberptr && isfunction(atype->btp))
                             atype->size = getSize(bt_int) * 2 + getSize(bt_pointer);
+
                     }
                     if (*spi)
                         (*spi)->tp = *tp;
@@ -6736,8 +6748,12 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         inTemplateBody++;
                     }
 
-                    if (sp->sb->constexpression && ismemberdata(sp))
-                        error(ERR_CONSTEXPR_MEMBER_MUST_BE_STATIC);
+                    if (sp->sb->constexpression)
+                        if (ismemberdata(sp))
+                            error(ERR_CONSTEXPR_MEMBER_MUST_BE_STATIC);
+                        else {
+                            CheckIsLiteralClass(sp->tp);
+                        }
                     if (lex)
                     {
                         if (linkage != lk_cdecl)

@@ -703,7 +703,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                         }
                         if (hr->next || Optimizer::cparams.prm_cplusplus)
                         {
-                            funcparams->nameSpace = nsv;
+                            funcparams->nameSpace = strSym ? nullptr : nsv;
                             funcparams->ascall = MATCHKW(lex, openpa);
                             funcparams->sp = sym;
                         }
@@ -1085,7 +1085,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                 funcparams->sp = sym;
                 funcparams->functp = sym->tp;
                 funcparams->fcall = intNode(en_c_i, 0);
-                funcparams->nameSpace = nsv;
+                funcparams->nameSpace = strSym ? nullptr : nsv;
                 *tp = sym->tp;
                 *exp = varNode(en_func, nullptr);
                 (*exp)->v.func = funcparams;

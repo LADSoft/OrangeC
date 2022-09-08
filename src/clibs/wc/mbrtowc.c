@@ -57,16 +57,8 @@ size_t mbrtowc(wchar_t* restrict pwc, const char* restrict s, size_t n, mbstate_
     if (n <= 0)
         return (size_t)-2;
 
+    b = (unsigned char)*s++;
     if (pwc)
         *pwc = (wchar_t)b;
-    return b ? 1 : 0;
-
-    if (p->left == 0)
-    {
-        b = (unsigned char)*s++;
-        if (pwc)
-            *pwc = (wchar_t)b;
-        return b ? 1 : 0;
-    }
-    return (size_t)-2;
+    return 1;
 }

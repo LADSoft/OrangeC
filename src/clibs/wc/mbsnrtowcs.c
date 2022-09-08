@@ -51,26 +51,18 @@ size_t mbsnrtowcs(wchar_t* restrict dst, const char** restrict src, size_t nms, 
     if (!p)
         p = &__getRtlData()->mbsrtowcs_st;
 
-    while (used < len && p->left <= nms)
+    while (used < len && nms > 0)
     {
         b = (unsigned char)*r++;
         nms--;
-        if (p->left == 0)
+        if (dst)
+            *dst++ = (wchar_t)b;
+        if (b == L'\0')
         {
-            if (!nms)
-            {
-                *src = r - 1;
-                return used;
-            }
-            if (dst)
-                *dst++ = (wchar_t)b;
-            if (b == L'\0')
-            {
-                *src = NULL;
-                return used;
-            }
-            used++;
+            *src = NULL;
+            return used;
         }
+        used++;
     }
 
     *src = r;

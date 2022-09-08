@@ -57,8 +57,6 @@ size_t wcrtomb(char* restrict s, wchar_t wc, mbstate_t* restrict ps)
     {
         if (s != NULL)
             *s = (char)wc;
-        if (wc == 0)
-            return 0;
         return 1;
     }
     errno = EILSEQ;

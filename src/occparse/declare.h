@@ -59,7 +59,7 @@ void addTemplateDeclaration(STRUCTSYM* decl);
 void dropStructureDeclaration(void);
 SYMBOL* getStructureDeclaration(void);
 void InsertSymbol(SYMBOL* sp, enum e_sc storage_class, enum e_lk linkage, bool allowDups);
-LEXLIST* tagsearch(LEXLIST* lex, char* name, SYMBOL** rsp, HASHTABLE** table, SYMBOL** strSym_out, NAMESPACEVALUELIST** nsv_out,
+LEXLIST* tagsearch(LEXLIST* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out, NAMESPACEVALUELIST** nsv_out,
                    enum e_sc storage_class);
 LEXLIST* get_type_id(LEXLIST* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_class, bool beforeOnly, bool toErr, bool inUsing);
 SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp);
@@ -77,7 +77,7 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                       enum e_lk* linkage_in, enum e_lk* linkage2_in, enum e_lk* linkage3_in, enum e_ac access, bool* notype,
                       bool* defd, int* consdest, bool* templateArg, bool isTypedef, bool templateErr, bool inUsing, bool asfriend,
                       bool constexpression);
-void injectThisPtr(SYMBOL* sp, HASHTABLE* syms);
+void injectThisPtr(SYMBOL* sp, SymbolTable<SYMBOL>* syms);
 bool intcmp(TYPE* t1, TYPE* t2);
 LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp, bool inTemplate, enum e_sc storage_class,
                            bool funcptr);

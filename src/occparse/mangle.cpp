@@ -680,7 +680,6 @@ char* mangleType(char* in, TYPE* tp, bool first)
 {
     char nm[4096];
     int i;
-    SYMLIST* hr;
     if (!tp)
     {
         Optimizer::my_sprintf(in, "%d%s", strlen("initializer-list"), "initializer-list");
@@ -732,13 +731,10 @@ char* mangleType(char* in, TYPE* tp, bool first)
                             in++;
                     }
                     *in++ = 'q';
-                    hr = tp->syms->table[0];
-                    while (hr)
+                    for (auto sym : *tp->syms)
                     {
-                        SYMBOL* sym = hr->p;
                         if (!sym->sb->thisPtr)
                             in = mangleType(in, sym->tp, true);
-                        hr = hr->next;
                     }
                     *in++ = '$';
                     // return value comes next
@@ -749,13 +745,10 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     if (isfunction(tp->btp))
                     {
                         *in++ = 'q';
-                        hr = basetype(tp->btp)->syms->table[0];
-                        while (hr)
+                        for (auto sym : *basetype(tp->btp)->syms)
                         {
-                            SYMBOL* sym = hr->p;
                             if (!sym->sb->thisPtr)
                                 in = mangleType(in, sym->tp, true);
-                            hr = hr->next;
                         }
                         *in++ = '$';
                         tp = tp->btp;  // so we can get to tp->btp->btp
@@ -967,8 +960,8 @@ static bool validType(TYPE* tp, bool byVal)
     case bt_ifunc:
         if (!validType(tp->btp, byVal))
             return false;
-        for (auto t = tp->syms->table[0]; t; t = t->next)
-            if (!validType(t->p->tp, byVal))
+        for (auto sp : *tp->syms)
+            if (!validType(sp->tp, byVal))
                 return false;
         break;
     case bt_struct:

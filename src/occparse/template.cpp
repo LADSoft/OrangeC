@@ -28,13 +28,11 @@
 #include "PreProcessor.h"
 #include <malloc.h>
 #include "ccerr.h"
-#include "symtab.h"
 #include "initbackend.h"
 #include "declare.h"
 #include "declcpp.h"
 #include "stmt.h"
 #include "expr.h"
-#include "symtab.h"
 #include "lambda.h"
 #include "occparse.h"
 #include "help.h"
@@ -53,6 +51,7 @@
 #include "template.h"
 #include "libcxx.h"
 #include "constexpr.h"
+#include "symtab.h"
 
 namespace Parser
 {
@@ -744,16 +743,13 @@ bool typeHasTemplateArg(TYPE* t)
             t = t->btp;
         if (isfunction(t))
         {
-            SYMLIST* hr;
             t = basetype(t);
             if (typeHasTemplateArg(t->btp))
                 return true;
-            hr = t->syms->table[0];
-            while (hr)
+            for (auto sym : *t->syms)
             {
-                if (typeHasTemplateArg(hr->p->tp))
+                if (typeHasTemplateArg(sym->tp))
                     return true;
-                hr = hr->next;
             }
         }
         else if (basetype(t)->type == bt_templateparam)
@@ -1031,7 +1027,7 @@ TEMPLATEPARAMLIST** expandTemplateSelector(TEMPLATEPARAMLIST** lst, TEMPLATEPARA
                 SYMBOL* s = nullptr;
                 while (sel)
                 {
-                    s = search(sel->name, base->syms);
+                    s = base->syms->search(sel->name);
                     if (!s || (s && sel->next && !isstructured(s->tp)))
                         break;
                     if (sel->next)
@@ -1195,7 +1191,7 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPL
         if (templ1->sb && templ1->sb->maintemplate)
             templ1 = templ1->sb->maintemplate;
         if (templ->tp && templ1->tp->type == bt_aggregate)
-            templ1 = templ1->tp->syms->table[0]->p;
+            templ1 = templ1->tp->syms->front();
         orig = templ1->templateParams
                    ? (templ1->templateParams->p->bySpecialization.types ? templ1->templateParams->p->bySpecialization.types
                                                                         : templ1->templateParams->next)
@@ -2055,20 +2051,22 @@ static bool matchTemplatedType(TYPE* old, TYPE* sym, bool strict)
                         if (!matchTemplatedType(old->btp, sym->btp, strict))
                             return false;
                         {
-                            SYMLIST* hro = old->syms->table[0];
-                            SYMLIST* hrs = sym->syms->table[0];
-                            if ((hro->p)->sb->thisPtr)
-                                hro = hro->next;
-                            if ((hrs->p)->sb->thisPtr)
-                                hrs = hrs->next;
-                            while (hro && hrs)
+                            auto ito = old->syms->begin();
+                            auto itoend = old->syms->end();
+                            auto its = sym->syms->begin();
+                            auto itsend = sym->syms->end();
+                            if ((*ito)->sb->thisPtr)
+                                ++ito;
+                            if ((*its)->sb->thisPtr)
+                                ++its;
+                            while (ito != itoend && its != itsend)
                             {
-                                if (!matchTemplatedType((hro->p)->tp, (hrs->p)->tp, strict))
+                                if (!matchTemplatedType((*ito)->tp, (*its)->tp, strict))
                                     return false;
-                                hro = hro->next;
-                                hrs = hrs->next;
+                                ++ito;
+                                ++its;
                             }
-                            return !hro && !hrs;
+                            return ito == itoend && its == itsend;
                         }
                     case bt_pointer:
                     case bt_lref:
@@ -2136,26 +2134,23 @@ static void restoreParams(SYMBOL** table, int count)
 SYMBOL* LookupFunctionSpecialization(SYMBOL* overloads, SYMBOL* sp)
 {
     SYMBOL* found1 = nullptr;
-    SYMBOL* sym = (SYMBOL*)overloads->tp->syms->table[0]->p;
+    SYMBOL* sym = (SYMBOL*)overloads->tp->syms->front();
     SYMBOL* sd = getStructureDeclaration();
     saveParams(&sd, 1);
     if (sym->sb->templateLevel && !sym->sb->instantiated &&
         (!sym->sb->parentClass || sym->sb->parentClass->sb->templateLevel != sym->sb->templateLevel))
     {
-        found1 = detemplate(overloads->tp->syms->table[0]->p, nullptr, sp->tp);
+        found1 = detemplate(overloads->tp->syms->front(), nullptr, sp->tp);
         if (found1 &&
             allTemplateArgsSpecified(
                 found1, found1->templateParams->next))  // && exactMatchOnTemplateArgs(found1->templateParams, sp->templateParams))
         {
             TEMPLATEPARAMLIST* tpl;
-            SYMLIST* hr = overloads->tp->syms->table[0]->next;
-
-            while (hr)
+            for (auto sp1 : *overloads->tp->syms)
             {
-                if (exactMatchOnTemplateArgs(found1->templateParams, hr->p->templateParams))
+                if (exactMatchOnTemplateArgs(found1->templateParams, sp1->templateParams))
                     if (matchOverload(found1->tp, sp->tp, true))
-                        return hr->p;
-                hr = hr->next;
+                        return sp1;
             }
             if (matchOverload(found1->tp, sp->tp, true))
             {
@@ -3923,7 +3918,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                     return nullptr;
                 if (isstructured(tp1))
                 {
-                    SYMBOL* cons = search(overloadNameTab[CI_ASSIGN], basetype(tp1)->syms);
+                    SYMBOL* cons = basetype(tp1)->syms->search(overloadNameTab[CI_ASSIGN]);
                     if (!cons)
                         return nullptr;
                     TYPE* tp2 = LookupTypeFromExpression(exp->left, enclosing, alt);
@@ -4293,7 +4288,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                         if (!isstructured(tp))
                             break;
 
-                        sp = search(find->name, basetype(tp)->syms);
+                        sp = basetype(tp)->syms->search(find->name);
                         if (!sp)
                         {
                             sp = classdata(find->name, basetype(tp)->sp, nullptr, false, false);
@@ -4423,17 +4418,15 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
             case bt_ifunc:
             case bt_func: {
                 TYPE* func;
-                SYMLIST* hr = tp->syms->table[0];
                 *last = CopyType(tp);
-                (*last)->syms = CreateHashTable(1);
+                (*last)->syms = symbols.CreateSymbolTable();
                 (*last)->btp = nullptr;
                 func = *last;
                 SynthesizeQuals(&last, &qual, &lastQual);
                 if (*last)
                     last = &(*last)->btp;
-                while (hr)
+                for (auto sp : *tp->syms)
                 {
-                    SYMBOL* sp = hr->p;
                     if (sp->packed && !sp->synthesized)
                     {
                         NormalizePacked(sp->tp);
@@ -4490,7 +4483,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                                     clone->tp = tp1;
                                     UpdateRootTypes(tp1);
                                     templateParams->p->packsym = clone;
-                                    insert(clone, func->syms);
+                                    func->syms->Add(clone);
                                     first = false;
                                     templateParams = templateParams->next;
                                     sp->tp->templateParam->p->index++;
@@ -4501,7 +4494,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                                 SYMBOL* clone = CopySymbol(sp);
                                 clone->tp = SynthesizeType(&stdany, enclosing, alt);
                                 clone->tp->templateParam = sp->tp->templateParam;
-                                insert(clone, func->syms);
+                                func->syms->Add(clone);
                             }
                         }
                     }
@@ -4509,7 +4502,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                     {
                         SYMBOL* clone = CopySymbol(sp);
                         TYPE* tp1;
-                        insert(clone, func->syms);
+                        func->syms->Add(clone);
                         clone->tp = SynthesizeType(clone->tp, enclosing, alt);
                         if (clone->tp->type != bt_void && clone->tp->type != bt_any)
                         {
@@ -4517,7 +4510,6 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                             UpdateRootTypes(clone->tp);
                         }
                     }
-                    hr = hr->next;
                 }
                 tp = tp->btp;
                 break;
@@ -4653,10 +4645,10 @@ static bool hasPack(TYPE* tp)
         tp = tp->btp;
     if (isfunction(tp))
     {
-        SYMLIST* hr = tp->syms->table[0];
-        while (hr && !rv)
+        for (auto sym : *tp->syms)
         {
-            SYMBOL* sym = hr->p;
+            if (rv)
+                break;
             if (sym->packed)
             {
                 rv = true;
@@ -4665,7 +4657,6 @@ static bool hasPack(TYPE* tp)
             {
                 rv = hasPack(sym->tp);
             }
-            hr = hr->next;
         }
     }
     return rv;
@@ -4717,7 +4708,7 @@ static SYMBOL* SynthesizeParentClass(SYMBOL* sym)
                 {
                     if (last)
                     {
-                        SYMBOL* found = search(syms[i]->name, last->tp->syms);
+                        SYMBOL* found = last->tp->syms->search(syms[i]->name);
                         if (!found || !isstructured(found->tp))
                         {
                             diag("SynthesizeParentClass mismatch 2");
@@ -4827,11 +4818,9 @@ static void clearoutDeduction(TYPE* tp)
                 break;
             case bt_func:
             case bt_ifunc: {
-                SYMLIST* hr = tp->syms->table[0];
-                while (hr)
+                for (auto sym : *tp->syms)
                 {
-                    clearoutDeduction(hr->p->tp);
-                    hr = hr->next;
+                    clearoutDeduction(sym->tp);
                 }
                 tp = tp->btp;
                 break;
@@ -5515,50 +5504,50 @@ static bool Deduce(TYPE* P, TYPE* A, EXPRESSION* exp, bool change, bool byClass,
                 break;
             case bt_func:
             case bt_ifunc: {
-                SYMLIST* hrp = Pb->syms->table[0];
-                SYMLIST* hra = Ab->syms->table[0];
+                auto itp = Pb->syms->begin();
+                auto itpend = Pb->syms->begin();
+                auto ita = Ab->syms->begin();
+                auto itaend = Ab->syms->begin();
                 if (islrqual(Pin) != islrqual(A) || isrrqual(Pin) != isrrqual(Ain))
                     return false;
                 if (isconst(Pin) != isconst(Ain) || isvolatile(Pin) != isvolatile(Ain))
                     return false;
-                if ((hrp->p)->sb->thisPtr)
-                    hrp = hrp->next;
-                if ((hra->p)->sb->thisPtr)
-                    hra = hra->next;
+                if ((*itp)->sb->thisPtr)
+                    ++itp;
+                if ((*ita)->sb->thisPtr)
+                    ++ita;
                 clearoutDeduction(P);
                 if (Pb->btp->type != bt_auto && !Deduce(Pb->btp, Ab->btp, nullptr, change, byClass, allowSelectors, baseClasses))
                     return false;
-                while (hra && hrp)
+                while (ita != itaend && itp != itpend)
                 {
-                    SYMBOL* sp = (SYMBOL*)hrp->p;
-                    if (!Deduce(sp->tp, (hra->p)->tp, nullptr, change, byClass, allowSelectors, baseClasses))
+                    SYMBOL* sp = *itp;
+                    if (!Deduce(sp->tp, (*ita)->tp, nullptr, change, byClass, allowSelectors, baseClasses))
                         return false;
                     if (sp->tp->type == bt_templateparam)
                     {
                         if (sp->tp->templateParam->p->packed)
                         {
-                            SYMBOL *sra, *srp;
-                            while (hrp->next)
-                                hrp = hrp->next;
-                            while (hra->next)
-                                hra = hra->next;
-
-                            sra = (SYMBOL*)hra->p;
-                            srp = (SYMBOL*)hrp->p;
+                            auto sra = Ab->syms->back();
+                            auto srp = Pb->syms->back();
+                            while ((*ita) != sra)
+                                ++ita;
+                            while ((*itp) != srp)
+                                ++itp;
                             if ((sra->tp->type != bt_ellipse && srp->tp->type != bt_ellipse) || sra->tp->type == srp->tp->type)
                             {
-                                hrp = nullptr;
-                                hra = nullptr;
+                                itp = itaend;
+                                ita = itpend;
                             }
                             break;
                         }
                     }
-                    hrp = hrp->next;
-                    hra = hra->next;
+                    ++itp;
+                    ++ita;
                 }
-                if (hra)
+                if (ita != itaend)
                     return false;
-                if (hrp && !(hrp->p)->sb->init)
+                if (itp != itpend && !(*itp)->sb->init)
                     return false;
                 return true;
             }
@@ -5574,15 +5563,16 @@ static bool Deduce(TYPE* P, TYPE* A, EXPRESSION* exp, bool change, bool byClass,
                     return true;
                 }
                 {
-                    SYMBOL* cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(Pb)->syms);
+                    SYMBOL* cons = basetype(Pb)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
                     if (cons)
                     {
-                        for (auto hr = cons->tp->syms->table[0]; hr; hr = hr->next)
+                        for (auto sp : *cons->tp->syms)
                         {
-                            auto hr1 = hr->p->tp->syms->table[0];
-                            if (hr1->next && !hr1->next->next)
+                            if (sp->tp->syms->size() == 2)
                             {
-                                if (comparetypes(hr1->next->p->tp, Ab, true) || sameTemplate(hr1->next->p->tp, Ab))
+                                auto it = sp->tp->syms->begin();
+                                ++it;
+                                if (comparetypes((*it)->tp, Ab, true) || sameTemplate((*it)->tp, Ab))
                                     return true;
                             }
                         }
@@ -5718,7 +5708,7 @@ static bool ValidArg(TYPE* tp)
                         if (!isstructured(spo->tp))
                             break;
 
-                        sp = search(find->name, spo->tp->syms);
+                        sp = spo->tp->syms->search(find->name);
                         if (!sp)
                         {
                             sp = classdata(find->name, spo, nullptr, false, false);
@@ -5776,12 +5766,10 @@ static bool ValidArg(TYPE* tp)
                 break;
             case bt_func:
             case bt_ifunc: {
-                SYMLIST* hr = tp->syms->table[0];
-                while (hr)
+                for (auto sp : *tp->syms)
                 {
-                    if (!ValidArg(hr->p->tp))
+                    if (!ValidArg(sp->tp))
                         return false;
-                    hr = hr->next;
                 }
                 tp = tp->btp;
                 if (tp->type == bt_templateparam)
@@ -6013,21 +6001,22 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
 {
     bool usesParams = !!args;
     INITLIST* check = args;
-    SYMLIST* hr = basetype(func->tp)->syms->table[0];
+    auto it = basetype(func->tp)->syms->begin();
+    auto ite = basetype(func->tp)->syms->end();
     STRUCTSYM s, s1;
     if (func->sb->isConstructor)
     {
         // get rid of potential constructor calls
         // that would involve a by_val template the same class as the constructor is in
-        SYMLIST* hr1 = hr;
+        auto it1 = it;
         INITLIST* arg1 = args;
-        if (hr1 && hr1->p->sb->thisPtr)
-            hr1 = hr1->next;
-        while (hr1 && arg1)
+        if (it1 != it && (*it1)->sb->thisPtr)
+            ++it1;
+        while (it1 != ite && arg1)
         {
             if (arg1->tp && isstructured(arg1->tp) && basetype(arg1->tp)->sp->sb->templateLevel && sameTemplate(func->sb->parentClass->tp, arg1->tp, true))
                 return nullptr;
-            hr1 = hr1->next;
+            ++it1;
             arg1 = arg1->next;
         }
 
@@ -6054,12 +6043,12 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
             }
         params = params->next;
     }
-    if (hr && hr->p->tp->type == bt_void)
+    if (it != ite && (*it)->tp->type == bt_void)
     {
         inDefaultParam--;
         return SynthesizeResult(func, nparams);
     }
-    if (hr)
+    if (it != ite)
     {
         bool packedOrEllipse = false;
         if (func->sb->parentClass)
@@ -6070,13 +6059,13 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
         s.tmpl = func->templateParams;
         addTemplateDeclaration(&s);
         args = check;
-        while (args && hr)
+        while (args && it != ite)
         {
-            SYMBOL* sp1 = (SYMBOL*)hr->p;
+            SYMBOL* sp1 = *it;
             if (basetype(sp1->tp)->type == bt_ellipse || sp1->packed)
                 packedOrEllipse = true;
             args = args->next;
-            hr = hr->next;
+            ++it;
         }
         if (args && !packedOrEllipse)
         {
@@ -6086,9 +6075,9 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
             inDefaultParam--;
             return nullptr;
         }
-        while (hr)
+        while (it != ite)
         {
-            SYMBOL* sp = hr->p;
+            SYMBOL* sp = *it;
             if (sp->sb->deferredCompile)
             {
                 LEXLIST* lex;
@@ -6107,7 +6096,7 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
                     return nullptr;
                 }
             }
-            hr = hr->next;
+            ++it;
         }
         dropStructureDeclaration();
         if (func->sb->parentClass)
@@ -6115,10 +6104,9 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
     }
     s.tmpl = func->templateParams;
     addTemplateDeclaration(&s);
-    hr = basetype(func->tp)->syms->table[0];
-    while (hr)
+    for (auto sp1 : *basetype(func->tp)->syms)
     {
-        if (!ValidArg(hr->p->tp))
+        if (!ValidArg(sp1->tp))
         {
             dropStructureDeclaration();
             inDefaultParam--;
@@ -6126,7 +6114,6 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
         }
         if (check)
             check = check->next;
-        hr = hr->next;
     }
     if (isstructured(basetype(func->tp)->btp))
     {
@@ -6279,23 +6266,30 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
     {
         // this is basical a poor man's way to do GetOverloadedFunction on a constructor,
         // with an arithmetic or pointer arg
-        SYMBOL* cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(P)->syms);
+        SYMBOL* cons = basetype(P)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
         if (cons)
         {
-            auto hr = basetype(cons->tp)->syms->table[0];
-            while (hr)
+            for (auto sp1 : *basetype(cons->tp)->syms)
             {
-                auto hr1 = basetype(hr->p->tp)->syms->table[0];
-                if (hr1->p->sb->thisPtr)
+                if (basetype(sp1->tp)->syms->front()->sb->thisPtr)
                 {
-                    hr1 = hr1->next;
-                    if (hr1 && (!hr1->next || hr1->next->p->sb->defaulted))
+                    if (basetype(sp1->tp)->syms->size() == 2)
                     {
-                        if (comparetypes(hr1->p->tp, A, true))
+                        if (comparetypes(basetype(sp1->tp)->syms->front()->tp, A, true))
                             return true;
                     }
+                    else if (basetype(sp1->tp)->syms->size() > 2)
+                    {
+                        auto it = basetype(sp1->tp)->syms->begin();
+                        ++it;
+                        ++it;
+                        if ((*it)->sb->defaulted)
+                        {
+                            if (comparetypes(basetype(sp1->tp)->syms->front()->tp, A, true))
+                                return true;
+                        }
+                    }
                 }
-                hr = hr->next;
             }
         }
     }
@@ -6305,20 +6299,15 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
         {
             if (exp->v.func->sp->sb->storage_class == sc_overloads)
             {
-                SYMLIST* hr = basetype(exp->v.func->sp->tp)->syms->table[0];
                 SYMBOL* candidate = nullptr;
-                while (hr)
+                for (auto sym : *basetype(exp->v.func->sp->tp)->syms)
                 {
-                    SYMBOL* sym = hr->p;
                     if (sym->sb->templateLevel)
                         return false;
-                    hr = hr->next;
                 }
                 // no templates, we can try each function one at a time
-                hr = basetype(exp->v.func->sp->tp)->syms->table[0];
-                while (hr)
+                for (auto sym : *basetype(exp->v.func->sp->tp)->syms)
                 {
-                    SYMBOL* sym = hr->p;
                     clearoutDeduction(P);
                     if (Deduce(P->btp, sym->tp, nullptr, false, false, allowSelectors, baseClasses))
                     {
@@ -6327,7 +6316,6 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
                         else
                             candidate = sym;
                     }
-                    hr = hr->next;
                 }
                 if (candidate)
                     return Deduce(P, candidate->tp, nullptr, true, false, allowSelectors, baseClasses);
@@ -6344,13 +6332,13 @@ void NormalizePacked(TYPE* tpo)
     if (basetype(tp)->templateParam)
         tpo->templateParam = basetype(tp)->templateParam;
 }
-static bool TemplateDeduceArgList(SYMLIST* funcArgs, SYMLIST* templateArgs, INITLIST* symArgs, bool allowSelectors,
+static bool TemplateDeduceArgList(SymbolTable<SYMBOL>::iterator funcArgs, SymbolTable<SYMBOL>::iterator funcArgsEnd, SymbolTable<SYMBOL>::iterator templateArgs, SymbolTable<SYMBOL>::iterator templateArgsEnd, INITLIST* symArgs, bool allowSelectors,
                                   bool baseClasses)
 {
     bool rv = true;
-    while (templateArgs && symArgs)
+    while (templateArgs != templateArgsEnd && symArgs)
     {
-        SYMBOL* sp = (SYMBOL*)templateArgs->p;
+        SYMBOL* sp = *templateArgs;
         if (sp->packed)
         {
             NormalizePacked(sp->tp);
@@ -6365,18 +6353,18 @@ static bool TemplateDeduceArgList(SYMLIST* funcArgs, SYMLIST* templateArgs, INIT
                     }
                     params = params->next;
                     symArgs = symArgs->next;
-                    if (funcArgs)
-                        funcArgs = funcArgs->next;
+                    if (funcArgs != funcArgsEnd)
+                        ++funcArgs;
                 }
             }
             else
             {
                 symArgs = symArgs->next;
-                if (funcArgs)
-                    funcArgs = funcArgs->next;
+                if (funcArgs != funcArgsEnd)
+                    ++funcArgs;
             }
         }
-        else if ((symArgs->nested || (!symArgs->tp && !symArgs->exp)) && funcArgs)
+        else if ((symArgs->nested || (!symArgs->tp && !symArgs->exp)) && funcArgs != funcArgsEnd)
         {
             if (symArgs->nested && isstructured(sp->tp) && basetype(sp->tp)->sp->sb->templateLevel &&
                 basetype(sp->tp)->sp->sb->initializer_list)
@@ -6387,18 +6375,18 @@ static bool TemplateDeduceArgList(SYMLIST* funcArgs, SYMLIST* templateArgs, INIT
                         rv = false;
             }
             symArgs = symArgs->next;
-            if (funcArgs)
-                funcArgs = funcArgs->next;
+            if (funcArgs != funcArgsEnd)
+                ++funcArgs;
         }
         else
         {
             if (!TemplateDeduceFromArg(sp->tp, symArgs->tp, symArgs->exp, allowSelectors, baseClasses))
                 rv = false;
             symArgs = symArgs->next;
-            if (funcArgs)
-                funcArgs = funcArgs->next;
+            if (funcArgs != funcArgsEnd)
+                ++funcArgs;
         }
-        templateArgs = templateArgs->next;
+        ++templateArgs;
     }
     return rv && (!symArgs || (symArgs->tp && symArgs->tp->type == bt_templateparam && symArgs->tp->templateParam->p->packed &&
                                !symArgs->tp->templateParam->p->byPack.pack));
@@ -6601,17 +6589,15 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* args, TEMPL
 }
 void ScrubTemplateValues(SYMBOL* func)
 {
-    SYMLIST* templateArgs = basetype(func->tp)->syms->table[0];
     ClearArgValues(func->templateParams, func->sb->specialized);
-    while (templateArgs)
+    for (auto sym : *basetype(func->tp)->syms)
     {
-        TYPE* tp = ((SYMBOL*)templateArgs->p)->tp;
+        TYPE* tp = sym->tp;
         while (isref(tp) || ispointer(tp))
             tp = basetype(tp)->btp;
         if (isstructured(tp) && basetype(tp)->sp->templateParams && !basetype(tp)->sp->sb->instantiated &&
             !basetype(tp)->sp->sb->declaring)
             ClearArgValues(basetype(tp)->sp->templateParams, basetype(tp)->sp->sb->specialized);
-        templateArgs = templateArgs->next;
     }
     TYPE* retval = basetype(basetype(func->tp)->btp);
     if (isstructured(retval) && retval->sp->templateParams && !retval->sp->sb->instantiated && !retval->sp->sb->declaring)
@@ -6619,16 +6605,14 @@ void ScrubTemplateValues(SYMBOL* func)
 }
 void PushPopTemplateArgs(SYMBOL* func, bool push)
 {
-    SYMLIST* templateArgs = basetype(func->tp)->syms->table[0];
     PushPopValues(func->templateParams, push);
-    while (templateArgs)
+    for (auto sym : *basetype(func->tp)->syms)
     {
-        TYPE* tp = ((SYMBOL*)templateArgs->p)->tp;
+        TYPE* tp = sym->tp;
         while (isref(tp) || ispointer(tp))
             tp = basetype(tp)->btp;
         if (isstructured(tp) && basetype(tp)->sp->templateParams && !basetype(tp)->sp->sb->declaring)
             PushPopValues(basetype(tp)->sp->templateParams, push);
-        templateArgs = templateArgs->next;
     }
     TYPE* retval = basetype(basetype(func->tp)->btp);
     if (isstructured(retval) && retval->sp->templateParams && !retval->sp->sb->instantiated && !retval->sp->sb->declaring)
@@ -6672,11 +6656,11 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
     if (nparams)
     {
         TEMPLATEPARAMLIST* params = nparams->next;
-        SYMLIST *templateArgs = basetype(sym->tp)->syms->table[0], *temp;
+        auto templateArgs = basetype(sym->tp)->syms->begin();
+        auto templateArgsEnd = basetype(sym->tp)->syms->end();
         INITLIST* symArgs = arguments;
         TEMPLATEPARAMLIST* initial = args->templateParams;
         ScrubTemplateValues(sym);
-        templateArgs = basetype(sym->tp)->syms->table[0];
         // fill in params that have been initialized in the arg list
         std::stack<TEMPLATEPARAMLIST*> tis;
         while (initial && params)
@@ -6773,30 +6757,31 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                 params = params->next;
         }
         // Deduce any args that we can
-        if (((SYMBOL*)(templateArgs->p))->sb->thisPtr)
-            templateArgs = templateArgs->next;
-        temp = templateArgs;
-        while (temp)
+        if ((*templateArgs)->sb->thisPtr)
+            ++templateArgs;
+        auto temp = templateArgs;
+        while (temp != templateArgsEnd)
         {
-            if (((SYMBOL*)temp->p)->packed)
+            auto* sp1 = (*temp);
+            if (sp1->packed)
             {
-                TYPE* tpx = ((SYMBOL*)temp->p)->tp;
+                TYPE* tpx = sp1->tp;
                 while (isref(tpx))
                     tpx = basetype(tpx)->btp;
                 auto base = basetype(tpx)->templateParam;
                 if (!base || base->p->type != kw_typename)
-                    temp = nullptr;
+                    temp = templateArgsEnd;
                 break;
             }
-            temp = temp->next;
+            ++temp;
         }
-        if (temp)
+        if (temp != templateArgsEnd)
         {
             // we have to gather the args list
             params = nparams->next;
-            while (templateArgs && symArgs)
+            while (templateArgs != basetype(sym->tp)->syms->end() && symArgs)
             {
-                SYMBOL* sp = (SYMBOL*)templateArgs->p;
+                SYMBOL* sp = *templateArgs;
                 if (sp->packed)
                     break;
                 if (!params || !params->p->byClass.dflt)
@@ -6813,13 +6798,13 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                     }
                     symArgs = symArgs->next;
                 }
-                templateArgs = templateArgs->next;
+                ++templateArgs;
                 if (params)
                     params = params->next;
             }
-            if (templateArgs)
+            if (templateArgs != templateArgsEnd)
             {
-                SYMBOL* sp = (SYMBOL*)templateArgs->p;
+                SYMBOL* sp = *templateArgs;
                 TYPE* tp = sp->tp;
                 TEMPLATEPARAMLIST* base;
                 bool forward = false;
@@ -6865,11 +6850,9 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
         }
         else
         {
-            bool rv = TemplateDeduceArgList(basetype(sym->tp)->syms->table[0], templateArgs, symArgs, basetype(sym->tp)->type == bt_templateselector, true);
-            SYMLIST* hr = basetype(sym->tp)->syms->table[0];
-            while (hr)
+            bool rv = TemplateDeduceArgList(basetype(sym->tp)->syms->begin(), basetype(sym->tp)->syms->end(),  templateArgs, templateArgsEnd, symArgs, basetype(sym->tp)->type == bt_templateselector, true);
+            for (auto sp : *basetype(sym->tp)->syms)
             {
-                SYMBOL* sp = hr->p;
                 TYPE* tp = sp->tp;
                 while (isref(tp) || ispointer(tp))
                     tp = basetype(tp)->btp;
@@ -6890,7 +6873,6 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                         }
                     }
                 }
-                hr = hr->next;
             }
             if (!rv)
             {
@@ -6972,21 +6954,23 @@ SYMBOL* TemplateDeduceArgsFromType(SYMBOL* sym, TYPE* tp)
     }
     else
     {
-        SYMLIST* templateArgs = basetype(tp)->syms->table[0];
-        SYMLIST* symArgs = basetype(sym->tp)->syms->table[0];
+        auto templateArgs = basetype(tp)->syms->begin();
+        auto templateArgsEnd = basetype(tp)->syms->end();
+        auto symArgs = basetype(sym->tp)->syms->begin();
+        auto symArgsEnd = basetype(sym->tp)->syms->end();
         TEMPLATEPARAMLIST* params;
-        while (templateArgs && symArgs)
+        while (templateArgs != templateArgsEnd && symArgs != symArgsEnd)
         {
-            SYMBOL* sp = (SYMBOL*)symArgs->p;
+            SYMBOL* sp = *symArgs;
             if (sp->packed)
                 break;
-            TemplateDeduceFromType(sp->tp, ((SYMBOL*)templateArgs->p)->tp);
-            templateArgs = templateArgs->next;
-            symArgs = symArgs->next;
+            TemplateDeduceFromType(sp->tp, (*templateArgs)->tp);
+            ++templateArgs;
+            ++symArgs;
         }
-        if (templateArgs && symArgs)
+        if (templateArgs != templateArgsEnd && symArgs != symArgsEnd)
         {
-            SYMBOL* sp = (SYMBOL*)symArgs->p;
+            SYMBOL* sp = *symArgs;
             TYPE* tp = sp->tp;
             TEMPLATEPARAMLIST* base;
             if (isref(tp))
@@ -6995,13 +6979,13 @@ SYMBOL* TemplateDeduceArgsFromType(SYMBOL* sym, TYPE* tp)
             if (base->p->type == kw_typename)
             {
                 TEMPLATEPARAMLIST** p = &base->p->byPack.pack;
-                while (symArgs)
+                while (symArgs != symArgsEnd)
                 {
                     *p = Allocate<TEMPLATEPARAMLIST>();
                     (*p)->p = Allocate<TEMPLATEPARAM>();
                     (*p)->p->type = kw_typename;
                     (*p)->p->byClass.val = sp->tp;
-                    symArgs = symArgs->next;
+                    ++symArgs;
                 }
             }
         }
@@ -7112,30 +7096,35 @@ int TemplatePartialDeduceArgsFromType(SYMBOL* syml, SYMBOL* symr, TYPE* tpl, TYP
     else
     {
         int i;
-        SYMLIST* tArgsl = basetype(tpl)->syms->table[0];
-        SYMLIST* sArgsl = basetype(syml->tp)->syms->table[0];
-        SYMLIST* tArgsr = basetype(tpr)->syms->table[0];
-        SYMLIST* sArgsr = basetype(symr->tp)->syms->table[0];
+        auto tArgsl = basetype(tpl)->syms->begin();
+        auto tArgsle = basetype(tpl)->syms->end();
+        auto sArgsl = basetype(syml->tp)->syms->begin();
+        auto sArgsle = basetype(syml->tp)->syms->end();
+        auto tArgsr = basetype(tpr)->syms->begin();
+        auto tArgsre = basetype(tpr)->syms->end();
+        auto sArgsr = basetype(symr->tp)->syms->begin();
+        auto sArgsre = basetype(symr->tp)->syms->end();
         bool usingargs = fcall && fcall->ascall;
         INITLIST* args = fcall ? fcall->arguments : nullptr;
         if (fcall && fcall->thisptr)
         {
-            tArgsl = tArgsl->next;
-            sArgsl = sArgsl->next;
-            tArgsr = tArgsr->next;
-            sArgsr = sArgsr->next;
+
+            ++tArgsl;
+            ++sArgsl;
+            ++tArgsr;
+            ++sArgsr;
         }
         n = 0;
-        while (tArgsl && tArgsr && sArgsl && sArgsr && (!usingargs || args))
+        while (tArgsl != tArgsle && tArgsr != tArgsre && sArgsl != sArgsle && sArgsr != sArgsre && (!usingargs || args))
         {
-            arr[n++] = TemplatePartialDeduce(((SYMBOL*)sArgsl->p)->tp, ((SYMBOL*)sArgsr->p)->tp, ((SYMBOL*)tArgsl->p)->tp,
-                                             ((SYMBOL*)tArgsr->p)->tp, false);
+            arr[n++] = TemplatePartialDeduce((*sArgsl)->tp, (*sArgsr)->tp, (*tArgsl)->tp,
+                                             (*tArgsr)->tp, false);
             if (args)
                 args = args->next;
-            tArgsl = tArgsl->next;
-            sArgsl = sArgsl->next;
-            tArgsr = tArgsr->next;
-            sArgsr = sArgsr->next;
+            ++tArgsl;
+            ++sArgsl;
+            ++tArgsr;
+            ++sArgsr;
         }
         for (i = 0; i < n; i++)
             if (arr[i] == 100)
@@ -7150,46 +7139,28 @@ int TemplatePartialDeduceArgsFromType(SYMBOL* syml, SYMBOL* symr, TYPE* tpl, TYP
         which = 0;
     if (!which)
     {
-        /*
-        if (!syml->sb->specialized && symr->sb->specialized)
+        TEMPLATEPARAMLIST* l = syml->templateParams->p->bySpecialization.types ? syml->templateParams->p->bySpecialization.types
+                                                                                : syml->templateParams->next;
+        TEMPLATEPARAMLIST* r = symr->templateParams->p->bySpecialization.types ? symr->templateParams->p->bySpecialization.types
+                                                                                : symr->templateParams->next;
+        int i;
+        n = 0;
+        while (l && r)
         {
-            TEMPLATEPARAMLIST *l = syml->templateParams->next;
-            TEMPLATEPARAMLIST *r = symr->templateParams->p->bySpecialization.types;
-            while (l && r)
-            {
-                if (!templatecomparetypes(l->p->byClass.val, r->p->byClass.val, true))
-                    return -1;
-                l = l->next;
-                r = r->next;
-            }
-            return 0;
+            int l1 = l->p->type == kw_typename ? !!l->p->byClass.val : 0;
+            int r1 = r->p->type == kw_typename ? !!r->p->byClass.val : 0;
+            if (l1 && !r1)
+                arr[n++] = -1;
+            else if (r1 && !l1)
+                arr[n++] = 1;
+            l = l->next;
+            r = r->next;
         }
-        else
-            */
-        {
-            TEMPLATEPARAMLIST* l = syml->templateParams->p->bySpecialization.types ? syml->templateParams->p->bySpecialization.types
-                                                                                   : syml->templateParams->next;
-            TEMPLATEPARAMLIST* r = symr->templateParams->p->bySpecialization.types ? symr->templateParams->p->bySpecialization.types
-                                                                                   : symr->templateParams->next;
-            int i;
-            n = 0;
-            while (l && r)
-            {
-                int l1 = l->p->type == kw_typename ? !!l->p->byClass.val : 0;
-                int r1 = r->p->type == kw_typename ? !!r->p->byClass.val : 0;
-                if (l1 && !r1)
-                    arr[n++] = -1;
-                else if (r1 && !l1)
-                    arr[n++] = 1;
-                l = l->next;
-                r = r->next;
-            }
-            for (i = 0; i < n; i++)
-                if (!which)
-                    which = arr[i];
-                else if (which && which != arr[i])
-                    return 0;
-        }
+        for (i = 0; i < n; i++)
+            if (!which)
+                which = arr[i];
+            else if (which && which != arr[i])
+                return 0;
     }
     return which;
 }
@@ -7568,81 +7539,96 @@ void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
 {
     if (newCls->tp->syms && (!newCls->templateParams || !newCls->templateParams->p->bySpecialization.types))
     {
-        SYMLIST* ns = newCls->tp->syms ? newCls->tp->syms->table[0] : nullptr;
-        SYMLIST* os = tmpl->tp->syms ? tmpl->tp->syms->table[0] : nullptr;
-        while (ns && os)
+        if (newCls->tp->syms && tmpl->tp->syms)
         {
-            SYMBOL* ss = (SYMBOL*)ns->p;
-            SYMBOL* ts = (SYMBOL*)os->p;
-            if (strcmp(ss->name, ts->name) != 0)
+            auto ns = newCls->tp->syms->begin();
+            auto nse = newCls->tp->syms->end();
+            auto os = tmpl->tp->syms->begin();
+            auto ose = tmpl->tp->syms->end();
+            while (ns != nse && os != ose)
             {
-                ts = search(ss->name, tmpl->tp->syms);
-                // we might get here with ts = nullptr for example when a using statement inside a template
-                // references base class template members which aren't defined yet.
-            }
-            if (ts)
-            {
-                if (ss->tp->type == bt_aggregate && ts->tp->type == bt_aggregate)
+                SYMBOL* ss = *ns;
+                SYMBOL* ts = *os;
+                if (strcmp(ss->name, ts->name) != 0)
                 {
-                    SYMLIST* os2 = ts->tp->syms->table[0];
-                    SYMLIST* ns2 = ss->tp->syms->table[0];
-                    // these lists may be mismatched, in particular the old symbol table
-                    // may have partial specializations for templates added after the class was defined...
-                    while (ns2 && os2)
+                    ts = tmpl->tp->syms->search(ss->name);
+                    // we might get here with ts = nullptr for example when a using statement inside a template
+                    // references base class template members which aren't defined yet.
+                }
+                if (ts)
+                {
+                    if (ss->tp->type == bt_aggregate && ts->tp->type == bt_aggregate)
                     {
-                        SYMBOL* ts2 = (SYMBOL*)os2->p;
-                        SYMBOL* ss2 = (SYMBOL*)ns2->p;
-                        if (ts2->sb->defaulted || ss2->sb->defaulted)
-                            break;
-                        ss2->sb->copiedTemplateFunction = true;
-                        SYMLIST* tsf = basetype(ts2->tp)->syms->table[0];
-                        if (ts2->sb->deferredCompile && !ss2->sb->deferredCompile)
+                        auto ns2 = ts->tp->syms->begin();
+                        auto ns2e = ts->tp->syms->end();
+                        auto os2 = ss->tp->syms->begin();
+                        auto os2e = ss->tp->syms->end();
+
+                        // these lists may be mismatched, in particular the old symbol table
+                        // may have partial specializations for templates added after the class was defined...
+                        while (ns2 != ns2e && os2 != os2e)
                         {
-                            SYMLIST* ssf = basetype(ss2->tp)->syms->table[0];
-                            while (tsf && ssf)
+                            SYMBOL* ts2 = *os2;
+                            SYMBOL* ss2 = *ns2;
+                            if (ts2->sb->defaulted || ss2->sb->defaulted)
+                                break;
+                            ss2->sb->copiedTemplateFunction = true;
+                            if (ts2->sb->deferredCompile && !ss2->sb->deferredCompile)
                             {
-                                if (!ssf->p->sb->anonymous || !tsf->p->sb->anonymous)
-                                    ssf->p->name = tsf->p->name;
-                                tsf = tsf->next;
-                                ssf = ssf->next;
+                                auto tsf = basetype(ts2->tp)->syms->begin();
+                                auto tsfe = basetype(ts2->tp)->syms->end();
+                                auto ssf = basetype(ss2->tp)->syms->begin();
+                                auto ssfe = basetype(ss2->tp)->syms->end();
+                                while (tsf != tsfe && ssf != ssfe)
+                                {
+                                    if (!(*ssf)->sb->anonymous || !(*tsf)->sb->anonymous)
+                                        (*ssf)->name = (*tsf)->name;
+                                    ++tsf;
+                                    ++ssf;
+                                }
+                                ss2->sb->deferredCompile = ts2->sb->deferredCompile;
                             }
-                            ss2->sb->deferredCompile = ts2->sb->deferredCompile;
+                            ss2->sb->maintemplate = ts2;
+                            ++ns2;
+                            ++os2;
                         }
-                        ss2->sb->maintemplate = ts2;
-                        ns2 = ns2->next;
-                        os2 = os2->next;
                     }
                 }
+                ++ns;
+                ++os;
             }
-            ns = ns->next;
-            os = os->next;
         }
-        ns = newCls->tp->tags ? newCls->tp->tags->table[0]->next : nullptr;
-        os = tmpl->tp->tags ? tmpl->tp->tags->table[0]->next : nullptr;
-        while (ns && os)
+        if (newCls->tp->tags && tmpl->tp->tags)
         {
-            SYMBOL* ss = (SYMBOL*)ns->p;
-            SYMBOL* ts = (SYMBOL*)os->p;
-            if (strcmp(ss->name, ts->name) != 0)
+            auto ns = newCls->tp->tags->begin();
+            auto nse = newCls->tp->tags->end();
+            auto os = tmpl->tp->tags->begin();
+            auto ose = tmpl->tp->tags->end();
+            while (ns != nse && os != ose)
             {
-                ts = search(ss->name, tmpl->tp->syms);
-                // we might get here with ts = nullptr for example when a using statement inside a template
-                // references base class template members which aren't defined yet.
-            }
-            if (ts)
-            {
-                if (isstructured(ss->tp))
+                SYMBOL* ss = *ns;
+                SYMBOL* ts = *os;
+                if (strcmp(ss->name, ts->name) != 0)
                 {
-                    if (!ss->sb->deferredCompile)
-                    {
-                        ss->sb->deferredCompile = ts->sb->deferredCompile;
-                        PerformDeferredInitialization(ss->tp, nullptr);
-                    }
-                    TemplateTransferClassDeferred(ss, ts);
+                    ts = tmpl->tp->syms->search(ss->name);
+                    // we might get here with ts = nullptr for example when a using statement inside a template
+                    // references base class template members which aren't defined yet.
                 }
+                if (ts)
+                {
+                    if (isstructured(ss->tp))
+                    {
+                        if (!ss->sb->deferredCompile)
+                        {
+                            ss->sb->deferredCompile = ts->sb->deferredCompile;
+                            PerformDeferredInitialization(ss->tp, nullptr);
+                        }
+                        TemplateTransferClassDeferred(ss, ts);
+                    }
+                }
+                ++ns;
+                ++os;
             }
-            ns = ns->next;
-            os = os->next;
         }
     }
 }
@@ -7919,9 +7905,9 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             int oldPackIndex = packIndex;
             int oldExpandingParams = expandingParams;
             int oldRegisterTemplate = dontRegisterTemplate;
-            HASHTABLE* oldSyms = localNameSpace->valueData->syms;
+            SymbolTable<SYMBOL>* oldSyms = localNameSpace->valueData->syms;
             NAMESPACEVALUELIST* oldNext = localNameSpace->next;
-            HASHTABLE* oldTags = localNameSpace->valueData->tags;
+            SymbolTable<SYMBOL>* oldTags = localNameSpace->valueData->tags;
             int oldInArgs = inTemplateArgs;
             int oldArgumentNesting = argumentNesting;
             int oldFuncLevel = funcLevel;
@@ -8090,16 +8076,13 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
 {
     SYMBOL* orig = sym;
     STRUCTSYM* old;
-    SYMLIST* hr;
     LEXLIST* lex;
     int pushCount;
     bool found = false;
     STRUCTSYM s;
     LAMBDA* oldLambdas;
-    hr = sym->sb->overloadName->tp->syms->table[0];
-    while (hr)
+    for (auto data : *sym->sb->overloadName->tp->syms)
     {
-        SYMBOL* data = hr->p;
         if (data->sb->instantiated && TemplateInstantiationMatch(data, sym, true) && matchOverload(sym->tp, data->tp, true))
         {
             if (data->sb->attribs.inheritable.linkage4 == lk_virtual || isExtern)
@@ -8109,17 +8092,17 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             if (!data->sb->deferredCompile && sym->sb->deferredCompile)
             {
                 data->sb->deferredCompile = sym->sb->deferredCompile;
-                auto hrs = basetype(sym->tp)->syms->table[0];
-                for (auto hr = basetype(data->tp)->syms->table[0]; hr; hr = hr->next, hrs = hrs->next)
+                auto hrs = basetype(sym->tp)->syms->begin();
+                for (auto sym : *basetype(data->tp)->syms)
                 {
-                    hr->p->name = hrs->p->name;
+                    sym->name = (*hrs)->name;
+                    ++hrs;
                 }
             }
             sym = data;
             found = true;
             break;
         }
-        hr = hr->next;
     }
     oldLambdas = lambdas;
     lambdas = nullptr;
@@ -8137,30 +8120,18 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
     if (!found)
     {
         bool ok = true;
-        SYMLIST* hr = sym->sb->overloadName->tp->syms->table[0];
-        while (hr)
+        for (auto sp1 : *sym->sb->overloadName->tp->syms)
         {
-            if (matchOverload(sym->tp, hr->p->tp, true))
+            if (matchOverload(sym->tp, sp1->tp, true))
             {
                 ok = false;
                 break;
             }
-            hr = hr->next;
         }
         if (ok)
         {
-            SYMLIST* hr = sym->sb->overloadName->tp->syms->table[0];
             if (!inNoExceptHandler)
-                insertOverload(sym, sym->sb->overloadName->tp->syms);
-            while (hr)
-            {
-                if (matchOverload(sym->tp, hr->p->tp, true))
-                {
-                    ok = false;
-                    break;
-                }
-                hr = hr->next;
-            }
+                sym->sb->overloadName->tp->syms->insertOverload(sym);
         }
 
         if (ismember(sym))
@@ -8578,7 +8549,6 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* v
     else if (!val->p->packed && val->p->type == kw_typename && val->p->byClass.dflt && val->p->byClass.val &&
              isfunction(val->p->byClass.dflt) && isfunction(val->p->byClass.val))
     {
-        SYMLIST *hrd, *hrv;
         TYPE* tpd = basetype(val->p->byClass.dflt)->btp;
         TYPE* tpv = basetype(val->p->byClass.val)->btp;
         if (tpd->type == bt_templateparam && tpd->templateParam->argsym)
@@ -8610,12 +8580,14 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* v
                     find->p->byClass.val = tpv->type == bt_templateparam ? tpv->templateParam->p->byClass.val : tpv;
             }
         }
-        hrd = basetype(val->p->byClass.dflt)->syms->table[0];
-        hrv = basetype(val->p->byClass.val)->syms->table[0];
-        while (hrd && hrv)
+        auto hrd = basetype(val->p->byClass.dflt)->syms->begin();
+        auto hrde = basetype(val->p->byClass.dflt)->syms->end();
+        auto hrv = basetype(val->p->byClass.val)->syms->begin();
+        auto hrve = basetype(val->p->byClass.val)->syms->end();
+        while (hrd != hrde && hrv != hrve)
         {
-            tpd = (hrd->p)->tp;
-            tpv = (hrv->p)->tp;
+            tpd = (*hrd)->tp;
+            tpv = (*hrv)->tp;
             if (tpd->type == bt_templateparam && tpd->templateParam->argsym)
             {
                 TEMPLATEPARAMLIST* find = params;
@@ -8634,7 +8606,7 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* v
                             if (tpv->type == bt_templateparam)
                             {
                                 find->p->byPack.pack = tpv->templateParam->p->byPack.pack;
-                                hrd = hrd->next;
+                                ++hrd;
                             }
                             else
                             {
@@ -8657,7 +8629,7 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* v
                     }
                     else
                     {
-                        hrd = hrd->next;
+                        ++hrd;
                     }
                     if (!find->p->byClass.val)
                         find->p->byClass.val = tpv->type == bt_templateparam ? tpv->templateParam->p->byClass.val : tpv;
@@ -8665,9 +8637,9 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* v
             }
             else
             {
-                hrd = hrd->next;
+                ++hrd;
             }
-            hrv = hrv->next;
+            ++hrv;
         }
     }
     // here to support return types, templateselectors would otherwise be resolved by now
@@ -9128,18 +9100,15 @@ static bool checkArgType(TYPE* tp, bool checkDeduced, bool checkDeclaring)
         tp = basetype(tp)->btp;
     if (isfunction(tp))
     {
-        SYMLIST* hr;
         SYMBOL* sym = basetype(tp)->sp;
         if (!checkArgType(basetype(tp)->btp, checkDeduced, checkDeclaring))
             return false;
         if (sym->tp->syms)
         {
-            hr = sym->tp->syms->table[0];
-            while (hr)
+            for (auto sp1 : *sym->tp->syms)
             {
-                if (!checkArgType(hr->p->tp, checkDeduced, checkDeclaring))
+                if (!checkArgType(sp1->tp, checkDeduced, checkDeclaring))
                     return false;
-                hr = hr->next;
             }
         }
     }
@@ -9671,7 +9640,7 @@ static SYMBOL* FindTemplateSelector(TEMPLATESELECTOR* tso)
                     if (!isstructured(spo->tp))
                         break;
 
-                    sp = search(find->name, spo->tp->syms);
+                    sp = spo->tp->syms->search(find->name);
                     if (!sp)
                     {
                         sp = classdata(find->name, spo, nullptr, false, false);
@@ -11896,11 +11865,7 @@ void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, NAMESPACEVALUELIST* ns
         ssp = getStructureDeclaration();
         if (ssp)
         {
-            p = LookupName(sym->name, ssp->tp->syms);
-            if (p)
-            {
-                spi = (SYMBOL*)(*p)->p;
-            }
+            spi = ssp->tp->syms->Lookup(sym->name);
         }
         if (!spi)
         {
@@ -11913,21 +11878,22 @@ void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, NAMESPACEVALUELIST* ns
         {
             FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
             SYMBOL* instance;
-            SYMLIST* hr = basetype(tp)->syms->table[0];
+            auto hr = basetype(tp)->syms->begin();
+            auto hre = basetype(tp)->syms->end();
             INITLIST** init = &funcparams->arguments;
             funcparams->templateParams = templateParams->p->bySpecialization.types;
             funcparams->ascall = true;
             if (templateParams->p->bySpecialization.types)
                 funcparams->astemplate = true;
-            if (hr->p->sb->thisPtr)
-                hr = hr->next;
-            while (hr)
+            if ((*hr)->sb->thisPtr)
+                ++hr;
+            while (hr != hre)
             {
                 *init = Allocate<INITLIST>();
-                (*init)->tp = hr->p->tp;
+                (*init)->tp = (*hr)->tp;
                 (*init)->exp = intNode(en_c_i, 0);
                 init = &(*init)->next;
-                hr = hr->next;
+                ++hr;
             }
             if (spi->sb->parentClass)
             {
@@ -11961,17 +11927,14 @@ static void referenceInstanceMembers(SYMBOL* cls, bool excludeFromExplicitInstan
     }
     if (cls->tp->syms)
     {
-        SYMLIST* hr = cls->tp->syms->table[0];
         BASECLASS* lst;
-        while (hr)
+        for (auto sym : *cls->tp->syms)
         {
-            SYMBOL* sym = hr->p;
             if (sym->sb->storage_class == sc_overloads)
             {
-                SYMLIST* hr2 = sym->tp->syms->table[0];
-                while (hr2)
+                auto sp = sym;
+                for (auto sym : *sp->tp->syms)
                 {
-                    sym = (SYMBOL*)hr2->p;
                     if (sym->sb->templateLevel <= cls->sb->templateLevel && !sym->templateParams)
                     {
                         sym->sb->dontinstantiate = false;
@@ -11993,7 +11956,6 @@ static void referenceInstanceMembers(SYMBOL* cls, bool excludeFromExplicitInstan
                             }
                         }
                     }
-                    hr2 = hr2->next;
                 }
             }
             else if (!ismember(sym) && !istype(sym))
@@ -12002,15 +11964,12 @@ static void referenceInstanceMembers(SYMBOL* cls, bool excludeFromExplicitInstan
                     InsertInlineData(sym);
                 Optimizer::SymbolManager::Get(sym)->genreffed = true;
             }
-            hr = hr->next;
         }
 
         if (cls->tp->tags)
         {
-            hr = cls->tp->tags->table[0]->next;  // past the definition of self
-            while (hr)
+            for (auto sym : *cls->tp->tags)
             {
-                SYMBOL* sym = hr->p;
                 if (isstructured(sym->tp))
                 {
                     sym = basetype(sym->tp)->sp;
@@ -12018,7 +11977,6 @@ static void referenceInstanceMembers(SYMBOL* cls, bool excludeFromExplicitInstan
                         referenceInstanceMembers(sym, excludeFromExplicitInstantiation ||
                                                           sym->sb->attribs.inheritable.excludeFromExplicitInstantiation);
                 }
-                hr = hr->next;
             }
         }
     }
@@ -12027,17 +11985,14 @@ static void dontInstantiateInstanceMembers(SYMBOL* cls, bool excludeFromExplicit
 {
     if (cls->tp->syms)
     {
-        SYMLIST* hr = cls->tp->syms->table[0];
         BASECLASS* lst;
-        while (hr)
+        for (auto sym : *cls->tp->syms)
         {
-            SYMBOL* sym = hr->p;
             if (sym->sb->storage_class == sc_overloads)
             {
-                SYMLIST* hr2 = sym->tp->syms->table[0];
-                while (hr2)
+                auto sp1 = sym;
+                for (auto sym : *sp1->tp->syms)
                 {
-                    sym = (SYMBOL*)hr2->p;
                     if (sym->sb->templateLevel <= cls->sb->templateLevel && !sym->templateParams)
                     {
                         if (!excludeFromExplicitInstantiation && !sym->sb->attribs.inheritable.excludeFromExplicitInstantiation)
@@ -12045,25 +12000,25 @@ static void dontInstantiateInstanceMembers(SYMBOL* cls, bool excludeFromExplicit
                             sym->sb->dontinstantiate = true;
                         }
                     }
-                    hr2 = hr2->next;
                 }
             }
-            hr = hr->next;
         }
         if (cls->tp->tags)
         {
-            hr = cls->tp->tags->table[0]->next;  // past the definition of self
-            while (hr)
+            bool first = true;
+            for (auto sym : *cls->tp->tags)
             {
-                SYMBOL* sym = hr->p;
-                if (isstructured(sym->tp))
+                if (!first) // past the definition of self
                 {
-                    sym = basetype(sym->tp)->sp;
-                    if (sym->sb->parentClass == cls && !sym->templateParams)
-                        dontInstantiateInstanceMembers(sym, excludeFromExplicitInstantiation ||
-                                                                sym->sb->attribs.inheritable.excludeFromExplicitInstantiation);
+                    if (isstructured(sym->tp))
+                    {
+                        sym = basetype(sym->tp)->sp;
+                        if (sym->sb->parentClass == cls && !sym->templateParams)
+                            dontInstantiateInstanceMembers(sym, excludeFromExplicitInstantiation ||
+                                sym->sb->attribs.inheritable.excludeFromExplicitInstantiation);
+                    }
                 }
-                hr = hr->next;
+                first = false;
             }
         }
     }
@@ -12150,14 +12105,11 @@ void propagateTemplateDefinition(SYMBOL* sym)
                 old = parent;
             if (old && old->tp->syms)
             {
-                SYMLIST** p = LookupName(sym->name, old->tp->syms);
+                SYMBOL* p = old->tp->syms->Lookup(sym->name);
                 if (p)
                 {
-                    SYMLIST* hr;
-                    hr = basetype(((SYMBOL*)(*p)->p)->tp)->syms->table[0];
-                    while (hr)
+                    for (auto cur : *basetype(p->tp)->syms)
                     {
-                        SYMBOL* cur = hr->p;
                         if (sym && sym->sb->origdeclline == cur->sb->origdeclline &&
                             !strcmp(sym->sb->origdeclfile, cur->sb->origdeclfile) && cur->sb->deferredCompile)
                         {
@@ -12169,13 +12121,15 @@ void propagateTemplateDefinition(SYMBOL* sym)
                                 sym->sb->pushedTemplateSpecializationDefinition = 1;
                                 if (basetype(sym->tp)->syms && basetype(cur->tp)->syms)
                                 {
-                                    SYMLIST* src = basetype(cur->tp)->syms->table[0];
-                                    SYMLIST* dest = basetype(sym->tp)->syms->table[0];
-                                    while (src && dest)
+                                    auto src = basetype(cur->tp)->syms->begin();
+                                    auto srce = basetype(cur->tp)->syms->end();
+                                    auto dest = basetype(sym->tp)->syms->begin();
+                                    auto deste = basetype(sym->tp)->syms->end();
+                                    while (src != srce && dest != deste)
                                     {
-                                        dest->p->name = src->p->name;
-                                        src = src->next;
-                                        dest = dest->next;
+                                        (*dest)->name = (*src)->name;
+                                        ++src;
+                                        ++dest;
                                     }
                                 }
                                 if (cur->templateParams && sym->templateParams)
@@ -12192,7 +12146,7 @@ void propagateTemplateDefinition(SYMBOL* sym)
                                 }
                                 {
                                     STRUCTSYM t, s;
-                                    SYMBOL* thsprospect = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
+                                    SYMBOL* thsprospect = (SYMBOL*)basetype(sym->tp)->syms->front();
                                     t.tmpl = nullptr;
                                     if (thsprospect && thsprospect->sb->thisPtr)
                                     {
@@ -12211,7 +12165,6 @@ void propagateTemplateDefinition(SYMBOL* sym)
                                 break;
                             }
                         }
-                        hr = hr->next;
                     }
                 }
             }
@@ -12223,11 +12176,8 @@ void propagateTemplateDefinition(SYMBOL* sym)
             old = namespacesearch(sym->name, globalNameSpace, false, false);
             if (old)
             {
-                SYMLIST* hr;
-                hr = basetype(old->tp)->syms->table[0];
-                while (hr)
+                for (auto cur : *basetype(old->tp)->syms)
                 {
-                    SYMBOL* cur = hr->p;
                     if (sym && sym->sb->declline == cur->sb->declline && !strcmp(sym->sb->declfile, cur->sb->declfile) &&
                         cur->sb->deferredCompile)
                     {
@@ -12235,18 +12185,20 @@ void propagateTemplateDefinition(SYMBOL* sym)
                         cur->sb->pushedTemplateSpecializationDefinition = 1;
                         if (basetype(sym->tp)->syms && basetype(cur->tp)->syms)
                         {
-                            SYMLIST* src = basetype(cur->tp)->syms->table[0];
-                            SYMLIST* dest = basetype(sym->tp)->syms->table[0];
-                            while (src && dest)
+                            auto src = basetype(cur->tp)->syms->begin();
+                            auto srce = basetype(cur->tp)->syms->end();
+                            auto dest = basetype(sym->tp)->syms->begin();
+                            auto deste = basetype(sym->tp)->syms->end();
+                            while (src != srce && dest != deste)
                             {
-                                dest->p->name = src->p->name;
-                                src = src->next;
-                                dest = dest->next;
+                                (*dest)->name = (*src)->name;
+                                ++src;
+                                ++dest;
                             }
                         }
                         {
                             STRUCTSYM t;
-                            SYMBOL* thsprospect = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
+                            SYMBOL* thsprospect = (SYMBOL*)basetype(sym->tp)->syms->front();
                             t.tmpl = nullptr;
                             if (thsprospect && thsprospect->sb->thisPtr)
                             {
@@ -12260,7 +12212,6 @@ void propagateTemplateDefinition(SYMBOL* sym)
                                 dropStructureDeclaration();
                         }
                     }
-                    hr = hr->next;
                 }
             }
             PopTemplateNamespace(tns);
@@ -12272,7 +12223,7 @@ void propagateTemplateDefinition(SYMBOL* sym)
         if (sym->sb->parentClass)
             SwapMainTemplateArgs(sym->sb->parentClass);
         STRUCTSYM t, s, r;
-        SYMBOL* thsprospect = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
+        SYMBOL* thsprospect = (SYMBOL*)basetype(sym->tp)->syms->front();
         t.tmpl = nullptr;
         r.tmpl = nullptr;
         if (sym->templateParams)
@@ -12333,24 +12284,20 @@ static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
             }
             if (sp->tp->syms)
             {
-                SYMLIST* hr = sp->tp->syms->table[0];
-                while (hr)
+                for (auto sym : *sp->tp->syms)
                 {
-                    SYMBOL* sym = hr->p;
                     if (sym->sb->storage_class == sc_overloads)
                     {
-                        SYMLIST* hr2 = sym->tp->syms->table[0];
-                        while (hr2)
+                        for (auto sp1 : *sym->tp->syms)
                         {
-                            if (!(hr2->p)->templateParams)
+                            if (!(sp1)->templateParams)
                             {
-                                (hr2->p)->sb->attribs.inheritable.linkage2 = linkage;
-                                (hr2->p)->sb->attribs.inheritable.isInline = false;
-                                Optimizer::SymbolManager::Get(hr2->p)->isexport = linkage == lk_export;
-                                Optimizer::SymbolManager::Get(hr2->p)->isimport = linkage == lk_import;
-                                Optimizer::SymbolManager::Get(hr2->p)->isinternal = linkage == lk_internal;
+                                (sp1)->sb->attribs.inheritable.linkage2 = linkage;
+                                (sp1)->sb->attribs.inheritable.isInline = false;
+                                Optimizer::SymbolManager::Get(sp1)->isexport = linkage == lk_export;
+                                Optimizer::SymbolManager::Get(sp1)->isimport = linkage == lk_import;
+                                Optimizer::SymbolManager::Get(sp1)->isinternal = linkage == lk_internal;
                             }
-                            hr2 = hr2->next;
                         }
                     }
                     else if (!ismember(sym) && !istype(sym))
@@ -12360,22 +12307,18 @@ static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
                         Optimizer::SymbolManager::Get(sym)->isimport = linkage == lk_import;
                         Optimizer::SymbolManager::Get(sym)->isinternal = linkage == lk_internal;
                     }
-                    hr = hr->next;
                 }
             }
             if (sp->tp->tags)
             {
-                SYMLIST* hr = sp->tp->tags->table[0]->next;  // past the definition of self
-                while (hr)
+                for (auto sym : *sp->tp->tags)
                 {
-                    SYMBOL* sym = hr->p;
                     if (isstructured(sym->tp))
                     {
                         sym = basetype(sym->tp)->sp;
                         if (sym->sb->parentClass == sp && !sym->templateParams)
                             MarkDllLinkage(sym, linkage);
                     }
-                    hr = hr->next;
                 }
             }
         }
@@ -12429,13 +12372,9 @@ static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, TYPE* tp, NAMESPACEVALUEL
         {
             ssp = getStructureDeclaration();
             if (ssp)
-                p = LookupName(sym->name, ssp->tp->syms);
+                spi = ssp->tp->syms->Lookup(sym->name);
             else
-                p = LookupName(sym->name, globalNameSpace->valueData->syms);
-            if (p)
-            {
-                spi = (SYMBOL*)(*p)->p;
-            }
+                spi = globalNameSpace->valueData->syms->Lookup(sym->name);
         }
         if (spi)
         {
@@ -12511,7 +12450,7 @@ bool definedInTemplate(const char* name)
 
 LEXLIST* TemplateDeclaration(LEXLIST* lex, SYMBOL* funcsp, enum e_ac access, enum e_sc storage_class, bool isExtern)
 {
-    HASHTABLE* oldSyms = localNameSpace->valueData->syms;
+    SymbolTable<SYMBOL>* oldSyms = localNameSpace->valueData->syms;
     lex = getsym();
     localNameSpace->valueData->syms = nullptr;
     if (MATCHKW(lex, lt))

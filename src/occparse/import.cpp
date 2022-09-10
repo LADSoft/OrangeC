@@ -27,16 +27,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include "compiler.h"
+#include "ccerr.h"
+#include "template.h"
 #include "winmode.h"
 #include "DotNetPELib.h"
 #include "Utils.h"
-
 #include <fstream>
 #include <deque>
 #include <string>
 #include <algorithm>
 #include "import.h"
-#include "symtab.h"
 #include "declcpp.h"
 #include "initbackend.h"
 #include "occparse.h"
@@ -45,6 +45,7 @@
 #include "declare.h"
 #include "mangle.h"
 #include "beinterf.h"
+#include "symtab.h"
 
 extern DotNetPELib::PELib* peLib;
 
@@ -227,18 +228,18 @@ bool Importer::EnterNamespace(const Namespace* nameSpace)
 {
     diag("Namespace", nameSpace->Name());
     level_++;
-    SYMLIST** hr = LookupName((char*)nameSpace->Name().c_str(), nameSpaces_.size() == 0
-                                                                    ? globalNameSpace->valueData->syms
-                                                                    : nameSpaces_.back()->sb->nameSpaceValues->valueData->syms);
-    SYMBOL* sp;
-    if (!hr)
+    SYMBOL* sp = (nameSpaces_.size() == 0
+        ? globalNameSpace->valueData->syms
+        : nameSpaces_.back()->sb->nameSpaceValues->valueData->syms
+    )->Lookup((char*)nameSpace->Name().c_str());
+    if (!sp)
     {
         TYPE* tp = MakeType(bt_void);
         sp = makeID(sc_namespace, tp, NULL, litlate((char*)nameSpace->Name().c_str()));
         sp->sb->nameSpaceValues = Allocate<NAMESPACEVALUELIST>();
         sp->sb->nameSpaceValues->valueData = Allocate<NAMESPACEVALUEDATA>();
-        sp->sb->nameSpaceValues->valueData->syms = CreateHashTable(GLOBALHASHSIZE);
-        sp->sb->nameSpaceValues->valueData->tags = CreateHashTable(GLOBALHASHSIZE);
+        sp->sb->nameSpaceValues->valueData->syms = symbols.CreateSymbolTable();
+        sp->sb->nameSpaceValues->valueData->tags = symbols.CreateSymbolTable();
         sp->sb->nameSpaceValues->valueData->origname = sp;
         sp->sb->nameSpaceValues->valueData->name = sp;
         sp->sb->parentNameSpace = globalNameSpace->valueData->name;
@@ -251,18 +252,17 @@ bool Importer::EnterNamespace(const Namespace* nameSpace)
         SetLinkerNames(sp, lk_none);
         if (nameSpaces_.size() == 0)
         {
-            insert(sp, globalNameSpace->valueData->syms);
-            insert(sp, globalNameSpace->valueData->tags);
+            globalNameSpace->valueData->syms->Add(sp);
+            globalNameSpace->valueData->tags->Add(sp);
         }
         else
         {
-            insert(sp, nameSpaces_.back()->sb->nameSpaceValues->valueData->syms);
-            insert(sp, nameSpaces_.back()->sb->nameSpaceValues->valueData->tags);
+            nameSpaces_.back()->sb->nameSpaceValues->valueData->syms->Add(sp);
+            nameSpaces_.back()->sb->nameSpaceValues->valueData->tags->Add(sp);
         }
     }
     else
     {
-        sp = (SYMBOL*)(*hr)->p;
         if (sp->sb->storage_class != sc_namespace)
         {
             Utils::fatal("internal error: misuse of namespace");
@@ -290,17 +290,14 @@ bool Importer::EnterClass(const Class* cls)
     if (nameSpaces_.size())
     {
         SYMBOL* sp = NULL;
-        SYMLIST** hr = nullptr;
         if (structures_.size())
         {
-            hr = LookupName((char*)cls->Name().c_str(), structures_.back()->tp->syms);
+            sp = structures_.back()->tp->syms->Lookup((char*)cls->Name().c_str());
         }
         else if (nameSpaces_.size())
         {
-            hr = LookupName((char*)cls->Name().c_str(), nameSpaces_.back()->sb->nameSpaceValues->valueData->syms);
+            sp = nameSpaces_.back()->sb->nameSpaceValues->valueData->syms->Lookup((char*)cls->Name().c_str());
         }
-        if (hr)
-            sp = (SYMBOL*)(*hr)->p;
         if (!sp)
         {
             sp = SymAlloc();
@@ -318,7 +315,7 @@ bool Importer::EnterClass(const Class* cls)
             }
             if (structures_.size())
                 sp->sb->parentClass = structures_.back();
-            sp->tp->syms = CreateHashTable(1);
+            sp->tp->syms = symbols.CreateSymbolTable();
             sp->tp->rootType = sp->tp;
             sp->tp->sp = sp;
             sp->sb->declfile = sp->sb->origdeclfile = "[import]";
@@ -328,10 +325,10 @@ bool Importer::EnterClass(const Class* cls)
             SetLinkerNames(sp, lk_cdecl);
 
             if (useGlobal())
-                insert(sp, globalNameSpace->valueData->syms);
+                globalNameSpace->valueData->syms->Add(sp);
             else
-                insert(sp, structures_.size() ? structures_.back()->tp->syms
-                                              : nameSpaces_.back()->sb->nameSpaceValues->valueData->syms);
+                (structures_.size() ? structures_.back()->tp->syms
+                    : nameSpaces_.back()->sb->nameSpaceValues->valueData->syms)->Add(sp);
             sp->sb->msil = GetName(cls);
             cachedClasses_[sp->name] = sp;
         }
@@ -416,26 +413,25 @@ void Importer::InsertBaseClass(SYMBOL* sp, Class* cls)
 }
 void Importer::InsertFuncs(SYMBOL* sp, SYMBOL* base)
 {
-    SYMLIST* hr = base->tp->syms->table[0];
-    while (hr)
+    for (auto sym : * base->tp->syms)
     {
-        SYMBOL* sym = (SYMBOL*)hr->p;
         // inserts an overload list, if there is not already an overload list for this func
         if (sym->sb->storage_class == sc_overloads)
         {
-            SYMLIST* hrc = sp->tp->syms->table[0];
-            while (hrc)
+            bool found = false;
+            for (auto sp1 : *sp->tp->syms)
             {
-                if (!strcmp(hrc->p->name, sym->name))
+                if (!strcmp(sp1->name, sym->name))
+                {
+                    found = true;
                     break;
-                hrc = hrc->next;
+                }
             }
-            if (!hrc)
+            if (!found)
             {
-                insert(sym, sp->tp->syms);
+                sp->tp->syms->Add(sym);
             }
         }
-        hr = hr->next;
     }
 }
 bool Importer::EnterMethod(const Method* method)
@@ -506,7 +502,7 @@ bool Importer::EnterMethod(const Method* method)
             sp->sb->parentClass = structures_.back();
             sp->sb->declfile = sp->sb->origdeclfile = "[import]";
             sp->sb->access = ac_public;
-            sp->tp->syms = CreateHashTable(1);
+            sp->tp->syms = symbols.CreateSymbolTable();
             sp->sb->isConstructor = ctor;
             if (!args.size())
             {
@@ -524,7 +520,7 @@ bool Importer::EnterMethod(const Method* method)
                 sp1->sb->access = ac_public;
                 sp1->sb->parent = sp;
                 SetLinkerNames(sp1, lk_cdecl);
-                insert(sp1, sp->tp->syms);
+                sp->tp->syms->Add(sp1);
             }
             for (int i = 0; i < args.size(); i++)
             {
@@ -536,7 +532,7 @@ bool Importer::EnterMethod(const Method* method)
                 sp1->sb->access = ac_public;
                 sp1->sb->parent = sp;
                 SetLinkerNames(sp1, lk_cdecl);
-                insert(sp1, sp->tp->syms);
+                sp->tp->syms->Add(sp1);
             }
             if (method->Signature()->Flags() & MethodSignature::Vararg)
             {
@@ -548,14 +544,11 @@ bool Importer::EnterMethod(const Method* method)
                 sp1->sb->access = ac_public;
                 sp1->sb->parent = sp;
                 SetLinkerNames(sp1, lk_cdecl);
-                insert(sp1, sp->tp->syms);
+                sp->tp->syms->Add(sp1);
             }
             SetLinkerNames(sp, lk_cdecl);
 
-            SYMLIST** hr = LookupName((char*)method->Signature()->Name().c_str(), structures_.back()->tp->syms);
-            SYMBOL* funcs = NULL;
-            if (hr)
-                funcs = (SYMBOL*)((*hr)->p);
+            SYMBOL* funcs = structures_.back()->tp->syms->Lookup((char*)method->Signature()->Name().c_str());
             if (!funcs)
             {
                 TYPE* tp = MakeType(bt_aggregate);
@@ -564,17 +557,17 @@ bool Importer::EnterMethod(const Method* method)
                 tp->sp = funcs;
                 SetLinkerNames(funcs, lk_cdecl);
                 if (useGlobal())
-                    insert(funcs, globalNameSpace->valueData->syms);
+                    globalNameSpace->valueData->syms->Add(funcs);
                 else
-                    insert(funcs, structures_.back()->tp->syms);
+                    structures_.back()->tp->syms->Add(funcs);
                 funcs->sb->parent = sp;
-                funcs->tp->syms = CreateHashTable(1);
-                insert(sp, funcs->tp->syms);
+                funcs->tp->syms = symbols.CreateSymbolTable();
+                sp->tp->syms->Add(sp);
                 sp->sb->overloadName = funcs;
             }
             else if (funcs->sb->storage_class == sc_overloads)
             {
-                insertOverload(sp, funcs->tp->syms);
+                funcs->tp->syms->insertOverload(sp);
                 sp->sb->overloadName = funcs;
             }
             else
@@ -615,9 +608,9 @@ bool Importer::EnterField(const Field* field)
             sp->sb->access = ac_public;
             SetLinkerNames(sp, lk_cdecl);
             if (useGlobal())
-                insert(sp, globalNameSpace->valueData->syms);
+                globalNameSpace->valueData->syms->Add(sp);
             else
-                insert(sp, structures_.back()->tp->syms);
+                structures_.back()->tp->syms->Add(sp);
         }
     }
     return true;
@@ -646,9 +639,9 @@ bool Importer::EnterProperty(const Property* property)
                 sp->sb->has_property_setter = true;
             SetLinkerNames(sp, lk_cdecl);
             if (useGlobal())
-                insert(sp, globalNameSpace->valueData->syms);
+                globalNameSpace->valueData->syms->Add(sp);
             else
-                insert(sp, structures_.back()->tp->syms);
+                structures_.back()->tp->syms->Add(sp);
         }
     }
     return true;

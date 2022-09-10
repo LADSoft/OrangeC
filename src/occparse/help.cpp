@@ -28,7 +28,6 @@
 #include "config.h"
 #include "initbackend.h"
 #include "stmt.h"
-#include "symtab.h"
 #include "declare.h"
 #include "OptUtils.h"
 #include "expr.h"
@@ -44,6 +43,7 @@
 #include "help.h"
 #include "declcpp.h"
 #include "ildata.h"
+#include "symtab.h"
 namespace Parser
 {
 
@@ -1279,16 +1279,16 @@ static EXPRESSION* msilThunkSubStructs(EXPRESSION* exps, EXPRESSION* expsym, SYM
             offset %= tp->size;  // in case of array
             if (isstructured(tp))
             {
-                for (auto hr = basetype(tp)->syms->table[0]; hr; hr = hr->next)
-                    if (offset >= hr->p->sb->offset && offset < hr->p->sb->offset + hr->p->tp->size)
+                for (auto sp : * basetype(tp)->syms)
+                    if (offset >= sp->sb->offset && offset < sp->sb->offset + sp->tp->size)
                     {
-                        if (ismemberdata(hr->p))
+                        if (ismemberdata(sp))
                         {
-                            if (isstructured(hr->p->tp))
+                            if (isstructured(sp->tp))
                             {
-                                offset -= hr->p->sb->offset;
-                                exps = exprNode(en_structadd, exps, varNode(en_structelem, hr->p));
-                                tp = hr->p->tp;
+                                offset -= sp->sb->offset;
+                                exps = exprNode(en_structadd, exps, varNode(en_structelem, sp));
+                                tp = sp->tp;
                             }
                             else
                             {
@@ -1333,7 +1333,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             else if (funcsp)
             {
                 SYMBOL* sym =
-                    (SYMBOL*)basetype(funcsp->tp)->syms->table[0] ? (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p : nullptr;
+                    (SYMBOL*)basetype(funcsp->tp)->syms->size() > 0 ? (SYMBOL*)basetype(funcsp->tp)->syms->front() : nullptr;
                 if (sym && sym->sb->thisPtr)
                     expsym = varNode(en_auto, sym);  // this ptr
                 else
@@ -1389,7 +1389,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     if (thisptr)
                         expsym = thisptr;
                     else if (funcsp)
-                        expsym = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);  // this ptr
+                        expsym = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->front());  // this ptr
                     else
                     {
                         expsym = intNode(en_c_i, 0);
@@ -1560,7 +1560,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         spc = exp->v.sp;
                         spc->sb->init = init;
                         insertInitSym(spc);
-                        insert(spc, localNameSpace->valueData->syms);
+                        localNameSpace->valueData->syms->Add(spc);
                         spc->sb->label = Optimizer::nextLabel++;
                         if (expsym)
                         {
@@ -1710,7 +1710,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
         SYMBOL* guardfunc = namespacesearch("__static_guard", globalNameSpace, false, false);
         if (guardfunc)
         {
-            guardfunc = guardfunc->tp->syms->table[0]->p;
+            guardfunc = guardfunc->tp->syms->front();
             EXPRESSION* guard = anonymousVar(sc_localstatic, &stdint);
             insertInitSym(guard->v.sp);
             deref(&stdpointer, &guard);

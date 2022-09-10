@@ -26,11 +26,13 @@
 #include "template.h"
 #include "initbackend.h"
 #include "unmangle.h"
-#include "symtab.h"
 #include "OptUtils.h"
 #include "help.h"
 #include "ccerr.h"
+#include "template.h"
+#include "declare.h"
 #include "declcpp.h"
+#include "symtab.h"
 
 namespace Parser
 {
@@ -56,7 +58,7 @@ static TYPE* replaceTemplateSelector(TYPE* tp)
                 SYMBOL* sp1 = GetClassTemplate(sp2, tp->sp->sb->templateSelector->next->templateParams, true);
                 if (sp1)
                 {
-                    sp1 = search(tp->sp->sb->templateSelector->next->next->name, sp1->tp->syms);
+                    sp1 = sp1->tp->syms->search(tp->sp->sb->templateSelector->next->next->name);
                     if (sp1)
                     {
                         tp = sp1->tp;
@@ -317,7 +319,6 @@ void RenderExpr(char* buf, EXPRESSION* exp)
 TYPE* typenum(char* buf, TYPE* tp)
 {
     SYMBOL* sym;
-    SYMLIST* hr;
     char name[4096];
     if (tp == nullptr)
     {
@@ -338,9 +339,8 @@ TYPE* typenum(char* buf, TYPE* tp)
         case bt_aggregate:
             if (!tp->syms)
                 break;
-            hr = tp->syms->table[0];
-            sym = hr->p;
-            if (hr->next || !strcmp(sym->name, tp->sp->name))  // the tail is to prevent a problem when there are a lot of errors
+            sym = tp->syms->front();
+            if (tp->syms->size() > 1 || !strcmp(sym->name, tp->sp->name))  // the tail is to prevent a problem when there are a lot of errors
             {
                 strcpy(buf, " (*)(\?\?\?)");
                 break;
@@ -353,18 +353,18 @@ TYPE* typenum(char* buf, TYPE* tp)
             buf = buf + strlen(buf);
             if (tp->syms)
             {
-                hr = tp->syms->table[0];
-                if (hr && hr->p)
+                auto it = tp->syms->begin();
+                if (it != tp->syms->end() && *it)
                 {
-                    if (hr->p->sb->thisPtr)
+                    if ((*it)->sb->thisPtr)
                     {
-                        SYMBOL* thisptr = hr->p;
+                        SYMBOL* thisptr = *it;
                         *buf++ = ' ';
                         *buf++ = '(';
                         getcls(buf, basetype(basetype(thisptr->tp)->btp)->sp);
                         strcat(buf, "::*)(");
                         buf += strlen(buf);
-                        hr = hr->next;
+                        ++it;
                     }
                     else
                     {
@@ -377,16 +377,17 @@ TYPE* typenum(char* buf, TYPE* tp)
                     strcat(buf, " (*)(");
                     buf += strlen(buf);
                 }
-                while (hr)
+                bool cleanup = it != tp->syms->end();
+                while (it != tp->syms->end())
                 {
-                    sym = hr->p;
+                    sym = *it;
                     *buf = 0;
                     typenum(buf, sym->tp);
                     buf = buf + strlen(buf);
-                    hr = hr->next;
-                    if (hr)
-                        *buf++ = ',';
+                    ++it;
                 }
+                if (cleanup)
+                    buf--;
             }
             else
             {
@@ -511,17 +512,14 @@ TYPE* typenum(char* buf, TYPE* tp)
                 buf += strlen(buf);
                 if (basetype(func)->syms)
                 {
-                    hr = basetype(func)->syms->table[0];
-                    while (hr)
+                    for (auto sym : *basetype(func)->syms)
                     {
-                        sym = hr->p;
                         *buf = 0;
                         typenum(buf, sym->tp);
                         buf = buf + strlen(buf);
-                        hr = hr->next;
-                        if (hr)
-                            *buf++ = ',';
                     }
+                    if (basetype(func)->syms->size())
+                        buf--;
                 }
                 *buf++ = ')';
                 *buf = 0;

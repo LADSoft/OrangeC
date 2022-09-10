@@ -30,7 +30,6 @@
 #include "initbackend.h"
 #include "stmt.h"
 #include "mangle.h"
-#include "symtab.h"
 #include "template.h"
 #include "lambda.h"
 #include "declare.h"
@@ -49,6 +48,7 @@
 #include "memory.h"
 #include "exprcpp.h"
 #include "constexpr.h"
+#include "symtab.h"
 
 namespace Parser
 {
@@ -209,7 +209,7 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
             //            enclosing = strSym;
         }
         if (funcsp)
-            en = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);  // this ptr
+            en = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->front());  // this ptr
         else
             en = intNode(en_thisshim, 0);
         if (lambdas && !memberSym->sb->parentClass->sb->islambda)
@@ -222,7 +222,7 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
             }
             else
             {
-                SYMBOL* sym = search("$this", lambdas->cls->tp->syms);
+                SYMBOL* sym = lambdas->cls->tp->syms->search("$this");
                 enclosing = basetype(lambdas->lthis->tp)->btp->sp;
                 if (sym)
                 {
@@ -415,7 +415,7 @@ bool castToPointer(TYPE** tp, EXPRESSION** exp, enum e_kw kw, TYPE* other)
                     retsp->sb->allocate = true;
                     retsp->sb->attribs.inheritable.used = retsp->sb->assigned = true;
                     SetLinkerNames(retsp, lk_cdecl);
-                    insert(retsp, localNameSpace->valueData->syms);
+                    localNameSpace->valueData->syms->Add(retsp);
                     params->returnSP = retsp;
                     params->returnEXP = varNode(en_auto, retsp);
                 }
@@ -490,7 +490,7 @@ typedef struct _subslist
     SYMBOL* sp;
 } SUBSTITUTIONLIST;
 
-static EXPRESSION* substitute_vars(EXPRESSION* exp, SUBSTITUTIONLIST* match, HASHTABLE* syms)
+static EXPRESSION* substitute_vars(EXPRESSION* exp, SUBSTITUTIONLIST* match, SymbolTable<SYMBOL>* syms)
 {
     EXPRESSION* rv;
     if (lvalue(exp))
@@ -509,15 +509,13 @@ static EXPRESSION* substitute_vars(EXPRESSION* exp, SUBSTITUTIONLIST* match, HAS
         }
         else if (syms && exp->v.sp)
         {
-            SYMLIST* hr = syms->table[0];
-            while (hr)
+            for (auto sp : *syms)
             {
-                CONSTEXPRSYM* ces = (CONSTEXPRSYM*)hr->p;
+                CONSTEXPRSYM* ces = (CONSTEXPRSYM*)sp;
                 if (ces->sp == exp->v.sp)
                 {
                     return ces->exp;
                 }
-                hr = hr->next;
             }
         }
     }
@@ -529,39 +527,40 @@ static EXPRESSION* substitute_vars(EXPRESSION* exp, SUBSTITUTIONLIST* match, HAS
         rv->right = substitute_vars(exp->right, match, syms);
     return rv;
 }
-EXPRESSION* substitute_params_for_constexpr(EXPRESSION* exp, FUNCTIONCALL* funcparams, HASHTABLE* syms)
+EXPRESSION* substitute_params_for_constexpr(EXPRESSION* exp, FUNCTIONCALL* funcparams, SymbolTable<SYMBOL>* syms)
 {
-    SYMLIST* hr = basetype(funcparams->sp->tp)->syms->table[0];
+    auto it = basetype(funcparams->sp->tp)->syms->begin();
+    auto itend = basetype(funcparams->sp->tp)->syms->end();
     INITLIST* args = funcparams->arguments;
     SUBSTITUTIONLIST *list = nullptr, **plist = &list;
     if (!funcparams->sp->sb->castoperator)
     {
-        if (hr->p->sb->thisPtr)
-            hr = hr->next;
+        if ((*it)->sb->thisPtr)
+            ++it;
         // because we already did function matching to get the constructor,
         // the worst that can happen here is that the specified arg list is shorter
         // than the actual parameters list
-        while (hr && args)
+        while (it != itend && args)
         {
             *plist = Allocate<SUBSTITUTIONLIST>();
             (*plist)->exp = args->exp;
-            (*plist)->sp = hr->p;
+            (*plist)->sp = *it;
             plist = &(*plist)->next;
-            hr = hr->next;
+            ++it;
             args = args->next;
         }
-        while (hr)
+        while (it != itend)
         {
             *plist = Allocate<SUBSTITUTIONLIST>();
-            (*plist)->exp = hr->p->sb->init->exp;
-            (*plist)->sp = hr->p;
+            (*plist)->exp = (*it)->sb->init->exp;
+            (*plist)->sp = (*it);
             plist = &(*plist)->next;
-            hr = hr->next;
+            ++it;
         }
     }
     return substitute_vars(exp, list, syms);
 }
-STATEMENT* do_substitute_for_function(STATEMENT* block, FUNCTIONCALL* funcparams, HASHTABLE* syms)
+STATEMENT* do_substitute_for_function(STATEMENT* block, FUNCTIONCALL* funcparams, SymbolTable<SYMBOL>* syms)
 {
     STATEMENT *rv = nullptr, **prv = &rv;
     while (block != nullptr)
@@ -577,7 +576,7 @@ STATEMENT* do_substitute_for_function(STATEMENT* block, FUNCTIONCALL* funcparams
     }
     return rv;
 }
-EXPRESSION* substitute_params_for_function(FUNCTIONCALL* funcparams, HASHTABLE* syms)
+EXPRESSION* substitute_params_for_function(FUNCTIONCALL* funcparams, SymbolTable<SYMBOL>* syms)
 {
     STATEMENT* st = do_substitute_for_function(funcparams->sp->sb->inlineFunc.stmt, funcparams, syms);
     EXPRESSION* exp = exprNode(en_stmt, 0, 0);
@@ -666,7 +665,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
         {
             // auto-boxing for msil
             TYPE* tp1 = find_boxed_type(basetype(*tp));
-            if (tp1 && search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp1)->syms))
+            if (tp1 && basetype(tp1)->syms->search(overloadNameTab[CI_CONSTRUCTOR]))
             {
                 unboxed = *tp;
                 *tp = tp1;
@@ -814,7 +813,7 @@ bool doDynamicCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* func
                         SYMBOL* oldrtti = RTTIDumpType(tpo);
                         SYMBOL* newrtti = basetype(tpn)->type == bt_void ? nullptr : RTTIDumpType(tpn);
                         deref(&stdpointer, &exp1);
-                        sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
+                        sym = (SYMBOL*)basetype(sym->tp)->syms->front();
                         arg1->next = arg2;
                         arg2->next = arg3;
                         arg3->next = arg4;
@@ -838,7 +837,7 @@ bool doDynamicCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* func
                     }
                     if (isref(*newType))
                         *newType = tpn;
-                    if (!basetype(tpo)->sp->sb->hasvtab || !basetype(tpo)->sp->tp->syms->table[0])
+                    if (!basetype(tpo)->sp->sb->hasvtab || !basetype(tpo)->sp->tp->syms->front())
                         errorsym(ERR_NOT_DEFINED_WITH_VIRTUAL_FUNCS, basetype(tpo)->sp);
                     return true;
                 }
@@ -1240,8 +1239,8 @@ LEXLIST* expression_typeid(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION**
                 valtp->esize = intNode(en_c_i, 2);
                 val = makeID(sc_auto, valtp, nullptr, AnonymousName());
                 val->sb->allocate = true;
-                insert(val, localNameSpace->valueData->syms);
-                sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
+                localNameSpace->valueData->syms->Add(val);
+                sym = (SYMBOL*)basetype(sym->tp)->syms->front();
                 funcparams->arguments = arg;
                 funcparams->sp = sym;
                 funcparams->functp = sym->tp;
@@ -1312,18 +1311,14 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
     s3 = makeID(sc_overloads, tpx, nullptr, name);
     tpx->sp = s3;
     SetLinkerNames(s3, lk_c);
-    tpx->syms = CreateHashTable(1);
-    hrd = &tpx->syms->table[0];
+    tpx->syms = symbols.CreateSymbolTable();
+    auto itd = tpx->syms->begin();
     if (s2)
     {
-        hrs = s2->tp->syms->table[0];
-        while (hrs)
+        for (auto sp : *s2->tp->syms)
         {
-            SYMLIST* ins = Allocate<SYMLIST>();
-            ins->p = hrs->p;
-            *hrd = ins;
-            hrd = &(*hrd)->next;
-            hrs = hrs->next;
+            itd = tpx->syms->insert(itd, sp);
+            ++itd;
         }
     }
     funcparams->ascall = true;
@@ -1396,11 +1391,11 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         case ovcl_assign_numericptr:
         case ovcl_assign_numeric:
         case ovcl_assign_int:
-            s1 = search(name, localNameSpace->valueData->syms);
+            s1 = localNameSpace->valueData->syms->search(name);
             if (!s1)
                 s1 = namespacesearch(name, localNameSpace, false, false);
             if (!s1 && enumSyms)
-                s1 = search(name, enumSyms->tp->syms);
+                s1 = enumSyms->tp->syms->search(name);
             if (!s1)
                 s1 = namespacesearch(name, globalNameSpace, false, false);
             break;
@@ -1470,54 +1465,38 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
     s3 = makeID(sc_overloads, tpx, nullptr, name);
     tpx->sp = s3;
     SetLinkerNames(s3, lk_c);
-    tpx->syms = CreateHashTable(1);
-    hrd = &tpx->syms->table[0];
+    tpx->syms = symbols.CreateSymbolTable();
+    auto itd = tpx->syms->begin();
     if (s1)
     {
-        hrs = s1->tp->syms->table[0];
-        while (hrs)
+        for (auto sp : *s1->tp->syms)
         {
-            SYMLIST* ins = Allocate<SYMLIST>();
-            ins->p = hrs->p;
-            *hrd = ins;
-            hrd = &(*hrd)->next;
-            hrs = hrs->next;
+            itd = tpx->syms->insert(itd, sp);
+            ++itd;
         }
     }
     if (s2)
     {
-        hrs = s2->tp->syms->table[0];
-        while (hrs)
+        for (auto sp : *s2->tp->syms)
         {
-            SYMLIST* ins = Allocate<SYMLIST>();
-            ins->p = hrs->p;
-            *hrd = ins;
-            hrd = &(*hrd)->next;
-            hrs = hrs->next;
+            itd = tpx->syms->insert(itd, sp);
+            ++itd;
         }
     }
     if (s4)
     {
-        hrs = s4->tp->syms->table[0];
-        while (hrs)
+        for (auto sp : *s4->tp->syms)
         {
-            SYMLIST* ins = Allocate<SYMLIST>();
-            ins->p = hrs->p;
-            *hrd = ins;
-            hrd = &(*hrd)->next;
-            hrs = hrs->next;
+            itd = tpx->syms->insert(itd, sp);
+            ++itd;
         }
     }
     if (s5)
     {
-        hrs = s5->tp->syms->table[0];
-        while (hrs)
+        for (auto sp : *s5->tp->syms)
         {
-            SYMLIST* ins = Allocate<SYMLIST>();
-            ins->p = hrs->p;
-            *hrd = ins;
-            hrd = &(*hrd)->next;
-            hrs = hrs->next;
+            itd = tpx->syms->insert(itd, sp);
+            ++itd;
         }
     }
     funcparams = Allocate<FUNCTIONCALL>();
@@ -1619,11 +1598,12 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
             case ovcl_binary_numericptr:
                 if (!isstructured(tpClean) && (!tp1Clean || !isstructured(tp1Clean)))
                 {
-                    SYMLIST* hr = basetype(s3->tp)->syms->table[0];
-                    if (hr->p->sb->thisPtr)
-                        hr = hr->next;
-                    TYPE* arg1 = hr->p->tp;
-                    TYPE* arg2 = tp1 && hr->next ? hr->next->p->tp : nullptr;
+                    auto it = basetype(s3->tp)->syms->begin();
+                    if ((*it)->sb->thisPtr)
+                        ++it;
+                    TYPE* arg1 = (*it)->tp;
+                    ++it;
+                    TYPE* arg2 = tp1 && it != basetype(s3->tp)->syms->end() ? (*it)->tp : nullptr;
                     if (arg1 && isref(arg1))
                         arg1 = basetype(arg1)->btp;
                     if (arg2 && isref(arg2))
@@ -2268,9 +2248,9 @@ static bool noexceptExpression(EXPRESSION* node)
                 SYMBOL* sym = fp->sp;
                 if (sym->tp->type == bt_aggregate)
                 {
-                    if (!sym->tp->syms->table[0]->next)
+                    if (sym->tp->syms->size() == 1)
                     {
-                        sym = sym->tp->syms->table[0]->p;
+                        sym = sym->tp->syms->front();
                     }
                 }
                 rv = sym->sb->noExcept;

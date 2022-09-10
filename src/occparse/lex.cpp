@@ -37,7 +37,6 @@
 #include "stmt.h"
 #include "occparse.h"
 #include "template.h"
-#include "symtab.h"
 #include "constopt.h"
 #include "memory.h"
 #include "ifloatconv.h"
@@ -45,6 +44,8 @@
 #include "help.h"
 #include "expr.h"
 #include "template.h"
+#include "declare.h"
+#include "symtab.h"
 
 //#define TESTANNOTATE
 
@@ -71,10 +72,6 @@ static int nextFree;
 static const unsigned char* linePointer;
 static std::string currentLine;
 static int lastBrowseIndex;
-#ifdef KW_HASH
-HASHTABLE* kwhash;
-#endif
-
 struct ParseHold
 {
     std::string currentLine;
@@ -399,6 +396,11 @@ KEYWORD keywords[] = {
 };
 
 #define TABSIZE (sizeof(keywords) / sizeof(keywords[0]))
+#ifdef KW_HASH
+SymbolTableFactory<KEYWORD> lexFactory;
+SymbolTable<KEYWORD>* kwSymbols;
+#endif
+
 static bool kwmatches(KEYWORD* kw);
 void lexini(void)
 /*
@@ -409,11 +411,12 @@ void lexini(void)
     Optimizer::cparams.prm_extwarning = false;
 #ifdef KW_HASH
     int i;
-    kwhash = CreateHashTable(1024);
+    lexFactory.Reset();
+    kwSymbols = lexFactory.CreateSymbolTable();
     for (i = 0; i < TABSIZE; i++)
     {
         if (kwmatches(&keywords[i]))
-            insert((SYMBOL*)&keywords[i], kwhash);
+            kwSymbols->Add(&keywords[i]);
     }
 #endif
     llminus1 = 0;
@@ -497,7 +500,7 @@ KEYWORD* searchkw(const unsigned char** p)
         }
         *q = 0;
 #ifdef KW_HASH
-        kw = (KEYWORD*)search((char*)buf, kwhash);
+        kw = kwSymbols->search((char*)buf);
         if (kw)
 #else
         kw = (KEYWORD*)binarySearch(buf);
@@ -536,7 +539,7 @@ KEYWORD* searchkw(const unsigned char** p)
         if (len)
         {
             buf[len] = 0;
-            while (len && (found = (KEYWORD*)search((char*)buf, kwhash)) == nullptr)
+            while (len && (found = kwSymbols->search((char*)buf)) == nullptr)
             {
                 buf[--len] = 0;
             }

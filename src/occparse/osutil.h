@@ -55,25 +55,11 @@ typedef struct
     void (*routine)(char, char*);
 } CMDLIST;
 
-/* Global HASHRECbol table is a hash table */
-#define GLOBALHASHSIZE 8192 /*9973 */
-#define LOCALHASHSIZE 29
-
 typedef struct _symlist_
 {
-    struct _symlist_* next; /* next to next element in list */
+    _symlist_* next;
     struct sym* p;
 } SYMLIST;
-
-typedef struct _hashtable_
-{
-    struct _hashtable_ *next, *chain;
-    struct _hashtable_* fast;
-    int size;
-    int blockLevel;
-    SYMLIST** table;
-
-} HASHTABLE;
 
 struct DefValue
 {

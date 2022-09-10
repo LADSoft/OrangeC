@@ -27,6 +27,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "db.h"
+#include "ccerr.h"
+#include "template.h"
+#include "declare.h"
 #include "symtab.h"
 #include "memory.h"
 #define STRINGVERSION "121"
@@ -39,13 +42,13 @@ using namespace Parser;
 
 namespace CompletionCompiler
 {
-void ccLoadIdsFromNameTable(const char* tabname, HASHTABLE* table);
 
 typedef struct _symid
 {
     const char* name;
     sqlite3_int64 id;
 } SYMID;
+void ccLoadIdsFromNameTable(const char* tabname, SymbolTable<SYMID>* table);
 static int version_ok;
 const char* tables = {
     "BEGIN; "
@@ -183,33 +186,35 @@ static const char* deletion = {
 static sqlite3* dbPointer;
 static sqlite3_stmt* whndln;
 static sqlite3_stmt* shndln;
-static HASHTABLE* listn;
+static SymbolTable<SYMID>* listn;
 static sqlite3_stmt* whndlm;
 static sqlite3_stmt* shndlm;
-static HASHTABLE* listm;
+static SymbolTable<SYMID>* listm;
 static sqlite3_stmt* whndls;
 static sqlite3_stmt* shndls;
-static HASHTABLE* lists;
+static SymbolTable<SYMID>* lists;
 static sqlite3_stmt* whndlf;
 static sqlite3_stmt* shndlf;
-static HASHTABLE* listf;
+static SymbolTable<SYMID>* listf;
 
-static HASHTABLE* map;
+static SymbolTable<SYMID>* map;
 
+static SymbolTableFactory<SYMID> dbSymbolTableFactory;
 void ccReset(void)
 {
     whndln = whndlm = whndls = whndlf = NULL;
     shndln = shndlm = shndls = shndlf = NULL;
-    listn = CreateHashTable(32000);
-    listm = CreateHashTable(32000);
-    lists = CreateHashTable(32000);
-    listf = CreateHashTable(32000);
+    dbSymbolTableFactory.Reset();
+    listn = dbSymbolTableFactory.CreateSymbolTable();
+    listm = dbSymbolTableFactory.CreateSymbolTable();
+    lists = dbSymbolTableFactory.CreateSymbolTable();
+    listf = dbSymbolTableFactory.CreateSymbolTable();
     ccLoadIdsFromNameTable("Names", listn);
     ccLoadIdsFromNameTable("MemberNames", listm);
     ccLoadIdsFromNameTable("StructNames", lists);
     ccLoadIdsFromNameTable("FileNames", listf);
 
-    map = CreateHashTable(32000);
+    map = dbSymbolTableFactory.CreateSymbolTable();
 }
 static void unregister(void)
 {
@@ -347,7 +352,7 @@ int ccDBDeleteForFile(sqlite3_int64 id)
     }
     return rv;
 }
-void ccLoadIdsFromNameTable(const char* tabname, HASHTABLE* table)
+void ccLoadIdsFromNameTable(const char* tabname, SymbolTable<SYMID>* table)
 {
     static const char* query = "SELECT name, id FROM %s";
     int rc = SQLITE_OK;
@@ -373,7 +378,7 @@ void ccLoadIdsFromNameTable(const char* tabname, HASHTABLE* table)
                     v = Allocate<SYMID>();
                     v->name = litlate((const char*)sqlite3_column_text(handle, 0));
                     v->id = sqlite3_column_int64(handle, 1);
-                    AddName((SYMBOL*)v, table);
+                    table->AddName(v);
                     rc = SQLITE_OK;
                     break;
                 default:
@@ -384,62 +389,22 @@ void ccLoadIdsFromNameTable(const char* tabname, HASHTABLE* table)
         sqlite3_finalize(handle);
     }
 }
-static int ccSelectIdFromNameTable(sqlite3_stmt** shndl, const char* name, const char* tabname, sqlite3_int64* id, HASHTABLE* table)
+static int ccSelectIdFromNameTable(sqlite3_stmt** shndl, const char* name, const char* tabname, sqlite3_int64* id, SymbolTable<SYMID>* table)
 {
     (void)shndl;
     (void)tabname;
     static const char* query = "SELECT id FROM %s WHERE name = ?";
     int rc = SQLITE_OK;
-    SYMLIST** p = LookupName(name, table);
-    if (p)
+    auto sp = table->Lookup(name);
+    if (sp)
     {
-        *id = ((SYMID*)((*p)->p))->id;
+        *id = sp->id;
         return rc;
     }
-    /*
-    if (!*shndl)
-    {
-        char qbuf[256];
-        sprintf(qbuf, query, tabname);
-        rc = sqlite3_prepare_v2(dbPointer, qbuf, strlen(qbuf)+1, shndl, NULL);
-    }
-    if (rc == SQLITE_OK)
-    {
-        int done = false;
-        rc = SQLITE_DONE;
-        sqlite3_reset(*shndl);
-        sqlite3_bind_text(*shndl, 1, name, strlen(name), SQLITE_STATIC);
-        while (!done)
-        {
-            switch(rc = sqlite3_step(*shndl))
-            {
-                case SQLITE_BUSY:
-                    done = true;
-                    break;
-                case SQLITE_DONE:
-                    done = true;
-                    break;
-                case SQLITE_ROW:
-                    v = Allocate<SYMID>();
-                    v->name = name;
-                    *id = sqlite3_column_int64(*shndl, 0);
-                    v->id = *id;
-                    AddName((SYMBOL *)v, table);
-                    rc = SQLITE_OK;
-                    done = true;
-                    break;
-                default:
-                    done = true;
-                    break;
-            }
-        }
-    }
-    return rc;
-    */
     return SQLITE_ERROR;
 }
 static int ccWriteNameInTable(sqlite3_stmt** whndl, sqlite3_stmt** shndl, const char* name, const char* tabname, sqlite3_int64* id,
-                              HASHTABLE* table)
+                              SymbolTable<SYMID>* table)
 {
     static const char* query = "INSERT INTO %s (name) VALUES (?)";
     int rc;
@@ -481,7 +446,7 @@ static int ccWriteNameInTable(sqlite3_stmt** whndl, sqlite3_stmt** shndl, const 
             v->name = name;
             *id = sqlite3_last_insert_rowid(dbPointer);
             v->id = *id;
-            AddName((SYMBOL*)v, table);
+            table->AddName(v);
         }
     }
     return rc;
@@ -496,12 +461,12 @@ static int ccWriteMap(sqlite_int64 smpl_id, sqlite_int64 cplx_id, sqlite_int64 m
     if (!handle)
         rc = sqlite3_prepare_v2(dbPointer, query, strlen(query) + 1, &handle, NULL);
     sprintf(id, "%d,%d", (int)smpl_id, (int)cplx_id);
-    if (!LookupName(id, map))
+    if (!map->Lookup(id))
     {
         int done = false;
         SYMID* v = Allocate<SYMID>();
         v->name = litlate(id);
-        AddName((SYMBOL*)v, map);
+        map->AddName(v);
         rc = SQLITE_DONE;
         sqlite3_reset(handle);
         sqlite3_bind_int64(handle, 1, smpl_id);
@@ -603,14 +568,13 @@ int ccWriteStructName(const char* name, sqlite_int64* id)
 int ccWriteFileName(const char* name, sqlite_int64* id)
 {
     char buf[260], *p = buf;
-    SYMLIST** q;
     while (*name)
         *p++ = tolower(*name++);
     *p = 0;
-    q = LookupName(buf, listf);
-    if (q)
+    auto sp = listf->Lookup(buf);
+    if (sp)
     {
-        *id = ((SYMID*)((*q)->p))->id;
+        *id = sp->id;
         return true;
     }
     name = litlate(buf);

@@ -22,31 +22,189 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
+#ifndef _SYMTAB_H
+#define _SYMTAB_H
+#include <list>
+#include <unordered_map>
+#include <iterator>
+#include <string>
+namespace CompletionCompiler
+{
+    extern Parser::SymbolTable<Parser::SYMBOL>* ccSymbols;
+    void ccSetSymbol(Parser::SYMBOL* s);
+};
 
 namespace Parser
 {
-extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
-extern HASHTABLE* labelSyms;
 
-extern HASHTABLE* CreateHashTable(int size);
-extern int matchOverloadLevel;
+    extern struct __nsv* globalNameSpace, * localNameSpace;
+    extern SymbolTable<SYMBOL>* labelSyms;
 
-HASHTABLE* CreateHashTable(int size);
-void syminit(void);
-HASHTABLE* CreateHashTable(int size);
-void AllocateLocalContext(BLOCKDATA* block, SYMBOL* sym, int label);
-void TagSyms(HASHTABLE* syms);
-void FreeLocalContext(BLOCKDATA* block, SYMBOL* sym, int label);
-SYMLIST** GetHashLink(HASHTABLE* t, const char* string);
-SYMLIST* AddName(SYMBOL* item, HASHTABLE* table);
-SYMLIST* AddOverloadName(SYMBOL* item, HASHTABLE* table);
-SYMLIST** LookupName(const char* name, HASHTABLE* table);
-SYMBOL* search(const char* name, HASHTABLE* table);
-bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly);
-SYMBOL* searchOverloads(SYMBOL* sym, HASHTABLE* table);
-SYMBOL* gsearch(const char* name);
-SYMBOL* tsearch(const char* name);
-void baseinsert(SYMBOL* in, HASHTABLE* table);
-void insert(SYMBOL* in, HASHTABLE* table);
-void insertOverload(SYMBOL* in, HASHTABLE* table);
+    extern int matchOverloadLevel;
+    extern SymbolTableFactory<SYMBOL> symbols;
+
+    void syminit(void);
+    void AllocateLocalContext(BLOCKDATA* block, SYMBOL* sym, int label);
+    void TagSyms(SymbolTable<SYMBOL>* syms);
+    void FreeLocalContext(BLOCKDATA* block, SYMBOL* sym, int label);
+    bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly);
+    SYMBOL* searchOverloads(SYMBOL* sym, SymbolTable<SYMBOL>* table);
+    SYMBOL* gsearch(const char* name);
+    SYMBOL* tsearch(const char* name);
+
+template <class T>
+inline T* SymbolTable<T>::AddOverloadName(T* s)
+{
+    auto p = Lookup(sym->name);
+    if (p)
+    {
+        for (auto q : *p->tp->syms)
+        {
+            if (!strcmp(q->sb->decoratedName, sym->sb->decoratedName))
+                return (q);
+        }
+    }
+    AddName(sym);
+    return (0);
+}
+template <>
+inline SYMBOL* SymbolTable<SYMBOL>::AddOverloadName(SYMBOL* sym)
+{
+    if (!IsCompiler() && !sym->parserSet)
+    {
+        sym->parserSet = true;
+        CompletionCompiler::ccSetSymbol(sym);
+    }
+
+    auto p = Lookup(sym->name);
+    if (p)
+    {
+        for (auto q : *p->tp->syms)
+        {
+            if (!strcmp(q->sb->decoratedName, sym->sb->decoratedName))
+                return (q);
+        }
+    }
+    AddName(sym);
+    return (0);
+}
+template<class T>
+void SymbolTable<T>::remove(typename SymbolTable<T>::iterator it)
+{
+    lookupTable_.erase((*it)->name);
+    return inOrder_.remove(*it);
+}
+template<class T>
+typename SymbolTable<T>::iterator SymbolTable<T>::insert(typename SymbolTable<T>::iterator it, SYMBOL* sym)
+{
+    lookupTable_[sym->name] = sym;
+    return inOrder_.insert(it, sym);
+}
+template<class T>
+T* SymbolTable<T>::Lookup(const std::string& name) const
+{
+    auto it = lookupTable_.find(name);
+    if (it == lookupTable_.end())
+        return nullptr;
+    return (*it).second;
+}
+template<class T>
+T* SymbolTable<T>::search(const std::string& name)
+{
+    auto p = this;
+    while (p)
+    {
+        T* sym = p->Lookup(name);
+        if (sym)
+            return sym;
+        p = p->next_;
+    }
+    return nullptr;
+}
+template <class T>
+inline void SymbolTable<T>::AddName(T* sym)
+{
+    inOrder_.push_back(sym);
+    lookupTable_[sym->name] = sym;
+}
+template <class T>
+inline void SymbolTable<T>::baseInsert(T* in)
+{
+    AddName(in);
+}
+template <>
+inline void SymbolTable<SYMBOL>::baseInsert(SYMBOL* in)
+{
+    if (Optimizer::cparams.prm_extwarning)
+        if (in->sb->storage_class == sc_parameter || in->sb->storage_class == sc_auto || in->sb->storage_class == sc_register)
+        {
+            SYMBOL* sym;
+            if ((sym = gsearch(in->name)) != nullptr &&
+                (sym->sb->storage_class == sc_parameter || sym->sb->storage_class == sc_auto))
+                preverror(ERR_VARIABLE_OBSCURES_VARIABLE_AT_HIGHER_SCOPE, in->name, sym->sb->declfile, sym->sb->declline);
+        }
+    if (Lookup(in->name))
+    {
+        if (IsCompiler() || this != CompletionCompiler::ccSymbols)
+        {
+            if (!IsCompiler())
+            {
+                SYMBOL* sym = search(in->name);
+                if (!sym || !sym->sb->wasUsing || !in->sb->wasUsing)
+                    preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->sb->declfile, in->sb->declline);
+            }
+            else
+            {
+                if (!structLevel || !templateNestingCount)
+                {
+                    SYMBOL* sym = search(in->name);
+                    if (!sym || !sym->sb->wasUsing || !in->sb->wasUsing)
+                        preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->sb->declfile, in->sb->declline);
+                }
+            }
+        }
+    }
+    else
+    {
+        AddName(in);
+    }
+}
+
+template <class T>
+inline void SymbolTable<T>::Add(T* in)
+{
+    baseInsert(in);
+}
+template <>
+inline void SymbolTable<SYMBOL>::Add(SYMBOL* in)
+{
+    if (!IsCompiler())
+    {
+        if (!in->parserSet)
+        {
+            in->parserSet = true;
+            CompletionCompiler::ccSetSymbol(in);
+        }
+    }
+    baseInsert(in);
+}
+template <class T>
+inline void SymbolTable<T>::insertOverload(T* in)
+{
+
+    if (Optimizer::cparams.prm_extwarning)
+        if (in->sb->storage_class == sc_parameter || in->sb->storage_class == sc_auto || in->sb->storage_class == sc_register)
+        {
+            SYMBOL* sym;
+            if ((sym = gsearch(in->name)) != nullptr)
+                preverror(ERR_VARIABLE_OBSCURES_VARIABLE_AT_HIGHER_SCOPE, in->name, sym->sb->declfile, sym->sb->declline);
+        }
+    if (AddOverloadName(in))
+    {
+        SetLinkerNames(in, lk_cdecl);
+        preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->sb->declfile, in->sb->declline);
+    }
+}
+
 }  // namespace Parser
+#endif

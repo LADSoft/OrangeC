@@ -25,7 +25,6 @@
 #include "compiler.h"
 #include "rtti.h"
 #include "config.h"
-#include "symtab.h"
 #include "mangle.h"
 #include "initbackend.h"
 #include "expr.h"
@@ -38,13 +37,15 @@
 #include "beinterf.h"
 #include "ildata.h"
 #include "ccerr.h"
+#include "template.h"
 #include "declcons.h"
 #include "cpplookup.h"
 #include "inline.h"
+#include "symtab.h"
 
 namespace Parser
 {
-HASHTABLE* rttiSyms;
+SymbolTable<SYMBOL>* rttiSyms;
 
 static std::set<SYMBOL*> defaultRecursionMap;
 
@@ -83,7 +84,11 @@ static const char* typeNames[] = {"bit",
                                   "__object",
                                   "__string"};
 
-void rtti_init(void) { rttiSyms = CreateHashTable(32); }
+void rtti_init(void) 
+{
+    symbols.Reset();
+    rttiSyms = symbols.CreateSymbolTable(); 
+}
 bool equalnode(EXPRESSION* node1, EXPRESSION* node2)
 /*
  *      equalnode will return 1 if the expressions pointed to by
@@ -205,22 +210,19 @@ static char* RTTIGetDisplayName(char* buf, TYPE* tp)
     }
     else if (isfunction(tp))
     {
-        SYMLIST* hr = basetype(tp)->syms->table[0];
         buf = RTTIGetDisplayName(buf, tp->btp);
         *buf++ = '(';
         *buf++ = '*';
         *buf++ = ')';
         *buf++ = '(';
-        while (hr)
+        for (auto sym : *basetype(tp)->syms)
         {
-            buf = RTTIGetDisplayName(buf, hr->p->tp);
-            if (hr->next)
-            {
-                *buf++ = ',';
-                *buf++ = ' ';
-            }
-            hr = hr->next;
+            buf = RTTIGetDisplayName(buf, sym->tp);
+            *buf++ = ',';
+            *buf++ = ' ';
         }
+        if (basetype(tp)->syms->size())
+            buf -= 2;
         *buf++ = ')';
         *buf = 0;
     }
@@ -260,7 +262,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
     }
     else if (isstructured(tp) && !basetype(tp)->sp->sb->trivialCons)
     {
-        sym = search(overloadNameTab[CI_DESTRUCTOR], basetype(tp)->syms);
+        sym = basetype(tp)->syms->search(overloadNameTab[CI_DESTRUCTOR]);
         // at this point if the class was never instantiated the destructor
         // may not have been created...
         if (sym)
@@ -269,7 +271,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
             {
                 // if it is deleted we just won't call it...
                 // still need the xt table entry though...
-                if (basetype(sym->tp)->syms->table[0]->p && basetype(sym->tp)->syms->table[0]->p->sb->deleted)
+                if (basetype(sym->tp)->syms->size() && basetype(sym->tp)->syms->front()->sb->deleted)
                 {
                     sym = nullptr;
                 }
@@ -283,7 +285,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
             }
             else
             {
-                sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
+                sym = (SYMBOL*)basetype(sym->tp)->syms->front();
             }
             Optimizer::SymbolManager::Get(sym);
             if (sym && sym->sb->attribs.inheritable.linkage2 == lk_import)
@@ -315,7 +317,6 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
 static void DumpEnclosedStructs(TYPE* tp, bool genXT)
 {
     SYMBOL* sym = basetype(tp)->sp;
-    SYMLIST* hr;
     tp = PerformDeferredInitialization(tp, nullptr);
     if (sym->sb->vbaseEntries)
     {
@@ -333,11 +334,11 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
                     SYMBOL* xtSym;
                     char name[4096];
                     RTTIGetName(name, entries->cls->tp);
-                    xtSym = search(name, rttiSyms);
+                    xtSym = rttiSyms->search(name);
                     if (!xtSym)
                     {
                         RTTIDumpType(entries->cls->tp);
-                        xtSym = search(name, rttiSyms);
+                        xtSym = rttiSyms->search(name);
                     }
                     Optimizer::genint(XD_CL_VIRTUAL);
                     Optimizer::genref(Optimizer::SymbolManager::Get(xtSym), 0);
@@ -363,7 +364,7 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
                     SYMBOL* xtSym;
                     char name[4096];
                     RTTIGetName(name, bc->cls->tp);
-                    xtSym = search(name, rttiSyms);
+                    xtSym = rttiSyms->search(name);
                     Optimizer::genint(XD_CL_BASE);
                     Optimizer::genref(Optimizer::SymbolManager::Get(xtSym), 0);
                     Optimizer::genint(bc->offset);
@@ -374,10 +375,8 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
     }
     if (sym->tp->syms)
     {
-        hr = sym->tp->syms->table[0];
-        while (hr)
+        for (auto member : *sym->tp->syms)
         {
-            SYMBOL* member = hr->p;
             if (member->sb->storage_class == sc_member || member->sb->storage_class == sc_mutable)
             {
                 TYPE* tp = member->tp;
@@ -397,21 +396,8 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
                     {
                         RTTIDumpType(tp);
                     }
-                    /*
-                    else
-                    {
-                        SYMBOL*xtSym;
-                        char name[4096];
-                        RTTIGetName(name, tp);
-                        xtSym = search(name, rttiSyms);
-                        Optimizer::genint(flags);
-                        Optimizer::genref(xtSym , 0);
-                        genint(member->sb->offset);
-                    }
-                    */
                 }
             }
-            hr = hr->next;
         }
     }
 }
@@ -454,7 +440,7 @@ SYMBOL* RTTIDumpType(TYPE* tp)
         {
             char name[4096];
             RTTIGetName(name, tp);
-            xtSym = search(name, rttiSyms);
+            xtSym = rttiSyms->search(name);
             if (!xtSym)
             {
                 xtSym = makeID(sc_global, tp, nullptr, litlate(name));
@@ -463,7 +449,7 @@ SYMBOL* RTTIDumpType(TYPE* tp)
                     xtSym->sb->attribs.inheritable.linkage2 = basetype(tp)->sp->sb->attribs.inheritable.linkage2;
                 xtSym->sb->decoratedName = xtSym->name;
                 xtSym->sb->xtEntry = true;
-                insert(xtSym, rttiSyms);
+                rttiSyms->Add(xtSym);
                 if (isstructured(tp) && basetype(tp)->sp->sb->dontinstantiate &&
                     basetype(tp)->sp->sb->attribs.inheritable.linkage2 != lk_import)
                 {
@@ -503,7 +489,7 @@ SYMBOL* RTTIDumpType(TYPE* tp)
                     SYMBOL* xtSym2;
                     // xtSym *should* be there.
                     RTTIGetName(name, basetype(tp));
-                    xtSym2 = search(name, rttiSyms);
+                    xtSym2 = rttiSyms->search(name);
                     if (xtSym2 && xtSym2->sb->dontinstantiate)
                     {
                         xtSym2->sb->dontinstantiate = false;

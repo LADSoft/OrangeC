@@ -26,7 +26,6 @@
 #include "Utils.h"
 #include "ccerr.h"
 #include "config.h"
-#include "symtab.h"
 #include "initbackend.h"
 #include "stmt.h"
 #include "ildata.h"
@@ -40,6 +39,8 @@
 #include "lex.h"
 #include "istmt.h"
 #include "init.h"
+#include "template.h"
+#include "symtab.h"
 
 namespace Parser
 {
@@ -62,9 +63,9 @@ static SYMBOL* CreateSetterPrototype(SYMBOL* sym)
     rv->sb->access = ac_public;
     rv->tp = MakeType(bt_func, &stdvoid);
     rv->tp->sp = rv;
-    rv->tp->syms = CreateHashTable(1);
+    rv->tp->syms = symbols.CreateSymbolTable();
     SetLinkerNames(value, lk_cdecl);
-    insert(value, rv->tp->syms);
+    rv->tp->syms->Add(value);
     SetLinkerNames(rv, lk_cdecl);
     return rv;
 }
@@ -78,33 +79,30 @@ static SYMBOL* CreateGetterPrototype(SYMBOL* sym)
     rv->sb->access = ac_public;
     rv->tp = MakeType(bt_func, sym->tp);
     rv->tp->sp = rv;
-    rv->tp->syms = CreateHashTable(1);
+    rv->tp->syms = symbols.CreateSymbolTable();
     SetLinkerNames(nullparam, lk_cdecl);
-    insert(nullparam, rv->tp->syms);
+    rv->tp->syms->Add(nullparam);
     SetLinkerNames(rv, lk_cdecl);
     return rv;
 }
-static void insertfunc(SYMBOL* in, HASHTABLE* syms)
+static void insertfunc(SYMBOL* in, SymbolTable<SYMBOL>* syms)
 {
 
-    SYMLIST** hr = LookupName(in->name, syms);
-    SYMBOL* funcs = nullptr;
-    if (hr)
-        funcs = (SYMBOL*)((*hr)->p);
+    SYMBOL* funcs = syms->Lookup(in->name);
     if (!funcs)
     {
         auto tp = MakeType(bt_aggregate);
         funcs = makeID(sc_overloads, tp, 0, litlate(in->name));
         tp->sp = funcs;
         SetLinkerNames(funcs, lk_cdecl);
-        insert(funcs, syms);
-        funcs->tp->syms = CreateHashTable(1);
-        insert(in, funcs->tp->syms);
+        syms->Add(funcs);
+        funcs->tp->syms = symbols.CreateSymbolTable();
+        funcs->tp->syms->Add(in);
         in->sb->overloadName = funcs;
     }
     else if (funcs->sb->storage_class == sc_overloads)
     {
-        insertOverload(in, funcs->tp->syms);
+        funcs->tp->syms->insertOverload(in);
         in->sb->overloadName = funcs;
     }
     else
@@ -128,7 +126,7 @@ static SYMBOL* CreateBackingSetter(SYMBOL* sym, SYMBOL* backing)
     STATEMENT* st;
     BLOCKDATA b;
     EXPRESSION* left = varNode(en_global, backing);
-    EXPRESSION* right = varNode(en_global, (SYMBOL*)p->tp->syms->table[0]->p);
+    EXPRESSION* right = varNode(en_global, (SYMBOL*)p->tp->syms->front());
     p->tp->type = bt_ifunc;
     memset(&b, 0, sizeof(b));
     deref(sym->tp, &left);
@@ -230,7 +228,7 @@ LEXLIST* initialize_property(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_s
             Optimizer::SymbolManager::Get(getter);
             insertfunc(setter, globalNameSpace->valueData->syms);
             insertfunc(getter, globalNameSpace->valueData->syms);
-            insert(backing, globalNameSpace->valueData->syms);
+            globalNameSpace->valueData->syms->Add(backing);
             if (!TotalErrors())
             {
                 int oldstartlab = startlab;
@@ -267,20 +265,20 @@ TYPE* find_boxed_type(TYPE* in)
                                       "Double", "",      "",       "",       "",       "",       "String"};
     if (isarray(basetype(in)) && basetype(in)->msil)
     {
-        SYMBOL* sym = search("System", globalNameSpace->valueData->syms);
+        SYMBOL* sym = globalNameSpace->valueData->syms->search("System");
         if (sym && sym->sb->storage_class == sc_namespace)
         {
-            SYMBOL* sym2 = search("Array", sym->sb->nameSpaceValues->valueData->syms);
+            SYMBOL* sym2 = sym->sb->nameSpaceValues->valueData->syms->search("Array");
             if (sym2)
                 return sym2->tp;
         }
     }
     else if (basetype(in)->type < sizeof(typeNames) / sizeof(typeNames[0]))
     {
-        SYMBOL* sym = search("System", globalNameSpace->valueData->syms);
+        SYMBOL* sym = globalNameSpace->valueData->syms->search("System");
         if (sym && sym->sb->storage_class == sc_namespace)
         {
-            SYMBOL* sym2 = search(typeNames[basetype(in)->type], sym->sb->nameSpaceValues->valueData->syms);
+            SYMBOL* sym2 = sym->sb->nameSpaceValues->valueData->syms->search(typeNames[basetype(in)->type]);
             if (sym2)
                 return sym2->tp;
         }

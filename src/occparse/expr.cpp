@@ -34,7 +34,6 @@
 #include "declcpp.h"
 #include "lambda.h"
 #include "template.h"
-#include "symtab.h"
 #include "declare.h"
 #include "help.h"
 #include "expr.h"
@@ -58,6 +57,7 @@
 #include "config.h"
 #include "constexpr.h"
 #include "AsmLexer.h"
+#include "symtab.h"
 
 // there is a bug where the compiler needs constant values for the memory order,
 // but parsed code may not provide it directly.
@@ -183,25 +183,25 @@ static EXPRESSION* GetManagedFuncData(TYPE* tp)
     int sz = 0;
     STRING* data = Allocate<STRING>();
     SYMBOL* sym;
-    SYMLIST* hr;
     if (ispointer(tp))
         tp = basetype(tp)->btp;
     sym = basetype(tp)->sp;
     *save++ = 0;  // space for the number of dwords
     *save++ = 0;
     *save++ = sym->sb->attribs.inheritable.linkage == lk_stdcall;
-    hr = basetype(tp)->syms->table[0];
-    if (hr && hr->p->tp->type != bt_void)
+    auto it = basetype(tp)->syms->begin();
+    auto itend = basetype(tp)->syms->end();
+    if (it != itend && (*it)->tp->type != bt_void)
     {
         sz++;
-        hr = hr->next;
-        if (hr)
+        ++it;
+        if (it != itend)
         {
             sz++;
-            hr = hr->next;
-            while (hr)
+            ++it;
+            for (; it != itend; ++it)
             {
-                int n = hr->p->tp->size;
+                int n = (*it)->tp->size;
                 n += 3;
                 n /= 4;
                 if (n > 32767)
@@ -216,7 +216,6 @@ static EXPRESSION* GetManagedFuncData(TYPE* tp)
                     *save++ = n;
                 }
                 sz += n;
-                hr = hr->next;
             }
         }
     }
@@ -281,22 +280,19 @@ void ValidateMSILFuncPtr(TYPE* dest, TYPE* src, EXPRESSION** exp)
             if (sym)
             {
                 int n = 0;
-                SYMLIST* hr;
                 FUNCTIONCALL* functionCall = Allocate<FUNCTIONCALL>();
                 TYPE* tp1 = src;
                 if (ispointer(tp1))
                     tp1 = basetype(tp1)->btp;
 
-                hr = basetype(tp1)->syms->table[0];
-                while (hr)
+                for (auto sp : *basetype(tp1)->syms)
                 {
-                    int m = hr->p->tp->size;
+                    int m = sp->tp->size;
                     m += 3;
                     m /= 4;
                     n += m;
-                    hr = hr->next;
                 }
-                sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
+                sym = (SYMBOL*)basetype(sym->tp)->syms->front();
                 functionCall->sp = sym;
                 functionCall->functp = sym->tp;
                 functionCall->fcall = varNode(en_pc, sym);
@@ -321,7 +317,7 @@ void ValidateMSILFuncPtr(TYPE* dest, TYPE* src, EXPRESSION** exp)
             if (sym)
             {
                 FUNCTIONCALL* functionCall = Allocate<FUNCTIONCALL>();
-                sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
+                sym = (SYMBOL*)basetype(sym->tp)->syms->front();
                 functionCall->sp = sym;
                 functionCall->functp = sym->tp;
                 functionCall->fcall = varNode(en_pc, sym);
@@ -447,7 +443,6 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
     }
     if (sym)
     {
-        SYMLIST* hr;
         browse_usage(sym, lex->data->linedata->fileindex);
         *tp = sym->tp;
         lex = getsym();
@@ -694,14 +689,14 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                             *exp = intNode(en_c_i, 0);
                         return lex;
                     case sc_overloads:
-                        hr = basetype(sym->tp)->syms->table[0];
+                    {
                         funcparams = Allocate<FUNCTIONCALL>();
                         if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, lt))
                         {
                             lex = GetTemplateArguments(lex, funcsp, sym, &funcparams->templateParams);
                             funcparams->astemplate = true;
                         }
-                        if (hr->next || Optimizer::cparams.prm_cplusplus)
+                        if (Optimizer::cparams.prm_cplusplus || basetype(sym->tp)->syms->size() > 1)
                         {
                             funcparams->nameSpace = strSym ? nullptr : nsv;
                             funcparams->ascall = MATCHKW(lex, openpa);
@@ -711,7 +706,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                         {
                             // we only get here for C language, sadly we have to do
                             // argument based lookup in C++...
-                            funcparams->sp = hr->p;
+                            funcparams->sp = basetype(sym->tp)->syms->front();
                             funcparams->sp->sb->attribs.inheritable.used = true;
                             funcparams->fcall = varNode(en_pc, funcparams->sp);
                             if (!MATCHKW(lex, openpa))
@@ -735,6 +730,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                             (*exp)->v.func = funcparams;
                         }
                         break;
+                    }
                     case sc_catchvar:
                         makeXCTab(funcsp);
                         *exp = varNode(en_auto, funcsp->sb->xc->xctab);
@@ -787,27 +783,31 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                                 }
                                 else
                                 {
-                                    SYMLIST* found = nullptr;
-                                    HASHTABLE* tables = localNameSpace->valueData->syms;
+                                    bool found = false;
+                                    SymbolTable<SYMBOL>::iterator it, itend;
+                                    SymbolTable<SYMBOL>* tables = localNameSpace->valueData->syms;
+
                                     while (tables && !found)
                                     {
-                                        SYMLIST* hr = tables->table[0];
-                                        while (hr && !found)
+                                        for (auto it1 = tables->begin(); it1 != tables->end(); ++it1)
                                         {
-                                            if (hr->p == sym)
-                                                found = hr;
-                                            hr = hr->next;
+                                            if (*it1 == sym)
+                                            {
+                                                it = it1;
+                                                itend = tables->end();
+                                                found = true;
+                                            }
                                         }
-                                        tables = tables->next;
+                                        tables = tables->Next();
                                     }
                                     if (found)
                                     {
                                         int i;
-                                        for (i = 0; found && i < packIndex; i++)
-                                            found = found->next;
-                                        if (found)
+                                        for (i = 0; it != itend && i < packIndex; i++)
+                                            ++it;
+                                        if (it != itend)
                                         {
-                                            sym = found->p;
+                                            sym = *it;
                                         }
                                         *exp = varNode(en_auto, sym);
                                         *tp = sym->tp;
@@ -1062,7 +1062,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                 sym->sb->storage_class = sc_external;
                 sym->sb->attribs.inheritable.linkage = lk_c;
                 sym->tp = MakeType(bt_func, CopyType(&stdint));
-                sym->tp->syms = CreateHashTable(1);
+                sym->tp->syms = symbols.CreateSymbolTable();
                 sym->tp->sp = sym;
                 sym->sb->oldstyle = true;
                 SetLinkerNames(sym, lk_c);
@@ -1077,7 +1077,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             else
             {
                 sym->tp = MakeType(bt_func, MakeType(bt_int));
-                sym->tp->syms = CreateHashTable(1);
+                sym->tp->syms = symbols.CreateSymbolTable();
                 sym->tp->sp = sym;
                 sym->sb->oldstyle = true;
                 sym->sb->externShim = !!(flags & _F_INDECLTYPE);
@@ -1260,7 +1260,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
         else if (isstructured(*tp))
         {
             // destructor
-            SYMBOL* sp2 = search(overloadNameTab[CI_DESTRUCTOR], (basetype(*tp)->sp)->tp->syms);
+            SYMBOL* sp2 = (basetype(*tp)->sp)->tp->syms->search(overloadNameTab[CI_DESTRUCTOR]);
             if (sp2)
             {
                 if (flags && _F_IS_NOTHROW)
@@ -1391,7 +1391,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
             SYMBOL* sp2 = nullptr;
             if ((*exp)->type == en_literalclass)
             {
-                CONSTEXPRSYM* ces = (CONSTEXPRSYM*)search(lex->data->value.s.a, (*exp)->v.syms);
+                CONSTEXPRSYM* ces = (CONSTEXPRSYM*)(*exp)->v.syms->search(lex->data->value.s.a);
                 if (ces)
                 {
                     lex = getsym();
@@ -1476,7 +1476,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
             }
             else
             {
-                sp2 = search(lex->data->value.s.a, (basetype(*tp)->sp)->tp->syms);
+                sp2 = (basetype(*tp)->sp)->tp->syms->search(lex->data->value.s.a);
             }
             if (!sp2)
             {
@@ -1513,15 +1513,17 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                     FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
                     if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, lt))
                     {
-                        SYMLIST* hr1 = basetype(sp2->tp)->syms->table[0];
-                        bool isdest = (hr1->p)->sb->isDestructor;
-                        while (hr1)
+                        bool isdest = basetype(sp2->tp)->syms->front()->sb->isDestructor;
+                        bool found = false;
+                        for (auto sp : *basetype(sp2->tp)->syms)
                         {
-                            if ((hr1->p)->sb->templateLevel)
+                            if (sp->sb->templateLevel)
+                            {
+                                found = true;
                                 break;
-                            hr1 = hr1->next;
+                            }
                         }
-                        if (hr1)
+                        if (found)
                         {
                             lex = GetTemplateArguments(lex, funcsp, nullptr, &funcparams->templateParams);
                             funcparams->astemplate = true;
@@ -1703,45 +1705,44 @@ TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr)
 {
     if (tp->type == bt_aggregate)
     {
-        SYMLIST* hr = tp->syms->table[0];
-        if (memberptr && hr->p->sb->parentClass && hr->p->sb->storage_class != sc_static && hr->p->sb->storage_class != sc_global &&
-            hr->p->sb->storage_class != sc_external)
+        auto sp = tp->syms->front();
+        if (memberptr && sp->sb->parentClass && sp->sb->storage_class != sc_static && sp->sb->storage_class != sc_global &&
+            sp->sb->storage_class != sc_external)
         {
             EXPRESSION* rv;
-            tp = MakeType(bt_memberptr, hr->p->tp);
-            tp->sp = hr->p->sb->parentClass;
-            *exp = varNode(en_memberptr, hr->p);
+            tp = MakeType(bt_memberptr, sp->tp);
+            tp->sp = sp->sb->parentClass;
+            *exp = varNode(en_memberptr, sp);
             (*exp)->isfunc = true;
         }
         else
         {
-            SYMBOL* s = hr->p;
             if ((*exp)->type == en_func && (*exp)->v.func->templateParams)
             {
-                s = detemplate(s, (*exp)->v.func, nullptr);
-                if (!s)
+                sp = detemplate(sp, (*exp)->v.func, nullptr);
+                if (!sp)
                 {
-                    s = hr->p;
+                    sp = tp->syms->front();
                 }
                 else
                 {
-                    if (s->sb->templateLevel && !templateNestingCount && s->templateParams)
+                    if (sp->sb->templateLevel && !templateNestingCount && sp->templateParams)
                     {
-                        s = TemplateFunctionInstantiate(s, false, false);
+                        sp = TemplateFunctionInstantiate(sp, false, false);
                     }
                 }
             }
-            *exp = varNode(en_pc, s);
+            *exp = varNode(en_pc, sp);
         }
-        hr = hr->next;
-        while (hr)
+        auto it = tp->syms->begin();
+        for (++it; it != tp->syms->end(); ++it)
         {
-            if (!hr->p->sb->templateLevel || !hr->p->sb->mainsym)
+            auto sp = *it;
+            if (!sp->sb->templateLevel || !sp->sb->mainsym)
             {
-                errorsym(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, tp->sp);
+                errorsym(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, sp);
                 break;
             }
-            hr = hr->next;
         }
     }
     return tp;
@@ -1982,7 +1983,6 @@ static LEXLIST* expression_bracket(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
 }
 void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
 {
-    SYMLIST* hr = basetype(params->functp)->syms->table[0];
     INITLIST* list = params->arguments;
     bool matching = true;
     bool tooshort = false;
@@ -1992,9 +1992,11 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
     bool hasEllipse = false;
     int argnum = 0;
 
-    if (hr && hr->p->sb->thisPtr)
-        hr = hr->next;
-    if (!hr)
+    auto it = basetype(params->functp)->syms->begin();
+    auto itend = basetype(params->functp)->syms->end();
+    if (it != itend && (*it)->sb->thisPtr)
+        ++it;
+    if (it == itend)
     {
         matching = false;
         noproto = params->sp->sb->oldstyle;
@@ -2004,22 +2006,22 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
         if (params->sp->sb->hasproto)
             noproto = false;
     }
-    if (hr && hr->p->tp->type == bt_void)
+    if (it != itend && (*it)->tp->type == bt_void)
     {
         if (list)
             errorsym(ERR_FUNCTION_TAKES_NO_PARAMETERS, params->sp);
     }
     else
-        while (hr || list)
+        while (it != itend || list)
         {
             TYPE* dest = nullptr;
             SYMBOL* decl = nullptr;
-            if (!hr || hr->p->tp->type != bt_any)
+            if (it == itend || (*it)->tp->type != bt_any)
             {
                 argnum++;
-                if (matching && hr)
+                if (matching && it != itend)
                 {
-                    decl = hr->p;
+                    decl = *it;
                     if (!decl->tp)
                         noproto = true;
                     else if (basetype(decl->tp)->type == bt_ellipse)
@@ -2029,7 +2031,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                         params->vararg = vararg;
                         matching = false;
                         decl = nullptr;
-                        hr = nullptr;
+                        it = itend;
                         if (!list)
                             break;
                     }
@@ -2040,7 +2042,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                 {
                     if (!decl)
                         toolong = true;
-                    else if (!list && !hr->p->sb->init && !hr->p->sb->deferredCompile)
+                    else if (!list && !(*it)->sb->init && !(*it)->sb->deferredCompile)
                         tooshort = true;
                     else
                     {
@@ -2240,9 +2242,9 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                 if (list->exp->type == en_auto && list->exp->v.sp->sb && list->exp->v.sp->sb->va_typeof)
                     ivararg = false;
                 list->vararg = ivararg;
-                if (hr)
+                if (it != itend)
                 {
-                    TYPE* tp = hr->p->tp;
+                    TYPE* tp = (*it)->tp;
                     while (tp && tp->type != bt_pointer)
                     {
                         if (tp->type == bt_va_list)
@@ -2255,8 +2257,8 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                 }
                 list = list->next;
             }
-            if (hr)
-                hr = hr->next;
+            if (it != itend)
+                ++it;
         }
     if (noproto)
         errorsym(ERR_CALL_FUNCTION_NO_PROTO, params->sp);
@@ -2315,16 +2317,13 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, INITLIST** lptr, e
                 if (p->exp && p->exp->type == en_func && p->exp->v.func->sp->sb->parentClass && !p->exp->v.func->ascall &&
                     !p->exp->v.func->asaddress && p->exp->v.func->functp)
                 {
-                    SYMLIST* hr = basetype(p->exp->v.func->functp)->syms->table[0];
-                    while (hr)
+                    for (auto sym: *basetype(p->exp->v.func->functp)->syms)
                     {
-                        SYMBOL* sym = hr->p;
                         if (sym->sb->storage_class == sc_member || sym->sb->storage_class == sc_mutable)
                         {
                             error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
                             break;
                         }
-                        hr = hr->next;
                     }
                 }
                 if (allowPack && Optimizer::cparams.prm_cplusplus && MATCHKW(lex, ellipse))
@@ -2698,8 +2697,8 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
     EXPRESSION *data, *initList;
     SYMBOL *begin, *size;
     EXPRESSION* dest;
-    begin = search("__begin_", basetype(initializerListTemplate)->syms);
-    size = search("__size_", basetype(initializerListTemplate)->syms);
+    begin = basetype(initializerListTemplate)->syms->search("__begin_");
+    size = basetype(initializerListTemplate)->syms->search("__size_");
     if (!begin || !size)
         Utils::fatal("Invalid definition of initializer-list");
     if (!(*initial)->nested && comparetypes((*initial)->tp, initializerListTemplate, true))
@@ -2755,14 +2754,14 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
                 initializerListType = basetype(initializerListType);
                 if (initializerListType->sp->sb->trivialCons)
                 {
-                    auto hr = initializerListType->syms->table[0];
                     node = nullptr;
                     auto list = &node;
                     INITLIST* arg = Allocate<INITLIST>();
                     *arg = (*lptr)->nested ? *(*lptr)->nested : **lptr;
-                    while (hr && arg)
+                    SymbolTable<SYMBOL>::iterator it;
+                    for (it = initializerListType->syms->begin(); arg && it != initializerListType->syms->end(); ++it)
                     {
-                        auto sym = hr->p;
+                        auto sym = *it;
                         if (ismemberdata(sym))
                         {
                             auto pos = exprNode(en_structadd, dest, intNode(en_c_i, sym->sb->offset));
@@ -2778,12 +2777,11 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
                                 node = node1;
                             }
                         }
-                        hr = hr->next;
                         arg = arg->next;
                     }
-                    while (hr)
+                    for (; it != initializerListType->syms->end(); ++it)
                     {
-                        auto sym = hr->p;
+                        auto sym = *it;
                         if (ismemberdata(sym))
                         {
                             auto pos = exprNode(en_structadd, dest, intNode(en_c_i, sym->sb->offset));
@@ -2799,7 +2797,6 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
                                 node = node1;
                             }
                         }
-                        hr = hr->next;
                     }
                 }
                 else if (*lptr && !(*lptr)->initializer_list && (*lptr)->nested)
@@ -2960,19 +2957,19 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
         }
     }
 }
-void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, bool implicit)
+void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SYMBOL>::iterator itend, INITLIST** lptr, bool operands, bool implicit)
 {
     auto old = argFriend;
     argFriend = func;
     (void)operands;
     if (func->sb->storage_class == sc_overloads)
         return;	
-    if (hr && hr->p->sb->thisPtr)
-        hr = hr->next;
-    while (hr && (*lptr || hr->p->sb->init != nullptr ||
-                  (hr->p->sb->deferredCompile != nullptr && (!templateNestingCount || instantiatingTemplate))))
+    if (it != itend && (*it)->sb->thisPtr)
+        ++it;
+    while (it != itend  && (*lptr || (*it)->sb->init != nullptr ||
+                  ((*it)->sb->deferredCompile != nullptr && (!templateNestingCount || instantiatingTemplate))))
     {
-        SYMBOL* sym = hr->p;
+        SYMBOL* sym = *it;
         INITLIST* p;
 
         if (!*lptr)
@@ -3008,7 +3005,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
             if (isstructured(sym->tp))
             {
                 (*lptr)->exp = exprNode(en_stackblock, (*lptr)->exp, nullptr);
-                hr = hr->next;
+                ++it;
                 lptr = &(*lptr)->next;
                 continue;
             }
@@ -3078,17 +3075,16 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                     if (basetype(stype)->sp->sb->trivialCons)
                     {
                         INITIALIZER *init = nullptr, **it = &init;
-                        SYMLIST* hr = basetype(stype)->syms->table[0];
-                        while (pinit && hr)
+                        for (auto shr : *basetype(stype)->syms)
                         {
-                            SYMBOL* shr = hr->p;
+                            if (!pinit)
+                                break;
                             if (ismemberdata(shr))
                             {
                                 initInsert(it, pinit->tp, pinit->exp, shr->sb->offset, false);
                                 it = &(*it)->next;
                                 pinit = pinit->next;
                             }
-                            hr = hr->next;
                         }
                         p->exp = convertInitToExpression(stype, nullptr, nullptr, theCurrentFunc, init, thisptr, false);
                         if (!isref(sym->tp))
@@ -3725,7 +3721,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                 }
             }
         }
-        hr = hr->next;
+        ++it;
         lptr = &(*lptr)->next;
     }
     while (*lptr)  // take care of elliptical arguments and arguments without a prototype
@@ -3885,7 +3881,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     if (!isstructured(spo->tp))
                         break;
 
-                    sp = search(find->name, spo->tp->syms);
+                    sp = spo->tp->syms->search(find->name);
                     if (!sp)
                     {
                         sp = classdata(find->name, spo, nullptr, false, false);
@@ -4037,7 +4033,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         // also if in a trailing return we want to defer the lookup until later if there are going to be multiple choices...
         if (funcparams->sp->sb->storage_class == sc_overloads &&
             (!parsingTrailingReturnOrUsing || funcparams->sp->tp->type != bt_aggregate ||
-             !funcparams->sp->tp->syms->table[0]->next))
+             funcparams->sp->tp->syms->size() < 2))
         {
             TYPE* tp1;
             // note at this pointer the arglist does NOT have the this pointer,
@@ -4094,7 +4090,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                         }
                         else if (funcsp->sb->storage_class == sc_member || funcsp->sb->storage_class == sc_virtual)
                         {
-                            funcparams->thisptr = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);
+                            funcparams->thisptr = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->front());
                             deref(&stdpointer, &funcparams->thisptr);
                             funcparams->thisptr =
                                 DerivedToBase(sym->sb->parentClass->tp, basetype(funcparams->thisptr->left->v.sp->tp)->btp,
@@ -4109,7 +4105,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                                 funcparams->thistp->btp = MakeType(bt_volatile, funcparams->thistp->btp);
                             }
                             UpdateRootTypes(funcparams->thistp->btp);
-                            cppCast(((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p)->tp, &funcparams->thistp,
+                            cppCast(((SYMBOL*)basetype(funcsp->tp)->syms->front())->tp, &funcparams->thistp,
                                     &funcparams->thisptr);
                         }
                     }
@@ -4166,10 +4162,10 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         }
     }
     {
-        HASHTABLE* temp = basetype(*tp)->syms;
+        SymbolTable<SYMBOL>* temp = basetype(*tp)->syms;
         if (temp)
         {
-            SYMLIST* hr = temp->table[0];
+            auto it = temp->begin();
 
             if (funcparams->sp && !ismember(funcparams->sp) && !memberPtr)
             {
@@ -4204,12 +4200,12 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     tp1 = basetype(tp1)->btp;
                 if (isfunction(tp1))
                 {
-                    hr = basetype(tp1)->syms->table[0];
-                    if (hr)
+                    it = basetype(tp1)->syms->begin();
+                    if (it != basetype(tp1)->syms->end())
                     {
-                        if (hr->p->sb->thisPtr)
-                            hr = hr->next;
-                        TYPE* tp = hr->p->tp;
+                        if ((*it)->sb->thisPtr)
+                            ++it;
+                        TYPE* tp = (*it)->tp;
                         if (isref(tp))
                         {
                             initializerRef = true;
@@ -4251,12 +4247,12 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     CreateInitializerList(funcparams->sp, initializerListTemplate, initializerListType, lptr, operands,
                                           initializerRef);
                     (*lptr)->next = next;
-                    if (hr->next)
-                        AdjustParams(funcparams->sp, hr->next, &(*lptr)->next, operands, true);
+                    if (it != temp->end())
+                        AdjustParams(funcparams->sp, it, temp->end(), &(*lptr)->next, operands, true);
                 }
                 else
                 {
-                    AdjustParams(funcparams->sp, hr, lptr, operands, true);
+                    AdjustParams(funcparams->sp, it, temp->end(), lptr, operands, true);
                 }
             }
             if (funcparams->sp->sb->xcMode != xc_unspecified && funcparams->sp->sb->xcMode != xc_none)
@@ -4502,7 +4498,7 @@ static LEXLIST* expression_offsetof(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXP
         {
             char name[512];
             SYMBOL* sym;
-            HASHTABLE* table;
+            SymbolTable<SYMBOL>* table;
             SYMBOL* strSym;
             NAMESPACEVALUELIST* nsv;
             strcpy(name, lex->data->value.s.a);
@@ -4661,19 +4657,19 @@ static LEXLIST* expression_string(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
         sym = LookupSym(name);
         if (sym)
         {
-            SYMLIST *hr = sym->tp->syms->table[0], *hr1;
             SYMBOL *sym1 = nullptr, *sym2 = nullptr;
-            while (hr)
+            bool found = false;
+            for (auto sym1 : *sym->tp->syms)
             {
-                sym1 = hr->p;
-                hr1 = sym1->tp->syms->table[0];
-                sym2 = (SYMBOL*)hr1->p;
-                if (hr1->next && ispointer(sym2->tp))
+                sym2 = sym1->tp->syms->front();
+                if (sym1->tp->syms->size() > 1 && ispointer(sym2->tp))
                     if (isconst(sym2->tp->btp) && basetype(sym2->tp->btp)->type == tpb)
+                    {
+                        found = true;
                         break;
-                hr = hr->next;
+                    }
             }
-            if (hr)
+            if (found)
             {
                 FUNCTIONCALL* f = Allocate<FUNCTIONCALL>();
                 f->sp = sym1;
@@ -4861,18 +4857,19 @@ static bool getSuffixedChar(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
     sym = LookupSym(name);
     if (sym)
     {
-        SYMLIST *hr = sym->tp->syms->table[0], *hr1;
+        bool found = false;
         SYMBOL *sym1 = nullptr, *sym2;
-        while (hr)
+        for (auto sp : *sym->tp->syms)
         {
-            sym1 = hr->p;
-            hr1 = sym1->tp->syms->table[0];
-            sym2 = (SYMBOL*)hr1->p;
-            if (!hr1->next && sym2->tp->type == tpb)
+            sym1 = sp;
+            sym2 = sym1->tp->syms->front();
+            if (sym1->tp->syms->size() == 1 && sym2->tp->type == tpb)
+            {
+                found = true;
                 break;
-            hr = hr->next;
+            }
         }
-        if (hr)
+        if (found)
         {
             FUNCTIONCALL* f = Allocate<FUNCTIONCALL>();
             f->sp = sym1;
@@ -4905,18 +4902,19 @@ static bool getSuffixedNumber(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
     if (sym)
     {
         // look for parameter of type unsigned long long or long double
-        SYMLIST *hr = sym->tp->syms->table[0], *hr1;
         SYMBOL *sym1 = nullptr, *sym2 = nullptr;
-        while (hr)
+        auto found = false;
+        for (auto sp : *sym->tp->syms)
         {
-            sym1 = hr->p;
-            hr1 = sym1->tp->syms->table[0];
-            sym2 = (SYMBOL*)hr1->p;
-            if (!hr1->next && sym2->tp->type == tpb)
+            sym1 = sp;
+            sym2 = sym2->tp->syms->front();
+            if (sym1->tp->syms->size() == 1 && sym2->tp->type == tpb)
+            {
+                found = true;
                 break;
-            hr = hr->next;
+            }
         }
-        if (hr)
+        if (found)
         {
             FUNCTIONCALL* f = Allocate<FUNCTIONCALL>();
             f->sp = sym1;
@@ -4943,24 +4941,25 @@ static bool getSuffixedNumber(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         }
         else
         {
+            bool found = false;
             // not found, look for parameter of type const char *
-            hr = sym->tp->syms->table[0];
-            while (hr)
+            for (auto sp : *sym->tp->syms)
             {
                 TYPE* tpx;
-                sym1 = hr->p;
-                hr1 = sym1->tp->syms->table[0];
-                sym2 = (SYMBOL*)hr1->p;
+                sym1 = sp;
+                sym2 = sym1->tp->syms->front();
                 tpx = sym2->tp;
-                if (!hr1->next && ispointer(tpx))
+                if (sym1->tp->syms->size() == 1 && ispointer(tpx))
                 {
                     tpx = basetype(tpx)->btp;
                     if (isconst(tpx) && basetype(tpx)->type == bt_char)
+                    {
+                        found = true;
                         break;
+                    }
                 }
-                hr = hr->next;
             }
-            if (hr)
+            if (found)
             {
                 FUNCTIONCALL* f = Allocate<FUNCTIONCALL>();
                 STRING* data;
@@ -5596,11 +5595,11 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                         lambda_capture(nullptr, cmThis, false);
                         if (lambdas->captureThis)
                         {
-                            SYMBOL* ths = search("$this", lambdas->cls->tp->syms);
+                            SYMBOL* ths = lambdas->cls->tp->syms->search("$this");
                             if (ths)
                             {
                                 *tp = MakeType(bt_pointer, basetype(lambdas->lthis->tp)->btp);
-                                *exp = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);  // this ptr
+                                *exp = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->front());  // this ptr
                                 deref(&stdpointer, exp);
                                 *exp = exprNode(en_structadd, *exp, intNode(en_c_i, ths->sb->offset));
                                 deref(&stdpointer, exp);
@@ -5619,7 +5618,7 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                     else if (getStructureDeclaration() && funcsp && funcsp->sb->parentClass)
                     {
                         getThisType(funcsp, tp);
-                        *exp = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);  // this ptr
+                        *exp = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->front());  // this ptr
                         deref(&stdpointer, exp);
                     }
                     else
@@ -6056,15 +6055,12 @@ static EXPRESSION* nodeSizeof(TYPE* tp, EXPRESSION* exp, int flags)
                 errorsym(ERR_UNSIZED_TYPE, basetype(tp)->sp);
             if (basetype(tp)->syms)
             {
-                SYMLIST* hr = basetype(tp)->syms->table[0];
                 SYMBOL* cache = nullptr;
                 TYPE* tpx;
-                while (hr)
+                for (auto sym : *basetype(tp)->syms)
                 {
-                    SYMBOL* sym = hr->p;
                     if (ismemberdata(sym))
                         cache = sym;
-                    hr = hr->next;
                 }
                 if (cache)
                 {
@@ -7059,7 +7055,7 @@ LEXLIST* expression_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                         if (Optimizer::cparams.prm_cplusplus)
                         {
                             sym = makeID(sc_auto, *tp, nullptr, AnonymousName());
-                            insert(sym, localNameSpace->valueData->syms);
+                            localNameSpace->valueData->syms->Add(sym);
                         }
                         lex = initType(lex, funcsp, 0, sc_auto, &init, nullptr, *tp, sym, false, flags);
                         *exp = convertInitToExpression(*tp, nullptr, nullptr, funcsp, init, *exp, false);
@@ -7825,17 +7821,17 @@ static LEXLIST* expression_inequality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, T
                 SYMBOL* funcsp = nullptr;
                 if ((ispointer(*tp) || basetype(*tp)->type == bt_memberptr) && tp1->type == bt_aggregate)
                 {
-                    if (tp1->syms->table[0]->next)
-                        errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)tp1->syms->table[0]->p)->name);
-                    exp1 = varNode(en_pc, tp1->syms->table[0]->p);
-                    tp1 = ((SYMBOL*)tp1->syms->table[0]->p)->tp;
+                    if (tp1->syms->size() > 1)
+                        errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)tp1->syms->front())->name);
+                    exp1 = varNode(en_pc, tp1->syms->front());
+                    tp1 = ((SYMBOL*)tp1->syms->front())->tp;
                 }
                 else if ((ispointer(tp1) || basetype(tp1)->type == bt_memberptr) && (*tp)->type == bt_aggregate)
                 {
-                    if ((*tp)->syms->table[0]->next)
-                        errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)(*tp)->syms->table[0]->p)->name);
-                    (*exp) = varNode(en_pc, (*tp)->syms->table[0]->p);
-                    (*tp) = ((SYMBOL*)(*tp)->syms->table[0]->p)->tp;
+                    if ((*tp)->syms->size() > 1)
+                        errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)(*tp)->syms->front())->name);
+                    (*exp) = varNode(en_pc, (*tp)->syms->front());
+                    (*tp) = ((SYMBOL*)(*tp)->syms->front())->tp;
                 }
             }
             if ((*exp)->type == en_pc || ((*exp)->type == en_func && !(*exp)->v.func->ascall))
@@ -7951,17 +7947,17 @@ static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYP
             SYMBOL* funcsp = nullptr;
             if ((ispointer(*tp) || basetype(*tp)->type == bt_memberptr) && tp1->type == bt_aggregate)
             {
-                if (tp1->syms->table[0]->next)
-                    errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)tp1->syms->table[0]->p)->name);
-                exp1 = varNode(en_pc, tp1->syms->table[0]->p);
-                tp1 = ((SYMBOL*)tp1->syms->table[0]->p)->tp;
+                if (tp1->syms->size() > 1)
+                    errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)tp1->syms->front())->name);
+                exp1 = varNode(en_pc, tp1->syms->front());
+                tp1 = ((SYMBOL*)tp1->syms->front())->tp;
             }
             else if ((ispointer(tp1) || basetype(tp1)->type == bt_memberptr) && (*tp)->type == bt_aggregate)
             {
-                if ((*tp)->syms->table[0]->next)
-                    errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)(*tp)->syms->table[0]->p)->name);
-                (*exp) = varNode(en_pc, (*tp)->syms->table[0]->p);
-                (*tp) = ((SYMBOL*)(*tp)->syms->table[0]->p)->tp;
+                if (tp1->syms->size() > 1)
+                    errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)(*tp)->syms->front())->name);
+                (*exp) = varNode(en_pc, (*tp)->syms->front());
+                (*tp) = ((SYMBOL*)(*tp)->syms->front())->tp;
             }
         }
         if ((*exp)->type == en_pc || ((*exp)->type == en_func && !(*exp)->v.func->ascall))
@@ -8562,7 +8558,7 @@ LEXLIST* expression_throw(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** 
                         deferredCompileOne(cons);
                 }
             }
-            sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
+            sym = (SYMBOL*)basetype(sym->tp)->syms->front();
             arg1->next = arg2;
             arg2->next = arg3;
             arg3->next = arg4;
@@ -8609,7 +8605,7 @@ LEXLIST* expression_throw(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** 
             FUNCTIONCALL* parms = Allocate<FUNCTIONCALL>();
             INITLIST* arg1 = Allocate<INITLIST>();  // exception table
             makeXCTab(funcsp);
-            sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
+            sym = (SYMBOL*)basetype(sym->tp)->syms->front();
             parms->ascall = true;
             parms->sp = sym;
             parms->functp = sym->tp;
@@ -8701,7 +8697,7 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                         SYMBOL* spinit = nullptr;
                         tp1 = *tp;
                         spinit = anonymousVar(sc_localstatic, tp1)->v.sp;
-                        insert(spinit, localNameSpace->valueData->syms);
+                        localNameSpace->valueData->syms->Add(spinit);
                         lex = initType(lex, funcsp, 0, sc_auto, &init, nullptr, tp1, spinit, false, flags | _F_ASSIGNINIT);
                         EXPRESSION* exp2 = nullptr;
                         if (init && init->exp->type == en_thisref)

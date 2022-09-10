@@ -34,7 +34,7 @@ extern const char* eofFile;
 extern bool parsingPreprocessorConstant;
 extern LEXCONTEXT* context;
 extern int charIndex;
-extern HASHTABLE* kwhash;
+extern SymbolTable<KEYWORD>* kwSymbols;
 extern LEXLIST* currentLex;
 
 void lexini(void);

@@ -24,6 +24,9 @@
 
 #include "compiler.h"
 #include "db.h"
+#include "ccerr.h"
+#include "declare.h"
+#include "template.h"
 #include "symtypes.h"
 #include "Utils.h"
 #include "PreProcessor.h"
@@ -71,7 +74,8 @@ typedef struct _using
 
 static USING* lusing;
 
-HASHTABLE* ccHash;
+Parser::SymbolTableFactory<SYMBOL> ccHashFactory;
+Parser::SymbolTable<SYMBOL>* ccSymbols;
 
 static int oldSkip[1000];
 static int skipCount;
@@ -120,7 +124,6 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
 {
     if (basetype(sym->tp)->syms)
     {
-        SYMLIST* hr = basetype(sym->tp)->syms->table[0];
         if (!isfunction(sym->tp))
         {
             BASECLASS* bases = sym->sb->baseClasses;
@@ -131,9 +134,8 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
                 bases = bases->next;
             }
         }
-        while (hr)
+        for (auto st : *basetype(sym->tp)->syms)
         {
-            SYMBOL* st = (SYMBOL*)hr->p;
             if (st->sb->storage_class == sc_overloads)
             {
                 order = WriteStructMembers(st, parent, struct_id, file_id, order, base, access);
@@ -156,7 +158,7 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
                 if (isfunction(st->tp))
                 {
                     flags |= 128;
-                    if (basetype(st->tp)->syms->table[0] && ((SYMBOL*)basetype(st->tp)->syms->table[0]->p)->sb->thisPtr)
+                    if (basetype(st->tp)->syms->size() && ((SYMBOL*)basetype(st->tp)->syms->front())->sb->thisPtr)
                         flags |= 2048;
                 }
                 if (base)
@@ -202,7 +204,6 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
                 ccWriteStructField(struct_id, GetSymName(st, parent), litlate(type_name), indirectCount, rel_id, file_id, main_id,
                                    flags, &order, &id);
             }
-            hr = hr->next;
         }
     }
     return order;
@@ -373,10 +374,11 @@ static void DumpSymbol(SYMBOL* sym)
             if (isfunction(sym->tp) && sym->tp->syms)
             {
                 int order = 1;
-                SYMLIST* hr = sym->tp->syms->table[0];
-                while (hr && ((SYMBOL*)hr->p)->sb->storage_class == sc_parameter)
+                auto it = sym->tp->syms->begin();
+                auto ite = sym->tp->syms->end();
+                while (it != ite && ((*it)->sb->storage_class == sc_parameter))
                 {
-                    SYMBOL* st = (SYMBOL*)hr->p;
+                    SYMBOL* st = *it;
                     const char* argName = GetSymName(st, st);
                     if (strstr(argName, "++"))
                         argName = " ";
@@ -386,7 +388,6 @@ static void DumpSymbol(SYMBOL* sym)
                     if (argName[0] == 'U' && strstr(argName, "++"))
                         argName = "{unnamed} ";  // the ide depends on the first char being '{'
                     ccWriteGlobalArg(id, main_id, argName, litlate(type_name), &order);
-                    hr = hr->next;
                 }
             }
         }
@@ -410,21 +411,16 @@ static void DumpSymbols(void)
 static void DumpLines(void)
 {
     int i;
-    for (i = 0; i < ccHash->size; i++)
+    for (auto sym : *ccSymbols)
     {
-        SYMLIST* hr = ccHash->table[i];
-        while (hr)
+        LINEINCLUDES* x = (LINEINCLUDES*)sym->sb;
+        if (!x->dataSize)
         {
-            LINEINCLUDES* x = (LINEINCLUDES*)hr->p->sb;
-            if (!x->dataSize)
-            {
-                x->lineTop = 0;
-                x->dataSize = 1;
-                x->data = (char*)"";  // is a null
-            }
-            ccWriteLineData(x->fileId, main_id, x->data, x->dataSize, x->lineTop);
-            hr = hr->next;
+            x->lineTop = 0;
+            x->dataSize = 1;
+            x->data = (char*)"";  // is a null
         }
+        ccWriteLineData(x->fileId, main_id, x->data, x->dataSize, x->lineTop);
     }
 }
 static void DumpUsing(void)
@@ -445,15 +441,10 @@ static void DumpFiles(void)
 {
     int i;
     time_t n = time(0);
-    for (i = 0; i < ccHash->size; i++)
+    for (auto sym : *ccSymbols)
     {
-        SYMLIST* hr = ccHash->table[i];
-        while (hr)
-        {
-            LINEINCLUDES* l = (LINEINCLUDES*)hr->p->sb;
-            ccWriteFileTime(l->name, n, &l->fileId);
-            hr = hr->next;
-        }
+        LINEINCLUDES* l = (LINEINCLUDES*)sym->sb;
+        ccWriteFileTime(l->name, n, &l->fileId);
     }
 }
 void ccDumpSymbols(void)
@@ -509,12 +500,13 @@ std::string ccNewFile(char* fileName, bool main)
     }
     if (main)
     {
-        ccHash = CreateHashTable(256);
+        ccHashFactory.Reset();
+        ccSymbols = ccHashFactory.CreateSymbolTable();
         ccReset();
     }
     // this only parses each file ONCE!!!!
     oldSkip[skipCount++] = skipThisFile;
-    skipThisFile = !!LookupName(s, ccHash);
+    skipThisFile = !!ccSymbols->Lookup(s);
     if (!skipThisFile)
     {
         l = Allocate<LINEINCLUDES>();
@@ -524,7 +516,11 @@ std::string ccNewFile(char* fileName, bool main)
         if (main)
             mainFile = l;
         else
-            insert((SYMBOL*)l, ccHash);
+        {
+            // this is broken, the rest of the routines use
+            // the line includes as sym->sb
+            ccSymbols->Add((SYMBOL*)l);
+        }
     }
     return "";
 }
@@ -543,7 +539,7 @@ void ccSetFileLine(char* filename, int lineno)
         }
         if (strcmp(filename, lastFile->name) != 0)
         {
-            lastFile = (LINEINCLUDES*)search(filename, ccHash);
+            lastFile = (LINEINCLUDES*)ccSymbols->search(filename);
             if (!lastFile)
                 lastFile = mainFile;
         }

@@ -131,7 +131,7 @@ static const int XCTAB_SIZE = 9 * 4;
 static const int XCTAB_INDEX_OFS = 5 * 4;
 static const int XCTAB_INSTANCE_OFS = 6 * 4;
 
-extern HASHTABLE* rttiSyms;
+extern SymbolTable<SYMBOL>* rttiSyms;
 extern std::map<int, std::map<int, __xclist*>> rttiStatements;
 
 void rtti_init(void);

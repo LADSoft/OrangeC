@@ -40,7 +40,6 @@
 #include "declcpp.h"
 #include "help.h"
 #include "memory.h"
-#include "symtab.h"
 #include "expr.h"
 #include "initbackend.h"
 #include "declcons.h"
@@ -49,6 +48,7 @@
 #include "beinterf.h"
 #include "iexpr.h"
 #include "floatconv.h"
+#include "symtab.h"
 
 namespace Parser
 {
@@ -436,21 +436,19 @@ static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, 
     exp->type = en_cshimthis;
     exp->v.sp = sym;
     exp->v.constexprData = {sym->sb->parentClass->tp->size, Allocate<EXPRESSION*>(sym->sb->parentClass->tp->size)};
-    auto hr = sym->sb->parentClass->tp->syms->table[0];
-    while (hr)
+    for (auto sp : *sym->sb->parentClass->tp->syms)
     {
-        if (ismemberdata(hr->p) && hr->p->sb->init)
+        if (ismemberdata(sp) && sp->sb->init)
         {
-            exp->v.constexprData.data[hr->p->sb->offset] = EvaluateExpression(hr->p->sb->init->exp, argmap, exp, nullptr, false);
+            exp->v.constexprData.data[sp->sb->offset] = EvaluateExpression(sp->sb->init->exp, argmap, exp, nullptr, false);
         }
-        hr = hr->next;
     }
     auto m = sym->sb->memberInitializers;
     while (m)
     {
         if (m->init)
         {
-            SYMBOL* sp = search(m->name, sym->sb->parentClass->tp->syms);
+            SYMBOL* sp = sym->sb->parentClass->tp->syms->search(m->name);
             if (sp)
             {
                 auto init = m->init;
@@ -545,15 +543,14 @@ static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<
 
     EXPRESSION* rv = exprNode(en_assign, varptr, thisptr);
     EXPRESSION** last = &rv;
-    auto hr = ths->v.sp->sb->parentClass->tp->syms->table[0];
-    while (hr)
+    for (auto sp : *ths->v.sp->sb->parentClass->tp->syms)
     {
-        if (ismemberdata(hr->p))
+        if (ismemberdata(sp))
         {
-            EXPRESSION* next = exprNode(en_structadd, varptr, intNode(en_c_i, hr->p->sb->offset));
-            deref(hr->p->tp, &next);
+            EXPRESSION* next = exprNode(en_structadd, varptr, intNode(en_c_i, sp->sb->offset));
+            deref(sp->tp, &next);
             next = exprNode(en_assign, next,
-                            EvaluateExpression(ths->v.constexprData.data[hr->p->sb->offset], argmap, ths, nullptr, false));
+                            EvaluateExpression(ths->v.constexprData.data[sp->sb->offset], argmap, ths, nullptr, false));
             if (next->right == nullptr || !IsConstantExpression(next->right, false, false))
                 return nullptr;
             inConstantExpression++;
@@ -563,7 +560,6 @@ static EXPRESSION* InstantiateStructure(EXPRESSION* thisptr, std::unordered_map<
             *last = exprNode(en_void, *last, next);
             last = &(*last)->right;
         }
-        hr = hr->next;
     }
     if (thisptr->type == en_substack)
         *last = exprNode(en_void, *last, varptr);
@@ -618,24 +614,24 @@ static void pushArray(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<SYMBOL*, 
             int n = tp->size;
             auto arr = Allocate<EXPRESSION*>(n + 1);
             argmap[arg] = {n, arr};
-            auto hr = tp->syms->table[0];
+            auto it = tp->syms->begin();
             while (exp->right)
             {
-                while (hr && !ismember(hr->p))
-                    hr = hr->next;
-                if (isarray(hr->p->tp))
+                while (it != tp->syms->end() && !ismember((*it)))
+                    ++it;
+                if (isarray((*it)->tp))
                 {
-                    int ofs = basetype(hr->p->tp)->btp->size;
-                    n = basetype(hr->p->tp)->size;
+                    int ofs = basetype((*it)->tp)->btp->size;
+                    n = basetype((*it)->tp)->size;
                     for (int i = 0; i < n && exp->right; i += ofs)
                     {
-                        arr[i + hr->p->sb->offset] = exp->left;
+                        arr[i + (*it)->sb->offset] = exp->left;
                         exp = exp->right;
                     }
                 }
                 else
                 {
-                    arr[hr->p->sb->offset] = exp->left;
+                    arr[(*it)->sb->offset] = exp->left;
                     exp = exp->right;
                 }
             }
@@ -1413,29 +1409,30 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                                 }
                             }
                         }
-                        auto hr = basetype(found1->tp)->syms->table[0];
-                        if (hr->p->sb->thisPtr)
-                            hr = hr->next;
+                        auto it = basetype(found1->tp)->syms->begin();
+                        auto ite = basetype(found1->tp)->syms->end();
+                        if ((*it)->sb->thisPtr)
+                            ++it;
                         auto arglist = node->v.func->arguments;
-                        while (hr && arglist)
+                        while (it != ite && arglist)
                         {
                             auto exp = arglist->exp;
                             if (exp && exp->type == en_auto && isstructured(exp->v.sp->tp) &&
                                 basetype(exp->v.sp->tp)->sp->sb->initializer_list && argmap.find(exp->v.sp) != argmap.end())
                             {
-                                argmap[hr->p] = argmap[exp->v.sp];
+                                argmap[*it] = argmap[exp->v.sp];
                             }
                             else
                             {
-                                argmap[hr->p] = {1, Allocate<EXPRESSION*>()};
-                                argmap[hr->p].data[0] = exp;
+                                argmap[*it] = {1, Allocate<EXPRESSION*>()};
+                                argmap[*it].data[0] = exp;
                             }
 
                             if (arglist->nested)
-                                pushArray(hr->p, arglist->nested, tempmap);
+                                pushArray(*it, arglist->nested, tempmap);
                             else
-                                pushArray(hr->p, exp, tempmap);
-                            hr = hr->next;
+                                pushArray(*it, exp, tempmap);
+                            ++it;
                             arglist = arglist->next;
                         }
                         for (auto s : tempmap)

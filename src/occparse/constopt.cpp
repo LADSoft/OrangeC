@@ -45,7 +45,6 @@
 #include "ifloatconv.h"
 #include "constopt.h"
 #include "OptUtils.h"
-#include "symtab.h"
 #include "declcpp.h"
 #include "cpplookup.h"
 #include "beinterf.h"
@@ -55,6 +54,7 @@
 #include "constexpr.h"
 #include "ccerr.h"
 #include "rtti.h"
+#include "symtab.h"
 
 namespace Parser
 {
@@ -2606,7 +2606,7 @@ int opt0(EXPRESSION** node)
                             if (!isstructured(spo->tp))
                                 break;
 
-                            sym = search(find->name, spo->tp->syms);
+                            sym = spo->tp->syms->search(find->name);
                             if (!sym)
                             {
                                 sym = classdata(find->name, spo, nullptr, false, false);

@@ -137,7 +137,7 @@ void specerror(int err, const char* name, const char* file, int line);
 void unmarkGotos(VLASHIM* shim);
 void checkGotoPastVLA(STATEMENT* stmt, bool first);
 void checkUnlabeledReferences(BLOCKDATA* block);
-void checkUnused(HASHTABLE* syms);
+void checkUnused(SymbolTable<SYMBOL>* syms);
 void findUnusedStatics(NAMESPACEVALUELIST* nameSpace);
 void assignmentUsages(EXPRESSION* node, bool first);
 void checkDefaultArguments(SYMBOL* spi);

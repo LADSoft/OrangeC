@@ -42,7 +42,6 @@
 #include "template.h"
 #include "stmt.h"
 #include "inasm.h"
-#include "symtab.h"
 #include "osutil.h"
 #include "ildata.h"
 #include "rtti.h"
@@ -68,6 +67,7 @@
 #include "irc.h"
 #include "DotNetPELib.h"
 #include "constexpr.h"
+#include "symtab.h"
 
 using namespace DotNetPELib;
 PELib* peLib;
@@ -212,33 +212,21 @@ int usingEsp;
 
 static void debug_dumptypedefs(NAMESPACEVALUELIST* nameSpace)
 {
-    int i;
-    HASHTABLE* syms = nameSpace->valueData->syms;
-    for (i = 0; i < syms->size; i++)
+    for (auto sym : *nameSpace->valueData->syms)
     {
-        SYMLIST* h = syms->table[i];
-        if (h != 0)
+        if (sym->sb->storage_class == sc_namespace)
         {
-            while (h)
+            debug_dumptypedefs(sym->sb->nameSpaceValues);
+        }
+        else if (sym->sb->storage_class == sc_typedef)
+        {
+            TYPE* tp = sym->tp;
+            while (ispointer(tp) || isref(tp))
             {
-
-                SYMBOL* sym = (SYMBOL*)h->p;
-                if (sym->sb->storage_class == sc_namespace)
-                {
-                    debug_dumptypedefs(sym->sb->nameSpaceValues);
-                }
-                else if (sym->sb->storage_class == sc_typedef)
-                {
-                    TYPE* tp = sym->tp;
-                    while (ispointer(tp) || isref(tp))
-                    {
-                        tp = basetype(tp)->btp;
-                    }
-                    if (!isstructured(tp) || !basetype(tp)->sp->sb->templateLevel || basetype(tp)->sp->sb->instantiated)
-                        Optimizer::typedefs.push_back(Optimizer::SymbolManager::Get(sym));
-                }
-                h = h->next;
+                tp = basetype(tp)->btp;
             }
+            if (!isstructured(tp) || !basetype(tp)->sp->sb->templateLevel || basetype(tp)->sp->sb->instantiated)
+                Optimizer::typedefs.push_back(Optimizer::SymbolManager::Get(sym));
         }
     }
 }

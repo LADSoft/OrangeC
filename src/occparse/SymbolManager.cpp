@@ -311,19 +311,18 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
             else if (rv->sp->storage_class == scc_typedef)
                 typedefs.push_back(rv->sp);
         }
-        if (tp->type != bt_aggregate && tp->syms && tp->syms->table && rv->sp && !rv->sp->syms)
+        if (tp->type != bt_aggregate && tp->syms && tp->syms->size() && rv->sp && !rv->sp->syms)
         {
-            SYMLIST* list = tp->syms->table[0];
             Optimizer::LIST** p = &rv->sp->syms;
-            while (list)
+            for (auto sp : *tp->syms)
             {
                 *p = Allocate<Optimizer::LIST>();
-                if (isfunction(tp) && list->p->sb->parent)
-                    list->p->sb->parent->sb->decoratedName = basetype(tp)->sp->sb->decoratedName;
-                (*p)->data = Get(list->p);
+                if (isfunction(tp) && sp->sb->parent)
+                    sp->sb->parent->sb->decoratedName = basetype(tp)->sp->sb->decoratedName;
+                (*p)->data = Get(sp);
                 if (rv->sp->storage_class == scc_type || rv->sp->storage_class == scc_cast)
                 {
-                    if (list->p->sb->storage_class == sc_static || isfunction(list->p->tp))
+                    if (sp->sb->storage_class == sc_static || isfunction(sp->tp))
                     {
                         Optimizer::SimpleSymbol* ns = Allocate<Optimizer::SimpleSymbol>();
                         *ns = *(Optimizer::SimpleSymbol*)(*p)->data;
@@ -339,7 +338,6 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
                     ((Optimizer::SimpleSymbol*)(*p)->data)->storage_class == scc_external)
                     definedFunctions.insert((Optimizer::SimpleSymbol*)(*p)->data);
                 p = &(*p)->next;
-                list = list->next;
             }
         }
         if (tp->btp)
@@ -362,19 +360,20 @@ void refreshBackendParams(SYMBOL* funcsp)
     if (isfunction(funcsp->tp))
     {
         basetype(funcsp->tp)->sp = funcsp;
-        SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
+        auto it = basetype(funcsp->tp)->syms->begin();
+        auto ite = basetype(funcsp->tp)->syms->end();
         Optimizer::LIST* syms = Optimizer::SymbolManager::Get(funcsp)->syms;
-        while (hr && syms)
+        while (it != ite && syms)
         {
             Optimizer::SimpleSymbol* sym = (Optimizer::SimpleSymbol*)syms->data;
-            if (hr->p->sb->thisPtr && !sym->thisPtr)
+            if ((*it)->sb->thisPtr && !sym->thisPtr)
             {
-                hr = hr->next;
+                ++it;
             }
-            sym->name = hr->p->name;  // update name to prototype in use...
-            sym->offset = hr->p->sb->offset;
-            Optimizer::SymbolManager::Get(hr->p)->offset = sym->offset;
-            hr = hr->next;
+            sym->name = (*it)->name;  // update name to prototype in use...
+            sym->offset = (*it)->sb->offset;
+            Optimizer::SymbolManager::Get((*it))->offset = sym->offset;
+            ++it;
             syms = syms->next;
         }
     }

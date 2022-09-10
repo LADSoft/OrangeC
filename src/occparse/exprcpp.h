@@ -36,9 +36,9 @@ bool castToArithmeticInternal(bool integer, TYPE** tp, EXPRESSION** exp, enum e_
 void castToArithmetic(bool integer, TYPE** tp, EXPRESSION** exp, enum e_kw kw, TYPE* other, bool implicit);
 bool castToPointer(TYPE** tp, EXPRESSION** exp, enum e_kw kw, TYPE* other);
 bool cppCast(TYPE* src, TYPE** tp, EXPRESSION** exp);
-EXPRESSION* substitute_params_for_constexpr(EXPRESSION* exp, FUNCTIONCALL* funcparams, HASHTABLE* syms);
-STATEMENT* do_substitute_for_function(STATEMENT* block, FUNCTIONCALL* funcparams, HASHTABLE* syms);
-EXPRESSION* substitute_params_for_function(FUNCTIONCALL* funcparams, HASHTABLE* syms);
+EXPRESSION* substitute_params_for_constexpr(EXPRESSION* exp, FUNCTIONCALL* funcparams, SymbolTable<SYMBOL>* syms);
+STATEMENT* do_substitute_for_function(STATEMENT* block, FUNCTIONCALL* funcparams, SymbolTable<SYMBOL>* syms);
+EXPRESSION* substitute_params_for_function(FUNCTIONCALL* funcparams, SymbolTable<SYMBOL>* syms);
 LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags);
 bool doDynamicCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* funcsp);
 bool doStaticCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* funcsp, bool checkconst);

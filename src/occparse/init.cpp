@@ -29,7 +29,6 @@
 #include "init.h"
 #include "ccerr.h"
 #include "config.h"
-#include "symtab.h"
 #include "initbackend.h"
 #include "stmt.h"
 #include "template.h"
@@ -54,7 +53,8 @@
 #include "types.h"
 #include "browse.h"
 #include "constexpr.h"
-/* initializers, local... can do w/out c99 */
+#include "symtab.h"
+ /* initializers, local... can do w/out c99 */
 
 namespace Parser
 {
@@ -88,18 +88,16 @@ static SYMBOL* LookupMsilToString()
             sym = namespacesearch("CString", sym->sb->nameSpaceValues, true, false);
             if (sym && isstructured(sym->tp))
             {
-                sym = search("ToPointer", basetype(sym->tp)->syms);
+                sym = basetype(sym->tp)->syms->search("ToPointer");
                 if (sym)
                 {
-                    auto hr = sym->tp->syms->table[0];
-                    while (hr)
+                    for (auto sp : *sym->tp->syms)
                     {
-                        if (hr->p->sb->storage_class == sc_static)
+                        if (sp->sb->storage_class == sc_static)
                         {
-                            msilToString = hr->p;
+                            msilToString = sp;
                             break;
                         }
-                        hr = hr->next;
                     }
                 }
             }
@@ -287,12 +285,12 @@ void dumpStartups(void)
                     started = true;
                     Optimizer::startupseg();
                 }
-                s = search(starts.first.c_str(), globalNameSpace->valueData->syms);
+                s = globalNameSpace->valueData->syms->search(starts.first.c_str());
                 if (!s || s->sb->storage_class != sc_overloads)
                     errorstr(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
                 else
                 {
-                    s = search(starts.first.c_str(), s->tp->syms);
+                    s = s->tp->syms->search(starts.first.c_str());
                     Optimizer::gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_STARTUP);
                     s->sb->attribs.inheritable.used = true;
                 }
@@ -308,12 +306,12 @@ void dumpStartups(void)
                     started = true;
                     Optimizer::rundownseg();
                 }
-                s = search(starts.first.c_str(), globalNameSpace->valueData->syms);
+                s = globalNameSpace->valueData->syms->search(starts.first.c_str());
                 if (!s || s->sb->storage_class != sc_overloads)
                     errorstr(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
                 else
                 {
-                    s = search(starts.first.c_str(), s->tp->syms);
+                    s = s->tp->syms->search(starts.first.c_str());
                     Optimizer::gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_RUNDOWN);
                     s->sb->attribs.inheritable.used = true;
                 }
@@ -470,7 +468,7 @@ static void callDynamic(const char* name, int startupType, int index, STATEMENT*
             Optimizer::my_sprintf(fullName, "%s_%d", name, index);
             SYMBOL* funcsp;
             TYPE* tp = MakeType(bt_ifunc, MakeType(bt_void));
-            tp->syms = CreateHashTable(1);
+            tp->syms = symbols.CreateSymbolTable();
             funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr, fullName);
             funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
             funcsp->sb->inlineFunc.stmt->lower = st;
@@ -571,7 +569,7 @@ static void dumpTLSInitializers(void)
             STATEMENT *st = nullptr, **stp = &st;
             SYMBOL* funcsp;
             TYPE* tp = MakeType(bt_ifunc, MakeType(bt_void));
-            tp->syms = CreateHashTable(1);
+            tp->syms = symbols.CreateSymbolTable();
             funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr,
                                   "__TLS_DYNAMIC_STARTUP__");
             funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
@@ -639,7 +637,7 @@ static void dumpTLSDestructors(void)
             STATEMENT *st = nullptr, **stp = &st;
             SYMBOL* funcsp;
             TYPE* tp = MakeType(bt_ifunc, MakeType(bt_void));
-            tp->syms = CreateHashTable(1);
+            tp->syms = symbols.CreateSymbolTable();
             funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr,
                                   "__TLS_DYNAMIC_RUNDOWN__");
             funcsp->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
@@ -1304,16 +1302,13 @@ static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
         if (*expr && (*expr)->type == en_func && (*expr)->v.func->sp->sb->parentClass && !(*expr)->v.func->ascall &&
             !(*expr)->v.func->asaddress)
         {
-            SYMLIST* hr = basetype((*expr)->v.func->functp)->syms->table[0];
-            while (hr)
+            for (auto sym : *basetype((*expr)->v.func->functp)->syms)
             {
-                SYMBOL* sym = hr->p;
                 if (sym->sb->storage_class == sc_member || sym->sb->storage_class == sc_mutable)
                 {
                     error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
                     break;
                 }
-                hr = hr->next;
             }
         }
         if (MATCHKW(lex, ellipse))
@@ -1442,7 +1437,7 @@ static LEXLIST* initialize_arithmetic_type(LEXLIST* lex, SYMBOL* funcsp, int off
                 while (castvalue(*exp2))
                     exp2 = &(*exp2)->left;
                 if ((*exp2)->type == en_func && (*exp2)->v.func->sp->sb->storage_class == sc_overloads &&
-                    (*exp2)->v.func->sp->tp->syms->table[0])
+                    (*exp2)->v.func->sp->tp->syms->size() > 0)
                 {
                     SYMBOL* sp2;
                     TYPE* tp1 = nullptr;
@@ -1741,14 +1736,14 @@ static LEXLIST* initialize_memberptr(LEXLIST* lex, SYMBOL* funcsp, int offset, e
                 {
                     castToPointer(&tp, &exp, (enum e_kw) - 1, itype);
                 }
-                if (isfunction(tp))
+                if (isfunction(tp)&& basetype(tp)->syms->size())
                 {
-                    SYMLIST* hr = basetype(tp)->syms->table[0];
-                    if (hr && hr->p->sb->thisPtr)
+                    auto sp = basetype(tp)->syms->front();
+                    if (sp->sb->thisPtr)
                     {
                         TYPE tp4 = {};
                         MakeType(tp4, bt_memberptr, tp);
-                        tp4.sp = basetype(basetype(hr->p->tp)->btp)->sp;
+                        tp4.sp = basetype(basetype(sp->tp)->btp)->sp;
                         tp = &tp4;
                     }
                 }
@@ -2119,7 +2114,7 @@ typedef struct _aggregate_descriptor
     int offset;
     int reloffset;
     int max;
-    SYMLIST* hr;
+    SymbolTable<SYMBOL>::iterator it, ite;
     TYPE* tp;
     BASECLASS* currentBase;
 } AGGREGATE_DESCRIPTOR;
@@ -2145,7 +2140,7 @@ static void free_desc(AGGREGATE_DESCRIPTOR** descin, AGGREGATE_DESCRIPTOR** cach
 static bool atend(AGGREGATE_DESCRIPTOR* desc)
 {
     if (isstructured(desc->tp))
-        return !desc->hr;
+        return desc->it == desc->ite;
     else
         return desc->tp->size && desc->reloffset >= desc->tp->size;
 }
@@ -2153,14 +2148,14 @@ static void unwrap_desc(AGGREGATE_DESCRIPTOR** descin, AGGREGATE_DESCRIPTOR** ca
 {
     if (!Optimizer::cparams.prm_cplusplus)
         dest = nullptr;
-    while (*descin && (!(*descin)->stopgap || (dest && (*descin)->hr)))
+    while (*descin && (!(*descin)->stopgap || (dest && ((*descin)->it != (*descin)->ite))))
     {
         // this won't work with the declarator syntax in C++20
         if (Optimizer::cparams.prm_cplusplus && dest)
         {
-            if ((*descin)->hr)
+            if ((*descin)->it != (*descin)->ite)
             {
-                SYMBOL* sym = ((SYMBOL*)((*descin)->hr->p));
+                SYMBOL* sym = *(*descin)->it;
                 if (sym->sb->init)
                 {
                     INITIALIZER* list = sym->sb->init;
@@ -2217,7 +2212,8 @@ static void allocate_desc(TYPE* tp, int offset, AGGREGATE_DESCRIPTOR** descin, A
     if (isstructured(tp))
     {
         BASECLASS* bc = basetype(tp)->sp->sb->baseClasses;
-        desc->hr = basetype(tp)->syms->table[0];
+        desc->it = basetype(tp)->syms->begin();
+        desc->ite = basetype(tp)->syms->end();
         if (bc)
         {
             desc->currentBase = bc;
@@ -2296,18 +2292,16 @@ static bool designator(LEXLIST** lex, SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** des
                 {
                     if (isstructured((*desc)->tp))
                     {
-                        SYMLIST* hr2 = basetype((*desc)->tp)->syms->table[0];
-                        while (hr2 && strcmp(((SYMBOL*)(hr2->p))->name, (*lex)->data->value.s.a) != 0)
-                        {
-                            hr2 = hr2->next;
-                        }
+                        SymbolTable<SYMBOL>::iterator it;
+                        for (it = basetype((*desc)->tp)->syms->begin(); it != basetype((*desc)->tp)->syms->end() && strcmp((*it)->name, (*lex)->data->value.s.a) != 0; ++it);
                         *lex = getsym();
-                        if (hr2)
+                        if (it != basetype((*desc)->tp)->syms->end())
                         {
-                            SYMBOL* sym = (SYMBOL*)hr2->p;
+                            SYMBOL* sym = *it;
                             TYPE* tp = sym->tp;
                             (*desc)->reloffset = sym->sb->offset;
-                            (*desc)->hr = hr2;
+                            (*desc)->it = it;
+                            (*desc)->ite = basetype((*desc)->tp)->syms->end();
                             if ((isarray(tp) && MATCHKW(*lex, openbr)) || (isstructured(tp) && MATCHKW(*lex, dot)))
                                 allocate_desc(tp, (*desc)->reloffset + (*desc)->offset, desc, cache);
                             else
@@ -2341,12 +2335,12 @@ static void increment_desc(AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** c
         {
             int offset = (*desc)->reloffset + (*desc)->offset;
             if (isunion((*desc)->tp))
-                (*desc)->hr = nullptr;
+                (*desc)->it = (*desc)->ite;
             else if (!basetype((*desc)->tp)->sp->sb->hasUserCons)
                 while (true)
                 {
-                    (*desc)->hr = (*desc)->hr->next;
-                    if (!(*desc)->hr)
+                    ++(*desc)->it;
+                    if ((*desc)->it == (*desc)->ite)
                     {
                         if ((*desc)->next && (*desc)->next->inbase)
 
@@ -2365,23 +2359,23 @@ static void increment_desc(AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** c
                             break;
                         }
                     }
-                    if (((SYMBOL*)((*desc)->hr->p))->sb->storage_class != sc_overloads)
+                    if ((*(*desc)->it)->sb->storage_class != sc_overloads)
                     {
-                        if (((SYMBOL*)((*desc)->hr->p))->tp->hasbits)
+                        if ((*(*desc)->it)->tp->hasbits)
                         {
-                            if (!((SYMBOL*)((*desc)->hr->p))->sb->anonymous)
+                            if (!(*(*desc)->it)->sb->anonymous)
                                 break;
                         }
-                        else if (((SYMBOL*)((*desc)->hr->p))->sb->offset + (*desc)->offset != offset)
+                        else if ((*(*desc)->it)->sb->offset + (*desc)->offset != offset)
                         {
                             break;
                         }
                     }
                 }
             else
-                (*desc)->hr = nullptr;
-            if ((*desc)->hr)
-                (*desc)->reloffset = ((SYMBOL*)((*desc)->hr->p))->sb->offset;
+                (*desc)->it = (*desc)->ite;
+            if ((*desc)->it != (*desc)->ite)
+                (*desc)->reloffset = (*(*desc)->it)->sb->offset;
             else
                 (*desc)->reloffset = (*desc)->tp->size;
             if (atend(*desc) && !(*desc)->stopgap)
@@ -2661,12 +2655,10 @@ static TYPE* nexttp(AGGREGATE_DESCRIPTOR* desc)
     {
         if (!Optimizer::cparams.prm_cplusplus || !basetype(desc->tp)->sp->sb->hasUserCons)
         {
-            SYMLIST* hr = desc->hr;
-            while (hr && (istype(hr->p) || hr->p->tp->type == bt_aggregate))
-                desc->hr = hr = hr->next;
-            if (!hr)
+            for (; desc->it != desc->ite && (istype(*desc->it) || (*desc->it)->tp->type == bt_aggregate); ++ desc->it)
+            if (desc->it == desc->ite)
                 return nullptr;
-            rv = hr->p->tp;
+            rv = (*desc->it)->tp;
         }
         else
         {
@@ -3294,9 +3286,9 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                 SYMBOL* fieldsp;
                 lex = initType(lex, funcsp, desc->offset + desc->reloffset, sc, next, dest, nexttp(desc), base, isarray(itype),
                                flags | _F_NESTEDINIT);
-                if (desc->hr && *next)
+                if (desc->it != desc->ite && *next)
                 {
-                    fieldsp = ((SYMBOL*)desc->hr->p);
+                    fieldsp = *desc->it;
                     if (ismember(fieldsp))
                     {
                         (*next)->fieldsp = fieldsp;
@@ -3326,19 +3318,19 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                     lex = getsym();
                 while (MATCHKW(lex, end))
                 {
-                    if (desc->hr && Optimizer::cparams.prm_cplusplus && isstructured(itype) &&
+                    if (desc->it != desc->ite && Optimizer::cparams.prm_cplusplus && isstructured(itype) &&
                         !basetype(itype)->sp->sb->trivialCons)
                     {
-                        while (desc->hr)
+                        while (desc->it != desc->ite)
                         {
-                            if (isstructured(desc->hr->p->tp) && !basetype(desc->hr->p->tp)->sp->sb->trivialCons)
+                            if (isstructured((*desc->it)->tp) && !basetype((*desc->it)->tp)->sp->sb->trivialCons)
                             {
                                 SYMBOL* fieldsp;
                                 lex = initType(lex, funcsp, desc->offset + desc->reloffset, sc, next, dest, nexttp(desc), base,
                                                isarray(itype), flags);
-                                if (desc->hr && *next)
+                                if (desc->it != desc->ite && *next)
                                 {
-                                    fieldsp = ((SYMBOL*)desc->hr->p);
+                                    fieldsp = *desc->it;
                                     if (ismember(fieldsp))
                                     {
                                         (*next)->fieldsp = fieldsp;
@@ -3647,7 +3639,7 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIA
                 if (!isstructured(spo->tp))
                     break;
 
-                sym = search(find->name, spo->tp->syms);
+                sym = spo->tp->syms->search(find->name);
                 if (!sym)
                 {
                     sym = classdata(find->name, spo, nullptr, false, false);
@@ -3786,12 +3778,10 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIA
 }
 static bool hasData(TYPE* tp)
 {
-    SYMLIST* hr = basetype(tp)->syms->table[0];
-    while (hr)
+    for (auto sp : *basetype(tp)->syms )
     {
-        if (hr->p->tp->size)
+        if (sp->tp->size)
             return true;
-        hr = hr->next;
     }
     return false;
 }
@@ -3823,7 +3813,7 @@ void RecalculateVariableTemplateInitializers(INITIALIZER** in, INITIALIZER*** ou
         }
         while (desc)
         {
-            sym = (SYMBOL*)desc->hr->p;
+            sym = *desc->it;
             if (ismember(sym))
             {
                 if (InitVariableMatches(sym, (*in)->fieldsp))
@@ -4013,7 +4003,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
             {
                 bool assigned = false;
                 TYPE* t = !isassign && (Optimizer::architecture == ARCHITECTURE_MSIL) ? find_boxed_type(sym->tp) : 0;
-                if (!t || !search(overloadNameTab[CI_CONSTRUCTOR], basetype(t)->syms))
+                if (!t || !basetype(t)->syms->search(overloadNameTab[CI_CONSTRUCTOR]))
                     t = sym->tp;
                 if (MATCHKW(lex, assign))
                 {
@@ -4046,7 +4036,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
         TYPE* t = ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions)
                       ? find_boxed_type(sym->tp)
                       : 0;
-        if (!t || !search(overloadNameTab[CI_CONSTRUCTOR], basetype(t)->syms))
+        if (!t || !basetype(t)->syms->search(overloadNameTab[CI_CONSTRUCTOR]))
             t = sym->tp;
         if (isstructured(t))
         {

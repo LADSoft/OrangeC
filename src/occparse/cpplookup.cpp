@@ -28,7 +28,6 @@
 #include "cpplookup.h"
 #include "config.h"
 #include "initbackend.h"
-#include "symtab.h"
 #include "stmt.h"
 #include "declare.h"
 #include "mangle.h"
@@ -49,6 +48,7 @@
 #include "libcxx.h"
 #include "declcons.h"
 #include "template.h"
+#include "symtab.h"
 
 namespace Parser
 {
@@ -67,9 +67,9 @@ Optimizer::LIST* tablesearchone(const char* name, NAMESPACEVALUELIST* ns, bool t
 {
     SYMBOL* rv = nullptr;
     if (!tagsOnly)
-        rv = search(name, ns->valueData->syms);
+        rv = ns->valueData->syms->search(name);
     if (!rv)
-        rv = search(name, ns->valueData->tags);
+        rv = ns->valueData->tags->search(name);
     if (rv)
     {
         Optimizer::LIST* l = Allocate<Optimizer::LIST>();
@@ -198,23 +198,16 @@ SYMBOL* namespacesearch(const char* name, NAMESPACEVALUELIST* ns, bool qualified
             }
             if (!a)
             {
-                SYMLIST** dest;
                 TYPE* tp = MakeType(bt_aggregate);
                 SYMBOL* sym = makeID(sc_overloads, tp, nullptr, ((SYMBOL*)lst->data)->name);
                 tp->sp = sym;
-                tp->syms = CreateHashTable(1);
+                tp->syms = symbols.CreateSymbolTable();
                 a = lst;
-                dest = &tp->syms->table[0];
                 while (a)
                 {
-                    SYMLIST* b = ((SYMBOL*)a->data)->tp->syms->table[0];
-
-                    while (b)
-                    {
-                        *dest = Allocate<SYMLIST>();
-                        (*dest)->p = b->p;
-                        dest = &(*dest)->next;
-                        b = b->next;
+                    for (auto b : *((SYMBOL*)a->data)->tp->syms)
+                    { 
+                        tp->syms->Add(b);
                     }
                     a = a->next;
                 }
@@ -865,9 +858,9 @@ SYMBOL* classdata(const char* name, SYMBOL* cls, SYMBOL* last, bool isvirtual, b
     }
 
     if (!rv && !tagsOnly)
-        rv = search(name, basetype(cls->tp)->syms);
+        rv = basetype(cls->tp)->syms->search(name);
     if (!rv)
-        rv = search(name, basetype(cls->tp)->tags);
+        rv = basetype(cls->tp)->tags->search(name);
     if (rv)
     {
         if (!last || ((last == rv || sameTemplate(last->tp, rv->tp) || (rv->sb->mainsym && rv->sb->mainsym == last->sb->mainsym)) &&
@@ -957,9 +950,9 @@ SYMBOL* classsearch(const char* name, bool tagsOnly, bool toErr)
         while (cls && !rv)
         {
             if (!tagsOnly)
-                rv = search(name, basetype(cls->tp)->syms);
+                rv = basetype(cls->tp)->syms->search(name);
             if (!rv)
-                rv = search(name, basetype(cls->tp)->tags);
+                rv = basetype(cls->tp)->tags->search(name);
             if (!rv && cls->sb->baseClasses)
             {
                 rv = classdata(name, cls, nullptr, false, tagsOnly);
@@ -1003,18 +996,18 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, NAMESPACEVALUELIST* ns,
         if (funcLevel || !ssp)
         {
             if (!tagsOnly)
-                rv = search(name, localNameSpace->valueData->syms);
+                rv = localNameSpace->valueData->syms->search(name);
             if (!rv)
-                rv = search(name, localNameSpace->valueData->tags);
+                rv = localNameSpace->valueData->tags->search(name);
             if (lambdas)
             {
                 LAMBDA* srch = lambdas;
                 while (srch && !rv)
                 {
                     if (Optimizer::cparams.prm_cplusplus || !tagsOnly)
-                        rv = search(name, srch->oldSyms);
+                        rv = srch->oldSyms->search(name);
                     if (!rv)
-                        rv = search(name, srch->oldTags);
+                        rv = srch->oldTags->search(name);
                     srch = srch->next;
                 }
             }
@@ -1026,14 +1019,14 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, NAMESPACEVALUELIST* ns,
             rv = namespacesearch(name, globalNameSpace, false, tagsOnly);
         }
         if (!rv && enumSyms)
-            rv = search(name, enumSyms->tp->syms);
+            rv = enumSyms->tp->syms->search(name);
         if (!rv)
         {
             if (lambdas)
             {
                 if (lambdas->lthis)
                 {
-                    rv = search(name, basetype(lambdas->lthis->tp)->btp->syms);
+                    rv = basetype(lambdas->lthis->tp)->btp->syms->search(name);
                     if (rv)
                         rv->sb->throughClass = true;
                 }
@@ -1200,15 +1193,16 @@ LEXLIST* nestedSearch(LEXLIST* lex, SYMBOL** sym, SYMBOL** strSym, NAMESPACEVALU
         {
             if ((*sym)->sb->storage_class == sc_overloads)
             {
-                SYMLIST* hr = basetype((*sym)->tp)->syms->table[0];
-                while (hr)
+                bool found = false;
+                for (auto sym : *basetype((*sym)->tp)->syms)
                 {
-                    SYMBOL* sym = hr->p;
                     if (sym->sb->templateLevel)
+                    {
+                        found = true;
                         break;
-                    hr = hr->next;
+                    }
                 }
-                if (!hr)
+                if (!found)
                     errorsym(ERR_NOT_A_TEMPLATE, *sym);
             }
             else
@@ -1367,7 +1361,7 @@ LEXLIST* id_expression(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strS
                 SYMBOL* ssp = getStructureDeclaration();
                 if (ssp)
                 {
-                    *sym = search(lex->data->value.s.a, ssp->tp->syms);
+                    *sym = ssp->tp->syms->search(lex->data->value.s.a);
                 }
                 if (*sym == nullptr)
                     *sym = gsearch(lex->data->value.s.a);
@@ -1415,15 +1409,16 @@ LEXLIST* id_expression(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strS
             {
                 if ((*sym)->sb->storage_class == sc_overloads)
                 {
-                    SYMLIST* hr = basetype((*sym)->tp)->syms->table[0];
-                    while (hr)
+                    bool found = false;
+                    for (auto sym : *basetype((*sym)->tp)->syms)
                     {
-                        SYMBOL* sym = hr->p;
                         if (sym->sb->templateLevel)
+                        {
+                            found = true;
                             break;
-                        hr = hr->next;
+                        }
                     }
-                    if (!hr)
+                    if (!found)
                         errorsym(ERR_NOT_A_TEMPLATE, *sym);
                 }
                 else
@@ -1455,9 +1450,9 @@ SYMBOL* LookupSym(char* name)
     {
         return gsearch(name);
     }
-    rv = search(name, localNameSpace->valueData->syms);
+    rv = localNameSpace->valueData->syms->search(name);
     if (!rv)
-        rv = search(name, localNameSpace->valueData->tags);
+        rv = localNameSpace->valueData->tags->search(name);
     if (!rv)
         rv = namespacesearch(name, localNameSpace, false, false);
     if (!rv)
@@ -1498,7 +1493,6 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
                                  int level, bool asAddress)
 {
     BASECLASS* lst;
-    SYMLIST* hr;
     SYMBOL* ssp;
     bool matched;
     if (!Optimizer::cparams.prm_cplusplus)
@@ -1516,11 +1510,9 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
         return true;
     if (!basetype(currentBase->tp)->syms)
         return false;
-    hr = basetype(currentBase->tp)->syms->table[0];
     matched = false;
-    while (hr)
+    for (auto sym : *basetype(currentBase->tp)->syms)
     {
-        SYMBOL* sym = hr->p;
         if (sym == member || sym == member->sb->mainsym)
         {
             matched = true;
@@ -1528,31 +1520,27 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
         }
         if (sym->sb->storage_class == sc_overloads && isfunction(member->tp) && sym->tp->syms)
         {
-            SYMLIST* hr1 = sym->tp->syms->table[0];
-            while (hr1)
+            bool found = false;
+            for (auto sym1 : *sym->tp->syms)
             {
-                SYMBOL* sym1 = (SYMBOL*)hr1->p;
                 if (sym1 == member || sym1 == member->sb->mainsym)
                 {
+                    found = true;
                     break;
                 }
                 else if (sym1->sb->instantiations)
                 {
-                    SYMLIST* lst1 = sym1->sb->instantiations;
-                    while (lst1)
+                    for (auto hr = sym1->sb->instantiations; hr; hr = hr->next)
                     {
-                        if (lst1->p == member)
+                        if (hr->p == member)
+                        {
+                            found = true;
                             break;
-                        lst1 = lst1->next;
-                    }
-                    if (lst1)
-                    {
-                        break;
+                        }
                     }
                 }
-                hr1 = hr1->next;
             }
-            if (hr1)
+            if (found)
             {
                 matched = true;
                 break;
@@ -1575,14 +1563,11 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
                 break;
             }
         }
-        hr = hr->next;
     }
     if (!matched)
     {
-        hr = basetype(currentBase->tp)->tags->table[0];
-        while (hr)
+        for (auto sym : *basetype(currentBase->tp)->tags)
         {
-            SYMBOL* sym = hr->p;
             if (sym == member || sym == member->sb->mainsym || sameTemplate(sym->tp, member->tp))
             {
                 matched = true;
@@ -1603,7 +1588,6 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
                     break;
                 }
             }
-            hr = hr->next;
         }
     }
     if (matched)
@@ -1750,13 +1734,10 @@ bool checkDeclarationAccessible(SYMBOL* sp, SYMBOL* derived, SYMBOL* funcsp)
         }
         else if (isfunction(tp))
         {
-            SYMLIST* hr = basetype(tp)->syms->table[0];
-            while (hr)
+            for (auto sym : *basetype(tp)->syms)
             {
-                SYMBOL* sym = hr->p;
                 if (!checkDeclarationAccessible(sym, funcsp ? funcsp->sb->parentClass : nullptr, funcsp))
                     return false;
-                hr = hr->next;
             }
         }
         tp = tp->btp;
@@ -1828,12 +1809,9 @@ static Optimizer::LIST* structuredArg(SYMBOL* sym, Optimizer::LIST* in, TYPE* tp
 static Optimizer::LIST* searchOneArg(SYMBOL* sym, Optimizer::LIST* in, TYPE* tp);
 static Optimizer::LIST* funcArg(SYMBOL* sp, Optimizer::LIST* in, TYPE* tp)
 {
-    SYMLIST** hr = basetype(tp)->syms->table;
-    while (*hr)
+    for (auto sym : *basetype(tp)->syms)
     {
-        SYMBOL* sym = (SYMBOL*)(*hr)->p;
         in = searchOneArg(sp, in, sym->tp);
-        hr = &(*hr)->next;
     }
     in = searchOneArg(sp, in, basetype(tp)->btp);
     return in;
@@ -2498,14 +2476,14 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
         int l = 0, r = 0, llvr = 0, rlvr = 0;
         if (seql[l] == CV_DERIVEDFROMBASE && seqr[r] == CV_DERIVEDFROMBASE)
         {
-            SYMLIST* hr = basetype(funcl->tp)->syms->table[0];
+            auto it = basetype(funcl->tp)->syms->begin();
             if (!funcl->sb->castoperator)
-                hr = hr->next;
-            ltype = hr->p->tp;
-            hr = basetype(funcr->tp)->syms->table[0];
+                ++it;
+            ltype = (*it)->tp;
+            it = basetype(funcr->tp)->syms->begin();
             if (!funcr->sb->castoperator)
-                hr = hr->next;
-            rtype = hr->p->tp;
+                ++it;
+            rtype = (*it)->tp;
             if (isref(ltype))
                 ltype = basetype(ltype)->btp;
             if (isref(rtype))
@@ -2683,10 +2661,10 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
 }
 static bool ellipsed(SYMBOL* sym)
 {
-    SYMLIST* hr = basetype(sym->tp)->syms->table[0];
-    while (hr->next)
-        hr = hr->next;
-    return basetype(hr->p->tp)->type == bt_ellipse;
+    for (auto sym : *basetype(sym->tp)->syms)
+        if (basetype(sym->tp)->type == bt_ellipse)
+            return true;
+    return false;
 }
 static int ChooseLessConstTemplate(SYMBOL* left, SYMBOL* right)
 {
@@ -2771,12 +2749,14 @@ static int ChooseLessConstTemplate(SYMBOL* left, SYMBOL* right)
     else if (isfunction(left->tp))
     {
         int lcount = 0, rcount = 0;
-        auto l = basetype(left->tp)->syms->table[0];
-        auto r = basetype(right->tp)->syms->table[0];
-        for (; l && r; l = l->next, r = r->next)
+        auto l = basetype(left->tp)->syms->begin();
+        auto lend = basetype(left->tp)->syms->end();
+        auto r = basetype(right->tp)->syms->begin();
+        auto rend = basetype(right->tp)->syms->end();
+        for (; l !=lend && r != rend; ++l, ++r)
         {
-            auto ltp = l->p->tp;
-            auto rtp = r->p->tp;
+            auto ltp = (*l)->tp;
+            auto rtp = (*r)->tp;
             while (isref(ltp) || ispointer(ltp))
                 ltp = basetype(ltp)->btp;
             while (isref(rtp) || ispointer(rtp))
@@ -2792,7 +2772,7 @@ static int ChooseLessConstTemplate(SYMBOL* left, SYMBOL* right)
                     break;
                 }
         }
-        if (!l && !r)
+        if (l == lend && r == rend)
         {
             if (lcount < rcount)
             {
@@ -2825,8 +2805,10 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                     int l = 0, r = 0;
                     int k = 0;
                     INITLIST* args = funcparams ? funcparams->arguments : nullptr;
-                    SYMLIST* hrl = basetype(spList[i]->tp)->syms->table[0];
-                    SYMLIST* hrr = basetype(spList[j]->tp)->syms->table[0];
+                    auto itl = basetype(spList[i]->tp)->syms->begin();
+                    auto itlend = basetype(spList[i]->tp)->syms->end();
+                    auto itr = basetype(spList[j]->tp)->syms->begin();
+                    auto itrend = basetype(spList[j]->tp)->syms->end();
                     memset(arr, 0, sizeof(arr));
                     for (k = 0; k < argCount ; k++)
                     {
@@ -2867,8 +2849,8 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                             }
                             else
                             {
-                                tpl = ((SYMBOL*)(hrl->p))->tp;
-                                hrl = hrl->next;
+                                tpl = (*itl)->tp;
+                                ++itl;
                             }
                             if (spList[j]->sb->castoperator)
                             {
@@ -2876,8 +2858,8 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                             }
                             else
                             {
-                                tpr = ((SYMBOL*)(hrr->p))->tp;
-                                hrr = hrr->next;
+                                tpr = (*itr)->tp;
+                                ++itr;
                             }
                             arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, funcparams->thistp,
                                                         funcparams->thisptr, funcList ? funcList[i][k] : nullptr,
@@ -2889,11 +2871,11 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                             if (spList[i]->sb->castoperator)
                                 tpl = spList[i]->tp;
                             else
-                                tpl = hrl ? (hrl->p)->tp : nullptr;
+                                tpl = itl != itlend ? (*itl)->tp : nullptr;
                             if (spList[j]->sb->castoperator)
                                 tpr = spList[j]->tp;
                             else
-                                tpr = hrr ? (hrr->p)->tp : nullptr;
+                                tpr = itr != itrend ? (*itr)->tp : nullptr;
                             if (tpl && tpr)
                                 arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, args ? args->tp : 0,
                                                             args ? args->exp : 0, funcList ? funcList[i][k] : nullptr,
@@ -2908,10 +2890,10 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                                                                 args ? args->exp : 0, funcList ? funcList[i][k] : nullptr,
                                                                 funcList ? funcList[j][k] : nullptr, lenl, lenr, false);
                             }
-                            if (hrl)
-                                hrl = hrl->next;
-                            if (hrr)
-                                hrr = hrr->next;
+                            if (itl != itlend)
+                                ++itl;
+                            if (itr != itrend)
+                                ++itr;
                             if (args)
                                 args = args->next;
                         }
@@ -3011,13 +2993,14 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                     if (spList[i] && !spList[i]->sb->templateLevel)
                     {
                         arg = funcparams->arguments;
-                        auto hr = basetype(spList[i]->tp)->syms->table[0];
-                        if (hr->p->sb->thisPtr)
-                            hr = hr->next;
+                        auto it = basetype(spList[i]->tp)->syms->begin();
+                        auto ite = basetype(spList[i]->tp)->syms->end();
+                        if ((*it)->sb->thisPtr)
+                            ++it;
                         int n = 0;
-                        while (arg && hr)
+                        while (arg && it != ite)
                         {
-                            TYPE* target = hr->p->tp;
+                            TYPE* target = (*it)->tp;
                             TYPE* current = arg->tp;
                             if (!current) // initlist, don't finish this screening
                                 return;
@@ -3052,9 +3035,9 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                                 n = INT_MIN;
                             }
                             arg = arg->next;
-                            hr = hr->next;
+                            ++it;
                         }
-                        if (!arg && !hr)
+                        if (!arg && it != ite)
                         {
                             match[i] = n;
                         }
@@ -3080,7 +3063,7 @@ static Optimizer::LIST* GetMemberCasts(Optimizer::LIST* gather, SYMBOL* sym)
     if (sym)
     {
         BASECLASS* bcl = sym->sb->baseClasses;
-        SYMBOL* find = search(overloadNameTab[CI_CAST], basetype(sym->tp)->syms);
+        SYMBOL* find = basetype(sym->tp)->syms->search(overloadNameTab[CI_CAST]);
         if (find)
         {
             Optimizer::LIST* lst = Allocate<Optimizer::LIST>();
@@ -3103,7 +3086,7 @@ static Optimizer::LIST* GetMemberConstructors(Optimizer::LIST* gather, SYMBOL* s
     while (sym)
     {
         // conversion of one class to another
-        SYMBOL* find = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sym->tp)->syms);
+        SYMBOL* find = basetype(sym->tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
         if (find)
         {
             Optimizer::LIST* lst = Allocate<Optimizer::LIST>();
@@ -3185,12 +3168,7 @@ SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int
             MakeType(thistp, bt_pointer, tpp);
             while (lst2)
             {
-                SYMLIST** hr = ((SYMBOL*)lst2->data)->tp->syms->table;
-                while (*hr)
-                {
-                    funcs++;
-                    hr = &(*hr)->next;
-                }
+                funcs += ((SYMBOL*)lst2->data)->tp->syms->size();
                 lst2 = lst2->next;
             }
             spList = Allocate<SYMBOL*>(funcs);
@@ -3201,10 +3179,8 @@ SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int
             std::set<SYMBOL*> filters;
             while (lst2)
             {
-                SYMLIST** hr = ((SYMBOL*)lst2->data)->tp->syms->table;
-                while (*hr)
+                for (auto sym : *((SYMBOL*)lst2->data)->tp->syms)
                 {
-                    SYMBOL* sym = (SYMBOL*)(*hr)->p;
                     if (!sym->sb->instantiated && filters.find(sym) == filters.end() && filters.find(sym->sb->mainsym) == filters.end())
                     {
                         filters.insert(sym);
@@ -3226,7 +3202,6 @@ SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int
                             spList[i++] = sym;
                         }
                     }
-                    hr = &(*hr)->next;
                 }
                 lst2 = lst2->next;
             }
@@ -3263,7 +3238,6 @@ SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int
                             }
                             else
                             {
-                                SYMLIST* args = basetype(candidate->tp)->syms->table[0];
                                 bool lref = false;
                                 TYPE* tpn = basetype(candidate->tp)->btp;
                                 if (tpn->type == bt_typedef)
@@ -3274,7 +3248,7 @@ SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int
                                         lref = true;
                                 }
                                 MakeType(thistp, bt_pointer, tpa);
-                                getSingleConversion(((SYMBOL*)args->p)->tp, &thistp, &exp, &n2, seq3, candidate, nullptr, true);
+                                getSingleConversion((*basetype(candidate->tp)->syms->begin())->tp, &thistp, &exp, &n2, seq3, candidate, nullptr, true);
                                 seq3[n2 + n3++] = CV_USER;
                                 inGetUserConversion--;
                                 if (tpc->type == bt_auto)
@@ -3341,8 +3315,9 @@ SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int
                         }
                         else
                         {
-                            SYMLIST* args = basetype(candidate->tp)->syms->table[0];
-                            if (args)
+                            auto sparg = basetype(candidate->tp)->syms->begin();
+                            auto spend = basetype(candidate->tp)->syms->end();
+                            if (sparg != spend)
                             {
                                 if (candidate_in && candidate_in->sb->isConstructor &&
                                     candidate_in->sb->parentClass == candidate->sb->parentClass)
@@ -3351,12 +3326,11 @@ SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int
                                 }
                                 else
                                 {
-                                    SYMBOL *first, *next = nullptr;
-                                    SYMBOL* th = (SYMBOL*)args->p;
-                                    args = args->next;
-                                    first = (SYMBOL*)args->p;
-                                    if (args->next)
-                                        next = (SYMBOL*)args->next->p;
+                                    auto th = *sparg;
+                                    ++sparg;
+                                    SYMBOL* first = *sparg;
+                                    ++sparg;
+                                    SYMBOL* next = sparg == spend ? nullptr : *sparg;
                                     if (!next || next->sb->init || next->sb->deferredCompile)
                                     {
                                         if (first->tp->type != bt_ellipse)
@@ -4480,10 +4454,10 @@ static void getInitListConversion(TYPE* tp, INITLIST* list, TYPE* tpp, int* n, e
         tp = basetype(tp);
         if (tp->sp->sb->trivialCons)
         {
-            SYMLIST* structSyms = tp->syms->table[0];
-            while (a && structSyms)
+            for (auto member : *tp->syms)
             {
-                SYMBOL* member = (SYMBOL*)structSyms->p;
+                if (!a)
+                    break;
                 if (ismemberdata(member))
                 {
                     getSingleConversion(member->tp, a->tp, a->exp, n, seq, candidate, userFunc, true);
@@ -4491,7 +4465,7 @@ static void getInitListConversion(TYPE* tp, INITLIST* list, TYPE* tpp, int* n, e
                         break;
                     a = a->next;
                 }
-                structSyms = structSyms->next;
+                ++structSyms;
             }
             if (a)
             {
@@ -4500,7 +4474,7 @@ static void getInitListConversion(TYPE* tp, INITLIST* list, TYPE* tpp, int* n, e
         }
         else
         {
-            SYMBOL* cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp)->syms);
+            SYMBOL* cons = basetype(tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
             if (!cons)
             {
                 // should never happen
@@ -4576,8 +4550,6 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
     int n = 0;
     int i;
     INITLIST* a = nullptr;
-    SYMLIST** hr;
-    SYMLIST** hrt = nullptr;
     enum e_cvsrn seq[100];
     TYPE* initializerListType = nullptr;
     int m = 0, m1;
@@ -4585,11 +4557,13 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
     if (sym->tp->type == bt_any)
         return false;
 
-    hr = basetype(sym->tp)->syms->table;
+    auto it = basetype(sym->tp)->syms->begin();
+    auto ite = basetype(sym->tp)->syms->end();
+    SymbolTable<SYMBOL>::iterator itt = atp->syms->begin();
     if (f)
         a = f->arguments;
     else
-        hrt = atp->syms->table;
+        itt = atp->syms->begin();
     for (i = 0; i < count; i++)
     {
         arr[i] = CV_PAD;
@@ -4599,7 +4573,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
     {
         TYPE tpx;
         TYPE* tpp;
-        SYMBOL* argsym = (SYMBOL*)(*hr)->p;
+        SYMBOL* argsym = *it;
         memset(&tpx, 0, sizeof(tpx));
         m = 0;
         getSingleConversion(parent->tp, basetype(sym->tp)->btp, nullptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr, true);
@@ -4616,7 +4590,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
         memcpy(arr + pos, seq, m * sizeof(enum e_cvsrn));
         sizes[n++] = m;
         pos += m;
-        hr = &(*hr)->next;
+        ++it;
         tpp = argsym->tp;
         MakeType(tpx, bt_pointer, f->arguments->tp);
         m = 0;
@@ -4654,9 +4628,9 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                     TYPE tpx;
                     TYPE* tpp;
                     TYPE* tpthis = f->thistp;
-                    SYMBOL* argsym = (SYMBOL*)(*hr)->p;
+                    SYMBOL* argsym = *it;
                     memset(&tpx, 0, sizeof(tpx));
-                    hr = &(*hr)->next;
+                    ++it;
                     tpp = argsym->tp;
                     if (!tpthis)
                     {
@@ -4740,21 +4714,21 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                 {
                     return false;
                 }
-                else if (a || hrt)
+                else if (a || f && itt != atp->syms->end())
                 {
-                    getSingleConversion(argtp, a ? a->tp : ((SYMBOL*)(*hrt)->p)->tp, a ? a->exp : nullptr, &m, seq, sym,
+                    getSingleConversion(argtp, a ? a->tp : (*itt)->tp, a ? a->exp : nullptr, &m, seq, sym,
                                         userFunc ? &userFunc[n] : nullptr, true);
                     if (a)
                         a = a->next;
-                    else if (hrt)
-                        hrt = &(*hrt)->next;
+                    else if (f)
+                        ++itt;
                 }
             }
         }
 
-        while (*hr && (a || (hrt && *hrt)))
+        while (it != ite && (a || f && itt != atp->syms->end()))
         {
-            SYMBOL* argsym = (SYMBOL*)(*hr)->p;
+            SYMBOL* argsym = *it;
             if (argsym->tp->type != bt_any)
             {
                 TYPE* tp;
@@ -4816,17 +4790,17 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                             if (!a->initializer_list)
                                 a->nested->next = next;
                             if (a->initializer_list && a->nested->nested)
-                                hr = &(*hr)->next;
+                                ++it;
                         }
                     }
                     else if (a->initializer_list)
                     {
-                        getSingleConversion(initializerListType, a ? a->tp : ((SYMBOL*)(*hrt)->p)->tp, a ? a->exp : nullptr, &m,
+                        getSingleConversion(initializerListType, a ? a->tp : (*itt)->tp, a ? a->exp : nullptr, &m,
                                             seq, sym, userFunc ? &userFunc[n] : nullptr, true);
                     }
                     else if (a->tp && a->exp)  // might be an empty initializer list...
                     {
-                        getSingleConversion((basetype(tp1)->sp)->tp, a ? a->tp : ((SYMBOL*)(*hrt)->p)->tp, a ? a->exp : nullptr, &m,
+                        getSingleConversion((basetype(tp1)->sp)->tp, a ? a->tp : (*itt)->tp, a ? a->exp : nullptr, &m,
                                             seq, sym, userFunc ? &userFunc[n] : nullptr, true);
                     }
                 }
@@ -4851,7 +4825,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                                 {
                                     getInitListConversion(basetype(tp1), a->nested, nullptr, &m, seq, sym,
                                                           userFunc ? &userFunc[n] : nullptr);
-                                    hr = &(*hr)->next;
+                                    ++it;
                                 }
                                 else
                                 {
@@ -4871,7 +4845,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                             {
                                 getSingleConversion(tp1,
                                                     a     ? a->tp
-                                                    : hrt ? ((SYMBOL*)(*hrt)->p)->tp
+                                                    : itt != atp->syms->end() ? (*itt)->tp
                                                           : tp1,
                                                     a ? a->exp : nullptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr, true);
                             }
@@ -4888,7 +4862,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                     {
                         MatchOverloadedFunction(tp2, &a->tp, a->tp->sp, &a->exp, 0);
                     }
-                    getSingleConversion(tp, a ? a->tp : ((SYMBOL*)(*hrt)->p)->tp, a ? a->exp : nullptr, &m, seq, sym,
+                    getSingleConversion(tp, a ? a->tp : (*itt)->tp, a ? a->exp : nullptr, &m, seq, sym,
                                         userFunc ? &userFunc[n] : nullptr, true);
                 }
                 m1 = m;
@@ -4910,13 +4884,13 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
             if (a)
                 a = a->next;
             else
-                hrt = &(*hrt)->next;
+                ++itt;
             if ((!initializerListType || !a || !a->initializer_list) && !tr)
-                hr = &(*hr)->next;
+                ++it;
         }
-        if (*hr)
+        if (*it)
         {
-            SYMBOL* sym = (SYMBOL*)(*hr)->p;
+            SYMBOL* sym = *it;
             if (sym->sb->init || sym->sb->deferredCompile || sym->packed)
             {
                 return true;
@@ -4985,16 +4959,18 @@ SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, TYPE* atp)
 static int CompareArgs(SYMBOL* left, SYMBOL* right)
 {
     int countl = 0, countr = 0;
-    auto hrl = basetype(left->sb->parentTemplate->tp)->syms->table[0];
-    auto hrr = basetype(right->sb->parentTemplate->tp)->syms->table[0];
-    if (hrl->p->sb->thisPtr)
-        hrl = hrl->next;
-    if (hrr->p->sb->thisPtr)
-        hrr = hrl->next;
-    while (hrl && hrr)
+    auto itl = basetype(left->sb->parentTemplate->tp)->syms->begin();
+    auto itlend = basetype(left->sb->parentTemplate->tp)->syms->end();
+    auto itr = basetype(right->sb->parentTemplate->tp)->syms->begin();
+    auto itrend = basetype(right->sb->parentTemplate->tp)->syms->end();
+    if ((*itl)->sb->thisPtr)
+        ++itl;
+    if ((*itr)->sb->thisPtr)
+        ++itr;
+    while (itl != itlend && itr != itrend)
     {
-        auto tpl = hrl->p->tp;
-        auto tpr = hrr->p->tp;
+        auto tpl = (*itl)->tp;
+        auto tpr = (*itr)->tp;
         if (isref(tpl))
             tpl = basetype(tpl)->btp;
         if (isref(tpr))
@@ -5010,8 +4986,8 @@ static int CompareArgs(SYMBOL* left, SYMBOL* right)
             countl++;
         if (tpr->type != bt_templateparam && tpr->type != bt_templateselector)
             countr++;
-        hrl = hrl->next;
-        hrr = hrr->next;
+        ++itl;
+        ++itr;
     }
     if (countl > countr)
         return -1;
@@ -5118,7 +5094,6 @@ SYMBOL* GetOverloadedTemplate(SYMBOL* sp, FUNCTIONCALL* args)
     int** lenList;
     SYMBOL*** funcList;
     int n = 0, i, argCount = 0;
-    SYMLIST* search = sp->tp->syms->table[0];
     INITLIST* il = args->arguments;
     gather.next = nullptr;
     gather.data = sp;
@@ -5127,11 +5102,7 @@ SYMBOL* GetOverloadedTemplate(SYMBOL* sp, FUNCTIONCALL* args)
         il = il->next;
         argCount++;
     }
-    while (search)
-    {
-        search = search->next;
-        n++;
-    }
+    n += sp->tp->syms->size();
     spList = Allocate<SYMBOL*>(n);
     icsList = Allocate<e_cvsrn*>(n);
     lenList = Allocate<int*>(n);
@@ -5190,40 +5161,38 @@ static int insertFuncs(SYMBOL** spList, Optimizer::LIST* gather, FUNCTIONCALL* a
     int n = 0;
     while (gather)
     {
-        SYMLIST** hr = ((SYMBOL*)gather->data)->tp->syms->table;
-        while (*hr)
+        for (auto sym : *((SYMBOL*)gather->data)->tp->syms)
         {
-            int i;
-            SYMBOL* sym = (SYMBOL*)(*hr)->p;
             if (filters.find(sym) == filters.end() && filters.find(sym->sb->mainsym) == filters.end() && (!args || !args->astemplate || sym->sb->templateLevel) &&
                 (!sym->sb->instantiated || sym->sb->specialized2 || sym->sb->isDestructor))
             {
-                auto hr1 = basetype(sym->tp)->syms->table[0];
+                auto it1 = basetype(sym->tp)->syms->begin();
+                auto it1end = basetype(sym->tp)->syms->end();
                 auto arg = args->arguments;
                 bool ellipse = false;
                 if (sym->name[0] == '$' || sym->sb->templateLevel)
                 {
                     arg = nullptr;
-                    hr1 = nullptr;
+                    it1 = it1end;
                 }
                 else
                 {
-                    if (hr1->p->sb->thisPtr)
-                        hr1 = hr1->next;
-                    if (hr1->p->tp->type == bt_void)
-                        hr1 = hr1->next;
+                    if ((*it1)->sb->thisPtr)
+                        ++it1;
+                    if ((*it1)->tp->type == bt_void)
+                        ++it1;
                     if (arg && arg->tp && arg->tp->type == bt_void)
                         arg = arg->next;
-                    while (arg && hr1)
+                    while (arg && it1 != it1end)
                     {
               
-                        if (hr1->p->tp->type == bt_ellipse || !arg->tp) // ellipse or initializer list
+                        if ((*it1)->tp->type == bt_ellipse || !arg->tp) // ellipse or initializer list
                             ellipse = true;
                         arg = arg->next;
-                        hr1 = hr1->next;
+                        ++it1;
                     }
                 }
-                if ((!arg || ellipse) && (!hr1 || hr1->p->sb->defaultarg || hr1->p->tp->type == bt_ellipse))
+                if ((!arg || ellipse) && (it1 == it1end || (*it1)->sb->defaultarg || (*it1)->tp->type == bt_ellipse))
                 {
                     if (sym->sb->templateLevel && (sym->templateParams || sym->sb->isDestructor))
                     {
@@ -5246,7 +5215,6 @@ static int insertFuncs(SYMBOL** spList, Optimizer::LIST* gather, FUNCTIONCALL* a
                     filters.insert(sym->sb->mainsym);
                 n++;
             }
-            hr = &(*hr)->next;
         }
         gather = gather->next;
     }
@@ -5264,20 +5232,24 @@ static bool IsMove(SYMBOL* sp)
     bool rv = false;
     if (sp->sb->isConstructor)
     {
-        auto hr = basetype(sp->tp)->syms->table[0];
-        auto thisPtr = hr ? hr->p : nullptr;
-        if (hr && thisPtr->sb->thisPtr)
-            hr = hr->next;
-        if (hr && !hr->next && thisPtr->sb->thisPtr)
+        auto it = basetype(sp->tp)->syms->begin();
+        auto itend = basetype(sp->tp)->syms->end();
+        auto thisPtr = it != itend ? *it : nullptr;
+        if (thisPtr && thisPtr->sb->thisPtr)
+            ++it;
+        if (it != itend && thisPtr->sb->thisPtr)
         {
-            if (basetype(hr->p->tp)->type == bt_rref)
+            if (basetype((*it)->tp)->type == bt_rref)
             {
-                auto tp1 = basetype (basetype(hr->p->tp)->btp);
-                auto tp2 = basetype (basetype(thisPtr->tp)->btp);
-                if (isstructured(tp1) && isstructured(tp2))
+                if (++it != itend)
                 {
-                   rv = comparetypes(tp2, tp1, true) || sameTemplate(tp2, tp1);
-                }                           
+                    auto tp1 = basetype(basetype((*it)->tp)->btp);
+                    auto tp2 = basetype(basetype(thisPtr->tp)->btp);
+                    if (isstructured(tp1) && isstructured(tp2))
+                    {
+                        rv = comparetypes(tp2, tp1, true) || sameTemplate(tp2, tp1);
+                    }
+                }
             }
         }
     }
@@ -5303,16 +5275,18 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
     {
         Optimizer::LIST* gather = nullptr;
         SYMBOL *found1 = nullptr, *found2 = nullptr;
+        auto it1 = sp->tp->syms->begin();
+        ++it1;
         if (!Optimizer::cparams.prm_cplusplus && ((Optimizer::architecture != ARCHITECTURE_MSIL) ||
-                                                  !Optimizer::cparams.msilAllowExtensions || (sp && !sp->tp->syms->table[0]->next)))
+                                                  !Optimizer::cparams.msilAllowExtensions || (sp && it1 == sp->tp->syms->end())))
         {
-            sp = ((SYMBOL*)sp->tp->syms->table[0]->p);
-            if (sp)
+            if (sp->tp->syms->begin() != sp->tp->syms->end())
             {
+                sp = *sp->tp->syms->begin();
                 *exp = varNode(en_pc, sp);
                 *tp = sp->tp;
             }
-            return sp;
+            return nullptr;
         }
         if (sp)
         {
@@ -5335,14 +5309,11 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     }
                     else
                     {
-                        SYMLIST** hr = atp->syms->table;
-                        while (*hr)
+                        for (auto sp : *atp->syms)
                         {
-                            SYMBOL* sp = (SYMBOL*)(*hr)->p;
                             if (sp->sb->storage_class != sc_parameter)
                                 break;
                             gather = searchOneArg(sp, gather, sp->tp);
-                            hr = &(*hr)->next;
                         }
                     }
                 }
@@ -5399,9 +5370,9 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
             {
                 if (argl->tp && argl->tp->type == bt_aggregate)
                 {
-                    SYMLIST* hr = argl->tp->syms->table[0];
-                    SYMBOL* func = hr->p;
-                    if (!func->sb->templateLevel && !hr->next)
+                    auto it = argl->tp->syms->begin();
+                    SYMBOL* func = *it;
+                    if (!func->sb->templateLevel && ++it != argl->tp->syms->end())
                     {
                         argl->tp = func->tp;
                         argl->exp = varNode(en_pc, func);
@@ -5427,15 +5398,12 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
             lst2 = gather;
             while (lst2)
             {
-                SYMLIST** hr = ((SYMBOL*)lst2->data)->tp->syms->table;
-                while (*hr)
+                for (auto sym : *((SYMBOL*)lst2->data)->tp->syms)
                 {
-                    SYMBOL* sym = (SYMBOL*)(*hr)->p;
                     if ((!args || !args->astemplate || sym->sb->templateLevel) && (!sym->sb->instantiated || sym->sb->isDestructor))
                     {
                         n++;
                     }
-                    hr = &(*hr)->next;
                 }
                 lst2 = lst2->next;
             }
@@ -5460,14 +5428,20 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 }
                 else
                 {
-                    SYMLIST** hr = atp->syms->table;
-                    while (*hr && ((SYMBOL*)(*hr)->p)->sb->storage_class == sc_parameter)
+
+                    for (auto sym : *atp->syms)
                     {
-                        argCount++;
-                        hr = &(*hr)->next;
+                        if (sym->sb->storage_class == sc_parameter)
+                        {
+                            argCount++;
+                        }
+                        else
+                        {
+                            if (ismember(sym))
+                                argCount++;
+                            break;
+                        }
                     }
-                    if (*hr && ismember(((SYMBOL*)(*hr)->p)))
-                        argCount++;
                 }
 
                 spList = Allocate<SYMBOL*>(n);
@@ -5586,10 +5560,10 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
             }
             else
             {
-                SYMLIST** hr = (SYMLIST**)((SYMBOL*)gather->data)->tp->syms->table;
-                found1 = (SYMBOL*)(*hr)->p;
-                if (n > 1)
-                    found2 = (SYMBOL*)(*(SYMLIST**)(*hr))->p;
+                auto it = ((SYMBOL*)gather->data)->tp->syms->begin();
+                found1 = *it;
+                if (n > 1 && ++it != ((SYMBOL*)gather->data)->tp->syms->end())
+                    found2 = *it;
             }
         }
         // any errors
@@ -5666,7 +5640,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                             INITLIST* a = args->arguments;
                             sym->tp = MakeType(bt_func, &stdint);
                             sym->tp->size = getSize(bt_pointer);
-                            sym->tp->syms = CreateHashTable(1);
+                            sym->tp->syms = symbols.CreateSymbolTable();
                             sym->tp->sp = sym;
                             while (a)
                             {
@@ -5675,7 +5649,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                                 Optimizer::my_sprintf(nn, "%d", v++);
                                 sym1->name = litlate(nn);
                                 sym1->tp = a->tp;
-                                insert(sym1, sym->tp->syms);
+                                sym->tp->syms->Add(sym1);
                                 a = a->next;
                             }
                         }
@@ -5737,9 +5711,9 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                             tp1 = &(*tp1)->btp;
                         *tp1 = (*tp1)->sp->tp;
                     }
-                    for (auto hr = basetype(found1->tp)->syms->table[0]; hr; hr = hr->next)
+                    for (auto sym : *basetype(found1->tp)->syms)
                     {
-                        CollapseReferences(hr->p->tp);
+                        CollapseReferences(sym->tp);
                     }
                     CollapseReferences(basetype(found1->tp)->btp);
                     if (found1->sb->templateLevel && (!templateNestingCount || instantiatingTemplate) && found1->templateParams)
@@ -5815,51 +5789,58 @@ SYMBOL* MatchOverloadedFunction(TYPE* tp, TYPE** mtp, SYMBOL* sym, EXPRESSION** 
     FUNCTIONCALL fpargs;
     INITLIST** args = &fpargs.arguments;
     EXPRESSION* exp2 = *exp;
-    SYMLIST* hrp;
+    bool found = false;
+    SymbolTable<SYMBOL>::iterator itp, itpe;
     tp = basetype(tp);
     if (isfuncptr(tp) || tp->type == bt_memberptr)
     {
-        hrp = basetype(basetype(tp)->btp)->syms->table[0];
+        itp = basetype(basetype(tp)->btp)->syms->begin();
+        itpe = basetype(basetype(tp)->btp)->syms->end();
+        found = true;
     }
     else
     {
-        hrp = nullptr;
         if (!*exp)
             return nullptr;
         if ((*exp)->v.func->sp->tp->syms)
         {
-            HASHTABLE* syms = (*exp)->v.func->sp->tp->syms;
-            hrp = syms->table[0];
-            if (hrp && (hrp->p)->tp->syms)
-                hrp = (hrp->p)->tp->syms->table[0];
-            else
-                hrp = nullptr;
+            SymbolTable<SYMBOL>* syms = (*exp)->v.func->sp->tp->syms;
+            itp = syms->begin();
+            if (itp != syms->end() && (*itp)->tp->syms)
+            {
+                itp = (*itp)->tp->syms->begin();
+                itpe = (*itp)->tp->syms->end();
+                found = true;
+            }
         }
     }
     while (castvalue(exp2))
         exp2 = exp2->left;
 
     memset(&fpargs, 0, sizeof(fpargs));
-    if (hrp && (hrp->p)->sb->thisPtr)
+    if (found && (*itp)->sb->thisPtr)
     {
-        fpargs.thistp = (hrp->p)->tp;
+        fpargs.thistp = (*itp)->tp;
         fpargs.thisptr = intNode(en_c_i, 0);
-        hrp = hrp->next;
+        ++itp;
     }
     else if (tp->type == bt_memberptr)
     {
         fpargs.thistp = MakeType(bt_pointer, tp->sp->tp);
         fpargs.thisptr = intNode(en_c_i, 0);
     }
-    while (hrp)
+    if (found)
     {
-        *args = Allocate<INITLIST>();
-        (*args)->tp = (hrp->p)->tp;
-        (*args)->exp = intNode(en_c_i, 0);
-        if (isref((*args)->tp))
-            (*args)->tp = basetype((*args)->tp)->btp;
-        args = &(*args)->next;
-        hrp = hrp->next;
+        while (itp != itpe)
+        {
+            *args = Allocate<INITLIST>();
+            (*args)->tp = ((*itp))->tp;
+            (*args)->exp = intNode(en_c_i, 0);
+            if (isref((*args)->tp))
+                (*args)->tp = basetype((*args)->tp)->btp;
+            args = &(*args)->next;
+            ++itp;
+        }
     }
     if (exp2 && exp2->type == en_func)
         fpargs.templateParams = exp2->v.func->templateParams;

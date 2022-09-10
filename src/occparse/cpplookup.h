@@ -30,7 +30,6 @@ extern int inSearchingFunctions;
 extern int inNothrowHandler;
 
 extern SYMBOL* argFriend;
-extern HASHTABLE* CreateHashTable(int size);
 #define F_WITHCONS 1
 #define F_INTEGER 2
 #define F_ARITHMETIC 4

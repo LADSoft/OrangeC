@@ -26,7 +26,6 @@
 #include <unordered_set>
 #include "config.h"
 #include "initbackend.h"
-#include "symtab.h"
 #include "stmt.h"
 #include "expr.h"
 #include "ccerr.h"
@@ -46,6 +45,7 @@
 #include "inline.h"
 #include "ioptimizer.h"
 #include "libcxx.h"
+#include "symtab.h"
 
 namespace Parser
 {
@@ -55,7 +55,7 @@ static Optimizer::LIST *inlineDataHead, *inlineDataTail;
 static SYMBOL* inlinesp_list[MAX_INLINE_NESTING];
 
 static int inlinesp_count;
-static HASHTABLE* vc1Thunks;
+static SymbolTable<SYMBOL>* vc1Thunks;
 static std::unordered_set<std::string> didInlines;
 
 static FUNCTIONCALL* function_list[MAX_INLINE_NESTING];
@@ -68,7 +68,7 @@ void inlineinit(void)
     inlineHead = nullptr;
     inlineVTabHead = nullptr;
     inlineDataHead = nullptr;
-    vc1Thunks = CreateHashTable(1);
+    vc1Thunks = symbols.CreateSymbolTable();
     didInlines.clear();
 }
 static bool inSearch(SYMBOL* sp) { return didInlines.find(sp->sb->decoratedName) != didInlines.end(); }
@@ -178,13 +178,13 @@ void dumpInlines(void)
                         {
                             parentTemplate = found2;
                         }
-                        origsym = search(sym->name, parentTemplate->tp->syms);
+                        origsym = parentTemplate->tp->syms->search(sym->name);
                         //            printf("%s\n", origsym->sb->decoratedName);
 
                         if (!origsym || origsym->sb->storage_class != sc_global)
                         {
                             parentTemplate = sym->sb->parentClass->sb->parentTemplate;
-                            origsym = search(sym->name, parentTemplate->tp->syms);
+                            origsym = parentTemplate->tp->syms->search(sym->name);
                         }
 
                         if (sym->sb->parentClass && sym->sb->parentClass->sb->dontinstantiate)
@@ -294,15 +294,12 @@ void dumpvc1Thunks(void)
 {
     if (IsCompiler())
     {
-        SYMLIST* hr;
         Optimizer::cseg();
-        hr = vc1Thunks->table[0];
-        while (hr)
+        for (auto sym : *vc1Thunks)
         {
-            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(hr->p), false);
-            Optimizer::gen_vc1(Optimizer::SymbolManager::Get(hr->p));
-            Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(hr->p));
-            hr = hr->next;
+            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), false);
+            Optimizer::gen_vc1(Optimizer::SymbolManager::Get(sym));
+            Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
         }
     }
 }
@@ -311,7 +308,7 @@ SYMBOL* getvc1Thunk(int offset)
     char name[256];
     SYMBOL* rv;
     Optimizer::my_sprintf(name, "@$vc1$B0$%d$0", offset + 1);
-    rv = search(name, vc1Thunks);
+    rv = vc1Thunks->search(name);
     if (!rv)
     {
         rv = SymAlloc();
@@ -320,7 +317,7 @@ SYMBOL* getvc1Thunk(int offset)
         rv->sb->attribs.inheritable.linkage4 = lk_virtual;
         rv->sb->offset = offset;
         rv->tp = &stdvoid;
-        insert(rv, vc1Thunks);
+        vc1Thunks->Add(rv);
     }
     return rv;
 }
@@ -1097,19 +1094,18 @@ static STATEMENT* SetupArguments(FUNCTIONCALL* params)
 
     STATEMENT *st = nullptr, **stp = &st;
     INITLIST* al = params->arguments;
-    SYMLIST* hr = basetype(params->sp->tp)->syms->table[0];
+    auto it = basetype(params->sp->tp)->syms->begin();
+    auto ite = basetype(params->sp->tp)->syms->end();
     if (ismember(params->sp))
     {
-        SYMBOL* sx = hr->p;
-        setExp(sx, params->thisptr, &stp);
-        hr = hr->next;
+        setExp(*it, params->thisptr, &stp);
+        ++it;
     }
-    while (al && hr)
+    while (al && it != ite)
     {
-        SYMBOL* sx = hr->p;
-        setExp(sx, al->exp, &stp);
+        setExp(*it, al->exp, &stp);
         al = al->next;
-        hr = hr->next;
+        ++it;
     }
     return st;
 }
@@ -1120,22 +1116,19 @@ void SetupVariables(SYMBOL* sym)
  * This copies the function parameters twice...
  */
 {
-    HASHTABLE* syms = sym->sb->inlineFunc.syms;
+    SymbolTable<SYMBOL>* syms = sym->sb->inlineFunc.syms;
     while (syms)
     {
-        SYMLIST* hr = syms->table[0];
-        while (hr)
+        for (auto sx : *syms)
         {
-            SYMBOL* sx = hr->p;
             if (sx->sb->storage_class == sc_auto)
             {
                 EXPRESSION* ev = anonymousVar(sc_auto, sx->tp);
                 deref(sx->tp, &ev);
                 sx->sb->inlineFunc.stmt = (STATEMENT*)ev;
             }
-            hr = hr->next;
         }
-        syms = syms->next;
+        syms = syms->Next();
     }
 }
 /*-------------------------------------------------------------------------*/

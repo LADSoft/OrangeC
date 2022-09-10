@@ -35,7 +35,6 @@
 #include "ccerr.h"
 #include "stmt.h"
 #include "ildata.h"
-#include "symtab.h"
 #include "occparse.h"
 #include "expr.h"
 #include "declare.h"
@@ -46,6 +45,8 @@
 #include "memory.h"
 #include "inline.h"
 #include "help.h"
+#include "template.h"
+#include "symtab.h"
 
 namespace Parser
 {
@@ -112,7 +113,9 @@ static Optimizer::ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", a
                                      {"offset", am_ext, akw_offset, 0}, {0, 0, 0}};
 
 static int floating;
-static HASHTABLE* asmHash;
+static SymbolTable<ASM_HASH_ENTRY>* asmHash;
+static SymbolTableFactory<ASM_HASH_ENTRY> asmSymbolFactory;
+
 void inlineAsmInit(void)
 {
     bool old = Optimizer::cparams.prm_extwarning;
@@ -120,14 +123,15 @@ void inlineAsmInit(void)
     Optimizer::assembling = false;
     Optimizer::ASMREG* r = reglst;
     ASM_HASH_ENTRY* s;
-    asmHash = CreateHashTable(1021);
+    asmSymbolFactory.Reset();
+    asmHash = asmSymbolFactory.CreateSymbolTable();
     while (r->name)
     {
         s = Allocate<ASM_HASH_ENTRY>();
         s->data = r;
         s->name = r->name;
         s->instruction = false;
-        insert((SYMBOL*)s, asmHash);
+        asmHash->Add(s);
         r++;
     }
     int i = 0;
@@ -143,7 +147,7 @@ void inlineAsmInit(void)
                 ((Optimizer::ASMNAME*)s->data)->name = v;
                 ((Optimizer::ASMNAME*)s->data)->atype = i;
                 s->instruction = true;
-                insert((SYMBOL*)s, asmHash);
+                asmHash->Add(s);
             }
             i++;
         }
@@ -157,7 +161,7 @@ void inlineAsmInit(void)
             s->data = o;
             s->name = o->name;
             s->instruction = true;
-            insert((SYMBOL*)s, asmHash);
+            asmHash->Add(s);
             o++;
         }
     }
@@ -175,7 +179,7 @@ static void inasm_txsym(void)
 {
     if (lex && ISID(lex))
     {
-        ASM_HASH_ENTRY* e = (ASM_HASH_ENTRY*)search(lex->data->value.s.a, asmHash);
+        ASM_HASH_ENTRY* e = asmHash->search(lex->data->value.s.a);
         if (e)
         {
             if (e->instruction)
@@ -239,7 +243,7 @@ static EXPRESSION* inasm_ident(void)
         inasm_getsym();
         /* No such identifier */
         /* label, put it in the symbol table */
-        if ((sym = search(nm, labelSyms)) == 0 && (sym = gsearch(nm)) == 0)
+        if ((sym = labelSyms->search(nm)) == 0 && (sym = gsearch(nm)) == 0)
         {
             sym = SymAlloc();
             sym->sb->storage_class = sc_ulabel;
@@ -251,7 +255,7 @@ static EXPRESSION* inasm_ident(void)
             sym->sb->attribs.inheritable.used = true;
             sym->tp = MakeType(bt_unsigned);
             sym->sb->offset = codeLabel++;
-            insert(sym, labelSyms);
+            labelSyms->Add(sym);
             node = intNode(en_labcon, sym->sb->offset);
         }
         else
@@ -266,8 +270,8 @@ static EXPRESSION* inasm_ident(void)
                     node = varNode(en_absolute, sym);
                     break;
                 case sc_overloads:
-                    node = varNode(en_pc, (SYMBOL*)sym->tp->syms->table[0]->p);
-                    Optimizer::SymbolManager::Get(sym->tp->syms->table[0]->p)->genreffed = true;
+                    node = varNode(en_pc, (SYMBOL*)sym->tp->syms->front());
+                    Optimizer::SymbolManager::Get(sym->tp->syms->front())->genreffed = true;
                     break;
                 case sc_localstatic:
                 case sc_global:
@@ -322,7 +326,7 @@ static EXPRESSION* inasm_label(void)
     }
     /* No such identifier */
     /* label, put it in the symbol table */
-    if ((sym = search(lex->data->value.s.a, labelSyms)) == 0)
+    if ((sym = labelSyms->search(lex->data->value.s.a)) == 0)
     {
         sym = SymAlloc();
         sym->sb->storage_class = sc_label;
@@ -334,7 +338,7 @@ static EXPRESSION* inasm_label(void)
         sym->tp = MakeType(bt_unsigned);
         sym->sb->offset = codeLabel++;
         SetLinkerNames(sym, lk_none);
-        insert(sym, labelSyms);
+        labelSyms->Add(sym);
     }
     else
     {

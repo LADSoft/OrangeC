@@ -23,6 +23,10 @@
  */
 
 #include "compiler.h"
+#include "ccerr.h"
+#include "template.h"
+#include "declare.h"
+#include "symtab.h"
 
 namespace Parser
 {
@@ -37,5 +41,5 @@ std::string ccNewFile(char* fileName, bool main) { return ""; }
 void ccCloseFile(FILE* handle) {}
 int ccDBOpen(const char* name) { return 0; }
 void ccSetSymbol(Parser::SYMBOL* sp) {}
-Parser::HASHTABLE* ccHash = nullptr;
+Parser::SymbolTable<Parser::SYMBOL>* ccSymbols = nullptr;
 }  // namespace CompletionCompiler

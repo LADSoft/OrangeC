@@ -29,9 +29,11 @@
 #include "initbackend.h"
 #include "declare.h"
 #include "lex.h"
-#include "symtab.h"
 #include "beinterf.h"
 #include "libcxx.h"
+#include "ccerr.h"
+#include "template.h"
+#include "symtab.h"
 
 namespace Parser
 {
@@ -116,7 +118,7 @@ void ParseBuiltins(void)
     }
     if (Optimizer::cparams.prm_cplusplus)
     {
-        stdXC.syms = CreateHashTable(1);
+        stdXC.syms = symbols.CreateSymbolTable();
         stdXC.sp = makeID(sc_type, &stdXC, nullptr, "$$XCTYPE");
         stdXC.sp->sb->decoratedName = stdXC.sp->name;
     }

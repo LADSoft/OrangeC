@@ -39,8 +39,9 @@
 #include "OptUtils.h"
 #include "iblock.h"
 #include "memory.h"
-#include "symtab.h"
 #include "initbackend.h"
+#include "template.h"
+#include "symtab.h"
 
 namespace Parser
 {
@@ -95,11 +96,11 @@ static EXPRESSION* inlineGetThisPtr(EXPRESSION* exp)
     }
     return nullptr;
 }
-static void inlineBindThis(SYMBOL* funcsp, SYMLIST* hr, EXPRESSION* thisptr)
+static void inlineBindThis(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, EXPRESSION* thisptr)
 {
-    if (hr)
+    if (table->size())
     {
-        SYMBOL* sym = hr->p;
+        SYMBOL* sym = table->front();
         inlinesym_thisptr[inlinesym_count] = 0;
         if (sym->sb->thisPtr)
         {
@@ -174,30 +175,25 @@ static void inlineBindThis(SYMBOL* funcsp, SYMLIST* hr, EXPRESSION* thisptr)
         }
     }
 }
-static void inlineBindArgs(SYMBOL* funcsp, SYMLIST* hr, INITLIST* args)
+static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, INITLIST* args)
 {
-    if (hr)
+    if (table->size())
     {
         EXPRESSION** list;
-        SYMLIST* hr1;
-        int cnt = 0;
-        SYMBOL* sym = hr->p;
+        int cnt = table->size();
+        auto it = table->begin();
+        SYMBOL* sym = *it;
         if (sym->sb->thisPtr)
         {
-            hr = hr->next;
+            ++it;
+            cnt--;
         }
-        hr1 = hr;
-        while (hr1)
-        {
-            cnt++;
-            hr1 = hr1->next;
-        }
-        hr1 = hr;
+        
         list = Allocate<EXPRESSION*>(cnt);
         cnt = 0;
-        while (hr && args)  // args might go to nullptr for a destructor, which currently has a VOID at the end of the arg list
+        while (it != table->end() && args)  // args might go to nullptr for a destructor, which currently has a VOID at the end of the arg list
         {
-            SYMBOL* sym = hr->p;
+            SYMBOL* sym = *it;
             if (!isvoid(sym->tp))
             {
                 Optimizer::IMODE *src, *ap1, *idest;
@@ -285,41 +281,34 @@ static void inlineBindArgs(SYMBOL* funcsp, SYMLIST* hr, INITLIST* args)
                 }
             }
             args = args->next;
-            hr = hr->next;
         }
         // we have to fill in the args last in case the same constructor was used
         // in multiple arguments...
-
         // also deals with things like the << and >> operators, where an expression can have arguments chained into the same
           // operator over and over...
-        hr = hr1;
         cnt = 0;
-        while (hr)
+        for (auto sym : *table)
         {
-            SYMBOL* sym = hr->p;
             if (!isvoid(sym->tp))
             {
                 Optimizer::SymbolManager::Get(sym)->paramSubstitute = list[cnt++];
             }
-            hr = hr->next;
         }
     }
 }
-static void inlineUnbindArgs(SYMLIST* hr)
+static void inlineUnbindArgs(SymbolTable<SYMBOL>* table)
 {
-    while (hr)
+    for (auto sym : *table)
     {
-        SYMBOL* sym = hr->p;
         sym->sb->inlineFunc.stmt = nullptr;
         Optimizer::SymbolManager::Get(sym)->paramSubstitute = nullptr;
-        hr = hr->next;
     }
 }
-static void inlineResetTable(SYMLIST* table)
+static void inlineResetTable(SymbolTable<SYMBOL>* table)
 {
-    while (table)
+    for (auto sp : * table)
     {
-        Optimizer::SimpleSymbol* sym = Optimizer::SymbolManager::Get((SYMBOL*)table->p);
+        Optimizer::SimpleSymbol* sym = Optimizer::SymbolManager::Get((SYMBOL*)sp);
         if (sym->storage_class != Optimizer::scc_localstatic)
         {
             sym->imvalue = nullptr;
@@ -330,36 +319,33 @@ static void inlineResetTable(SYMLIST* table)
                 sym->allocate = false;
             sym->inAllocTable = false;
         }
-        table = table->next;
     }
 }
 // this is overkill since stmt.c disallows inlines with variables other than
 // at the opening of the first block.
-static void inlineResetVars(HASHTABLE* syms, SYMLIST* params)
+static void inlineResetVars(SymbolTable<SYMBOL>* syms, SymbolTable<SYMBOL>* params)
 {
-    HASHTABLE* old = syms;
+    SymbolTable<SYMBOL>* old = syms;
     inlineResetTable(params);
     while (syms)
     {
 
-        inlineResetTable(syms->table[0]);
-        syms = syms->next;
+        inlineResetTable(syms);
+        syms = syms->Next();
     }
     while (old)
     {
 
-        inlineResetTable(old->table[0]);
-        old = old->chain;
+        inlineResetTable(old);
+        old = old->Chain();
     }
 }
-static void inlineCopySyms(HASHTABLE* src)
+static void inlineCopySyms(SymbolTable<SYMBOL>* src)
 {
     while (src)
     {
-        SYMLIST* hr = src->table[0];
-        while (hr)
+        for (auto sym : * src)
         {
-            SYMBOL* sym = hr->p;
             if (!sym->sb->thisPtr && !sym->sb->anonymous && sym->sb->storage_class != sc_parameter &&
                 sym->sb->storage_class != sc_localstatic)
             {
@@ -370,9 +356,8 @@ static void inlineCopySyms(HASHTABLE* src)
                     simpleSym->inAllocTable = true;
                 }
             }
-            hr = hr->next;
         }
-        src = src->next;
+        src = src->Next();
     }
 }
 static bool inlineTooComplex(FUNCTIONCALL* f) { return f->sp->sb->endLine - f->sp->sb->startLine > 15 / (inline_nesting * 2 + 1); }
@@ -398,7 +383,6 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     int i;
     Optimizer::IMODE* ap3;
     FUNCTIONCALL* f = node->v.func;
-    SYMLIST* hr;
     Optimizer::IMODE* oldReturnImode = returnImode;
     int oldretlab = retlab, oldstartlab = startlab;
     int oldretcount = retcount;
@@ -518,15 +502,13 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
-    hr = basetype(f->sp->tp)->syms->table[0];
-    while (hr)
+    for (auto sp : *basetype(f->sp->tp)->syms)
     {
-        if (isstructured(hr->p->tp) || basetype(hr->p->tp)->type == bt_memberptr)
+        if (isstructured(sp->tp) || basetype(sp->tp)->type == bt_memberptr)
         {
             f->sp->sb->dumpInlineToFile = true;
             return nullptr;
         }
-        hr = hr->next;
     }
     for (i = 0; i < inlinesym_count; i++)
         if (f->sp == inlinesym_list[i])
@@ -554,10 +536,10 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     startlab = Optimizer::nextLabel++;
     retlab = Optimizer::nextLabel++;
     AllocateLocalContext(nullptr, funcsp, Optimizer::nextLabel++);
-    inlineBindThis(funcsp, basetype(f->sp->tp)->syms->table[0], f->thisptr);
-    inlineBindArgs(funcsp, basetype(f->sp->tp)->syms->table[0], f->arguments);
+    inlineBindThis(funcsp, basetype(f->sp->tp)->syms, f->thisptr);
+    inlineBindArgs(funcsp, basetype(f->sp->tp)->syms, f->arguments);
     inlinesym_list[inlinesym_count++] = f->sp;
-    inlineResetVars(f->sp->sb->inlineFunc.syms, basetype(f->sp->tp)->syms->table[0]);
+    inlineResetVars(f->sp->sb->inlineFunc.syms, basetype(f->sp->tp)->syms);
     inlineCopySyms(f->sp->sb->inlineFunc.syms);
     genstmt(f->sp->sb->inlineFunc.stmt->lower, f->sp);
     if (f->sp->sb->inlineFunc.stmt->blockTail)
@@ -582,7 +564,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         gen_icode(Optimizer::i_assn, ap4, ap3, nullptr);
         ap3 = ap4;
     }
-    inlineUnbindArgs(basetype(f->sp->tp)->syms->table[0]);
+    inlineUnbindArgs(basetype(f->sp->tp)->syms);
     FreeLocalContext(nullptr, funcsp, Optimizer::nextLabel++);
     returnImode = oldReturnImode;
     retlab = oldretlab;

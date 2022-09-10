@@ -41,16 +41,16 @@ void createConstructorsForLambda(SYMBOL* sp);
 void createDefaultConstructors(SYMBOL* sp);
 EXPRESSION* destructLocal(EXPRESSION* exp);
 void DestructParams(INITLIST* first);
-void destructBlock(EXPRESSION** exp, SYMLIST* hr, bool mainDestruct);
+void destructBlock(EXPRESSION** exp, SymbolTable<SYMBOL> *table, bool mainDestruct);
 SYMBOL* findClassName(const char* name, SYMBOL* cls, BASECLASS* bc, VBASEENTRY* vbase, int* offset);
 void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons);
 void createDestructor(SYMBOL* sp);
-EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTABLE* syms, bool parseInitializers, bool doCopy,
+EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, SymbolTable<SYMBOL>* syms, bool parseInitializers, bool doCopy,
                                  bool defaulted);
 void createConstructor(SYMBOL* sp, SYMBOL* consfunc);
 void asnVirtualBases(BLOCKDATA* b, SYMBOL* sp, VBASEENTRY* vbe, EXPRESSION* thisptr, EXPRESSION* other, bool move, bool isconst);
 void createAssignment(SYMBOL* sym, SYMBOL* asnfunc);
-void thunkDestructorTail(BLOCKDATA* b, SYMBOL* sp, SYMBOL* dest, HASHTABLE* syms, bool defaulted);
+void thunkDestructorTail(BLOCKDATA* b, SYMBOL* sp, SYMBOL* dest, SymbolTable<SYMBOL>* syms, bool defaulted);
 void makeArrayConsDest(TYPE** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, EXPRESSION* count);
 bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* arrayElms, bool top, bool pointer, bool skipAccess,
                     bool novtab);

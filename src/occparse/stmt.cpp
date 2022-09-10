@@ -30,7 +30,6 @@
 #include "ccerr.h"
 #include "config.h"
 #include "initbackend.h"
-#include "symtab.h"
 #include "mangle.h"
 #include "lex.h"
 #include "occparse.h"
@@ -62,6 +61,7 @@
 #include "optmodules.h"
 #include "constexpr.h"
 #include "libcxx.h"
+#include "symtab.h"
 
 #define MAX_INLINE_EXPRESSIONS 3
 
@@ -326,7 +326,7 @@ void makeXCTab(SYMBOL* funcsp)
         sym->sb->decoratedName = sym->name;
         sym->sb->allocate = true;
         sym->sb->attribs.inheritable.used = sym->sb->assigned = true;
-        insert(sym, localNameSpace->valueData->syms);
+        localNameSpace->valueData->syms->Add(sym);
         funcsp->sb->xc->xctab = sym;
     }
 }
@@ -344,7 +344,7 @@ static void thunkCatchCleanup(STATEMENT* st, SYMBOL* funcsp, BLOCKDATA* src, BLO
                 STATEMENT** find = &src->head;
                 INITLIST* arg1 = Allocate<INITLIST>();  // exception table
                 makeXCTab(funcsp);
-                sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
+                sym = (SYMBOL*)basetype(sym->tp)->syms->front();
                 funcparams->ascall = true;
                 funcparams->sp = sym;
                 funcparams->functp = sym->tp;
@@ -379,24 +379,21 @@ static void thunkCatchCleanup(STATEMENT* st, SYMBOL* funcsp, BLOCKDATA* src, BLO
         srch = srch->next;
     }
 }
-static void ThunkUndestructSyms(HASHTABLE* syms)
+static void ThunkUndestructSyms(SymbolTable<SYMBOL>* syms)
 {
-    SYMLIST* hr = syms->table[0];
-    while (hr)
+    for (auto sym : *syms)
     {
-        SYMBOL* sym = hr->p;
         sym->sb->destructed = true;
-        hr = hr->next;
     }
 }
-static void thunkRetDestructors(EXPRESSION** exp, HASHTABLE* top, HASHTABLE* syms)
+static void thunkRetDestructors(EXPRESSION** exp, SymbolTable<SYMBOL>* top, SymbolTable<SYMBOL>* syms)
 {
     if (syms)
     {
         if (syms != top)
         {
-            thunkRetDestructors(exp, top, syms->chain);
-            destructBlock(exp, syms->table[0], false);
+            thunkRetDestructors(exp, top, syms->Chain());
+            destructBlock(exp, syms, false);
         }
     }
 }
@@ -446,7 +443,7 @@ static void HandleEndOfCase(BLOCKDATA* parent)
         EXPRESSION* exp = nullptr;
         STATEMENT* st;
         // the destruct is only used for endin
-        destructBlock(&exp, localNameSpace->valueData->syms->table[0], false);
+        destructBlock(&exp, localNameSpace->valueData->syms, false);
         if (exp)
         {
             st = stmtNode(nullptr, parent, st_nop);
@@ -746,7 +743,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 // range based for statement
                 // we will ignore 'init'.
                 TYPE* selectTP = nullptr;
-                SYMBOL* declSP = (SYMBOL*)localNameSpace->valueData->syms->table[0]->p;
+                SYMBOL* declSP = (SYMBOL*)localNameSpace->valueData->syms->front();
                 EXPRESSION* declExp;
                 if (!declSP)
                 {
@@ -930,8 +927,8 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         // try to lookup in structure
                         TYPE thisTP = {};
                         MakeType(thisTP, bt_pointer, rangeSP->tp->btp);
-                        sbegin = search("begin", basetype(selectTP)->syms);
-                        send = search("end", basetype(selectTP)->syms);
+                        sbegin = basetype(selectTP)->syms->search("begin");
+                        send = basetype(selectTP)->syms->search("end");
                         if (sbegin && send)
                         {
                             SYMBOL *beginFunc = nullptr, *endFunc = nullptr;
@@ -1084,7 +1081,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         fc->ascall = true;
                                         fc->arguments = Allocate<INITLIST>();
                                         *fc->arguments = *fcb.arguments;
-                                        if (isstructured(it2) && isstructured(((SYMBOL*)(it2->syms->table[0]->p))->tp))
+                                        if (isstructured(it2) && isstructured(((SYMBOL*)(it2->syms->front()))->tp))
                                         {
                                             EXPRESSION* consexp =
                                                 anonymousVar(sc_auto, basetype(rangeSP->tp)->btp);  // sc_parameter to push it...
@@ -1111,7 +1108,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         fc->ascall = true;
                                         fc->arguments = Allocate<INITLIST>();
                                         *fc->arguments = *fce.arguments;
-                                        if (isstructured(it2) && isstructured(((SYMBOL*)(it2->syms->table[0]->p))->tp))
+                                        if (isstructured(it2) && isstructured(((SYMBOL*)(it2->syms->front()))->tp))
                                         {
                                             EXPRESSION* consexp =
                                                 anonymousVar(sc_auto, basetype(rangeSP->tp)->btp);  // sc_parameter to push it...
@@ -1415,16 +1412,17 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             {
                 if (declaration && Optimizer::cparams.prm_cplusplus)
                 {
-                    SYMLIST* hr = localNameSpace->valueData->syms->table[0];
-                    while (hr && hr->p->sb->anonymous)
-                        hr = hr->next;
-                    if (!hr)
+                    auto it = localNameSpace->valueData->syms->begin();
+                    auto ite = localNameSpace->valueData->syms->end();
+                    while (it != ite && (*it)->sb->anonymous)
+                        ++it;
+                    if (it == ite)
                     {
                         error(ERR_FOR_DECLARATOR_MUST_INITIALIZE);
                     }
                     else
                     {
-                        SYMBOL* declSP = hr->p;
+                        SYMBOL* declSP = *it;
                         if (!declSP->sb->init)
                         {
                             if (isstructured(declSP->tp) && !basetype(declSP->tp)->sp->sb->trivialCons)
@@ -1744,7 +1742,7 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     currentLineData(parent, lex, 0);
     if (ISID(lex))
     {
-        SYMBOL* spx = search(lex->data->value.s.a, labelSyms);
+        SYMBOL* spx = labelSyms->search(lex->data->value.s.a);
         BLOCKDATA* block = Allocate<BLOCKDATA>();
         STATEMENT* st = stmtNode(lex, block, st_goto);
         st->explicitGoto = true;
@@ -1761,7 +1759,7 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             SetLinkerNames(spx, lk_none);
             spx->sb->offset = codeLabel++;
             spx->sb->gotoTable = st;
-            insert(spx, labelSyms);
+            labelSyms->Add(spx);
         }
         else
         {
@@ -1785,7 +1783,7 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 }
 static LEXLIST* statement_label(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
-    SYMBOL* spx = search(lex->data->value.s.a, labelSyms);
+    SYMBOL* spx = labelSyms->search(lex->data->value.s.a);
     STATEMENT* st;
     (void)funcsp;
     st = stmtNode(lex, parent, st_label);
@@ -1812,7 +1810,7 @@ static LEXLIST* statement_label(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         SetLinkerNames(spx, lk_none);
         spx->sb->offset = codeLabel++;
         spx->sb->gotoTable = st;
-        insert(spx, labelSyms);
+        labelSyms->Add(spx);
     }
     st->label = spx->sb->offset;
     st->purelabel = true;
@@ -2007,8 +2005,9 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
             sp->sb->structuredReturn = true;
             sp->name = "__retblock";
             sp->sb->retblk = true;
-            if ((funcsp->sb->attribs.inheritable.linkage == lk_pascal) && basetype(funcsp->tp)->syms->table[0] &&
-                ((SYMBOL*)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
+            // this next omiited the ->p
+            if ((funcsp->sb->attribs.inheritable.linkage == lk_pascal) && basetype(funcsp->tp)->syms->size() &&
+                ((SYMBOL*)basetype(funcsp->tp)->syms->front())->tp->type != bt_void)
                 sp->sb->offset = funcsp->sb->paramsize;
             deref(&stdpointer, &en);
             if (Optimizer::cparams.prm_cplusplus && isstructured(tp) && (!basetype(tp)->sp->sb->trivialCons || MATCHKW(lex, begin)))
@@ -2653,7 +2652,7 @@ static LEXLIST* asm_declare(LEXLIST* lex)
         {
             if (ISID(lex))
             {
-                SYMBOL* sym = search(lex->data->value.s.a, globalNameSpace->valueData->syms);
+                SYMBOL* sym = globalNameSpace->valueData->syms->search(lex->data->value.s.a);
                 if (!sym)
                 {
                     sym = makeID(sc_label, nullptr, nullptr, litlate(lex->data->value.s.a));
@@ -3243,7 +3242,7 @@ static void insertXCInfo(SYMBOL* funcsp)
         INITLIST* arg1 = Allocate<INITLIST>();
         INITLIST* arg2 = Allocate<INITLIST>();
         EXPRESSION* exp;
-        sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
+        sym = (SYMBOL*)basetype(sym->tp)->syms->front();
         funcparams->functp = sym->tp;
         funcparams->sp = sym;
         funcparams->fcall = varNode(en_pc, sym);
@@ -3261,7 +3260,7 @@ static void insertXCInfo(SYMBOL* funcsp)
         sym = namespacesearch("_RundownException", globalNameSpace, false, false);
         if (sym)
         {
-            sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
+            sym = (SYMBOL*)basetype(sym->tp)->syms->front();
             funcparams = Allocate<FUNCTIONCALL>();
             funcparams->functp = sym->tp;
             funcparams->sp = sym;
@@ -3314,19 +3313,16 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
 
     if (first)
     {
-        SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
         int n = 1;
         browse_startfunc(funcsp, funcsp->sb->declline);
-        while (hr)
+        for (auto sp2 : *basetype(funcsp->tp)->syms)
         {
-            SYMBOL* sp2 = hr->p;
             if (!Optimizer::cparams.prm_cplusplus && sp2->tp->type != bt_ellipse && !isvoid(sp2->tp) && sp2->sb->anonymous)
                 errorarg(ERR_PARAMETER_MUST_HAVE_NAME, n, sp2, funcsp);
             sp2->sb->destructed = false;
-            insert(sp2, localNameSpace->valueData->syms);
+            localNameSpace->valueData->syms->Add(sp2);
             browse_variable(sp2);
             n++;
-            hr = hr->next;
         }
         if (Optimizer::cparams.prm_cplusplus && funcsp->sb->isConstructor && funcsp->sb->parentClass)
         {
@@ -3517,7 +3513,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
             STATEMENT* st = stmtNode(lex, blockstmt, st_expr);
             INITLIST* arg1 = Allocate<INITLIST>();  // exception table
             makeXCTab(funcsp);
-            sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
+            sym = (SYMBOL*)basetype(sym->tp)->syms->front();
             funcparams->ascall = true;
             funcparams->sp = sym;
             funcparams->functp = sym->tp;
@@ -3577,32 +3573,31 @@ void assignParam(SYMBOL* funcsp, int* base, SYMBOL* param)
             *base += Optimizer::chosenAssembler->arch->parmwidth - *base % Optimizer::chosenAssembler->arch->parmwidth;
     }
 }
-static void assignCParams(LEXLIST* lex, SYMBOL* funcsp, int* base, SYMLIST* params, TYPE* rv, BLOCKDATA* block)
+static void assignCParams(LEXLIST* lex, SYMBOL* funcsp, int* base, SymbolTable<SYMBOL>* params, TYPE* rv, BLOCKDATA* block)
 {
     (void)rv;
-    while (params)
+    for (auto sym : *params)
     {
         STATEMENT* s = stmtNode(lex, block, st_varstart);
-        s->select = varNode(en_auto, (SYMBOL*)params->p);
-        assignParam(funcsp, base, (SYMBOL*)params->p);
-        params = params->next;
+        s->select = varNode(en_auto, sym);
+        assignParam(funcsp, base, sym);
     }
 }
-static void assignPascalParams(LEXLIST* lex, SYMBOL* funcsp, int* base, SYMLIST* params, TYPE* rv, BLOCKDATA* block)
+static void assignPascalParams(LEXLIST* lex, SYMBOL* funcsp, int* base, SymbolTable<SYMBOL>* params, TYPE* rv, BLOCKDATA* block)
 {
-    if (params)
+    std::stack<SYMBOL*> stk;
+    for (auto sym : *params)
+        stk.push(sym);
+    while (!stk.empty())
     {
-        STATEMENT* s;
-        if (params->next)
-            assignPascalParams(lex, funcsp, base, params->next, rv, block);
-        assignParam(funcsp, base, (SYMBOL*)params->p);
-        s = stmtNode(lex, block, st_varstart);
-        s->select = varNode(en_auto, (SYMBOL*)params->p);
+        assignParam(funcsp, base, stk.top());
+        STATEMENT* s = stmtNode(lex, block, st_varstart);
+        s->select = varNode(en_auto, stk.top());
+        stk.pop();
     }
 }
 static void assignParameterSizes(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* block)
 {
-    SYMLIST* params = basetype(funcsp->tp)->syms->table[0];
     int base;
     if (Optimizer::chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
         base = 0;
@@ -3610,7 +3605,7 @@ static void assignParameterSizes(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* block)
         base = Optimizer::chosenAssembler->arch->retblocksize;
     if (funcsp->sb->attribs.inheritable.linkage == lk_pascal)
     {
-        assignPascalParams(lex, funcsp, &base, params, basetype(funcsp->tp)->btp, block);
+        assignPascalParams(lex, funcsp, &base, basetype(funcsp->tp)->syms, basetype(funcsp->tp)->btp, block);
     }
     else
     {
@@ -3630,19 +3625,20 @@ static void assignParameterSizes(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* block)
                     base += Optimizer::chosenAssembler->arch->parmwidth - base % Optimizer::chosenAssembler->arch->parmwidth;
             }
         }
+        /*
         if (ismember(funcsp))
         {
             // handle 'this' pointer
             assignParam(funcsp, &base, (SYMBOL*)params->p);
             params = params->next;
         }
-        assignCParams(lex, funcsp, &base, params, basetype(funcsp->tp)->btp, block);
+        */
+        assignCParams(lex, funcsp, &base, basetype(funcsp->tp)->syms, basetype(funcsp->tp)->btp, block);
     }
     funcsp->sb->paramsize = base - Optimizer::chosenAssembler->arch->retblocksize;
 }
 static void checkUndefinedStructures(SYMBOL* funcsp)
 {
-    SYMLIST* hr;
     TYPE* tp = basetype(funcsp->tp)->btp;
     if (isstructured(tp) && !basetype(tp)->sp->tp->syms)
     {
@@ -3653,10 +3649,8 @@ static void checkUndefinedStructures(SYMBOL* funcsp)
             errorsym(ERR_STRUCT_NOT_DEFINED, basetype(tp)->sp);
         }
     }
-    hr = basetype(funcsp->tp)->syms->table[0];
-    while (hr)
+    for (auto sym : *basetype(funcsp->tp)->syms)
     {
-        SYMBOL* sym = hr->p;
         TYPE* tp = basetype(sym->tp);
         if (isstructured(tp) && !basetype(tp)->sp->tp->syms)
         {
@@ -3691,7 +3685,6 @@ static void checkUndefinedStructures(SYMBOL* funcsp)
                 errorsym(ERR_STRUCT_NOT_DEFINED, basetype(tp)->sp);
             }
         }
-        hr = hr->next;
     }
 }
 static int inlineStatementCount(STATEMENT* block)
@@ -3762,39 +3755,35 @@ static void handleInlines(SYMBOL* funcsp)
     {
         if (funcsp->sb->inlineFunc.syms)
         {
-            HASHTABLE* ht = funcsp->sb->inlineFunc.syms->next; /* past params */
+            SymbolTable<SYMBOL>* ht = funcsp->sb->inlineFunc.syms->Next(); /* past params */
             if (ht)
-                ht = ht->next; /* past first level */
+                ht = ht->Next(); /* past first level */
             /* if any vars declared at another level */
-            while (ht && ht->next)
+            while (ht && ht->Next())
             {
-                if (ht->table[0])
+                if (ht->size())
                 {
                     funcsp->sb->noinline = true;
                     break;
                 }
-                ht = ht->next;
+                ht = ht->Next();
             }
-            if (funcsp->sb->inlineFunc.syms->next)
+            if (funcsp->sb->inlineFunc.syms->Next())
             {
-                if (funcsp->sb->inlineFunc.syms->next->table[0])
+                if (funcsp->sb->inlineFunc.syms->Next()->size())
                     funcsp->sb->noinline = true;
             }
         }
         if (funcsp->sb->attribs.inheritable.linkage4 == lk_virtual)
         {
 
-            SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
-            SYMBOL* head;
-            while (hr)
+            for (auto head : *basetype(funcsp->tp)->syms)
             {
-                head = hr->p;
                 if (isstructured(head->tp))
                 {
                     funcsp->sb->noinline = true;
                     break;
                 }
-                hr = hr->next;
             }
         }
         if (inlineStatementCount(funcsp->sb->inlineFunc.stmt) > 100)
@@ -3818,15 +3807,12 @@ void parseNoexcept(SYMBOL* funcsp)
             if (t.tmpl)
                 addTemplateDeclaration(&t);
         }
-        SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
         TYPE* tp = nullptr;
         EXPRESSION* exp = nullptr;
         AllocateLocalContext(nullptr, nullptr, 0);
-        while (hr)
+        for (auto sp2 : *basetype(funcsp->tp)->syms)
         {
-            SYMBOL* sp2 = hr->p;
-            insert(sp2, localNameSpace->valueData->syms);
-            hr = hr->next;
+            localNameSpace->valueData->syms->Add(sp2);
         }
         lex = optimized_expression(lex, funcsp, nullptr, &tp, &exp, false);
         FreeLocalContext(nullptr, nullptr, 0);
@@ -3866,8 +3852,8 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     bool oldDeclareAndInitialize = declareAndInitialize;
     bool oldHasXCInfo = hasXCInfo;
     bool oldFunctionCanThrow = functionCanThrow;
-    HASHTABLE* oldSyms = localNameSpace->valueData->syms;
-    HASHTABLE* oldLabelSyms = labelSyms;
+    SymbolTable<SYMBOL>* oldSyms = localNameSpace->valueData->syms;
+    SymbolTable<SYMBOL>* oldLabelSyms = labelSyms;
     SYMBOL* oldtheCurrentFunc = theCurrentFunc;
     BLOCKDATA* block = Allocate<BLOCKDATA>();
     STATEMENT* startStmt;
@@ -3909,7 +3895,7 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
                 funcsp->sb->linedata = startStmt->lineData;
         }
         funcsp->sb->declaring = true;
-        labelSyms = CreateHashTable(1);
+        labelSyms = symbols.CreateSymbolTable();
         assignParameterSizes(lex, funcsp, block);
         funcsp->sb->startLine = lex->data->errline;
         lex = compound(lex, funcsp, block, true);
@@ -3967,12 +3953,9 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
             // if it is variadic don't allow it to be inline
             if (funcsp->sb->attribs.inheritable.isInline)
             {
-                SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
-                if (hr)
+                if (basetype(funcsp->tp)->syms->size())
                 {
-                    while (hr->next)
-                        hr = hr->next;
-                    if (hr->p->tp->type == bt_ellipse)
+                    if (basetype(funcsp->tp)->syms->back()->tp->type == bt_ellipse)
                         funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline =
                             false;
                 }

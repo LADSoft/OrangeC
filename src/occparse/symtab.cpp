@@ -38,20 +38,20 @@
 #include "declcons.h"
 #include "types.h"
 #include "lex.h"
-
+#include "symtab.h"
 namespace CompletionCompiler
 {
-extern Parser::HASHTABLE* ccHash;
+extern Parser::SymbolTable<Parser::SYMBOL>* ccSymbols;
 void ccSetSymbol(Parser::SYMBOL* s);
 }  // namespace CompletionCompiler
 namespace Parser
 {
 
 NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
-HASHTABLE* labelSyms;
+SymbolTable<SYMBOL>* labelSyms;
 
-HASHTABLE* CreateHashTable(int size);
 int matchOverloadLevel;
+SymbolTableFactory<SYMBOL> symbols;
 
 static Optimizer::LIST* usingDirectives;
 
@@ -59,24 +59,18 @@ void syminit(void)
 {
     globalNameSpace = Allocate<NAMESPACEVALUELIST>();
     globalNameSpace->valueData = Allocate<NAMESPACEVALUEDATA>();
-    globalNameSpace->valueData->syms = CreateHashTable(GLOBALHASHSIZE);
-    globalNameSpace->valueData->tags = CreateHashTable(GLOBALHASHSIZE);
+    globalNameSpace->valueData->syms = symbols.CreateSymbolTable();
+    globalNameSpace->valueData->tags = symbols.CreateSymbolTable();
 
     localNameSpace = Allocate<NAMESPACEVALUELIST>();
     localNameSpace->valueData = Allocate<NAMESPACEVALUEDATA>();
     usingDirectives = nullptr;
     matchOverloadLevel = 0;
-}
-HASHTABLE* CreateHashTable(int size)
-{
-    HASHTABLE* rv = Allocate<HASHTABLE>();
-    rv->table = Allocate<SYMLIST*>(size);
-    rv->size = size;
-    return rv;
+    symbols.Reset();
 }
 void AllocateLocalContext(BLOCKDATA* block, SYMBOL* sym, int label)
 {
-    HASHTABLE* tn = CreateHashTable(1);
+    SymbolTable<SYMBOL>* tn = symbols.CreateSymbolTable();
     STATEMENT* st;
     Optimizer::LIST* l;
     st = stmtNode(nullptr, block, st_dbgblock);
@@ -86,37 +80,34 @@ void AllocateLocalContext(BLOCKDATA* block, SYMBOL* sym, int label)
         st = stmtNode(nullptr, block, st_label);
         st->label = label;
     }
-    tn->next = tn->chain = localNameSpace->valueData->syms;
+    tn->Next(localNameSpace->valueData->syms);
+    tn->Chain(localNameSpace->valueData->syms);
+
     localNameSpace->valueData->syms = tn;
-    tn = CreateHashTable(1);
-    tn->next = tn->chain = localNameSpace->valueData->tags;
+    tn = symbols.CreateSymbolTable();
+    tn->Next(localNameSpace->valueData->tags);
+    tn->Chain(localNameSpace->valueData->tags);
     localNameSpace->valueData->tags = tn;
     if (sym)
-        localNameSpace->valueData->tags->blockLevel = sym->sb->value.i++;
+        localNameSpace->valueData->tags->Block(sym->sb->value.i++);
 
     l = Allocate<Optimizer::LIST>();
     l->data = localNameSpace->valueData->usingDirectives;
     l->next = usingDirectives;
     usingDirectives = l;
 }
-void TagSyms(HASHTABLE* syms)
+void TagSyms(SymbolTable<SYMBOL>* syms)
 {
     int i;
-    for (i = 0; i < syms->size; i++)
+    for (auto sym : *syms)
     {
-        SYMLIST* hr = syms->table[i];
-        while (hr)
-        {
-            SYMBOL* sym = hr->p;
-            sym->sb->ccEndLine = preProcessor->GetRealLineNo() + 1;
-            hr = hr->next;
-        }
+        sym->sb->ccEndLine = preProcessor->GetRealLineNo() + 1;
     }
 }
 void FreeLocalContext(BLOCKDATA* block, SYMBOL* sym, int label)
 {
-    HASHTABLE* locals = localNameSpace->valueData->syms;
-    HASHTABLE* tags = localNameSpace->valueData->tags;
+    SymbolTable<SYMBOL>* locals = localNameSpace->valueData->syms;
+    SymbolTable<SYMBOL>* tags = localNameSpace->valueData->tags;
     STATEMENT* st;
     if (block && Optimizer::cparams.prm_debug)
     {
@@ -128,9 +119,9 @@ void FreeLocalContext(BLOCKDATA* block, SYMBOL* sym, int label)
         sym->sb->value.i--;
 
     st = stmtNode(nullptr, block, st_expr);
-    destructBlock(&st->select, localNameSpace->valueData->syms->table[0], true);
-    localNameSpace->valueData->syms = localNameSpace->valueData->syms->next;
-    localNameSpace->valueData->tags = localNameSpace->valueData->tags->next;
+    destructBlock(&st->select, localNameSpace->valueData->syms, true);
+    localNameSpace->valueData->syms = localNameSpace->valueData->syms->Next();
+    localNameSpace->valueData->tags = localNameSpace->valueData->tags->Next();
 
     localNameSpace->valueData->usingDirectives = (Optimizer::LIST*)usingDirectives->data;
     usingDirectives = usingDirectives->next;
@@ -142,8 +133,8 @@ void FreeLocalContext(BLOCKDATA* block, SYMBOL* sym, int label)
     }
     if (sym)
     {
-        locals->next = sym->sb->inlineFunc.syms;
-        tags->next = sym->sb->inlineFunc.tags;
+        locals->Next(sym->sb->inlineFunc.syms);
+        tags->Next(sym->sb->inlineFunc.tags);
         sym->sb->inlineFunc.syms = locals;
         sym->sb->inlineFunc.tags = tags;
     }
@@ -159,112 +150,13 @@ static int GetHashValue(const char* string)
         i = ((i << 7) + (i << 1) + i) ^ *string;
     return i;
 }
-SYMLIST** GetHashLink(HASHTABLE* t, const char* string)
-{
-    unsigned i;
-    if (t->size == 1)
-        return &t->table[0];
-    for (i = 0; *string; string++)
-        i = ((i << 7) + (i << 1) + i) ^ *string;
-    return &t->table[i % t->size];
-}
-/* Add a hash item to the table */
-SYMLIST* AddName(SYMBOL* item, HASHTABLE* table)
-{
-    SYMLIST** p = GetHashLink(table, item->name);
-    SYMLIST* newRec;
 
-    if (*p)
-    {
-        SYMLIST *q = *p, *r = *p;
-        while (q)
-        {
-            r = q;
-            if (!strcmp(r->p->name, item->name))
-                return (r);
-            q = q->next;
-        }
-        newRec = Allocate<SYMLIST>();
-        r->next = newRec;
-        newRec->p = (SYMBOL*)item;
-    }
-    else
-    {
-        newRec = Allocate<SYMLIST>();
-        *p = newRec;
-        newRec->p = (SYMBOL*)item;
-    }
-    return (0);
-}
-SYMLIST* AddOverloadName(SYMBOL* item, HASHTABLE* table)
-{
-    SYMLIST** p = GetHashLink(table, item->sb->decoratedName);
-    SYMLIST* newRec;
-    if (!IsCompiler() && !item->parserSet)
-    {
-        item->parserSet = true;
-        CompletionCompiler::ccSetSymbol(item);
-    }
-
-    if (*p)
-    {
-        SYMLIST *q = *p, *r = *p;
-        while (q)
-        {
-            r = q;
-            if (!strcmp(((SYMBOL*)r->p)->sb->decoratedName, item->sb->decoratedName))
-                return (r);
-            q = q->next;
-        }
-        newRec = Allocate<SYMLIST>();
-        r->next = newRec;
-        newRec->p = (SYMBOL*)item;
-    }
-    else
-    {
-        newRec = Allocate<SYMLIST>();
-        *p = newRec;
-        newRec->p = (SYMBOL*)item;
-    }
-    return (0);
-}
-
-/*
- * Find something in the hash table
- */
-SYMLIST** LookupName(const char* name, HASHTABLE* table)
-{
-    if (table->fast)
-    {
-        table = table->fast;
-    }
-    SYMLIST** p = GetHashLink(table, name);
-
-    while (*p)
-    {
-        if (!strcmp((*p)->p->name, name))
-        {
-            return p;
-        }
-        p = (SYMLIST**)*p;
-    }
-    return (0);
-}
-SYMBOL* search(const char* name, HASHTABLE* table)
-{
-    while (table)
-    {
-        SYMLIST** p = LookupName(name, table);
-        if (p)
-            return (SYMBOL*)(*p)->p;
-        table = table->next;
-    }
-    return nullptr;
-}
 bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
 {
-    SYMLIST* hnew = basetype(tnew)->syms->table[0];
-    SYMLIST* hold = basetype(told)->syms->table[0];
+    auto hnew = basetype(tnew)->syms->begin();
+    auto hnewe = basetype(tnew)->syms->end();
+    auto hold = basetype(told)->syms->begin();
+    auto holde = basetype(told)->syms->end();
     unsigned tableOld[100], tableNew[100];
     int tCount = 0;
     if (!Optimizer::cparams.prm_cplusplus)
@@ -278,24 +170,24 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
     if (isrrqual(tnew) != isrrqual(told))
         return false;
     matchOverloadLevel++;
-    while (hnew && hold)
+    while (hnew != hnewe && hold != holde)
     {
-        SYMBOL* snew = (SYMBOL*)hnew->p;
-        SYMBOL* sold = (SYMBOL*)hold->p;
+        SYMBOL* snew = *hnew;
+        SYMBOL* sold = *hold;
         TYPE *tnew, *told;
         if (sold->sb->thisPtr)
         {
-            hold = hold->next;
-            if (!hold)
+            ++hold;
+            if (hold == holde)
                 break;
-            sold = (SYMBOL*)hold->p;
+            sold = *hold;
         }
         if (snew->sb->thisPtr)
         {
-            hnew = hnew->next;
-            if (!hnew)
+            ++hnew;
+            if (hnew == hnewe)
                 break;
-            snew = (SYMBOL*)hnew->p;
+            snew = *hnew;
         }
         tnew = basetype(snew->tp);
         told = basetype(sold->tp);
@@ -340,11 +232,11 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                 }
             }
         }
-        hold = hold->next;
-        hnew = hnew->next;
+        ++hold;
+        ++hnew;
     }
     matchOverloadLevel--;
-    if (!hold && !hnew)
+    if (hold == holde && hnew == hnewe)
     {
         if (tCount)
         {
@@ -493,7 +385,7 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                                 if (!isstructured(sym->tp))
                                     break;
 
-                                fsp = search(find->name, basetype(sym->tp)->syms);
+                                fsp = basetype(sym->tp)->syms->search(find->name);
                                 if (!fsp)
                                 {
                                     fsp = classdata(find->name, basetype(sym->tp)->sp, nullptr, false, false);
@@ -555,14 +447,12 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
     }
     return false;
 }
-SYMBOL* searchOverloads(SYMBOL* sym, HASHTABLE* table)
+SYMBOL* searchOverloads(SYMBOL* sym, SymbolTable<SYMBOL>* table)
 {
-    SYMLIST* p = table->table[0];
     if (Optimizer::cparams.prm_cplusplus)
     {
-        while (p)
-        {
-            SYMBOL* spp = (SYMBOL*)p->p;
+        for (auto spp : *table)
+        { 
             if (matchOverload(sym->tp, spp->tp, false))
             {
                 if (!spp->templateParams)
@@ -590,93 +480,26 @@ SYMBOL* searchOverloads(SYMBOL* sym, HASHTABLE* table)
                         return spp;
                 }
             }
-            p = p->next;
         }
     }
     else
     {
-        return (SYMBOL*)p->p;
+        return table->front();
     }
     return (0);
 }
 SYMBOL* gsearch(const char* name)
 {
-    SYMBOL* sym = search(name, localNameSpace->valueData->syms);
+    SYMBOL* sym = localNameSpace->valueData->syms->search(name);
     if (sym)
         return sym;
-    return search(name, globalNameSpace->valueData->syms);
+    return globalNameSpace->valueData->syms->search(name);
 }
 SYMBOL* tsearch(const char* name)
 {
-    SYMBOL* sym = search(name, localNameSpace->valueData->tags);
+    SYMBOL* sym = localNameSpace->valueData->tags->search(name);
     if (sym)
         return sym;
-    return search(name, globalNameSpace->valueData->tags);
-}
-void baseinsert(SYMBOL* in, HASHTABLE* table)
-{
-    if (Optimizer::cparams.prm_extwarning)
-        if (in->sb->storage_class == sc_parameter || in->sb->storage_class == sc_auto || in->sb->storage_class == sc_register)
-        {
-            SYMBOL* sym;
-            if ((sym = gsearch(in->name)) != nullptr &&
-                (sym->sb->storage_class == sc_parameter || sym->sb->storage_class == sc_auto))
-                preverror(ERR_VARIABLE_OBSCURES_VARIABLE_AT_HIGHER_SCOPE, in->name, sym->sb->declfile, sym->sb->declline);
-        }
-    if (AddName(in, table) && (IsCompiler() || table != CompletionCompiler::ccHash))
-    {
-        if (!IsCompiler())
-        {
-            SYMBOL* sym = search(in->name, table);
-            if (!sym || !sym->sb->wasUsing || !in->sb->wasUsing)
-                preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->sb->declfile, in->sb->declline);
-        }
-        else
-        {
-            if (!structLevel || !templateNestingCount)
-            {
-                SYMBOL* sym = search(in->name, table);
-                if (!sym || !sym->sb->wasUsing || !in->sb->wasUsing)
-                    preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->sb->declfile, in->sb->declline);
-            }
-        }
-    }
-}
-void insert(SYMBOL* in, HASHTABLE* table)
-{
-    if (table)
-    {
-        if (!IsCompiler())
-        {
-            if (table != kwhash && table != CompletionCompiler::ccHash)
-                if (!in->parserSet)
-                {
-                    in->parserSet = true;
-                    CompletionCompiler::ccSetSymbol(in);
-                }
-        }
-        baseinsert(in, table);
-    }
-    else
-    {
-        diag("insert: cannot insert");
-    }
-}
-
-void insertOverload(SYMBOL* in, HASHTABLE* table)
-{
-
-    if (Optimizer::cparams.prm_extwarning)
-        if (in->sb->storage_class == sc_parameter || in->sb->storage_class == sc_auto || in->sb->storage_class == sc_register)
-        {
-            SYMBOL* sym;
-            if ((sym = gsearch(in->name)) != nullptr)
-                preverror(ERR_VARIABLE_OBSCURES_VARIABLE_AT_HIGHER_SCOPE, in->name, sym->sb->declfile, sym->sb->declline);
-        }
-    if (AddOverloadName(in, table))
-    {
-        SetLinkerNames(in, lk_cdecl);
-        preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->sb->declfile, in->sb->declline);
-    }
+    return globalNameSpace->valueData->tags->search(name);
 }
 }  // namespace Parser

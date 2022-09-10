@@ -1973,12 +1973,10 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
 
             Optimizer::QUAD* tail = Optimizer::intermed_tail;
             int i = 0;
-            SYMLIST* hr;
             if (isfunction(functp))
             {
                 if (basetype(functp)->sp)
                     sym = basetype(functp)->sp;
-                hr = basetype(functp)->syms->table[0];
                 if (!ismember(sym) && sym->sb->attribs.inheritable.linkage != lk_fastcall &&
                     basetype(sym->tp)->type != bt_memberptr)
                     return 0;
@@ -1990,13 +1988,15 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
 
             int structret = !!isstructured(basetype(sym->tp)->btp);
 
-            while (hr && tail && tail->dc.opcode != Optimizer::i_block)
+            auto it = basetype(functp)->syms->begin();
+            auto itend = basetype(functp)->syms->end();
+            while (it != itend && tail && tail->dc.opcode != Optimizer::i_block)
             {
 
                 if (tail->dc.opcode == Optimizer::i_parm)
                 {
                     // change it to a move
-                    SYMBOL* sp = hr->p;
+                    SYMBOL* sp = *it;
                     TYPE* tp = basetype(sp->tp);
                     if (thisptr || ((tp->type < bt_float ||
                                      (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) || isref(tp)) &&
@@ -2027,13 +2027,13 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
                         break;
                     if (thisptr)
                     {
-                        if (hr->p->sb->thisPtr)
-                            hr = hr->next;
+                        if (sp->sb->thisPtr)
+                            ++it;
                         thisptr = false;
                     }
                     else
                     {
-                        hr = hr->next;
+                        ++it;
                     }
                 }
                 else if (tail->dc.opcode == Optimizer::i_gosub)

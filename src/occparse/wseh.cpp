@@ -24,8 +24,8 @@
 
 #include "compiler.h"
 #include "ccerr.h"
+#include "template.h"
 #include "config.h"
-#include "symtab.h"
 #include "initbackend.h"
 #include "stmt.h"
 #include "declcpp.h"
@@ -34,6 +34,7 @@
 #include "memory.h"
 #include "wseh.h"
 #include "stmt.h"
+#include "symtab.h"
 
 namespace Parser
 {
@@ -111,7 +112,7 @@ static LEXLIST* SEH_catch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         needkw(&lex, openpa);
         lex = declare(lex, funcsp, &tp, sc_auto, lk_none, catchstmt, false, true, false, ac_public);
         needkw(&lex, closepa);
-        sym = localNameSpace->valueData->syms->table[0]->p;
+        sym = localNameSpace->valueData->syms->front();
     }
     else
     {

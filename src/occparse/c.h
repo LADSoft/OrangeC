@@ -21,7 +21,6 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-
 namespace Parser
 {
 /*      compiler header file    */
@@ -47,6 +46,61 @@ namespace Parser
 #define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_'))
 
 bool IsCompiler();
+
+template <class T>
+class SymbolTable
+{
+public:
+    typedef typename std::list<T*>::iterator iterator;
+    iterator begin() { return inOrder_.begin(); }
+    iterator end() { return inOrder_.end(); }
+    size_t size() const { return inOrder_.size(); }
+    T* back() const { return inOrder_.back(); }
+    T* front() const { return inOrder_.front(); }
+    inline void remove(iterator it);
+    inline iterator insert(iterator it, struct sym* sym);
+    inline T* Lookup(const std::string& name) const;
+    inline T* search(const std::string& name);
+    void Next(SymbolTable<struct sym>* next) { next_ = next; }
+    SymbolTable<struct sym>* Next() const { return next_; }
+    void Chain(SymbolTable<struct sym>* chain) { chain_ = chain; }
+    SymbolTable<struct sym>* Chain() const { return chain_; }
+    auto ReleaseNext() { auto rv = next_; if (next_) next_ = next_->next_; return rv; }
+    int Block() const { return blockLevel_; }
+    void Block(int level) { blockLevel_ = level; }
+
+    inline void Add(T* sym);
+    inline T* AddOverloadName(T* sym);
+    inline void insertOverload(T* in);
+    inline void baseInsert(T* sym);
+
+    inline void AddName(T* sym);
+private:
+    std::list<T*> inOrder_;
+    std::unordered_map<std::string, T*> lookupTable_;
+    int blockLevel_;
+    SymbolTable<T>* next_ = nullptr;
+    SymbolTable<T>* chain_ = nullptr;
+};
+
+template <class T>
+class SymbolTableFactory
+{
+public:
+    SymbolTableFactory() = default;
+    void Reset()
+    {
+        tables.clear();
+    }
+    SymbolTable<T>* CreateSymbolTable()
+    {
+        tables.push_back(SymbolTable<T>());
+        return &tables.back();
+    }
+private:
+    std::list<SymbolTable<T>> tables;
+};
+
 
 /* keywords and symbols */
 // clang-format off
@@ -327,7 +381,7 @@ typedef struct expr
             struct stmt* stmt;
             struct Optimizer::_imode_* imode;
             struct _msilarray* msilArray;
-            HASHTABLE* syms;
+            SymbolTable<struct sym>* syms;
             struct typ* tp;
             struct expr* exp;
             struct
@@ -437,8 +491,8 @@ typedef struct typ
     char startbit;  /* start of bit field */
     struct sym* sp; /* pointer to a symbol which describes the type */
     /* local symbol tables */
-    HASHTABLE* syms; /* Symbol table for structs & functions */
-    HASHTABLE* tags; /* Symbol table for nested types*/
+    SymbolTable<struct sym>* syms; /* Symbol table for structs & functions */
+    SymbolTable<struct sym>* tags; /* Symbol table for nested types*/
     struct _templateParamList* templateParam;
     int alignment;                /* alignment pref for this structure/class/union   */
     EXPRESSION* esize;            /* enode version of size */
@@ -486,7 +540,7 @@ typedef struct blockdata
     CASEDATA* cases;
     STATEMENT *head, *tail;
     STATEMENT* blockTail;
-    HASHTABLE* table;
+    SymbolTable<struct sym>* table;
     int breaklabel;
     int continuelabel;
     int defaultlabel;
@@ -511,14 +565,14 @@ typedef struct init
 typedef struct ifunc
 {
     STATEMENT* stmt;
-    HASHTABLE* syms;
-    HASHTABLE* tags;
+    SymbolTable<struct sym>* syms;
+    SymbolTable<struct sym>* tags;
 } INLINEFUNC;
 
 typedef struct
 {
-    HASHTABLE* syms;
-    HASHTABLE* tags;
+    SymbolTable<struct sym>* syms;
+    SymbolTable<struct sym>* tags;
     Optimizer::LIST* usingDirectives;
     Optimizer::LIST* inlineDirectives;
     struct sym* origname;
@@ -764,15 +818,14 @@ typedef struct __lambda
 {
     struct __lambda *prev, *next;
     enum e_cm captureMode;
-    HASHTABLE* captured;
+    SymbolTable<struct __lambdasp>* captured;
     SYMBOL* cls;
     SYMBOL* func;
     SYMBOL* lthis;
     TYPE* functp;
-    SYMLIST* funcargs;
     SYMBOL* enclosingFunc;
-    HASHTABLE* oldSyms;
-    HASHTABLE* oldTags;
+    SymbolTable<SYMBOL>* oldSyms;
+    SymbolTable<SYMBOL>* oldTags;
     TYPE* rv;
     int index;
     int isMutable : 1;

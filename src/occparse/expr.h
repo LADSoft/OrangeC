@@ -52,7 +52,7 @@ TYPE* InitializerListType(TYPE* arg);
 EXPRESSION* getFunc(EXPRESSION* exp);
 void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* initializerListType, INITLIST** lptr, bool operands,
                            bool asref);
-void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, bool implicit);
+void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it , SymbolTable<SYMBOL>::iterator itend, INITLIST** lptr, bool operands, bool implicit);
 LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags);
 LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
 LEXLIST* expression_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);

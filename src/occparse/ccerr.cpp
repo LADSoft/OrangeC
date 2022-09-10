@@ -34,7 +34,6 @@
 #include "template.h"
 #include "occparse.h"
 #include "stmt.h"
-#include "symtab.h"
 #include "unmangle.h"
 #include "OptUtils.h"
 #include "memory.h"
@@ -47,6 +46,7 @@
 #include "declcons.h"
 #include "FNV_hash.h"
 #include <cstdio>
+#include "symtab.h"
 
 namespace Parser
 {
@@ -1281,111 +1281,89 @@ void checkGotoPastVLA(STATEMENT* stmt, bool first)
 void checkUnlabeledReferences(BLOCKDATA* block)
 {
     int i;
-    for (i = 0; i < labelSyms->size; i++)
+    for (auto sp : *labelSyms)
     {
-        SYMLIST* hr = labelSyms->table[i];
-        while (hr)
+        if (sp->sb->storage_class == sc_ulabel)
         {
-            SYMBOL* sp = hr->p;
-            if (sp->sb->storage_class == sc_ulabel)
-            {
-                STATEMENT* st;
-                specerror(ERR_UNDEFINED_LABEL, sp->name, sp->sb->declfile, sp->sb->declline);
-                sp->sb->storage_class = sc_label;
-                st = stmtNode(nullptr, block, st_label);
-                st->label = sp->sb->offset;
-            }
-            hr = hr->next;
+            STATEMENT* st;
+            specerror(ERR_UNDEFINED_LABEL, sp->name, sp->sb->declfile, sp->sb->declline);
+            sp->sb->storage_class = sc_label;
+            st = stmtNode(nullptr, block, st_label);
+            st->label = sp->sb->offset;
         }
     }
 }
-void checkUnused(HASHTABLE* syms)
+void checkUnused(SymbolTable<SYMBOL>* syms)
 {
     int i;
-    for (i = 0; i < syms->size; i++)
-    {
-        SYMLIST* hr = syms->table[i];
-        while (hr)
+    for (auto sp : *syms)
+    { 
+        if (sp->sb->storage_class == sc_overloads)
+            sp = *sp->tp->syms->begin();
+        if (!sp->sb->attribs.inheritable.used && !sp->sb->anonymous)
         {
-            SYMBOL* sp = hr->p;
-            if (sp->sb->storage_class == sc_overloads)
-                sp = (SYMBOL*)sp->tp->syms->table[0]->p;
-            if (!sp->sb->attribs.inheritable.used && !sp->sb->anonymous)
+            if (sp->sb->assigned || sp->sb->altered)
             {
-                if (sp->sb->assigned || sp->sb->altered)
-                {
-                    if (sp->sb->storage_class == sc_auto || sp->sb->storage_class == sc_register ||
-                        sp->sb->storage_class == sc_parameter)
-                        errorsym(ERR_SYM_ASSIGNED_VALUE_NEVER_USED, sp);
-                }
-                else
-                {
-                    if (sp->sb->storage_class == sc_parameter)
-                        errorsym(ERR_UNUSED_PARAMETER, sp);
-                    else
-                        errorsym(ERR_UNUSED_VARIABLE, sp);
-                }
+                if (sp->sb->storage_class == sc_auto || sp->sb->storage_class == sc_register ||
+                    sp->sb->storage_class == sc_parameter)
+                    errorsym(ERR_SYM_ASSIGNED_VALUE_NEVER_USED, sp);
             }
-            hr = hr->next;
+            else
+            {
+                if (sp->sb->storage_class == sc_parameter)
+                    errorsym(ERR_UNUSED_PARAMETER, sp);
+                else
+                    errorsym(ERR_UNUSED_VARIABLE, sp);
+            }
         }
     }
 }
 void findUnusedStatics(NAMESPACEVALUELIST* nameSpace)
 {
-    int i;
-    for (i = 0; i < nameSpace->valueData->syms->size; i++)
+    for (auto sp : *nameSpace->valueData->syms)
     {
-        SYMLIST* hr = nameSpace->valueData->syms->table[i];
-        while (hr)
+        if (sp)
         {
-            SYMBOL* sp = hr->p;
-            if (sp)
+            if (sp->sb->storage_class == sc_namespace)
             {
-                if (sp->sb->storage_class == sc_namespace)
+                findUnusedStatics(sp->sb->nameSpaceValues);
+            }
+            else
+            {
+                if (sp->sb->storage_class == sc_overloads)
                 {
-                    findUnusedStatics(sp->sb->nameSpaceValues);
+                    for (auto sp1 : *sp->tp->syms)
+                    {
+                        if (sp1->sb->attribs.inheritable.isInline && !sp1->sb->inlineFunc.stmt && !sp1->sb->deferredCompile &&
+                            !sp1->sb->templateLevel)
+                        {
+                            errorsym(ERR_UNDEFINED_IDENTIFIER, sp1);
+                        }
+                        else if (sp1->sb->attribs.inheritable.linkage2 == lk_internal ||
+                            (sp1->sb->storage_class == sc_static && !sp1->sb->inlineFunc.stmt &&
+                                !(sp1->sb->templateLevel || sp1->sb->instantiated)))
+                        {
+                            if (sp1->sb->attribs.inheritable.used)
+                                errorsym(ERR_UNDEFINED_STATIC_FUNCTION, sp1, eofLine, eofFile);
+                            else if (sp1->sb->attribs.inheritable.linkage2 != lk_internal)
+                                errorsym(ERR_STATIC_FUNCTION_USED_BUT_NOT_DEFINED, sp1, eofLine, eofFile);
+                        }
+                    }
                 }
                 else
                 {
-                    if (sp->sb->storage_class == sc_overloads)
-                    {
-                        SYMLIST* hr1 = sp->tp->syms->table[0];
-                        while (hr1)
-                        {
-                            SYMBOL* sp1 = (SYMBOL*)hr1->p;
-                            if (sp1->sb->attribs.inheritable.isInline && !sp1->sb->inlineFunc.stmt && !sp1->sb->deferredCompile &&
-                                !sp1->sb->templateLevel)
-                            {
-                                errorsym(ERR_UNDEFINED_IDENTIFIER, sp1);
-                            }
-                            else if (sp1->sb->attribs.inheritable.linkage2 == lk_internal ||
-                                     (sp1->sb->storage_class == sc_static && !sp1->sb->inlineFunc.stmt &&
-                                      !(sp1->sb->templateLevel || sp1->sb->instantiated)))
-                            {
-                                if (sp1->sb->attribs.inheritable.used)
-                                    errorsym(ERR_UNDEFINED_STATIC_FUNCTION, sp1, eofLine, eofFile);
-                                else if (sp1->sb->attribs.inheritable.linkage2 != lk_internal)
-                                    errorsym(ERR_STATIC_FUNCTION_USED_BUT_NOT_DEFINED, sp1, eofLine, eofFile);
-                            }
-                            hr1 = hr1->next;
-                        }
-                    }
-                    else
-                    {
-                        currentErrorLine = 0;
-                        if (sp->sb->storage_class == sc_static && !sp->sb->attribs.inheritable.used)
-                            errorsym(ERR_UNUSED_STATIC, sp);
-                        currentErrorLine = 0;
-                        if (sp->sb->storage_class == sc_global || sp->sb->storage_class == sc_static ||
-                            sp->sb->storage_class == sc_localstatic)
-                            /* void will be caught earlier */
-                            if (!isfunction(sp->tp) && !isarray(sp->tp) && sp->tp->size == 0 && !isvoid(sp->tp) &&
-                                sp->tp->type != bt_any && !sp->sb->templateLevel)
-                                errorsym(ERR_UNSIZED, sp);
-                    }
+                    currentErrorLine = 0;
+                    if (sp->sb->storage_class == sc_static && !sp->sb->attribs.inheritable.used)
+                        errorsym(ERR_UNUSED_STATIC, sp);
+                    currentErrorLine = 0;
+                    if (sp->sb->storage_class == sc_global || sp->sb->storage_class == sc_static ||
+                        sp->sb->storage_class == sc_localstatic)
+                        /* void will be caught earlier */
+                        if (!isfunction(sp->tp) && !isarray(sp->tp) && sp->tp->size == 0 && !isvoid(sp->tp) &&
+                            sp->tp->type != bt_any && !sp->sb->templateLevel)
+                            errorsym(ERR_UNSIZED, sp);
                 }
             }
-            hr = hr->next;
         }
     }
 }

@@ -38,22 +38,6 @@ bool qualifiedStruct(SimpleSymbol* sp)
     //    SYMLIST *hr;
     if (!sp->tp->size)
         return false;
-#if 0
-        if (sp->tp->type == st_union)
-            return false;
-        hr = sp->tp->syms->table[0];
-        while (hr)
-        {
-            SYMBOL *check = (SYMBOL *)hr->p;
-            if (basetype(check->tp)->bits)
-                return false;
-            //        if (isstructured(check->tp))
-            //            return false;
-    //        if (basetype(check->tp)->array)
-    //            return false;
-            hr = hr->next;
-        }
-#endif
     return true;
 }
 

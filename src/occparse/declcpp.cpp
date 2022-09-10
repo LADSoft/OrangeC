@@ -29,7 +29,6 @@
 #include "ccerr.h"
 #include "declcpp.h"
 #include "config.h"
-#include "symtab.h"
 #include "mangle.h"
 #include "initbackend.h"
 #include "occparse.h"
@@ -59,6 +58,7 @@
 #include "iblock.h"
 #include "istmt.h"
 #include "iinline.h"
+#include "symtab.h"
 namespace CompletionCompiler
 {
 void ccInsertUsing(Parser::SYMBOL* ns, Parser::SYMBOL* parentns, const char* file, int line);
@@ -118,11 +118,9 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                         EXPRESSION* exp = intNode(en_c_i, 0);
                         SYMBOL* sp = vf->func->sb->overloadName;
                         INITLIST** args = &fcall.arguments;
-                        SYMLIST* hr = basetype(vf->func->tp)->syms->table[0];
                         memset(&fcall, 0, sizeof(fcall));
-                        while (hr)
+                        for (auto sym : *basetype(vf->func->tp)->syms)
                         {
-                            SYMBOL* sym = hr->p;
                             if (sym->sb->thisPtr)
                             {
                                 fcall.thistp = sym->tp;
@@ -135,7 +133,6 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                                 (*args)->exp = exp;
                                 args = &(*args)->next;
                             }
-                            hr = hr->next;
                         }
                         fcall.ascall = true;
                         auto oldnoExcept = noExcept;
@@ -507,44 +504,35 @@ static void checkXT(SYMBOL* sym1, SYMBOL* sym2, bool func)
 }
 static void checkExceptionSpecification(SYMBOL* sp)
 {
-    SYMLIST* hr = basetype(sp->tp)->syms->table[0];
-    while (hr)
+    for (auto sym : *basetype(sp->tp)->syms)
     {
-        SYMBOL* sym = hr->p;
         if (sym->sb->storage_class == sc_overloads)
         {
-            SYMLIST* hr1 = basetype(sym->tp)->syms->table[0];
-            while (hr1)
+            for (auto sym1 : *basetype(sym->tp)->syms)
             {
-                SYMBOL* sym1 = (SYMBOL*)hr1->p;
                 if (sym1->sb->storage_class == sc_virtual)
                 {
                     BASECLASS* bc = sp->sb->baseClasses;
                     const char* f1 = (char *)strrchr(sym1->sb->decoratedName, '@');
                     while (bc && f1)
                     {
-                        SYMBOL* sym2 = search(sym->name, basetype(bc->cls->tp)->syms);
+                        SYMBOL* sym2 = basetype(bc->cls->tp)->syms->search(sym->name);
                         if (sym2)
                         {
-                            SYMLIST* hr3 = basetype(sym2->tp)->syms->table[0];
-                            while (hr3)
+                            for (auto sym3 : *basetype(sym2->tp)->syms)
                             {
-                                SYMBOL* sym3 = (SYMBOL*)hr3->p;
                                 const char* f2 = (char *)strrchr(sym3->sb->decoratedName, '@');
                                 if (f2 && !strcmp(f1, f2))
                                 {
                                     checkXT(sym1, sym3, false);
                                 }
-                                hr3 = hr3->next;
                             }
                         }
                         bc = bc->next;
                     }
                 }
-                hr1 = hr1->next;
             }
         }
-        hr = hr->next;
     }
 }
 void CheckCalledException(SYMBOL* cst, EXPRESSION* exp)
@@ -557,7 +545,6 @@ void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, VTABENTRY** pos, int offset
 {
     BASECLASS* lst = base->sb->baseClasses;
     VBASEENTRY* vb = sym->sb->vbaseEntries;
-    SYMLIST* hr = sym->tp->syms->table[0];
     if (sym->sb->hasvtab && (!lst || lst->isvirtual || !lst->cls->sb->vtabEntries))
     {
         VTABENTRY* vt = Allocate<VTABENTRY>();
@@ -593,15 +580,14 @@ void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, VTABENTRY** pos, int offset
         }
         lst = lst->next;
     }
-    while (hr && sym->sb->vtabEntries)
+    for (auto cur : *sym->tp->syms)
     {
-        SYMBOL* cur = hr->p;
+        if (!sym->sb->vtabEntries)
+            break;
         if (cur->sb->storage_class == sc_overloads)
         {
-            SYMLIST* hrf = cur->tp->syms->table[0];
-            while (hrf)
+            for (auto cur : *cur->tp->syms)
             {
-                SYMBOL* cur = (SYMBOL*)hrf->p;
                 VTABENTRY *hold, *hold2;
                 bool found = false;
                 bool isfirst = false;
@@ -633,10 +619,8 @@ void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, VTABENTRY** pos, int offset
                 {
                     errorsym(ERR_FUNCTION_DOES_NOT_OVERRIDE, cur);
                 }
-                hrf = hrf->next;
             }
         }
-        hr = hr->next;
     }
     vb = sym->sb->vbaseEntries;
     while (vb)
@@ -960,7 +944,6 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
 }
 void deferredInitializeStructFunctions(SYMBOL* cur)
 {
-    SYMLIST* hr;
     LEXLIST* lex;
     STRUCTSYM l, n;
     int count = 0;
@@ -976,24 +959,18 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
         count++;
     }
     //    dontRegisterTemplate++;
-    hr = cur->tp->syms->table[0];
-    while (hr)
+    for (auto sp : *cur->tp->syms)
     {
-        SYMBOL* sp = hr->p;
         if (sp->sb->storage_class == sc_overloads)
         {
             if (templateNestingCount != 1 || instantiatingTemplate)
             {
-                SYMLIST* hr1 = sp->tp->syms->table[0];
-                while (hr1)
+                for (auto sp1 : *sp->tp->syms)
                 {
-                    SYMBOL* sp1 = (SYMBOL*)hr1->p;
                     if (!sp1->sb->templateLevel)
                     {
-                        SYMLIST* hr2 = basetype(sp1->tp)->syms->table[0];
-                        while (hr2)
+                        for (auto sp2 : *sp1->tp->syms)
                         {
-                            SYMBOL* sp2 = (SYMBOL*)hr2->p;
                             if (!sp2->sb->thisPtr)
                             {
                                 sp2->tp = PerformDeferredInitialization(sp2->tp, nullptr);
@@ -1012,14 +989,11 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
                                     SetAlternateLex(nullptr);
                                 }
                             }
-                            hr2 = hr2->next;
                         }
                     }
-                    hr1 = hr1->next;
                 }
             }
         }
-        hr = hr->next;
     }
     //    dontRegisterTemplate--;
     while (count--)
@@ -1031,7 +1005,6 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
 void deferredInitializeStructMembers(SYMBOL* cur)
 {
     Optimizer::LIST* staticAssert;
-    SYMLIST* hr;
     LEXLIST* lex;
     STRUCTSYM l, n;
     int count = 0;
@@ -1047,10 +1020,8 @@ void deferredInitializeStructMembers(SYMBOL* cur)
         count++;
     }
     dontRegisterTemplate++;
-    hr = cur->tp->syms->table[0];
-    while (hr)
+    for (auto sp : *cur->tp->syms)
     {
-        SYMBOL* sp = hr->p;
         if (isarray(sp->tp) && sp->tp->esize)
         {
             RecalcArraySize(sp->tp);
@@ -1065,7 +1036,6 @@ void deferredInitializeStructMembers(SYMBOL* cur)
             lex = initialize(lex, theCurrentFunc, sp, sc_member, false, false, 0);
             SetAlternateLex(nullptr);
         }
-        hr = hr->next;
     }
     dontRegisterTemplate--;
     while (count--)
@@ -1145,11 +1115,8 @@ TYPE* PerformDeferredInitialization(TYPE* tp, SYMBOL* funcsp)
 }
 void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
 {
-    SYMLIST* hr = sym->tp->syms->table[0];
-    hr = sym->tp->syms->table[0];
-    while (hr)
+    for (auto cur : *sym->tp->syms)
     {
-        SYMBOL* cur = hr->p;
         if (cur->sb->storage_class == sc_static && (cur->tp->hasbits || localClassWarnings))
             errorstr(ERR_INVALID_STORAGE_CLASS, "static");
         if (sym != cur && !strcmp(sym->name, cur->name))
@@ -1163,44 +1130,34 @@ void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
         }
         if (cur->sb->storage_class == sc_overloads)
         {
-            SYMLIST* hrf = cur->tp->syms->table[0];
-            while (hrf)
+            for (auto cur1 : *cur->tp->syms)
             {
-                cur = (SYMBOL*)hrf->p;
                 if (localClassWarnings)
                 {
-                    if (isfunction(cur->tp))
-                        if (!basetype(cur->tp)->sp->sb->inlineFunc.stmt)
-                            errorsym(ERR_LOCAL_CLASS_FUNCTION_NEEDS_BODY, cur);
+                    if (isfunction(cur1->tp))
+                        if (!basetype(cur1->tp)->sp->sb->inlineFunc.stmt)
+                            errorsym(ERR_LOCAL_CLASS_FUNCTION_NEEDS_BODY, cur1);
                 }
-                if (cur->sb->isfinal || cur->sb->isoverride || cur->sb->ispure)
-                    if (cur->sb->storage_class != sc_virtual)
+                if (cur1->sb->isfinal || cur1->sb->isoverride || cur1->sb->ispure)
+                    if (cur1->sb->storage_class != sc_virtual)
                         error(ERR_SPECIFIER_VIRTUAL_FUNC);
-                hrf = hrf->next;
             }
         }
-        hr = hr->next;
     }
 }
 bool usesVTab(SYMBOL* sym)
 {
-    SYMLIST* hr;
     BASECLASS* base;
-    hr = sym->tp->syms->table[0];
-    while (hr)
+    for (auto cur : *sym->tp->syms)
     {
-        SYMBOL* cur = hr->p;
         if (cur->sb->storage_class == sc_overloads)
         {
-            SYMLIST* hrf = cur->tp->syms->table[0];
-            while (hrf)
+            for (auto sp : *cur->tp->syms)
             {
-                if (((SYMBOL*)(hrf->p))->sb->storage_class == sc_virtual)
+                if (sp->sb->storage_class == sc_virtual)
                     return true;
-                hrf = hrf->next;
             }
         }
-        hr = hr->next;
     }
     base = sym->sb->baseClasses;
     while (base)
@@ -1241,7 +1198,7 @@ BASECLASS* innerBaseClass(SYMBOL* declsym, SYMBOL* bcsym, bool isvirtual, enum e
         injected->sb->mainsym = bcsym;
         injected->sb->parentClass = declsym;
         injected->sb->access = currentAccess;
-        insert(injected, declsym->tp->tags);
+        declsym->tp->tags->Add(injected);
     }
     return bc;
 }
@@ -1561,7 +1518,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
                             while (lst && sym)
                             {
                                 PerformDeferredInitialization(sym->tp, funcsp);
-                                sym = search(lst->name, sym->tp->syms);
+                                sym = sym->tp->syms->search(lst->name);
                                 lst = lst->next;
                             }
                             if (sym)
@@ -1668,17 +1625,13 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
 }
 static bool hasPackedTemplate(TYPE* tp)
 {
-    SYMLIST* hr;
-    SYMBOL* sym;
 
     switch (tp->type)
     {
         case bt_typedef:
             break;
         case bt_aggregate:
-            hr = tp->syms->table[0];
-            sym = hr->p;
-            tp = sym->tp;
+            tp = tp->syms->front()->tp;
             /* fall through */
         case bt_func:
         case bt_ifunc:
@@ -1686,13 +1639,10 @@ static bool hasPackedTemplate(TYPE* tp)
                 return true;
             if (tp->syms)
             {
-                hr = tp->syms->table[0];
-                while (hr)
+                for (auto sym : *tp->syms)
                 {
-                    sym = hr->p;
                     if (hasPackedTemplate(sym->tp))
                         return true;
-                    hr = hr->next;
                 }
             }
             break;
@@ -2237,14 +2187,14 @@ INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXLIST* start,
         {
             if (arg[0]->sb && arg[0]->packed && arg[0]->sb->parent)
             {
-                SYMLIST* hr = basetype(arg[0]->sb->parent->tp)->syms->table[0];
-                while (hr->p && hr->p != arg[0])
-                    hr = hr->next;
-                if (hr)
+                auto it = basetype(arg[0]->sb->parent->tp)->syms->begin();
+                auto itend = basetype(arg[0]->sb->parent->tp)->syms->end();
+                for (; it != itend && (*it) != arg[0]; ++it);
+                if (it != itend)
                 {
-                    while (hr)
+                    while (it != itend)
                     {
-                        SYMBOL* sym = hr->p;
+                        SYMBOL* sym = *it;
                         INITLIST* p = Allocate<INITLIST>();
                         p->tp = sym->tp;
                         p->exp = varNode(en_auto, sym);
@@ -2257,7 +2207,7 @@ INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXLIST* start,
                             deref(p->tp, &p->exp);
                         *lptr = p;
                         lptr = &(*lptr)->next;
-                        hr = hr->next;
+                        ++it;
                     }
                 }
             }
@@ -2643,15 +2593,16 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
     }
     else
     {
-        SYMLIST* hr = basetype(sp->tp)->syms->table[0];
-        if (!hr)
+        auto it = basetype(sp->tp)->syms->begin();
+        auto itend = basetype(sp->tp)->syms->end();
+        if (it == itend)
             return;
         if (!asFriend && getStructureDeclaration())  // nonstatic member
         {
             if (sp->sb->operatorId == CI_CAST)
             {
                 // needs no argument
-                SYMBOL* sym = hr->p;
+                SYMBOL* sym = *it;
                 if (sym->tp->type != bt_void)
                 {
                     errortype(ERR_OPERATOR_NEEDS_NO_PARAMETERS, basetype(sym->tp)->btp, nullptr);
@@ -2666,11 +2617,11 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     case star:
                     case andx:
                         // needs zero or one argument
-                        if (hr && hr->next)
+                        if (basetype(sp->tp)->syms->size() > 1)
                         {
                             errorstr(ERR_OPERATOR_NEEDS_ZERO_OR_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
-                        if (!hr)
+                        if (basetype(sp->tp)->syms->size() == 0)
                         {
                             switch ((enum e_kw)(sp->sb->operatorId - CI_NEW))
                             {
@@ -2694,7 +2645,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     case notx:
                     case complx:
                         // needs no argument
-                        sym = hr->p;
+                        sym = *it;
                         if (sym->tp->type != bt_void)
                         {
                             errorstr(ERR_OPERATOR_NEEDS_NO_PARAMETERS, overloadXlateTab[sp->sb->operatorId]);
@@ -2717,19 +2668,19 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     case comma:
                     case pointstar:
                         // needs one argument
-                        sym = hr->p;
-                        if (sym->tp->type == bt_void || hr->next)
+                        sym = *it;
+                        if (sym->tp->type == bt_void || basetype(sp->tp)->syms->size() > 1)
                         {
                             errorstr(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                         break;
                     case autoinc:
                     case autodec:
-                        if (hr->next)
+                        if (basetype(sp->tp)->syms->size() > 1)
                         {
                             errorstr(ERR_OPERATOR_NEEDS_ZERO_OR_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
-                        sym = hr->p;
+                        sym = *it;
                         if (sym->tp->type != bt_void && sym->tp->type != bt_int)
                         {
                             errorstr(ERR_OPERATOR_NEEDS_PARAMETER_OF_TYPE_INT, overloadXlateTab[sp->sb->operatorId]);
@@ -2752,8 +2703,8 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     case asor:
                     case asxor:
                         // needs one argument
-                        sym = hr->p;
-                        if (sym->tp->type == bt_void || hr->next)
+                        sym = *it;
+                        if (sym->tp->type == bt_void || basetype(sp->tp)->syms->size() > 1)
                         {
                             errorstr(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
@@ -2761,8 +2712,8 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
 
                     case openbr:
                         // needs one argument:
-                        sym = hr->p;
-                        if (sym->tp->type == bt_void || hr->next)
+                        sym = *it;
+                        if (sym->tp->type == bt_void || basetype(sp->tp)->syms->size() > 1)
                         {
                             errorstr(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
@@ -2772,7 +2723,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         break;
                     case pointsto:
                         // needs no arguments
-                        sym = hr->p;
+                        sym = *it;
                         if (sym->tp->type != bt_void)
                         {
                             errorstr(ERR_OPERATOR_NEEDS_NO_PARAMETERS, overloadXlateTab[sp->sb->operatorId]);
@@ -2818,12 +2769,13 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                 case asor:
                 case asxor:
                     // needs one or two arguments, one being class type
-                    sym = hr->p;
-                    if (sym->tp->type == bt_void || (hr->next && hr->next->next))
+                    sym = (*it);
+                    ++it;
+                    if (sym->tp->type == bt_void || basetype(sp->tp)->syms->size() > 2)
                     {
                         errorstr(ERR_OPERATOR_NEEDS_ONE_OR_TWO_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                     }
-                    else if (!classOrEnumParam(hr->p) && (!hr->next || !classOrEnumParam(hr->next->p)))
+                    else if (!classOrEnumParam(sym) && (basetype(sp->tp)->syms->size() == 1 || !classOrEnumParam((*it))))
                     {
                         if (!templateNestingCount)
                             errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
@@ -2832,12 +2784,12 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                 case notx:
                 case complx:
                     // needs one arg of class or enum type
-                    sym = hr->p;
-                    if (sym->tp->type == bt_void || hr->next)
+                    sym = *it;
+                    if (sym->tp->type == bt_void || basetype(sp->tp)->syms->size() != 1)
                     {
                         errorstr(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                     }
-                    else if (!classOrEnumParam(hr->p))
+                    else if (!classOrEnumParam(sym))
                     {
                         if (!templateNestingCount)
                             errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
@@ -2860,11 +2812,11 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                 case uparrow:
                 case comma:
                     // needs two args, one of class or enum type
-                    if (!hr || !hr->next || hr->next->next)
+                    if (basetype(sp->tp)->syms->size() != 2)
                     {
                         errorstr(ERR_OPERATOR_NEEDS_TWO_PARAMETERS, overloadXlateTab[sp->sb->operatorId]);
                     }
-                    else if (!classOrEnumParam(hr->p) && !classOrEnumParam((SYMBOL*)(hr->next->p)))
+                    else if (!classOrEnumParam(*it) && !classOrEnumParam(*++it))
                     {
                         if (!templateNestingCount)
                             errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
@@ -2874,8 +2826,8 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                 case autodec:
                     // needs one or two args, first of class or enum type
                     // if second is present int type
-                    sym = hr->p;
-                    if (sym->tp->type == bt_void || (hr->next && hr->next->next))
+                    sym = (*it);
+                    if (sym->tp->type == bt_void || basetype(sp->tp)->syms->size() > 2)
                     {
                         errorstr(ERR_OPERATOR_NEEDS_ONE_OR_TWO_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                     }
@@ -2884,9 +2836,9 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         if (!templateNestingCount)
                             errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                     }
-                    if (hr && hr->next)
+                    if (basetype(sp->tp)->syms->size() == 2)
                     {
-                        sym = (SYMBOL*)(hr->next->p);
+                        sym = *++it;
                         if (sym->tp->type != bt_int)
                         {
                             errorstr(ERR_OPERATOR_NEEDS_SECOND_PARAMETER_OF_TYPE_INT, overloadXlateTab[sp->sb->operatorId]);
@@ -2894,37 +2846,34 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     }
                     break;
                 case quot:
-                    if (hr && hr->next)
+                    if (basetype(sp->tp)->syms->size() > 2)
                     {
-                        if (hr->next->next)
+                        errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
+                    }
+                    else if (basetype(sp->tp)->syms->size() == 2)
+                    {
+                        // two args
+                        TYPE* tpl = (*it)->tp;
+                        TYPE* tpr = (*++it)->tp;
+                        if (!isunsigned(tpr) || !ispointer(tpl))
                         {
                             errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                         }
                         else
                         {
-                            // two args
-                            TYPE* tpl = hr->p->tp;
-                            TYPE* tpr = (hr->next->p)->tp;
-                            if (!isunsigned(tpr) || !ispointer(tpl))
+                            tpl = basetype(tpl)->btp;
+                            tpr = basetype(tpl);
+                            if (!isconst(tpl) || (tpr->type != bt_char && tpr->type != bt_wchar_t && tpr->type != bt_char16_t &&
+                                                    tpr->type != bt_char32_t))
                             {
                                 errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
-                            }
-                            else
-                            {
-                                tpl = basetype(tpl)->btp;
-                                tpr = basetype(tpl);
-                                if (!isconst(tpl) || (tpr->type != bt_char && tpr->type != bt_wchar_t && tpr->type != bt_char16_t &&
-                                                      tpr->type != bt_char32_t))
-                                {
-                                    errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
-                                }
                             }
                         }
                     }
                     else
                     {
                         // one arg
-                        TYPE* tp = hr->p->tp;
+                        TYPE* tp = (*it)->tp;
                         if ((!ispointer(tp) || !isconst(basetype(tp)->btp) || basetype(basetype(tp)->btp)->type != bt_char) &&
                             tp->type != bt_unsigned_long_long && tp->type != bt_long_double && tp->type != bt_char &&
                             tp->type != bt_wchar_t && tp->type != bt_char16_t && tp->type != bt_char32_t)
@@ -2935,10 +2884,10 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     break;
                 case kw_new:
                 case kw_newa:
-                    if (hr)
+                    if (basetype(sp->tp)->syms->size() > 0)
                     {
                         // any number of args, but first must be a size
-                        TYPE* tp = hr->p->tp;
+                        TYPE* tp = (*it)->tp;
                         if (!isint(tp))
                             errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                     }
@@ -2949,10 +2898,10 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     break;
                 case kw_delete:
                 case kw_dela:
-                    if (hr)
+                    if (basetype(sp->tp)->syms->size() > 0)
                     {
                         // one or more args, first must be a pointer
-                        TYPE* tp = hr->p->tp;
+                        TYPE* tp = (*it)->tp;
                         if (!ispointer(tp))
                             errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                     }
@@ -3040,7 +2989,6 @@ LEXLIST* insertNamespace(LEXLIST* lex, enum e_lk linkage, enum e_sc storage_clas
 {
     bool anon = false;
     char buf[256], *p;
-    SYMLIST** hr;
     SYMBOL* sym;
     Optimizer::LIST* list;
     *linked = false;
@@ -3065,15 +3013,15 @@ LEXLIST* insertNamespace(LEXLIST* lex, enum e_lk linkage, enum e_sc storage_clas
                     else
                     {
                         SYMBOL* src = sym;
+                        SYMBOL* sym = nullptr;
                         TYPE* tp;
                         SYMLIST** p;
                         if (storage_class == sc_auto)
-                            p = LookupName(buf, localNameSpace->valueData->syms);
+                            sym = localNameSpace->valueData->syms->Lookup(buf);
                         else
-                            p = LookupName(buf, globalNameSpace->valueData->syms);
-                        if (p)
+                            sym = globalNameSpace->valueData->syms->Lookup(buf);
+                        if (sym)
                         {
-                            SYMBOL* sym = (SYMBOL*)(*p)->p;
                             // already exists, bug check it
                             if (sym->sb->storage_class == sc_namespacealias && sym->sb->nameSpaceValues->valueData->origname == src)
                             {
@@ -3094,13 +3042,13 @@ LEXLIST* insertNamespace(LEXLIST* lex, enum e_lk linkage, enum e_sc storage_clas
                         SetLinkerNames(sym, lk_none);
                         if (storage_class == sc_auto)
                         {
-                            insert(sym, localNameSpace->valueData->syms);
-                            insert(sym, localNameSpace->valueData->tags);
+                            localNameSpace->valueData->syms->Add(sym);
+                            localNameSpace->valueData->tags->Add(sym);
                         }
                         else
                         {
-                            insert(sym, globalNameSpace->valueData->syms);
-                            insert(sym, globalNameSpace->valueData->tags);
+                            globalNameSpace->valueData->syms->Add(sym);
+                            globalNameSpace->valueData->tags->Add(sym);
                         }
                         sym->sb->nameSpaceValues = Allocate<NAMESPACEVALUELIST>();
                         sym->sb->nameSpaceValues->valueData = Allocate<NAMESPACEVALUEDATA>();
@@ -3148,14 +3096,14 @@ LEXLIST* insertNamespace(LEXLIST* lex, enum e_lk linkage, enum e_sc storage_clas
     {
         error(ERR_NO_NAMESPACE_IN_FUNCTION);
     }
-    hr = LookupName(buf, globalNameSpace->valueData->syms);
-    if (!hr)
+    SYMBOL *sp = globalNameSpace->valueData->syms->Lookup(buf);
+    if (!sp)
     {
         sym = makeID(sc_namespace, MakeType(bt_void), nullptr, litlate(buf));
         sym->sb->nameSpaceValues = Allocate<NAMESPACEVALUELIST>();
         sym->sb->nameSpaceValues->valueData = Allocate<NAMESPACEVALUEDATA>();
-        sym->sb->nameSpaceValues->valueData->syms = CreateHashTable(GLOBALHASHSIZE);
-        sym->sb->nameSpaceValues->valueData->tags = CreateHashTable(GLOBALHASHSIZE);
+        sym->sb->nameSpaceValues->valueData->syms = symbols.CreateSymbolTable();
+        sym->sb->nameSpaceValues->valueData->tags = symbols.CreateSymbolTable();
         sym->sb->nameSpaceValues->valueData->origname = sym;
         sym->sb->nameSpaceValues->valueData->name = sym;
         sym->sb->parentNameSpace = globalNameSpace->valueData->name;
@@ -3165,8 +3113,8 @@ LEXLIST* insertNamespace(LEXLIST* lex, enum e_lk linkage, enum e_sc storage_clas
             sym->sb->parentNameSpace = (SYMBOL*)nameSpaceList->data;
         }
         SetLinkerNames(sym, lk_none);
-        insert(sym, globalNameSpace->valueData->syms);
-        insert(sym, globalNameSpace->valueData->tags);
+        globalNameSpace->valueData->syms->Add(sym);
+        globalNameSpace->valueData->tags->Add(sym);
         if (anon || linkage == lk_inline)
         {
             // plop in a using directive for the anonymous namespace we are declaring
@@ -3186,7 +3134,7 @@ LEXLIST* insertNamespace(LEXLIST* lex, enum e_lk linkage, enum e_sc storage_clas
     }
     else
     {
-        sym = (SYMBOL*)(*hr)->p;
+        sym = sp;
         if (sym->sb->storage_class != sc_namespace)
         {
             errorsym(ERR_NOT_A_NAMESPACE, sym);
@@ -3230,7 +3178,7 @@ void unvisitUsingDirectives(NAMESPACEVALUELIST* v)
 }
 static void InsertTag(SYMBOL* sym, enum e_sc storage_class, bool allowDups)
 {
-    HASHTABLE* table;
+    SymbolTable<SYMBOL>* table;
     SYMBOL* ssp = getStructureDeclaration();
     SYMBOL* sp1 = nullptr;
     if (ssp && (storage_class == sc_member || storage_class == sc_mutable || storage_class == sc_type))
@@ -3243,9 +3191,9 @@ static void InsertTag(SYMBOL* sym, enum e_sc storage_class, bool allowDups)
     else
         table = globalNameSpace->valueData->tags;
     if (allowDups)
-        sp1 = search(sym->name, table);
+        sp1 = table->search(sym->name);
     if (!allowDups || !sp1 || (sym != sp1 && sym->sb->mainsym && sym->sb->mainsym != sp1->sb->mainsym))
-        insert(sym, table);
+        table->Add(sym);
 }
 LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc storage_class, bool inTemplate, bool hasAttributes)
 {
@@ -3417,18 +3365,16 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
         if (sp)
         {
             if (sp->sb->mainsym && sp->sb->mainsym == strsym)
-                sp = search(overloadNameTab[CI_CONSTRUCTOR], strsym->tp->syms);
+                sp = strsym->tp->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
             if (sp)
             {
                 if (!templateNestingCount)
                 {
                     if (sp->sb->storage_class == sc_overloads)
                     {
-                        SYMLIST** hr = sp->tp->syms->table;
-                        while (*hr)
+                        for (auto sp : * sp->tp->syms)
                         {
                             SYMBOL *ssp = getStructureDeclaration(), *ssp1;
-                            SYMBOL* sp = (SYMBOL*)(*hr)->p;
                             SYMBOL* sp1 = CopySymbol(sp);
                             sp1->sb->wasUsing = true;
                             ssp1 = sp1->sb->parentClass;
@@ -3439,7 +3385,6 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                             InsertSymbol(sp1, storage_class, sp1->sb->attribs.inheritable.linkage, true);
                             InsertInline(sp1);
                             sp1->sb->parentClass = ssp1;
-                            hr = &(*hr)->next;
                         }
                         if (isTypename)
                             error(ERR_TYPE_NAME_EXPECTED);
@@ -3693,16 +3638,26 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                         if (sym)
                                         {
                                             if (sym->tp->type == bt_aggregate)
-                                                if (basetype(sym->tp)->syms->table[0] && !basetype(sym->tp)->syms->table[0]->next)
-                                                    sym = basetype(sym->tp)->syms->table[0]->p;
+                                                if (basetype(sym->tp)->syms->size() == 1)
+                                                    sym = basetype(sym->tp)->syms->front();
                                             if (isfunction(sym->tp) && isvoid(basetype(sym->tp)->btp))
                                             {
-                                                auto arg = basetype(sym->tp)->syms->table[0];
-                                                if (!arg || arg == (void*)-1 || isvoid(arg->p->tp) ||
-                                                    (isvoidptr(arg->p->tp) && !arg->next))
+                                                if (basetype(sym->tp)->syms->size() == 0)
+                                                {
                                                     basisAttribs.inheritable.cleanup = sym;
+                                                }
+                                                else if (basetype(sym->tp)->syms->size() == 1)
+                                                {
+                                                    auto sp = basetype(sym->tp)->syms->front();
+                                                    if (isvoid(sp->tp) || isvoidptr(sp->tp))
+                                                        basisAttribs.inheritable.cleanup = sym;
+                                                    else
+                                                        error(ERR_INVALID_ATTRIBUTE_CLEANUP);
+                                                }
                                                 else
+                                                {
                                                     error(ERR_INVALID_ATTRIBUTE_CLEANUP);
+                                                }
                                             }
                                             else
                                             {
@@ -4220,15 +4175,12 @@ static bool hasNoBody(STATEMENT* stmt)
 }
 bool isConstexprConstructor(SYMBOL* sym)
 {
-    SYMLIST* hr;
     if (sym->sb->constexpression)
         return true;
     if (!sym->sb->deleted && !sym->sb->defaulted && !hasNoBody(sym->sb->inlineFunc.stmt))
         return false;
-    hr = sym->sb->parentClass->tp->syms->table[0];
-    while (hr)
+    for (auto sp : *sym->sb->parentClass->tp->syms)
     {
-        SYMBOL* sp = hr->p;
         if (ismemberdata(sp) && !sp->sb->init)
         {
             MEMBERINITIALIZERS* memberInit = sym->sb->memberInitializers;
@@ -4241,7 +4193,6 @@ bool isConstexprConstructor(SYMBOL* sym)
             if (!memberInit)
                 return false;
         }
-        hr = hr->next;
     }
     return true;
 }
@@ -4258,42 +4209,39 @@ static bool constArgValid(TYPE* tp)
     if (isstructured(tp))
     {
         SYMBOL *sym = basetype(tp)->sp, *sym1;
-        SYMLIST* hr;
         SYMBOL *cpy, *mv;
         BASECLASS* bc;
         tp = basetype(tp);
         if (sym->sb->trivialCons)
             return true;
         tp = PerformDeferredInitialization(tp, nullptr);
-        sym1 = search(overloadNameTab[CI_DESTRUCTOR], tp->syms);
-        if (sym1 && !((SYMBOL*)sym1->tp->syms->table[0]->p)->sb->defaulted)
+        sym1 = tp->syms->search(overloadNameTab[CI_DESTRUCTOR]);
+        if (sym1 && !((SYMBOL*)sym1->tp->syms->front())->sb->defaulted)
             return false;
-        sym1 = search(overloadNameTab[CI_CONSTRUCTOR], tp->syms);
+        sym1 = tp->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
         if (sym1)
         {
             cpy = getCopyCons(sym, false);
             mv = getCopyCons(sym, true);
-            hr = sym1->tp->syms->table[0];
-            while (hr)
+            bool found = false;
+            for (auto sym2 : *sym1->sb->parentClass->tp->syms)
             {
-                sym1 = hr->p;
-                if (sym1 != cpy && sym1 != mv && isConstexprConstructor(sym1))
+                if (sym2 != cpy && sym2 != mv && isConstexprConstructor(sym2))
+                {
+                    found = true;
                     break;
-                hr = hr->next;
+                }
             }
-            if (!hr)
+            if (!found)
                 return false;
         }
         if (tp->syms)
         {
-            hr = tp->syms->table[0];
-            while (hr)
+            for (auto sp : *tp->syms)
             {
-                sym1 = hr->p;
-                if (sym1->sb->storage_class == sc_member && !isfunction(sym1->tp))
-                    if (!constArgValid(sym1->tp))
+                if (sp->sb->storage_class == sc_member && !isfunction(sp->tp))
+                    if (!constArgValid(sp->tp))
                         return false;
-                hr = hr->next;
             }
         }
         bc = sym->sb->baseClasses;
@@ -4309,18 +4257,14 @@ static bool constArgValid(TYPE* tp)
 }
 bool MatchesConstFunction(SYMBOL* sym)
 {
-    SYMLIST* hr;
     if (sym->sb->storage_class == sc_virtual)
         return false;
     if (!constArgValid(basetype(sym->tp)->btp))
         return false;
-    hr = basetype(sym->tp)->syms->table[0];
-    while (hr)
+    for (auto sym : *basetype(sym->tp)->syms)
     {
-        SYMBOL* sym = hr->p;
         if (sym->tp->type != bt_void && !constArgValid(sym->tp))
             return false;
-        hr = hr->next;
     }
     return true;
 }
@@ -4372,10 +4316,14 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
         }
         if ((*tn) && (*tn)->type == bt_aggregate && exp->type == en_func)
         {
-            SYMLIST* hr = (*tn)->syms->table[0];
-            if (hr->next)
-                errorsym2(ERR_AMBIGUITY_BETWEEN, hr->p, hr->next->p);
-            exp->v.func->sp = hr->p;
+            if ((*tn)->syms->size() > 1)
+            {
+                auto it = (*tn)->syms->begin();
+                auto it1 = it;
+                ++it1;
+                errorsym2(ERR_AMBIGUITY_BETWEEN, *it, *it1);
+            }
+            exp->v.func->sp = (*tn)->syms->front();
             if (hasAmpersand)
             {
                 if (ismember(exp->v.func->sp))
@@ -4488,7 +4436,7 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
         auto atexitfunc = namespacesearch("atexit", globalNameSpace, false, false);
         if (atexitfunc)
         {
-            atexitfunc = atexitfunc->tp->syms->table[0]->p;
+            atexitfunc = atexitfunc->tp->syms->front();
             EXPRESSION** last = &exp;
             while (*last && (*last)->type == en_void)
                 last = &(*last)->right;

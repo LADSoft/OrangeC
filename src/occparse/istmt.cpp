@@ -40,7 +40,6 @@
 #include "iblock.h"
 #include "initbackend.h"
 #include "declcpp.h"
-#include "symtab.h"
 #include "ildata.h"
 #include "OptUtils.h"
 #include "iblock.h"
@@ -57,6 +56,7 @@
 #include "beinterf.h"
 #include "inasm.h"
 #include "optmodules.h"
+#include "symtab.h"
 
 Optimizer::SimpleSymbol* currentFunction;
 
@@ -142,7 +142,7 @@ Optimizer::IMODE* set_symbol(const char* name, int isproc)
         sym->name = sym->sb->decoratedName = litlate(name);
         sym->tp = MakeType(isproc ? bt_func : bt_int);
         sym->sb->safefunc = true;
-        insert(sym, globalNameSpace->valueData->syms);
+        globalNameSpace->valueData->syms->Add(sym);
         auto osym = Optimizer::SymbolManager::Get(sym);
         osym->genreffed = true;
         Optimizer::externalSet.insert(osym);
@@ -151,7 +151,7 @@ Optimizer::IMODE* set_symbol(const char* name, int isproc)
     else
     {
         if (sym->sb->storage_class == sc_overloads)
-            sym = (SYMBOL*)(sym->tp->syms->table[0]->p);
+            sym = sym->tp->syms->front();
     }
     result = Allocate<Optimizer::IMODE>();
     result->offset = Allocate<Optimizer::SimpleExpression>();
@@ -469,8 +469,9 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
                 sym->name = "__retblock";
                 sym->sb->retblk = true;
                 sym->sb->allocate = false;
-                if ((funcsp->sb->attribs.inheritable.linkage == lk_pascal) && basetype(funcsp->tp)->syms->table[0] &&
-                    ((SYMBOL*)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
+                // instead of 'front()' the next line did table[0] without the ->p
+                if ((funcsp->sb->attribs.inheritable.linkage == lk_pascal) && basetype(funcsp->tp)->syms->size() &&
+                    ((SYMBOL*)basetype(funcsp->tp)->syms->front())->tp->type != bt_void)
                 {
                     sym->sb->offset = funcsp->sb->paramsize;
                 }
@@ -851,7 +852,6 @@ static Optimizer::IMODE* GetBucket(Optimizer::IMODE* mem)
 /*-------------------------------------------------------------------------*/
 static void InsertParameterThunks(SYMBOL* funcsp, Optimizer::BLOCK* b)
 {
-    SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
     Optimizer::QUAD *old, *oldit;
     Optimizer::BLOCK* ocb = Optimizer::currentBlock;
     old = b->head->fwd;
@@ -862,18 +862,15 @@ static void InsertParameterThunks(SYMBOL* funcsp, Optimizer::BLOCK* b)
     Optimizer::intermed_tail = old->back;
     Optimizer::intermed_tail->fwd = nullptr;
     Optimizer::currentBlock = b;
-    while (hr)
+    for (auto sym : *basetype(funcsp->tp)->syms)
     {
-        SYMBOL* sym = hr->p;
         Optimizer::SimpleSymbol* simpleSym = Optimizer::SymbolManager::Get(sym);
         if (sym->tp->type == bt_void || sym->tp->type == bt_ellipse || isstructured(sym->tp))
         {
-            hr = hr->next;
             continue;
         }
         if (!simpleSym->imvalue || simpleSym->imaddress)
         {
-            hr = hr->next;
             continue;
         }
         if (funcsp->sb->oldstyle && sym->tp->type == bt_float)
@@ -891,7 +888,6 @@ static void InsertParameterThunks(SYMBOL* funcsp, Optimizer::BLOCK* b)
                 Optimizer::gen_icode(Optimizer::i_assn, simpleSym->imvalue, fp, 0);
             }
         }
-        hr = hr->next;
     }
     Optimizer::currentBlock = ocb;
     if (old->back == b->tail)
@@ -905,14 +901,14 @@ static void InsertParameterThunks(SYMBOL* funcsp, Optimizer::BLOCK* b)
 void CopyVariables(SYMBOL* funcsp)
 {
     Optimizer::functionVariables.clear();
-    for (HASHTABLE* syms = funcsp->sb->inlineFunc.syms; syms; syms = syms->next)
+    for (SymbolTable<SYMBOL>* syms = funcsp->sb->inlineFunc.syms; syms; syms = syms->Next())
     {
-        for (SYMLIST* hr = syms->table[0]; hr; hr = hr->next)
+        for (auto sym1 : *syms)
         {
-            if (hr->p->sb->storage_class == sc_auto || hr->p->sb->storage_class == sc_parameter)
+            if (sym1->sb->storage_class == sc_auto || sym1->sb->storage_class == sc_parameter)
             {
-                Optimizer::SimpleSymbol* sym = Optimizer::SymbolManager::Get(hr->p);
-                sym->i = syms->blockLevel;
+                Optimizer::SimpleSymbol* sym = Optimizer::SymbolManager::Get(sym1);
+                sym->i = syms->Block();
                 Optimizer::functionVariables.push_back(sym);
             }
         }
@@ -952,7 +948,6 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     Optimizer::SimpleSymbol* oldCurrentFunction;
     EXPRESSION* funcexp = varNode(en_global, funcsp);
     SYMBOL* tmpl = funcsp;
-    SYMLIST* hr;
     if (TotalErrors())
         return;
 
@@ -1024,18 +1019,18 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     Optimizer::gen_icode(Optimizer::i_prologue, 0, 0, 0);
     if (Optimizer::cparams.prm_debug)
     {
-        if (basetype(funcsp->tp)->syms->table[0] && ((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p)->sb->thisPtr)
+        if (basetype(funcsp->tp)->syms->size() && ((SYMBOL*)basetype(funcsp->tp)->syms->front())->sb->thisPtr)
         {
-            EXPRESSION* exp = varNode(en_auto, ((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p));
+            EXPRESSION* exp = varNode(en_auto, ((SYMBOL*)basetype(funcsp->tp)->syms->front()));
             exp->v.sp->tp->used = true;
             gen_varstart(exp);
         }
     }
     else
     {
-        if (basetype(funcsp->tp)->syms->table[0] && ((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p)->sb->thisPtr)
+        if (basetype(funcsp->tp)->syms->size() && ((SYMBOL*)basetype(funcsp->tp)->syms->front())->sb->thisPtr)
         {
-            baseThisPtr = Optimizer::SymbolManager::Get((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);
+            baseThisPtr = Optimizer::SymbolManager::Get((SYMBOL*)basetype(funcsp->tp)->syms->front());
         }
     }
     Optimizer::gen_label(startlab);
@@ -1090,10 +1085,8 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
         maxTemps = Optimizer::tempCount;
 
     // this is explicitly to clean up the this pointer
-    hr = basetype(funcsp->tp)->syms->table[0];
-    while (hr)
+    for (auto sym : *basetype(funcsp->tp)->syms)
     {
-        SYMBOL* sym = hr->p;
         if (sym->sb->storage_class == sc_parameter)
         {
             Optimizer::SimpleSymbol* simpleSym = Optimizer::SymbolManager::Get(sym);
@@ -1101,7 +1094,6 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
             simpleSym->imvalue = nullptr;
             simpleSym->imaddress = nullptr;
         }
-        hr = hr->next;
     }
     baseThisPtr = nullptr;
     Optimizer::nextLabel += 2;  // temporary

@@ -1,6 +1,7 @@
 # OrangeC Compiler And Tool Chain Release Notes
 
-## Version 6.0.60:
+## Version 6.0.61:
+
 * occ: various template handling fixes
 * occ: various constexpr fixes
 * occ: various noexcept fixes

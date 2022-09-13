@@ -218,7 +218,7 @@ Boolean TInputLine::checkValid(Boolean noAutoFill)
         if (!validator->isValidInput(newData, noAutoFill))
             {
                 restoreState();
-                delete newData;
+                delete []newData;
                 return False;
             }
         else
@@ -228,7 +228,7 @@ Boolean TInputLine::checkValid(Boolean noAutoFill)
             strcpy(data,newData);
             if ((curPos >= oldLen) && (strlen(data) > oldLen))
                 curPos = strlen(data);
-            delete newData;
+            delete []newData;
             return True;
             }
         }

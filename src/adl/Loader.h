@@ -103,7 +103,7 @@ class RegClass
     ~RegClass()
     {
         if (regs)
-            delete regs;
+            delete []regs;
     }
     int id;
     BYTE* regs;

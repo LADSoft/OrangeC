@@ -170,7 +170,7 @@ long double __xstrtod(FILE* fil, int count, int* ch, int* chars, long double max
             return 0;
         }
         nextchar;
-        if (*ch == 's' && *ch == 'S')
+        if (*ch == 's' || *ch == 'S')
         {
             nextchar;
             signalling_nan = 1;

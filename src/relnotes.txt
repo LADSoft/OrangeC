@@ -1,6 +1,6 @@
 Release notes:
 
-version 6.0.60: 09/03/2022
+version 6.0.61: 09/08/2022
     occ: various template handling fixes
     occ: various constexpr fixes
     occ: various noexcept fixes

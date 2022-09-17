@@ -43,7 +43,7 @@ typedef struct _dyninit_
 {
     struct _dyninit_* next;
     SYMBOL* sp;
-    INITIALIZER* init;
+    std::list<INITIALIZER*>* init;
 } DYNAMIC_INITIALIZER;
 
 extern bool initializingGlobalVar;
@@ -55,23 +55,23 @@ EXPRESSION* ConvertToMSILString(EXPRESSION* val);
 int genstring(STRING* str);
 void dumpLits(void);
 void dumpStartups(void);
-void insertDynamicInitializer(SYMBOL* sym, INITIALIZER* init);
-void insertDynamicDestructor(SYMBOL* sym, INITIALIZER* init);
+void insertDynamicInitializer(SYMBOL* sym, std::list<INITIALIZER*>* init);
+void insertDynamicDestructor(SYMBOL* sym, std::list<INITIALIZER*>* init);
 int dumpMemberPtr(SYMBOL* sym, TYPE* membertp, bool make_label);
 int dumpInit(SYMBOL* sym, INITIALIZER* init);
 bool IsConstWithArr(TYPE* tp);
 void dumpInitGroup(SYMBOL* sym, TYPE* tp);
 void dumpInitializers(void);
 void insertInitSym(SYMBOL* sym);
-INITIALIZER* initInsert(INITIALIZER** pos, TYPE* tp, EXPRESSION* exp, int offset, bool noassign);
+INITIALIZER* initInsert(std::list<INITIALIZER*>** pos, TYPE* tp, EXPRESSION* exp, int offset, bool noassign);
 enum e_node referenceTypeError(TYPE* tp, EXPRESSION* exp);
 EXPRESSION* createTemporary(TYPE* tp, EXPRESSION* val);
 EXPRESSION* msilCreateTemporary(TYPE* tp, EXPRESSION* val);
 EXPRESSION* getThisNode(SYMBOL* sym);
-LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALIZER** init, INITIALIZER** dest, TYPE* itype,
+LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, std::list<INITIALIZER*>** init, std::list<INITIALIZER*>** dest, TYPE* itype,
                   SYMBOL* sym, bool arrayMember, int flags);
 bool InitVariableMatches(SYMBOL* left, SYMBOL* right);
-void RecalculateVariableTemplateInitializers(INITIALIZER** in, INITIALIZER*** out, TYPE* tp, int offset);
+void RecalculateVariableTemplateInitializers(std::list<INITIALIZER*>::iterator& ilbegin, std::list<INITIALIZER*>::iterator& ilend, std::list<INITIALIZER*>** out, TYPE* tp, int offset);
 LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, bool inTemplate,
                     int flags);
 }  // namespace Parser

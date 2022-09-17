@@ -548,7 +548,7 @@ void getcls(char* buf, SYMBOL* clssym)
     }
     strcat(buf, clssym->name);
 }
-void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char* name)
+void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name)
 {
     char buf[4096];
     char unopped[10000];
@@ -590,14 +590,14 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char
     }
     else if (nsv)
     {
-        getns(buf, nsv->valueData->name);
+        getns(buf, nsv->name);
     }
     strcat(buf, "'");
     if (strSym && !strSym->tp->syms)
         strcat(buf, " because the type is not defined");
     printerr(err, nullptr, 0, buf);
 }
-void errorNotMember(SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char* name)
+void errorNotMember(SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name)
 {
     errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, name);
 }
@@ -837,9 +837,11 @@ void diag(const char* fmt, ...)
 }
 namespace Parser
 {
-static bool hasGoto(STATEMENT* stmt)
+static bool hasGoto(std::list<STATEMENT*>* statements)
 {
-    while (stmt)
+    if (!statements)
+        return false;
+    for (auto stmt : *statements)
     {
         switch (stmt->type)
         {
@@ -876,13 +878,14 @@ static bool hasGoto(STATEMENT* stmt)
                 diag("unknown stmt type in hasgoto");
                 break;
         }
-        stmt = stmt->next;
     }
     return false;
 }
-static bool hasDeclarations(STATEMENT* stmt)
+static bool hasDeclarations(std::list<STATEMENT*>* statements)
 {
-    while (stmt)
+    if (!statements)
+        return false;
+    for (auto stmt : *statements)
     {
         switch (stmt->type)
         {
@@ -920,13 +923,14 @@ static bool hasDeclarations(STATEMENT* stmt)
                 diag("unknown stmt type in hasDeclarations");
                 break;
         }
-        stmt = stmt->next;
     }
     return false;
 }
-static void labelIndexes(STATEMENT* stmt, int* min, int* max)
+static void labelIndexes(std::list<STATEMENT*>* statements, int* min, int* max)
 {
-    while (stmt)
+    if (!statements)
+        return;
+    for (auto stmt : *statements)
     {
         switch (stmt->type)
         {
@@ -966,7 +970,6 @@ static void labelIndexes(STATEMENT* stmt, int* min, int* max)
                 diag("unknown stmt type in hasDeclarations");
                 break;
         }
-        stmt = stmt->next;
     }
 }
 static VLASHIM* mkshim(_vlaTypes type, int level, int label, STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, int blocknum,
@@ -975,8 +978,7 @@ static VLASHIM* mkshim(_vlaTypes type, int level, int label, STATEMENT* stmt, VL
     VLASHIM* rv = Allocate<VLASHIM>();
     if (last && last->type != v_return && last->type != v_goto)
     {
-        rv->backs = Allocate<Optimizer::LIST>();
-        rv->backs->data = last;
+        rv->backs.push_front(last);
     }
     rv->type = type;
     rv->level = level;
@@ -990,28 +992,28 @@ static VLASHIM* mkshim(_vlaTypes type, int level, int label, STATEMENT* stmt, VL
     return rv;
 }
 /* thisll be sluggish if there are lots of gotos & labels... */
-static VLASHIM* getVLAList(STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, VLASHIM** labels, int minLabel, int* blocknum,
+static std::list<VLASHIM*> getVLAList(std::list<STATEMENT*>* statements, VLASHIM* last, VLASHIM* parent, VLASHIM** labels, int minLabel, int* blocknum,
                            int level, bool* branched)
 {
+    std::list<VLASHIM*> rv;
+    if (!statements)
+        return rv;
     int curBlockNum = (*blocknum)++;
     int curBlockIndex = 0;
-    VLASHIM *rv = nullptr, **cur = &rv, *nextParent = nullptr;
-    while (stmt)
+    VLASHIM *nextParent = nullptr;
+    for (auto stmt : *statements)
     {
         switch (stmt->type)
         {
             case st_switch: {
                 bool first = true;
-                CASEDATA* cases = stmt->cases;
-                while (cases)
+                for (auto cases : *stmt->cases)
                 {
-                    *cur = mkshim(v_branch, level, cases->label, stmt, last, parent, curBlockNum, curBlockIndex++);
-                    last = *cur;
+                    rv.push_back(mkshim(v_branch, level, cases->label, stmt, last, parent, curBlockNum, curBlockIndex++));
+                    last = rv.back();
                     if (first)
                         nextParent = last;
                     first = false;
-                    cur = &(*cur)->next;
-                    cases = cases->next;
                 }
             }
                 // fallthrough
@@ -1022,28 +1024,25 @@ static VLASHIM* getVLAList(STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, VLAS
             case st___catch:
             case st___finally:
             case st___fault:
-                if (stmt->lower && stmt->lower->type == st_goto)
+                if (stmt->lower && stmt->lower->front()->type == st_goto)
                 {
                     // unwrap the goto for purposes of these diagnostics
-                    *cur = mkshim(v_goto, level, stmt->lower->label, stmt->lower, last, parent, curBlockNum, curBlockIndex++);
-                    last = *cur;
-                    last->checkme = stmt->lower->explicitGoto;
-                    cur = &(*cur)->next;
+                    rv.push_back(mkshim(v_goto, level, stmt->lower->front()->label, stmt->lower->front(), last, parent, curBlockNum, curBlockIndex++));
+                    last = rv.back();
+                    last->checkme = stmt->lower->front()->explicitGoto;
                     *branched = true;
                 }
                 else
                 {
-                    *cur = mkshim(v_blockstart, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
-                    last = *cur;
-                    cur = &(*cur)->next;
+                    rv.push_back(mkshim(v_blockstart, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++));
+                    last = rv.back();
                     if (!nextParent)
                         nextParent = last;
                     last->lower = getVLAList(stmt->lower, last, nextParent, labels, minLabel, blocknum, level + 1, branched);
                     if (stmt->blockTail)
                     {
-                        *cur = mkshim(v_blockend, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
-                        last = *cur;
-                        cur = &(*cur)->next;
+                        rv.push_back(mkshim(v_blockend, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++));
+                        last = rv.back();
                     }
                 }
                 break;
@@ -1053,31 +1052,27 @@ static VLASHIM* getVLAList(STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, VLAS
                 {
                     if (stmt->hasvla)
                     {
-                        *cur = mkshim(v_vla, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
-                        last = *cur;
-                        cur = &(*cur)->next;
+                        rv.push_back(mkshim(v_vla, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++));
+                        last = rv.back();
                     }
                     else if (stmt->hasdeclare)
                     {
-                        *cur = mkshim(v_declare, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
-                        last = *cur;
-                        cur = &(*cur)->next;
+                        rv.push_back(mkshim(v_declare, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++));
+                        last = rv.back();
                     }
                     nextParent = last;
                 }
                 break;
             case st_return:
                 *branched = true;
-                *cur = mkshim(v_return, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
-                last = *cur;
-                cur = &(*cur)->next;
+                rv.push_back(mkshim(v_return, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++));
+                last = rv.back();
                 break;
             case st_select:
             case st_notselect:
                 *branched = true;
-                *cur = mkshim(v_branch, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
-                last = *cur;
-                cur = &(*cur)->next;
+                rv.push_back(mkshim(v_branch, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++));
+                last = rv.back();
                 nextParent = last;
                 break;
             case st_line:
@@ -1091,28 +1086,25 @@ static VLASHIM* getVLAList(STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, VLAS
                 break;
             case st_goto:
                 *branched = true;
-                *cur = mkshim(v_goto, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
-                last = *cur;
+                rv.push_back(mkshim(v_goto, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++));
+                last = rv.back();
                 last->checkme = stmt->explicitGoto;
-                cur = &(*cur)->next;
                 break;
             case st_label:
-                *cur = mkshim(v_label, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
-                last = *cur;
-                cur = &(*cur)->next;
+                rv.push_back(mkshim(v_label, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++));
+                last = rv.back();
                 labels[stmt->label - minLabel] = last;
                 break;
             default:
                 diag("unknown stmt type in checkvla");
                 break;
         }
-        stmt = stmt->next;
     }
     return rv;
 }
-static void fillPrevious(VLASHIM* shim, VLASHIM** labels, int minLabel)
+static void fillPrevious(std::list<VLASHIM*>& vlashims, VLASHIM** labels, int minLabel)
 {
-    while (shim)
+    for (auto shim : vlashims)
     {
         VLASHIM* selected;
         Optimizer::LIST* prev;
@@ -1132,10 +1124,7 @@ static void fillPrevious(VLASHIM* shim, VLASHIM** labels, int minLabel)
                 selected = labels[shim->label - minLabel];
                 if (selected)
                 {
-                    prev = Allocate<Optimizer::LIST>();
-                    prev->data = shim;
-                    prev->next = selected->backs;
-                    selected->backs = prev;
+                    selected->backs.push_front(shim);
                     shim->fwd = selected;
                 }
                 break;
@@ -1143,7 +1132,6 @@ static void fillPrevious(VLASHIM* shim, VLASHIM** labels, int minLabel)
                 diag("unknown shim type in fillPrevious");
                 break;
         }
-        shim = shim->next;
     }
 }
 static void vlaError(VLASHIM* gotoShim, VLASHIM* errShim)
@@ -1175,37 +1163,27 @@ static bool scanGoto(VLASHIM* shim, VLASHIM* gotoshim, VLASHIM* matchshim, int* 
             if (shim->type == v_vla)
                 vlaError(gotoshim, shim);
         }
-        Optimizer::LIST* lst = shim->backs;
-        while (lst)
-        {
-            if (lst->data == matchshim)
+        for (auto lst : shim->backs)
+            if (lst == matchshim)
                 return true;
-            lst = lst->next;
-        }
-        lst = shim->backs;
-        while (lst)
-        {
-            VLASHIM* s = (VLASHIM*)lst->data;
+        for (auto s : shim->backs)
             if (!s->checkme && scanGoto(s, gotoshim, matchshim, currentLevel))
                 return true;
-            lst = lst->next;
-        }
     }
     return false;
 }
-void unmarkGotos(VLASHIM* shim)
+void unmarkGotos(std::list<VLASHIM*>& vlashims)
 {
-    while (shim)
+    for (auto shim : vlashims)
     {
         shim->mark = false;
         if (shim->type == v_blockstart)
             unmarkGotos(shim->lower);
-        shim = shim->next;
     }
 }
-static void validateGotos(VLASHIM* shim, VLASHIM* root)
+static void validateGotos(std::list<VLASHIM*>& vlashims, std::list<VLASHIM*>& root)
 {
-    while (shim)
+    for (auto shim : vlashims)
     {
         VLASHIM* selected;
         Optimizer::LIST* prev;
@@ -1258,27 +1236,26 @@ static void validateGotos(VLASHIM* shim, VLASHIM* root)
                 diag("unknown shim type in validateGotos");
                 break;
         }
-        shim = shim->next;
     }
 }
-void checkGotoPastVLA(STATEMENT* stmt, bool first)
+void checkGotoPastVLA(std::list<STATEMENT*>*statements, bool first)
 {
-    if (hasGoto(stmt) && hasDeclarations(stmt))
+    if (hasGoto(statements) && hasDeclarations(statements))
     {
         int min = INT_MAX, max = INT_MIN;
-        labelIndexes(stmt, &min, &max);
+        labelIndexes(statements, &min, &max);
         if (min > max)
             return;
         VLASHIM** labels = Allocate<VLASHIM*>(max + 1 - min);
 
         int blockNum = 0;
         bool branched = false;
-        VLASHIM* list = getVLAList(stmt, nullptr, nullptr, labels, min, &blockNum, 0, &branched);
+        std::list<VLASHIM*> list = getVLAList(statements, nullptr, nullptr, labels, min, &blockNum, 0, &branched);
         fillPrevious(list, labels, min);
         validateGotos(list, list);
     }
 }
-void checkUnlabeledReferences(BLOCKDATA* block)
+void checkUnlabeledReferences(std::list<BLOCKDATA*>& block)
 {
     int i;
     for (auto sp : *labelSyms)
@@ -1318,9 +1295,9 @@ void checkUnused(SymbolTable<SYMBOL>* syms)
         }
     }
 }
-void findUnusedStatics(NAMESPACEVALUELIST* nameSpace)
+void findUnusedStatics(std::list<NAMESPACEVALUEDATA*>* nameSpace)
 {
-    for (auto sp : *nameSpace->valueData->syms)
+    for (auto sp : *nameSpace->front()->syms)
     {
         if (sp)
         {
@@ -1628,11 +1605,12 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case en_func:
             fp = node->v.func;
             {
-                INITLIST* args = fp->arguments;
-                while (args)
+                if (fp->arguments)
                 {
-                    assignmentUsages(args->exp, false);
-                    args = args->next;
+                    for (auto args : *fp->arguments)
+                    {
+                        assignmentUsages(args->exp, false);
+                    }
                 }
                 if (Optimizer::cparams.prm_cplusplus && fp->thisptr && !fp->fcall)
                 {
@@ -1850,14 +1828,9 @@ static int checkDefaultExpression(EXPRESSION* node)
             break;
         case en_func:
             fp = node->v.func;
-            {
-                INITLIST* args = fp->arguments;
-                while (args)
-                {
+            if (fp->arguments)
+                for (auto args : *fp->arguments)
                     rv |= checkDefaultExpression(args->exp);
-                    args = args->next;
-                }
-            }
             if (fp->sp->sb->parentClass && fp->sp->sb->parentClass->sb->islambda)
                 rv |= 2;
             break;
@@ -1876,13 +1849,10 @@ static int checkDefaultExpression(EXPRESSION* node)
 }
 void checkDefaultArguments(SYMBOL* spi)
 {
-    INITIALIZER* p = spi->sb->init;
     int r = 0;
-    while (p)
-    {
-        r |= checkDefaultExpression(p->exp);
-        p = p->next;
-    }
+    if (spi->sb->init)
+        for (auto p : *spi->sb->init)
+            r |= checkDefaultExpression(p->exp);
     if (r & 1)
     {
         error(ERR_NO_LOCAL_VAR_OR_PARAMETER_DEFAULT_ARGUMENT);

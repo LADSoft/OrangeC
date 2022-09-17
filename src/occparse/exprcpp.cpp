@@ -49,7 +49,7 @@
 #include "exprcpp.h"
 #include "constexpr.h"
 #include "symtab.h"
-
+#include "ListFactory.h"
 namespace Parser
 {
 
@@ -98,70 +98,90 @@ EXPRESSION* baseClassOffset(SYMBOL* base, SYMBOL* derived, EXPRESSION* en)
     EXPRESSION* rv = en;
     if (base != derived)
     {
-        VBASEENTRY* vbase = derived->sb->vbaseEntries;
-        while (vbase)
-        {
-            // this will get all virtual bases since they are all listed on each deriviation
-            if (vbase->alloc && vbase->cls == base)
+        bool found = false;
+        if (derived->sb->vbaseEntries)
+        { 
+            for (auto vbase : *derived->sb->vbaseEntries)
             {
-                EXPRESSION* ec = intNode(en_c_i, vbase->pointerOffset);
-                rv = exprNode(en_add, en, ec);
-                deref(&stdpointer, &rv);
-                break;
-            }
-            vbase = vbase->next;
-        }
-        if (!vbase)
-        {
-            BASECLASS* lst = derived->sb->baseClasses;
-            if (lst)
-            {
-                BASECLASS* stack[200];
-                int top = 0, i;
-                stack[top++] = lst;
-                while (lst)
+                // this will get all virtual bases since they are all listed on each deriviation
+                if (vbase->alloc && vbase->cls == base)
                 {
-                    if (lst->cls == base)
-                        break;
-                    if (lst->cls->sb->baseClasses)
+                    EXPRESSION* ec = intNode(en_c_i, vbase->pointerOffset);
+                    rv = exprNode(en_add, en, ec);
+                    deref(&stdpointer, &rv);
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (!found && derived->sb->baseClasses)
+        {
+            auto it = derived->sb->baseClasses->begin();
+            auto ite = derived->sb->baseClasses->end();
+            std::deque<std::pair<std::list<BASECLASS*>::iterator, std::list<BASECLASS*>::iterator>> stk;
+            stk.push_back(std::pair<std::list<BASECLASS*>::iterator, std::list<BASECLASS*>::iterator>(it, ite));
+            while (it != ite)
+            {
+                if ((*it)->cls == base)
+                    break;
+                if ((*it)->cls->sb->baseClasses)
+                {
+                    it = (*it)->cls->sb->baseClasses->begin();
+                    ite = (*it)->cls->sb->baseClasses->end();
+                    stk.push_back(std::pair<std::list<BASECLASS*>::iterator, std::list<BASECLASS*>::iterator>(it, ite));
+                }
+                else if (++it != ite)
+                {
+                    stk.back() = std::pair<std::list<BASECLASS*>::iterator, std::list<BASECLASS*>::iterator>(it, ite);
+                }
+                else if (stk.size())
+                {
+                    while (stk.size())
                     {
-                        lst = lst->cls->sb->baseClasses;
-                        stack[top++] = lst;
-                    }
-                    else if (lst->next)
-                    {
-                        lst = lst->next;
-                        stack[top - 1] = lst;
-                    }
-                    else if (top)
-                    {
-                        do
-                        {
-                            lst = stack[--top]->next;
-                        } while (top && !lst);
-                        stack[top++] = lst;
+                        auto&& a = stk.back();
+                        auto itx = a.first;
+                        ++itx;
+                        if (itx != a.second)
+                            break;
+                        stk.pop_back();
                     }
                 }
-                if (top && stack[0])
+            }
+            if (stk.size())
+            {
+                std::list<VBASEENTRY*>::iterator itl, itle = itl;
+                if (derived->sb->vbaseEntries)
                 {
-                    for (i = 0; i < top; i++)
+                    itl = derived->sb->vbaseEntries->begin();
+                    itle = derived->sb->vbaseEntries->end();
+                }
+                for (auto it = stk.begin(); it != stk.end(); ++it)
+                {
+                    auto entry = *(*it).first;
+                    if (entry->isvirtual)
                     {
-                        if (stack[i]->isvirtual)
-                        {
-                            int offset;
-                            VBASEENTRY* cur = i ? stack[i - 1]->cls->sb->vbaseEntries : derived->sb->vbaseEntries;
-                            while (cur && cur->cls != stack[i]->cls)
-                                cur = cur->next;
-                            offset = cur->pointerOffset;
-                            rv = exprNode(en_add, rv, intNode(en_c_i, offset));
-                            if (stack[i]->isvirtual)
-                                deref(&stdpointer, &rv);
-                        }
-                        else
-                        {
-                            int offset = stack[i]->offset;
-                            rv = exprNode(en_add, rv, intNode(en_c_i, offset));
-                        }
+                        int offset;
+                        std::list<VBASEENTRY*>::iterator itx;
+                        for (itx = itl; itx != itl && (*itx)->cls != entry->cls; ++itx);
+                        offset = (*itx)->pointerOffset;
+                        rv = exprNode(en_add, rv, intNode(en_c_i, offset));
+                        if (entry->isvirtual)
+                            deref(&stdpointer, &rv);
+                    }
+                    else
+                    {
+                        int offset = entry->offset;
+                        rv = exprNode(en_add, rv, intNode(en_c_i, offset));
+                    }
+                    if (entry->cls->sb->vbaseEntries)
+                    {
+                        itl = entry->cls->sb->vbaseEntries->begin();
+                        itle = entry->cls->sb->vbaseEntries->end();
+                    }
+                    else
+                    {
+                        itl = std::list<VBASEENTRY*>::iterator();
+                        itle = itl;
                     }
                 }
             }
@@ -212,9 +232,9 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
             en = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->front());  // this ptr
         else
             en = intNode(en_thisshim, 0);
-        if (lambdas && !memberSym->sb->parentClass->sb->islambda)
+        if (lambdas.size() && !memberSym->sb->parentClass->sb->islambda)
         {
-            if (!lambdas->lthis || !lambdas->captured)
+            if (!lambdas.front()->lthis || !lambdas.front()->captured)
             {
                 en = intNode(en_c_i, 0);
                 if (toError)
@@ -222,8 +242,8 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
             }
             else
             {
-                SYMBOL* sym = lambdas->cls->tp->syms->search("$this");
-                enclosing = basetype(lambdas->lthis->tp)->btp->sp;
+                SYMBOL* sym = lambdas.front()->cls->tp->syms->search("$this");
+                enclosing = basetype(lambdas.front()->lthis->tp)->btp->sp;
                 if (sym)
                 {
                     deref(&stdpointer, &en);
@@ -415,7 +435,7 @@ bool castToPointer(TYPE** tp, EXPRESSION** exp, enum e_kw kw, TYPE* other)
                     retsp->sb->allocate = true;
                     retsp->sb->attribs.inheritable.used = retsp->sb->assigned = true;
                     SetLinkerNames(retsp, lk_cdecl);
-                    localNameSpace->valueData->syms->Add(retsp);
+                    localNameSpace->front()->syms->Add(retsp);
                     params->returnSP = retsp;
                     params->returnEXP = varNode(en_auto, retsp);
                 }
@@ -531,7 +551,6 @@ EXPRESSION* substitute_params_for_constexpr(EXPRESSION* exp, FUNCTIONCALL* funcp
 {
     auto it = basetype(funcparams->sp->tp)->syms->begin();
     auto itend = basetype(funcparams->sp->tp)->syms->end();
-    INITLIST* args = funcparams->arguments;
     SUBSTITUTIONLIST *list = nullptr, **plist = &list;
     if (!funcparams->sp->sb->castoperator)
     {
@@ -540,19 +559,24 @@ EXPRESSION* substitute_params_for_constexpr(EXPRESSION* exp, FUNCTIONCALL* funcp
         // because we already did function matching to get the constructor,
         // the worst that can happen here is that the specified arg list is shorter
         // than the actual parameters list
-        while (it != itend && args)
+        if (funcparams->arguments)
         {
-            *plist = Allocate<SUBSTITUTIONLIST>();
-            (*plist)->exp = args->exp;
-            (*plist)->sp = *it;
-            plist = &(*plist)->next;
-            ++it;
-            args = args->next;
+            auto ita = funcparams->arguments->begin();
+            auto itae = funcparams->arguments->end();
+            while (it != itend && ita != itae)
+            {
+                *plist = Allocate<SUBSTITUTIONLIST>();
+                (*plist)->exp = (*ita)->exp;
+                (*plist)->sp = *it;
+                plist = &(*plist)->next;
+                ++it;
+                ++ita;
+            }
         }
         while (it != itend)
         {
             *plist = Allocate<SUBSTITUTIONLIST>();
-            (*plist)->exp = (*it)->sb->init->exp;
+            (*plist)->exp = (*it)->sb->init->front()->exp;
             (*plist)->sp = (*it);
             plist = &(*plist)->next;
             ++it;
@@ -560,25 +584,28 @@ EXPRESSION* substitute_params_for_constexpr(EXPRESSION* exp, FUNCTIONCALL* funcp
     }
     return substitute_vars(exp, list, syms);
 }
-STATEMENT* do_substitute_for_function(STATEMENT* block, FUNCTIONCALL* funcparams, SymbolTable<SYMBOL>* syms)
+std::list<STATEMENT*>* do_substitute_for_function(std::list<STATEMENT*>* blocks, FUNCTIONCALL* funcparams, SymbolTable<SYMBOL>* syms)
 {
-    STATEMENT *rv = nullptr, **prv = &rv;
-    while (block != nullptr)
+    if (blocks)
     {
-        *prv = Allocate<STATEMENT>();
-        **prv = *block;
-        if (block->select)
-            (*prv)->select = substitute_params_for_constexpr(block->select, funcparams, syms);
-        if (block->lower)
-            (*prv)->lower = do_substitute_for_function(block->lower, funcparams, syms);
-        prv = &(*prv)->next;
-        block = block->next;
+        std::list<STATEMENT*>* rv = stmtListFactory.CreateList();
+        for (auto block : *blocks)
+        {
+            auto stmt = Allocate<STATEMENT>();
+            *stmt = *block;
+            rv->push_back(stmt);
+            if (stmt->select)
+                stmt->select = substitute_params_for_constexpr(block->select, funcparams, syms);
+            if (stmt->lower)
+                stmt->lower = do_substitute_for_function(block->lower, funcparams, syms);
+        }
+        return rv;
     }
-    return rv;
+    return nullptr;
 }
 EXPRESSION* substitute_params_for_function(FUNCTIONCALL* funcparams, SymbolTable<SYMBOL>* syms)
 {
-    STATEMENT* st = do_substitute_for_function(funcparams->sp->sb->inlineFunc.stmt, funcparams, syms);
+    auto st = do_substitute_for_function(funcparams->sp->sb->inlineFunc.stmt, funcparams, syms);
     EXPRESSION* exp = exprNode(en_stmt, 0, 0);
     exp->v.stmt = st;
     return exp;
@@ -606,17 +633,18 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
         if (MATCHKW(lex, begin))
         {
             flags &= ~_F_NOEVAL;
-            INITIALIZER *init = nullptr, *dest = nullptr;
+            std::list<INITIALIZER*>* init = nullptr, *dest = nullptr;
             SYMBOL* sym = nullptr;
             sym = anonymousVar(sc_auto, *tp)->v.sp;
 
             lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, *tp, sym, false, flags | _F_EXPLICIT);
-            if (init && !init->next && init->exp->type == en_thisref)
+            if (init->size() == 1 && init->front()->exp->type == en_thisref)
             {
-                *exp = init->exp;
+                *exp = init->front()->exp;
                 if (sym)
                 {
-                    sym->sb->dest = dest;
+                    sym->sb->dest = initListFactory.CreateList();
+                    sym->sb->dest->insert(sym->sb->dest->begin(), init->begin(), init->end());
                 }
             }
             else
@@ -632,7 +660,8 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                         if ((*e1)->type == en_void)
                             e1 = &(*e1)->left;
                         *e1 = exprNode(en_void, *e1, varNode(en_auto, sym));
-                        sym->sb->dest = dest;
+                        sym->sb->dest = initListFactory.CreateList();
+                        sym->sb->dest->insert(sym->sb->dest->begin(), init->begin(), init->end());
                     }
                 }
             }
@@ -728,12 +757,10 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                 lex = backupsym();
                 lex = getArgs(lex, funcsp, &funcParams, closepa, true, flags);
                 throwaway = nullptr;
-                if (funcParams.arguments)
+                if (funcParams.arguments && funcParams.arguments->size())
                 {
-                    while (funcParams.arguments->next)
-                        funcParams.arguments = funcParams.arguments->next;
-                    throwaway = funcParams.arguments->tp;
-                    *exp = funcParams.arguments->exp;
+                    throwaway = funcParams.arguments->back()->tp;
+                    *exp = funcParams.arguments->back()->exp;
                     if (throwaway && isautotype(*tp))
                         *tp = throwaway;
                     if (isfuncptr(*tp) && (*exp)->type == en_func)
@@ -814,9 +841,6 @@ bool doDynamicCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* func
                         SYMBOL* newrtti = basetype(tpn)->type == bt_void ? nullptr : RTTIDumpType(tpn);
                         deref(&stdpointer, &exp1);
                         sym = (SYMBOL*)basetype(sym->tp)->syms->front();
-                        arg1->next = arg2;
-                        arg2->next = arg3;
-                        arg3->next = arg4;
                         arg1->exp = *exp;
                         arg1->tp = &stdpointer;
                         arg2->exp = exprNode(en_cond, *exp, exprNode(en_void, exp1, intNode(en_c_i, 0)));
@@ -826,7 +850,11 @@ bool doDynamicCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* func
                         arg3->tp = &stdpointer;
                         arg4->exp = newrtti ? varNode(en_global, newrtti) : intNode(en_c_i, 0);
                         arg4->tp = &stdpointer;
-                        funcparams->arguments = arg1;
+                        funcparams->arguments = initListListFactory.CreateList();
+                        funcparams->arguments->push_back(arg1);
+                        funcparams->arguments->push_back(arg2);
+                        funcparams->arguments->push_back(arg3);
+                        funcparams->arguments->push_back(arg4);
                         funcparams->sp = sym;
                         funcparams->functp = sym->tp;
                         funcparams->fcall = varNode(en_pc, sym);
@@ -1239,16 +1267,17 @@ LEXLIST* expression_typeid(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION**
                 valtp->esize = intNode(en_c_i, 2);
                 val = makeID(sc_auto, valtp, nullptr, AnonymousName());
                 val->sb->allocate = true;
-                localNameSpace->valueData->syms->Add(val);
+                localNameSpace->front()->syms->Add(val);
                 sym = (SYMBOL*)basetype(sym->tp)->syms->front();
-                funcparams->arguments = arg;
+                funcparams->arguments = initListListFactory.CreateList();
+                funcparams->arguments->push_back(arg);
+                funcparams->arguments->push_back(arg2);
                 funcparams->sp = sym;
                 funcparams->functp = sym->tp;
                 funcparams->fcall = varNode(en_pc, sym);
                 funcparams->ascall = true;
                 arg->tp = &stdpointer;
                 arg->exp = varNode(en_auto, val);
-                arg->next = arg2;
                 arg2->tp = &stdpointer;
                 if (!byType && isstructured(*tp) && basetype(*tp)->sp->sb->hasvtab)
                 {
@@ -1344,7 +1373,7 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
     return false;
 }
 bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, TYPE* tp1, EXPRESSION* exp1,
-                        INITLIST* args, int flags)
+                        std::list<INITLIST*>* args, int flags)
 {
     static SYMBOL* s30;
     SYMBOL *s1 = nullptr, *s2 = nullptr, *s3, *s4 = nullptr, *s5 = nullptr;
@@ -1391,7 +1420,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         case ovcl_assign_numericptr:
         case ovcl_assign_numeric:
         case ovcl_assign_int:
-            s1 = localNameSpace->valueData->syms->search(name);
+            s1 = localNameSpace->front()->syms->search(name);
             if (!s1)
                 s1 = namespacesearch(name, localNameSpace, false, false);
             if (!s1 && enumSyms)
@@ -1418,8 +1447,8 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         l.str = nullptr;
         if (basetype(tpClean)->type == bt_enum && tpClean->sp)
         {
-            Optimizer::LIST aa{nullptr, tpClean->sp->sb->parentNameSpace};
-            tpClean->sp->sb->templateNameSpace = aa.data ? &aa : nullptr;
+            std::list<SYMBOL*> aa{ tpClean->sp->sb->parentNameSpace };
+            tpClean->sp->sb->templateNameSpace = tpClean->sp->sb->parentNameSpace ? &aa : nullptr;
             int n = PushTemplateNamespace(basetype(tpClean)->sp);  // used for more than just templates here
             s4 = namespacesearch(name, globalNameSpace, false, false);
             PopTemplateNamespace(n);
@@ -1445,8 +1474,8 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         }
         else if (tp1->sp)  // enum
         {
-            Optimizer::LIST aa{nullptr, tp1->sp->sb->parentNameSpace};
-            tp1->sp->sb->templateNameSpace = aa.data ? &aa : nullptr;
+            std::list<SYMBOL*> aa{ tpClean->sp->sb->parentNameSpace };
+            tpClean->sp->sb->templateNameSpace = tpClean->sp->sb->parentNameSpace ? &aa : nullptr;
             int n = PushTemplateNamespace(basetype(tp1)->sp);  // used for more than just templates here
             s5 = namespacesearch(name, globalNameSpace, false, false);
             PopTemplateNamespace(n);
@@ -1507,39 +1536,31 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
             one = Allocate<INITLIST>();
             one->exp = *exp;
             one->tp = *tp;
-            funcparams->arguments = one;
         }
         if (args)
         {
             INITLIST* one = Allocate<INITLIST>();
             one->nested = args;
-            funcparams->arguments = one;
         }
         else if (tp1)
         {
             two = Allocate<INITLIST>();
             two->exp = exp1;
             two->tp = tp1;
-            funcparams->arguments = two;
         }
         else if (cls == ovcl_unary_postfix)
         {
             two = Allocate<INITLIST>();
             two->exp = intNode(en_c_i, 0);
             two->tp = &stdint;
-            funcparams->arguments = two;
         }
-        if (one && two)
+        if (one || two)
         {
-            one->next = two;
-        }
-        if (one)
-        {
-            funcparams->arguments = one;
-        }
-        else
-        {
-            funcparams->arguments = two;
+            funcparams->arguments = initListListFactory.CreateList();
+            if (one)
+                funcparams->arguments->push_back(one);
+            if (two)
+                funcparams->arguments->push_back(two);
         }
     }
     switch (cls)
@@ -1617,7 +1638,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         *tp = ctype;
         if (ismember(s3))
         {
-            funcparams->arguments = funcparams->arguments->next;
+            funcparams->arguments->pop_front();
             funcparams->thistp = MakeType(bt_pointer, tpin);
             funcparams->thisptr = *exp;
         }
@@ -1752,8 +1773,9 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
         sza = Allocate<INITLIST>();
         sza->exp = sz;
         sza->tp = &stdint;
-        sza->next = placement->arguments;
-        placement->arguments = sza;
+        if (!placement->arguments)
+            placement->arguments = initListListFactory.CreateList();
+        placement->arguments->push_front(sza);
     }
     else
     {
@@ -1785,8 +1807,8 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
         val = anonymousVar(sc_auto, &stdpointer);
         sym = val->v.sp;
         sym->sb->decoratedName = sym->name;
-        //        if (localNameSpace->valueData->syms)
-        //            insert(sym, localNameSpace->valueData->syms);
+        //        if (localNameSpace->front()->syms)
+        //            insert(sym, localNameSpace->front()->syms);
         deref(&stdpointer, &val);
         s1->sb->throughClass = s1->sb->parentClass != nullptr;
         if (s1->sb->throughClass && !isAccessible(s1->sb->parentClass, s1->sb->parentClass, s1, funcsp,
@@ -1832,15 +1854,15 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
             lex = getArgs(lex, funcsp, initializers, closepa, true, 0);
             if (initializers->arguments)
             {
-                if (!comparetypes(initializers->arguments->tp, *tp, false) || initializers->arguments->next)
+                if (!comparetypes(initializers->arguments->front()->tp, *tp, false) || initializers->arguments->size() > 1)
                 {
                     if (!templateNestingCount)
                         error(ERR_NEED_NUMERIC_EXPRESSION);
                 }
                 else
                 {
-                    exp1 = initializers->arguments->exp;
-                    DeduceAuto(tp, initializers->arguments->tp, exp1);
+                    exp1 = initializers->arguments->front()->exp;
+                    DeduceAuto(tp, initializers->arguments->front()->tp, exp1);
                     UpdateRootTypes(*tp);
                     if (exp1 && val)
                     {
@@ -1872,7 +1894,7 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
         // i can't make it work well because the array indexes aren't necessarily constants...
         if (*tp)
         {
-            INITIALIZER* init = nullptr;
+            std::list<INITIALIZER*>* init = nullptr;
             EXPRESSION* base = val;
             TYPE* tp1 = *tp;
             SYMBOL* sym = nullptr;
@@ -1890,13 +1912,13 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
             lex = initType(lex, funcsp, 0, sc_auto, &init, nullptr, tp1, sym, false, 0);
             if (!isstructured(*tp) && !arrSize)
             {
-                if (!init || init->next || (init->basetp && isstructured(init->basetp)))
+                if (init->size() != 1 || (init->front()->basetp && isstructured(init->front()->basetp)))
                     error(ERR_NONSTRUCTURED_INIT_LIST);
             }
             // dest is lost for these purposes
             if (theCurrentFunc)
             {
-                if (init->exp)
+                if (init->front()->exp)
                 {
                     *exp = convertInitToExpression(tp1, nullptr, nullptr, funcsp, init, base, false);
                 }
@@ -1905,17 +1927,15 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
                     exp1 = exprNode(en_blockclear, base, exprNode(en_mul, arrSize, intNode(en_c_i, (*tp)->size)));
                     *exp = *exp ? exprNode(en_void, exp1, *exp) : exp1;
                 }
-                else if (isstructured(*tp) && (arrSize || !init->exp))
+                else if (isstructured(*tp) && (arrSize || !init->front()->exp))
                 {
                     EXPRESSION* exp1;
                     exp1 = val;
                     if (arrSize)
                     {
-                        INITIALIZER* it = init;
-                        while (it && it->exp)
-                            it = it->next;
-                        arrSize = exprNode(en_sub, arrSize, intNode(en_c_i, it->offset / (basetype(*tp)->size)));
-                        exp1 = exprNode(en_add, exp1, intNode(en_c_i, it->offset));
+                        auto back = init->back();
+                        arrSize = exprNode(en_sub, arrSize, intNode(en_c_i, back->offset / (basetype(*tp)->size)));
+                        exp1 = exprNode(en_add, exp1, intNode(en_c_i, back->offset));
                     }
                     tpf = *tp;
                     callConstructor(&tpf, &exp1, nullptr, false, arrSize, true, false, false, true, false, false, true);
@@ -2016,7 +2036,8 @@ LEXLIST* expression_delete(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION**
     one = Allocate<INITLIST>();
     one->exp = exp1;
     one->tp = &stdpointer;
-    funcparams->arguments = one;
+    funcparams->arguments = initListListFactory.CreateList();
+    funcparams->arguments->push_back(one);
     funcparams->ascall = true;
     s1 = GetOverloadedFunction(&tpf, &funcparams->fcall, s1, funcparams, nullptr, true, false, true, flags);
     if (s1)
@@ -2049,7 +2070,7 @@ bool isNoexcept(EXPRESSION* exp)
     (void)exp;
     return false;
 }
-static bool noexceptStmt(STATEMENT* block);
+static bool noexceptStmt(std::list<STATEMENT*>* block);
 static bool noexceptExpression(EXPRESSION* node)
 {
     FUNCTIONCALL* fp;
@@ -2267,10 +2288,10 @@ static bool noexceptExpression(EXPRESSION* node)
     }
     return rv;
 }
-static bool noexceptStmt(STATEMENT* block)
+static bool noexceptStmt(std::list<STATEMENT*>* blocks)
 {
     bool rv = true;
-    while (block != nullptr)
+    for (auto block : *blocks)
     {
         switch (block->type)
         {
@@ -2318,7 +2339,6 @@ static bool noexceptStmt(STATEMENT* block)
                 diag("Invalid block type in noexceptStmt");
                 break;
         }
-        block = block->next;
     }
     return rv;
 }

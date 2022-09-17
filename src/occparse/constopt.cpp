@@ -1402,23 +1402,23 @@ int opt0(EXPRESSION** node)
                 {
                     // this will only do one level, so if we have an array of pointers to arrays
                     // it won't work.
-                    if (ref->v.sp->sb->constexpression)
+                    if (ref->v.sp->sb->constexpression && ref->v.sp->sb->init)
                     {
+                        auto its = ref->v.sp->sb->init->begin();
                         if (isarray(ref->v.sp->tp))
                         {
                             int n = offset / ref->v.sp->tp->btp->size;
-                            auto init = ref->v.sp->sb->init;
-                            while (n-- && init)
-                                init = init->next;
-                            if (init)
+                            while (n-- && its != ref->v.sp->sb->init->end())
+                                ++its;
+                            if (its != ref->v.sp->sb->init->end())
                             {
-                                **node = *init->exp;
+                                **node = *(*its)->exp;
                                 rv = true;
                             }
                         }
-                        else if (ref->v.sp->sb->init)
+                        else
                         {
-                            **node = *ref->v.sp->sb->init->exp;
+                            **node = *ref->v.sp->sb->init->front()->exp;
                             rv = true;
                         }
                     }
@@ -2615,10 +2615,11 @@ int opt0(EXPRESSION** node)
                             }
                             if (sym && find->asCall)
                             {
-                                for (auto i = find->arguments; i; i = i->next)
-                                {
-                                    i->tp = SynthesizeType(i->tp, nullptr, false);
-                                }
+                                if (find->arguments)
+                                    for (auto i : *find->arguments)
+                                    {
+                                        i->tp = SynthesizeType(i->tp, nullptr, false);
+                                    }
                                 TYPE* ctype = sym->tp;
                                 EXPRESSION* exp = intNode(en_c_i, 0);
                                 FUNCTIONCALL funcparams = { };
@@ -2635,8 +2636,8 @@ int opt0(EXPRESSION** node)
                         {
                             if (sym->sb->storage_class == sc_constant)
                             {
-                                optimize_for_constants(&sym->sb->init->exp);
-                                *node = sym->sb->init->exp;
+                                optimize_for_constants(&sym->sb->init->front()->exp);
+                                *node = sym->sb->init->front()->exp;
                                 return true;
                             }
                         }
@@ -2650,11 +2651,12 @@ int opt0(EXPRESSION** node)
             {
                 SYMBOL* sym = (*node)->v.sp;
                 TEMPLATEPARAMLIST* found = (*node)->v.sp->tp->templateParam;
-                STRUCTSYM* search = structSyms;
                 if (!found || !found->p->byNonType.val)
                     found = nullptr;
-                while (search && !found)
+                for (auto search : structSyms)
                 {
+                    if (found)
+                        break;
                     if (search->tmpl)
                     {
                         TEMPLATEPARAMLIST* tpl = search->tmpl;
@@ -2665,7 +2667,6 @@ int opt0(EXPRESSION** node)
                             tpl = tpl->next;
                         }
                     }
-                    search = search->next;
                 }
                 if (found && found->p->type == kw_int)
                 {
@@ -3157,10 +3158,11 @@ int fold_const(EXPRESSION* node)
             LEXLIST* lex = SetAlternateLex(node->v.construct.deferred);
             if (isarithmetic(node->v.construct.tp))
             {
-                INITIALIZER *init = nullptr, *dest = nullptr;
+
+                std::list<INITIALIZER*> *init = nullptr, *dest = nullptr;
                 lex = initType(lex, nullptr, 0, sc_auto, &init, &dest, node->v.construct.tp, nullptr, false, 0);
                 if (init)
-                    *node = *init->exp;
+                    *node = *init->front()->exp;
             }
             else
             {
@@ -3191,26 +3193,31 @@ int fold_const(EXPRESSION* node)
             }
             break;
         case en_stmt:
-            // constructor thunks
-            while (node->v.stmt && node->v.stmt->type == st_expr)
-                node->v.stmt = node->v.stmt->next;
-            if (node->v.stmt && node->v.stmt->type == st_block)
+        {   // constructor thunks
+            auto its = node->v.stmt->begin();
+            auto itse = node->v.stmt->end();
+            while (its != itse && (*its)->type == st_expr)
+                ++its;
+            // thi originally modified the node statement...
+            if (its != itse && (*its)->type == st_block)
             {
-                STATEMENT* st = node->v.stmt->lower;
-                while (st->type == st_varstart)
-                    st = st->next;
-                if (st->type == st_block && !st->next)
+                its = (*its)->lower->begin();
+                while ((*its)->type == st_varstart)
+                    ++its;
+                auto its1 = its;
+                ++its1;
+                if ((*its)->type == st_block && its1 == itse)
                 {
-                    st = st->lower;
-                    while (st->type == st_line || st->type == st_dbgblock)
-                        st = st->next;
-                    if (st->type == st_expr || st->type == st_return)
+                    its = (*its)->lower->begin();
+                    while ((*its)->type == st_line || (*its)->type == st_dbgblock)
+                        ++its;
+                    if ((*its)->type == st_expr || (*its)->type == st_return)
                     {
-                        EXPRESSION* exp = st->select;
-                        optimize_for_constants(&st->select);
-                        if (IsConstantExpression(st->select, true, false))
+                        EXPRESSION* exp = (*its)->select;
+                        optimize_for_constants(&(*its)->select);
+                        if (IsConstantExpression((*its)->select, true, false))
                         {
-                            *node = *st->select;
+                            *node = *(*its)->select;
                             node->noexprerr = true;
                             rv = true;
                         }
@@ -3218,6 +3225,7 @@ int fold_const(EXPRESSION* node)
                 }
             }
             break;
+        }
         default:
             break;
     }
@@ -3240,8 +3248,8 @@ int typedconsts(EXPRESSION* node1)
             rv = true;
             break;
         case en_const:
-            optimize_for_constants(&node1->v.sp->sb->init->exp);
-            *node1 = *node1->v.sp->sb->init->exp;
+            optimize_for_constants(&node1->v.sp->sb->init->front()->exp);
+            *node1 = *node1->v.sp->sb->init->front()->exp;
             rv = true;
             break;
         default:
@@ -3385,10 +3393,10 @@ int typedconsts(EXPRESSION* node1)
             }
             else if (node1->left->type == en_global)
             {
-                if (node1->left->v.sp->sb->storage_class == sc_constant && isintconst(node1->left->v.sp->sb->init->exp))
+                if (node1->left->v.sp->sb->storage_class == sc_constant && isintconst(node1->left->v.sp->sb->init->front()->exp))
                 {
-                    optimize_for_constants(&node1->v.sp->sb->init->exp);
-                    *node1 = *node1->left->v.sp->sb->init->exp;
+                    optimize_for_constants(&node1->v.sp->sb->init->front()->exp);
+                    *node1 = *node1->left->v.sp->sb->init->front()->exp;
                     rv = true;
                 }
             }
@@ -3792,7 +3800,7 @@ bool msilConstant(EXPRESSION* exp)
             return true;
         if (exp->type == en_func)
         {
-            if (exp->v.func->arguments && !exp->v.func->arguments->next && !strcmp(exp->v.func->sp->name, "ToPointer"))
+            if (exp->v.func->arguments && exp->v.func->arguments->size() == 1 && !strcmp(exp->v.func->sp->name, "ToPointer"))
                 return true;
         }
         if (exp->left && !msilConstant(exp->left))

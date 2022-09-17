@@ -126,12 +126,13 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
     {
         if (!isfunction(sym->tp))
         {
-            BASECLASS* bases = sym->sb->baseClasses;
-            while (bases)
-            {
-                order = WriteStructMembers(bases->cls, parent, struct_id, file_id, order, true,
-                                           (e_ac)imin(bases->cls->sb->access, access));
-                bases = bases->next;
+            if (sym->sb->baseClasses)
+            { 
+                for (auto bases : *sym->sb->baseClasses)
+                {
+                    order = WriteStructMembers(bases->cls, parent, struct_id, file_id, order, true,
+                        (e_ac)imin(bases->cls->sb->access, access));
+                }
             }
         }
         for (auto st : *basetype(sym->tp)->syms)
@@ -299,11 +300,13 @@ static void DumpSymbol(SYMBOL* sym);
 static void DumpNamespace(SYMBOL* sym)
 {
     const char* symName = GetSymName(sym, sym);
-    struct _ccNamespaceData* ns = sym->sb->ccNamespaceData;
-    while (ns)
+    if (sym->sb->ccNamespaceData)
     {
-        ccWriteNameSpaceEntry(symName, main_id, ns->declfile, ns->startline, ns->endline);
-        ns = ns->next;
+        for (auto ns : *sym->sb->ccNamespaceData)
+        while (ns)
+        {
+            ccWriteNameSpaceEntry(symName, main_id, ns->declfile, ns->startline, ns->endline);
+        }
     }
 }
 static void DumpSymbol(SYMBOL* sym)

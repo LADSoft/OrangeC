@@ -63,10 +63,11 @@ enum _vlaTypes
 };
 typedef struct vlaShim
 {
-    struct vlaShim *next, *lower;
+    struct vlaShim* next;
+    std::list<struct vlaShim*> lower;
     struct vlaShim* fwd;
     struct vlaShim* parent;
-    Optimizer::LIST* backs;
+    std::list<struct vlaShim*> backs;
     enum _vlaTypes type;
     STATEMENT* stmt;
     int level;
@@ -116,8 +117,8 @@ void errorat(int err, const char* name, const char* file, int line);
 void errorcurrent(int err);
 void getns(char* buf, SYMBOL* nssym);
 void getcls(char* buf, SYMBOL* clssym);
-void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char* name);
-void errorNotMember(SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char* name);
+void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name);
+void errorNotMember(SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name);
 void error(int err);
 void errorint(int err, int val);
 void errorstr(int err, const char* val);
@@ -135,10 +136,10 @@ void skip(LEXLIST** lex, enum e_kw kw);
 bool needkw(LEXLIST** lex, enum e_kw kw);
 void specerror(int err, const char* name, const char* file, int line);
 void unmarkGotos(VLASHIM* shim);
-void checkGotoPastVLA(STATEMENT* stmt, bool first);
-void checkUnlabeledReferences(BLOCKDATA* block);
+void checkGotoPastVLA(std::list<STATEMENT*>* stmt, bool first);
+void checkUnlabeledReferences(std::list<BLOCKDATA*>& block);
 void checkUnused(SymbolTable<SYMBOL>* syms);
-void findUnusedStatics(NAMESPACEVALUELIST* nameSpace);
+void findUnusedStatics(std::list<NAMESPACEVALUEDATA*>* nameSpace);
 void assignmentUsages(EXPRESSION* node, bool first);
 void checkDefaultArguments(SYMBOL* spi);
 void EnterInstantiation(LEXLIST* lex, SYMBOL* sp);

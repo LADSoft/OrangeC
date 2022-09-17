@@ -142,7 +142,7 @@ Optimizer::IMODE* set_symbol(const char* name, int isproc)
         sym->name = sym->sb->decoratedName = litlate(name);
         sym->tp = MakeType(isproc ? bt_func : bt_int);
         sym->sb->safefunc = true;
-        globalNameSpace->valueData->syms->Add(sym);
+        globalNameSpace->front()->syms->Add(sym);
         auto osym = Optimizer::SymbolManager::Get(sym);
         osym->genreffed = true;
         Optimizer::externalSet.insert(osym);
@@ -222,32 +222,31 @@ void SubProfilerData(void)
 }
 
 /*-------------------------------------------------------------------------*/
-void count_cases(CASEDATA* cd, struct Optimizer::cases* cs)
+void count_cases(std::list<CASEDATA*>* casedata, struct Optimizer::cases* cs)
 {
-    while (cd)
+    for (auto cd : *casedata)
     {
         cs->count++;
         if (cd->val < cs->bottom)
             cs->bottom = cd->val;
         if (cd->val > cs->top)
             cs->top = cd->val;
-        cd = cd->next;
     }
 }
 /*-------------------------------------------------------------------------*/
-void gather_cases(CASEDATA* cd, struct Optimizer::cases* cs)
+void gather_cases(std::list<CASEDATA*>* cds, struct Optimizer::cases* cs)
 {
     int pos = 0;
     if (!cs->ptrs)
     {
         cs->ptrs = Allocate<Optimizer::caseptrs>(cs->count);
     }
-    while (cd)
-    {
-        cs->ptrs[pos].label = cd->label + codeLabelOffset;
-        cs->ptrs[pos++].id = cd->val;
-        cd = cd->next;
-    }
+    if (cds)
+        for (auto cd : *cds)
+        {
+            cs->ptrs[pos].label = cd->label + codeLabelOffset;
+            cs->ptrs[pos++].id = cd->val;
+        }
 }
 
 /*-------------------------------------------------------------------------*/
@@ -348,7 +347,7 @@ void genselect(STATEMENT* stmt, SYMBOL* funcsp, bool jmptrue)
     }
 }
 /*-------------------------------------------------------------------------*/
-static void gen_try(SYMBOL* funcsp, STATEMENT* stmt, int startLab, int endLab, int transferLab, STATEMENT* lower)
+static void gen_try(SYMBOL* funcsp, STATEMENT* stmt, int startLab, int endLab, int transferLab, std::list<STATEMENT*>* lower)
 {
     Optimizer::gen_label(startLab);
     stmt->tryStart = ++consIndex;
@@ -365,7 +364,7 @@ static void gen_try(SYMBOL* funcsp, STATEMENT* stmt, int startLab, int endLab, i
     tryStart = stmt->tryStart;
     tryEnd = stmt->tryEnd;
 }
-static void gen_catch(SYMBOL* funcsp, STATEMENT* stmt, int startLab, int transferLab, STATEMENT* lower)
+static void gen_catch(SYMBOL* funcsp, STATEMENT* stmt, int startLab, int transferLab, std::list<STATEMENT*>* lower)
 {
     int oldtryStart = tryStart;
     int oldtryEnd = tryEnd;
@@ -383,10 +382,10 @@ static void gen_catch(SYMBOL* funcsp, STATEMENT* stmt, int startLab, int transfe
     stmt->tryStart = tryStart;
     stmt->tryEnd = tryEnd;
 }
-static STATEMENT* gen___try(SYMBOL* funcsp, STATEMENT* stmt)
+static void gen___try(SYMBOL* funcsp, std::list<STATEMENT*> stmts)
 {
     int label = Optimizer::nextLabel++;
-    while (stmt)
+    for (auto stmt : stmts)
     {
         int mode = 0;
         Optimizer::IMODE* left = nullptr;
@@ -415,7 +414,7 @@ static STATEMENT* gen___try(SYMBOL* funcsp, STATEMENT* stmt)
                 break;
             default:
                 Optimizer::gen_label(label);
-                return stmt;
+                return;
         }
         Optimizer::gen_icode(Optimizer::i_seh, nullptr, left, nullptr);
         Optimizer::intermed_tail->alwayslive = true;
@@ -425,12 +424,10 @@ static STATEMENT* gen___try(SYMBOL* funcsp, STATEMENT* stmt)
         Optimizer::gen_icode(Optimizer::i_seh, nullptr, left, nullptr);
         Optimizer::intermed_tail->sehMode = mode;
         Optimizer::intermed_tail->dc.v.label = label;
-        stmt = stmt->next;
-        if (stmt && stmt->type == st___try)
-            break;
+//        if (stmt && stmt->type == st___try)
+//            break;
     }
     Optimizer::gen_label(label);
-    return stmt;
 }
 /*
  *      generate a return statement.
@@ -689,16 +686,19 @@ void gen_asmdata(STATEMENT* stmt)
 
 /*-------------------------------------------------------------------------*/
 
-Optimizer::IMODE* genstmt(STATEMENT* stmt, SYMBOL* funcsp)
+Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp)
 /*
  *      genstmt will generate a statement and follow the next pointer
  *      until the block is generated.
  */
 {
     Optimizer::IMODE* rv = nullptr;
-    while (stmt != 0)
+    auto il = stmts->begin();
+    auto ile = stmts->end();
+
+    while (il != ile)
     {
-        STATEMENT* last = stmt;
+        auto stmt = *il;
         switch (stmt->type)
         {
             case st_nop:
@@ -719,9 +719,7 @@ Optimizer::IMODE* genstmt(STATEMENT* stmt, SYMBOL* funcsp)
                 break;
             case st_goto:
                 if (stmt->destexp)
-                {
-                    gen_expr(funcsp, last->destexp, F_NOVALUE, ISZ_ADDR);
-                }
+                    gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
                 Optimizer::gen_igoto(Optimizer::i_goto, (int)stmt->label + codeLabelOffset);
                 break;
             case st_asmgoto:
@@ -734,29 +732,28 @@ Optimizer::IMODE* genstmt(STATEMENT* stmt, SYMBOL* funcsp)
                 gen_try(funcsp, stmt, stmt->label + codeLabelOffset, stmt->endlabel + codeLabelOffset,
                         stmt->breaklabel + codeLabelOffset, stmt->lower);
                 break;
-            case st_catch: {
-                STATEMENT* last = nullptr;
-                while (stmt && stmt->type == st_catch)
-                {
-                    // the following adjustment to altlabel is required to get the XT info proper
-                    gen_catch(funcsp, stmt, stmt->altlabel += codeLabelOffset, stmt->breaklabel + codeLabelOffset, stmt->lower);
-                    last = stmt;
-                    stmt = stmt->next;
-                }
-                stmt = last;
+            case st_catch:
+                // the following adjustment to altlabel is required to get the XT info proper
+                gen_catch(funcsp, stmt, stmt->altlabel += codeLabelOffset, stmt->breaklabel + codeLabelOffset, stmt->lower);
                 Optimizer::gen_label(stmt->breaklabel + codeLabelOffset);
-            }
-            break;
+                break;
             case st___try:
             case st___catch:
             case st___finally:
             case st___fault:
-                stmt = gen___try(funcsp, stmt);
-                if (last->type != st_return && last->type != st_goto && last->destexp)
+            {
+                auto ilx = il;
+                while (ilx != ile && (*ilx)->type != st___try)
+                    ilx++;
+                std::list<STATEMENT*> stmts(il, ilx);
+                gen___try(funcsp, stmts);
+                if ((*il)->destexp)
                 {
-                    gen_expr(funcsp, last->destexp, F_NOVALUE, ISZ_ADDR);
+                    gen_expr(funcsp, (*il)->destexp, F_NOVALUE, ISZ_ADDR);
                 }
+                il = ilx;
                 continue;
+            }
             case st_expr:
             case st_declare:
                 if (stmt->select)
@@ -790,11 +787,11 @@ Optimizer::IMODE* genstmt(STATEMENT* stmt, SYMBOL* funcsp)
                 diag("unknown statement.");
                 break;
         }
-        if (last->type != st_return && last->type != st_goto && last->destexp)
+        if ((*il)->type != st_return && (*il)->type != st_goto && (*il)->destexp)
         {
-            gen_expr(funcsp, last->destexp, F_NOVALUE, ISZ_ADDR);
+            gen_expr(funcsp, (*il)->destexp, F_NOVALUE, ISZ_ADDR);
         }
-        stmt = stmt->next;
+        ++il;
     }
     return rv;
 }
@@ -1042,7 +1039,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     }
     /*    if (funcsp->sb->loadds && funcsp->sb->farproc) */
     /*	        Optimizer::gen_icode(Optimizer::i_loadcontext, 0,0,0); */
-    AllocateLocalContext(nullptr, funcsp, Optimizer::nextLabel++);
+    AllocateLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
     if (funcsp->sb->allocaUsed && (Optimizer::architecture != ARCHITECTURE_MSIL))
     {
         EXPRESSION* allocaExp = anonymousVar(sc_auto, &stdpointer);
@@ -1051,11 +1048,11 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     }
     /* Generate the icode */
     /* LCSE is done while code is generated */
-    genstmt(funcsp->sb->inlineFunc.stmt->lower, funcsp);
-    if (funcsp->sb->inlineFunc.stmt->blockTail)
+    genstmt(funcsp->sb->inlineFunc.stmt->front()->lower, funcsp);
+    if (funcsp->sb->inlineFunc.stmt->front()->blockTail)
     {
         Optimizer::gen_icode(Optimizer::i_functailstart, 0, 0, 0);
-        genstmt(funcsp->sb->inlineFunc.stmt->blockTail, funcsp);
+        genstmt(funcsp->sb->inlineFunc.stmt->front()->blockTail, funcsp);
         Optimizer::gen_icode(Optimizer::i_functailend, 0, 0, 0);
     }
     genreturn(0, funcsp, 1, 0, allocaAP);
@@ -1063,7 +1060,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     tFree();
 
     InsertParameterThunks(funcsp, Optimizer::blockArray[1]);
-    FreeLocalContext(nullptr, funcsp, Optimizer::nextLabel++);
+    FreeLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
 
     /* Code gen from icode */
     Optimizer::AddFunction();
@@ -1071,9 +1068,9 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     if (!currentFunction->isinternal && (funcsp->sb->attribs.inheritable.linkage4 == lk_virtual || tmpl))
         Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(funcsp));
 
-    AllocateLocalContext(nullptr, funcsp, Optimizer::nextLabel);
+    AllocateLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel);
     XTDumpTab(funcsp);
-    FreeLocalContext(nullptr, funcsp, Optimizer::nextLabel);
+    FreeLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel);
 
     Optimizer::intermed_head = nullptr;
     theCurrentFunc = oldCurrentFunc;
@@ -1098,7 +1095,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     baseThisPtr = nullptr;
     Optimizer::nextLabel += 2;  // temporary
 }
-void genASM(STATEMENT* st)
+void genASM(std::list<STATEMENT*>* st)
 {
     Optimizer::cseg();
     contlab = breaklab = -1;

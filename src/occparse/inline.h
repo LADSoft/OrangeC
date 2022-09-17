@@ -34,7 +34,7 @@ SYMBOL* getvc1Thunk(int offset);
 void InsertInline(SYMBOL* sym);
 void InsertInlineData(SYMBOL* sym);
 EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval);
-STATEMENT* inlinestmt(STATEMENT* block);
+std::list<STATEMENT*>* inlinestmt(std::list<STATEMENT*>* blocks);
 void SetupVariables(SYMBOL* sym);
 EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp);
 bool IsEmptyFunction(FUNCTIONCALL* params, SYMBOL* funcsp);

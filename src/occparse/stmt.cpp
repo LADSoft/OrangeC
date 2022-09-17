@@ -62,7 +62,7 @@
 #include "constexpr.h"
 #include "libcxx.h"
 #include "symtab.h"
-
+#include "ListFactory.h"
 #define MAX_INLINE_EXPRESSIONS 3
 
 namespace Parser
@@ -84,8 +84,9 @@ int codeLabel;
 bool declareAndInitialize;
 bool functionCanThrow;
 int bodyIsDestructor;
+std::list<BLOCKDATA*> emptyBlockdata;
 
-Optimizer::LINEDATA *linesHead, *linesTail;
+std::list<Optimizer::LINEDATA*>* lines;
 
 static int matchReturnTypes;
 static int endline;
@@ -93,14 +94,14 @@ static int caseLevel = 0;
 static int controlSequences;
 static int expressions;
 
-static LEXLIST* autodeclare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, BLOCKDATA* parent, int asExpression);
-static LEXLIST* nononconststatement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontrol);
+static LEXLIST* autodeclare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, std::list<BLOCKDATA*>& parent, int asExpression);
+static LEXLIST* nononconststatement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, bool viacontrol);
 
 static BLOCKDATA* caseDestructBlock;
 
 void statement_ini(bool global)
 {
-    linesHead = linesTail = nullptr;
+    lines = nullptr;
     functionCanThrow = false;
     funcNesting = 0;
     funcLevel = 0;
@@ -122,48 +123,52 @@ bool msilManaged(SYMBOL* s)
 
 void InsertLineData(int lineno, int fileindex, const char* fname, char* line)
 {
-    Optimizer::LINEDATA* ld;
-    ld = Allocate<Optimizer::LINEDATA>();
+    if (!lines)
+        lines = lineDataListFactory.CreateList();
+    auto ld = Allocate<Optimizer::LINEDATA>();
     ld->file = fname;
     ld->line = litlate(line);
     ld->lineno = lineno;
     ld->fileindex = fileindex;
-    if (linesHead)
-        linesTail = linesTail->next = ld;
-    else
-        linesHead = linesTail = ld;
+    lines->push_back(ld);
 }
 void FlushLineData(const char* file, int lineno)
 {
-    while (linesHead)
+    if (lines)
     {
-        if (strcmp(file, linesHead->file) != 0 || linesHead->lineno < lineno)
-            linesHead = linesHead->next;
-        else
-            break;
+        while (lines->size())
+        {
+            if (strcmp(file, lines->front()->file) != 0 || lines->front()->lineno < lineno)
+                lines->pop_front();
+            else
+                break;
+        }
     }
 }
-STATEMENT* currentLineData(BLOCKDATA* parent, LEXLIST* lex, int offset)
+std::list<STATEMENT*>* currentLineData(std::list<BLOCKDATA*>& parent, LEXLIST* lex, int offset)
 {
-    STATEMENT* rv = nullptr;
-    Optimizer::LINEDATA *ld = linesHead, **p = &ld;
+    if (!lex || !lines)
+        return nullptr;
+    std::list<STATEMENT*> rv;
     int lineno;
     const char* file;
-    if (!lex)
-        return nullptr;
-    lineno = lex->data->linedata->lineno + offset + 1;
+    lineno = lex->data->linedata->front()->lineno + offset + 1;
     file = lex->data->errfile;
-    while (*p && (strcmp((*p)->file, file) != 0 || lineno >= (*p)->lineno))
+    while (lines->size() && (strcmp(lines->front()->file, file) != 0 || lineno >= lines->front()->lineno))
     {
-        rv = stmtNode(lex, parent, st_line);
-        rv->lineData = *p;
-        p = &(*p)->next;
+        rv.push_back(stmtNode(lex, parent, st_line));
+        rv.back()->lineData = lines->front();
+        lines->pop_front();
     }
-    linesHead = *p;
-    *p = nullptr;
-    return rv;
+    if (rv.size())
+    {
+        auto rva = stmtListFactory.CreateList();
+        *rva = rv;
+        return rva;
+    }
+    return nullptr;
 }
-STATEMENT* stmtNode(LEXLIST* lex, BLOCKDATA* parent, enum e_stmt stype)
+STATEMENT* stmtNode(LEXLIST* lex, std::list<BLOCKDATA*>& parent, enum e_stmt stype)
 {
     STATEMENT* st = Allocate<STATEMENT>();
     if (!lex)
@@ -172,13 +177,12 @@ STATEMENT* stmtNode(LEXLIST* lex, BLOCKDATA* parent, enum e_stmt stype)
     st->charpos = 0;
     st->line = lex->data->errline;
     st->file = lex->data->errfile;
-    st->parent = parent;
-    if (parent)
+    st->parent = parent.front();
+    if (&parent != &emptyBlockdata)
     {
-        if (parent->head)
-            parent->tail = parent->tail->next = st;
-        else
-            parent->head = parent->tail = st;
+        if (!parent.front()->statements)
+            parent.front()->statements = stmtListFactory.CreateList();
+        parent.front()->statements->push_back(st);
     }
     switch (stype)
     {
@@ -195,11 +199,11 @@ STATEMENT* stmtNode(LEXLIST* lex, BLOCKDATA* parent, enum e_stmt stype)
     }
     return st;
 }
-static void AddBlock(LEXLIST* lex, BLOCKDATA* parent, BLOCKDATA* newbl)
+static void AddBlock(LEXLIST* lex, std::list<BLOCKDATA*>& parent, BLOCKDATA* newbl)
 {
     STATEMENT* st = stmtNode(lex, parent, st_block);
     st->blockTail = newbl->blockTail;
-    st->lower = newbl->head;
+    st->lower = newbl->statements;
 }
 static bool isselecttrue(EXPRESSION* exp)
 {
@@ -213,20 +217,13 @@ static bool isselectfalse(EXPRESSION* exp)
         return !exp->v.i;
     return false;
 }
-static void markInitializers(STATEMENT* prev)
+static void markInitializers(std::list<STATEMENT*>& lst)
 {
-    if (prev)
-    {
-        prev = prev->next;
-        while (prev)
-        {
-            if (prev->type == st_expr)
-                prev->hasdeclare = true;
-            prev = prev->next;
-        }
-    }
+    for (auto it = lst.begin(); it != lst.end(); ++it)
+        if ((*it)->type == st_expr)
+            (*it)->hasdeclare = true;
 }
-static LEXLIST* selection_expression(LEXLIST* lex, BLOCKDATA* parent, EXPRESSION** exp, SYMBOL* funcsp, enum e_kw kw,
+static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent, EXPRESSION** exp, SYMBOL* funcsp, enum e_kw kw,
                                      bool* declaration)
 {
     TYPE* tp = nullptr;
@@ -295,22 +292,17 @@ static LEXLIST* selection_expression(LEXLIST* lex, BLOCKDATA* parent, EXPRESSION
     GetLogicalDestructors(&(*exp)->v.logicaldestructors.left, *exp);
     return lex;
 }
-static BLOCKDATA* getCommonParent(BLOCKDATA* src, BLOCKDATA* dest)
+static BLOCKDATA* getCommonParent(std::list<BLOCKDATA*>& src, std::list<BLOCKDATA*>& dest)
 {
-    BLOCKDATA* top = src;
-    while (top)
-    {
-        BLOCKDATA* test = dest;
-        while (test && test != top)
-            test = test->next;
-        if (test)
-        {
-            top = test;
-            break;
-        }
-        top = top->next;
-    }
-    return top;
+    BLOCKDATA* rv = nullptr;
+    for (auto s : src)
+        for (auto d : dest)
+            if (d == s)
+            {
+                rv = d;
+                break;
+            }
+    return rv;
 }
 void makeXCTab(SYMBOL* funcsp)
 {
@@ -326,22 +318,23 @@ void makeXCTab(SYMBOL* funcsp)
         sym->sb->decoratedName = sym->name;
         sym->sb->allocate = true;
         sym->sb->attribs.inheritable.used = sym->sb->assigned = true;
-        localNameSpace->valueData->syms->Add(sym);
+        localNameSpace->front()->syms->Add(sym);
         funcsp->sb->xc->xctab = sym;
     }
 }
-static void thunkCatchCleanup(STATEMENT* st, SYMBOL* funcsp, BLOCKDATA* src, BLOCKDATA* dest)
+static void thunkCatchCleanup(STATEMENT* st, SYMBOL* funcsp, std::list<BLOCKDATA*>& src, std::list<BLOCKDATA*>& dest)
 {
-    BLOCKDATA *top = dest ? getCommonParent(src, dest) : nullptr, *srch = src;
-    while (srch != top)
+    BLOCKDATA *top = dest.size() ? getCommonParent(src, dest) : nullptr;
+    for (auto srch : src)
     {
+        if (srch == top)
+            break;
         if (srch->type == kw_catch)
         {
             SYMBOL* sym = namespacesearch("_CatchCleanup", globalNameSpace, false, false);
             if (sym)
             {
                 FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
-                STATEMENT** find = &src->head;
                 INITLIST* arg1 = Allocate<INITLIST>();  // exception table
                 makeXCTab(funcsp);
                 sym = (SYMBOL*)basetype(sym->tp)->syms->front();
@@ -349,34 +342,34 @@ static void thunkCatchCleanup(STATEMENT* st, SYMBOL* funcsp, BLOCKDATA* src, BLO
                 funcparams->sp = sym;
                 funcparams->functp = sym->tp;
                 funcparams->fcall = varNode(en_pc, sym);
-                funcparams->arguments = arg1;
+                funcparams->arguments = initListListFactory.CreateList();
+                funcparams->arguments->push_back(arg1);
                 arg1->exp = varNode(en_auto, funcsp->sb->xc->xctab);
                 arg1->tp = &stdpointer;
-                while (*find && *find != st)
-                    find = &(*find)->next;
-                if (*find == st)
+                for (auto it = src.front()->statements->begin(); it != src.front()->statements->end(); ++it)
                 {
-                    *find = Allocate<STATEMENT>();
-                    **find = *st;
-                    (*find)->next = st;
-                    (*find)->type = st_expr;
-                    (*find)->select = exprNode(en_func, nullptr, nullptr);
-                    (*find)->select->v.func = funcparams;
+                    if ((*it) == st)
+                    {
+                        auto next = Allocate<STATEMENT>();
+                        *next = *st;
+                        next->type = st_expr;
+                        next->select = exprNode(en_func, nullptr, nullptr);
+                        next->select->v.func = funcparams;
+                        it = src.front()->statements->insert(it, next);
+                        break;
+                    }
                 }
             }
             break;
         }
-        srch = srch->next;
     }
-    srch = dest;
-    while (srch != top)
+    for (auto srch : dest)
     {
         if (srch->type == kw_try || srch->type == kw_catch)
         {
             error(ERR_GOTO_INTO_TRY_OR_CATCH_BLOCK);
             break;
         }
-        srch = srch->next;
     }
 }
 static void ThunkUndestructSyms(SymbolTable<SYMBOL>* syms)
@@ -397,27 +390,28 @@ static void thunkRetDestructors(EXPRESSION** exp, SymbolTable<SYMBOL>* top, Symb
         }
     }
 }
-static void thunkGotoDestructors(EXPRESSION** exp, BLOCKDATA* gotoTab, BLOCKDATA* labelTab)
+static void thunkGotoDestructors(EXPRESSION** exp, std::list<BLOCKDATA*>& gotoTab, std::list<BLOCKDATA*>& labelTab)
 {
     // find the common parent
-    BLOCKDATA* realtop;
+    std::list<BLOCKDATA*>::iterator realtop;
     BLOCKDATA* top = getCommonParent(gotoTab, labelTab);
-    if (gotoTab->next != top)
+    auto il = gotoTab.begin();
+    ++il;
+    if ((*il) != top)
     {
-        realtop = gotoTab;
-        while (realtop->next != top)
-            realtop = realtop->next;
-        thunkRetDestructors(exp, realtop->table, gotoTab->table);
+        realtop = il;
+        while ((*il) != top) ++il;
+        thunkRetDestructors(exp, (*il)->table, gotoTab.front()->table);
     }
 }
 static void InSwitch() {}
-static void StartOfCaseGroup(SYMBOL* funcsp, BLOCKDATA* parent)
+static void StartOfCaseGroup(SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
     caseLevel++;
     STATEMENT* st = stmtNode(nullptr, parent, st_dbgblock);
     st->label = 1;
 }
-static void EndOfCaseGroup(SYMBOL* funcsp, BLOCKDATA* parent)
+static void EndOfCaseGroup(SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
     if (caseLevel)
     {
@@ -426,85 +420,98 @@ static void EndOfCaseGroup(SYMBOL* funcsp, BLOCKDATA* parent)
         st->label = 0;
     }
 }
-static void HandleStartOfCase(BLOCKDATA* parent)
+static void HandleStartOfCase(std::list<BLOCKDATA*>& parent)
 {
     // this is a little buggy in that it doesn't check to see if we are already in a switch
     // statement, however if we aren't we should get a compile erroir that would halt program generation anyway
-    if (parent != caseDestructBlock)
+    if (parent.front() != caseDestructBlock)
     {
-        parent->caseDestruct = caseDestructBlock;
-        caseDestructBlock = parent;
+        parent.front()->caseDestruct = caseDestructBlock;
+        caseDestructBlock = parent.front();
     }
 }
-static void HandleEndOfCase(BLOCKDATA* parent)
+static void HandleEndOfCase(std::list<BLOCKDATA*>& parent)
 {
-    if (parent == caseDestructBlock)
+    if (parent.front() == caseDestructBlock)
     {
         EXPRESSION* exp = nullptr;
         STATEMENT* st;
         // the destruct is only used for endin
-        destructBlock(&exp, localNameSpace->valueData->syms, false);
+        destructBlock(&exp, localNameSpace->front()->syms, false);
         if (exp)
         {
             st = stmtNode(nullptr, parent, st_nop);
             st->destexp = exp;
         }
-        ThunkUndestructSyms(localNameSpace->valueData->syms);
+        ThunkUndestructSyms(localNameSpace->front()->syms);
     }
 }
-static void HandleEndOfSwitchBlock(BLOCKDATA* parent)
+static void HandleEndOfSwitchBlock(std::list<BLOCKDATA*>& parent)
 {
-    if (parent == caseDestructBlock)
+    if (parent.front() == caseDestructBlock)
     {
         caseDestructBlock = caseDestructBlock->caseDestruct;
     }
 }
-static LEXLIST* statement_break(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* statement_break(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
-    BLOCKDATA *breakableStatement = parent, *last = nullptr;
+    std::list<BLOCKDATA*>::iterator breakableStatement, last = parent.end();
     EXPRESSION* exp = nullptr;
     (void)lex;
     (void)funcsp;
     (void)parent;
-    while (breakableStatement &&
-           (breakableStatement->type == begin || breakableStatement->type == kw_try || breakableStatement->type == kw_catch ||
-            breakableStatement->type == kw_if || breakableStatement->type == kw_else))
+    bool found = false;
+    for (auto it = parent.begin(); it != parent.end(); ++it)
     {
-        last = breakableStatement;
-        breakableStatement = breakableStatement->next;
+        auto b = *it;
+        if (b->type != begin && b->type != kw_try && b->type != kw_catch &&
+            b->type != kw_if || b->type != kw_else)
+        {
+            breakableStatement = it;
+            found = true;
+            break;
+        }
+        last = it;
     }
 
-    if (!breakableStatement)
+    if (!found)
         error(ERR_BREAK_NO_LOOP);
     else
     {
         STATEMENT* st;
         currentLineData(parent, lex, 0);
-        if (last)
-            thunkRetDestructors(&exp, last->table, localNameSpace->valueData->syms);
+        if (last != parent.end())
+            thunkRetDestructors(&exp, (*last)->table, localNameSpace->front()->syms);
         st = stmtNode(lex, parent, st_goto);
-        st->label = breakableStatement->breaklabel;
+        st->label = (*breakableStatement)->breaklabel;
         st->destexp = exp;
-        thunkCatchCleanup(st, funcsp, parent, breakableStatement);
-        parent->needlabel = true;
-        breakableStatement->needlabel = false;
-        breakableStatement->hasbreak = true;
+        auto range = std::list<BLOCKDATA*>(breakableStatement, parent.end());
+        thunkCatchCleanup(st, funcsp, parent, range);
+        parent.front()->needlabel = true;
+        (*breakableStatement)->needlabel = false;
+        (*breakableStatement)->hasbreak = true;
     }
     return getsym();
 }
-static LEXLIST* statement_case(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* statement_case(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
     long long val;
     BLOCKDATA dummy;
     TYPE* tp = nullptr;
     EXPRESSION* exp = nullptr;
-    BLOCKDATA* switchstmt = parent;
+    BLOCKDATA* switchstmt = nullptr;
     lex = getsym();
-    while (switchstmt && switchstmt->type != kw_switch)
+    bool found = false;
+    for (auto s : parent)
     {
-        switchstmt = switchstmt->next;
+        if (s->type == kw_switch)
+        {
+            found = true;
+            switchstmt = s;
+            break;
+        }
     }
-    if (!switchstmt)
+    if (!found)
     {
         memset(&dummy, 0, sizeof(dummy));
         switchstmt = &dummy;
@@ -514,7 +521,7 @@ static LEXLIST* statement_case(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     else
     {
         switchstmt->needlabel = false;
-        parent->needlabel = false;
+        parent.front()->needlabel = false;
     }
 
     lex = optimized_expression(lex, funcsp, nullptr, &tp, &exp, false);
@@ -524,35 +531,35 @@ static LEXLIST* statement_case(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     }
     else if (isintconst(exp))
     {
-        CASEDATA **cases = &switchstmt->cases, *data;
+        needkw(&lex, colon);
         const char* fname = lex->data->errfile;
         int line = lex->data->errline;
         val = exp->v.i;
         /* need error: lost conversion on case value */
-        while (*cases)
+        bool found = false;
+        for (auto cases : *switchstmt->cases)
         {
-            if ((*cases)->val == val)
+            if (cases->val == val)
             {
+                found = true;
                 char buf[256];
                 Optimizer::my_sprintf(buf, LLONG_FORMAT_SPECIFIER, val);
-                preverror(ERR_DUPLICATE_CASE, buf, (*cases)->file, (*cases)->line);
+                preverror(ERR_DUPLICATE_CASE, buf, cases->file, cases->line);
                 break;
             }
-            cases = &(*cases)->next;
         }
-        if (!*cases)
+        if (!found)
         {
             STATEMENT* st = stmtNode(lex, parent, st_label);
             st->label = codeLabel++;
             codeLabel++;  // reserve a label in case a bingen is used in the back end...
-            data = Allocate<CASEDATA>();
+            auto data = Allocate<CASEDATA>();
             data->val = val;
             data->label = st->label;
             data->file = fname;
             data->line = line;
-            *cases = data;
+            switchstmt->cases->push_back(data);
         }
-        needkw(&lex, colon);
     }
     else
     {
@@ -562,61 +569,79 @@ static LEXLIST* statement_case(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     }
     return lex;
 }
-static LEXLIST* statement_continue(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* statement_continue(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
-    BLOCKDATA* continuableStatement = parent;
-    BLOCKDATA* last = nullptr;
+    std::list<BLOCKDATA*>::iterator continuableStatement, last = parent.end();
     EXPRESSION* exp = nullptr;
     (void)lex;
     (void)funcsp;
-    while (continuableStatement && (continuableStatement->type == kw_switch || continuableStatement->type == begin ||
-                                    continuableStatement->type == kw_try || continuableStatement->type == kw_catch ||
-                                    continuableStatement->type == kw_if || continuableStatement->type == kw_else))
+    bool found = false;
+    for (auto it = parent.begin(); it != parent.end(); ++it)
     {
-        last = continuableStatement;
-        continuableStatement = continuableStatement->next;
+        auto c = *it;
+        if (c->type != begin && c->type != kw_try && c->type != kw_catch &&
+            c->type != kw_if || c->type != kw_else)
+        {
+            continuableStatement = it;
+            found = true;
+            break;
+        }
+        last = it;
     }
-    if (!continuableStatement)
+
+    if (!found)
         error(ERR_CONTINUE_NO_LOOP);
     else
     {
         STATEMENT* st;
-        if (last)
-            thunkRetDestructors(&exp, last->table, localNameSpace->valueData->syms);
+        if (last != parent.end())
+            thunkRetDestructors(&exp, (*last)->table, localNameSpace->front()->syms);
         currentLineData(parent, lex, 0);
         st = stmtNode(lex, parent, st_goto);
-        st->label = continuableStatement->continuelabel;
+        st->label = (*continuableStatement)->continuelabel;
         st->destexp = exp;
-        thunkCatchCleanup(st, funcsp, parent, continuableStatement);
-        parent->needlabel = true;
+        auto range = std::list<BLOCKDATA*>(continuableStatement, parent.end());
+        thunkCatchCleanup(st, funcsp, parent, range);
+        parent.front()->needlabel = true;
     }
     return getsym();
 }
-static LEXLIST* statement_default(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* statement_default(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
-    BLOCKDATA* defaultableStatement = parent;
+    std::list<BLOCKDATA*>::iterator defaultableStatement;
+    EXPRESSION* exp = nullptr;
     (void)lex;
     (void)funcsp;
-    while (defaultableStatement && defaultableStatement->type != kw_switch)
-        defaultableStatement = defaultableStatement->next;
-    lex = getsym();
-    if (!defaultableStatement)
+    bool found = false;
+    for (auto it = parent.begin(); it != parent.end(); ++it)
+    {
+        auto c = *it;
+        if (c->type == kw_switch)
+        {
+            defaultableStatement = it;
+            found = true;
+            break;
+        }
+    }
+
+    if (!found)
         error(ERR_DEFAULT_NO_SWITCH);
     else
     {
         STATEMENT* st = stmtNode(lex, parent, st_label);
         st->label = codeLabel++;
-        if (defaultableStatement->defaultlabel != -1)
+        if ((*defaultableStatement)->defaultlabel != -1)
             error(ERR_SWITCH_HAS_DEFAULT);
-        defaultableStatement->defaultlabel = st->label;
-        defaultableStatement->needlabel = false;
-        parent->needlabel = false;
+        (*defaultableStatement)->defaultlabel = st->label;
+        (*defaultableStatement)->needlabel = false;
+        parent.front()->needlabel = false;
     }
     needkw(&lex, colon);
     return lex;
 }
-static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
+    auto before = parent.front();
     BLOCKDATA* dostmt = Allocate<BLOCKDATA>();
     STATEMENT *st, *lastLabelStmt;
     EXPRESSION* select = nullptr;
@@ -625,11 +650,11 @@ static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     lex = getsym();
     dostmt->breaklabel = codeLabel++;
     dostmt->continuelabel = codeLabel++;
-    dostmt->next = parent;
     dostmt->type = kw_do;
-    dostmt->table = localNameSpace->valueData->syms;
-    currentLineData(dostmt, lex, 0);
-    st = stmtNode(lex, dostmt, st_label);
+    dostmt->table = localNameSpace->front()->syms;
+    parent.push_front(dostmt);
+    currentLineData(parent, lex, 0);
+    st = stmtNode(lex, parent, st_label);
     st->label = loopLabel;
     inLoopOrConditional++;
     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
@@ -639,15 +664,15 @@ static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     }
     do
     {
-        lastLabelStmt = dostmt->tail;
-        lex = nononconststatement(lex, funcsp, dostmt, true);
-    } while (lex && dostmt->tail != lastLabelStmt && dostmt->tail->purelabel);
+        lastLabelStmt = dostmt->statements->back();
+        lex = nononconststatement(lex, funcsp, parent, true);
+    } while (lex && dostmt->statements->back() != lastLabelStmt && dostmt->statements->back()->purelabel);
     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
     {
         addedBlock--;
-        FreeLocalContext(dostmt, funcsp, codeLabel++);
+        FreeLocalContext(parent, funcsp, codeLabel++);
     }
-    parent->nosemi = false;
+    before->nosemi = false;
     if (MATCHKW(lex, kw_while))
     {
         lex = getsym();
@@ -659,7 +684,7 @@ static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         if (MATCHKW(lex, openpa))
         {
             lex = getsym();
-            lex = selection_expression(lex, dostmt, &select, funcsp, kw_do, nullptr);
+            lex = selection_expression(lex, parent, &select, funcsp, kw_do, nullptr);
             if (!MATCHKW(lex, closepa))
             {
                 error(ERR_DOWHILE_NEEDS_CLOSEPA);
@@ -668,15 +693,15 @@ static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             }
             else
                 lex = getsym();
-            st = stmtNode(lex, dostmt, st_label);
+            st = stmtNode(lex, parent, st_label);
             st->label = dostmt->continuelabel;
-            currentLineData(dostmt, lex, 0);
-            st = stmtNode(lex, dostmt, st_select);
+            currentLineData(parent, lex, 0);
+            st = stmtNode(lex, parent, st_select);
             st->select = select;
             if (!dostmt->hasbreak && (dostmt->needlabel || isselecttrue(st->select)))
-                parent->needlabel = true;
+                before->needlabel = true;
             st->label = loopLabel;
-            st = stmtNode(lex, dostmt, st_label);
+            st = stmtNode(lex, parent, st_label);
             st->label = dostmt->breaklabel;
         }
         else
@@ -688,32 +713,36 @@ static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     }
     else
     {
-        parent->nosemi = true;
+        before->nosemi = true;
         error(ERR_DO_STMT_NEEDS_WHILE);
         errskim(&lex, skim_semi);
         skip(&lex, semicolon);
     }
     inLoopOrConditional--;
     while (addedBlock--)
-        FreeLocalContext(dostmt, funcsp, codeLabel++);
+        FreeLocalContext(parent, funcsp, codeLabel++);
+    parent.pop_front();
     AddBlock(lex, parent, dostmt);
     return lex;
 }
-static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
+    BLOCKDATA* before = parent.front();
     BLOCKDATA* forstmt = Allocate<BLOCKDATA>();
     STATEMENT *st, *lastLabelStmt;
-    STATEMENT* forline;
+    std::list<STATEMENT*>* forline;
     int addedBlock = 0;
-    EXPRESSION *init = nullptr, *before = nullptr, *select = nullptr;
+    EXPRESSION *init = nullptr, *incrementer = nullptr, *select = nullptr;
     int loopLabel = codeLabel++, testlabel = codeLabel++;
     forstmt->breaklabel = codeLabel++;
     forstmt->continuelabel = codeLabel++;
-    forstmt->next = parent;
     forstmt->type = kw_for;
-    forstmt->table = localNameSpace->valueData->syms;
-    currentLineData(forstmt, lex, -1);
-    forline = currentLineData(nullptr, lex, 0);
+    forstmt->table = localNameSpace->front()->syms;
+    parent.push_front(forstmt);
+    auto beforeit = parent.begin();
+    ++beforeit;
+    currentLineData(parent, lex, -1);
+    forline = currentLineData(emptyBlockdata, lex, 0);
     lex = getsym();
     inLoopOrConditional++;
     if (MATCHKW(lex, openpa))
@@ -726,7 +755,8 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             if ((Optimizer::cparams.prm_cplusplus && !Optimizer::cparams.prm_oldfor) || Optimizer::cparams.prm_c99)
             {
                 addedBlock++;
-                AllocateLocalContext(parent, funcsp, codeLabel++);
+                std::list<BLOCKDATA*> dummy(beforeit, parent.end());
+                AllocateLocalContext(dummy, funcsp, codeLabel++);
             }
             if (Optimizer::cparams.prm_cplusplus)
             {
@@ -737,13 +767,13 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 lex = prevsym(origLex);
             }
 
-            lex = selection_expression(lex, forstmt, &init, funcsp, hasColon ? kw_rangefor : kw_for, &declaration);
+            lex = selection_expression(lex, parent, &init, funcsp, hasColon ? kw_rangefor : kw_for, &declaration);
             if (Optimizer::cparams.prm_cplusplus && !Optimizer::cparams.prm_oldfor && declaration && MATCHKW(lex, colon))
             {
                 // range based for statement
                 // we will ignore 'init'.
                 TYPE* selectTP = nullptr;
-                SYMBOL* declSP = (SYMBOL*)localNameSpace->valueData->syms->front();
+                SYMBOL* declSP = (SYMBOL*)localNameSpace->front()->syms->front();
                 EXPRESSION* declExp;
                 if (!declSP)
                 {
@@ -767,17 +797,15 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     TYPE* matchtp = &stdint;
                     EXPRESSION *begin, *end;
                     std::deque<std::pair<TYPE*, EXPRESSION*>> save;
-                    INITLIST* lst;
+                    std::list<INITLIST*>* lst = nullptr;
                     lex = getInitList(lex, funcsp, &lst);
                     int offset = 0;
 
                     if (lst)
                     {
-                        int n = 0;
-                        for (auto temp = lst; temp; temp = temp->next, n++)
-                            ;
+                        int n = lst->size();
 
-                        matchtp = lst->tp;
+                        matchtp = lst->front()->tp;
                         if (isref(matchtp))
                             matchtp = basetype(matchtp)->btp;
 
@@ -787,11 +815,11 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 
                         EXPRESSION* val = anonymousVar(sc_auto, valueList);
 
-                        int sz = lst->tp->size;
+                        int sz = lst->front()->tp->size;
 
-                        while (lst)
-                        {
-                            TYPE* ittp = lst->tp;
+                        for (auto lstitem : *lst)
+                        { 
+                            TYPE* ittp = lstitem->tp;
                             EXPRESSION* base = exprNode(en_add, val, intNode(en_c_i, offset));
                             offset += sz;
                             if (isref(ittp))
@@ -806,13 +834,13 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 {
                                     TYPE* ctype = matchtp;
                                     EXPRESSION* newExp = base;
-                                    if (!callConstructorParam(&ctype, &newExp, ittp, lst->exp, true, false, true, false, true))
+                                    if (!callConstructorParam(&ctype, &newExp, ittp, lstitem->exp, true, false, true, false, true))
                                     {
                                         errortype(ERR_CANNOT_CONVERT_TYPE, ittp, matchtp);
                                     }
                                     else
                                     {
-                                        st = stmtNode(lex, forstmt, st_expr);
+                                        st = stmtNode(lex, parent, st_expr);
                                         st->select = newExp;
                                         newExp = base;
                                         callDestructor(matchtp->sp, matchtp->sp, &newExp, intNode(en_c_i, offset / sz), true, true,
@@ -825,31 +853,30 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 TYPE* ctype = matchtp;
                                 EXPRESSION* newExp = base;
                                 ittp->lref = true;
-                                if (lst->exp->type == en_thisref)
+                                if (lstitem->exp->type == en_thisref)
                                 {
-                                    lst->exp->left->v.func->thisptr->v.sp->sb->dest = nullptr;
-                                    lst->exp->left->v.func->thisptr = base;
-                                    st = stmtNode(lex, forstmt, st_expr);
-                                    st->select = lst->exp;
+                                    lstitem->exp->left->v.func->thisptr->v.sp->sb->dest = nullptr;
+                                    lstitem->exp->left->v.func->thisptr = base;
+                                    st = stmtNode(lex, parent, st_expr);
+                                    st->select = lstitem->exp;
                                 }
-                                else if (!callConstructorParam(&ctype, &newExp, ittp, lst->exp, true, false, true, false, true))
+                                else if (!callConstructorParam(&ctype, &newExp, ittp, lstitem->exp, true, false, true, false, true))
                                 {
                                     errortype(ERR_CANNOT_CONVERT_TYPE, ittp, matchtp);
                                 }
                                 else
                                 {
-                                    st = stmtNode(lex, forstmt, st_expr);
+                                    st = stmtNode(lex, parent, st_expr);
                                     st->select = newExp;
                                 }
                                 newExp = base;
                             }
                             else
                             {
-                                st = stmtNode(lex, forstmt, st_expr);
+                                st = stmtNode(lex, parent, st_expr);
                                 deref(&stdpointer, &base);
-                                st->select = exprNode(en_assign, base, lst->exp);
+                                st->select = exprNode(en_assign, base, lstitem->exp);
                             }
-                            lst = lst->next;
                         }
                         if (isstructured(matchtp))
                         {
@@ -868,15 +895,15 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         begin = end = select;
                     }
                     selectTP = InitializerListType(matchtp);
-                    INITIALIZER* init;
+                    std::list<INITIALIZER*>* init = nullptr;
                     initInsert(&init, &stdpointer, begin, 0, false);
-                    initInsert(&init->next, &stdpointer, end, stdpointer.size, false);
+                    initInsert(&init, &stdpointer, end, stdpointer.size, false);
                     TYPE* tp2 = MakeType(bt_pointer, &stdpointer);
                     tp2->size = 2 * stdpointer.size;
                     tp2->array = true;
                     EXPRESSION* val = anonymousVar(sc_auto, tp2);
                     select = convertInitToExpression(tp2, nullptr, val, funcsp, init, nullptr, false);
-                    st = stmtNode(lex, forstmt, st_expr);
+                    st = stmtNode(lex, parent, st_expr);
                     st->select = select;
                     select = val;
                 }
@@ -904,7 +931,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         select = select->left;
                     if (lvalue(select) && select->type != en_l_ref && !isstructured(selectTP))
                         select = select->left;
-                    st = stmtNode(lex, forstmt, st_expr);
+                    st = stmtNode(lex, parent, st_expr);
                     st->select = exprNode(en_assign, rangeExp, select);
                     if (!isstructured(selectTP))
                     {
@@ -958,7 +985,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     iteratorType = basetype(beginFunc->tp)->btp;
                                     if (isstructured(iteratorType))
                                     {
-                                        INITIALIZER* dest;
+                                        std::list<INITIALIZER*>* dest = nullptr;
                                         EXPRESSION* exp;
                                         fcb.returnEXP = anonymousVar(sc_auto, iteratorType);
                                         fcb.returnSP = fcb.returnEXP->v.sp;
@@ -1032,12 +1059,14 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 memset(&args, 0, sizeof(args));
                                 args.tp = rangeSP->tp->btp;
                                 args.exp = rangeExp;
-                                fcb.arguments = &args;
+                                fcb.arguments = initListListFactory.CreateList();
+                                fcb.arguments->push_back(&args);
                                 fcb.ascall = true;
                                 ctp = rangeSP->tp;
                                 beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, sbegin, &fcb, nullptr, false, false, true, 0);
                                 memset(&fce, 0, sizeof(fce));
-                                fce.arguments = &args;
+                                fce.arguments = initListListFactory.CreateList();
+                                fce.arguments->push_back(&args);
                                 fce.ascall = true;
                                 ctp = rangeSP->tp;
                                 endFunc = GetOverloadedFunction(&ctp, &fce.fcall, send, &fce, nullptr, false, false, true, 0);
@@ -1056,7 +1085,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         FUNCTIONCALL* fc;
                                         if (isstructured(iteratorType))
                                         {
-                                            INITIALIZER* dest;
+                                            std::list<INITIALIZER*>* dest = nullptr;
                                             EXPRESSION* exp;
                                             fcb.returnEXP = anonymousVar(sc_auto, iteratorType);
                                             fcb.returnSP = fcb.returnEXP->v.sp;
@@ -1079,8 +1108,9 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         fc->sp = beginFunc;
                                         fc->functp = beginFunc->tp;
                                         fc->ascall = true;
-                                        fc->arguments = Allocate<INITLIST>();
-                                        *fc->arguments = *fcb.arguments;
+                                        fc->arguments = initListListFactory.CreateList();
+                                        for (auto i : *fcb.arguments)
+                                            fc->arguments->push_back(i);
                                         if (isstructured(it2) && isstructured(((SYMBOL*)(it2->syms->front()))->tp))
                                         {
                                             EXPRESSION* consexp =
@@ -1089,15 +1119,16 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
                                             TYPE* ctype = basetype(rangeSP->tp)->btp;
                                             esp->sb->stackblock = true;
-                                            funcparams->arguments = Allocate<INITLIST>();
-                                            *funcparams->arguments = *fc->arguments;
+                                            funcparams->arguments = initListListFactory.CreateList();
+                                            for (auto i : *fc->arguments)
+                                                funcparams->arguments->push_back(i);
                                             callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, false, false,
                                                             false, false, true);
-                                            fc->arguments->exp = consexp;
+                                            fc->arguments->front()->exp = consexp;
                                         }
                                         else
                                         {
-                                            fc->arguments->tp = MakeType(bt_lref, fcb.arguments->tp);
+                                            fc->arguments->front()->tp = MakeType(bt_lref, fcb.arguments->front()->tp);
                                         }
                                         ibegin = exprNode(en_func, nullptr, nullptr);
                                         ibegin->v.func = fc;
@@ -1106,8 +1137,9 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         fc->sp = endFunc;
                                         fc->functp = endFunc->tp;
                                         fc->ascall = true;
-                                        fc->arguments = Allocate<INITLIST>();
-                                        *fc->arguments = *fce.arguments;
+                                        fc->arguments = initListListFactory.CreateList();
+                                        for (auto i : *fce.arguments)
+                                            fc->arguments->push_back(i);
                                         if (isstructured(it2) && isstructured(((SYMBOL*)(it2->syms->front()))->tp))
                                         {
                                             EXPRESSION* consexp =
@@ -1116,15 +1148,16 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
                                             TYPE* ctype = basetype(rangeSP->tp)->btp;
                                             esp->sb->stackblock = true;
-                                            funcparams->arguments = Allocate<INITLIST>();
-                                            *funcparams->arguments = *fc->arguments;
+                                            funcparams->arguments = initListListFactory.CreateList();
+                                            for (auto i : *fc->arguments)
+                                                funcparams->arguments->push_back(i);
                                             callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, false, false,
                                                             false, false, true);
-                                            fc->arguments->exp = consexp;
+                                            fc->arguments->front()->exp = consexp;
                                         }
                                         else
                                         {
-                                            fc->arguments->tp = MakeType(bt_lref, fce.arguments->tp);
+                                            fc->arguments->front()->tp = MakeType(bt_lref, fce.arguments->front()->tp);
                                         }
                                         iend = exprNode(en_func, nullptr, nullptr);
                                         iend->v.func = fc;
@@ -1146,18 +1179,12 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         if (isstructured(selectTP) && isstructured(iteratorType) && ibegin->type == en_func &&
                             iend->type == en_func)
                         {
-                            st = stmtNode(lex, forstmt, st_expr);
+                            st = stmtNode(lex, parent, st_expr);
                             st->select = ibegin;
-                            st = stmtNode(lex, forstmt, st_expr);
+                            st = stmtNode(lex, parent, st_expr);
                             st->select = iend;
                             eBegin = ibegin->v.func->returnEXP;
                             eEnd = iend->v.func->returnEXP;
-                            /*
-                            st = stmtNode(lex, forstmt, st_expr);
-                            st->select = exprNode(en_assign, eBegin, ibegin->v.func->returnEXP);
-                            st = stmtNode(lex, forstmt, st_expr);
-                            st->select = exprNode(en_assign, eEnd, iend->v.func->returnEXP);
-                            */
                         }
                         else
                         {
@@ -1166,9 +1193,9 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                             eEnd = anonymousVar(sc_auto, tpx);
                             deref(&stdpointer, &eBegin);
                             deref(&stdpointer, &eEnd);
-                            st = stmtNode(lex, forstmt, st_expr);
+                            st = stmtNode(lex, parent, st_expr);
                             st->select = exprNode(en_assign, eBegin, ibegin);
-                            st = stmtNode(lex, forstmt, st_expr);
+                            st = stmtNode(lex, parent, st_expr);
                             st->select = exprNode(en_assign, eEnd, iend);
                         }
                         if (isref(iteratorType))
@@ -1188,18 +1215,19 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                             }
                         }
 
-                        st = stmtNode(lex, forstmt, st_select);
-                        st->label = forstmt->breaklabel;
+                        st = stmtNode(lex, parent, st_select);
+                        st->label = parent.front()->breaklabel;
                         st->altlabel = testlabel;
                         st->select = compare;
 
-                        st = stmtNode(lex, forstmt, st_label);
+                        st = stmtNode(lex, parent, st_label);
                         st->label = loopLabel;
 
-                        AllocateLocalContext(parent, funcsp, codeLabel++);
+                        std::list<BLOCKDATA*> dummy(beforeit, parent.end());
+                        AllocateLocalContext(dummy, funcsp, codeLabel++);
 
                         // initialize var here
-                        st = stmtNode(lex, forstmt, st_expr);
+                        st = stmtNode(lex, parent, st_expr);
                         if (!isstructured(selectTP))
                         {
                             DeduceAuto(&declSP->tp, selectTP, declExp);
@@ -1216,9 +1244,10 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 TYPE* ctype = declSP->tp;
                                 FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
                                 INITLIST* args = Allocate<INITLIST>();
-                                funcparams->arguments = args;
-                                args->tp = declSP->tp;
-                                args->exp = eBegin;
+                                funcparams->arguments = initListListFactory.CreateList();
+                                funcparams->arguments->push_back(Allocate<INITLIST>());
+                                funcparams->arguments->front()->tp = declSP->tp;
+                                funcparams->arguments->front()->exp = eBegin;
                                 callConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false, true);
                                 st->select = decl;
                                 declDest = declExp;
@@ -1261,9 +1290,10 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     TYPE* ctype = declSP->tp;
                                     FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
                                     INITLIST* args = Allocate<INITLIST>();
-                                    funcparams->arguments = args;
-                                    args->tp = declSP->tp;
-                                    args->exp = eBegin;
+                                    funcparams->arguments = initListListFactory.CreateList();
+                                    funcparams->arguments->push_back(Allocate<INITLIST>());
+                                    funcparams->arguments->front()->tp = declSP->tp;
+                                    funcparams->arguments->front()->exp = eBegin;
                                     callConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false,
                                                     true);
                                     st->select = decl;
@@ -1310,9 +1340,10 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     TYPE* ctype = declSP->tp;
                                     FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
                                     INITLIST* args = Allocate<INITLIST>();
-                                    funcparams->arguments = args;
-                                    args->tp = declSP->tp;
-                                    args->exp = st->select;
+                                    funcparams->arguments = initListListFactory.CreateList();
+                                    funcparams->arguments->push_back(Allocate<INITLIST>());
+                                    funcparams->arguments->front()->tp = declSP->tp;
+                                    funcparams->arguments->front()->exp = st->select;
                                     callConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false,
                                                     true);
                                     st->select = decl;
@@ -1323,18 +1354,18 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         }
                         do
                         {
-                            lastLabelStmt = forstmt->tail;
-                            lex = nononconststatement(lex, funcsp, forstmt, true);
-                        } while (lex && forstmt->tail != lastLabelStmt && forstmt->tail->purelabel);
-                        FreeLocalContext(forstmt, funcsp, codeLabel++);
+                            lastLabelStmt = parent.front()->statements->back();
+                            lex = nononconststatement(lex, funcsp, parent, true);
+                        } while (lex && parent.front()->statements->back() != lastLabelStmt && parent.front()->statements->back()->purelabel);
+                        FreeLocalContext(parent, funcsp, codeLabel++);
                         if (declDest)
                         {
-                            st = stmtNode(lex, forstmt, st_expr);
+                            st = stmtNode(lex, parent, st_expr);
                             st->select = declDest;
                         }
-                        st = stmtNode(lex, forstmt, st_label);
-                        st->label = forstmt->continuelabel;
-                        st = stmtNode(lex, forstmt, st_expr);
+                        st = stmtNode(lex, parent, st_label);
+                        st->label = parent.front()->continuelabel;
+                        st = stmtNode(lex, parent, st_expr);
 
                         // do ++ here
                         if (!isstructured(selectTP))
@@ -1369,7 +1400,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     declDest = st->select->v.func->returnEXP;
                                     callDestructor(st->select->v.func->returnSP, nullptr, &declDest, nullptr, true, true, false,
                                                    true);
-                                    st = stmtNode(lex, forstmt, st_expr);
+                                    st = stmtNode(lex, parent, st_expr);
                                     st->select = declDest;
                                 }
                             }
@@ -1377,26 +1408,21 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 
                         if (forline)
                         {
-                            if (forstmt->head)
-                                forstmt->tail = forstmt->tail->next = forline;
-                            else
-                                forstmt->head = forstmt->tail = forline;
-                            while (forstmt->tail->next)
-                                forstmt->tail->next = forstmt->tail;
+                            parent.front()->statements->insert(parent.front()->statements->end(), forline->begin(), forline->end());
                         }
-                        st = stmtNode(lex, forstmt, st_label);
+                        st = stmtNode(lex, parent, st_label);
                         st->label = testlabel;
 
-                        st = stmtNode(lex, forstmt, st_notselect);
+                        st = stmtNode(lex, parent, st_notselect);
                         st->label = loopLabel;
                         st->select = compare;
 
-                        if (!forstmt->hasbreak && (!st->select || isselectfalse(st->select)))
-                            parent->needlabel = true;
-                        st = stmtNode(lex, forstmt, st_label);
-                        st->label = forstmt->breaklabel;
-                        parent->hassemi = forstmt->hassemi;
-                        parent->nosemi = forstmt->nosemi;
+                        if (!parent.front()->hasbreak && (!st->select || isselectfalse(st->select)))
+                            before->needlabel = true;
+                        st = stmtNode(lex, parent, st_label);
+                        st->label = parent.front()->breaklabel;
+                        before->hassemi = parent.front()->hassemi;
+                        before->nosemi = parent.front()->nosemi;
                     }
                     else
                     {
@@ -1404,7 +1430,8 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     }
                 }
                 while (addedBlock--)
-                    FreeLocalContext(forstmt, funcsp, codeLabel++);
+                    FreeLocalContext(parent, funcsp, codeLabel++);
+                parent.pop_front();
                 AddBlock(lex, parent, forstmt);
                 return lex;
             }
@@ -1412,8 +1439,8 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             {
                 if (declaration && Optimizer::cparams.prm_cplusplus)
                 {
-                    auto it = localNameSpace->valueData->syms->begin();
-                    auto ite = localNameSpace->valueData->syms->end();
+                    auto it = localNameSpace->front()->syms->begin();
+                    auto ite = localNameSpace->front()->syms->end();
                     while (it != ite && (*it)->sb->anonymous)
                         ++it;
                     if (it == ite)
@@ -1467,15 +1494,15 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 if (!MATCHKW(lex, closepa))
                 {
                     TYPE* tp = nullptr;
-                    lex = expression_comma(lex, funcsp, nullptr, &tp, &before, nullptr, 0);
+                    lex = expression_comma(lex, funcsp, nullptr, &tp, &incrementer, nullptr, 0);
                     if (!tp)
                     {
                         error(ERR_EXPRESSION_SYNTAX);
                     }
                     else
                     {
-                        optimize_for_constants(&before);
-                        ConstExprPatch(&before);
+                        optimize_for_constants(&incrementer);
+                        ConstExprPatch(&incrementer);
                     }
                 }
                 if (!MATCHKW(lex, closepa))
@@ -1489,73 +1516,68 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     lex = getsym();
                     if (init)
                     {
-                        st = stmtNode(lex, forstmt, st_expr);
+                        st = stmtNode(lex, parent, st_expr);
                         st->select = init;
                     }
                     if (Optimizer::cparams.prm_debug || Optimizer::cparams.prm_optimize_for_size ||
                         (Optimizer::chosenAssembler->arch->denyopts & DO_NOENTRYIF))
                     {
-                        st = stmtNode(lex, forstmt, st_goto);
+                        st = stmtNode(lex, parent, st_goto);
                         st->label = testlabel;
                     }
                     else
                     {
-                        st = stmtNode(lex, forstmt, st_notselect);
-                        st->label = forstmt->breaklabel;
+                        st = stmtNode(lex, parent, st_notselect);
+                        st->label = parent.front()->breaklabel;
                         st->altlabel = testlabel;
                         st->select = select;
                     }
-                    st = stmtNode(lex, forstmt, st_label);
+                    st = stmtNode(lex, parent, st_label);
                     st->label = loopLabel;
                     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
                     {
                         addedBlock++;
-                        AllocateLocalContext(forstmt, funcsp, codeLabel++);
+                        AllocateLocalContext(parent, funcsp, codeLabel++);
                     }
                     do
                     {
-                        lastLabelStmt = forstmt->tail;
-                        lex = nononconststatement(lex, funcsp, forstmt, true);
-                    } while (lex && forstmt->tail != lastLabelStmt && forstmt->tail->purelabel);
+                        lastLabelStmt = parent.front()->statements->back();
+                        lex = nononconststatement(lex, funcsp, parent, true);
+                    } while (lex && parent.front()->statements->back() != lastLabelStmt && parent.front()->statements->back()->purelabel);
                     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
                     {
                         addedBlock--;
-                        FreeLocalContext(forstmt, funcsp, codeLabel++);
+                        FreeLocalContext(parent, funcsp, codeLabel++);
                     }
                     if (before)
-                        assignmentUsages(before, false);
-                    st = stmtNode(lex, forstmt, st_label);
-                    st->label = forstmt->continuelabel;
-                    st = stmtNode(lex, forstmt, st_expr);
-                    st->select = before;
+                        assignmentUsages(incrementer, false);
+                    st = stmtNode(lex, parent, st_label);
+                    st->label = parent.front()->continuelabel;
+                    st = stmtNode(lex, parent, st_expr);
+                    st->select = incrementer;
                     if (forline)
                     {
-                        if (forstmt->head)
-                            forstmt->tail = forstmt->tail->next = forline;
-                        else
-                            forstmt->head = forstmt->tail = forline;
-                        while (forstmt->tail->next)
-                            forstmt->tail = forstmt->tail->next;
+                        parent.front()->statements->insert(parent.front()->statements->end(), forline->begin(), forline->end());
                     }
-                    st = stmtNode(lex, forstmt, st_label);
+                    st = stmtNode(lex, parent, st_label);
                     st->label = testlabel;
                     if (select)
                     {
-                        st = stmtNode(lex, forstmt, st_select);
+                        st = stmtNode(lex, parent, st_select);
                         st->label = loopLabel;
                         st->select = select;
                     }
                     else
                     {
-                        st = stmtNode(lex, forstmt, st_goto);
+                        st = stmtNode(lex, parent, st_goto);
                         st->label = loopLabel;
                     }
-                    if (!forstmt->hasbreak && (!st->select || isselectfalse(st->select)))
-                        parent->needlabel = true;
-                    st = stmtNode(lex, forstmt, st_label);
-                    st->label = forstmt->breaklabel;
-                    parent->hassemi = forstmt->hassemi;
-                    parent->nosemi = forstmt->nosemi;
+                    if (!parent.front()->hasbreak && (!st->select || isselectfalse(st->select)))
+                        before->needlabel = true;
+                    st = stmtNode(lex, parent, st_label);
+                    st->label = parent.front()->breaklabel;
+                    before->hassemi = parent.front()->hassemi;
+                    before->nosemi = parent.front()->nosemi;
                 }
             }
         }
@@ -1568,13 +1590,14 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     }
     inLoopOrConditional--;
     while (addedBlock--)
-        FreeLocalContext(forstmt, funcsp, codeLabel++);
+        FreeLocalContext(parent, funcsp, codeLabel++);
+    parent.pop_front();
     AddBlock(lex, parent, forstmt);
     return lex;
 }
-static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
-    STATEMENT *st, *st1, *st2, *lastLabelStmt;
+    STATEMENT *st, *lastLabelStmt;
     EXPRESSION* select = nullptr;
     int addedBlock = 0;
     bool needlabelif;
@@ -1594,14 +1617,15 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         if (MATCHKW(lex, closepa))
         {
             bool optimized = false;
-            STATEMENT* sti;
+            std::list<STATEMENT*>::iterator sti;
             currentLineData(parent, lex, 0);
             lex = getsym();
             st = stmtNode(lex, parent, st_notselect);
             st->label = ifbranch;
             st->select = select;
-            sti = st;
-            parent->needlabel = false;
+            sti = parent.front()->statements->end();
+            --sti;
+            parent.front()->needlabel = false;
             if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
             {
                 addedBlock++;
@@ -1609,10 +1633,10 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             }
             do
             {
-                lastLabelStmt = parent->tail;
+                lastLabelStmt = parent.front()->statements->back();
                 lex = nononconststatement(lex, funcsp, parent, true);
-            } while (lex && parent->tail != lastLabelStmt && parent->tail->purelabel);
-            needlabelif = parent->needlabel;
+            } while (lex && parent.front()->statements->back() != lastLabelStmt && parent.front()->statements->back()->purelabel);
+            needlabelif = parent.front()->needlabel;
             if (MATCHKW(lex, kw_else))
             {
                 int elsebr = codeLabel++;
@@ -1628,54 +1652,53 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 }
                 if (Optimizer::cparams.prm_optimize_for_speed || Optimizer::cparams.prm_optimize_for_size)
                 {
-                    st2 = sti;
-                    st1 = sti->next;
-                    while (st1 && (st1)->type == st_line)
+                    auto st2 = sti;
+                    auto st1 = sti;
+                    ++st1;
+                    for  ( ; st1 != parent.front()->statements->end() && (*st1)->type == st_line; ++ st1)
                     {
                         st2 = st1;
-                        st1 = st1->next;
                     }
-                    if (st1 && st1->type == st_goto)
+                    if  (st1 != parent.front()->statements->end() && (*st1)->type == st_goto)
                     {
                         optimized = true;
-                        st2->next = nullptr;
-                        parent->tail = st2;
-                        sti->type = st_select;
-                        sti->label = st1->label;
+                        parent.front()->statements->back() = *st2;
+                        (*sti)->type = st_select;
+                        (*sti)->label = (*st1)->label;
                     }
                 }
                 st = stmtNode(lex, parent, st_label);
                 st->label = ifbranch;
-                if (!parent->nosemi && !parent->hassemi)
+                if (!parent.front()->nosemi && !parent.front()->hassemi)
                     errorint(ERR_NEEDY, ';');
-                if (parent->nosemi && parent->hassemi)
+                if (parent.front()->nosemi && parent.front()->hassemi)
                     error(ERR_MISPLACED_ELSE);
                 currentLineData(parent, lex, 0);
                 lex = getsym();
-                parent->needlabel = false;
+                parent.front()->needlabel = false;
                 do
                 {
-                    lastLabelStmt = parent->tail;
+                    lastLabelStmt = parent.front()->statements->back();
                     lex = nononconststatement(lex, funcsp, parent, true);
-                } while (lex && parent->tail != lastLabelStmt && parent->tail->purelabel);
+                } while (lex && parent.front()->statements->back() != lastLabelStmt && parent.front()->statements->back()->purelabel);
                 if ((Optimizer::cparams.prm_optimize_for_speed || Optimizer::cparams.prm_optimize_for_size) && !optimized)
                 {
-                    st1 = st->next;
-                    st2 = st;
-                    while (st1 && (st1)->type == st_line)
+                    auto st2 = sti;
+                    auto st1 = sti;
+                    ++st1;
+                    for ( ; st1 != parent.front()->statements->end() && (*st1)->type == st_line; ++st1)
                     {
                         st2 = st1;
-                        st1 = st1->next;
                     }
-                    if (st1 && st1->type == st_goto)
+                    if (st1 != parent.front()->statements->end() && (*st1)->type == st_goto)
                     {
                         //						optimized = true;
-                        st2->next = nullptr;
-                        parent->tail = st2;
-                        sti->label = st1->label;
+                        parent.front()->statements->back() = *st2;
+                        (*sti)->type = st_select;
+                        (*sti)->label = (*st1)->label;
                     }
                 }
-                needlabelelse = parent->needlabel;
+                needlabelelse = parent.front()->needlabel;
                 if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
                 {
                     FreeLocalContext(parent, funcsp, codeLabel++);
@@ -1688,20 +1711,19 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             {
                 if (Optimizer::cparams.prm_optimize_for_speed || Optimizer::cparams.prm_optimize_for_size)
                 {
-                    st2 = sti;
-                    st1 = sti->next;
-                    while (st1 && (st1)->type == st_line)
+                    auto st2 = sti;
+                    auto st1 = sti;
+                    ++st1;
+                    for ( ; st1 != parent.front()->statements->end() && (*st1)->type == st_line; ++st1)
                     {
                         st2 = st1;
-                        st1 = st1->next;
                     }
-                    if (st1 && st1->type == st_goto)
+                    if (st1 != parent.front()->statements->end() && (*st1)->type == st_goto)
                     {
                         //						optimized = true;
-                        st2->next = nullptr;
-                        parent->tail = st2;
-                        sti->type = st_select;
-                        sti->label = st1->label;
+                        parent.front()->statements->back() = *st2;
+                        (*sti)->type = st_select;
+                        (*sti)->label = (*st1)->label;
                     }
                 }
                 if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
@@ -1712,9 +1734,9 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 st = stmtNode(lex, parent, st_label);
                 st->label = ifbranch;
             }
-            if (parent->hassemi)
-                parent->nosemi = true;
-            parent->needlabel = (needlabelif && needlabelelse);
+            if (parent.front()->hassemi)
+                parent.front()->nosemi = true;
+            parent.front()->needlabel = (needlabelif && needlabelelse);
         }
         else
         {
@@ -1732,10 +1754,12 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     inLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
+
     return lex;
 }
-static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
+    auto before = parent.front();
     (void)funcsp;
     (void)parent;
     lex = getsym();
@@ -1744,31 +1768,33 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     {
         SYMBOL* spx = labelSyms->search(lex->data->value.s.a);
         BLOCKDATA* block = Allocate<BLOCKDATA>();
-        STATEMENT* st = stmtNode(lex, block, st_goto);
-        st->explicitGoto = true;
-        block->next = parent;
+        parent.push_front(block);
         block->type = begin;
-        block->table = localNameSpace->valueData->syms;
+        block->table = localNameSpace->front()->syms;
+        STATEMENT* st = stmtNode(lex, parent, st_goto);
+        st->explicitGoto = true;
         if (!spx)
         {
             spx = makeID(sc_ulabel, nullptr, nullptr, litlate(lex->data->value.s.a));
             spx->sb->declfile = spx->sb->origdeclfile = lex->data->errfile;
             spx->sb->declline = spx->sb->origdeclline = lex->data->errline;
-            spx->sb->realdeclline = lex->data->linedata->lineno;
-            spx->sb->declfilenum = lex->data->linedata->fileindex;
+            spx->sb->realdeclline = lex->data->linedata->front()->lineno;
+            spx->sb->declfilenum = lex->data->linedata->front()->fileindex;
             SetLinkerNames(spx, lk_none);
             spx->sb->offset = codeLabel++;
-            spx->sb->gotoTable = st;
+            spx->sb->gotoTable->push_back(st);
             labelSyms->Add(spx);
         }
         else
         {
-            thunkGotoDestructors(&st->destexp, block, spx->sb->gotoTable->parent);
-            thunkCatchCleanup(st, funcsp, block, spx->sb->gotoTable->parent);
+            std::list<BLOCKDATA*> dummy{ spx->sb->gotoTable->front()->parent };
+            thunkGotoDestructors(&st->destexp, parent, dummy);
+            thunkCatchCleanup(st, funcsp, parent, dummy);
         }
         st->label = spx->sb->offset;
         lex = getsym();
-        parent->needlabel = true;
+        before->needlabel = true;
+        parent.pop_front();
         AddBlock(lex, parent, block);
     }
     else
@@ -1781,8 +1807,9 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         error(ERR_CONSTEXPR_FUNC_NO_GOTO);
     return lex;
 }
-static LEXLIST* statement_label(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* statement_label(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
+    auto before = parent.front();
     SYMBOL* spx = labelSyms->search(lex->data->value.s.a);
     STATEMENT* st;
     (void)funcsp;
@@ -1795,8 +1822,9 @@ static LEXLIST* statement_label(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             // may come here from assembly language...
             if (spx->sb->gotoTable)
             {
-                thunkGotoDestructors(&spx->sb->gotoTable->destexp, spx->sb->gotoTable->parent, parent);
-                thunkCatchCleanup(spx->sb->gotoTable, funcsp, spx->sb->gotoTable->parent, parent);
+                std::list<BLOCKDATA*> dummy{ spx->sb->gotoTable->front()->parent };
+                thunkGotoDestructors(&spx->sb->gotoTable->front()->destexp, dummy, parent);
+                thunkCatchCleanup(spx->sb->gotoTable->front(), funcsp, dummy, parent);
             }
         }
         else
@@ -1809,14 +1837,14 @@ static LEXLIST* statement_label(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         spx = makeID(sc_label, nullptr, nullptr, litlate(lex->data->value.s.a));
         SetLinkerNames(spx, lk_none);
         spx->sb->offset = codeLabel++;
-        spx->sb->gotoTable = st;
+        spx->sb->gotoTable->push_back(st);
         labelSyms->Add(spx);
     }
     st->label = spx->sb->offset;
     st->purelabel = true;
     getsym();       /* colon */
     lex = getsym(); /* next sym */
-    parent->needlabel = false;
+    before->needlabel = false;
     return lex;
 }
 static EXPRESSION* ConvertReturnToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP)
@@ -1954,8 +1982,9 @@ static void MatchReturnTypes(SYMBOL* funcsp, TYPE* tp1, TYPE* tp2)
         }
     }
 }
-static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
+    auto before = parent.front();
     STATEMENT* st;
     TYPE* tp = nullptr;
     EXPRESSION* returnexp = nullptr;
@@ -2024,7 +2053,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
                 if (MATCHKW(lex, begin))
                 {
                     implicit = true;
-                    INITIALIZER *init = nullptr, *dest = nullptr;
+                    std::list<INITIALIZER*>* init = nullptr, *dest = nullptr;
                     SYMBOL* sym = nullptr;
                     sym = anonymousVar(sc_localstatic, tp)->v.sp;
                     lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, tp, sym, false, 0);
@@ -2089,9 +2118,10 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
                     else
                     {
                         bool nonconst = funcsp->sb->nonConstVariableUsed;
-                        funcparams->arguments = Allocate<INITLIST>();
-                        funcparams->arguments->tp = tp1;
-                        funcparams->arguments->exp = exp1;
+                        funcparams->arguments = initListListFactory.CreateList();
+                        funcparams->arguments->push_back(Allocate<INITLIST>());
+                        funcparams->arguments->front()->tp = tp1;
+                        funcparams->arguments->front()->exp = exp1;
                         oldrref = basetype(tp1)->rref;
                         oldlref = basetype(tp1)->lref;
                         basetype(tp1)->rref = exp1->type == en_auto && exp1->v.sp->sb->storage_class != sc_parameter;
@@ -2281,11 +2311,11 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
             returnexp = intNode(en_c_i, 0);  // errors
     }
     currentLineData(parent, lex, 0);
-    thunkRetDestructors(&destexp, nullptr, localNameSpace->valueData->syms);
+    thunkRetDestructors(&destexp, nullptr, localNameSpace->front()->syms);
     st = stmtNode(lex, parent, st_return);
     st->select = returnexp;
     st->destexp = destexp;
-    thunkCatchCleanup(st, funcsp, parent, nullptr);  // to top level
+    thunkCatchCleanup(st, funcsp, parent, emptyBlockdata);  // to top level
     if (returnexp && returntype && !isautotype(returntype) && !matchReturnTypes)
     {
         if (!tp)  // some error...
@@ -2395,21 +2425,22 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
             }
         }
     }
-    parent->needlabel = true;
+    before->needlabel = true;
     return lex;
 }
-static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
+    auto before = parent.front();
     BLOCKDATA* switchstmt = Allocate<BLOCKDATA>();
     STATEMENT* st;
     EXPRESSION* select = nullptr;
     int addedBlock = 0;
     funcsp->sb->noinline = true;
     switchstmt->breaklabel = codeLabel++;
-    switchstmt->next = parent;
     switchstmt->defaultlabel = -1; /* no default */
     switchstmt->type = kw_switch;
-    switchstmt->table = localNameSpace->valueData->syms;
+    switchstmt->table = localNameSpace->front()->syms;
+    parent.push_front(switchstmt);
     lex = getsym();
     inLoopOrConditional++;
     if (MATCHKW(lex, openpa))
@@ -2420,32 +2451,32 @@ static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
             addedBlock++;
             AllocateLocalContext(parent, funcsp, codeLabel++);
         }
-        lex = selection_expression(lex, switchstmt, &select, funcsp, kw_switch, nullptr);
+        lex = selection_expression(lex, parent, &select, funcsp, kw_switch, nullptr);
         if (MATCHKW(lex, closepa))
         {
-            currentLineData(switchstmt, lex, 0);
+            currentLineData(parent, lex, 0);
             lex = getsym();
-            st = stmtNode(lex, switchstmt, st_switch);
+            st = stmtNode(lex, parent, st_switch);
             st->select = select;
             st->breaklabel = switchstmt->breaklabel;
-            lex = nononconststatement(lex, funcsp, switchstmt, true);
+            lex = nononconststatement(lex, funcsp, parent, true);
             EndOfCaseGroup(funcsp, parent);
             st->cases = switchstmt->cases;
             st->label = switchstmt->defaultlabel;
             if (st->label != -1 && switchstmt->needlabel && !switchstmt->hasbreak)
-                parent->needlabel = true;
+                before->needlabel = true;
             /* force a default if there was none */
             if (st->label == -1)
             {
                 st->label = codeLabel;
-                st = stmtNode(lex, switchstmt, st_label);
+                st = stmtNode(lex, parent, st_label);
                 st->label = codeLabel++;
             }
-            st = stmtNode(lex, switchstmt, st_label);
+            st = stmtNode(lex, parent, st_label);
             st->label = switchstmt->breaklabel;
             if (!switchstmt->nosemi && !switchstmt->hassemi)
                 errorint(ERR_NEEDY, ';');
-            parent->nosemi = true;
+            before->nosemi = true;
         }
         else
         {
@@ -2462,24 +2493,28 @@ static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
     }
     inLoopOrConditional--;
     while (addedBlock--)
-        FreeLocalContext(switchstmt, funcsp, codeLabel++);
-    AddBlock(lex, parent, switchstmt);
+        FreeLocalContext(parent, funcsp, codeLabel++);
+    auto il = parent.begin();
+    ++il;
+    auto dummy = std::list<BLOCKDATA*>(il, parent.end());
+    parent.pop_front();
     return lex;
 }
-static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
+    auto before = parent.front();
     BLOCKDATA* whilestmt = Allocate<BLOCKDATA>();
     STATEMENT *st, *lastLabelStmt;
-    STATEMENT* whileline;
+    std::list<STATEMENT*>* whileline;
     EXPRESSION* select = nullptr;
     int addedBlock = 0;
     int loopLabel = codeLabel++;
     whilestmt->breaklabel = codeLabel++;
     whilestmt->continuelabel = codeLabel++;
-    whilestmt->next = parent;
     whilestmt->type = kw_while;
-    whilestmt->table = localNameSpace->valueData->syms;
-    whileline = currentLineData(nullptr, lex, 0);
+    whilestmt->table = localNameSpace->front()->syms;
+    whileline = currentLineData(emptyBlockdata, lex, 0);
+    parent.push_front(whilestmt);
     lex = getsym();
     inLoopOrConditional++;
     if (MATCHKW(lex, openpa))
@@ -2490,7 +2525,7 @@ static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             addedBlock++;
             AllocateLocalContext(parent, funcsp, codeLabel++);
         }
-        lex = selection_expression(lex, whilestmt, &select, funcsp, kw_while, nullptr);
+        lex = selection_expression(lex, parent, &select, funcsp, kw_while, nullptr);
         if (!MATCHKW(lex, closepa))
         {
             error(ERR_WHILE_NEEDS_CLOSEPA);
@@ -2504,54 +2539,49 @@ static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             if (Optimizer::cparams.prm_debug || Optimizer::cparams.prm_optimize_for_size ||
                 (Optimizer::chosenAssembler->arch->denyopts & DO_NOENTRYIF))
             {
-                st = stmtNode(lex, whilestmt, st_goto);
+                st = stmtNode(lex, parent, st_goto);
                 st->label = whilestmt->continuelabel;
             }
             else
             {
-                st = stmtNode(lex, whilestmt, st_notselect);
+                st = stmtNode(lex, parent, st_notselect);
                 st->label = whilestmt->breaklabel;
                 st->altlabel = whilestmt->continuelabel;
                 st->select = select;
             }
 
-            st = stmtNode(lex, whilestmt, st_label);
+            st = stmtNode(lex, parent, st_label);
             st->label = loopLabel;
             if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
             {
                 addedBlock++;
-                AllocateLocalContext(whilestmt, funcsp, codeLabel++);
+                AllocateLocalContext(parent, funcsp, codeLabel++);
             }
             do
             {
-                lastLabelStmt = whilestmt->tail;
-                lex = nononconststatement(lex, funcsp, whilestmt, true);
-            } while (lex && whilestmt->tail != lastLabelStmt && whilestmt->tail->purelabel);
+                lastLabelStmt = whilestmt->statements->back();
+                lex = nononconststatement(lex, funcsp, parent, true);
+            } while (lex && whilestmt->statements->back() != lastLabelStmt && whilestmt->statements->back()->purelabel);
             if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
             {
                 addedBlock--;
-                FreeLocalContext(whilestmt, funcsp, codeLabel++);
+                FreeLocalContext(parent, funcsp, codeLabel++);
             }
-            st = stmtNode(lex, whilestmt, st_label);
+            st = stmtNode(lex, parent, st_label);
             st->label = whilestmt->continuelabel;
             if (whileline)
             {
-                if (whilestmt->head)
-                    whilestmt->tail = whilestmt->tail->next = whileline;
-                else
-                    whilestmt->head = whilestmt->tail = whileline;
-                while (whilestmt->tail->next)
-                    whilestmt->tail = whilestmt->tail->next;
+                parent.front()->statements->insert(parent.front()->statements->end(), whileline->begin(), whileline->end());
             }
-            st = stmtNode(lex, whilestmt, st_select);
+            st = stmtNode(lex, parent, st_select);
             st->label = loopLabel;
             st->select = select;
             if (!whilestmt->hasbreak && isselecttrue(st->select))
-                parent->needlabel = true;
-            st = stmtNode(lex, whilestmt, st_label);
+                before->needlabel = true;
+            st = stmtNode(lex, parent, st_label);
             st->label = whilestmt->breaklabel;
-            parent->hassemi = whilestmt->hassemi;
-            parent->nosemi = whilestmt->nosemi;
+            before->hassemi = whilestmt->hassemi;
+            before->nosemi = whilestmt->nosemi;
         }
     }
     else
@@ -2562,7 +2592,9 @@ static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     }
     inLoopOrConditional--;
     while (addedBlock--)
-        FreeLocalContext(whilestmt, funcsp, codeLabel++);
+        FreeLocalContext(parent, funcsp, codeLabel++);
+    std::list<BLOCKDATA*> dummy{ whilestmt };
+    parent.pop_front();
     AddBlock(lex, parent, whilestmt);
     return lex;
 }
@@ -2602,19 +2634,18 @@ static bool checkNoEffect(EXPRESSION* exp)
             return true;
     }
 }
-static LEXLIST* statement_expr(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* statement_expr(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
     STATEMENT* st;
     EXPRESSION* select = nullptr;
     TYPE* tp = nullptr;
-    Optimizer::LINEDATA *oldLineHead = linesHead, *oldLineTail = linesTail;
-    linesHead = linesTail = nullptr;
+    auto oldLines = lines;
+    lines = nullptr;
     (void)parent;
 
     auto prevlex = lex;
     lex = optimized_expression(prevlex, funcsp, nullptr, &tp, &select, true);
-    linesHead = oldLineHead;
-    linesTail = oldLineTail;
+    lines = oldLines;
     currentLineData(parent, prevlex, 0);
     st = stmtNode(lex, parent, st_expr);
     st->select = select;
@@ -2632,7 +2663,7 @@ static LEXLIST* statement_expr(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             SYMBOL* sym = select->v.func->returnSP;
             if (sym && sym->sb->allocate)
             {
-                INITIALIZER* init = nullptr;
+                std::list<INITIALIZER*>* init = nullptr;
                 EXPRESSION* exp = select->v.func->returnEXP;
                 callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, false, true);
                 initInsert(&init, sym->tp, exp, 0, false);
@@ -2652,7 +2683,7 @@ static LEXLIST* asm_declare(LEXLIST* lex)
         {
             if (ISID(lex))
             {
-                SYMBOL* sym = globalNameSpace->valueData->syms->search(lex->data->value.s.a);
+                SYMBOL* sym = globalNameSpace->front()->syms->search(lex->data->value.s.a);
                 if (!sym)
                 {
                     sym = makeID(sc_label, nullptr, nullptr, litlate(lex->data->value.s.a));
@@ -2682,8 +2713,12 @@ static LEXLIST* asm_declare(LEXLIST* lex)
     } while (lex && MATCHKW(lex, comma));
     return lex;
 }
-LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, int label, int startlab, int endlab)
+LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, int label, int startlab, int endlab)
 {
+    auto before = parent.front();
+    auto ilbefore = parent.begin();
+    ++ilbefore;
+    auto next = ilbefore != parent.end() ? *ilbefore : nullptr;
     bool last = false;
     inLoopOrConditional++;
     if (!MATCHKW(lex, kw_catch))
@@ -2702,11 +2737,11 @@ LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, int la
             BLOCKDATA* catchstmt = Allocate<BLOCKDATA>();
             ParseAttributeSpecifiers(&lex, funcsp, true);
             catchstmt->breaklabel = label;
-            catchstmt->next = parent;
             catchstmt->defaultlabel = -1; /* no default */
             catchstmt->type = kw_catch;
-            catchstmt->table = localNameSpace->valueData->syms;
-            AllocateLocalContext(catchstmt, funcsp, codeLabel++);
+            catchstmt->table = localNameSpace->front()->syms;
+            parent.push_front(catchstmt);
+            AllocateLocalContext(parent, funcsp, codeLabel++);
             if (MATCHKW(lex, ellipse))
             {
                 last = true;
@@ -2714,32 +2749,33 @@ LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, int la
             }
             else
             {
-                lex = declare(lex, funcsp, &tp, sc_catchvar, lk_none, catchstmt, false, true, false, ac_public);
+                lex = declare(lex, funcsp, &tp, sc_catchvar, lk_none, parent, false, true, false, ac_public);
             }
             if (needkw(&lex, closepa))
             {
                 if (MATCHKW(lex, begin))
                 {
-                    lex = compound(lex, funcsp, catchstmt, false);
-                    parent->nosemi = true;
-                    parent->needlabel &= catchstmt->needlabel;
-                    if (parent->next)
-                        parent->next->nosemi = true;
+                    lex = compound(lex, funcsp, parent, false);
+                    before->nosemi = true;
+                    before->needlabel &= catchstmt->needlabel;
+                    if (next)
+                        next->nosemi = true;
                 }
                 else
                 {
                     error(ERR_EXPECTED_CATCH_BLOCK);
                 }
             }
-            FreeLocalContext(catchstmt, funcsp, codeLabel++);
+            FreeLocalContext(parent, funcsp, codeLabel++);
             st = stmtNode(lex, parent, st_catch);
             st->label = startlab;
             st->endlabel = endlab;
             st->altlabel = codeLabel++;
             st->breaklabel = catchstmt->breaklabel;
             st->blockTail = catchstmt->blockTail;
-            st->lower = catchstmt->head;
+            st->lower = catchstmt->statements;
             st->tp = tp;
+            parent.pop_front();
         }
         else
         {
@@ -2749,16 +2785,20 @@ LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, int la
     inLoopOrConditional--;
     return lex;
 }
-LEXLIST* statement_try(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+LEXLIST* statement_try(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
+    auto before = parent.front();
+    auto ilbefore = parent.begin();
+    ++ilbefore;
+    auto next = ilbefore != parent.end() ? *ilbefore : nullptr;
     STATEMENT* st;
     BLOCKDATA* trystmt = Allocate<BLOCKDATA>();
     hasXCInfo = true;
     trystmt->breaklabel = codeLabel++;
-    trystmt->next = parent;
     trystmt->defaultlabel = -1; /* no default */
     trystmt->type = kw_try;
-    trystmt->table = localNameSpace->valueData->syms;
+    trystmt->table = localNameSpace->front()->syms;
+    parent.push_front(trystmt);
     funcsp->sb->anyTry = true;
     lex = getsym();
     inLoopOrConditional++;
@@ -2768,36 +2808,38 @@ LEXLIST* statement_try(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     }
     else
     {
-        AllocateLocalContext(trystmt, funcsp, codeLabel++);
+        AllocateLocalContext(parent, funcsp, codeLabel++);
         tryLevel++;
-        lex = compound(lex, funcsp, trystmt, false);
+        lex = compound(lex, funcsp, parent, false);
         tryLevel--;
-        FreeLocalContext(trystmt, funcsp, codeLabel++);
-        parent->needlabel = trystmt->needlabel;
+        FreeLocalContext(parent, funcsp, codeLabel++);
+        before->needlabel = trystmt->needlabel;
         st = stmtNode(lex, parent, st_try);
         st->label = codeLabel++;
         st->endlabel = codeLabel++;
         st->breaklabel = trystmt->breaklabel;
         st->blockTail = trystmt->blockTail;
-        st->lower = trystmt->head;
-        parent->nosemi = true;
-        if (parent->next)
-            parent->next->nosemi = true;
+        st->lower = trystmt->statements;
+        before->nosemi = true;
+        if (next)
+            next->nosemi = true;
         lex = statement_catch(lex, funcsp, parent, st->breaklabel, st->label, st->endlabel);
     }
     inLoopOrConditional--;
 
+    parent.pop_front();
     return lex;
 }
 bool hasInlineAsm() { return Optimizer::architecture == ARCHITECTURE_X86; }
-LEXLIST* statement_asm(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+LEXLIST* statement_asm(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
+    auto before = parent.front();
     (void)funcsp;
     (void)parent;  //
     Optimizer::functionHasAssembly = true;
     if (hasInlineAsm())
     {
-        parent->hassemi = false;
+        before->hassemi = false;
         lex = getsym();
         if (MATCHKW(lex, begin))
         {
@@ -2812,7 +2854,7 @@ LEXLIST* statement_asm(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 }
             }
             needkw(&lex, end);
-            parent->nosemi = true;
+            before->nosemi = true;
             return lex;
         }
         else
@@ -2839,7 +2881,7 @@ LEXLIST* statement_asm(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         skip(&lex, semicolon);
                 }
             }
-            parent->hassemi = true;
+            before->hassemi = true;
         }
     }
     else
@@ -2857,61 +2899,68 @@ LEXLIST* statement_asm(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 lex = getsym();
             }
             needkw(&lex, end);
-            parent->nosemi = true;
+            before->nosemi = true;
         }
         else
         {
             /* problematic, ASM keyword without a block->  Skip to end of line... */
             currentLineData(parent, lex, 0);
-            parent->hassemi = true;
+            before->hassemi = true;
             SkipToEol();
             lex = getsym();
         }
     }
     return lex;
 }
-static void reverseAssign(STATEMENT* current, EXPRESSION** exp)
+static void reverseAssign(std::list<STATEMENT*>* current, EXPRESSION** exp)
 {
     if (current)
     {
-        reverseAssign(current->next, exp);
-        if (current->type != st_line)
+        for (auto it = current->end(); it != current->begin();)
         {
-            if (*exp)
-                *exp = exprNode(en_void, current->select, *exp);
-            else
-                *exp = current->select;
+            --it;
+            if ((*it)->type != st_line)
+            {
+                if (*exp)
+                    *exp = exprNode(en_void, (*it)->select, *exp);
+                else
+                    *exp = (*it)->select;
+            }
         }
     }
 }
-static LEXLIST* autodeclare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, BLOCKDATA* parent, int asExpression)
+static LEXLIST* autodeclare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, std::list<BLOCKDATA*>& parent, int asExpression)
 {
     BLOCKDATA block;
     (void)parent;
     declareAndInitialize = false;
     memset(&block, 0, sizeof(block));
-    lex = declare(lex, funcsp, tp, sc_auto, lk_none, &block, false, asExpression, false, ac_public);
-
+    parent.push_front(&block);
+    lex = declare(lex, funcsp, tp, sc_auto, lk_none, parent, false, asExpression, false, ac_public);
+   
     // move any auto assignments
-    reverseAssign(block.head, exp);
+    reverseAssign(block.statements, exp);
 
     // now move variable declarations
-    while (block.head)
+    if (block.statements)
     {
-        if (block.head->type == st_varstart)
+        for (auto stmt : *block.statements)
         {
-            STATEMENT* s = stmtNode(lex, parent, st_varstart);
-            s->select = block.head->select;
+            if (stmt->type == st_varstart)
+            {
+                STATEMENT* s = stmtNode(lex, parent, st_varstart);
+                s->select = stmt->select;
+            }
         }
-        block.head = block.head->next;
     }
     if (!*exp)
     {
         *exp = intNode(en_c_i, 0);
         errorint(ERR_NEEDY, '=');
     }
-
+    parent.pop_front();
     return lex;
+
 }
 bool resolveToDeclaration(LEXLIST* lex, bool structured)
 {
@@ -2993,7 +3042,7 @@ bool resolveToDeclaration(LEXLIST* lex, bool structured)
     prevsym(placeholder);
     return true;
 }
-static LEXLIST* nononconststatement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontrol)
+static LEXLIST* nononconststatement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, bool viacontrol)
 {
     int old = funcsp->sb->nonConstVariableUsed;
     auto rv = statement(lex, funcsp, parent, viacontrol);
@@ -3001,8 +3050,9 @@ static LEXLIST* nononconststatement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* par
     return rv;
 }
 
-LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontrol)
+LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, bool viacontrol)
 {
+    auto before = parent.front();
     LEXLIST* start = lex;
     ParseAttributeSpecifiers(&lex, funcsp, true);
     if (ISID(lex))
@@ -3012,8 +3062,8 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacont
         {
             lex = backupsym();
             lex = statement_label(lex, funcsp, parent);
-            parent->needlabel = false;
-            parent->nosemi = true;
+            before->needlabel = false;
+            before->nosemi = true;
             return lex;
         }
         else
@@ -3021,17 +3071,17 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacont
             lex = backupsym();
         }
     }
-    if (parent->needlabel && !MATCHKW(lex, kw_case) && !MATCHKW(lex, kw_default) && !MATCHKW(lex, begin))
+    if (before->needlabel && !MATCHKW(lex, kw_case) && !MATCHKW(lex, kw_default) && !MATCHKW(lex, begin))
         error(ERR_UNREACHABLE_CODE);
 
     if (!MATCHKW(lex, begin))
     {
         if (MATCHKW(lex, kw_throw))
-            parent->needlabel = true;
+            before->needlabel = true;
         else
-            parent->needlabel = false;
+            before->needlabel = false;
     }
-    parent->nosemi = false;
+    before->nosemi = false;
     switch (KW(lex))
     {
         case kw_try:
@@ -3041,17 +3091,21 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacont
             error(ERR_CATCH_WITHOUT_TRY);
             lex = statement_catch(lex, funcsp, parent, 1, 1, 1);
             break;
-        case begin:
+        case begin: {
             lex = compound(lex, funcsp, parent, false);
-            parent->nosemi = true;
-            if (parent->next)
-                parent->next->nosemi = true;
+            before->nosemi = true;
+            auto il = parent.begin();
+            ++il;
+            auto next = il != parent.end() ? *il : nullptr;
+            if (next)
+                next->nosemi = true;
             break;
+        }
         case end:
             /* don't know how it could get here :) */
             //			error(ERR_UNEXPECTED_END_OF_BLOCKDATA);
             //			lex = getsym();
-            parent->hassemi = true;
+            before->hassemi = true;
             return lex;
             break;
         case kw_do:
@@ -3072,7 +3126,7 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacont
         case kw_else:
             error(ERR_MISPLACED_ELSE);
             skip(&lex, kw_else);
-            parent->nosemi = true;
+            before->nosemi = true;
             break;
         case kw_case:
             EndOfCaseGroup(funcsp, parent);
@@ -3086,7 +3140,7 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacont
             }
             StartOfCaseGroup(funcsp, parent);
             lex = nononconststatement(lex, funcsp, parent, false);
-            parent->nosemi = true;
+            before->nosemi = true;
             return lex;
             break;
         case kw_default:
@@ -3098,7 +3152,7 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacont
                 HandleStartOfCase(parent);
             StartOfCaseGroup(funcsp, parent);
             lex = nononconststatement(lex, funcsp, parent, false);
-            parent->nosemi = true;
+            before->nosemi = true;
             return lex;
             break;
         case kw_continue:
@@ -3159,7 +3213,8 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacont
                        MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) ||
                        MATCHKW(lex, kw_static_assert) || MATCHKW(lex, kw_constexpr))
                 {
-                    STATEMENT* current = parent->tail;
+                        std::list<STATEMENT*>* prev = before->statements;
+                    before->statements = nullptr;
                     declareAndInitialize = false;
                     if (start)
                     {
@@ -3167,10 +3222,20 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacont
                         start = nullptr;
                     }
                     lex = declare(lex, funcsp, nullptr, sc_auto, lk_none, parent, false, false, false, ac_public);
-                    markInitializers(current);
+                    // this originally did the last existing statement as well
+                    if (before->statements)
+                    {
+                        markInitializers(*before->statements);
+                        if (prev)
+                            before->statements->insert(before->statements->begin(), prev->begin(), prev->end());
+                    }
+                    else
+                    {
+                        before->statements = prev;
+                    }
                     if (MATCHKW(lex, semicolon))
                     {
-                        parent->hassemi = true;
+                        before->hassemi = true;
                         skip(&lex, semicolon);
                     }
                     else
@@ -3186,20 +3251,20 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacont
             {
                 isCallNoreturnFunction = false;
                 lex = statement_expr(lex, funcsp, parent);
-                parent->needlabel = isCallNoreturnFunction;
+                before->needlabel = isCallNoreturnFunction;
             }
         }
     }
     if (MATCHKW(lex, semicolon))
     {
-        parent->hassemi = true;
+        before->hassemi = true;
         skip(&lex, semicolon);
     }
     else
-        parent->hassemi = false;
+        before->hassemi = false;
     return lex;
 }
-static bool thunkmainret(SYMBOL* funcsp, BLOCKDATA* parent, bool always)
+static bool thunkmainret(SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, bool always)
 {
     if (always || (!strcmp(funcsp->name, "main") && !funcsp->sb->parentClass && !funcsp->sb->parentNameSpace))
     {
@@ -3209,15 +3274,14 @@ static bool thunkmainret(SYMBOL* funcsp, BLOCKDATA* parent, bool always)
     }
     return false;
 }
-static void thunkThisReturns(STATEMENT* st, EXPRESSION* thisptr)
+static void thunkThisReturns(std::list<STATEMENT*>* st, EXPRESSION* thisptr)
 {
-    while (st)
+    for (auto stmt : *st)
     {
-        if (st->lower)
-            thunkThisReturns(st->lower, thisptr);
-        if (st->type == st_return)
-            st->select = thisptr;
-        st = st->next;
+        if (stmt->lower)
+            thunkThisReturns(stmt->lower, thisptr);
+        if (stmt->type == st_return)
+            stmt->select = thisptr;
     }
 }
 static void insertXCInfo(SYMBOL* funcsp)
@@ -3247,13 +3311,16 @@ static void insertXCInfo(SYMBOL* funcsp)
         funcparams->sp = sym;
         funcparams->fcall = varNode(en_pc, sym);
         funcparams->ascall = true;
-        funcparams->arguments = arg1;
-        arg1->next = arg2;
-        arg1->tp = &stdpointer;
+        funcparams->arguments = initListListFactory.CreateList();
+        funcparams->arguments->push_back(arg1);
+        funcparams->arguments->push_back(arg2);
 
+        arg1->tp = &stdpointer;
         arg1->exp = varNode(en_auto, funcsp->sb->xc->xctab);
+
         arg2->tp = &stdpointer;
         arg2->exp = varNode(en_global, funcsp->sb->xc->xclab);
+
         exp = exprNode(en_func, 0, 0);
         exp->v.func = funcparams;
         funcsp->sb->xc->xcInitializeFunc = exp;
@@ -3296,20 +3363,21 @@ static bool isvoidreturntype(TYPE* tp, SYMBOL* funcsp)
     }
     return false;
 }
-LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
+LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, bool first)
 {
+    auto before = parent.front();
     BLOCKDATA* blockstmt = Allocate<BLOCKDATA>();
     preProcessor->MarkStdPragma();
     STATEMENT* st;
     EXPRESSION* thisptr = nullptr;
     browse_blockstart(lex->data->errline);
-    blockstmt->next = parent;
     blockstmt->type = begin;
-    blockstmt->needlabel = parent->needlabel;
-    blockstmt->table = localNameSpace->valueData->syms;
-    currentLineData(blockstmt, lex, 0);
-    AllocateLocalContext(blockstmt, funcsp, codeLabel++);
-    parent->needlabel = false;
+    blockstmt->needlabel = before->needlabel;
+    blockstmt->table = localNameSpace->front()->syms;
+    parent.push_front(blockstmt);
+    currentLineData(parent, lex, 0);
+    AllocateLocalContext(parent, funcsp, codeLabel++);
+    before->needlabel = false;
 
     if (first)
     {
@@ -3320,7 +3388,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
             if (!Optimizer::cparams.prm_cplusplus && sp2->tp->type != bt_ellipse && !isvoid(sp2->tp) && sp2->sb->anonymous)
                 errorarg(ERR_PARAMETER_MUST_HAVE_NAME, n, sp2, funcsp);
             sp2->sb->destructed = false;
-            localNameSpace->valueData->syms->Add(sp2);
+            localNameSpace->front()->syms->Add(sp2);
             browse_variable(sp2);
             n++;
         }
@@ -3328,21 +3396,29 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
         {
             ParseMemberInitializers(funcsp->sb->parentClass, funcsp);
             thisptr =
-                thunkConstructorHead(blockstmt, funcsp->sb->parentClass, funcsp, basetype(funcsp->tp)->syms, true, false, false);
+                thunkConstructorHead(parent, funcsp->sb->parentClass, funcsp, basetype(funcsp->tp)->syms, true, false, false);
         }
     }
     lex = getsym(); /* past { */
 
-    st = blockstmt->tail;
+    if (blockstmt->statements)
+        st = blockstmt->statements->back();
+    else
+        st = nullptr;
     if (!Optimizer::cparams.prm_cplusplus)
     {
+        auto prev = blockstmt->statements;
         // have to defer so we can get expression like constructor calls
         while (startOfType(lex, nullptr, false))
         {
-            STATEMENT* current = blockstmt->tail;
+            blockstmt->statements = nullptr;
             declareAndInitialize = false;
-            lex = declare(lex, funcsp, nullptr, sc_auto, lk_none, blockstmt, false, false, false, ac_public);
-            markInitializers(current);
+            lex = declare(lex, funcsp, nullptr, sc_auto, lk_none, parent, false, false, false, ac_public);
+            markInitializers(*blockstmt->statements);
+            if (prev)
+                prev->insert(prev->end(), blockstmt->statements->begin(), blockstmt->statements->end());
+            else
+                prev = blockstmt->statements;
             if (MATCHKW(lex, semicolon))
             {
                 lex = getsym();
@@ -3352,13 +3428,16 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
                 error(ERR_DECLARE_SYNTAX);
             }
         }
+        blockstmt->statements = prev;
     }
-    if (parent->type == kw_switch)
+    if (before->type == kw_switch)
     {
-        if (st != blockstmt->tail)
+        if (st != blockstmt->statements->back())
         {
             /* kinda naive other than this one check for msil... */
             bool toErr = false;
+            // this only checked the last block...
+            /*
             st = blockstmt->tail;
             while (st)
             {
@@ -3368,13 +3447,19 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
                 }
                 st = st->next;
             }
+            */
+            st = blockstmt->statements->back();
+            if (st->select->type != en__initobj && st->type != st_varstart)
+            {
+                toErr = true;
+            }
             if (toErr)
             {
                 error(ERR_INITIALIZATION_MAY_BE_BYPASSED);
             }
         }
     }
-    currentLineData(blockstmt, lex, -1);
+    currentLineData(parent, lex, -1);
     blockstmt->nosemi = true; /* in case it is an empty body */
     while (lex && !MATCHKW(lex, end))
     {
@@ -3386,7 +3471,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
         }
         else
         {
-            lex = statement(lex, funcsp, blockstmt, false);
+            lex = statement(lex, funcsp, parent, false);
         }
     }
     if (first)
@@ -3399,22 +3484,20 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
         return lex;
     }
     browse_blockend(endline = lex->data->errline);
-    currentLineData(blockstmt, lex, -!first);
-    if (parent->type == begin || parent->type == kw_switch || parent->type == kw_try || parent->type == kw_catch ||
-        parent->type == kw_do)
-        parent->needlabel = blockstmt->needlabel;
+    currentLineData(parent, lex, -!first);
+    if (before->type == begin || before->type == kw_switch || before->type == kw_try || before->type == kw_catch ||
+        before->type == kw_do)
+        before->needlabel = blockstmt->needlabel;
     if (!blockstmt->hassemi && !blockstmt->nosemi)
     {
         errorint(ERR_NEEDY, ';');
     }
-    st = blockstmt->head;
-    if (st)
+    if (blockstmt->statements)
     {
         bool hasvla = false;
-        while (st)
+        for (auto stmt : *blockstmt->statements)
         {
             hasvla |= st->hasvla;
-            st = st->next;
         }
         if (hasvla)
         {
@@ -3446,12 +3529,12 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
         }
         if (!strcmp(funcsp->name, overloadNameTab[CI_DESTRUCTOR]))
         {
-            thunkDestructorTail(blockstmt, funcsp->sb->parentClass, funcsp, basetype(funcsp->tp)->syms, false);
+            thunkDestructorTail(parent, funcsp->sb->parentClass, funcsp, basetype(funcsp->tp)->syms, false);
         }
     }
     if (Optimizer::cparams.prm_cplusplus)
-        HandleEndOfSwitchBlock(blockstmt);
-    FreeLocalContext(blockstmt, funcsp, codeLabel++);
+        HandleEndOfSwitchBlock(parent);
+    FreeLocalContext(parent, funcsp, codeLabel++);
     if (first && !blockstmt->needlabel && !isvoidreturntype(basetype(funcsp->tp)->btp, funcsp) &&
         basetype(funcsp->tp)->btp->type != bt_auto && !funcsp->sb->isConstructor)
     {
@@ -3463,7 +3546,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
         }
         else if (Optimizer::cparams.prm_c99 || Optimizer::cparams.prm_cplusplus)
         {
-            if (!thunkmainret(funcsp, blockstmt, false))
+            if (!thunkmainret(funcsp, parent, false))
             {
                 if (isref(basetype(funcsp->tp)->btp))
                     error(ERR_FUNCTION_RETURNING_REF_SHOULD_RETURN_VALUE);
@@ -3471,7 +3554,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
                 {
                     error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
                     if (Optimizer::chosenAssembler->arch->preferopts & OPT_THUNKRETVAL)
-                        thunkmainret(funcsp, blockstmt, true);
+                        thunkmainret(funcsp, parent, true);
                 }
             }
         }
@@ -3479,7 +3562,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
         {
             error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
             if (Optimizer::chosenAssembler->arch->preferopts & OPT_THUNKRETVAL)
-                thunkmainret(funcsp, blockstmt, true);
+                thunkmainret(funcsp, parent, true);
         }
     }
     needkw(&lex, end);
@@ -3487,30 +3570,29 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     {
         if (funcsp->sb->hasTry)
         {
-            STATEMENT* last = stmtNode(nullptr, blockstmt, st_return);
-            lex = statement_catch(lex, funcsp, blockstmt, retlab, startlab, 0);
-            if (last->next)
+            stmtNode(nullptr, parent, st_return);
+            auto it = blockstmt->statements->end();
+            --it;
+            lex = statement_catch(lex, funcsp, parent, retlab, startlab, 0);
+            if (++it != blockstmt->statements->end())
             {
-                int label;
-                last = last->next;
-                label = last->altlabel;
+                int label = (*it)->altlabel;
                 do
                 {
-                    last->endlabel = label;
-                    last = last->next;
-                } while (last);
+                    (*it)->endlabel = label;
+                } while (++it != blockstmt->statements->end());
             }
             hasXCInfo = true;
             funcsp->sb->anyTry = true;
         }
     }
-    if (parent->type == kw_catch)
+    if (before->type == kw_catch)
     {
         SYMBOL* sym = namespacesearch("_CatchCleanup", globalNameSpace, false, false);
         if (sym)
         {
             FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
-            STATEMENT* st = stmtNode(lex, blockstmt, st_expr);
+            STATEMENT* st = stmtNode(lex, parent, st_expr);
             INITLIST* arg1 = Allocate<INITLIST>();  // exception table
             makeXCTab(funcsp);
             sym = (SYMBOL*)basetype(sym->tp)->syms->front();
@@ -3518,7 +3600,8 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
             funcparams->sp = sym;
             funcparams->functp = sym->tp;
             funcparams->fcall = varNode(en_pc, sym);
-            funcparams->arguments = arg1;
+            funcparams->arguments = initListListFactory.CreateList();
+            funcparams->arguments->push_back(arg1);
             arg1->exp = varNode(en_auto, funcsp->sb->xc->xctab);
             arg1->tp = &stdpointer;
             st->select = exprNode(en_func, nullptr, nullptr);
@@ -3529,10 +3612,14 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     {
         if (thisptr)
         {
-            stmtNode(nullptr, blockstmt, st_return);
-            thunkThisReturns(blockstmt->head, thisptr);
+            stmtNode(nullptr, parent, st_return);
+            thunkThisReturns(blockstmt->statements, thisptr);
         }
     }
+    auto it = parent.begin();
+    ++it;
+    std::list<BLOCKDATA*> dummy(it, parent.end());
+    parent.pop_front();
     AddBlock(lex, parent, blockstmt);
     preProcessor->ReleaseStdPragma();
     return lex;
@@ -3573,7 +3660,7 @@ void assignParam(SYMBOL* funcsp, int* base, SYMBOL* param)
             *base += Optimizer::chosenAssembler->arch->parmwidth - *base % Optimizer::chosenAssembler->arch->parmwidth;
     }
 }
-static void assignCParams(LEXLIST* lex, SYMBOL* funcsp, int* base, SymbolTable<SYMBOL>* params, TYPE* rv, BLOCKDATA* block)
+static void assignCParams(LEXLIST* lex, SYMBOL* funcsp, int* base, SymbolTable<SYMBOL>* params, TYPE* rv, std::list<BLOCKDATA*>& block)
 {
     (void)rv;
     for (auto sym : *params)
@@ -3583,7 +3670,7 @@ static void assignCParams(LEXLIST* lex, SYMBOL* funcsp, int* base, SymbolTable<S
         assignParam(funcsp, base, sym);
     }
 }
-static void assignPascalParams(LEXLIST* lex, SYMBOL* funcsp, int* base, SymbolTable<SYMBOL>* params, TYPE* rv, BLOCKDATA* block)
+static void assignPascalParams(LEXLIST* lex, SYMBOL* funcsp, int* base, SymbolTable<SYMBOL>* params, TYPE* rv, std::list<BLOCKDATA*>& block)
 {
     std::stack<SYMBOL*> stk;
     for (auto sym : *params)
@@ -3596,7 +3683,7 @@ static void assignPascalParams(LEXLIST* lex, SYMBOL* funcsp, int* base, SymbolTa
         stk.pop();
     }
 }
-static void assignParameterSizes(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* block)
+static void assignParameterSizes(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& block)
 {
     int base;
     if (Optimizer::chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
@@ -3687,12 +3774,12 @@ static void checkUndefinedStructures(SYMBOL* funcsp)
         }
     }
 }
-static int inlineStatementCount(STATEMENT* block)
+static int inlineStatementCount(std::list<STATEMENT*>* block)
 {
     int rv = 0;
-    while (block != nullptr)
-    {
-        switch (block->type)
+    for (auto stmt : *block)
+    { 
+        switch (stmt->type)
         {
             case st__genword:
                 break;
@@ -3719,11 +3806,11 @@ static int inlineStatementCount(STATEMENT* block)
                 break;
             case st_switch:
                 rv++;
-                rv += inlineStatementCount(block->lower);
+                rv += inlineStatementCount(stmt->lower);
                 break;
             case st_block:
                 rv++;
-                rv += inlineStatementCount(block->lower) + inlineStatementCount(block->blockTail);
+                rv += inlineStatementCount(stmt->lower) + inlineStatementCount(stmt->blockTail);
                 break;
             case st_passthrough:
             case st_nop:
@@ -3735,10 +3822,9 @@ static int inlineStatementCount(STATEMENT* block)
             case st_dbgblock:
                 break;
             default:
-                diag("Invalid block type in inlinestmtCount");
+                diag("Invalid stmt type in inlinestmtCount");
                 break;
         }
-        block = block->next;
     }
     return rv;
 }
@@ -3809,13 +3895,13 @@ void parseNoexcept(SYMBOL* funcsp)
         }
         TYPE* tp = nullptr;
         EXPRESSION* exp = nullptr;
-        AllocateLocalContext(nullptr, nullptr, 0);
+        AllocateLocalContext(emptyBlockdata, nullptr, 0);
         for (auto sp2 : *basetype(funcsp->tp)->syms)
         {
-            localNameSpace->valueData->syms->Add(sp2);
+            localNameSpace->front()->syms->Add(sp2);
         }
         lex = optimized_expression(lex, funcsp, nullptr, &tp, &exp, false);
-        FreeLocalContext(nullptr, nullptr, 0);
+        FreeLocalContext(emptyBlockdata, nullptr, 0);
         if (!IsConstantExpression(exp, false, false))
         {
             if (!templateNestingCount)
@@ -3852,11 +3938,12 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     bool oldDeclareAndInitialize = declareAndInitialize;
     bool oldHasXCInfo = hasXCInfo;
     bool oldFunctionCanThrow = functionCanThrow;
-    SymbolTable<SYMBOL>* oldSyms = localNameSpace->valueData->syms;
+    SymbolTable<SYMBOL>* oldSyms = localNameSpace->front()->syms;
     SymbolTable<SYMBOL>* oldLabelSyms = labelSyms;
     SYMBOL* oldtheCurrentFunc = theCurrentFunc;
     BLOCKDATA* block = Allocate<BLOCKDATA>();
-    STATEMENT* startStmt;
+    std::list<BLOCKDATA*> parent { block };
+    std::list<STATEMENT*>* startStmt;
     int oldCodeLabel = codeLabel;
     int oldMatchReturnTypes = matchReturnTypes;
     bool oldHasFuncCall = hasFuncCall;
@@ -3867,14 +3954,14 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     noExcept = true;
     expressions = 0;
     controlSequences = 0;
-    Optimizer::LIST* oldGlobal = globalNameSpace->valueData->usingDirectives;
+    auto oldGlobal = globalNameSpace->front()->usingDirectives;
     hasFuncCall = false;
     funcNesting++;
     funcLevel++;
     functionCanThrow = false;
     codeLabel = INT_MIN;
     hasXCInfo = false;
-    localNameSpace->valueData->syms = nullptr;
+    localNameSpace->front()->syms = nullptr;
     Optimizer::functionHasAssembly = false;
     Optimizer::setjmp_used = false;
     declareAndInitialize = false;
@@ -3890,20 +3977,20 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
         FlushLineData(funcsp->sb->declfile, funcsp->sb->realdeclline);
         if (!funcsp->sb->linedata)
         {
-            startStmt = currentLineData(nullptr, lex, 0);
+            startStmt = currentLineData(emptyBlockdata, lex, 0);
             if (startStmt)
-                funcsp->sb->linedata = startStmt->lineData;
+                funcsp->sb->linedata = startStmt->front()->lineData;
         }
         funcsp->sb->declaring = true;
         labelSyms = symbols.CreateSymbolTable();
-        assignParameterSizes(lex, funcsp, block);
+        assignParameterSizes(lex, funcsp, parent);
         funcsp->sb->startLine = lex->data->errline;
-        lex = compound(lex, funcsp, block, true);
+        lex = compound(lex, funcsp, parent, true);
         if (isstructured(basetype(funcsp->tp)->btp))
-            assignParameterSizes(lex, funcsp, block);
+            assignParameterSizes(lex, funcsp, parent);
         refreshBackendParams(funcsp);
-        checkUnlabeledReferences(block);
-        checkGotoPastVLA(block->head, true);
+        checkUnlabeledReferences(parent);
+        checkGotoPastVLA(block->statements, true);
         if (isautotype(basetype(funcsp->tp)->btp) && !templateNestingCount)
             basetype(funcsp->tp)->btp = &stdvoid;  // return value for auto function without return statements
         if (Optimizer::cparams.prm_cplusplus)
@@ -3941,9 +4028,9 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
         n1 = codeLabel;
         if (!funcsp->sb->templateLevel || funcsp->sb->instantiated)
         {
-            funcsp->sb->inlineFunc.stmt = stmtNode(lex, nullptr, st_block);
-            funcsp->sb->inlineFunc.stmt->lower = block->head;
-            funcsp->sb->inlineFunc.stmt->blockTail = block->blockTail;
+            funcsp->sb->inlineFunc.stmt->push_back(stmtNode(lex, emptyBlockdata, st_block));
+            funcsp->sb->inlineFunc.stmt->front()->lower = block->statements;
+            funcsp->sb->inlineFunc.stmt->front()->blockTail = block->blockTail;
             funcsp->sb->declaring = false;
             if (funcsp->sb->attribs.inheritable.isInline &&
                 (Optimizer::functionHasAssembly || funcsp->sb->attribs.inheritable.linkage2 == lk_export))
@@ -4003,14 +4090,14 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     noExcept = oldNoExcept;
     controlSequences = oldControlSequences;
     expressions = oldExpressionCount;
-    globalNameSpace->valueData->usingDirectives = oldGlobal;
+    globalNameSpace->front()->usingDirectives = oldGlobal;
     hasFuncCall = oldHasFuncCall;
     declareAndInitialize = oldDeclareAndInitialize;
     theCurrentFunc = oldtheCurrentFunc;
     hasXCInfo = oldHasXCInfo;
     Optimizer::setjmp_used = oldsetjmp_used;
     Optimizer::functionHasAssembly = oldfunctionHasAssembly;
-    localNameSpace->valueData->syms = oldSyms;
+    localNameSpace->front()->syms = oldSyms;
     labelSyms = oldLabelSyms;
     codeLabel = oldCodeLabel;
     functionCanThrow = oldFunctionCanThrow;

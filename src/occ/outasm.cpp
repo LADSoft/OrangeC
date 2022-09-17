@@ -657,14 +657,12 @@ void oa_put_code(OCODE* cd)
         return;
     if (op == op_line)
     {
-        Optimizer::LINEDATA* ld = (Optimizer::LINEDATA*)aps;
         oa_nl();
-        while (ld)
+        for (auto ld : *(std::list<Optimizer::LINEDATA*>*)aps)
         {
             AsmOutput("; Line %d:", ld->lineno);
             ColumnPosition(8);
             AsmOutput("%s\n", ld->line);
-            ld = ld->next;
         }
         return;
     }

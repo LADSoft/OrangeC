@@ -408,17 +408,16 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
             case en_func: {
                 if (exp->v.func->ascall)
                 {
-                    INITLIST* args = exp->v.func->arguments;
                     *buf++ = 'f';
                     buf = getName(buf, exp->v.func->sp);
-                    while (args)
+                    if (exp->v.func->arguments)
                     {
-                        if (args->exp)
-                        {
-                            *buf++ = 'F';
-                            buf = mangleExpressionInternal(buf, args->exp);
-                        }
-                        args = args->next;
+                        for (auto arg : *exp->v.func->arguments)
+                            if (arg->exp)
+                            {
+                                *buf++ = 'F';
+                                buf = mangleExpressionInternal(buf, arg->exp);
+                            }
                     }
                 }
                 else

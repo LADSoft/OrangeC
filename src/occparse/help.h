@@ -118,7 +118,7 @@ void cast(TYPE* tp, EXPRESSION** exp);
 bool castvalue(EXPRESSION* exp);
 bool xvalue(EXPRESSION* exp);
 bool lvalue(EXPRESSION* exp);
-EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, INITIALIZER* init,
+EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, std::list<INITIALIZER*>* init,
                                     EXPRESSION* thisptr, bool isdest);
 bool assignDiscardsConst(TYPE* dest, TYPE* source);
 bool isconstzero(TYPE* tp, EXPRESSION* exp);

@@ -46,11 +46,10 @@
 #include "ioptimizer.h"
 #include "libcxx.h"
 #include "symtab.h"
-
+#include "ListFactory.h"
 namespace Parser
 {
-static Optimizer::LIST *inlineHead, *inlineTail, *inlineVTabHead, *inlineVTabTail;
-static Optimizer::LIST *inlineDataHead, *inlineDataTail;
+static std::list<SYMBOL*> inlines, inlineVTabs, inlineData;
 
 static SYMBOL* inlinesp_list[MAX_INLINE_NESTING];
 
@@ -65,9 +64,9 @@ static int namenumber;
 void inlineinit(void)
 {
     namenumber = 0;
-    inlineHead = nullptr;
-    inlineVTabHead = nullptr;
-    inlineDataHead = nullptr;
+    inlines.clear();
+    inlineVTabs.clear();
+    inlineData.clear();
     vc1Thunks = symbols.CreateSymbolTable();
     didInlines.clear();
 }
@@ -81,16 +80,11 @@ void dumpInlines(void)
         if (!TotalErrors())
         {
             bool done;
-            Optimizer::LIST* vtabList;
-            Optimizer::LIST* dataList;
             Optimizer::cseg();
             do
             {
-                Optimizer::LIST* funcList = inlineHead;
-                done = true;
-                while (funcList)
-                {
-                    SYMBOL* sym = (SYMBOL*)funcList->data;
+                for (auto sym : inlines)
+                { 
                     if (((sym->sb->attribs.inheritable.isInline && sym->sb->dumpInlineToFile) ||
                          (Optimizer::SymbolManager::Test(sym) && Optimizer::SymbolManager::Test(sym)->genreffed)))
                     {
@@ -127,13 +121,10 @@ void dumpInlines(void)
                             }
                         }
                     }
-                    funcList = funcList->next;
                 }
                 startlab = retlab = 0;
-                vtabList = inlineVTabHead;
-                while (vtabList)
+                for (auto sym : inlineVTabs)
                 {
-                    SYMBOL* sym = (SYMBOL*)vtabList->data;
                     if (Optimizer::SymbolManager::Test(sym->sb->vtabsp) && hasVTab(sym) && !sym->sb->vtabsp->sb->didinline)
                     {
                         if (inSearch(sym))
@@ -158,14 +149,10 @@ void dumpInlines(void)
                             }
                         }
                     }
-                    vtabList = vtabList->next;
                 }
             } while (!done);
-            dataList = inlineDataHead;
-            Optimizer::dseg();
-            while (dataList)
+            for (auto sym : inlineData)
             {
-                SYMBOL* sym = (SYMBOL*)dataList->data;
                 if (sym->sb->attribs.inheritable.linkage2 != lk_import)
                 {
                     if (sym->sb->parentClass && sym->sb->parentClass->sb->parentTemplate)
@@ -227,7 +214,7 @@ void dumpInlines(void)
                                 }
                                 else
                                 {
-                                    int s = dumpInit(sym, sym->sb->init);
+                                    int s = dumpInit(sym, sym->sb->init->front());
                                     if (s < sym->tp->size)
                                         Optimizer::genstorage(sym->tp->size - s);
                                 }
@@ -259,7 +246,7 @@ void dumpInlines(void)
                                     }
                                     else
                                     {
-                                        int s = dumpInit(sym, sym->sb->init);
+                                        int s = dumpInit(sym, sym->sb->init->front());
                                         if (s < sym->tp->size)
                                             Optimizer::genstorage(sym->tp->size - s);
                                     }
@@ -271,7 +258,6 @@ void dumpInlines(void)
                         }
                     }
                 }
-                dataList = dataList->next;
             }
         }
     }
@@ -280,13 +266,11 @@ void dumpImportThunks(void)
 {
     if (IsCompiler())
     {
-        Optimizer::LIST* l = importThunks;
-        while (l)
+        for (auto sym : importThunks)
         {
-            Optimizer::gen_virtual(Optimizer::SymbolManager::Get((SYMBOL*)l->data), false);
-            Optimizer::gen_importThunk(Optimizer::SymbolManager::Get(((SYMBOL*)l->data)->sb->mainsym));
-            Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get((SYMBOL*)l->data));
-            l = l->next;
+            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), false);
+            Optimizer::gen_importThunk(Optimizer::SymbolManager::Get((sym)->sb->mainsym));
+            Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
         }
     }
 }
@@ -323,32 +307,18 @@ SYMBOL* getvc1Thunk(int offset)
 }
 void InsertInline(SYMBOL* sym)
 {
-    SYMBOL* sp = sym;
-    Optimizer::LIST* temp = Allocate<Optimizer::LIST>();
-    temp->data = sym;
     if (isfunction(sym->tp))
     {
-        if (inlineHead)
-            inlineTail = inlineTail->next = temp;
-        else
-            inlineHead = inlineTail = temp;
+        inlines.push_back(sym);
     }
     else
     {
-        if (inlineVTabHead)
-            inlineVTabTail = inlineVTabTail->next = temp;
-        else
-            inlineVTabHead = inlineVTabTail = temp;
+        inlineVTabs.push_back(sym);
     }
 }
 void InsertInlineData(SYMBOL* sym)
 {
-    Optimizer::LIST* temp = Allocate<Optimizer::LIST>();
-    temp->data = sym;
-    if (inlineDataHead)
-        inlineDataTail = inlineDataTail->next = temp;
-    else
-        inlineDataHead = inlineDataTail = temp;
+    inlineData.push_back(sym);
 }
 /*-------------------------------------------------------------------------*/
 
@@ -625,19 +595,19 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
             }
             if (temp->v.func == nullptr)
             {
-                INITLIST* args = fp->arguments;
-                INITLIST** p;
                 temp->v.func = Allocate<FUNCTIONCALL>();
                 *temp->v.func = *fp;
-                p = &temp->v.func->arguments;
-                *p = nullptr;
-                while (args)
+                if (temp->v.func->arguments)
                 {
-                    *p = Allocate<INITLIST>();
-                    **p = *args;
-                    (*p)->exp = inlineexpr((*p)->exp, nullptr);
-                    args = args->next;
-                    p = &(*p)->next;
+                    auto args = *temp->v.func->arguments;
+                    temp->v.func->arguments->clear();
+                    for (auto a : args)
+                    {
+                        auto il = Allocate<INITLIST>();
+                        *il = *a;
+                        il->exp = inlineexpr(a->exp, nullptr);
+                        temp->v.func->arguments->push_back(il);
+                    }
                 }
                 if (temp->v.func->thisptr)
                     temp->v.func->thisptr = inlineexpr(temp->v.func->thisptr, nullptr);
@@ -656,16 +626,19 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
 
 /*-------------------------------------------------------------------------*/
 
-STATEMENT* inlinestmt(STATEMENT* block)
+std::list<STATEMENT*>* inlinestmt(std::list<STATEMENT*>* blocks)
 {
-    STATEMENT *out = nullptr, **outptr = &out;
-    while (block != nullptr)
+    if (blocks)
     {
-        *outptr = Allocate<STATEMENT>();
-        memcpy(*outptr, block, sizeof(STATEMENT));
-        (*outptr)->next = nullptr;
-        switch (block->type)
+        std::list<STATEMENT*>* out = stmtListFactory.CreateList();
+        for (auto block : *blocks)
         {
+            auto stmt = Allocate<STATEMENT>();
+            out->push_back(stmt);
+            *stmt = *block;
+            block = stmt;
+            switch (block->type)
+            {
             case st__genword:
                 break;
             case st_try:
@@ -674,28 +647,28 @@ STATEMENT* inlinestmt(STATEMENT* block)
             case st___catch:
             case st___finally:
             case st___fault:
-                (*outptr)->lower = inlinestmt(block->lower);
-                (*outptr)->blockTail = inlinestmt(block->blockTail);
+                block->lower = inlinestmt(block->lower);
+                block->blockTail = inlinestmt(block->blockTail);
                 break;
             case st_return:
             case st_expr:
             case st_declare:
-                (*outptr)->select = inlineexpr(block->select, nullptr);
+                block->select = inlineexpr(block->select, nullptr);
                 break;
             case st_goto:
             case st_label:
                 break;
             case st_select:
             case st_notselect:
-                (*outptr)->select = inlineexpr(block->select, nullptr);
+                block->select = inlineexpr(block->select, nullptr);
                 break;
             case st_switch:
-                (*outptr)->select = inlineexpr(block->select, nullptr);
-                (*outptr)->lower = inlinestmt(block->lower);
+                block->select = inlineexpr(block->select, nullptr);
+                block->lower = inlinestmt(block->lower);
                 break;
             case st_block:
-                (*outptr)->lower = inlinestmt(block->lower);
-                (*outptr)->blockTail = inlinestmt(block->blockTail);
+                block->lower = inlinestmt(block->lower);
+                block->blockTail = inlinestmt(block->blockTail);
                 break;
             case st_passthrough:
                 if (block->lower)
@@ -712,11 +685,11 @@ STATEMENT* inlinestmt(STATEMENT* block)
             default:
                 diag("Invalid block type in inlinestmt");
                 break;
+            }
         }
-        outptr = &(*outptr)->next;
-        block = block->next;
+        return out;
     }
-    return out;
+    return nullptr;
 }
 static void inlineResetReturn(STATEMENT* block, TYPE* rettp, EXPRESSION* retnode)
 {
@@ -747,12 +720,14 @@ static EXPRESSION* newReturn(TYPE* tp)
         exp = intNode(en_c_i, 0);
     return exp;
 }
-static void reduceReturns(STATEMENT* block, TYPE* rettp, EXPRESSION* retnode)
+static void reduceReturns(std::list<STATEMENT*>* blocks, TYPE* rettp, EXPRESSION* retnode)
 {
-    while (block != nullptr)
+    if (blocks)
     {
-        switch (block->type)
+        for (auto block : *blocks)
         {
+            switch (block->type)
+            {
             case st__genword:
                 break;
             case st_try:
@@ -794,17 +769,18 @@ static void reduceReturns(STATEMENT* block, TYPE* rettp, EXPRESSION* retnode)
             default:
                 diag("Invalid block type in reduceReturns");
                 break;
+            }
         }
-        block = block->next;
     }
 }
-static EXPRESSION* scanReturn(STATEMENT* block, TYPE* rettp)
+static EXPRESSION* scanReturn(std::list<STATEMENT*>* blocks, TYPE* rettp)
 {
     EXPRESSION* rv = nullptr;
-    while (block != nullptr && !rv)
-    {
-        switch (block->type)
+    if (blocks)
+        for (auto block : *blocks)
         {
+            switch (block->type)
+            {
             case st__genword:
                 break;
             case st_try:
@@ -855,9 +831,8 @@ static EXPRESSION* scanReturn(STATEMENT* block, TYPE* rettp)
             default:
                 diag("Invalid block type in scanReturn");
                 break;
+            }
         }
-        block = block->next;
-    }
     return rv;
 }
 
@@ -1069,42 +1044,48 @@ static bool sideEffects(EXPRESSION* node)
     }
     return rv;
 }
-static void setExp(SYMBOL* sx, EXPRESSION* exp, STATEMENT*** stp)
+static void setExp(SYMBOL* sx, EXPRESSION* exp, std::list<STATEMENT*> **stp)
 {
     if (!sx->sb->altered && !sx->sb->addressTaken && !sideEffects(exp))
     {
         // well if the expression is too complicated it gets evaluated over and over
         // but maybe the backend can clean it up again...
-        sx->sb->inlineFunc.stmt = (STATEMENT*)exp;
+        sx->sb->inlineFunc.stmt = (std::list<STATEMENT*>*)exp;
     }
     else
     {
         EXPRESSION* tnode = anonymousVar(sc_auto, sx->tp);
         deref(sx->tp, &tnode);
-        sx->sb->inlineFunc.stmt = (STATEMENT*)tnode;
+        sx->sb->inlineFunc.stmt = (std::list<STATEMENT*>*)tnode;
         tnode = exprNode(en_assign, tnode, exp);
-        **stp = Allocate<STATEMENT>();
-        (**stp)->type = st_expr;
-        (**stp)->select = tnode;
-        *stp = &(**stp)->next;
+        auto stmt = Allocate<STATEMENT>();
+        stmt->type = st_expr;
+        stmt->select = tnode;
+        if (!*stp)
+            *stp = stmtListFactory.CreateList();
+        (*stp)->push_back(stmt);
     }
 }
-static STATEMENT* SetupArguments(FUNCTIONCALL* params)
+static std::list<STATEMENT*>* SetupArguments1(FUNCTIONCALL* params)
 {
-
-    STATEMENT *st = nullptr, **stp = &st;
-    INITLIST* al = params->arguments;
+    std::list<STATEMENT*>* st = nullptr;
+    std::list<INITLIST*>::iterator al, ale = al;
+    if (params->arguments)
+    {
+        al = params->arguments->begin();
+        ale = params->arguments->end();
+    }
     auto it = basetype(params->sp->tp)->syms->begin();
     auto ite = basetype(params->sp->tp)->syms->end();
     if (ismember(params->sp))
     {
-        setExp(*it, params->thisptr, &stp);
+        setExp(*it, params->thisptr, &st);
         ++it;
     }
-    while (al && it != ite)
+    while (al != ale && it != ite)
     {
-        setExp(*it, al->exp, &stp);
-        al = al->next;
+        setExp(*it, (*al)->exp, &st);
+        ++al;
         ++it;
     }
     return st;
@@ -1125,7 +1106,7 @@ void SetupVariables(SYMBOL* sym)
             {
                 EXPRESSION* ev = anonymousVar(sc_auto, sx->tp);
                 deref(sx->tp, &ev);
-                sx->sb->inlineFunc.stmt = (STATEMENT*)ev;
+                sx->sb->inlineFunc.stmt = (std::list<STATEMENT*>*)ev;
             }
         }
         syms = syms->Next();
@@ -1136,7 +1117,6 @@ void SetupVariables(SYMBOL* sym)
 EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
 {
     bool found = false;
-    STATEMENT *stmt = nullptr, **stp = &stmt, *stmt1;
     EXPRESSION* newExpression;
     bool allocated = false;
 
@@ -1176,25 +1156,26 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
         params->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
-    if (!localNameSpace->valueData->syms)
+    if (!localNameSpace->front()->syms)
     {
         allocated = true;
-        AllocateLocalContext(nullptr, nullptr, Optimizer::nextLabel++);
+        AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
     }
-    stmt1 = SetupArguments(params);
+    std::list<STATEMENT*>* stmt = stmtListFactory.CreateList();
+    auto stmt1 = SetupArguments1(params);
+    SetupVariables(params->sp);
+    function_list[function_list_count++] = params;
+    stmt = inlinestmt(params->sp->sb->inlineFunc.stmt);
     if (stmt1)
     {
         // this will kill the ret val but we don't care since we've modified params
-        stmt = Allocate<STATEMENT>();
-        stmt->type = st_block;
-        stmt->lower = stmt1;
-    }
-    SetupVariables(params->sp);
-    function_list[function_list_count++] = params;
 
-    while (*stp)
-        stp = &(*stp)->next;
-    *stp = inlinestmt(params->sp->sb->inlineFunc.stmt);
+        auto stmt2 = Allocate<STATEMENT>();
+        stmt2->type = st_block;
+        stmt2->lower = stmt1;
+        stmt->push_front(stmt2);
+    }
+
     newExpression = exprNode(en_stmt, nullptr, nullptr);
     newExpression->v.stmt = stmt;
 
@@ -1213,12 +1194,12 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
     optimize_for_constants(&newExpression->left);
     if (allocated)
     {
-        FreeLocalContext(nullptr, nullptr, Optimizer::nextLabel++);
+        FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
     }
     function_list_count--;
     if (newExpression->type == en_stmt)
-        if (newExpression->v.stmt->type == st_block)
-            if (!newExpression->v.stmt->lower)
+        if (newExpression->v.stmt->front()->type == st_block)
+            if (!newExpression->v.stmt->front()->lower)
                 newExpression = intNode(en_c_i, 0);  // noop if there is no body
     if (newExpression->type == en_stmt)
     {
@@ -1230,48 +1211,48 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
     }
     return newExpression;
 }
-static bool IsEmptyBlocks(STATEMENT* block)
+static bool IsEmptyBlocks(std::list<STATEMENT*>* blocks)
 {
     bool rv = true;
-    while (block != nullptr && rv)
-    {
-        switch (block->type)
+    if (blocks)
+        for (auto block : *blocks)
         {
-            case st_line:
-            case st_varstart:
-            case st_dbgblock:
-                break;
-            case st__genword:
-            case st_try:
-            case st_catch:
-            case st___try:
-            case st___catch:
-            case st___finally:
-            case st___fault:
-            case st_return:
-            case st_goto:
-            case st_expr:
-            case st_declare:
-            case st_select:
-            case st_notselect:
-            case st_switch:
-            case st_passthrough:
-            case st_datapassthrough:
-                rv = false;
-                break;
-            case st_nop:
-                break;
-            case st_label:
-                break;
-            case st_block:
-                rv = IsEmptyBlocks(block->lower) && block->blockTail == nullptr;
-                break;
-            default:
-                diag("Invalid block type in IsEmptyBlocks");
-                break;
+            switch (block->type)
+            {
+                case st_line:
+                case st_varstart:
+                case st_dbgblock:
+                    break;
+                case st__genword:
+                case st_try:
+                case st_catch:
+                case st___try:
+                case st___catch:
+                case st___finally:
+                case st___fault:
+                case st_return:
+                case st_goto:
+                case st_expr:
+                case st_declare:
+                case st_select:
+                case st_notselect:
+                case st_switch:
+                case st_passthrough:
+                case st_datapassthrough:
+                    rv = false;
+                    break;
+                case st_nop:
+                    break;
+                case st_label:
+                    break;
+                case st_block:
+                    rv = IsEmptyBlocks(block->lower) && block->blockTail == nullptr;
+                    break;
+                default:
+                    diag("Invalid block type in IsEmptyBlocks");
+                    break;
+            }
         }
-        block = block->next;
-    }
     return rv;
 }
 bool IsEmptyFunction(FUNCTIONCALL* params, SYMBOL* funcsp)
@@ -1281,13 +1262,6 @@ bool IsEmptyFunction(FUNCTIONCALL* params, SYMBOL* funcsp)
         return false;
     if (!params->sp->sb->inlineFunc.stmt)
         return false;
-    st = params->sp->sb->inlineFunc.stmt;
-    while (st && st->type == st_expr)
-    {
-        st = st->next;
-    }
-    if (!st)
-        return true;
-    return true || IsEmptyBlocks(st);
+    return true;
 }
 }  // namespace Parser

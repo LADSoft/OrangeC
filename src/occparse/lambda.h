@@ -25,7 +25,7 @@
 
 namespace Parser
 {
-extern LAMBDA* lambdas;
+extern std::list<LAMBDA*> lambdas;
 
 void lambda_init(void);
 SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit);

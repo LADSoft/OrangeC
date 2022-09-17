@@ -175,7 +175,7 @@ static void inlineBindThis(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, EXPRESSIO
         }
     }
 }
-static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, INITLIST* args)
+static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list<INITLIST*>* args)
 {
     if (table->size())
     {
@@ -191,7 +191,8 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, INITLIST*
         
         list = Allocate<EXPRESSION*>(cnt);
         cnt = 0;
-        while (it != table->end() && args)  // args might go to nullptr for a destructor, which currently has a VOID at the end of the arg list
+        std::list<INITLIST*>::iterator ita, itae;
+        while (it != table->end() && ita != itae)  // args might go to nullptr for a destructor, which currently has a VOID at the end of the arg list
         {
             SYMBOL* sym = *it;
             if (!isvoid(sym->tp))
@@ -199,7 +200,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, INITLIST*
                 Optimizer::IMODE *src, *ap1, *idest;
                 EXPRESSION* dest;
                 int n = sizeFromType(sym->tp);
-                int m = natural_size(args->exp);
+                int m = natural_size((*ita)->exp);
                 if (sym->sb->addressTaken || n == ISZ_ULONGLONG || n == -ISZ_ULONGLONG || m == ISZ_ULONGLONG || m == -ISZ_ULONGLONG || Optimizer::architecture == ARCHITECTURE_MSIL)
                 {
                     SYMBOL* sym2;
@@ -222,7 +223,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, INITLIST*
 
                     list[cnt++] = dest;
                     idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
-                    src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));
+                    src = gen_expr(funcsp, (*ita)->exp, 0, natural_size((*ita)->exp));
                     ap1 = Optimizer::LookupLoadTemp(nullptr, src);
                     if (ap1 != src)
                     {
@@ -247,7 +248,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, INITLIST*
                         deref(sym->tp, &dest);
                     }
                     list[cnt++] = dest;
-                    src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));
+                    src = gen_expr(funcsp, (*ita)->exp, 0, natural_size((*ita)->exp));
                     ap1 = Optimizer::LookupLoadTemp(nullptr, src);
                     if (ap1 != src)
                     {
@@ -280,7 +281,6 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, INITLIST*
                     }
                 }
             }
-            args = args->next;
         }
         // we have to fill in the args last in case the same constructor was used
         // in multiple arguments...
@@ -518,15 +518,16 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         }
     // this is here because cmdswitch uses a unique_ptr and autoincrement of a structure member together, and the resulting code gen
     // fails
-    INITLIST* fargs = f->arguments;
-    while (fargs)
+    if (f->arguments)
     {
-        if (hasaincdec(fargs->exp))
+        for (auto fargs : *f->arguments)
         {
-            f->sp->sb->dumpInlineToFile = true;
-            return nullptr;
+            if (hasaincdec(fargs->exp))
+            {
+                f->sp->sb->dumpInlineToFile = true;
+                return nullptr;
+            }
         }
-        fargs = fargs->next;
     }
     inline_nesting++;
     codeLabelOffset = Optimizer::nextLabel - INT_MIN;
@@ -535,17 +536,17 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     returnImode = nullptr;
     startlab = Optimizer::nextLabel++;
     retlab = Optimizer::nextLabel++;
-    AllocateLocalContext(nullptr, funcsp, Optimizer::nextLabel++);
+    AllocateLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
     inlineBindThis(funcsp, basetype(f->sp->tp)->syms, f->thisptr);
     inlineBindArgs(funcsp, basetype(f->sp->tp)->syms, f->arguments);
     inlinesym_list[inlinesym_count++] = f->sp;
     inlineResetVars(f->sp->sb->inlineFunc.syms, basetype(f->sp->tp)->syms);
     inlineCopySyms(f->sp->sb->inlineFunc.syms);
-    genstmt(f->sp->sb->inlineFunc.stmt->lower, f->sp);
-    if (f->sp->sb->inlineFunc.stmt->blockTail)
+    genstmt(f->sp->sb->inlineFunc.stmt->front()->lower, f->sp);
+    if (f->sp->sb->inlineFunc.stmt->front()->blockTail)
     {
         Optimizer::gen_icode(Optimizer::i_functailstart, 0, 0, 0);
-        genstmt(f->sp->sb->inlineFunc.stmt->blockTail, funcsp);
+        genstmt(f->sp->sb->inlineFunc.stmt->front()->blockTail, funcsp);
         Optimizer::gen_icode(Optimizer::i_functailend, 0, 0, 0);
     }
     genreturn(0, f->sp, 1, 0, nullptr);
@@ -565,7 +566,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         ap3 = ap4;
     }
     inlineUnbindArgs(basetype(f->sp->tp)->syms);
-    FreeLocalContext(nullptr, funcsp, Optimizer::nextLabel++);
+    FreeLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
     returnImode = oldReturnImode;
     retlab = oldretlab;
     startlab = oldstartlab;

@@ -378,7 +378,7 @@ typedef struct expr
             const char* name; /* name during base class processing */
             struct functioncall* func;
             struct _atomicData* ad;
-            struct stmt* stmt;
+            std::list<struct stmt*>* stmt;
             struct Optimizer::_imode_* imode;
             struct _msilarray* msilArray;
             SymbolTable<struct sym>* syms;
@@ -396,8 +396,8 @@ typedef struct expr
             } construct;
             struct
             {
-                Optimizer::LIST* left;
-                Optimizer::LIST* right;
+                std::list<struct expr*>* left;
+                std::list<struct expr*>* right;
             } logicaldestructors;
         };
         struct _templateParamList* templateParam;
@@ -441,7 +441,6 @@ typedef struct
 
 typedef struct casedata
 {
-    struct casedata* next;
     long long val;
     int label;
     const char* file;
@@ -503,9 +502,8 @@ typedef struct typ
 
 typedef struct stmt
 {
-    struct stmt* next;
-    struct stmt* lower;
-    struct stmt* blockTail;
+    std::list<struct stmt*>* lower;
+    std::list<struct stmt*>* blockTail;
     enum e_stmt type;
     EXPRESSION* select;
     EXPRESSION* destexp;
@@ -513,7 +511,7 @@ typedef struct stmt
     union
     {
         TYPE* tp;
-        CASEDATA* cases;
+        std::list<CASEDATA*>* cases;
         struct blockdata* parent;
     };
     struct sym* sp;
@@ -534,12 +532,11 @@ typedef struct stmt
 
 typedef struct blockdata
 {
-    struct blockdata* next;
     struct blockdata* caseDestruct;
     enum e_kw type;
-    CASEDATA* cases;
-    STATEMENT *head, *tail;
-    STATEMENT* blockTail;
+    std::list<CASEDATA*>* cases;
+    std::list<STATEMENT*>* statements;
+    std::list<STATEMENT*>* blockTail;
     SymbolTable<struct sym>* table;
     int breaklabel;
     int continuelabel;
@@ -552,7 +549,6 @@ typedef struct blockdata
 
 typedef struct init
 {
-    struct init* next;
     int offset;
     TYPE* basetp;
     struct sym* fieldsp;
@@ -564,7 +560,7 @@ typedef struct init
 
 typedef struct ifunc
 {
-    STATEMENT* stmt;
+    std::list<STATEMENT*>* stmt;
     SymbolTable<struct sym>* syms;
     SymbolTable<struct sym>* tags;
 } INLINEFUNC;
@@ -573,21 +569,15 @@ typedef struct
 {
     SymbolTable<struct sym>* syms;
     SymbolTable<struct sym>* tags;
-    Optimizer::LIST* usingDirectives;
-    Optimizer::LIST* inlineDirectives;
+    std::list<struct sym*>* usingDirectives;
+    std::list<struct sym*>* inlineDirectives;
     struct sym* origname;
     struct sym* name;
 
 } NAMESPACEVALUEDATA;
-typedef struct __nsv
-{
-    struct __nsv* next;
-    NAMESPACEVALUEDATA* valueData;
-} NAMESPACEVALUELIST;
 
 struct _ccNamespaceData
 {
-    struct _ccNamespaceData* next;
     const char* declfile;
     int startline;
     int endline;
@@ -658,7 +648,7 @@ typedef struct sym
         struct sym* parent;
         struct sym* parentClass;
         struct sym* parentNameSpace;
-        NAMESPACEVALUELIST* nameSpaceValues; /* for a namespace SP */
+        std::list<NAMESPACEVALUEDATA*>* nameSpaceValues; /* for a namespace SP */
         struct sym* vtabsp;
         Optimizer::LINEDATA* linedata;
         enum e_sc storage_class; /* storage class */
@@ -669,7 +659,7 @@ typedef struct sym
         int overlayIndex;              /* differentiating index when function differs only in return type from similar functions */
         int ccEndLine;                 /* end line for code completion */
         unsigned long long ccStructId; /* code completion struct id */
-        struct _ccNamespaceData* ccNamespaceData; /* namespace data for code completion */
+        std::list<struct _ccNamespaceData*>* ccNamespaceData; /* namespace data for code completion */
         unsigned declaring : 1;                   /* currently being declared */
         unsigned declaringRecursive : 1;          /* structure is recursively declared */
         unsigned compilerDeclared : 1;            /* compiler declared this */
@@ -784,31 +774,31 @@ typedef struct sym
         struct sym* typedefSym;
         struct sym* mainsym;                            /* pointer to the global version of a copied symbol */
         struct sym* maintemplate;                       /* pointer to the global version of a copied symbol */
-        struct _memberInitializers* memberInitializers; /* initializers for constructor */
-        STATEMENT* gotoTable;                           /* pointer to hashtable associated with goto or label */
+        std::list<struct _memberInitializers*>* memberInitializers; /* initializers for constructor */
+        std::list<STATEMENT*>* gotoTable;                           /* pointer to hashtable associated with goto or label */
         /* these fields depend on storage_class */
         struct u_val value;
-        struct _baseClass* baseClasses;
-        struct _vbaseEntry* vbaseEntries;
-        struct _vtabEntry* vtabEntries;
+        std::list<struct _baseClass*>* baseClasses;
+        std::list<struct _vbaseEntry*>* vbaseEntries;
+        std::list<struct _vtabEntry*>* vtabEntries;
         struct lexlist* deferredCompile;
         struct lexlist* deferredNoexcept;
-        Optimizer::LIST* templateNameSpace;
+        std::list<struct sym*>* templateNameSpace;
         short templateLevel;
         struct _templateParamList* typeAlias;
-        struct _symlist_* specializations;
-        struct _symlist_* instantiations;
+        std::list<struct sym*>* specializations;
+        std::list<struct sym*>* instantiations;
         const char* msil;                            // MSIL path
         struct _templateSelector* templateSelector;  // first element is the last valid sym found, second element is the template
                                                      // parameter sym following elements are the list of pointers to names
         struct sym* parentTemplate;                  // could be the parent of a specialization or an instantiation
-        struct init *init, *lastInit, *dest;
+        std::list<struct init *>* init, *lastInit, *dest;
         // order is important for this next, a comparison is done based on this ordering
         // clang-format off
             enum e_xc xcMode;
         // clang-format on
         struct xcept* xc;
-        Optimizer::LIST* friends;
+        std::list<struct sym*>* friends;
         attributes attribs;
         /* Type declarations */
     } * sb;
@@ -816,7 +806,6 @@ typedef struct sym
 
 typedef struct __lambda
 {
-    struct __lambda *prev, *next;
     enum e_cm captureMode;
     SymbolTable<struct __lambdasp>* captured;
     SYMBOL* cls;
@@ -843,11 +832,10 @@ typedef struct __lambdasp
 
 typedef struct _memberInitializers
 {
-    struct _memberInitializers* next;
     const char* name;
     SYMBOL* sp;
     SYMBOL* basesym;
-    INITIALIZER* init;
+    std::list<INITIALIZER*>* init;
     int line;
     const char* file;
     struct lexlist* initData;
@@ -858,23 +846,16 @@ typedef struct _memberInitializers
 
 typedef struct _baseClass
 {
-    struct _baseClass* next;
     SYMBOL* cls;
     enum e_ac accessLevel;
     unsigned offset;
     int isvirtual : 1;
     int top : 1;
 } BASECLASS;
-typedef struct _virtualFunc
-{
-    struct _virtualFunc* next;
-    SYMBOL* func;
-} VIRTUALFUNC;
 typedef struct _vtabEntry
 {
-    struct _vtabEntry* next;
-    struct _vtabEntry* children;
-    struct _virtualFunc* virtuals;
+    std::list<struct _vtabEntry*>* children;
+    std::list<struct sym*>* virtuals;
     SYMBOL* cls;
     unsigned dataOffset;
     unsigned vtabOffset;
@@ -883,7 +864,6 @@ typedef struct _vtabEntry
 } VTABENTRY;
 typedef struct _vbaseEntry
 {
-    struct _vbaseEntry* next;
     SYMBOL* cls;
     bool alloc;
     unsigned pointerOffset;
@@ -975,7 +955,7 @@ typedef struct _templateSelector
         TYPE* tp;
     };
     TEMPLATEPARAMLIST* templateParams;
-    struct initlist* arguments;
+    std::list<struct initlist*>* arguments;
     int isTemplate : 1;
     int isDeclType : 1;
     int asCall : 1;
@@ -983,17 +963,15 @@ typedef struct _templateSelector
 
 typedef struct _structSym
 {
-    struct _structSym* next;
     SYMBOL* str;
     TEMPLATEPARAMLIST* tmpl;
 } STRUCTSYM;
 typedef struct initlist
 {
-    struct initlist* next;
     TYPE* tp;
     EXPRESSION* exp;
-    Optimizer::LIST* destructors;
-    struct initlist* nested;
+    std::list<struct expr*>* destructors;
+    std::list<struct initlist*>* nested;
     int byRef : 1;
     int packed : 1;
     int vararg : 1;
@@ -1006,14 +984,14 @@ typedef struct functioncall
     SYMBOL* sp;
     TYPE* functp;
     EXPRESSION* fcall;
-    INITLIST* arguments;
-    Optimizer::LIST* destructors;
+    std::list<INITLIST*>* arguments;
+    std::list<struct expr*>* destructors;
     SYMBOL* returnSP;
     EXPRESSION* returnEXP;
     EXPRESSION* thisptr;
     TYPE* thistp;
     TEMPLATEPARAMLIST* templateParams;
-    NAMESPACEVALUELIST* nameSpace;
+    NAMESPACEVALUEDATA* nameSpace;
     int callLab;
     int novtab : 1;
     int ascall : 1;
@@ -1030,7 +1008,6 @@ typedef struct functioncall
 /* error list */
 struct errl
 {
-    struct errl* next;
     int errornumber;
     void* data;
 };
@@ -1150,7 +1127,6 @@ enum e_lexType
 
 typedef struct _string
 {
-    struct _string* next;
     enum e_lexType strtype;
     int size;
     int label;
@@ -1167,7 +1143,7 @@ typedef struct lexeme
     struct u_val value;
     char* litaslit;
     char* suffix;
-    Optimizer::LINEDATA* linedata;
+    std::list<Optimizer::LINEDATA*>* linedata;
     int errline;
     const char* errfile;
     int charindex;

@@ -320,38 +320,35 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
     tp = PerformDeferredInitialization(tp, nullptr);
     if (sym->sb->vbaseEntries)
     {
-        VBASEENTRY* entries = sym->sb->vbaseEntries;
-        while (entries)
+        for (auto vbase : *sym->sb->vbaseEntries)
         {
-            if (entries->alloc)
+            if (vbase->alloc)
             {
                 if (genXT)
                 {
-                    RTTIDumpType(entries->cls->tp);
+                    RTTIDumpType(vbase->cls->tp);
                 }
                 else
                 {
                     SYMBOL* xtSym;
                     char name[4096];
-                    RTTIGetName(name, entries->cls->tp);
+                    RTTIGetName(name, vbase->cls->tp);
                     xtSym = rttiSyms->search(name);
                     if (!xtSym)
                     {
-                        RTTIDumpType(entries->cls->tp);
+                        RTTIDumpType(vbase->cls->tp);
                         xtSym = rttiSyms->search(name);
                     }
                     Optimizer::genint(XD_CL_VIRTUAL);
                     Optimizer::genref(Optimizer::SymbolManager::Get(xtSym), 0);
-                    Optimizer::genint(entries->structOffset);
+                    Optimizer::genint(vbase->structOffset);
                 }
             }
-            entries = entries->next;
         }
     }
     if (sym->sb->baseClasses)
     {
-        BASECLASS* bc = sym->sb->baseClasses;
-        while (bc)
+        for (auto bc : *sym->sb->baseClasses)
         {
             if (!bc->isvirtual)
             {
@@ -370,7 +367,6 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
                     Optimizer::genint(bc->offset);
                 }
             }
-            bc = bc->next;
         }
     }
     if (sym->tp->syms)
@@ -501,7 +497,7 @@ SYMBOL* RTTIDumpType(TYPE* tp)
     }
     return xtSym;
 }
-static void XCStmt(STATEMENT* block, std::map<int, std::map<int, __xclist*>>& lst);
+static void XCStmt(std::list<STATEMENT*>* block, std::map<int, std::map<int, __xclist*>>& lst);
 static void XCExpression(EXPRESSION* node, std::map<int, std::map<int, __xclist*>>& lst)
 {
     FUNCTIONCALL* fp;
@@ -698,12 +694,9 @@ static void XCExpression(EXPRESSION* node, std::map<int, std::map<int, __xclist*
         case en_func:
             fp = node->v.func;
             {
-                INITLIST* args = fp->arguments;
-                while (args)
-                {
-                    XCExpression(args->exp, lst);
-                    args = args->next;
-                }
+                if (fp->arguments)
+                    for (auto arg : *fp->arguments)
+                        XCExpression(arg->exp, lst);
                 if (fp->thisptr)
                     XCExpression(fp->thisptr, lst);
                 if (fp->returnEXP)
@@ -718,11 +711,11 @@ static void XCExpression(EXPRESSION* node, std::map<int, std::map<int, __xclist*
             break;
     }
 }
-static void XCStmt(STATEMENT* block, std::map<int, std::map<int, __xclist*>>& lst)
+static void XCStmt(std::list<STATEMENT*>* block, std::map<int, std::map<int, __xclist*>>& lst)
 {
-    while (block != nullptr)
-    {
-        switch (block->type)
+    for (auto stmt : *block)
+    { 
+        switch (stmt->type)
         {
             case st__genword:
                 break;
@@ -731,35 +724,35 @@ static void XCStmt(STATEMENT* block, std::map<int, std::map<int, __xclist*>>& ls
             case st___finally:
             case st___fault: {
                 __xclist* temp = Allocate<__xclist>();
-                temp->stmt = block;
+                temp->stmt = stmt;
                 temp->byStmt = true;
-                lst[block->tryStart][block->tryEnd] = temp;
-                XCStmt(block->lower, lst);
+                lst[stmt->tryStart][stmt->tryEnd] = temp;
+                XCStmt(stmt->lower, lst);
                 break;
             }
             case st_try:
             case st___try:
-                XCStmt(block->lower, lst);
+                XCStmt(stmt->lower, lst);
                 break;
             case st_return:
             case st_expr:
             case st_declare:
-                XCExpression(block->select, lst);
+                XCExpression(stmt->select, lst);
                 break;
             case st_goto:
             case st_label:
                 break;
             case st_select:
             case st_notselect:
-                XCExpression(block->select, lst);
+                XCExpression(stmt->select, lst);
                 break;
             case st_switch:
-                XCExpression(block->select, lst);
-                XCStmt(block->lower, lst);
+                XCExpression(stmt->select, lst);
+                XCStmt(stmt->lower, lst);
                 break;
             case st_block:
-                XCStmt(block->lower, lst);
-                XCStmt(block->blockTail, lst);
+                XCStmt(stmt->lower, lst);
+                XCStmt(stmt->blockTail, lst);
                 break;
             case st_passthrough:
             case st_nop:
@@ -774,7 +767,6 @@ static void XCStmt(STATEMENT* block, std::map<int, std::map<int, __xclist*>>& ls
                 diag("Invalid block type in XCStmt");
                 break;
         }
-        block = block->next;
     }
 }
 static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)

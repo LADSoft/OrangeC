@@ -30,7 +30,7 @@ extern int packIndex;
 extern int argumentNesting;
 extern int inAssignRHS;
 
-extern Optimizer::LIST* importThunks;
+extern std::list<SYMBOL*> importThunks;
 
 void expr_init(void);
 void thunkForImportTable(EXPRESSION** exp);
@@ -40,19 +40,19 @@ EXPRESSION* varNode(enum e_node type, SYMBOL* sym);
 EXPRESSION* typeNode(TYPE* tp);
 EXPRESSION* intNode(enum e_node type, long long val);
 void checkauto(TYPE* tp1, int err);
-void GetLogicalDestructors(Optimizer::LIST** rv, EXPRESSION* cur);
+void GetLogicalDestructors(std::list<EXPRESSION*>**lst, EXPRESSION* cur);
 void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp);
 TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr = false);
-LEXLIST* getInitList(LEXLIST* lex, SYMBOL* funcsp, INITLIST** owner);
+LEXLIST* getInitList(LEXLIST* lex, SYMBOL* funcsp, std::list<INITLIST*>** owner);
 LEXLIST* getArgs(LEXLIST* lex, SYMBOL* funcsp, FUNCTIONCALL* funcparams, enum e_kw finish, bool allowPack, int flags);
 LEXLIST* getMemberInitializers(LEXLIST* lex, SYMBOL* funcsp, FUNCTIONCALL* funcparams, enum e_kw finish, bool allowPack);
 EXPRESSION* DerivedToBase(TYPE* tpn, TYPE* tpo, EXPRESSION* exp, int flags);
 bool cloneTempStmt(STATEMENT** block, SYMBOL** found, SYMBOL** replace);
 TYPE* InitializerListType(TYPE* arg);
 EXPRESSION* getFunc(EXPRESSION* exp);
-void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* initializerListType, INITLIST** lptr, bool operands,
-                           bool asref);
-void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it , SymbolTable<SYMBOL>::iterator itend, INITLIST** lptr, bool operands, bool implicit);
+void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* initializerListType, std::list<INITLIST*>** lptr, bool operands,
+    bool asref);
+void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it , SymbolTable<SYMBOL>::iterator itend, std::list<INITLIST*>** lptr, bool operands, bool implicit);
 LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags);
 LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
 LEXLIST* expression_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);

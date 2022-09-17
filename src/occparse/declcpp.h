@@ -28,7 +28,7 @@ namespace Parser
 {
 extern attributes basisAttribs;
 
-extern Optimizer::LIST* nameSpaceList;
+extern std::list<SYMBOL*> nameSpaceList;
 extern char anonymousNameSpaceName[512];
 extern int noNeedToSpecialize;
 extern int parsingUsing;
@@ -46,7 +46,7 @@ void dumpVTab(SYMBOL* sym);
 void internalClassRefCount(SYMBOL* base, SYMBOL* derived, int* vcount, int* ccount, bool isVirtual);
 int classRefCount(SYMBOL* base, SYMBOL* derived);
 void CheckCalledException(SYMBOL* cst, EXPRESSION* exp);
-void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, VTABENTRY** pos, int offset);
+void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos, int offset);
 void calculateVirtualBaseOffsets(SYMBOL* sym);
 void deferredCompileOne(SYMBOL* cur);
 void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func);
@@ -67,15 +67,15 @@ void GatherPackedTypes(int* count, SYMBOL** arg, TYPE* tp);
 void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp);
 void ReplicatePackedExpression(EXPRESSION* pattern, int count, SYMBOL** arg, TEMPLATEPARAMLIST** dest);
 int CountPacks(TEMPLATEPARAMLIST* packs);
-INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXLIST* start, EXPRESSION* packedExp);
-MEMBERINITIALIZERS* expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, MEMBERINITIALIZERS** init, BASECLASS* bc,
-                                            VBASEENTRY* vbase);
-void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, TEMPLATEPARAMLIST* templatePack, MEMBERINITIALIZERS** p,
-                                    LEXLIST* start, INITLIST* list);
+void expandPackedInitList(std::list<INITLIST*>** lptr, SYMBOL* funcsp, LEXLIST* start, EXPRESSION* packedExp);
+void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIALIZERS*>* init, std::list<BASECLASS*>* bc,
+    std::list<VBASEENTRY*>* vbase);
+void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, TEMPLATEPARAMLIST* templatePack, std::list<MEMBERINITIALIZERS*>** p,
+                                    LEXLIST* start, std::list<INITLIST*>* list);
 void checkOperatorArgs(SYMBOL* sp, bool asFriend);
 LEXLIST* handleStaticAssert(LEXLIST* lex);
 LEXLIST* insertNamespace(LEXLIST* lex, enum e_lk linkage, enum e_sc storage_class, bool* linked);
-void unvisitUsingDirectives(NAMESPACEVALUELIST* v);
+void unvisitUsingDirectives(NAMESPACEVALUEDATA* v);
 LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc storage_class, bool inTemplate, bool hasAttributes);
 TYPE* AttributeFinish(SYMBOL* sym, TYPE* tp);
 void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp);

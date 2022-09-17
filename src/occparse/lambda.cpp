@@ -41,6 +41,7 @@
 #include "declcons.h"
 #include "beinterf.h"
 #include "symtab.h"
+#include "ListFactory.h"
 
 namespace Parser
 {
@@ -76,7 +77,7 @@ private:
 struct aa *aa::___self;
 */
 
-LAMBDA* lambdas;
+std::list<LAMBDA*> lambdas;
 
 static char lambdaQualifier[260];
 static int lambdaIndex;
@@ -86,7 +87,7 @@ void lambda_init(void)
 {
     lambdaFactory.Reset();
     lambdaIndex = 1;
-    lambdas = NULL;
+    lambdas.clear();
 }
 static char* LambdaName(void)
 {
@@ -119,17 +120,17 @@ static const char* AnonymousLambdaName(void)
     Optimizer::my_sprintf(buf, "%s_thunk", name);
     return litlate(buf);
 }
-static void lambda_insert(SYMBOL* sym, LAMBDA* lambdas)
+static void lambda_insert(SYMBOL* sym, LAMBDA* current)
 {
     int align = getAlign(sc_member, sym->tp);
-    if (align && lambdas->cls->tp->size % align)
-        lambdas->cls->tp->size += align - lambdas->cls->tp->size % align;
-    if (align > lambdas->cls->sb->attribs.inheritable.structAlign)
-        lambdas->cls->sb->attribs.inheritable.structAlign = align;
-    sym->sb->parentClass = lambdas->cls;
-    sym->sb->offset = lambdas->cls->tp->size;
-    lambdas->cls->tp->syms->Add(sym);
-    lambdas->cls->tp->size += sym->tp->size;
+    if (align && current->cls->tp->size % align)
+        current->cls->tp->size += align - current->cls->tp->size % align;
+    if (align > current->cls->sb->attribs.inheritable.structAlign)
+        current->cls->sb->attribs.inheritable.structAlign = align;
+    sym->sb->parentClass = current->cls;
+    sym->sb->offset = current->cls->tp->size;
+    current->cls->tp->syms->Add(sym);
+    current->cls->tp->size += sym->tp->size;
 }
 static TYPE* lambda_type(TYPE* tp, enum e_cm mode)
 {
@@ -146,7 +147,7 @@ static TYPE* lambda_type(TYPE* tp, enum e_cm mode)
             tp = tp->btp;
         }
         tp = basetype(tp);
-        if (!lambdas->isMutable)
+        if (!lambdas.front()->isMutable)
         {
             tp = MakeType(bt_const, tp);
         }
@@ -155,56 +156,56 @@ static TYPE* lambda_type(TYPE* tp, enum e_cm mode)
 }
 SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
 {
-    if (lambdas)
+    if (lambdas.size())
     {
+        auto cile = lambdas.end();
+        auto cilb = lambdas.begin();
         if (mode == cmThis)
         {
-            SYMBOL* lthis = lambdas->lthis;
-            SYMBOL* base = basetype(lambdas->lthis->tp)->btp->sp;
+            SYMBOL* lthis = lambdas.front()->lthis;
+            SYMBOL* base = basetype(lambdas.front()->lthis->tp)->btp->sp;
             if (lthis->sb->mainsym)
                 lthis = lthis->sb->mainsym;
             if (base->sb->mainsym)
                 base = base->sb->mainsym;
-            if (!sym || (lambdas->lthis && lthis == base))
+            if (!sym || (lambdas.front()->lthis && lthis == base))
             {
-                if (lambdas->captureThis)
+                if (lambdas.front()->captureThis)
                 {
                     bool errorflg = false;
-                    LAMBDA* check = lambdas;
                     // have to try to replicate the symbol into the current context
-                    while (check && !errorflg)
+                    for (auto cil = cilb ; cil != cile; ++cil )
                     {
-                        if (check->captureMode == cmNone)
+                        if ((*cil)->captureMode == cmNone)
                         {
                             if (isExplicit)
                             {
-                                if (lambdas->prev)
+                                // this checked the beginning of the list
+                                if (cil != lambdas.begin())
                                 {
                                     errorflg = true;
                                     errorstr(ERR_EXPLICIT_CAPTURE_BLOCKED, "this");
+                                    break;
                                 }
                             }
                             else
                             {
                                 errorflg = true;
                                 errorstr(ERR_IMPLICIT_CAPTURE_BLOCKED, "this");
+                                break;
                             }
                         }
-                        else if (check->captureMode == cmValue && isExplicit)
+                        else if ((*cil)->captureMode == cmValue && isExplicit)
                         {
                             errorflg = true;
                             errorstr(ERR_EXPLICIT_CAPTURE_BLOCKED, "this");
+                            break;
                         }
-                        check = check->next;
                     }
                     if (!errorflg)
                     {
-                        check = lambdas;
-                        while (check)
-                        {
-                            check->captureThis = true;
-                            check = check->next;
-                        }
+                        for (auto cil = cilb; cil != cile; ++cil)
+                            (*cil)->captureThis = true;
                     }
                 }
                 else
@@ -215,7 +216,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
         }
         else
         {
-            if (sym->sb->parent != lambdas->func)
+            if (sym->sb->parent != lambdas.front()->func)
             {
                 if (sym->sb->storage_class != sc_auto && sym->sb->storage_class != sc_parameter)
                 {
@@ -223,82 +224,81 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
                 }
                 else
                 {
-                    LAMBDA* current = lambdas;
+                    auto current = cilb;
                     SYMBOL* sym2 = NULL;
                     LAMBDA* check;
-                    while (current)
+                    for ( ; current != cile; ++current)
                     {
-                        LAMBDASP* lsp = current->captured->search(sym->name);
+                        LAMBDASP* lsp = (*current)->captured->search(sym->name);
                         if (lsp)
                         {
                             sym2 = lsp->sp;
                             break;
                         }
-                        current = current->next;
                     }
                     if (sym2)
                     {
-                        if (lambdas == current && isExplicit)
+                        if (cilb == current && isExplicit)
                         {
                             error(ERR_CAPTURE_ITEM_LISTED_MULTIPLE_TIMES);
                         }
                         sym = sym2;
-                        current = current->prev;
+                        --current;
                     }
                     else
                     {
-                        current = lambdas;
+                        auto ilt = cilb;
+                        current = cilb;
                         SYMBOL* sp = nullptr;
-                        while (current->next && !sp)
+                        for  ( ; ++ilt != cile ; ++ current)
                         {
-                            sp = current->oldSyms->search(sym->name);
-                            if (!sp)
-                                current = current->next;
+                            sp = (*current)->oldSyms->search(sym->name);
+                            if (sp)
+                                break;
                         }
                     }
-                    check = current;
+                    current++;
                     // have to try to replicate the symbol into the current context
-                    while (check)
+                    for (auto check = current; check != cilb;)
                     {
-                        if (check->captureMode == cmNone)
+                        --check;
+                        if ((*check)->captureMode == cmNone)
                         {
                             if (isExplicit)
                             {
-                                if (check->prev)
+                                if (check != cilb)
                                 {
-                                    check = NULL;
                                     errorsym(ERR_EXPLICIT_CAPTURE_BLOCKED, sym);
+                                    break;
                                 }
                             }
                             else
                             {
-                                check = NULL;
                                 errorsym(ERR_IMPLICIT_CAPTURE_BLOCKED, sym);
+                                break;
                             }
                         }
-                        if (check)
-                            check = check->prev;
                     }
-                    while (current)
+                    for ( ; current != cilb;)
                     {
+                        --current;
                         // we are replicating captures through intermediate lambdas
                         // to make it easier to handle inner lambda creation.
                         LAMBDASP* ins = Allocate<LAMBDASP>();
                         ins->name = sym->name;
                         ins->parent = sym;
                         sym = CopySymbol(sym);
-                        sym->sb->lambdaMode = mode == cmNone ? current->captureMode : mode;
+                        sym->sb->lambdaMode = mode == cmNone ? (*current)->captureMode : mode;
                         sym->tp = lambda_type(sym->tp, sym->sb->lambdaMode);
                         sym->sb->storage_class = sc_member;
-                        sym->sb->parent = current->func;
+                        sym->sb->parent = (*current)->func;
                         sym->sb->access = ac_private;
                         if (mode != cmExplicitValue)
                             sym->sb->init = NULL;
-                        lambda_insert(sym, current);
+                        lambda_insert(sym, (*current));
                         ins->sp = sym;
-                        ins->enclosing = current;
-                        current->captured->baseInsert(ins);
-                        current = current->prev;
+                        ins->enclosing = (*current);
+                        (*current)->captured->baseInsert(ins);
                     }
                 }
             }
@@ -359,7 +359,7 @@ static void convertCallToTemplate(SYMBOL* func)
     func->templateParams = Allocate<TEMPLATEPARAMLIST>();
     func->templateParams->p = Allocate<TEMPLATEPARAM>();
     func->templateParams->p->type = kw_new;
-    if (isautotype(lambdas->functp))
+    if (isautotype(lambdas.front()->functp))
         basetype(func->tp)->btp = &stdauto;  // convert return type back to auto
     tplholder = &func->templateParams->next;
     int index = 0;
@@ -386,74 +386,74 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
 {
     INITLIST** argptr;
     FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
-    TYPE* args = cloneFuncType(lambdas->func);
+    TYPE* args = cloneFuncType(lambdas.front()->func);
     SYMBOL* func = makeID(sc_static, args, NULL, "___ptrcall");
-    BLOCKDATA block1, block2;
+    BLOCKDATA bd1 = {}, bd2 = {};
+    std::list<BLOCKDATA*> block1{ &bd1 }, block2{ &bd2 };
     STATEMENT* st;
     basetype(args)->sp = func;
-    basetype(args)->btp = basetype(lambdas->func->tp)->btp;
-    func->sb->parentClass = lambdas->cls;
+    basetype(args)->btp = basetype(lambdas.front()->func->tp)->btp;
+    func->sb->parentClass = lambdas.front()->cls;
     func->sb->attribs.inheritable.linkage = lk_cdecl;
     func->sb->attribs.inheritable.isInline = true;
     func->sb->storage_class = sc_static;
     func->sb->access = ac_private;
 
-    memset(&block1, 0, sizeof(BLOCKDATA));
-    memset(&block2, 0, sizeof(BLOCKDATA));
-    insertFunc(lambdas->cls, func);
+    insertFunc(lambdas.front()->cls, func);
     func->tp->syms->remove(func->tp->syms->begin()); // elide this pointer
-    st = stmtNode(NULL, &block2, isstructured(basetype(lambdas->func->tp)->btp) ? st_expr : st_return);
+    st = stmtNode(NULL, block2, isstructured(basetype(lambdas.front()->func->tp)->btp) ? st_expr : st_return);
     st->select = varNode(en_func, NULL);
     st->select->v.func = params;
     st->select = exprNode(en_thisref, st->select, NULL);
 
-    argptr = &params->arguments;
+    if (!params->arguments)
+        params->arguments = initListListFactory.CreateList();
     for (auto sym : *args->syms)
     {
         if (sym->tp->type == bt_void)
             break;
         sym = CopySymbol(sym);
         sym->sb->offset -= getSize(bt_pointer);
-        *argptr = Allocate<INITLIST>();
+        auto arg = Allocate<INITLIST>();
         if (isstructured(sym->tp) && !isref(sym->tp))
         {
             SYMBOL* sym2 = anonymousVar(sc_auto, sym->tp)->v.sp;
             sym2->sb->stackblock = true;
-            (*argptr)->exp = varNode(en_auto, sym2);  // DAL MODIFIED
+            arg->exp = varNode(en_auto, sym2);  // DAL MODIFIED
         }
         else
         {
-            (*argptr)->exp = varNode(en_auto, sym);
-            deref(sym->tp, &(*argptr)->exp);
+            arg->exp = varNode(en_auto, sym);
+            deref(sym->tp, &arg->exp);
         }
-        (*argptr)->tp = sym->tp;
-        argptr = &(*argptr)->next;
+        arg->tp = sym->tp;
     }
     params->ascall = true;
-    params->sp = lambdas->func;
-    params->fcall = varNode(en_pc, lambdas->func);
+    params->sp = lambdas.front()->func;
+    params->fcall = varNode(en_pc, lambdas.front()->func);
     params->functp = func->tp;
     params->thisptr = varNode(en_global, self);
     deref(&stdpointer, &params->thisptr);
     params->thistp = self->tp;
-    st = stmtNode(NULL, &block1, st_block);
-    st->lower = block2.head;
-    st->blockTail = block2.blockTail;
-    func->sb->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
-    func->sb->inlineFunc.stmt->lower = block1.head;
-    func->sb->inlineFunc.stmt->blockTail = block1.blockTail;
+    st = stmtNode(NULL, block1, st_block);
+    st->lower = block2.front()->statements;
+    st->blockTail = block2.front()->blockTail;
+    func->sb->inlineFunc.stmt = stmtListFactory.CreateList();
+    func->sb->inlineFunc.stmt->push_back(stmtNode(NULL, emptyBlockdata, st_block));
+    func->sb->inlineFunc.stmt->front()->lower = block1.front()->statements;
+    func->sb->inlineFunc.stmt->front()->blockTail = block1.front()->blockTail;
     func->sb->inlineFunc.syms = basetype(args)->syms;
-    if (lambdas->templateFunctions)
+    if (lambdas.front()->templateFunctions)
     {
         LEXLIST* lex1;
         int l = 0;
-        if (isautotype(lambdas->functp))
+        if (isautotype(lambdas.front()->functp))
             basetype(func->tp)->btp = &stdauto;  // convert return type back to auto
         cloneTemplateParams(func);
         func->sb->templateLevel = templateNestingCount;
         func->sb->parentTemplate = func;
         std::string val = "{return ___self->operator()(";
-        for (auto sym : *basetype(lambdas->func->tp)->syms)
+        for (auto sym : *basetype(lambdas.front()->func->tp)->syms)
         {
             if (!sym->sb->thisPtr)
             {
@@ -477,14 +477,15 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
 static void createConverter(SYMBOL* self)
 {
     SYMBOL* caller = createPtrToCaller(self);
-    TYPE* args = cloneFuncType(lambdas->func);
+    TYPE* args = cloneFuncType(lambdas.front()->func);
     SYMBOL* func = makeID(sc_member, MakeType(bt_func, MakeType(bt_pointer, args)), NULL, overloadNameTab[CI_CAST]);
-    BLOCKDATA block1, block2;
+    BLOCKDATA bd1 = {}, bd2 = {};
+    std::list<BLOCKDATA*> block1{ &bd1 }, block2{ &bd2 };
     STATEMENT* st;
     EXPRESSION* exp;
     SYMBOL* sym = makeID(sc_parameter, &stdvoid, NULL, AnonymousName());
     func->tp->syms = symbols.CreateSymbolTable();
-    func->sb->parentClass = lambdas->cls;
+    func->sb->parentClass = lambdas.front()->cls;
     func->sb->attribs.inheritable.linkage4 = lk_virtual;
     func->sb->attribs.inheritable.isInline = true;
     func->sb->storage_class = sc_member;
@@ -492,32 +493,32 @@ static void createConverter(SYMBOL* self)
     func->tp->syms = symbols.CreateSymbolTable();
     func->tp->syms->Add(sym);
     injectThisPtr(func, func->tp->syms);
-    func->sb->parentClass = lambdas->cls;
-    memset(&block1, 0, sizeof(BLOCKDATA));
-    memset(&block2, 0, sizeof(BLOCKDATA));
-    insertFunc(lambdas->cls, func);
+    func->sb->parentClass = lambdas.front()->cls;
+    insertFunc(lambdas.front()->cls, func);
     // assign ___self = this
-    st = stmtNode(NULL, &block2, st_expr);
+    st = stmtNode(NULL, block2, st_expr);
     st->select = varNode(en_auto, (SYMBOL*)basetype(func->tp)->syms->front());
     deref(&stdpointer, &st->select);
     st->select = exprNode(en_assign, varNode(en_global, self), st->select);
     deref(&stdpointer, &st->select->left);
     // return pointer to ptrtocaller
-    st = stmtNode(NULL, &block2, st_return);
+    st = stmtNode(NULL, block2, st_return);
     st->select = varNode(en_pc, caller);
-    st = stmtNode(NULL, &block1, st_block);
-    st->lower = block2.head;
-    st->blockTail = block2.blockTail;
-    func->sb->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
-    func->sb->inlineFunc.stmt->lower = block1.head;
-    func->sb->inlineFunc.stmt->blockTail = block1.blockTail;
+    st = stmtNode(NULL, block1, st_block);
+    st->lower = block2.front()->statements;
+    st->blockTail = block2.front()->blockTail;
+    func->sb->inlineFunc.stmt = stmtListFactory.CreateList();
+    func->sb->inlineFunc.stmt->push_back(stmtNode(NULL, emptyBlockdata, st_block));
+    func->sb->inlineFunc.stmt->front()->lower = block1.front()->statements;
+    func->sb->inlineFunc.stmt->front()->blockTail = block1.front()->blockTail;
     func->sb->inlineFunc.syms = symbols.CreateSymbolTable();
-    if (lambdas->templateFunctions)
+    if (lambdas.front()->templateFunctions)
     {
         LEXLIST* lex1;
         TEMPLATEPARAMLIST *tpl, **tplp, **tplp2;
         FUNCTIONCALL* f = Allocate<FUNCTIONCALL>();
-        INITLIST** args = &f->arguments;
+        if (!f->arguments)
+            f->arguments = initListListFactory.CreateList();
         func->templateParams = caller->templateParams;
         func->sb->templateLevel = templateNestingCount;
         func->sb->parentTemplate = func;
@@ -533,10 +534,10 @@ static void createConverter(SYMBOL* self)
             }
             else
             {
-                (*args) = Allocate<INITLIST>();
-                (*args)->tp = sym->tp;
-                (*args)->exp = intNode(en_c_i, 0);
-                args = &(*args)->next;
+                auto arg = Allocate<INITLIST>();
+                arg->tp = sym->tp;
+                arg->exp = intNode(en_c_i, 0);
+                f->arguments->push_back(arg);
             }
         }
         f->ascall = false;
@@ -575,40 +576,40 @@ static bool lambda_get_template_state(SYMBOL* func)
 }
 static void finishClass(void)
 {
-    TYPE* tps = MakeType(bt_pointer, lambdas->cls->tp);
+    TYPE* tps = MakeType(bt_pointer, lambdas.front()->cls->tp);
     SYMBOL* self = makeID(sc_static, tps, NULL, "___self");
     SYMLIST* lst;
     self->sb->access = ac_private;
 
-    if (lambdas->captureThis && lambdas->next)
+    if (lambdas.front()->captureThis && lambdas.size() > 1)
     {
         SYMBOL* parent = makeID(sc_member, &stdpointer, NULL, "$parent");
-        lambda_insert(parent, lambdas);
+        lambda_insert(parent, lambdas.front());
     }
     self->sb->label = Optimizer::nextLabel++;
-    self->sb->parentClass = lambdas->cls;
+    self->sb->parentClass = lambdas.front()->cls;
     SetLinkerNames(self, lk_cdecl);
-    lambdas->cls->tp->syms->Add(self);
+    lambdas.front()->cls->tp->syms->Add(self);
     insertInitSym(self);
-    createConstructorsForLambda(lambdas->cls);
-    if (lambdas->templateFunctions)
+    createConstructorsForLambda(lambdas.front()->cls);
+    if (lambdas.front()->templateFunctions)
     {
         templateNestingCount++;
         dontRegisterTemplate++;
-        convertCallToTemplate(lambdas->func);
+        convertCallToTemplate(lambdas.front()->func);
     }
-    SetLinkerNames(lambdas->func, lk_cdecl);
-    insertFunc(lambdas->cls, lambdas->func);
+    SetLinkerNames(lambdas.front()->func, lk_cdecl);
+    insertFunc(lambdas.front()->cls, lambdas.front()->func);
     createConverter(self);
-    if (lambdas->templateFunctions)
+    if (lambdas.front()->templateFunctions)
     {
         templateNestingCount--;
         dontRegisterTemplate--;
     }
-    if (!lambdas->isMutable)
+    if (!lambdas.front()->isMutable)
     {
-        SYMBOL* ths = (SYMBOL*)lambdas->func->tp->syms->front();
-        lambdas->func->tp = MakeType(bt_const, lambdas->func->tp);
+        SYMBOL* ths = (SYMBOL*)lambdas.front()->func->tp->syms->front();
+        lambdas.front()->func->tp = MakeType(bt_const, lambdas.front()->func->tp);
         basetype(ths->tp)->btp = MakeType(bt_const, basetype(ths->tp->btp));
         UpdateRootTypes(ths->tp);
     }
@@ -617,25 +618,27 @@ static EXPRESSION* createLambda(bool noinline)
 {
     EXPRESSION *rv = NULL, **cur = &rv;
     EXPRESSION *clsThs, *parentThs;
-    SYMBOL* cls = makeID(lambdas->enclosingFunc ? sc_auto : sc_localstatic, lambdas->cls->tp, NULL,
-                         lambdas->enclosingFunc ? AnonymousName() : AnonymousLambdaName());
+    SYMBOL* cls = makeID(lambdas.front()->enclosingFunc ? sc_auto : sc_localstatic, lambdas.front()->cls->tp, NULL,
+                         lambdas.front()->enclosingFunc ? AnonymousName() : AnonymousLambdaName());
     SetLinkerNames(cls, lk_cdecl);
     cls->sb->allocate = true;
-    if (lambdas->enclosingFunc)
+    if (lambdas.front()->enclosingFunc)
     {
-        localNameSpace->valueData->syms->Add(cls);
+        localNameSpace->front()->syms->Add(cls);
         clsThs = varNode(en_auto, cls);  // this ptr
     }
     else
     {
-        globalNameSpace->valueData->syms->Add(cls);  // well if we could put this as an auto in the init func that would be good
+        globalNameSpace->front()->syms->Add(cls);  // well if we could put this as an auto in the init func that would be good
                                                         // but there is no way to do that here...
         clsThs = varNode(en_global, cls);               // this ptr
         cls->sb->label = Optimizer::nextLabel++;
         insertInitSym(cls);
     }
     {
-        INITIALIZER* init = NULL;
+        std::list<INITIALIZER*>* init = NULL;
+        if (!init)
+            init = initListFactory.CreateList();
         EXPRESSION* exp = clsThs;
         callDestructor(cls, NULL, &exp, NULL, true, false, false, true);
         initInsert(&init, cls->tp, exp, 0, true);
@@ -648,8 +651,8 @@ static EXPRESSION* createLambda(bool noinline)
             cls->sb->dest = init;
         }
     }
-    parentThs = varNode(en_auto, (SYMBOL*)basetype(lambdas->func->tp)->syms->front());  // this ptr
-    for (auto sp : *lambdas->cls->tp->syms)
+    parentThs = varNode(en_auto, (SYMBOL*)basetype(lambdas.front()->func->tp)->syms->front());  // this ptr
+    for (auto sp : *lambdas.front()->cls->tp->syms)
     {
         EXPRESSION *en = NULL, *en1 = NULL;
         if (!strcmp(sp->name, "$parent"))
@@ -662,13 +665,13 @@ static EXPRESSION* createLambda(bool noinline)
         }
         else if (!strcmp(sp->name, "$this"))
         {
-            if (!lambdas->next || !lambdas->captureThis)
+            if (lambdas.size() == 1 || !lambdas.front()->captureThis)
             {
                 en1 = parentThs;  // get parent from function call
             }
             else
             {
-                SYMBOL* parent = lambdas->cls->tp->syms->search("$parent");
+                SYMBOL* parent = lambdas.front()->cls->tp->syms->search("$parent");
                 en1 = varNode(en_auto, cls);
                 deref(&stdpointer, &en1);
                 en1 = exprNode(en_add, en1, intNode(en_c_i, parent->sb->offset));
@@ -680,7 +683,7 @@ static EXPRESSION* createLambda(bool noinline)
         }
         else if (sp->sb->lambdaMode)
         {
-            LAMBDASP* lsp = lambdas->captured->search(sp->name);
+            LAMBDASP* lsp = lambdas.front()->captured->search(sp->name);
             if (lsp)
             {
                 en1 = exprNode(en_add, clsThs, intNode(en_c_i, sp->sb->offset));
@@ -690,14 +693,14 @@ static EXPRESSION* createLambda(bool noinline)
                     TYPE* ctp = capture->tp;
                     if (isstructured(ctp))
                     {
-                        if (!callConstructorParam(&ctp, &en1, sp->tp, sp->sb->init->exp, true, false, true, false, true))
+                        if (!callConstructorParam(&ctp, &en1, sp->tp, sp->sb->init->front()->exp, true, false, true, false, true))
                             errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sp);
                         en = en1;
                     }
                     else
                     {
                         deref(ctp, &en1);
-                        en = exprNode(en_assign, en1, sp->sb->init->exp);
+                        en = exprNode(en_assign, en1, sp->sb->init->front()->exp);
                     }
                 }
                 else if (sp->sb->lambdaMode == cmRef)
@@ -782,8 +785,8 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     ltp->tags = symbols.CreateSymbolTable();
     ltp->size = 0;
     self->captured = lambdaFactory.CreateSymbolTable();
-    self->oldSyms = localNameSpace->valueData->syms;
-    self->oldTags = localNameSpace->valueData->tags;
+    self->oldSyms = localNameSpace->front()->syms;
+    self->oldTags = localNameSpace->front()->tags;
     self->index = lambdaIndex;
     self->captureMode = cmNone;
     self->isMutable = false;
@@ -797,16 +800,15 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     self->func->sb->parentClass = self->cls;
     self->functp = &stdauto;
     self->enclosingFunc = theCurrentFunc;
-    if (lambdas)
-        lambdas->prev = self;
-    self->next = lambdas;
-    lambdas = self;
+    lambdas.push_front(self);
 
-    localNameSpace->valueData->syms = symbols.CreateSymbolTable();
-    localNameSpace->valueData->tags = symbols.CreateSymbolTable();
-    if (lambdas->next)
+    localNameSpace->front()->syms = symbols.CreateSymbolTable();
+    localNameSpace->front()->tags = symbols.CreateSymbolTable();
+    if (lambdas.size() > 1)
     {
-        self->lthis = lambdas->next->lthis;
+        auto itx = lambdas.begin();
+        ++itx;
+        self->lthis = (*itx)->lthis;
     }
     else if (funcsp && funcsp->sb->parentClass)
     {
@@ -913,12 +915,12 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     }
                     else
                     {
-                        sp = localNameSpace->valueData->syms->search(idlex->data->value.s.a);
-                        current = lambdas;
-                        while (current && !sp)
+                        sp = localNameSpace->front()->syms->search(idlex->data->value.s.a);
+                        for (auto current : lambdas)
                         {
                             sp = current->oldSyms->search(idlex->data->value.s.a);
-                            current = current->next;
+                            if (sp)
+                                break;
                         }
                         if (sp)
                         {
@@ -1025,28 +1027,28 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         spi = makeID(sc_parameter, self->func->tp, NULL, AnonymousName());
         spi->sb->anonymous = true;
         spi->tp = MakeType(bt_void);
-        localNameSpace->valueData->syms->Add(spi);
+        localNameSpace->front()->syms->Add(spi);
         SetLinkerNames(spi, lk_cpp);
-        self->func->tp->syms = localNameSpace->valueData->syms;
+        self->func->tp->syms = localNameSpace->front()->syms;
         self->func->tp->syms->Add(makeID(sc_parameter, &stdvoid, NULL, AnonymousName()));
     }
     basetype(self->func->tp)->btp = self->functp;
-    injectThisPtr(lambdas->func, basetype(lambdas->func->tp)->syms);
-    lambdas->func->tp->btp = self->functp;
-    lambdas->func->tp->rootType = lambdas->func->tp;
-    lambdas->func->sb->attribs.inheritable.linkage4 = lk_virtual;
-    lambdas->func->sb->attribs.inheritable.isInline = true;
-    lambdas->templateFunctions = lambda_get_template_state(lambdas->func);
+    injectThisPtr(lambdas.front()->func, basetype(lambdas.front()->func->tp)->syms);
+    lambdas.front()->func->tp->btp = self->functp;
+    lambdas.front()->func->tp->rootType = lambdas.front()->func->tp;
+    lambdas.front()->func->sb->attribs.inheritable.linkage4 = lk_virtual;
+    lambdas.front()->func->sb->attribs.inheritable.isInline = true;
+    lambdas.front()->templateFunctions = lambda_get_template_state(lambdas.front()->func);
     ssl.str = self->cls;
     ssl.tmpl = NULL;
     addStructureDeclaration(&ssl);
     ths = makeID(sc_member, &stdpointer, NULL, "$this");
     SetLinkerNames(ths, lk_cdecl);
-    lambda_insert(ths, lambdas);
+    lambda_insert(ths, lambdas.front());
     if (MATCHKW(lex, begin))
     {
         lex = getDeferredData(lex, &self->func->sb->deferredCompile, true);
-        if (!lambdas->templateFunctions)
+        if (!lambdas.front()->templateFunctions)
         {
             LEXLIST* lex1 = SetAlternateLex(self->func->sb->deferredCompile);
             SetLinkerNames(self->func, lk_cdecl);
@@ -1065,14 +1067,12 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         error(ERR_LAMBDA_FUNCTION_BODY_EXPECTED);
     }
     dropStructureDeclaration();
-    localNameSpace->valueData->syms = self->oldSyms;
-    localNameSpace->valueData->tags = self->oldTags;
+    localNameSpace->front()->syms = self->oldSyms;
+    localNameSpace->front()->tags = self->oldTags;
     finishClass();
     *exp = createLambda(0);
-    *tp = lambdas->cls->tp;
-    lambdas = lambdas->next;
-    if (lambdas)
-        lambdas->prev = NULL;
+    *tp = lambdas.front()->cls->tp;
+    lambdas.pop_front();
     return lex;
 }
 }  // namespace Parser

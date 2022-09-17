@@ -398,16 +398,17 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
         rv->sizeFromType = ISZ_ADDR;
     rv->offset = sym->sb->offset;
     BaseList** p = &rv->baseClasses;
-    BASECLASS* src = sym->sb->baseClasses;
-    while (src)
+    if (sym->sb->baseClasses)
     {
-        *p = Allocate<BaseList>();
-        (*p)->offset = src->offset;
-        (*p)->sym = Get(src->cls);
-        if ((*p)->sym->tp && (*p)->sym->tp->type == st_i)
-            typeSymbols.push_back((*p)->sym);
-        src = src->next;
-        p = &(*p)->next;
+        for (auto src : *sym->sb->baseClasses)
+        {
+            *p = Allocate<BaseList>();
+            (*p)->offset = src->offset;
+            (*p)->sym = Get(src->cls);
+            if ((*p)->sym->tp && (*p)->sym->tp->type == st_i)
+                typeSymbols.push_back((*p)->sym);
+            p = &(*p)->next;
+        }
     }
     rv->label = sym->sb->label;
     rv->tp = Get(sym->tp);

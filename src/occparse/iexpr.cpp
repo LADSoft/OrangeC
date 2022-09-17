@@ -507,7 +507,7 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
     }
     else if (node->left->type == en_const)
     {
-        ap1 = gen_expr(funcsp, node->left->v.sp->sb->init->exp, 0, 0);
+        ap1 = gen_expr(funcsp, node->left->v.sp->sb->init->front()->exp, 0, 0);
     }
     /* deref for auto variables */
     else if (node->left->type == en_imode)
@@ -1048,13 +1048,11 @@ Optimizer::IMODE* gen_pmul(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
 }
 
 /*-------------------------------------------------------------------------*/
-static void DumpLogicalDestructors(SYMBOL* funcsp, Optimizer::LIST* list)
+static void DumpLogicalDestructors(SYMBOL* funcsp, std::list<EXPRESSION*>* node)
 {
-    while (list)
+    for (auto node : *node)
     {
-        EXPRESSION* node = (EXPRESSION*)list->data;
         gen_void(node, funcsp);
-        list = list->next;
     }
 }
 Optimizer::IMODE* gen_hook(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
@@ -1864,49 +1862,58 @@ static int sizeParam(INITLIST* a, SYMBOL* funcsp)
         rv += Optimizer::chosenAssembler->arch->stackalign - rv % Optimizer::chosenAssembler->arch->stackalign;
     return rv;
 }
-static int genCdeclArgs(INITLIST* args, SYMBOL* funcsp)
+static int genCdeclArgs(std::list<INITLIST*>* args, SYMBOL* funcsp)
 {
     int rv = 0;
     if (args)
     {
-        rv = genCdeclArgs(args->next, funcsp);
-        int n = gen_parm(args, funcsp);
-        rv += n;
-        stackblockOfs -= n;
-        if (args->exp->type == en_auto)
-            if (args->exp->v.sp->sb->stackblock)
-                args->exp->v.sp->sb->offset = stackblockOfs;
+        for (auto it = args->end(); it != args->begin();)
+        {
+            --it;
+            int n = gen_parm((*it), funcsp);
+            rv += n;
+            stackblockOfs -= n;
+            if ((*it)->exp->type == en_auto)
+                if ((*it)->exp->v.sp->sb->stackblock)
+                    (*it)->exp->v.sp->sb->offset = stackblockOfs;
+        }
     }
     return rv;
 }
-static void genCallLab(INITLIST* args, int callLab)
+static void genCallLab(std::list<INITLIST*>* args, int callLab)
 {
     if (args)
     {
-        genCallLab(args->next, callLab);
-        if (args->exp->type == en_thisref)
+        for (auto it = args->end(); it != args->begin();)
         {
-            args->exp->v.t.thisptr->xcDest = callLab;
+            --it;
+            if ((*it)->exp->type == en_thisref)
+            {
+                (*it)->exp->v.t.thisptr->xcDest = callLab;
+            }
         }
     }
 }
-static int genPascalArgs(INITLIST* args, SYMBOL* funcsp)
+static int genPascalArgs(std::list<INITLIST*>* args, SYMBOL* funcsp)
 {
     int rv = 0;
     if (args)
     {
-        rv = gen_parm(args, funcsp);
-        rv += genPascalArgs(args->next, funcsp);
+        for (auto it = args->begin(); it != args->end(); ++it)
+            rv += gen_parm((*it), funcsp);
     }
     return rv;
 }
-static int sizeParams(INITLIST* args, SYMBOL* funcsp)
+static int sizeParams(std::list<INITLIST*>* args, SYMBOL* funcsp)
 {
     int rv = 0;
     if (args)
     {
-        rv = sizeParam(args, funcsp);
-        rv += sizeParams(args->next, funcsp);
+        for (auto it = args->end(); it != args->begin();)
+        {
+            --it;
+            rv += sizeParam(*it, funcsp);
+        }
     }
     return rv;
 }
@@ -1931,32 +1938,29 @@ Optimizer::IMODE* gen_stmt_from_expr(SYMBOL* funcsp, EXPRESSION* node, int flags
 }
 /*-------------------------------------------------------------------------*/
 
-static bool has_arg_destructors(INITLIST* arg)
+static bool has_arg_destructors(std::list<INITLIST*>* arg)
 {
     if (arg)
-        return !!arg->destructors || has_arg_destructors(arg->next);
+        for (auto t : *arg)
+            if (!!t->destructors)
+                return true;
     return false;
 }
-static void gen_arg_destructors(SYMBOL* funcsp, INITLIST* arg, Optimizer::LIST* assignDestructors)
+static void gen_arg_destructors(SYMBOL* funcsp, std::list<INITLIST*>* arg, std::list<EXPRESSION*>* assignDestructors)
 {
     if (arg)
     {
-        gen_arg_destructors(funcsp, arg->next, nullptr);
-        if (arg->destructors)
+        for (auto it = arg->end(); it != arg->begin();)
         {
-            auto e = arg->destructors;
-            while (e)
-            {
-                gen_expr(funcsp, (EXPRESSION*)e->data, F_NOVALUE, ISZ_UINT);
-                e = e->next;
-            }
+            --it;
+            if ((*it)->destructors)
+                for (auto e : *(*it)->destructors)
+                    gen_expr(funcsp, e, F_NOVALUE, ISZ_UINT);
         }
     }
-    while (assignDestructors)
-    {
-        gen_expr(funcsp, (EXPRESSION*)assignDestructors->data, F_NOVALUE, ISZ_UINT);
-        assignDestructors = assignDestructors->next;
-    }
+    if (assignDestructors)
+        for (auto e : *assignDestructors)
+            gen_expr(funcsp, e, F_NOVALUE, ISZ_UINT);
 }
 static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
 {
@@ -2054,12 +2058,10 @@ Optimizer::SimpleExpression* CreateMsilVarargs(SYMBOL* funcsp, FUNCTIONCALL* f)
     if (f->vararg)
     {
         int count = 0;
-        INITLIST* a = f->arguments;
-        for (; a; a = a->next)
-        {
-            if (a->vararg)
-                count++;
-        }
+        if (f->arguments)
+            for (auto a : *f->arguments)
+                if (a->vararg)
+                    count++;
         if (count)
         {
             auto tp = MakeType(bt_pointer, MakeType(bt___object));
@@ -2084,7 +2086,7 @@ Optimizer::SimpleExpression* CreateMsilVarargs(SYMBOL* funcsp, FUNCTIONCALL* f)
             Optimizer::gen_icode(Optimizer::i_assn, ap6, ap4, nullptr);
 
             int parmIndex = 0;
-            for (a = f->arguments; a; a = a->next)
+            for (auto a : *f->arguments)
             {
                 if (a->vararg)
                 {
@@ -2367,16 +2369,15 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         if (f->sp->name[0] == '_' && !strcmp(f->sp->name, "__va_arg__"))
             vaarg = true;
         Optimizer::ArgList** p = &gosub->altargs;
-        INITLIST* il = f->arguments;
-        while (il)
-        {
-            *p = Allocate<Optimizer::ArgList>();
-            (*p)->tp = Optimizer::SymbolManager::Get(il->tp);
-            if (vaarg && !lvalue(il->exp) && !castvalue(il->exp))
-                (*p)->exp = Optimizer::SymbolManager::Get(il->exp);
-            il = il->next;
-            p = &(*p)->next;
-        }
+        if (f->arguments)
+            for (auto il : *f->arguments)
+            {
+                *p = Allocate<Optimizer::ArgList>();
+                (*p)->tp = Optimizer::SymbolManager::Get(il->tp);
+                if (vaarg && !lvalue(il->exp) && !castvalue(il->exp))
+                    (*p)->exp = Optimizer::SymbolManager::Get(il->exp);
+                p = &(*p)->next;
+            }
     }
     gosub->altsp = Optimizer::SymbolManager::Get(f->sp);
     if ((f->sp->sb->storage_class == sc_typedef || f->sp->sb->storage_class == sc_cast) && isfuncptr(f->sp->tp))
@@ -2407,12 +2408,9 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     if (Optimizer::chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
     {
         int n = f->thisptr ? 1 : 0;
-        INITLIST* args = f->arguments;
-        while (args)
-        {
-            n++;
-            args = args->next;
-        }
+        if (f->arguments)
+            for (auto args : *f->arguments)
+                ++n;
         if (f->returnEXP && !managed)
             n++;
         Optimizer::gen_nodag(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(n),
@@ -3734,7 +3732,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             break;
         case en_const:
             /* should never get here unless the constant optimizer is turned off */
-            ap1 = gen_expr(funcsp, node->v.sp->sb->init->exp, 0, 0);
+            ap1 = gen_expr(funcsp, node->v.sp->sb->init->front()->exp, 0, 0);
             rv = ap1;
             break;
         default:

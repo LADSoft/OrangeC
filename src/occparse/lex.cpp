@@ -46,7 +46,7 @@
 #include "template.h"
 #include "declare.h"
 #include "symtab.h"
-
+#include "ListFactory.h"
 //#define TESTANNOTATE
 
 namespace Parser
@@ -64,7 +64,8 @@ LEXCONTEXT* context;
 int charIndex;
 
 LEXLIST* currentLex;
-Optimizer::LINEDATA nullLineData = {0, 0, "", "", 0, 0};
+static Optimizer::LINEDATA nullLineDataData = { 0, "", "", 0, 0 };
+std::list<Optimizer::LINEDATA*> nullLineData = { &nullLineDataData };
 
 static bool valid;
 static unsigned long long llminus1;
@@ -1612,12 +1613,10 @@ LEXLIST* getsym(void)
             TemplateRegisterDeferred(context->last);
         context->last = rv;
         context->cur = context->cur->next;
-        if (rv->data->linedata && rv->data->linedata != &nullLineData)
+        if (rv->data->linedata && rv->data->linedata->size())
         {
-            linesHead = rv->data->linedata;
-            linesTail = linesHead;
-            //            while (linesTail && linesTail->next)
-            //                linesTail = linesTail->next;
+            lines = lineDataListFactory.CreateList();
+            lines->push_back(rv->data->linedata->front());
         }
         currentLex = rv;
         return rv;
@@ -1674,8 +1673,8 @@ LEXLIST* getsym(void)
                 linePointer++;
             if (*linePointer != 0)
             {
-                if (linesHead)
-                    origLine = linesHead->line;
+                if (lines && lines->size())
+                    origLine = lines->front()->line;
                 if (fetched)
                 {
                     trailer = 0;
@@ -1828,9 +1827,10 @@ LEXLIST* getsym(void)
 #endif
         }
     } while (contin);
-    if (linesHead)
+    if (lines && lines->size())
     {
-        lex->data->linedata = linesHead;
+        lex->data->linedata = lines;
+        lines = nullptr;
     }
     else
     {

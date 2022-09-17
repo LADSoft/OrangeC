@@ -46,7 +46,7 @@
 #include "mangle.h"
 #include "beinterf.h"
 #include "symtab.h"
-
+#include "ListFactory.h"
 extern DotNetPELib::PELib* peLib;
 
 using namespace DotNetPELib;
@@ -229,20 +229,21 @@ bool Importer::EnterNamespace(const Namespace* nameSpace)
     diag("Namespace", nameSpace->Name());
     level_++;
     SYMBOL* sp = (nameSpaces_.size() == 0
-        ? globalNameSpace->valueData->syms
-        : nameSpaces_.back()->sb->nameSpaceValues->valueData->syms
+        ? globalNameSpace->front()->syms
+        : nameSpaces_.back()->sb->nameSpaceValues->front()->syms
     )->Lookup((char*)nameSpace->Name().c_str());
     if (!sp)
     {
         TYPE* tp = MakeType(bt_void);
         sp = makeID(sc_namespace, tp, NULL, litlate((char*)nameSpace->Name().c_str()));
-        sp->sb->nameSpaceValues = Allocate<NAMESPACEVALUELIST>();
-        sp->sb->nameSpaceValues->valueData = Allocate<NAMESPACEVALUEDATA>();
-        sp->sb->nameSpaceValues->valueData->syms = symbols.CreateSymbolTable();
-        sp->sb->nameSpaceValues->valueData->tags = symbols.CreateSymbolTable();
-        sp->sb->nameSpaceValues->valueData->origname = sp;
-        sp->sb->nameSpaceValues->valueData->name = sp;
-        sp->sb->parentNameSpace = globalNameSpace->valueData->name;
+        sp->sb->nameSpaceValues = namespaceValueDataListFactory.CreateList();
+        auto nsv = Allocate<NAMESPACEVALUEDATA>();
+        sp->sb->nameSpaceValues->push_front(nsv);
+        nsv->syms = symbols.CreateSymbolTable();
+        nsv->tags = symbols.CreateSymbolTable();
+        nsv->origname = sp;
+        nsv->name = sp;
+        sp->sb->parentNameSpace = globalNameSpace->front()->name;
         sp->sb->attribs.inheritable.linkage = lk_cdecl;
         sp->sb->msil = GetName(nameSpace);
         if (nameSpaces_.size())
@@ -252,13 +253,13 @@ bool Importer::EnterNamespace(const Namespace* nameSpace)
         SetLinkerNames(sp, lk_none);
         if (nameSpaces_.size() == 0)
         {
-            globalNameSpace->valueData->syms->Add(sp);
-            globalNameSpace->valueData->tags->Add(sp);
+            globalNameSpace->front()->syms->Add(sp);
+            globalNameSpace->front()->tags->Add(sp);
         }
         else
         {
-            nameSpaces_.back()->sb->nameSpaceValues->valueData->syms->Add(sp);
-            nameSpaces_.back()->sb->nameSpaceValues->valueData->tags->Add(sp);
+            nameSpaces_.back()->sb->nameSpaceValues->front()->syms->Add(sp);
+            nameSpaces_.back()->sb->nameSpaceValues->front()->tags->Add(sp);
         }
     }
     else
@@ -296,7 +297,7 @@ bool Importer::EnterClass(const Class* cls)
         }
         else if (nameSpaces_.size())
         {
-            sp = nameSpaces_.back()->sb->nameSpaceValues->valueData->syms->Lookup((char*)cls->Name().c_str());
+            sp = nameSpaces_.back()->sb->nameSpaceValues->front()->syms->Lookup((char*)cls->Name().c_str());
         }
         if (!sp)
         {
@@ -325,10 +326,10 @@ bool Importer::EnterClass(const Class* cls)
             SetLinkerNames(sp, lk_cdecl);
 
             if (useGlobal())
-                globalNameSpace->valueData->syms->Add(sp);
+                globalNameSpace->front()->syms->Add(sp);
             else
                 (structures_.size() ? structures_.back()->tp->syms
-                    : nameSpaces_.back()->sb->nameSpaceValues->valueData->syms)->Add(sp);
+                    : nameSpaces_.back()->sb->nameSpaceValues->front()->syms)->Add(sp);
             sp->sb->msil = GetName(cls);
             cachedClasses_[sp->name] = sp;
         }
@@ -396,18 +397,20 @@ void Importer::InsertBaseClass(SYMBOL* sp, Class* cls)
     SYMBOL* parent = cachedClasses_[cls->Name()];
     if (parent != sp && parent != NULL)  // object is parent to itself
     {
-        BASECLASS* srch = sp->sb->baseClasses;
-        while (srch)
+        if (sp->sb->baseClasses)
         {
-            if (srch->cls && !strcmp(srch->cls->name, parent->name))
-                return;
-            srch = srch->next;
+            for (auto srch : *sp->sb->baseClasses)
+                if (srch->cls && !strcmp(srch->cls->name, parent->name))
+                    return;
+        }
+        else
+        {
+            sp->sb->baseClasses = baseClassListFactory.CreateList();
         }
         BASECLASS* cl = Allocate<BASECLASS>();
         cl->accessLevel = ac_public;
         cl->cls = parent;
-        cl->next = sp->sb->baseClasses;
-        sp->sb->baseClasses = cl;
+        sp->sb->baseClasses->push_front(cl);
         InsertFuncs(sp, parent);
     }
 }
@@ -557,7 +560,7 @@ bool Importer::EnterMethod(const Method* method)
                 tp->sp = funcs;
                 SetLinkerNames(funcs, lk_cdecl);
                 if (useGlobal())
-                    globalNameSpace->valueData->syms->Add(funcs);
+                    globalNameSpace->front()->syms->Add(funcs);
                 else
                     structures_.back()->tp->syms->Add(funcs);
                 funcs->sb->parent = sp;
@@ -608,7 +611,7 @@ bool Importer::EnterField(const Field* field)
             sp->sb->access = ac_public;
             SetLinkerNames(sp, lk_cdecl);
             if (useGlobal())
-                globalNameSpace->valueData->syms->Add(sp);
+                globalNameSpace->front()->syms->Add(sp);
             else
                 structures_.back()->tp->syms->Add(sp);
         }
@@ -639,7 +642,7 @@ bool Importer::EnterProperty(const Property* property)
                 sp->sb->has_property_setter = true;
             SetLinkerNames(sp, lk_cdecl);
             if (useGlobal())
-                globalNameSpace->valueData->syms->Add(sp);
+                globalNameSpace->front()->syms->Add(sp);
             else
                 structures_.back()->tp->syms->Add(sp);
         }

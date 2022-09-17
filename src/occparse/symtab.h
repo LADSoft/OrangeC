@@ -37,16 +37,16 @@ namespace CompletionCompiler
 namespace Parser
 {
 
-    extern struct __nsv* globalNameSpace, * localNameSpace;
+    extern std::list<NAMESPACEVALUEDATA*>* globalNameSpace, * localNameSpace, *rootNameSpace;
     extern SymbolTable<SYMBOL>* labelSyms;
 
     extern int matchOverloadLevel;
     extern SymbolTableFactory<SYMBOL> symbols;
 
     void syminit(void);
-    void AllocateLocalContext(BLOCKDATA* block, SYMBOL* sym, int label);
+    void AllocateLocalContext(std::list<BLOCKDATA*>& block, SYMBOL* sym, int label);
     void TagSyms(SymbolTable<SYMBOL>* syms);
-    void FreeLocalContext(BLOCKDATA* block, SYMBOL* sym, int label);
+    void FreeLocalContext(std::list<BLOCKDATA*>& block, SYMBOL* sym, int label);
     bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly);
     SYMBOL* searchOverloads(SYMBOL* sym, SymbolTable<SYMBOL>* table);
     SYMBOL* gsearch(const char* name);

@@ -99,11 +99,9 @@ static void iop_line(Optimizer::QUAD* q)
 {
     if (cparams.prm_lines)
     {
-        LINEDATA* ld = (LINEDATA*)q->dc.left;
-        while (ld)
+        for (auto ld : *((std::list<LINEDATA*>*)q->dc.left))
         {
             oprintf(icdFile, "; Line %d:\t%s\n", ld->lineno, ld->line);
-            ld = ld->next;
         }
     }
 }

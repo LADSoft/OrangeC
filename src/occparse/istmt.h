@@ -50,9 +50,9 @@ void gen_func(void* exp, int start);
 void gen_dbgblock(int start);
 void gen_asm(STATEMENT* stmt);
 void gen_asmdata(STATEMENT* stmt);
-Optimizer::IMODE* genstmt(STATEMENT* stmt, SYMBOL* funcsp);
+Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmt, SYMBOL* funcsp);
 void CopyVariables(SYMBOL* funcsp);
 void genfunc(SYMBOL* funcsp, bool doOptimize);
-void genASM(STATEMENT* st);
+void genASM(std::list<STATEMENT*>* st);
 
 }  // namespace Parser

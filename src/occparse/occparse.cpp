@@ -68,7 +68,7 @@
 #include "DotNetPELib.h"
 #include "constexpr.h"
 #include "symtab.h"
-
+#include "ListFactory.h"
 using namespace DotNetPELib;
 PELib* peLib;
 
@@ -210,9 +210,9 @@ void doPragma(const char *key, const char *tag)
 
 int usingEsp;
 
-static void debug_dumptypedefs(NAMESPACEVALUELIST* nameSpace)
+static void debug_dumptypedefs(std::list<NAMESPACEVALUEDATA*>* nameSpace)
 {
-    for (auto sym : *nameSpace->valueData->syms)
+    for (auto sym : *nameSpace->front()->syms)
     {
         if (sym->sb->storage_class == sc_namespace)
         {
@@ -236,6 +236,7 @@ void compile(bool global)
     SET_GLOBAL(true, 1);
     LEXLIST* lex = nullptr;
     Optimizer::SymbolManager::clear();
+    ListFactoryInit();
     helpinit();
     mangleInit();
     errorinit();
@@ -253,6 +254,7 @@ void compile(bool global)
     lexini();
     setglbdefs();
     templateInit();
+
     if (Optimizer::architecture != ARCHITECTURE_MSIL)
     {
         Optimizer::nextLabel = 1;
@@ -283,14 +285,15 @@ void compile(bool global)
         lex = getsym();
         if (lex)
         {
-            BLOCKDATA block;
-            memset(&block, 0, sizeof(block));
-            block.type = begin;
-            while ((lex = statement_asm(lex, nullptr, &block)) != nullptr)
+            BLOCKDATA bd;
+            memset(&bd, 0, sizeof(bd));
+            bd.type = begin;
+            std::list<BLOCKDATA*> block{ &bd };
+            while ((lex = statement_asm(lex, nullptr, block)) != nullptr)
                 ;
             if (IsCompiler())
             {
-                genASM(block.head);
+                genASM(bd.statements);
             }
         }
     }
@@ -299,7 +302,7 @@ void compile(bool global)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, nullptr, nullptr, sc_global, lk_none, nullptr, true, false, false, ac_public)) != nullptr)
+            while ((lex = declare(lex, nullptr, nullptr, sc_global, lk_none, emptyBlockdata, true, false, false, ac_public)) != nullptr)
                 ;
         }
     }

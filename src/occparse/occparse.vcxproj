@@ -65,6 +65,7 @@
     <ClCompile Include="browse.cpp" />
     <ClCompile Include="ccerr.cpp" />
     <ClCompile Include="constexpr.cpp" />
+    <ClCompile Include="ListFactory.cpp" />
     <ClCompile Include="occparse.cpp" />
     <ClCompile Include="constopt.cpp" />
     <ClCompile Include="cppbltin.cpp" />
@@ -163,6 +164,7 @@
     <ClInclude Include="lambda.h" />
     <ClInclude Include="lex.h" />
     <ClInclude Include="libcxx.h" />
+    <ClInclude Include="ListFactory.h" />
     <ClInclude Include="mangle.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="occparse.h" />

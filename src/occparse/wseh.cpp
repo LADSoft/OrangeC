@@ -38,62 +38,51 @@
 
 namespace Parser
 {
-static void ReorderSEHRecords(STATEMENT** xtry, BLOCKDATA* parent)
+static void ReorderSEHRecords(std::list<STATEMENT*>* xtry, std::list<BLOCKDATA*>& parent)
 {
-    STATEMENT *xfinally = nullptr, *xfault = nullptr, **pass = xtry;
-    while (*pass)
+    STATEMENT *xfinally = nullptr, *xfault = nullptr;
+    for (auto it = xtry->begin(); it != xtry->end(); ++it)
     {
-        if ((*pass)->type == st___finally)
+        if ((*it)->type == st___finally)
         {
-            xfinally = *pass;
-            *pass = (*pass)->next;
+            xfinally = *it;
+            it = xtry->erase(it);
         }
-        else if ((*pass)->type == st___fault)
+        else if ((*it)->type == st___fault)
         {
-            xfault = *pass;
-            *pass = (*pass)->next;
-        }
-        else
-        {
-            pass = &(*pass)->next;
+            xfault = *it;
+            it = xtry->erase(it);
         }
     }
     if (xfault)
     {
-        xfault->next = nullptr;
-        if ((*xtry)->next)
+        if (xtry->front() != xtry->back())
         {
-            STATEMENT* st = stmtNode(nullptr, nullptr, st___try);
-            st->lower = *xtry;
-            st->next = xfault;
-            *xtry = st;
+            STATEMENT* st = stmtNode(nullptr, emptyBlockdata, st___try);
+            st->lower = xtry;
+            xtry->clear();
+            xtry->push_back(st);
         }
-        else
-        {
-            (*xtry)->next = xfault;
-        }
+        xtry->push_back(xfault);
     }
     if (xfinally)
     {
-        xfinally->next = nullptr;
-        if ((*xtry)->next)
+        if (xtry->front() != xtry->back())
         {
-            STATEMENT* st = stmtNode(nullptr, nullptr, st___try);
-            st->lower = *xtry;
-            st->next = xfinally;
-            *xtry = st;
+            STATEMENT* st = stmtNode(nullptr, emptyBlockdata, st___try);
+            st->lower = xtry;
+            xtry->clear();
+            xtry->push_back(st);
         }
-        else
-        {
-            (*xtry)->next = xfinally;
-        }
+        xtry->push_back(xfinally);
     }
-    parent->tail = *xtry;
-    while (parent->tail->next)
-        parent->tail = parent->tail->next;
+    parent.front()->statements->insert(parent.front()->statements->end(), xtry->begin(), xtry->end());
 }
-static LEXLIST* SEH_catch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* SEH_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
+    auto before = parent.front();
+    auto next = parent.begin();
+    ++next;
     STATEMENT* st;
     TYPE* tp = nullptr;
     BLOCKDATA* catchstmt = Allocate<BLOCKDATA>();
@@ -101,18 +90,18 @@ static LEXLIST* SEH_catch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, true);
     catchstmt->breaklabel = -1;
-    catchstmt->next = nullptr;    // so can't break or continue out of the block
     catchstmt->defaultlabel = -1; /* no default */
     catchstmt->type = kw_catch;
-    catchstmt->table = localNameSpace->valueData->syms;
+    catchstmt->table = localNameSpace->front()->syms;
+    parent.push_front(catchstmt);
     inLoopOrConditional++;
-    AllocateLocalContext(catchstmt, funcsp, codeLabel++);
+    AllocateLocalContext(parent, funcsp, codeLabel++);
     if (MATCHKW(lex, openpa))
     {
         needkw(&lex, openpa);
-        lex = declare(lex, funcsp, &tp, sc_auto, lk_none, catchstmt, false, true, false, ac_public);
+        lex = declare(lex, funcsp, &tp, sc_auto, lk_none, parent, false, true, false, ac_public);
         needkw(&lex, closepa);
-        sym = localNameSpace->valueData->syms->front();
+        sym = localNameSpace->front()->syms->front();
     }
     else
     {
@@ -120,98 +109,110 @@ static LEXLIST* SEH_catch(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     }
     if (MATCHKW(lex, begin))
     {
-        lex = compound(lex, funcsp, catchstmt, false);
-        parent->nosemi = true;
-        parent->needlabel &= catchstmt->needlabel;
-        if (parent->next)
-            parent->next->nosemi = true;
+        lex = compound(lex, funcsp, parent, false);
+        before->nosemi = true;
+        before->needlabel &= catchstmt->needlabel;
+        if (next != parent.end())
+            (*next)->nosemi = true;
     }
     else
     {
         error(ERR_EXPECTED_CATCH_BLOCK);
     }
     inLoopOrConditional--;
-    FreeLocalContext(catchstmt, funcsp, codeLabel++);
+    FreeLocalContext(parent, funcsp, codeLabel++);
     st = stmtNode(lex, parent, st___catch);
     st->blockTail = catchstmt->blockTail;
-    st->lower = catchstmt->head;
+    st->lower = catchstmt->statements;
     st->tp = tp;
     st->sp = sym;
+    parent.pop_front();
     return lex;
 }
-static LEXLIST* SEH_finally(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* SEH_finally(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
+    auto before = parent.front();
+    auto next = parent.begin();
+    ++next;
     STATEMENT* st;
-    BLOCKDATA* catchstmt = Allocate<BLOCKDATA>();
+    BLOCKDATA* finallystmt = Allocate<BLOCKDATA>();
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, true);
-    catchstmt->breaklabel = -1;
-    catchstmt->next = nullptr;    // so can't break or continue out of the block
-    catchstmt->defaultlabel = -1; /* no default */
-    catchstmt->type = kw_catch;
-    catchstmt->table = localNameSpace->valueData->syms;
-    AllocateLocalContext(catchstmt, funcsp, codeLabel++);
+    finallystmt->breaklabel = -1;
+    finallystmt->defaultlabel = -1; /* no default */
+    finallystmt->type = kw_catch;
+    finallystmt->table = localNameSpace->front()->syms;
+    parent.push_front(finallystmt);
+    AllocateLocalContext(parent, funcsp, codeLabel++);
     inLoopOrConditional++;
     if (MATCHKW(lex, begin))
     {
-        lex = compound(lex, funcsp, catchstmt, false);
-        parent->nosemi = true;
-        parent->needlabel &= catchstmt->needlabel;
-        if (parent->next)
-            parent->next->nosemi = true;
+        lex = compound(lex, funcsp, parent, false);
+        before->nosemi = true;
+        before->needlabel &= finallystmt->needlabel;
+        if (next != parent.end())
+            (*next)->nosemi = true;
     }
     else
     {
         error(ERR_EXPECTED_CATCH_BLOCK);
     }
-    FreeLocalContext(catchstmt, funcsp, codeLabel++);
+    FreeLocalContext(parent, funcsp, codeLabel++);
     inLoopOrConditional--;
     st = stmtNode(lex, parent, st___finally);
-    st->blockTail = catchstmt->blockTail;
-    st->lower = catchstmt->head;
+    st->blockTail = finallystmt->blockTail;
+    st->lower = finallystmt->statements;
+    parent.pop_front();
     return lex;
 }
-static LEXLIST* SEH_fault(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* SEH_fault(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
+    auto before = parent.front();
+    auto next = parent.begin();
+    ++next;
     STATEMENT* st;
-    BLOCKDATA* catchstmt = Allocate<BLOCKDATA>();
+    BLOCKDATA* faultstmt = Allocate<BLOCKDATA>();
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, true);
-    catchstmt->breaklabel = -1;
-    catchstmt->next = nullptr;    // so can't break or continue out of the block
-    catchstmt->defaultlabel = -1; /* no default */
-    catchstmt->type = kw_catch;
-    catchstmt->table = localNameSpace->valueData->syms;
-    AllocateLocalContext(catchstmt, funcsp, codeLabel++);
+    faultstmt->breaklabel = -1;
+    faultstmt->defaultlabel = -1; /* no default */
+    faultstmt->type = kw_catch;
+    faultstmt->table = localNameSpace->front()->syms;
+    parent.push_front(faultstmt);
+    AllocateLocalContext(parent, funcsp, codeLabel++);
     inLoopOrConditional++;
     if (MATCHKW(lex, begin))
     {
-        lex = compound(lex, funcsp, catchstmt, false);
-        parent->nosemi = true;
-        parent->needlabel &= catchstmt->needlabel;
-        if (parent->next)
-            parent->next->nosemi = true;
+        lex = compound(lex, funcsp, parent, false);
+        before->nosemi = true;
+        before->needlabel &= faultstmt->needlabel;
+        if (next != parent.end())
+            (*next)->nosemi = true;
     }
     else
     {
         error(ERR_EXPECTED_CATCH_BLOCK);
     }
-    FreeLocalContext(catchstmt, funcsp, codeLabel++);
+    FreeLocalContext(parent, funcsp, codeLabel++);
     st = stmtNode(lex, parent, st___fault);
-    st->blockTail = catchstmt->blockTail;
-    st->lower = catchstmt->head;
+    st->blockTail = faultstmt->blockTail;
+    st->lower = faultstmt->statements;
     inLoopOrConditional--;
+    parent.pop_front();
     return lex;
 }
-static LEXLIST* SEH_try(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+static LEXLIST* SEH_try(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
-    STATEMENT *st, **tail = parent->head ? &parent->tail->next : &parent->head;
+    auto before = parent.front();
+    auto next = parent.begin();
+    ++next;
+    STATEMENT *st;
     BLOCKDATA* trystmt = Allocate<BLOCKDATA>();
     trystmt->breaklabel = -1;
-    trystmt->next = nullptr;    // so we can't break or continue out of the block
     trystmt->defaultlabel = -1; /* no default */
     trystmt->type = kw_try;
-    trystmt->table = localNameSpace->valueData->syms;
+    trystmt->table = localNameSpace->front()->syms;
+    parent.push_front(trystmt);
     lex = getsym();
     inLoopOrConditional++;
     if (!MATCHKW(lex, begin))
@@ -220,17 +221,19 @@ static LEXLIST* SEH_try(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     }
     else
     {
+        auto prev = parent.front()->statements;
+        parent.front()->statements = nullptr;
         bool foundFinally = false, foundFault = false;
-        AllocateLocalContext(trystmt, funcsp, codeLabel++);
-        lex = compound(lex, funcsp, trystmt, false);
-        FreeLocalContext(trystmt, funcsp, codeLabel++);
-        parent->needlabel = trystmt->needlabel;
+        AllocateLocalContext(parent, funcsp, codeLabel++);
+        lex = compound(lex, funcsp, parent, false);
+        FreeLocalContext(parent, funcsp, codeLabel++);
+        before->needlabel = trystmt->needlabel;
         st = stmtNode(lex, parent, st___try);
         st->blockTail = trystmt->blockTail;
-        st->lower = trystmt->head;
-        parent->nosemi = true;
-        if (parent->next)
-            parent->next->nosemi = true;
+        st->lower = trystmt->statements;
+        before->nosemi = true;
+        if (next != parent.end())
+            (*next)->nosemi = true;
         if (!MATCHKW(lex, kw___catch) && !MATCHKW(lex, kw___finally) && !MATCHKW(lex, kw___fault))
         {
             error(ERR_EXPECTED_SEH_HANDLER);
@@ -253,14 +256,15 @@ static LEXLIST* SEH_try(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             }
             lex = statement_SEH(lex, funcsp, parent);
         }
-        ReorderSEHRecords(tail, parent);
+        ReorderSEHRecords(parent.front()->statements, parent);
+        parent.front()->statements->insert(parent.front()->statements->begin(), prev->begin(), prev->end());
     }
     inLoopOrConditional--;
-
+    parent.pop_front();
     return lex;
 }
 
-LEXLIST* statement_SEH(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
+LEXLIST* statement_SEH(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
     switch (KW(lex))
     {

@@ -50,7 +50,7 @@ typedef struct _ilist_
 
 typedef struct _linedata
 {
-    struct _linedata *next, *stmtNext;
+    struct _linedata *stmtNext;
     const char* line;
     const char* file;
     int lineno;

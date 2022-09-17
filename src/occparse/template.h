@@ -109,8 +109,8 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args);
 int pushContext(SYMBOL* cls, bool all);
 TYPE* CloneUsingSyms(TYPE* sp);
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args);
-void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, NAMESPACEVALUELIST* nsv, SYMBOL* strSym,
-                                   TEMPLATEPARAMLIST* templateParams, bool isExtern);
+void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, std::list<NAMESPACEVALUEDATA*>* nsv, SYMBOL* strSym,
+    TEMPLATEPARAMLIST* templateParams, bool isExtern);
 bool TemplateFullySpecialized(SYMBOL* sp);
 void propagateTemplateDefinition(SYMBOL* sym);
 bool inCurrentTemplate(const char* name);

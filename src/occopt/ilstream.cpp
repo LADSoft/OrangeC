@@ -433,15 +433,20 @@ static void StreamInstruction(QUAD* q)
                     StreamIndex(q->dc.v.label);
                     break;
                 case i_line:
-                    i = 0;
-                    for (auto v = (LINEDATA*)q->dc.left; v; v = v->next, i++)
-                        ;
-                    StreamIndex(i);
-                    for (auto v = (LINEDATA*)q->dc.left; v; v = v->next)
+                    if (q->dc.left == nullptr)
                     {
-                        StreamIndex(v->fileindex);
-                        StreamIndex(v->lineno);
-                        StreamTextIndex(v->line);
+                        StreamIndex(0);
+                    }
+                    else
+                    {
+                        i = ((std::list<LINEDATA*>*)q->dc.left)->size();
+                        StreamIndex(i);
+                        for (auto v : *((std::list<LINEDATA*>*)q->dc.left))
+                        {
+                            StreamIndex(v->fileindex);
+                            StreamIndex(v->lineno);
+                            StreamTextIndex(v->line);
+                        }
                     }
                     break;
                 case i_block:

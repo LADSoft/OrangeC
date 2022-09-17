@@ -39,6 +39,7 @@
 #include "types.h"
 #include "lex.h"
 #include "symtab.h"
+#include "ListFactory.h"
 namespace CompletionCompiler
 {
 extern Parser::SymbolTable<Parser::SYMBOL>* ccSymbols;
@@ -47,54 +48,52 @@ void ccSetSymbol(Parser::SYMBOL* s);
 namespace Parser
 {
 
-NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
+std::list<NAMESPACEVALUEDATA*>*globalNameSpace, *localNameSpace, * rootNameSpace;
 SymbolTable<SYMBOL>* labelSyms;
 
 int matchOverloadLevel;
 SymbolTableFactory<SYMBOL> symbols;
 
-static Optimizer::LIST* usingDirectives;
+static std::list<std::list<SYMBOL*>*> usingDirectives;
 
 void syminit(void)
 {
-    globalNameSpace = Allocate<NAMESPACEVALUELIST>();
-    globalNameSpace->valueData = Allocate<NAMESPACEVALUEDATA>();
-    globalNameSpace->valueData->syms = symbols.CreateSymbolTable();
-    globalNameSpace->valueData->tags = symbols.CreateSymbolTable();
+    globalNameSpace = namespaceValueDataListFactory.CreateList();
+    globalNameSpace->push_front(Allocate<NAMESPACEVALUEDATA>());
+    globalNameSpace->front()->syms = symbols.CreateSymbolTable();
+    globalNameSpace->front()->tags = symbols.CreateSymbolTable();
+    rootNameSpace->push_front(globalNameSpace->front());
 
-    localNameSpace = Allocate<NAMESPACEVALUELIST>();
-    localNameSpace->valueData = Allocate<NAMESPACEVALUEDATA>();
-    usingDirectives = nullptr;
+    localNameSpace = namespaceValueDataListFactory.CreateList();
+    localNameSpace->push_front(Allocate<NAMESPACEVALUEDATA>());
+    usingDirectives.clear();
     matchOverloadLevel = 0;
     symbols.Reset();
 }
-void AllocateLocalContext(BLOCKDATA* block, SYMBOL* sym, int label)
+void AllocateLocalContext(std::list<BLOCKDATA*>& block, SYMBOL* sym, int label)
 {
     SymbolTable<SYMBOL>* tn = symbols.CreateSymbolTable();
     STATEMENT* st;
     Optimizer::LIST* l;
     st = stmtNode(nullptr, block, st_dbgblock);
     st->label = 1;
-    if (block && Optimizer::cparams.prm_debug)
+    if (block.size() && Optimizer::cparams.prm_debug)
     {
         st = stmtNode(nullptr, block, st_label);
         st->label = label;
     }
-    tn->Next(localNameSpace->valueData->syms);
-    tn->Chain(localNameSpace->valueData->syms);
+    tn->Next(localNameSpace->front()->syms);
+    tn->Chain(localNameSpace->front()->syms);
 
-    localNameSpace->valueData->syms = tn;
+    localNameSpace->front()->syms = tn;
     tn = symbols.CreateSymbolTable();
-    tn->Next(localNameSpace->valueData->tags);
-    tn->Chain(localNameSpace->valueData->tags);
-    localNameSpace->valueData->tags = tn;
+    tn->Next(localNameSpace->front()->tags);
+    tn->Chain(localNameSpace->front()->tags);
+    localNameSpace->front()->tags = tn;
     if (sym)
-        localNameSpace->valueData->tags->Block(sym->sb->value.i++);
+        localNameSpace->front()->tags->Block(sym->sb->value.i++);
 
-    l = Allocate<Optimizer::LIST>();
-    l->data = localNameSpace->valueData->usingDirectives;
-    l->next = usingDirectives;
-    usingDirectives = l;
+    usingDirectives.push_front(localNameSpace->front()->usingDirectives);
 }
 void TagSyms(SymbolTable<SYMBOL>* syms)
 {
@@ -104,27 +103,28 @@ void TagSyms(SymbolTable<SYMBOL>* syms)
         sym->sb->ccEndLine = preProcessor->GetRealLineNo() + 1;
     }
 }
-void FreeLocalContext(BLOCKDATA* block, SYMBOL* sym, int label)
+void FreeLocalContext(std::list<BLOCKDATA*>& block, SYMBOL* sym, int label)
 {
-    SymbolTable<SYMBOL>* locals = localNameSpace->valueData->syms;
-    SymbolTable<SYMBOL>* tags = localNameSpace->valueData->tags;
+    SymbolTable<SYMBOL>* locals = localNameSpace->front()->syms;
+    SymbolTable<SYMBOL>* tags = localNameSpace->front()->tags;
     STATEMENT* st;
-    if (block && Optimizer::cparams.prm_debug)
+    if (block.size() && Optimizer::cparams.prm_debug)
     {
         st = stmtNode(nullptr, block, st_label);
         st->label = label;
     }
-    checkUnused(localNameSpace->valueData->syms);
+    checkUnused(localNameSpace->front()->syms);
     if (sym)
         sym->sb->value.i--;
 
     st = stmtNode(nullptr, block, st_expr);
-    destructBlock(&st->select, localNameSpace->valueData->syms, true);
-    localNameSpace->valueData->syms = localNameSpace->valueData->syms->Next();
-    localNameSpace->valueData->tags = localNameSpace->valueData->tags->Next();
+    destructBlock(&st->select, localNameSpace->front()->syms, true);
+    localNameSpace->front()->syms = localNameSpace->front()->syms->Next();
+    localNameSpace->front()->tags = localNameSpace->front()->tags->Next();
 
-    localNameSpace->valueData->usingDirectives = (Optimizer::LIST*)usingDirectives->data;
-    usingDirectives = usingDirectives->next;
+
+    localNameSpace->front()->usingDirectives = usingDirectives.front();
+    usingDirectives.pop_front();
 
     if (!IsCompiler())
     {
@@ -490,16 +490,16 @@ SYMBOL* searchOverloads(SYMBOL* sym, SymbolTable<SYMBOL>* table)
 }
 SYMBOL* gsearch(const char* name)
 {
-    SYMBOL* sym = localNameSpace->valueData->syms->search(name);
+    SYMBOL* sym = localNameSpace->front()->syms->search(name);
     if (sym)
         return sym;
-    return globalNameSpace->valueData->syms->search(name);
+    return globalNameSpace->front()->syms->search(name);
 }
 SYMBOL* tsearch(const char* name)
 {
-    SYMBOL* sym = localNameSpace->valueData->tags->search(name);
+    SYMBOL* sym = localNameSpace->front()->tags->search(name);
     if (sym)
         return sym;
-    return globalNameSpace->valueData->tags->search(name);
+    return globalNameSpace->front()->tags->search(name);
 }
 }  // namespace Parser

@@ -47,6 +47,8 @@ namespace Parser
     ListFactory<struct _errl*> errlListFactory;
     ListFactory<struct _string*> stringListFactory;
     ListFactory<struct Optimizer::_linedata*> lineDataListFactory;
+    ListFactory<TEMPLATEPARAMPAIR> templateParamPairListFactory;
+    ListFactory<TEMPLATESELECTOR> templateSelectorListFactory;
 
     void ListFactoryInit()
     {
@@ -68,5 +70,7 @@ namespace Parser
         errlListFactory.Reset();
         stringListFactory.Reset();
         lineDataListFactory.Reset();
+        templateParamPairListFactory.Reset();
+        templateSelectorListFactory.Reset();
     }
-}
+    }

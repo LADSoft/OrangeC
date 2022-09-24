@@ -40,12 +40,12 @@ TYPE* typenum(char* buf, TYPE* tp);
 
 static TYPE* replaceTemplateSelector(TYPE* tp)
 {
-    if (!templateNestingCount && tp->type == bt_templateselector && tp->sp->sb->templateSelector->next->isTemplate)
+    if (!templateNestingCount && tp->type == bt_templateselector && (*tp->sp->sb->templateSelector)[1].isTemplate)
     {
-        SYMBOL* sp2 = tp->sp->sb->templateSelector->next->sp;
-        if (tp->sp->sb->templateSelector->next->isDeclType)
+        SYMBOL* sp2 = (*tp->sp->sb->templateSelector)[1].sp;
+        if ((*tp->sp->sb->templateSelector)[1].isDeclType)
         {
-            TYPE* tp1 = TemplateLookupTypeFromDeclType(tp->sp->sb->templateSelector->next->tp);
+            TYPE* tp1 = TemplateLookupTypeFromDeclType((*tp->sp->sb->templateSelector)[1].tp);
             if (tp1 && isstructured(tp1))
                 sp2 = basetype(tp1)->sp;
             else
@@ -55,10 +55,10 @@ static TYPE* replaceTemplateSelector(TYPE* tp)
         {
             if (sp2)
             {
-                SYMBOL* sp1 = GetClassTemplate(sp2, tp->sp->sb->templateSelector->next->templateParams, true);
+                SYMBOL* sp1 = GetClassTemplate(sp2, (*tp->sp->sb->templateSelector)[1].templateParams, true);
                 if (sp1)
                 {
-                    sp1 = sp1->tp->syms->search(tp->sp->sb->templateSelector->next->next->name);
+                    sp1 = sp1->tp->syms->search((*tp->sp->sb->templateSelector)[2].name);
                     if (sp1)
                     {
                         tp = sp1->tp;
@@ -581,16 +581,15 @@ TYPE* typenum(char* buf, TYPE* tp)
             strcpy(buf, name);
             break;
         case bt_templateselector: {
-            TEMPLATESELECTOR* ts = tp->sp->sb->templateSelector->next;
-            if (ts->sp)
+            auto itts = tp->sp->sb->templateSelector->begin();
+            ++itts;
+            if (itts->sp)
             {
-                strcpy(buf, ts->sp->name);
-                ts = ts->next;
-                while (ts)
+                strcpy(buf, itts->sp->name);
+                for (++itts; itts != tp->sp->sb->templateSelector->end(); ++itts)
                 {
                     strcat(buf, "::");
-                    strcat(buf, ts->name);
-                    ts = ts->next;
+                    strcat(buf, itts->name);
                 }
             }
             break;

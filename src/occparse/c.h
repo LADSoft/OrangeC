@@ -350,6 +350,8 @@ typedef struct
 
 #define _F_NOCHECKAUTO 0x80
 
+typedef std::pair<struct sym*, struct _templateParam*> TEMPLATEPARAMPAIR;
+
 struct ConstExprArgArray
 {
     int size;
@@ -400,8 +402,8 @@ typedef struct expr
                 std::list<struct expr*>* right;
             } logicaldestructors;
         };
-        struct _templateParamList* templateParam;
-        struct _templateSelector* templateSelector;
+        TEMPLATEPARAMPAIR* templateParam;
+        std::vector<struct _templateSelector>* templateSelector;
     } v;
     struct _string* string;
     int xcInit, xcDest;
@@ -492,7 +494,7 @@ typedef struct typ
     /* local symbol tables */
     SymbolTable<struct sym>* syms; /* Symbol table for structs & functions */
     SymbolTable<struct sym>* tags; /* Symbol table for nested types*/
-    struct _templateParamList* templateParam;
+    TEMPLATEPARAMPAIR* templateParam;
     int alignment;                /* alignment pref for this structure/class/union   */
     EXPRESSION* esize;            /* enode version of size */
     struct typ* etype;            /* type of size field  when size isn't constant */
@@ -632,7 +634,7 @@ typedef struct sym
 {
     const char* name;
     TYPE* tp;
-    struct _templateParamList* templateParams;
+    std::list<TEMPLATEPARAMPAIR>* templateParams;
     unsigned packed : 1;       // packed template param instance
     unsigned synthesized : 1;  // packed template param was synthesized during parsing
     int parserSet : 1;         /* sent to parser already*/
@@ -785,11 +787,11 @@ typedef struct sym
         struct lexlist* deferredNoexcept;
         std::list<struct sym*>* templateNameSpace;
         short templateLevel;
-        struct _templateParamList* typeAlias;
+        std::list<TEMPLATEPARAMPAIR>* typeAlias;
         std::list<struct sym*>* specializations;
         std::list<struct sym*>* instantiations;
         const char* msil;                            // MSIL path
-        struct _templateSelector* templateSelector;  // first element is the last valid sym found, second element is the template
+        std::vector<struct _templateSelector>* templateSelector;  // first element is the last valid sym found, second element is the template
                                                      // parameter sym following elements are the list of pointers to names
         struct sym* parentTemplate;                  // could be the parent of a specialization or an instantiation
         std::list<struct init *>* init, *lastInit, *dest;
@@ -899,17 +901,17 @@ typedef struct _templateParam
             SYMBOL* dflt;
             SYMBOL* val;
             struct lexlist* txtdflt;
-            Optimizer::LIST* txtargs;
+            std::list<SYMBOL*>* txtargs;
             SYMBOL* temp;
-            struct _templateParamList* args;
-            struct _templateParamList* orig;
+            std::list<TEMPLATEPARAMPAIR>* args;
+            TEMPLATEPARAMPAIR* orig;
         } byTemplate;
         struct
         {
             TYPE* dflt;
             TYPE* val;
             struct lexlist* txtdflt;
-            Optimizer::LIST* txtargs;
+            std::list<SYMBOL*>* txtargs;
             TYPE* temp;
         } byClass;
         struct
@@ -917,44 +919,36 @@ typedef struct _templateParam
             EXPRESSION* dflt;
             EXPRESSION* val;
             struct lexlist* txtdflt;
-            Optimizer::LIST* txtargs;
+            std::list<SYMBOL*>* txtargs;
             EXPRESSION* temp;
             struct lexlist* txttype;
             TYPE* tp;
         } byNonType;
         struct
         {
-            struct _templateParamList* types;
-            struct _templateParamList* next;
+            std::list<TEMPLATEPARAMPAIR>* types;
+            std::list<TEMPLATEPARAMPAIR>* next;
         } bySpecialization;
         struct
         {
-            struct _templateParamList* pack;
+            std::list<TEMPLATEPARAMPAIR>* pack;
         } byPack;
         struct
         {
-            struct _templateParamList* args;
+            std::list<TEMPLATEPARAMPAIR>* args;
         } byDeferred;
     };
 } TEMPLATEPARAM;
 
-typedef struct _templateParamList
-{
-    struct _templateParamList* next;
-    SYMBOL* argsym;
-    TEMPLATEPARAM* p;
-} TEMPLATEPARAMLIST;
-
 typedef struct _templateSelector
 {
-    struct _templateSelector* next;
     union
     {
         SYMBOL* sp;
         const char* name;
         TYPE* tp;
     };
-    TEMPLATEPARAMLIST* templateParams;
+    std::list<TEMPLATEPARAMPAIR>* templateParams;
     std::list<struct initlist*>* arguments;
     int isTemplate : 1;
     int isDeclType : 1;
@@ -964,7 +958,7 @@ typedef struct _templateSelector
 typedef struct _structSym
 {
     SYMBOL* str;
-    TEMPLATEPARAMLIST* tmpl;
+    std::list<TEMPLATEPARAMPAIR>* tmpl;
 } STRUCTSYM;
 typedef struct initlist
 {
@@ -990,7 +984,7 @@ typedef struct functioncall
     EXPRESSION* returnEXP;
     EXPRESSION* thisptr;
     TYPE* thistp;
-    TEMPLATEPARAMLIST* templateParams;
+    std::list<TEMPLATEPARAMPAIR>* templateParams;
     NAMESPACEVALUEDATA* nameSpace;
     int callLab;
     int novtab : 1;
@@ -1168,8 +1162,8 @@ typedef struct lexContext
 
 struct templateListData
 {
-    TEMPLATEPARAMLIST* args;  // list of templateparam lists
-    TEMPLATEPARAMLIST **ptail, **plast, **phold;
+    std::list<TEMPLATEPARAMPAIR>* args;  // list of templateparam lists
+    std::list<TEMPLATEPARAMPAIR>**ptail, **plast, **phold;
     LEXLIST *head, *tail;
     LEXLIST *bodyHead, *bodyTail;
     SYMBOL* sp;
@@ -1198,13 +1192,13 @@ constexpr inline bool __isref(TYPE* x) { return (x)->type == bt_lref || (x)->typ
 constexpr inline bool isref(TYPE* x)
 {
     return (__isref(basetype(x)) ||
-            (x)->type == bt_templateparam && (x)->templateParam->p->type == kw_int && __isref((x)->templateParam->p->byNonType.tp));
+            (x)->type == bt_templateparam && (x)->templateParam->second->type == kw_int && __isref((x)->templateParam->second->byNonType.tp));
 }
 constexpr inline bool __ispointer(TYPE* x) { return ((x)->type == bt_pointer || (x)->type == bt_seg); }
 constexpr inline bool ispointer(TYPE* x)
 {
-    return (__ispointer(basetype(x)) || (x)->type == bt_templateparam && (x)->templateParam->p->type == kw_int &&
-                                            __ispointer((x)->templateParam->p->byNonType.tp));
+    return (__ispointer(basetype(x)) || (x)->type == bt_templateparam && (x)->templateParam->second->type == kw_int &&
+                                            __ispointer((x)->templateParam->second->byNonType.tp));
 }
 
 constexpr inline bool __isfunction(TYPE* x) { return ((x)->type == bt_func || (x)->type == bt_ifunc); }

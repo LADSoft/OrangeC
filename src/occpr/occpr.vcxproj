@@ -42,6 +42,7 @@
     <ClCompile Include="..\occopt\output.cpp" />
     <ClCompile Include="..\occopt\symfuncs.cpp" />
     <ClCompile Include="..\occparse\constexpr.cpp" />
+    <ClCompile Include="..\occparse\ListFactory.cpp" />
     <ClCompile Include="..\occ\InstructionParser.cpp" />
     <ClCompile Include="..\occ\x64Parser.cpp" />
     <ClCompile Include="..\occ\x64stub.cpp" />

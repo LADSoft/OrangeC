@@ -83,7 +83,7 @@ bool istype(SYMBOL* sym)
 {
     if (!sym->sb || sym->sb->storage_class == sc_templateparam)
     {
-        return sym->tp->templateParam->p->type == kw_typename || sym->tp->templateParam->p->type == kw_template;
+        return sym->tp->templateParam->second->type == kw_typename || sym->tp->templateParam->second->type == kw_template;
     }
     return (sym->tp->type != bt_templateselector && sym->sb->storage_class == sc_type) || sym->sb->storage_class == sc_typedef;
 }
@@ -98,7 +98,7 @@ bool startOfType(LEXLIST* lex, bool* structured, bool assumeType)
 
     if (lex->data->type == l_id)
     {
-        TEMPLATEPARAMLIST* tparam = TemplateLookupSpecializationParam(lex->data->value.s.a);
+        auto tparam = TemplateLookupSpecializationParam(lex->data->value.s.a);
         if (tparam)
         {
             LEXLIST* placeHolder = lex;
@@ -114,7 +114,7 @@ bool startOfType(LEXLIST* lex, bool* structured, bool assumeType)
             if (!member)
             {
                 lines = old;
-                return tparam->p->type == kw_typename || tparam->p->type == kw_template;
+                return tparam->second->type == kw_typename || tparam->second->type == kw_template;
             }
         }
     }
@@ -132,9 +132,9 @@ bool startOfType(LEXLIST* lex, bool* structured, bool assumeType)
         {
             if (sym->tp->type == bt_templateparam)
             {
-                if (sym->tp->templateParam->p->type == kw_typename && sym->tp->templateParam->p->byClass.val)
-                    *structured = isstructured(sym->tp->templateParam->p->byClass.val);
-                else if (sym->tp->templateParam->p->type == kw_template)
+                if (sym->tp->templateParam->second->type == kw_typename && sym->tp->templateParam->second->byClass.val)
+                    *structured = isstructured(sym->tp->templateParam->second->byClass.val);
+                else if (sym->tp->templateParam->second->type == kw_template)
                     *structured = true;
             }
             else
@@ -269,8 +269,8 @@ bool isint(TYPE* tp)
             case bt_unative:
                 return true;
             case bt_templateparam:
-                if (tp->templateParam->p->type == kw_int)
-                    return isint(tp->templateParam->p->byNonType.tp);
+                if (tp->templateParam->second->type == kw_int)
+                    return isint(tp->templateParam->second->byNonType.tp);
                 return false;
             default:
                 if (tp->type == bt_enum && !Optimizer::cparams.prm_cplusplus)
@@ -1329,7 +1329,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             else if (funcsp)
             {
                 SYMBOL* sym =
-                    (SYMBOL*)basetype(funcsp->tp)->syms->size() > 0 ? (SYMBOL*)basetype(funcsp->tp)->syms->front() : nullptr;
+                    basetype(funcsp->tp)->syms->size() > 0 ? (SYMBOL*)basetype(funcsp->tp)->syms->front() : nullptr;
                 if (sym && sym->sb->thisPtr)
                     expsym = varNode(en_auto, sym);  // this ptr
                 else

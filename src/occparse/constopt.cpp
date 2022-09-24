@@ -2537,15 +2537,13 @@ int opt0(EXPRESSION** node)
             if (!templateNestingCount || instantiatingTemplate)
             {
                 int n = 0;
-                if (!(*node)->v.templateParam->p->packed)
+                if (!(*node)->v.templateParam->second->packed)
                 {
                     n = 1;
                 }
                 else
                 {
-                    TEMPLATEPARAMLIST* tpl = (*node)->v.templateParam->p->byPack.pack;
-                    while (tpl)
-                        n++, tpl = tpl->next;
+                    n = (*node)->v.templateParam->second->byPack.pack->size();
                 }
                 *node = intNode(en_c_i, n);
             }
@@ -2553,13 +2551,12 @@ int opt0(EXPRESSION** node)
         case en_templateselector:
             if (!templateNestingCount || instantiatingTemplate)
             {
-                TEMPLATESELECTOR* tsl = (*node)->v.templateSelector;
-                SYMBOL* ts = tsl->next->sp;
+                auto tsl = (*node)->v.templateSelector;
+                SYMBOL* ts = (*tsl)[1].sp;
                 SYMBOL* sym = ts;
-                TEMPLATESELECTOR* find = tsl->next->next;
-                if (tsl->next->isDeclType)
+                if ((*tsl)[1].isDeclType)
                 {
-                    TYPE* tp = TemplateLookupTypeFromDeclType(tsl->next->tp);
+                    TYPE* tp = TemplateLookupTypeFromDeclType((*tsl)[1].tp);
                     if (tp && isstructured(tp))
                         sym = basetype(tp)->sp;
                     else
@@ -2569,15 +2566,15 @@ int opt0(EXPRESSION** node)
                 {
                     if (ts->tp->type == bt_templateparam)
                     {
-                        if (ts->tp->templateParam->p->type != kw_template)
+                        if (ts->tp->templateParam->second->type != kw_template)
                             break;
-                        ts = ts->tp->templateParam->p->byTemplate.val;
+                        ts = ts->tp->templateParam->second->byTemplate.val;
                         if (!ts)
                             break;
                     }
-                    if (tsl->next->isTemplate && tsl->next->templateParams)
+                    if ((*tsl)[1].isTemplate && (*tsl)[1].templateParams)
                     {
-                        TEMPLATEPARAMLIST* current = SolidifyTemplateParams(tsl->next->templateParams);
+                        std::list<TEMPLATEPARAMPAIR>* current = SolidifyTemplateParams((*tsl)[1].templateParams);
                         if (ts->sb->storage_class == sc_typedef)
                         {
                             sym = GetTypeAliasSpecialization(sym, current);
@@ -2600,39 +2597,42 @@ int opt0(EXPRESSION** node)
                     sym = basetype(PerformDeferredInitialization(sym->tp, nullptr))->sp;
                     if (sym)
                     {
-                        while (find && sym)
+                        auto find = (*tsl).begin();
+                        ++find;
+                        ++find;
+                        while (find != (*tsl).end() && sym)
                         {
                             SYMBOL* spo = sym;
                             if (!isstructured(spo->tp))
                                 break;
 
-                            sym = spo->tp->syms->search(find->name);
+                            sym = spo->tp->syms->search((*find).name);
                             if (!sym)
                             {
-                                sym = classdata(find->name, spo, nullptr, false, false);
+                                sym = classdata((*find).name, spo, nullptr, false, false);
                                 if (sym == (SYMBOL*)-1)
                                     sym = nullptr;
                             }
-                            if (sym && find->asCall)
+                            if (sym && (*find).asCall)
                             {
-                                if (find->arguments)
-                                    for (auto i : *find->arguments)
+                                if ((*find).arguments)
+                                    for (auto i : *(*find).arguments)
                                     {
                                         i->tp = SynthesizeType(i->tp, nullptr, false);
                                     }
                                 TYPE* ctype = sym->tp;
                                 EXPRESSION* exp = intNode(en_c_i, 0);
                                 FUNCTIONCALL funcparams = { };
-                                funcparams.arguments = find->arguments;
+                                funcparams.arguments = (*find).arguments;
                                 auto sp1 = GetOverloadedFunction(&ctype, &exp, sym, &funcparams, nullptr, false, false, false, 0);
                                 if (sp1)
                                 {
                                     sym = sp1;
                                 }
                             }
-                            find = find->next;
+                            ++find;
                         }
-                        if (!find && sym)
+                        if (find != (*tsl).end() && sym)
                         {
                             if (sym->sb->storage_class == sc_constant)
                             {
@@ -2647,31 +2647,33 @@ int opt0(EXPRESSION** node)
             }
             break;
         case en_templateparam:
-            if ((!templateNestingCount || instantiatingTemplate) && (*node)->v.sp->tp->templateParam->p->type == kw_int)
+            if ((!templateNestingCount || instantiatingTemplate) && (*node)->v.sp->tp->templateParam->second->type == kw_int)
             {
                 SYMBOL* sym = (*node)->v.sp;
-                TEMPLATEPARAMLIST* found = (*node)->v.sp->tp->templateParam;
-                if (!found || !found->p->byNonType.val)
+                TEMPLATEPARAMPAIR* found = (*node)->v.sp->tp->templateParam;
+                if (!found || !found->second->byNonType.val)
                     found = nullptr;
-                for (auto search : structSyms)
+                for (auto&& search : structSyms)
                 {
                     if (found)
                         break;
                     if (search->tmpl)
                     {
-                        TEMPLATEPARAMLIST* tpl = search->tmpl;
-                        while (tpl && !found)
+                        for (auto&& tpl : *search->tmpl)
                         {
-                            if (tpl->argsym && !strcmp(tpl->argsym->name, sym->name))
-                                found = tpl;
-                            tpl = tpl->next;
+                            if (tpl.first && !strcmp(tpl.first->name, sym->name))
+                            {
+                                found = &tpl;
+                                if (found)
+                                    break;
+                            }
                         }
                     }
                 }
-                if (found && found->p->type == kw_int)
+                if (found && found->second->type == kw_int)
                 {
-                    if (found->p->byNonType.val && !found->p->packed)
-                        *node = found->p->byNonType.val;
+                    if (found->second->byNonType.val && !found->second->packed)
+                        *node = found->second->byNonType.val;
                 }
             }
             break;

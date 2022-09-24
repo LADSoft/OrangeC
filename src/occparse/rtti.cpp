@@ -167,8 +167,8 @@ static char* RTTIGetDisplayName(char* buf, TYPE* tp)
 {
     if (tp->type == bt_templateparam)
     {
-        if (tp->templateParam && tp->templateParam->p->type == kw_typename && tp->templateParam->p->byClass.val)
-            tp = tp->templateParam->p->byClass.val;
+        if (tp->templateParam && tp->templateParam->second->type == kw_typename && tp->templateParam->second->byClass.val)
+            tp = tp->templateParam->second->byClass.val;
     }
     if (isconst(tp))
     {
@@ -237,8 +237,8 @@ static char* RTTIGetName(char* buf, TYPE* tp)
 {
     if (tp->type == bt_templateparam)
     {
-        if (tp->templateParam && tp->templateParam->p->type == kw_typename && tp->templateParam->p->byClass.val)
-            tp = tp->templateParam->p->byClass.val;
+        if (tp->templateParam && tp->templateParam->second->type == kw_typename && tp->templateParam->second->byClass.val)
+            tp = tp->templateParam->second->byClass.val;
     }
     mangledNamesCount = 0;
     strcpy(buf, "@$xt@");
@@ -783,15 +783,17 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
             while (p)
             {
                 TYPE* tp = (TYPE*)p->data;
-                if (tp->type == bt_templateparam && tp->templateParam->p->packed)
+                if (tp->type == bt_templateparam && tp->templateParam->second->packed)
                 {
-                    if (tp->templateParam->p->type == kw_typename)
+                    if (tp->templateParam->second->type == kw_typename)
                     {
-                        TEMPLATEPARAMLIST* pack = tp->templateParam->p->byPack.pack;
-                        while (pack)
+                        if (tp->templateParam->second->byPack.pack)
                         {
-                            list[count++] = RTTIDumpType((TYPE*)pack->p->byClass.val);
-                            pack = pack->next;
+                            std::list<TEMPLATEPARAMPAIR>* pack = tp->templateParam->second->byPack.pack;
+                            for (auto&& pack : *tp->templateParam->second->byPack.pack)
+                            {
+                                list[count++] = RTTIDumpType(pack.second->byClass.val);
+                            }
                         }
                     }
                 }

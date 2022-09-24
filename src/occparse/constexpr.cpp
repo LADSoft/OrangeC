@@ -581,7 +581,9 @@ static void pushArray(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<SYMBOL*, 
     if (finalsym && isstructured(finalsym->tp) && basetype(finalsym->tp)->sp->sb->initializer_list && finalsym->sb->init)
     {
         int n = finalsym->sb->init ? finalsym->sb->init->size() : 0;
-        auto tp = MakeType(bt_pointer, finalsym->tp->sp->templateParams->next->p->byClass.val);
+        auto it = finalsym->tp->sp->templateParams->begin();
+        ++it;
+        auto tp = MakeType(bt_pointer, it->second->byClass.val);
         tp->size = n * tp->btp->size;
         tp->array = true;
         auto sym = makeID(sc_global, tp, nullptr, AnonymousName());

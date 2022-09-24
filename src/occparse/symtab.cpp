@@ -224,10 +224,10 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                 {
                     if (tps->type != bt_templateparam)
                         break;
-                    if (tpn->templateParam->p->packed != tps->templateParam->p->packed)
+                    if (tpn->templateParam->second->packed != tps->templateParam->second->packed)
                         break;
-                    tableOld[tCount] = GetHashValue(tps->templateParam->argsym->name);
-                    tableNew[tCount] = GetHashValue(tpn->templateParam->argsym->name);
+                    tableOld[tCount] = GetHashValue(tps->templateParam->first->name);
+                    tableNew[tCount] = GetHashValue(tpn->templateParam->first->name);
                     tCount++;
                 }
             }
@@ -243,25 +243,52 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
             int i, j;
             SYMBOL* fnew = basetype(tnew)->sp->sb->parentClass;
             SYMBOL* fold = basetype(told)->sp->sb->parentClass;
-            TEMPLATEPARAMLIST *tplNew, *tplOld;
+            std::list<TEMPLATEPARAMPAIR>::iterator itNew, iteNew = itNew, itOld, iteOld = itOld;
             int iCount = 0;
             unsigned oldIndex[100], newIndex[100];
-            tplNew = fnew && fnew->templateParams ? fnew->templateParams : nullptr;
-            tplOld = fold && fold->templateParams ? fold->templateParams : nullptr;
-            if (tplNew)
-                tplNew = tplNew->p->bySpecialization.types ? tplNew->p->bySpecialization.types : tplNew->next;
-            if (tplOld)
-                tplOld = tplOld->p->bySpecialization.types ? tplOld->p->bySpecialization.types : tplOld->next;
-            while (tplNew && tplOld)
+
+            if (fnew && fnew->templateParams)
             {
-                if (tplOld->argsym && tplNew->argsym)
+                itNew = fnew->templateParams->begin();
+                iteNew = fnew->templateParams->end();
+            }
+            if (fold && fold->templateParams)
+            {
+                itOld = fold->templateParams->begin();
+                iteOld = fold->templateParams->end();
+            }
+            if (itNew != iteNew)
+            {
+                if (itNew->second->bySpecialization.types)
                 {
-                    oldIndex[iCount] = GetHashValue(tplOld->argsym->name);
-                    newIndex[iCount] = GetHashValue(tplNew->argsym->name);
+                    itNew = itNew->second->bySpecialization.types->begin();
+                    iteNew = itNew->second->bySpecialization.types->end();
+                }
+                else
+                {
+                    ++itNew;
+                }
+            }
+            if (itOld != iteOld)
+            {
+                if (itOld->second->bySpecialization.types)
+                {
+                    itOld = itOld->second->bySpecialization.types->begin();
+                    iteOld = itOld->second->bySpecialization.types->end();
+                }
+                else
+                {
+                    ++itOld;
+                }
+            }
+            for ( ; itNew != iteNew && itOld != iteOld ; ++itNew, ++itOld)
+            {
+                if (itOld->first && itNew->first)
+                {
+                    oldIndex[iCount] = GetHashValue(itOld->first->name);
+                    newIndex[iCount] = GetHashValue(itNew->first->name);
                     iCount++;
                 }
-                tplNew = tplNew->next;
-                tplOld = tplOld->next;
             }
             for (i = 0; i < tCount; i++)
             {
@@ -329,34 +356,32 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                         {
                             if (!templateselectorcompare(tpn->sp->sb->templateSelector, tps->sp->sb->templateSelector))
                             {
-                                TEMPLATESELECTOR* ts1 = tpn->sp->sb->templateSelector->next;
-                                TEMPLATESELECTOR* ts2 = tps->sp->sb->templateSelector->next;
+                                auto ts1 = (*tpn->sp->sb->templateSelector).begin();
+                                auto ts1e = (*tpn->sp->sb->templateSelector).end();
+                                auto ts2 = (*tps->sp->sb->templateSelector).begin();
+                                auto ts2e = (*tps->sp->sb->templateSelector).end();
                                 if (ts2->sp->sb && ts2->sp->sb->typedefSym)
                                 {
-                                    ts1 = ts1->next;
+                                    ++ts1;
                                     if (!strcmp(ts1->name, ts2->sp->sb->typedefSym->name))
                                     {
-                                        ts1 = ts1->next;
-                                        ts2 = ts2->next;
-                                        while (ts1 && ts2)
-                                        {
+                                        ++ts1;
+                                        ++ts2;
+                                        for (++ts1, ++ts2; ts1 != ts1e && ts2 != ts2e; ++ts1, ++ts2)
                                             if (strcmp(ts1->name, ts2->name))
                                                 return false;
-                                            ts1 = ts1->next;
-                                            ts2 = ts2->next;
-                                        }
-                                        if (ts1 || ts2)
+                                        if (ts1 != ts1e || ts2 != ts2e)
                                             return false;
                                     }
                                 }
-                                else if (!strcmp(tpn->sp->sb->templateSelector->next->sp->name,
-                                                 tps->sp->sb->templateSelector->next->sp->name))
+                                else if (!strcmp((*tpn->sp->sb->templateSelector)[1].sp->name,
+                                                 (*tps->sp->sb->templateSelector)[1].sp->name))
                                 {
-                                    if (tpn->sp->sb->templateSelector->next->next->name[0])
+                                    if ((*tpn->sp->sb->templateSelector)[2].name[0])
                                         return false;
                                 }
                                 else if (basetype(told)->btp->type == bt_typedef &&
-                                         strcmp(basetype(told)->btp->sp->name, tpn->sp->sb->templateSelector->next->next->name) ==
+                                         strcmp(basetype(told)->btp->sp->name, (*tpn->sp->sb->templateSelector)[2].name) ==
                                              0)
                                 {
                                 }
@@ -368,18 +393,19 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                         }
                         else
                         {
-                            TEMPLATESELECTOR* tpl = basetype(tpn)->sp->sb->templateSelector->next;
-                            SYMBOL* sym = tpl->sp;
-                            TEMPLATESELECTOR* find = tpl->next;
-                            if (tpl->isDeclType)
+                            auto tpl = basetype(tpn)->sp->sb->templateSelector;
+                            SYMBOL* sym = (*tpl)[1].sp;
+                            if ((*tpl)[1].isDeclType)
                             {
-                                TYPE* tp1 = TemplateLookupTypeFromDeclType(tpl->tp);
+                                TYPE* tp1 = TemplateLookupTypeFromDeclType((*tpl)[1].tp);
                                 if (tp1 && isstructured(tp1))
                                     sym = basetype(tp1)->sp;
                                 else
                                     sym = nullptr;
                             }
-                            while (sym && find)
+                            auto find = (*tpl).begin();
+                            auto finde = (*tpl).end();
+                            for (; sym && find != finde; ++find)
                             {
                                 SYMBOL* fsp;
                                 if (!isstructured(sym->tp))
@@ -393,9 +419,8 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                                         fsp = nullptr;
                                 }
                                 sym = fsp;
-                                find = find->next;
                             }
-                            if (find || !sym || (!comparetypes(sym->tp, tps, true) && !sameTemplate(sym->tp, tps)))
+                            if (find != finde || !sym || (!comparetypes(sym->tp, tps, true) && !sameTemplate(sym->tp, tps)))
                                 return false;
                         }
                         return true;
@@ -408,24 +433,23 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                 }
                 if (tpn->type == bt_templateselector && tps->type == bt_templateselector)
                 {
-                    TEMPLATESELECTOR *ts1 = tpn->sp->sb->templateSelector->next, *tss1;
-                    TEMPLATESELECTOR *ts2 = tps->sp->sb->templateSelector->next, *tss2;
-                    if (ts1->isTemplate != ts2->isTemplate || strcmp(ts1->sp->sb->decoratedName, ts2->sp->sb->decoratedName))
+                    auto ts1 = tpn->sp->sb->templateSelector;
+                    auto ts2 = tps->sp->sb->templateSelector;
+                    if ((*ts1)[1].isTemplate != (*ts2)[1].isTemplate ||
+                        strcmp((*ts1)[1].sp->sb->decoratedName, (*ts2)[1].sp->sb->decoratedName))
                         return false;
-                    tss1 = ts1->next;
-                    tss2 = ts2->next;
-                    while (tss1 && tss2)
+                    auto tss1 = (*ts1).begin();
+                    auto tss2 = (*ts2).begin();
+                    for (; tss1 != (*ts1).end() && tss2 != (*ts2).end(); ++ tss1, ++ tss2)
                     {
                         if (strcmp(tss1->name, tss2->name))
                             return false;
-                        tss1 = tss1->next;
-                        tss2 = tss2->next;
                     }
-                    if (tss1 || tss2)
+                    if (tss1 != (*ts1).end() || tss2 != (*ts2).end())
                         return false;
-                    if (ts1->isTemplate)
+                    if ((*ts1)[1].isTemplate)
                     {
-                        if (!exactMatchOnTemplateParams(ts1->templateParams, ts2->templateParams))
+                        if (!exactMatchOnTemplateParams((*ts1)[1].templateParams, (*ts2)[1].templateParams))
                             return false;
                     }
                     return true;
@@ -458,25 +482,25 @@ SYMBOL* searchOverloads(SYMBOL* sym, SymbolTable<SYMBOL>* table)
                 if (!spp->templateParams)
                     return spp;
                 if (sym->sb->templateLevel == spp->sb->templateLevel ||
-                    (sym->sb->templateLevel && !spp->sb->templateLevel && !sym->templateParams->next))
+                    (sym->sb->templateLevel && !spp->sb->templateLevel && sym->templateParams->size() == 1))
                     return spp;
 
                 if (!!spp->templateParams == !!sym->templateParams)
                 {
-                    TEMPLATEPARAMLIST* tpl = spp->templateParams->next;
-                    TEMPLATEPARAMLIST* tpr = sym->templateParams->next;
-                    while (tpl && tpr)
+                    auto tpl = spp->templateParams->begin();
+                    auto tple = spp->templateParams->end();
+                    ++tpl;
+                    auto tpr = sym->templateParams->begin();
+                    auto tpre = sym->templateParams->end();
+                    ++tpr;
+                    for  ( ; tpl != tple  && tpr != tpre; ++tpl, ++tpr)
                     {
-                        if (tpl->p->type == kw_int && tpl->p->byNonType.tp->type == bt_templateselector)
+                        if (tpl->second->type == kw_int && tpl->second->byNonType.tp->type == bt_templateselector)
                             break;
-                        if (tpr->p->type == kw_int && tpr->p->byNonType.tp->type == bt_templateselector)
+                        if (tpr->second->type == kw_int && tpr->second->byNonType.tp->type == bt_templateselector)
                             break;
-                        //    if (tpl->argsym->sb->compilerDeclared || tpr->argsym->sb->compilerDeclared)
-                        //        break;
-                        tpl = tpl->next;
-                        tpr = tpr->next;
                     }
-                    if (!tpl && !tpr)
+                    if (tpl == tple && tpr == tpre)
                         return spp;
                 }
             }

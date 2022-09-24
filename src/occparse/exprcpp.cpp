@@ -2370,7 +2370,7 @@ void ResolveTemplateVariable(TYPE** ttype, EXPRESSION** texpr, TYPE* rtype, TYPE
         {
             SYMBOL* sym;
             TYPE* type;
-            TEMPLATEPARAMLIST* params;
+            std::list<TEMPLATEPARAMPAIR>* params = templateParamPairListFactory.CreateList();
             if (atype)
                 if (rtype)
                     if (atype->type > rtype->type)
@@ -2381,11 +2381,11 @@ void ResolveTemplateVariable(TYPE** ttype, EXPRESSION** texpr, TYPE* rtype, TYPE
                     type = atype;
             else
                 type = rtype;
-            params = Allocate<TEMPLATEPARAMLIST>();
-            params->p = Allocate<TEMPLATEPARAM>();
+            auto  second = Allocate<TEMPLATEPARAM>();
 
-            params->p->type = kw_typename;
-            params->p->byClass.dflt = type;
+            second->type = kw_typename;
+            second->byClass.dflt = type;
+            params->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
             sym = GetVariableTemplate(exp->v.sp, params);
             if (sym)
             {

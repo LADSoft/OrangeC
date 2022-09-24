@@ -2076,7 +2076,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                     lex = SetAlternateLex(init->initData);
                     if (MATCHKW(lex, lt))
                     {
-                        TEMPLATEPARAMLIST* lst = nullptr;
+                        std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
                         lex = GetTemplateArguments(lex, cons, init->sp, &lst);
                         if (init->sp->sb->templateLevel)
                         {
@@ -2158,9 +2158,9 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                     init->sp = sp;
                 if (sp && sp->tp->type == bt_templateparam)
                 {
-                    if (sp->tp->templateParam->p->type == kw_typename)
+                    if (sp->tp->templateParam->second->type == kw_typename)
                     {
-                        if (sp->tp->templateParam->p->packed)
+                        if (sp->tp->templateParam->second->packed)
                         {
                             FUNCTIONCALL shim;
                             lex = SetAlternateLex(init->initData);
@@ -2169,13 +2169,13 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                             if (!init->packed)
                                 error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
                             SetAlternateLex(nullptr);
-                            expandPackedMemberInitializers(cls, cons, sp->tp->templateParam->p->byPack.pack, &cons->sb->memberInitializers, init->initData,
+                            expandPackedMemberInitializers(cls, cons, sp->tp->templateParam->second->byPack.pack, &cons->sb->memberInitializers, init->initData,
                                 shim.arguments);
                             init->sp = cls;
                         }
-                        else if (sp->tp->templateParam->p->byClass.val && isstructured(sp->tp->templateParam->p->byClass.val))
+                        else if (sp->tp->templateParam->second->byClass.val && isstructured(sp->tp->templateParam->second->byClass.val))
                         {
-                            TYPE* tp = sp->tp->templateParam->p->byClass.val;
+                            TYPE* tp = sp->tp->templateParam->second->byClass.val;
                             int offset = 0;
                             int vcount = 0, ccount = 0;
                             init->name = basetype(tp)->sp->name;
@@ -2268,7 +2268,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                         lex = SetAlternateLex(init->initData);
                         if (MATCHKW(lex, lt))
                         {
-                            TEMPLATEPARAMLIST* lst = nullptr;
+                            std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
                             lex = GetTemplateArguments(lex, cons, init->sp, &lst);
                             if (init->sp->sb->templateLevel)
                             {
@@ -2332,7 +2332,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                             lex = SetAlternateLex(init->initData);
                             if (MATCHKW(lex, lt))
                             {
-                                TEMPLATEPARAMLIST* lst = nullptr;
+                                std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
                                 lex = GetTemplateArguments(lex, cons, init->sp, &lst);
                                 if (init->sp->sb->templateLevel)
                                 {
@@ -3163,7 +3163,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                     if (!templateNestingCount && sp1->sb->templateLevel && sp1->templateParams && !sp1->sb->instantiated)
                     {
                         if (!allTemplateArgsSpecified(sp1, sp1->templateParams))
-                            sp1 = GetClassTemplate(sp1, sp1->templateParams->next, false);
+                            sp1 = GetClassTemplate(sp1, sp1->templateParams, false);
                         if (sp1)
                             list->tp = TemplateClassInstantiate(sp1, sp1->templateParams, false, sc_global)->tp;
                     }
@@ -3232,8 +3232,10 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                     SYMBOL* sym = (basetype(tp)->sp);
                     if (sym->sb->initializer_list && sym->sb->templateLevel)
                     {
+                        auto it = sym->templateParams->begin();
+                        ++it;
                         initializerListTemplate = sym->tp;
-                        initializerListType = sym->templateParams->next->p->byClass.val;
+                        initializerListType = it->second->byClass.val;
                     }
                 }
             }

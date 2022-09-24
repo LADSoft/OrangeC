@@ -46,8 +46,8 @@ SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bo
 LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly, enum e_sc storage_class,
                     bool isType);
 SYMBOL* classdata(const char* name, SYMBOL* cls, SYMBOL* last, bool isvirtual, bool tagsOnly);
-SYMBOL* templatesearch(const char* name, TEMPLATEPARAMLIST* arg);
-TEMPLATEPARAMLIST* getTemplateStruct(char* name);
+SYMBOL* templatesearch(const char* name, std::list<TEMPLATEPARAMPAIR>* arg);
+TEMPLATEPARAMPAIR* getTemplateStruct(char* name);
 SYMBOL* classsearch(const char* name, bool tagsOnly, bool toErr);
 SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALUEDATA*>* ns, bool tagsOnly, bool throughClass,
                      bool namespaceOnly);

@@ -35,12 +35,19 @@ public:
         data.push_back(std::list<T>());
         return& data.back();
     }
+    std::vector<T>* CreateVector()
+    {
+        vdata.push_back(std::vector<T>());
+        return &vdata.back();
+    }
     void Reset()
     {
         data.clear();
+        vdata.clear();
     }
 private:
 	std::list<std::list<T>>	data;
+    std::list<std::vector<T>> vdata;
 };
 
 void ListFactoryInit();
@@ -63,6 +70,8 @@ extern ListFactory<struct initlist*> initListListFactory;
 extern ListFactory<struct _errl*> errlListFactory;
 extern ListFactory<struct _string*> stringListFactory;
 extern ListFactory<struct Optimizer::_linedata*> lineDataListFactory;
+extern ListFactory<TEMPLATEPARAMPAIR> templateParamPairListFactory;
+extern ListFactory<TEMPLATESELECTOR> templateSelectorListFactory;
 
 
 }

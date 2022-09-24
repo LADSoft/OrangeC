@@ -793,7 +793,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
         long long i;
         FPF f, im;
         if (tp->type == bt_templateparam)
-            tp = tp->templateParam->p->byClass.val;
+            tp = tp->templateParam->second->byClass.val;
         if (isstructured(tp))
         {
             rv = tp->size;  // +tp->sp->sb->attribs.inheritable.structAlign;
@@ -2413,7 +2413,20 @@ static void sort_aggregate_initializers(std::list<INITIALIZER*>* data)
 {
     if (!data)
         return;
-    data->sort(ascomp);
+    bool inorder = true;
+    int last = 0;
+    for (auto d : *data)
+        if (d->offset < last)
+        {
+            inorder = false;
+            break;
+        }
+        else
+        {
+            last = d->offset;
+        }
+    if (!inorder)
+        data->sort(ascomp);
     int offset = -1;
     std::list<INITIALIZER*>::iterator itlast;
     /* trim duplicates - highest tag value indicated for a given offset/startbit pair wins */
@@ -3503,38 +3516,37 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, std::l
     tp = basetype(itype);
     if (tp->type == bt_templateselector)
     {
-        SYMBOL* ts = tp->sp->sb->templateSelector->next->sp;
+        SYMBOL* ts = (*tp->sp->sb->templateSelector)[1].sp;
         SYMBOL* sym = nullptr;
-        TEMPLATESELECTOR* find = tp->sp->sb->templateSelector->next->next;
-        if (tp->sp->sb->templateSelector->next->isDeclType)
+        if ((*tp->sp->sb->templateSelector)[1].isDeclType)
         {
-            TYPE* tp1 = TemplateLookupTypeFromDeclType(tp->sp->sb->templateSelector->next->tp);
+            TYPE* tp1 = TemplateLookupTypeFromDeclType((*tp->sp->sb->templateSelector)[1].tp);
             if (tp1 && isstructured(tp1))
                 sym = basetype(tp1)->sp;
         }
-        else if (tp->sp->sb->templateSelector->next->isTemplate)
+        else if ((*tp->sp->sb->templateSelector)[1].isTemplate)
         {
-            if (ts->tp->type == bt_templateparam && ts->tp->templateParam->p->byTemplate.val == nullptr)
+            if (ts->tp->type == bt_templateparam && ts->tp->templateParam->second->byTemplate.val == nullptr)
             {
                 lex = getsym();
                 errskim(&lex, skim_end);
                 needkw(&lex, end);
                 return lex;
             }
-            if (!tp->sp->sb->templateSelector->next->sp->sb->instantiated && !tp->sp->sb->templateSelector->next->templateParams)
+            if (!(*tp->sp->sb->templateSelector)[1].sp->sb->instantiated && !(*tp->sp->sb->templateSelector)[1].templateParams)
             {
-                TEMPLATEPARAMLIST* current = tp->sp->sb->templateSelector->next->templateParams;
+                std::list<TEMPLATEPARAMPAIR>* current = (*tp->sp->sb->templateSelector)[1].templateParams;
                 sym = GetClassTemplate(ts, current, false);
             }
             else
             {
-                sym = tp->sp->sb->templateSelector->next->sp;
+                sym = (*tp->sp->sb->templateSelector)[1].sp;
             }
             tp = nullptr;
         }
-        else if (basetype(ts->tp)->templateParam->p->type == kw_typename)
+        else if (basetype(ts->tp)->templateParam->second->type == kw_typename)
         {
-            tp = basetype(ts->tp)->templateParam->p->byClass.val;
+            tp = basetype(ts->tp)->templateParam->second->byClass.val;
             if (!tp)
             {
                 if (templateNestingCount)
@@ -3546,17 +3558,18 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, std::l
             }
             sym = tp->sp;
         }
-        else if (basetype(ts->tp)->templateParam->p->type == kw_delete)
+        else if (basetype(ts->tp)->templateParam->second->type == kw_delete)
         {
-            TEMPLATEPARAMLIST* args = basetype(ts->tp)->templateParam->p->byDeferred.args;
-            TEMPLATEPARAMLIST *val = nullptr, **lst = &val;
-            sym = tp->templateParam->argsym;
+            std::list<TEMPLATEPARAMPAIR>* args = basetype(ts->tp)->templateParam->second->byDeferred.args;
+            sym = tp->templateParam->first;
             sym = TemplateClassInstantiateInternal(sym, args, true);
         }
         if (sym)
         {
             sym = basetype(PerformDeferredInitialization(sym->tp, nullptr))->sp;
-            while (find && sym)
+            auto find = (*tp->sp->sb->templateSelector).begin();
+            auto finde = (*tp->sp->sb->templateSelector).end();
+            for ( ; find != finde && sym; ++ find)
             {
                 SYMBOL* spo = sym;
                 if (!isstructured(spo->tp))
@@ -3575,9 +3588,8 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, std::l
                             sym->tp = PerformDeferredInitialization(sym->tp, funcsp);
                     }
                 }
-                find = find->next;
             }
-            if (!find && sym && istype(sym))
+            if (find == finde && sym && istype(sym))
                 tp = basetype(sym->tp);
             else
                 tp = nullptr;
@@ -4268,7 +4280,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
         {
             if (!sym->sb->parentClass ||
                 (sym->sb->parentClass &&
-                 allTemplateArgsSpecified(sym->sb->parentClass, sym->sb->parentClass->templateParams->next)))
+                 allTemplateArgsSpecified(sym->sb->parentClass, sym->sb->parentClass->templateParams)))
             {
                 sym->sb->attribs.inheritable.linkage4 = lk_virtual;
                 InsertInlineData(sym);

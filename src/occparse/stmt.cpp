@@ -2046,7 +2046,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                 {
                     SYMBOL* sym = basetype(tp)->sp;
                     if (!allTemplateArgsSpecified(sym, sym->templateParams))
-                        sym = GetClassTemplate(sym, sym->templateParams->next, false);
+                        sym = GetClassTemplate(sym, sym->templateParams, false);
                     if (sym && allTemplateArgsSpecified(sym, sym->templateParams))
                         tp = TemplateClassInstantiate(sym, sym->templateParams, false, sc_global)->tp;
                 }
@@ -2094,7 +2094,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                         {
                             SYMBOL* sym = basetype(tp1)->sp;
                             if (!allTemplateArgsSpecified(sym, sym->templateParams))
-                                sym = GetClassTemplate(sym, sym->templateParams->next, false);
+                                sym = GetClassTemplate(sym, sym->templateParams, false);
                             if (sym)
                                 ctype = tp1 = TemplateClassInstantiate(sym, sym->templateParams, false, sc_global)->tp;
                         }
@@ -3345,17 +3345,21 @@ static bool isvoidreturntype(TYPE* tp, SYMBOL* funcsp)
         return true;
     if (tp->type == bt_templateparam)
     {
-        if (tp->templateParam->p->byClass.val)
-            return isvoid(tp->templateParam->p->byClass.val);
-        if (tp->templateParam->p->byClass.dflt)
+        if (tp->templateParam->second->byClass.val)
+            return isvoid(tp->templateParam->second->byClass.val);
+        if (tp->templateParam->second->byClass.dflt)
         {
-            TEMPLATEPARAMLIST param = *tp->templateParam;
-            param.next = nullptr;
-            if (TemplateParseDefaultArgs(funcsp, nullptr, &param, tp->templateParam, tp->templateParam))
+            std::list<TEMPLATEPARAMPAIR> temp;
+            temp.push_back(*tp->templateParam);
+            auto second = Allocate<TEMPLATEPARAM>();
+            *second = *tp->templateParam->second;
+            std::list<TEMPLATEPARAMPAIR> param;
+            param.push_back(TEMPLATEPARAMPAIR{ tp->templateParam->first, second });
+            if (TemplateParseDefaultArgs(funcsp, nullptr, &param, &temp, &temp))
             {
-                if (param.p->byClass.val)
+                if (param.front().second->byClass.val)
                 {
-                    tp = param.p->byClass.val;
+                    tp = param.front().second->byClass.val;
                     return isvoid(tp);
                 }
             }
@@ -3744,24 +3748,31 @@ static void checkUndefinedStructures(SYMBOL* funcsp)
             if (basetype(tp)->sp->sb->templateLevel)
             {
                 auto sym1 = basetype(tp)->sp;
-                static std::stack<TEMPLATEPARAMLIST*> stk;
+                static std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> stk;
                 while (!stk.empty())
                     stk.pop();
-                for (auto tpl = sym1->templateParams; tpl; tpl = tpl->next)
+                auto it = sym1->templateParams->begin();
+                auto ite = sym1->templateParams->end();
+                for ( ; it != ite ;)
                 {
-                    if (tpl->p->packed)
+                    if (it->second->packed && it->second->byPack.pack)
                     {
-                        stk.push(tpl);
-                        tpl = tpl->p->byPack.pack;
+                        stk.push(it);
+                        stk.push(ite);
+                        it = it->second->byPack.pack->begin();
+                        ite = it->second->byPack.pack->end();
                     }
-                    tpl->p->byClass.dflt = tpl->p->byClass.val;
-                    if (!tpl->next && !stk.empty())
+                    it->second->byClass.dflt = it->second->byClass.val;
+                    if (++it != ite && !stk.empty())
                     {
-                        tpl = stk.top();
+                        ite = stk.top();
                         stk.pop();
+                        it = stk.top();
+                        stk.pop();
+                        ++it;
                     }
                 }
-                sym1 = GetClassTemplate(sym1, sym1->templateParams->next, false);
+                sym1 = GetClassTemplate(sym1, sym1->templateParams, false);
                 if (sym1)
                     basetype(tp)->sp = sym1;
             }

@@ -231,30 +231,30 @@ static LEXLIST* getTypeList(LEXLIST* lex, SYMBOL* funcsp, std::list<INITLIST*>**
         else
         {
             tp = basetype(tp);
-            if (tp->templateParam->p->packed)
+            if (tp->templateParam->second->packed)
             {
-                TEMPLATEPARAMLIST* tpl = tp->templateParam->p->byPack.pack;
+                std::list<TEMPLATEPARAMPAIR>* tpl = tp->templateParam->second->byPack.pack;
                 needkw(&lex, ellipse);
-                while (tpl)
-                {
-                    if (tpl->p->byClass.val)
+                if (tp->templateParam->second->byPack.pack)
+                    for (auto&& tpl : *tp->templateParam->second->byPack.pack)
                     {
-                        auto arg = Allocate<INITLIST>();
-                        arg->tp = tpl->p->byClass.val;
-                        if (initialize)
-                            arg->tp = PerformDeferredInitialization(arg->tp, funcsp);
-                        arg->exp = intNode(en_c_i, 1);
-                        (*lptr)->push_back(arg);
+                        if (tpl.second->byClass.val)
+                        {
+                            auto arg = Allocate<INITLIST>();
+                            arg->tp = tpl.second->byClass.val;
+                            if (initialize)
+                                arg->tp = PerformDeferredInitialization(arg->tp, funcsp);
+                            arg->exp = intNode(en_c_i, 1);
+                            (*lptr)->push_back(arg);
+                        }
                     }
-                    tpl = tpl->next;
-                }
             }
             else
             {
-                if (tp->templateParam->p->byClass.val)
+                if (tp->templateParam->second->byClass.val)
                 {
                     auto arg = Allocate<INITLIST>();
-                    arg->tp = tp->templateParam->p->byClass.val;
+                    arg->tp = tp->templateParam->second->byClass.val;
                     if (initialize)
                         arg->tp = PerformDeferredInitialization(arg->tp, funcsp);
                     arg->exp = intNode(en_c_i, 1);
@@ -968,9 +968,9 @@ static bool is_convertible_to(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE**
                 to = basetype(to)->btp;
             }
             if (to->type == bt_templateparam)
-                to = to->templateParam->p->byClass.val;
+                to = to->templateParam->second->byClass.val;
             if (from->type == bt_templateparam)
-                from = from->templateParam->p->byClass.val;
+                from = from->templateParam->second->byClass.val;
             rv = comparetypes(to, from, false);
             if (!rv && isstructured(from) && isstructured(to))
             {
@@ -1415,45 +1415,50 @@ bool underlying_type(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPR
     }
     return true;
 }
-static SYMBOL* MakeIntegerSeqType(SYMBOL* sp, TEMPLATEPARAMLIST* args)
+static SYMBOL* MakeIntegerSeqType(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
 {
     EXPRESSION* e = nullptr;
-    if (args->next && args->next->next)
+    auto it = args->begin();
+    if (args->size() >= 3)
     {
-        e = args->next->next->p->byNonType.dflt;
+        auto it = args->begin();
+        ++it;
+        ++it;
+        e = it->second->byNonType.dflt;
     }
     if (e && isintconst(e))
     {
-        SYMBOL* tpl = args->p->byTemplate.dflt;
+        it = args->begin();
+        ++it; // second arg
+        SYMBOL* tpl = args->front().second->byTemplate.dflt;
         if (tpl->sb->parentTemplate)
             tpl = tpl->sb->parentTemplate;
-        int nt = basetype(args->next->p->byClass.dflt)->type + e->v.i;
-        const char* nm = args->p->byTemplate.dflt->name;
+        int nt = basetype(it->second->byClass.dflt)->type + e->v.i;
+        const char* nm = it->second->byTemplate.dflt->name;
         auto sym = integerSequences[nm][nt];
         if (sym)
             return sym;
         int n = e->v.i;
-        decltype(args) args1;
-        args1 = Allocate<TEMPLATEPARAMLIST>();
-        args1->p = Allocate<TEMPLATEPARAM>();
-        args1->p->type = kw_new;
-        args1->next = Allocate<TEMPLATEPARAMLIST>();
-        args1->next->p = args->next->p;
-        args1->next->next = Allocate<TEMPLATEPARAMLIST>();
-        args1->next->next->p = Allocate<TEMPLATEPARAM>();
-        args1->next->next->p->type = kw_int;
-        args1->next->next->p->byNonType.tp = args1->next->p->byClass.dflt;
-        args1->next->next->p->packed = true;
-        auto last = &args1->next->next->p->byPack.pack;
-        for (int i = 0; i < n; i++, last = &(*last)->next)
+        decltype(args) args1 = templateParamPairListFactory.CreateList();
+        auto second = Allocate<TEMPLATEPARAM>();
+        second->type = kw_new;
+        args1->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
+        args1->push_back(TEMPLATEPARAMPAIR{ nullptr, it->second });
+        second = Allocate<TEMPLATEPARAM>();
+        second->type = kw_int;
+        second->byNonType.tp = it->second->byClass.dflt;
+        second->packed = true;
+        args1->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
+        auto last = args1->back().second->byPack.pack = templateParamPairListFactory.CreateList();
+        for (int i = 0; i < n; i++)
         {
-            *last = Allocate<TEMPLATEPARAMLIST>();
-            (*last)->p = Allocate<TEMPLATEPARAM>();
-            (*last)->p->type = kw_int;
-            (*last)->p->byNonType.tp = args1->next->p->byClass.dflt;
-            (*last)->p->byNonType.val = intNode(en_c_i, i);
+            second = Allocate<TEMPLATEPARAM>();
+            second->type = kw_int;
+            second->byNonType.tp = it->second->byClass.dflt;
+            second->byNonType.val = intNode(en_c_i, i);
+            last->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
         }
-        sym = GetClassTemplate(tpl, args1->next, false);
+        sym = GetClassTemplate(tpl, args1, false);
         if (sym)
         {
             auto sym1 = TemplateClassInstantiateInternal(sym, args1, false);
@@ -1468,7 +1473,7 @@ static SYMBOL* MakeIntegerSeqType(SYMBOL* sp, TEMPLATEPARAMLIST* args)
     }
     return nullptr;
 }
-SYMBOL* MakeIntegerSeq(SYMBOL* sym, TEMPLATEPARAMLIST* args)
+SYMBOL* MakeIntegerSeq(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args)
 {
     SYMBOL* rv = CopySymbol(sym);
     rv->sb->mainsym = sym;
@@ -1477,46 +1482,45 @@ SYMBOL* MakeIntegerSeq(SYMBOL* sym, TEMPLATEPARAMLIST* args)
         rv->tp = rs->tp;
     return rv;
 }
-static TYPE* TypePackElementType(SYMBOL* sym, TEMPLATEPARAMLIST* args)
+static TYPE* TypePackElementType(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args)
 {
     auto tpl = args;
-    if (args->p->packed)
+    auto it = args->begin();
+    ++it; // second
+    if (args->front().second->packed)
     {
-        tpl = args->p->byPack.pack;
+        tpl = args->front().second->byPack.pack;
         if (!tpl)
         {
             return &stdany;
         }
     }
-    auto e = tpl->p->byNonType.val;
+    auto e = tpl->front().second->byNonType.val;
     if (!e)
-        e = tpl->p->byNonType.dflt;
+        e = tpl->front().second->byNonType.dflt;
     if (e && isintconst(e))
     {
         int n = e->v.i;
-        TEMPLATEPARAMLIST* lst;
-        if (!args->next->p->packed)
+        std::list<TEMPLATEPARAMPAIR>::iterator lst;
+        if (!it->second->packed)
         {
             if (n == 0)
             {
-                lst = args->next;
+                lst = it;
             }
             else
             {
-                lst = nullptr;
+                lst = args->end();
             }
         }
         else
         {
-            lst = args->next->p->byPack.pack;
+            lst = it->second->byPack.pack ? it->second->byPack.pack->begin() : args->end();;
         }
-        for (; n && lst; n--)
+        for (; n && lst != args->end(); n--, ++lst);
+        if (lst != args->end())
         {
-            lst = lst->next;
-        }
-        if (lst)
-        {
-            return MakeType(bt_derivedfromtemplate, lst->p->byClass.val ? lst->p->byClass.val : lst->p->byClass.dflt);
+            return MakeType(bt_derivedfromtemplate, lst->second->byClass.val ? lst->second->byClass.val : lst->second->byClass.dflt);
         }
         else
         {
@@ -1528,7 +1532,7 @@ static TYPE* TypePackElementType(SYMBOL* sym, TEMPLATEPARAMLIST* args)
         return &stdany;
     }
 }
-SYMBOL* TypePackElementCls(SYMBOL* sym, TEMPLATEPARAMLIST* args)
+SYMBOL* TypePackElementCls(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args)
 {
     SYMBOL* rv = CopySymbol(sym);
     rv->sb->mainsym = sym;
@@ -1540,7 +1544,7 @@ SYMBOL* TypePackElementCls(SYMBOL* sym, TEMPLATEPARAMLIST* args)
     rv->tp->syms->Add(sym1);
     return rv;
 }
-SYMBOL* TypePackElement(SYMBOL* sym, TEMPLATEPARAMLIST* args)
+SYMBOL* TypePackElement(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args)
 {
     SYMBOL* rv = CopySymbol(sym);
     rv->sb->mainsym = sym;

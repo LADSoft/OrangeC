@@ -31,7 +31,7 @@ void libcxx_builtins(void);
 bool parseBuiltInTypelistFunc(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 bool underlying_type(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 bool is_literal_type(TYPE* tp);
-SYMBOL* MakeIntegerSeq(SYMBOL* sp, TEMPLATEPARAMLIST* args);
-SYMBOL* TypePackElementCls(SYMBOL* sym, TEMPLATEPARAMLIST* args);
-SYMBOL* TypePackElement(SYMBOL* sym, TEMPLATEPARAMLIST* args);
+SYMBOL* MakeIntegerSeq(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args);
+SYMBOL* TypePackElementCls(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args);
+SYMBOL* TypePackElement(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args);
 }  // namespace Parser

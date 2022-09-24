@@ -126,7 +126,7 @@ char* mangleNameSpaces(char* in, SYMBOL* sym)
     Optimizer::my_sprintf(in, "@%s", sym->name);
     return in + strlen(in);
 }
-static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params);
+static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params);
 static char* getName(char* in, SYMBOL* sym);
 static char* mangleClasses(char* in, SYMBOL* sym)
 {
@@ -374,20 +374,20 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 buf = mangleExpressionInternal(buf, exp->left);
                 break;
             case en_templateselector: {
-                TEMPLATESELECTOR *tsl = exp->v.templateSelector, *find = tsl->next->next;
-                SYMBOL* ts = tsl->next->sp;
+                auto tsl = exp->v.templateSelector;
+                SYMBOL* ts = (*tsl)[1].sp;
                 *buf++ = 't';
                 *buf++ = 's';
-                if (tsl->next->isTemplate && tsl->next->templateParams)  // may be an empty variadic
+                if ((*tsl)[1].isTemplate && (*tsl)[1].templateParams)  // may be an empty variadic
                 {
-                    buf = mangleTemplate(buf, ts, tsl->next->templateParams);
+                    buf = mangleTemplate(buf, ts, (*tsl)[1].templateParams);
                 }
-                while (find)
+                auto find = (*tsl).begin();
+                for (; find != (*tsl).end(); ++find)
                 {
                     *buf++ = 't';
                     buf = lookupName(buf, find->name);
                     buf += strlen(buf);
-                    find = find->next;
                 }
                 *buf = 0;
                 break;
@@ -455,7 +455,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 break;
             case en_sizeofellipse:
                 *buf++ = 'z';
-                buf = getName(buf, exp->v.templateParam->argsym);
+                buf = getName(buf, exp->v.templateParam->first);
                 buf += strlen(buf);
                 break;
             case en_void:
@@ -480,18 +480,18 @@ static char* mangleExpression(char* buf, EXPRESSION* exp)
     }
     return buf;
 }
-static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
+static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
 {
     bool bySpecial = false;
-    if (params && params->p->type == kw_new &&
-        ((sym->sb->instantiated && !sym->sb->templateLevel) || (params && params->p->bySpecialization.types)))
+    if (params && params->front().second->type == kw_new &&
+        ((sym->sb->instantiated && !sym->sb->templateLevel) || (params && params->front().second->bySpecialization.types)))
     {
-        params = params->p->bySpecialization.types;
+        params = params->front().second->bySpecialization.types;
         bySpecial = true;
     }
-    if (sym->tp->type == bt_templateparam && sym->tp->templateParam->p->type == kw_template)
+    if (sym->tp->type == bt_templateparam && sym->tp->templateParam->second->type == kw_template)
     {
-        auto sp = sym->tp->templateParam->p->byTemplate.val;
+        auto sp = sym->tp->templateParam->second->byTemplate.val;
         if (sp)
             sym = sp;
     }
@@ -511,114 +511,120 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
         strcat(buf, "$");
         buf += strlen(buf);
     }
-    static StackList<TEMPLATEPARAMLIST*> nestedStack;
-    NestedStack<TEMPLATEPARAMLIST*> tps(nestedStack);
+    static StackList<std::list<TEMPLATEPARAMPAIR>::iterator> nestedStack;
+    NestedStack<std::list<TEMPLATEPARAMPAIR>::iterator> tps(nestedStack);
 
-    while (params)
+    if (params)
     {
-        switch (params->p->type)
+        auto it = params->begin();
+        auto ite = params->end();
+        for ( ;it != ite; )
         {
+            switch (it->second->type)
+            {
             case kw_typename:
-                if (params->p->packed)
+                if (it->second->packed)
                 {
-                    if (params->p->byPack.pack)
+                    if (it->second->byPack.pack)
                     {
-                        TEMPLATEPARAMLIST* pack = params->p->byPack.pack;
-                        while (pack)
-                        {
-                            buf = mangleType(buf, pack->p->byClass.val, true);
-                            pack = pack->next;
-                        }
+                        for (auto pack : *it->second->byPack.pack)
+                            buf = mangleType(buf, pack.second->byClass.val, true);
                     }
                     else
                     {
                         *buf++ = 'e';
-                        buf = getName(buf, params->argsym);
+                        buf = getName(buf, it->first);
                     }
                 }
                 else if (bySpecial)
                 {
-                    if (params->p->byClass.dflt)
+                    if (it->second->byClass.dflt)
                     {
-                        buf = mangleType(buf, params->p->byClass.dflt, true);
+                        buf = mangleType(buf, it->second->byClass.dflt, true);
                     }
                     else
                     {
-                        buf = getName(buf, params->argsym);
+                        buf = getName(buf, it->first);
                     }
                 }
-                else if (sym->sb && sym->sb->instantiated && params->p->byClass.val)
+                else if (sym->sb && sym->sb->instantiated && it->second->byClass.val)
                 {
-                    buf = mangleType(buf, params->p->byClass.val, true);
+                    buf = mangleType(buf, it->second->byClass.val, true);
                 }
                 else
                 {
-                    if (params->p->byClass.dflt)
+                    if (it->second->byClass.dflt)
                     {
-                        buf = mangleType(buf, params->p->byClass.dflt, true);
+                        buf = mangleType(buf, it->second->byClass.dflt, true);
                     }
                     else
                     {
-                        buf = getName(buf, params->argsym);
+                        buf = getName(buf, it->first);
                     }
                 }
                 break;
             case kw_template:
-                if (params->p->packed)
+                if (it->second->packed)
                     *buf++ = 'e';
                 /*
-                if (bySpecial && params->p->byTemplate.dflt && params->p->byTemplate.val)
+                if (bySpecial && it->second->byTemplate.dflt && it->second->byTemplate.val)
                 {
-                    buf = mangleTemplate(buf, params->p->byTemplate.dflt, params->p->byTemplate.val->templateParams);
+                    buf = mangleTemplate(buf, it->second->byTemplate.dflt, it->second->byTemplate.val->templateit);
                 }
                 else
                 */
-                if (sym->sb->instantiated && params->p->byTemplate.val)
+                if (sym->sb->instantiated && it->second->byTemplate.val)
                 {
-                    buf = mangleTemplate(buf, params->p->byTemplate.val, params->p->byTemplate.val->templateParams);
+                    buf = mangleTemplate(buf, it->second->byTemplate.val, it->second->byTemplate.val->templateParams);
                 }
-                else if (params->argsym)
+                else if (it->first)
                 {
-                    buf = getName(buf, params->argsym);
+                    buf = getName(buf, it->first);
                 }
                 else
                 {
-                    buf = getName(buf, params->p->byTemplate.dflt);
+                    buf = getName(buf, it->second->byTemplate.dflt);
                 }
                 break;
             case kw_int:
-                if (params->p->packed)
+                if (it->second->packed)
                 {
                     *buf++ = 'e';
-                    if (params->p->byPack.pack)
+                    if (it->second->byPack.pack)
                     {
-                        tps.push(params->next);
-                        params = params->p->byPack.pack;
+                        tps.push(it);
+                        tps.push(ite);
+                        it = it->second->byPack.pack->begin();
+                        ite = it->second->byPack.pack->end();
                         continue;
                     }
                 }
                 else
                 {
-                    buf = mangleType(buf, params->p->byNonType.tp, true);
+                    buf = mangleType(buf, it->second->byNonType.tp, true);
                     if (bySpecial || sym->sb->instantiated)
                     {
-                        EXPRESSION* exp = bySpecial ? params->p->byNonType.dflt : params->p->byNonType.val;
+                        EXPRESSION* exp = bySpecial ? it->second->byNonType.dflt : it->second->byNonType.val;
                         buf = mangleExpression(buf, exp);
                     }
-                    else if (params->p->byNonType.dflt)
+                    else if (it->second->byNonType.dflt)
                     {
-                        buf = mangleExpression(buf, params->p->byNonType.dflt);
+                        buf = mangleExpression(buf, it->second->byNonType.dflt);
                     }
                 }
                 break;
             default:
                 break;
-        }
-        params = params->next;
-        if (!params && !tps.empty())
-        {
-            params = tps.top();
-            tps.pop();
+            }
+            ++it;
+            if (it == ite && !tps.empty())
+            {
+                ite = tps.top();
+                tps.pop();
+                it = tps.top();
+                tps.pop();
+                ++it;
+            }
         }
     }
     *buf++ = '~';
@@ -878,16 +884,17 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     *in++ = 'v';
                     break;
                 case bt_templateparam:
-                    if (inKeyCreation && tp->templateParam->p->type == kw_typename && tp->templateParam->p->byClass.val &&
-                        basetype(tp->templateParam->p->byClass.val)->type != bt_templateparam)
-                        in = mangleType(in, tp->templateParam->p->byClass.val, false);
+                    if (inKeyCreation && tp->templateParam->second->type == kw_typename && tp->templateParam->second->byClass.val &&
+                        basetype(tp->templateParam->second->byClass.val)->type != bt_templateparam)
+                        in = mangleType(in, tp->templateParam->second->byClass.val, false);
                     else
-                        in = getName(in, tp->templateParam->argsym);
+                        in = getName(in, tp->templateParam->first);
                     break;
                 case bt_templateselector: {
-                    TEMPLATESELECTOR* s = tp->sp->sb->templateSelector;
+                    auto s = (*tp->sp->sb->templateSelector).begin();
+                    auto se = (*tp->sp->sb->templateSelector).end();
                     char* p;
-                    s = s->next;
+                    ++s;
                     if (s->isTemplate)
                         p = mangleTemplate(nm, s->sp, s->sp->sb->instantiated ? s->sp->templateParams : s->templateParams);
                     else
@@ -895,12 +902,11 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     p[0] = 0;
                     if (strlen(nm) > sizeof(nm))
                         p = mangleTemplate(nm, s->sp, s->templateParams);
-                    s = s->next;
-                    while (s)
+                    for (++s; s != se; ++s)
                     {
                         strcat(nm, "@");
                         strcat(nm, s->name);
-                        s = s->next;
+                        ++s;
                     }
                     p = nm;
                     while (isdigit(*p))
@@ -968,27 +974,27 @@ static bool validType(TYPE* tp, bool byVal)
     case bt_union:
         if (tp->sp->templateParams)
         {
-            for (auto tpl = tp->sp->templateParams; tpl; tpl = tpl->next)
+            for (auto tpl : *tp->sp->templateParams)
             {
-                if (tpl->p->type == kw_typename)
+                if (tpl.second->type == kw_typename)
                 {
-
-                    if (tpl->p->packed)
+                    if (tpl.second->packed)
                     {
-                        for (auto tpl2 = tpl->p->byPack.pack; tpl2; tpl2 = tpl2->next)
+                        if (tpl.second->byPack.pack)
+                        for (auto tpl2 : *tpl.second->byPack.pack)
                         {
-                            auto dflt = tpl2->p->byClass.dflt;
+                            auto dflt = tpl2.second->byClass.dflt;
                             if (!dflt)
-                                dflt = tpl2->p->byClass.val;
+                                dflt = tpl2.second->byClass.val;
                             if (!dflt || !validType(dflt, byVal))
                                 return false;
                         }
                     }
                     else
                     {
-                        auto dflt = tpl->p->byClass.dflt;
+                        auto dflt = tpl.second->byClass.dflt;
                         if (!dflt)
-                            dflt = tpl->p->byClass.val;
+                            dflt = tpl.second->byClass.val;
                         if (!dflt || !validType(dflt, byVal))
                             return false;
                     }
@@ -1003,105 +1009,111 @@ static bool validType(TYPE* tp, bool byVal)
     }
     return true;
 }
-bool GetTemplateArgumentName(TEMPLATEPARAMLIST* params, std::string& result, bool byVal)
+bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& result, bool byVal)
 {
+
     mangledNamesCount = 0;
     if (!params)
         result = "v";
     else
         result = "";
-    while (params)
+    if (params)
     {
-        char buf[8000];
-        void *dflt;
-        if (params->p->packed)
+        for (auto&& param : *params)
         {
-            if (!params->p->byPack.pack)
+            if (param.second->type != kw_new)
             {
-                return false;
-            }
-            for (auto tpl = params->p->byPack.pack; tpl; tpl = tpl->next)
-            {
-                buf[0] = 0;
-                if (byVal)
+                char buf[8000];
+                void* dflt;
+                if (param.second->packed)
                 {
-                    dflt = tpl->p->byClass.val;
-                    if (!dflt)
-                        dflt = tpl->p->byClass.dflt;
+                    if (!param.second->byPack.pack)
+                    {
+                        return false;
+                    }
+                    for (auto tpl : *param.second->byPack.pack)
+                    {
+                        buf[0] = 0;
+                        if (byVal)
+                        {
+                            dflt = tpl.second->byClass.val;
+                            if (!dflt)
+                                dflt = tpl.second->byClass.dflt;
+                        }
+                        else
+                        {
+                            dflt = tpl.second->byClass.dflt;
+                            if (!dflt)
+                                dflt = tpl.second->byClass.val;
+                        }
+                        if (!dflt)
+                            return false;
+                        switch (param.second->type)
+                        {
+                            case kw_typename:
+                                if (!validType((TYPE*)dflt, byVal))
+                                    return false;
+                                result += 'c';
+                                *(mangleType(buf, (TYPE*)dflt, true)) = 0;
+                                break;
+                            case kw_int:
+                                result += 'i';
+                                *mangleExpression(buf, (EXPRESSION*)dflt) = 0;
+                                break;
+                            case kw_template:
+                                result += 't';
+                                *mangleTemplate(buf, (SYMBOL*)dflt, tpl.second->byTemplate.args) = 0;
+                                break;
+                        }
+
+                        result += buf;
+                    }
                 }
                 else
                 {
-                    dflt = tpl->p->byClass.dflt;
+                    if (byVal)
+                    {
+                        dflt = param.second->byClass.val;
+                        if (!dflt)
+                            dflt = param.second->byClass.dflt;
+                    }
+                    else
+                    {
+                        dflt = param.second->byClass.dflt;
+                        if (!dflt)
+                            dflt = param.second->byClass.val;
+                    }
                     if (!dflt)
-                        dflt = tpl->p->byClass.val;
-                }
-                if (!dflt)
-                    return false;
-                switch (params->p->type)
-                {
-                case kw_typename:
-                    if (!validType((TYPE*)dflt, byVal))
                         return false;
-                    result += 'c';
-                    *(mangleType(buf, (TYPE*)dflt, true)) = 0;
-                    break;
-                case kw_int:
-                    result += 'i';
-                    *mangleExpression(buf, (EXPRESSION*)dflt) = 0;
-                    break;
-                case kw_template:
-                    result += 't';
-                    *mangleTemplate(buf, (SYMBOL*)dflt, tpl->p->byTemplate.args) = 0;
-                    break;           
+                    buf[0] = 0;
+                    switch (param.second->type)
+                    {
+                        case kw_typename:
+                            if (!validType((TYPE*)dflt, byVal))
+                                return false;
+                            result += 'c';
+                            *(mangleType(buf, (TYPE*)dflt, true)) = 0;
+                            break;
+                        case kw_int:
+                            if (((EXPRESSION*)dflt)->type == en_templateparam)
+                                return false;
+                            result += 'i';
+                            *mangleExpression(buf, (EXPRESSION*)dflt) = 0;
+                            break;
+                        case kw_template:
+                            result += 't';
+                            *mangleTemplate(buf, (SYMBOL*)dflt, param.second->byTemplate.args) = 0;
+                            break;
+                    }
+                    result += buf;
                 }
-
-                result += buf;
             }
         }
-        else
-        {
-            if (byVal)
-            {
-                dflt = params->p->byClass.val;
-                if (!dflt)
-                    dflt = params->p->byClass.dflt;
-            }
-            else
-            {
-                dflt = params->p->byClass.dflt;
-                if (!dflt)
-                    dflt = params->p->byClass.val;
-            }
-            if (!dflt)
-                return false;
-            buf[0] = 0;
-            switch (params->p->type)
-            {
-                case kw_typename:
-                    if (!validType((TYPE*)dflt, byVal))
-                        return false;
-                    result += 'c';
-                    *(mangleType(buf, (TYPE*)dflt, true)) = 0;
-                    break;
-                case kw_int:
-                    if (((EXPRESSION*)dflt)->type == en_templateparam)
-                        return false;
-                    result += 'i';
-                    *mangleExpression(buf, (EXPRESSION*)dflt) = 0;
-                    break;
-                case kw_template:
-                    result += 't';
-                    *mangleTemplate(buf, (SYMBOL*)dflt, params->p->byTemplate.args) = 0;
-                    break;           
-            }
-            result += buf;
-        }
-        params = params->next;
     }
     return true;
 }
 
-void GetClassKey(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
+void GetClassKey(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
 {
     inKeyCreation = true;
     mangledNamesCount = 0;

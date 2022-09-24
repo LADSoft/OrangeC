@@ -329,54 +329,52 @@ static TYPE* cloneFuncType(SYMBOL* funcin)
 }
 static void cloneTemplateParams(SYMBOL* func)
 {
-    TEMPLATEPARAMLIST** tplp = &func->templateParams;
+    func->templateParams = templateParamPairListFactory.CreateList();
     int index = 0;
-    (*tplp) = Allocate<TEMPLATEPARAMLIST>();
-    (*tplp)->p = Allocate<TEMPLATEPARAM>();
-    (*tplp)->p->type = kw_new;
-    tplp = &(*tplp)->next;
+    auto second = Allocate<TEMPLATEPARAM>();
+    second->type = kw_new;
+    func->templateParams->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
     for (auto arg : *basetype(func->tp)->syms)
     {
         if (!arg->sb->thisPtr)
         {
             arg->tp = CopyType(arg->tp);
             UpdateRootTypes(arg->tp);
-            (*tplp) = Allocate<TEMPLATEPARAMLIST>();
-            (*tplp)->p = Allocate<TEMPLATEPARAM>();
-            (*tplp)->argsym = Allocate<SYMBOL>();
-            *(*tplp)->argsym = *arg;
-            (*tplp)->argsym->sb = nullptr;
-            (*tplp)->p->type = kw_typename;
-            arg->tp->templateParam = *tplp;
-            arg->templateParams = *tplp;
-            tplp = &(*tplp)->next;
+            second = Allocate<TEMPLATEPARAM>();
+            auto first = Allocate<SYMBOL>();
+            *first = *arg;
+            first->sb = nullptr;
+            second->type = kw_typename;
+            func->templateParams->push_back(TEMPLATEPARAMPAIR{ first, second });
+            arg->tp->templateParam = &func->templateParams->back();
+            arg->templateParams = templateParamPairListFactory.CreateList();
+            arg->templateParams->push_back(func->templateParams->back());
         }
     }
 }
 static void convertCallToTemplate(SYMBOL* func)
 {
-    TEMPLATEPARAMLIST** tplholder;
-    func->templateParams = Allocate<TEMPLATEPARAMLIST>();
-    func->templateParams->p = Allocate<TEMPLATEPARAM>();
-    func->templateParams->p->type = kw_new;
+    func->templateParams = templateParamPairListFactory.CreateList();
+    auto second = Allocate<TEMPLATEPARAM>();
+    second->type = kw_new;
+    func->templateParams->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
+
     if (isautotype(lambdas.front()->functp))
         basetype(func->tp)->btp = &stdauto;  // convert return type back to auto
-    tplholder = &func->templateParams->next;
     int index = 0;
     for (auto arg : *basetype(func->tp)->syms)
     {
         if (isautotype(arg->tp))
         {
-            (*tplholder) = Allocate<TEMPLATEPARAMLIST>();
-            (*tplholder)->p = Allocate<TEMPLATEPARAM>();
-            (*tplholder)->argsym = Allocate<SYMBOL>();
-            *(*tplholder)->argsym = *arg;
-            (*tplholder)->argsym->sb = nullptr;
+            second = Allocate<TEMPLATEPARAM>();
+            auto first = Allocate<SYMBOL>();
+            *first = *arg;
+            first->sb = nullptr;
+            second->type = kw_typename;
+            second->index = index++;
+            func->templateParams->push_back(TEMPLATEPARAMPAIR{ first, second });
             arg->tp = MakeType(bt_templateparam);
-            arg->tp->templateParam = *tplholder;
-            (*tplholder)->p->type = kw_typename;
-            (*tplholder)->p->index = index++;
-            tplholder = &(*tplholder)->next;
+            arg->tp->templateParam = &func->templateParams->back();
         }
     }
     func->sb->templateLevel = templateNestingCount;
@@ -515,7 +513,6 @@ static void createConverter(SYMBOL* self)
     if (lambdas.front()->templateFunctions)
     {
         LEXLIST* lex1;
-        TEMPLATEPARAMLIST *tpl, **tplp, **tplp2;
         FUNCTIONCALL* f = Allocate<FUNCTIONCALL>();
         if (!f->arguments)
             f->arguments = initListListFactory.CreateList();
@@ -933,20 +930,13 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                             }
                             if (sp->packed)
                             {
-                                int n;
-                                TEMPLATEPARAMLIST* templateParam = sp->tp->templateParam->p->byPack.pack;
-                                for (n = 0; templateParam; templateParam = templateParam->next, n++)
-                                    ;
+                                int n = sp->tp->templateParam->second->byPack.pack ? sp->tp->templateParam->second->byPack.pack->size() : 0;
                                 auto it = funcsp->tp->syms->begin();
                                 auto ite= funcsp->tp->syms->end();
                                 while (it != ite && *it != sp)
                                     ++it;
-                                while (it != ite && n)
-                                {
+                                for ( ; it != ite && n; n--, ++it)
                                     lambda_capture(*it, localMode, true);
-                                    ++it;
-                                    n--;
-                                }
                             }
                             else
                             {

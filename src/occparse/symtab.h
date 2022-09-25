@@ -89,7 +89,7 @@ inline SYMBOL* SymbolTable<SYMBOL>::AddOverloadName(SYMBOL* sym)
     return (0);
 }
 template<class T>
-void SymbolTable<T>::remove(typename SymbolTable<T>::iterator it)
+typename void SymbolTable<T>::remove(typename SymbolTable<T>::iterator it)
 {
     lookupTable_.erase((*it)->name);
     return inOrder_.remove(*it);

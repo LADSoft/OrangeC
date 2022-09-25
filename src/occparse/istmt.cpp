@@ -693,105 +693,107 @@ Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp)
  */
 {
     Optimizer::IMODE* rv = nullptr;
-    auto il = stmts->begin();
-    auto ile = stmts->end();
-
-    while (il != ile)
+    if (stmts)
     {
-        auto stmt = *il;
-        switch (stmt->type)
+        auto il = stmts->begin();
+        auto ile = stmts->end();
+
+        while (il != ile)
         {
-            case st_nop:
-                break;
-            case st_varstart:
-                gen_varstart(stmt->select);
-                break;
-            case st_dbgblock:
-                gen_dbgblock(stmt->label);
-                break;
-                break;
-            case st_block:
-                rv = genstmt(stmt->lower, funcsp);
-                genstmt(stmt->blockTail, funcsp);
-                break;
-            case st_label:
-                Optimizer::gen_label((int)stmt->label + codeLabelOffset);
-                break;
-            case st_goto:
-                if (stmt->destexp)
-                    gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
-                Optimizer::gen_igoto(Optimizer::i_goto, (int)stmt->label + codeLabelOffset);
-                break;
-            case st_asmgoto:
-                Optimizer::gen_igoto(Optimizer::i_asmgoto, (int)stmt->label + codeLabelOffset);
-                break;
-            case st_asmcond:
-                Optimizer::gen_igoto(Optimizer::i_asmcond, (int)stmt->label + codeLabelOffset);
-                break;
-            case st_try:
-                gen_try(funcsp, stmt, stmt->label + codeLabelOffset, stmt->endlabel + codeLabelOffset,
-                        stmt->breaklabel + codeLabelOffset, stmt->lower);
-                break;
-            case st_catch:
-                // the following adjustment to altlabel is required to get the XT info proper
-                gen_catch(funcsp, stmt, stmt->altlabel += codeLabelOffset, stmt->breaklabel + codeLabelOffset, stmt->lower);
-                Optimizer::gen_label(stmt->breaklabel + codeLabelOffset);
-                break;
-            case st___try:
-            case st___catch:
-            case st___finally:
-            case st___fault:
+            auto stmt = *il;
+            switch (stmt->type)
             {
-                auto ilx = il;
-                while (ilx != ile && (*ilx)->type != st___try)
-                    ilx++;
-                std::list<STATEMENT*> stmts(il, ilx);
-                gen___try(funcsp, stmts);
-                if ((*il)->destexp)
-                {
-                    gen_expr(funcsp, (*il)->destexp, F_NOVALUE, ISZ_ADDR);
+                case st_nop:
+                    break;
+                case st_varstart:
+                    gen_varstart(stmt->select);
+                    break;
+                case st_dbgblock:
+                    gen_dbgblock(stmt->label);
+                    break;
+                    break;
+                case st_block:
+                    rv = genstmt(stmt->lower, funcsp);
+                    genstmt(stmt->blockTail, funcsp);
+                    break;
+                case st_label:
+                    Optimizer::gen_label((int)stmt->label + codeLabelOffset);
+                    break;
+                case st_goto:
+                    if (stmt->destexp)
+                        gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
+                    Optimizer::gen_igoto(Optimizer::i_goto, (int)stmt->label + codeLabelOffset);
+                    break;
+                case st_asmgoto:
+                    Optimizer::gen_igoto(Optimizer::i_asmgoto, (int)stmt->label + codeLabelOffset);
+                    break;
+                case st_asmcond:
+                    Optimizer::gen_igoto(Optimizer::i_asmcond, (int)stmt->label + codeLabelOffset);
+                    break;
+                case st_try:
+                    gen_try(funcsp, stmt, stmt->label + codeLabelOffset, stmt->endlabel + codeLabelOffset,
+                            stmt->breaklabel + codeLabelOffset, stmt->lower);
+                    break;
+                case st_catch:
+                    // the following adjustment to altlabel is required to get the XT info proper
+                    gen_catch(funcsp, stmt, stmt->altlabel += codeLabelOffset, stmt->breaklabel + codeLabelOffset, stmt->lower);
+                    Optimizer::gen_label(stmt->breaklabel + codeLabelOffset);
+                    break;
+                case st___try:
+                case st___catch:
+                case st___finally:
+                case st___fault: {
+                    auto ilx = il;
+                    while (ilx != ile && (*ilx)->type != st___try)
+                        ilx++;
+                    std::list<STATEMENT*> stmts(il, ilx);
+                    gen___try(funcsp, stmts);
+                    if ((*il)->destexp)
+                    {
+                        gen_expr(funcsp, (*il)->destexp, F_NOVALUE, ISZ_ADDR);
+                    }
+                    il = ilx;
+                    continue;
                 }
-                il = ilx;
-                continue;
+                case st_expr:
+                case st_declare:
+                    if (stmt->select)
+                        rv = gen_expr(funcsp, stmt->select, F_NOVALUE, natural_size(stmt->select));
+                    break;
+                case st_return:
+                    genreturn(stmt, funcsp, 0, 0, nullptr);
+                    break;
+                case st_line:
+                    Optimizer::gen_line(stmt->lineData);
+                    break;
+                case st_select:
+                    genselect(stmt, funcsp, true);
+                    break;
+                case st_notselect:
+                    genselect(stmt, funcsp, false);
+                    break;
+                case st_switch:
+                    genxswitch(stmt, funcsp);
+                    break;
+                case st__genword:
+                    gen_genword(stmt, funcsp);
+                    break;
+                case st_passthrough:
+                    gen_asm(stmt);
+                    break;
+                case st_datapassthrough:
+                    gen_asmdata(stmt);
+                    break;
+                default:
+                    diag("unknown statement.");
+                    break;
             }
-            case st_expr:
-            case st_declare:
-                if (stmt->select)
-                    rv = gen_expr(funcsp, stmt->select, F_NOVALUE, natural_size(stmt->select));
-                break;
-            case st_return:
-                genreturn(stmt, funcsp, 0, 0, nullptr);
-                break;
-            case st_line:
-                Optimizer::gen_line(stmt->lineData);
-                break;
-            case st_select:
-                genselect(stmt, funcsp, true);
-                break;
-            case st_notselect:
-                genselect(stmt, funcsp, false);
-                break;
-            case st_switch:
-                genxswitch(stmt, funcsp);
-                break;
-            case st__genword:
-                gen_genword(stmt, funcsp);
-                break;
-            case st_passthrough:
-                gen_asm(stmt);
-                break;
-            case st_datapassthrough:
-                gen_asmdata(stmt);
-                break;
-            default:
-                diag("unknown statement.");
-                break;
+            if ((*il)->type != st_return && (*il)->type != st_goto && (*il)->destexp)
+            {
+                gen_expr(funcsp, (*il)->destexp, F_NOVALUE, ISZ_ADDR);
+            }
+            ++il;
         }
-        if ((*il)->type != st_return && (*il)->type != st_goto && (*il)->destexp)
-        {
-            gen_expr(funcsp, (*il)->destexp, F_NOVALUE, ISZ_ADDR);
-        }
-        ++il;
     }
     return rv;
 }

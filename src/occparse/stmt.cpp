@@ -177,7 +177,7 @@ STATEMENT* stmtNode(LEXLIST* lex, std::list<BLOCKDATA*>& parent, enum e_stmt sty
     st->charpos = 0;
     st->line = lex->data->errline;
     st->file = lex->data->errfile;
-    st->parent = parent.front();
+    st->parent = parent.size() ? parent.front() : nullptr;
     if (&parent != &emptyBlockdata)
     {
         if (!parent.front()->statements)
@@ -297,11 +297,14 @@ static BLOCKDATA* getCommonParent(std::list<BLOCKDATA*>& src, std::list<BLOCKDAT
     BLOCKDATA* rv = nullptr;
     for (auto s : src)
         for (auto d : dest)
-            if (d == s)
+        {
+            auto d1 = d->orig? d->orig : d, s1 = s->orig ? s->orig : s;
+            if (d1 == s1)
             {
-                rv = d;
+                rv = d1;
                 break;
             }
+        }
     return rv;
 }
 void makeXCTab(SYMBOL* funcsp)
@@ -397,10 +400,10 @@ static void thunkGotoDestructors(EXPRESSION** exp, std::list<BLOCKDATA*>& gotoTa
     BLOCKDATA* top = getCommonParent(gotoTab, labelTab);
     auto il = gotoTab.begin();
     ++il;
-    if ((*il) != top)
+    if ((*il) != top && (*il)->orig != top)
     {
         realtop = il;
-        while ((*il) != top) ++il;
+        while ((*il) != top && (*il)->orig != top) ++il;
         thunkRetDestructors(exp, (*il)->table, gotoTab.front()->table);
     }
 }
@@ -465,7 +468,7 @@ static LEXLIST* statement_break(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDAT
     {
         auto b = *it;
         if (b->type != begin && b->type != kw_try && b->type != kw_catch &&
-            b->type != kw_if || b->type != kw_else)
+            b->type != kw_if && b->type != kw_else)
         {
             breakableStatement = it;
             found = true;
@@ -580,7 +583,7 @@ static LEXLIST* statement_continue(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCK
     {
         auto c = *it;
         if (c->type != begin && c->type != kw_try && c->type != kw_catch &&
-            c->type != kw_if || c->type != kw_else)
+            c->type != kw_if && c->type != kw_else)
         {
             continuableStatement = it;
             found = true;
@@ -608,6 +611,7 @@ static LEXLIST* statement_continue(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCK
 }
 static LEXLIST* statement_default(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
+    lex = getsym();
     std::list<BLOCKDATA*>::iterator defaultableStatement;
     EXPRESSION* exp = nullptr;
     (void)lex;
@@ -1782,14 +1786,25 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
             spx->sb->declfilenum = lex->data->linedata->front()->fileindex;
             SetLinkerNames(spx, lk_none);
             spx->sb->offset = codeLabel++;
+            if (!spx->sb->gotoTable)
+            {
+                spx->sb->gotoTable = stmtListFactory.CreateList();
+                spx->sb->gotoBlockTable = blockDataListFactory.CreateList();
+                for (auto b : parent)
+                {
+                    auto x = Allocate<BLOCKDATA>();
+                    *x = *b;
+                    x->orig = b;
+                    spx->sb->gotoBlockTable->push_back(x);
+                }
+            }
             spx->sb->gotoTable->push_back(st);
             labelSyms->Add(spx);
         }
         else
         {
-            std::list<BLOCKDATA*> dummy{ spx->sb->gotoTable->front()->parent };
-            thunkGotoDestructors(&st->destexp, parent, dummy);
-            thunkCatchCleanup(st, funcsp, parent, dummy);
+            thunkGotoDestructors(&st->destexp, parent, *spx->sb->gotoBlockTable);
+            thunkCatchCleanup(st, funcsp, parent, *spx->sb->gotoBlockTable);
         }
         st->label = spx->sb->offset;
         lex = getsym();
@@ -1816,15 +1831,13 @@ static LEXLIST* statement_label(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDAT
     st = stmtNode(lex, parent, st_label);
     if (spx)
     {
-        if (spx->sb->storage_class == sc_ulabel)
-        {
+        if (spx->sb->storage_class == sc_ulabel){
             spx->sb->storage_class = sc_label;
             // may come here from assembly language...
             if (spx->sb->gotoTable)
             {
-                std::list<BLOCKDATA*> dummy{ spx->sb->gotoTable->front()->parent };
-                thunkGotoDestructors(&spx->sb->gotoTable->front()->destexp, dummy, parent);
-                thunkCatchCleanup(spx->sb->gotoTable->front(), funcsp, dummy, parent);
+                thunkGotoDestructors(&spx->sb->gotoTable->front()->destexp, *spx->sb->gotoBlockTable, parent);
+                thunkCatchCleanup(spx->sb->gotoTable->front(), funcsp, *spx->sb->gotoBlockTable, parent);
             }
         }
         else
@@ -2459,6 +2472,7 @@ static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
             st = stmtNode(lex, parent, st_switch);
             st->select = select;
             st->breaklabel = switchstmt->breaklabel;
+            switchstmt->cases = casedataListFactory.CreateList();
             lex = nononconststatement(lex, funcsp, parent, true);
             EndOfCaseGroup(funcsp, parent);
             st->cases = switchstmt->cases;
@@ -2494,10 +2508,8 @@ static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
     inLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
-    auto il = parent.begin();
-    ++il;
-    auto dummy = std::list<BLOCKDATA*>(il, parent.end());
     parent.pop_front();
+    AddBlock(lex, parent, switchstmt);
     return lex;
 }
 static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
@@ -2937,6 +2949,7 @@ static LEXLIST* autodeclare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
     memset(&block, 0, sizeof(block));
     parent.push_front(&block);
     lex = declare(lex, funcsp, tp, sc_auto, lk_none, parent, false, asExpression, false, ac_public);
+    parent.pop_front();
    
     // move any auto assignments
     reverseAssign(block.statements, exp);
@@ -2958,7 +2971,6 @@ static LEXLIST* autodeclare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
         *exp = intNode(en_c_i, 0);
         errorint(ERR_NEEDY, '=');
     }
-    parent.pop_front();
     return lex;
 
 }
@@ -3788,53 +3800,56 @@ static void checkUndefinedStructures(SYMBOL* funcsp)
 static int inlineStatementCount(std::list<STATEMENT*>* block)
 {
     int rv = 0;
-    for (auto stmt : *block)
-    { 
-        switch (stmt->type)
+    if (block)
+    {
+        for (auto stmt : *block)
         {
-            case st__genword:
-                break;
-            case st_try:
-            case st_catch:
-            case st___try:
-            case st___catch:
-            case st___finally:
-            case st___fault:
-                rv += 1000;
-                break;
-            case st_return:
-            case st_expr:
-            case st_declare:
-                rv++;
-                break;
-            case st_goto:
-            case st_label:
-                rv++;
-                break;
-            case st_select:
-            case st_notselect:
-                rv++;
-                break;
-            case st_switch:
-                rv++;
-                rv += inlineStatementCount(stmt->lower);
-                break;
-            case st_block:
-                rv++;
-                rv += inlineStatementCount(stmt->lower) + inlineStatementCount(stmt->blockTail);
-                break;
-            case st_passthrough:
-            case st_nop:
-                break;
-            case st_datapassthrough:
-                break;
-            case st_line:
-            case st_varstart:
-            case st_dbgblock:
-                break;
-            default:
-                diag("Invalid stmt type in inlinestmtCount");
-                break;
+            switch (stmt->type)
+            {
+                case st__genword:
+                    break;
+                case st_try:
+                case st_catch:
+                case st___try:
+                case st___catch:
+                case st___finally:
+                case st___fault:
+                    rv += 1000;
+                    break;
+                case st_return:
+                case st_expr:
+                case st_declare:
+                    rv++;
+                    break;
+                case st_goto:
+                case st_label:
+                    rv++;
+                    break;
+                case st_select:
+                case st_notselect:
+                    rv++;
+                    break;
+                case st_switch:
+                    rv++;
+                    rv += inlineStatementCount(stmt->lower);
+                    break;
+                case st_block:
+                    rv++;
+                    rv += inlineStatementCount(stmt->lower) + inlineStatementCount(stmt->blockTail);
+                    break;
+                case st_passthrough:
+                case st_nop:
+                    break;
+                case st_datapassthrough:
+                    break;
+                case st_line:
+                case st_varstart:
+                case st_dbgblock:
+                    break;
+                default:
+                    diag("Invalid stmt type in inlinestmtCount");
+                    break;
+            }
         }
     }
     return rv;
@@ -4039,6 +4054,7 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
         n1 = codeLabel;
         if (!funcsp->sb->templateLevel || funcsp->sb->instantiated)
         {
+            funcsp->sb->inlineFunc.stmt = stmtListFactory.CreateList();
             funcsp->sb->inlineFunc.stmt->push_back(stmtNode(lex, emptyBlockdata, st_block));
             funcsp->sb->inlineFunc.stmt->front()->lower = block->statements;
             funcsp->sb->inlineFunc.stmt->front()->blockTail = block->blockTail;

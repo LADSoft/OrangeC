@@ -83,6 +83,7 @@ void dumpInlines(void)
             Optimizer::cseg();
             do
             {
+                done = true;
                 for (auto sym : inlines)
                 { 
                     if (((sym->sb->attribs.inheritable.isInline && sym->sb->dumpInlineToFile) ||

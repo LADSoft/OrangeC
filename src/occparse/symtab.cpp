@@ -58,17 +58,20 @@ static std::list<std::list<SYMBOL*>*> usingDirectives;
 
 void syminit(void)
 {
+    symbols.Reset();
     globalNameSpace = namespaceValueDataListFactory.CreateList();
     globalNameSpace->push_front(Allocate<NAMESPACEVALUEDATA>());
     globalNameSpace->front()->syms = symbols.CreateSymbolTable();
     globalNameSpace->front()->tags = symbols.CreateSymbolTable();
+
+    rootNameSpace = namespaceValueDataListFactory.CreateList();
     rootNameSpace->push_front(globalNameSpace->front());
 
     localNameSpace = namespaceValueDataListFactory.CreateList();
     localNameSpace->push_front(Allocate<NAMESPACEVALUEDATA>());
+
     usingDirectives.clear();
     matchOverloadLevel = 0;
-    symbols.Reset();
 }
 void AllocateLocalContext(std::list<BLOCKDATA*>& block, SYMBOL* sym, int label)
 {

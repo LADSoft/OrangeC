@@ -534,6 +534,7 @@ typedef struct stmt
 
 typedef struct blockdata
 {
+    struct blockdata* orig;
     struct blockdata* caseDestruct;
     enum e_kw type;
     std::list<CASEDATA*>* cases;
@@ -778,6 +779,7 @@ typedef struct sym
         struct sym* maintemplate;                       /* pointer to the global version of a copied symbol */
         std::list<struct _memberInitializers*>* memberInitializers; /* initializers for constructor */
         std::list<STATEMENT*>* gotoTable;                           /* pointer to hashtable associated with goto or label */
+        std::list<BLOCKDATA*>* gotoBlockTable;
         /* these fields depend on storage_class */
         struct u_val value;
         std::list<struct _baseClass*>* baseClasses;

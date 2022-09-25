@@ -86,7 +86,6 @@ static const char* typeNames[] = {"bit",
 
 void rtti_init(void) 
 {
-    symbols.Reset();
     rttiSyms = symbols.CreateSymbolTable(); 
 }
 bool equalnode(EXPRESSION* node1, EXPRESSION* node2)

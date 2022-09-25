@@ -1649,10 +1649,12 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     if (initItem->offset || initItem != init->back())
                     {
                         std::list<INITIALIZER*>::iterator last;
-                        for (auto itx = init->end(); itx != init->begin() && *itx != initItem; )
+                        for (auto itx = init->end(); itx != init->begin();)
                         {
-                            last = itx;
                             --itx;
+                            last = itx;
+                            if (*itx == initItem)
+                                break;
                         }
                         if (initItem->offset ||
                             (last != init->end() && (*last)->basetp && (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)))

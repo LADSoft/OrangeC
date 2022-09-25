@@ -1275,11 +1275,12 @@ INITIALIZER* initInsert(std::list<INITIALIZER*>** pos, std::list<INITIALIZER*>::
     pos1->tag = inittag++;
     pos1->noassign = noassign;
     (*pos)->insert(it, pos1);
-    (*pos)->push_back(pos1);
     return pos1;
 }
 INITIALIZER* initInsert(std::list<INITIALIZER*>** pos, TYPE* tp, EXPRESSION* exp, int offset, bool noassign)
 {
+    if (!*pos)
+        *pos = initListFactory.CreateList();
     return initInsert(pos, (**pos).end(), tp, exp, offset, noassign);
 }
 static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed,
@@ -2197,7 +2198,7 @@ static void allocate_desc(TYPE* tp, int offset, AGGREGATE_DESCRIPTOR** descin, A
     }
     if (!desc)
     {
-        desc = Allocate<AGGREGATE_DESCRIPTOR>();
+        desc = new AGGREGATE_DESCRIPTOR;
         desc->tp = tp;
         desc->offset = offset;
     }
@@ -3212,7 +3213,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
             else
             {
                 SYMBOL* fieldsp;
-                int size = data->size();
+                int size = data ? data->size() : 0;
                 lex = initType(lex, funcsp, desc->offset + desc->reloffset, sc, &data, dest, nexttp(desc), base, isarray(itype),
                                flags | _F_NESTEDINIT);
                 int size1 = data->size();
@@ -3323,6 +3324,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
         set_array_sizes(cache);
 
         sort_aggregate_initializers(data);
+
         *init = data;
     }
     // have to fill in unused array elements with C++ constructors
@@ -3951,12 +3953,15 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
                 if (sym->sb->init || assigned)
                 {
                     bool found = false;
-                    for (auto init : *sym->sb->init)
+                    if (sym->sb->init)
                     {
-                        if (!init->basetp)
+                        for (auto init : *sym->sb->init)
                         {
-                            found = true;
-                            break;
+                            if (!init->basetp)
+                            {
+                                found = true;
+                                break;
+                            }
                         }
                     }
                     if (!found)

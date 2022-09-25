@@ -244,13 +244,13 @@ void compile(bool global)
     constexprinit();
     declare_init();
     init_init();
+    syminit();
     inlineinit();
     lambda_init();
     rtti_init();
     expr_init();
     libcxx_init();
     statement_ini(global);
-    syminit();
     lexini();
     setglbdefs();
     templateInit();

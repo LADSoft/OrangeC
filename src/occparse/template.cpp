@@ -10161,7 +10161,7 @@ static std::list<TEMPLATEPARAMPAIR>* CopyArgsBack(std::list<TEMPLATEPARAMPAIR>* 
             }
         }
     }
-    return rv;
+    return rv == nullptr ? args : rv;
 }
 std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelectors(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool byVal)
 {
@@ -10190,7 +10190,8 @@ std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelectors(SYMBOL* sp, std::list<TEM
                     continue;
                 }
             }
-            hold[k++] = ResolveTemplateSelector(sp, &*t, byVal)->begin();
+            auto a = ResolveTemplateSelector(sp, &*t, byVal);
+            hold[k++] = a ? a->begin() : t;
             ++t;
             if (t == te && !tas.empty())
             {

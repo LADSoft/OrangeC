@@ -598,8 +598,7 @@ void calculateStructOffsets(SYMBOL* sp)
             }
         }
     }
-    auto it = sp->tp->syms->begin();
-    while (it != sp->tp->syms->end())
+    for (auto it = sp->tp->syms->begin(); it != sp->tp->syms->end(); ++it)
     {
         SYMBOL* p = *it;
         TYPE* tp = basetype(p->tp);
@@ -814,8 +813,7 @@ static void resolveAnonymousGlobalUnion(SYMBOL* sp)
 }
 void resolveAnonymousUnions(SYMBOL* sp)
 {
-    auto itmember = sp->tp->syms->begin();
-    while (itmember != sp->tp->syms->end())
+    for (auto itmember = sp->tp->syms->begin(); itmember != sp->tp->syms->end(); ++itmember)
     {
         SYMBOL* spm = *itmember;
         // anonymous structured type declaring anonymous variable is a candidate for
@@ -828,7 +826,10 @@ void resolveAnonymousUnions(SYMBOL* sp)
             resolveAnonymousUnions(spm);
             validateAnonymousUnion(sp, spm->tp);
 
+            auto it = itmember;
+            ++it;
             sp->tp->syms->remove(itmember);
+            itmember = it;
             if (basetype(spm->tp)->type == bt_union)
             {
                 if (!Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_cplusplus)
@@ -846,11 +847,13 @@ void resolveAnonymousUnions(SYMBOL* sp)
                 {
                     newsp->sb->offset += spm->sb->offset;
                     newsp->sb->parentClass = sp;
-                    sp->tp->syms->insert(itmember, newsp);
+                    itmember = sp->tp->syms->insert(itmember, newsp);
                     ++itmember;
                 }
             }
         }
+        if (itmember == sp->tp->syms->end())
+            break;
     }
 }
 static bool usesClass(SYMBOL* cls, SYMBOL* internal)
@@ -3452,9 +3455,9 @@ static void matchFunctionDeclaration(LEXLIST* lex, SYMBOL* sp, SYMBOL* spo, bool
                         auto hro1end = basetype(spo->tp)->syms->end();
                         auto it1 = basetype(sp->tp)->syms->begin();
                         auto hr1end = basetype(sp->tp)->syms->end();
-                        if (ito1 != hro1end && (*ito1)->sb->thisPtr)
+                        if (ito1 != hro1end && (*ito1)->sb && (*ito1)->sb->thisPtr)
                             ++ito1;
-                        if (it1 != hro1end && (*it1)->sb->thisPtr)
+                        if (it1 != hr1end && (*it1)->sb && (*it1)->sb->thisPtr)
                             ++it1;
                         while (ito1 != hro1end && it1 != hr1end)
                         {
@@ -3638,7 +3641,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
     LEXLIST* placeholder = lex;
     STRUCTSYM s;
     NAMESPACEVALUEDATA internalNS = {};
-    SymbolTable<SYMBOL> symbolTable;
+    SymbolTable<SYMBOL>* symbolTable = symbols.CreateSymbolTable();
     s.tmpl = nullptr;
     lex = getsym();
     if (*tp == nullptr)
@@ -3648,7 +3651,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
     tp1->sp = sp;
     sp->tp = *tp = tp1;
     localNameSpace->push_front(&internalNS);
-    localNameSpace->front()->syms = tp1->syms = &symbolTable;
+    localNameSpace->front()->syms = tp1->syms = symbolTable;
     attributes oldAttribs = basisAttribs;
 
     basisAttribs = {0};

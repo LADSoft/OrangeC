@@ -6975,7 +6975,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                                     break;
                                                 }
                                             }
-                                            doit = !found;
+                                            doit = found;
                                         }
                                         else
                                         {

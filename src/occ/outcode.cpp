@@ -998,9 +998,9 @@ void outcode_AssembleIns(OCODE* ins)
             case op_line:
                 if (Optimizer::cparams.prm_debug)
                 {
-                    auto ld = (std::list<Optimizer::LINEDATA*>*)ins->oper1;
-                    if (ld && ld->size())
-                    InsertLine(ld->back());
+                    auto ld = (Optimizer::LINEDATA*)ins->oper1;
+                    if (ld)
+                        InsertLine(ld);
                 }
                 break;
             case op_varstart:

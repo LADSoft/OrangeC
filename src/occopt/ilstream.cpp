@@ -439,14 +439,11 @@ static void StreamInstruction(QUAD* q)
                     }
                     else
                     {
-                        i = ((std::list<LINEDATA*>*)q->dc.left)->size();
-                        StreamIndex(i);
-                        for (auto v : *((std::list<LINEDATA*>*)q->dc.left))
-                        {
-                            StreamIndex(v->fileindex);
-                            StreamIndex(v->lineno);
-                            StreamTextIndex(v->line);
-                        }
+                        StreamIndex(1);
+                        auto v = (LINEDATA*)q->dc.left;
+                        StreamIndex(v->fileindex);
+                        StreamIndex(v->lineno);
+                        StreamTextIndex(v->line);
                     }
                     break;
                 case i_block:

@@ -1829,8 +1829,8 @@ LEXLIST* getsym(void)
     } while (contin);
     if (lines && lines->size())
     {
-        lex->data->linedata = lines;
-        lines = nullptr;
+        lex->data->linedata = lineDataListFactory.CreateList();
+        lex->data->linedata->insert(lex->data->linedata->begin(), lines->begin(), lines->end());
     }
     else
     {

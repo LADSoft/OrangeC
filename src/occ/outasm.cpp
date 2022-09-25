@@ -658,12 +658,10 @@ void oa_put_code(OCODE* cd)
     if (op == op_line)
     {
         oa_nl();
-        for (auto ld : *(std::list<Optimizer::LINEDATA*>*)aps)
-        {
-            AsmOutput("; Line %d:", ld->lineno);
-            ColumnPosition(8);
-            AsmOutput("%s\n", ld->line);
-        }
+        auto ld = (Optimizer::LINEDATA*)aps;
+        AsmOutput("; Line %d:", ld->lineno);
+        ColumnPosition(8);
+        AsmOutput("%s\n", ld->line);
         return;
     }
     else if (op == op_comment)

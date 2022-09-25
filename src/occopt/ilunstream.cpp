@@ -445,16 +445,14 @@ static Optimizer::QUAD* UnstreamInstruction(FunctionData& fd)
                     break;
                 case i_line: {
                     i = UnstreamIndex();
-                    std::list<LINEDATA*>* ld = new std::list<LINEDATA*>();
-                    for (; i; i--)
+                    if (i)
                     {
                         auto lineData = Allocate<LINEDATA>();
                         lineData->fileindex = UnstreamIndex();
                         lineData->lineno = UnstreamIndex();
                         lineData->line = (const char*)UnstreamTextIndex();
-                        ld->push_back(lineData);
+                        rv->dc.left = (Optimizer::IMODE*)lineData;
                     }
-                    rv->dc.left = (Optimizer::IMODE*)ld;
                 }
                 break;
                 case i_block:
@@ -1056,8 +1054,8 @@ static void ResolveInstruction(Optimizer::QUAD* q, std::map<int, std::string>& t
         case i_label:
             break;
         case i_line: {
-            for (auto ld : *((std::list<LINEDATA*>*)q->dc.left))
-                ld->line = texts[(int)(intptr_t)ld->line].c_str();
+            auto ld = (LINEDATA*)q->dc.left;
+            ld->line = texts[(int)(intptr_t)ld->line].c_str();
             break;
         }
         default:

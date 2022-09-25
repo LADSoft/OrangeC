@@ -4156,7 +4156,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                 {
                     spo = spo->tp->syms->front();
                     auto symtab = spo->tp->syms;
-                    if (symtab)
+                    if (symtab && symtab->size())
                     {
                         auto sp2 = symtab->front();
                         if (sp2->tp->type == bt_void)

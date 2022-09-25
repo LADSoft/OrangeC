@@ -399,7 +399,6 @@ static void thunkGotoDestructors(EXPRESSION** exp, std::list<BLOCKDATA*>& gotoTa
     std::list<BLOCKDATA*>::iterator realtop;
     BLOCKDATA* top = getCommonParent(gotoTab, labelTab);
     auto il = gotoTab.begin();
-    ++il;
     if ((*il) != top && (*il)->orig != top)
     {
         realtop = il;
@@ -1850,6 +1849,18 @@ static LEXLIST* statement_label(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDAT
         spx = makeID(sc_label, nullptr, nullptr, litlate(lex->data->value.s.a));
         SetLinkerNames(spx, lk_none);
         spx->sb->offset = codeLabel++;
+        if (!spx->sb->gotoTable)
+        {
+            spx->sb->gotoTable = stmtListFactory.CreateList();
+            spx->sb->gotoBlockTable = blockDataListFactory.CreateList();
+            for (auto b : parent)
+            {
+                auto x = Allocate<BLOCKDATA>();
+                *x = *b;
+                x->orig = b;
+                spx->sb->gotoBlockTable->push_back(x);
+            }
+        }
         spx->sb->gotoTable->push_back(st);
         labelSyms->Add(spx);
     }
@@ -3430,11 +3441,14 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
             blockstmt->statements = nullptr;
             declareAndInitialize = false;
             lex = declare(lex, funcsp, nullptr, sc_auto, lk_none, parent, false, false, false, ac_public);
-            markInitializers(*blockstmt->statements);
-            if (prev)
-                prev->insert(prev->end(), blockstmt->statements->begin(), blockstmt->statements->end());
-            else
-                prev = blockstmt->statements;
+            if (blockstmt->statements)
+            {
+                markInitializers(*blockstmt->statements);
+                if (prev)
+                    prev->insert(prev->end(), blockstmt->statements->begin(), blockstmt->statements->end());
+                else
+                    prev = blockstmt->statements;
+            }
             if (MATCHKW(lex, semicolon))
             {
                 lex = getsym();

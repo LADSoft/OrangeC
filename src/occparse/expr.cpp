@@ -4560,7 +4560,7 @@ static LEXLIST* expression_offsetof(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXP
             {
 
                 sym = namespacesearch(name, globalNameSpace, false, false);
-                if (sym->tp->type == bt_typedef)
+                if (sym && sym->tp->type == bt_typedef)
                 {
                     sym = basetype(sym->tp->btp)->sp;
                 }

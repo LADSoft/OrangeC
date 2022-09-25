@@ -87,22 +87,24 @@ std::list<SYMBOL*> tablesearchinline(const char* name, NAMESPACEVALUEDATA* ns, b
     if (find)
         rv.insert(rv.begin(), find);
     // included inlines
-    for (auto x : *ns->inlineDirectives)
+    if (ns->inlineDirectives)
     {
-        if (!x->sb->visited)
+        for (auto x : *ns->inlineDirectives)
         {
-            x->sb->visited = true;
-            auto rv1 = tablesearchinline(name, x->sb->nameSpaceValues->front(), tagsOnly, allowUsing);
-            if (rv1.size())
+            if (!x->sb->visited)
             {
-                rv.insert(rv.begin(), rv1.begin(), rv1.end());
+                x->sb->visited = true;
+                auto rv1 = tablesearchinline(name, x->sb->nameSpaceValues->front(), tagsOnly, allowUsing);
+                if (rv1.size())
+                {
+                    rv.insert(rv.begin(), rv1.begin(), rv1.end());
+                }
             }
         }
     }
     // any using definitions in this inline namespace
-    if (allowUsing)
+    if (allowUsing && ns->usingDirectives)
     {
-        auto lst = ns->usingDirectives;
         for (auto x : *ns->usingDirectives)
         {
             if (!x->sb->visited)
@@ -137,7 +139,7 @@ static void namespacesearchone(const char* name, NAMESPACEVALUEDATA* ns, std::li
     {
         rv = gather;
     }
-    if (allowUsing)
+    if (allowUsing && ns->usingDirectives)
     {
         for (auto x : *ns->usingDirectives)
         {
@@ -148,6 +150,7 @@ static void namespacesearchone(const char* name, NAMESPACEVALUEDATA* ns, std::li
             }
         }
     }
+    gather = rv;
 }
 static std::list<SYMBOL*> namespacesearchInternal(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bool qualified, bool tagsOnly,
                                                 bool allowUsing)

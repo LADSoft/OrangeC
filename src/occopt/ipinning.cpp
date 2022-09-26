@@ -88,7 +88,7 @@ static void LoadAddresses(std::map<std::string, std::deque<QUAD*>>& map, std::ma
                         if (head->dc.left->offset->type == se_labcon)
                         {
                             char buf[256];
-                            sprintf(buf, "%d", (int)head->dc.left->offset->i);
+                            my_sprintf(buf, "%d", (int)head->dc.left->offset->i);
                             name = buf;
                         }
                         else

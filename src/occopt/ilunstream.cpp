@@ -42,6 +42,8 @@
 #include "ildata.h"
 #include "iblock.h"
 #include "memory.h"
+#include "OptUtils.h"
+
 namespace Optimizer
 {
 static std::list<std::string> textRegion;
@@ -234,7 +236,7 @@ static Optimizer::SimpleSymbol* GetTempref(int n, int size, int sizeFromType)
         Optimizer::SimpleSymbol* sym = temps[n] = Allocate<Optimizer::SimpleSymbol>();
         char buf[256];
         sym->storage_class = scc_temp;
-        sprintf(buf, "$$t%d", n);
+        my_sprintf(buf, "$$t%d", n);
         sym->name = sym->outputName = litlate(buf);
         sym->tp = Allocate<Optimizer::SimpleType>();
         sym->tp->type = st_i;

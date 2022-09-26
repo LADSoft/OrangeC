@@ -79,8 +79,9 @@ T* TreeToVine(T* nd, F* consider)
 template <class T, class F>
 void TreeToVineWrapper(T* root, F* consider)
 {
+    static std::stack<T*> stk;
+    while (stk.size()) stk.pop();
     T* tail = root;
-    std::stack<T*> stk;
     stk.push(tail);
     while (!stk.empty())
     {

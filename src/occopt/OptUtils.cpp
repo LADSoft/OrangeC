@@ -34,6 +34,7 @@
 #include "ildata.h"
 #include "memory.h"
 #include "iblock.h"
+#include "OptUtils.h"
 
 namespace Optimizer
 {
@@ -325,7 +326,7 @@ Optimizer::SimpleExpression* tempenode(void)
     sym = Allocate<Optimizer::SimpleSymbol>();
 
     sym->storage_class = scc_temp;
-    sprintf(buf, "$$t%d", tempCount);
+    my_sprintf(buf, "$$t%d", tempCount);
     sym->name = sym->outputName = litlate(buf);
     sym->i = tempCount++;
     Optimizer::SimpleExpression* rv = Allocate<Optimizer::SimpleExpression>();

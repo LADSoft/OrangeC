@@ -446,7 +446,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
     }
     if (sym)
     {
-        browse_usage(sym, lex->data->linedata->front()->fileindex);
+        browse_usage(sym, lex->data->linedata->fileindex);
         *tp = sym->tp;
         lex = getsym();
         if (sym->sb && sym->sb->attribs.uninheritable.deprecationText)
@@ -1060,8 +1060,8 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
         sym->sb->attribs.inheritable.used = true;
         sym->sb->declfile = sym->sb->origdeclfile = lex->data->errfile;
         sym->sb->declline = sym->sb->origdeclline = lex->data->errline;
-        sym->sb->realdeclline = lex->data->linedata->front()->lineno;
-        sym->sb->declfilenum = lex->data->linedata->front()->fileindex;
+        sym->sb->realdeclline = lex->data->linedata->lineno;
+        sym->sb->declfilenum = lex->data->linedata->fileindex;
         lex = getsym();
         if (MATCHKW(lex, openpa))
         {
@@ -1514,7 +1514,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                 TYPE* typ2 = typein;
                 if (sp2->sb->attribs.uninheritable.deprecationText)
                     deprecateMessage(sp2);
-                browse_usage(sp2, lex->data->linedata->front()->fileindex);
+                browse_usage(sp2, lex->data->linedata->fileindex);
                 if (ispointer(typ2))
                     typ2 = basetype(typ2)->btp;
                 (*exp)->isatomic = false;
@@ -4086,7 +4086,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
             {
                 sym->sb->attribs.inheritable.used = true;
                 if (sym->sb->decoratedName[0] == '@' && lex)
-                    browse_usage(sym, lex->data->linedata->front()->fileindex);
+                    browse_usage(sym, lex->data->linedata->fileindex);
                 if (funcparams->astemplate && sym->sb->templateLevel && !sym->sb->specialized)
                 {
                     auto tpln = funcparams->templateParams->begin();

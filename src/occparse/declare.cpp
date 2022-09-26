@@ -172,8 +172,8 @@ SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
     {
         sp->sb->declfile = sp->sb->origdeclfile = lex->data->errfile;
         sp->sb->declline = sp->sb->origdeclline = lex->data->errline;
-        sp->sb->realdeclline = lex->data->linedata->front()->lineno;
-        sp->sb->declfilenum = lex->data->linedata->front()->fileindex;
+        sp->sb->realdeclline = lex->data->linedata->lineno;
+        sp->sb->declfilenum = lex->data->linedata->fileindex;
     }
     if (spi)
     {
@@ -1024,7 +1024,7 @@ static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac c
     sp->sb->declaring = true;
     while (lex && KW(lex) != end)
     {
-        FlushLineData(lex->data->errfile, lex->data->linedata->front()->lineno);
+        FlushLineData(lex->data->errfile, lex->data->linedata->lineno);
         switch (KW(lex))
         {
             case kw_private:
@@ -1236,7 +1236,7 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
     enum e_ac defaultAccess;
     bool addedNew = false;
     int declline = lex->data->errline;
-    int realdeclline = lex->data->linedata->front()->lineno;
+    int realdeclline = lex->data->linedata->lineno;
     bool anonymous = false;
     unsigned char* uuid;
     enum e_lk linkage1 = lk_none, linkage2 = lk_none, linkage3 = lk_none;
@@ -1348,7 +1348,7 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
         sp->sb->declline = sp->sb->origdeclline = declline;
         sp->sb->realdeclline = realdeclline;
         sp->sb->declfile = sp->sb->origdeclfile = lex->data->errfile;
-        sp->sb->declfilenum = lex->data->linedata->front()->fileindex;
+        sp->sb->declfilenum = lex->data->linedata->fileindex;
         sp->sb->attribs = basisAttribs;
         if ((storage_class == sc_member || storage_class == sc_mutable) &&
             (MATCHKW(lex, begin) || MATCHKW(lex, colon) || MATCHKW(lex, kw_try) || MATCHKW(lex, semicolon)))
@@ -1549,9 +1549,9 @@ static LEXLIST* enumbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* spi, enum e_sc st
                 sp->name = sp->sb->decoratedName = litlate(lex->data->value.s.a);
                 sp->sb->declcharpos = lex->data->charindex;
                 sp->sb->declline = sp->sb->origdeclline = lex->data->errline;
-                sp->sb->realdeclline = lex->data->linedata->front()->lineno;
+                sp->sb->realdeclline = lex->data->linedata->lineno;
                 sp->sb->declfile = sp->sb->origdeclfile = lex->data->errfile;
-                sp->sb->declfilenum = lex->data->linedata->front()->fileindex;
+                sp->sb->declfilenum = lex->data->linedata->fileindex;
                 sp->sb->parentClass = spi->sb->parentClass;
                 sp->sb->access = access;
                 browse_variable(sp);
@@ -1692,7 +1692,7 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc stor
     std::list<NAMESPACEVALUEDATA*>* nsv;
     SYMBOL* strSym;
     int declline = lex->data->errline;
-    int realdeclline = lex->data->linedata->front()->lineno;
+    int realdeclline = lex->data->linedata->lineno;
     bool anonymous = false;
     enum e_lk linkage1 = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     *defd = false;
@@ -1774,7 +1774,7 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc stor
         sp->sb->declline = sp->sb->origdeclline = declline;
         sp->sb->realdeclline = realdeclline;
         sp->sb->declfile = sp->sb->origdeclfile = lex->data->errfile;
-        sp->sb->declfilenum = lex->data->linedata->front()->fileindex;
+        sp->sb->declfilenum = lex->data->linedata->fileindex;
         if (storage_class == sc_member || storage_class == sc_mutable)
             sp->sb->parentClass = getStructureDeclaration();
         if (nsv)
@@ -3619,7 +3619,7 @@ LEXLIST* getDeferredData(LEXLIST* lex, LEXLIST** savePos, bool braces)
             lex->data->value.s.a = litlate(lex->data->value.s.a);
         **cur = *lex;
         (*cur)->prev = last;
-        (*cur)->data->linedata = lines;
+        (*cur)->data->linedata = lines->front();
         lines = nullptr;
         last = *cur;
         cur = &(*cur)->next;

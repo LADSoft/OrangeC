@@ -1139,7 +1139,7 @@ typedef struct lexeme
     struct u_val value;
     char* litaslit;
     char* suffix;
-    std::list<Optimizer::LINEDATA*>* linedata;
+    Optimizer::LINEDATA* linedata;
     int errline;
     const char* errfile;
     int charindex;

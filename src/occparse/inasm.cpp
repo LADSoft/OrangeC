@@ -250,8 +250,8 @@ static EXPRESSION* inasm_ident(void)
             sym->name = litlate(nm);
             sym->sb->declfile = sym->sb->origdeclfile = lex->data->errfile;
             sym->sb->declline = sym->sb->origdeclline = lex->data->errline;
-            sym->sb->realdeclline = lex->data->linedata->front()->lineno;
-            sym->sb->declfilenum = lex->data->linedata->front()->fileindex;
+            sym->sb->realdeclline = lex->data->linedata->lineno;
+            sym->sb->declfilenum = lex->data->linedata->fileindex;
             sym->sb->attribs.inheritable.used = true;
             sym->tp = MakeType(bt_unsigned);
             sym->sb->offset = codeLabel++;
@@ -333,8 +333,8 @@ static EXPRESSION* inasm_label(void)
         sym->name = litlate(lex->data->value.s.a);
         sym->sb->declfile = sym->sb->origdeclfile = lex->data->errfile;
         sym->sb->declline = sym->sb->origdeclline = lex->data->errline;
-        sym->sb->realdeclline = lex->data->linedata->front()->lineno;
-        sym->sb->declfilenum = lex->data->linedata->front()->fileindex;
+        sym->sb->realdeclline = lex->data->linedata->lineno;
+        sym->sb->declfilenum = lex->data->linedata->fileindex;
         sym->tp = MakeType(bt_unsigned);
         sym->sb->offset = codeLabel++;
         SetLinkerNames(sym, lk_none);

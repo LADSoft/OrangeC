@@ -64,8 +64,7 @@ LEXCONTEXT* context;
 int charIndex;
 
 LEXLIST* currentLex;
-static Optimizer::LINEDATA nullLineDataData = { 0, "", "", 0, 0 };
-std::list<Optimizer::LINEDATA*> nullLineData = { &nullLineDataData };
+static Optimizer::LINEDATA nullLineData = { 0, "", "", 0, 0 };
 
 static bool valid;
 static unsigned long long llminus1;
@@ -1613,10 +1612,20 @@ LEXLIST* getsym(void)
             TemplateRegisterDeferred(context->last);
         context->last = rv;
         context->cur = context->cur->next;
-        if (rv->data->linedata && rv->data->linedata->size())
+        if (rv->data->linedata)
         {
-            lines = lineDataListFactory.CreateList();
-            lines->push_back(rv->data->linedata->front());
+            if (!lines)
+                lines = lineDataListFactory.CreateList();
+            while (lines->size() > 1)
+                lines->pop_back();
+            if (lines->size() == 1)
+            {
+                lines->front() = rv->data->linedata;
+            }
+            else
+            {
+                lines->push_back(rv->data->linedata);
+            }
         }
         currentLex = rv;
         return rv;
@@ -1829,8 +1838,7 @@ LEXLIST* getsym(void)
     } while (contin);
     if (lines && lines->size())
     {
-        lex->data->linedata = lineDataListFactory.CreateList();
-        lex->data->linedata->insert(lex->data->linedata->begin(), lines->begin(), lines->end());
+        lex->data->linedata = lines->front();
     }
     else
     {

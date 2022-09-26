@@ -152,7 +152,7 @@ std::list<STATEMENT*>* currentLineData(std::list<BLOCKDATA*>& parent, LEXLIST* l
     std::list<STATEMENT*> rv;
     int lineno;
     const char* file;
-    lineno = lex->data->linedata->front()->lineno + offset + 1;
+    lineno = lex->data->linedata->lineno + offset + 1;
     file = lex->data->errfile;
     while (lines->size() && (strcmp(lines->front()->file, file) != 0 || lineno >= lines->front()->lineno))
     {
@@ -1781,8 +1781,8 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
             spx = makeID(sc_ulabel, nullptr, nullptr, litlate(lex->data->value.s.a));
             spx->sb->declfile = spx->sb->origdeclfile = lex->data->errfile;
             spx->sb->declline = spx->sb->origdeclline = lex->data->errline;
-            spx->sb->realdeclline = lex->data->linedata->front()->lineno;
-            spx->sb->declfilenum = lex->data->linedata->front()->fileindex;
+            spx->sb->realdeclline = lex->data->linedata->lineno;
+            spx->sb->declfilenum = lex->data->linedata->fileindex;
             SetLinkerNames(spx, lk_none);
             spx->sb->offset = codeLabel++;
             if (!spx->sb->gotoTable)

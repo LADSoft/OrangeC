@@ -1747,7 +1747,7 @@ static void genConstructorCall(std::list<BLOCKDATA*>& b, SYMBOL* cls, std::list<
         else
         {
             bool found = true;
-            if (mi->front() && mi->front()->sp && baseClass)
+            if (mi && mi->front() && mi->front()->sp && baseClass)
             {
                 for (auto mi2 : *mi)
                 {
@@ -3274,12 +3274,12 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
             {
                 std::list<INITLIST*> temp;
                 std::list<INITLIST*>* temp2 = &temp;
-                if (params->arguments && params->arguments->front()->nested && !params->arguments->front()->initializer_list)
+                if (params->arguments && params->arguments->size() && params->arguments->front()->nested && !params->arguments->front()->initializer_list)
                 {
                     temp = *params->arguments->front()->nested;
                     *params->arguments = temp;
                 }
-                AdjustParams(cons1, basetype(cons1->tp)->syms->begin(), basetype(cons1->tp)->syms->begin(), &params->arguments, false,
+                AdjustParams(cons1, basetype(cons1->tp)->syms->begin(), basetype(cons1->tp)->syms->end(), &params->arguments, false,
                              implicit && !cons1->sb->isExplicit);
             }
             params->functp = cons1->tp;
@@ -3380,8 +3380,12 @@ void PromoteConstructorArgs(SYMBOL* cons1, FUNCTIONCALL* params)
     auto ite = basetype(cons1->tp)->syms->end();
     if ((*it)->sb->thisPtr)
         ++it;
-    auto args = params->arguments->begin();
-    auto argse = params->arguments->end();
+    std::list<INITLIST*>::iterator args, argse;
+    if (params->arguments)
+    {
+        args = params->arguments->begin();
+        argse = params->arguments->end();
+    }
     while (it != ite && args != argse)
     {
         SYMBOL* sp = *it;

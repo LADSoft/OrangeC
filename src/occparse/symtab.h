@@ -55,14 +55,10 @@ namespace Parser
 template <class T>
 inline T* SymbolTable<T>::AddOverloadName(T* s)
 {
-    auto p = Lookup(sym->name);
-    if (p)
+    for (auto q : *this)
     {
-        for (auto q : *p->tp->syms)
-        {
-            if (!strcmp(q->sb->decoratedName, sym->sb->decoratedName))
-                return (q);
-        }
+        if (!strcmp(q->sb->decoratedName, sym->sb->decoratedName))
+            return (q);
     }
     AddName(sym);
     return (0);
@@ -76,14 +72,10 @@ inline SYMBOL* SymbolTable<SYMBOL>::AddOverloadName(SYMBOL* sym)
         CompletionCompiler::ccSetSymbol(sym);
     }
 
-    auto p = Lookup(sym->name);
-    if (p)
+    for (auto q : *this)
     {
-        for (auto q : *p->tp->syms)
-        {
-            if (!strcmp(q->sb->decoratedName, sym->sb->decoratedName))
-                return (q);
-        }
+        if (!strcmp(q->sb->decoratedName, sym->sb->decoratedName))
+            return (q);
     }
     AddName(sym);
     return (0);

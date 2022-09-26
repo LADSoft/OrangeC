@@ -2406,6 +2406,7 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
         case kw_template:
             arg.second->type = kw_template;
             lex = getsym();
+            arg.second->byTemplate.args = templateParamPairListFactory.CreateList();
             lex = TemplateHeader(lex, funcsp, arg.second->byTemplate.args);
             if (arg.second->byTemplate.args)
                 dropStructureDeclaration();

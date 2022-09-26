@@ -1019,7 +1019,7 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
         {
             rv->sb->throughClass = false;
         }
-        if (!rv && (!ssp || ssp->sb->nameSpaceValues->front() != globalNameSpace->front()))
+        if (!rv && (!ssp || !ssp->sb->nameSpaceValues || ssp->sb->nameSpaceValues->front() != globalNameSpace->front()))
         {
             rv = namespacesearch(name, localNameSpace, false, tagsOnly);
             if (!rv)
@@ -4559,7 +4559,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
 
     auto it = basetype(sym->tp)->syms->begin();
     auto ite = basetype(sym->tp)->syms->end();
-    SymbolTable<SYMBOL>::iterator itt = atp->syms->begin();
+    SymbolTable<SYMBOL>::iterator itt;
     if (f)
     {
         if (f->arguments)
@@ -4732,7 +4732,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
         }
         std::list<TEMPLATEPARAMPAIR>* tr = nullptr;
         std::list<TEMPLATEPARAMPAIR>::iterator itr, itre;
-        while (it != ite && (ita != itae || (f && itt != atp->syms->end())))
+        while (it != ite && (ita != itae || (!f && itt != atp->syms->end())))
         {
             SYMBOL* argsym = *it;
             if (argsym->tp->type != bt_any)
@@ -4912,7 +4912,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
             if ((!initializerListType || ita == itae || !(*ita)->initializer_list) && !tr)
                 ++it;
         }
-        if (*it)
+        if (it != ite)
         {
             SYMBOL* sym = *it;
             if (sym->sb->init || sym->sb->deferredCompile || sym->packed)
@@ -5298,10 +5298,8 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
     {
         std::list<SYMBOL*> gather;
         SYMBOL *found1 = nullptr, *found2 = nullptr;
-        auto it1 = sp->tp->syms->begin();
-        ++it1;
         if (!Optimizer::cparams.prm_cplusplus && ((Optimizer::architecture != ARCHITECTURE_MSIL) ||
-                                                  !Optimizer::cparams.msilAllowExtensions || (sp && it1 == sp->tp->syms->end())))
+                                                  !Optimizer::cparams.msilAllowExtensions || (sp && sp->tp->syms->size() == 1)))
         {
             if (sp->tp->syms->begin() != sp->tp->syms->end())
             {
@@ -5352,7 +5350,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 }
                 else
                 {
-                    bool found;
+                    bool found = false;
                     for (auto sym : gather)
                         if (sym == sp)
                         {

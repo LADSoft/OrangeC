@@ -7,6 +7,7 @@
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
+ *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
  *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
@@ -452,7 +453,7 @@ static void callDynamic(const char* name, int startupType, int index, std::list<
 {
     if (IsCompiler())
     {
-        if (st)
+        if (st->size())
         {
             STATEMENT* stbegin = stmtNode(nullptr, emptyBlockdata, st_dbgblock);
             stbegin->label = 1;
@@ -2216,7 +2217,7 @@ static void allocate_desc(TYPE* tp, int offset, AGGREGATE_DESCRIPTOR** descin, A
             if (bc)
             {
                 desc->currentBase =bc->begin();
-                desc->currentBase = bc->end();
+                desc->currentBaseEnd = bc->end();
                 desc->inbase = true;
                 tp = bc->front()->cls->tp;
                 allocate_desc(tp, offset + bc->front()->offset, descin, cache);
@@ -2351,7 +2352,8 @@ static void increment_desc(AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** c
                             ++(*desc)->currentBase;
                             if ((*desc)->currentBase != (*desc)->currentBaseEnd)
                             {
-                                allocate_desc((*(*desc)->currentBase)->cls->tp, (*desc)->offset + (*(*desc)->currentBase)->offset, desc,
+                                allocate_desc((*(*desc)->currentBase)->cls->tp, (*desc)->offset + (*(*desc)->currentBase)->offset,
+                                              desc,
                                     cache);
                             }
                             offset = -1;

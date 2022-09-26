@@ -191,7 +191,12 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
         
         list = Allocate<EXPRESSION*>(cnt);
         cnt = 0;
-        std::list<INITLIST*>::iterator ita = args->begin(), itae = args->end();
+        std::list<INITLIST*>::iterator ita, itae;
+        if (args)
+        {
+            ita = args->begin();
+            itae = args->end();
+        }
         for ( ; it != table->end() && ita != itae; ++it, ++ita )  // args might go to nullptr for a destructor, which currently has a VOID at the end of the arg list
         {
             SYMBOL* sym = *it;

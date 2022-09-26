@@ -709,7 +709,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                         }
                         if (Optimizer::cparams.prm_cplusplus || basetype(sym->tp)->syms->size() > 1)
                         {
-                            funcparams->nameSpace = strSym ? nullptr : nsv->front();
+                            funcparams->nameSpace = strSym ? nullptr : nsv ? nsv->front() : nullptr;
                             funcparams->ascall = MATCHKW(lex, openpa);
                             funcparams->sp = sym;
                         }
@@ -1101,7 +1101,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                 funcparams->sp = sym;
                 funcparams->functp = sym->tp;
                 funcparams->fcall = intNode(en_c_i, 0);
-                funcparams->nameSpace = strSym ? nullptr : nsv->front();
+                funcparams->nameSpace = strSym ? nullptr : nsv ? nsv->front() : nullptr;
                 *tp = sym->tp;
                 *exp = varNode(en_func, nullptr);
                 (*exp)->v.func = funcparams;
@@ -2994,8 +2994,12 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
 }
 void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SYMBOL>::iterator itend, std::list<INITLIST*>** lptr, bool operands, bool implicit)
 {
-    auto itl = (*lptr)->begin();
-    auto itle = (*lptr)->end();
+    std::list<INITLIST*>::iterator itl, itle;
+    if (*lptr)
+    {
+        itl = (*lptr)->begin();
+        itle = (*lptr)->end();
+    }
     auto old = argFriend;
     argFriend = func;
     (void)operands;

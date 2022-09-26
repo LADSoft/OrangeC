@@ -64,7 +64,7 @@ LEXCONTEXT* context;
 int charIndex;
 
 LEXLIST* currentLex;
-static Optimizer::LINEDATA nullLineData = { 0, "", "", 0, 0 };
+Optimizer::LINEDATA nullLineData = { 0, "", "", 0, 0 };
 
 static bool valid;
 static unsigned long long llminus1;
@@ -1612,7 +1612,7 @@ LEXLIST* getsym(void)
             TemplateRegisterDeferred(context->last);
         context->last = rv;
         context->cur = context->cur->next;
-        if (rv->data->linedata)
+        if (rv->data->linedata && rv->data->linedata != &nullLineData)
         {
             if (!lines)
                 lines = lineDataListFactory.CreateList();

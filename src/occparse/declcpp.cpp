@@ -398,7 +398,7 @@ static int allocVTabSpace(std::list<VTABENTRY*>* vtab, int offset)
     }
     return offset;
 }
-static void copyVTabEntries(std::list<VTABENTRY*>* vtab, std::list<VTABENTRY*>* pos, int offset, bool isvirtual)
+static void copyVTabEntries(std::list<VTABENTRY*>* vtab, std::list<VTABENTRY*>** pos, int offset, bool isvirtual)
 {
     if (vtab)
     {
@@ -409,7 +409,9 @@ static void copyVTabEntries(std::list<VTABENTRY*>* vtab, std::list<VTABENTRY*>* 
             vt->isvirtual = lst->isvirtual;
             vt->isdead = vt->isvirtual || lst->dataOffset == 0 || isvirtual;
             vt->dataOffset = offset + lst->dataOffset;
-            pos->push_back(vt);
+            if (!(*pos))
+                *pos = vtabEntryListFactory.CreateList();
+            (*pos)-> push_back(vt);
 
             if (lst->virtuals)
             {
@@ -418,7 +420,7 @@ static void copyVTabEntries(std::list<VTABENTRY*>* vtab, std::list<VTABENTRY*>* 
                     vt->virtuals->push_back(vf);
             }
             if (lst->children)
-                copyVTabEntries(lst->children, vt->children, offset + lst->dataOffset,
+                copyVTabEntries(lst->children, &vt->children, offset + lst->dataOffset,
                     vt->isvirtual || isvirtual || lst->dataOffset == lst->children->front()->dataOffset);
         }
     }
@@ -566,7 +568,7 @@ void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos
             vt->isdead = vt->isvirtual;
             vt->dataOffset = offset + lst->offset;
             (*pos)->push_back(vt);
-            copyVTabEntries(lst->cls->sb->vtabEntries, vt->children, lst->offset, false);
+            copyVTabEntries(lst->cls->sb->vtabEntries, &vt->children, lst->offset, false);
             if (vt->children && vt->children->front()->virtuals)
             {
                 vt->virtuals = symListFactory.CreateList();
@@ -577,7 +579,7 @@ void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos
     }
     for (auto cur : *sym->tp->syms)
     {
-        if (!sym->sb->vtabEntries)
+        if (!sym->sb->vtabEntries->size())
             break;
         std::list<VTABENTRY*> temp;
         if (cur->sb->storage_class == sc_overloads)
@@ -590,9 +592,9 @@ void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos
                 bool isvirt = cur->sb->storage_class == sc_virtual;
                 temp.clear();
                 temp.push_back(sym->sb->vtabEntries->front());
-                sym->sb->vtabEntries->pop_front();
                 auto children = sym->sb->vtabEntries->front()->children;
                 sym->sb->vtabEntries->front()->children = nullptr;
+                sym->sb->vtabEntries->pop_front();
                 found = backpatchVirtualFunc(sym, &temp, cur);
                 found |= backpatchVirtualFunc(sym, children, cur);
                 isfirst = backpatchVirtualFunc(sym, sym->sb->vtabEntries, cur);
@@ -625,7 +627,7 @@ void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos
             }
     checkExceptionSpecification(sym);
     allocVTabSpace(sym->sb->vtabEntries, 0);
-    if (sym->sb->vtabEntries && sym->sb->vtabEntries->front()->virtuals)
+    if (sym->sb->vtabEntries->size() && sym->sb->vtabEntries->front()->virtuals)
     {
         int ofs = 0;
         for (auto func : *sym->sb->vtabEntries->front()->virtuals)
@@ -3061,10 +3063,14 @@ LEXLIST* insertNamespace(LEXLIST* lex, enum e_lk linkage, enum e_sc storage_clas
             // plop in a using directive for the anonymous namespace we are declaring
             if (linkage == lk_inline)
             {
+                if (!globalNameSpace->front()->inlineDirectives)
+                    globalNameSpace->front()->inlineDirectives = symListFactory.CreateList();
                 globalNameSpace->front()->inlineDirectives->push_front(sym);
             }
             else
             {
+                if (!globalNameSpace->front()->usingDirectives)
+                    globalNameSpace->front()->usingDirectives = symListFactory.CreateList();
                 globalNameSpace->front()->usingDirectives->push_front(sym);
             }
         }
@@ -3158,6 +3164,8 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                             }
                     if (!found)
                     {
+                        if (!globalNameSpace->front()->usingDirectives)
+                            globalNameSpace->front()->usingDirectives = symListFactory.CreateList();
                         globalNameSpace->front()->usingDirectives->push_front(sp);
                         if (!IsCompiler() && lex)
                             CompletionCompiler::ccInsertUsing(sp, nameSpaceList.size() ? nameSpaceList.front() : nullptr,

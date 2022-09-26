@@ -3619,7 +3619,7 @@ LEXLIST* getDeferredData(LEXLIST* lex, LEXLIST** savePos, bool braces)
             lex->data->value.s.a = litlate(lex->data->value.s.a);
         **cur = *lex;
         (*cur)->prev = last;
-        (*cur)->data->linedata = lines->front();
+        (*cur)->data->linedata = lines && lines->size() ? lines->front() : &nullLineData;
         lines = nullptr;
         last = *cur;
         cur = &(*cur)->next;

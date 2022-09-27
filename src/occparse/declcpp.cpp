@@ -98,94 +98,100 @@ void SpecializationError(SYMBOL* sym)
 }
 static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTABENTRY*>* entries)
 {
-    if (IsCompiler() && entries)
+    if (IsCompiler())
     {
-        for (auto entry : *entries)
+        if (entries)
         {
-            if (!entry->isdead)
+            for (auto entry : *entries)
             {
-                Optimizer::genaddress(entry->dataOffset);
-                Optimizer::genaddress(entry->vtabOffset);
-                for (auto func : *entry->virtuals)
+                if (!entry->isdead)
                 {
-                    if (func->sb->deferredCompile && (!func->sb->templateLevel || func->sb->instantiated))
+                    Optimizer::genaddress(entry->dataOffset);
+                    Optimizer::genaddress(entry->vtabOffset);
+                    if (entry->virtuals)
                     {
-                        FUNCTIONCALL fcall;
-                        TYPE* tp = nullptr;
-                        EXPRESSION* exp = intNode(en_c_i, 0);
-                        SYMBOL* sp = func->sb->overloadName;
-                        fcall.arguments = initListListFactory.CreateList();
-                        memset(&fcall, 0, sizeof(fcall));
-                        for (auto sym : *basetype(func->tp)->syms)
+                        for (auto func : *entry->virtuals)
                         {
-                            if (sym->sb->thisPtr)
+                            if (func->sb->deferredCompile && (!func->sb->templateLevel || func->sb->instantiated))
                             {
-                                fcall.thistp = sym->tp;
-                                fcall.thisptr = exp;
+                                FUNCTIONCALL fcall;
+                                TYPE* tp = nullptr;
+                                EXPRESSION* exp = intNode(en_c_i, 0);
+                                SYMBOL* sp = func->sb->overloadName;
+                                fcall.arguments = initListListFactory.CreateList();
+                                memset(&fcall, 0, sizeof(fcall));
+                                for (auto sym : *basetype(func->tp)->syms)
+                                {
+                                    if (sym->sb->thisPtr)
+                                    {
+                                        fcall.thistp = sym->tp;
+                                        fcall.thisptr = exp;
+                                    }
+                                    else if (sym->tp->type != bt_void)
+                                    {
+                                        auto arg = Allocate<INITLIST>();
+                                        arg->tp = sym->tp;
+                                        arg->exp = exp;
+                                        fcall.arguments->push_back(arg);
+                                    }
+                                }
+                                fcall.ascall = true;
+                                auto oldnoExcept = noExcept;
+                                sp = GetOverloadedFunction(&tp, &exp, sp, &fcall, nullptr, true, false, true, 0);
+                                noExcept = oldnoExcept;
+                                if (sp)
+                                    func = sp;
                             }
-                            else if (sym->tp->type != bt_void)
+                            InsertInline(func);
+                            if (func->sb->defaulted && !func->sb->inlineFunc.stmt && func->sb->isDestructor)
+                                createDestructor(func->sb->parentClass);
+                            if (func->sb->ispure)
                             {
-                                auto arg = Allocate<INITLIST>();
-                                arg->tp = sym->tp;
-                                arg->exp = exp;
-                                fcall.arguments->push_back(arg);
+                                Optimizer::genaddress(0);
                             }
-                        }
-                        fcall.ascall = true;
-                        auto oldnoExcept = noExcept;
-                        sp = GetOverloadedFunction(&tp, &exp, sp, &fcall, nullptr, true, false, true, 0);
-                        noExcept = oldnoExcept;
-                        if (sp)
-                            func = sp;
-                    }
-                    InsertInline(func);
-                    if (func->sb->defaulted && !func->sb->inlineFunc.stmt && func->sb->isDestructor)
-                        createDestructor(func->sb->parentClass);
-                    if (func->sb->ispure)
-                    {
-                        Optimizer::genaddress(0);
-                    }
-                    else if (sym == func->sb->parentClass && entry->vtabOffset)
-                    {
-                        char buf[512];
-                        SYMBOL* localsp;
-                        strcpy(buf, sym->sb->decoratedName);
-                        Optimizer::my_sprintf(buf + strlen(buf), "_@%c%d", count % 26 + 'A', count / 26);
+                            else if (sym == func->sb->parentClass && entry->vtabOffset)
+                            {
+                                char buf[512];
+                                SYMBOL* localsp;
+                                strcpy(buf, sym->sb->decoratedName);
+                                Optimizer::my_sprintf(buf + strlen(buf), "_@%c%d", count % 26 + 'A', count / 26);
 
-                        thunks[count].entry = entry;
-                        if (func->sb->attribs.inheritable.linkage2 == lk_import)
-                        {
-                            EXPRESSION* exp = varNode(en_pc, func);
-                            thunkForImportTable(&exp);
-                            thunks[count].func = exp->v.sp;
-                        }
-                        else
-                        {
-                            thunks[count].func = func;
-                        }
-                        thunks[count].name = localsp = makeID(sc_static, &stdfunc, nullptr, litlate(buf));
-                        localsp->sb->decoratedName = localsp->name;
-                        localsp->sb->attribs.inheritable.linkage4 = lk_virtual;
-                        Optimizer::genref(Optimizer::SymbolManager::Get(localsp), 0);
-                        InsertInline(localsp);
-                        count++;
-                    }
-                    else
-                    {
-                        if (func->sb->attribs.inheritable.linkage2 == lk_import)
-                        {
-                            EXPRESSION* exp = varNode(en_pc, func);
-                            thunkForImportTable(&exp);
-                            Optimizer::genref(Optimizer::SymbolManager::Get(exp->v.sp), 0);
-                        }
-                        else
-                        {
-                            Optimizer::genref(Optimizer::SymbolManager::Get(func), 0);
+                                thunks[count].entry = entry;
+                                if (func->sb->attribs.inheritable.linkage2 == lk_import)
+                                {
+                                    EXPRESSION* exp = varNode(en_pc, func);
+                                    thunkForImportTable(&exp);
+                                    thunks[count].func = exp->v.sp;
+                                }
+                                else
+                                {
+                                    thunks[count].func = func;
+                                }
+                                thunks[count].name = localsp = makeID(sc_static, &stdfunc, nullptr, litlate(buf));
+                                localsp->sb->decoratedName = localsp->name;
+                                localsp->sb->attribs.inheritable.linkage4 = lk_virtual;
+                                Optimizer::genref(Optimizer::SymbolManager::Get(localsp), 0);
+                                InsertInline(localsp);
+                                count++;
+                            }
+                            else
+                            {
+                                if (func->sb->attribs.inheritable.linkage2 == lk_import)
+                                {
+                                    EXPRESSION* exp = varNode(en_pc, func);
+                                    thunkForImportTable(&exp);
+                                    Optimizer::genref(Optimizer::SymbolManager::Get(exp->v.sp), 0);
+                                }
+                                else
+                                {
+                                    Optimizer::genref(Optimizer::SymbolManager::Get(func), 0);
+                                }
+                            }
                         }
                     }
                 }
+                count = dumpVTabEntries(count, thunks, sym, entry->children);
             }
-            count = dumpVTabEntries(count, thunks, sym, entry->children);
         }
     }
     else
@@ -357,7 +363,7 @@ static bool backpatchVirtualFunc(SYMBOL* sym, std::list<VTABENTRY*>* entries, SY
         {
             if (entry->virtuals)
             {
-                for (auto func : *entry->virtuals)
+                for (auto&& func : *entry->virtuals)
                 {
                     if (vfMatch(sym, func, func_in))
                     {
@@ -584,43 +590,44 @@ void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos
             }
         }
     }
-    for (auto cur : *sym->tp->syms)
+    if (sym->sb->vtabEntries && sym->sb->vtabEntries->size())
     {
-        if (!sym->sb->vtabEntries->size())
-            break;
-        std::list<VTABENTRY*> temp;
-        if (cur->sb->storage_class == sc_overloads)
+        for (auto cur : *sym->tp->syms)
         {
-            for (auto cur : *cur->tp->syms)
+            std::list<VTABENTRY*> temp;
+            if (cur->sb->storage_class == sc_overloads)
             {
-                VTABENTRY *hold, *hold2;
-                bool found = false;
-                bool isfirst = false;
-                bool isvirt = cur->sb->storage_class == sc_virtual;
-                temp.clear();
-                temp.push_back(sym->sb->vtabEntries->front());
-                auto children = sym->sb->vtabEntries->front()->children;
-                sym->sb->vtabEntries->front()->children = nullptr;
-                sym->sb->vtabEntries->pop_front();
-                found = backpatchVirtualFunc(sym, &temp, cur);
-                found |= backpatchVirtualFunc(sym, children, cur);
-                isfirst = backpatchVirtualFunc(sym, sym->sb->vtabEntries, cur);
-                isvirt |= found | isfirst;
-                sym->sb->vtabEntries->push_front(temp.front());
-                sym->sb->vtabEntries->front()->children = children;
-                if (isvirt)
+                for (auto cur : *cur->tp->syms)
                 {
-                    cur->sb->storage_class = sc_virtual;
-                    if (!isfirst)
+                    VTABENTRY *hold, *hold2;
+                    bool found = false;
+                    bool isfirst = false;
+                    bool isvirt = cur->sb->storage_class == sc_virtual;
+                    temp.clear();
+                    temp.push_back(sym->sb->vtabEntries->front());
+                    auto children = sym->sb->vtabEntries->front()->children;
+                    sym->sb->vtabEntries->front()->children = nullptr;
+                    sym->sb->vtabEntries->pop_front();
+                    found = backpatchVirtualFunc(sym, sym->sb->vtabEntries, cur);
+                    found |= backpatchVirtualFunc(sym, children, cur);
+                    isfirst = backpatchVirtualFunc(sym, &temp, cur);
+                    isvirt |= found | isfirst;
+                    sym->sb->vtabEntries->push_front(temp.front());
+                    sym->sb->vtabEntries->front()->children = children;
+                    if (isvirt)
                     {
-                        if (sym->sb->vtabEntries->front()->virtuals == nullptr)
-                            sym->sb->vtabEntries->front()->virtuals = symListFactory.CreateList();
-                        sym->sb->vtabEntries->front()->virtuals->push_back(cur);
+                        cur->sb->storage_class = sc_virtual;
+                        if (!isfirst)
+                        {
+                            if (sym->sb->vtabEntries->front()->virtuals == nullptr)
+                                sym->sb->vtabEntries->front()->virtuals = symListFactory.CreateList();
+                            sym->sb->vtabEntries->front()->virtuals->push_back(cur);
+                        }
                     }
-                }
-                if (cur->sb->isoverride && !found && !isfirst)
-                {
-                    errorsym(ERR_FUNCTION_DOES_NOT_OVERRIDE, cur);
+                    if (cur->sb->isoverride && !found && !isfirst)
+                    {
+                        errorsym(ERR_FUNCTION_DOES_NOT_OVERRIDE, cur);
+                    }
                 }
             }
         }

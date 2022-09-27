@@ -1745,7 +1745,7 @@ static void genConstructorCall(std::list<BLOCKDATA*>& b, SYMBOL* cls, std::list<
         }
         else
         {
-            bool found = true;
+            MEMBERINITIALIZERS* mix = nullptr;
             if (mi && mi->front() && mi->front()->sp && baseClass)
             {
                 for (auto mi2 : *mi)
@@ -1753,20 +1753,17 @@ static void genConstructorCall(std::list<BLOCKDATA*>& b, SYMBOL* cls, std::list<
                     if (mi2->sp && isstructured(mi2->sp->tp) &&
                         (basetype(mi2->sp->tp)->sp == member || basetype(mi2->sp->tp)->sp == member->sb->maintemplate || sameTemplate(mi2->sp->tp, member->tp)))
                     {
+                        mix = mi2;
                         break;
                     }
                 }
             }
-            else
-            {
-                found = false;
-            }
-            if (found)
+            if (mix)
             {
                 FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
                 if (!funcparams->arguments)
                     funcparams->arguments = initListListFactory.CreateList();
-                for (auto init : *mi->front()->init)
+                for (auto init : *mix->init)
                 {
                     if (!init->exp)
                         break;
@@ -1777,10 +1774,10 @@ static void genConstructorCall(std::list<BLOCKDATA*>& b, SYMBOL* cls, std::list<
                 }
                 if (!callConstructor(&ctype, &exp, funcparams, false, nullptr, top, false, false, false, false, false, true))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
-                if (mi->front()->sp && !mi->front()->init)
+                if (mix->sp && !mix->init)
                 {
                     EXPRESSION* clr = exprNode(en_blockclear, exp, nullptr);
-                    clr->size = mi->front()->sp->tp->size;
+                    clr->size = mix->sp->tp->size;
                     exp = exprNode(en_void, clr, exp);
                 }
                 // previously, callConstructor can return false here, meaning that funcparams->sp is null

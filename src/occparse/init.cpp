@@ -2942,6 +2942,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
             {
                 *init = it;
             }
+            it = nullptr;
             exp = baseexp;
             if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable && sc != sc_localstatic && !arrayMember)
             {
@@ -3388,34 +3389,32 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
             {
                 *init = first;
             }
-            first = initListFactory.CreateList();
+            first = nullptr;
+            int n = itype->size / s;
+            EXPRESSION* exp;
+            EXPRESSION* sz = nullptr;
+            TYPE* tn = btp;
+            exp = getThisNode(base);
+            if (n > 1)
             {
-                int n = itype->size / s;
-                EXPRESSION* exp;
-                EXPRESSION* sz = nullptr;
-                TYPE* tn = btp;
-                exp = getThisNode(base);
-                if (n > 1)
-                {
-                    sz = intNode(en_c_i, n);
-                    tn = MakeType(bt_pointer, btp);
-                    tn->array = true;
-                    tn->size = n * s;
-                    tn->esize = sz;
-                }
-                if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable)
-                {
-                    callDestructor(btp->sp, nullptr, &exp, sz, true, false, false, true);
-                    initInsert(&first, tn, exp, last, false);
-                    insertDynamicDestructor(base, first);
-                    *dest = nullptr;
-                }
-                else if (dest)
-                {
-                    callDestructor(btp->sp, nullptr, &exp, sz, true, false, false, true);
-                    initInsert(&first, tn, exp, last, false);
-                    *dest = first;
-                }
+                sz = intNode(en_c_i, n);
+                tn = MakeType(bt_pointer, btp);
+                tn->array = true;
+                tn->size = n * s;
+                tn->esize = sz;
+            }
+            if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable)
+            {
+                callDestructor(btp->sp, nullptr, &exp, sz, true, false, false, true);
+                initInsert(&first, tn, exp, last, false);
+                insertDynamicDestructor(base, first);
+                *dest = nullptr;
+            }
+            else if (dest)
+            {
+                callDestructor(btp->sp, nullptr, &exp, sz, true, false, false, true);
+                initInsert(&first, tn, exp, last, false);
+                *dest = first;
             }
         }
     }

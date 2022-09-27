@@ -2922,13 +2922,13 @@ void thunkDestructorTail(std::list<BLOCKDATA*>& b, SYMBOL* sp, SYMBOL* dest, Sym
         {
             auto it = syms->begin();
             ++it;
-            auto sp = *it;
-            EXPRESSION* val = varNode(en_auto, sp);
+            auto sp1 = *it;
+            EXPRESSION* val = varNode(en_auto, sp1);
             int lbl = codeLabel++;
             STATEMENT* st;
-            sp->sb->decoratedName = sp->name;
-            sp->sb->offset = Optimizer::chosenAssembler->arch->retblocksize + getSize(bt_pointer);
-            Optimizer::SymbolManager::Get(sp)->offset = sp->sb->offset;
+            sp1->sb->decoratedName = sp1->name;
+            sp1->sb->offset = Optimizer::chosenAssembler->arch->retblocksize + getSize(bt_pointer);
+            Optimizer::SymbolManager::Get(sp1)->offset = sp1->sb->offset;
             deref(&stdint, &val);
             st = stmtNode(nullptr, b, st_notselect);
             optimize_for_constants(&val);

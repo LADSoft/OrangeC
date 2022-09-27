@@ -998,6 +998,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                         initInsert(&dest, iteratorType, exp, 0, true);
                                         fcb.returnSP->sb->dest = dest;
 
+                                        dest = nullptr;
                                         fce.returnEXP = anonymousVar(sc_auto, iteratorType);
                                         fce.returnSP = fcb.returnEXP->v.sp;
                                         exp = fce.returnEXP;
@@ -1098,6 +1099,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                             initInsert(&dest, iteratorType, exp, 0, true);
                                             fcb.returnSP->sb->dest = dest;
 
+                                            dest = nullptr;
                                             fce.returnEXP = anonymousVar(sc_auto, iteratorType);
                                             fce.returnSP = fcb.returnEXP->v.sp;
                                             exp = fce.returnEXP;

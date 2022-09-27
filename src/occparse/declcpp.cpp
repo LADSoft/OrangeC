@@ -439,10 +439,17 @@ static void checkAmbiguousVirtualFunc(SYMBOL* sym, VTABENTRY** match, std::list<
                 }
                 else
                 {
-                    auto itm = (*match)->virtuals->begin();
-                    auto itme = (*match)->virtuals->end();
-                    auto itv = vt->virtuals->begin();
-                    auto itve = vt->virtuals->end();
+                    std::list<SYMBOL*>::iterator itm, itme, itv, itve;
+                    if ((*match)->virtuals)
+                    {
+                        itm = (*match)->virtuals->begin();
+                        itme = (*match)->virtuals->end();
+                    }
+                    if (vt->virtuals)
+                    {
+                        itv = vt->virtuals->begin();
+                        itve = vt->virtuals->end();
+                    }
                     while (itm != itme && itv != itve)
                     {
                         if (*itm != *itv)
@@ -642,57 +649,64 @@ void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos
 }
 void calculateVirtualBaseOffsets(SYMBOL* sym)
 {
-    // copy all virtual base classes of direct base classes
-    if (sym->sb->baseClasses && sym->sb->baseClasses->front()->cls->sb->vbaseEntries)
-    {
-        if (!sym->sb->vbaseEntries)
-            sym->sb->vbaseEntries = vbaseEntryListFactory.CreateList();
+    if (sym->sb->vbaseEntries)
         sym->sb->vbaseEntries->clear();
+    // copy all virtual base classes of direct base classes
+    if (sym->sb->baseClasses)
+    {
         for (auto lst : *sym->sb->baseClasses)
         {
-            for (auto cur : *lst->cls->sb->vbaseEntries)
+            if (lst->cls->sb->vbaseEntries)
             {
-                auto vbase = Allocate<VBASEENTRY>();
-                vbase->alloc = false;
-                vbase->cls = cur->cls;
-                vbase->pointerOffset = cur->pointerOffset + lst->offset;
-                vbase->structOffset = 0;
-                sym->sb->vbaseEntries->push_back(vbase);
-
-                bool found = false;
-                for (auto search : *sym->sb->vbaseEntries)
-                    if (search->cls == vbase->cls && search->alloc)
-                    {
-                        found = true;
-                        break;
-                    }
-                if (!found)
+                for (auto cur : *lst->cls->sb->vbaseEntries)
                 {
-                    // copy for the derived class's vbase table
-                    vbase = Allocate<VBASEENTRY>();
-                    vbase->alloc = true;
+                    auto vbase = Allocate<VBASEENTRY>();
+                    vbase->alloc = false;
                     vbase->cls = cur->cls;
-                    vbase->pointerOffset = 0;
+                    vbase->pointerOffset = cur->pointerOffset + lst->offset;
                     vbase->structOffset = 0;
+                    if (!sym->sb->vbaseEntries)
+                        sym->sb->vbaseEntries = vbaseEntryListFactory.CreateList();
                     sym->sb->vbaseEntries->push_back(vbase);
+
+                    bool found = false;
+                    for (auto search : *sym->sb->vbaseEntries)
+                        if (search->cls == vbase->cls && search->alloc)
+                        {
+                            found = true;
+                            break;
+                        }
+                    if (!found)
+                    {
+                        // copy for the derived class's vbase table
+                        vbase = Allocate<VBASEENTRY>();
+                        vbase->alloc = true;
+                        vbase->cls = cur->cls;
+                        vbase->pointerOffset = 0;
+                        vbase->structOffset = 0;
+                        sym->sb->vbaseEntries->push_back(vbase);
+                    }
                 }
             }
         }
     }
     // now add any new base classes for this derived class
-    if (sym->sb->baseClasses && sym->sb->vbaseEntries)
+    if (sym->sb->baseClasses)
     {
         for (auto lst : *sym->sb->baseClasses)
         {
             if (lst->isvirtual)
             {
                 bool found = false;
-                for (auto search : *sym->sb->vbaseEntries)
+                if (sym->sb->vbaseEntries)
                 {
-                    if (search->cls == lst->cls && search->alloc)
+                    for (auto search : *sym->sb->vbaseEntries)
                     {
-                        found = true;
-                        break;
+                        if (search->cls == lst->cls && search->alloc)
+                        {
+                            found = true;
+                            break;
+                        }
                     }
                 }
                 if (!found)
@@ -702,6 +716,8 @@ void calculateVirtualBaseOffsets(SYMBOL* sym)
                     vbase->cls = lst->cls;
                     vbase->pointerOffset = 0;
                     vbase->structOffset = 0;
+                    if (!sym->sb->vbaseEntries)
+                        sym->sb->vbaseEntries = vbaseEntryListFactory.CreateList();
                     sym->sb->vbaseEntries->push_back(vbase);
                 }
             }

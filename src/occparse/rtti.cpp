@@ -712,59 +712,62 @@ static void XCExpression(EXPRESSION* node, std::map<int, std::map<int, __xclist*
 }
 static void XCStmt(std::list<STATEMENT*>* block, std::map<int, std::map<int, __xclist*>>& lst)
 {
-    for (auto stmt : *block)
-    { 
-        switch (stmt->type)
+    if (block)
+    {
+        for (auto stmt : *block)
         {
-            case st__genword:
-                break;
-            case st_catch:
-            case st___catch:
-            case st___finally:
-            case st___fault: {
-                __xclist* temp = Allocate<__xclist>();
-                temp->stmt = stmt;
-                temp->byStmt = true;
-                lst[stmt->tryStart][stmt->tryEnd] = temp;
-                XCStmt(stmt->lower, lst);
-                break;
+            switch (stmt->type)
+            {
+                case st__genword:
+                    break;
+                case st_catch:
+                case st___catch:
+                case st___finally:
+                case st___fault: {
+                    __xclist* temp = Allocate<__xclist>();
+                    temp->stmt = stmt;
+                    temp->byStmt = true;
+                    lst[stmt->tryStart][stmt->tryEnd] = temp;
+                    XCStmt(stmt->lower, lst);
+                    break;
+                }
+                case st_try:
+                case st___try:
+                    XCStmt(stmt->lower, lst);
+                    break;
+                case st_return:
+                case st_expr:
+                case st_declare:
+                    XCExpression(stmt->select, lst);
+                    break;
+                case st_goto:
+                case st_label:
+                    break;
+                case st_select:
+                case st_notselect:
+                    XCExpression(stmt->select, lst);
+                    break;
+                case st_switch:
+                    XCExpression(stmt->select, lst);
+                    XCStmt(stmt->lower, lst);
+                    break;
+                case st_block:
+                    XCStmt(stmt->lower, lst);
+                    XCStmt(stmt->blockTail, lst);
+                    break;
+                case st_passthrough:
+                case st_nop:
+                    break;
+                case st_datapassthrough:
+                    break;
+                case st_line:
+                case st_varstart:
+                case st_dbgblock:
+                    break;
+                default:
+                    diag("Invalid block type in XCStmt");
+                    break;
             }
-            case st_try:
-            case st___try:
-                XCStmt(stmt->lower, lst);
-                break;
-            case st_return:
-            case st_expr:
-            case st_declare:
-                XCExpression(stmt->select, lst);
-                break;
-            case st_goto:
-            case st_label:
-                break;
-            case st_select:
-            case st_notselect:
-                XCExpression(stmt->select, lst);
-                break;
-            case st_switch:
-                XCExpression(stmt->select, lst);
-                XCStmt(stmt->lower, lst);
-                break;
-            case st_block:
-                XCStmt(stmt->lower, lst);
-                XCStmt(stmt->blockTail, lst);
-                break;
-            case st_passthrough:
-            case st_nop:
-                break;
-            case st_datapassthrough:
-                break;
-            case st_line:
-            case st_varstart:
-            case st_dbgblock:
-                break;
-            default:
-                diag("Invalid block type in XCStmt");
-                break;
         }
     }
 }

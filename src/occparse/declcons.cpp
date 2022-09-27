@@ -1308,7 +1308,6 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
                 consfunc->sb->inlineFunc.stmt = stmtListFactory.CreateList();
                 auto stmt = stmtNode(nullptr, emptyBlockdata, st_block);
                 consfunc->sb->inlineFunc.stmt->push_back(stmt);
-                stmt->lower = stmtListFactory.CreateList();
                 stmt->lower = bd.statements;
                 consfunc->sb->inlineFunc.syms = basetype(consfunc->tp)->syms;
                 consfunc->sb->retcount = 1;
@@ -2404,7 +2403,7 @@ static void allocInitializers(SYMBOL* cls, SYMBOL* cons, EXPRESSION* ths)
             if (init->init)
             {
                 init->sp->sb->init = init->init;
-                if (init->init->front()->exp)
+                if (init->init->size() && init->init->front()->exp)
                     init->init->front()->exp = unshim(init->init->front()->exp, ths);
             }
         }
@@ -2588,6 +2587,7 @@ void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
         auto stmt = stmtNode(nullptr, emptyBlockdata, st_block);
         consfunc->sb->inlineFunc.stmt = stmtListFactory.CreateList();
         stmt->lower = bd.statements;
+        consfunc->sb->inlineFunc.stmt->push_back(stmt);
         consfunc->sb->inlineFunc.syms = basetype(consfunc->tp)->syms;
         consfunc->sb->retcount = 1;
         consfunc->sb->attribs.inheritable.isInline = true;

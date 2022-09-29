@@ -220,47 +220,6 @@ static IMODE* renameTemp(BLOCK* b, QUAD* head, IMODE* adr)
     }
     return im;
 }
-static void RemoveName(int i)
-{
-    IMODE* key = tempInfo[i]->enode->sp->imvalue;
-    int hashval = dhash((UBYTE*)&key, sizeof(void*));
-    DAGLIST* list = name_hash[hashval];
-    while (list)
-    {
-        if (list->key && !memcmp(key, list->key, sizeof(void*)))
-        {
-            memset(list->key, 0, sizeof(void*));
-            list->rv = nullptr;
-        }
-        list = list->next;
-    }
-}
-static DAGLIST* InsertHash(QUAD* rv, UBYTE* key, int size, DAGLIST** table)
-{
-    int hashval = dhash(key, size);
-    DAGLIST* newDag;
-    newDag = oAllocate<DAGLIST>();
-    newDag->rv = (UBYTE*)rv;
-    newDag->key = key;
-    newDag->next = *table;
-    *table = newDag;
-    return newDag;
-}
-DAGLIST** getSavedDAG(void)
-{
-    if (savedDag)
-    {
-        DAGLIST** rv = (DAGLIST**)savedDag;
-        savedDag = (LIST*)rv[0];
-        return rv;
-    }
-    return Allocate<DAGLIST*>(DAGSIZE);
-}
-void releaseSavedDAG(DAGLIST** dag)
-{
-    dag[0] = (DAGLIST*)savedDag;
-    savedDag = (LIST*)dag;
-}
 /*
  * after the phi nodes are in place, we start renaming all related temps
  * accordingly
@@ -270,14 +229,15 @@ static void renameToPhi(BLOCK* b)
     QUAD *head = b->head, *tail;
     BLOCKLIST* bl;
     bool done = false;
-    DAGLIST** saved_ins = getSavedDAG();
-    DAGLIST** saved_name = getSavedDAG();
     if (b->visiteddfst)
         return;
     b->visiteddfst = true;
+    decltype(ins_hash) save_ins(ins_hash);
+    decltype(name_hash) save_name(name_hash);
 
-    memcpy(saved_ins, ins_hash, sizeof(ins_hash));
-    memcpy(saved_name, name_hash, sizeof(name_hash));
+    ins_hash.clear();
+    name_hash.clear();
+
     /* go through the code in the block in forward order */
     while (!done)
     {
@@ -503,16 +463,14 @@ static void renameToPhi(BLOCK* b)
             q = q->fwd;
         }
     }
-    memcpy(ins_hash, saved_ins, sizeof(ins_hash));
-    memcpy(name_hash, saved_name, sizeof(name_hash));
-    releaseSavedDAG(saved_ins);
-    releaseSavedDAG(saved_name);
+    ins_hash = save_ins;
+    name_hash = save_name;
 }
 void TranslateToSSA(void)
 {
     int i;
-    memset(name_hash, 0, sizeof(void*) * DAGSIZE);
-    memset(ins_hash, 0, sizeof(void*) * DAGSIZE);
+    ins_hash.clear();
+    name_hash.clear();
     for (i = 0; i < tempCount; i++)
     {
         tempInfo[i]->preSSATemp = -1;

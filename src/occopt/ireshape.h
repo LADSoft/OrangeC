@@ -28,7 +28,6 @@ namespace Optimizer
 void DumpInvariants(void);
 bool variantThisLoop(BLOCK* b, int tnum);
 bool matchesop(enum i_ops one, enum i_ops two);
-void ReplaceHashReshape(QUAD* rv, UBYTE* key, int size, DAGLIST** table);
 void unmarkPreSSA(QUAD* ins);
 void RewriteInnerExpressions(void);
 void Reshape(void);

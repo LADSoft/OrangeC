@@ -441,13 +441,6 @@ typedef struct _comgo
  * DAG structures
  */
 
-typedef struct _daglist
-{
-    struct _daglist* next;
-    UBYTE* key;
-    UBYTE* rv;
-} DAGLIST;
-
 typedef struct _list2
 {
     struct _list2* next;

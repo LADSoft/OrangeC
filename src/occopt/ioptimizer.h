@@ -600,7 +600,6 @@ typedef struct quad
 /*-------------------------------------------------------------------------*/
 
 #define DAGCOMPARE sizeof(struct Optimizer::_basic_dag)
-#define DAGSIZE 251
 
 /* constant node combinattions:
  * ic = prefix
@@ -657,15 +656,10 @@ typedef struct _storetemphash
     IMODE* temp;
 } STORETEMPHASH;
 
-typedef struct _casttemphash
+typedef struct
 {
-    struct _casttemphash* next;
-    struct
-    {
-        IMODE* im;
-        int size;
-    } sf;
-    IMODE* rv;
-} CASTTEMPHASH;
+    IMODE* im;
+    int size;
+} CASTTEMP;
 }  // namespace Optimizer
 #include "iopt.h"

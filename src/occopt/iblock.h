@@ -23,6 +23,8 @@
  *
  */
 
+#include "FNV_hash.h"
+
 namespace Optimizer
 {
 extern TEMP_INFO** tempInfo;
@@ -30,8 +32,9 @@ extern BLOCK** blockArray;
 
 extern QUAD *intermed_head, *intermed_tail;
 extern int blockCount;
-extern DAGLIST* ins_hash[DAGSIZE];
-extern DAGLIST* name_hash[DAGSIZE];
+extern std::unordered_map<QUAD*, QUAD*, OrangeC::Utils::fnv1a32_binary<DAGCOMPARE>, OrangeC::Utils::bin_eql<DAGCOMPARE>> ins_hash;
+extern std::unordered_map<IMODE**, QUAD*, OrangeC::Utils::fnv1a32_binary<sizeof(IMODE*)>, OrangeC::Utils::bin_eql<sizeof(IMODE*)>>
+    name_hash;
 extern short wasgoto;
 
 extern BLOCK* currentBlock;
@@ -40,9 +43,6 @@ extern int blockMax;
 
 void gen_nodag(enum i_ops op, IMODE* res, IMODE* left, IMODE* right);
 int equalimode(IMODE* ap1, IMODE* ap2);
-short dhash(UBYTE* str, int len);
-QUAD* LookupNVHash(UBYTE* key, int size, DAGLIST** table);
-DAGLIST* ReplaceHash(QUAD* rv, UBYTE* key, int size, DAGLIST** table);
 void add_intermed(QUAD* newQuad);
 IMODE* liveout2(QUAD* q);
 QUAD* liveout(QUAD* node);

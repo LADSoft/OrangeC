@@ -34,12 +34,15 @@
 #include "memory.h"
 #include "ilocal.h"
 #include "ilive.h"
-
+#include "FNV_hash.h"
 /* reshaping and loop induction strength reduction */
 
 namespace Optimizer
 {
 static int cachedTempCount;
+static std::unordered_map<QUAD*, IMODE*, OrangeC::Utils::fnv1a32_binary<DAGCOMPARE>, OrangeC::Utils::bin_eql<DAGCOMPARE>> in_hash;
+static std::unordered_map<IMODE**, IMODE*, OrangeC::Utils::fnv1a32_binary<sizeof(IMODE*)>, OrangeC::Utils::bin_eql<sizeof(IMODE*)>>
+    nm_hash;
 
 #ifdef XXXXX
 void DumpInvariants(void)
@@ -370,21 +373,11 @@ static void ApplyDistribution(void)
             done = true;
     }
 }
-void ReplaceHashReshape(QUAD* rv, UBYTE* key, int size, DAGLIST** table)
-{
-    int hashval = dhash(key, size);
-    DAGLIST* newDag;
-    newDag = tAllocate<DAGLIST>();
-    newDag->rv = (UBYTE*)rv;
-    newDag->key = key;
-    newDag->next = table[hashval];
-    table[hashval] = newDag;
-}
 static void replaceIM(IMODE** iml, IMODE* im)
 {
     if ((*iml)->mode == i_immed)
         return;
-    ReplaceHashReshape((QUAD*)im, (UBYTE*)&(*iml)->offset->sp->imvalue, sizeof(IMODE*), name_hash);
+    nm_hash[&(*iml)->offset->sp->imvalue] = im;
     if ((*iml)->mode == i_direct)
         *iml = im;
     else
@@ -423,7 +416,11 @@ static void CopyExpressionTree(enum i_ops op, BLOCK* b, QUAD* insertBefore, IMOD
     {
         int tnum = (*iml)->offset->sp->i;
         QUAD* def = tempInfo[tnum]->instructionDefines;
-        IMODE* im = (IMODE*)LookupNVHash((UBYTE*)&(*iml)->offset->sp->imvalue, sizeof(IMODE*), name_hash);
+
+        IMODE* im = nullptr;
+        auto it = nm_hash.find(&(*iml)->offset->sp->imvalue);
+        if (it != nm_hash.end())
+            im = it->second;
         if (im)
         {
             replaceIM(iml, im);
@@ -440,14 +437,17 @@ static void CopyExpressionTree(enum i_ops op, BLOCK* b, QUAD* insertBefore, IMOD
             CopyExpressionTree(op, b, insertBefore, &newIns->dc.left, &newIns->dc.right);
             InsertInstruction(insertBefore->back, newIns);
             replaceIM(iml, newIns->ans);
-            ReplaceHashReshape((QUAD*)newIns->ans, (UBYTE*)newIns, DAGCOMPARE, ins_hash);
+            in_hash[newIns] = newIns->ans;
         }
     }
     if ((*imr) && (*imr)->offset->type == se_tempref)
     {
         int tnum = (*imr)->offset->sp->i;
         QUAD* def = tempInfo[tnum]->instructionDefines;
-        IMODE* im = (IMODE*)LookupNVHash((UBYTE*)&(*imr)->offset->sp->imvalue, sizeof(IMODE*), name_hash);
+        IMODE* im = nullptr;
+        auto it = nm_hash.find(&(*imr)->offset->sp->imvalue);
+        if (it != nm_hash.end())
+            im = it->second;
         if (im)
         {
             replaceIM(imr, im);
@@ -464,7 +464,7 @@ static void CopyExpressionTree(enum i_ops op, BLOCK* b, QUAD* insertBefore, IMOD
             CopyExpressionTree(op, b, insertBefore, &newIns->dc.left, &newIns->dc.right);
             InsertInstruction(insertBefore->back, newIns);
             replaceIM(imr, newIns->ans);
-            ReplaceHashReshape((QUAD*)newIns->ans, (UBYTE*)newIns, DAGCOMPARE, ins_hash);
+            in_hash[newIns] = newIns->ans;
         }
     }
 }
@@ -496,7 +496,10 @@ static IMODE* InsertAddInstruction(BLOCK* b, int size, QUAD* insertBefore, int f
     ins->dc.opcode = flagsr & RF_NEG ? i_sub : i_add;
     ins->dc.left = iml;
     ins->dc.right = imr;
-    imrv = (IMODE*)LookupNVHash((UBYTE*)ins, DAGCOMPARE, ins_hash);
+    imrv = nullptr;
+    auto it = in_hash.find(ins);
+    if (it != in_hash.end())
+        imrv = it->second;
     if (imrv)
         return imrv;
     else
@@ -511,7 +514,7 @@ static IMODE* InsertAddInstruction(BLOCK* b, int size, QUAD* insertBefore, int f
             InsertInstruction(insertBefore->back, insn2);
         }
         InsertInstruction(insertBefore->back, ins);
-        ReplaceHashReshape((QUAD*)ins->ans, (UBYTE*)ins, DAGCOMPARE, ins_hash);
+        in_hash[ins] = ins->ans;
         return ins->ans;
     }
 }
@@ -550,7 +553,10 @@ static IMODE* InsertMulInstruction(BLOCK* b, int size, QUAD* insertBefore, int f
     ins->dc.opcode = flagsr & RF_SHIFT ? i_lsl : i_mul;
     ins->dc.left = iml;
     ins->dc.right = imr;
-    imrv = (IMODE*)LookupNVHash((UBYTE*)ins, DAGCOMPARE, ins_hash);
+    imrv = nullptr;
+    auto it = in_hash.find(ins);
+    if (it != in_hash.end())
+        imrv = it->second;
     if (imrv)
         return imrv;
     else
@@ -561,7 +567,7 @@ static IMODE* InsertMulInstruction(BLOCK* b, int size, QUAD* insertBefore, int f
             InsertInstruction(insertBefore->back, insn);
         }
         InsertInstruction(insertBefore->back, ins);
-        ReplaceHashReshape((QUAD*)ins->ans, (UBYTE*)ins, DAGCOMPARE, ins_hash);
+        in_hash[ins] = ins->ans;
         return ins->ans;
     }
 }
@@ -646,7 +652,7 @@ static void RewriteAdd(BLOCK* b, int tnum)
     }
     tempInfo[tnum]->expression.lastName = left;
     if (left)
-        ReplaceHashReshape((QUAD*)left, (UBYTE*)&tempInfo[tnum]->enode->sp->imvalue, sizeof(IMODE*), name_hash);
+        nm_hash[&tempInfo[tnum]->enode->sp->imvalue] = left;
     ia = tempInfo[tnum]->instructionDefines;
     if (ia && left)  // && !inductionThisLoop(ia->block, tnum))
     {
@@ -771,7 +777,7 @@ static void RewriteMul(BLOCK* b, int tnum)
             gather = gather->next;
         }
         if (left)
-            ReplaceHashReshape((QUAD*)left, (UBYTE*)&tempInfo[tnum]->enode->sp->imvalue, sizeof(IMODE*), name_hash);
+            nm_hash[&tempInfo[tnum]->enode->sp->imvalue] = left;
         ia = tempInfo[tnum]->instructionDefines;
         if (ia && left)  // && !inductionThisLoop(ia->block, tnum))
         {
@@ -797,10 +803,10 @@ static void RewriteInvariantExpressions(BLOCK* b)
 {
     BLOCKLIST* bl = b->dominates;
     int i;
-    DAGLIST* old_ins_hash[DAGSIZE];
-    DAGLIST* old_name_hash[DAGSIZE];
-    memcpy(old_ins_hash, ins_hash, sizeof(DAGLIST*) * DAGSIZE);
-    memcpy(old_name_hash, name_hash, sizeof(DAGLIST*) * DAGSIZE);
+    decltype(in_hash) old_in_hash(in_hash);
+    decltype(nm_hash) old_nm_hash(nm_hash);
+    in_hash.clear();
+    nm_hash.clear();
     for (i = 0; i < cachedTempCount; i++)
     {
         if (tempInfo[i]->expressionRoot && tempInfo[i]->size < ISZ_FLOAT && tempInfo[i]->instructionDefines->block == b)
@@ -832,8 +838,8 @@ static void RewriteInvariantExpressions(BLOCK* b)
         RewriteInvariantExpressions(bl->block);
         bl = bl->next;
     }
-    memcpy(ins_hash, old_ins_hash, sizeof(DAGLIST*) * DAGSIZE);
-    memcpy(name_hash, old_name_hash, sizeof(DAGLIST*) * DAGSIZE);
+    in_hash = old_in_hash;
+    nm_hash = old_nm_hash;
 }
 void RewriteInnerExpressions(void)
 {
@@ -871,8 +877,8 @@ void Reshape(void)
     CalculateInduction();
     CreateExpressionLists();
     ApplyDistribution(); /* assumes the lists are already sorted */
-    memset(name_hash, 0, sizeof(name_hash));
-    memset(ins_hash, 0, sizeof(ins_hash));
+    nm_hash.clear();
+    in_hash.clear();
     RewriteInvariantExpressions(blockArray[0]);
     RewriteInnerExpressions();
 #ifdef XXXXX

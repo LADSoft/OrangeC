@@ -41,6 +41,7 @@
 #include "memory.h"
 #include "ioptutil.h"
 #include "optmain.h"
+#include "FNV_hash.h"
 /* This is a partial implementation of the VLLPA algorithm in
  * Practical and Accurate Low-Level Pointer Analysis
  * Bolei Guo, Matthew J. Bridges, Spyridon Triantafyllis
@@ -68,10 +69,22 @@ static bool changed;
 static ALIASLIST* parmList;
 static int processCount;
 
-static ALIASADDRESS* addresses[DAGSIZE];
-static ALIASNAME* mem[DAGSIZE];
-static struct UIVHash* names[DAGSIZE];
-static ADDRBYNAME* addrNames[DAGSIZE];
+#pragma pack(1)
+struct ptrint
+{
+    void* ptr;
+    int intval;
+};
+#pragma pack()
+
+static std::unordered_map < ptrint*, ALIASADDRESS*, OrangeC::Utils::fnv1a32_binary<sizeof(ptrint)>,
+    OrangeC::Utils::bin_eql<sizeof(ptrint)>> addresses;
+static std::unordered_map<IMODE**, std::list<ALIASNAME*>, OrangeC::Utils::fnv1a32_binary<sizeof(IMODE*)>,
+    OrangeC::Utils::bin_eql<sizeof(IMODE*)>> mem;
+static std::unordered_map<ptrint*, UIVHash*, OrangeC::Utils::fnv1a32_binary<sizeof(ptrint)>,
+                          OrangeC::Utils::bin_eql<sizeof(ptrint)>> names;
+static std::unordered_map<ALIASNAME**, ADDRBYNAME*, OrangeC::Utils::fnv1a32_binary<sizeof(ALIASNAME*)>,
+                          OrangeC::Utils::bin_eql<sizeof(ALIASNAME*)>> addrNames;
 static void ResetProcessed(void);
 static void GatherInds(BITINT* p, int n, ALIASLIST* al);
 void AliasInit(void)
@@ -82,10 +95,10 @@ void AliasInit(void)
         tempInfo[i]->pointsto = nullptr;
         tempInfo[i]->modifiedBy = nullptr;
     }
-    memset(addresses, 0, sizeof(addresses));
-    memset(names, 0, sizeof(names));
-    memset(mem, 0, sizeof(mem));
-    memset(addrNames, 0, sizeof(addrNames));
+    addresses.clear();
+    names.clear();
+    mem.clear();
+    addrNames.clear();
     parmList = nullptr;
     uivBytes = nullptr;
     cachedTempCount = tempCount;
@@ -137,28 +150,24 @@ static void DumpAliases(void)
     oprintf(icdFile, "function: %s\n", currentFunction->name);
     int i;
     oprintf(icdFile, "Alias Dump:\n");
-    for (i = 0; i < DAGSIZE; i++)
+    for (auto aab : addresses)
     {
-        ALIASADDRESS* aa = addresses[i];
-        while (aa)
+        ALIASADDRESS* aa = aab.second;
+        ALIASLIST* al;
+        ALIASADDRESS* aa1 = aa;
+        while (aa1->merge)
+            aa1 = aa1->merge;
+        al = aa1->pointsto;
+        PrintName(aa->name, aa->offset);
+        oprintf(icdFile, ": ");
+        while (al)
         {
-            ALIASLIST* al;
-            ALIASADDRESS* aa1 = aa;
-            while (aa1->merge)
-                aa1 = aa1->merge;
-            al = aa1->pointsto;
-            PrintName(aa->name, aa->offset);
-            oprintf(icdFile, ": ");
-            while (al)
-            {
-                PrintName(al->address->name, al->address->offset);
-                oprintf(icdFile, " ");
-                al = al->next;
-            }
-            PrintTemps(aa1->modifiedBy);
-            oprintf(icdFile, "\n");
-            aa = aa->next;
+            PrintName(al->address->name, al->address->offset);
+            oprintf(icdFile, " ");
+            al = al->next;
         }
+        PrintTemps(aa1->modifiedBy);
+        oprintf(icdFile, "\n");
     }
     for (i = 0; i < cachedTempCount; i++)
     {
@@ -193,8 +202,6 @@ static void DumpAliases(void)
 }
 static ALIASNAME* LookupMem(IMODE* im)
 {
-    ALIASNAME** p;
-    int hash;
     switch (im->offset->type)
     {
         case se_global:
@@ -207,31 +214,40 @@ static ALIASNAME* LookupMem(IMODE* im)
         default:
             break;
     }
-    hash = dhash((UBYTE*)&im, sizeof(im));
-    p = &mem[hash];
-    while (*p)
+    auto it = mem.find(&im);
+    if (it != mem.end())
     {
-        if (((*p)->byUIV == false && (*p)->v.name == im) ||
-            ((*p)->byUIV == true && (*p)->v.uiv->im == im && (*p)->v.uiv->offset == nullptr))
+        for (auto p : it->second)
         {
-            return *p;
+            if ((p->byUIV == false && p->v.name == im) ||
+                (p->byUIV == true && p->v.uiv->im == im && p->v.uiv->offset == nullptr))
+            {
+                return p;
+            }
         }
-        p = &(*p)->next;
     }
-    *p = aAllocate<ALIASNAME>();
-    (*p)->v.name = im;
+    else
+    {
+        IMODE** im2 = Allocate<IMODE*>();
+        *im2 = im;
+        mem[im2] = std::list<ALIASNAME*>();
+        it = mem.find(im2);
+    }
+    auto p = Allocate<ALIASNAME>();
+    p->v.name = im;
     switch (im->offset->type)
     {
         case se_auto:
         case se_global:
-            (*p)->v.uiv = aAllocate<UIV>();
-            (*p)->v.uiv->im = im;
-            (*p)->byUIV = true;
+            p->v.uiv = aAllocate<UIV>();
+            p->v.uiv->im = im;
+            p->byUIV = true;
             break;
         default:
             break;
     }
-    return *p;
+    it->second.push_back(p);
+    return p;
 }
 static void AliasUnion(ALIASLIST** dest, ALIASLIST* src)
 {
@@ -296,23 +312,20 @@ static void AliasUnionParm(ALIASLIST** dest, ALIASLIST* src)
 }
 static ALIASNAME* LookupAliasName(ALIASNAME* name, int offset)
 {
-    int str[(sizeof(ALIASNAME*) + sizeof(int)) / sizeof(int)];
-    int hash;
+    ptrint str;
+    str.ptr = name;
+    str.intval = offset;
+    auto it = names.find(&str);
+    if (it != names.end())
+        return it->second->result;
+    ptrint* mystr = Allocate<ptrint>();
+    memcpy(mystr, &str, sizeof(ptrint));
+
+    UIVHash* uiv;
+    uiv = aAllocate<UIVHash>();
+    uiv->name = name;
+    uiv->offset = offset;
     ALIASNAME* result;
-    struct UIVHash** uivs;
-    str[0] = offset;
-    *((ALIASNAME**)(str + 1)) = name;
-    hash = dhash((UBYTE*)str, sizeof(str));
-    uivs = &names[hash];
-    while (*uivs)
-    {
-        if ((*uivs)->name == name && (*uivs)->offset == offset)
-            return (*uivs)->result;
-        uivs = &(*uivs)->next;
-    }
-    *uivs = aAllocate<UIVHash>();
-    (*uivs)->name = name;
-    (*uivs)->offset = offset;
     result = aAllocate<ALIASNAME>();
     result->byUIV = true;
     result->v.uiv = aAllocate<UIV>();
@@ -329,47 +342,37 @@ static ALIASNAME* LookupAliasName(ALIASNAME* name, int offset)
     result->v.uiv->offset->offset = offset;
     if (name->byUIV)
         result->v.uiv->offset->next = name->v.uiv->offset;
-    (*uivs)->result = result;
+    uiv->result = result;
+    names[mystr] = uiv;
     return result;
 }
 static ALIASNAME* GetAliasName(ALIASNAME* name, int offset)
 {
-    int str[(sizeof(ALIASNAME*) + sizeof(int)) / sizeof(int)];
-    int hash;
-    ALIASNAME* result;
-    struct UIVHash** uivs;
-    str[0] = offset;
-    *((ALIASNAME**)(str + 1)) = name;
-    hash = dhash((UBYTE*)str, sizeof(str));
-    uivs = &names[hash];
-    while (*uivs)
-    {
-        if ((*uivs)->name == name && (*uivs)->offset == offset)
-            return (*uivs)->result;
-        uivs = &(*uivs)->next;
-    }
+    ptrint str;
+    str.ptr = name;
+    str.intval = offset;
+    auto it = names.find(&str);
+    if (it != names.end())
+        return it->second->result;
     return nullptr;
 }
 static ALIASADDRESS* LookupAddress(ALIASNAME* name, int offset)
 {
-    int str[(sizeof(ALIASNAME*) + sizeof(int)) / sizeof(int)];
-    int hash;
-    ALIASADDRESS *addr, **search;
+    ptrint str;
+    str.ptr = name;
+    str.intval = offset;
     IMODE* im;
     LIST* li;
-    str[0] = offset;
-    *((ALIASNAME**)(str + 1)) = name;
-    hash = dhash((UBYTE*)str, sizeof(str));
-    search = &addresses[hash];
-    while (*search)
-    {
-        if ((*search)->name == name && (*search)->offset == offset)
-            return (*search);
-        search = &(*search)->next;
-    }
-    addr = (*search) = aAllocate<ALIASADDRESS>();
+    auto it = addresses.find(&str);
+    if (it != addresses.end())
+        return it->second;
+    ALIASADDRESS* addr;
+    addr = aAllocate<ALIASADDRESS>();
     addr->name = name;
     addr->offset = offset;
+    ptrint* mystr = Allocate<ptrint>();
+    memcpy(mystr, &str, sizeof(ptrint));
+    addresses[mystr] = addr;
     if (addr->name->byUIV)
     {
         im = addr->name->v.uiv->im;
@@ -396,44 +399,37 @@ static ALIASADDRESS* LookupAddress(ALIASNAME* name, int offset)
     li->data = addr;
     li->next = name->addresses;
     name->addresses = li;
-    hash = dhash((UBYTE*)&name, sizeof(name));
-    ADDRBYNAME* q = addrNames[hash];
-    while (q)
+
+    auto it1 = addrNames.find(&name);
+    if (it1 == addrNames.end())
     {
-        if (q->name == name)
-            break;
-        q = q->next;
-    }
-    if (!q)
-    {
-        q = aAllocate<ADDRBYNAME>();
-        q->next = addrNames[hash];
-        addrNames[hash] = q;
+        auto q = aAllocate<ADDRBYNAME>();
         q->name = name;
+        ALIASNAME** name1 = Allocate<ALIASNAME*>();
+        *name1 = name;
+        addrNames[name1] = q;
+        ALIASLIST* ali = aAllocate<ALIASLIST>();
+        ali->address = addr;
+        ali->next = q->addresses;
+        q->addresses = ali;
     }
-    ALIASLIST* ali = aAllocate<ALIASLIST>();
-    ali->address = addr;
-    ali->next = q->addresses;
-    q->addresses = ali;
+    else
+    {
+        ALIASLIST* ali = aAllocate<ALIASLIST>();
+        ali->address = addr;
+        ali->next = it1->second->addresses;
+        it1->second->addresses = ali;
+    }
     return addr;
 }
 static ALIASADDRESS* GetAddress(ALIASNAME* name, int offset)
 {
-    int str[(sizeof(ALIASNAME*) + sizeof(int)) / sizeof(int)];
-    int hash;
-    ALIASADDRESS *addr, **search;
-    IMODE* im;
-    LIST* li;
-    str[0] = offset;
-    *((ALIASNAME**)(str + 1)) = name;
-    hash = dhash((UBYTE*)str, sizeof(str));
-    search = &addresses[hash];
-    while (*search)
-    {
-        if ((*search)->name == name && (*search)->offset == offset)
-            return (*search);
-        search = &(*search)->next;
-    }
+    ptrint str;
+    str.ptr = name;
+    str.intval = offset;
+    auto it = addresses.find(&str);
+    if (it != addresses.end())
+        return it->second;
     return nullptr;
 }
 static void CreateMem(IMODE* im)
@@ -746,17 +742,10 @@ static int InferStride(IMODE* im)
 }
 static void SetStride(ALIASADDRESS* addr, int stride)
 {
-    int hash = dhash((UBYTE*)&addr->name, sizeof(addr->name));
-    ADDRBYNAME* q = addrNames[hash];
-    while (q)
+    auto it = addrNames.find(&addr->name);
+    if (it != addrNames.end())
     {
-        if (q->name == addr->name)
-            break;
-        q = q->next;
-    }
-    if (q)
-    {
-        ALIASLIST* addresses = q->addresses;
+        ALIASLIST* addresses = it->second->addresses;
         while (addresses)
         {
             ALIASADDRESS* scan = addresses->address;
@@ -1400,39 +1389,35 @@ static void ScanUIVs(void)
     int i;
     ResetProcessed();
     uivBytes = aallocbit(termCount);
-    for (i = 0; i < DAGSIZE; i++)
+    for (auto aab : addresses)
     {
-        ALIASADDRESS* aa = addresses[i];
-        while (aa)
+        auto aa = aab.second;
+        ALIASADDRESS* aa1 = aa;
+        IMODE* im;
+        while (aa1->merge)
+            aa1 = aa1->merge;
+        if (aa1->name->byUIV)
         {
-            ALIASADDRESS* aa1 = aa;
-            IMODE* im;
-            while (aa1->merge)
-                aa1 = aa1->merge;
-            if (aa1->name->byUIV)
-            {
-                im = aa1->name->v.uiv->im;
-            }
-            else
-            {
-                im = aa1->name->v.name;
-            }
-            switch (im->offset->type)
-            {
-                case se_auto:
-                case se_global:
-                case se_pc:
-                case se_threadlocal:
-                    im = GetLoadTemp(im);
-                    if (im)
-                        setbit(uivBytes, termMap[im->offset->sp->i]);
-                    if (aa1->modifiedBy)
-                        ormap(uivBytes, aa1->modifiedBy);
-                    break;
-                default:
-                    break;
-            }
-            aa = aa->next;
+            im = aa1->name->v.uiv->im;
+        }
+        else
+        {
+            im = aa1->name->v.name;
+        }
+        switch (im->offset->type)
+        {
+            case se_auto:
+            case se_global:
+            case se_pc:
+            case se_threadlocal:
+                im = GetLoadTemp(im);
+                if (im)
+                    setbit(uivBytes, termMap[im->offset->sp->i]);
+                if (aa1->modifiedBy)
+                    ormap(uivBytes, aa1->modifiedBy);
+                break;
+            default:
+                break;
         }
     }
 }
@@ -1498,17 +1483,14 @@ static void AllocateProcessed(void)
 {
     int i;
     processCount = 0;
-    for (i = 0; i < DAGSIZE; i++)
+    for (auto aab : addresses)
     {
-        ALIASADDRESS* addr = addresses[i];
-        while (addr)
-        {
-            ALIASADDRESS* aa = addr;
-            while (aa->merge)
-                aa = aa->merge;
-            aa->processIndex = processCount++;
-            addr = addr->next;
-        }
+        ALIASADDRESS* addr = aab.second;
+        ALIASADDRESS* aa = addr;
+        while (aa->merge)
+            aa = aa->merge;
+        aa->processIndex = processCount++;
+        addr = addr->next;
     }
     processBits = aallocbit(processCount);
 }
@@ -1550,17 +1532,13 @@ static void ScanMem(void)
     {
         changed = false;
         ResetProcessed();
-        for (i = 0; i < DAGSIZE; i++)
+        for (auto aab : addresses)
         {
-            ALIASADDRESS* aa = addresses[i];
-            while (aa)
-            {
-                ALIASADDRESS* aa1 = aa;
-                while (aa1->merge)
-                    aa1 = aa1->merge;
-                GatherInds(&aa1->modifiedBy[0], n, aa->pointsto);
-                aa = aa->next;
-            }
+            ALIASADDRESS* aa = aab.second;
+            ALIASADDRESS* aa1 = aa;
+            while (aa1->merge)
+                aa1 = aa1->merge;
+            GatherInds(&aa1->modifiedBy[0], n, aa->pointsto);
         }
     } while (changed);
 }

@@ -37,6 +37,7 @@
 #include "Utils.h"
 #include <unordered_map>
 #include <deque>
+#include "FNV_hash.h"
 /* reshaping and loop induction strength reduction */
 
 /* there is some minor problems - if an induction set spans multiple loops
@@ -52,7 +53,7 @@
 namespace Optimizer
 {
 static std::unordered_map<int, IMODE*> loadTemps;
-
+static std::unordered_map<QUAD*, IMODE*, OrangeC::Utils::fnv1a32_binary<DAGCOMPARE>, OrangeC::Utils::bin_eql<DAGCOMPARE>> hash;
 static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int match, ILIST* vars)
 {
     while (l)
@@ -378,7 +379,10 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
     }
     if (ins->dc.opcode != i_assn)
     {
-        rv = (IMODE*)LookupNVHash((UBYTE*)&q1, DAGCOMPARE, ins_hash);
+        rv = nullptr;
+        auto it = hash.find(&q1);
+        if (it != hash.end())
+            rv = it->second;
         if (rv)
         {
             int n = rv->offset->sp->i;
@@ -388,7 +392,7 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
         {
             QUAD* q2 = Allocate<QUAD>();
             *q2 = q1;
-            ReplaceHashReshape((QUAD*)ins->ans, (UBYTE*)q2, DAGCOMPARE, ins_hash);
+            hash[q2] = ins->ans;
             tempInfo[ins->ans->offset->sp->i]->preSSATemp = ins->ans->offset->sp->i;
         }
     }
@@ -660,8 +664,6 @@ static void ReduceStrength(BLOCK* b)
 {
     BLOCKLIST* bl = b->dominates;
     QUAD* head;
-    //	DAGLIST *temp_hash[DAGSIZE];
-    //	memcpy(temp_hash, ins_hash, sizeof(ins_hash));
     head = b->head;
     while (head != b->tail->fwd)
     {
@@ -712,13 +714,12 @@ static void ReduceStrength(BLOCK* b)
         ReduceStrength(bl->block);
         bl = bl->next;
     }
-    //	memcpy(ins_hash, temp_hash, sizeof(ins_hash));
 }
 void ReduceLoopStrength(void)
 {
     loadTemps.clear();
     int i;
-    memset(ins_hash, 0, sizeof(ins_hash));
+    hash.clear();
     CalculateInduction();
     ScanStrength();
     for (i = 0; i < blockCount; i++)

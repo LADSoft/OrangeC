@@ -39,7 +39,8 @@
 namespace Optimizer
 {
 std::map<Optimizer::IMODE*, Optimizer::IMODE*> loadHash;
-CASTTEMPHASH* castHash[DAGSIZE];
+std::unordered_map<CASTTEMP*, IMODE*, OrangeC::Utils::fnv1a32_binary<sizeof(CASTTEMP)>, OrangeC::Utils::bin_eql<sizeof(CASTTEMP)>>
+    castHash;
 int tempCount;
 
 LIST* immed_list[4091];
@@ -402,31 +403,16 @@ Optimizer::IMODE* LookupCastTemp(Optimizer::IMODE* im, int size)
 {
     if (im->mode != i_immed)
     {
-        CASTTEMPHASH ch;
-        CASTTEMPHASH* sh;
+        CASTTEMP ch;
         int hash;
-        memset(&ch, 0, sizeof(ch));
-        ch.sf.im = im;
-        ch.sf.size = size;
-        hash = dhash((UBYTE*)&ch.sf, sizeof(ch.sf));
-        sh = castHash[hash];
-        while (sh)
-        {
-            if (!memcmp(&sh->sf, &ch.sf, sizeof(ch.sf)))
-            {
-                break;
-            }
-            sh = sh->next;
-        }
-        if (!sh)
-        {
-            sh = Allocate<CASTTEMPHASH>();
-            memcpy(&sh->sf, &ch.sf, sizeof(ch.sf));
-            sh->rv = tempreg(size, 0);
-            sh->next = castHash[hash];
-            castHash[hash] = sh;
-        }
-        return sh->rv;
+        ch.im = im;
+        ch.size = size;
+        auto it = castHash.find(&ch);
+        if (it != castHash.end())
+            return it->second;
+        auto ch1 = Allocate<CASTTEMP>();
+        *ch1 = ch;
+        return castHash[ch1] = tempreg(size, 0);
     }
     else
     {

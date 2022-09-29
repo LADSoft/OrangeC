@@ -54,8 +54,9 @@ BLOCK** blockArray;
 
 Optimizer::QUAD *intermed_head, *intermed_tail;
 int blockCount;
-DAGLIST* ins_hash[DAGSIZE];
-DAGLIST* name_hash[DAGSIZE];
+std::unordered_map<QUAD*, QUAD*, OrangeC::Utils::fnv1a32_binary<DAGCOMPARE>, OrangeC::Utils::bin_eql<DAGCOMPARE>> ins_hash;
+std::unordered_map<IMODE**, QUAD*, OrangeC::Utils::fnv1a32_binary<sizeof(IMODE*)>, OrangeC::Utils::bin_eql<sizeof(IMODE*)>>
+    name_hash;
 short wasgoto = false;
 
 BLOCK* currentBlock;
@@ -89,62 +90,6 @@ int equalimode(Optimizer::IMODE* ap1, Optimizer::IMODE* ap2)
                 return false;
             return equalnode(ap1->offset, ap2->offset);
     }
-}
-
-/*-------------------------------------------------------------------------*/
-
-short dhash(UBYTE* str, int len)
-/*
- * hashing for dag nodes
- */
-{
-    int i;
-    unsigned short v = 0;
-    for (i = 0; i < len; i++)
-    {
-        v = (v << 3) + (v >> 13) + (v >> 3) + (v << 13);
-        v += str[i];
-    }
-    return v % DAGSIZE;
-}
-
-/*-------------------------------------------------------------------------*/
-
-Optimizer::QUAD* LookupNVHash(UBYTE* key, int size, DAGLIST** table)
-{
-    int hashval = dhash(key, size);
-    DAGLIST* list = table[hashval];
-    while (list)
-    {
-        if (list->key && !memcmp(key, list->key, size))
-            return (Optimizer::QUAD*)list->rv;
-        list = list->next;
-    }
-    return 0;
-}
-
-/*-------------------------------------------------------------------------*/
-
-DAGLIST* ReplaceHash(Optimizer::QUAD* rv, UBYTE* key, int size, DAGLIST** table)
-{
-    int hashval = dhash(key, size);
-    DAGLIST **list = &table[hashval], **flist = list;
-    DAGLIST* newDag;
-    while (*list)
-    {
-        if ((*list)->key && !memcmp(key, (*list)->key, size))
-        {
-            (*list)->rv = (UBYTE*)rv;
-            return *list;
-        }
-        list = *(DAGLIST***)list;
-    }
-    newDag = oAllocate<DAGLIST>();
-    newDag->rv = (UBYTE*)rv;
-    newDag->key = key;
-    newDag->next = *flist;
-    *flist = newDag;
-    return newDag;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -258,14 +203,18 @@ int ToQuadConst(Optimizer::IMODE** im)
             /* might get address constants here*/
             return 0;
         }
-        rv = LookupNVHash((UBYTE*)&temp, DAGCOMPARE, ins_hash);
+        rv = nullptr;
+        auto it = ins_hash.find(&temp);
+        if (it != ins_hash.end())
+            rv = it->second;
+
         if (!rv)
         {
             rv = Allocate<Optimizer::QUAD>();
             *rv = temp;
             rv->ans = tempreg(ISZ_UINT, 0);
             add_intermed(rv);
-            ReplaceHash(rv, (UBYTE*)rv, DAGCOMPARE, ins_hash);
+            ins_hash[rv] = rv;
             wasgoto = false;
         }
         *im = (Optimizer::IMODE*)rv;
@@ -356,7 +305,10 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
     */
 
     /* Transform the quad structure members from imodes to quads */
-    node = LookupNVHash((UBYTE*)&newQuad->dc.left, sizeof(void*), name_hash);
+    node = nullptr;
+    auto it = name_hash.find(&newQuad->dc.left);
+    if (it != name_hash.end())
+        node = it->second;
     if (node)
     {
         if (node->dc.opcode == i_assn && node->dc.left->mode == i_immed && !node->ans->offset->sp->storeTemp && node->dc.left->size == newQuad->dc.left->size)
@@ -374,7 +326,10 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
         /*		if (!ToQuadConst(&newQuad->dc.left))*/
         newQuad->livein |= IM_LIVELEFT;
     }
-    node = LookupNVHash((UBYTE*)&newQuad->dc.right, sizeof(void*), name_hash);
+    node = nullptr;
+    it = name_hash.find(&newQuad->dc.right);
+    if (it != name_hash.end())
+        node = it->second;
     if (node)
     {
         if (node->dc.opcode == i_assn && node->dc.left->mode == i_immed && node->dc.left->size == newQuad->dc.right->size)
@@ -397,7 +352,11 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
     /*    ConstantFold(newQuad); */
 
     /* Now replace the CSE or enter it into the table */
-    node = LookupNVHash((UBYTE*)newQuad, DAGCOMPARE, ins_hash);
+    node = nullptr;
+    auto it1 = ins_hash.find(newQuad);
+    if (it1 != ins_hash.end())
+        node = it1->second;
+
     if (!node || (newQuad->dc.opcode == i_assn && node->ans->size != newQuad->ans->size) || node->ans->bits != newQuad->ans->bits)
     {
         if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) &&
@@ -423,7 +382,7 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
                         if (newQuad->dc.opcode != i_assn ||
                             (!newQuad->genConflict &&
                              (!(newQuad->livein & IM_LIVELEFT) || newQuad->ans->size == newQuad->dc.left->size)))
-                            ReplaceHash(newQuad, (UBYTE*)newQuad, DAGCOMPARE, ins_hash);
+                             ins_hash[newQuad] = newQuad;
                 }
         }
         /* convert back to a quad structure and generate code */
@@ -460,7 +419,7 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
                       node->dc.opcode == i_icon || node->dc.opcode == i_fcon || node->dc.opcode == i_imcon ||
                       node->dc.opcode == i_cxcon)))
         {
-            ReplaceHash(node, (UBYTE*)&newQuad->ans, sizeof(Optimizer::IMODE*), name_hash);
+            name_hash[&newQuad->ans] = node;
         }
     }
 #else
@@ -474,8 +433,8 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
 void flush_dag(void)
 {
 #ifdef DOING_LCSE
-    memset(name_hash, 0, sizeof(void*) * DAGSIZE);
-    memset(ins_hash, 0, sizeof(void*) * DAGSIZE);
+    ins_hash.clear();
+    name_hash.clear();
 #endif
 }
 
@@ -484,8 +443,8 @@ void flush_dag(void)
 void dag_rundown(void)
 {
 #ifdef DOING_LCSE
-    memset(name_hash, 0, sizeof(void*) * DAGSIZE);
-    memset(ins_hash, 0, sizeof(void*) * DAGSIZE);
+    ins_hash.clear();
+    name_hash.clear();
 #endif
 }
 

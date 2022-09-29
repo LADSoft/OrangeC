@@ -63,6 +63,7 @@
 #include "using.h"
 #include "template.h"
 #include "constopt.h"
+#include "FNV_hash.h"
 
 namespace Parser
 {
@@ -76,7 +77,9 @@ Optimizer::IMODE* structret_imode;
 SYMBOL* inlinesp_list[MAX_INLINE_NESTING];
 int inlinesp_count;
 
-static Optimizer::DAGLIST* name_value_hash[DAGSIZE];
+static std::unordered_map<Optimizer::QUAD*, Optimizer::IMODE*, OrangeC::Utils::fnv1a32_binary<DAGCOMPARE>,
+                          OrangeC::Utils::bin_eql<DAGCOMPARE>>
+    name_value_hash;
 static Optimizer::LIST* incdecList;
 static Optimizer::LIST* incdecListLast;
 static int push_nesting;
@@ -102,9 +105,9 @@ void iexpr_init(void)
 }
 void iexpr_func_init(void)
 {
-    memset(name_value_hash, 0, sizeof(Optimizer::DAGLIST*) * DAGSIZE);
+    name_value_hash.clear();
     Optimizer::loadHash.clear();
-    memset(Optimizer::castHash, 0, sizeof(Optimizer::castHash));
+    Optimizer::castHash.clear();
     incdecList = nullptr;
 }
 
@@ -146,7 +149,11 @@ Optimizer::IMODE* LookupExpression(enum Optimizer::i_ops op, int size, Optimizer
     Optimizer::IMODE* ap = nullptr;
     Optimizer::QUAD head = {op, left, right};
     if (!left->bits && (!right || !right->bits))
-        ap = (Optimizer::IMODE*)LookupNVHash((Optimizer::UBYTE*)&head, DAGCOMPARE, name_value_hash);
+    {
+        auto it = name_value_hash.find(&head);
+        if (it != name_value_hash.end())
+            ap = it->second;
+    }
     if (!ap)
     {
         bool vol = false;
@@ -156,7 +163,7 @@ Optimizer::IMODE* LookupExpression(enum Optimizer::i_ops op, int size, Optimizer
         Optimizer::gen_icode(op, ap, left, right);
         if (!left->offset->unionoffset && (!right || !right->offset->unionoffset))
             if (!left->bits && (!right || !right->bits))
-                ReplaceHash((Optimizer::QUAD*)ap, (Optimizer::UBYTE*)Optimizer::intermed_tail, DAGCOMPARE, name_value_hash);
+                name_value_hash[Optimizer::intermed_tail] = ap;
         if (left->offset)
             if (right && right->offset)
             {

@@ -24,10 +24,12 @@
  */
 
 #include <map>
+#include "FNV_hash.h"
 namespace Optimizer
 {
 extern std::map<IMODE*, IMODE*> loadHash;
-extern CASTTEMPHASH* castHash[DAGSIZE];
+extern std::unordered_map<CASTTEMP*, IMODE*, OrangeC::Utils::fnv1a32_binary<sizeof(CASTTEMP)>, OrangeC::Utils::bin_eql<sizeof(CASTTEMP)>>
+    castHash;
 extern int tempCount;
 
 extern LIST* immed_list[4091];

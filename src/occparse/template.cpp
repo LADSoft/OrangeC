@@ -6108,7 +6108,6 @@ static bool checkNonTypeTypes(std::list<TEMPLATEPARAMPAIR>* params, std::list<TE
 static SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func, std::list<INITLIST*>* args, std::list<TEMPLATEPARAMPAIR>* nparams)
 {
     bool usesParams = !!args && args->size();
-    auto check = args ? args->begin() : std::list<INITLIST*>::iterator();
     auto it = basetype(func->tp)->syms->begin();
     auto ite = basetype(func->tp)->syms->end();
     STRUCTSYM s, s1;
@@ -6131,7 +6130,8 @@ static SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBO
 
     }
     inDefaultParam++;
-    if (!valFromDefault(params, usesParams, args))
+    std::list<INITLIST*> arg1(*args);
+    if (!valFromDefault(params, usesParams, &arg1))
     {
         inDefaultParam--;
         return nullptr;
@@ -6169,7 +6169,7 @@ static SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBO
         }
         s.tmpl = func->templateParams;
         addTemplateDeclaration(&s);
-        auto ita = check;
+        auto ita = args->begin();
         auto itae = args->end();
         while (ita != itae && it != ite)
         {
@@ -6179,7 +6179,7 @@ static SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBO
             ++ita;
             ++it;
         }
-        if (args && !packedOrEllipse)
+        if (ita != itae && !packedOrEllipse)
         {
             dropStructureDeclaration();
             if (func->sb->parentClass)
@@ -6216,6 +6216,7 @@ static SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBO
     }
     s.tmpl = func->templateParams;
     addTemplateDeclaration(&s);
+    auto check = args->begin();
     for (auto sp1 : *basetype(func->tp)->syms)
     {
         if (!ValidArg(sp1->tp))
@@ -7797,6 +7798,7 @@ void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
             auto nse = newCls->tp->tags->end();
             auto os = tmpl->tp->tags->begin();
             auto ose = tmpl->tp->tags->end();
+            ++ns, ++os; // past embedded reference to self
             while (ns != nse && os != ose)
             {
                 SYMBOL* ss = *ns;
@@ -8034,8 +8036,12 @@ void SwapMainTemplateArgs(SYMBOL* cls)
 }
 SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, bool isExtern)
 {
-    auto ita = args->begin();
-    auto itae = args->end();
+    std::list<TEMPLATEPARAMPAIR>::iterator ita, itae;
+    if (args)
+    {
+        ita = args->begin();
+        itae = args->end();
+    }
     if (ita != itae && ita->second->type == kw_new)
         ++ita;
     (void)args;
@@ -10372,9 +10378,16 @@ std::list<TEMPLATEPARAMPAIR>* ResolveClassTemplateArgs(SYMBOL* sp, std::list<TEM
             {
                 if (n >= 0)
                     packIndex = i;
-                hold[k] = ResolveDeclType(sp,&*t)->begin();
-                hold[k] = ResolveTemplateSelector(sp, &*hold[k], false)->begin();
-                hold[k] = ResolveConstructor(sp, &*hold[k])->begin();
+                hold[k] = t;
+                auto t1 = ResolveDeclType(sp, &*hold[k]);
+                if (t1)
+                    hold[k] = t1->begin();
+                auto t2 = ResolveTemplateSelector(sp, &*hold[k], false);
+                if (t2)
+                    hold[k] = t2->begin();
+                auto t3 = ResolveConstructor(sp, &*hold[k]);
+                if (t3)
+                    hold[k] = t3->begin();
                 k++;
             }
             packIndex = oldIndex;
@@ -10400,16 +10413,19 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
     auto itdest = dest->begin();
     for ( ; itsrc != src->end() && itdest != dest->end(); ++itsrc, ++itdest)
     {
-        SYMBOL* hold = itdest->first;
-        TYPE* tp = CopyType(itsrc->first->tp);
-        itdest->first = CopySymbol(itsrc->first);
-        itdest->first->tp = tp;
-        if (hold)
+        if (itsrc->second->type != kw_new)
         {
-            itdest->first->name = hold->name;
+            SYMBOL* hold = itdest->first;
+            TYPE* tp = CopyType(itsrc->first->tp);
+            itdest->first = CopySymbol(itsrc->first);
+            itdest->first->tp = tp;
+            if (hold)
+            {
+                itdest->first->name = hold->name;
+            }
+            UpdateRootTypes(itdest->first->tp);
+            itdest->first->tp->templateParam = &*itdest;
         }
-        UpdateRootTypes(itdest->first->tp);
-        itdest->first->tp->templateParam = &*itdest;
     }
 }
 SYMBOL* TemplateByValLookup(SYMBOL* parent, SYMBOL* test, std::string& argumentName)

@@ -54,7 +54,7 @@ DWORD EnhancedStatusLine::WinMessage(DWORD iMessage, DWORD wParam ,DWORD lParam)
         case SB_SETPARTS:
             for (int i=0; i < count; i++)
                 delete items[i].text;
-            delete items;
+            delete [] items;
             count = wParam;
             items = new statusItem[count];
             for (int i=0; i < wParam; i++)

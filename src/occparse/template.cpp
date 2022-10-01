@@ -10366,7 +10366,7 @@ static TEMPLATEPARAMPAIR* TypeAliasSearch(const char* name)
         std::list<TEMPLATEPARAMPAIR>* arg = s->tmpl;
         if (s->tmpl)
         {
-            for (auto arg : *s->tmpl)
+            for (auto&& arg : *s->tmpl)
             {
                 if (arg.first && !strcmp(arg.first->name, name))
                 {

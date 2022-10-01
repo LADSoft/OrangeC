@@ -383,6 +383,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                     buf = mangleTemplate(buf, ts, (*tsl)[1].templateParams);
                 }
                 auto find = (*tsl).begin();
+                ++find;
                 for (; find != (*tsl).end(); ++find)
                 {
                     *buf++ = 't';

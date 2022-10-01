@@ -368,7 +368,7 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                             TEMPLATEPARAMPAIR* params = sp->tp->templateParam;
                             if (params->second->type == kw_typename)
                             {
-                                if (params->second->packed)
+                                if (params->second->packed && params->second->byPack.pack)
                                 {
                                     params = &params->second->byPack.pack->front();
                                 }
@@ -726,6 +726,8 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                 }
                 else if (sp && (basetype(sp->tp)->type == bt_templateparam || basetype(sp->tp)->type == bt_templateselector))
                 {
+                    if (!templateSelector)
+                        templateSelector = templateSelectorListFactory.CreateVector();
                     templateSelector->push_back(TEMPLATESELECTOR{});
                     templateSelector->back().sp = strSym;
                     templateSelector->push_back(TEMPLATESELECTOR{});

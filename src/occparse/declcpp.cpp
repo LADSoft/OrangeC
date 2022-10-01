@@ -975,7 +975,7 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
                 {
                     if (!sp1->sb->templateLevel)
                     {
-                        for (auto sp2 : *sp1->tp->syms)
+                        for (auto sp2 : *basetype(sp1->tp)->syms)
                         {
                             if (!sp2->sb->thisPtr)
                             {

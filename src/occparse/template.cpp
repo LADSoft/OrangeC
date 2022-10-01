@@ -293,7 +293,7 @@ void TemplateGetDeferred(SYMBOL* sym)
 TEMPLATEPARAMPAIR* TemplateLookupSpecializationParam(const char* name)
 {
     if (parsingSpecializationDeclaration && currents->args)
-        for (auto search : *currents->args)
+        for (auto&& search : *currents->args)
             if (search.first && !strcmp(search.first->name, name))
                 return &search;
     return nullptr;
@@ -1529,7 +1529,6 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                     if (ISID(lex))
                     {
                         for (auto&& s : structSyms)
-                        while (s && !name)
                         {
                             if (s->tmpl)
                             {
@@ -6130,7 +6129,9 @@ static SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBO
 
     }
     inDefaultParam++;
-    std::list<INITLIST*> arg1(*args);
+    std::list<INITLIST*> arg1;
+    if (args)
+        arg1 = *args;
     if (!valFromDefault(params, usesParams, &arg1))
     {
         inDefaultParam--;
@@ -6169,8 +6170,12 @@ static SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBO
         }
         s.tmpl = func->templateParams;
         addTemplateDeclaration(&s);
-        auto ita = args->begin();
-        auto itae = args->end();
+        std::list<INITLIST*>::iterator ita, itae;
+        if (args)
+        {
+            ita = args->begin();
+            itae = args->end();
+        }
         while (ita != itae && it != ite)
         {
             SYMBOL* sp1 = *it;
@@ -6216,7 +6221,12 @@ static SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBO
     }
     s.tmpl = func->templateParams;
     addTemplateDeclaration(&s);
-    auto check = args->begin();
+    std::list<INITLIST*>::iterator check, checke;
+    if (args)
+    {
+        check = args->begin();
+        checke = args->end();
+    }
     for (auto sp1 : *basetype(func->tp)->syms)
     {
         if (!ValidArg(sp1->tp))
@@ -6225,7 +6235,7 @@ static SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBO
             inDefaultParam--;
             return nullptr;
         }
-        if (args && check != args->end())
+        if (args && check != checke)
             ++check;
     }
     if (isstructured(basetype(func->tp)->btp))
@@ -10099,7 +10109,7 @@ static std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelector(SYMBOL* sp, TEMPLAT
     }
     return rv;
 }
-static std::list<TEMPLATEPARAMPAIR>* CopyArgsBack(std::list<TEMPLATEPARAMPAIR>* args, std::list<TEMPLATEPARAMPAIR>::iterator hold[], int k1)
+static std::list<TEMPLATEPARAMPAIR>* CopyArgsBack(std::list<TEMPLATEPARAMPAIR>* args, TEMPLATEPARAMPAIR* hold[], int k1)
 {
     int k = 0;
     std::list<TEMPLATEPARAMPAIR>* rv = nullptr;
@@ -10127,12 +10137,12 @@ static std::list<TEMPLATEPARAMPAIR>* CopyArgsBack(std::list<TEMPLATEPARAMPAIR>* 
                     continue;
                 }
             }
-            if (hold[k++] != t)
+            if (hold[k++] != &*t)
                 break;
             ++t;
             if (t == te && !tas.empty())
             {
-                if (hold[k++] != te)
+                if (hold[k++] != nullptr)
                     break;
                 te = tas.top();
                 tas.pop();
@@ -10156,7 +10166,7 @@ static std::list<TEMPLATEPARAMPAIR>* CopyArgsBack(std::list<TEMPLATEPARAMPAIR>* 
                 *rv->back().second = *old.second;
                 rv->back().first = old.first;
                 rv->back().second->byPack.pack = templateParamPairListFactory.CreateList();
-                while (hold[k] != te)
+                while (hold[k] != nullptr)
                 {
                     rv->back().second->byPack.pack->push_back(*hold[k++]);
                 }
@@ -10174,7 +10184,7 @@ std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelectors(SYMBOL* sp, std::list<TEM
 {
     std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
     int k = 0;
-    std::list<TEMPLATEPARAMPAIR>::iterator hold[200];
+    TEMPLATEPARAMPAIR* hold[200];
     if (args)
     {
         auto t = args->begin();
@@ -10192,17 +10202,17 @@ std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelectors(SYMBOL* sp, std::list<TEM
                 }
                 else
                 {
-                    hold[k++] = te;
+                    hold[k++] = nullptr;
                     ++t;
                     continue;
                 }
             }
             auto a = ResolveTemplateSelector(sp, &*t, byVal);
-            hold[k++] = a ? a->begin() : t;
+            hold[k++] = a ? &*a->begin() : &*t;
             ++t;
             if (t == te && !tas.empty())
             {
-                hold[k++] = te;
+                hold[k++] = nullptr;
                 te = tas.top();
                 tas.pop();
                 t = tas.top();
@@ -10225,15 +10235,18 @@ TYPE* ResolveTemplateSelectors(SYMBOL* sp, TYPE* tp)
 }
 std::list<TEMPLATEPARAMPAIR>* ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMPAIR* tpx)
 {
-    std::list<TEMPLATEPARAMPAIR>* rv = nullptr;
+    std::list<TEMPLATEPARAMPAIR>* rv = templateParamPairListFactory.CreateList();
     if (tpx->second->type == kw_typename && tpx->second->byClass.dflt && tpx->second->byClass.dflt->type == bt_templatedecltype)
     {
-        rv = templateParamPairListFactory.CreateList();
         rv->push_back(TEMPLATEPARAMPAIR{tpx->first, Allocate<TEMPLATEPARAM>()});
         *rv->back().second = *tpx->second;
         rv->back().second->byClass.dflt = TemplateLookupTypeFromDeclType(rv->back().second->byClass.dflt);
         if (!rv->back().second->byClass.dflt)
             rv->back().second->byClass.dflt = &stdany;
+    }
+    else
+    {
+        rv->push_back(*tpx);
     }
     return rv;
 }
@@ -10246,7 +10259,7 @@ std::list<TEMPLATEPARAMPAIR>* ResolveDeclTypes(SYMBOL* sp, std::list<TEMPLATEPAR
         s.tmpl = args;
         addTemplateDeclaration(&s);
         int k = 0;
-        std::list<TEMPLATEPARAMPAIR>::iterator hold[200];
+        TEMPLATEPARAMPAIR* hold[200];
         if (args)
         {
             auto t = args->begin();
@@ -10264,16 +10277,19 @@ std::list<TEMPLATEPARAMPAIR>* ResolveDeclTypes(SYMBOL* sp, std::list<TEMPLATEPAR
                     }
                     else
                     {
-                        hold[k++] = te;
+                        hold[k++] = nullptr;
                         ++t;
                         continue;
                     }
                 }
-                hold[k++] = ResolveDeclType(sp, &*t)->begin();
+                hold[k++] = &*t;
+                auto t1 = ResolveDeclType(sp, &*t);
+                if (t1)
+                    hold[k++] = &*t1->begin();
                 ++t;
                 if (t == te && !tas.empty())
                 {
-                    hold[k++] = te;
+                    hold[k++] = nullptr;
                     te = tas.top();
                     tas.pop();
                     t = tas.top();
@@ -10328,7 +10344,7 @@ std::list<TEMPLATEPARAMPAIR>* ResolveClassTemplateArgs(SYMBOL* sp, std::list<TEM
 {
     std::list<TEMPLATEPARAMPAIR>* rv = args;
     std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
-    std::list<TEMPLATEPARAMPAIR>::iterator hold[200];
+    TEMPLATEPARAMPAIR* hold[200];
     int k = 0;
     if (args)
     {
@@ -10348,7 +10364,7 @@ std::list<TEMPLATEPARAMPAIR>* ResolveClassTemplateArgs(SYMBOL* sp, std::list<TEM
                 }
                 else
                 {
-                    hold[k++] = te;
+                    hold[k++] = nullptr;
                     ++t;
                     continue;
                 }
@@ -10378,23 +10394,23 @@ std::list<TEMPLATEPARAMPAIR>* ResolveClassTemplateArgs(SYMBOL* sp, std::list<TEM
             {
                 if (n >= 0)
                     packIndex = i;
-                hold[k] = t;
+                hold[k] = &*t;
                 auto t1 = ResolveDeclType(sp, &*hold[k]);
                 if (t1)
-                    hold[k] = t1->begin();
+                    hold[k] = &*t1->begin();
                 auto t2 = ResolveTemplateSelector(sp, &*hold[k], false);
                 if (t2)
-                    hold[k] = t2->begin();
+                    hold[k] = &*t2->begin();
                 auto t3 = ResolveConstructor(sp, &*hold[k]);
                 if (t3)
-                    hold[k] = t3->begin();
+                    hold[k] = &*t3->begin();
                 k++;
             }
             packIndex = oldIndex;
             ++t;
             if (t == te && !tas.empty())
             {
-                hold[k++] = te;
+                hold[k++] = nullptr;
                 te = tas.top();
                 tas.pop();
                 t = tas.top();
@@ -11763,7 +11779,7 @@ static bool ParseTypeAliasDefaults(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
     if (origTemplate && args)
     {
         std::list<TEMPLATEPARAMPAIR>::iterator tpl2, tpl3;
-        for (std::list<TEMPLATEPARAMPAIR>::iterator tpl2 = origTemplate->begin(), tpl3 = args->begin(); tpl2 != origTemplate->end();
+        for (tpl2 = origTemplate->begin(), tpl3 = args->begin(); tpl2 != origTemplate->end();
              ++tpl2, tpl3 == args->end() ? tpl3 : ++tpl3)
             if ((tpl3 == args->end() || !tpl3->second->byClass.dflt) && tpl2->second->byClass.txtdflt)
                 break;
@@ -11875,34 +11891,37 @@ std::list<TEMPLATEPARAMPAIR>* GetTypeAliasArgs(SYMBOL* sp, std::list<TEMPLATEPAR
             std::list<TEMPLATEPARAMPAIR>::iterator itargs2 = args->begin();
             for (auto test : *origTemplate)
             {
-                if (test.first && !strcmp(test.first->name, args1->back().first->name))
+                if (test.second->type != kw_new)
                 {
-                    if (itargs2 == args->end())
+                    if (test.first && !strcmp(test.first->name, args1->back().first->name))
                     {
-                        if (!test.second->packed)
-                            Utils::fatal("internal error");
-                    }
-                    else if (args1->back().second->packed)
-                    {
-                        if (itargs2->second->packed)
+                        if (itargs2 == args->end())
                         {
-                            args1->back().second->byPack.pack = itargs2->second->byPack.pack;
+                            if (!test.second->packed)
+                                Utils::fatal("internal error");
+                        }
+                        else if (args1->back().second->packed)
+                        {
+                            if (itargs2->second->packed)
+                            {
+                                args1->back().second->byPack.pack = itargs2->second->byPack.pack;
+                            }
+                            else
+                            {
+                                if (!args1->back().second->byPack.pack)
+                                    args1->back().second->byPack.pack = templateParamPairListFactory.CreateList();
+                                args1->back().second->byPack.pack->push_back(TEMPLATEPARAMPAIR{nullptr, itargs2->second});
+                            }
                         }
                         else
                         {
-                            if (!args1->back().second->byPack.pack)
-                                args1->back().second->byPack.pack = templateParamPairListFactory.CreateList();
-                            args1->back().second->byPack.pack->push_back(TEMPLATEPARAMPAIR{nullptr, itargs2->second});
+                            args1->back().second->byClass.dflt = itargs2->second->byClass.dflt ? itargs2->second->byClass.dflt : itargs2->second->byClass.val;
                         }
                     }
-                    else
+                    if (itargs2 != args->end())
                     {
-                        args1->back().second->byClass.dflt = itargs2->second->byClass.dflt ? itargs2->second->byClass.dflt : itargs2->second->byClass.val;
+                        ++itargs2;
                     }
-                }
-                if (itargs2 != args->end())
-                {
-                    ++itargs2;
                 }
             }
         }

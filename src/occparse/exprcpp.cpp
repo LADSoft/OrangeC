@@ -119,7 +119,8 @@ EXPRESSION* baseClassOffset(SYMBOL* base, SYMBOL* derived, EXPRESSION* en)
             auto it = derived->sb->baseClasses->begin();
             auto ite = derived->sb->baseClasses->end();
             std::deque<std::pair<std::list<BASECLASS*>::iterator, std::list<BASECLASS*>::iterator>> stk;
-            stk.push_back(std::pair<std::list<BASECLASS*>::iterator, std::list<BASECLASS*>::iterator>(it, ite));
+            if (it != ite)
+                stk.push_back(std::pair<std::list<BASECLASS*>::iterator, std::list<BASECLASS*>::iterator>(it, ite));
             while (it != ite)
             {
                 if ((*it)->cls == base)

@@ -564,7 +564,7 @@ void calculateStructOffsets(SYMBOL* sp)
     int maxsize = 0;
     int size = 0;
     int totalAlign = -1;
-    if (sp->sb->baseClasses)
+    if (sp->sb->baseClasses && sp->sb->baseClasses->size())
     {
         auto bases = sp->sb->baseClasses->front();
         if (sp->sb->hasvtab && !bases->cls->sb->hasvtab)

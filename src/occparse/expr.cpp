@@ -4107,7 +4107,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                             break;
                         }
                     }
-                    if (!found)
+                    if (!found && tpln != tplne)
                         errorsym(ERR_TOO_MANY_ARGS_PASSED_TO_TEMPLATE, sym);
                 }
                 sym->sb->throughClass = funcparams->sp->sb->throughClass;

@@ -177,13 +177,10 @@ SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bo
             bool found = false;
             for (auto a : lst)
             {
-                while (a)
+                if (a->sb->storage_class != sc_overloads)
                 {
-                    if (a->sb->storage_class != sc_overloads)
-                    {
-                        found = true;
-                        break;
-                    }
+                    found = true;
+                    break;
                 }
             }
             if (!found)
@@ -196,7 +193,7 @@ SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bo
                 {
                     for (auto b : *a->tp->syms)
                     { 
-                        tp->syms->Add(b);
+                        tp->syms->AddName(b);
                     }
                 }
                 return sym;
@@ -219,6 +216,7 @@ SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bo
     }
     return nullptr;
 }
+int count3;
 LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly, enum e_sc storage_class,
                     bool isType)
 {
@@ -249,7 +247,7 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
     }
     if (MATCHKW(lex, classsel))
     {
-        nssym == rootNameSpace;
+        nssym = rootNameSpace;
         lex = getsym();
         qualified = true;
     }
@@ -1444,7 +1442,7 @@ static bool IsFriend(SYMBOL* cls, SYMBOL* frnd)
             if (isfunction(sym->tp) && sym->sb->parentClass == frnd->sb->parentClass && !strcmp(sym->name, frnd->name) &&
                 sym->sb->overloadName && searchOverloads(frnd, sym->sb->overloadName->tp->syms))
                 return true;
-            if (sym->sb->templateLevel)
+            if (sym->sb->templateLevel && sym->sb->instantiations)
             {
                 for (auto instants : *sym->sb->instantiations)
                 {
@@ -1568,22 +1566,26 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
                 derived == currentBase) ||
                sym->sb->access >= minAccess;
     }
-    for (auto lst : *currentBase->sb->baseClasses)
+    if (currentBase->sb->baseClasses)
     {
-        SYMBOL* sym = lst->cls;
-        sym = basetype(sym->tp)->sp;
-        // we have to go through the base classes even if we know that a normal
-        // lookup wouldn't work, so we can check their friends lists...
-        if (sym == member || sameTemplate(sym->tp, member->tp))
+        for (auto lst : *currentBase->sb->baseClasses)
         {
-            return ((level == 0 || (level == 1 && (minAccess < ac_public || sym->sb->access == ac_public))) &&
-                    (derived == currentBase || sym->sb->access != ac_private)) ||
-                   sym->sb->access >= minAccess;
+            SYMBOL* sym = lst->cls;
+            sym = basetype(sym->tp)->sp;
+            // we have to go through the base classes even if we know that a normal
+            // lookup wouldn't work, so we can check their friends lists...
+            if (sym == member || sameTemplate(sym->tp, member->tp))
+            {
+                return ((level == 0 || (level == 1 && (minAccess < ac_public || sym->sb->access == ac_public))) &&
+                        (derived == currentBase || sym->sb->access != ac_private)) ||
+                       sym->sb->access >= minAccess;
+            }
+            if (isAccessibleInternal(derived, sym, member, funcsp,
+                                     level != 0 && (lst->accessLevel == ac_private || minAccess == ac_private) ? ac_none
+                                                                                                               : minAccess,
+                                     level + 1, asAddress))
+                return true;
         }
-        if (isAccessibleInternal(derived, sym, member, funcsp,
-                                 level != 0 && (lst->accessLevel == ac_private || minAccess == ac_private) ? ac_none : minAccess,
-                                 level + 1, asAddress))
-            return true;
     }
     return false;
 }
@@ -3682,10 +3684,26 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
                 pas.push(PAE);
                 if (!PL->second->byPack.pack != !PA->second->byPack.pack)
                     return false;
-                PLE = PL->second->byPack.pack->end();
-                PL = PL->second->byPack.pack->begin();
-                PAE = PA->second->byPack.pack->end();
-                PA = PA->second->byPack.pack->begin();
+                if (PL->second->byPack.pack)
+                {
+                    PLE = PL->second->byPack.pack->end();
+                    PL = PL->second->byPack.pack->begin();
+                }
+                else
+                {
+                    PLE = std::list<TEMPLATEPARAMPAIR>::iterator();
+                    PL = PLE;
+                }
+                if (PA->second->byPack.pack)
+                {
+                    PAE = PA->second->byPack.pack->end();
+                    PA = PA->second->byPack.pack->begin();
+                }
+                else
+                {
+                    PAE = std::list<TEMPLATEPARAMPAIR>::iterator();
+                    PA = PAE;
+                }
             }
             if (PL == PLE || PA == PAE)
                 break;
@@ -5164,13 +5182,17 @@ void weedgathering(std::list<SYMBOL*>& gather)
             set.insert(p);
         else
             toRemove.insert(toRemove.begin(), p);
-    for (auto it = gather.begin(); it != gather.end(); ++it)
+    for (auto it = gather.begin(); it != gather.end();)
     {
         auto itr = toRemove.find(*it);
         if (itr != toRemove.end())
         {
             it = gather.erase(it);
             toRemove.erase(itr);
+        }
+        else
+        {
+            ++it;
         }
     }
 }
@@ -5825,8 +5847,8 @@ SYMBOL* MatchOverloadedFunction(TYPE* tp, TYPE** mtp, SYMBOL* sym, EXPRESSION** 
             itp = syms->begin();
             if (itp != syms->end() && (*itp)->tp->syms)
             {
-                itp = (*itp)->tp->syms->begin();
                 itpe = (*itp)->tp->syms->end();
+                itp = (*itp)->tp->syms->begin();
                 found = true;
             }
         }
@@ -5855,6 +5877,8 @@ SYMBOL* MatchOverloadedFunction(TYPE* tp, TYPE** mtp, SYMBOL* sym, EXPRESSION** 
             il->exp = intNode(en_c_i, 0);
             if (isref(il->tp))
                 il->tp = basetype(il->tp)->btp;
+            if (!fpargs.arguments)
+                fpargs.arguments = initListListFactory.CreateList();
             fpargs.arguments->push_back(il);
             ++itp;
         }

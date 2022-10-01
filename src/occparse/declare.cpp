@@ -353,7 +353,7 @@ void InsertSymbol(SYMBOL* sp, enum e_sc storage_class, enum e_lk linkage, bool a
                     if (!found)
                     {
                         sp->sb->overlayIndex = n;
-                        table->Add(sp);
+                        table->AddName(sp);
                     }
                 }
                 sp->sb->overloadName = funcs;
@@ -1061,7 +1061,7 @@ static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac c
         calculateStructAbstractness(sp, sp);
         calculateVirtualBaseOffsets(sp);  // undefined in local context
         calculateVTabEntries(sp, sp, &sp->sb->vtabEntries, 0);
-        if (sp->sb->vtabEntries)
+        if (sp->sb->vtabEntries && sp->sb->vtabEntries->size())
         {
             char* buf = (char*)alloca(4096);
             //            InsertInline(sp);
@@ -1446,17 +1446,20 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
                     std::list<TEMPLATEPARAMPAIR>* templateParams = TemplateGetParams(sp);
                     sp->templateParams =
                         TemplateMatching(lex, sp->templateParams, templateParams, sp, MATCHKW(lex, begin) || MATCHKW(lex, colon));
-                    for (auto instant : *sp->sb->parentTemplate->sb->instantiations)
+                    if (sp->sb->parentTemplate->sb->instantiations)
                     {
-                        std::list<TEMPLATEPARAMPAIR>::iterator itln = instant->templateParams->begin();
-                        ++itln;
-                        std::list<TEMPLATEPARAMPAIR>::iterator itlne = instant->templateParams->end();
-                        std::list<TEMPLATEPARAMPAIR>::iterator itl = templateParams->begin();
-                        ++itl;
-                        std::list<TEMPLATEPARAMPAIR>::iterator itle = templateParams->end();
-                        for  ( ; itl != itle && itln != itlne; ++itln, ++itl)
+                        for (auto instant : *sp->sb->parentTemplate->sb->instantiations)
                         {
-                            itln->first->name = itl->first->name;
+                            std::list<TEMPLATEPARAMPAIR>::iterator itln = instant->templateParams->begin();
+                            ++itln;
+                            std::list<TEMPLATEPARAMPAIR>::iterator itlne = instant->templateParams->end();
+                            std::list<TEMPLATEPARAMPAIR>::iterator itl = templateParams->begin();
+                            ++itl;
+                            std::list<TEMPLATEPARAMPAIR>::iterator itle = templateParams->end();
+                            for (; itl != itle && itln != itlne; ++itln, ++itl)
+                            {
+                                itln->first->name = itl->first->name;
+                            }
                         }
                     }
                 }

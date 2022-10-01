@@ -684,7 +684,7 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
-    if (funcparams.arguments)
+    if (funcparams.arguments && funcparams.arguments->size())
     {
         TYPE* tp2 = first(funcparams.arguments)->tp;
         if (isarray(tp2))
@@ -1075,7 +1075,7 @@ static bool is_nothrow_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym,
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
-    if (funcparams.arguments)
+    if (funcparams.arguments && funcparams.arguments->size())
     {
         TYPE* tp2 = first(funcparams.arguments)->tp;
         if (isref(tp2) && funcparams.arguments->size() > 1)
@@ -1128,7 +1128,7 @@ static bool is_nothrow_assignable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TY
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
-    if (funcparams.arguments)
+    if (funcparams.arguments && funcparams.arguments->size())
     {
         TYPE* tp2 = first(funcparams.arguments)->tp;
         if (isref(tp2) && funcparams.arguments->size() > 1)
@@ -1232,7 +1232,7 @@ static bool is_trivially_assignable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, 
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
-    if (funcparams.arguments && isstructured(first(funcparams.arguments)->tp))
+    if (funcparams.arguments && funcparams.arguments->size() && isstructured(first(funcparams.arguments)->tp))
     {
         if (funcparams.arguments->size() == 2)
         {
@@ -1254,7 +1254,7 @@ static bool is_trivially_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sy
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
-    if (funcparams.arguments && isstructured(first(funcparams.arguments)->tp))
+    if (funcparams.arguments && funcparams.arguments->size() && isstructured(first(funcparams.arguments)->tp))
     {
         if (funcparams.arguments->size() == 1)
            rv = trivialDefaultConstructor(first(funcparams.arguments)->tp);

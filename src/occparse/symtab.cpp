@@ -264,8 +264,8 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
             {
                 if (itNew->second->bySpecialization.types)
                 {
-                    itNew = itNew->second->bySpecialization.types->begin();
                     iteNew = itNew->second->bySpecialization.types->end();
+                    itNew = itNew->second->bySpecialization.types->begin();
                 }
                 else
                 {
@@ -276,8 +276,8 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
             {
                 if (itOld->second->bySpecialization.types)
                 {
-                    itOld = itOld->second->bySpecialization.types->begin();
                     iteOld = itOld->second->bySpecialization.types->end();
+                    itOld = itOld->second->bySpecialization.types->begin();
                 }
                 else
                 {
@@ -363,6 +363,8 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                                 auto ts1e = (*tpn->sp->sb->templateSelector).end();
                                 auto ts2 = (*tps->sp->sb->templateSelector).begin();
                                 auto ts2e = (*tps->sp->sb->templateSelector).end();
+                                ++ts1;
+                                ++ts2;
                                 if (ts2->sp->sb && ts2->sp->sb->typedefSym)
                                 {
                                     ++ts1;
@@ -408,7 +410,7 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                             }
                             auto find = (*tpl).begin();
                             auto finde = (*tpl).end();
-                            for (; sym && find != finde; ++find)
+                            for (++find, ++find; sym && find != finde; ++find)
                             {
                                 SYMBOL* fsp;
                                 if (!isstructured(sym->tp))
@@ -443,7 +445,7 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                         return false;
                     auto tss1 = (*ts1).begin();
                     auto tss2 = (*ts2).begin();
-                    for (; tss1 != (*ts1).end() && tss2 != (*ts2).end(); ++ tss1, ++ tss2)
+                    for (++tss1, ++tss2; tss1 != (*ts1).end() && tss2 != (*ts2).end(); ++ tss1, ++ tss2)
                     {
                         if (strcmp(tss1->name, tss2->name))
                             return false;

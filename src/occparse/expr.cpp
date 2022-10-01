@@ -3026,6 +3026,9 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
             il->exp = q;
             il->tp = basetype(sym->tp);
             (*lptr)->push_back(il);
+            itle = (*lptr)->end();
+            itl = itle;
+            --itl;
             if (cloneTempExpr(&il->exp, nullptr, nullptr))
             {
                 int i;

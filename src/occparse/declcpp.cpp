@@ -1200,8 +1200,7 @@ BASECLASS* innerBaseClass(SYMBOL* declsym, SYMBOL* bcsym, bool isvirtual, enum e
 }
 LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defaultAccess)
 {
-    if (!declsym->sb->baseClasses)
-        declsym->sb->baseClasses = baseClassListFactory.CreateList();
+    auto baseClasses = baseClassListFactory.CreateList();
     enum e_ac currentAccess;
     bool isvirtual = false;
     bool done = false;
@@ -1232,7 +1231,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
             {
                 auto bc = innerBaseClass(declsym, tp->sp, isvirtual, currentAccess);
                 if (bc)
-                    declsym->sb->baseClasses->push_back(bc);
+                    baseClasses->push_back(bc);
             }
             done = !MATCHKW(lex, comma);
             if (!done)
@@ -1354,7 +1353,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
                                     bcsym->packed = true;
                                     auto bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
                                     if (bc)
-                                        declsym->sb->baseClasses->push_back(bc);
+                                        baseClasses->push_back(bc);
                                 }
                             }
                             else
@@ -1408,7 +1407,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
                                             auto bc = innerBaseClass(declsym, temp, isvirtual, currentAccess);
                                             if (bc)
                                             {
-                                                declsym->sb->baseClasses->push_back(bc);
+                                                baseClasses->push_back(bc);
                                             }
                                         }
                                         n++;
@@ -1478,7 +1477,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
                         {
                             auto bc = innerBaseClass(declsym, tpp.second->byClass.val->sp, isvirtual, currentAccess);
                             if (bc)
-                                declsym->sb->baseClasses->push_back(bc);
+                                baseClasses->push_back(bc);
                         }
                     }
                 }
@@ -1527,7 +1526,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
                     {
                         auto bc = innerBaseClass(declsym, tp->sp, isvirtual, currentAccess);
                         if (bc)
-                            declsym->sb->baseClasses->push_back(bc);
+                            baseClasses->push_back(bc);
                         currentAccess = defaultAccess;
                         isvirtual = false;
                     }
@@ -1540,7 +1539,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
             {
                 auto bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
                 if (bc)
-                    declsym->sb->baseClasses->push_back(bc);
+                    baseClasses->push_back(bc);
                 currentAccess = defaultAccess;
                 isvirtual = false;
                 done = !MATCHKW(lex, comma);
@@ -1585,6 +1584,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
     } while (!done);
     dropStructureDeclaration();
 
+    declsym->sb->baseClasses = baseClasses;
     for (auto lst : *declsym->sb->baseClasses)
     {
         if (!isExpressionAccessible(nullptr, lst->cls, nullptr, nullptr, false))
@@ -4119,14 +4119,16 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
 // used to construct things...
 static bool hasNoBody(std::list<STATEMENT*>* stmts)
 {
-    for (auto stmt : *stmts)
-    while (stmt)
+    if (stmts)
     {
-        if (stmt->type != st_line && stmt->type != st_varstart && stmt->type != st_dbgblock)
-            return false;
-        // modified this next line to use 'lower'
-        if (stmt->type == st_block && !hasNoBody(stmt->lower))
-            return false;
+        for (auto stmt : *stmts)
+        {
+            if (stmt->type != st_line && stmt->type != st_varstart && stmt->type != st_dbgblock)
+                return false;
+            // modified this next line to use 'lower'
+            if (stmt->type == st_block && !hasNoBody(stmt->lower))
+                return false;
+        }
     }
     return true;
 }

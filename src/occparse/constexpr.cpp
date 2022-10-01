@@ -1155,9 +1155,10 @@ static bool EvaluateStatements(EXPRESSION*& node, std::list<STATEMENT*>* stmt, s
     blockList.push(std::pair<std::list<STATEMENT*>*, std::list<STATEMENT*>::iterator>( stmt, stmt->begin()));
     while (!blockList.empty())
     {
+        bool breakout = false;
         auto s = blockList.top();
         blockList.pop();
-        for (auto it = s.second; it != s.first->end(); ++it)
+        for (auto it = s.second; it != s.first->end();++it)
         {
             auto stmt = *it;
             switch (stmt->type)
@@ -1240,6 +1241,7 @@ static bool EvaluateStatements(EXPRESSION*& node, std::list<STATEMENT*>* stmt, s
                     // next program counter, next lower block
                     blockList.push(std::pair<std::list<STATEMENT*>*, std::list<STATEMENT*>::iterator>(stmt->lower, stmt->lower->begin()));
                     // break out of loop to activate
+                    breakout = true;
                     break;
                 case st_expr:
                     if (stmt->select)
@@ -1280,6 +1282,8 @@ static bool EvaluateStatements(EXPRESSION*& node, std::list<STATEMENT*>* stmt, s
                     }
                     break;
             }
+            if (breakout)
+                break;
         }
     }
     return false;
@@ -1289,7 +1293,7 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
     if (node->v.func->sp->sb->isConstructor)
     {
         // we don't support constexpr constructors for classes with base classes right now...
-        if (node->v.func->sp->sb->parentClass->sb->baseClasses)
+        if (node->v.func->sp->sb->parentClass->sb->baseClasses && node->v.func->sp->sb->parentClass->sb->baseClasses->size())
             return false;
     }
 

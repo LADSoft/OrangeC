@@ -595,8 +595,8 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>
                     {
                         tps.push(it);
                         tps.push(ite);
-                        it = it->second->byPack.pack->begin();
                         ite = it->second->byPack.pack->end();
+                        it = it->second->byPack.pack->begin();
                         continue;
                     }
                 }
@@ -907,7 +907,6 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     {
                         strcat(nm, "@");
                         strcat(nm, s->name);
-                        ++s;
                     }
                     p = nm;
                     while (isdigit(*p))

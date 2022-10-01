@@ -3520,6 +3520,8 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, std::l
     if (tp->type == bt_templateselector)
     {
         SYMBOL* ts = (*tp->sp->sb->templateSelector)[1].sp;
+        auto find = (*tp->sp->sb->templateSelector).begin();
+        auto finde = (*tp->sp->sb->templateSelector).end();
         SYMBOL* sym = nullptr;
         if ((*tp->sp->sb->templateSelector)[1].isDeclType)
         {
@@ -3570,9 +3572,7 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, std::l
         if (sym)
         {
             sym = basetype(PerformDeferredInitialization(sym->tp, nullptr))->sp;
-            auto find = (*tp->sp->sb->templateSelector).begin();
-            auto finde = (*tp->sp->sb->templateSelector).end();
-            for ( ; find != finde && sym; ++ find)
+            for (++find, ++find ; find != finde && sym; ++ find)
             {
                 SYMBOL* spo = sym;
                 if (!isstructured(spo->tp))

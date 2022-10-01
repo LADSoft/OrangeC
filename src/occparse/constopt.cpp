@@ -2632,7 +2632,7 @@ int opt0(EXPRESSION** node)
                             }
                             ++find;
                         }
-                        if (find != (*tsl).end() && sym)
+                        if (find == (*tsl).end() && sym)
                         {
                             if (sym->sb->storage_class == sc_constant)
                             {

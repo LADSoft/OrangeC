@@ -1259,7 +1259,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
         auto it1 = it;
         auto itend = basetype(match->tp)->syms->end();
         ++it1;
-        if (it1 != itend && ((*it)->sb->init || (*it)->sb->deferredCompile))
+        if (it1 != itend && (*it1)->tp->type != bt_void && (match->sb->init || match->sb->deferredCompile))
         {
             if (allTemplateArgsSpecified(sp, sp->templateParams))
             {
@@ -1283,6 +1283,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
                 params->functp = match->tp;
                 params->sp = match;
                 params->ascall = true;
+                params->arguments = initListListFactory.CreateList();
                 AdjustParams(match, basetype(match->tp)->syms->begin(), basetype(match->tp)->syms->end(), &params->arguments, false, true);
                 if (sp->sb->vbaseEntries)
                 {

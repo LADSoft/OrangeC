@@ -10507,6 +10507,7 @@ SYMBOL* TemplateByValLookup(SYMBOL* parent, SYMBOL* test, std::string& argumentN
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool noErr)
 {
+    auto argsorig = args;
     if (args && args->front().second->type == kw_new)
     {
         auto it = args->begin();
@@ -10749,7 +10750,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
                 for (int i = 0; i < args->size() && it != sym->templateParams->end(); ++i, ++it)
                     ;
                 if (it != sym->templateParams->end() && it->second->byClass.txtdflt)
-                    found1->templateParams->insert(found1->templateParams->end(), it, sym->templateParams->end());
+                    argsorig->insert(argsorig->end(), it, sym->templateParams->end());
                 copySyms(found1, sym);
             }
             else

@@ -11534,9 +11534,9 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, std::list
         {
             basetype(tp)->sp = CopySymbol(basetype(tp)->sp);
             std::list<TEMPLATEPARAMPAIR>* tpx = basetype(tp)->sp->templateParams;
+            auto args1 = templateParamPairListFactory.CreateList();
             if (tpx)
             {
-                auto args1 = templateParamPairListFactory.CreateList();
                 for (auto&& tpl : *tpx)
                 {
                     args1->push_back(TEMPLATEPARAMPAIR{tpl.first, Allocate<TEMPLATEPARAM>()});
@@ -11585,137 +11585,137 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, std::list
                         }
                     }
                 }
-                SYMBOL* sp1 = GetClassTemplate(basetype(tp)->sp, args1, true);
-                if (sp1)
+            }
+            SYMBOL* sp1 = GetClassTemplate(basetype(tp)->sp, args1, true);
+            if (sp1)
+            {
+                sp1->tp = PerformDeferredInitialization(sp1->tp, nullptr);
+                if (sp1->templateParams)
                 {
-                    sp1->tp = PerformDeferredInitialization(sp1->tp, nullptr);
-                    if (sp1->templateParams)
+                    std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
+                    auto ita = sp1->templateParams->begin();
+                    auto itea = sp1->templateParams->end();
+                    for (; ita != itea;)
                     {
-                        std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
-                        auto ita = sp1->templateParams->begin();
-                        auto itea = sp1->templateParams->end();
-                        for (; ita != itea;)
+                        if (ita->second->packed && ita->second->byPack.pack)
                         {
-                            if (ita->second->packed && ita->second->byPack.pack)
-                            {
-                                tas.push(ita);
-                                tas.push(itea);
-                                itea = ita->second->byPack.pack->end();
-                                ita = ita->second->byPack.pack->begin();
-                            }
-                            if (ita != itea)
-                            {
-                                ita->second->byClass.dflt = ita->second->byClass.val;
-                                ++ita;
-                            }
-                            if (ita == itea && !tas.empty())
-                            {
-                                itea = tas.top();
-                                tas.pop();
-                                ita = tas.top();
-                                tas.pop();
-                                ++ita;
-                            }
+                            tas.push(ita);
+                            tas.push(itea);
+                            itea = ita->second->byPack.pack->end();
+                            ita = ita->second->byPack.pack->begin();
+                        }
+                        if (ita != itea)
+                        {
+                            ita->second->byClass.dflt = ita->second->byClass.val;
+                            ++ita;
+                        }
+                        if (ita == itea && !tas.empty())
+                        {
+                            itea = tas.top();
+                            tas.pop();
+                            ita = tas.top();
+                            tas.pop();
+                            ++ita;
                         }
                     }
-                    basetype(tp)->sp = sp1;
                 }
+                basetype(tp)->sp = sp1;
             }
         }
-        else if (tp->type == bt_templatedecltype)
+    }
+    else if (tp->type == bt_templatedecltype)
+    {
+        static int nested;
+        if (nested >= 10)
+            return rv;
+        nested++;
+        tp->templateDeclType = SpecifyArgInt(sym, tp->templateDeclType, orig, args, origTemplate, origUsing);
+        nested--;
+    }
+    else if (basetype(tp)->type == bt_templateselector)
+    {
+        std::list<TEMPLATEPARAMPAIR>** tplp = nullptr;
+        basetype(tp)->sp = CopySymbol(basetype(tp)->sp);
+        auto oldx = basetype(tp)->sp->sb->templateSelector;
+        if (oldx)
         {
-            static int nested;
-            if (nested >= 10)
-                return rv;
-            nested++;
-            tp->templateDeclType = SpecifyArgInt(sym, tp->templateDeclType, orig, args, origTemplate, origUsing);
-            nested--;
-        }
-        else if (basetype(tp)->type == bt_templateselector)
-        {
-            std::list<TEMPLATEPARAMPAIR>** tplp = nullptr;
-            basetype(tp)->sp = CopySymbol(basetype(tp)->sp);
-            auto oldx = basetype(tp)->sp->sb->templateSelector;
-            if (oldx)
+            auto rvs = basetype(tp)->sp->sb->templateSelector = templateSelectorListFactory.CreateVector();
+            bool first = true;
+            for (auto&& old : *oldx)
             {
-                auto rvs = basetype(tp)->sp->sb->templateSelector = templateSelectorListFactory.CreateVector();
-                bool first = true;
-                for (auto&& old : *oldx)
+                rvs->push_back(old);
+                if (old.isDeclType)
                 {
-                    rvs->push_back(old);
-                    if (old.isDeclType)
+                    first = false;
+                    rvs->back().tp = CopyType(old.tp);
+                    rvs->back().tp->templateDeclType =
+                        SpecifyArgInt(sym, rvs->back().tp->templateDeclType, orig, args, origTemplate, origUsing);
+                    auto tp1 = TemplateLookupTypeFromDeclType(rvs->back().tp);
+                    rvs->back().isDeclType = false;
+                    rvs->back().sp = makeID(sc_auto, tp1, nullptr, AnonymousName());
+                }
+                else
+                {
+                    if (first && old.sp)
                     {
                         first = false;
-                        rvs->back().tp = CopyType(old.tp);
-                        rvs->back().tp->templateDeclType =
-                            SpecifyArgInt(sym, rvs->back().tp->templateDeclType, orig, args, origTemplate, origUsing);
-                        auto tp1 = TemplateLookupTypeFromDeclType(rvs->back().tp);
-                        rvs->back().isDeclType = false;
-                        rvs->back().sp = makeID(sc_auto, tp1, nullptr, AnonymousName());
-                    }
-                    else
-                    {
-                        if (first && old.sp)
+                        if (old.sp->tp->type == bt_templateparam)
                         {
-                            first = false;
-                            if (old.sp->tp->type == bt_templateparam)
+                            TEMPLATEPARAMPAIR* rv = TypeAliasSearch(old.sp->name);
+                            if (rv && rv->second->type == kw_typename)
                             {
-                                TEMPLATEPARAMPAIR* rv = TypeAliasSearch(old.sp->name);
-                                if (rv && rv->second->type == kw_typename)
-                                {
-                                    TYPE* tp = rv->second->byClass.val ? rv->second->byClass.val : rv->second->byClass.dflt;
-                                    if (tp && isstructured(tp))
-                                        rvs->back().sp = basetype(tp)->sp;
-                                }
+                                TYPE* tp = rv->second->byClass.val ? rv->second->byClass.val : rv->second->byClass.dflt;
+                                if (tp && isstructured(tp))
+                                    rvs->back().sp = basetype(tp)->sp;
                             }
                         }
-                        if (old.templateParams)
+                    }
+                    if (old.templateParams)
+                    {
+                        auto tpr = rvs->back().templateParams = templateParamPairListFactory.CreateList();
+                        for (auto&& temp : *old.templateParams)
                         {
-                            auto tpr = rvs->back().templateParams = templateParamPairListFactory.CreateList();
-                            for (auto&& temp : *old.templateParams)
+                            tpr->push_back(TEMPLATEPARAMPAIR{temp.first, Allocate<TEMPLATEPARAM>()});
+                            *tpr->back().second = *temp.second;
+                            if (tpr->back().second->packed)
                             {
-                                tpr->push_back(TEMPLATEPARAMPAIR{temp.first, Allocate<TEMPLATEPARAM>()});
-                                *tpr->back().second = *temp.second;
-                                if (tpr->back().second->packed)
+                                if (packIndex >= 0 && !tpr->back().second->ellipsis)
                                 {
-                                    if (packIndex >= 0 && !tpr->back().second->ellipsis)
+                                    std::list<TEMPLATEPARAMPAIR>* tpx = tpr->back().second->byPack.pack;
+                                    if (tpx && packIndex < tpx->size())
                                     {
-                                        std::list<TEMPLATEPARAMPAIR>* tpx = tpr->back().second->byPack.pack;
-                                        if (tpx && packIndex < tpx->size())
-                                        {
-                                            auto it = tpx->begin();
-                                            for (int i = 0; i < packIndex; ++i, ++it)
-                                                ;
-                                            *tpr->back().second = *it->second;
-                                        }
-                                    }
-                                    else if (tpr->back().second->ellipsis)
-                                    {
-                                        if (tpr->back().second->byPack.pack)
-                                        {
-                                            *tpr->back().second = *tpr->back().second->byPack.pack->front().second;
-                                            SpecifyOneArg(sym, &tpr->back(), args, origTemplate, origUsing);
-                                        }
-                                    }
-                                    else if (tpr->back().second->byPack.pack)
-                                    {
-                                        for (auto&& t : *tpr->back().second->byPack.pack)
-                                        {
-                                            SpecifyOneArg(sym, &t, args, origTemplate, origUsing);
-                                        }
+                                        auto it = tpx->begin();
+                                        for (int i = 0; i < packIndex; ++i, ++it)
+                                            ;
+                                        *tpr->back().second = *it->second;
                                     }
                                 }
-                                else
+                                else if (tpr->back().second->ellipsis)
                                 {
-                                    SpecifyOneArg(sym, &tpr->back(), args, origTemplate, origUsing);
+                                    if (tpr->back().second->byPack.pack)
+                                    {
+                                        *tpr->back().second = *tpr->back().second->byPack.pack->front().second;
+                                        SpecifyOneArg(sym, &tpr->back(), args, origTemplate, origUsing);
+                                    }
                                 }
+                                else if (tpr->back().second->byPack.pack)
+                                {
+                                    for (auto&& t : *tpr->back().second->byPack.pack)
+                                    {
+                                        SpecifyOneArg(sym, &t, args, origTemplate, origUsing);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                SpecifyOneArg(sym, &tpr->back(), args, origTemplate, origUsing);
                             }
                         }
                     }
                 }
             }
-            rv = SynthesizeType(rv, nullptr, false);
         }
+        rv = SynthesizeType(rv, nullptr, false);
     }
     return rv;
 }

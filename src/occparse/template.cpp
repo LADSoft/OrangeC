@@ -2053,7 +2053,7 @@ SYMBOL* LookupSpecialization(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* template
     candidate->templateParams = templateParams;
     if (!sym->sb->specializations)
         sym->sb->specializations = symListFactory.CreateList();
-    sym->sb->specializations->push_back(candidate);
+    sym->sb->specializations->push_front(candidate);
     candidate->sb->overloadName = sym->sb->overloadName;
     candidate->sb->specialized = true;
     if (!candidate->sb->parentTemplate)

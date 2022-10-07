@@ -1430,7 +1430,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
         hr = basetype(match->tp)->syms->table[0];
         if (hr->next && ((hr->next->p)->sb->init || (hr->next->p)->sb->deferredCompile))
         {
-            if (allTemplateArgsSpecified(sp, sp->templateParams ? sp->templateParams->next : sp->templateParams))
+            if (allTemplateArgsSpecified(sp, sp->templateParams))
             {
                 // will match a default constructor but has defaulted args
                 SYMBOL* consfunc = declareConstructor(sp, true, false);  // default

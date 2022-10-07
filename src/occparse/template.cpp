@@ -9244,7 +9244,6 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                 rv = nullptr;
             if (spsyms && params)
             {
-                itParams = params->begin();
                 auto iteParams = params->end();
                 for ( ; itParams != iteParams; )
                 {

@@ -9730,7 +9730,10 @@ static bool constOnly(SYMBOL** spList, SYMBOL** origList, int n)
                     {
                         TYPE* tp1 = tpx.second->byClass.dflt;
                         if (isconst(tp1) || isvolatile(tp1))
+                        {
+                            found = true;
                             break;
+                        }
                     }
                 }
             }

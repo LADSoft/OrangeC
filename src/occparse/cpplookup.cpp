@@ -216,7 +216,6 @@ SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bo
     }
     return nullptr;
 }
-int count3;
 LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly, enum e_sc storage_class,
                     bool isType)
 {
@@ -3141,7 +3140,7 @@ SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int
             memset(&thistp, 0, sizeof(thistp));
             memset(&exp, 0, sizeof(exp));
             funcparams.arguments = &args;
-            INITLIST arg0;
+            INITLIST arg0 = {};
             args.push_back(&arg0);
             arg0.tp = tpa;
             arg0.exp = &exp;

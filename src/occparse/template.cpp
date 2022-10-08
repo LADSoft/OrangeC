@@ -6479,8 +6479,12 @@ static bool TemplateDeduceArgList(SymbolTable<SYMBOL>::iterator funcArgs, Symbol
                                   bool baseClasses)
 {
     bool rv = true;
-    auto its = symArgs->begin();
-    auto itse = symArgs->end();
+    std::list<INITLIST*>::iterator its, itse;
+    if (symArgs)
+    {
+        its = symArgs->begin();
+        itse = symArgs->end();
+    }
     while (templateArgs != templateArgsEnd && its != itse)
     {
         SYMBOL* sp = *templateArgs;
@@ -6796,7 +6800,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
     std::list<TEMPLATEPARAMPAIR>* nparams = sym->templateParams;
     TYPE* thistp = args->thistp;
     std::list<INITLIST*>::iterator ita, itae;
-    if (args)
+    if (args->arguments)
     {
         ita = args->arguments->begin();
         itae = args->arguments->end();

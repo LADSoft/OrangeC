@@ -216,6 +216,7 @@ SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bo
     }
     return nullptr;
 }
+int count4;
 LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly, enum e_sc storage_class,
                     bool isType)
 {
@@ -2661,7 +2662,7 @@ static int ChooseLessConstTemplate(SYMBOL* left, SYMBOL* right)
             ++itr;
             itre = right->templateParams->end();
         }
-        while (itl != itle && itr != itre)
+        for ( ; itl != itle && itr != itre; ++itl, ++itr)
         {
             auto&& tpl = *itl;
             auto&& tpr = *itr;
@@ -3185,6 +3186,7 @@ SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int
                     }
                 }
             }
+            funcs = i;
             memset(&exp, 0, sizeof(exp));
             exp.type = en_not_lvalue;
             for (i = 0; i < funcs; i++)

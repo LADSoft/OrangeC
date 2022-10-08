@@ -7774,10 +7774,10 @@ void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
                 {
                     if (ss->tp->type == bt_aggregate && ts->tp->type == bt_aggregate)
                     {
-                        auto ns2 = ts->tp->syms->begin();
-                        auto ns2e = ts->tp->syms->end();
-                        auto os2 = ss->tp->syms->begin();
-                        auto os2e = ss->tp->syms->end();
+                        auto os2 = ts->tp->syms->begin();
+                        auto os2e = ts->tp->syms->end();
+                        auto ns2 = ss->tp->syms->begin();
+                        auto ns2e = ss->tp->syms->end();
 
                         // these lists may be mismatched, in particular the old symbol table
                         // may have partial specializations for templates added after the class was defined...

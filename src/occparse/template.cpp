@@ -5158,6 +5158,7 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
                 default:
                     break;
             }
+            ++itTA;
         }
         static std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tps;
         while (!tas.empty())

@@ -5777,7 +5777,8 @@ static bool ValidArg(TYPE* tp)
                 }
                 else if ((*tp->sp->sb->templateSelector)[1].isTemplate)
                 {
-                    std::list<TEMPLATEPARAMPAIR>* current = (*tp->sp->sb->templateSelector)[1].templateParams;
+                    std::list<TEMPLATEPARAMPAIR>* current = templateParamPairListFactory.CreateList();
+                    *current = *(*tp->sp->sb->templateSelector)[1].templateParams;
                     if (ts->tp->type == bt_typedef)
                     {
                         sp = GetTypeAliasSpecialization(ts, current);

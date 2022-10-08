@@ -3108,7 +3108,7 @@ founddecltype:
                     if ((!templateNestingCount || instantiatingTemplate) && isstructured(sym->tp) && (sym->sb && sym->sb->instantiated && !declaringTemplate(sym) && (!sym->sb->templateLevel || allTemplateArgsSpecified(sym, (*strSym->tp->sp->sb->templateSelector)[1].templateParams))))
                     {
 
-                        errorNotMember(sym, nsv->front() , (*strSym->tp->sp->sb->templateSelector)[2].name);
+                        errorNotMember(sym, nsv ? nsv->front() : nullptr , (*strSym->tp->sp->sb->templateSelector)[2].name);
                     }
                     tn = strSym->tp;
                 }

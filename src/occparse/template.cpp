@@ -6475,16 +6475,10 @@ void NormalizePacked(TYPE* tpo)
     if (basetype(tp)->templateParam)
         tpo->templateParam = basetype(tp)->templateParam;
 }
-static bool TemplateDeduceArgList(SymbolTable<SYMBOL>::iterator funcArgs, SymbolTable<SYMBOL>::iterator funcArgsEnd, SymbolTable<SYMBOL>::iterator templateArgs, SymbolTable<SYMBOL>::iterator templateArgsEnd,std::list<INITLIST*>* symArgs, bool allowSelectors,
+static bool TemplateDeduceArgList(SymbolTable<SYMBOL>::iterator funcArgs, SymbolTable<SYMBOL>::iterator funcArgsEnd, SymbolTable<SYMBOL>::iterator templateArgs, SymbolTable<SYMBOL>::iterator templateArgsEnd,std::list<INITLIST*>::iterator its,std::list<INITLIST*>::iterator itse, bool allowSelectors,
                                   bool baseClasses)
 {
     bool rv = true;
-    std::list<INITLIST*>::iterator its, itse;
-    if (symArgs)
-    {
-        its = symArgs->begin();
-        itse = symArgs->end();
-    }
     while (templateArgs != templateArgsEnd && its != itse)
     {
         SYMBOL* sp = *templateArgs;
@@ -7059,7 +7053,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
         }
         else
         {
-            bool rv = TemplateDeduceArgList(basetype(sym->tp)->syms->begin(), basetype(sym->tp)->syms->end(),  templateArgs, templateArgsEnd, args->arguments, basetype(sym->tp)->type == bt_templateselector, true);
+            bool rv = TemplateDeduceArgList(basetype(sym->tp)->syms->begin(), basetype(sym->tp)->syms->end(),  templateArgs, templateArgsEnd, symArgs, itae, basetype(sym->tp)->type == bt_templateselector, true);
             for (auto sp : *basetype(sym->tp)->syms)
             {
                 TYPE* tp = sp->tp;

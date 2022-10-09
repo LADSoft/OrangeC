@@ -1475,8 +1475,8 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         }
         else if (tp1->sp)  // enum
         {
-            std::list<SYMBOL*> aa{ tpClean->sp->sb->parentNameSpace };
-            tpClean->sp->sb->templateNameSpace = tpClean->sp->sb->parentNameSpace ? &aa : nullptr;
+            std::list<SYMBOL*> aa{ tp1->sp->sb->parentNameSpace };
+            tp1->sp->sb->templateNameSpace = tp1->sp->sb->parentNameSpace ? &aa : nullptr;
             int n = PushTemplateNamespace(basetype(tp1)->sp);  // used for more than just templates here
             s5 = namespacesearch(name, globalNameSpace, false, false);
             PopTemplateNamespace(n);

@@ -7951,12 +7951,15 @@ int PushTemplateNamespace(SYMBOL* sym)
             auto sp = *it;
             if (!sp->sb->value.i || (itnext != sym->sb->templateNameSpace->end() && nameSpaceList.front() != sp))
             {
-                sp->sb->value.i++;
+                if (sp->sb->nameSpaceValues)
+                {
+                    sp->sb->value.i++;
 
-                nameSpaceList.push_front(sp);
-                globalNameSpace->push_front(sp->sb->nameSpaceValues->front());
+                    nameSpaceList.push_front(sp);
+                    globalNameSpace->push_front(sp->sb->nameSpaceValues->front());
 
-                rv++;
+                    rv++;
+                }
             }
         }
     }

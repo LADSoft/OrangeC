@@ -5289,14 +5289,11 @@ static bool IsMove(SYMBOL* sp)
         {
             if (basetype((*it)->tp)->type == bt_rref)
             {
-                if (++it != itend)
+                auto tp1 = basetype(basetype((*it)->tp)->btp);
+                auto tp2 = basetype(basetype(thisPtr->tp)->btp);
+                if (isstructured(tp1) && isstructured(tp2))
                 {
-                    auto tp1 = basetype(basetype((*it)->tp)->btp);
-                    auto tp2 = basetype(basetype(thisPtr->tp)->btp);
-                    if (isstructured(tp1) && isstructured(tp2))
-                    {
-                        rv = comparetypes(tp2, tp1, true) || sameTemplate(tp2, tp1);
-                    }
+                    rv = comparetypes(tp2, tp1, true) || sameTemplate(tp2, tp1);
                 }
             }
         }

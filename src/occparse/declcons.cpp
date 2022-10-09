@@ -1261,7 +1261,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
         ++it1;
         if (it1 != itend && ((*it1)->sb->init || (*it1)->sb->deferredCompile))
         {
-            if (allTemplateArgsSpecified(sp, sp->templateParams))
+            if (sp->templateParams == nullptr)
             {
                 // will match a default constructor but has defaulted args
                 SYMBOL* consfunc = declareConstructor(sp, true, false);  // default

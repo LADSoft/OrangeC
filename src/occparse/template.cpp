@@ -4153,7 +4153,7 @@ TYPE* TemplateLookupTypeFromDeclType(TYPE* tp)
 TYPE* SynthesizeType(TYPE* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt)
 {
     auto oldnoExcept = noExcept;
-    TYPE *rv = nullptr, **last = &rv;
+    TYPE *rv = &stdany, **last = &rv;
     TYPE *qual = nullptr, **lastQual = &qual;
     TYPE* tp_in = tp;
     while (true)

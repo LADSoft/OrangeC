@@ -1259,7 +1259,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
         auto it1 = it;
         auto itend = basetype(match->tp)->syms->end();
         ++it1;
-        if (it1 != itend && (*it1)->tp->type != bt_void && (match->sb->init || match->sb->deferredCompile))
+        if (it1 != itend && ((*it1)->sb->init || (*it1)->sb->deferredCompile))
         {
             if (allTemplateArgsSpecified(sp, sp->templateParams))
             {

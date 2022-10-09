@@ -127,8 +127,8 @@ EXPRESSION* baseClassOffset(SYMBOL* base, SYMBOL* derived, EXPRESSION* en)
                     break;
                 if ((*it)->cls->sb->baseClasses)
                 {
-                    it = (*it)->cls->sb->baseClasses->begin();
                     ite = (*it)->cls->sb->baseClasses->end();
+                    it = (*it)->cls->sb->baseClasses->begin();
                     stk.push_back(std::pair<std::list<BASECLASS*>::iterator, std::list<BASECLASS*>::iterator>(it, ite));
                 }
                 else if (++it != ite)

@@ -4661,11 +4661,11 @@ TYPE* SynthesizeType(TYPE* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
             default:
                 if (alt && isstructured(tp))
                 {
-                    if (tp_in->sp->templateParams)
+                    if (tp->sp->templateParams)
                     {
-                        auto last = tp_in->sp->templateParams = templateParamPairListFactory.CreateList();
                         tp_in = CopyType(tp);
                         tp_in->sp = CopySymbol(tp_in->sp);
+                        auto last = tp_in->sp->templateParams = templateParamPairListFactory.CreateList();
                         for (auto&& tpx : *tp_in->sp->templateParams)
                         {
                             if (tpx.second->type == kw_typename && tpx.second->byClass.temp)
@@ -10755,7 +10755,10 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
                 for (int i = 0; i < args->size() && it != sym->templateParams->end(); ++i, ++it)
                     ;
                 if (it != sym->templateParams->end() && it->second->byClass.txtdflt)
+                {
                     argsorig->insert(argsorig->end(), it, sym->templateParams->end());
+                    found1->templateParams->insert(found1->templateParams->end(), it, sym->templateParams->end());
+                }
                 copySyms(found1, sym);
             }
             else

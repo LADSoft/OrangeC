@@ -2184,7 +2184,8 @@ void expandPackedInitList(std::list<INITLIST*>** lptr, SYMBOL* funcsp, LEXLIST* 
                 int n = CountPacks(arg[0]->tp->templateParam->second->byPack.pack);
                 if (n > 1 || !packedExp->v.func->arguments || !packedExp->v.func->arguments->size() || packedExp->v.func->arguments->front()->tp->type != bt_void)
                 {
-                    *lptr = initListListFactory.CreateList();
+                    if (!*lptr)
+                        *lptr = initListListFactory.CreateList();
 
                     for (i = 0; i < n; i++)
                     {

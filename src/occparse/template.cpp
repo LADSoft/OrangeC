@@ -6554,6 +6554,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
     {
         itPrimary = declareSym->sb->parentTemplate->templateParams->begin();
         itePrimary = declareSym->sb->parentTemplate->templateParams->end();
+        ++itPrimary;
     }
 
     instantiatingMemberFuncClass = declareSym->sb->parentClass;

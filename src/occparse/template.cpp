@@ -7937,6 +7937,7 @@ void SetTemplateNamespace(SYMBOL* sym)
 {
     sym->sb->templateNameSpace = symListFactory.CreateList();
     sym->sb->templateNameSpace->insert(sym->sb->templateNameSpace->begin(), nameSpaceList.begin(), nameSpaceList.end());
+    sym->sb->templateNameSpace->reverse(); //   will be reversed back when used
 }
 int PushTemplateNamespace(SYMBOL* sym)
 {

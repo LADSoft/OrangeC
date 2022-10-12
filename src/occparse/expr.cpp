@@ -2977,7 +2977,7 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
         {
             rv = dest;
         }
-        initial->clear();
+        initial = (*lptr) = initListListFactory.CreateList();
         initial->push_back(Allocate<INITLIST>());
         if (asref)
         {
@@ -3164,6 +3164,12 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             p->tp = InitializerListType(tp);
                             p->exp = intNode(en_c_i, 0);
                             CreateInitializerList(nullptr, p->tp, tp, &params->arguments, true, isref(sym->tp));
+                            if (itpinit == itpinite )
+                            {
+                                auto itl1 = itl;
+                                ++itl1;
+                                params->arguments->insert(params->arguments->end(), itl1, itle);
+                            }
                             p->tp = sym->tp;
                             p->nested = nullptr;
                         }

@@ -3240,6 +3240,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
             if (initializerListType && (!params->arguments->front()->tp || !isstructured(params->arguments->front()->tp) ||
                                         !basetype(params->arguments->front()->tp)->sp->sb->initializer_list))
             {
+                std::list<INITLIST*>* old = params->arguments;
                 std::list<INITLIST*> temp;
                 std::list<INITLIST*>* temp2 = &temp;
 
@@ -3252,10 +3253,20 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                 if (!params->arguments->front()->initializer_list)
                 {
                     temp = *params->arguments->front()->nested;
-                    *params->arguments = temp;
                 }
                 CreateInitializerList(cons1, initializerListTemplate, initializerListType, &temp2, false,
                                       initializerRef);
+                params->arguments = temp2;
+                if (temp.size() &&  (!temp.front()->initializer_list ||
+                             (temp.front()->nested && temp.front()->nested->front()->nested && !temp.front()->initializer_list)))
+                {
+                    auto it1 = old->begin();
+                    if (it1 != old->end())
+                    {
+                        ++it1;
+                        params->arguments->insert(params->arguments->begin(), it1, old->end());
+                    }
+                }
                 auto it = basetype(cons1->tp)->syms->begin();
                 ++it;
                 ++it;

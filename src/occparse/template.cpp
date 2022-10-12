@@ -4212,8 +4212,12 @@ TYPE* SynthesizeType(TYPE* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                     ++find;
                     if (rvsit->isTemplate && ts->templateParams)
                     {
-                        auto current = rvsit->templateParams->begin();
-                        auto currente = rvsit->templateParams->end();
+                        std::list<TEMPLATEPARAMPAIR>::iterator current, currente;
+                        if (rvsit->templateParams)
+                        {
+                            current = rvsit->templateParams->begin();
+                            currente = rvsit->templateParams->end();
+                        }
                         auto symit = ts->templateParams->begin();
                         auto symite = ts->templateParams->end();
                         ++symit;

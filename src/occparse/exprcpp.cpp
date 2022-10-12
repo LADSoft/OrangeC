@@ -722,7 +722,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                 callDestructor(basetype(*tp)->sp, nullptr, &exp1, nullptr, true, false, false, true);
                 if (Optimizer::architecture == ARCHITECTURE_MSIL)
                     *exp = exprNode(en_void, *exp, exp2);
-                else if (!funcparams->arguments)  // empty parens means value constructed, e.g. set the thing to zero...
+                else if (!funcparams->arguments || funcparams->arguments->size() == 0)  // empty parens means value constructed, e.g. set the thing to zero...
                 {
                     EXPRESSION* clr = exprNode(en_blockclear, exp2, nullptr);
                     clr->size = sym->tp->size;

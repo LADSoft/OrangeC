@@ -3084,6 +3084,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             sym = exp2->v.func->returnSP;
                         if (sym && !sym->sb->destructed && sym->sb->dest && sym->sb->dest->front()->exp && !basetype(sym->tp)->sp->sb->trivialCons )
                         {
+                            exp2->v.func->returnSP->sb->destructed = true;
                             if (!p->destructors)
                                 p->destructors = exprListFactory.CreateList();
                             p->destructors->push_front(exp2->v.func->returnSP->sb->dest->front()->exp);

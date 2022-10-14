@@ -4103,8 +4103,12 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     browse_usage(sym, lex->data->linedata->fileindex);
                 if (funcparams->astemplate && sym->sb->templateLevel && !sym->sb->specialized)
                 {
-                    auto tpln = funcparams->templateParams->begin();
-                    auto tplne = funcparams->templateParams->end();
+                    std::list<TEMPLATEPARAMPAIR>::iterator tpln, tplne;
+                    if (funcparams->templateParams)
+                    {
+                        tpln = funcparams->templateParams->begin();
+                        tplne = funcparams->templateParams->end();
+                    }
                     auto tplo = sym->sb->parentTemplate->templateParams->begin();
                     ++tplo;
                     auto tploe = sym->sb->parentTemplate->templateParams->end();

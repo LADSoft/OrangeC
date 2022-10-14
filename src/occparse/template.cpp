@@ -9305,11 +9305,20 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                 }
             }
             params = args;
-            itParams = params->begin();
+            std::list<TEMPLATEPARAMPAIR>::iterator iteParams;
+            if (params)
+            {
+                itParams = params->begin();
+                iteParams = params->end();
+            }
+            else
+            {
+                itParams = iteParams;
+            }
             itPrimary = primary->begin();
             if (itPrimary->second->type == kw_new)
                 ++itPrimary;
-            for ( ; itParams != params->end() && itPrimary != primary->end(); ++itParams, ++itPrimary)
+            for ( ; itParams != iteParams && itPrimary != primary->end(); ++itParams, ++itPrimary)
             {
                 if (!itPrimary->second->byClass.val && !itPrimary->second->packed)
                 {
@@ -9321,7 +9330,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                 if (it == primary->end() && itPrimary->second->packed)
                     break;
             }
-            if (itParams != params->end() && !itParams->second->packed && !itParams->second->byPack.pack && itPrimary == primary->end())
+            if (itParams != iteParams && !itParams->second->packed && !itParams->second->byPack.pack && itPrimary == primary->end())
             {
                 rv = nullptr;
             }

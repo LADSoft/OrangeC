@@ -4852,7 +4852,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                     {
                         seq[m++] = CV_LVALUETORVALUE;
                     }
-                    if ((*ita)->nested)
+                    if ((*ita)->nested && (*ita)->nested->size())
                     {
                         auto ita1 = ita;
                         ++ita1;

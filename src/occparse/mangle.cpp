@@ -484,7 +484,7 @@ static char* mangleExpression(char* buf, EXPRESSION* exp)
 static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
 {
     bool bySpecial = false;
-    if (params && params->front().second->type == kw_new &&
+    if (params &&  params->size() && params->front().second->type == kw_new &&
         ((sym->sb->instantiated && !sym->sb->templateLevel) || (params && params->front().second->bySpecialization.types)))
     {
         params = params->front().second->bySpecialization.types;

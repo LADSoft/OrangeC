@@ -432,9 +432,9 @@ bool exactMatchOnTemplateArgs(std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPL
         auto itoe = old->end();
         auto its = sym->begin();
         auto itse = sym->end();
-        if (ito->second->type == kw_new)
+        if (ito != itoe && ito->second->type == kw_new)
             ++ito;
-        if (its->second->type == kw_new)
+        if (its != itse && its->second->type == kw_new)
             ++its;
         for (; ito != itoe && its != itse; ++ito, ++its)
         {
@@ -1136,7 +1136,7 @@ std::list<TEMPLATEPARAMPAIR>** expandTemplateSelector(std::list<TEMPLATEPARAMPAI
                         auto sele = (*tp->sp->sb->templateSelector).end();
                         TYPE* base = sp->tp, *base1 = base;
                         SYMBOL* s = nullptr;
-                        for (; sel != sele; ++sel)
+                        for (++sel, ++sel; sel != sele; ++sel)
                         {
                             base = base1;
                             STRUCTSYM ss;
@@ -2195,7 +2195,7 @@ SYMBOL* LookupFunctionSpecialization(SYMBOL* overloads, SYMBOL* sp)
             if (matchOverload(found1->tp, sp->tp, true))
             {
                 sp->templateParams->front().second->bySpecialization.types = copyParams(found1->templateParams, false);
-                sp->templateParams->pop_front();
+                sp->templateParams->front().second->bySpecialization.types->pop_front();
                 for (auto&& tpx : *sp->templateParams->front().second->bySpecialization.types)
                 {
                     tpx.second->byClass.dflt = tpx.second->byClass.val;
@@ -4665,10 +4665,10 @@ TYPE* SynthesizeType(TYPE* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
             default:
                 if (alt && isstructured(tp))
                 {
+                    tp_in = CopyType(tp);
+                    tp_in->sp = CopySymbol(tp_in->sp);
                     if (tp->sp->templateParams)
                     {
-                        tp_in = CopyType(tp);
-                        tp_in->sp = CopySymbol(tp_in->sp);
                         auto last = tp_in->sp->templateParams = templateParamPairListFactory.CreateList();
                         for (auto&& tpx : *tp_in->sp->templateParams)
                         {
@@ -9260,7 +9260,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                     {
                         if (!itParams->second->byPack.pack)
                         {
-                            ++params;
+                            ++itParams;
                             continue;
                         }
                         else
@@ -11778,7 +11778,7 @@ static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMPAIR* temp, std::list<TEMPLA
     int oldIndex = packIndex;
     void* hold[200];
     TEMPLATEPARAMPAIR* tpx = temp;
-    if (tpx->second->packed && tpx->second->byPack.pack)
+    if (tpx->second->packed && tpx->second->byPack.pack && tpx->second->byPack.pack->size())
         tpx = &tpx->second->byPack.pack->front();
     for (int i = count == 0 ? -1 : 0; i <= n; i++)
     {

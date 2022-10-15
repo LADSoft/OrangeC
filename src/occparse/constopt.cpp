@@ -2541,6 +2541,10 @@ int opt0(EXPRESSION** node)
                 {
                     n = 1;
                 }
+                else if (!(*node)->v.templateParam->second->byPack.pack)
+                {
+                    n = 0;
+                }
                 else
                 {
                     n = (*node)->v.templateParam->second->byPack.pack->size();

@@ -456,7 +456,7 @@ static void checkAmbiguousVirtualFunc(SYMBOL* sym, VTABENTRY** match, std::list<
                         itv = vt->virtuals->begin();
                         itve = vt->virtuals->end();
                     }
-                    while (itm != itme && itv != itve)
+                    for (;itm != itme && itv != itve; ++itm, ++itv)
                     {
                         if (*itm != *itv)
                         {

@@ -544,6 +544,7 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                         hasTemplateArgs = true;
                         if (MATCHKW(lex, lt))
                         {
+                            current = nullptr;
                             lex = GetTemplateArguments(lex, nullptr, sp_orig, &current);
                         }
                         else if (MATCHKW(lex, classsel))

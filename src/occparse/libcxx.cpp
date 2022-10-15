@@ -1433,7 +1433,7 @@ static SYMBOL* MakeIntegerSeqType(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args
         if (tpl->sb->parentTemplate)
             tpl = tpl->sb->parentTemplate;
         int nt = basetype(it->second->byClass.dflt)->type + e->v.i;
-        const char* nm = it->second->byTemplate.dflt->name;
+        const char* nm = tpl->name;
         auto sym = integerSequences[nm][nt];
         if (sym)
             return sym;

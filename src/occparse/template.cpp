@@ -10527,8 +10527,6 @@ SYMBOL* TemplateByValLookup(SYMBOL* parent, SYMBOL* test, std::string& argumentN
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool noErr)
 {
-    if (!strcmp(sp->name, "__allocator_traits_rebind"))
-        printf("hi");
     auto argsorig = args;
     if (args && args->front().second->type == kw_new)
     {

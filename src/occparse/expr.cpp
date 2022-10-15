@@ -2884,7 +2884,7 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
                     FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
                     if ((*itl)->nested)
                     {
-                        params->arguments = initial;
+                        params->arguments = (*itl)->nested;
                     }
                     else
                     {

@@ -9619,7 +9619,7 @@ void TemplateArgsTemplateAdd(TEMPLATEPARAMPAIR* current, TEMPLATEPARAMPAIR* spec
     auto spl = special->second->byTemplate.args;
     auto itt = tpx->begin();
     auto its = spl->begin();
-    for (; itt != tpx->end() && its != spl->end(); ++itt, ++its)
+    for (++itt; itt != tpx->end() && its != spl->end(); ++itt, ++its)
     {
         TemplateArgsAdd(&*itt, &*its, base);
     }
@@ -10527,6 +10527,8 @@ SYMBOL* TemplateByValLookup(SYMBOL* parent, SYMBOL* test, std::string& argumentN
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool noErr)
 {
+    if (!strcmp(sp->name, "__allocator_traits_rebind"))
+        printf("hi");
     auto argsorig = args;
     if (args && args->front().second->type == kw_new)
     {

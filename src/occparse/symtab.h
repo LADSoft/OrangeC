@@ -53,7 +53,7 @@ namespace Parser
     SYMBOL* tsearch(const char* name);
 
 template <class T>
-inline T* SymbolTable<T>::AddOverloadName(T* s)
+inline T* SymbolTable<T>::AddOverloadName(T* sym)
 {
     for (auto q : *this)
     {
@@ -81,7 +81,7 @@ inline SYMBOL* SymbolTable<SYMBOL>::AddOverloadName(SYMBOL* sym)
     return (0);
 }
 template<class T>
-typename void SymbolTable<T>::remove(typename SymbolTable<T>::iterator it)
+void SymbolTable<T>::remove(typename SymbolTable<T>::iterator it)
 {
     lookupTable_.erase((*it)->name);
     return inOrder_.remove(*it);

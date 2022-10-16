@@ -2938,7 +2938,8 @@ static std::list<TEMPLATEPARAMPAIR>** addStructParam(std::list<TEMPLATEPARAMPAIR
     {
         if (!search.first || search.second->byClass.dflt)
         {
-            if (!search.second->byClass.dflt)
+            // DAL this next line is buggy, we should probably handled packed a little better...
+            if (search.second->packed || !search.second->byClass.dflt)
                 return nullptr;
             if (!*pt)
                 *pt = templateParamPairListFactory.CreateList();
@@ -5059,6 +5060,7 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
                         {
                             if (itTP->second->byPack.pack == nullptr)
                             {
+                                ++itTA;
                                 continue;
                             }
                         }
@@ -5066,6 +5068,7 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
                         {
                             if (!itTP->second->byClass.val)
                             {
+                                ++itTA;
                                 continue;
                             }
                         }
@@ -5953,7 +5956,7 @@ static bool valFromDefault(std::list<TEMPLATEPARAMPAIR>* params, bool usesParams
     {
         for (auto&& param : *params)
         {
-            if (!usesParams || !(args && args->size()))
+            if (usesParams || !(args && args->size()))
                 break;
             if (param.second->type != kw_new)
             {
@@ -10249,7 +10252,7 @@ std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelectors(SYMBOL* sp, std::list<TEM
         {
             if (t->second->packed)
             {
-                if (t->second->byPack.pack)
+                if (t->second->byPack.pack && t->second->byPack.pack->size())
                 {
                     tas.push(t);
                     tas.push(te);
@@ -10324,7 +10327,7 @@ std::list<TEMPLATEPARAMPAIR>* ResolveDeclTypes(SYMBOL* sp, std::list<TEMPLATEPAR
             {
                 if (t->second->packed)
                 {
-                    if (t->second->byPack.pack)
+                    if (t->second->byPack.pack && t->second->byPack.pack->size())
                     {
                         tas.push(t);
                         tas.push(te);
@@ -11790,7 +11793,13 @@ static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMPAIR* temp, std::list<TEMPLA
         {
             case kw_int: {
                 std::list<TEMPLATEPARAMPAIR> a{*tpx};
-                auto rv = SpecifyArgInt(sym, tpx->second->byNonType.dflt ? tpx->second->byNonType.dflt : tpx->second->byNonType.val, &a, args,
+                // the checked for pack here wasn't done before, it relied on dflt being null
+                // should be looked at more closely...
+                auto rv = SpecifyArgInt(sym,
+                                       tpx->second->byNonType.dflt && (!tpx->second->packed || !tpx->second->byPack.pack)
+                                           ? tpx->second->byNonType.dflt
+                                           : tpx->second->byNonType.val,
+                                       &a, args,
                                         origTemplate, origUsing);
                 if (rv)
                 {
@@ -12084,7 +12093,12 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
 {
     bool checked = false;
     TEMPLATEPARAMPAIR old;
-    if (args->front().second->type == kw_new)
+    std::list<TEMPLATEPARAMPAIR> temp;
+    if (!args)
+    {
+        args = &temp;
+    }
+    else if (args->front().second->type == kw_new)
     {
         checked = true;
         old = args->front();

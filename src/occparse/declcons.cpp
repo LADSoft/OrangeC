@@ -1764,14 +1764,17 @@ static void genConstructorCall(std::list<BLOCKDATA*>& b, SYMBOL* cls, std::list<
                 FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
                 if (!funcparams->arguments)
                     funcparams->arguments = initListListFactory.CreateList();
-                for (auto init : *mix->init)
+                if (mix->init)
                 {
-                    if (!init->exp)
-                        break;
-                    auto arg = Allocate<INITLIST>();
-                    arg->tp = init->basetp;
-                    arg->exp = init->exp;
-                    funcparams->arguments->push_back(arg);
+                    for (auto init : *mix->init)
+                    {
+                        if (!init->exp)
+                            break;
+                        auto arg = Allocate<INITLIST>();
+                        arg->tp = init->basetp;
+                        arg->exp = init->exp;
+                        funcparams->arguments->push_back(arg);
+                    }
                 }
                 if (!callConstructor(&ctype, &exp, funcparams, false, nullptr, top, false, false, false, false, false, true))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);

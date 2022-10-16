@@ -1493,6 +1493,8 @@ static TYPE* TypePackElementType(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args
         {
             return &stdany;
         }
+        it = tpl->begin();
+        ++it;
     }
     auto e = tpl->front().second->byNonType.val;
     if (!e)

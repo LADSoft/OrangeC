@@ -6933,7 +6933,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                     if (!templateNestingCount && sp1->sb->templateLevel && sp1->templateParams &&
                                         !sp1->sb->instantiated)
                                     {
-                                        if (!allTemplateArgsSpecified(sp1, sp1->templateParams))
+//                                        if (!allTemplateArgsSpecified(sp1, sp1->templateParams))
                                             sp1 = GetClassTemplate(sp1, sp1->templateParams, false);
                                         if (sp1)
                                             sp->tp = PerformDeferredInitialization(

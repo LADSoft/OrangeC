@@ -1129,24 +1129,24 @@ static EXPRESSION* EvaluateExpression(EXPRESSION* node, std::unordered_map<SYMBO
 static bool EvaluateStatements(EXPRESSION*& node, std::list<STATEMENT*>* stmt, std::unordered_map<SYMBOL*, ConstExprArgArray>& argmap,
                                EXPRESSION* ths, EXPRESSION* retblk)
 {
-    std::unordered_map<int, STATEMENT*> labels;
+    std::unordered_map<int, std::list<STATEMENT*>::iterator> labels;
     std::stack<std::list<STATEMENT*>*> stk;
     stk.push(stmt);
     while (!stk.empty())
     {
         auto s = stk.top();
         stk.pop();
-        for (auto p : *s)
+        for (auto it = (*s).begin(); it != (*s).end(); ++it)
         {
-            switch (p->type)
+            switch ((*it)->type)
             {
                 case st_label:
-                    labels[p->label] = p;
+                    labels[(*it)->label] = it;
                     break;
                 case st_block:
                 case st___try:
                 case st_try:
-                    stk.push(p->lower);
+                    stk.push((*it)->lower);
                     break;
             }
         }
@@ -1197,9 +1197,9 @@ static bool EvaluateStatements(EXPRESSION*& node, std::list<STATEMENT*>* stmt, s
                     }
                     if ((node1->v.i && stmt->type == st_notselect) || (!node1->v.i && stmt->type == st_select))
                         break;
-                    stmt = labels[stmt->label];
-                    if (!stmt)
-                        return false;
+                    it = labels[stmt->label];
+//                    if (!stmt)
+//                        return false;
                     break;
                 }
                 case st_goto:
@@ -1208,9 +1208,9 @@ static bool EvaluateStatements(EXPRESSION*& node, std::list<STATEMENT*>* stmt, s
                         return false;
                     if (stmt->explicitGoto)
                         return false;
-                    stmt = labels[stmt->label];
-                    if (!stmt)
-                        return false;
+                    it = labels[stmt->label];
+//                    if (!stmt)
+//                        return false;
                     break;
                 case st_switch: {
                     if (Optimizer::cparams.prm_debug)
@@ -1228,9 +1228,9 @@ static bool EvaluateStatements(EXPRESSION*& node, std::list<STATEMENT*>* stmt, s
                             break;
                         }
                     }
-                    stmt = labels[label];
-                    if (!stmt)
-                        return false;
+                    it = labels[label];
+//                    if (!stmt)
+//                        return false;
                     break;
                 }
                 case st_block:

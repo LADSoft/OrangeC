@@ -4804,32 +4804,30 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                     {
                         if (isstructured(initializerListType))
                         {
-                            auto top = *ita;
-                            
-                            std::list<INITLIST*> temp;
                             std::list<INITLIST*> nested;
-                            temp.push_back(top);
                             if (!(*ita)->initializer_list)
                             {
-                                top->nested = &nested;
                                 nested.push_back((*ita)->nested->front());
                             }
-                            getInitListConversion(initializerListType, &temp, nullptr, &m, seq, sym,
+                            else
+                            {
+                                nested.insert(nested.begin(), (*ita)->nested->begin(), (*ita)->nested->end());
+                            }
+                            getInitListConversion(initializerListType, &nested, nullptr, &m, seq, sym,
                                                   userFunc ? &userFunc[n] : nullptr);
                         }
                         else
                         {
-                            auto top = *ita;
-
-                            std::list<INITLIST*> temp;
                             std::list<INITLIST*> nested;
-                            temp.push_back(top);
                             if (!(*ita)->initializer_list)
                             {
-                                top->nested = &nested;
                                 nested.push_back((*ita)->nested->front());
                             }
-                            getInitListConversion(initializerListType, &temp, nullptr, &m, seq, sym,
+                            else
+                            {
+                                nested.insert(nested.begin(), (*ita)->nested->begin(), (*ita)->nested->end());
+                            }
+                            getInitListConversion(initializerListType, &nested, nullptr, &m, seq, sym,
                                                   userFunc ? &userFunc[n] : nullptr);
                             if ((*ita)->initializer_list && (*ita)->nested->front()->nested)
                                 ++it;

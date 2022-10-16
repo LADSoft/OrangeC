@@ -11618,7 +11618,7 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, std::list
                     std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
                     auto ita = sp1->templateParams->begin();
                     auto itea = sp1->templateParams->end();
-                    for (; ita != itea;)
+                    for (++ita; ita != itea;)
                     {
                         if (ita->second->packed && ita->second->byPack.pack)
                         {

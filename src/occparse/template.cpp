@@ -11565,23 +11565,26 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, std::list
             {
                 for (auto&& tpl : *tpx)
                 {
-                    args1->push_back(TEMPLATEPARAMPAIR{tpl.first, Allocate<TEMPLATEPARAM>()});
-                    *args1->back().second = *tpl.second;
-                    if (args1->back().second->type == kw_int || args1->back().second->type == kw_typename)
+                    if (tpl.second->type != kw_new)
                     {
-                        if (args1->back().second->byClass.dflt)
+                        args1->push_back(TEMPLATEPARAMPAIR{tpl.first, Allocate<TEMPLATEPARAM>()});
+                        *args1->back().second = *tpl.second;
+                        if (args1->back().second->type == kw_int || args1->back().second->type == kw_typename)
                         {
-                            if (args1->back().second->packed)
+                            if (args1->back().second->byClass.dflt)
                             {
-                                if (packIndex >= 0 && !args1->back().second->ellipsis)
+                                if (args1->back().second->packed)
                                 {
-                                    std::list<TEMPLATEPARAMPAIR>* tpx = args1->back().second->byPack.pack;
-                                    if (tpx && packIndex < tpx->size())
+                                    if (packIndex >= 0 && !args1->back().second->ellipsis)
                                     {
-                                        auto it = tpx->begin();
-                                        for (int i = 0; i < packIndex; i++, ++it)
-                                            ;
-                                        *args1->back().second = *it->second;
+                                        std::list<TEMPLATEPARAMPAIR>* tpx = args1->back().second->byPack.pack;
+                                        if (tpx && packIndex < tpx->size())
+                                        {
+                                            auto it = tpx->begin();
+                                            for (int i = 0; i < packIndex; i++, ++it)
+                                                ;
+                                            *args1->back().second = *it->second;
+                                        }
                                     }
                                     else if (args1->back().second->ellipsis)
                                     {

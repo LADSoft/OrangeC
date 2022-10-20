@@ -41,8 +41,6 @@
 #    include <stdint.h>
 #endif
 
-#if defined(__cplusplus) || defined(__STDC_FORMAT_MACROS)
-
 #    define PRId8 "hhd"
 #    define PRIi8 "hhi"
 #    define PRIo8 "hho"
@@ -354,8 +352,6 @@
 #        define SCNuMAX SCNuMAX64
 #        define SCNxMAX SCNxMAX64
 #    endif
-
-#endif
 
 #ifndef RC_INVOKED
 typedef struct

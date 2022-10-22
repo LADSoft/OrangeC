@@ -1480,7 +1480,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     }
                     else
                     {
-                        exp = exprNode(en_blockassign, copy_expression(expsym), exp2);
+                        exp = exprNode(en_blockassign, exprNode(en_add, copy_expression(expsym), intNode(en_c_i, initItem->offset)), exp2);
                         exp->size = initItem->basetp->size;
                         exp->altdata = (void*)(initItem->basetp);
                         noClear = true;

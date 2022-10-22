@@ -9329,7 +9329,7 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         else if (isstructured(*tp))
         {
             EXPRESSION* exp2 = exp1;
-            if (((*exp)->type == en_not_lvalue || (*exp)->type == en_func || (*exp)->type == en_void) && !(flags & _F_SIZEOF))
+            if (((*exp)->type == en_not_lvalue || ((*exp)->type == en_func && (!(*exp)->v.func->ascall || (*exp)->v.func->returnSP)) || ((*exp)->type == en_void) && !(flags & _F_SIZEOF)))
                 error(ERR_LVALUE);
             if (lvalue(exp2))
                 exp2 = exp2->left;

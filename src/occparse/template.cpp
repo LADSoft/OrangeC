@@ -11571,7 +11571,11 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, std::list
                         *args1->back().second = *tpl.second;
                         if (args1->back().second->type == kw_int || args1->back().second->type == kw_typename)
                         {
-                            if (args1->back().second->byClass.dflt)
+                            if (args1->back().second->packed && (!args1->back().second->byPack.pack || !args1->back().second->byPack.pack->size()))
+                            {
+                                SearchAlias(args1->back().first->name, &args1->back(), sym, args, origTemplate, origUsing);                            
+                            }
+                            else if (args1->back().second->byClass.dflt)
                             {
                                 if (args1->back().second->packed)
                                 {

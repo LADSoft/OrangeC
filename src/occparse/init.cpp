@@ -3038,9 +3038,9 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
     }
     else if (!Optimizer::cparams.prm_cplusplus && !MATCHKW(lex, begin) && !itype->msil && !itype->array)
     {
-        EXPRESSION* exp = getThisNode(base);
+        EXPRESSION* exp = base ? getThisNode(base) : nullptr;
         TYPE* tp = nullptr;
-        lex = expression(lex, funcsp, nullptr, &tp, &exp, 0);
+        lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, 0);
         ConstExprPatch(&exp);
         if (!tp)
         {
@@ -3048,19 +3048,55 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
         }
         else
         {
-            INITIALIZER* it = nullptr;
             if (!comparetypes(itype, tp, true))
             {
                 error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
             }
-            initInsert(&it, itype, exp, offset, true);
-            if (sc != sc_auto && sc != sc_localstatic && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
-            {
-                insertDynamicInitializer(base, it);
-            }
             else
             {
-                *init = it;
+                bool first = true;
+                INITIALIZER* it = nullptr, **it1 = &it, *it2;
+                switch (exp->type)
+                {
+                    case en_global:
+                    case en_auto:
+                    case en_threadlocal:
+                    case en_absolute:
+                        it2 = exp->v.sp->sb->init;
+                        while (it2)
+                        {
+                            if (it2->exp)
+                            {
+                                if (!first)
+                                    it1 = &(*it1)->next;
+                                auto xx = it2->exp;
+                                if (exp->type != en_auto || !exp->v.sp->sb->anonymous)
+                                    while (xx->type == en_void && xx->left->type == en_assign)
+                                        xx = xx->right;
+                                *it1 = Allocate<INITIALIZER>();
+                                initInsert(it1, it2->basetp, xx, it2->offset + offset, it2->noassign);
+                                first = false;
+                            }
+                            it2 = it2->next;
+                        }
+                        break;
+                    default: 
+                    {
+                        initInsert(&it, itype, exp, offset, false);
+                        break;
+                    }
+                }
+                if (it)
+                {
+                    if (sc != sc_auto && sc != sc_localstatic && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
+                    {
+                        insertDynamicInitializer(base, it);
+                    }
+                    else
+                    {
+                        *init = it;
+                    }
+                }
             }
         }
         return lex;
@@ -3253,6 +3289,18 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                     }
                     else
                     {
+                        if (isstructured(tp2))
+                        {
+                            auto placeholder = lex;
+                            EXPRESSION* exp = nullptr;
+                            TYPE* tp = nullptr;
+                            lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, 0);
+                            lex = prevsym(placeholder);
+                            if (tp && comparetypes(tp2, tp, true))
+                            {
+                                break;
+                            }
+                        }
                         if (!atend(desc))
                         {
                             hasSome = true;

@@ -81,6 +81,7 @@ extern "C"
 
 #define _O_CREAT O_CREAT
 #define _O_TRUNC O_TRUNC
+#define _O_EXCL O_EXCL
 
 /* The "open flags" defined above are not needed after open, hence they
    are re-used for other purposes when the file is running.  Sorry, it's
@@ -97,6 +98,8 @@ extern "C"
 #define O_NONBLOCK 0x0020
 #define O_RSYNC 0x0040
 #define O_SYNC 0x0080
+
+#define _O_APPEND O_APPEND
 
     /* MSDOS special bits */
 
@@ -115,6 +118,12 @@ extern "C"
 #define O_DENYWRITE 0x20
 #define O_DENYREAD 0x30
 #define O_DENYNONE 0x40
+
+#define _O_NOINHERIT O_NOINHERIT
+#define _O_DENYALL O_DENYALL
+#define _O_DENYWRITE O_DENYWRITE
+#define _O_DENYREAD O_DENYREAD
+#define _O_DENYNONE O_DENYNONE
 
 #define F_DUPFD 0  /* duplicate file descriptor */
 #define F_GETFD 1  /* get file descriptor flags */

@@ -55,6 +55,9 @@
 #    define SH_DENYNO 0x40 /* deny none mode */
 
 #    define SH_DENYNONE SH_DENYNO
+#    define _SH_DENYRW SH_DENYRW
 #    define _SH_DENYNO SH_DENYNO
+#    define _SH_DENYRD SH_DENYRD
+#    define _SH_DENYWR SH_DENYWR
 
 #endif /* __SHARE_H */

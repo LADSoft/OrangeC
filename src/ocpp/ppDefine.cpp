@@ -194,13 +194,6 @@ ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& val
             failed = true;
         else
         {
-            int n = old->GetArgCount();
-            for (int i = 0; i < n; i++)
-                if (old->GetArg(i) != d->GetArg(i))
-                {
-                    failed = true;
-                    break;
-                }
             const char* p = old->GetValue().c_str();
             const char* q = d->GetValue().c_str();
             while (*p && *q)

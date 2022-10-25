@@ -2176,6 +2176,10 @@ LEXLIST* parse_declspec(LEXLIST* lex, enum e_lk* linkage, enum e_lk* linkage2, e
                         error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                     *linkage2 = lk_export;
                 }
+                else if (!strcmp(lex->data->value.s.a, "deprecated") || !strcmp(lex->data->value.s.a, "__deprecated__"))
+                {
+                    basisAttribs.uninheritable.deprecationText = (char *)-1;
+                }
                 else
                 {
                     error(ERR_IGNORING__DECLSPEC);

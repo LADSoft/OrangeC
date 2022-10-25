@@ -217,7 +217,10 @@ static ARCH_DEFINES defines[] = {
     {"__i386__", "1", true, true},
     {"_i386_", "1", true, true},
     {"__i386", "1", true, true},
-    {0},
+    {"_X86_", "1", true, true},
+    {"_M_IX86", "1", true, true},
+    {"_INTEGRAL_MAX_BITS", "64", true, true},
+    { 0 }
 };
 static ARCH_SIZING sizes = {
     1,  /*char a_bool;*/

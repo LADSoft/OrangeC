@@ -8856,7 +8856,7 @@ interface INamespaceWalk {
 #endif /* __INamespaceWalk_INTERFACE_DEFINED__ */
 
 #endif /* NTDDI_WINXP || (_WIN32_IE >= _WIN32_IE_IE70) */
-_inline void FreeIDListArray(PIDLIST_RELATIVE * ppidls, UINT cItems) {
+inline void FreeIDListArray(PIDLIST_RELATIVE * ppidls, UINT cItems) {
     UINT i;
     for  (i = 0; i < cItems; i++)
     {
@@ -8864,14 +8864,14 @@ _inline void FreeIDListArray(PIDLIST_RELATIVE * ppidls, UINT cItems) {
     } CoTaskMemFree(ppidls);
 }
 #if defined(STRICT_TYPED_ITEMIDS) && defined(__cplusplus)
-_inline void FreeIDListArrayFull(PIDLIST_ABSOLUTE * ppidls, UINT cItems) {
+inline void FreeIDListArrayFull(PIDLIST_ABSOLUTE * ppidls, UINT cItems) {
     for (UINT i = 0; i < cItems; i++)
     {
         CoTaskMemFree(ppidls[i]);
     }
     CoTaskMemFree(ppidls);
 }
-_inline void FreeIDListArrayChild(PITEMID_CHILD * ppidls, UINT cItems) {
+inline void FreeIDListArrayChild(PITEMID_CHILD * ppidls, UINT cItems) {
     for (UINT i = 0; i < cItems; i++)
     {
         CoTaskMemFree(ppidls[i]);
@@ -11191,7 +11191,7 @@ interface IKnownFolderManager {
 
 #endif /* __IKnownFolderManager_INTERFACE_DEFINED__ */
 
-_inline void FreeKnownFolderDefinitionFields(KNOWNFOLDER_DEFINITION * pKFD)
+inline void FreeKnownFolderDefinitionFields(KNOWNFOLDER_DEFINITION * pKFD)
 {
     CoTaskMemFree(pKFD->pszName);
     CoTaskMemFree(pKFD->pszDescription);

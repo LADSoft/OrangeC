@@ -3970,8 +3970,6 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                     tpb = basetype(tp1);
                     if (tpb->array)
                     {
-                        if (Optimizer::cparams.prm_cplusplus && isstructured(tpb->btp) && !basetype(tpb->btp)->sp->sb->trivialCons)
-                            error(ERR_CANNOT_USE_ARRAY_OF_STRUCTURES_AS_FUNC_ARG);
                         if (tpb->vla)
                         {
                             auto tpx = MakeType(bt_pointer, tpb);

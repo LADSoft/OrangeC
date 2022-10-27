@@ -141,11 +141,19 @@ void ppPragma::HandlePack(Tokenizer& tk)
         tok = tk.Next();
         int val = -1;
         if (tok)
+        {
+            if (tok->GetId() == "push" || tok->GetId() == "pop")
+            {
+               tok = tk.Next();
+               if (tok->GetKeyword() == kw::comma)
+                   tok = tk.Next();
+            }
             if (tok->IsNumeric())
             {
                 val = tok->GetInteger();
                 tok = tk.Next();
             }
+        }
         if (tok)
             if (tok->GetKeyword() == kw::closepa)
             {

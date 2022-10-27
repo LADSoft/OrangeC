@@ -215,8 +215,15 @@ void RCFile::SkimStructOrEnum()
         NextToken();
     }
     NeedEnd();
-    if (GetToken()->IsIdentifier())
-        NextToken();
+    do
+    {  
+        if (GetToken()->IsKeyword() && GetToken()->GetKeyword() == kw::comma)
+            NextToken();
+        while (GetToken()->IsKeyword() && GetToken()->GetKeyword() == kw::star)
+            NextToken();
+        if (GetToken()->IsIdentifier())
+            NextToken();
+    } while (GetToken()->IsKeyword() && GetToken()->GetKeyword() == kw::comma);
     if (GetToken()->IsKeyword() && GetToken()->GetKeyword() == kw::semi)
         NextToken();
     else
@@ -270,6 +277,16 @@ void RCFile::SkimPrototype()
     int count = 0;
     while (GetToken()->GetKeyword() != kw::openpa && !AtEof())
     {
+        if (GetToken()->IsIdentifier() && GetToken()->GetId() == "__declspec")
+        {
+           while (GetToken()->GetKeyword() != kw::closepa && GetToken()->GetKeyword() != kw::semi && !AtEof())
+               NextToken();
+        }
+        if (GetToken()->IsKeyword() && GetToken()->GetKeyword() == kw::semi)
+        {
+            NextToken();
+            return;
+        }
         NextToken();
     }
     if (GetToken()->IsKeyword() && GetToken()->GetKeyword() == kw::openpa)
@@ -296,7 +313,30 @@ void RCFile::SkimPrototype()
     else
         throw std::runtime_error("close parenthesis expected");
     if (GetToken()->IsKeyword() && GetToken()->GetKeyword() == kw::semi)
+    {
         NextToken();
+    }
+    else if (GetToken()->IsKeyword() && GetToken()->GetKeyword() == kw::BEGIN)
+    {
+        NextToken();
+        count = 0;
+        while ((count > 0 || GetToken()->GetKeyword() != kw::END) && !AtEof())
+        {
+            switch (GetToken()->GetKeyword())
+            {
+                case kw::BEGIN:
+                    count++;
+                    break;
+                case kw::END:
+                    count--;
+                    break;
+            }
+            if (count < 0)
+                break;
+            NextToken();
+        }
+        NextToken();
+    }
     else
         throw std::runtime_error("semicolon expected");
 }
@@ -353,6 +393,12 @@ Resource* RCFile::GetRes()
             {
                 throw std::runtime_error("Expected resource identifier");
             }
+        }
+        else if (GetToken()->IsIdentifier() && GetToken()->GetId() == "__declspec")
+        {
+             SkimPrototype();
+             done = false;
+             continue;
         }
         else
         {

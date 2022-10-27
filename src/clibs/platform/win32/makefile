@@ -76,6 +76,5 @@ DISTRIBUTE:
 	$(MAKE) -Cpels DISTRIBUTE
 	$(MAKE) -Cmsvcrdm DISTRIBUTE
 	$(MAKE) -Ccrtdmain DISTRIBUTE
-	$(COPYDIR) wininc\%.h $(DISTINC)
-	$(COPYDIR) wininc\win32\%.h $(DISTINCWIN)
+	$(COPYDIR) inc\%.h $(DISTINC)\c\win32
 #	$(MAKE) -Clscrtl DISTRIBUTE

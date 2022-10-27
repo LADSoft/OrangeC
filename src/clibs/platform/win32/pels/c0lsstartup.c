@@ -51,9 +51,6 @@ extern void _import _exit(int);
 #include <locale.h>
 #include <libp.h>
 
-BOOL __stdcall GetModuleHandleExW(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule);
-#define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 4
-
 extern char INITSTART[], INITEND[], EXITSTART[], EXITEND[], BSSSTART[], BSSEND[];
 extern char _TLSINITSTART[], _TLSINITEND[];
 extern __import int _argc;
@@ -70,14 +67,14 @@ static void init(void)
 {
     HANDLE handle;
     int eip;
-    __asm mov eax, [ebp + 4] __asm mov[eip], eax GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)eip, &handle);
+    __asm mov eax, [ebp + 4] __asm mov[eip], eax GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCWSTR)eip, &handle);
     __thrdRegisterModule(handle, _TLSINITSTART, _TLSINITEND);
 }
 static void destroy(void)
 {
     HANDLE handle;
     int eip;
-    __asm mov eax, [ebp + 4] __asm mov[eip], eax GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)eip, &handle);
+    __asm mov eax, [ebp + 4] __asm mov[eip], eax GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCWSTR)eip, &handle);
     __thrdUnregisterModule(handle);
 }
 

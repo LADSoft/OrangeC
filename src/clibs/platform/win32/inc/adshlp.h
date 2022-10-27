@@ -1,0 +1,54 @@
+#ifndef _ADSHLP_H
+#define _ADSHLP_H
+
+#ifdef __ORANGEC__ 
+#pragma once
+#endif
+
+/* Active Directory Service helper definitions */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+HRESULT WINAPI ADsGetObject(LPCWSTR,REFIID,VOID**);
+HRESULT WINAPI ADsBuildEnumerator(IADsContainer*,IEnumVARIANT**);
+HRESULT WINAPI ADsFreeEnumerator(IEnumVARIANT*);
+HRESULT WINAPI ADsEnumerateNext(IEnumVARIANT*,ULONG,VARIANT*,ULONG*);
+HRESULT WINAPI ADsBuildVarArrayStr(LPWSTR*,DWORD,VARIANT*);
+HRESULT WINAPI ADsBuildVarArrayInt(LPDWORD,DWORD,VARIANT*);
+HRESULT WINAPI ADsOpenObject(LPCWSTR,LPCWSTR,LPCWSTR,DWORD,REFIID,void**);
+HRESULT WINAPI ADsGetLastError(LPDWORD,LPWSTR,DWORD,LPWSTR,DWORD);
+VOID WINAPI ADsSetLastError(DWORD,LPCWSTR,LPCWSTR);
+VOID WINAPI ADsFreeAllErrorRecords(VOID);
+LPVOID WINAPI AllocADsMem(DWORD);
+BOOL WINAPI FreeADsMem(LPVOID);
+LPVOID WINAPI ReallocADsMem(LPVOID,DWORD,DWORD);
+LPWSTR WINAPI AllocADsStr(LPCWSTR);
+BOOL WINAPI FreeADsStr(LPWSTR);
+BOOL WINAPI ReallocADsStr(LPWSTR*,LPWSTR);
+HRESULT WINAPI ADsEncodeBinaryData(PBYTE,DWORD,LPWSTR*);
+HRESULT WINAPI ADsDecodeBinaryData(LPCWSTR,PBYTE*,ULONG*);
+HRESULT WINAPI PropVariantToAdsType(VARIANT*,DWORD,PADSVALUE*,PDWORD);
+HRESULT WINAPI AdsTypeToPropVariant(PADSVALUE,DWORD,VARIANT*);
+void WINAPI AdsFreeAdsValues(PADSVALUE,DWORD);
+HRESULT WINAPI BinarySDToSecurityDescriptor(PSECURITY_DESCRIPTOR,VARIANT*,LPCWSTR,LPCWSTR,LPCWSTR,DWORD);
+HRESULT WINAPI SecurityDescriptorToBinarySD(VARIANT,PSECURITY_DESCRIPTOR*,PDWORD,LPCWSTR,LPCWSTR,LPCWSTR,DWORD);
+
+#if DBG
+extern LIST_ENTRY ADsMemList;
+extern CRITICAL_SECTION ADsMemCritSect;
+VOID InitADsMem(VOID);
+VOID AssertADsMemLeaks(VOID);
+VOID DumpMemoryTracker();
+#else /* DBG */
+#define InitADsMem()
+#define AssertADsMemLeaks()
+#define DumpMemoryTracker()
+#endif /* DBG */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _ADSHLP_H */

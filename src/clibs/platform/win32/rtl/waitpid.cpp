@@ -44,68 +44,6 @@
 static HANDLE hjob;
 static HANDLE end;
 CRITICAL_SECTION critical;
-typedef enum _JOBOBJECTINFOCLASS
-{
-    JobObjectBasicAccountingInformation = 1,
-    JobObjectBasicLimitInformation,
-    JobObjectBasicProcessIdList,
-    JobObjectBasicUIRestrictions,
-    JobObjectSecurityLimitInformation,
-    JobObjectEndOfJobTimeInformation,
-    JobObjectAssociateCompletionPortInformation,
-    JobObjectBasicAndIoAccountingInformation,
-    JobObjectExtendedLimitInformation,
-    MaxJobObjectInfoClass
-} JOBOBJECTINFOCLASS;
-
-WINBASEAPI
-HANDLE
-WINAPI
-CreateJobObjectA(LPSECURITY_ATTRIBUTES lpJobAttributes, LPCSTR lpName);
-WINBASEAPI
-HANDLE
-WINAPI
-CreateJobObjectW(LPSECURITY_ATTRIBUTES lpJobAttributes, LPCWSTR lpName);
-#ifdef UNICODE
-#    define CreateJobObject CreateJobObjectW
-#else
-#    define CreateJobObject CreateJobObjectA
-#endif  // !UNICODE
-
-WINBASEAPI
-HANDLE
-WINAPI
-OpenJobObjectA(DWORD dwDesiredAccess, BOOL bInheritHandle, LPCSTR lpName);
-WINBASEAPI
-HANDLE
-WINAPI
-OpenJobObjectW(DWORD dwDesiredAccess, BOOL bInheritHandle, LPCWSTR lpName);
-#ifdef UNICODE
-#    define OpenJobObject OpenJobObjectW
-#else
-#    define OpenJobObject OpenJobObjectA
-#endif  // !UNICODE
-
-WINBASEAPI
-BOOL WINAPI AssignProcessToJobObject(HANDLE hJob, HANDLE hProcess);
-
-WINBASEAPI
-BOOL WINAPI TerminateJobObject(HANDLE hJob, UINT uExitCode);
-
-WINBASEAPI
-BOOL WINAPI QueryInformationJobObject(HANDLE hJob, JOBOBJECTINFOCLASS JobObjectInformationClass, LPVOID lpJobObjectInformation,
-                                      DWORD cbJobObjectInformationLength, LPDWORD lpReturnLength);
-
-WINBASEAPI
-BOOL WINAPI SetInformationJobObject(HANDLE hJob, JOBOBJECTINFOCLASS JobObjectInformationClass, LPVOID lpJobObjectInformation,
-                                    DWORD cbJobObjectInformationLength);
-
-typedef struct _JOBOBJECT_BASIC_PROCESS_ID_LIST
-{
-    DWORD NumberOfAssignedProcesses;
-    DWORD NumberOfProcessIdsInList;
-    ULONG_PTR ProcessIdList[1024];
-} JOBOBJECT_BASIC_PROCESS_ID_LIST, *PJOBOBJECT_BASIC_PROCESS_ID_LIST;
 
 static std::map<DWORD, HANDLE> pidList;
 #pragma startup init 224

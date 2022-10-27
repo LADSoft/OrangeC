@@ -107,8 +107,7 @@ copyfiles: mkdir
 	-copy  cpp\stdinc_libcxx ..\..\include 2>NUL
 	-copy  stdinc ..\..\include\c 2>NUL
 	-copy  stdinc\sys ..\..\include\c\sys 2>NUL
-	-copy  platform\win32\wininc ..\..\include\c 2>NUL
-	-copy  platform\win32\wininc\win32 ..\..\include\c\win32 2>NUL
+	-copy  platform\win32\inc ..\..\include\c\win32 2>NUL
 
 $(C_CLIBS) : %.clibs :
 	$(MAKE) -C$* --eval="OBJECT=$(CLIBOBJECT)" --eval="$(BUILDING_DLL)"
@@ -151,8 +150,7 @@ DISTRIBUTE:
 
 	$(COPYDIR) stdinc\%.h $(DISTINC)\c
 	$(COPYDIR) stdinc\sys\%.h $(DISTINC)\c\sys
-	$(COPYDIR) platform\win32\wininc\%.h $(DISTINC)\c
-	$(COPYDIR) platform\win32\wininc\win32\%.h $(DISTINC)\c\win32
+	$(COPYDIR) platform\win32\inc\%.h $(DISTINC)\c\win32
 ifndef BUILDENV
 	$(COPYDIR) object\startup\%.l $(DISTLIB)
 	$(COPYDIR) object\startup\%.o $(DISTLIB)

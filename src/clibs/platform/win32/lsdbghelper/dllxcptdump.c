@@ -39,9 +39,6 @@
 #include "PEHeader.h"
 #include "sqlite3.h"
 
-BOOL __stdcall GetModuleHandleExW(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule);
-#define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 4
-
 char* unmangle(char* val, char* name);
 
 #define DBVersion 100
@@ -493,7 +490,7 @@ void GetModuleName(char* buf, unsigned addr, unsigned* base)
 {
     buf[0] = 0;
     HMODULE module;
-    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCTSTR)addr, &module))
+    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCWSTR)addr, &module))
     {
         DWORD dbgBase;
         DWORD read;

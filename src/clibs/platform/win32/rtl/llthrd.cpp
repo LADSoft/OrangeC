@@ -58,8 +58,6 @@ extern "C"
     void __cnd_remove_thrd(thrd_t thrd);
     void rpmalloc_thread_initialize();
     void rpmalloc_thread_finalize();
-    BOOL __stdcall GetModuleHandleExW(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule);
-#define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 4
     extern void* __hInstance;
     void __srproc(char*, char *);
     void __load_local_data(bool constructors);
@@ -99,14 +97,14 @@ static PASCAL unsigned char* __getTlsData(int eip, int thread)
         __load_local_data(true);
         __ll_exit_critical();
     }
-    HANDLE hModule;
+    HMODULE hModule;
     HandleMap* map = (HandleMap*)r->thread_local_data;
     if (map->size() == 1)
     {
         // optimize the non-dll use case
         return map->begin()->second;
     }
-    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)eip, &hModule))
+    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCWSTR)eip, &hModule))
     {
 
         auto it = map->find(hModule);

@@ -39,7 +39,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 static int ctrlchandlerInstalled;
-static WINBOOL CALLBACK ControlCHandler(DWORD type)
+static BOOL CALLBACK ControlCHandler(DWORD type)
 {
     if (type == CTRL_C_EVENT)
         raise(SIGINT);

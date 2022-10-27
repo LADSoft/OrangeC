@@ -2110,6 +2110,10 @@ LEXLIST* parse_declspec(LEXLIST* lex, enum e_lk* linkage, enum e_lk* linkage2, e
                         error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                     *linkage2 = lk_export;
                 }
+                else if (!strcmp(lex->data->value.s.a, "deprecated") || !strcmp(lex->data->value.s.a, "__deprecated__"))
+                {
+                    basisAttribs.uninheritable.deprecationText = (char *)-1;
+                }
                 else
                 {
                     error(ERR_IGNORING__DECLSPEC);
@@ -3893,8 +3897,6 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                     tpb = basetype(tp1);
                     if (tpb->array)
                     {
-                        if (Optimizer::cparams.prm_cplusplus && isstructured(tpb->btp) && !basetype(tpb->btp)->sp->sb->trivialCons)
-                            error(ERR_CANNOT_USE_ARRAY_OF_STRUCTURES_AS_FUNC_ARG);
                         if (tpb->vla)
                         {
                             auto tpx = MakeType(bt_pointer, tpb);

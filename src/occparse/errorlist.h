@@ -408,7 +408,7 @@ ERRLIST(ERR_INIT_NARROWING, 366, "Value narrowing within { } is not allowed", CE
 ERRLIST(ERR_NONSTRUCTURED_INIT_LIST, 367, "Nonstructured initializer list expected", CE_ERROR)
 ERRLIST(ERR_CANNOT_USE_INIT_LIST, 368, "Cannot use initializer list here", CE_ERROR)
 ERRLIST(ERR_CANNOT_USE_INIT_LIST_WITH_BUILTIN_BRACKET, 369, "Initializer list requires overloaded operator []", CE_ERROR)
-ERRLIST(ERR_CANNOT_USE_ARRAY_OF_STRUCTURES_AS_FUNC_ARG, 370, "Cannot use array of structures as function argument", CE_ERROR)
+ERRLIST(ERR_UNUSED_CANNOT_USE_ARRAY_OF_STRUCTURES_AS_FUNC_ARG, 370, "", CE_ERROR)
 ERRLIST(ERR_ANONYMOUS_UNION_NO_FUNCTION_OR_TYPE, 371, "Anonymous union cannot contain function or nested type", CE_ERROR)
 ERRLIST(ERR_ANONYMOUS_UNION_PUBLIC_MEMBERS, 372, "Anonymous union must contain only public members", CE_ERROR)
 ERRLIST(ERR_ANONYMOUS_UNION_NONSTATIC_MEMBERS, 373, "Anonymous union must contain only nonstatic data members", CE_ERROR)

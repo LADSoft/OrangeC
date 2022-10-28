@@ -148,7 +148,9 @@ extern "C"
     int _RTL_FUNC _IMPORT _open_osfhandle(long __osfhandle, int __oflag);
 
     int _RTL_FUNC _IMPORT _access(const char* ZSTR, int);
+    int _RTL_FUNC _IMPORT _waccess(const wchar_t* ZSTR __path, int __amode);
     int _RTL_FUNC _IMPORT _chmod(const char* ZSTR, int);
+    int _RTL_FUNC _IMPORT _wchmod(const wchar_t* ZSTR, int);
     int _RTL_FUNC _IMPORT _chsize(int, long);
     int _RTL_FUNC _IMPORT _close(int);
     int _RTL_FUNC _IMPORT _commit(int);

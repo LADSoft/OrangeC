@@ -116,7 +116,7 @@ extern "C"
 
     /* Spawn function */
     int __ll_spawn(char* name, char* parms, char** env, int mode);
-    int __ll_system(char* string, int in, int out);
+    int __ll_system(wchar_t* string, int in, int out);
 
     /* assert */
     void __ll_assertfail(const char* __who, const char* __file, int __line, const char* __func, const char* __msg);
@@ -243,7 +243,7 @@ typedef struct _blkhead
 void __ll_uioinit(void);
 int __ll_uio_flags(int);
 void __uio_rundown(void);
-int __ll_chmod(const char* path, int amode);
+int __ll_chmod(const wchar_t* path, int amode);
 int __ll_chsize(int handle, int size);
 int __ll_dup(int handle);
 int __ll_setftime(int handle, void* ftimep);

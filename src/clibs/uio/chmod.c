@@ -44,7 +44,7 @@
 #include <locale.h>
 #include "libp.h"
 
-int _RTL_FUNC chmod(const char* __path, int __amode)
+int _RTL_FUNC _wchmod(const wchar_t* __path, int __amode)
 {
     int i;
     for (i = 0; i < 3; i++)
@@ -57,4 +57,13 @@ int _RTL_FUNC chmod(const char* __path, int __amode)
     }
     return -1;
 }
+int _RTL_FUNC chmod(const char* __path, int __amode)
+{
+    wchar_t buf[260], *p = buf;
+    while (*__path)
+        *p++ = *__path++;
+    *p = *__path;
+    return _wchmod(buf, __amode);
+}
+
 int _RTL_FUNC _chmod(const char* __path, int __amode) { return chmod(__path, __amode); }

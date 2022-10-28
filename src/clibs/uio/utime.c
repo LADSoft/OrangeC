@@ -39,6 +39,7 @@
 #include <io.h>
 #include <fcntl.h>
 #include <locale.h>
+#include <stat.h>
 #include <wchar.h>
 #include "libp.h"
 
@@ -81,6 +82,19 @@ int _RTL_FUNC _utime(const char* path, struct _utimbuf* times)
     int rv;
 
     if ((handle = open(path, O_RDWR)) == -1)
+        return -1;
+
+    rv = _futime(handle, times);
+
+    close(handle);
+    return rv;
+}
+int _RTL_FUNC _wutime(const wchar_t* path, struct _utimbuf* times)
+{
+    int handle;
+    int rv;
+
+    if ((handle = _wsopen(path, O_RDWR, S_IREAD | S_IWRITE, 0)) == -1)
         return -1;
 
     rv = _futime(handle, times);

@@ -50,6 +50,7 @@ int _RTL_FUNC rmdir(const char* name)
     return __ll_rmdir(buf); 
 }
 int _RTL_FUNC _rmdir(const char* name) { return rmdir(name); }
+int _RTL_FUNC _wrmdir(const wchar_t* name) { return __ll_rmdir(name); }
 int _RTL_FUNC remove(const char* name)
 {
     int rv = unlink(name);
@@ -80,6 +81,7 @@ int _RTL_FUNC _wremove(const wchar_t* name)
     }
     return 0;
 }
+int _RTL_FUNC _wunlink(const wchar_t* name) { return (__ll_remove(name)); }
 int _RTL_FUNC unlink(const char* name) 
 { 
     wchar_t buf[260], *p = buf; 

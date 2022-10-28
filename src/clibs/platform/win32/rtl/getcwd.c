@@ -34,30 +34,40 @@
  * 
  */
 
+#include <windows.h>
 #include <dos.h>
 #include <dir.h>
 #include <errno.h>
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
-
-char* _RTL_FUNC getcwd(char* __buf, int __buflen)
+#include <wchar.h>
+wchar_t* _RTL_FUNC _wgetcwd(wchar_t* __buf, int __buflen)
 {
-    int drv, rv;
-    char ibuf[265];
-    drv = getdisk();
-    rv = getcurdir(0, ibuf + 3);
-    ibuf[0] = drv + 'A';
-    ibuf[1] = ':';
-    ibuf[2] = '\\';
+    wchar_t ibuf[265];
+    GetCurrentDirectoryW(256, ibuf);
     if (!__buf)
-        __buf = strdup(ibuf);
+        __buf = wcsdup(ibuf);
     else
     {
-        memcpy(__buf, ibuf, __buflen);
+        wmemcpy(__buf, ibuf, __buflen);
         __buf[__buflen - 1] = 0;
     }
     return __buf;
+}
+char* _RTL_FUNC getcwd(char* __buf, int __buflen)
+{
+    wchar_t buf1[260], *p = buf1;
+    _wgetcwd(buf1, __buflen > 259 ? 260 : __buflen);
+    if (!__buf)
+    {
+        __buf = malloc(wcslen(p) + 1);
+        if (!__buf)
+            return __buf;
+    }
+    while (*p)
+        *__buf++ = *p++;
+    *__buf = *p;
+    return __buf - (p - buf1);
 }
 char* _RTL_FUNC _getcwd(char* __buf, int __buflen) { return getcwd(__buf, __buflen); }

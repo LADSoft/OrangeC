@@ -34,28 +34,18 @@
  * 
  */
 
-#include <stdlib.h>
 #include <ctype.h>
-
-wchar_t* _RTL_FUNC wcsupr(wchar_t* s)
+void* _RTL_FUNC memichr(const void* __s1, int ch, size_t __n)
 {
-    wchar_t* sold = s;
-    while (*s)
+    const char* s1 = __s1;
+    ch = toupper(ch);
+    while (__n)
     {
-        *s = toupper(*s);
-        s++;
+        if (toupper(*s1) == ch)
+            return s1;
+        s1++;
+        __n--;
     }
-    return sold;
+    return NULL;
 }
-wchar_t* _RTL_FUNC _wcsupr(wchar_t* s) { return wcsupr(s); }
-wchar_t* _RTL_FUNC wcslwr(wchar_t* s)
-{
-    wchar_t* sold = s;
-    while (*s)
-    {
-        *s = tolower(*s);
-        s++;
-    }
-    return sold;
-}
-wchar_t* _RTL_FUNC _wcslwr(wchar_t* s) { return wcslwr(s); }
+void* _RTL_FUNC _memichr(const void* __s1, int ch, size_t __n) { return memichr(__s1, ch, __n); }

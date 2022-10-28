@@ -35,27 +35,14 @@
  */
 
 #include <stdlib.h>
-#include <ctype.h>
+#include <string.h>
 
-wchar_t* _RTL_FUNC wcsupr(wchar_t* s)
+wchar_t* wcsnset(wchar_t* p, int n, size_t len)
 {
-    wchar_t* sold = s;
-    while (*s)
-    {
-        *s = toupper(*s);
-        s++;
-    }
-    return sold;
+    int l = wcslen(p);
+    if (l > len)
+        l = len;
+    wmemset(p, n, l);
+    return p;
 }
-wchar_t* _RTL_FUNC _wcsupr(wchar_t* s) { return wcsupr(s); }
-wchar_t* _RTL_FUNC wcslwr(wchar_t* s)
-{
-    wchar_t* sold = s;
-    while (*s)
-    {
-        *s = tolower(*s);
-        s++;
-    }
-    return sold;
-}
-wchar_t* _RTL_FUNC _wcslwr(wchar_t* s) { return wcslwr(s); }
+wchar_t* _wcsnset(wchar_t* p, int n, size_t len) { return wcsnset(p, n, len); }

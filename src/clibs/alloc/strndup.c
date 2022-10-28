@@ -34,28 +34,26 @@
  * 
  */
 
-#include <stdlib.h>
-#include <ctype.h>
+/*
+ * strdup.c
+ */
 
-wchar_t* _RTL_FUNC wcsupr(wchar_t* s)
+#include <stdlib.h>
+#include <string.h>
+
+char* _RTL_FUNC strndup(const char* string, size_t count)
 {
-    wchar_t* sold = s;
-    while (*s)
+    int n;
+    for (n=0; n < count; n++)
+        if (!string[n])
+            break;  
+    char* rv = malloc(n + 1);
+    if (rv)
     {
-        *s = toupper(*s);
-        s++;
+        strncpy(rv, string, n);
+        rv[n] = 0;
     }
-    return sold;
+    return rv;
 }
-wchar_t* _RTL_FUNC _wcsupr(wchar_t* s) { return wcsupr(s); }
-wchar_t* _RTL_FUNC wcslwr(wchar_t* s)
-{
-    wchar_t* sold = s;
-    while (*s)
-    {
-        *s = tolower(*s);
-        s++;
-    }
-    return sold;
-}
-wchar_t* _RTL_FUNC _wcslwr(wchar_t* s) { return wcslwr(s); }
+
+char* _RTL_FUNC _strndup(const char* string, size_t count) { return strndup(string, count); }

@@ -34,28 +34,23 @@
  * 
  */
 
+#include <wchar.h>
+#include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
 
-wchar_t* _RTL_FUNC wcsupr(wchar_t* s)
+wchar_t* _RTL_FUNC wcsndup(const wchar_t* string, int count)
 {
-    wchar_t* sold = s;
-    while (*s)
+    int n;
+    for (n=0; n < count; n++)
+        if (!string[n])
+            break; 
+    wchar_t* rv = malloc((n + 1)*sizeof(wchar_t));
+    if (rv)
     {
-        *s = toupper(*s);
-        s++;
+        wcsncpy(rv, string, n);
+        rv[n] = 0;
     }
-    return sold;
+    return rv;
 }
-wchar_t* _RTL_FUNC _wcsupr(wchar_t* s) { return wcsupr(s); }
-wchar_t* _RTL_FUNC wcslwr(wchar_t* s)
-{
-    wchar_t* sold = s;
-    while (*s)
-    {
-        *s = tolower(*s);
-        s++;
-    }
-    return sold;
-}
-wchar_t* _RTL_FUNC _wcslwr(wchar_t* s) { return wcslwr(s); }
+
+wchar_t * _RTL_FUNC _wcsndup(const wchar_t* s, int count) { return wcsndup(s, count); }

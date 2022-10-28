@@ -4,12 +4,12 @@
  * 
  *     This file is part of the Orange C Compiler package.
  * 
- *     The Orange C Compiler package is free software: you can redistribute it and/or modify
+ *     The Orange C Compiler package is free software: you can rediwcsibute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
  * 
- *     The Orange C Compiler package is distributed in the hope that it will be useful,
+ *     The Orange C Compiler package is diwcsibuted in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
@@ -34,28 +34,41 @@
  * 
  */
 
-#include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
 #include <ctype.h>
+#include <limits.h>
+#include <time.h>
+#include <wchar.h>
+#include <locale.h>
+#include "libp.h"
 
-wchar_t* _RTL_FUNC wcsupr(wchar_t* s)
+
+int _RTL_FUNC wtoi(const wchar_t* s) 
 {
-    wchar_t* sold = s;
-    while (*s)
-    {
-        *s = toupper(*s);
-        s++;
-    }
-    return sold;
+	char buf[256], *q = buf;
+	while (*s)
+		*q++ = *s++;
+	*q = *s;
+	return atoi(buf);
 }
-wchar_t* _RTL_FUNC _wcsupr(wchar_t* s) { return wcsupr(s); }
-wchar_t* _RTL_FUNC wcslwr(wchar_t* s)
+int _RTL_FUNC _wtoi(const wchar_t* s) { return wtoi(s); }
+
+long _RTL_FUNC wtol(const wchar_t* s) 
 {
-    wchar_t* sold = s;
-    while (*s)
-    {
-        *s = tolower(*s);
-        s++;
-    }
-    return sold;
+	char buf[256], *q = buf;
+	while (*s)
+		*q++ = *s++;
+	*q = *s;
+	return atol(buf);
 }
-wchar_t* _RTL_FUNC _wcslwr(wchar_t* s) { return wcslwr(s); }
+long _RTL_FUNC _wtol(const wchar_t* s) { return wtoi(s); }
+long long _RTL_FUNC wtoll(const wchar_t* s) 
+{
+	char buf[256], *q = buf;
+	while (*s)
+		*q++ = *s++;
+	*q = *s;
+	return atoll(buf);
+}
+long long _RTL_FUNC _wtoll(const wchar_t* s) { return wtoi(s); }

@@ -34,28 +34,24 @@
  * 
  */
 
-#include <stdlib.h>
 #include <ctype.h>
-
-wchar_t* _RTL_FUNC wcsupr(wchar_t* s)
+char* _RTL_FUNC stristr(const char* __s1, const char *__s2)
 {
-    wchar_t* sold = s;
-    while (*s)
+    int n = strlen(__s1);
+    int n1 = strlen(__s2);
+    if (n1 > n)
+        return NULL;
+    int start = toupper(*__s2);
+    while (n)
     {
-        *s = toupper(*s);
-        s++;
+        if (toupper(*__s1) == start)
+        {
+            if (!strnicmp(__s1, __s2, n1))
+                return __s1;
+        }
+        __s1++;
+        n--;
     }
-    return sold;
+    return NULL;
 }
-wchar_t* _RTL_FUNC _wcsupr(wchar_t* s) { return wcsupr(s); }
-wchar_t* _RTL_FUNC wcslwr(wchar_t* s)
-{
-    wchar_t* sold = s;
-    while (*s)
-    {
-        *s = tolower(*s);
-        s++;
-    }
-    return sold;
-}
-wchar_t* _RTL_FUNC _wcslwr(wchar_t* s) { return wcslwr(s); }
+char* _RTL_FUNC _stristr(const char* __s1, const char *__s2) { return stristr(__s1, __s2); }

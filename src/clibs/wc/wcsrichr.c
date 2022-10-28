@@ -4,12 +4,12 @@
  * 
  *     This file is part of the Orange C Compiler package.
  * 
- *     The Orange C Compiler package is free software: you can redistribute it and/or modify
+ *     The Orange C Compiler package is free software: you can rediwcsibute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
  * 
- *     The Orange C Compiler package is distributed in the hope that it will be useful,
+ *     The Orange C Compiler package is diwcsibuted in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
@@ -34,28 +34,19 @@
  * 
  */
 
-#include <stdlib.h>
 #include <ctype.h>
-
-wchar_t* _RTL_FUNC wcsupr(wchar_t* s)
+wchar_t* _RTL_FUNC wcsrichr(const wchar_t* __s1, int ch)
 {
-    wchar_t* sold = s;
-    while (*s)
+    int n = wcslen(__s1);
+    const wchar_t* s1 = __s1 + n - 1;
+    ch = towupper(ch);
+    while (n)
     {
-        *s = toupper(*s);
-        s++;
+        if (towupper(*s1) == ch)
+            return s1;
+        s1--;
+        n--;
     }
-    return sold;
+    return NULL;
 }
-wchar_t* _RTL_FUNC _wcsupr(wchar_t* s) { return wcsupr(s); }
-wchar_t* _RTL_FUNC wcslwr(wchar_t* s)
-{
-    wchar_t* sold = s;
-    while (*s)
-    {
-        *s = tolower(*s);
-        s++;
-    }
-    return sold;
-}
-wchar_t* _RTL_FUNC _wcslwr(wchar_t* s) { return wcslwr(s); }
+wchar_t* _RTL_FUNC _wcsrichr(const wchar_t* __s1, int ch) { return wcsrichr(__s1, ch); }

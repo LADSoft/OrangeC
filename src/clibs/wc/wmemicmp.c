@@ -34,28 +34,19 @@
  * 
  */
 
-#include <stdlib.h>
 #include <ctype.h>
-
-wchar_t* _RTL_FUNC wcsupr(wchar_t* s)
+int _RTL_FUNC wmemicmp(const void* __s1, const void* __s2, size_t __n)
 {
-    wchar_t* sold = s;
-    while (*s)
+    const wchar_t* s1 = __s1;
+    const wchar_t* s2 = __s2;
+    while (__n)
     {
-        *s = toupper(*s);
-        s++;
+        if (towupper(*s1) != towupper(*s2))
+            return towupper(*s1) > towupper(*s2) ? 1 : -1;
+        s1++;
+        s2++;
+        __n--;
     }
-    return sold;
+    return 0;
 }
-wchar_t* _RTL_FUNC _wcsupr(wchar_t* s) { return wcsupr(s); }
-wchar_t* _RTL_FUNC wcslwr(wchar_t* s)
-{
-    wchar_t* sold = s;
-    while (*s)
-    {
-        *s = tolower(*s);
-        s++;
-    }
-    return sold;
-}
-wchar_t* _RTL_FUNC _wcslwr(wchar_t* s) { return wcslwr(s); }
+int _RTL_FUNC _wmemicmp(const void* __s1, const void* __s2, size_t __n) { return wmemicmp(__s1, __s2, __n); }

@@ -71,6 +71,11 @@ extern "C"
     void _RTL_FUNC _IMPORT _MSIL_RTL free(void* __block);
     void _RTL_FUNC _IMPORT _MSIL_RTL* malloc(size_t __size);
     void _RTL_FUNC _IMPORT _MSIL_RTL* realloc(void* __block, size_t __size);
+    void * _RTL_FUNC _IMPORT _mm_malloc(size_t, size_t);
+    void _RTL_FUNC _IMPORT _mm_free(void *);
+    void* _RTL_FUNC _IMPORT aligned_alloc(size_t __align, size_t __size);
+    void* _RTL_FUNC _IMPORT _aligned_malloc(size_t __align, size_t __size);
+    void _RTL_FUNC _IMPORT _aligned_free(void* __block);
 #ifdef __CC386__
     void _RTL_FUNC _IMPORT _FAR* farmalloc(size_t __size);
     void _RTL_FUNC _IMPORT farfree(void _FAR* __block);

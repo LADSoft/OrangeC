@@ -364,9 +364,6 @@ extern char _RTL_DATA** __argv;
 #if 0
 extern _CRTIMP int __cdecl _heap_validate(void *);
 extern _CRTIMP size_t __cdecl _msize(void *);
-
-extern _CRTIMP void * __cdecl _mm_malloc(size_t, size_t);
-extern _CRTIMP void __cdecl _mm_free(void *);
 #endif
 
 #ifdef __cplusplus

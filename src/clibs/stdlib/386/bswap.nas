@@ -34,76 +34,42 @@
 ; 
 
 %ifdef __BUILDING_LSCRTL_DLL
-[export __crotl]
-[export __crotr]
-[export __rotl]
-[export __rotr]
-[export __lrotl]
-[export __lrotr]
-[export __llrotl]
-[export __llrotr]
+[export __bswap]
+[export __bswap16]
+[export __bswap64]
 %endif
-[global __crotl]
-[global __crotr]
-[global __rotl]
-[global __rotr]
-[global __llrotl]
-[global __llrotr]
+[global __bswap]
+[global __bswap16]
+[global __bswap64]
 
 SECTION code CLASS=CODE USE32
-__rotl:
-__lrotl:
-    mov 	eax,[esp + 4]
-    mov		ecx,[esp + 8]
-    rol		eax,cl
+__bswap:
+    mov eax, [esp + 4]
+    mov ecx, eax
+    and eax, 0xff00ff00
+    and ecx, 0x00ff00ff
+    rol eax, 8
+    ror ecx, 8
+    or eax, ecx
     ret
-
-__rotr:
-__lrotr:
-    mov 	eax,[esp + 4]
-    mov		ecx,[esp + 8]
-    ror		eax,cl
+__bswap16:
+    movzx eax, WORD [esp + 4]
+    xchg al, ah
     ret
-__crotl:
-    movzx 	eax, BYTE [esp + 4]
-    mov		ecx,[esp + 8]
-    rol		al,cl
-    ret
-__crotr:
-    movzx 	eax, BYTE [esp + 4]
-    mov		ecx,[esp + 8]
-    ror		al,cl
-    ret
-
-
-__llrotl:
-    movzx  ecx, BYTE[esp + 12]
-    mov    eax, [esp + 4]
-    mov    edx, [esp + 8]
-    jecxz   llrotlx
-llrotlloop:
-    clc
-    rcl    edx, 1
-    rcl    eax, 1
-    jnc  llrotlcont
-    bts    edx, 1
-llrotlcont:
-    loop llrotlloop
-llrotlx:
-    ret
-__llrotr:
-    movzx  ecx, BYTE[esp + 12]
-    mov    eax, [esp + 4]
-    mov    edx, [esp + 8]
-    jecxz   llrotrx
-llrotrloop:
-    clc	
-    rcr    edx, 1
-    rcr    eax, 1
-    jnc  llrotrcont
-    bts    edx, 31
-llrotrcont:
-    loop llrotrloop
-llrotrx:
-    ret
+__bswap64:
+    push ebx
+    mov ecx, 4
+    lea eax, [esp + 8]
+    lea edx, [esp + 8 + 7]
+bsl:
+    mov bl,[eax]
+    mov bh,[edx]
+    mov [eax],bh
+    mov [edx], bl
+    inc eax
+    dec edx
+    loop bsl
+    mov eax,[esp + 8]
+    mov edx,[esp + 12]
+    pop ebx
     ret

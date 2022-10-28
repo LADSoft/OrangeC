@@ -143,6 +143,10 @@ extern "C"
     void* _RTL_FUNC _IMPORT _aligned_malloc(size_t __align, size_t __size);
     void* _RTL_FUNC _IMPORT _MSIL_RTL malloc(size_t __size);
     int _RTL_FUNC _IMPORT mblen(const char* ZSTR __s, size_t __n);
+    int _RTL_FUNC _IMPORT _heap_validate(void *);
+    size_t _RTL_FUNC _IMPORT _msize(void *);
+    void * _RTL_FUNC _IMPORT _mm_malloc(size_t, size_t);
+    void _RTL_FUNC _IMPORT _mm_free(void *);
     size_t _RTL_FUNC _IMPORT mbstowcs(wchar_t* restrict __pwcs, const char* ZSTR restrict __s, size_t __n);
     int _RTL_FUNC _IMPORT mbtowc(wchar_t* restrict __pwc, const char* ZSTR restrict __s, size_t __n);
     void _RTL_FUNC _IMPORT qsort(void* __base, size_t __nelem, size_t __width, int (*__fcmp)(const void*, const void*));
@@ -274,6 +278,12 @@ extern unsigned char _RTL_DATA _osminor;
     unsigned int _RTL_FUNC _IMPORT _rotr(unsigned int, int);
     unsigned long _RTL_FUNC _IMPORT _lrotl(unsigned long, int);
     unsigned long _RTL_FUNC _IMPORT _lrotr(unsigned long, int);
+    unsigned long long _RTL_FUNC _IMPORT _llrotl(unsigned long long, int);
+    unsigned long long _RTL_FUNC _IMPORT _llrotr(unsigned long long, int);
+
+    unsigned int _RTL_FUNC _IMPORT _bswap(unsigned int);
+    unsigned short _RTL_FUNC _IMPORT _bswap16(unsigned short);
+    unsigned long long _RTL_FUNC _IMPORT _bswap64(unsigned long long);
 
     const char* ZSTR _RTL_FUNC getexecname(void);
     const char* ZSTR _RTL_FUNC realpath(const char* ZSTR path, char* ZSTR resolved_path);
@@ -348,6 +358,15 @@ extern char _RTL_DATA** __argv;
 #        define min(a, b) (((a) < (b)) ? (a) : (b))
 #    endif
 
+#endif
+
+
+#if 0
+extern _CRTIMP int __cdecl _heap_validate(void *);
+extern _CRTIMP size_t __cdecl _msize(void *);
+
+extern _CRTIMP void * __cdecl _mm_malloc(size_t, size_t);
+extern _CRTIMP void __cdecl _mm_free(void *);
 #endif
 
 #ifdef __cplusplus

@@ -38,7 +38,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-wchar_t* _RTL_FUNC wcsndup(const wchar_t* string, int count)
+wchar_t* _RTL_FUNC wcsndup(const wchar_t* string, size_t count)
 {
     int n;
     for (n=0; n < count; n++)
@@ -53,4 +53,4 @@ wchar_t* _RTL_FUNC wcsndup(const wchar_t* string, int count)
     return rv;
 }
 
-wchar_t * _RTL_FUNC _wcsndup(const wchar_t* s, int count) { return wcsndup(s, count); }
+wchar_t * _RTL_FUNC _wcsndup(const wchar_t* s, size_t count) { return wcsndup(s, count); }

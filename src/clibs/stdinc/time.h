@@ -118,8 +118,14 @@ extern "C"
 
     unsigned _RTL_FUNC _IMPORT _getsystime(struct tm*);
     unsigned _RTL_FUNC _IMPORT _setsystime(struct tm*, unsigned);
-#endif
 
+    void _RTL_FUNC _IMPORT _sleep(unsigned long);
+    void _RTL_FUNC _IMPORT _nanosleep(const struct _timespec *, struct _timespec *);
+
+#endif
+#if 0
+extern _CRTIMP int __cdecl _nanosleep(const struct _timespec *, struct _timespec *);
+#endif
 #ifdef __cplusplus
 };
 #endif

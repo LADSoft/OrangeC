@@ -72,8 +72,8 @@ extern "C"
     void __ll_init(void);
 
     /* File open close */
-    int __ll_open(const char* __name, int flags, int shflags);
-    int __ll_creat(const char* __name, int flags, int shflags);
+    int __ll_open(const wchar_t* __name, int flags, int shflags);
+    int __ll_creat(const wchar_t* __name, int flags, int shflags);
     int __ll_openpipe(int* read, int* write, unsigned int size);
     int __ll_close(int __fd);
 
@@ -89,11 +89,13 @@ extern "C"
     /* File positioning */
     size_t __ll_getpos(int __fd);
     int __ll_seek(int __fd, size_t __pos, int __origin);
+    long long  __ll_getpos64(int __fd);
+    int __ll_seek64(int __fd, long long __pos, int __origin);
 
     /* File utilities */
-    int __ll_rename(const char* __old, const char* __new);
-    int __ll_remove(const char* __name);
-    int __ll_rmdir(const char* name);
+    int __ll_rename(const wchar_t* __old, const wchar_t* __new);
+    int __ll_remove(const wchar_t* __name);
+    int __ll_rmdir(const wchar_t* name);
 
 /* malloc stuff */
 #define MALLOC_MASK 0xfffffff8
@@ -140,11 +142,11 @@ extern "C"
 #endif
     /* stat */
     int __ll_stat(int handle, void* __statbuf);
-    int __ll_namedstat(const char* name, void* __statbuf);
-    int __ll_writeable(const char* path);
+    int __ll_namedstat(const wchar_t* name, void* __statbuf);
+    int __ll_writeable(const wchar_t* path);
 
     /* Internal functions, already implemented */
-    FILE* __basefopen(const char* name, const char* mode, FILE* stream, int fd, int share);
+    FILE* __basefopen(const wchar_t* name, const wchar_t* mode, FILE* stream, int fd, int share);
     int __basefclose(FILE* stream, int release);
     int __writebuf(FILE* __stream);
     int __readbuf(FILE* stream);

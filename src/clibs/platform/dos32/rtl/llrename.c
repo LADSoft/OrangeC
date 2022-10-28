@@ -43,11 +43,18 @@
 #include <dpmi.h>
 #include "llp.h"
 
-int __ll_rename(char *old , char *new)
+int __ll_rename(wchar_t *old , wchar_t *new)
 {
+    char buf[256], *p = buf, buf1[256], *q= buf1;
+    while (*old)
+        *p++ = *old++;
+    *p = *old;
+    while (*new)
+        *q++ = *new++;
+    *q = *new;
     DPMI_REGS regs;
-    regs.h.dx = __nametodta(old,0);
-    regs.h.di = __nametodta(new,256);
+    regs.h.dx = __nametodta(buf,0);
+    regs.h.di = __nametodta(buf1,256);
     __doscall(0x56,&regs);
     if (regs.h.flags & 1)
     {

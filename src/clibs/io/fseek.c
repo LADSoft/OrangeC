@@ -55,7 +55,7 @@ int _RTL_FUNC fseek(FILE* stream, long offset, int origin)
     funlockfile(stream);
     return rv;
 }
-int _RTL_FUNC fseek_unlocked(FILE* stream, long offset, int origin)
+static int _wfseek_unlocked(FILE* stream, long long offset, int origin)
 {
     if (stream->token != FILTOK)
     {
@@ -153,4 +153,15 @@ int _RTL_FUNC fseek_unlocked(FILE* stream, long offset, int origin)
             return EOF;
     }
     return 0;
+}
+int _RTL_FUNC fseek_unlocked(FILE* stream, long offset, int origin)
+{
+    return _wfseek_unlocked(stream, offset, origin);
+}
+int _RTL_FUNC _fseek64(FILE* stream, long long offset, int origin)
+{
+    flockfile(stream);
+    int rv = _wfseek_unlocked(stream, offset, origin);
+    funlockfile(stream);
+    return rv;
 }

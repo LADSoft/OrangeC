@@ -39,5 +39,16 @@
 #include <wchar.h>
 #include <locale.h>
 #include <libp.h>
-
-int _RTL_FUNC rename(const char* name, const char* newname) { return (__ll_rename(name, newname)); }
+int _RTL_FUNC _wrename(const wchar_t* name, const wchar_t* newname) { return (__ll_rename(name, newname)); }
+int _RTL_FUNC rename(const char* name, const char* newname) 
+{
+    wchar_t buf[260], *p = buf; 
+    wchar_t buf1[260], *q = buf1; 
+    while (*name)
+        *p++ = *name++;
+    *p = *name;
+    while (*newname)
+        *q++ = *newname++;
+    *q = *newname;
+    return (__ll_rename(buf, buf1));
+}

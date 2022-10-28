@@ -45,7 +45,7 @@
 
 __int64 __ll_getpos64(int fd)
 {
-    long high;
+    long high = 0;
     __int64 rv = SetFilePointer((HANDLE)fd, 0, &high, FILE_CURRENT);
     if (rv == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
         errno = GetLastError();

@@ -66,7 +66,7 @@ static int spawnThread(void* v)
     int rv = __ll_system(t->cmd, t->pipeisstdin ? t->pipe : fileno(stdin), t->pipeisstdin ? fileno(stdout) : t->pipe);
     return rv;
 }
-FILE* __basefopen(const char* restrict name, const char* restrict mode, FILE* restrict stream, int fd, int share);
+FILE* __basefopen(const wchar_t* restrict name, const wchar_t* restrict mode, FILE* restrict stream, int fd, int share);
 
 FILE* _RTL_FUNC popen(const char* name, const char* restrict mode)
 {
@@ -83,7 +83,14 @@ FILE* _RTL_FUNC popen(const char* name, const char* restrict mode)
     int pipeEnds[2];
     if (pipe(pipeEnds) != 0)
         return NULL;
-    FILE* rv = __basefopen(name, mode, NULL, read ? pipeEnds[0] : pipeEnds[1], 0);
+    wchar_t buf[260], *p = buf, buf1[64], *q = buf1;
+    while (*name)
+        *p++ = *name++;
+    *p = *name;
+    while (*mode)
+        *q++ = *mode++;
+    *q = *mode;
+    FILE* rv = __basefopen(buf, buf1, NULL, read ? pipeEnds[0] : pipeEnds[1], 0);
 
     struct threads* t = calloc(1, sizeof(struct threads));
     if (!t)

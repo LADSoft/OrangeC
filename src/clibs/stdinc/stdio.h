@@ -77,7 +77,7 @@ typedef struct __file__
         unsigned flags2;
         union
         {
-            char* name; /* filename */
+            wchar_t* name; /* filename */
             void* dynamicBuffer[2];
         };
         int lock; // this is actually an atomic type 
@@ -232,11 +232,14 @@ extern "C"
     int _RTL_FUNC _IMPORT fseek(FILE* __stream, long __offset, int __whence);
     int _RTL_FUNC _IMPORT fseeko(FILE* __stream, off_t __offset, int __whence);
     int _RTL_FUNC _IMPORT fsetpos(FILE* __stream, const fpos_t* __pos);
+    int _RTL_FUNC _IMPORT _fseek64(FILE *, long long, int);  /* 14-06-29 */
     long _RTL_FUNC _IMPORT ftell(FILE* __stream);
     off_t _RTL_FUNC _IMPORT ftello(FILE* __stream);
+    long long _RTL_FUNC _IMPORT _ftell64(FILE *);  /* 14-06-29 */
     size_t _RTL_FUNC _IMPORT fwrite(const void* __ptr, size_t __size, size_t __n, FILE* __stream);
     FILE* _RTL_FUNC popen(const char* ZSTR name, const char* ZSTR restrict mode);
     FILE* _RTL_FUNC _popen(const char* ZSTR name, const char* ZSTR restrict mode);
+    int _RTL_FUNC _IMPORT _pclose(FILE *);
     char* ZSTR _RTL_FUNC _IMPORT gets(char* ZSTR __s);
     void _RTL_FUNC _IMPORT perror(const char* ZSTR __s);
     int _RTL_FUNC _IMPORT printf(const char* ZSTR restrict __format, ...);
@@ -300,6 +303,13 @@ extern "C"
     int _RTL_FUNC _IMPORT rmtmp(void);
     int _RTL_FUNC _IMPORT _rmtmp(void);
     char* ZSTR _RTL_FUNC _IMPORT _strerror(const char* ZSTR __s);
+
+    FILE * _RTL_FUNC _IMPORT _wfopen(const wchar_t * restrict, const wchar_t * restrict);
+    FILE * _RTL_FUNC _IMPORT _wfreopen(const wchar_t * restrict, const wchar_t * restrict, FILE * restrict);
+    FILE * _RTL_FUNC _IMPORT _wfdopen(int, const wchar_t *);
+    int _RTL_FUNC _IMPORT _wremove(const wchar_t *);
+    int _RTL_FUNC _IMPORT _wrename(const wchar_t *, const wchar_t *);
+
 
     void _RTL_FUNC _IMPORT flockfile(FILE* filehandle);
     int _RTL_FUNC _IMPORT ftrylockfile(FILE* filehandle);

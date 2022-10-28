@@ -70,11 +70,15 @@ int __ll_stat(int handle, void *__statbuf)
    } 
    return 0;
 }
-int __ll_namedstat(const char *file, void *__statbuf)
+int __ll_namedstat(const wchar_t *file, void *__statbuf)
 {
+    char buf[260], *p = buf;
+    while (*file)
+        *p++ = *file++;
+    *p = *file;
     struct stat *sb = __statbuf;
     struct find_t finddata;
-    if (!_dos_findfirst(file, 0x17, &finddata))
+    if (!_dos_findfirst(buf, 0x17, &finddata))
     {
       struct ftime *ft = &finddata.wr_time;
       int timex;

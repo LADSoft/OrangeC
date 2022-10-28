@@ -43,9 +43,9 @@
 #include <locale.h>
 #include "libp.h"
 
-int __ll_open(char* name, int flags, int shflags)
+int __ll_open(wchar_t* name, int flags, int shflags)
 {
-    HANDLE handle = CreateFile(name, flags, shflags, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+    HANDLE handle = CreateFileW(name, flags, shflags, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
     if (handle == INVALID_HANDLE_VALUE)
     {
         errno = GetLastError();

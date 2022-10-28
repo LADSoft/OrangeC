@@ -43,10 +43,14 @@
 #include <dpmi.h>
 #include "llp.h"
 
-int __ll_open(char *name, int flags, int shflags)
+int __ll_open(wchar_t *name, int flags, int shflags)
 {
+    char buf[256], *p = buf;
+    while (*name)
+        *p++ = *name++;
+    *p = *name;
     DPMI_REGS regs;
    regs.d.eax = flags | shflags;
-    regs.h.dx = __nametodta(name,0);
+    regs.h.dx = __nametodta(buf,0);
     return __doscall(0x3d,&regs);
 }

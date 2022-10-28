@@ -95,21 +95,29 @@ int _RTL_FUNC _fstat(int handle, struct _stat* __statbuf)
     return rv;
 }
 int _RTL_FUNC fstat(int handle, struct stat* __statbuf) { return _fstat(handle, (struct _stat*)__statbuf); }
-int _RTL_FUNC _stat(char* path, struct _stat* __statbuf)
+int _RTL_FUNC _wstat(wchar_t* path, struct _stat* __statbuf)
 {
     int fd, rv, rootdir;
     char pbuf[265];
+    wchar_t ppbuf[260], *q = ppbuf;
     memset(__statbuf, 0, sizeof(__statbuf));
-    if (!strcmp(path, "."))
-        path = getcwd(pbuf, 265);
+    if (!wcscmp(path, L"."))
+    {
+         char *path2 = getcwd(pbuf, 265);
+         while (*path2)
+             *q++ = *path2++;
+         *q = *path2;
+         path = ppbuf;
+          
+    }
     rootdir = ((path[1] == ':' && (path[2] == '\\' || path[2] == '/') && (path[3] == '.' || path[3] == '\0')) ||
                ((path[0] == '\\' || path[0] == '/') && (path[1] == '.' || path[1] == '\0')));
     if (!rootdir)
     {
-        int l = strlen(path);
+        int l = wcslen(path);
         if ((path[l - 1] == '/' || path[l - 1] == '\\'))
         {
-            path = strcpy(pbuf, path);
+            path = wcscpy(ppbuf, path);
             path[l - 1] = '\0';
         }
     }
@@ -125,15 +133,16 @@ int _RTL_FUNC _stat(char* path, struct _stat* __statbuf)
         }
         else
         {
-            fd = open(path, O_RDONLY, 0);
-            if (fd != -1)
+            FILE* fil = _wfopen(path, L"r");
+            if (fil)
             {
+                fd = fileno(fil);
                 if (__ll_isatty(__uihandles[fd]))
                 {
                     __statbuf->st_mode |= S_IFREG | S_IREAD | S_IWRITE;
                     rv = 0;
                 }
-                close(fd);
+                fclose(fil);
             }
         }
     }
@@ -158,5 +167,16 @@ int _RTL_FUNC _stat(char* path, struct _stat* __statbuf)
         errno = ENOENT;
     return rv;
 }
-int _RTL_FUNC stat(char* path, struct stat* __statbuf) { return _stat(path, (struct _stat*)__statbuf); }
+int _RTL_FUNC _stat(char* path, struct _stat* __statbuf) 
+{
+    wchar_t buf[256], *q = buf;
+    while (*path)
+        *q++ = *path++;
+    *q = *path;
+    return _wstat(buf, __statbuf);
+}
+int _RTL_FUNC stat(char* path, struct stat* __statbuf) 
+{ 
+    return _stat(path, (struct _stat*)__statbuf); 
+}
 int _RTL_FUNC _stat32(char* path, struct stat* __statbuf) { return _stat(path, (struct _stat*)__statbuf); }

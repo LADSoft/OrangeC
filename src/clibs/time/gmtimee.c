@@ -35,42 +35,51 @@
  */
 
 #include <time.h>
-#include <stdio.h>
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"
-#include <string.h>
-#include "_locale.h"
 
-extern LOCALE_HEADER _C_locale_data;
-static void pnum(char* str, int num, int fwidth, int zerofil)
+static char _monthdays[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+struct tm* _RTL_FUNC _gmtime64(const time_t_64* time)
 {
-    int i;
-    char* p = str + fwidth - 1;
-    if (zerofil)
-        memset(str, '0', fwidth);
-    while (num && fwidth--)
+    struct tm* rv = &__getRtlData()->gmtime_buf;
+    time_t_64 t = *time;
+    int temp1;
+
+    t -= _daylight * 60 * 60;
+    rv->tm_sec = t % 60;
+    t /= 60;
+    rv->tm_min = t % 60;
+    t /= 60;
+    rv->tm_hour = t % 24;
+    t /= 24;
+    rv->tm_yday = t;
+    rv->tm_wday = (t + 4) % 7;
+    rv->tm_year = 70 + (rv->tm_yday / 365);
+    rv->tm_yday = rv->tm_yday % 365;
+    rv->tm_yday -= (rv->tm_year - 69) / 4;
+    if (rv->tm_yday < 0)
     {
-        *p-- = (char)(num % 10) + '0';
-        num = num / 10;
+        rv->tm_year--;
+        rv->tm_yday += 365 + ((rv->tm_year - 68) % 4 == 0);
     }
-}
-
-char* _RTL_FUNC asctime(struct tm* timeptr)
-{
-    char* rv = __getRtlData()->asctime_buf;
-    TIME_DATA* td = _C_locale_data.td;
-    memset(rv, ' ', 25);
-    memcpy(rv, td->shortdays[timeptr->tm_wday], 3);
-    memcpy(rv + 4, td->shortmonths[timeptr->tm_mon], 3);
-    pnum(rv + 7, timeptr->tm_mday, 3, 0);
-    pnum(rv + 11, timeptr->tm_hour, 2, 1);
-    rv[13] = ':';
-    pnum(rv + 14, timeptr->tm_min, 2, 1);
-    rv[16] = ':';
-    pnum(rv + 17, timeptr->tm_sec, 2, 1);
-    pnum(rv + 20, timeptr->tm_year + 1900, 4, 1);
-    rv[24] = '\n';
-    rv[25] = 0;
+    if ((rv->tm_year - 68) % 4 == 0)
+        _monthdays[1] = 29;
+    else
+        _monthdays[1] = 28;
+    temp1 = rv->tm_yday;
+    rv->tm_mon = -1;
+    while (temp1 >= 0)
+        temp1 -= _monthdays[++rv->tm_mon];
+    rv->tm_mday = temp1 + _monthdays[rv->tm_mon] + 1;
+    rv->tm_isdst = 0;
     return rv;
+}
+struct tm* _RTL_FUNC _gmtime32(const time_t_32* time)
+{
+    if (*time & 0x80000000)
+        return NULL;
+    time_t_64 t = (unsigned)*time;
+    return _gmtime64(&t);
 }

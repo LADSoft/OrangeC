@@ -35,42 +35,17 @@
  */
 
 #include <time.h>
-#include <stdio.h>
-#include <wchar.h>
-#include <locale.h>
-#include "libp.h"
-#include <string.h>
-#include "_locale.h"
 
-extern LOCALE_HEADER _C_locale_data;
-static void pnum(char* str, int num, int fwidth, int zerofil)
+char* _RTL_FUNC _ctime64(const time_t_64* timer)
 {
-    int i;
-    char* p = str + fwidth - 1;
-    if (zerofil)
-        memset(str, '0', fwidth);
-    while (num && fwidth--)
-    {
-        *p-- = (char)(num % 10) + '0';
-        num = num / 10;
-    }
+    struct tm* t = _localtime64(timer);
+    if (t != NULL)
+        return asctime(t);
+    else
+        return ("undefined");
 }
-
-char* _RTL_FUNC asctime(struct tm* timeptr)
+char * _RTL_FUNC _ctime32(const time_t_32* timer)
 {
-    char* rv = __getRtlData()->asctime_buf;
-    TIME_DATA* td = _C_locale_data.td;
-    memset(rv, ' ', 25);
-    memcpy(rv, td->shortdays[timeptr->tm_wday], 3);
-    memcpy(rv + 4, td->shortmonths[timeptr->tm_mon], 3);
-    pnum(rv + 7, timeptr->tm_mday, 3, 0);
-    pnum(rv + 11, timeptr->tm_hour, 2, 1);
-    rv[13] = ':';
-    pnum(rv + 14, timeptr->tm_min, 2, 1);
-    rv[16] = ':';
-    pnum(rv + 17, timeptr->tm_sec, 2, 1);
-    pnum(rv + 20, timeptr->tm_year + 1900, 4, 1);
-    rv[24] = '\n';
-    rv[25] = 0;
-    return rv;
+     time_t_64 p = (unsigned)*timer;
+     return _ctime64(&p); 
 }

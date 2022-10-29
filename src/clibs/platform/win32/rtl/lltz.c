@@ -47,8 +47,8 @@
 #undef _timezone
 #undef _tzname
 
-static int _daylight = 1;
-static long _timezone = 5 * 60 * 60;
+static int _daylight = 0;
+static long _timezone = 0;
 
 static char tz1[36] = "EST", tz2[36] = "EDT";
 static char* _tzname[2] = {tz1, tz2};

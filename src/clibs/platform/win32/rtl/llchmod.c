@@ -46,7 +46,7 @@
 #include "libp.h"
 #include <sys\stat.h>
 
-int __ll_chmod(wchar_t* path, int amode)
+int __ll_chmod(const wchar_t* path, int amode)
 {
     amode = amode & S_IWRITE ? FILE_ATTRIBUTE_NORMAL : FILE_ATTRIBUTE_READONLY;
     if (SetFileAttributesW(path, amode))

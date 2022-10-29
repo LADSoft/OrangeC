@@ -46,11 +46,15 @@
 #include "llp.h"
 #include <sys\stat.h>
 
-int __ll_chmod(char *path, int amode)
+int __ll_chmod(const wchar_t *path, int amode)
 {
+   char buf[260], *p = buf;
+   while (*path)
+       *p++ = *path++;
+   *p = *path;
     DPMI_REGS regs;
    regs.b.al = 1 ;
-   regs.h.dx = __nametodta(path,0);
+   regs.h.dx = __nametodta(buf,0);
    regs.h.cx = (amode & S_IWRITE) ? 0 : 1 ;
    __doscall(0x43,&regs);
     if (regs.h.flags & 1)

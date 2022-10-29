@@ -160,7 +160,7 @@ FILE* __basefopen(const wchar_t* restrict name, const wchar_t* restrict mode, FI
             if (fd != -1)
                 id = fd;
             else
-                id = _wsopen(name, cvFlags(flags) | share, S_IREAD | S_IWRITE);
+                id = _wsopen(name, cvFlags(flags), share, S_IREAD | S_IWRITE);
             break;
         case _F_WRIT:
             if (update)
@@ -171,9 +171,9 @@ FILE* __basefopen(const wchar_t* restrict name, const wchar_t* restrict mode, FI
             else
             {
                 if (append)
-                    id = _wsopen(name, cvFlags(flags) | share, S_IREAD | S_IWRITE);
+                    id = _wsopen(name, cvFlags(flags), share, S_IREAD | S_IWRITE);
                 if (id < 0)
-                    id = _wsopen(name, O_CREAT | O_TRUNC | cvFlags(flags) | share, S_IREAD | S_IWRITE);
+                    id = _wsopen(name, O_CREAT | O_TRUNC | cvFlags(flags), share, S_IREAD | S_IWRITE);
             }
             break;
         case _F_READ | _F_WRIT:

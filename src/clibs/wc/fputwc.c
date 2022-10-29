@@ -207,6 +207,7 @@ wint_t _RTL_FUNC fputwc_unlocked(wchar_t c, FILE* stream)
             else
             {
                 stream->level = -stream->bsize;
+                stream->curp = stream->buffer;
             }
             stream->flags &= ~_F_IN;
             stream->flags |= _F_OUT;

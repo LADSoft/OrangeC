@@ -84,6 +84,7 @@ int _RTL_FUNC fputws_unlocked(const wchar_t* string, FILE* stream)
             else
             {
                 stream->level = -stream->bsize;
+                stream->curp = stream->buffer;
             }
             stream->flags &= ~_F_IN;
             stream->flags |= _F_OUT;

@@ -98,9 +98,8 @@ time_t __to_timet(FILETIME* time)
         return tempTime;
     return tempTime - bias * 60;
 }
-int __ll_stat(int handle, void* __statbuf)
+int __ll_stat(int handle, struct _stat64 * sb)
 {
-    struct _stat* sb = __statbuf;
     BY_HANDLE_FILE_INFORMATION info;
     FILETIME timex;
 
@@ -120,9 +119,8 @@ int __ll_stat(int handle, void* __statbuf)
     }
     return 0;
 }
-int __ll_namedstat(wchar_t* file, void* __statbuf)
+int __ll_namedstat(wchar_t* file, struct _stat64* sb)
 {
-    struct stat* sb = __statbuf;
     WIN32_FIND_DATAW finddata;
     HANDLE handle;
     if ((handle = FindFirstFileW(file, &finddata)) != INVALID_HANDLE_VALUE)
@@ -141,11 +139,8 @@ int __ll_namedstat(wchar_t* file, void* __statbuf)
             sb->st_mode |= S_IWRITE;
         if (isexe(file))
             sb->st_mode |= S_IEXEC;
-        if (!finddata.nFileSizeHigh)
-        {
-            sb->st_size = finddata.nFileSizeLow;
-            return 0;
-        }
+        sb->st_size = ((unsigned long long)finddata.nFileSizeHigh << 32) + finddata.nFileSizeLow;
+        return 0;
     }
     return -1;
 }

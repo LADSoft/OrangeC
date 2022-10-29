@@ -36,7 +36,7 @@
 
 #include <time.h>
 
-char* _RTL_FUNC _ctime64(const time_t_64* timer)
+char* _RTL_FUNC _ctime64(const __time_t_64* timer)
 {
     struct tm* t = _localtime64(timer);
     if (t != NULL)
@@ -44,8 +44,8 @@ char* _RTL_FUNC _ctime64(const time_t_64* timer)
     else
         return ("undefined");
 }
-char * _RTL_FUNC _ctime32(const time_t_32* timer)
+char * _RTL_FUNC _ctime32(const __time_t_32* timer)
 {
-     time_t_64 p = (unsigned)*timer;
+     __time_t_64 p = (unsigned)*timer;
      return _ctime64(&p); 
 }

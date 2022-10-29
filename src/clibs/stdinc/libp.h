@@ -141,8 +141,8 @@ extern "C"
 #    endif
 #endif
     /* stat */
-    int __ll_stat(int handle, void* __statbuf);
-    int __ll_namedstat(const wchar_t* name, void* __statbuf);
+    int __ll_stat(int handle, struct _stat64* __statbuf);
+    int __ll_namedstat(const wchar_t* name, struct _stat64* __statbuf);
     int __ll_writeable(const wchar_t* path);
 
     /* Internal functions, already implemented */

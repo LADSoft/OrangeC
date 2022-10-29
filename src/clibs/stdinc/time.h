@@ -58,13 +58,13 @@ extern "C"
 #ifndef RC_INVOKED
 #ifndef _TIME_T
 #    define _TIME_T
-typedef long time_t_32;
-typedef long long time_t_64;
+typedef long __time_t_32;
+typedef long long __time_t_64;
 
 #if defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined (_USE_32BIT_TIME_T) || defined( _DEFINING_TIME_T)
-    typedef time_t_32 time_t;
+    typedef __time_t_32 time_t;
 #else
-    typedef time_t_64 time_t;
+    typedef __time_t_64 time_t;
 #endif
 #endif
 
@@ -122,19 +122,19 @@ typedef long long time_t_64;
     void _RTL_FUNC _IMPORT _sleep(unsigned long);
     void _RTL_FUNC _IMPORT _nanosleep(const struct _timespec *, struct _timespec *);
 
-    char* _RTL_FUNC _IMPORT _ctime32(const time_t_32* __time);
-    int _RTL_FUNC _IMPORT _stime32(time_t_32* __tp);
-    struct tm* _RTL_FUNC _IMPORT _gmtime32(const time_t_32* __timer);
-    struct tm* _RTL_FUNC _IMPORT _localtime32(const time_t_32* __timer);
-    time_t_32 _RTL_FUNC _IMPORT _time32(time_t_32* __timer);
-    time_t_32 _RTL_FUNC _IMPORT _mktime32(struct tm* __timeptr);
+    char* _RTL_FUNC _IMPORT _ctime32(const __time_t_32* __time);
+    int _RTL_FUNC _IMPORT _stime32(__time_t_32* __tp);
+    struct tm* _RTL_FUNC _IMPORT _gmtime32(const __time_t_32* __timer);
+    struct tm* _RTL_FUNC _IMPORT _localtime32(const __time_t_32* __timer);
+    __time_t_32 _RTL_FUNC _IMPORT _time32(__time_t_32* __timer);
+    __time_t_32 _RTL_FUNC _IMPORT _mktime32(struct tm* __timeptr);
 
-    char* _RTL_FUNC _IMPORT _ctime64(const time_t_64* __time);
-    int _RTL_FUNC _IMPORT _stime64(time_t_64* __tp);
-    struct tm* _RTL_FUNC _IMPORT _gmtime64(const time_t_64* __timer);
-    struct tm* _RTL_FUNC _IMPORT _localtime64(const time_t_64* __timer);
-    time_t_64 _RTL_FUNC _IMPORT _time64(time_t_64* __timer);
-    time_t_64 _RTL_FUNC _IMPORT _mktime64(struct tm* __timeptr);
+    char* _RTL_FUNC _IMPORT _ctime64(const __time_t_64* __time);
+    int _RTL_FUNC _IMPORT _stime64(__time_t_64* __tp);
+    struct tm* _RTL_FUNC _IMPORT _gmtime64(const __time_t_64* __timer);
+    struct tm* _RTL_FUNC _IMPORT _localtime64(const __time_t_64* __timer);
+    __time_t_64 _RTL_FUNC _IMPORT _time64(__time_t_64* __timer);
+    __time_t_64 _RTL_FUNC _IMPORT _mktime64(struct tm* __timeptr);
 
 #if defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined(_DEFINING_TIME_T)
     char* _RTL_FUNC _IMPORT ctime(const time_t* __time);

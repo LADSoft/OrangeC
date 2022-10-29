@@ -40,9 +40,9 @@
 #include <locale.h>
 #include "libp.h"
 
-time_t_64 _RTL_FUNC _time64(time_t_64* tptr)
+__time_t_64 _RTL_FUNC _time64(__time_t_64* tptr)
 {
-    time_t_64 val;
+    __time_t_64 val;
     struct tm t2;
     __ll_gettime(&t2);
     val = _mktime64(&t2);
@@ -51,7 +51,7 @@ time_t_64 _RTL_FUNC _time64(time_t_64* tptr)
         *tptr = val;
     return val;
 }
-time_t_32 _RTL_FUNC _time32(time_t_32* tptr)
+__time_t_32 _RTL_FUNC _time32(__time_t_32* tptr)
 {
     time_t x = _time64(0);
     if (tptr)

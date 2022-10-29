@@ -41,10 +41,10 @@
 
 static char _monthdays[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-struct tm* _RTL_FUNC _gmtime64(const time_t_64* time)
+struct tm* _RTL_FUNC _gmtime64(const __time_t_64* time)
 {
     struct tm* rv = &__getRtlData()->gmtime_buf;
-    time_t_64 t = *time;
+    __time_t_64 t = *time;
     int temp1;
 
     t -= _daylight * 60 * 60;
@@ -76,10 +76,10 @@ struct tm* _RTL_FUNC _gmtime64(const time_t_64* time)
     rv->tm_isdst = 0;
     return rv;
 }
-struct tm* _RTL_FUNC _gmtime32(const time_t_32* time)
+struct tm* _RTL_FUNC _gmtime32(const __time_t_32* time)
 {
     if (*time & 0x80000000)
         return NULL;
-    time_t_64 t = (unsigned)*time;
+    __time_t_64 t = (unsigned)*time;
     return _gmtime64(&t);
 }

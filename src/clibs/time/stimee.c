@@ -40,15 +40,15 @@
 #include <locale.h>
 #include "libp.h"
 
-int _RTL_FUNC _stime64(time_t_64* tptr)
+int _RTL_FUNC _stime64(__time_t_64* tptr)
 {
     struct tm t2;
     t2 = *_localtime64(tptr);
     return __ll_settime(&t2);
 }
-int _RTL_FUNC _stime32(time_t_32* tptr)
+int _RTL_FUNC _stime32(__time_t_32* tptr)
 {
-    time_t_64 t = (unsigned)*tptr;
+    __time_t_64 t = (unsigned)*tptr;
     return _stime64(&t);
 }
 

@@ -57,13 +57,13 @@ typedef int ssize_t;
 #ifndef _TIME_T
 #    define _TIME_T
 #        define _USING_TYPES_H_TIME_T
-typedef long time_t_32;
-typedef long long time_t_64;
+typedef long __time_t_32;
+typedef long long __time_t_64;
 
 #if defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined (_USE_32BIT_TIME_T)
-    typedef time_t_32 time_t;
+    typedef __time_t_32 time_t;
 #else
-    typedef time_t_64 time_t;
+    typedef __time_t_64 time_t;
 #endif
 #    endif
 

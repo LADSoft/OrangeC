@@ -38,9 +38,9 @@
 
 static char _monthdays[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-time_t_64 _RTL_FUNC _mktime64(struct tm* timeptr)
+__time_t_64 _RTL_FUNC _mktime64(struct tm* timeptr)
 {
-    time_t_64 days, x;
+    __time_t_64 days, x;
     int i;
     struct tm t = *timeptr;
     tzset();
@@ -104,9 +104,9 @@ time_t_64 _RTL_FUNC _mktime64(struct tm* timeptr)
     *timeptr = t;
     return days;
 }
-time_t_32 _RTL_FUNC _mktime32(struct tm* timeptr)
+__time_t_32 _RTL_FUNC _mktime32(struct tm* timeptr)
 {
-    time_t_32 rv = _mktime64(timeptr);
+    __time_t_32 rv = _mktime64(timeptr);
     if (rv > 0x7fffffff)
          return 0;
     return rv;

@@ -34,70 +34,69 @@
  * 
  */
 
-#include <errno.h>
-#include <stdlib.h>
-#include <stdio.h>
+#define _DEFINING_STAT
 #include <io.h>
+#include <fcntl.h>
+#include <time.h>
+#include <errno.h>
 #include <string.h>
-#include <time.h>
-#include <sys/stat.h>
-#include <time.h>
-#include <dpmi.h>
 #include <wchar.h>
 #include <locale.h>
+#include <ctype.h>
 #include <dos.h>
 #include "libp.h"
+#include <sys/stat.h>
+#include <dir.h>
+extern char __uidrives[HANDLE_MAX];
+extern int __uiflags[HANDLE_MAX];
+extern int __uihandles[HANDLE_MAX];
 
-int __ll_stat(int handle, struct _stat64 *sb)
+int _RTL_FUNC _fstat64(int handle, struct _stat64* __statbuf)
 {
-   if (sb->st_mode & S_IFREG) {
-      struct ftime ft ;
-      int timex ;
-      struct tm tmx ;
-      if (__ll_getftime(handle,&ft) == -1) {
-         errno = EBADF ;
-         return -1 ;
-      }
-      tmx.tm_year = ft.ft_year +1980 - 1900;
-      tmx.tm_mon = ft.ft_month-1 ;
-      tmx.tm_mday = ft.ft_day ;
-      tmx.tm_hour = ft.ft_hour ;
-      tmx.tm_min = ft.ft_min ;
-      tmx.tm_sec = 2 * ft.ft_tsec ;
-      timex = mktime(&tmx) ;
-      sb->st_atime = sb->st_mtime = sb->st_ctime = timex ;
-   } 
-   return 0;
-}
-int __ll_namedstat(const wchar_t *file, struct _stat64 *sb)
-{
-    char buf[260], *p = buf;
-    while (*file)
-        *p++ = *file++;
-    *p = *file;
-    struct find_t finddata;
-    if (!_dos_findfirst(buf, 0x17, &finddata))
+    int hand, rv;
+
+    __ll_enter_critical();
+    hand = __uiohandle(handle);
+    if (hand < 0)
     {
-      struct ftime *ft = &finddata.wr_time;
-      int timex;
-    struct tm tmx;
-      tmx.tm_year = ft->ft_year +1980 - 1900;
-      tmx.tm_mon = ft->ft_month-1 ;
-      tmx.tm_mday = ft->ft_day ;
-      tmx.tm_hour = ft->ft_hour ;
-      tmx.tm_min = ft->ft_min ;
-      tmx.tm_sec = 2 * ft->ft_tsec ;
-      timex = mktime(&tmx) ;
-      sb->st_atime = sb->st_mtime = sb->st_ctime = timex ;
-      if (finddata.attrib & FA_DIREC)
-        sb->st_mode = S_IFDIR;
-      else 
-          sb->st_mode = S_IFREG;
-      sb->st_mode |= S_IREAD;
-      if (!(finddata.attrib & FA_RDONLY))
-          sb->st_mode |= S_IWRITE;
-      sb->st_size = *(int *)(&finddata.size);
-      return 0;
+        __ll_exit_critical();
+        return -1;
     }
-    return -1;	
+
+    memset(__statbuf, 0, sizeof(*__statbuf));
+    struct _stat64 stat64 = { 0 };
+    rv = __ll_stat(hand, &stat64);
+
+    __statbuf->st_nlink = 1;
+    __statbuf->st_ino = stat64.st_ino;
+    __statbuf->st_mode = stat64.st_mode;
+    __statbuf->st_uid = stat64.st_uid;
+    __statbuf->st_gid = stat64.st_gid;
+    __statbuf->st_atime = stat64.st_atime;
+    __statbuf->st_mtime = stat64.st_mtime;
+    __statbuf->st_ctime = stat64.st_ctime;
+    __statbuf->st_size = stat64.st_size;
+    if (__ll_isatty(hand))
+    {
+        __statbuf->st_mode |= S_IFCHR;
+        __statbuf->st_rdev = __statbuf->st_dev = handle;
+    }
+    else
+    {
+        __statbuf->st_mode = S_IREAD;
+        if (__uiflags[handle] & UIF_WRITEABLE)
+            __statbuf->st_mode |= S_IWRITE;
+        __statbuf->st_mode |= S_IFREG;
+        __statbuf->st_rdev = __statbuf->st_dev = __uidrives[handle];
+        if ((__statbuf->st_size = filelength(handle)) == -1)
+        {
+            errno = EBADF;
+            __ll_exit_critical();
+            return -1;
+        }
+    }
+
+    /* llstat will return times */
+    __ll_exit_critical();
+    return rv;
 }

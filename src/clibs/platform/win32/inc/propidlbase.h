@@ -54,10 +54,6 @@ typedef interface IEnumSTATPROPSETSTG IEnumSTATPROPSETSTG;
 extern "C"{
 #endif 
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 /* #include <winapifamily.h> */
 
@@ -613,9 +609,6 @@ HRESULT STDMETHODCALLTYPE IEnumSTATPROPSTG_Next_Stub(IEnumSTATPROPSTG *This, ULO
 HRESULT STDMETHODCALLTYPE IEnumSTATPROPSETSTG_Next_Proxy(IEnumSTATPROPSETSTG *This, ULONG celt, STATPROPSETSTG *rgelt, ULONG *pceltFetched);
 HRESULT STDMETHODCALLTYPE IEnumSTATPROPSETSTG_Next_Stub(IEnumSTATPROPSETSTG *This, ULONG celt, STATPROPSETSTG *rgelt, ULONG *pceltFetched);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

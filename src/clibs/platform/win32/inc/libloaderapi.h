@@ -12,10 +12,6 @@
 #include <minwindef.h>
 #include <minwinbase.h>
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2027)  /* Missing prototype */
-#endif
 
 #define FIND_RESOURCE_DIRECTORY_TYPES  (0x0100)
 #define FIND_RESOURCE_DIRECTORY_NAMES  (0x0200)
@@ -204,8 +200,5 @@ WINBASEAPI BOOL WINAPI EnumResourceNamesW(HMODULE, LPCWSTR, ENUMRESNAMEPROCW, LO
 #define LoadLibrary  LoadLibraryA
 #endif /* !UNICODE */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _LIBLOADERAPI_H */

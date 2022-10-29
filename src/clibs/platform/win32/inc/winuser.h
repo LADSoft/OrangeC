@@ -9,11 +9,6 @@
 #pragma once
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #ifndef WINUSERAPI
 #define WINUSERAPI  DECLSPEC_IMPORT
@@ -341,7 +336,7 @@ WINUSERAPI int WINAPIV wsprintfW(LPWSTR, LPCWSTR, ...);
 #define VK_DELETE  0x2E
 #define VK_HELP  0x2F
 
-#ifdef __POCC__
+#ifdef __ORANGEC__
 #define VK_0  0x30
 #define VK_1  0x31
 #define VK_2  0x32
@@ -378,7 +373,7 @@ WINUSERAPI int WINAPIV wsprintfW(LPWSTR, LPCWSTR, ...);
 #define VK_X  0x58
 #define VK_Y  0x59
 #define VK_Z  0x5A
-#endif /* __POCC__ */
+#endif
 
 #define VK_LWIN  0x5B
 #define VK_RWIN  0x5C
@@ -7663,9 +7658,6 @@ WINUSERAPI BOOL WINAPI IsImmersiveProcess(HANDLE);
 WINUSERAPI BOOL WINAPI SetProcessRestrictionExemption(BOOL);
 #endif /* WINVER >= 0x0601 */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #if defined(ISOLATION_AWARE_ENABLED) && (ISOLATION_AWARE_ENABLED != 0)
 #error Isolation aware inline functions not supported

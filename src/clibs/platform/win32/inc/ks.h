@@ -3,10 +3,6 @@
 
 /* Windows Driver Model/Connection and Streaming Architecture (WDM-CSA) definitions (the plonk factor is enormous) */
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #if !defined(_NTRTL_)
 #ifndef DEFINE_GUIDEX
@@ -3598,8 +3594,5 @@ if ( pIrp->RequestorMode != KernelMode ) { \
     return STATUS_INVALID_DEVICE_REQUEST; \
 }
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _KS_H */

@@ -33,11 +33,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define ABM_NEW  0x00000000
 #define ABM_REMOVE  0x00000001
@@ -952,9 +947,6 @@ typedef PNOTIFYICONDATAA PNOTIFYICONDATA;
 
 #define SHGetDiskFreeSpace  SHGetDiskFreeSpaceEx
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

@@ -13,10 +13,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#endif
 
 #define CNLEN  15
 #define UNCLEN  (CNLEN+2)
@@ -148,9 +144,6 @@ UINT WINAPI NDdeTrustedShareEnumW(LPWSTR,UINT,PBYTE,DWORD,PDWORD,PDWORD);
 #define NDdeTrustedShareEnum NDdeTrustedShareEnumA
 #endif /* UNICODE */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

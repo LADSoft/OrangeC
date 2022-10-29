@@ -11,10 +11,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define MoveMemory  RtlMoveMemory
 #define CopyMemory  RtlCopyMemory
@@ -347,9 +343,6 @@ typedef PCONTEXT LPCONTEXT;
 #define LMEM_DISCARDED  0x4000
 #define LMEM_LOCKCOUNT  0x00FF
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

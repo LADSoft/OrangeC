@@ -13,10 +13,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif /* __POCC__ >= 290 */
 
 #define SQL_SPEC_MAJOR  3
 #define SQL_SPEC_MINOR  52
@@ -1401,9 +1397,6 @@ VOID SQL_API FireVSDebugEvent(PODBC_VS_ARGS);
 
 #include "sqlucode.h"
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

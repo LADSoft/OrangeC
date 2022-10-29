@@ -7,10 +7,6 @@
 
 /* TCP/IP definitions */
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #include <mprapi.h>
 #include <ipifcons.h>
@@ -198,8 +194,5 @@ typedef struct _MIB_OPAQUE_INFO {
 
 #define CAST_MIB_INFO(X,Y,Z)  Z = (Y)(X->rgbyData)
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _IPRTRMIB_H */

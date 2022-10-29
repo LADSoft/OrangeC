@@ -11,10 +11,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define MSSIP_FLAGS_PROHIBIT_RESIZE_ON_CREATE  0x00010000
 #define MSSIP_FLAGS_USE_CATALOG  0x00020000
@@ -182,9 +178,6 @@ extern BOOL WINAPI CryptSIPGetSealedDigest(SIP_SUBJECTINFO *, const BYTE *, DWOR
 typedef BOOL (WINAPI *pCryptSIPGetSealedDigest)(SIP_SUBJECTINFO *, const BYTE *, DWORD, BYTE *, DWORD *);
 #endif /* NTDDI_VERSION >= NTDDI_WINBLUE */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

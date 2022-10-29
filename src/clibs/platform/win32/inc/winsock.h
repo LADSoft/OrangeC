@@ -59,7 +59,7 @@ extern int PASCAL __WSAFDIsSet(SOCKET,fd_set*);
 #define FD_ZERO(set)  (((fd_set*)(set))->fd_count = 0)
 #define FD_ISSET(fd,set)  __WSAFDIsSet((SOCKET)(fd),(fd_set*)(set))
 
-#if !(defined(_TIMEVAL_DEFINED) && defined(__POCC__OLDNAMES))
+#if !defined(_TIMEVAL_DEFINED)
 #define _WINSOCK_H_TIMEVAL
 struct timeval {
     long tv_sec;
@@ -479,14 +479,7 @@ void PASCAL WSASetLastError(int);
 int PASCAL WSAGetLastError(void);
 BOOL PASCAL WSAIsBlocking(void);
 int PASCAL WSAUnhookBlockingHook(void);
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2027 2028)  /* Missing prototype */
-#endif
 FARPROC PASCAL WSASetBlockingHook(FARPROC);
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 int PASCAL WSACancelBlockingCall(void);
 HANDLE PASCAL WSAAsyncGetServByName(HWND,u_int,const char*,const char*,char*,int);
 HANDLE PASCAL WSAAsyncGetServByPort(HWND,u_int,int,const char*,char*,int);

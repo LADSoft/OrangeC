@@ -20,11 +20,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2027 2028)  /* Missing prototype */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define NDR_CHAR_REP_MASK  0x0000000FUL
 #define NDR_INT_REP_MASK  0x000000F0UL
@@ -768,9 +763,6 @@ RPCRTAPI void RPC_ENTRY NdrPartialIgnoreServerUnmarshall(PMIDL_STUB_MESSAGE,void
 RPCRTAPI void RPC_ENTRY NdrPartialIgnoreClientBufferSize(PMIDL_STUB_MESSAGE,void*);
 RPCRTAPI void RPC_ENTRY NdrPartialIgnoreServerInitialize(PMIDL_STUB_MESSAGE,void**,PFORMAT_STRING);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

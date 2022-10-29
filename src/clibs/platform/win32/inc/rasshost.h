@@ -30,14 +30,7 @@ typedef struct _RAS_SECURITY_INFO {
     CHAR DeviceName[MAX_DEVICE_NAME+1];
 } RAS_SECURITY_INFO, *PRAS_SECURITY_INFO;
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2027 2028)  /* Missing prototype */
-#endif
 typedef DWORD (WINAPI *RASSECURITYPROC)();
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 VOID WINAPI RasSecurityDialogComplete(SECURITY_MESSAGE*);
 DWORD WINAPI RasSecurityDialogBegin(HPORT,PBYTE,DWORD,PBYTE,DWORD,VOID (WINAPI *)(SECURITY_MESSAGE*));

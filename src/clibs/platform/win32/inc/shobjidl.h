@@ -25,10 +25,6 @@
 #pragma once
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#endif
 
 /* Forward Declarations */
 
@@ -14823,8 +14819,5 @@ HRESULT STDMETHODCALLTYPE IModalWindow_Show_Stub(IModalWindow * This, HWND hwndP
 }
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif

@@ -11,12 +11,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#pragma warn(disable:2805)  /* Strict alias violation */
-#endif
 
 #ifndef WS2IPDEF_ASSERT
 #define WS2IPDEF_ASSERT(exp)  ((VOID)0)
@@ -580,9 +574,6 @@ C_ASSERT(sizeof(IN6_PKTINFO) == 20);
 #define TCP_CONGESTION_ALGORITHM  12
 #define TCP_DELAY_FIN_ACK  13
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

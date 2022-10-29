@@ -12,11 +12,6 @@
 
 #include <pshpack4.h>
 
-#ifdef __POCC__
-#pragma warn(push)
-#pragma warn(disable:2185)  /* alignment of field 'x' in 'type' can be less than the natural alignment */
-#endif /* __POCC__ */
-
 #ifndef _RICHEDIT_VER
 #define _RICHEDIT_VER  0x0300
 /* Version 1.0 = 0x0100 */
@@ -1305,10 +1300,6 @@ static __forceinline int RichEdit_GetLine(HWND hwnd, int line, void *lpch, int c
 #define FINDTEXT FINDTEXTA
 #define FINDTEXTEX FINDTEXTEXA
 #endif /* _RICHEDIT_VER >= 0x0200 */
-
-#ifdef __POCC__
-#pragma warn(pop)
-#endif /* __POCC__ */
 
 #include <poppack.h>
 

@@ -112,10 +112,6 @@ typedef interface IPropertyBag IPropertyBag;
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 void *__RPC_USER MIDL_user_allocate(size_t);
 void __RPC_USER MIDL_user_free(void*);
@@ -2346,9 +2342,6 @@ HRESULT STDMETHODCALLTYPE ITypeLib2_GetDocumentation2_Stub(ITypeLib2*,INT,LCID,D
 HRESULT STDMETHODCALLTYPE IPropertyBag_Read_Proxy(IPropertyBag*,LPCOLESTR,VARIANT*,IErrorLog*);
 HRESULT STDMETHODCALLTYPE IPropertyBag_Read_Stub(IPropertyBag*,LPCOLESTR,VARIANT*,IErrorLog*,DWORD,IUnknown*);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

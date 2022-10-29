@@ -12,13 +12,6 @@
 #define WINGDIAPI  DECLSPEC_IMPORT
 #define WINSPOOLAPI  DECLSPEC_IMPORT
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2027 2028)  /* Missing prototype */
-// ? #pragma warn(disable:2073)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-// ? #pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #ifndef WINVER
 #define WINVER  0x0500
@@ -4804,8 +4797,5 @@ WINGDIAPI DWORD WINAPI wglSwapMultipleBuffers(UINT, CONST WGLSWAP *);
 
 #endif /* NOGDI */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _WINGDI_H */

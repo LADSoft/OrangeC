@@ -471,9 +471,6 @@ typedef struct {
 } COMPVARS, *PCOMPVARS;
 
 static DWORD dwICValue;
-#ifdef __POCC__
-#pragma ref dwICValue  /* get rid of "not referenced" warning */
-#endif
 
 typedef HANDLE HDRAWDIB;
 
@@ -543,14 +540,7 @@ BOOL VFWAPI ICInstall(DWORD,DWORD,LPARAM,LPSTR,UINT);
 BOOL VFWAPI ICRemove(DWORD,DWORD,UINT);
 LRESULT VFWAPI ICGetInfo(HIC,ICINFO*,DWORD);
 HIC VFWAPI ICOpen(DWORD,DWORD,UINT);
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2027 2028)  /* Missing prototype */
-#endif
 HIC VFWAPI ICOpenFunction(DWORD,DWORD,UINT,FARPROC);
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 LRESULT VFWAPI ICClose(HIC);
 LRESULT VFWAPI ICSendMessage(HIC,UINT,DWORD_PTR,DWORD_PTR);
 DWORD VFWAPIV ICCompress(HIC,DWORD,LPBITMAPINFOHEADER,LPVOID,LPBITMAPINFOHEADER,LPVOID,LPDWORD,LPDWORD,LONG,DWORD,DWORD,LPBITMAPINFOHEADER,LPVOID);

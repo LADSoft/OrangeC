@@ -11,10 +11,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define PROTOCOL_NUM_ANY  (-1)
 
@@ -147,9 +143,6 @@ HFRAME FilterFindPropertyInstance(HFRAME,HFILTER,HCAPTURE,HFILTER,LPPROPERTYINST
 extern VOID WINAPI SetCurrentFilter(HFILTER);
 extern HFILTER WINAPI GetCurrentFilter(VOID);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

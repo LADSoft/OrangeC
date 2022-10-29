@@ -31,10 +31,6 @@ typedef struct _PNRPINFO_V1 {
     PNRP_REGISTERED_ID_STATE enNameState;
 } PNRPINFO_V1, *PPNRPINFO_V1;
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 typedef struct _PNRPINFO_V2 {
     DWORD dwSize;
@@ -53,9 +49,6 @@ typedef struct _PNRPINFO_V2 {
     };
 } PNRPINFO_V2, *PPNRPINFO_V2;
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #if defined(PNRP_USE_V1_API)
 typedef PNRPINFO_V1 PNRPINFO;

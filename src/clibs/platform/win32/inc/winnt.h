@@ -8,15 +8,6 @@
 #define __forceinline inline
 /* Windows NT definitions */
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2007)  /* Inline assembly code is non-portable */
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#pragma warn(disable:2225)  /* Type padded due to alignment */
-#pragma warn(disable:2805)  /* violation of strict-aliasing rules */
-#endif
 
 #include <ctype.h>
 
@@ -186,13 +177,8 @@
 #endif /* PFORCEINLINE */
 
 #ifndef DECLSPEC_DEPRECATED
-#if __POCC__ >= 650
 #define DECLSPEC_DEPRECATED  __declspec(deprecated)
 #define DEPRECATE_SUPPORTED
-#else
-#define DECLSPEC_DEPRECATED
-#undef  DEPRECATE_SUPPORTED
-#endif
 #endif /* DECLSPEC_DEPRECATED */
 
 #ifdef DEPRECATE_DDK_FUNCTIONS
@@ -545,30 +531,7 @@ unsigned __int16 __cdecl _rotl16(unsigned __int16, unsigned __int8);
 unsigned __int8 __cdecl _rotr8(unsigned __int8, unsigned __int8);
 unsigned __int16 __cdecl _rotr16(unsigned __int16, unsigned __int8);
 
-#if __POCC__ >= 900
-
-#pragma intrinsic(_rotl8)
-#pragma intrinsic(_rotl16)
-#pragma intrinsic(_rotr8)
-#pragma intrinsic(_rotr16)
-
-#endif /* __POCC__ >= 900 */
-
 #endif /* _M_AMD64 */
-
-#if __POCC__ >= 1000
-
-#define RotateLeft32 _rotl32
-#define RotateLeft64 _rotl64
-#define RotateRight32 _rotr32
-#define RotateRight64 _rotr64
-
-unsigned __int32 __cdecl _rotl32(unsigned __int32, unsigned __int8);
-unsigned __int64 __cdecl _rotl64(unsigned __int64, unsigned __int8);
-unsigned __int32 __cdecl _rotr32(unsigned __int32, unsigned __int8);
-unsigned __int64 __cdecl _rotr64(unsigned __int64, unsigned __int8);
-
-#else /* __POCC__ < 1000 */
 
 #define RotateLeft32 _rotl
 #define RotateLeft64 _llrotl
@@ -582,12 +545,6 @@ unsigned __int64 __cdecl _llrotr(unsigned __int64, int);
 
 #pragma intrinsic(_rotl)
 #pragma intrinsic(_rotr)
-#if __POCC__ >= 500 && defined(_M_AMD64)
-#pragma intrinsic(_llrotl)
-#pragma intrinsic(_llrotr)
-#endif /* __POCC__ >= 500 && defined(_M_AMD64) */
-
-#endif /* __POCC__ < 1000 */
 
 #define ANSI_NULL  ((CHAR)0)
 #define UNICODE_NULL  ((WCHAR)0)
@@ -1688,24 +1645,21 @@ BOOLEAN /* __cdecl */  __stdcall _InterlockedCompareExchange128(LONG64 volatile 
 PVOID /* __cdecl */  __stdcall _InterlockedCompareExchangePointer(PVOID volatile *, PVOID, PVOID);
 PVOID /* __cdecl */  __stdcall _InterlockedExchangePointer(PVOID volatile *, PVOID);
 
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedIncrement16)
 #pragma intrinsic(_InterlockedDecrement16)
 #pragma intrinsic(_InterlockedCompareExchange16)
 #pragma intrinsic(_InterlockedAnd)
 #pragma intrinsic(_InterlockedOr)
 #pragma intrinsic(_InterlockedXor)
-#endif /* __POCC__ >= 900 */
 #pragma intrinsic(_InterlockedIncrement)
 #pragma intrinsic(_InterlockedDecrement)
 #pragma intrinsic(_InterlockedExchange)
 #pragma intrinsic(_InterlockedExchangeAdd)
 #pragma intrinsic(_InterlockedCompareExchange)
-#if __POCC__ >= 900
 #pragma intrinsic(_InterlockedAnd64)
 #pragma intrinsic(_InterlockedOr64)
 #pragma intrinsic(_InterlockedXor64)
-#endif /* __POCC__ >= 900 */
 #pragma intrinsic(_InterlockedIncrement64)
 #pragma intrinsic(_InterlockedDecrement64)
 #pragma intrinsic(_InterlockedExchange64)
@@ -1715,6 +1669,7 @@ PVOID /* __cdecl */  __stdcall _InterlockedExchangePointer(PVOID volatile *, PVO
 
 #pragma intrinsic(_InterlockedExchangePointer)
 #pragma intrinsic(_InterlockedCompareExchangePointer)
+#endif
 
 #define InterlockedExchange8 _InterlockedExchange8
 #define InterlockedExchange16 _InterlockedExchange16
@@ -1722,13 +1677,10 @@ PVOID /* __cdecl */  __stdcall _InterlockedExchangePointer(PVOID volatile *, PVO
 CHAR /* __cdecl */  __stdcall _InterlockedExchange8(CHAR volatile *, CHAR);
 SHORT /* __cdecl */  __stdcall _InterlockedExchange16(SHORT volatile *, SHORT);
 
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedExchange8)
-#endif /* __POCC__ >= 6666 */
-
-#if __POCC__ >= 900
 #pragma intrinsic(_InterlockedExchange16)
-#endif /* __POCC__ >= 900 */
+#endif
 
 #define InterlockedExchangeAdd8 _InterlockedExchangeAdd8
 #define InterlockedAnd8 _InterlockedAnd8
@@ -1746,18 +1698,15 @@ SHORT /* __cdecl */  __stdcall _InterlockedAnd16(SHORT volatile *, SHORT);
 SHORT /* __cdecl */  __stdcall _InterlockedOr16(SHORT volatile *, SHORT);
 SHORT /* __cdecl */  __stdcall _InterlockedXor16(SHORT volatile *, SHORT);
 
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 #pragma intrinsic (_InterlockedExchangeAdd8)
 #pragma intrinsic (_InterlockedAnd8)
 #pragma intrinsic (_InterlockedOr8)
 #pragma intrinsic (_InterlockedXor8)
-#endif /* __POCC__ >= 6666 */
-
-#if __POCC__ >= 900
 #pragma intrinsic (_InterlockedAnd16)
 #pragma intrinsic (_InterlockedOr16)
 #pragma intrinsic (_InterlockedXor16)
-#endif /* __POCC__ >= 900 */
+#endif
 
 #define CpuIdEx  __cpuidex
 
@@ -1771,19 +1720,14 @@ void __cdecl _mm_clflush(void const *);
 
 #pragma intrinsic(_mm_clflush)
 
-#if __POCC__ >= 650
-
+#ifndef __ORANGEC__
 #undef  _ReadWriteBarrier
 #define _ReadWriteBarrier  __memory_barrier
 #pragma intrinsic(__memory_barrier)
-
-#else /* !__POCC__ */
-
+#else
 void __cdecl _ReadWriteBarrier(void);
-
 #pragma intrinsic(_ReadWriteBarrier)
-
-#endif /* !__POCC__ */
+#endif
 
 #define FastFence  __faststorefence
 
@@ -1804,18 +1748,15 @@ void __cdecl _m_prefetchw(/*volatile*/ CONST VOID *);
 #define _MM_HINT_T2  3
 #define _MM_HINT_NTA  0
 
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma intrinsic(__faststorefence)
-#endif /* __POCC__ >= 900 */
-
 #pragma intrinsic(_mm_pause)
 #pragma intrinsic(_mm_prefetch)
 #pragma intrinsic(_mm_lfence)
 #pragma intrinsic(_mm_mfence)
 #pragma intrinsic(_mm_sfence)
-#if __POCC__ >= 900
 #pragma intrinsic(_m_prefetchw)
-#endif /* __POCC__ >= 900 */
+#endif
 
 #define YieldProcessor  _mm_pause
 #define MemoryBarrier  __faststorefence
@@ -1841,25 +1782,25 @@ void __cdecl _mm_setcsr(unsigned int);
 
 unsigned __int32 __cdecl __getcallerseflags(void);
 
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 #pragma intrinsic(__getcallerseflags)
-#endif /* __POCC__ >= 6666 */
+#endif
 
 #define GetSegmentLimit  __segmentlimit
 
 DWORD __cdecl __segmentlimit(DWORD);
 
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma intrinsic(__segmentlimit)
-#endif /* __POCC__ >= 900 */
+#endif
 
 #define ReadPMC  __readpmc
 
 DWORD64 __cdecl __readpmc(DWORD);
 
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma intrinsic(__readpmc)
-#endif /* __POCC__ >= 900 */
+#endif
 
 #define ReadTimeStampCounter()  __rdtsc()
 
@@ -1893,18 +1834,18 @@ void __cdecl __stosq(PDWORD64, DWORD64, SIZE_T);
 LONGLONG MultiplyHigh(LONG64, LONG64);
 ULONGLONG UnsignedMultiplyHigh(DWORD64, DWORD64);
 
-#if __POCC__ >= 1000
+#ifndef __ORANGEC__
 #pragma intrinsic(__mulh)
 #pragma intrinsic(__umulh)
-#endif /* __POCC__ >= 6666 */
+#endif
 
 #define PopulationCount64  __popcnt64
 
 DWORD64 PopulationCount64(DWORD64);
 
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 #pragma intrinsic(__popcnt64)
-#endif /* __POCC__ >= 6666 */
+#endif
 
 #define ShiftLeft128  __shiftleft128
 #define ShiftRight128  __shiftright128
@@ -1912,25 +1853,25 @@ DWORD64 PopulationCount64(DWORD64);
 DWORD64 __cdecl ShiftLeft128(DWORD64, DWORD64, BYTE);
 DWORD64 __cdecl ShiftRight128(DWORD64, DWORD64, BYTE);
 
-#if __POCC__ >= 1000
+#ifndef __ORANGEC__
 #pragma intrinsic(__shiftleft128)
 #pragma intrinsic(__shiftright128)
-#endif /* __POCC__ >= 1000 */
+#endif
 
 #define Multiply128  _mul128
 
 LONG64 Multiply128(LONG64, LONG64, LONG64 *);
 
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 #pragma intrinsic(_mul128)
-#endif /* __POCC__ >= 6666 */
+#endif
 
 #ifndef UnsignedMultiply128
 #define UnsignedMultiply128  _umul128
 DWORD64 UnsignedMultiply128(DWORD64, DWORD64, DWORD64 *);
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 #pragma intrinsic(_umul128)
-#endif /* __POCC__ >= 6666 */
+#endif
 #endif /* UnsignedMultiply128 */
 
 __forceinline LONG64 MultiplyExtract128(LONG64 Multiplier, LONG64 Multiplicand, BYTE Shift) {
@@ -2242,7 +2183,7 @@ NTSYSAPI BOOLEAN __cdecl RtlDeleteFunctionTable(PRUNTIME_FUNCTION);
 
 #if defined(_M_AMD64)
 
-#if (__POCC__ >= 900)
+#ifndef __ORANGEC__
 
 void __cdecl __int2c(void);
 
@@ -2250,7 +2191,7 @@ void __cdecl __int2c(void);
 
 #define DbgRaiseAssertionFailure()  __int2c()
 
-#endif /* __POCC__ >= 900 */
+#endif
 
 #endif /* _M_AMD64 */
 
@@ -2258,20 +2199,8 @@ void __cdecl __int2c(void);
 
 #if defined(_M_IX86)
 
-#if (__POCC__ >= 900)
-
-void __cdecl __int2c(void);
-
-#pragma intrinsic(__int2c)
-
-#define DbgRaiseAssertionFailure()  __int2c()
-
-#else /* __POCC__ < 900 || !__POCC__ */
-
 #ifndef __MSIL__
 __forceinline void DbgRaiseAssertionFailure(VOID) { __asm int 0x2c }
-#endif
-
 #endif
 
 #endif /* _M_IX86 */
@@ -2370,12 +2299,12 @@ SHORT /* __cdecl */ __stdcall _InterlockedDecrement16(SHORT volatile *);
 SHORT /* __cdecl */ __stdcall _InterlockedCompareExchange16(SHORT volatile *, SHORT, SHORT);
 LONG64 /* __cdecl */ __stdcall _InterlockedCompareExchange64(LONG64 volatile *, LONG64, LONG64);
 
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedIncrement16)
 #pragma intrinsic(_InterlockedDecrement16)
 #pragma intrinsic(_InterlockedCompareExchange16)
-#endif /* __POCC__ >= 900 */
 #pragma intrinsic(_InterlockedCompareExchange64)
+#endif
 
 #define InterlockedAnd  _InterlockedAnd
 #define InterlockedAndAcquire  _InterlockedAnd
@@ -2458,16 +2387,16 @@ FORCEINLINE PVOID _InlineInterlockedCompareExchangePointer(PVOID volatile *Desti
 #define InterlockedCompareExchangePointerRelease  _InlineInterlockedCompareExchangePointer
 #define InterlockedCompareExchangePointerNoFence  _InlineInterlockedCompareExchangePointer
 
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedAnd)
 #pragma intrinsic(_InterlockedOr)
 #pragma intrinsic(_InterlockedXor)
-#endif /* __POCC__ >= 900 */
 #pragma intrinsic(_InterlockedIncrement)
 #pragma intrinsic(_InterlockedDecrement)
 #pragma intrinsic(_InterlockedExchange)
 #pragma intrinsic(_InterlockedExchangeAdd)
 #pragma intrinsic(_InterlockedCompareExchange)
+#endif
 
 #define InterlockedExchange8  _InterlockedExchange8
 #define InterlockedExchange16  _InterlockedExchange16
@@ -2475,13 +2404,10 @@ FORCEINLINE PVOID _InlineInterlockedCompareExchangePointer(PVOID volatile *Desti
 CHAR /* __cdecl */ __stdcall _InterlockedExchange8(CHAR volatile *, CHAR);
 SHORT /* __cdecl */ __stdcall _InterlockedExchange16(SHORT volatile *, SHORT);
 
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedExchange8)
-#endif /* __POCC__ >= 6666 */
-
-#if __POCC__ >= 900
 #pragma intrinsic(_InterlockedExchange16)
-#endif /* __POCC__ >= 900 */
+#endif
 
 #define InterlockedExchangeAdd8  _InterlockedExchangeAdd8
 #define InterlockedAnd8  _InterlockedAnd8
@@ -2505,21 +2431,18 @@ SHORT /* __cdecl */ __stdcall _InterlockedOr16(SHORT volatile *, SHORT);
 SHORT /* __cdecl */ __stdcall _InterlockedIncrement16(SHORT volatile *);
 SHORT /* __cdecl */ __stdcall _InterlockedDecrement16(SHORT volatile *);
 
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedExchangeAdd8)
 #pragma intrinsic(_InterlockedAnd8)
 #pragma intrinsic(_InterlockedOr8)
 #pragma intrinsic(_InterlockedXor8)
-#endif /* __POCC__ >= 6666 */
-
-#if __POCC__ >= 900
 #pragma intrinsic(_InterlockedAnd16)
 #pragma intrinsic(_InterlockedOr16)
 #pragma intrinsic(_InterlockedXor16)
 #pragma intrinsic(_InterlockedCompareExchange16)
 #pragma intrinsic(_InterlockedIncrement16)
 #pragma intrinsic(_InterlockedDecrement16)
-#endif /* __POCC__ >= 900 */
+#endif
 
 #define InterlockedCompareExchange64  _InterlockedCompareExchange64
 
@@ -2559,9 +2482,9 @@ FORCEINLINE LONG64 _InlineInterlockedAdd64(LONG64 volatile *Addend, LONG64 Value
 
 LONG /*__cdecl*/ __stdcall _InterlockedXor(LONG volatile *, LONG);
 
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedXor)
-#endif /* __POCC__ >= 900 */
+#endif
 
 #define InterlockedXor  _InterlockedXor
 
@@ -2703,9 +2626,9 @@ void __cdecl _mm_prefetch(CONST CHAR *, int);
 
 DWORD64 __cdecl __readpmc(DWORD);
 
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma intrinsic(__readpmc)
-#endif /* __POCC__ >= 900 */
+#endif
 
 #define ReadTimeStampCounter()  __rdtsc()
 
@@ -9311,10 +9234,10 @@ typedef struct _RTL_BARRIER {
 #define FAST_FAIL_INVALID_THREAD  40
 #define FAST_FAIL_INVALID_FAST_FAIL_CODE  0xFFFFFFFF
 
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 DECLSPEC_NORETURN VOID __fastfail(unsigned int Code);
 #pragma intrinsic(__fastfail)
-#endif /* __POCC__ >= 6666 */
+#endif
 
 #define HEAP_NO_SERIALIZE  0x00000001
 #define HEAP_GROWABLE  0x00000002
@@ -10736,8 +10659,5 @@ inline struct _TEB * NtCurrentTeb(void) { return (struct _TEB *)(ULONG_PTR)__rea
 #define ACTIVATION_CONTEXT_SECTION_COMPATIBILITY_INFO  (11)
 #endif 
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _WINNT_H */

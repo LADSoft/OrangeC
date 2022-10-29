@@ -13,10 +13,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#endif
 
 #define SCRIPT_UNDEFINED  0
 
@@ -264,9 +260,6 @@ HRESULT WINAPI ScriptIsComplex(const WCHAR*,int,DWORD);
 HRESULT WINAPI ScriptRecordDigitSubstitution(LCID,SCRIPT_DIGITSUBSTITUTE*);
 HRESULT WINAPI ScriptApplyDigitSubstitution(const SCRIPT_DIGITSUBSTITUTE*,SCRIPT_CONTROL*,SCRIPT_STATE*);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

@@ -11,10 +11,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #if !defined(_AUTHZ_)
 #define AUTHZAPI DECLSPEC_IMPORT
@@ -278,9 +274,6 @@ AUTHZAPI BOOL WINAPI AuthzUnregisterCapChangeNotification(AUTHZ_CAP_CHANGE_SUBSC
 AUTHZAPI BOOL WINAPI AuthzFreeCentralAccessPolicyCache(void);
 #endif /* _WIN32_WINNT >= _WIN32_WINNT_WIN8 */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

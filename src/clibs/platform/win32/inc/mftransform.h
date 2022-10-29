@@ -36,10 +36,6 @@ typedef interface IMFTransform IMFTransform;
 extern "C"{
 #endif 
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#endif
 
 enum _MFT_INPUT_DATA_BUFFER_FLAGS {
     MFT_INPUT_DATA_BUFFER_PLACEHOLDER = 0xffffffff
@@ -355,9 +351,6 @@ STDAPI MFCreateTransformActivate(IMFActivate **);
 extern RPC_IF_HANDLE __MIDL_itf_mftransform_0000_0001_v0_0_c_ifspec;
 extern RPC_IF_HANDLE __MIDL_itf_mftransform_0000_0001_v0_0_s_ifspec;
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

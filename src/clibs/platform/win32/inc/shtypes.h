@@ -26,10 +26,6 @@
 extern "C"{
 #endif 
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #include <pshpack1.h>
 typedef struct _SHITEMID {
@@ -283,9 +279,6 @@ typedef enum DEVICE_SCALE_FACTOR {
 extern RPC_IF_HANDLE __MIDL_itf_shtypes_0000_0000_v0_0_c_ifspec;
 extern RPC_IF_HANDLE __MIDL_itf_shtypes_0000_0000_v0_0_s_ifspec;
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

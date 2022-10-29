@@ -11,10 +11,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #include <windows.h>
 #include <windowsx.h>
@@ -125,9 +121,6 @@ STDAPI MQMailComposeBody(LPMQMailEMail,ULONG*,LPBYTE*);
 STDAPI MQMailParseBody(ULONG,LPBYTE,LPMQMailEMail*);
 STDAPI_(void) MQMailFreeMemory(LPVOID);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

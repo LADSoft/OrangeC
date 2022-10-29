@@ -11,10 +11,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#endif
 
 #define WM_DDE_FIRST  0x03E0
 #define WM_DDE_INITIATE  (WM_DDE_FIRST)
@@ -67,9 +63,6 @@ BOOL WINAPI UnpackDDElParam(UINT,LPARAM,PUINT_PTR,PUINT_PTR);
 BOOL WINAPI FreeDDElParam(UINT,LPARAM);
 LONG WINAPI ReuseDDElParam(LPARAM,UINT,UINT,UINT_PTR,UINT_PTR);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

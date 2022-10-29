@@ -62,12 +62,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #include <pshpack1.h>
 
@@ -3079,9 +3073,6 @@ SHDOCAPI DoPrivacyDlg(HWND, LPWSTR, IEnumPrivacyRecords *, BOOL);
 
 #include <poppack.h>
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

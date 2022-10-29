@@ -71,10 +71,6 @@ typedef interface IKernelTransaction IKernelTransaction;
 extern "C"{
 #endif 
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#endif
 
 #include "winerror.h"
 
@@ -559,9 +555,6 @@ DEFINE_GUID(IID_IKernelTransaction,0x79427a2b,0xf895,0x40e0,0xbe,0x79,0xb5,0x7d,
 extern RPC_IF_HANDLE __MIDL_itf_transact_0000_0009_v0_0_c_ifspec;
 extern RPC_IF_HANDLE __MIDL_itf_transact_0000_0009_v0_0_s_ifspec;
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

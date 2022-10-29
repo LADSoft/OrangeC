@@ -497,10 +497,6 @@ typedef interface ISWbemRefresher ISWbemRefresher;
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#endif
 
 void *__RPC_USER MIDL_user_allocate(size_t);
 void __RPC_USER MIDL_user_free(void *);
@@ -5066,9 +5062,6 @@ MIDL_INTERFACE("5AD4BF92-DAAB-11d3-B38F-00105A1F473A")ISWbemRefreshableItem:publ
     extern RPC_IF_HANDLE __MIDL_itf_wbemdisp_0275_v0_0_c_ifspec;
     extern RPC_IF_HANDLE __MIDL_itf_wbemdisp_0275_v0_0_s_ifspec;
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

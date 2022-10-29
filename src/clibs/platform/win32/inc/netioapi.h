@@ -11,12 +11,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #ifndef ANY_SIZE
 #define ANY_SIZE  1
@@ -384,9 +378,6 @@ NETIOAPI_API SetNetworkInformation(CONST NET_IF_NETWORK_GUID*,NET_IF_COMPARTMENT
 NETIOAPI_API ConvertLengthToIpv4Mask(ULONG,PULONG);
 NETIOAPI_API ConvertIpv4MaskToLength(ULONG,PUINT8);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

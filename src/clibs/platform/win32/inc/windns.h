@@ -11,10 +11,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#endif
 
 #define SIZEOF_IP4_ADDRESS  (4)
 #define IP4_ADDRESS_STRING_LENGTH  (16)
@@ -1313,9 +1309,6 @@ typedef DNS_RECORD_OPTA DNS_RECORD_OPT, *PDNS_RECORD_OPT;
 #define DnsNameCompare(n1,n2)  DnsNameCompare_A((n1),(n2))
 #endif /* !UNICODE */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

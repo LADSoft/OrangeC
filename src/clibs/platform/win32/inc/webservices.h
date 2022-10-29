@@ -14,10 +14,6 @@ extern "C"
 {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#endif
 
 /* handles */
 typedef struct _WS_XML_READER WS_XML_READER;
@@ -3329,9 +3325,6 @@ HRESULT WINAPI WsCreateServiceEndpointFromTemplate(WS_CHANNEL_TYPE, const WS_SER
 #define WS_E_SECURITY_SYSTEM_FAILURE  0x803D0023
 #endif /* FACILITY_WEBSERVICES */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

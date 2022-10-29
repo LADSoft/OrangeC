@@ -20,11 +20,7 @@
 #endif /* !WINTRUST_H */
 
 #define IMAGEAPI  DECLSPEC_IMPORT __stdcall
-#if __POCC__ >= 650
 #define DBHLP_DEPRECIATED   __declspec(deprecated)
-#else
-#define DBHLP_DEPRECIATED
-#endif
 
 #define DBHLPAPI  IMAGEAPI
 

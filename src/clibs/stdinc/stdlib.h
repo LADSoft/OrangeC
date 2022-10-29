@@ -131,6 +131,7 @@ extern "C"
     void _RTL_FUNC _IMPORT _MSIL_RTL free(void* __block);
     void _RTL_FUNC _IMPORT _aligned_free(void* __block);
     char* ZSTR _RTL_FUNC _IMPORT getenv(const char* ZSTR __name);
+    wchar_t* ZSTR _RTL_FUNC _IMPORT _wgetenv(const wchar_t* ZSTR __name);
     void* _RTL_FUNC _IMPORT lfind(const void* __key, const void* __base, size_t* __num, size_t __width,
                                   int (*fcmp)(const void*, const void*));
     void* _RTL_FUNC _IMPORT lsearch(const void* __key, void* __base, size_t* __num, size_t __width,
@@ -234,10 +235,13 @@ extern unsigned char _RTL_DATA _osminor;
     void _RTL_FUNC _IMPORT _makepath(char* ZSTR __path, const char* ZSTR __drive, const char* ZSTR __dir, const char* ZSTR __name,
                                      const char* ZSTR __ext);
     int _RTL_FUNC _IMPORT putenv(const char* ZSTR __name);
+    int _RTL_FUNC _IMPORT _wputenv(const wchar_t* ZSTR __name);
     int _RTL_FUNC _IMPORT _putenv(const char* ZSTR __name);
     int _RTL_FUNC _IMPORT _putenv_s(const char* ZSTR __name, const char* ZSTR value);
     int _RTL_FUNC _IMPORT setenv(const char* ZSTR name, const char* ZSTR value, int overwrite);
+    int _RTL_FUNC _IMPORT _wsetenv(const wchar_t* ZSTR name, const wchar_t* ZSTR value, int overwrite);
     int _RTL_FUNC _IMPORT unsetenv(const char* ZSTR name);
+    int _RTL_FUNC _IMPORT _wunsetenv(const wchar_t* ZSTR name);
 
     void _RTL_FUNC _IMPORT _searchenv(const char* ZSTR __file, const char* ZSTR __varname, char* ZSTR __pathname);
     void _RTL_FUNC _IMPORT _searchstr(const char* ZSTR __file, const char* ZSTR __ipath, char* ZSTR __pathname);

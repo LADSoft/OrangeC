@@ -34,54 +34,54 @@
  * 
  */
 
-#include <stdlib.h>
+#include <windows.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <time.h>
-#include <errno.h>
-#include <process.h>
-#include <wchar.h>
-#include <locale.h>
-#include "libp.h"
-#include <dir.h>
 
-int _RTL_FUNC system(const char* string)
+
+int __ll_wgetenvsize(int id)
 {
-    FILE* f;
-    char buf[4096], *a;
-    if (*string)
+    wchar_t* env = GetEnvironmentStringsW();
+    while (id--)
     {
-        while (isspace(*string))
-            string++;
-        if (!strnicmp(string, "cd ", 3))
-        {
-            return chdir(string + 3);
-        }
-    }
-    a = getenv("COMSPEC");
-    if (!a)
-        a = searchpath("cmd.exe");
-    if (!string)
-    {
-        if (!a)
+        while (*env)
+            env++;
+        if (*++env == 0)
             return 0;
-        if (f = fopen(a, "r"))
-        {
-            fclose(f);
-            return 1;
-        }
-        return 0;
     }
-    if (!a)
-    {
-        errno = ENOENT;
-        return -1;
-    }
-    buf[0] = ' ';
-    buf[1] = '/';
-    buf[2] = 'C';
-    buf[3] = ' ';
-    strcpy(buf + 4, string);
-    return spawnlp(P_WAIT, a, a, buf, 0);
+    return wcslen(env);
 }
-
+int __ll_wgetenv(wchar_t* buf, int id)
+{
+    int count = 0;
+    int rv;
+    wchar_t* env = GetEnvironmentStringsW();
+    if (buf)
+    {
+        while (id--)
+        {
+            while (*env)
+                env++;
+            if (*++env == 0)
+                return 0;
+        }
+        wcscpy(buf, env);
+        return (int)env;
+    }
+    else
+    {
+        if (!*env)
+            return 0;
+        do
+        {
+            count++;
+            while (*env)
+                env++;
+            env++;
+        } while (*env);
+        return count;
+    }
+}

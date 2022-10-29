@@ -43,20 +43,14 @@
 #include "libp.h"
 #include "errno.h"
 
-extern char _RTL_DATA** _environ;
-int _RTL_FUNC putenv(const char* name)
+extern wchar_t _RTL_DATA** __wenviron;
+int _RTL_FUNC _wputenv(const wchar_t* name)
 {
-    wchar_t buf[260], *x = buf;
-    const char *y = name;
-    while (*y)
-        *x++ = *y++;
-    *x= *y;
-    int rv = _wputenv(wcsdup(buf));
-    if (rv)
-        return rv;
-    char **q = _environ, **p;
+    if (!__wenviron)
+        __wenvset();
+    wchar_t **q = __wenviron, **p;
     int len = 0, count = 0;
-    char* z = strchr(name, '=');
+    wchar_t* z = wcschr(name, '=');
     if (!z)
         return -1;
     len = z - name;
@@ -64,7 +58,7 @@ int _RTL_FUNC putenv(const char* name)
     while (*q)
     {
         count++;
-        if (!strnicmp(name, *q, len) && (*q)[len] == '=')
+        if (!wcsnicmp(name, *q, len) && (*q)[len] == '=')
         {
             *q = name;  // yes this is supposed to be raw
             __ll_exit_critical();
@@ -72,7 +66,7 @@ int _RTL_FUNC putenv(const char* name)
         }
         q++;
     }
-    p = (char**)realloc(_environ, (count + 2) * sizeof(char**));
+    p = (wchar_t**)realloc(_environ, (count + 2) * sizeof(wchar_t**));
     if (!p)
     {
         __ll_exit_critical();
@@ -81,54 +75,47 @@ int _RTL_FUNC putenv(const char* name)
     }
     p[count + 2 - 1] = NULL;
     p[count + 2 - 2] = name;
-    _environ = p;
+    __wenviron = p;
     __ll_exit_critical();
     return 0;
 }
-int _RTL_FUNC _putenv(const char* name) { return putenv(name); }
-int _RTL_FUNC _putenv_s(const char* name, const char* value)
+int _RTL_FUNC _wputenv_s(const wchar_t* name, const wchar_t* value)
 {
-    char* buf = calloc(strlen(name) + strlen(value) + 2, 1);
+    wchar_t* buf = calloc(wcslen(name) + wcslen(value) + 2, sizeof(wchar_t));
     if (!buf)
     {
         errno = ENOMEM;
         return -1;
     }
-    strcpy(buf, name);
-    buf[strlen(buf)] = '=';
-    strcat(buf, value);
-    int rv = putenv(strdup(buf));
+    wcscpy(buf, name);
+    buf[wcslen(buf)] = '=';
+    wcscat(buf, value);
+    int rv = _wputenv(wcsdup(buf));
     free(buf);
     return rv;
 }
-int _RTL_FUNC setenv(const char* name, const char* value, int overwrite)
+int _RTL_FUNC _wsetenv(const wchar_t* name, const wchar_t* value, int overwrite)
 {
-    if (name == 0 || name[0] == 0 || strchr(name, '='))
+    if (name == 0 || name[0] == 0 || wcschr(name, '='))
     {
         errno = EINVAL;
         return -1;
     }
-    if (!overwrite && getenv(name))
+    if (!overwrite && _wgetenv(name))
         return 0;
-    return _putenv_s(name, value);
+    return _wputenv_s(name, value);
 }
-int _RTL_FUNC unsetenv(const char* name)
+int _RTL_FUNC _wunsetenv(const wchar_t* name)
 {
-    wchar_t buf[260], *x = buf;
-    const char *y = name;
-    while (*y)
-        *x++ = *y++;
-    *x= *y;
-    int rv = _wunsetenv(buf);
-    if (rv)
-        return rv;
-    char** q = _environ;
+    if (!__wenviron)
+        __wenvset();
+    wchar_t** q = __wenviron;
     int len = 0;
-    len = strlen(name);
+    len = wcslen(name);
     __ll_enter_critical();
     while (*q)
     {
-        if (!strnicmp(name, *q, len) && (*q)[len] == '=')
+        if (!wcsnicmp(name, *q, len) && (*q)[len] == '=')
         {
             while (*q)
             {

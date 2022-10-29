@@ -34,54 +34,30 @@
  * 
  */
 
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <time.h>
-#include <errno.h>
-#include <process.h>
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"
-#include <dir.h>
 
-int _RTL_FUNC system(const char* string)
+int __ll_wgetenv(wchar_t* buf, int id);
+
+wchar_t _RTL_DATA** __wenviron;
+
+void __wenvset(void)
 {
-    FILE* f;
-    char buf[4096], *a;
-    if (*string)
+    int count = __ll_wgetenv(0, 0), i, j;
+    __wenviron = calloc(sizeof(wchar_t*) * (count + 1), sizeof(wchar_t));
+    for (i = 1, j = 0; i <= count; i++)
     {
-        while (isspace(*string))
-            string++;
-        if (!strnicmp(string, "cd ", 3))
-        {
-            return chdir(string + 3);
-        }
+        int n = __ll_wgetenvsize(i - 1);
+        wchar_t* p = (wchar_t*)malloc((n + 1) * sizeof(wchar_t));
+        __ll_wgetenv(p, i - 1);
+        if (p[0] != '=')
+            __wenviron[j++] = p;
+        else
+            free(p);
     }
-    a = getenv("COMSPEC");
-    if (!a)
-        a = searchpath("cmd.exe");
-    if (!string)
-    {
-        if (!a)
-            return 0;
-        if (f = fopen(a, "r"))
-        {
-            fclose(f);
-            return 1;
-        }
-        return 0;
-    }
-    if (!a)
-    {
-        errno = ENOENT;
-        return -1;
-    }
-    buf[0] = ' ';
-    buf[1] = '/';
-    buf[2] = 'C';
-    buf[3] = ' ';
-    strcpy(buf + 4, string);
-    return spawnlp(P_WAIT, a, a, buf, 0);
 }
-

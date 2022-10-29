@@ -38,50 +38,28 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include <errno.h>
-#include <process.h>
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"
-#include <dir.h>
 
-int _RTL_FUNC system(const char* string)
+extern wchar_t _RTL_DATA** __wenviron;
+
+wchar_t* _RTL_FUNC _wgetenv(const wchar_t* varname)
 {
-    FILE* f;
-    char buf[4096], *a;
-    if (*string)
+    if (!__wenviron)
+        __wenvset();
+    wchar_t** q = __wenviron;
+    int len = wcslen(varname);
+    __ll_enter_critical();
+    while (*q)
     {
-        while (isspace(*string))
-            string++;
-        if (!strnicmp(string, "cd ", 3))
+        if ((*q)[len] == '=' && !wcsnicmp(varname, *q, len))
         {
-            return chdir(string + 3);
+            __ll_exit_critical();
+            return (*q + len + 1);
         }
+        q++;
     }
-    a = getenv("COMSPEC");
-    if (!a)
-        a = searchpath("cmd.exe");
-    if (!string)
-    {
-        if (!a)
-            return 0;
-        if (f = fopen(a, "r"))
-        {
-            fclose(f);
-            return 1;
-        }
-        return 0;
-    }
-    if (!a)
-    {
-        errno = ENOENT;
-        return -1;
-    }
-    buf[0] = ' ';
-    buf[1] = '/';
-    buf[2] = 'C';
-    buf[3] = ' ';
-    strcpy(buf + 4, string);
-    return spawnlp(P_WAIT, a, a, buf, 0);
+    __ll_exit_critical();
+    return 0;
 }
-

@@ -103,14 +103,20 @@ int __ll_stat(int handle, struct _stat64 * sb)
     BY_HANDLE_FILE_INFORMATION info;
     FILETIME timex;
 
+
     if (sb->st_mode & S_IFCHR)
         return 0;
-
     if (!GetFileInformationByHandle((HANDLE)handle, &info))
     {
         errno = EBADF;
         return -1;
     }
+    if (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        sb->st_mode = S_IFDIR;
+    else
+        sb->st_mode = S_IFREG;
+    if (sb->st_mode & S_IFCHR)
+        return 0;
     if (sb->st_mode & S_IFREG)
     {
         sb->st_atime = __to_timet(&info.ftLastAccessTime);

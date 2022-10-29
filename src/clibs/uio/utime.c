@@ -39,7 +39,7 @@
 #include <io.h>
 #include <fcntl.h>
 #include <locale.h>
-#include <stat.h>
+#include <sys/stat.h>
 #include <wchar.h>
 #include "libp.h"
 

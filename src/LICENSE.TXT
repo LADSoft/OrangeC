@@ -9,10 +9,12 @@ run-time library is gnu-licensed, for example modifying the library then linking
 modified version into a program will require that gnu licensing be followed for the
 library itself; for example the library source code has to be made available.
 
-An exception is that the WIN32 header files were derived from GNU sources, and
-are covered under the GNU lesser public license.  Since these files are header
-files rather than code it is unclear whether using them causes the GNU licensing
-terms to attach to derivative works.  See the file 'license\copying' for details.
+The windows header files are derived from Pelles C.   Pelles C is derived from LCC.
+The licensing for Pelles C is that things derived from Pelles C cannot be used commerically.
+LCC also doesn't want things to be used commerically, but it has an additional stipulation 
+that there has to be acknowledgement of use.   These header files remain under the Pelles C
+and LCC licenses and are not covered by the GNU license that the rest of the runtime library
+abides by.
 
 Additionally, the OCL program was originally written by Kirill Joss.
 Licensing terms can be found in the 'license' directory.

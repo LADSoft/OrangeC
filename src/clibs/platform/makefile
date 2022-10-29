@@ -38,7 +38,9 @@ SHELL=cmd.exe
 all:
 	$(MAKE) -CCOMMON
 	$(MAKE) -CWIN32 --eval="OBJECT=$(WINOBJECT)"
+ifneq "$(ORANGEC_ONLY)" "YES"
 	$(MAKE) -CDOS32 --eval="OBJECT=$(DOSOBJECT)"
+endif
 	$(MAKE) -CCIL32
 
 format:

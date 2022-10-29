@@ -119,8 +119,10 @@ platform: $(C_CLIBS)
 	$(MAKE) -Cplatform --eval="OBJECT=$(CLIBOBJECT)"
 
 mklibs: platform
+ifneq "$(ORANGEC_ONLY)" "YES"
 	-del $(SYSOBJECT)\cldos.l
 	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\cldos.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $(foreach dir, $(DOSOBJS), $(DOSOBJECT)\$(dir))
+endif
 	-del $(SYSOBJECT)\clwin.l
 	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\clwin.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $(foreach dir, $(WINOBJS), $(WINOBJECT)\$(dir))
 

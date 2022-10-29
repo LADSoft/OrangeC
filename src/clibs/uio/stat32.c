@@ -140,19 +140,3 @@ int _RTL_FUNC _stat32(char* path, struct _stat32* __statbuf)
     *q = *path;
     return _wstat32(buf, __statbuf);
 }
-#undef _stat
-int _RTL_FUNC _stat(char* path, struct stat* __statbuf) 
-{
-    return _stat32(path, (struct _stat32*) __statbuf);
-}
-#undef stat
-int _RTL_FUNC stat(char* path, struct stat* __statbuf) 
-{ 
-    return _stat32(path, (struct _stat32*) __statbuf);
-}
-
-#undef _wstat
-int _RTL_FUNC _wstat(wchar_t* path, struct stat* __statbuf) 
-{ 
-    return _wstat32(path, (struct _stat32*) __statbuf); 
-}

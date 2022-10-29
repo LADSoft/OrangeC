@@ -112,13 +112,13 @@ extern "C"
 #if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL)
 struct _stat32
 {
-    dev_t         st_dev;
-    ino_t         st_ino;
-    unsigned short st_mode;
-    short          st_nlink;
-    short          st_uid;
-    short          st_gid;
-    dev_t         st_rdev;
+        int st_dev;
+        short st_ino;
+        short st_mode;
+        int st_nlink;
+        short st_uid;
+        short st_gid;
+        int st_rdev;
     off_t         st_size;
     __time_t_32     st_atime;
     __time_t_32     st_mtime;
@@ -127,12 +127,13 @@ struct _stat32
 
 struct _stat32i64
 {
-    dev_t         st_dev;
-    ino_t         st_ino;
-    unsigned short st_mode;
-    short          st_nlink;
-    short          st_uid;
-    short          st_gid;
+        int st_dev;
+        short st_ino;
+        short st_mode;
+        int st_nlink;
+        short st_uid;
+        short st_gid;
+        int st_rdev;
     dev_t         st_rdev;
     __int64        st_size;
     __time_t_32     st_atime;
@@ -142,13 +143,13 @@ struct _stat32i64
 
 struct _stat64i32
 {
-    dev_t         st_dev;
-    ino_t         st_ino;
-    unsigned short st_mode;
-    short          st_nlink;
-    short          st_uid;
-    short          st_gid;
-    dev_t         st_rdev;
+        int st_dev;
+        short st_ino;
+        short st_mode;
+        int st_nlink;
+        short st_uid;
+        short st_gid;
+        int st_rdev;
     off_t         st_size;
     __time_t_64     st_atime;
     __time_t_64     st_mtime;
@@ -157,13 +158,13 @@ struct _stat64i32
 
 struct _stat64
 {
-    dev_t         st_dev;
-    ino_t         st_ino;
-    unsigned short st_mode;
-    short          st_nlink;
-    short          st_uid;
-    short          st_gid;
-    dev_t         st_rdev;
+        int st_dev;
+        short st_ino;
+        short st_mode;
+        int st_nlink;
+        short st_uid;
+        short st_gid;
+        int st_rdev;
     __int64        st_size;
     __time_t_64     st_atime;
     __time_t_64     st_mtime;
@@ -175,13 +176,13 @@ struct _stat64
 
     struct stat
     {
-        dev_t st_dev;
-        ino_t st_ino;
-        mode_t st_mode;
-        nlink_t st_nlink;
-        uid_t st_uid;
-        gid_t st_gid;
-        dev_t st_rdev;
+        int st_dev;
+        short st_ino;
+        short st_mode;
+        int st_nlink;
+        short st_uid;
+        short st_gid;
+        int st_rdev;
         off_t st_size;
         time_t st_atime;
         time_t st_mtime;
@@ -203,6 +204,7 @@ struct _stat64
     struct _stat
     {
 #    ifdef __CRTDLL_DLL
+#pragma pack(1)
         short st_dev;
         short st_ino;
         short st_mode;
@@ -214,6 +216,7 @@ struct _stat64
         long st_atime;
         long st_mtime;
         long st_ctime;
+#pragma pack()
 #    else
     int st_dev;
     short st_ino;

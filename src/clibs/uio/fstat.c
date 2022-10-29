@@ -52,52 +52,23 @@ extern char __uidrives[HANDLE_MAX];
 extern int __uiflags[HANDLE_MAX];
 extern int __uihandles[HANDLE_MAX];
 
-int _RTL_FUNC _fstat32(int handle, struct _stat32* __statbuf)
+#undef fstat
+int _RTL_FUNC fstat(int handle, struct stat* __statbuf) { return _fstat32(handle, (struct _stat32*)__statbuf); }
+#undef _fstat
+int _RTL_FUNC _fstat(int handle, struct _stat* __statbuf) 
 {
-    int hand, rv;
-
-    __ll_enter_critical();
-    hand = __uiohandle(handle);
-    if (hand < 0)
-    {
-        __ll_exit_critical();
-        return -1;
-    }
-
-    memset(__statbuf, 0, sizeof(*__statbuf));
-    struct _stat64 stat64 = { 0 };
-    rv = __ll_stat(hand, &stat64);
-
-    __statbuf->st_nlink = 1;
-    __statbuf->st_ino = stat64.st_ino;
-    __statbuf->st_mode = stat64.st_mode;
-    __statbuf->st_uid = stat64.st_uid;
-    __statbuf->st_gid = stat64.st_gid;
-    __statbuf->st_atime = stat64.st_atime;
-    __statbuf->st_mtime = stat64.st_mtime;
-    __statbuf->st_ctime = stat64.st_ctime;
-    __statbuf->st_size = stat64.st_size;
-    if (__ll_isatty(hand))
-    {
-        __statbuf->st_mode |= S_IFCHR;
-        __statbuf->st_rdev = __statbuf->st_dev = handle;
-    }
-    else
-    {
-        __statbuf->st_mode = S_IREAD;
-        if (__uiflags[handle] & UIF_WRITEABLE)
-            __statbuf->st_mode |= S_IWRITE;
-        __statbuf->st_mode |= S_IFREG;
-        __statbuf->st_rdev = __statbuf->st_dev = __uidrives[handle];
-        if ((__statbuf->st_size = filelength(handle)) == -1)
-        {
-            errno = EBADF;
-            __ll_exit_critical();
-            return -1;
-        }
-    }
-
-    /* llstat will return times */
-    __ll_exit_critical();
+    struct _stat32 stat32 = { 0 };
+    int rv = _fstat32(handle, &stat32); 
+    __statbuf->st_dev = stat32.st_dev;
+    __statbuf->st_rdev = stat32.st_rdev;
+    __statbuf->st_nlink = stat32.st_nlink;
+    __statbuf->st_ino = stat32.st_ino;
+    __statbuf->st_mode = stat32.st_mode;
+    __statbuf->st_uid = stat32.st_uid;
+    __statbuf->st_gid = stat32.st_gid;
+    __statbuf->st_atime = stat32.st_atime;
+    __statbuf->st_mtime = stat32.st_mtime;
+    __statbuf->st_ctime = stat32.st_ctime;
+    __statbuf->st_size = stat32.st_size;
     return rv;
 }

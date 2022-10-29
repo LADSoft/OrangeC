@@ -34,6 +34,8 @@
  * 
  */
 
+#define USE_32BIT_TIME_T
+#define _DEFINING_STAT
 #include <io.h>
 #include <fcntl.h>
 #include <time.h>
@@ -50,133 +52,28 @@ extern char __uidrives[HANDLE_MAX];
 extern int __uiflags[HANDLE_MAX];
 extern int __uihandles[HANDLE_MAX];
 
-int _RTL_FUNC _fstat(int handle, struct _stat* __statbuf)
-{
-    int hand, rv;
-
-    __ll_enter_critical();
-    hand = __uiohandle(handle);
-    if (hand < 0)
-    {
-        __ll_exit_critical();
-        return -1;
-    }
-
-    memset(__statbuf, 0, sizeof(*__statbuf));
-
-    __statbuf->st_mode = 0;
-
-    if (__ll_isatty(hand))
-    {
-        __statbuf->st_mode |= S_IFCHR;
-        __statbuf->st_rdev = __statbuf->st_dev = handle;
-    }
-    else
-    {
-        __statbuf->st_mode = S_IREAD;
-        if (__uiflags[handle] & UIF_WRITEABLE)
-            __statbuf->st_mode |= S_IWRITE;
-        __statbuf->st_mode |= S_IFREG;
-        __statbuf->st_rdev = __statbuf->st_dev = __uidrives[handle];
-        if ((__statbuf->st_size = filelength(handle)) == -1)
-        {
-            errno = EBADF;
-            __ll_exit_critical();
-            return -1;
-        }
-    }
-    __statbuf->st_ino = 0;
-    __statbuf->st_uid = 0;
-    __statbuf->st_nlink = 1;
-
-    /* llstat will return times */
-    rv = __ll_stat(hand, __statbuf);
-    __ll_exit_critical();
-    return rv;
-}
-int _RTL_FUNC fstat(int handle, struct stat* __statbuf) { return _fstat(handle, (struct _stat*)__statbuf); }
-int _RTL_FUNC _wstat(wchar_t* path, struct _stat* __statbuf)
-{
-    int fd, rv, rootdir;
-    char pbuf[265];
-    wchar_t ppbuf[260], *q = ppbuf;
-    memset(__statbuf, 0, sizeof(__statbuf));
-    if (!wcscmp(path, L"."))
-    {
-         char *path2 = getcwd(pbuf, 265);
-         while (*path2)
-             *q++ = *path2++;
-         *q = *path2;
-         path = ppbuf;
-          
-    }
-    rootdir = ((path[1] == ':' && (path[2] == '\\' || path[2] == '/') && (path[3] == '.' || path[3] == '\0')) ||
-               ((path[0] == '\\' || path[0] == '/') && (path[1] == '.' || path[1] == '\0')));
-    if (!rootdir)
-    {
-        int l = wcslen(path);
-        if ((path[l - 1] == '/' || path[l - 1] == '\\'))
-        {
-            path = wcscpy(ppbuf, path);
-            path[l - 1] = '\0';
-        }
-    }
-    rv = __ll_namedstat(path, __statbuf);
-    if (rv == -1)
-    {
-        if (rootdir)
-        {
-            memset(__statbuf, 0, sizeof(*__statbuf));
-            __statbuf->st_atime = __statbuf->st_ctime = __statbuf->st_mtime = (10 * 365 + 2) * 60 * 60 * 24 - _timezone;
-            __statbuf->st_mode = S_IFDIR;
-            rv = 0;
-        }
-        else
-        {
-            FILE* fil = _wfopen(path, L"r");
-            if (fil)
-            {
-                fd = fileno(fil);
-                if (__ll_isatty(__uihandles[fd]))
-                {
-                    __statbuf->st_mode |= S_IFREG | S_IREAD | S_IWRITE;
-                    rv = 0;
-                }
-                fclose(fil);
-            }
-        }
-    }
-    if (rv == 0)
-    {
-        int drive;
-        if (path[1] == ':')
-        {
-            drive = toupper(path[0]) - 'A';
-        }
-        else
-        {
-            _dos_getdrive(&drive);
-            drive--;
-        }
-        __statbuf->st_ino = 0;
-        __statbuf->st_uid = 0;
-        __statbuf->st_nlink = 1;
-        __statbuf->st_rdev = __statbuf->st_dev = drive;
-    }
-    if (rv == -1)
-        errno = ENOENT;
-    return rv;
-}
-int _RTL_FUNC _stat(char* path, struct _stat* __statbuf) 
-{
-    wchar_t buf[256], *q = buf;
-    while (*path)
-        *q++ = *path++;
-    *q = *path;
-    return _wstat(buf, __statbuf);
-}
+#undef stat
 int _RTL_FUNC stat(char* path, struct stat* __statbuf) 
 { 
-    return _stat(path, (struct _stat*)__statbuf); 
+    return _stat32(path, (struct _stat32*) __statbuf);
 }
-int _RTL_FUNC _stat32(char* path, struct stat* __statbuf) { return _stat(path, (struct _stat*)__statbuf); }
+#undef _stat
+int _RTL_FUNC _stat(char* path, struct stat* __statbuf) 
+{
+    struct _stat32 stat32 = { 0 };
+    int rv = _stat32(path, (struct _stat32*) __statbuf);
+    __statbuf->st_dev = stat32.st_dev;
+    __statbuf->st_rdev = stat32.st_rdev;
+    __statbuf->st_nlink = stat32.st_nlink;
+    __statbuf->st_ino = stat32.st_ino;
+    __statbuf->st_mode = stat32.st_mode;
+    __statbuf->st_uid = stat32.st_uid;
+    __statbuf->st_gid = stat32.st_gid;
+    __statbuf->st_atime = stat32.st_atime;
+    __statbuf->st_mtime = stat32.st_mtime;
+    __statbuf->st_ctime = stat32.st_ctime;
+    __statbuf->st_size = stat32.st_size;
+    return rv;
+}
+
+

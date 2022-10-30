@@ -109,7 +109,7 @@ typedef unsigned short wchar_t;
 extern "C"
 {
 #    endif
-#if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL)
+#if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL) && !defined(__MSIL__)
 struct _stat32
 {
         int st_dev;
@@ -232,7 +232,7 @@ struct _stat64
 #    endif
     };
 
-#if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL)
+#if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL) && !defined(__MSIL__)
 #ifdef _USE_32BIT_TIME_T
     #define _fstat      _fstat32
     #define _fstati64   _fstat32i64

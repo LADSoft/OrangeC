@@ -11,10 +11,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#endif
 
 #ifndef UNLEN
 #include <lmcons.h>
@@ -1433,9 +1429,6 @@ DWORD APIENTRY RasGetProjectionInfoEx(HRASCONN,PRAS_PROJECTION_INFO,LPDWORD);
 
 #include <poppack.h>
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

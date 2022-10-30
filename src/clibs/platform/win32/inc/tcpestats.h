@@ -5,10 +5,6 @@
 #pragma once
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#endif
 
 /* TCP extended statistics definitions */
 
@@ -215,9 +211,6 @@ typedef struct _TCP_ESTATS_FINE_RTT_ROD_v0 {
     ULONG SumRtt;
 } TCP_ESTATS_FINE_RTT_ROD_v0, *PTCP_ESTATS_FINE_RTT_ROD_v0;
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _TCPESTATS_H */
 

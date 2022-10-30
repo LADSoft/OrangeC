@@ -11,11 +11,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define LIST_MODULES_DEFAULT  0x00
 #define LIST_MODULES_32BIT  0x01
@@ -222,9 +217,6 @@ DWORD WINAPI GetProcessImageFileNameW(HANDLE,LPWSTR,DWORD);
 #define GetProcessImageFileName  GetProcessImageFileNameA
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

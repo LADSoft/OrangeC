@@ -37,6 +37,36 @@
 #include <stdlib.h>
 #include <wchar.h>
 
+wchar_t* _RTL_FUNC ultow(unsigned long __value, wchar_t* __stringValue, int __radix)
+{
+    char buf2[36];
+    int len = 0, pos = 0;
+    if (__radix < 2 || __radix > 36)
+        __stringValue[pos] = 0;
+    else if (!__value)
+    {
+        __stringValue[pos++] = '0';
+        __stringValue[pos] = 0;
+    }
+    else
+    {
+        while (__value)
+        {
+            buf2[len++] = __value % __radix;
+            __value /= __radix;
+        }
+        while (len)
+        {
+            int ch = buf2[--len];
+            ch += '0';
+            if (ch > '9')
+                ch += 7;
+            __stringValue[pos++] = ch;
+        }
+        __stringValue[pos] = 0;
+    }
+    return __stringValue;
+}
 wchar_t* _RTL_FUNC ltow(long __value, wchar_t* __stringValue, int __radix)
 {
     char buf2[36];
@@ -73,3 +103,6 @@ wchar_t* _RTL_FUNC ltow(long __value, wchar_t* __stringValue, int __radix)
     return __stringValue;
 }
 wchar_t* _RTL_FUNC itow(int __value, wchar_t* __stringValue, int __radix) { return ltow(__value, __stringValue, __radix); }
+wchar_t* _RTL_FUNC _itow(int __value, wchar_t* __stringValue, int __radix) { return ltow(__value, __stringValue, __radix); }
+wchar_t* _RTL_FUNC _ultow(unsigned long __value, wchar_t* __stringValue, int __radix) { return ultow(__value, __stringValue, __radix); }
+wchar_t* _RTL_FUNC _ltow(long __value, wchar_t* __stringValue, int __radix) { return ltow(__value, __stringValue, __radix); }

@@ -5,11 +5,6 @@
 #ifndef _KSMEDIA_H
 #define _KSMEDIA_H
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 typedef struct {
     KSPROPERTY Property;
@@ -5742,8 +5737,5 @@ DEFINE_GUIDSTRUCT("4E73C07F-23CC-4955-A7EA-3DA502496290", KSPROPSETID_AudioBuffe
 
 #define KSPROPERTY_AUDIO_BUFFER_DURATION  1
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _KSMEDIA_H */

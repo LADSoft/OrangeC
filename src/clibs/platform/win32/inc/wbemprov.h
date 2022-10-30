@@ -151,10 +151,6 @@ typedef interface IWbemHiPerfProvider IWbemHiPerfProvider;
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#endif
 
 void *__RPC_USER MIDL_user_allocate(size_t);
 void __RPC_USER MIDL_user_free(void *);
@@ -630,9 +626,6 @@ typedef enum tag_WBEM_PROVIDER_FLAGS {
 extern RPC_IF_HANDLE __MIDL_itf_wbemprov_0155_v0_0_c_ifspec;
 extern RPC_IF_HANDLE __MIDL_itf_wbemprov_0155_v0_0_s_ifspec;
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

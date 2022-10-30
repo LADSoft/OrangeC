@@ -114,6 +114,9 @@ extern "C"
     size_t _RTL_FUNC wcsxfrm(wchar_t* restrict __s1, const wchar_t* restrict __s2, size_t __n);
 
     wchar_t* _RTL_FUNC wcsdup(const wchar_t* __s);
+    wchar_t* _RTL_FUNC _wcsdup(const wchar_t* __s);
+    wchar_t* _RTL_FUNC wcsndup(const wchar_t* __s, size_t count);
+    wchar_t* _RTL_FUNC _wcsndup(const wchar_t* __s, size_t count);
 #ifdef __cplusplus
     const wchar_t* _RTL_FUNC wcschr(const wchar_t* __wcs, wchar_t __wc);
     const wchar_t* _RTL_FUNC wcsrchr(const wchar_t* __wcs, wchar_t __wc);
@@ -134,6 +137,8 @@ extern "C"
 
     wchar_t* _RTL_FUNC wcsupr(wchar_t* __s);
     wchar_t* _RTL_FUNC wcslwr(wchar_t* __s);
+    wchar_t* _RTL_FUNC _wcsupr(wchar_t* __s);
+    wchar_t* _RTL_FUNC _wcslwr(wchar_t* __s);
 
     size_t _RTL_FUNC wcslen(const wchar_t* __s);
 
@@ -173,10 +178,32 @@ extern "C"
     long long int _RTL_FUNC wcstoll(const wchar_t* restrict __nptr, wchar_t** restrict __endptr, int __base);
     unsigned long long int _RTL_FUNC wcstoull(const wchar_t* restrict __nptr, wchar_t** restrict __endptr, int __base);
 #endif
+    int _RTL_FUNC _wtoi(const wchar_t *);
+    long _RTL_FUNC _wtol(const wchar_t *);
+    long long _RTL_FUNC _wtoll(const wchar_t *);
     double _RTL_FUNC wtof(const wchar_t* __stringValue);
     long double _RTL_FUNC _wtold(const wchar_t* __stringValue);
     wchar_t* _RTL_FUNC itow(int __value, wchar_t* __stringValue, int __radix);
     wchar_t* _RTL_FUNC ltow(long __value, wchar_t* __stringValue, int __radix);
+    wchar_t* _RTL_FUNC ultow(unsigned long __value, wchar_t* __stringValue, int __radix);
+    wchar_t* _RTL_FUNC _itow(int __value, wchar_t* __stringValue, int __radix);
+    wchar_t* _RTL_FUNC _ltow(long __value, wchar_t* __stringValue, int __radix);
+    wchar_t* _RTL_FUNC _ultow(unsigned long __value, wchar_t* __stringValue, int __radix);
+
+
+    wchar_t * _RTL_FUNC wcsnset(wchar_t *, wchar_t, size_t);
+    wchar_t * _RTL_FUNC wcsrev(wchar_t *);
+    wchar_t * _RTL_FUNC _wcsnset(wchar_t *, wchar_t, size_t);
+    wchar_t * _RTL_FUNC _wcsrev(wchar_t *);
+
+    wchar_t * _RTL_FUNC _wcserror(int);
+    wchar_t * _RTL_FUNC _wcsichr(const wchar_t *, wchar_t);
+    wchar_t * _RTL_FUNC _wcsistr(const wchar_t *, const wchar_t *);
+    wchar_t * _RTL_FUNC _wcsrichr(const wchar_t *, wchar_t);
+    wchar_t * _RTL_FUNC _wcstok_ms(wchar_t * restrict, const wchar_t * restrict);  /* 06-03-28 */
+    wchar_t * _RTL_FUNC _wmemichr(const wchar_t *, wchar_t, size_t);
+    int _RTL_FUNC _wmemicmp(const wchar_t *, const wchar_t *, size_t);
+
 
     size_t _RTL_FUNC wcsftime(wchar_t* restrict __str, size_t __maxsize, const wchar_t* restrict __format,
                               const struct tm* restrict __t);

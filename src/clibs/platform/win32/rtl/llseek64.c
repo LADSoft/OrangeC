@@ -43,7 +43,7 @@
 #include <locale.h>
 #include "libp.h"
 
-__int64 __ll_seek64(int fd, __int64 pos, int origin)
+int __ll_seek64(int fd, long long pos, int origin)
 {
     int type;
     switch (origin)

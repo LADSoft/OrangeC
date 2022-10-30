@@ -54,6 +54,8 @@ ifneq "$(ORANGEC_ONLY)" "YES"
 	$(ZIP) a $(DISTSRC) orangec/src/*.exe orangec/src/*.iss orangec/src/*.bmp orangec/src/config.bat orangec/src/ocidehld.bat
 	$(ZIP) a $(DISTSRC) orangec/src/LICENSE.TXT orangec/license/*.* orangec/src/readme.txt orangec/src/relnotes.txt
 	$(ZIP) a $(DISTSRC) orangec/src/clibs/repobj.bat orangec/src/copying orangec/src/ocl.lic orangec/src/addon.txt
+ifneq "$(MSYSTEM)" "MSYS"
 	"/program files (x86)/inno setup 6/iscc" /Q /FWindowsInstaller$(VERNAME) /O/orangec/dist orangec/src/occ.iss
+endif
 	-rmdir $(DISTROOT)\appdata
 endif

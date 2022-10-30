@@ -3,10 +3,6 @@
 
 /* #include <winapifamily.h> */
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#endif
 
 #include "pshpack1.h"
 
@@ -533,8 +529,5 @@ DWORD APIENTRY mmGetCurrentTask(VOID);
 
 #include "poppack.h"
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _MMDDK_H */

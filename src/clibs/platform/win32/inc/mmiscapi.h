@@ -13,10 +13,6 @@
 #include <mmsyscom.h>
 
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#endif
 
 
 #ifndef MMNODRV
@@ -243,8 +239,5 @@ WINMMAPI MMRESULT WINAPI mmioCreateChunk(HMMIO, LPMMCKINFO, UINT);
 
 #endif /* !MMNOMMIO */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _MMISCAPI_H */

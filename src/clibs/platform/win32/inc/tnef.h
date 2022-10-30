@@ -11,10 +11,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#endif
 
 #ifndef BEGIN_INTERFACE
 #define BEGIN_INTERFACE
@@ -260,9 +256,6 @@ typedef struct _NSID {
     } address;
 } NSID, *LPNSID;
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

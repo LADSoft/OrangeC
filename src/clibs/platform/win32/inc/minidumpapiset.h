@@ -12,11 +12,6 @@
 
 #include <pshpack4.h>
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#pragma warn(disable:2225)  /* Type 'x' padded due to explicit alignment */
-#endif
 
 #define MINIDUMP_SIGNATURE  ('PMDM')
 #define MINIDUMP_VERSION  (42899)
@@ -893,9 +888,6 @@ typedef struct _MINIDUMP_CALLBACK_INFORMATION {
 BOOL WINAPI MiniDumpWriteDump(HANDLE, DWORD, HANDLE, MINIDUMP_TYPE, PMINIDUMP_EXCEPTION_INFORMATION, PMINIDUMP_USER_STREAM_INFORMATION, PMINIDUMP_CALLBACK_INFORMATION);
 BOOL WINAPI MiniDumpReadDumpStream(PVOID, ULONG, PMINIDUMP_DIRECTORY *, PVOID *, ULONG *);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #include <poppack.h>
 

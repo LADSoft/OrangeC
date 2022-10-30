@@ -44,6 +44,7 @@
 struct tm* __ll_gettime(struct tm* tm2)
 {
     SYSTEMTIME timex;
+    memset(tm2, 0, sizeof(*tm2));
     GetLocalTime(&timex);
 
     tm2->tm_sec = timex.wSecond;

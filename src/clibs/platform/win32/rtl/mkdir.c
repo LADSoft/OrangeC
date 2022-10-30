@@ -43,14 +43,22 @@
 #include <stdlib.h>
 #include <memory.h>
 
-int _RTL_FUNC _mkdir(const char* __path)
+int _RTL_FUNC _wmkdir(const wchar_t* __path)
 {
-    if (!CreateDirectory(__path, 0))
+    if (!CreateDirectoryW(__path, 0))
     {
         errno = ENOENT;
         return -1;
     }
     return 0;
+}
+int _RTL_FUNC _mkdir(const char* __path)
+{
+    wchar_t buf[260], *p = buf;
+    while (*__path)
+        *p++ = *__path++;
+    *p = *__path;
+    return _wmkdir(buf);
 }
 int _RTL_FUNC mkdir(const char* __path, int __amode) 
 { 

@@ -48,11 +48,15 @@
 #include <dos.h>
 #include "libp.h"
 
-int __ll_writeable(const char *file)
+int __ll_writeable(const wchar_t *file)
 {
+    char buf[260], *p = buf;
+    while (*file)
+        *p++ = *file++;
+    *p = *file;
     DPMI_REGS regs;
    regs.b.al = 0 ;
-   regs.h.dx = __nametodta(file,0) ;
+   regs.h.dx = __nametodta(buf,0) ;
    __doscall(0x43,&regs);
    if (regs.b.al != 0)
       return 1 ;

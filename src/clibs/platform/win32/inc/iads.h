@@ -581,11 +581,6 @@ typedef struct ADsSecurityUtility ADsSecurityUtility;
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 void *__RPC_USER MIDL_user_allocate(size_t);
 void __RPC_USER MIDL_user_free(void *);
@@ -7191,9 +7186,6 @@ class DECLSPEC_UUID ("f270c64a-ffb8-4ae4-85fe-3a75e5347966") ADsSecurityUtility;
 #endif
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

@@ -40,7 +40,7 @@ LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP
 
 
 CC=x86_64-w64-mingw32-gcc
-CCFLAGS = -c -O2 -D__MSVCRT__ -D_MINGW -U__STRICT_ANSI__ -Wno-int-to-pointer-cast
+CCFLAGS = -c -O2 -D__MSVCRT__ -D_MINGW -Wno-int-to-pointer-cast
 LINK=ld
 LFLAGS=-L$(_LIBDIR) -Xlinker -Map=output.map
 

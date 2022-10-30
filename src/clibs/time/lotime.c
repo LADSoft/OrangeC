@@ -34,6 +34,7 @@
  * 
  */
 
+#define _DEFINING_TIME_T
 #include <time.h>
 #include <wchar.h>
 #include <locale.h>
@@ -41,17 +42,5 @@
 
 struct tm* _RTL_FUNC localtime(const time_t* time)
 {
-    struct tm* t;
-    time_t t1 = *time;
-    if (t1 & 0x80000000)
-        return NULL;
-    tzset();
-    t1 -= _timezone;
-    // the *2 is because gmtime adjusts for DST...
-    t1 += _daylight * 60 * 60 * 2;
-    if (t1 > 0x7fffffff)
-        return NULL;
-    t = gmtime(&t1);
-    t->tm_isdst = _daylight;
-    return t;
+    return _localtime32(time);
 }

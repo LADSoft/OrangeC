@@ -162,10 +162,6 @@ typedef struct PropertySystem PropertySystem;
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#endif
 
 #ifndef PSSTDAPI
 #if defined(_PROPSYS_)
@@ -1498,9 +1494,6 @@ HRESULT STDMETHODCALLTYPE IInitializeWithStream_Initialize_Stub(IInitializeWithS
 HRESULT STDMETHODCALLTYPE IPropertyDescription_CoerceToCanonicalValue_Proxy(IPropertyDescription * This, PROPVARIANT * ppropvar);
 HRESULT STDMETHODCALLTYPE IPropertyDescription_CoerceToCanonicalValue_Stub(IPropertyDescription * This, REFPROPVARIANT propvar, PROPVARIANT * ppropvar);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

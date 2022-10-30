@@ -43,9 +43,9 @@
 #include <locale.h>
 #include "libp.h"
 
-int __ll_rename(char* old, char* new)
+int __ll_rename(wchar_t* old, wchar_t* new)
 {
-    int rv = MoveFile(old, new);
+    int rv = MoveFileW(old, new);
     if (!rv)
         errno = GetLastError();
     return !rv;

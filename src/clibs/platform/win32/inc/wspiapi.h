@@ -27,12 +27,6 @@ typedef void (WINAPI *WSPIAPI_PFREEADDRINFO)(struct addrinfo*);
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2006)  /* Conversion from 'type1' to 'type2' is not portable */
-#pragma warn(disable:2027 2028)  /* missing prototype */
-#pragma warn(disable:2215)  /* possible loss of data */
-#endif
 
 __inline char * WINAPI WspiapiStrdup(const char *pszString)
 {
@@ -556,9 +550,6 @@ __inline void WINAPI WspiapiFreeAddrInfo(struct addrinfo *ai)
     (*pfFreeAddrInfo)(ai);
 }
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef  __cplusplus
 }

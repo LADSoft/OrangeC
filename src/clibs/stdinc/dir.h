@@ -98,9 +98,11 @@ extern "C"
     int _RTL_FUNC _IMPORT setdisk(int __drive);
 
     int _RTL_FUNC _IMPORT _chdir(const char* ZSTR);
+    int _RTL_FUNC _IMPORT _wchdir(const wchar_t* ZSTR);
     char* ZSTR _RTL_FUNC _IMPORT _getcwd(char* ZSTR, int);
-    int _RTL_FUNC _IMPORT _mkdir(const char* ZSTR);
+    int _RTL_FUNC _IMPORT _wmkdir(const wchar_t* ZSTR);
     int _RTL_FUNC _IMPORT _rmdir(const char* ZSTR);
+    int _RTL_FUNC _IMPORT _wrmdir(const wchar_t* ZSTR);
 #endif
 
 #ifdef __cplusplus

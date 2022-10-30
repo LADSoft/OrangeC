@@ -27,7 +27,7 @@ extern "C" {
 #define WORK_QUEUE_TIMEOUT  1
 #define THREAD_IDLE_TIMEOUT  10
 
-#ifndef MAX_PROTOCOL_NAME_LEN  /* __POCC__ */
+#ifndef MAX_PROTOCOL_NAME_LEN
 #define MAX_PROTOCOL_NAME_LEN  40
 #endif
 #define MAX_PROTOCOL_DLL_LEN  48

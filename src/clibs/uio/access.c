@@ -37,30 +37,30 @@
 #include <io.h>
 #include <sys/stat.h>
 #include <errno.h>
-#include <string.h>
-int _RTL_FUNC access(const char* __file, int __level)
+#include <wchar.h>
+int _RTL_FUNC _waccess(const wchar_t* __file, int __level)
 {
-    char buf[260];
+    wchar_t buf[260];
     struct stat stat_st;
     int mode = 0;
-    if (stat(__file, &stat_st) == -1)
+    if (_wstat(__file, &stat_st) == -1)
     {
         errno = ENOFILE;
         // at this point we MAY have an invalid path, so, check the directory.
         // we are going backwards until nothing is left or we encounter an error,
         // possible errors are ENOENT (path does not exist) or ENOTDIR) path exists
         // but is not a directory
-        strcpy(buf, __file);
-        char* p;
+        wcscpy(buf, __file);
+        wchar_t* p;
         do
         {
-            p = strrchr(buf, '\\');
+            p = wcsrchr(buf, '\\');
             if (!p)
-                p = strrchr(buf, '/');
+                p = wcsrchr(buf, '/');
             if (p)
             {
                 *p = 0;
-                if (stat(buf, &stat_st) == -1)
+                if (_wstat(buf, &stat_st) == -1)
                     errno = ENOENT;
                 else if (!S_ISDIR(stat_st.st_mode))
                     errno = ENOTDIR;
@@ -80,5 +80,13 @@ int _RTL_FUNC access(const char* __file, int __level)
         return 0;
     errno = ENOFILE;
     return -1;
+}
+int _RTL_FUNC access(const char* __file, int __level)
+{
+    wchar_t buf[260], *p = buf;
+    while (*__file)
+        *p++ = *__file++;
+    *p = *__file;
+    return _waccess(buf, __level);
 }
 int _RTL_FUNC _access(const char* __file, int __level) { return access(__file, __level); }

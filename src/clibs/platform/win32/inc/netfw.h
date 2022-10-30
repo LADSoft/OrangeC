@@ -289,10 +289,6 @@ typedef struct NetFwMgr NetFwMgr;
 extern "C"{
 #endif 
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 /* #include <winapifamily.h> */
 
@@ -2048,9 +2044,6 @@ unsigned char *__RPC_USER VARIANT_UserMarshal64(unsigned long *, unsigned char *
 unsigned char *__RPC_USER VARIANT_UserUnmarshal64(unsigned long *, unsigned char *, VARIANT *);
 void __RPC_USER VARIANT_UserFree64(unsigned long *, VARIANT *);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

@@ -11,11 +11,6 @@
 
 #include <guiddef.h>
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define INVALID_FRAGMENT_ID  0
 
@@ -580,9 +575,6 @@ typedef struct _NDR64_RANGE_PIPE_FORMAT {
     NDR64_UINT32 MaxValue;
 } NDR64_RANGE_PIPE_FORMAT;
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #include <poppack.h>
 

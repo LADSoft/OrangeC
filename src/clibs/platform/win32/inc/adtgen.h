@@ -7,10 +7,6 @@
 
 /* Generic audits generating definitions */
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define AUDIT_TYPE_LEGACY  1
 #define AUDIT_TYPE_WMI  2
@@ -104,8 +100,5 @@ typedef PVOID AUDIT_HANDLE, *PAUDIT_HANDLE;
 BOOL AuthzpRegisterAuditEvent(PAUTHZ_AUDIT_EVENT_TYPE_OLD,PAUDIT_HANDLE);
 BOOL AuthzpUnregisterAuditEvent(AUDIT_HANDLE*);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _ADTGEN_H */

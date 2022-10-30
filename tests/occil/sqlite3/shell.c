@@ -38,7 +38,7 @@
 #include <stdarg.h>
 
 FILE *_popen(char *a, char *b);// { return NULL; }
-void _pclose(FILE *c);// {}
+int _pclose(FILE *c);// {}
 
 #if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__)
 # include <signal.h>

@@ -45,10 +45,6 @@ extern "C"{
 #include <pshpack8.h>
 #include "vsserror.h"
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#endif
 
 typedef enum _VSS_OBJECT_TYPE {
     VSS_OBJECT_UNKNOWN = 0,
@@ -429,9 +425,6 @@ interface IVssAsync {
 extern RPC_IF_HANDLE __MIDL_itf_vss_0000_0002_v0_0_c_ifspec;
 extern RPC_IF_HANDLE __MIDL_itf_vss_0000_0002_v0_0_s_ifspec;
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

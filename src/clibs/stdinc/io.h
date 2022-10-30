@@ -136,6 +136,7 @@ extern "C"
     int _RTL_FUNC _IMPORT setmode(int __handle, int __amode);
 
     int _RTL_FUNC _IMPORT sopen(const char* ZSTR __path, int __access, int __shflag, ... /* unsigned mode */);
+    int _RTL_FUNC _IMPORT _wsopen(const wchar_t* ZSTR __path, int __access, int __shflag, ... /* unsigned mode */);
     int _RTL_FUNC _IMPORT rmdir(const char* ZSTR __path);
     long _RTL_FUNC _IMPORT tell(int __handle);
     int _RTL_FUNC _IMPORT umask(int perm);
@@ -147,7 +148,9 @@ extern "C"
     int _RTL_FUNC _IMPORT _open_osfhandle(long __osfhandle, int __oflag);
 
     int _RTL_FUNC _IMPORT _access(const char* ZSTR, int);
+    int _RTL_FUNC _IMPORT _waccess(const wchar_t* ZSTR __path, int __amode);
     int _RTL_FUNC _IMPORT _chmod(const char* ZSTR, int);
+    int _RTL_FUNC _IMPORT _wchmod(const wchar_t* ZSTR, int);
     int _RTL_FUNC _IMPORT _chsize(int, long);
     int _RTL_FUNC _IMPORT _close(int);
     int _RTL_FUNC _IMPORT _commit(int);

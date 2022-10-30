@@ -11,10 +11,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define RTM_MAX_ADDRESS_SIZE  16
 
@@ -350,9 +346,6 @@ DWORD WINAPI RtmGetListEnumRoutes(RTM_ENTITY_HANDLE,RTM_ENUM_HANDLE,PUINT,PRTM_R
 DWORD WINAPI RtmDeleteRouteList(RTM_ENTITY_HANDLE,RTM_ROUTE_LIST_HANDLE);
 DWORD WINAPI RtmReferenceHandles(RTM_ENTITY_HANDLE,UINT,HANDLE*);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

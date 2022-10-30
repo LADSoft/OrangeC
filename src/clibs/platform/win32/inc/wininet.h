@@ -17,11 +17,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define INTERNETAPI         EXTERN_C DECLSPEC_IMPORT HRESULT STDAPICALLTYPE
 #define INTERNETAPI_(type)  EXTERN_C DECLSPEC_IMPORT type STDAPICALLTYPE
@@ -1685,9 +1680,6 @@ typedef LPINTERNET_CACHE_GROUP_INFOA LPINTERNET_CACHE_GROUP_INFO;
 
 #endif /* UNICODE */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

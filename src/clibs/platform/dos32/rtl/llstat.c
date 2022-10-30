@@ -48,9 +48,8 @@
 #include <dos.h>
 #include "libp.h"
 
-int __ll_stat(int handle, void *__statbuf)
+int __ll_stat(int handle, struct _stat64 *sb)
 {
-   struct _stat *sb = __statbuf ;
    if (sb->st_mode & S_IFREG) {
       struct ftime ft ;
       int timex ;
@@ -70,11 +69,14 @@ int __ll_stat(int handle, void *__statbuf)
    } 
    return 0;
 }
-int __ll_namedstat(const char *file, void *__statbuf)
+int __ll_namedstat(const wchar_t *file, struct _stat64 *sb)
 {
-    struct stat *sb = __statbuf;
+    char buf[260], *p = buf;
+    while (*file)
+        *p++ = *file++;
+    *p = *file;
     struct find_t finddata;
-    if (!_dos_findfirst(file, 0x17, &finddata))
+    if (!_dos_findfirst(buf, 0x17, &finddata))
     {
       struct ftime *ft = &finddata.wr_time;
       int timex;

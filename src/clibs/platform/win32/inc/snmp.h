@@ -13,10 +13,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#endif
 
 #include <pshpack4.h>
 
@@ -302,9 +298,6 @@ VOID /*SNMP_FUNC_TYPE*/ WINAPIV SnmpUtilDbgPrint(INT,LPSTR,...);
 
 #endif /* SNMPSTRICT */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

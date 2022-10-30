@@ -17,10 +17,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#endif
 
 #define CMAPI  DECLSPEC_IMPORT
 
@@ -1410,9 +1406,6 @@ CONFIGRET CM_Import_PowerScheme(LPCWSTR ImportFileNamePath, GUID ** DestinationS
 #define CR_INVALID_STRUCTURE_SIZE  (0x0000003B)
 #define NUM_CR_RESULTS  (0x0000003C)
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

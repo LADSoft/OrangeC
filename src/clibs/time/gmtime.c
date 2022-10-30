@@ -34,47 +34,13 @@
  * 
  */
 
+#define _DEFINING_TIME_T
 #include <time.h>
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"
 
-static char _monthdays[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-
 struct tm* _RTL_FUNC gmtime(const time_t* time)
 {
-    struct tm* rv = &__getRtlData()->gmtime_buf;
-    time_t t = *time;
-    int temp1;
-
-    t -= _daylight * 60 * 60;
-    if (t & 0x80000000)
-        return NULL;
-    rv->tm_sec = t % 60;
-    t /= 60;
-    rv->tm_min = t % 60;
-    t /= 60;
-    rv->tm_hour = t % 24;
-    t /= 24;
-    rv->tm_yday = t;
-    rv->tm_wday = (t + 4) % 7;
-    rv->tm_year = 70 + (rv->tm_yday / 365);
-    rv->tm_yday = rv->tm_yday % 365;
-    rv->tm_yday -= (rv->tm_year - 69) / 4;
-    if (rv->tm_yday < 0)
-    {
-        rv->tm_year--;
-        rv->tm_yday += 365 + ((rv->tm_year - 68) % 4 == 0);
-    }
-    if ((rv->tm_year - 68) % 4 == 0)
-        _monthdays[1] = 29;
-    else
-        _monthdays[1] = 28;
-    temp1 = rv->tm_yday;
-    rv->tm_mon = -1;
-    while (temp1 >= 0)
-        temp1 -= _monthdays[++rv->tm_mon];
-    rv->tm_mday = temp1 + _monthdays[rv->tm_mon] + 1;
-    rv->tm_isdst = 0;
-    return rv;
+    return _gmtime32(time);
 }

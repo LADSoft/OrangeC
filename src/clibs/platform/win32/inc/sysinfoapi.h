@@ -14,10 +14,6 @@
 
 #define NOT_BUILD_WINDOWS_DEPRECATE  __declspec(deprecated)
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 typedef struct _SYSTEM_INFO {
     union {
@@ -146,9 +142,5 @@ WINBASEAPI BOOL WINAPI SetComputerNameExA(COMPUTER_NAME_FORMAT, LPCSTR);
 #define SetComputerNameEx SetComputerNameExA
 #endif // !UNICODE
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #endif /* _SYSINFOAPI_H */

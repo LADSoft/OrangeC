@@ -12,13 +12,13 @@
 #include <minwindef.h>
 #include <minwinbase.h>
 
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #define DECLSPEC_ALLOCATOR  __declspec(allocator)
 #define DECLSPEC_RELEASE(n)  __declspec(release(n))
-#else /* __POCC__ < 900 */
+#else
 #define DECLSPEC_ALLOCATOR
 #define DECLSPEC_RELEASE(x)
-#endif /* __POCC__ < 900 */
+#endif
 
 typedef struct _HEAP_SUMMARY {
     DWORD cb;

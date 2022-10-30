@@ -13,6 +13,7 @@
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
+
  * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
@@ -58,7 +59,14 @@ extern "C"
 #ifndef RC_INVOKED
 #ifndef _TIME_T
 #    define _TIME_T
-    typedef long time_t;
+typedef long __time_t_32;
+typedef long long __time_t_64;
+
+#if defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined (_USE_32BIT_TIME_T) || defined( _DEFINING_TIME_T) || defined(__MSIL__)
+    typedef __time_t_32 time_t;
+#else
+    typedef __time_t_64 time_t;
+#endif
 #endif
 
 #ifndef _CLOCK_T
@@ -97,12 +105,6 @@ extern "C"
     int timespec_get(struct timespec* ts, int base);
 #endif
     char* _RTL_FUNC _IMPORT asctime(const struct tm* __tblock);
-    char* _RTL_FUNC _IMPORT ctime(const time_t* __time);
-    double _RTL_FUNC _IMPORT difftime(time_t __time2, time_t __time1);
-    struct tm* _RTL_FUNC _IMPORT gmtime(const time_t* __timer);
-    struct tm* _RTL_FUNC _IMPORT localtime(const time_t* __timer);
-    time_t _RTL_FUNC _IMPORT time(time_t* __timer);
-    time_t _RTL_FUNC _IMPORT mktime(struct tm* __timeptr);
     clock_t _RTL_FUNC _IMPORT clock(void);
     size_t _RTL_FUNC _IMPORT strftime(char* ZSTR restrict __s, size_t __maxsize, const char* ZSTR restrict __fmt,
                                       const struct tm* restrict __t);
@@ -111,15 +113,100 @@ extern "C"
     int* _RTL_FUNC _IMPORT __getDaylight(void);
     long* _RTL_FUNC _IMPORT __getTimezone(void);
     char** _RTL_FUNC _IMPORT __getTzName(void);
-    int _RTL_FUNC _IMPORT stime(time_t* __tp);
     void _RTL_FUNC _IMPORT tzset(void);
     char* _RTL_FUNC _IMPORT _strdate(char* ZSTR __datestr);
     char* _RTL_FUNC _IMPORT _strtime(char* ZSTR __timestr);
 
     unsigned _RTL_FUNC _IMPORT _getsystime(struct tm*);
     unsigned _RTL_FUNC _IMPORT _setsystime(struct tm*, unsigned);
+
+    void _RTL_FUNC _IMPORT _sleep(unsigned long);
+    void _RTL_FUNC _IMPORT _nanosleep(const struct _timespec *, struct _timespec *);
+
+    char* _RTL_FUNC _IMPORT _ctime32(const __time_t_32* __time);
+    int _RTL_FUNC _IMPORT _stime32(__time_t_32* __tp);
+    struct tm* _RTL_FUNC _IMPORT _gmtime32(const __time_t_32* __timer);
+    struct tm* _RTL_FUNC _IMPORT _localtime32(const __time_t_32* __timer);
+    __time_t_32 _RTL_FUNC _IMPORT _time32(__time_t_32* __timer);
+    __time_t_32 _RTL_FUNC _IMPORT _mktime32(struct tm* __timeptr);
+
+    char* _RTL_FUNC _IMPORT _ctime64(const __time_t_64* __time);
+    int _RTL_FUNC _IMPORT _stime64(__time_t_64* __tp);
+    struct tm* _RTL_FUNC _IMPORT _gmtime64(const __time_t_64* __timer);
+    struct tm* _RTL_FUNC _IMPORT _localtime64(const __time_t_64* __timer);
+    __time_t_64 _RTL_FUNC _IMPORT _time64(__time_t_64* __timer);
+    __time_t_64 _RTL_FUNC _IMPORT _mktime64(struct tm* __timeptr);
+
+#if defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined(_DEFINING_TIME_T) || defined(__MSIL__)
+    char* _RTL_FUNC _IMPORT ctime(const time_t* __time);
+    int _RTL_FUNC _IMPORT stime(time_t* __tp);
+    struct tm* _RTL_FUNC _IMPORT gmtime(const time_t* __timer);
+    struct tm* _RTL_FUNC _IMPORT localtime(const time_t* __timer);
+    time_t _RTL_FUNC _IMPORT time(time_t* __timer);
+    time_t _RTL_FUNC _IMPORT mktime(struct tm* __timeptr);
+    double _RTL_FUNC _IMPORT difftime(time_t __time2, time_t __time1);
+#else
+#if defined(_USE_32BIT_TIME_T)
+    inline char* ctime(const time_t* __time)
+    {
+        return _ctime32(__time);
+    }
+    inline int stime(time_t* __tp)
+    {
+        return _stime32(__tp);
+    }
+    inline struct tm* gmtime(const time_t* __timer)
+    {
+        return _gmtime32(__timer);
+    }
+    inline struct tm* localtime(const time_t* __timer)
+    {
+        return _localtime32(__timer);
+    }
+    inline time_t time(time_t* __timer)
+    {
+        return _time32(__timer);
+    }
+    inline time_t mktime(struct tm* __timeptr)
+    {
+        return _mktime32(__timeptr);
+    }
+#else
+    inline char* ctime(const time_t* __time)
+    {
+        return _ctime64(__time);
+    }
+    inline int stime(time_t* __tp)
+    {
+        return _stime64(__tp);
+    }
+    inline struct tm* gmtime(const time_t* __timer)
+    {
+        return _gmtime64(__timer);
+    }
+    inline struct tm* localtime(const time_t* __timer)
+    {
+        return _localtime64(__timer);
+    }
+    inline time_t _IMPORT time(time_t* __timer)
+    {
+        return _time64(__timer);
+    }
+    inline time_t mktime(struct tm* __timeptr)
+    {
+        return _mktime64(__timeptr);
+    }
+#endif
+    inline double difftime(time_t __time2, time_t __time1)
+    {
+        return((double)(__time2 - __time1));
+    }
 #endif
 
+#endif
+#if 0
+extern _CRTIMP int __cdecl _nanosleep(const struct _timespec *, struct _timespec *);
+#endif
 #ifdef __cplusplus
 };
 #endif

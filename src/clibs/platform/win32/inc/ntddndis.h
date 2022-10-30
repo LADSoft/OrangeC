@@ -13,11 +13,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #if ((NTDDI_VERSION >= NTDDI_VISTA) || NDIS_SUPPORT_NDIS6)
 #include <ifdef.h>
@@ -3348,9 +3343,6 @@ typedef struct NDIS_BPC_STATUS_CONNECTION {
 } NDIS_BPC_STATUS_CONNECTED, *PNDIS_BPC_STATUS_CONNECTED;
 */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

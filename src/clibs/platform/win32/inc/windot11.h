@@ -10,12 +10,6 @@
 #include <ntddndis.h>
 #include <wlantypes.h>
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 typedef struct _DOT11_MAC_ADDRESS {
     UCHAR ucDot11MacAddress[6];
@@ -2141,8 +2135,5 @@ typedef struct DOT11_MAC_INFO {
 
 #endif /* NWF_VWIFI_SUPPORTED */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _WINDOT11_H */

@@ -3478,10 +3478,6 @@ typedef interface IHostBehaviorInit IHostBehaviorInit;
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#endif
 
 void *__RPC_USER MIDL_user_allocate(size_t);
 void __RPC_USER MIDL_user_free(void *);
@@ -38555,9 +38551,6 @@ unsigned char *__RPC_USER VARIANT_UserMarshal (unsigned long *, unsigned char *,
 unsigned char *__RPC_USER VARIANT_UserUnmarshal (unsigned long *, unsigned char *, VARIANT *);
 void __RPC_USER VARIANT_UserFree (unsigned long *, VARIANT *);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

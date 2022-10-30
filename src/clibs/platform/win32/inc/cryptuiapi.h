@@ -90,10 +90,6 @@ extern "C" {
 #define CRYPTUI_WIZ_IMPORT_TO_CURRENTUSER  0x00200000
 #define CRYPTUI_WIZ_IMPORT_REMOTE_DEST_STORE  0x00400000
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 typedef BOOL (WINAPI *PFNCFILTERPROC)(PCCERT_CONTEXT,BOOL*,void*);
 
@@ -279,9 +275,6 @@ typedef struct _CRYPTUI_WIZ_IMPORT_SUBJECT_INFO {
 } CRYPTUI_WIZ_IMPORT_SRC_INFO, *PCRYPTUI_WIZ_IMPORT_SRC_INFO;
 typedef const CRYPTUI_WIZ_IMPORT_SRC_INFO *PCCRYPTUI_WIZ_IMPORT_SRC_INFO;
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 BOOL WINAPI CryptUIDlgCertMgr(PCCRYPTUI_CERT_MGR_STRUCT);
 BOOL WINAPI CryptUIDlgViewContext(DWORD,const void*,HWND,LPCWSTR,DWORD,void*);

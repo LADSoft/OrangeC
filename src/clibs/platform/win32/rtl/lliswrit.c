@@ -48,9 +48,9 @@
 #include <io.h>
 #include "libp.h"
 
-int __ll_writeable(const char* file)
+int __ll_writeable(const wchar_t* file)
 {
-    int attrib = GetFileAttributes(file);
+    int attrib = GetFileAttributesW(file);
     if (attrib == -1)
         return 1;
     return !(attrib & FILE_ATTRIBUTE_READONLY);

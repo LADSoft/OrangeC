@@ -2002,11 +2002,7 @@ typedef struct adpcmwaveformat_tag {
     WAVEFORMATEX wfx;
     WORD wSamplesPerBlock;
     WORD wNumCoef;
-#ifdef __POCC__
-    ADPCMCOEFSET aCoef[];
-#else
     ADPCMCOEFSET aCoef[1];
-#endif
 } ADPCMWAVEFORMAT, *PADPCMWAVEFORMAT, *NPADPCMWAVEFORMAT, *LPADPCMWAVEFORMAT;
 
 typedef struct dvi_adpcmwaveformat_tag {

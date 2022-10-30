@@ -90,7 +90,7 @@ int __basefclose(FILE* stream, int release)
 
     if (stream->token == FILTOK && __maxfiles)
     {
-        char* fname = stream->extended->name;
+        wchar_t* fname = stream->extended->name;
         stream->flags &= ~_F_VBUF;
         fflush(stream);
         stream->token = (short)-1;

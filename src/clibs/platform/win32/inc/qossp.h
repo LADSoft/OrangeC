@@ -219,10 +219,6 @@
 #define GQOS_CHKQOS_BADPARAMETER  (QOSSP_ERR_BASE+850+5)
 #define GQOS_CHKQOS_EXCEPTION  (QOSSP_ERR_BASE+850+6)
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 typedef union _IN_ADDR_IPV4 {
     ULONG Addr;
@@ -365,8 +361,5 @@ typedef struct _RSVP_ADSPEC  {
     CONTROL_SERVICE Services[1];
 } RSVP_ADSPEC, *LPRSVP_ADSPEC;
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif  /* _QOSSP_H */

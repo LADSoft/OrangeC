@@ -43,9 +43,9 @@
 #include <locale.h>
 #include "libp.h"
 
-int __ll_remove(char* name)
+int __ll_remove(wchar_t* name)
 {
-    int rv = DeleteFile(name);
+    int rv = DeleteFileW(name);
     if (!rv)
         errno = GetLastError();
     return !rv;

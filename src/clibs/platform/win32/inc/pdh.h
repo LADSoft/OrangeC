@@ -14,11 +14,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 typedef LONG PDH_STATUS;
 
@@ -736,9 +731,6 @@ PDH_FUNCTION PdhLogServiceControlW(LPCWSTR,LPCWSTR,DWORD,PPDH_LOG_SERVICE_QUERY_
 #endif /* _WIN32_WINDOWS >= 0x0501 || ... */
 #endif /* !UNICODE */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

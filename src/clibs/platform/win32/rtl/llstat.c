@@ -4,12 +4,12 @@
  * 
  *     This file is part of the Orange C Compiler package.
  * 
- *     The Orange C Compiler package is free software: you can redistribute it and/or modify
+ *     The Orange C Compiler package is free software: you can rediwcsibute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
  * 
- *     The Orange C Compiler package is distributed in the hope that it will be useful,
+ *     The Orange C Compiler package is diwcsibuted in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
@@ -38,7 +38,6 @@
 #include <windows.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <time.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -48,14 +47,14 @@
 #include <io.h>
 #include "libp.h"
 
-static int isexe(const char* filename)
+static int isexe(wchar_t* filename)
 {
     int rv = 0;
-    int n = strlen(filename);
-    rv = n > 4 && !stricmp(filename + n - 4, ".bat");
-    if (!rv && n > 4 && !stricmp(filename + n - 4, ".exe"))
+    int n = wcslen(filename);
+    rv = n > 4 && !wcsicmp(filename + n - 4, L".bat");
+    if (!rv && n > 4 && !wcsicmp(filename + n - 4, L".exe"))
     {
-        HANDLE handle = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+        HANDLE handle = CreateFileW(filename, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
         if (handle != INVALID_HANDLE_VALUE)
         {
             DWORD read;
@@ -99,20 +98,25 @@ time_t __to_timet(FILETIME* time)
         return tempTime;
     return tempTime - bias * 60;
 }
-int __ll_stat(int handle, void* __statbuf)
+int __ll_stat(int handle, struct _stat64 * sb)
 {
-    struct _stat* sb = __statbuf;
     BY_HANDLE_FILE_INFORMATION info;
     FILETIME timex;
 
+
     if (sb->st_mode & S_IFCHR)
         return 0;
-
     if (!GetFileInformationByHandle((HANDLE)handle, &info))
     {
         errno = EBADF;
         return -1;
     }
+    if (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        sb->st_mode = S_IFDIR;
+    else
+        sb->st_mode = S_IFREG;
+    if (sb->st_mode & S_IFCHR)
+        return 0;
     if (sb->st_mode & S_IFREG)
     {
         sb->st_atime = __to_timet(&info.ftLastAccessTime);
@@ -121,12 +125,11 @@ int __ll_stat(int handle, void* __statbuf)
     }
     return 0;
 }
-int __ll_namedstat(const char* file, void* __statbuf)
+int __ll_namedstat(wchar_t* file, struct _stat64* sb)
 {
-    struct stat* sb = __statbuf;
-    WIN32_FIND_DATA finddata;
+    WIN32_FIND_DATAW finddata;
     HANDLE handle;
-    if ((handle = FindFirstFile(file, &finddata)) != INVALID_HANDLE_VALUE)
+    if ((handle = FindFirstFileW(file, &finddata)) != INVALID_HANDLE_VALUE)
     {
         FindClose(handle);
         sb->st_atime = __to_timet(&finddata.ftLastAccessTime);
@@ -142,11 +145,8 @@ int __ll_namedstat(const char* file, void* __statbuf)
             sb->st_mode |= S_IWRITE;
         if (isexe(file))
             sb->st_mode |= S_IEXEC;
-        if (!finddata.nFileSizeHigh)
-        {
-            sb->st_size = finddata.nFileSizeLow;
-            return 0;
-        }
+        sb->st_size = ((unsigned long long)finddata.nFileSizeHigh << 32) + finddata.nFileSizeLow;
+        return 0;
     }
     return -1;
 }

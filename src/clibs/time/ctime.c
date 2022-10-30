@@ -34,13 +34,10 @@
  * 
  */
 
+#define _DEFINING_TIME_T
 #include <time.h>
 
-char* _RTL_FUNC ctime(const time_t* timer)
+char * _RTL_FUNC ctime(const time_t* timer)
 {
-    struct tm* t = localtime(timer);
-    if (t != NULL)
-        return asctime(t);
-    else
-        return ("undefined");
+    return _ctime32(timer);
 }

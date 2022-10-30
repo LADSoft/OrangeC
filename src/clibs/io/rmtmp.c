@@ -94,10 +94,16 @@ static void __closeTempFiles(void)
     struct _rmvlist* rmv = remove_list;
     while (rmv)
     {
+        wchar_t buf[256];
+        wchar_t *p = buf;
+        char *q = rmv->name;
+        while (*q)
+            *p++ = *q++;
+        *p = q;
         int i;
         for (i = __maxfiles - 1; i >= 3; i--)
         {
-            if (!strcmp(_pstreams[i]->extended->name, rmv->name))
+            if (!strcmp(_pstreams[i]->extended->name, buf))
             {
                 fclose(_pstreams[i]);
                 break;

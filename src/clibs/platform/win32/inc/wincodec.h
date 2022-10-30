@@ -241,10 +241,6 @@ typedef interface IWICDdsFrameDecode IWICDdsFrameDecode;
 extern "C"{
 #endif 
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#endif
 
 /* #include <intsafe.h> */
 
@@ -3342,9 +3338,6 @@ HRESULT STDMETHODCALLTYPE IWICDevelopRaw_SetToneCurve_Stub(IWICDevelopRaw *, UIN
 HRESULT STDMETHODCALLTYPE IWICDevelopRaw_GetToneCurve_Proxy(IWICDevelopRaw *, UINT, WICRawToneCurve *, UINT *);
 HRESULT STDMETHODCALLTYPE IWICDevelopRaw_GetToneCurve_Stub(IWICDevelopRaw *, UINT *, WICRawToneCurvePoint **);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

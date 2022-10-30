@@ -88,6 +88,7 @@ wchar_t* _RTL_FUNC fgetws_unlocked(wchar_t* restrict buf, int num, FILE* restric
         else
         {
             stream->level = stream->bsize;
+            stream->curp = stream->buffer;
         }
         stream->flags &= ~_F_OUT;
         stream->flags |= _F_IN;

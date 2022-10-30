@@ -7,23 +7,20 @@
 
 /* Windows Basic sized type definitions (01-05-29) */
 
-#if (__POCC__ >= 1500) && (defined(_M_MRX000) || defined(_M_AMD64) || defined(_M_IA64))
+#if (defined(_M_MRX000) || defined(_M_AMD64) || defined(_M_IA64))
 #define POINTER_64 __ptr64
 typedef unsigned __int64 POINTER_64_INT;
+
 #if defined(_WIN64)
 #define POINTER_32  __ptr32
 #else /* !_WIN64 */
 #define POINTER_32
 #endif /* !_WIN64 */
-#else /* __POCC__ < 600 ... */
-#if __POCC__ >= 1500
-#define POINTER_64 __ptr64
-#else /* __POCC__ < 600 */
+#else
 #define POINTER_64
-#endif /* __POCC__ < 600 */
 typedef unsigned long POINTER_64_INT;
 #define POINTER_32
-#endif /* __POCC__ < 600 ... */
+#endif
 
 #if defined(_IA64_) || defined(_AMD64_)
 #define FIRMWARE_PTR
@@ -39,13 +36,6 @@ typedef unsigned long POINTER_64_INT;
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2006)  /* Conversion from 'type1' to 'type2' is not portable */
-#pragma warn(disable:2052)  /* Conversion from 'type1' to 'type2' is undefined */
-#pragma warn(disable:2215)  /* possible loss of data */
 #endif
 
 typedef signed char INT8, *PINT8;
@@ -222,10 +212,6 @@ typedef unsigned __int64 DWORD64, *PDWORD64;
 
 typedef ULONG_PTR KAFFINITY;
 typedef KAFFINITY *PKAFFINITY;
-
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

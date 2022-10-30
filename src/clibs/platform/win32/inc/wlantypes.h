@@ -3,10 +3,6 @@
 
 /* wlan */
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#endif
 
 typedef enum _DOT11_BSS_TYPE {
     dot11_BSS_type_infrastructure = 1,
@@ -58,8 +54,5 @@ typedef struct DOT11_AUTH_CIPHER_PAIR {
     DOT11_CIPHER_ALGORITHM CipherAlgoId;
 } DOT11_AUTH_CIPHER_PAIR, *PDOT11_AUTH_CIPHER_PAIR;
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _WLANTYPES_H */

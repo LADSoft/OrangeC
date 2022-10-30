@@ -43,7 +43,7 @@
 #include "_locale.h"
 
 extern LOCALE_HEADER _C_locale_data;
-static int pnum(char* str, int num, int fwidth, int zerofil)
+static void pnum(char* str, int num, int fwidth, int zerofil)
 {
     int i;
     char* p = str + fwidth - 1;

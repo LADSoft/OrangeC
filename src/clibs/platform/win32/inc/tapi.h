@@ -24,11 +24,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define DECLARE_OPAQUE32(name)  typedef DWORD name
 DECLARE_OPAQUE32(HCALL);
@@ -2473,9 +2468,6 @@ LONG WINAPI lineGetQueueListW(HLINE,LPGUID,LPLINEQUEUELIST);
 
 #define TAPIERROR_FORMATMESSAGE(__ErrCode__)  (((__ErrCode__)>0xFFFF0000) ? ((__ErrCode__)&0x0000FFFF) : (((__ErrCode__)&0x10000000) ? ((__ErrCode__)-0x90000000+0xF000) : ((__ErrCode__)-0x80000000+0xE000)))
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

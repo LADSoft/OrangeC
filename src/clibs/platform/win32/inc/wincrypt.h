@@ -11,10 +11,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #ifndef _HRESULT_DEFINED
 #define _HRESULT_DEFINED
@@ -2046,10 +2042,6 @@ typedef unsigned int ALG_ID;
 #define PKCS12_EXPORT_RESERVED_MASK  0xffff0000
 
 #if (NTDDI_VERSION < NTDDI_WINXP)
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2027 2028)  /* Missing prototype */
-#endif
 typedef struct _VTableProvStruc {
     DWORD Version;
     FARPROC FuncVerifyImage;
@@ -2059,9 +2051,6 @@ typedef struct _VTableProvStruc {
     DWORD cbContextInfo;
     LPSTR pszProvName;
 } VTableProvStruc, *PVTableProvStruc;
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 #endif /* NTDDI_VERSION < NTDDI_WINXP */
 
 #ifndef __HCRYPTPROV_DEFINED__
@@ -4062,9 +4051,6 @@ typedef PCRYPT_PASSWORD_CREDENTIALSA PCRYPT_PASSWORD_CREDENTIALS;
 #define CryptBinaryToString  CryptBinaryToStringA
 #endif /* !UNICODE */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

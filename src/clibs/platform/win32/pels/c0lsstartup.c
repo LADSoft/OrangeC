@@ -80,7 +80,7 @@ static void destroy(void)
 
 static void _dorundown(void);
 // in the follow, the args are ONLY valid for DLLs
-int __stdcall DllEntryPoint(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved);
+int __stdcall DllMain(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved);
 void __stdcall __import ___lsdllinit(void* tlsStart, void* tlsEnd, DWORD flags, void (*rundown)(void), unsigned* exceptBlock);
 void __srproc(char*, char*);
 int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
@@ -110,7 +110,7 @@ int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvRese
     __srproc(INITSTART, INITEND);
     if (flags & DLL)
     {
-        rv = DllEntryPoint(hInst, fdwReason, lpvReserved) + 1;
+        rv = DllMain(hInst, fdwReason, lpvReserved) + 1;
     }
     else if (flags & GUI)
     {

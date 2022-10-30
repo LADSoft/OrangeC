@@ -315,10 +315,6 @@ typedef interface IWbemConfigureRefresher IWbemConfigureRefresher;
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#endif
 
 void *__RPC_USER MIDL_user_allocate(size_t);
 void __RPC_USER MIDL_user_free(void *);
@@ -2097,9 +2093,6 @@ unsigned char *__RPC_USER BSTR_UserMarshal(unsigned long*,unsigned char *,BSTR*)
 unsigned char *__RPC_USER BSTR_UserUnmarshal(unsigned long*,unsigned char *,BSTR*);
 void __RPC_USER BSTR_UserFree(unsigned long*,BSTR*);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

@@ -7,10 +7,6 @@
 
 /* WMI structure definitions */
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define WNODE_FLAG_ALL_DATA  0x00000001
 #define WNODE_FLAG_SINGLE_INSTANCE  0x00000002
@@ -118,11 +114,7 @@ typedef struct tagWNODE_ALL_DATA {
     ULONG OffsetInstanceNameOffsets;
     union {
         ULONG FixedInstanceSize;
-#if __POCC__
         OFFSETINSTANCEDATAANDLENGTH OffsetInstanceDataAndLength[1];
-#else /* !__POCC__ */
-        OFFSETINSTANCEDATAANDLENGTH OffsetInstanceDataAndLength[];
-#endif /* !__POCC__ */
     } DUMMYUNIONNAME;
 } WNODE_ALL_DATA, *PWNODE_ALL_DATA;
 
@@ -165,11 +157,7 @@ typedef struct tagWNODE_EVENT_REFERENCE {
     ULONG TargetDataBlockSize;
     union {
         ULONG TargetInstanceIndex;
-#if __POCC__
         WCHAR TargetInstanceName[1];
-#else /* !__POCC__ */
-        WCHAR TargetInstanceName[];
-#endif /* !__POCC__ */
     } DUMMYUNIONNAME;
 } WNODE_EVENT_REFERENCE, *PWNODE_EVENT_REFERENCE;
 
@@ -220,8 +208,5 @@ typedef enum {
 #endif /* _WMIKM_ */
 } WMIDPREQUESTCODE;
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _WMISTR_H */

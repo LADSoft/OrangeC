@@ -43,9 +43,9 @@
 #include <locale.h>
 #include "libp.h"
 
-int __ll_rmdir(char* name)
+int __ll_rmdir(wchar_t* name)
 {
-    int rv = RemoveDirectory(name);
+    int rv = RemoveDirectoryW(name);
     if (!rv)
         errno = GetLastError();
     return !rv;

@@ -48,10 +48,10 @@ typedef unsigned long DWORD;
 #define STRSAFE_MAX_CCH  0x7fffffff /* 2147483647 */
 #endif /* STRSAFE_MAX_CCH */
 
-#if __POCC_STDC_VERSION__ >= 201101L
+#if __STDC_VERSION__ >= 201101L
 _Static_assert(STRSAFE_MAX_CCH <= 2147483647, L"STRSAFE_MAX_CCH is too big !!");
 _Static_assert(STRSAFE_MAX_CCH > 1, L"STRSAFE_MAX_CCH is too small !!");
-#endif /* __POCC_STDC_VERSION__ >= 201101L */
+#endif
 
 #define STRSAFE_MAX_LENGTH  (STRSAFE_MAX_CCH - 1)
 
@@ -1481,7 +1481,7 @@ STRSAFEAPI UnalignedStringCchLengthW(STRSAFE_PCUNZWCH psz, size_t cchMax, size_t
 #endif /* !UNICODE */
 
 /* See TR24731-1 and TR24731-2, for example */
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma deprecated(StringCchCopy)
 #pragma deprecated(StringCchCopyEx)
 #pragma deprecated(StringCchCopyN)
@@ -1498,7 +1498,7 @@ STRSAFEAPI UnalignedStringCchLengthW(STRSAFE_PCUNZWCH psz, size_t cchMax, size_t
 #pragma deprecated(StringCchGetsEx)
 #pragma deprecated(StringCchLength)
 #pragma deprecated(UnalignedStringCchLength)
-#endif /* __POCC__ >= 900 */
+#endif
 
 #endif /* !STRSAFE_NO_CCH_FUNCTIONS */
 
@@ -2503,7 +2503,7 @@ STRSAFEAPI UnalignedStringCbLengthW(STRSAFE_PCUNZWCH psz, size_t cbMax, size_t *
 #endif /* !UNICODE */
 
 /* See TR24731-1 and TR24731-2, for example */
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma deprecated(StringCbCopy)
 #pragma deprecated(StringCbCopyEx)
 #pragma deprecated(StringCbCopyN)
@@ -2520,7 +2520,7 @@ STRSAFEAPI UnalignedStringCbLengthW(STRSAFE_PCUNZWCH psz, size_t cbMax, size_t *
 #pragma deprecated(StringCbGetsEx)
 #pragma deprecated(StringCbLength)
 #pragma deprecated(UnalignedStringCbLength)
-#endif /* __POCC__ >= 900 */
+#endif
 
 #endif /* !STRSAFE_NO_CB_FUNCTIONS */
 

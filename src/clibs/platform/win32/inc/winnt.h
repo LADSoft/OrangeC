@@ -8,15 +8,6 @@
 #define __forceinline inline
 /* Windows NT definitions */
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2007)  /* Inline assembly code is non-portable */
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#pragma warn(disable:2225)  /* Type padded due to alignment */
-#pragma warn(disable:2805)  /* violation of strict-aliasing rules */
-#endif
 
 #include <ctype.h>
 
@@ -186,13 +177,8 @@
 #endif /* PFORCEINLINE */
 
 #ifndef DECLSPEC_DEPRECATED
-#if __POCC__ >= 650
 #define DECLSPEC_DEPRECATED  __declspec(deprecated)
 #define DEPRECATE_SUPPORTED
-#else
-#define DECLSPEC_DEPRECATED
-#undef  DEPRECATE_SUPPORTED
-#endif
 #endif /* DECLSPEC_DEPRECATED */
 
 #ifdef DEPRECATE_DDK_FUNCTIONS
@@ -545,30 +531,7 @@ unsigned __int16 __cdecl _rotl16(unsigned __int16, unsigned __int8);
 unsigned __int8 __cdecl _rotr8(unsigned __int8, unsigned __int8);
 unsigned __int16 __cdecl _rotr16(unsigned __int16, unsigned __int8);
 
-#if __POCC__ >= 900
-
-#pragma intrinsic(_rotl8)
-#pragma intrinsic(_rotl16)
-#pragma intrinsic(_rotr8)
-#pragma intrinsic(_rotr16)
-
-#endif /* __POCC__ >= 900 */
-
 #endif /* _M_AMD64 */
-
-#if __POCC__ >= 1000
-
-#define RotateLeft32 _rotl32
-#define RotateLeft64 _rotl64
-#define RotateRight32 _rotr32
-#define RotateRight64 _rotr64
-
-unsigned __int32 __cdecl _rotl32(unsigned __int32, unsigned __int8);
-unsigned __int64 __cdecl _rotl64(unsigned __int64, unsigned __int8);
-unsigned __int32 __cdecl _rotr32(unsigned __int32, unsigned __int8);
-unsigned __int64 __cdecl _rotr64(unsigned __int64, unsigned __int8);
-
-#else /* __POCC__ < 1000 */
 
 #define RotateLeft32 _rotl
 #define RotateLeft64 _llrotl
@@ -582,12 +545,6 @@ unsigned __int64 __cdecl _llrotr(unsigned __int64, int);
 
 #pragma intrinsic(_rotl)
 #pragma intrinsic(_rotr)
-#if __POCC__ >= 500 && defined(_M_AMD64)
-#pragma intrinsic(_llrotl)
-#pragma intrinsic(_llrotr)
-#endif /* __POCC__ >= 500 && defined(_M_AMD64) */
-
-#endif /* __POCC__ < 1000 */
 
 #define ANSI_NULL  ((CHAR)0)
 #define UNICODE_NULL  ((WCHAR)0)
@@ -1483,6 +1440,7 @@ typedef struct _SCOPE_TABLE_AMD64 {
 #define BitTestAndComplement _bittestandcomplement
 #define BitTestAndSet _bittestandset
 #define BitTestAndReset _bittestandreset
+#if 0
 #define InterlockedBitTestAndSet _interlockedbittestandset
 #define InterlockedBitTestAndSetAcquire _interlockedbittestandset
 #define InterlockedBitTestAndSetRelease _interlockedbittestandset
@@ -1504,6 +1462,7 @@ typedef struct _SCOPE_TABLE_AMD64 {
 #define InterlockedBitTestAndReset64Acquire _interlockedbittestandreset64
 #define InterlockedBitTestAndReset64Release _interlockedbittestandreset64
 #define InterlockedBitTestAndReset64NoFence _interlockedbittestandreset64
+#endif
 
 BOOLEAN __cdecl _bittest(LONG const *, LONG);
 BOOLEAN __cdecl _bittestandcomplement(LONG *, LONG);
@@ -1547,6 +1506,7 @@ BOOLEAN __cdecl _BitScanReverse64(DWORD *, DWORD64);
 #pragma intrinsic(_BitScanForward64)
 #pragma intrinsic(_BitScanReverse64)
 
+#if 0
 #define InterlockedIncrement16  _InterlockedIncrement16
 #define InterlockedIncrementAcquire16  _InterlockedIncrement16
 #define InterlockedIncrementRelease16  _InterlockedIncrement16
@@ -1643,6 +1603,9 @@ BOOLEAN __cdecl _BitScanReverse64(DWORD *, DWORD64);
 #define InterlockedCompareExchangePointerRelease  _InterlockedCompareExchangePointer
 #define InterlockedCompareExchangePointerNoFence  _InterlockedCompareExchangePointer
 
+#endif
+
+
 #define InterlockedExchangeAddSizeT(a,b)  InterlockedExchangeAdd64((LONG64 *)a, b)
 #define InterlockedExchangeAddSizeTAcquire(a,b)  InterlockedExchangeAdd64((LONG64 *)a, b)
 #define InterlockedExchangeAddSizeTNoFence(a,b)  InterlockedExchangeAdd64((LONG64 *)a, b)
@@ -1651,19 +1614,19 @@ BOOLEAN __cdecl _BitScanReverse64(DWORD *, DWORD64);
 #define InterlockedDecrementSizeT(a)  InterlockedDecrement64((LONG64 *)a)
 #define InterlockedDecrementSizeTNoFence(a)  InterlockedDecrement64((LONG64 *)a)
 
-SHORT /* __cdecl */  __stdcall _InterlockedIncrement16(SHORT volatile *);
-SHORT /* __cdecl */  __stdcall _InterlockedDecrement16(SHORT volatile *);
-SHORT /* __cdecl */  __stdcall _InterlockedCompareExchange16(SHORT volatile *, SHORT, SHORT);
-LONG /* __cdecl */  __stdcall _InterlockedAnd(LONG volatile *, LONG);
-LONG /* __cdecl */  __stdcall _InterlockedOr(LONG volatile *, LONG);
-LONG /* __cdecl */  __stdcall _InterlockedXor(LONG volatile *, LONG);
-LONG64 /* __cdecl */  __stdcall _InterlockedAnd64(LONG64 volatile *, LONG64);
-LONG64 /* __cdecl */  __stdcall _InterlockedOr64(LONG64 volatile *, LONG64);
-LONG64 /* __cdecl */  __stdcall _InterlockedXor64(LONG64 volatile *, LONG64);
-LONG /* __cdecl */  __stdcall _InterlockedIncrement(LONG volatile *);
-LONG /* __cdecl */  __stdcall _InterlockedDecrement(LONG volatile *);
-LONG /* __cdecl */  __stdcall _InterlockedExchange(LONG volatile *, LONG);
-LONG /* __cdecl */  __stdcall _InterlockedExchangeAdd(LONG volatile *, LONG);
+SHORT /* __cdecl */  __stdcall InterlockedIncrement16(SHORT volatile *);
+SHORT /* __cdecl */  __stdcall InterlockedDecrement16(SHORT volatile *);
+SHORT /* __cdecl */  __stdcall InterlockedCompareExchange16(SHORT volatile *, SHORT, SHORT);
+LONG /* __cdecl */  __stdcall InterlockedAnd(LONG volatile *, LONG);
+LONG /* __cdecl */  __stdcall InterlockedOr(LONG volatile *, LONG);
+LONG /* __cdecl */  __stdcall InterlockedXor(LONG volatile *, LONG);
+LONG64 /* __cdecl */  __stdcall InterlockedAnd64(LONG64 volatile *, LONG64);
+LONG64 /* __cdecl */  __stdcall InterlockedOr64(LONG64 volatile *, LONG64);
+LONG64 /* __cdecl */  __stdcall InterlockedXor64(LONG64 volatile *, LONG64);
+LONG /* __cdecl */  __stdcall InterlockedIncrement(LONG volatile *);
+LONG /* __cdecl */  __stdcall InterlockedDecrement(LONG volatile *);
+LONG /* __cdecl */  __stdcall InterlockedExchange(LONG volatile *, LONG);
+LONG /* __cdecl */  __stdcall InterlockedExchangeAdd(LONG volatile *, LONG);
 
 #ifndef _X86AMD64_
 __forceinline LONG InterlockedAdd(LONG volatile *Addend, LONG Value) {
@@ -1671,11 +1634,11 @@ __forceinline LONG InterlockedAdd(LONG volatile *Addend, LONG Value) {
 }
 #endif /* !_X86AMD64_ */
 
-LONG /* __cdecl */  __stdcall _InterlockedCompareExchange(LONG volatile *, LONG, LONG);
-LONG64 /* __cdecl */  __stdcall _InterlockedIncrement64(LONG64 volatile *);
-LONG64 /* __cdecl */  __stdcall _InterlockedDecrement64(LONG64 volatile *);
-LONG64 /* __cdecl */  __stdcall _InterlockedExchange64(LONG64 volatile *, LONG64);
-LONG64 /* __cdecl */  __stdcall _InterlockedExchangeAdd64(LONG64 volatile *, LONG64);
+LONG /* __cdecl */  __stdcall InterlockedCompareExchange(LONG volatile *, LONG, LONG);
+LONG64 /* __cdecl */  __stdcall InterlockedIncrement64(LONG64 volatile *);
+LONG64 /* __cdecl */  __stdcall InterlockedDecrement64(LONG64 volatile *);
+LONG64 /* __cdecl */  __stdcall InterlockedExchange64(LONG64 volatile *, LONG64);
+LONG64 /* __cdecl */  __stdcall InterlockedExchangeAdd64(LONG64 volatile *, LONG64);
 
 #ifndef _X86AMD64_
 __forceinline LONG64 _InlineInterlockedAdd64(LONG64 volatile *Addend, LONG64 Value) {
@@ -1683,53 +1646,50 @@ __forceinline LONG64 _InlineInterlockedAdd64(LONG64 volatile *Addend, LONG64 Val
 }
 #endif /* !_X86AMD64_ */
 
-LONG64 /* __cdecl */  __stdcall _InterlockedCompareExchange64(LONG64 volatile *, LONG64, LONG64);
-BOOLEAN /* __cdecl */  __stdcall _InterlockedCompareExchange128(LONG64 volatile *, LONG64, LONG64, LONG64 *);
-PVOID /* __cdecl */  __stdcall _InterlockedCompareExchangePointer(PVOID volatile *, PVOID, PVOID);
-PVOID /* __cdecl */  __stdcall _InterlockedExchangePointer(PVOID volatile *, PVOID);
+LONG64 /* __cdecl */  __stdcall InterlockedCompareExchange64(LONG64 volatile *, LONG64, LONG64);
+BOOLEAN /* __cdecl */  __stdcall InterlockedCompareExchange128(LONG64 volatile *, LONG64, LONG64, LONG64 *);
+PVOID /* __cdecl */  __stdcall InterlockedCompareExchangePointer(PVOID volatile *, PVOID, PVOID);
+PVOID /* __cdecl */  __stdcall InterlockedExchangePointer(PVOID volatile *, PVOID);
 
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedIncrement16)
 #pragma intrinsic(_InterlockedDecrement16)
 #pragma intrinsic(_InterlockedCompareExchange16)
 #pragma intrinsic(_InterlockedAnd)
 #pragma intrinsic(_InterlockedOr)
 #pragma intrinsic(_InterlockedXor)
-#endif /* __POCC__ >= 900 */
 #pragma intrinsic(_InterlockedIncrement)
 #pragma intrinsic(_InterlockedDecrement)
 #pragma intrinsic(_InterlockedExchange)
 #pragma intrinsic(_InterlockedExchangeAdd)
 #pragma intrinsic(_InterlockedCompareExchange)
-#if __POCC__ >= 900
 #pragma intrinsic(_InterlockedAnd64)
 #pragma intrinsic(_InterlockedOr64)
 #pragma intrinsic(_InterlockedXor64)
-#endif /* __POCC__ >= 900 */
 #pragma intrinsic(_InterlockedIncrement64)
 #pragma intrinsic(_InterlockedDecrement64)
 #pragma intrinsic(_InterlockedExchange64)
 #pragma intrinsic(_InterlockedExchangeAdd64)
 #pragma intrinsic(_InterlockedCompareExchange64)
 #pragma intrinsic(_InterlockedCompareExchange128)
-
 #pragma intrinsic(_InterlockedExchangePointer)
 #pragma intrinsic(_InterlockedCompareExchangePointer)
+#endif
 
+#if 0
 #define InterlockedExchange8 _InterlockedExchange8
 #define InterlockedExchange16 _InterlockedExchange16
+#endif
 
-CHAR /* __cdecl */  __stdcall _InterlockedExchange8(CHAR volatile *, CHAR);
-SHORT /* __cdecl */  __stdcall _InterlockedExchange16(SHORT volatile *, SHORT);
+CHAR /* __cdecl */  __stdcall InterlockedExchange8(CHAR volatile *, CHAR);
+SHORT /* __cdecl */  __stdcall InterlockedExchange16(SHORT volatile *, SHORT);
 
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedExchange8)
-#endif /* __POCC__ >= 6666 */
-
-#if __POCC__ >= 900
 #pragma intrinsic(_InterlockedExchange16)
-#endif /* __POCC__ >= 900 */
+#endif
 
+#if 0
 #define InterlockedExchangeAdd8 _InterlockedExchangeAdd8
 #define InterlockedAnd8 _InterlockedAnd8
 #define InterlockedOr8 _InterlockedOr8
@@ -1737,27 +1697,25 @@ SHORT /* __cdecl */  __stdcall _InterlockedExchange16(SHORT volatile *, SHORT);
 #define InterlockedAnd16 _InterlockedAnd16
 #define InterlockedOr16 _InterlockedOr16
 #define InterlockedXor16 _InterlockedXor16
+#endif
 
-char /* __cdecl */  __stdcall _InterlockedExchangeAdd8(char volatile *, char);
-char /* __cdecl */  __stdcall _InterlockedAnd8(char volatile *, char);
-char /* __cdecl */  __stdcall _InterlockedOr8(char volatile *, char);
-char /* __cdecl */  __stdcall _InterlockedXor8(char volatile *, char);
-SHORT /* __cdecl */  __stdcall _InterlockedAnd16(SHORT volatile *, SHORT);
-SHORT /* __cdecl */  __stdcall _InterlockedOr16(SHORT volatile *, SHORT);
-SHORT /* __cdecl */  __stdcall _InterlockedXor16(SHORT volatile *, SHORT);
+char /* __cdecl */  __stdcall InterlockedExchangeAdd8(char volatile *, char);
+char /* __cdecl */  __stdcall InterlockedAnd8(char volatile *, char);
+char /* __cdecl */  __stdcall InterlockedOr8(char volatile *, char);
+char /* __cdecl */  __stdcall InterlockedXor8(char volatile *, char);
+SHORT /* __cdecl */  __stdcall InterlockedAnd16(SHORT volatile *, SHORT);
+SHORT /* __cdecl */  __stdcall InterlockedOr16(SHORT volatile *, SHORT);
+SHORT /* __cdecl */  __stdcall InterlockedXor16(SHORT volatile *, SHORT);
 
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 #pragma intrinsic (_InterlockedExchangeAdd8)
 #pragma intrinsic (_InterlockedAnd8)
 #pragma intrinsic (_InterlockedOr8)
 #pragma intrinsic (_InterlockedXor8)
-#endif /* __POCC__ >= 6666 */
-
-#if __POCC__ >= 900
 #pragma intrinsic (_InterlockedAnd16)
 #pragma intrinsic (_InterlockedOr16)
 #pragma intrinsic (_InterlockedXor16)
-#endif /* __POCC__ >= 900 */
+#endif
 
 #define CpuIdEx  __cpuidex
 
@@ -1771,19 +1729,14 @@ void __cdecl _mm_clflush(void const *);
 
 #pragma intrinsic(_mm_clflush)
 
-#if __POCC__ >= 650
-
+#ifndef __ORANGEC__
 #undef  _ReadWriteBarrier
 #define _ReadWriteBarrier  __memory_barrier
 #pragma intrinsic(__memory_barrier)
-
-#else /* !__POCC__ */
-
+#else
 void __cdecl _ReadWriteBarrier(void);
-
 #pragma intrinsic(_ReadWriteBarrier)
-
-#endif /* !__POCC__ */
+#endif
 
 #define FastFence  __faststorefence
 
@@ -1804,18 +1757,15 @@ void __cdecl _m_prefetchw(/*volatile*/ CONST VOID *);
 #define _MM_HINT_T2  3
 #define _MM_HINT_NTA  0
 
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma intrinsic(__faststorefence)
-#endif /* __POCC__ >= 900 */
-
 #pragma intrinsic(_mm_pause)
 #pragma intrinsic(_mm_prefetch)
 #pragma intrinsic(_mm_lfence)
 #pragma intrinsic(_mm_mfence)
 #pragma intrinsic(_mm_sfence)
-#if __POCC__ >= 900
 #pragma intrinsic(_m_prefetchw)
-#endif /* __POCC__ >= 900 */
+#endif
 
 #define YieldProcessor  _mm_pause
 #define MemoryBarrier  __faststorefence
@@ -1841,25 +1791,25 @@ void __cdecl _mm_setcsr(unsigned int);
 
 unsigned __int32 __cdecl __getcallerseflags(void);
 
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 #pragma intrinsic(__getcallerseflags)
-#endif /* __POCC__ >= 6666 */
+#endif
 
 #define GetSegmentLimit  __segmentlimit
 
 DWORD __cdecl __segmentlimit(DWORD);
 
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma intrinsic(__segmentlimit)
-#endif /* __POCC__ >= 900 */
+#endif
 
 #define ReadPMC  __readpmc
 
 DWORD64 __cdecl __readpmc(DWORD);
 
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma intrinsic(__readpmc)
-#endif /* __POCC__ >= 900 */
+#endif
 
 #define ReadTimeStampCounter()  __rdtsc()
 
@@ -1893,18 +1843,18 @@ void __cdecl __stosq(PDWORD64, DWORD64, SIZE_T);
 LONGLONG MultiplyHigh(LONG64, LONG64);
 ULONGLONG UnsignedMultiplyHigh(DWORD64, DWORD64);
 
-#if __POCC__ >= 1000
+#ifndef __ORANGEC__
 #pragma intrinsic(__mulh)
 #pragma intrinsic(__umulh)
-#endif /* __POCC__ >= 6666 */
+#endif
 
 #define PopulationCount64  __popcnt64
 
 DWORD64 PopulationCount64(DWORD64);
 
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 #pragma intrinsic(__popcnt64)
-#endif /* __POCC__ >= 6666 */
+#endif
 
 #define ShiftLeft128  __shiftleft128
 #define ShiftRight128  __shiftright128
@@ -1912,25 +1862,25 @@ DWORD64 PopulationCount64(DWORD64);
 DWORD64 __cdecl ShiftLeft128(DWORD64, DWORD64, BYTE);
 DWORD64 __cdecl ShiftRight128(DWORD64, DWORD64, BYTE);
 
-#if __POCC__ >= 1000
+#ifndef __ORANGEC__
 #pragma intrinsic(__shiftleft128)
 #pragma intrinsic(__shiftright128)
-#endif /* __POCC__ >= 1000 */
+#endif
 
 #define Multiply128  _mul128
 
 LONG64 Multiply128(LONG64, LONG64, LONG64 *);
 
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 #pragma intrinsic(_mul128)
-#endif /* __POCC__ >= 6666 */
+#endif
 
 #ifndef UnsignedMultiply128
 #define UnsignedMultiply128  _umul128
 DWORD64 UnsignedMultiply128(DWORD64, DWORD64, DWORD64 *);
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 #pragma intrinsic(_umul128)
-#endif /* __POCC__ >= 6666 */
+#endif
 #endif /* UnsignedMultiply128 */
 
 __forceinline LONG64 MultiplyExtract128(LONG64 Multiplier, LONG64 Multiplicand, BYTE Shift) {
@@ -2242,7 +2192,7 @@ NTSYSAPI BOOLEAN __cdecl RtlDeleteFunctionTable(PRUNTIME_FUNCTION);
 
 #if defined(_M_AMD64)
 
-#if (__POCC__ >= 900)
+#ifndef __ORANGEC__
 
 void __cdecl __int2c(void);
 
@@ -2250,7 +2200,7 @@ void __cdecl __int2c(void);
 
 #define DbgRaiseAssertionFailure()  __int2c()
 
-#endif /* __POCC__ >= 900 */
+#endif
 
 #endif /* _M_AMD64 */
 
@@ -2258,20 +2208,8 @@ void __cdecl __int2c(void);
 
 #if defined(_M_IX86)
 
-#if (__POCC__ >= 900)
-
-void __cdecl __int2c(void);
-
-#pragma intrinsic(__int2c)
-
-#define DbgRaiseAssertionFailure()  __int2c()
-
-#else /* __POCC__ < 900 || !__POCC__ */
-
 #ifndef __MSIL__
 __forceinline void DbgRaiseAssertionFailure(VOID) { __asm int 0x2c }
-#endif
-
 #endif
 
 #endif /* _M_IX86 */
@@ -2287,6 +2225,8 @@ __forceinline void DbgRaiseAssertionFailure(VOID) { __asm int 0x2c }
 #define BitTestAndComplement  _bittestandcomplement
 #define BitTestAndSet  _bittestandset
 #define BitTestAndReset  _bittestandreset
+
+#if 0
 #define InterlockedBitTestAndSet  _interlockedbittestandset
 #define InterlockedBitTestAndSetAcquire  _interlockedbittestandset
 #define InterlockedBitTestAndSetRelease  _interlockedbittestandset
@@ -2295,6 +2235,7 @@ __forceinline void DbgRaiseAssertionFailure(VOID) { __asm int 0x2c }
 #define InterlockedBitTestAndResetAcquire  _interlockedbittestandreset
 #define InterlockedBitTestAndResetRelease  _interlockedbittestandreset
 #define InterlockedBitTestAndResetNoFence  _interlockedbittestandreset
+#endif
 
 BOOLEAN __cdecl _bittest(const LONG *, LONG);
 BOOLEAN __cdecl _bittestandcomplement(LONG *, LONG);
@@ -2345,6 +2286,7 @@ FORCEINLINE BOOLEAN _InlineBitScanReverse64(DWORD *Index, DWORD64 Mask) {
 
 #define BitScanReverse64  _InlineBitScanReverse64
 
+#if 0
 #define InterlockedIncrement16  _InterlockedIncrement16
 #define InterlockedIncrementAcquire16  _InterlockedIncrement16
 #define InterlockedIncrementRelease16  _InterlockedIncrement16
@@ -2364,19 +2306,21 @@ FORCEINLINE BOOLEAN _InlineBitScanReverse64(DWORD *Index, DWORD64 Mask) {
 #define InterlockedCompareExchangeAcquire64  _InterlockedCompareExchange64
 #define InterlockedCompareExchangeRelease64  _InterlockedCompareExchange64
 #define InterlockedCompareExchangeNoFence64  _InterlockedCompareExchange64
+#endif
 
-SHORT /* __cdecl */ __stdcall _InterlockedIncrement16(SHORT volatile *);
-SHORT /* __cdecl */ __stdcall _InterlockedDecrement16(SHORT volatile *);
-SHORT /* __cdecl */ __stdcall _InterlockedCompareExchange16(SHORT volatile *, SHORT, SHORT);
-LONG64 /* __cdecl */ __stdcall _InterlockedCompareExchange64(LONG64 volatile *, LONG64, LONG64);
+SHORT /* __cdecl */ __stdcall InterlockedIncrement16(SHORT volatile *);
+SHORT /* __cdecl */ __stdcall InterlockedDecrement16(SHORT volatile *);
+SHORT /* __cdecl */ __stdcall InterlockedCompareExchange16(SHORT volatile *, SHORT, SHORT);
+LONG64 /* __cdecl */ __stdcall InterlockedCompareExchange64(LONG64 volatile *, LONG64, LONG64);
 
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedIncrement16)
 #pragma intrinsic(_InterlockedDecrement16)
 #pragma intrinsic(_InterlockedCompareExchange16)
-#endif /* __POCC__ >= 900 */
 #pragma intrinsic(_InterlockedCompareExchange64)
+#endif
 
+#if 0
 #define InterlockedAnd  _InterlockedAnd
 #define InterlockedAndAcquire  _InterlockedAnd
 #define InterlockedAndRelease  _InterlockedAnd
@@ -2423,20 +2367,21 @@ LONG64 /* __cdecl */ __stdcall _InterlockedCompareExchange64(LONG64 volatile *, 
 #define InterlockedCompareExchangeNoFence  _InterlockedCompareExchange
 
 #define InterlockedExchange16  _InterlockedExchange16
+#endif
 
-LONG /* __cdecl */ __stdcall _InterlockedAnd(LONG volatile *, LONG);
-LONG /* __cdecl */ __stdcall _InterlockedOr(LONG volatile *, LONG);
-LONG /* __cdecl */ __stdcall _InterlockedXor(LONG volatile *, LONG);
-LONG /* __cdecl */ __stdcall _InterlockedIncrement(LONG volatile *);
-LONG /* __cdecl */ __stdcall _InterlockedDecrement(LONG volatile *);
-LONG /* __cdecl */ __stdcall _InterlockedExchange(LONG volatile *, LONG);
-LONG /* __cdecl */ __stdcall _InterlockedExchangeAdd(LONG volatile *, LONG);
+LONG /* __cdecl */ __stdcall InterlockedAnd(LONG volatile *, LONG);
+LONG /* __cdecl */ __stdcall InterlockedOr(LONG volatile *, LONG);
+LONG /* __cdecl */ __stdcall InterlockedXor(LONG volatile *, LONG);
+LONG /* __cdecl */ __stdcall InterlockedIncrement(LONG volatile *);
+LONG /* __cdecl */ __stdcall InterlockedDecrement(LONG volatile *);
+LONG /* __cdecl */ __stdcall InterlockedExchange(LONG volatile *, LONG);
+LONG /* __cdecl */ __stdcall InterlockedExchangeAdd(LONG volatile *, LONG);
 
 FORCEINLINE LONG _InlineInterlockedAdd(LONG volatile *Addend, LONG Value) {
     return InterlockedExchangeAdd(Addend, Value) + Value;
 }
 
-LONG /* __cdecl */ __stdcall _InterlockedCompareExchange(LONG volatile *, LONG, LONG);
+LONG /* __cdecl */ __stdcall InterlockedCompareExchange(LONG volatile *, LONG, LONG);
 
 #undef _InterlockedExchangePointer
 
@@ -2458,31 +2403,31 @@ FORCEINLINE PVOID _InlineInterlockedCompareExchangePointer(PVOID volatile *Desti
 #define InterlockedCompareExchangePointerRelease  _InlineInterlockedCompareExchangePointer
 #define InterlockedCompareExchangePointerNoFence  _InlineInterlockedCompareExchangePointer
 
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedAnd)
 #pragma intrinsic(_InterlockedOr)
 #pragma intrinsic(_InterlockedXor)
-#endif /* __POCC__ >= 900 */
 #pragma intrinsic(_InterlockedIncrement)
 #pragma intrinsic(_InterlockedDecrement)
 #pragma intrinsic(_InterlockedExchange)
 #pragma intrinsic(_InterlockedExchangeAdd)
 #pragma intrinsic(_InterlockedCompareExchange)
+#endif
 
+#if 0
 #define InterlockedExchange8  _InterlockedExchange8
 #define InterlockedExchange16  _InterlockedExchange16
+#endif
 
-CHAR /* __cdecl */ __stdcall _InterlockedExchange8(CHAR volatile *, CHAR);
-SHORT /* __cdecl */ __stdcall _InterlockedExchange16(SHORT volatile *, SHORT);
+CHAR /* __cdecl */ __stdcall InterlockedExchange8(CHAR volatile *, CHAR);
+SHORT /* __cdecl */ __stdcall InterlockedExchange16(SHORT volatile *, SHORT);
 
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedExchange8)
-#endif /* __POCC__ >= 6666 */
-
-#if __POCC__ >= 900
 #pragma intrinsic(_InterlockedExchange16)
-#endif /* __POCC__ >= 900 */
+#endif
 
+#if 0
 #define InterlockedExchangeAdd8  _InterlockedExchangeAdd8
 #define InterlockedAnd8  _InterlockedAnd8
 #define InterlockedOr8  _InterlockedOr8
@@ -2493,35 +2438,35 @@ SHORT /* __cdecl */ __stdcall _InterlockedExchange16(SHORT volatile *, SHORT);
 #define InterlockedCompareExchange16  _InterlockedCompareExchange16
 #define InterlockedIncrement16  _InterlockedIncrement16
 #define InterlockedDecrement16  _InterlockedDecrement16
+#endif
 
-char /* __cdecl */ __stdcall _InterlockedExchangeAdd8(char volatile *, char);
-char /* __cdecl */ __stdcall _InterlockedAnd8(char volatile *, char);
-char /* __cdecl */ __stdcall _InterlockedOr8(char volatile *, char);
-char /* __cdecl */ __stdcall _InterlockedXor8(char volatile *, char);
-SHORT /* __cdecl */ __stdcall _InterlockedAnd16(SHORT volatile *, SHORT);
-SHORT /* __cdecl */ __stdcall _InterlockedXor16(SHORT volatile *, SHORT);
-SHORT /* __cdecl */ __stdcall _InterlockedCompareExchange16(SHORT volatile *, SHORT, SHORT);
-SHORT /* __cdecl */ __stdcall _InterlockedOr16(SHORT volatile *, SHORT);
-SHORT /* __cdecl */ __stdcall _InterlockedIncrement16(SHORT volatile *);
-SHORT /* __cdecl */ __stdcall _InterlockedDecrement16(SHORT volatile *);
+char /* __cdecl */ __stdcall InterlockedExchangeAdd8(char volatile *, char);
+char /* __cdecl */ __stdcall InterlockedAnd8(char volatile *, char);
+char /* __cdecl */ __stdcall InterlockedOr8(char volatile *, char);
+char /* __cdecl */ __stdcall InterlockedXor8(char volatile *, char);
+SHORT /* __cdecl */ __stdcall InterlockedAnd16(SHORT volatile *, SHORT);
+SHORT /* __cdecl */ __stdcall InterlockedXor16(SHORT volatile *, SHORT);
+SHORT /* __cdecl */ __stdcall InterlockedCompareExchange16(SHORT volatile *, SHORT, SHORT);
+SHORT /* __cdecl */ __stdcall InterlockedOr16(SHORT volatile *, SHORT);
+SHORT /* __cdecl */ __stdcall InterlockedIncrement16(SHORT volatile *);
+SHORT /* __cdecl */ __stdcall InterlockedDecrement16(SHORT volatile *);
 
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedExchangeAdd8)
 #pragma intrinsic(_InterlockedAnd8)
 #pragma intrinsic(_InterlockedOr8)
 #pragma intrinsic(_InterlockedXor8)
-#endif /* __POCC__ >= 6666 */
-
-#if __POCC__ >= 900
 #pragma intrinsic(_InterlockedAnd16)
 #pragma intrinsic(_InterlockedOr16)
 #pragma intrinsic(_InterlockedXor16)
 #pragma intrinsic(_InterlockedCompareExchange16)
 #pragma intrinsic(_InterlockedIncrement16)
 #pragma intrinsic(_InterlockedDecrement16)
-#endif /* __POCC__ >= 900 */
+#endif
 
+#if 0
 #define InterlockedCompareExchange64  _InterlockedCompareExchange64
+#endif
 
 FORCEINLINE LONG64 _InlineInterlockedAnd64(LONG64 volatile *Destination, LONG64 Value) {
     LONG64 Old;
@@ -2531,10 +2476,12 @@ FORCEINLINE LONG64 _InlineInterlockedAnd64(LONG64 volatile *Destination, LONG64 
     return Old;
 }
 
+#if 0
 #define InterlockedAnd64  _InlineInterlockedAnd64
 #define InterlockedAnd64Acquire  _InlineInterlockedAnd64
 #define InterlockedAnd64Release  _InlineInterlockedAnd64
 #define InterlockedAnd64NoFence  _InlineInterlockedAnd64
+#endif
 
 FORCEINLINE LONG64 _InlineInterlockedAdd64(LONG64 volatile *Addend, LONG64 Value) {
     LONG64 Old;
@@ -2544,10 +2491,12 @@ FORCEINLINE LONG64 _InlineInterlockedAdd64(LONG64 volatile *Addend, LONG64 Value
     return Old + Value;
 }
 
+#if 0
 #define InterlockedAdd64  _InlineInterlockedAdd64
 #define InterlockedAddAcquire64  _InlineInterlockedAdd64
 #define InterlockedAddRelease64  _InlineInterlockedAdd64
 #define InterlockedAddNoFence64  _InlineInterlockedAdd64
+#endif
 
 #define InterlockedExchangeAddSizeT(a,b)  InterlockedExchangeAdd((LONG *)a, b)
 #define InterlockedExchangeAddSizeTAcquire(a,b)  InterlockedExchangeAdd((LONG *)a, b)
@@ -2557,13 +2506,15 @@ FORCEINLINE LONG64 _InlineInterlockedAdd64(LONG64 volatile *Addend, LONG64 Value
 #define InterlockedDecrementSizeT(a)  InterlockedDecrement((LONG *)a)
 #define InterlockedDecrementSizeTNoFence(a)  InterlockedDecrement((LONG *)a)
 
-LONG /*__cdecl*/ __stdcall _InterlockedXor(LONG volatile *, LONG);
+LONG /*__cdecl*/ __stdcall InterlockedXor(LONG volatile *, LONG);
 
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedXor)
-#endif /* __POCC__ >= 900 */
+#endif
 
+#if 0
 #define InterlockedXor  _InterlockedXor
+#endif
 
 LONGLONG FORCEINLINE _InlineInterlockedOr64(LONGLONG volatile *Destination, LONGLONG Value) {
     LONGLONG Old;
@@ -2573,7 +2524,9 @@ LONGLONG FORCEINLINE _InlineInterlockedOr64(LONGLONG volatile *Destination, LONG
     return Old;
 }
 
+#if 0
 #define InterlockedOr64  _InlineInterlockedOr64
+#endif
 
 FORCEINLINE LONG64 _InlineInterlockedXor64(LONG64 volatile *Destination, LONG64 Value) {
     LONG64 Old;
@@ -2583,7 +2536,9 @@ FORCEINLINE LONG64 _InlineInterlockedXor64(LONG64 volatile *Destination, LONG64 
     return Old;
 }
 
+#if 0
 #define InterlockedXor64  _InlineInterlockedXor64
+#endif
 
 LONGLONG FORCEINLINE _InlineInterlockedIncrement64(LONGLONG volatile *Addend) {
     LONGLONG Old;
@@ -2593,8 +2548,10 @@ LONGLONG FORCEINLINE _InlineInterlockedIncrement64(LONGLONG volatile *Addend) {
     return Old + 1;
 }
 
+#if 0
 #define InterlockedIncrement64  _InlineInterlockedIncrement64
 #define InterlockedIncrementAcquire64  InterlockedIncrement64
+#endif
 
 FORCEINLINE LONGLONG _InlineInterlockedDecrement64(LONGLONG volatile *Addend) {
     LONGLONG Old;
@@ -2604,7 +2561,9 @@ FORCEINLINE LONGLONG _InlineInterlockedDecrement64(LONGLONG volatile *Addend) {
     return Old - 1;
 }
 
+#if 0
 #define InterlockedDecrement64  _InlineInterlockedDecrement64
+#endif
 
 FORCEINLINE LONGLONG _InlineInterlockedExchange64(LONGLONG volatile *Target, LONGLONG Value) {
     LONGLONG Old;
@@ -2614,9 +2573,11 @@ FORCEINLINE LONGLONG _InlineInterlockedExchange64(LONGLONG volatile *Target, LON
     return Old;
 }
 
+#if 0
 #define InterlockedExchange64  _InlineInterlockedExchange64
 #define InterlockedExchangeAcquire64  InterlockedExchange64
 #define InterlockedExchangeNoFence64  _InlineInterlockedExchange64
+#endif
 
 FORCEINLINE LONGLONG _InlineInterlockedExchangeAdd64(LONGLONG volatile *Addend, LONGLONG Value) {
     LONGLONG Old;
@@ -2626,9 +2587,10 @@ FORCEINLINE LONGLONG _InlineInterlockedExchangeAdd64(LONGLONG volatile *Addend, 
     return Old;
 }
 
+#if 0
 #define InterlockedExchangeAdd64  _InlineInterlockedExchangeAdd64
 #define InterlockedExchangeAddNoFence64  _InlineInterlockedExchangeAdd64
-
+#endif
 void __cdecl __incfsbyte(DWORD);
 void __cdecl __addfsbyte(DWORD, BYTE);
 void __cdecl __incfsword(DWORD);
@@ -2703,9 +2665,9 @@ void __cdecl _mm_prefetch(CONST CHAR *, int);
 
 DWORD64 __cdecl __readpmc(DWORD);
 
-#if __POCC__ >= 900
+#ifndef __ORANGEC__
 #pragma intrinsic(__readpmc)
-#endif /* __POCC__ >= 900 */
+#endif
 
 #define ReadTimeStampCounter()  __rdtsc()
 
@@ -9311,10 +9273,10 @@ typedef struct _RTL_BARRIER {
 #define FAST_FAIL_INVALID_THREAD  40
 #define FAST_FAIL_INVALID_FAST_FAIL_CODE  0xFFFFFFFF
 
-#if __POCC__ >= 6666
+#ifndef __ORANGEC__
 DECLSPEC_NORETURN VOID __fastfail(unsigned int Code);
 #pragma intrinsic(__fastfail)
-#endif /* __POCC__ >= 6666 */
+#endif
 
 #define HEAP_NO_SERIALIZE  0x00000001
 #define HEAP_GROWABLE  0x00000002
@@ -10736,8 +10698,5 @@ inline struct _TEB * NtCurrentTeb(void) { return (struct _TEB *)(ULONG_PTR)__rea
 #define ACTIVATION_CONTEXT_SECTION_COMPATIBILITY_INFO  (11)
 #endif 
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _WINNT_H */

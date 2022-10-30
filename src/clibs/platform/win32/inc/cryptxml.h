@@ -19,10 +19,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 typedef struct _CRYPT_XML_BLOB CRYPT_XML_BLOB, *PCRYPT_XML_BLOB;
 typedef struct _CRYPT_XML_DATA_BLOB CRYPT_XML_DATA_BLOB, *PCRYPT_XML_DATA_BLOB;
@@ -467,9 +463,6 @@ typedef struct _CRYPT_XML_CRYPTOGRAPHIC_INTERFACE {
 typedef HRESULT (WINAPI *CryptXmlDllEncodeKeyValue)(NCRYPT_KEY_HANDLE, CRYPT_XML_CHARSET, void *, PFN_CRYPT_XML_WRITE_CALLBACK);
 typedef HRESULT (WINAPI *CryptXmlDllCreateKey)(const CRYPT_XML_BLOB *, BCRYPT_KEY_HANDLE *);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

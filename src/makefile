@@ -77,31 +77,41 @@ library:
 copyexes:
 	@$(MAKE) -f $(_TREEROOT) distribute_exe
 
-buildenv:
+envbuild:
 	@$(MAKE) -f $(_TREEROOT) distribute_self
 	@$(MAKE) -f $(_TREEROOT) distribute_clibs_no_binary
 	-copy orc.exe ..\bin
 
-buildenv1:
+exebuild:
 	@$(MAKE) -f $(_TREEROOT) distribute_self
-	@$(MAKE) -f $(_TREEROOT) distribute_clibs_no_binary
 	-copy orc.exe ..\bin
-tools1: buildenv1 
 	@$(MAKE) -f $(_TREEROOT) createdirs
 	@$(MAKE) -f $(_TREEROOT) library
 	@$(MAKE) -f $(_TREEROOT) exefile
-copyexes1: tools1
 	@$(MAKE) -f $(_TREEROOT) distribute_exe
-library1: copyexes1
+
+librarybuild:
 	@$(MAKE) -Cclibs
-distribute1: library1
-	@$(MAKE) -f $(_TREEROOT) distribute
 	@$(MAKE) -f $(_TREEROOT) distribute_clibs
 
-zip: distribute1
+zip:
 	@$(MAKE) -f $(_TREEROOT) zip
 
-fullbuild: zip
+zip7z:
+	@$(MAKE) -fzip7z.mak
+
+fullbuild:
+	@$(MAKE) -f $(_TREEROOT) distribute_self
+	@$(MAKE) -f $(_TREEROOT) distribute_clibs_no_binary
+	-copy orc.exe ..\bin
+	@$(MAKE) -f $(_TREEROOT) createdirs
+	@$(MAKE) -f $(_TREEROOT) library
+	@$(MAKE) -f $(_TREEROOT) exefile
+	@$(MAKE) -f $(_TREEROOT) distribute_exe
+	@$(MAKE) -Cclibs
+	@$(MAKE) -f $(_TREEROOT) distribute
+	@$(MAKE) -f $(_TREEROOT) distribute_clibs
+	@$(MAKE) -f $(_TREEROOT) zip
 
 format:
 	@$(MAKE) -f $(_TREEROOT) format

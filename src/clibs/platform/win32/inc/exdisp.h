@@ -204,10 +204,6 @@ typedef struct SearchAssistantOC SearchAssistantOC;
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#endif
 
 void *__RPC_USER MIDL_user_allocate(size_t);
 void __RPC_USER MIDL_user_free(void *);
@@ -1922,9 +1918,6 @@ class DECLSPEC_UUID("B45FF030-4447-11D2-85DE-00C04FA35C89") SearchAssistantOC;
 
 #endif /* __SHDocVw_LIBRARY_DEFINED__ */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

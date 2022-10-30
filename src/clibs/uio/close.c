@@ -62,7 +62,7 @@ int _RTL_FUNC close(int __handle)
     __ll_close(__handle);
     if (__uiflags[ohand] & UIF_RO)
     {
-        __ll_chmod(__uinames[ohand], 0);
+        chmod(__uinames[ohand], 0);
     }
     while (__uilocks[ohand])
     {

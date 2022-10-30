@@ -43,6 +43,14 @@
 #include <stdlib.h>
 #include <memory.h>
 
+int _RTL_FUNC         _wchdir( const wchar_t  *__path )
+{
+    char buf[260], *p = buf;
+    while (*__path)
+        *p++ = *__path++;
+    *p = *__path;
+    return _dos_setpwd(buf);
+}
 int _RTL_FUNC         chdir( const char  *__path )
 {
     return _dos_setpwd(__path);

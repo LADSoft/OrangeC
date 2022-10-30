@@ -115,6 +115,7 @@ wctrans_t _RTL_FUNC wctrans(const char* s)
 wint_t _RTL_FUNC towctrans(wint_t __wc, wctrans_t prop)
 {
 
+    if (!__ctype_u) expand();
     if (prop && __wc < 0x10000)
     {
         if (prop[__wc])

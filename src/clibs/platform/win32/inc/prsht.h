@@ -47,10 +47,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #ifndef SNDMSG
 #ifdef __cplusplus
@@ -658,9 +654,6 @@ WINCOMMCTRLAPI INT_PTR WINAPI PropertySheetW(LPCPROPSHEETHEADERW);
 /* #include "prsht.inl" */
 #endif /* ISOLATION_AWARE_ENABLED */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

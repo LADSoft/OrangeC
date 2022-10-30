@@ -156,7 +156,9 @@ DISTRIBUTE:
 ifndef BUILDENV
 	$(COPYDIR) object\startup\%.l $(DISTLIB)
 	$(COPYDIR) object\startup\%.o $(DISTLIB)
+ifneq "$(ORANGEC_ONLY)" "YES"
 	$(COPYDIR) object\startup\%.exe $(DISTLIB)
+endif
 	$(COPYDIR) object\startup\%.dll $(DISTBIN)
 	$(MAKE) -Cplatform DISTRIBUTE
 endif

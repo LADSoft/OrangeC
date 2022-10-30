@@ -193,6 +193,7 @@ wint_t _RTL_FUNC fgetwc_unlocked(FILE* stream)
         else
         {
             stream->level = stream->bsize;
+            stream->curp = stream->buffer;
         }
         stream->flags &= ~_F_OUT;
         stream->flags |= _F_IN;

@@ -81,6 +81,7 @@ extern "C"
     char* _RTL_INTRINS _IMPORT stpcpy(char* ZSTR restrict __dest, const char* ZSTR restrict __src);
     size_t _RTL_FUNC _IMPORT strcspn(const char* ZSTR __s1, const char* ZSTR __s2);
     char* _RTL_FUNC _IMPORT strdup(const char* ZSTR __src);
+    char* _RTL_FUNC _IMPORT strndup(const char* ZSTR __src, size_t __count);
     char* _RTL_FUNC _IMPORT strerror(int __errnum);
     char* _RTL_FUNC _IMPORT _strerror(const char* ZSTR msg);
     errno_t _RTL_FUNC _IMPORT strerror_s(char* ZSTR buf, size_t size, errno_t __errnum);
@@ -119,6 +120,10 @@ extern "C"
     char* _RTL_FUNC _IMPORT strrev(char* ZSTR);
     char* _RTL_FUNC _IMPORT strupr(char* ZSTR __s);
     char* _RTL_FUNC _IMPORT strlwr(char* ZSTR __s);
+    void * _RTL_FUNC _IMPORT memichr(const void *, int, size_t);
+    char * _RTL_FUNC _IMPORT strichr(const char *, int);
+    char * _RTL_FUNC _IMPORT stristr(const char *, const char *);
+    char * _RTL_FUNC _IMPORT strrichr(const char *, int);
     int _RTL_FUNC _IMPORT strnicmp(const char* ZSTR __s1, const char* ZSTR __s2, size_t __n);
     int _RTL_FUNC _IMPORT stricmp(const char* ZSTR __s1, const char* ZSTR __s2);
     int _RTL_FUNC _IMPORT strncmpi(const char* ZSTR __s1, const char* ZSTR __s2, size_t __n);
@@ -131,14 +136,20 @@ extern "C"
     char* _RTL_FUNC _IMPORT _strrev(char* ZSTR);
 
     char* _RTL_FUNC _IMPORT _strdup(const char* ZSTR string);
+    char* _RTL_FUNC _IMPORT _strndup(const char* ZSTR __src, size_t __count);
     int _RTL_FUNC _IMPORT _stricmp(const char* ZSTR, const char* ZSTR);
     int _RTL_FUNC _IMPORT _strcmpi(const char* ZSTR, const char* ZSTR);
     int _RTL_FUNC _IMPORT _strnicmp(const char* ZSTR, const char* ZSTR, size_t);
     int _RTL_FUNC _IMPORT _strncmpi(const char* ZSTR, const char* ZSTR, size_t);
     char* _RTL_FUNC _IMPORT _strlwr(char* ZSTR);
     char* _RTL_FUNC _IMPORT _strupr(char* ZSTR);
+    void * _RTL_FUNC _IMPORT _memichr(const void *, int, size_t);
+    char * _RTL_FUNC _IMPORT _strichr(const char *, int);
+    char * _RTL_FUNC _IMPORT _stristr(const char *, const char *);
+    char * _RTL_FUNC _IMPORT _strrichr(const char *, int);
 
 #endif
+
 #if defined(__USELOCALES__)
 #    define strupr _lstrupr
 #    define strlwr _lstrlwr

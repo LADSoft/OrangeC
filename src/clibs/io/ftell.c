@@ -39,7 +39,9 @@
 #include <locale.h>
 #include <wchar.h>
 #include <libp.h>
-
+#include <fcntl.h>
+#include <errno.h>
+#include <io.h>
 long _RTL_FUNC ftell(FILE* stream)
 {
     fpos_t rv;
@@ -50,4 +52,38 @@ long _RTL_FUNC ftell(FILE* stream)
 off_t _RTL_FUNC ftello(FILE* stream)
 {
     return (off_t)ftell(stream);
+}
+
+long long _RTL_FUNC _ftell64(FILE* restrict stream)
+{
+    flockfile(stream);
+    if (stream->token == FILTOK)
+    {
+        long long curpos;
+        stream->flags &= ~_F_VBUF;
+        if (!(__getmode(stream->fd) & O_BINARY) && fflush(stream))
+        {   
+            funlockfile(stream);
+            return EOF;
+        }
+        curpos = __ll_getpos64(__uiohandle(fileno(stream)));
+        if (curpos < 0)
+        {
+            stream->flags |= _F_ERR;
+            errno = EIO;
+            funlockfile(stream);
+            return EOF;
+        }
+        if (stream->level > 0 && stream->buffer)
+            curpos -= stream->level - 1;
+        else if (stream->level < 0 && stream->buffer)
+            curpos += stream->bsize + stream->level;
+        if (stream->flags & _F_UNGETC)
+            curpos--;
+        funlockfile(stream);
+        return curpos;
+    }
+    _dos_errno = errno = ENOENT;
+    funlockfile(stream);
+    return EOF;
 }

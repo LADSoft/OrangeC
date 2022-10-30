@@ -16,7 +16,7 @@
  * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+- * 
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -38,7 +38,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-wchar_t* wcsdup(const wchar_t* s)
+wchar_t* _RTL_FUNC wcsdup(const wchar_t* s)
 {
     int len = (wcslen(s) + 1) * sizeof(wchar_t);
     void* buf = malloc(len);
@@ -50,3 +50,4 @@ wchar_t* wcsdup(const wchar_t* s)
 
     return (wchar_t*)buf;
 }
+wchar_t* _RTL_FUNC _wcsdup(const wchar_t* s) { return wcsdup(s); }

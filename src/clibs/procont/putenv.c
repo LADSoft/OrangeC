@@ -46,6 +46,14 @@
 extern char _RTL_DATA** _environ;
 int _RTL_FUNC putenv(const char* name)
 {
+    wchar_t buf[260], *x = buf;
+    const char *y = name;
+    while (*y)
+        *x++ = *y++;
+    *x= *y;
+    int rv = _wputenv(wcsdup(buf));
+    if (rv)
+        return rv;
     char **q = _environ, **p;
     int len = 0, count = 0;
     char* z = strchr(name, '=');
@@ -106,6 +114,14 @@ int _RTL_FUNC setenv(const char* name, const char* value, int overwrite)
 }
 int _RTL_FUNC unsetenv(const char* name)
 {
+    wchar_t buf[260], *x = buf;
+    const char *y = name;
+    while (*y)
+        *x++ = *y++;
+    *x= *y;
+    int rv = _wunsetenv(buf);
+    if (rv)
+        return rv;
     char** q = _environ;
     int len = 0;
     len = strlen(name);

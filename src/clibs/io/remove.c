@@ -41,8 +41,16 @@
 #include <libp.h>
 #include <errno.h>
 
-int _RTL_FUNC rmdir(const char* name) { return __ll_rmdir(name); }
-int _RTL_FUNC _rmdir(const char* name) { return __ll_rmdir(name); }
+int _RTL_FUNC rmdir(const char* name) 
+{ 
+    wchar_t buf[260], *p = buf; 
+    while (*name)
+        *p++ = *name++;
+    *p = *name;
+    return __ll_rmdir(buf); 
+}
+int _RTL_FUNC _rmdir(const char* name) { return rmdir(name); }
+int _RTL_FUNC _wrmdir(const wchar_t* name) { return __ll_rmdir(name); }
 int _RTL_FUNC remove(const char* name)
 {
     int rv = unlink(name);
@@ -58,5 +66,28 @@ int _RTL_FUNC remove(const char* name)
     }
     return 0;
 }
-int _RTL_FUNC unlink(const char* name) { return (__ll_remove(name)); }
-int _RTL_FUNC _unlink(const char* name) { return (__ll_remove(name)); }
+int _RTL_FUNC _wremove(const wchar_t* name)
+{
+    int rv = __ll_remove(name);
+    if (rv)
+    {
+        int errx = errno;
+        rv = __ll_rmdir(name);
+        if (rv)
+        {
+            errno = errx;
+            return 1;
+        }
+    }
+    return 0;
+}
+int _RTL_FUNC _wunlink(const wchar_t* name) { return (__ll_remove(name)); }
+int _RTL_FUNC unlink(const char* name) 
+{ 
+    wchar_t buf[260], *p = buf; 
+    while (*name)
+        *p++ = *name++;
+    *p = *name;
+    return (__ll_remove(buf)); 
+}
+int _RTL_FUNC _unlink(const char* name) { return (unlink(name)); }

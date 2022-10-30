@@ -40,13 +40,15 @@
 [export __rotr]
 [export __lrotl]
 [export __lrotr]
+[export __llrotl]
+[export __llrotr]
 %endif
 [global __crotl]
 [global __crotr]
 [global __rotl]
 [global __rotr]
-[global __lrotl]
-[global __lrotr]
+[global __llrotl]
+[global __llrotr]
 
 SECTION code CLASS=CODE USE32
 __rotl:
@@ -71,4 +73,37 @@ __crotr:
     movzx 	eax, BYTE [esp + 4]
     mov		ecx,[esp + 8]
     ror		al,cl
+    ret
+
+
+__llrotl:
+    movzx  ecx, BYTE[esp + 12]
+    mov    eax, [esp + 4]
+    mov    edx, [esp + 8]
+    jecxz   llrotlx
+llrotlloop:
+    clc
+    rcl    edx, 1
+    rcl    eax, 1
+    jnc  llrotlcont
+    bts    edx, 1
+llrotlcont:
+    loop llrotlloop
+llrotlx:
+    ret
+__llrotr:
+    movzx  ecx, BYTE[esp + 12]
+    mov    eax, [esp + 4]
+    mov    edx, [esp + 8]
+    jecxz   llrotrx
+llrotrloop:
+    clc	
+    rcr    edx, 1
+    rcr    eax, 1
+    jnc  llrotrcont
+    bts    edx, 31
+llrotrcont:
+    loop llrotrloop
+llrotrx:
+    ret
     ret

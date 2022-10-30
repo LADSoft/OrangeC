@@ -84,3 +84,4 @@ int _RTL_FUNC system(const char* string)
     strcpy(buf + 4, string);
     return spawnlp(P_WAIT, a, a, buf, 0);
 }
+

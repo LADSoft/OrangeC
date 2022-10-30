@@ -55,7 +55,7 @@ extern char __uinames[HANDLE_MAX][256], __uidrives[HANDLE_MAX];
 
 int __umask_perm = 0;
 
-int _RTL_FUNC sopen(const char* __path, int __access, int __shmode, ... /*unsigned mode*/)
+int _RTL_FUNC _wsopen(const wchar_t* __path, int __access, int __shmode, ... /*unsigned mode*/)
 {
     va_list ap;
     int __amode, handle;
@@ -161,6 +161,19 @@ int _RTL_FUNC sopen(const char* __path, int __access, int __shmode, ... /*unsign
     }
     __ll_exit_critical();
     return h;
+}
+int _RTL_FUNC sopen(const char* __path, int __access, int __shmode, ... /*unsigned mode*/)
+{
+    wchar_t buf[260], *p = buf;
+    while (*__path)
+        *p++ = *__path++;
+    *p = *__path;
+    int mode;
+    va_list ap;
+    va_start(ap, __shmode);
+    mode = *(int*)ap;
+    va_end(ap);
+    return _wsopen(buf, __access, __shmode, mode);
 }
 int _RTL_FUNC _sopen(const char* __path, int __access, int __shmode, ... /*unsigned mode*/)
 {

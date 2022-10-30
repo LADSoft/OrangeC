@@ -109,16 +109,80 @@ typedef unsigned short wchar_t;
 extern "C"
 {
 #    endif
+#if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL)
+struct _stat32
+{
+        int st_dev;
+        short st_ino;
+        short st_mode;
+        int st_nlink;
+        short st_uid;
+        short st_gid;
+        int st_rdev;
+    off_t         st_size;
+    __time_t_32     st_atime;
+    __time_t_32     st_mtime;
+    __time_t_32     st_ctime;
+};
+
+struct _stat32i64
+{
+        int st_dev;
+        short st_ino;
+        short st_mode;
+        int st_nlink;
+        short st_uid;
+        short st_gid;
+        int st_rdev;
+    dev_t         st_rdev;
+    __int64        st_size;
+    __time_t_32     st_atime;
+    __time_t_32     st_mtime;
+    __time_t_32     st_ctime;
+};
+
+struct _stat64i32
+{
+        int st_dev;
+        short st_ino;
+        short st_mode;
+        int st_nlink;
+        short st_uid;
+        short st_gid;
+        int st_rdev;
+    off_t         st_size;
+    __time_t_64     st_atime;
+    __time_t_64     st_mtime;
+    __time_t_64     st_ctime;
+};
+
+struct _stat64
+{
+        int st_dev;
+        short st_ino;
+        short st_mode;
+        int st_nlink;
+        short st_uid;
+        short st_gid;
+        int st_rdev;
+    __int64        st_size;
+    __time_t_64     st_atime;
+    __time_t_64     st_mtime;
+    __time_t_64     st_ctime;
+};
+
+#define __stat64 _stat64 // For legacy compatibility
+#endif
 
     struct stat
     {
-        dev_t st_dev;
-        ino_t st_ino;
-        mode_t st_mode;
-        nlink_t st_nlink;
-        uid_t st_uid;
-        gid_t st_gid;
-        dev_t st_rdev;
+        int st_dev;
+        short st_ino;
+        short st_mode;
+        int st_nlink;
+        short st_uid;
+        short st_gid;
+        int st_rdev;
         off_t st_size;
         time_t st_atime;
         time_t st_mtime;
@@ -140,6 +204,7 @@ extern "C"
     struct _stat
     {
 #    ifdef __CRTDLL_DLL
+#pragma pack(1)
         short st_dev;
         short st_ino;
         short st_mode;
@@ -151,6 +216,7 @@ extern "C"
         long st_atime;
         long st_mtime;
         long st_ctime;
+#pragma pack()
 #    else
     int st_dev;
     short st_ino;
@@ -166,6 +232,113 @@ extern "C"
 #    endif
     };
 
+#if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL)
+#ifdef _USE_32BIT_TIME_T
+    #define _fstat      _fstat32
+    #define _fstati64   _fstat32i64
+    #define _stat       _stat32
+    #define _stati64    _stat32i64
+    #define _wstat      _wstat32
+    #define _wstati64   _wstat32i64
+#else
+    #define _fstat      _fstat64i32
+    #define _fstati64   _fstat64
+    #define _stat       _stat64i32
+    #define _stati64    _stat64
+    #define _wstat      _wstat64i32
+    #define _wstati64   _wstat64
+#endif
+
+int _RTL_FUNC _fstat32(
+     int             _FileHandle,
+     struct _stat32* _Stat
+    );
+
+int _RTL_FUNC _fstat32i64(
+     int                _FileHandle,
+     struct _stat32i64* _Stat
+    );
+
+int _RTL_FUNC _fstat64i32(
+     int                _FileHandle,
+     struct _stat64i32* _Stat
+    );
+
+int _RTL_FUNC _fstat64(
+     int             _FileHandle,
+     struct _stat64* _Stat
+    );
+
+int _RTL_FUNC _stat32(
+      char const*     _FileName,
+      struct _stat32* _Stat
+    );
+
+int _RTL_FUNC _stat32i64(
+      char const*        _FileName,
+      struct _stat32i64* _Stat
+    );
+
+int _RTL_FUNC _stat64i32(
+      char const*        _FileName,
+      struct _stat64i32* _Stat
+    );
+
+int _RTL_FUNC _stat64(
+      char const*     _FileName,
+      struct _stat64* _Stat
+    );
+
+int _RTL_FUNC _wstat32(
+      wchar_t const*  _FileName,
+      struct _stat32* _Stat
+    );
+
+int _RTL_FUNC _wstat32i64(
+      wchar_t const*     _FileName,
+      struct _stat32i64* _Stat
+    );
+
+int _RTL_FUNC _wstat64i32(
+      wchar_t const*     _FileName,
+      struct _stat64i32* _Stat
+    );
+
+int _RTL_FUNC _wstat64(
+      wchar_t const*  _FileName,
+      struct _stat64* _Stat
+    );
+#ifndef _DEFINING_STAT
+    #ifdef _USE_32BIT_TIME_T
+
+        static __inline int _RTL_FUNC fstat(int const _FileHandle, struct stat* const _Stat)
+        {
+//            _STATIC_ASSERT(sizeof(struct stat) == sizeof(struct _stat32));
+            return _fstat32(_FileHandle, (struct _stat32*)_Stat);
+        }
+
+        static __inline int _RTL_FUNC stat(char const* const _FileName, struct stat* const _Stat)
+        {
+//            _STATIC_ASSERT(sizeof(struct stat) == sizeof(struct _stat32));
+            return _stat32(_FileName, (struct _stat32*)_Stat);
+        }
+
+    #else
+
+        static __inline int _RTL_FUNC fstat(int const _FileHandle, struct stat* const _Stat)
+        {
+//            _STATIC_ASSERT(sizeof(struct stat) == sizeof(struct _stat64i32));
+            return _fstat64i32(_FileHandle, (struct _stat64i32*)_Stat);
+        }
+        static __inline int _RTL_FUNC stat(char const* const _FileName, struct stat* const _Stat)
+        {
+//            _STATIC_ASSERT(sizeof(struct stat) == sizeof(struct _stat64i32));
+            return _stat64i32(_FileName, (struct _stat64i32*)_Stat);
+        }
+
+    #endif
+#endif
+#else
     int _RTL_FUNC _IMPORT _fstat(int __handle, struct _stat* __statbuf);
     int _RTL_FUNC _IMPORT fstat(int __handle, struct stat* __statbuf);
     int _RTL_FUNC _IMPORT _wstat(const wchar_t* __path, struct _stat* __statbuf);
@@ -173,6 +346,8 @@ extern "C"
     int _RTL_FUNC _IMPORT stat(const char* __path, struct stat* __statbuf);
     int _RTL_FUNC _IMPORT chmod(const char* ZSTR __path, int __amode);
     int _RTL_FUNC _IMPORT mkdir(const char* ZSTR __path, int __amode);
+#endif
+
 
 #    ifdef __cplusplus
 };

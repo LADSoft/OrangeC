@@ -47,6 +47,7 @@ wchar_t* _RTL_FUNC wcsupr(wchar_t* s)
     }
     return sold;
 }
+wchar_t* _RTL_FUNC _wcsupr(wchar_t* s) { return wcsupr(s); }
 wchar_t* _RTL_FUNC wcslwr(wchar_t* s)
 {
     wchar_t* sold = s;
@@ -57,3 +58,4 @@ wchar_t* _RTL_FUNC wcslwr(wchar_t* s)
     }
     return sold;
 }
+wchar_t* _RTL_FUNC _wcslwr(wchar_t* s) { return wcslwr(s); }

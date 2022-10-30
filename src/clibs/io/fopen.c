@@ -74,13 +74,14 @@ static int cvFlags(int flags)
         rv |= O_APPEND;
     return rv;
 }
-FILE* __basefopen(const char* restrict name, const char* restrict mode, FILE* restrict stream, int fd, int share)
+FILE* __basefopen(const wchar_t* restrict name, const wchar_t* restrict mode, FILE* restrict stream, int fd, int share)
 {
+    
     int flags = 0, append = 0, update = 0, id = 0, i;
     FILE* file;
-    char* fname;
     if (!name)
         return NULL;
+    wchar_t* fname;
     __ll_enter_critical();
     if (__maxfiles >= _NFILE_)
     {
@@ -88,7 +89,7 @@ FILE* __basefopen(const char* restrict name, const char* restrict mode, FILE* re
         __ll_exit_critical();
         return 0;
     }
-    for (i = 0; i < strlen(mode); i++)
+    for (i = 0; i < wcslen(mode); i++)
     {
         switch (mode[i])
         {
@@ -118,13 +119,13 @@ FILE* __basefopen(const char* restrict name, const char* restrict mode, FILE* re
         __ll_exit_critical();
         return 0;
     }
-    fname = malloc(strlen(name) + 1);
+    fname = malloc((wcslen(name) + 1)*2);
     if (!fname)
     {
         __ll_exit_critical();
         return 0;
     }
-    strcpy(fname, name);
+    wcscpy(fname, name);
     if (stream)
         file = stream;
     else if ((file = malloc(sizeof(FILE))) == 0)
@@ -159,7 +160,7 @@ FILE* __basefopen(const char* restrict name, const char* restrict mode, FILE* re
             if (fd != -1)
                 id = fd;
             else
-                id = open(name, cvFlags(flags) | share, S_IREAD | S_IWRITE);
+                id = _wsopen(name, cvFlags(flags), share, S_IREAD | S_IWRITE);
             break;
         case _F_WRIT:
             if (update)
@@ -170,9 +171,9 @@ FILE* __basefopen(const char* restrict name, const char* restrict mode, FILE* re
             else
             {
                 if (append)
-                    id = open(name, cvFlags(flags) | share, S_IREAD | S_IWRITE);
+                    id = _wsopen(name, cvFlags(flags), share, S_IREAD | S_IWRITE);
                 if (id < 0)
-                    id = open(name, O_CREAT | O_TRUNC | cvFlags(flags) | share, S_IREAD | S_IWRITE);
+                    id = _wsopen(name, O_CREAT | O_TRUNC | cvFlags(flags), share, S_IREAD | S_IWRITE);
             }
             break;
         case _F_READ | _F_WRIT:
@@ -244,8 +245,27 @@ FILE* __basefopen(const char* restrict name, const char* restrict mode, FILE* re
     __ll_exit_critical();
     return file;
 }
-FILE* _RTL_FUNC fopen(const char* restrict name, const char* restrict mode) { return __basefopen(name, mode, 0, -1, SH_COMPAT); }
-FILE* _RTL_FUNC fdopen(int handle, const char* restrict mode) { return __basefopen("", mode, 0, handle, SH_COMPAT); }
+FILE* _RTL_FUNC _wfopen(const wchar_t* restrict name, const wchar_t* restrict mode) { return __basefopen(name, mode, 0, -1, SH_COMPAT); }
+FILE* _RTL_FUNC fopen(const char* restrict name, const char* restrict mode) 
+{ 
+    wchar_t buf[260], buf1[64], *p = buf, *q = buf1;
+    while (*name)
+        *p++ = *name++;
+    *p = *name; 
+    while (*mode)
+        *q++ = *mode++;
+    *q = *mode; 
+	return __basefopen(buf, buf1, 0, -1, SH_COMPAT); 
+}
+FILE* _RTL_FUNC _wfdopen(int handle, const wchar_t* restrict mode) { return __basefopen(L"", mode, 0, handle, SH_COMPAT); }
+FILE* _RTL_FUNC fdopen(int handle, const char* restrict mode) 
+{ 
+    wchar_t buf1[64], *q = buf1;
+    while (*mode)
+        *q++ = *mode++;
+    *q = *mode; 
+    return _wfdopen(handle, buf1);
+}
 FILE* _RTL_FUNC _fdopen(int handle, const char* restrict mode) { return fdopen(handle, mode); }
 int _RTL_FUNC(fileno)(FILE* stream)
 {

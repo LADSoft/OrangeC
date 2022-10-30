@@ -34,6 +34,7 @@
  * 
  */
 
+#define _DEFINING_TIME_T
 #include <time.h>
 #include <stdio.h>
 #include <wchar.h>
@@ -42,8 +43,5 @@
 
 int _RTL_FUNC stime(time_t* tptr)
 {
-    time_t val;
-    struct tm t2;
-    t2 = *localtime(tptr);
-    return __ll_settime(&t2);
+    return _stime32(tptr);
 }

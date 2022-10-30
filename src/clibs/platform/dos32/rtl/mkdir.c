@@ -43,6 +43,14 @@
 #include <stdlib.h>
 #include <memory.h>
 
+int _RTL_FUNC         _wmkdir(const wchar_t * __path)
+{
+    char buf[260], *p = buf;
+    while (*__path)
+        *p++ = *__path++;
+    *p = *__path;
+    return _mkdir(buf);
+}
 int _RTL_FUNC         _mkdir( const char  *__path )
 {
     DPMI_REGS regs;

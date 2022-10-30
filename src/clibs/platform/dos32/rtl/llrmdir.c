@@ -43,10 +43,14 @@
 #include <dpmi.h>
 #include "llp.h"
 
-int __ll_rmdir(char *name)
+int __ll_rmdir(wchar_t *name)
 {
+    char buf[256], *p = buf;
+    while (*name)
+        *p++ = *name++;
+    *p = *name;
     DPMI_REGS regs;
-    regs.h.dx = __nametodta(name,0);
+    regs.h.dx = __nametodta(buf,0);
     __doscall(0x3a,&regs);
     if (regs.h.flags & 1)
     {

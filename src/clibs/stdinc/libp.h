@@ -72,8 +72,8 @@ extern "C"
     void __ll_init(void);
 
     /* File open close */
-    int __ll_open(const char* __name, int flags, int shflags);
-    int __ll_creat(const char* __name, int flags, int shflags);
+    int __ll_open(const wchar_t* __name, int flags, int shflags);
+    int __ll_creat(const wchar_t* __name, int flags, int shflags);
     int __ll_openpipe(int* read, int* write, unsigned int size);
     int __ll_close(int __fd);
 
@@ -89,11 +89,13 @@ extern "C"
     /* File positioning */
     size_t __ll_getpos(int __fd);
     int __ll_seek(int __fd, size_t __pos, int __origin);
+    long long  __ll_getpos64(int __fd);
+    int __ll_seek64(int __fd, long long __pos, int __origin);
 
     /* File utilities */
-    int __ll_rename(const char* __old, const char* __new);
-    int __ll_remove(const char* __name);
-    int __ll_rmdir(const char* name);
+    int __ll_rename(const wchar_t* __old, const wchar_t* __new);
+    int __ll_remove(const wchar_t* __name);
+    int __ll_rmdir(const wchar_t* name);
 
 /* malloc stuff */
 #define MALLOC_MASK 0xfffffff8
@@ -114,7 +116,7 @@ extern "C"
 
     /* Spawn function */
     int __ll_spawn(char* name, char* parms, char** env, int mode);
-    int __ll_system(char* string, int in, int out);
+    int __ll_system(wchar_t* string, int in, int out);
 
     /* assert */
     void __ll_assertfail(const char* __who, const char* __file, int __line, const char* __func, const char* __msg);
@@ -139,12 +141,12 @@ extern "C"
 #    endif
 #endif
     /* stat */
-    int __ll_stat(int handle, void* __statbuf);
-    int __ll_namedstat(const char* name, void* __statbuf);
-    int __ll_writeable(const char* path);
+    int __ll_stat(int handle, struct _stat64* __statbuf);
+    int __ll_namedstat(const wchar_t* name, struct _stat64* __statbuf);
+    int __ll_writeable(const wchar_t* path);
 
     /* Internal functions, already implemented */
-    FILE* __basefopen(const char* name, const char* mode, FILE* stream, int fd, int share);
+    FILE* __basefopen(const wchar_t* name, const wchar_t* mode, FILE* stream, int fd, int share);
     int __basefclose(FILE* stream, int release);
     int __writebuf(FILE* __stream);
     int __readbuf(FILE* stream);
@@ -241,7 +243,7 @@ typedef struct _blkhead
 void __ll_uioinit(void);
 int __ll_uio_flags(int);
 void __uio_rundown(void);
-int __ll_chmod(const char* path, int amode);
+int __ll_chmod(const wchar_t* path, int amode);
 int __ll_chsize(int handle, int size);
 int __ll_dup(int handle);
 int __ll_setftime(int handle, void* ftimep);

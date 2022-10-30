@@ -51,9 +51,6 @@ extern void _import _exit(int);
 #include <locale.h>
 #include <libp.h>
 
-BOOL __stdcall GetModuleHandleExW(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule);
-#define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 4
-
 extern char INITSTART[], INITEND[], EXITSTART[], EXITEND[], BSSSTART[], BSSEND[];
 extern char _TLSINITSTART[], _TLSINITEND[];
 extern __import int _argc;
@@ -70,20 +67,20 @@ static void init(void)
 {
     HANDLE handle;
     int eip;
-    __asm mov eax, [ebp + 4] __asm mov[eip], eax GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)eip, &handle);
+    __asm mov eax, [ebp + 4] __asm mov[eip], eax GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCWSTR)eip, &handle);
     __thrdRegisterModule(handle, _TLSINITSTART, _TLSINITEND);
 }
 static void destroy(void)
 {
     HANDLE handle;
     int eip;
-    __asm mov eax, [ebp + 4] __asm mov[eip], eax GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)eip, &handle);
+    __asm mov eax, [ebp + 4] __asm mov[eip], eax GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCWSTR)eip, &handle);
     __thrdUnregisterModule(handle);
 }
 
 static void _dorundown(void);
 // in the follow, the args are ONLY valid for DLLs
-int __stdcall DllEntryPoint(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved);
+int __stdcall DllMain(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved);
 void __stdcall __import ___lsdllinit(void* tlsStart, void* tlsEnd, DWORD flags, void (*rundown)(void), unsigned* exceptBlock);
 void __srproc(char*, char*);
 int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
@@ -113,7 +110,7 @@ int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvRese
     __srproc(INITSTART, INITEND);
     if (flags & DLL)
     {
-        rv = DllEntryPoint(hInst, fdwReason, lpvReserved) + 1;
+        rv = DllMain(hInst, fdwReason, lpvReserved) + 1;
     }
     else if (flags & GUI)
     {

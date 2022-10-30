@@ -46,11 +46,6 @@ typedef LONG HRESULT;
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #include <prsht.h>
 
@@ -6282,9 +6277,6 @@ int WINAPI DrawShadowText(HDC,LPCWSTR,UINT,RECT*,DWORD,COLORREF,COLORREF,int,int
 /* #include "commctrl.inl" */
 #endif /* ISOLATION_AWARE_ENABLED */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

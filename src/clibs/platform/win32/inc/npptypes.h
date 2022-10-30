@@ -17,11 +17,6 @@ typedef const void *HBLOB;
 
 #include <pshpack1.h>
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define MAC_TYPE_UNKNOWN  0
 #define MAC_TYPE_ETHERNET  1
@@ -680,9 +675,6 @@ typedef struct _ESTATFRAME {
 } ESTATFRAME, *LPESTATFRAME, UNALIGNED *ULPESTATFRAME;
 #define ESTATFRAME_SIZE  sizeof(ESTATFRAME)
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #include <poppack.h>
 

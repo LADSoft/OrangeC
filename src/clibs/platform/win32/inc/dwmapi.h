@@ -18,11 +18,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#pragma warn(disable:2073)
-#endif
 
 #include <wtypes.h>
 #include <uxtheme.h>
@@ -249,9 +244,6 @@ DWMAPI DwmTetherContact(DWORD, BOOL, POINT);
 DWMAPI DwmShowContact(DWORD, enum DWM_SHOWCONTACT);
 #endif /* NTDDI_VERSION >= NTDDI_WIN8 */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

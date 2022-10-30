@@ -12,11 +12,7 @@ extern "C" {
 #endif
 
 #ifndef DECLSPEC_NORETURN
-#if __POCC__ >= 270
 #define DECLSPEC_NORETURN  __declspec(noreturn)
-#else
-#define DECLSPEC_NORETURN
-#endif
 #endif /* DECLSPEC_NORETURN */
 
 typedef unsigned char *RPC_CSTR;

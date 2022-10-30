@@ -93,12 +93,6 @@
 #endif /* RC_INVOKED */
 
 /* Shut up permanently */
-#if __POCC__ >= 290
-#pragma warn(disable:2265)  /* array size is zero */
-#pragma warn(disable:2121)  /* redeclaration of 'type' */
-#pragma warn(disable:2109)  /* more than x external identifiers */
-#pragma warn(disable:1067)  /* more than x macro identifiers */
-#endif
 
 #include <windef.h>
 #include <winbase.h>

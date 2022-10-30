@@ -156,7 +156,7 @@ typedef struct tagSQL_INTERVAL_STRUCT {
 } SQL_INTERVAL_STRUCT;
 #endif /* __SQLDATE */
 
-#ifdef __POCC__
+#ifdef __ORANGEC__
 #define ODBCINT64 __int64
 #endif
 #ifdef ODBCINT64

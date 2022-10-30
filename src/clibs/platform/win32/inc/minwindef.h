@@ -21,10 +21,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2027)  /* Missing prototype */
-#endif
 
 #ifndef BASETYPES
 #define BASETYPES
@@ -179,9 +175,6 @@ typedef struct _FILETIME {
 } FILETIME, *PFILETIME, *LPFILETIME;
 #define _FILETIME_
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

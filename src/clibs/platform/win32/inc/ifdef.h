@@ -92,10 +92,6 @@ typedef struct _NET_IF_ALIAS_LH {
     USHORT ifAliasOffset;
 } NET_IF_ALIAS_LH, *PNET_IF_ALIAS_LH;
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#endif
 typedef union _NET_LUID_LH {
     ULONG64 Value;
     struct {
@@ -104,9 +100,6 @@ typedef union _NET_LUID_LH {
         ULONG64 IfType:16;
     }Info;
 } NET_LUID_LH, *PNET_LUID_LH;
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #if (NTDDI_VERSION >= NTDDI_VISTA)
 typedef NET_IF_RCV_ADDRESS_LH NET_IF_RCV_ADDRESS;

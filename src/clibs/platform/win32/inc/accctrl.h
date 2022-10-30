@@ -13,10 +13,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define NO_INHERITANCE  0x0
 #define SUB_OBJECTS_ONLY_INHERIT  0x1
@@ -439,9 +435,6 @@ typedef PINHERITED_FROMA PINHERITED_FROM;
 #define ACCCTRL_DEFAULT_PROVIDER ACCCTRL_DEFAULT_PROVIDERA
 #endif /* UNICODE */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

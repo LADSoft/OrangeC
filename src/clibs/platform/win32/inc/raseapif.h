@@ -11,10 +11,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#endif
 
 #if (WINVER >= 0x0500)
 
@@ -210,9 +206,6 @@ DWORD APIENTRY RasEapGetIdentity(DWORD,HWND,DWORD,const WCHAR*,const WCHAR*,BYTE
 
 #endif /* WINVER >= 0x0500 */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

@@ -15,11 +15,6 @@ extern "C" {
 #error Do not include winsock.h and ws2def.h in the same module. Instead include only winsock2.h.
 #endif /* moron */
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #if (_WIN32_WINNT >= 0x0600)
 #define WS2DEF_INLINE  inline
@@ -501,9 +496,6 @@ typedef WSACMSGHDR CMSGHDR, *PCMSGHDR;
 #define MSG_BCAST  0x0400
 #define MSG_MCAST  0x0800
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

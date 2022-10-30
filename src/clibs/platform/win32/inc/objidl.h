@@ -25,10 +25,6 @@
 #pragma once
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 /* Forward Declarations */ 
 
@@ -8629,8 +8625,5 @@ HRESULT __stdcall IFillLockBytes_FillAt_Stub(IFillLockBytes *This, ULARGE_INTEGE
 }
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _OBJIDL_H */

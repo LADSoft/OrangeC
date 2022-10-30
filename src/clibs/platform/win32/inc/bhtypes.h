@@ -13,11 +13,6 @@ extern "C" {
 
 #include <pshpack1.h>
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define GetTableSize(TableBaseSize,nElements,ElementSize) ((TableBaseSize) + ((nElements) * (ElementSize)))
 
@@ -368,9 +363,6 @@ typedef struct _ADDRESSINFOTABLE {
 
 typedef DWORD (WINAPI *FILTERPROC)(HCAPTURE,HFRAME,LPVOID);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #include <poppack.h>
 

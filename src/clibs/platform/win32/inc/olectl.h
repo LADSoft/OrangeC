@@ -10,10 +10,6 @@
 #include <pshpack8.h>
 #include <ocidl.h>
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define WINOLECTLAPI EXTERN_C DECLSPEC_IMPORT HRESULT STDAPICALLTYPE
 #define WINOLECTLAPI_(type) EXTERN_C DECLSPEC_IMPORT type STDAPICALLTYPE
@@ -392,9 +388,6 @@ WINOLECTLAPI_(HCURSOR) OleIconToCursor(HINSTANCE,HICON);
 #define STDOLE_TLB  "stdole2.tlb"
 #define STDTYPE_TLB  "olepro32.dll"
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _OLECTL_H */
 

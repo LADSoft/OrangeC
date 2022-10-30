@@ -36,12 +36,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#pragma warn(disable:2153)  /* Unknown size of incomplete type */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define MAX_CLUSTERNAME_LENGTH  DNS_MAX_LABEL_LENGTH
 
@@ -3153,9 +3147,6 @@ DWORD WINAPI DestroyCluster(HCLUSTER, PCLUSTER_SETUP_PROGRESS_CALLBACK, PVOID, B
 #define CLUSCTL_RESOURCE_TYPE_STORAGE_GET_AVAILABLE_DISKS_EX2_FLAG_FILTER_BY_POOL  0x00000002
 #define CLUSCTL_RESOURCE_TYPE_STORAGE_GET_AVAILABLE_DISKS_EX2_FLAG_INCLUDE_NON_SHARED_DISKS  0x00000004
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

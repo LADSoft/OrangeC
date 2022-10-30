@@ -11,10 +11,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #include <mswsockdef.h>
 
@@ -212,9 +208,6 @@ typedef INT (WSAAPI *LPFN_WSAPOLL)(LPWSAPOLLFD, ULONG, INT);
 
 #endif /* _WIN32_WINNT >= 0x0600 */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

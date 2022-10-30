@@ -13,10 +13,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#endif
 
 typedef enum {
     MES_ENCODE,
@@ -93,9 +89,6 @@ void RPC_ENTRY NdrMesTypeFree2(handle_t,PMIDL_TYPE_PICKLING_INFO,PMIDL_STUB_DESC
 void RPC_VAR_ENTRY NdrMesProcEncodeDecode(handle_t,PMIDL_STUB_DESC,PFORMAT_STRING,...);
 CLIENT_CALL_RETURN RPC_VAR_ENTRY NdrMesProcEncodeDecode2(handle_t,PMIDL_STUB_DESC,PFORMAT_STRING,...);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

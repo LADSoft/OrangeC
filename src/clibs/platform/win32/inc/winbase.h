@@ -45,12 +45,6 @@
 #include <securityappcontainer.h>
 #include <realtimeapiset.h>
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2027)  /* Missing prototype */
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define DefineHandleTable(w)  ((w),TRUE)
 #define LimitEmsPages(dw)
@@ -3139,8 +3133,5 @@ WINBASEAPI DWORD APIENTRY ReadThreadProfilingData(HANDLE, DWORD, PPERFORMANCE_DA
 /* #include "winbase.inl" */
 #endif /* ISOLATION_AWARE_ENABLED */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _WINBASE_H */

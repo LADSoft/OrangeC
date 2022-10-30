@@ -128,10 +128,6 @@ typedef enum _NL_LINK_LOCAL_ADDRESS_BEHAVIOR{
     LinkLocalUnchanged = -1
 } NL_LINK_LOCAL_ADDRESS_BEHAVIOR;
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#endif
 typedef struct _NL_INTERFACE_OFFLOAD_ROD {
     BOOLEAN NlChecksumSupported:1;
     BOOLEAN NlOptionsSupported:1;
@@ -142,9 +138,6 @@ typedef struct _NL_INTERFACE_OFFLOAD_ROD {
     BOOLEAN TlLargeSendOffloadSupported:1;
     BOOLEAN TlGiantSendOffloadSupported:1;
 } NL_INTERFACE_OFFLOAD_ROD, *PNL_INTERFACE_OFFLOAD_ROD;
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 typedef enum _NL_ROUTER_DISCOVERY_BEHAVIOR {
     RouterDiscoveryDisabled = 0,

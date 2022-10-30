@@ -100,7 +100,7 @@ extern int PASCAL __WSAFDIsSet(SOCKET,fd_set*);
 #define FD_ZERO(set) (((fd_set *)(set))->fd_count=0)
 #define FD_ISSET(fd,set) __WSAFDIsSet((SOCKET)(fd),(fd_set*)(set))
 
-#if !(defined(_TIMEVAL_DEFINED) && defined(__POCC__OLDNAMES))
+#if !defined(_TIMEVAL_DEFINED)
 #define _WINSOCK_H_TIMEVAL
 struct timeval {
     long tv_sec;
@@ -1052,14 +1052,7 @@ WINSOCK_API_LINKAGE void WSAAPI WSASetLastError(int);
 WINSOCK_API_LINKAGE int WSAAPI WSAGetLastError(void);
 WINSOCK_API_LINKAGE BOOL WSAAPI WSAIsBlocking(void);
 WINSOCK_API_LINKAGE int WSAAPI WSAUnhookBlockingHook(void);
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2027 2028)  /* Missing prototype */
-#endif
 WINSOCK_API_LINKAGE FARPROC WSAAPI WSASetBlockingHook(FARPROC);
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 WINSOCK_API_LINKAGE int WSAAPI WSACancelBlockingCall(void);
 WINSOCK_API_LINKAGE HANDLE WSAAPI WSAAsyncGetServByName(HWND,u_int,const char*,const char*,char*,int);
 WINSOCK_API_LINKAGE HANDLE WSAAPI WSAAsyncGetServByPort(HWND,u_int,int,const char*,char*,int);

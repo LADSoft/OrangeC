@@ -37,10 +37,6 @@
 #define MAX_DESC  64
 #define MAX_DESC_W  256
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#endif
 
 #include <pshpack1.h>
 
@@ -73,9 +69,6 @@ typedef struct _SMGRSTATUS {
 
 #include <poppack.h>
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 extern "C" {

@@ -51,12 +51,6 @@ DEFINE_DEVPROPKEY(DEVPKEY_Storage_System_Critical, 0x4d1ebee8, 0x803, 0x4774, 0x
 #ifndef _WINIOCTL_H
 #define _WINIOCTL_H
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #ifndef _DEVIOCTL_
 #define _DEVIOCTL_
@@ -5220,8 +5214,5 @@ typedef struct _IO_IRP_EXT_TRACK_OFFSET_HEADER {
 
 #endif /* NTDDI_VERSION >= NTDDI_WINTHRESHOLD */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _WINIOCTL_H */

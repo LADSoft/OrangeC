@@ -76,11 +76,6 @@ typedef struct {
     ULONG64 Token;
 } INET_PORT_RESERVATION_TOKEN, *PINET_PORT_RESERVATION_TOKEN;
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#pragma warn(disable:2046)
-#endif
 typedef struct {
 #ifdef __cplusplus
     INET_PORT_RESERVATION Reservation;
@@ -982,9 +977,6 @@ NTSYSAPI LONG NTAPI RtlIpv6StringToAddressExW(PCWSTR,struct in6_addr*,PULONG,PUS
 #undef ASSERT
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

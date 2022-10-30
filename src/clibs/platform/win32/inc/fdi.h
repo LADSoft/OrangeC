@@ -159,10 +159,6 @@ typedef enum {
     fdidtDECRYPT,
 } FDIDECRYPTTYPE;
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 typedef struct {
     FDIDECRYPTTYPE fdidt;
     void *pvUser;
@@ -188,9 +184,6 @@ typedef struct {
         } decrypt;
     };
 } FDIDECRYPT, *PFDIDECRYPT;
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 typedef void * (DIAMONDAPI *PFNALLOC)(ULONG);
 #define FNALLOC(fn) void * DIAMONDAPI fn(ULONG cb)
@@ -246,17 +239,10 @@ typedef INT_PTR (DIAMONDAPI *PFNFDINOTIFY)(FDINOTIFICATIONTYPE,PFDINOTIFICATION)
 #pragma pack(1)
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#endif
 typedef struct {
     char ach[2];
     long cbFile;
 } FDISPILLFILE, *PFDISPILLFILE;
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifndef _WIN64
 #pragma pack()

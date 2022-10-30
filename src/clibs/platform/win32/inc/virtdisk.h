@@ -13,11 +13,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2014)  /* Empty declaration */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #ifndef _VIRTUAL_STORAGE_TYPE_DEFINED
 #define _VIRTUAL_STORAGE_TYPE_DEFINED
@@ -709,9 +704,6 @@ DWORD WINAPI RawSCSIVirtualDisk(HANDLE, const PRAW_SCSI_VIRTUAL_DISK_PARAMETERS,
 
 #endif /* VIRTDISK_DEFINE_FLAGS */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

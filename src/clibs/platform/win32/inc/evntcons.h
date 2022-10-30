@@ -11,11 +11,6 @@
 #include <evntrace.h>
 #include <evntprov.h>
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define EVENT_HEADER_EXT_TYPE_RELATED_ACTIVITYID  0x0001
 #define EVENT_HEADER_EXT_TYPE_SID  0x0002
@@ -216,8 +211,5 @@ ULONG EVNTAPI EventAccessQuery(LPGUID,PSECURITY_DESCRIPTOR,PULONG);
 ULONG EVNTAPI EventAccessRemove(LPGUID);
 #endif /* WINVER >= _WIN32_WINNT_LONGHORN */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _EVNTCONS_H */

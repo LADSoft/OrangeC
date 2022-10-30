@@ -12,10 +12,6 @@
 
 #include <mmsyscom.h>
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#endif
 
 #ifndef _MCIERROR_
 #define _MCIERROR_
@@ -948,8 +944,5 @@ UINT APIENTRY mciDriverYield(MCIDEVICEID);
 BOOL APIENTRY mciDriverNotify(HANDLE, MCIDEVICEID, UINT);
 BOOL APIENTRY mciFreeCommandResource(UINT);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _MCIAPI_H */

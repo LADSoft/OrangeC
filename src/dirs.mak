@@ -26,7 +26,11 @@ ifeq "$(COMPILER)" "gcc-linux"
 DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
        oimplib omake onm orc occparse occpr occ occil coff2ieee ieeeconvert
 else
-
+ifneq "$(ORANGEC_ONLY)" "YES"
 DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
        oimplib omake onm orc ocl occparse occpr occ occil coff2ieee ieeeconvert help MSDNHelp
+else
+DIRS := sqlite3 util objlib netlib occopt ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
+       oimplib omake onm orc ocl occparse occ occil coff2ieee ieeeconvert
+endif
 endif

@@ -11,10 +11,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define MAX_COLOR_CHANNELS  8
 
@@ -634,9 +630,6 @@ BOOL WcsSetCalibrationManagementState(BOOL);
 #endif /* NTDDI_VERSION >= NTDDI_VISTA */
 #endif /* UNICODE */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

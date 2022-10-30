@@ -512,12 +512,6 @@ typedef interface IMFSystemId IMFSystemId;
 extern "C"{
 #endif 
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2073)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #include <windef.h>
 
@@ -6874,9 +6868,6 @@ HRESULT STDMETHODCALLTYPE IMFWorkQueueServices_EndUnregisterPlatformWorkQueueWit
 HRESULT STDMETHODCALLTYPE IMFPMPHost_CreateObjectByCLSID_Proxy(IMFPMPHost *This, REFCLSID clsid, IStream *pStream, REFIID riid, void **ppv);
 HRESULT STDMETHODCALLTYPE IMFPMPHost_CreateObjectByCLSID_Stub(IMFPMPHost *This, REFCLSID clsid, BYTE *pbData, DWORD cbData, REFIID riid, void **ppv);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

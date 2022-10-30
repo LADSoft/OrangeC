@@ -7,10 +7,6 @@
 
 /* IPX Routing Protocol definitions */
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #include <ipxconst.h>
 #include <ipxsap.h>
@@ -208,8 +204,5 @@ typedef struct _IPX_MIB_SET_INPUT_DATA {
     IPX_MIB_ROW MibRow;
 } IPX_MIB_SET_INPUT_DATA, *PIPX_MIB_SET_INPUT_DATA;
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _IPXRTDEF_H */

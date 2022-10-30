@@ -26,10 +26,6 @@
 extern "C"{
 #endif 
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#endif
 
 #define WCN_E_PEER_NOT_FOUND         MAKE_HRESULT(SEVERITY_ERROR, FACILITY_ITF, 0x3C01)
 #define WCN_E_AUTHENTICATION_FAILED  MAKE_HRESULT(SEVERITY_ERROR, FACILITY_ITF, 0x3C02)
@@ -307,9 +303,6 @@ typedef struct tagWCN_VALUE_TYPE_PRIMARY_DEVICE_TYPE {
 extern RPC_IF_HANDLE __MIDL_itf_wcntypes_0000_0000_v0_0_c_ifspec;
 extern RPC_IF_HANDLE __MIDL_itf_wcntypes_0000_0000_v0_0_s_ifspec;
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

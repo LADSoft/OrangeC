@@ -13,10 +13,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define RF_ROUTING  0x00000001
 #define RF_DEMAND_UPDATE_ROUTES  0x00000004
@@ -277,9 +273,6 @@ typedef MPR_ROUTING_CHARACTERISTICS *PMPR_ROUTING_CHARACTERISTICS;
 
 typedef DWORD (WINAPI *PREGISTER_PROTOCOL)(PMPR_ROUTING_CHARACTERISTICS,PMPR_SERVICE_CHARACTERISTICS);
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

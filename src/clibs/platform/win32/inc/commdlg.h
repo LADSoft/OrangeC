@@ -23,10 +23,6 @@ DEFINE_GUID(IID_IPrintDialogServices,0x509aaeda,0x5639,0x11d1,0xb6,0xa1,0x0,0x0,
 #include <pshpack1.h>
 #endif /* !_WIN64 */
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#endif
 
 #ifndef WINCOMMDLGAPI
 #define WINCOMMDLGAPI  DECLSPEC_IMPORT
@@ -842,9 +838,6 @@ typedef LPPRINTDLGEXA LPPRINTDLGEX;
 /* #include "commdlg.inl" */
 #endif /* ISOLATION_AWARE_ENABLED */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifndef _WIN64
 #include <poppack.h>

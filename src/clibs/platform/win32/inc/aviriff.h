@@ -7,11 +7,6 @@
 
 /* RIFF AVI file format definitions */
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #ifndef NUMELMS
 #define NUMELMS(aa)  (sizeof(aa)/sizeof((aa)[0]))
@@ -294,8 +289,5 @@ typedef struct _avifieldindex_chunk {
 
 #include <poppack.h>
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #endif /* _AVIRIFF_H */

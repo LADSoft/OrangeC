@@ -13,10 +13,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2185)  /* Alignment of field 'x' can be less than the natural alignment */
-#endif
 
 #define MCI_TEST  0x00000020L
 
@@ -759,9 +755,6 @@ typedef MCI_DGV_WINDOW_PARMSA MCI_DGV_WINDOW_PARMS;
 typedef LPMCI_DGV_WINDOW_PARMSA LPMCI_DGV_WINDOW_PARMS;
 #endif /* UNICODE */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

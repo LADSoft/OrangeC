@@ -16,11 +16,6 @@
 extern "C" {
 #endif
 
-#if __POCC__ >= 290
-#pragma warn(push)
-#pragma warn(disable:2197)  /* 'type' is not a standard bit-field type */
-#pragma warn(disable:2198)  /* Nameless field is not standard */
-#endif
 
 #define HTTP_INITIALIZE_SERVER  0x00000001
 #define HTTP_INITIALIZE_CONFIG  0x00000002
@@ -972,9 +967,6 @@ HTTPAPI_LINKAGE ULONG WINAPI HttpCancelHttpRequest(HANDLE,HTTP_REQUEST_ID,LPOVER
 HTTPAPI_LINKAGE ULONG WINAPI HttpWaitForDemandStart(HANDLE,LPOVERLAPPED);
 #endif /* _WIN32_WINNT >= 0x0600 */
 
-#if __POCC__ >= 290
-#pragma warn(pop)
-#endif
 
 #ifdef __cplusplus
 }

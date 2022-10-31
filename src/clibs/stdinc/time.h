@@ -13,6 +13,7 @@
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
+
  * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
@@ -61,7 +62,7 @@ extern "C"
 typedef long __time_t_32;
 typedef long long __time_t_64;
 
-#if defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined (_USE_32BIT_TIME_T) || defined( _DEFINING_TIME_T)
+#if defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined (_USE_32BIT_TIME_T) || defined( _DEFINING_TIME_T) || defined(__MSIL__)
     typedef __time_t_32 time_t;
 #else
     typedef __time_t_64 time_t;
@@ -136,7 +137,7 @@ typedef long long __time_t_64;
     __time_t_64 _RTL_FUNC _IMPORT _time64(__time_t_64* __timer);
     __time_t_64 _RTL_FUNC _IMPORT _mktime64(struct tm* __timeptr);
 
-#if defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined(_DEFINING_TIME_T)
+#if defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined(_DEFINING_TIME_T) || defined(__MSIL__)
     char* _RTL_FUNC _IMPORT ctime(const time_t* __time);
     int _RTL_FUNC _IMPORT stime(time_t* __tp);
     struct tm* _RTL_FUNC _IMPORT gmtime(const time_t* __timer);
@@ -145,7 +146,7 @@ typedef long long __time_t_64;
     time_t _RTL_FUNC _IMPORT mktime(struct tm* __timeptr);
     double _RTL_FUNC _IMPORT difftime(time_t __time2, time_t __time1);
 #else
-#ifdef _USE_32BIT_TIME_T
+#if defined(_USE_32BIT_TIME_T)
     inline char* ctime(const time_t* __time)
     {
         return _ctime32(__time);

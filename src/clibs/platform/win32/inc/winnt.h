@@ -1440,6 +1440,7 @@ typedef struct _SCOPE_TABLE_AMD64 {
 #define BitTestAndComplement _bittestandcomplement
 #define BitTestAndSet _bittestandset
 #define BitTestAndReset _bittestandreset
+#if 0
 #define InterlockedBitTestAndSet _interlockedbittestandset
 #define InterlockedBitTestAndSetAcquire _interlockedbittestandset
 #define InterlockedBitTestAndSetRelease _interlockedbittestandset
@@ -1461,6 +1462,7 @@ typedef struct _SCOPE_TABLE_AMD64 {
 #define InterlockedBitTestAndReset64Acquire _interlockedbittestandreset64
 #define InterlockedBitTestAndReset64Release _interlockedbittestandreset64
 #define InterlockedBitTestAndReset64NoFence _interlockedbittestandreset64
+#endif
 
 BOOLEAN __cdecl _bittest(LONG const *, LONG);
 BOOLEAN __cdecl _bittestandcomplement(LONG *, LONG);
@@ -1504,6 +1506,7 @@ BOOLEAN __cdecl _BitScanReverse64(DWORD *, DWORD64);
 #pragma intrinsic(_BitScanForward64)
 #pragma intrinsic(_BitScanReverse64)
 
+#if 0
 #define InterlockedIncrement16  _InterlockedIncrement16
 #define InterlockedIncrementAcquire16  _InterlockedIncrement16
 #define InterlockedIncrementRelease16  _InterlockedIncrement16
@@ -1600,6 +1603,9 @@ BOOLEAN __cdecl _BitScanReverse64(DWORD *, DWORD64);
 #define InterlockedCompareExchangePointerRelease  _InterlockedCompareExchangePointer
 #define InterlockedCompareExchangePointerNoFence  _InterlockedCompareExchangePointer
 
+#endif
+
+
 #define InterlockedExchangeAddSizeT(a,b)  InterlockedExchangeAdd64((LONG64 *)a, b)
 #define InterlockedExchangeAddSizeTAcquire(a,b)  InterlockedExchangeAdd64((LONG64 *)a, b)
 #define InterlockedExchangeAddSizeTNoFence(a,b)  InterlockedExchangeAdd64((LONG64 *)a, b)
@@ -1608,19 +1614,19 @@ BOOLEAN __cdecl _BitScanReverse64(DWORD *, DWORD64);
 #define InterlockedDecrementSizeT(a)  InterlockedDecrement64((LONG64 *)a)
 #define InterlockedDecrementSizeTNoFence(a)  InterlockedDecrement64((LONG64 *)a)
 
-SHORT /* __cdecl */  __stdcall _InterlockedIncrement16(SHORT volatile *);
-SHORT /* __cdecl */  __stdcall _InterlockedDecrement16(SHORT volatile *);
-SHORT /* __cdecl */  __stdcall _InterlockedCompareExchange16(SHORT volatile *, SHORT, SHORT);
-LONG /* __cdecl */  __stdcall _InterlockedAnd(LONG volatile *, LONG);
-LONG /* __cdecl */  __stdcall _InterlockedOr(LONG volatile *, LONG);
-LONG /* __cdecl */  __stdcall _InterlockedXor(LONG volatile *, LONG);
-LONG64 /* __cdecl */  __stdcall _InterlockedAnd64(LONG64 volatile *, LONG64);
-LONG64 /* __cdecl */  __stdcall _InterlockedOr64(LONG64 volatile *, LONG64);
-LONG64 /* __cdecl */  __stdcall _InterlockedXor64(LONG64 volatile *, LONG64);
-LONG /* __cdecl */  __stdcall _InterlockedIncrement(LONG volatile *);
-LONG /* __cdecl */  __stdcall _InterlockedDecrement(LONG volatile *);
-LONG /* __cdecl */  __stdcall _InterlockedExchange(LONG volatile *, LONG);
-LONG /* __cdecl */  __stdcall _InterlockedExchangeAdd(LONG volatile *, LONG);
+SHORT /* __cdecl */  __stdcall InterlockedIncrement16(SHORT volatile *);
+SHORT /* __cdecl */  __stdcall InterlockedDecrement16(SHORT volatile *);
+SHORT /* __cdecl */  __stdcall InterlockedCompareExchange16(SHORT volatile *, SHORT, SHORT);
+LONG /* __cdecl */  __stdcall InterlockedAnd(LONG volatile *, LONG);
+LONG /* __cdecl */  __stdcall InterlockedOr(LONG volatile *, LONG);
+LONG /* __cdecl */  __stdcall InterlockedXor(LONG volatile *, LONG);
+LONG64 /* __cdecl */  __stdcall InterlockedAnd64(LONG64 volatile *, LONG64);
+LONG64 /* __cdecl */  __stdcall InterlockedOr64(LONG64 volatile *, LONG64);
+LONG64 /* __cdecl */  __stdcall InterlockedXor64(LONG64 volatile *, LONG64);
+LONG /* __cdecl */  __stdcall InterlockedIncrement(LONG volatile *);
+LONG /* __cdecl */  __stdcall InterlockedDecrement(LONG volatile *);
+LONG /* __cdecl */  __stdcall InterlockedExchange(LONG volatile *, LONG);
+LONG /* __cdecl */  __stdcall InterlockedExchangeAdd(LONG volatile *, LONG);
 
 #ifndef _X86AMD64_
 __forceinline LONG InterlockedAdd(LONG volatile *Addend, LONG Value) {
@@ -1628,11 +1634,11 @@ __forceinline LONG InterlockedAdd(LONG volatile *Addend, LONG Value) {
 }
 #endif /* !_X86AMD64_ */
 
-LONG /* __cdecl */  __stdcall _InterlockedCompareExchange(LONG volatile *, LONG, LONG);
-LONG64 /* __cdecl */  __stdcall _InterlockedIncrement64(LONG64 volatile *);
-LONG64 /* __cdecl */  __stdcall _InterlockedDecrement64(LONG64 volatile *);
-LONG64 /* __cdecl */  __stdcall _InterlockedExchange64(LONG64 volatile *, LONG64);
-LONG64 /* __cdecl */  __stdcall _InterlockedExchangeAdd64(LONG64 volatile *, LONG64);
+LONG /* __cdecl */  __stdcall InterlockedCompareExchange(LONG volatile *, LONG, LONG);
+LONG64 /* __cdecl */  __stdcall InterlockedIncrement64(LONG64 volatile *);
+LONG64 /* __cdecl */  __stdcall InterlockedDecrement64(LONG64 volatile *);
+LONG64 /* __cdecl */  __stdcall InterlockedExchange64(LONG64 volatile *, LONG64);
+LONG64 /* __cdecl */  __stdcall InterlockedExchangeAdd64(LONG64 volatile *, LONG64);
 
 #ifndef _X86AMD64_
 __forceinline LONG64 _InlineInterlockedAdd64(LONG64 volatile *Addend, LONG64 Value) {
@@ -1640,10 +1646,10 @@ __forceinline LONG64 _InlineInterlockedAdd64(LONG64 volatile *Addend, LONG64 Val
 }
 #endif /* !_X86AMD64_ */
 
-LONG64 /* __cdecl */  __stdcall _InterlockedCompareExchange64(LONG64 volatile *, LONG64, LONG64);
-BOOLEAN /* __cdecl */  __stdcall _InterlockedCompareExchange128(LONG64 volatile *, LONG64, LONG64, LONG64 *);
-PVOID /* __cdecl */  __stdcall _InterlockedCompareExchangePointer(PVOID volatile *, PVOID, PVOID);
-PVOID /* __cdecl */  __stdcall _InterlockedExchangePointer(PVOID volatile *, PVOID);
+LONG64 /* __cdecl */  __stdcall InterlockedCompareExchange64(LONG64 volatile *, LONG64, LONG64);
+BOOLEAN /* __cdecl */  __stdcall InterlockedCompareExchange128(LONG64 volatile *, LONG64, LONG64, LONG64 *);
+PVOID /* __cdecl */  __stdcall InterlockedCompareExchangePointer(PVOID volatile *, PVOID, PVOID);
+PVOID /* __cdecl */  __stdcall InterlockedExchangePointer(PVOID volatile *, PVOID);
 
 #ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedIncrement16)
@@ -1666,22 +1672,24 @@ PVOID /* __cdecl */  __stdcall _InterlockedExchangePointer(PVOID volatile *, PVO
 #pragma intrinsic(_InterlockedExchangeAdd64)
 #pragma intrinsic(_InterlockedCompareExchange64)
 #pragma intrinsic(_InterlockedCompareExchange128)
-
 #pragma intrinsic(_InterlockedExchangePointer)
 #pragma intrinsic(_InterlockedCompareExchangePointer)
 #endif
 
+#if 0
 #define InterlockedExchange8 _InterlockedExchange8
 #define InterlockedExchange16 _InterlockedExchange16
+#endif
 
-CHAR /* __cdecl */  __stdcall _InterlockedExchange8(CHAR volatile *, CHAR);
-SHORT /* __cdecl */  __stdcall _InterlockedExchange16(SHORT volatile *, SHORT);
+CHAR /* __cdecl */  __stdcall InterlockedExchange8(CHAR volatile *, CHAR);
+SHORT /* __cdecl */  __stdcall InterlockedExchange16(SHORT volatile *, SHORT);
 
 #ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedExchange8)
 #pragma intrinsic(_InterlockedExchange16)
 #endif
 
+#if 0
 #define InterlockedExchangeAdd8 _InterlockedExchangeAdd8
 #define InterlockedAnd8 _InterlockedAnd8
 #define InterlockedOr8 _InterlockedOr8
@@ -1689,14 +1697,15 @@ SHORT /* __cdecl */  __stdcall _InterlockedExchange16(SHORT volatile *, SHORT);
 #define InterlockedAnd16 _InterlockedAnd16
 #define InterlockedOr16 _InterlockedOr16
 #define InterlockedXor16 _InterlockedXor16
+#endif
 
-char /* __cdecl */  __stdcall _InterlockedExchangeAdd8(char volatile *, char);
-char /* __cdecl */  __stdcall _InterlockedAnd8(char volatile *, char);
-char /* __cdecl */  __stdcall _InterlockedOr8(char volatile *, char);
-char /* __cdecl */  __stdcall _InterlockedXor8(char volatile *, char);
-SHORT /* __cdecl */  __stdcall _InterlockedAnd16(SHORT volatile *, SHORT);
-SHORT /* __cdecl */  __stdcall _InterlockedOr16(SHORT volatile *, SHORT);
-SHORT /* __cdecl */  __stdcall _InterlockedXor16(SHORT volatile *, SHORT);
+char /* __cdecl */  __stdcall InterlockedExchangeAdd8(char volatile *, char);
+char /* __cdecl */  __stdcall InterlockedAnd8(char volatile *, char);
+char /* __cdecl */  __stdcall InterlockedOr8(char volatile *, char);
+char /* __cdecl */  __stdcall InterlockedXor8(char volatile *, char);
+SHORT /* __cdecl */  __stdcall InterlockedAnd16(SHORT volatile *, SHORT);
+SHORT /* __cdecl */  __stdcall InterlockedOr16(SHORT volatile *, SHORT);
+SHORT /* __cdecl */  __stdcall InterlockedXor16(SHORT volatile *, SHORT);
 
 #ifndef __ORANGEC__
 #pragma intrinsic (_InterlockedExchangeAdd8)
@@ -2216,6 +2225,8 @@ __forceinline void DbgRaiseAssertionFailure(VOID) { __asm int 0x2c }
 #define BitTestAndComplement  _bittestandcomplement
 #define BitTestAndSet  _bittestandset
 #define BitTestAndReset  _bittestandreset
+
+#if 0
 #define InterlockedBitTestAndSet  _interlockedbittestandset
 #define InterlockedBitTestAndSetAcquire  _interlockedbittestandset
 #define InterlockedBitTestAndSetRelease  _interlockedbittestandset
@@ -2224,6 +2235,7 @@ __forceinline void DbgRaiseAssertionFailure(VOID) { __asm int 0x2c }
 #define InterlockedBitTestAndResetAcquire  _interlockedbittestandreset
 #define InterlockedBitTestAndResetRelease  _interlockedbittestandreset
 #define InterlockedBitTestAndResetNoFence  _interlockedbittestandreset
+#endif
 
 BOOLEAN __cdecl _bittest(const LONG *, LONG);
 BOOLEAN __cdecl _bittestandcomplement(LONG *, LONG);
@@ -2274,6 +2286,7 @@ FORCEINLINE BOOLEAN _InlineBitScanReverse64(DWORD *Index, DWORD64 Mask) {
 
 #define BitScanReverse64  _InlineBitScanReverse64
 
+#if 0
 #define InterlockedIncrement16  _InterlockedIncrement16
 #define InterlockedIncrementAcquire16  _InterlockedIncrement16
 #define InterlockedIncrementRelease16  _InterlockedIncrement16
@@ -2293,11 +2306,12 @@ FORCEINLINE BOOLEAN _InlineBitScanReverse64(DWORD *Index, DWORD64 Mask) {
 #define InterlockedCompareExchangeAcquire64  _InterlockedCompareExchange64
 #define InterlockedCompareExchangeRelease64  _InterlockedCompareExchange64
 #define InterlockedCompareExchangeNoFence64  _InterlockedCompareExchange64
+#endif
 
-SHORT /* __cdecl */ __stdcall _InterlockedIncrement16(SHORT volatile *);
-SHORT /* __cdecl */ __stdcall _InterlockedDecrement16(SHORT volatile *);
-SHORT /* __cdecl */ __stdcall _InterlockedCompareExchange16(SHORT volatile *, SHORT, SHORT);
-LONG64 /* __cdecl */ __stdcall _InterlockedCompareExchange64(LONG64 volatile *, LONG64, LONG64);
+SHORT /* __cdecl */ __stdcall InterlockedIncrement16(SHORT volatile *);
+SHORT /* __cdecl */ __stdcall InterlockedDecrement16(SHORT volatile *);
+SHORT /* __cdecl */ __stdcall InterlockedCompareExchange16(SHORT volatile *, SHORT, SHORT);
+LONG64 /* __cdecl */ __stdcall InterlockedCompareExchange64(LONG64 volatile *, LONG64, LONG64);
 
 #ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedIncrement16)
@@ -2306,6 +2320,7 @@ LONG64 /* __cdecl */ __stdcall _InterlockedCompareExchange64(LONG64 volatile *, 
 #pragma intrinsic(_InterlockedCompareExchange64)
 #endif
 
+#if 0
 #define InterlockedAnd  _InterlockedAnd
 #define InterlockedAndAcquire  _InterlockedAnd
 #define InterlockedAndRelease  _InterlockedAnd
@@ -2352,20 +2367,21 @@ LONG64 /* __cdecl */ __stdcall _InterlockedCompareExchange64(LONG64 volatile *, 
 #define InterlockedCompareExchangeNoFence  _InterlockedCompareExchange
 
 #define InterlockedExchange16  _InterlockedExchange16
+#endif
 
-LONG /* __cdecl */ __stdcall _InterlockedAnd(LONG volatile *, LONG);
-LONG /* __cdecl */ __stdcall _InterlockedOr(LONG volatile *, LONG);
-LONG /* __cdecl */ __stdcall _InterlockedXor(LONG volatile *, LONG);
-LONG /* __cdecl */ __stdcall _InterlockedIncrement(LONG volatile *);
-LONG /* __cdecl */ __stdcall _InterlockedDecrement(LONG volatile *);
-LONG /* __cdecl */ __stdcall _InterlockedExchange(LONG volatile *, LONG);
-LONG /* __cdecl */ __stdcall _InterlockedExchangeAdd(LONG volatile *, LONG);
+LONG /* __cdecl */ __stdcall InterlockedAnd(LONG volatile *, LONG);
+LONG /* __cdecl */ __stdcall InterlockedOr(LONG volatile *, LONG);
+LONG /* __cdecl */ __stdcall InterlockedXor(LONG volatile *, LONG);
+LONG /* __cdecl */ __stdcall InterlockedIncrement(LONG volatile *);
+LONG /* __cdecl */ __stdcall InterlockedDecrement(LONG volatile *);
+LONG /* __cdecl */ __stdcall InterlockedExchange(LONG volatile *, LONG);
+LONG /* __cdecl */ __stdcall InterlockedExchangeAdd(LONG volatile *, LONG);
 
 FORCEINLINE LONG _InlineInterlockedAdd(LONG volatile *Addend, LONG Value) {
     return InterlockedExchangeAdd(Addend, Value) + Value;
 }
 
-LONG /* __cdecl */ __stdcall _InterlockedCompareExchange(LONG volatile *, LONG, LONG);
+LONG /* __cdecl */ __stdcall InterlockedCompareExchange(LONG volatile *, LONG, LONG);
 
 #undef _InterlockedExchangePointer
 
@@ -2398,17 +2414,20 @@ FORCEINLINE PVOID _InlineInterlockedCompareExchangePointer(PVOID volatile *Desti
 #pragma intrinsic(_InterlockedCompareExchange)
 #endif
 
+#if 0
 #define InterlockedExchange8  _InterlockedExchange8
 #define InterlockedExchange16  _InterlockedExchange16
+#endif
 
-CHAR /* __cdecl */ __stdcall _InterlockedExchange8(CHAR volatile *, CHAR);
-SHORT /* __cdecl */ __stdcall _InterlockedExchange16(SHORT volatile *, SHORT);
+CHAR /* __cdecl */ __stdcall InterlockedExchange8(CHAR volatile *, CHAR);
+SHORT /* __cdecl */ __stdcall InterlockedExchange16(SHORT volatile *, SHORT);
 
 #ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedExchange8)
 #pragma intrinsic(_InterlockedExchange16)
 #endif
 
+#if 0
 #define InterlockedExchangeAdd8  _InterlockedExchangeAdd8
 #define InterlockedAnd8  _InterlockedAnd8
 #define InterlockedOr8  _InterlockedOr8
@@ -2419,17 +2438,18 @@ SHORT /* __cdecl */ __stdcall _InterlockedExchange16(SHORT volatile *, SHORT);
 #define InterlockedCompareExchange16  _InterlockedCompareExchange16
 #define InterlockedIncrement16  _InterlockedIncrement16
 #define InterlockedDecrement16  _InterlockedDecrement16
+#endif
 
-char /* __cdecl */ __stdcall _InterlockedExchangeAdd8(char volatile *, char);
-char /* __cdecl */ __stdcall _InterlockedAnd8(char volatile *, char);
-char /* __cdecl */ __stdcall _InterlockedOr8(char volatile *, char);
-char /* __cdecl */ __stdcall _InterlockedXor8(char volatile *, char);
-SHORT /* __cdecl */ __stdcall _InterlockedAnd16(SHORT volatile *, SHORT);
-SHORT /* __cdecl */ __stdcall _InterlockedXor16(SHORT volatile *, SHORT);
-SHORT /* __cdecl */ __stdcall _InterlockedCompareExchange16(SHORT volatile *, SHORT, SHORT);
-SHORT /* __cdecl */ __stdcall _InterlockedOr16(SHORT volatile *, SHORT);
-SHORT /* __cdecl */ __stdcall _InterlockedIncrement16(SHORT volatile *);
-SHORT /* __cdecl */ __stdcall _InterlockedDecrement16(SHORT volatile *);
+char /* __cdecl */ __stdcall InterlockedExchangeAdd8(char volatile *, char);
+char /* __cdecl */ __stdcall InterlockedAnd8(char volatile *, char);
+char /* __cdecl */ __stdcall InterlockedOr8(char volatile *, char);
+char /* __cdecl */ __stdcall InterlockedXor8(char volatile *, char);
+SHORT /* __cdecl */ __stdcall InterlockedAnd16(SHORT volatile *, SHORT);
+SHORT /* __cdecl */ __stdcall InterlockedXor16(SHORT volatile *, SHORT);
+SHORT /* __cdecl */ __stdcall InterlockedCompareExchange16(SHORT volatile *, SHORT, SHORT);
+SHORT /* __cdecl */ __stdcall InterlockedOr16(SHORT volatile *, SHORT);
+SHORT /* __cdecl */ __stdcall InterlockedIncrement16(SHORT volatile *);
+SHORT /* __cdecl */ __stdcall InterlockedDecrement16(SHORT volatile *);
 
 #ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedExchangeAdd8)
@@ -2444,7 +2464,9 @@ SHORT /* __cdecl */ __stdcall _InterlockedDecrement16(SHORT volatile *);
 #pragma intrinsic(_InterlockedDecrement16)
 #endif
 
+#if 0
 #define InterlockedCompareExchange64  _InterlockedCompareExchange64
+#endif
 
 FORCEINLINE LONG64 _InlineInterlockedAnd64(LONG64 volatile *Destination, LONG64 Value) {
     LONG64 Old;
@@ -2454,10 +2476,12 @@ FORCEINLINE LONG64 _InlineInterlockedAnd64(LONG64 volatile *Destination, LONG64 
     return Old;
 }
 
+#if 0
 #define InterlockedAnd64  _InlineInterlockedAnd64
 #define InterlockedAnd64Acquire  _InlineInterlockedAnd64
 #define InterlockedAnd64Release  _InlineInterlockedAnd64
 #define InterlockedAnd64NoFence  _InlineInterlockedAnd64
+#endif
 
 FORCEINLINE LONG64 _InlineInterlockedAdd64(LONG64 volatile *Addend, LONG64 Value) {
     LONG64 Old;
@@ -2467,10 +2491,12 @@ FORCEINLINE LONG64 _InlineInterlockedAdd64(LONG64 volatile *Addend, LONG64 Value
     return Old + Value;
 }
 
+#if 0
 #define InterlockedAdd64  _InlineInterlockedAdd64
 #define InterlockedAddAcquire64  _InlineInterlockedAdd64
 #define InterlockedAddRelease64  _InlineInterlockedAdd64
 #define InterlockedAddNoFence64  _InlineInterlockedAdd64
+#endif
 
 #define InterlockedExchangeAddSizeT(a,b)  InterlockedExchangeAdd((LONG *)a, b)
 #define InterlockedExchangeAddSizeTAcquire(a,b)  InterlockedExchangeAdd((LONG *)a, b)
@@ -2480,13 +2506,15 @@ FORCEINLINE LONG64 _InlineInterlockedAdd64(LONG64 volatile *Addend, LONG64 Value
 #define InterlockedDecrementSizeT(a)  InterlockedDecrement((LONG *)a)
 #define InterlockedDecrementSizeTNoFence(a)  InterlockedDecrement((LONG *)a)
 
-LONG /*__cdecl*/ __stdcall _InterlockedXor(LONG volatile *, LONG);
+LONG /*__cdecl*/ __stdcall InterlockedXor(LONG volatile *, LONG);
 
 #ifndef __ORANGEC__
 #pragma intrinsic(_InterlockedXor)
 #endif
 
+#if 0
 #define InterlockedXor  _InterlockedXor
+#endif
 
 LONGLONG FORCEINLINE _InlineInterlockedOr64(LONGLONG volatile *Destination, LONGLONG Value) {
     LONGLONG Old;
@@ -2496,7 +2524,9 @@ LONGLONG FORCEINLINE _InlineInterlockedOr64(LONGLONG volatile *Destination, LONG
     return Old;
 }
 
+#if 0
 #define InterlockedOr64  _InlineInterlockedOr64
+#endif
 
 FORCEINLINE LONG64 _InlineInterlockedXor64(LONG64 volatile *Destination, LONG64 Value) {
     LONG64 Old;
@@ -2506,7 +2536,9 @@ FORCEINLINE LONG64 _InlineInterlockedXor64(LONG64 volatile *Destination, LONG64 
     return Old;
 }
 
+#if 0
 #define InterlockedXor64  _InlineInterlockedXor64
+#endif
 
 LONGLONG FORCEINLINE _InlineInterlockedIncrement64(LONGLONG volatile *Addend) {
     LONGLONG Old;
@@ -2516,8 +2548,10 @@ LONGLONG FORCEINLINE _InlineInterlockedIncrement64(LONGLONG volatile *Addend) {
     return Old + 1;
 }
 
+#if 0
 #define InterlockedIncrement64  _InlineInterlockedIncrement64
 #define InterlockedIncrementAcquire64  InterlockedIncrement64
+#endif
 
 FORCEINLINE LONGLONG _InlineInterlockedDecrement64(LONGLONG volatile *Addend) {
     LONGLONG Old;
@@ -2527,7 +2561,9 @@ FORCEINLINE LONGLONG _InlineInterlockedDecrement64(LONGLONG volatile *Addend) {
     return Old - 1;
 }
 
+#if 0
 #define InterlockedDecrement64  _InlineInterlockedDecrement64
+#endif
 
 FORCEINLINE LONGLONG _InlineInterlockedExchange64(LONGLONG volatile *Target, LONGLONG Value) {
     LONGLONG Old;
@@ -2537,9 +2573,11 @@ FORCEINLINE LONGLONG _InlineInterlockedExchange64(LONGLONG volatile *Target, LON
     return Old;
 }
 
+#if 0
 #define InterlockedExchange64  _InlineInterlockedExchange64
 #define InterlockedExchangeAcquire64  InterlockedExchange64
 #define InterlockedExchangeNoFence64  _InlineInterlockedExchange64
+#endif
 
 FORCEINLINE LONGLONG _InlineInterlockedExchangeAdd64(LONGLONG volatile *Addend, LONGLONG Value) {
     LONGLONG Old;
@@ -2549,9 +2587,10 @@ FORCEINLINE LONGLONG _InlineInterlockedExchangeAdd64(LONGLONG volatile *Addend, 
     return Old;
 }
 
+#if 0
 #define InterlockedExchangeAdd64  _InlineInterlockedExchangeAdd64
 #define InterlockedExchangeAddNoFence64  _InlineInterlockedExchangeAdd64
-
+#endif
 void __cdecl __incfsbyte(DWORD);
 void __cdecl __addfsbyte(DWORD, BYTE);
 void __cdecl __incfsword(DWORD);

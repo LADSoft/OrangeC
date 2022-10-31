@@ -342,7 +342,7 @@ extern char _RTL_DATA** __argv;
 typedef long __time_t_32;
 typedef long long __time_t_64;
 
-#if defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined (_USE_32BIT_TIME_T)
+#if defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined (_USE_32BIT_TIME_T) || defined(__MSIL__)
     typedef __time_t_32 time_t;
 #else
     typedef __time_t_64 time_t;

@@ -56,6 +56,7 @@ int _abterm = 0;
 
 void _RTL_FUNC _abort()
 {
+    __aborthook();
     fprintf(stderr, "\nAbnormal program termination");
     fflush(stderr);
     _abterm = 1;

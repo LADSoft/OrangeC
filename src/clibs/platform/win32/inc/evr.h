@@ -688,7 +688,7 @@ EXTERN_C const IID IID_IMFTopologyServiceLookup;
 MIDL_INTERFACE("fa993889-4383-415a-a930-dd472a8cf6f7")IMFTopologyServiceLookup:public IUnknown
 {
     public:
-    virtual HRESULT STDMETHODCALLTYPE LookupService(MF_SERVICE_LOOKUP_TYPE Type, DWORD dwIndex, REFGUID guidService, REFIID riid, __out_ecount_full(*pnObjects)LPVOID * ppvObjects, DWORD * pnObjects) = 0;
+    virtual HRESULT STDMETHODCALLTYPE LookupService(MF_SERVICE_LOOKUP_TYPE Type, DWORD dwIndex, REFGUID guidService, REFIID riid, LPVOID * ppvObjects, DWORD * pnObjects) = 0;
 };
 #else
 typedef struct IMFTopologyServiceLookupVtbl {

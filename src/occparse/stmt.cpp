@@ -2294,7 +2294,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
         if (tp->type == bt_void)
         {
             if (!Optimizer::cparams.prm_cplusplus || returntype->type != bt_void)
-                error(ERR_CANNOT_RETURN_VOID_VALUE);
+                error(ERR_VOID_FUNCTION_RETURNS_VALUE);
         }
         else if (returntype && returntype->type == bt_void)
             error(ERR_RETURN_NO_VALUE);

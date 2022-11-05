@@ -98,6 +98,7 @@ copyfiles: mkdir
 	-mkdir ..\..\include\c 2> NUL
 	-mkdir ..\..\include\c\sys 2> NUL
 	-mkdir ..\..\include\c\win32 2> NUL
+	-mkdir ..\..\include\c\win32\gl 2> NUL
 	-mkdir ..\..\include\support 2> NUL
 	-mkdir ..\..\include\support\win32 2> NUL
 	-mkdir ..\..\include\support\orangec 2> NUL
@@ -108,6 +109,7 @@ copyfiles: mkdir
 	-copy  stdinc ..\..\include\c 2>NUL
 	-copy  stdinc\sys ..\..\include\c\sys 2>NUL
 	-copy  platform\win32\inc ..\..\include\c\win32 2>NUL
+	-copy  platform\win32\inc\gl ..\..\include\c\win32\gl 2>NUL
 
 $(C_CLIBS) : %.clibs :
 	$(MAKE) -C$* --eval="OBJECT=$(CLIBOBJECT)" --eval="$(BUILDING_DLL)"

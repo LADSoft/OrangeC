@@ -32,6 +32,16 @@
 #include <cstdlib>
 #include <cstring>
 
+
+#include <windows.h>
+extern "C" void __aborthook()
+{
+	printf("%s\n", GetCommandLineA());
+}
+extern "C" void __excepthook()
+{
+	printf("%s\n", GetCommandLineA());
+}
 CmdSwitchBase::CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar, std::deque<std::string> LongNames) :
     exists(false), switchChar(SwitchChar), longNames(LongNames)
 {

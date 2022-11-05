@@ -55,7 +55,7 @@ static char usage_text[] =
     "/axxx     - set assembler extension   /c        - compile only\n"
     "+e        - dump errors to file       /f{flags} - set flags\n"
     "/g        - enable debug symbols      +i        - dump preprocessed file\n"
-    "/lxxx     - include library           /oname    - specify output file name\n"
+    "/lxxx     - include library           /oxxx     - specify output file name\n"
     "/pxxx     - pass command to tool      /snn      - align stack\n"
     "/t        - display timing info       /wxxx     - warning control\n"
     "/x xxx    - specify language          /y[...]   - verbosity\n"

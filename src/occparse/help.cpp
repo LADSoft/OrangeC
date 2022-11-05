@@ -44,6 +44,7 @@
 #include "help.h"
 #include "declcpp.h"
 #include "ildata.h"
+#include "types.h"
 namespace Parser
 {
 
@@ -1488,7 +1489,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         exp = exprNode(en_blockassign, exprNode(en_add, copy_expression(expsym), intNode(en_c_i, init->offset)), exp2);
                         exp->size = init->basetp->size;
                         exp->altdata = (void*)(init->basetp);
-                        noClear = true;
+                        noClear = comparetypes(init->basetp, tp, true);
                     }
                 }
                 else

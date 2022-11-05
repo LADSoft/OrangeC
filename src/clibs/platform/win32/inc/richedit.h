@@ -12,6 +12,8 @@
 
 #include <pshpack4.h>
 
+#define __forceinline inline
+
 #ifndef _RICHEDIT_VER
 #define _RICHEDIT_VER  0x0300
 /* Version 1.0 = 0x0100 */

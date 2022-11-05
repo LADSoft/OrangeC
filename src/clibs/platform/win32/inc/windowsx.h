@@ -11,6 +11,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#define __forceinline inline
+
 #ifndef SNDMSG
 #ifdef __cplusplus
 #define SNDMSG ::SendMessage

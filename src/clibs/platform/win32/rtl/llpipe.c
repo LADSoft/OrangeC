@@ -35,6 +35,7 @@
  */
 
 #include <windows.h>
+#include <errno.h>
 
 int __ll_openpipe(int* read, int* write, unsigned int size)
 {

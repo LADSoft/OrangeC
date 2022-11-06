@@ -106,6 +106,7 @@ void libcxx_init(void)
 {
     int i;
     intrinsicHash = CreateHashTable(32);
+    integerSequences.clear();
     for (i = 0; i < sizeof(defaults) / sizeof(defaults[0]); i++)
         AddName((SYMBOL*)&defaults[i], intrinsicHash);
 }

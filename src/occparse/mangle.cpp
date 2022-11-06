@@ -31,15 +31,16 @@
 #include "help.h"
 #include "memory.h"
 #include "mangle.h"
+#include <algorithm>
 namespace Parser
 {
 
-const char* overloadNameTab[] = {"$bctr",  "$bdtr",   "$bcast",  "$bnew",   "$bdel",   "$badd",   "$bsub",   "$bmul",    "$bdiv",
-                                 "$bshl",  "$bshr",   "$bmod",   "$bequ",   "$bneq",   "$blt",    "$bleq",   "$bgt",     "$bgeq",
-                                 "$basn",  "$basadd", "$bassub", "$basmul", "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand",
-                                 "$basor", "$basxor", "$binc",   "$bdec",   "$barray", "$bcall",  "$bstar",  "$barrow",  "$bcomma",
-                                 "$blor",  "$bland",  "$bnot",   "$bor",    "$band",   "$bxor",   "$bcpl",   "$bnwa",    "$bdla",
-                                 "$blit",  "$badd",   "$bsub",   "$bmul",   "$band"};
+const char* overloadNameTab[] = {".bctr",  ".bdtr",   ".bcast",  ".bnew",   ".bdel",   ".badd",   ".bsub",   ".bmul",    ".bdiv",
+                                 ".bshl",  ".bshr",   ".bmod",   ".bequ",   ".bneq",   ".blt",    ".bleq",   ".bgt",     ".bgeq",
+                                 ".basn",  ".basadd", ".bassub", ".basmul", ".basdiv", ".basmod", ".basshl", ".bsasshr", ".basand",
+                                 ".basor", ".basxor", ".binc",   ".bdec",   ".barray", ".bcall",  ".bstar",  ".barrow",  ".bcomma",
+                                 ".blor",  ".bland",  ".bnot",   ".bor",    ".band",   ".bxor",   ".bcpl",   ".bnwa",    ".bdla",
+                                 ".blit",  ".badd",   ".bsub",   ".bmul",   ".band"};
 const char* msiloverloadNameTab[] = {".ctor",
                                      ".dtor",
                                      ".bcast",
@@ -58,7 +59,7 @@ const char* msiloverloadNameTab[] = {".ctor",
                                      "op_LessThanOrEqual",
                                      "op_GreaterThan",
                                      "op_GreaterThanOrEqual",
-                                     "$basn",
+                                     ".basn",
                                      "op_AdditionAssignment",
                                      "op_SubtractionAssignment",
                                      "op_MultiplicationAssignment",
@@ -69,11 +70,11 @@ const char* msiloverloadNameTab[] = {".ctor",
                                      "op_BitwiseAndAssignment",
                                      "op_BitwiseOrAssignment",
                                      "op_ExclusiveOrAssignment",
-                                     "$binc",
-                                     "$bdec",
-                                     "$barray",
-                                     "$bcall",
-                                     "$bstar",
+                                     ".binc",
+                                     ".bdec",
+                                     ".barray",
+                                     ".bcall",
+                                     ".bstar",
                                      "op_MemberSelection",
                                      "op_Comma",
                                      "op_LogicalOr",
@@ -83,9 +84,9 @@ const char* msiloverloadNameTab[] = {".ctor",
                                      "op_BitwiseAnd",
                                      "op_ExclusiveOr",
                                      "op_OnesComplement",
-                                     "$bnwa",
-                                     "$bdla",
-                                     "$blit",
+                                     ".bnwa",
+                                     ".bdla",
+                                     ".blit",
                                      "op_UnaryPlus",
                                      "op_UnaryMinus",
                                      "op_PointerDereference",
@@ -427,7 +428,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                     *buf++ = '?';
                     buf = getName(buf, exp->v.func->sp);
                     buf += strlen(buf);
-                    *buf++ = '$';
+                    *buf++ = '.';
                     buf = mangleType(buf, exp->v.func->sp->tp, true);
                 }
                 break;
@@ -441,7 +442,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                     *buf++ = '?';
                     strcpy(buf, exp->v.sp->name);
                     buf += strlen(buf);
-                    *buf++ = '$';
+                    *buf++ = '.';
                     buf = mangleType(buf, exp->v.sp->tp, true);
                 }
                 else
@@ -450,7 +451,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                     if (!nonpointer)
                         *buf++ = '?';
                     strcpy(buf, exp->v.sp->name);
-                    *buf++ = '$';
+                    *buf++ = '.';
                     *buf = 0;
                 }
                 break;
@@ -502,14 +503,14 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
         strcpy(buf, sym->name);
         while (*buf)
             buf++;
-        *buf++ = '$';
+        *buf++ = '.';
         *buf = 0;
     }
     else
     {
         *buf++ = '#';
         strcpy(buf, sym->name);
-        strcat(buf, "$");
+        strcat(buf, ".");
         buf += strlen(buf);
     }
     static StackList<TEMPLATEPARAMLIST*> nestedStack;
@@ -740,7 +741,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
                             in = mangleType(in, sym->tp, true);
                         hr = hr->next;
                     }
-                    *in++ = '$';
+                    *in++ = '.';
                     // return value comes next
                     break;
                 case bt_memberptr:
@@ -757,12 +758,12 @@ char* mangleType(char* in, TYPE* tp, bool first)
                                 in = mangleType(in, sym->tp, true);
                             hr = hr->next;
                         }
-                        *in++ = '$';
+                        *in++ = '.';
                         tp = tp->btp;  // so we can get to tp->btp->btp
                     }
                     else
                     {
-                        *in++ = '$';
+                        *in++ = '.';
                     }
                     break;
                 case bt_enum:
@@ -1177,15 +1178,27 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage, bool isTemplateDefinition)
 
             break;
         case lk_pascal:
-            strcpy(errbuf, sym->name);
-            while (*p)
+            if (sym->name[0] == '.')
             {
-                *p = toupper(*p);
-                p++;
+                errbuf[0] = '_';
+                strcpy(errbuf + 1, sym->name);
             }
+            else
+            {
+                strcpy(errbuf, sym->name);
+            }
+            std::transform(errbuf, errbuf + strlen(errbuf), errbuf, ::toupper);
             break;
         case lk_stdcall:
-            strcpy(errbuf, sym->name);
+            if (sym->name[0] == '.')
+            {
+                errbuf[0] = '_';
+                strcpy(errbuf + 1, sym->name);
+            }
+            else
+            {
+                strcpy(errbuf, sym->name);
+            }
             break;
         case lk_c:
         default:
@@ -1225,15 +1238,15 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage, bool isTemplateDefinition)
             }
             if (isfunction(sym->tp))
             {
-                *p++ = '$';
+                *p++ = '.';
                 if (sym->sb->castoperator)
                 {
                     int tmplCount = 0;
                     *p++ = 'o';
                     p = mangleType(p, basetype(sym->tp)->btp, true);  // cast operators get their cast type in the name
-                    *p++ = '$';
+                    *p++ = '.';
                     p = mangleType(p, sym->tp, true);  // add the $qv
-                    while (p > errbuf && (*--p != '$' || tmplCount))
+                    while (p > errbuf && (*--p != '.' || tmplCount))
                         if (*p == '~')
                             tmplCount++;
                         else if (*p == '#')
@@ -1246,14 +1259,14 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage, bool isTemplateDefinition)
                                                        //                    if (!sym->sb->templateLevel)
                     {
                         int tmplCount = 0;
-                        while (p > errbuf && (*--p != '$' || tmplCount))
+                        while (p > errbuf && (*--p != '.' || tmplCount))
                             if (*p == '~')
                                 tmplCount++;
                             else if (*p == '#')
                                 tmplCount--;
                         if (basetype(sym->tp)->btp->type == bt_memberptr)
                         {
-                            while (p > errbuf && (*--p != '$' || tmplCount))
+                            while (p > errbuf && (*--p != '.' || tmplCount))
                                 if (*p == '~')
                                     tmplCount++;
                                 else if (*p == '#')

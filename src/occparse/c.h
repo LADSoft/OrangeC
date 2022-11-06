@@ -43,8 +43,8 @@ namespace Parser
 #    define imin(x, y) ((x) < (y) ? (x) : (y))
 #endif
 
-#define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_'))
-#define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_'))
+#define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_') || (x) == '$')
+#define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_') || (x) == '$')
 
 bool IsCompiler();
 

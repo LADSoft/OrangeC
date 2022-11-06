@@ -5201,7 +5201,7 @@ static int insertFuncs(SYMBOL** spList, Optimizer::LIST* gather, FUNCTIONCALL* a
                 auto hr1 = basetype(sym->tp)->syms->table[0];
                 auto arg = args->arguments;
                 bool ellipse = false;
-                if (sym->name[0] == '$' || sym->sb->templateLevel)
+                if (sym->name[0] == '.' || sym->sb->templateLevel)
                 {
                     arg = nullptr;
                     hr1 = nullptr;

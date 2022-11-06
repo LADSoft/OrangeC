@@ -3226,7 +3226,7 @@ static void insertXCInfo(SYMBOL* funcsp)
     char name[2048];
     SYMBOL* sym;
     makeXCTab(funcsp);
-    Optimizer::my_sprintf(name, "@$xc%s", funcsp->sb->decoratedName);
+    Optimizer::my_sprintf(name, "@.xc%s", funcsp->sb->decoratedName);
     sym = makeID(sc_global, &stdpointer, nullptr, litlate(name));
     sym->sb->attribs.inheritable.linkage4 = lk_virtual;
     sym->sb->decoratedName = sym->name;

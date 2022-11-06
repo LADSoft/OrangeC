@@ -567,7 +567,7 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char
         else
             last = lastb;
     }
-    if (*name == '$')
+    if (*name == '.')
     {
         *unopped = 0;
         if (name[1] == 'b' || name[1] == 'o')

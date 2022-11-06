@@ -617,7 +617,7 @@ unsigned long long Optimizer::SymbolManager::Key(struct Parser::sym* old)
     if (old->sb->storage_class == sc_type)
         strcat(buf, "#");
     if (old->sb->attribs.inheritable.linkage == lk_stdcall)
-        strcat(buf, "$");
+        strcat(buf, ".");
     std::hash<std::string> hasher;
     std::string aa(buf);
     size_t key = hasher(aa);

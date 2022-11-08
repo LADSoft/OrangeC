@@ -2528,6 +2528,7 @@ rpmalloc_initialize_config(const rpmalloc_config_t* config) {
 	}
 
 #if PLATFORM_WINDOWS
+#ifndef __ORANGEC__
 	if (_memory_config.enable_huge_pages) {
 		HANDLE token = 0;
 		size_t large_page_minimum = GetLargePageMinimum();
@@ -2555,6 +2556,7 @@ rpmalloc_initialize_config(const rpmalloc_config_t* config) {
 			CloseHandle(token);
 		}
 	}
+#endif
 #endif
 
 	size_t min_span_size = 256;

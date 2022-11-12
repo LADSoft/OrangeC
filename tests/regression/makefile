@@ -8,10 +8,10 @@ TESTS := $(TESTS) fastcall1.tst
 all: $(TESTS)
 
 %.o: %.c
-	occ /1 /c /! $<
+	occ /1 /DWIN32_LEAN_AND_MEAN /c /! $<
 
 %.o: %.cpp
-	occ /c /! $<
+	occ /c /DWIN32_LEAN_AND_MEAN /! $<
 
 %.o: %.asm
 	oasm /! $<

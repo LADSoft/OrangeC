@@ -1097,7 +1097,9 @@ static bool is_nothrow_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym,
         {
             if (!basetype(tp2)->sp->sb->trivialCons)
             {
-                rv = nothrowConstructible(first(funcparams.arguments)->tp, funcparams.arguments);
+                auto tp = first(funcparams.arguments)->tp;
+                funcparams.arguments->pop_front();
+                rv = nothrowConstructible(tp, funcparams.arguments);
             }
             else if (funcparams.arguments->size() > 1)
             {

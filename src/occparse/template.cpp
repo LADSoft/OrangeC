@@ -82,7 +82,7 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
 std::list<TEMPLATEPARAMPAIR>* copyParams(std::list<TEMPLATEPARAMPAIR>* t, bool alsoSpecializations);
 static bool valFromDefault(std::list<TEMPLATEPARAMPAIR>* params, bool usesParams, INITLIST** args);
 std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelectors(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool byVal);
-std::list<TEMPLATEPARAMPAIR>* ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMPAIR* tpx);
+std::list<TEMPLATEPARAMPAIR>* ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMPAIR* tpx, bool returnNull = false);
 static std::list<TEMPLATEPARAMPAIR>* GetTypeAliasArgs(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, std::list<TEMPLATEPARAMPAIR>* origTemplate,
                                            std::list<TEMPLATEPARAMPAIR>* origUsing);
 static void TransferClassTemplates(std::list<TEMPLATEPARAMPAIR>* dflt, std::list<TEMPLATEPARAMPAIR>* val, std::list<TEMPLATEPARAMPAIR>* params);
@@ -8931,6 +8931,7 @@ static void TransferClassTemplates(std::list<TEMPLATEPARAMPAIR>* dflt, std::list
         itval->second->byClass.dflt = tvd;
     }
 }
+int count7;
 static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* unspecialized, std::list<TEMPLATEPARAMPAIR>* args)
 {
     (void)unspecialized;
@@ -9035,7 +9036,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                             tis.pop();
                             ++itInitial;
                         }
-                        if (itInitial != iteInitial && itInitial->second->packed)
+                        if (itInitial != iteInitial && itInitial->second->packed && itInitial->second->byPack.pack)
                         {
                             tis.push(itInitial);
                             tis.push(iteInitial);
@@ -9221,10 +9222,11 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
             itInitial = iteInitial;
         if (itInitial != iteInitial && (max && itmax != max->end() || !spsyms))
             rv = nullptr;
-        if (spsyms && params)
+        if (spsyms)
         {
-            for (auto&& primary : *params)
+            for (auto its = itParams; its != params->end(); ++its)
             {
+                auto&& primary = *its;
                 if (primary.second->type == kw_typename)
                 {
                     auto temp = ResolveDeclType(sp, &primary);
@@ -9237,11 +9239,11 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
             }
         }
         bool found = false;
-        if (params)
+        if (itParams != params->end())
         {
-            for (auto primary : *params)
-            {
-                if (primary.second->usedAsUnpacked)
+            for (auto its = itParams; its != params->end(); ++its)
+            {      
+                if ((*its).second->usedAsUnpacked)
                 {
                     found = true;
                     break;
@@ -10168,10 +10170,12 @@ static std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelector(SYMBOL* sp, TEMPLAT
     }
     return rv;
 }
+int count5;
 static std::list<TEMPLATEPARAMPAIR>* CopyArgsBack(std::list<TEMPLATEPARAMPAIR>* args, TEMPLATEPARAMPAIR* hold[], int k1)
 {
+    auto orig = args;
     int k = 0;
-    std::list<TEMPLATEPARAMPAIR>* rv = nullptr;
+    std::list<TEMPLATEPARAMPAIR>* rv = args;
     std::list<TEMPLATEPARAMPAIR>::iterator t;
     std::list<TEMPLATEPARAMPAIR>::iterator te = t;
     std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
@@ -10213,8 +10217,6 @@ static std::list<TEMPLATEPARAMPAIR>* CopyArgsBack(std::list<TEMPLATEPARAMPAIR>* 
     }
     if (t != te)
     {
-        rv = nullptr;
-        std::list<TEMPLATEPARAMPAIR>* old = args;
         k = 0;
         rv = templateParamPairListFactory.CreateList();
         for (auto&& old : *args)
@@ -10236,8 +10238,27 @@ static std::list<TEMPLATEPARAMPAIR>* CopyArgsBack(std::list<TEMPLATEPARAMPAIR>* 
                 rv->push_back(*hold[k++]);
             }
         }
+        // this should be looked at.   It is part of the problem with GetClassTemplate modifying the input argument list
+        if (rv->begin()->second->type == kw_new)
+        {
+            auto t1 = args->begin();
+            ++t1;
+            if (&*t1 == hold[1])
+            {
+                *args = *rv;
+                rv = args;
+            }
+        }
+        else
+        {
+            if (&*args->begin() == hold[0])
+            {
+                *args = *rv;
+                rv = args;
+            }
+        }
     }
-    return rv == nullptr ? args : rv;
+    return rv;
 }
 std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelectors(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool byVal)
 {
@@ -10292,22 +10313,26 @@ TYPE* ResolveTemplateSelectors(SYMBOL* sp, TYPE* tp)
     return tpl2->front().second->byClass.dflt;
     ;
 }
-std::list<TEMPLATEPARAMPAIR>* ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMPAIR* tpx)
+std::list<TEMPLATEPARAMPAIR>* ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMPAIR* tpx, bool returnNull)
 {
-    std::list<TEMPLATEPARAMPAIR>* rv = templateParamPairListFactory.CreateList();
     if (tpx->second->type == kw_typename && tpx->second->byClass.dflt && tpx->second->byClass.dflt->type == bt_templatedecltype)
     {
+        std::list<TEMPLATEPARAMPAIR>* rv = templateParamPairListFactory.CreateList();
         rv->push_back(TEMPLATEPARAMPAIR{tpx->first, Allocate<TEMPLATEPARAM>()});
         *rv->back().second = *tpx->second;
         rv->back().second->byClass.dflt = TemplateLookupTypeFromDeclType(rv->back().second->byClass.dflt);
         if (!rv->back().second->byClass.dflt)
             rv->back().second->byClass.dflt = &stdany;
+        return rv;
     }
     else
     {
+        if (returnNull)
+            return nullptr;
+        std::list<TEMPLATEPARAMPAIR>* rv = templateParamPairListFactory.CreateList();
         rv->push_back(*tpx);
+        return rv;
     }
-    return rv;
 }
 std::list<TEMPLATEPARAMPAIR>* ResolveDeclTypes(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
 {
@@ -10342,7 +10367,7 @@ std::list<TEMPLATEPARAMPAIR>* ResolveDeclTypes(SYMBOL* sp, std::list<TEMPLATEPAR
                     }
                 }
                 hold[k] = &*t;
-                auto t1 = ResolveDeclType(sp, &*t);
+                auto t1 = ResolveDeclType(sp, &*t, true);
                 if (t1)
                     hold[k] = &*t1->begin();
                 k++;
@@ -10455,7 +10480,7 @@ std::list<TEMPLATEPARAMPAIR>* ResolveClassTemplateArgs(SYMBOL* sp, std::list<TEM
                 if (n >= 0)
                     packIndex = i;
                 hold[k] = &*t;
-                auto t1 = ResolveDeclType(sp, &*hold[k]);
+                auto t1 = ResolveDeclType(sp, &*hold[k], true);
                 if (t1)
                     hold[k] = &*t1->begin();
                 auto t2 = ResolveTemplateSelector(sp, &*hold[k], false);
@@ -10530,15 +10555,6 @@ SYMBOL* TemplateByValLookup(SYMBOL* parent, SYMBOL* test, std::string& argumentN
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool noErr)
 {
-    auto argsorig = args;
-    if (args && args->front().second->type == kw_new)
-    {
-        auto it = args->begin();
-        ++it;
-        auto args1 = templateParamPairListFactory.CreateList();
-        args1->insert(args1->begin(), it, args->end());
-        args = args1;
-    }
     // quick check for non-template
     if (!sp->sb->templateLevel)
         return sp;
@@ -10550,6 +10566,15 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
     int count = 0;
     noErr |= matchOverloadLevel;
     args = ResolveClassTemplateArgs(sp, args);
+    auto argsorig = args;
+    if (args && args->front().second->type == kw_new)
+    {
+        auto it = args->begin();
+        ++it;
+        auto args1 = templateParamPairListFactory.CreateList();
+        args1->insert(args1->begin(), it, args->end());
+        args = args1;
+    }
 
     if (sp->sb->parentTemplate && sp)
         sp = sp->sb->parentTemplate;

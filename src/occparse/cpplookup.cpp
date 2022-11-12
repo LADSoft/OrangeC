@@ -216,7 +216,6 @@ SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bo
     }
     return nullptr;
 }
-int count4;
 LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly, enum e_sc storage_class,
                     bool isType)
 {
@@ -644,12 +643,15 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                             }
                             else
                             {
-                                for (auto&& p : *current)
+                                if (current)
                                 {
-                                    if (p.second->usedAsUnpacked)
+                                    for (auto&& p : *current)
                                     {
-                                        deferred = true;
-                                        break;
+                                        if (p.second->usedAsUnpacked)
+                                        {
+                                            deferred = true;
+                                            break;
+                                        }
                                     }
                                 }
                                 if (!deferred)
@@ -5787,7 +5789,9 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         }
                     }
                     if (found1->sb->inlineFunc.stmt)
+                    {
                         noExcept &= found1->sb->noExcept;
+                    }
                 }
                 else
                 {

@@ -2132,7 +2132,8 @@ void expandPackedInitList(std::list<INITLIST*>** lptr, SYMBOL* funcsp, LEXLIST* 
         {
             if (packedExp->v.sp->tp->templateParam->second->byPack.pack)
             {
-                *lptr = initListListFactory.CreateList();
+                if (!*lptr)
+                    *lptr = initListListFactory.CreateList();
                 for (auto&& t : *packedExp->v.sp->tp->templateParam->second->byPack.pack)
                 {
                     auto il = Allocate<INITLIST>();
@@ -2154,7 +2155,8 @@ void expandPackedInitList(std::list<INITLIST*>** lptr, SYMBOL* funcsp, LEXLIST* 
         {
             if (arg[0]->sb && arg[0]->packed && arg[0]->sb->parent)
             {
-                *lptr = initListListFactory.CreateList();
+                if (!*lptr)
+                    *lptr = initListListFactory.CreateList();
                 auto it = basetype(arg[0]->sb->parent->tp)->syms->begin();
                 auto itend = basetype(arg[0]->sb->parent->tp)->syms->end();
                 for (; it != itend && (*it) != arg[0]; ++it);

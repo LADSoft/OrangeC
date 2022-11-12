@@ -8931,7 +8931,6 @@ static void TransferClassTemplates(std::list<TEMPLATEPARAMPAIR>* dflt, std::list
         itval->second->byClass.dflt = tvd;
     }
 }
-int count7;
 static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* unspecialized, std::list<TEMPLATEPARAMPAIR>* args)
 {
     (void)unspecialized;
@@ -10170,7 +10169,6 @@ static std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelector(SYMBOL* sp, TEMPLAT
     }
     return rv;
 }
-int count5;
 static std::list<TEMPLATEPARAMPAIR>* CopyArgsBack(std::list<TEMPLATEPARAMPAIR>* args, TEMPLATEPARAMPAIR* hold[], int k1)
 {
     auto orig = args;

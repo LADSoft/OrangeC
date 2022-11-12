@@ -1318,27 +1318,24 @@ static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
             lex = getsym();
             if (*expr && (*expr)->type != en_packedempty)
             {
-                std::list<INITLIST*> temp;
-                std::list<INITLIST*>* temp1 = { &temp };
-                INITLIST* shim = nullptr;
-                INITLIST** lptr = &shim;
+                std::list<INITLIST*>* temp = nullptr;
                 checkPackedExpression(*expr);
                 // this is going to presume that the expression involved
                 // is not too long to be cached by the LEXLIST mechanism.
-                expandPackedInitList(&temp1, funcsp, start, *expr);
-                if (!shim)
+                expandPackedInitList(&temp, funcsp, start, *expr);
+                if (!temp)
                 {
                     *expr = intNode(en_c_i, 0);
                     *tp = &stdint;
                 }
                 else
                 {
-                    if (temp.size() > 1)
+                    if (temp->size() > 1)
                     {
                         error(ERR_TOO_MANY_INITIALIZERS);
                     }
-                    *expr = shim->exp;
-                    *tp = shim->tp;
+                    *expr = temp->front()->exp;
+                    *tp = temp->front()->tp;
                 }
             }
         }

@@ -1065,7 +1065,7 @@ static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac c
         {
             char* buf = (char*)alloca(4096);
             //            InsertInline(sp);
-            Optimizer::my_sprintf(buf, "%s@_$vt", sp->sb->decoratedName);
+            Optimizer::my_sprintf(buf, "%s@_.vt", sp->sb->decoratedName);
             sp->sb->vtabsp = makeID(sc_static, &stdvoid, nullptr, litlate(buf));
             sp->sb->vtabsp->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
             sp->sb->vtabsp->sb->attribs.inheritable.linkage4 = lk_virtual;

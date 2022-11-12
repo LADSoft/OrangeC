@@ -34,16 +34,16 @@
 ; 
 
 %ifdef __BUILDING_LSCRTL_DLL
-[export @_InitializeException$qpvpv]
-[export @_RundownException$qv]
+[export @_InitializeException.qpvpv]
+[export @_RundownException.qv]
 %endif
-[global @_InitializeException$qpvpv]
-[global @_RundownException$qv]
+[global @_InitializeException.qpvpv]
+[global @_RundownException.qv]
 
 [extern ___cppexceptionhandle]
 
 SECTION code CLASS=CODE USE32
-@_InitializeException$qpvpv:
+@_InitializeException.qpvpv:
     push eax
     push ecx
     push edx
@@ -64,7 +64,7 @@ SECTION code CLASS=CODE USE32
     pop ecx
     pop eax
     ret
-@_RundownException$qv:
+@_RundownException.qv:
     mov ecx,[fs:0]      ; has to be ECX to avoid killing the function return value
     mov ecx,[ecx]
     mov [fs:0],ecx

@@ -45,7 +45,7 @@
 #include "ildata.h"
 #include "symtab.h"
 #include "ListFactory.h"
-
+#include "types.h"
 namespace Parser
 {
 
@@ -1483,7 +1483,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         exp = exprNode(en_blockassign, exprNode(en_add, copy_expression(expsym), intNode(en_c_i, initItem->offset)), exp2);
                         exp->size = initItem->basetp->size;
                         exp->altdata = (void*)(initItem->basetp);
-                        noClear = true;
+                        noClear = comparetypes(initItem->basetp, tp, true);
                     }
                 }
                 else

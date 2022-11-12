@@ -34,30 +34,8 @@
  * 
  */
 
-#include <windows.h>
-#include <errno.h>
+#include <stddef.h>
 
-int __ll_openpipe(int* read, int* write, unsigned int size)
+void _RTL_FUNC __aborthook()
 {
-    HANDLE pipeRead, pipeWrite, pipeWriteDuplicate = NULL, pipeReadDuplicate = NULL;
-    if (!CreatePipe(&pipeRead, &pipeWrite, NULL, size))
-    {
-        errno = GetLastError();
-        return -1;
-    }
-    if (!DuplicateHandle(GetCurrentProcess(), pipeRead, GetCurrentProcess(), &pipeReadDuplicate, 0, TRUE, DUPLICATE_SAME_ACCESS) ||
-        !DuplicateHandle(GetCurrentProcess(), pipeWrite, GetCurrentProcess(), &pipeWriteDuplicate, 0, TRUE, DUPLICATE_SAME_ACCESS))
-    {
-        errno = GetLastError();
-        CloseHandle(pipeWrite);
-        CloseHandle(pipeRead);
-        CloseHandle(pipeWriteDuplicate);
-        CloseHandle(pipeReadDuplicate);
-        return -1;
-    }
-    CloseHandle(pipeWrite);
-    CloseHandle(pipeRead);
-    *read = (int)pipeReadDuplicate;
-    *write = (int)pipeWriteDuplicate;
-    return 0;
 }

@@ -107,6 +107,7 @@ void libcxx_init(void)
 {
     intrinsicHash = SymbolTable<_ihash>();
     int i;
+    integerSequences.clear();
     for (int i = 0; i < sizeof(defaults) / sizeof(defaults[0]); i++)
         intrinsicHash.Add(&defaults[i]);
 }

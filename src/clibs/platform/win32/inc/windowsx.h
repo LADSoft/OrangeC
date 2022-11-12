@@ -11,6 +11,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#define __forceinline inline
+
 #ifndef SNDMSG
 #ifdef __cplusplus
 #define SNDMSG ::SendMessage
@@ -95,7 +97,7 @@ extern "C" {
 #define Edit_GetLine(hwndCtl,line,lpch,cchMax)  ((*((int*)(lpch)) = (cchMax)),((int)(DWORD)SNDMSG((hwndCtl),EM_GETLINE,(WPARAM)(int)(line),(LPARAM)(LPTSTR)(lpch))))
 #else
 static __forceinline int Edit_GetLine(HWND hwndCtl, int line, void *lpch, int cchMax) {
-    int *lpchMax = lpch; *lpchMax = cchMax;
+    int *lpchMax = (int *)lpch; *lpchMax = cchMax;
     return (int)(DWORD)SNDMSG(hwndCtl, EM_GETLINE, (WPARAM)(int)(line), (LPARAM)(LPTSTR)(lpch));
 }
 #endif

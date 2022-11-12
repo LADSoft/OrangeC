@@ -292,7 +292,7 @@ SYMBOL* getvc1Thunk(int offset)
 {
     char name[256];
     SYMBOL* rv;
-    Optimizer::my_sprintf(name, "@$vc1$B0$%d$0", offset + 1);
+    Optimizer::my_sprintf(name, "@.vc1$B0$%d$0", offset + 1);
     rv = vc1Thunks->search(name);
     if (!rv)
     {

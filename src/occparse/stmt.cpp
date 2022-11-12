@@ -2349,7 +2349,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
         if (tp->type == bt_void)
         {
             if (!Optimizer::cparams.prm_cplusplus || returntype->type != bt_void)
-                error(ERR_CANNOT_RETURN_VOID_VALUE);
+                error(ERR_VOID_FUNCTION_RETURNS_VALUE);
         }
         else if (returntype && returntype->type == bt_void)
             error(ERR_RETURN_NO_VALUE);
@@ -3314,7 +3314,7 @@ static void insertXCInfo(SYMBOL* funcsp)
     char name[2048];
     SYMBOL* sym;
     makeXCTab(funcsp);
-    Optimizer::my_sprintf(name, "@$xc%s", funcsp->sb->decoratedName);
+    Optimizer::my_sprintf(name, "@.xc%s", funcsp->sb->decoratedName);
     sym = makeID(sc_global, &stdpointer, nullptr, litlate(name));
     sym->sb->attribs.inheritable.linkage4 = lk_virtual;
     sym->sb->decoratedName = sym->name;

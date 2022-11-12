@@ -69,10 +69,10 @@ const char* tn_char16_t = "char16_t";
 const char* tn_char32_t = "char32_t";
 
 const char* cpp_funcname_tab[] = {
-    "$bctr",   "$bdtr",    "$bcast",  "$bnew",  "$bdel",   "$badd", "$bsub", "$bmul",   "$bdiv",   "$bshl",   "$bshr",   "$bmod",
-    "$bequ",   "$bneq",    "$blt",    "$bleq",  "$bgt",    "$bgeq", "$basn", "$basadd", "$bassub", "$basmul", "$basdiv", "$basmod",
-    "$basshl", "$bsasshr", "$basand", "$basor", "$basxor", "$binc", "$bdec", "$barray", "$bcall",  "$bstar",  "$barrow", "$bcomma",
-    "$blor",   "$bland",   "$bnot",   "$bor",   "$band",   "$bxor", "$bcpl", "$bnwa",   "$bdla",   "$blit"
+    ".bctr",   ".bdtr",    ".bcast",  ".bnew",  ".bdel",   ".badd", ".bsub", ".bmul",   ".bdiv",   ".bshl",   ".bshr",   ".bmod",
+    ".bequ",   ".bneq",    ".blt",    ".bleq",  ".bgt",    ".bgeq", ".basn", ".basadd", ".bassub", ".basmul", ".basdiv", ".basmod",
+    ".basshl", ".bsasshr", ".basand", ".basor", ".basxor", ".binc", ".bdec", ".barray", ".bcall",  ".bstar",  ".barrow", ".bcomma",
+    ".blor",   ".bland",   ".bnot",   ".bor",   ".band",   ".bxor", ".bcpl", ".bnwa",   ".bdla",   ".blit"
 
 };
 const char* xlate_tab[] = {
@@ -96,8 +96,8 @@ const char* unmang_intrins(char* buf, const char* name, const char* last)
 {
     char cur[4096], *p = cur;
     int i;
-    *p++ = *name++;  // past the '$'
-    while (*name != '@' && *name != '$' && *name)
+    *p++ = *name++;  // past the '.'
+    while (*name != '@' && *name != '.' && *name)
         *p++ = *name++;
     *p = 0;
     for (i = 0; i < IT_SIZE; i++)
@@ -113,7 +113,7 @@ const char* unmang_intrins(char* buf, const char* name, const char* last)
             {
                 case 2:  // cast op
                     strcpy(buf, "operator ");
-                    if (*name == '$')
+                    if (*name == '.')
                     {
                         buf += strlen(buf);
                         name = unmang1(buf, name + 2, last, false);
@@ -511,7 +511,7 @@ char* unmangleExpression(char* dest, const char** name)
                     *dest++ = '*';
                     (*name)++;
                 }
-                while (*(*name) && *(*name) != '$')
+                while (*(*name) && *(*name) != '.')
                     *dest++ = *(*name)++;
                 if (*(*name))
                 {
@@ -526,7 +526,7 @@ char* unmangleExpression(char* dest, const char** name)
                     *dest++ = '*';
                     (*name)++;
                 }
-                while (*(*name) && *(*name) != '$')
+                while (*(*name) && *(*name) != '.')
                     *dest++ = *(*name)++;
                 if (*(*name))
                 {
@@ -543,7 +543,7 @@ static const char* unmangTemplate(char* buf, const char* name, const char* last)
     if (*name == '#')
     {
         name++;
-        if (*name == '$' && (name[1] == 'b' || name[1] == 'o'))
+        if (*name == '.' && (name[1] == 'b' || name[1] == 'o'))
         {
             buf[0] = 0;
             name = unmang_intrins(buf, name, last);
@@ -551,7 +551,7 @@ static const char* unmangTemplate(char* buf, const char* name, const char* last)
         }
         else
         {
-            while (*name && *name != '$')
+            while (*name && *name != '.')
                 *buf++ = *name++;
         }
         *buf++ = '<';
@@ -667,9 +667,9 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
                 name = newname;
                 buf += strlen(buf);
             }
-            else if (name[0] == '$')
+            else if (name[0] == '.')
             {
-                if (name[1] == '$')  // in case of $$lambda
+                if (name[1] == '.')  // in case of ..lambda
                 {
                     *buf++ = *name++;
                     *buf++ = *name++;
@@ -705,7 +705,7 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
     else
         switch (*name++)
         {
-            case '$':
+            case '.':
                 p = buf1;
                 if (*name == 't')
                 {
@@ -714,7 +714,7 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
                 else if (isdigit(*name))
                 {
                     *p++ = '(';
-                    while (*name && *name != '$')
+                    while (*name && *name != '.')
                     {
                         *p++ = *name++;
                     }
@@ -728,7 +728,7 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
                     name++;
                     *p++ = '(';
                     *p++ = '"';
-                    while (*name && *name != '$')
+                    while (*name && *name != '.')
                     {
                         *p++ = *name++;
                     }
@@ -760,7 +760,7 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
                 }
                 else
                 {
-                    while (*name && *name != '$')
+                    while (*name && *name != '.')
                     {
                         if (*name == '#')
                         {
@@ -776,7 +776,7 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
                         *p = 0;
                     }
                 }
-                if (*name == '$')
+                if (*name == '.')
                     name++;
                 if (p >= buf1 + 2)
                     p -= 2;
@@ -905,7 +905,7 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
                     name = unmang1(buf3, name, last, true);
                 }
                 buf1[0] = 0;
-                if (name[0] == '$')
+                if (name[0] == '.')
                 {
                     name = unmang1(buf1, ++name, last, false);
                 }
@@ -1083,11 +1083,11 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
 static const char* unmangcpptype(char* buf, const char* name, const char* last)
 {
     *buf++ = '<';
-    while (*name && *name != '$' && *name != '@' && *name != '#')
+    while (*name && *name != '.' && *name != '@' && *name != '#')
     {
         name = unmang1(buf, name, last, false);
         buf = buf + strlen(buf);
-        if (*name && *name != '$' && *name != '@' && *name != '#')
+        if (*name && *name != '.' && *name != '@' && *name != '#')
         {
             *buf++ = ',';
         }
@@ -1097,7 +1097,7 @@ static const char* unmangcpptype(char* buf, const char* name, const char* last)
             *buf++ = ' ';
         }
     }
-    if (*name && *name == '$')
+    if (*name && *name == '.')
         name++;
     *buf = 0;
     return name;
@@ -1140,7 +1140,11 @@ const char* unmangle(char* val, const char* name)
                 name = unmangTemplate(buf, name, last);
                 buf += strlen(buf);
             }
-            else if (*name == '$')
+            else if (name[1] == 'x' && name[2] == 'c')
+            {
+                *buf++ = *name++;
+            }
+            else if (*name == '.')
             {
                 // discard the template params if they are there
                 if (name[1] == 'b' || name[1] == 'o')
@@ -1163,7 +1167,7 @@ const char* unmangle(char* val, const char* name)
                     {
                         name++;
                         *buf++ = '<';
-                        while (*name && *name != '$')
+                        while (*name && *name != '.')
                         {
                             *buf = 0;
                             name = unmang1(buf, name, last, false);
@@ -1199,7 +1203,7 @@ const char* unmangle(char* val, const char* name)
                 }
                 *buf++ = ':';
                 *buf++ = ':';
-                if (*name != '$' && (*name != '#' || name[1] != '$'))
+                if (*name != '.' && (*name != '#' || name[1] != '.'))
                     last = buf;
             }
             else

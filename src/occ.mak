@@ -76,6 +76,7 @@ RCINCLUDE=$(DISTROOT)\include
 ifneq "$(INCLUDES)" ""
 CINCLUDES:=$(addprefix /I,$(INCLUDES))
 endif
+DEFINES := WIN32_LEAN_AND_MEAN $(DEFINES)
 DEFINES := $(addprefix /D,$(DEFINES))
 DEFINES := $(subst @, ,$(DEFINES))
 LIB_DEPENDENCIES := $(foreach file, $(addsuffix .l,$(LIB_DEPENDENCIES)), $(file))

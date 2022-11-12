@@ -12,6 +12,8 @@
 
 #include <pshpack4.h>
 
+#define __forceinline inline
+
 #ifndef _RICHEDIT_VER
 #define _RICHEDIT_VER  0x0300
 /* Version 1.0 = 0x0100 */
@@ -1202,7 +1204,7 @@ typedef struct tagHyphenateInfo {
 #define RichEdit_GetLine(hwnd,line,lpch,cchMax)  ((*((int *)(lpch))=(cchMax)), ((int)(DWORD)SendMessage((hwnd),EM_GETLINE,(WPARAM)(int)(line),(LPARAM)(LPTSTR)(lpch))))
 #else
 static __forceinline int RichEdit_GetLine(HWND hwnd, int line, void *lpch, int cchMax) {
-    int *lpchMax = lpch; *lpchMax = cchMax;
+    int *lpchMax = (int *)lpch; *lpchMax = cchMax;
     return (int)(DWORD)SendMessage(hwnd, EM_GETLINE, (WPARAM)(int)(line), (LPARAM)(LPTSTR)(lpch));
 }
 #endif

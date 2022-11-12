@@ -710,10 +710,38 @@ int getChar(const unsigned char** source, enum e_lexType* tp)
                     error(ERR_INVALID_CHAR_CONSTANT);
                     j = '0';
                 }
-                i += j << 8;
+                i = (i << 8) + j;
                 if (*p != '\'')
                 {
-                    error(ERR_UNTERM_CHAR_CONSTANT);
+                    j = getsch(v == l_Uchr ? 8 : v == l_wchr || v == l_uchr ? 4 : 2, &p);
+                    if (j == INT_MIN)
+                    {
+                        error(ERR_INVALID_CHAR_CONSTANT);
+                        j = '0';
+                    }
+                    i = (i << 8) + j;
+                    if (*p != '\'')
+                    {
+                        j = getsch(v == l_Uchr ? 8 : v == l_wchr || v == l_uchr ? 4 : 2, &p);
+                        if (j == INT_MIN)
+                        {
+                            error(ERR_INVALID_CHAR_CONSTANT);
+                            j = '0';
+                        }
+                        i = (i << 8) + j;
+                        if (*p != '\'')
+                        {
+                            error(ERR_UNTERM_CHAR_CONSTANT);
+                        }
+                        else
+                            do
+                                p++;
+                            while (*p == ppDefine::MACRO_PLACEHOLDER);
+                    }
+                    else
+                        do
+                            p++;
+                        while (*p == ppDefine::MACRO_PLACEHOLDER);
                 }
                 else
                     do

@@ -60,6 +60,7 @@ static int* _xceptblkptr;
 /*static*/ PCONTEXT xxctxt;
 /*static*/ void regdump(char* text, PCONTEXT p)
 {
+    __excepthook();
     HMODULE hmod = LoadLibrary("lsdbghelper");
     if (hmod)
     {

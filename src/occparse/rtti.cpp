@@ -240,7 +240,7 @@ static char* RTTIGetName(char* buf, TYPE* tp)
             tp = tp->templateParam->second->byClass.val;
     }
     mangledNamesCount = 0;
-    strcpy(buf, "@$xt@");
+    strcpy(buf, "@.xt@");
     buf += strlen(buf);
     buf = mangleType(buf, tp, true);
     return buf;
@@ -806,7 +806,7 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
                 p = p->next;
             }
         }
-        Optimizer::my_sprintf(name, "@$xct%s", funcsp->sb->decoratedName);
+        Optimizer::my_sprintf(name, "@.xct%s", funcsp->sb->decoratedName);
         xcSym = makeID(sc_global, &stdpointer, nullptr, litlate(name));
         xcSym->sb->attribs.inheritable.linkage4 = lk_virtual;
         xcSym->sb->decoratedName = xcSym->name;

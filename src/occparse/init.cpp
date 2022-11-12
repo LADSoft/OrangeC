@@ -75,6 +75,7 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, std::l
 
 void init_init(void)
 {
+    strtab.clear();
     symListHead = nullptr;
     dynamicInitializers = TLSInitializers = nullptr;
     dynamicDestructors = TLSDestructors = nullptr;

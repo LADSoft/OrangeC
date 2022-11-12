@@ -5213,7 +5213,7 @@ static int insertFuncs(SYMBOL** spList, std::list<SYMBOL* >& gather, FUNCTIONCAL
                 auto arg = args->arguments;
                 bool ellipse = false;
                 bool found = false;
-                if (sym->name[0] == '$' || sym->sb->templateLevel)
+                if (sym->name[0] == '.' || sym->sb->templateLevel)
                 {
                     it1 = it1end;
                 }

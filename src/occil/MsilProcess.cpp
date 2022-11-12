@@ -195,7 +195,7 @@ static const char* fieldname(const char* name)
         {
             memmove(buff, p + 1, strlen(p + 1) + 1);
         }
-        p = strchr(buff, '$');
+        p = strchr(buff, '.');
         if (p)
         {
             const char* q = strchr(p, '_');
@@ -243,7 +243,7 @@ static const char* methodname(const char* name)
         static char rv[512];
         char* p = rv;
         name++;
-        while (*name && *name != '$')
+        while (*name && *name != '.')
         {
             *p++ = *name++;
         }

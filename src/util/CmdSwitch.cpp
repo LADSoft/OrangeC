@@ -34,16 +34,17 @@
 
 
 #include <windows.h>
+
 #ifdef __ORANGEC__
-extern "C" void _RTL_FUNC __aborthook()
-{
-	printf("%s\n", GetCommandLineA());
-}
+#ifndef __LSCRTL_DLL
 extern "C" void _RTL_FUNC __excepthook()
 {
-	printf("%s\n", GetCommandLineA());
+    printf("version: " STRING_VERSION "\n");
+    printf("Command Line: %s\n", GetCommandLineA());
 }
 #endif
+#endif
+
 CmdSwitchBase::CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar, std::deque<std::string> LongNames) :
     exists(false), switchChar(SwitchChar), longNames(LongNames)
 {

@@ -2046,8 +2046,10 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
     bool hasDelegate = false;
     if (cons->sb->memberInitializers)
     {
-        for (auto init : *cons->sb->memberInitializers)
+        auto ite = cons->sb->memberInitializers->end();
+        for (auto it = cons->sb->memberInitializers->begin(); it != ite;)
         {
+            auto init = *it;
             LEXLIST* lex;
             if (!first && hasDelegate)
                 error(ERR_DELEGATING_CONSTRUCTOR_ONLY_INITIALIZER);
@@ -2239,10 +2241,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                 }
                 else if (init->packed)
                 {
-                    std::list<MEMBERINITIALIZERS*> temp = { init };
-                    std::list<MEMBERINITIALIZERS*>* init2 = &temp;
-                    expandPackedBaseClasses(
-                        cls, cons, init == cons->sb->memberInitializers->front() ? cons->sb->memberInitializers : init2, cls->sb->baseClasses, cls->sb->vbaseEntries);
+                    expandPackedBaseClasses(cls, cons, it, ite, cons->sb->memberInitializers, cls->sb->baseClasses, cls->sb->vbaseEntries);
                     continue;
                 }
                 else
@@ -2378,6 +2377,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
             {
                 errorstrsym(ERR_NOT_A_MEMBER_OR_BASE_CLASS, init->name, cls);
             }
+            ++it;
             first = false;
         }
     }

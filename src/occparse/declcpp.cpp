@@ -2287,11 +2287,12 @@ static int GetVBaseClassList(const char* name, SYMBOL* cls, std::list<VBASEENTRY
     }
     return vcount;
 }
-void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIALIZERS*>* init, std::list<BASECLASS*>* bc,
+void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIALIZERS*>::iterator& init,
+                             std::list<MEMBERINITIALIZERS*>::iterator& initend,
+                             std::list<MEMBERINITIALIZERS*>* mi, std::list<BASECLASS*>* bc,
                                             std::list<VBASEENTRY*>* vbase)
 {
-    MEMBERINITIALIZERS* linit = init->front();
-    auto it = init->begin();
+    MEMBERINITIALIZERS* linit = *init;
     int basecount = 0, vbasecount = 0;
     std::list<BASECLASS*> baseEntries;
     std::list<VBASEENTRY*> vbaseEntries;
@@ -2301,17 +2302,17 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
     if (!basecount && !vbasecount)
     {
         // already evaluated to not having a base class
-        ++it;
+        ++init;
     }
     else if ((basecount && !baseEntries.front()->cls->sb->templateLevel) || (vbasecount && !vbaseEntries.front()->cls->sb->templateLevel))
     {
-        ++it;
+        ++init;
         errorsym(ERR_NOT_A_TEMPLATE, linit->sp);
     }
     else
     {
         LEXLIST* lex = SetAlternateLex(linit->initData);
-        ++it;
+        init = mi->erase(init);
         if (MATCHKW(lex, lt))
         {
             // at this point we've already created the independent base classes
@@ -2340,7 +2341,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                     }
                 }
             }
-            if (n != -1)
+            if (n > 0)
             {
                 int i;
                 // the presumption is that the number of packed vars will be the same as the number
@@ -2362,8 +2363,8 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                     lex = SetAlternateLex(arglex);
                     packIndex = i;
                     added->name = linit->name;
-                    (*it) = added;
-                    ++it;
+                    init = mi->insert(init, added);
+                    ++init;
                     added->sp = baseSP;
                     if (MATCHKW(lex, openpa) && added->sp->tp->sp->sb->trivialCons)
                     {

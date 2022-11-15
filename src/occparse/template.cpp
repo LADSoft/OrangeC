@@ -6986,12 +6986,9 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
         {
             // we have to gather the args list
             std::list<TEMPLATEPARAMPAIR>::iterator itParams, iteParams;
-            if (params)
-            {
-                itParams = params->begin();
-                iteParams = params->end();
-                ++itParams;
-            }
+            itParams = nparams->begin();
+            iteParams = nparams->end();
+            ++itParams;
             for (; templateArgs != basetype(sym->tp)->syms->end() && symArgs != itae;)
             {
                 SYMBOL* sp = *templateArgs;
@@ -7006,7 +7003,8 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                             std::list<TEMPLATEPARAMPAIR>* params2 = basetype(sp->tp)->sp->templateParams;
                             std::list<TEMPLATEPARAMPAIR>* special =
                                 params2->front().second->bySpecialization.types ? params2->front().second->bySpecialization.types : params2;
-                            TransferClassTemplates(special, special, params);
+                            std::list<TEMPLATEPARAMPAIR> xxparams(itParams, iteParams);
+                            TransferClassTemplates(special, special, &xxparams);
                         }
                     }
                     ++symArgs;
@@ -8729,6 +8727,7 @@ static void TransferClassTemplates(std::list<TEMPLATEPARAMPAIR>* dflt, std::list
                 itval->second->byClass.dflt = basetype(itval->second->byClass.dflt)->btp;
         }
     }
+
     if (params && params->front().second->packed)
     {
         if (dflt)

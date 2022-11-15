@@ -68,9 +68,12 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp);
 void ReplicatePackedExpression(EXPRESSION* pattern, int count, SYMBOL** arg, std::list<TEMPLATEPARAMPAIR>** dest);
 int CountPacks(std::list<TEMPLATEPARAMPAIR>* packs);
 void expandPackedInitList(std::list<INITLIST*>** lptr, SYMBOL* funcsp, LEXLIST* start, EXPRESSION* packedExp);
-void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIALIZERS*>* init, std::list<BASECLASS*>* bc,
-    std::list<VBASEENTRY*>* vbase);
-void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* templatePack, std::list<MEMBERINITIALIZERS*>** p,
+void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIALIZERS*>::iterator& init,
+                             std::list<MEMBERINITIALIZERS*>::iterator& initend, std::list<MEMBERINITIALIZERS*>* mi,
+                             std::list<BASECLASS*>* bc, std::list<VBASEENTRY*>* vbase);
+void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp,
+                                                                       std::list<TEMPLATEPARAMPAIR>* templatePack,
+                                                                       std::list<MEMBERINITIALIZERS*>** p,
                                     LEXLIST* start, std::list<INITLIST*>* list);
 void checkOperatorArgs(SYMBOL* sp, bool asFriend);
 LEXLIST* handleStaticAssert(LEXLIST* lex);

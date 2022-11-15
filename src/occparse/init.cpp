@@ -2889,6 +2889,8 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
             }
             else if (MATCHKW(lex, openpa) || MATCHKW(lex, begin))
             {
+                if (lex->data->errline == 702 && strstr(lex->data->errfile, "tuple"))
+                    printf("hi");
                 if (!(flags & _F_EXPLICIT) && MATCHKW(lex, begin))
                     implicit = true;
                 bool isbegin = MATCHKW(lex, begin);

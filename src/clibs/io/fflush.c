@@ -79,15 +79,16 @@ static int __flushone(FILE* stream)
                         }
                     }
                 }
-                if (stream->extended->flags2 & _F2_WCHAR)
+                if (stream->flags & _F_OUT)
                 {
-                    if (stream->curp - stream->buffer >= stream->bsize - 2)
+                    if (stream->extended->flags2 & _F2_WCHAR)
+                    {
                         *(wchar_t*)stream->curp = 0;
-                }
-                else
-                {
-                    if (stream->curp - stream->buffer >= stream->bsize - 1)
+                    }
+                    else
+                    {
                         *stream->curp = 0;
+                    }
                 }
             }
             stream->hold = 0;

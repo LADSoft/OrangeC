@@ -156,10 +156,6 @@ FILE* _RTL_FUNC fmemopen(void* buf, size_t size, const char* mode)
             rv->curp += size;
             rv->level += size;
          }
-         else
-         {
-             memset(buf, 0, size);
-         }
     }
     if (rv && !buf)
     {

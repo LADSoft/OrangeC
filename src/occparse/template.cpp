@@ -6595,7 +6595,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
     {
         itArgs = args->begin();
         iteArgs = args->end();
-        if (itArgs->second->type == kw_new)
+        if (itArgs != args->end() && itArgs->second->type == kw_new)
             ++itArgs;
     }
     for (; itSrc != iteSrc && itDest != iteDest; ++itSrc, ++itDest)

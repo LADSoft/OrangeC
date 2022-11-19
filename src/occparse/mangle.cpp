@@ -1028,7 +1028,7 @@ bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& 
                 void* dflt;
                 if (param.second->packed)
                 {
-                    if (!param.second->byPack.pack)
+                    if (!param.second->byPack.pack || !param.second->byPack.pack->size())
                     {
                         return false;
                     }

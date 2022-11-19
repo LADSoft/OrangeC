@@ -1497,6 +1497,7 @@ static TYPE* TypePackElementType(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args
             return &stdany;
         }
         it = tpl->begin();
+        args = tpl;
         ++it;
     }
     auto e = tpl->front().second->byNonType.val;
@@ -1520,6 +1521,7 @@ static TYPE* TypePackElementType(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args
         else
         {
             lst = it->second->byPack.pack ? it->second->byPack.pack->begin() : args->end();;
+            args = it->second->byPack.pack ? it->second->byPack.pack : args;
         }
         for (; n && lst != args->end(); n--, ++lst);
         if (lst != args->end())

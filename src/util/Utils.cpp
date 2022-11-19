@@ -158,7 +158,7 @@ void Utils::usage(const char* prog_name, const char* text)
         std::cerr << buf;
         if (--left == 0)
         {
-            fprintf(stderr, "Press <ENTER> to continue...");
+            std::cerr << "Press <ENTER> to continue...";
             char temp[512];
             fgets(temp, sizeof(temp), stdin);
             left = rows - 1;

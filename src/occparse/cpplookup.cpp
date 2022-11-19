@@ -322,10 +322,10 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
             SYMBOL* sp_orig;
             lex = getIdName(lex, nullptr, buf, &ovdummy, nullptr);
             ++count4;
-//            if (count4 == 58939)
+//            if (count4 >= 68225)
 //                printf("hi");
-            //            if (count4 > 52000)
-            printf("%d:%d:%s:%s\n", count4, lex->data->errline, buf, lex->data->errfile);
+//              if (count4 > 71000)
+//            printf("%d:%d:%s:%s\n", count4, lex->data->errline, buf, lex->data->errfile);
             lex = getsym();
             bool hasTemplateArgs = false;
             bool deferred = false;
@@ -371,7 +371,7 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                             TEMPLATEPARAMPAIR* params = sp->tp->templateParam;
                             if (params->second->type == kw_typename)
                             {
-                                if (params->second->packed && params->second->byPack.pack)
+                                if (params->second->packed && params->second->byPack.pack && params->second->byPack.pack->size())
                                 {
                                     params = &params->second->byPack.pack->front();
                                 }

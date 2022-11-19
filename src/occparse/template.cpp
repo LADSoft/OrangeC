@@ -844,6 +844,9 @@ static void GetPackedTypes(TEMPLATEPARAMPAIR** packs, int* count, std::list<TEMP
 }
 std::list<TEMPLATEPARAMPAIR>** expandArgs(std::list<TEMPLATEPARAMPAIR>** lst, LEXLIST* start, SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* select, bool packable)
 {
+    int beginning = 0;
+    if (*lst)
+        beginning = (*lst)->size();
     // this is going to presume that the expression involved
     // is not too long to be cached by the LEXLIST mechanism.
     int oldPack = packIndex;
@@ -925,13 +928,25 @@ std::list<TEMPLATEPARAMPAIR>** expandArgs(std::list<TEMPLATEPARAMPAIR>** lst, LE
     // make it packed again...   we aren't flattening at this point.
     if (select->front().second->packed)
     {
-        auto current = *lst;
-        *lst = templateParamPairListFactory.CreateList();
-        (*lst)->push_back(TEMPLATEPARAMPAIR{ nullptr, Allocate<TEMPLATEPARAM>() });
-        *(*lst)->back().second = *select->front().second;
-        (*lst)->back().first = select->front().first;
-        (*lst)->back().second->byPack.pack = current;
-        (*lst)->back().second->resolved = true;
+        TEMPLATEPARAMPAIR next;
+        next.second = Allocate<TEMPLATEPARAM>();
+        *next.second = *select->front().second;
+        next.first = select->front().first;
+        if (*lst && beginning != (*lst)->size())
+        {
+            next.second->byPack.pack = templateParamPairListFactory.CreateList();
+            auto itbeginning = (*lst)->begin();
+            int n = (*lst)->size() - beginning;
+            while (beginning--)
+                ++itbeginning;
+            (*next.second->byPack.pack) = std::move(std::list<TEMPLATEPARAMPAIR>(itbeginning, (*lst)->end()));
+            while (n--)
+                (*lst)->pop_back();
+        }
+        next.second->resolved = true;
+        if (!*lst)
+            (*lst) = templateParamPairListFactory.CreateList();
+        (*lst)->push_back(next);
     }
     return lst;
 }
@@ -1442,7 +1457,9 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                             (*lst)->back().first = itorig->first;
                         first = false;
                     }
-                    auto last = (*lst)->back().second->byPack.pack = templateParamPairListFactory.CreateList();
+                    if (!(*lst)->back().second->byPack.pack)
+                        (*lst)->back().second->byPack.pack = templateParamPairListFactory.CreateList();
+                    auto last = (*lst)->back().second->byPack.pack;
                     last->push_back(TEMPLATEPARAMPAIR{nullptr, Allocate<TEMPLATEPARAM>()});
                     if (itorig != iteorig && itorig->second->type == kw_template && isstructured(tp) && basetype(tp)->sp->sb->templateLevel)
                     {
@@ -5028,23 +5045,29 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
         auto itTAo = itTA;
         auto isspecialized = itTP->second->bySpecialization.types ? itTP : itTPe;
         auto isespecialized = itTPe;
-        if (itTA->second->bySpecialization.types)
+        if (itTA != itTAe)
         {
-            itTAe = itTA->second->bySpecialization.types->end();
-            itTA = itTA->second->bySpecialization.types->begin();
+            if (itTA->second->bySpecialization.types)
+            {
+                itTAe = itTA->second->bySpecialization.types->end();
+                itTA = itTA->second->bySpecialization.types->begin();
+            }
+            else
+            {
+                ++itTA;
+            }
         }
-        else
+        if (itTP != itTPe)
         {
-            ++itTA;
-        }
-        if (itTP->second->bySpecialization.types)
-        {
-            itTPe = itTP->second->bySpecialization.types->end();
-            itTP = itTP->second->bySpecialization.types->begin();
-        }
-        else
-        {
-            ++itTP;
+            if (itTP->second->bySpecialization.types)
+            {
+                itTPe = itTP->second->bySpecialization.types->end();
+                itTP = itTP->second->bySpecialization.types->begin();
+            }
+            else
+            {
+                ++itTP;
+            }
         }
         static std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
         for (; itTP != itTPe && itTA != itTAe; ++itTP)
@@ -10422,6 +10445,7 @@ static TEMPLATEPARAMPAIR* TypeAliasSearch(const char* name)
     }
     return rv;
 }
+
 std::list<TEMPLATEPARAMPAIR>* ResolveClassTemplateArgs(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
 {
     std::list<TEMPLATEPARAMPAIR>* rv = args;

@@ -95,6 +95,7 @@ static char usage_text[] =
     "\n"
     "\nOptimization control:\n" OPTIMIZATION_DESCRIPTION "\nFlags:\n" OPTMODULES_DESCRIPTION
     "  -fsyntax-only                  compile only, don't produce an output file\n"
+    "  -funsigned-char                'char' type is unsigned\n"
     " -std=xxxx                       specify the language standard to use\n"
     "    note for C++, this only changes the definition of __cplusplus\n"
     "    it doesn't check for conformity to the standard or deprecate things properly\n"

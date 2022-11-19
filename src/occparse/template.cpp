@@ -6895,6 +6895,8 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                         tis.push(iteInitial);
                         iteInitial = itInitial->second->byPack.pack->end();
                         itInitial = itInitial->second->byPack.pack->begin();
+                        if (itParams->second->packed)
+                            itParams->second->byPack.pack = templateParamPairListFactory.CreateList();
                     }
                     else
                     {
@@ -6911,7 +6913,8 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                     ++it;
                     if (it != iteParams || itParams->second->type != kw_typename || itInitial->second->byClass.dflt->type != bt_void)
                     {
-                        itParams->second->byPack.pack = templateParamPairListFactory.CreateList();
+                        if (!itParams->second->byPack.pack)
+                            itParams->second->byPack.pack = templateParamPairListFactory.CreateList();
                         itParams->second->byPack.pack->push_back(TEMPLATEPARAMPAIR{nullptr, Allocate<TEMPLATEPARAM>()});
                         itParams->second->byPack.pack->back().second->type = itParams->second->type;
                         itParams->second->byPack.pack->back().second->byClass.val = itInitial->second->byClass.dflt;

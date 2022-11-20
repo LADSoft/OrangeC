@@ -33,6 +33,13 @@
 * [onm](general/onm.md) dumps the symbols from object files
 * [ieeeconvert](general/ieeeconvert.md) convert object files between binary and ascii formats
 
+## Compiler wrappers
+
+  Compiler wrappers are wrappers that convert the command line for other compilers to a format that OCC can use
+
+* [gccocc](wrappers/gccocc.md) wrapper for the gcc command line
+* [arocc](wrappers/arocc.md) wrapper for the ar command line
+
 ## WIN32 Specific tools
  
  WIN32 specific tools are tools that aid in the development of WIN32 programs.

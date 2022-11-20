@@ -1761,6 +1761,7 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     currentLineData(parent, lex, 0);
     if (ISID(lex))
     {
+        // standard c/c++ goto
         SYMBOL* spx = search(lex->data->value.s.a, labelSyms);
         BLOCKDATA* block = Allocate<BLOCKDATA>();
         STATEMENT* st = stmtNode(lex, block, st_goto);
@@ -1790,6 +1791,7 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     }
     else if (MATCHKW(lex, star))
     {
+        // extension: computed goto
         BLOCKDATA* block = Allocate<BLOCKDATA>();
         STATEMENT* st = stmtNode(lex, block, st_goto);
         block->next = parent;
@@ -1797,6 +1799,8 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         block->table = localNameSpace->valueData->syms;
         st->explicitGoto = true;
         st->indirectGoto = true;
+        Optimizer::functionHasAssembly = true; // don't optimize
+        // turn off optimizations
         lex = getsym();
         TYPE*tp = nullptr;
         EXPRESSION* exp = nullptr;

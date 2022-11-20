@@ -5659,6 +5659,7 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                     *tp = &stdvoid;
                     break;
                 case land:
+                    // computed goto: take the address of a label
                     lex = getsym();
                     if (!ISID(lex))
                     {

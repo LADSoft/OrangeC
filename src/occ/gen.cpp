@@ -2415,7 +2415,7 @@ void asm_goto(Optimizer::QUAD* q) /* unconditional branch */
     {
         AMODE* ap;
         Optimizer::SimpleSymbol* sp = q->dc.left->offset->sp;
-        if (sp->storage_class == Optimizer::scc_temp)
+        if (q->dc.left->mode != Optimizer::i_immed && sp->storage_class == Optimizer::scc_temp)
         {
             ap = makedreg(Optimizer::chosenAssembler->arch->regMap[q->leftColor & 0xff][0]);
             ap->liveRegs = q->liveRegs;
@@ -2428,7 +2428,7 @@ void asm_goto(Optimizer::QUAD* q) /* unconditional branch */
         else
         {
             ap = make_offset(q->dc.left->offset);
-            if (q->dc.left->offset->type == Optimizer::se_pc)
+            if (q->dc.left->offset->type == Optimizer::se_pc || q->dc.left->offset->type == Optimizer::se_labcon)
                 ap->mode = am_immed;
             ap->liveRegs = q->liveRegs;
         }

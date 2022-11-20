@@ -1213,7 +1213,7 @@ static bool EvaluateStatements(EXPRESSION*& node, STATEMENT* stmt, std::unordere
                 case st_loopgoto:
                     if (Optimizer::cparams.prm_debug)
                         return false;
-                    if (stmt->explicitGoto)
+                    if (stmt->explicitGoto || stmt->indirectGoto)
                         return false;
                     stmt = labels[stmt->label];
                     if (!stmt)

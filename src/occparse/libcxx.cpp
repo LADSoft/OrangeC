@@ -1486,52 +1486,42 @@ SYMBOL* MakeIntegerSeq(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args)
 }
 static TYPE* TypePackElementType(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args)
 {
-    auto tpl = args;
     auto it = args->begin();
-    ++it; // second
-    if (args->front().second->packed)
-    {
-        tpl = args->front().second->byPack.pack;
-        if (!tpl)
-        {
-            return &stdany;
-        }
-        it = tpl->begin();
-        args = tpl;
+    auto ite = args->end();
+    if (it->second->type == kw_new)
         ++it;
+    if (it->second->packed)
+    {
+        if (!it->second->byPack.pack)
+            return &stdany;
+        ite = it->second->byPack.pack->end();
+        it = it->second->byPack.pack->begin();
+        if (it->second->type == kw_new)
+            ++it;
     }
-    auto e = tpl->front().second->byNonType.val;
+    auto e = it->second->byNonType.val;
     if (!e)
-        e = tpl->front().second->byNonType.dflt;
+        e = it->second->byNonType.dflt;
     if (e && isintconst(e))
     {
         int n = e->v.i;
-        std::list<TEMPLATEPARAMPAIR>::iterator lst;
-        if (!it->second->packed)
+        ++it;
+        if (it->second->packed)
         {
-            if (n == 0)
-            {
-                lst = it;
-            }
-            else
-            {
-                lst = args->end();
-            }
+            if (!it->second->byPack.pack)
+                return &stdany;
+            ite = it->second->byPack.pack->end();
+            it = it->second->byPack.pack->begin();
+            if (it->second->type == kw_new)
+                ++it;        
         }
-        else
+        while (n-- && it != ite)
         {
-            lst = it->second->byPack.pack ? it->second->byPack.pack->begin() : args->end();;
-            args = it->second->byPack.pack ? it->second->byPack.pack : args;
+            ++it;
         }
-        for (; n && lst != args->end(); n--, ++lst);
-        if (lst != args->end())
-        {
-            return MakeType(bt_derivedfromtemplate, lst->second->byClass.val ? lst->second->byClass.val : lst->second->byClass.dflt);
-        }
-        else
-        {
+        if (it == ite)
             return &stdany;
-        }
+        return MakeType(bt_derivedfromtemplate, it->second->byClass.val ? it->second->byClass.val : it->second->byClass.dflt);
     }
     else
     {

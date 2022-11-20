@@ -276,7 +276,10 @@ void addTemplateDeclaration(STRUCTSYM* decl)
     decl->str = nullptr;
     structSyms.push_front(decl);
 }
-void dropStructureDeclaration(void) { structSyms.pop_front(); }
+void dropStructureDeclaration(void) 
+{ 
+    structSyms.pop_front(); 
+}
 SYMBOL* getStructureDeclaration(void)
 {
     for (auto&& l : structSyms)

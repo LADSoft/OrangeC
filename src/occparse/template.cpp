@@ -1238,6 +1238,7 @@ bool constructedInt(LEXLIST* lex, SYMBOL* funcsp)
     lex = prevsym(placeholder);
     return rv;
 }
+int count7;
 LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPARAMPAIR>** lst)
 {
     std::list<TEMPLATEPARAMPAIR>** start = lst;
@@ -11525,7 +11526,7 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, std::list
         auto tpr = tp->sp->templateParams = templateParamPairListFactory.CreateList();
         auto tps = tp->sp->sb->mainsym->templateParams;
         auto ittps = tps->begin();
-        for (auto tpl : *temp)
+        for (auto&& tpl : *temp)
         {
             tpr->push_back(TEMPLATEPARAMPAIR{tpl.first, Allocate<TEMPLATEPARAM>()});
             *tpr->back().second = *tpl.second;
@@ -11810,12 +11811,18 @@ static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMPAIR* temp, std::list<TEMPLA
     {
         if (temp->second->type == kw_typename)
         {
-            TYPE* tp1 = temp->second->packed ? temp->second->byPack.pack->front().second->byClass.dflt : temp->second->byClass.dflt;
+            TYPE* tp1 = temp->second->packed ? (temp->second->byPack.pack && temp->second->byPack.pack->size()
+                                                    ? temp->second->byPack.pack->front().second->byClass.dflt
+                                                    : nullptr)
+                                             : temp->second->byClass.dflt;
             GatherPackedTypes(&count, syms, basetype(tp1));
         }
         else
         {
-            EXPRESSION* exp1 = temp->second->packed ? temp->second->byPack.pack->front().second->byNonType.dflt : temp->second->byNonType.dflt;
+            EXPRESSION* exp1 = temp->second->packed ? (temp->second->byPack.pack && temp->second->byPack.pack->size()
+                                                           ? temp->second->byPack.pack->front().second->byNonType.dflt
+                                                           : nullptr)
+                                                    : temp->second->byNonType.dflt;
             GatherPackedVars(&count, syms, exp1);
         }
         for (int i = 0; i < count; i++)
@@ -12090,6 +12097,7 @@ std::list<TEMPLATEPARAMPAIR>* GetTypeAliasArgs(SYMBOL* sp, std::list<TEMPLATEPAR
 }
 static std::list<TEMPLATEPARAMPAIR>* TypeAliasAdjustArgs(std::list<TEMPLATEPARAMPAIR>* tpx, std::list<TEMPLATEPARAMPAIR>* args)
 {
+    int n = args->size();
     std::list<TEMPLATEPARAMPAIR>* t;
     if (tpx->size() > args->size())
     {
@@ -12131,16 +12139,16 @@ static std::list<TEMPLATEPARAMPAIR>* TypeAliasAdjustArgs(std::list<TEMPLATEPARAM
     auto itt = tpx->begin();
     if (itt->second->type == kw_new)
         ++itt;
-    for (; itt != tpx->end() && ita != args->end(); ++itt, ++ita)
+    for (; itt != tpx->end() && n; ++itt, ++ita, n--)
     {
         ita->first = itt->first;
     }
-    for (auto tpl1 : *tpx)
+    for (;itt != tpx->end(); ++itt)
     {
-        if (tpl1.second->type != kw_new)
+        if (itt->second->type != kw_new)
         {
-            tpl1.second->byClass.dflt = nullptr;
-            tpl1.second->byClass.val = nullptr;
+            itt->second->byClass.dflt = nullptr;
+            itt->second->byClass.val = nullptr;
         }
     }
     return args;

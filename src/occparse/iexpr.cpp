@@ -3340,6 +3340,11 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             break;
         case en_labcon:
             ap1 = Allocate<Optimizer::IMODE>();
+            if (node->adjustLabel)
+            {
+                node->adjustLabel = false;
+                node->v.i += codeLabelOffset;
+            }
             ap1->offset = Optimizer::SymbolManager::Get(node);
             ap1->mode = Optimizer::i_immed;
             ap1->size = size;

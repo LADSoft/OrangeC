@@ -1762,6 +1762,39 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
 
     return lex;
 }
+int GetLabelValue(LEXLIST* lex, std::list<BLOCKDATA*>* parent, STATEMENT* st)
+{
+    SYMBOL* spx = labelSyms->search(lex->data->value.s.a);
+    if (!spx)
+    {
+        spx = makeID(sc_ulabel, nullptr, nullptr, litlate(lex->data->value.s.a));
+        spx->sb->declfile = spx->sb->origdeclfile = lex->data->errfile;
+        spx->sb->declline = spx->sb->origdeclline = lex->data->errline;
+        spx->sb->realdeclline = lex->data->linedata->lineno;
+        spx->sb->declfilenum = lex->data->linedata->fileindex;
+        SetLinkerNames(spx, lk_none);
+        spx->sb->offset = codeLabel++;
+        if (!spx->sb->gotoTable)
+        {
+            spx->sb->gotoTable = stmtListFactory.CreateList();
+            spx->sb->gotoBlockTable = blockDataListFactory.CreateList();
+            if (parent)
+            {
+                for (auto b : *parent)
+                {
+                    auto x = Allocate<BLOCKDATA>();
+                    *x = *b;
+                    x->orig = b;
+                    spx->sb->gotoBlockTable->push_back(x);
+                }
+            }
+        }
+        if (st)
+            spx->sb->gotoTable->push_back(st);
+        labelSyms->Add(spx);
+    }
+    return spx->sb->offset;
+}
 static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
     auto before = parent.front();
@@ -1771,6 +1804,7 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
     currentLineData(parent, lex, 0);
     if (ISID(lex))
     {
+        // standard c/c++ goto
         SYMBOL* spx = labelSyms->search(lex->data->value.s.a);
         BLOCKDATA* block = Allocate<BLOCKDATA>();
         parent.push_front(block);
@@ -1778,40 +1812,50 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
         block->table = localNameSpace->front()->syms;
         STATEMENT* st = stmtNode(lex, parent, st_goto);
         st->explicitGoto = true;
+        int lbl = 0;
         if (!spx)
         {
-            spx = makeID(sc_ulabel, nullptr, nullptr, litlate(lex->data->value.s.a));
-            spx->sb->declfile = spx->sb->origdeclfile = lex->data->errfile;
-            spx->sb->declline = spx->sb->origdeclline = lex->data->errline;
-            spx->sb->realdeclline = lex->data->linedata->lineno;
-            spx->sb->declfilenum = lex->data->linedata->fileindex;
-            SetLinkerNames(spx, lk_none);
-            spx->sb->offset = codeLabel++;
-            if (!spx->sb->gotoTable)
-            {
-                spx->sb->gotoTable = stmtListFactory.CreateList();
-                spx->sb->gotoBlockTable = blockDataListFactory.CreateList();
-                for (auto b : parent)
-                {
-                    auto x = Allocate<BLOCKDATA>();
-                    *x = *b;
-                    x->orig = b;
-                    spx->sb->gotoBlockTable->push_back(x);
-                }
-            }
-            spx->sb->gotoTable->push_back(st);
-            labelSyms->Add(spx);
+            lbl = GetLabelValue(lex, &parent, st);
         }
         else
         {
+            lbl = spx->sb->offset;
             thunkGotoDestructors(&st->destexp, parent, *spx->sb->gotoBlockTable);
             thunkCatchCleanup(st, funcsp, parent, *spx->sb->gotoBlockTable);
         }
-        st->label = spx->sb->offset;
+        st->label = lbl;
         lex = getsym();
         before->needlabel = true;
         parent.pop_front();
         AddBlock(lex, parent, block);
+    }
+    else if (MATCHKW(lex, star))
+    {
+        // extension: computed goto
+        BLOCKDATA* block = Allocate<BLOCKDATA>();
+        STATEMENT* st = stmtNode(lex, parent, st_goto);
+        parent.push_front(block);
+        block->type = begin;
+        block->table = localNameSpace->front()->syms;
+        st->explicitGoto = true;
+        st->indirectGoto = true;
+        Optimizer::functionHasAssembly = true; // don't optimize
+        // turn off optimizations
+        lex = getsym();
+        TYPE*tp = nullptr;
+        EXPRESSION* exp = nullptr;
+        lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, 0);
+        if (!tp)
+            error(ERR_IDENTIFIER_EXPECTED);
+        else if (!ispointer(tp))
+            error(ERR_INVALID_POINTER_CONVERSION);
+        else
+        {
+            st->select = exp;
+            AddBlock(lex, parent, block);
+        }
+        before->needlabel = true;
+        parent.pop_front();
     }
     else
     {
@@ -1835,7 +1879,7 @@ static LEXLIST* statement_label(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDAT
         if (spx->sb->storage_class == sc_ulabel){
             spx->sb->storage_class = sc_label;
             // may come here from assembly language...
-            if (spx->sb->gotoTable)
+            if (spx->sb->gotoTable && spx->sb->gotoTable->size())
             {
                 thunkGotoDestructors(&spx->sb->gotoTable->front()->destexp, *spx->sb->gotoBlockTable, parent);
                 thunkCatchCleanup(spx->sb->gotoTable->front(), funcsp, *spx->sb->gotoBlockTable, parent);

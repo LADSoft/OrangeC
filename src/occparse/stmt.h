@@ -50,6 +50,7 @@ void FlushLineData(const char* file, int lineno);
 std::list<STATEMENT*>* currentLineData(std::list<BLOCKDATA*>& parent, LEXLIST* lex, int offset);
 STATEMENT* stmtNode(LEXLIST* lex, std::list<BLOCKDATA*>& parent, enum e_stmt stype);
 void makeXCTab(SYMBOL* funcsp);
+int GetLabelValue(LEXLIST* lex, std::list<BLOCKDATA*>* parent, STATEMENT* st);
 LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, int label, int startlab, int endlab);
 LEXLIST* statement_try(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent);
 bool hasInlineAsm(void);

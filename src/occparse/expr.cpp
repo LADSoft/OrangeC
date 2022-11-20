@@ -5751,6 +5751,22 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                     *exp = intNode(en_c_i, 0);
                     *tp = &stdvoid;
                     break;
+                case land:
+                    // computed goto: take the address of a label
+                    lex = getsym();
+                    if (!ISID(lex))
+                    {
+                        *exp = intNode(en_c_i, 0);
+                        error(ERR_IDENTIFIER_EXPECTED);
+                    }
+                    else
+                    {
+                        *exp = intNode(en_labcon, GetLabelValue(lex, nullptr, nullptr));
+                        (*exp)->adjustLabel = true;
+                        lex = getsym();
+                    }
+                    *tp = &stdpointer;
+                    break;
                 case kw_true:
                     lex = getsym();
                     *exp = intNode(en_c_i, 1);

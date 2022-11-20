@@ -948,6 +948,8 @@ static void labelIndexes(std::list<STATEMENT*>* statements, int* min, int* max)
             case st_expr:
                 break;
             case st_goto:
+                if (stmt->indirectGoto)
+                    break;
             case st_select:
             case st_notselect:
             case st_label:
@@ -1024,7 +1026,7 @@ static std::list<VLASHIM*> getVLAList(std::list<STATEMENT*>* statements, VLASHIM
             case st___catch:
             case st___finally:
             case st___fault:
-                if (stmt->lower && stmt->lower->front()->type == st_goto)
+                if (stmt->lower && stmt->lower->front()->type == st_goto && !stmt->lower->front()->indirectGoto)
                 {
                     // unwrap the goto for purposes of these diagnostics
                     rv.push_back(mkshim(v_goto, level, stmt->lower->front()->label, stmt->lower->front(), last, parent, curBlockNum, curBlockIndex++));
@@ -1085,10 +1087,13 @@ static std::list<VLASHIM*> getVLAList(std::list<STATEMENT*>* statements, VLASHIM
             case st_nop:
                 break;
             case st_goto:
-                *branched = true;
-                rv.push_back(mkshim(v_goto, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++));
-                last = rv.back();
-                last->checkme = stmt->explicitGoto;
+                if (!stmt->indirectGoto)
+                {
+                    *branched = true;
+                    rv.push_back(mkshim(v_goto, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++));
+                    last = rv.back();
+                    last->checkme = stmt->explicitGoto;
+                }
                 break;
             case st_label:
                 rv.push_back(mkshim(v_label, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++));

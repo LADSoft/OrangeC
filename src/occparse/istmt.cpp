@@ -718,11 +718,21 @@ Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp)
                     break;
                 case st_label:
                     Optimizer::gen_label((int)stmt->label + codeLabelOffset);
+                    if (stmt->purelabel)
+                       Optimizer::intermed_tail->alwayslive = true;
                     break;
                 case st_goto:
                     if (stmt->destexp)
                         gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
-                    Optimizer::gen_igoto(Optimizer::i_goto, (int)stmt->label + codeLabelOffset);
+                    if (stmt->indirectGoto)
+                    {
+                        auto ap1 = gen_expr(funcsp, stmt->select, F_NOVALUE, natural_size(stmt->select));
+                        Optimizer::gen_icode(Optimizer::i_directbranch, nullptr, ap1, nullptr);
+                    }
+                    else
+                    {
+                        Optimizer::gen_igoto(Optimizer::i_goto, (int)stmt->label + codeLabelOffset);
+                    }
                     break;
                 case st_asmgoto:
                     Optimizer::gen_igoto(Optimizer::i_asmgoto, (int)stmt->label + codeLabelOffset);

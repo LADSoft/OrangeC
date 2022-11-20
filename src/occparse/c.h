@@ -229,7 +229,7 @@ typedef struct
 // clang-format off
     enum e_stmt
     {
-        st_line, st_nop, st_expr, st_declare, st_goto, st_asmgoto, st_asmcond,
+        st_line, st_nop, st_expr, st_declare, st_goto, st_indgoto, st_asmgoto, st_asmcond,
         st_loopgoto, st_select, st_notselect, st_varstart, st_dbgblock,
         st_switch, st_return, st_block, st_throw, st_try, st_catch,
         st__genword, st_passthrough, st_datapassthrough, st_abs, st_label,
@@ -423,6 +423,7 @@ typedef struct expr
     int preincdec : 1;  //  an assignment which is the 'pre' form of autoinc
     int keepZero : 1;
     int paramArray : 1;
+    int adjustLabel : 1;
 } EXPRESSION;
 
 typedef struct _msilarray
@@ -530,6 +531,7 @@ typedef struct stmt
     int hasdeclare : 1;
     int purelabel : 1;
     int explicitGoto : 1;
+    int indirectGoto : 1;
 } STATEMENT;
 
 typedef struct blockdata

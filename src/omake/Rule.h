@@ -26,7 +26,7 @@
 #define RULE_H
 
 #include "Spawner.h"
-#include "Semaphores.h"
+#include "semaphores.h"
 #include <string>
 #include <list>
 #include <map>

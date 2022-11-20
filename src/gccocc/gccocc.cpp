@@ -144,7 +144,7 @@ int gccocc::Run(int argc, char** argv)
     if (prm_verbose.GetExists())
         fputs(" -yyyy", fil);
     if (prm_output.GetExists())
-        fprintf(fil, " \"-o%s\"", prm_output.GetValue());
+        fprintf(fil, " \"-o%s\"", prm_output.GetValue().c_str());
     if (prm_cppmode.GetValue())
         fputs(" -x c++", fil);
     if (prm_nostdinc.GetValue())

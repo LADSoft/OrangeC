@@ -7983,7 +7983,7 @@ int PushTemplateNamespace(SYMBOL* sym)
             auto itnext = it;
             ++itnext;
             auto sp = *it;
-            if (!sp->sb->value.i || (itnext != sym->sb->templateNameSpace->end() && nameSpaceList.front() != sp))
+            if (!sp->sb->value.i || (itnext == sym->sb->templateNameSpace->end() && nameSpaceList.front() != sp))
             {
                 if (sp->sb->nameSpaceValues)
                 {

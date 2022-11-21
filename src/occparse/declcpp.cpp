@@ -4188,7 +4188,7 @@ static bool constArgValid(TYPE* tp)
             cpy = getCopyCons(sym, false);
             mv = getCopyCons(sym, true);
             bool found = false;
-            for (auto sym2 : *sym1->sb->parentClass->tp->syms)
+            for (auto sym2 : *sym1->tp->syms)
             {
                 if (sym2 != cpy && sym2 != mv && isConstexprConstructor(sym2))
                 {

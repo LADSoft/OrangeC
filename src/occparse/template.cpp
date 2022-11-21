@@ -5639,9 +5639,9 @@ static bool Deduce(TYPE* P, TYPE* A, EXPRESSION* exp, bool change, bool byClass,
             case bt_func:
             case bt_ifunc: {
                 auto itp = Pb->syms->begin();
-                auto itpend = Pb->syms->begin();
+                auto itpend = Pb->syms->end();
                 auto ita = Ab->syms->begin();
-                auto itaend = Ab->syms->begin();
+                auto itaend = Ab->syms->end();
                 if (islrqual(Pin) != islrqual(A) || isrrqual(Pin) != isrrqual(Ain))
                     return false;
                 if (isconst(Pin) != isconst(Ain) || isvolatile(Pin) != isvolatile(Ain))
@@ -5670,8 +5670,8 @@ static bool Deduce(TYPE* P, TYPE* A, EXPRESSION* exp, bool change, bool byClass,
                                 ++itp;
                             if ((sra->tp->type != bt_ellipse && srp->tp->type != bt_ellipse) || sra->tp->type == srp->tp->type)
                             {
-                                itp = itaend;
-                                ita = itpend;
+                                itp = itpend;
+                                ita = itaend;
                             }
                             break;
                         }
@@ -8791,12 +8791,15 @@ static void TransferClassTemplates(std::list<TEMPLATEPARAMPAIR>* dflt, std::list
     {
         std::list<TEMPLATEPARAMPAIR>* tpdflt = basetype(itval->second->byClass.dflt)->sp->templateParams;
         std::list<TEMPLATEPARAMPAIR>* tpval = basetype(itval->second->byClass.val)->sp->templateParams;
-        auto ittpdflt = tpdflt->begin();
-        auto ittpval = tpval->begin();
-        for (; ittpdflt != tpdflt->end() && ittpval != tpval->end(); ++ ittpdflt, ++ittpval)
+        if (tpdflt && tpval)
         {
-            std::list<TEMPLATEPARAMPAIR> dflt{*ittpdflt}, val{*ittpval};
-            TransferClassTemplates(&dflt, &val, params);
+            auto ittpdflt = tpdflt->begin();
+            auto ittpval = tpval->begin();
+            for (; ittpdflt != tpdflt->end() && ittpval != tpval->end(); ++ ittpdflt, ++ittpval)
+            {
+                std::list<TEMPLATEPARAMPAIR> dflt{*ittpdflt}, val{*ittpval};
+                TransferClassTemplates(&dflt, &val, params);
+            }
         }
     }
     else if (itval != val->end() && !itval->second->packed && itval->second->type == kw_typename && itval->second->byClass.dflt &&
@@ -9193,7 +9196,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                                 {
                                     auto it = nparams->begin();
                                     ++it;
-                                    std::list<TEMPLATEPARAMPAIR> a{*itParams}, b{*it};
+                                    std::list<TEMPLATEPARAMPAIR> a{*itParams}, b(it, nparams->end());
                                     TransferClassTemplates(&a, &a, &b);
                                 }
                             }

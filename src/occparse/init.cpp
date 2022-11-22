@@ -2729,7 +2729,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
             FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
             EXPRESSION* exp;
             TYPE* ctype = itype;
-            std::list<INITIALIZER*>* it = nullptr;
+            std::list<INITIALIZER*>* it;
             bool maybeConversion = true;
             bool isconversion;
             bool isList = MATCHKW(lex, begin);
@@ -2938,25 +2938,29 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                 if (funcparams->sp)  // may be an error
                     PromoteConstructorArgs(funcparams->sp, funcparams);
             }
-            initInsert(&it, itype, exp, offset, true);
             if (sc != sc_auto && sc != sc_localstatic && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
             {
+                it = nullptr;
+                initInsert(&it, itype, exp, offset, true);
                 insertDynamicInitializer(base, it);
             }
             else
             {
+                it = *init;
+                initInsert(&it, itype, exp, offset, true);
                 *init = it;
             }
-            it = nullptr;
             exp = baseexp;
             if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable && sc != sc_localstatic && !arrayMember)
             {
+                it = nullptr;
                 callDestructor(basetype(itype)->sp, nullptr, &exp, nullptr, true, false, false, true);
                 initInsert(&it, itype, exp, offset, true);
                 insertDynamicDestructor(base, it);
             }
             else if (dest)
             {
+                it = *dest;
                 callDestructor(basetype(itype)->sp, nullptr, &exp, nullptr, true, false, false, true);
                 initInsert(&it, itype, exp, offset, true);
                 *dest = it;

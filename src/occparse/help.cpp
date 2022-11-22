@@ -1492,15 +1492,17 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     while (isarray(btp))
                         btp = basetype(btp)->btp;
                     btp = basetype(btp);
-                    auto it = init->end();
-                    --it;
-                    for (; it != init->end() && *it != initItem; --it)
+                    bool found = false;
+                    for (auto elm : *init)
                     {
-                        if ((*it)->exp)
-                            if (!isarithmeticconst((*it)->exp) && !isconstaddress((*it)->exp))
+                        if (elm->exp)
+                            if (!isarithmeticconst(elm->exp) && !isconstaddress(elm->exp))
+                            {
+                                found = true;
                                 break;
+                            }
                     }
-                    if ((*it) != initItem)
+                    if (found)
                     {
                         /* some members are non-constant expressions */
                         if (!Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_cplusplus)
@@ -1704,8 +1706,9 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
         }
     }
     // plop in a clear block if necessary
+    // this needs some work, if the structure was entirely created we shouldn't do this...
     if ((sym || expsymin) && !noClear && !isdest &&
-        (isarray(tp) ||
+        ((isarray(tp) && (!isstructured(basetype(tp)->btp) || !basetype(basetype(tp)->btp)->sp->sb->hasUserCons)) ||
          (isstructured(tp) && ((!Optimizer::cparams.prm_cplusplus && (Optimizer::architecture != ARCHITECTURE_MSIL)) ||
                                !basetype(tp)->sp->sb->hasUserCons))))
     {

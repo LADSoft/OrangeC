@@ -2836,6 +2836,7 @@ LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pa
                 }
             }
             FreeLocalContext(parent, funcsp, codeLabel++);
+            parent.pop_front();
             st = stmtNode(lex, parent, st_catch);
             st->label = startlab;
             st->endlabel = endlab;
@@ -2844,7 +2845,6 @@ LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pa
             st->blockTail = catchstmt->blockTail;
             st->lower = catchstmt->statements;
             st->tp = tp;
-            parent.pop_front();
         }
         else
         {
@@ -2867,7 +2867,6 @@ LEXLIST* statement_try(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pare
     trystmt->defaultlabel = -1; /* no default */
     trystmt->type = kw_try;
     trystmt->table = localNameSpace->front()->syms;
-    parent.push_front(trystmt);
     funcsp->sb->anyTry = true;
     lex = getsym();
     inLoopOrConditional++;
@@ -2877,11 +2876,13 @@ LEXLIST* statement_try(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pare
     }
     else
     {
+        parent.push_front(trystmt);
         AllocateLocalContext(parent, funcsp, codeLabel++);
         tryLevel++;
         lex = compound(lex, funcsp, parent, false);
         tryLevel--;
         FreeLocalContext(parent, funcsp, codeLabel++);
+        parent.pop_front();
         before->needlabel = trystmt->needlabel;
         st = stmtNode(lex, parent, st_try);
         st->label = codeLabel++;
@@ -2896,7 +2897,6 @@ LEXLIST* statement_try(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pare
     }
     inLoopOrConditional--;
 
-    parent.pop_front();
     return lex;
 }
 bool hasInlineAsm() { return Optimizer::architecture == ARCHITECTURE_X86; }

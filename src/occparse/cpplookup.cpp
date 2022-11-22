@@ -322,9 +322,10 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
             SYMBOL* sp_orig;
             lex = getIdName(lex, nullptr, buf, &ovdummy, nullptr);
             ++count4;
-//            if (count4 >= 52305)
+//            if (count4 >= 231844)
 //                printf("hi");
-            printf("%d:%d:%s:%s\n", count4, lex->data->errline, buf, lex->data->errfile);
+//            if (count4 >= 231500)
+//                printf("%d:%d:%s:%s\n", count4, lex->data->errline, buf, lex->data->errfile);
             lex = getsym();
             bool hasTemplateArgs = false;
             bool deferred = false;

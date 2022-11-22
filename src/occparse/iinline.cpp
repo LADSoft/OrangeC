@@ -393,7 +393,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     int oldretcount = retcount;
     int oldOffset = codeLabelOffset;
     EXPRESSION* oldthis = inlinesym_thisptr[inlinesym_count];
-    //    return nullptr;
+//        return nullptr;
     if (noinline)
         return nullptr;
     if (Optimizer::chosenAssembler->arch->denyopts & DO_NOINLINE)

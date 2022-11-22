@@ -4319,13 +4319,35 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                         ++itx;
                         temp1.clear();
                         temp1.insert(temp1.begin(), itx, itle);
+                        int n = temp1.size();
                         AdjustParams(funcparams->sp, it, temp->end(), &temp2, operands, true);
+                        auto itt = temp1.begin();
+                        auto itte = temp1.end();
+                        for (auto i = 0; i < n; i++)
+                            ++itt;
+                        if (!funcparams->arguments)
+                            funcparams->arguments = initListListFactory.CreateList();
+                        for (;itt != itte; ++itt)
+                        {
+                            funcparams->arguments->push_back(*itt);
+                        }
                     }
                 }
                 else
                 {
                     temp1.insert(temp1.begin(), itl, itle);
+                    int n = temp1.size();
                     AdjustParams(funcparams->sp, it, temp->end(), &temp2, operands, true);
+                    auto itt = temp1.begin();
+                    auto itte = temp1.end();
+                    for (auto i = 0; i < n; i++)
+                        ++itt;
+                    if (!funcparams->arguments)
+                        funcparams->arguments = initListListFactory.CreateList();
+                    for (; itt != itte; ++itt)
+                    {
+                        funcparams->arguments->push_back(*itt);
+                    }
                 }
             }
             if (funcparams->sp->sb->xcMode != xc_unspecified && funcparams->sp->sb->xcMode != xc_none)

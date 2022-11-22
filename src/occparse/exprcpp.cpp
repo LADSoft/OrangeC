@@ -135,35 +135,44 @@ EXPRESSION* baseClassOffset(SYMBOL* base, SYMBOL* derived, EXPRESSION* en)
                 {
                     stk.back() = std::pair<std::list<BASECLASS*>::iterator, std::list<BASECLASS*>::iterator>(it, ite);
                 }
-                else if (stk.size())
+                else
                 {
-                    while (stk.size())
+                    --it;
+                    if (stk.size())
                     {
-                        auto&& a = stk.back();
-                        auto itx = a.first;
-                        ++itx;
-                        if (itx != a.second)
-                            break;
-                        stk.pop_back();
+                        do
+                        {
+                            ite = stk.back().second;
+                            it = stk.back().first;
+                            ++it;
+                            stk.pop_back();
+                        } while (stk.size() && it == ite);
+                        stk.push_back(std::pair<std::list<BASECLASS*>::iterator, std::list<BASECLASS*>::iterator>(it, ite));
                     }
                 }
             }
-            if (stk.size())
+            if (stk.size() && stk.front().first != stk.front().second)
             {
-                std::list<VBASEENTRY*>::iterator itl, itle = itl;
-                if (derived->sb->vbaseEntries)
-                {
-                    itl = derived->sb->vbaseEntries->begin();
-                    itle = derived->sb->vbaseEntries->end();
-                }
+                int i = 0;
                 for (auto it = stk.begin(); it != stk.end(); ++it)
                 {
                     auto entry = *(*it).first;
                     if (entry->isvirtual)
                     {
                         int offset;
-                        std::list<VBASEENTRY*>::iterator itx;
-                        for (itx = itl; itx != itl && (*itx)->cls != entry->cls; ++itx);
+                        std::list<VBASEENTRY*>::iterator itl, itle = itl, itx;
+                        if (i == 0)
+                        {
+                            itl = derived->sb->vbaseEntries->begin();
+                            itle = derived->sb->vbaseEntries->end();
+                        }
+                        else
+                        {
+                            itl = entry->cls->sb->vbaseEntries->begin();
+                            itle = entry->cls->sb->vbaseEntries->end();                        
+                        }
+                        for (itx = itl; itx != itl && (*itx)->cls != entry->cls; ++itx)
+                            ;
                         offset = (*itx)->pointerOffset;
                         rv = exprNode(en_add, rv, intNode(en_c_i, offset));
                         if (entry->isvirtual)
@@ -173,16 +182,6 @@ EXPRESSION* baseClassOffset(SYMBOL* base, SYMBOL* derived, EXPRESSION* en)
                     {
                         int offset = entry->offset;
                         rv = exprNode(en_add, rv, intNode(en_c_i, offset));
-                    }
-                    if (entry->cls->sb->vbaseEntries)
-                    {
-                        itl = entry->cls->sb->vbaseEntries->begin();
-                        itle = entry->cls->sb->vbaseEntries->end();
-                    }
-                    else
-                    {
-                        itl = std::list<VBASEENTRY*>::iterator();
-                        itle = itl;
                     }
                 }
             }

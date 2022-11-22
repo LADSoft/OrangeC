@@ -6448,7 +6448,7 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
                 {
                     if (basetype(sp1->tp)->syms->size() == 2)
                     {
-                        if (comparetypes(basetype(sp1->tp)->syms->front()->tp, A, true))
+                        if (comparetypes(basetype(sp1->tp)->syms->back()->tp, A, true))
                             return true;
                     }
                     else if (basetype(sp1->tp)->syms->size() > 2)
@@ -6458,7 +6458,8 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
                         ++it;
                         if ((*it)->sb->defaulted)
                         {
-                            if (comparetypes(basetype(sp1->tp)->syms->front()->tp, A, true))
+                            --it;
+                            if (comparetypes((*it)->tp, A, true))
                                 return true;
                         }
                     }

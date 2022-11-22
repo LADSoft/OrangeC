@@ -114,12 +114,11 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                         {
                             if (func->sb->deferredCompile && (!func->sb->templateLevel || func->sb->instantiated))
                             {
-                                FUNCTIONCALL fcall;
+                                FUNCTIONCALL fcall = {};
                                 TYPE* tp = nullptr;
                                 EXPRESSION* exp = intNode(en_c_i, 0);
                                 SYMBOL* sp = func->sb->overloadName;
                                 fcall.arguments = initListListFactory.CreateList();
-                                memset(&fcall, 0, sizeof(fcall));
                                 for (auto sym : *basetype(func->tp)->syms)
                                 {
                                     if (sym->sb->thisPtr)

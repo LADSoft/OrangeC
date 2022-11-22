@@ -1850,7 +1850,7 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
             exp1 = nullptr;
             initializers = Allocate<FUNCTIONCALL>();
             lex = getArgs(lex, funcsp, initializers, closepa, true, 0);
-            if (initializers->arguments)
+            if (initializers->arguments && initializers->arguments->size())
             {
                 if (!comparetypes(initializers->arguments->front()->tp, *tp, false) || initializers->arguments->size() > 1)
                 {

@@ -768,7 +768,6 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                         funcparams.thistp = MakeType(bt_pointer, basetype(tp3));
                         funcparams.ascall = true;
                         funcparams.arguments->clear();
-                        funcparams.arguments = nullptr;
                         funcparams.sp = nullptr;
                         for (auto sym : *basetype(basetype(tp2)->btp)->syms)
                         {

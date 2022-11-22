@@ -1726,7 +1726,7 @@ TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr)
             sp->sb->storage_class != sc_external)
         {
             EXPRESSION* rv;
-            tp = MakeType(bt_memberptr, sp->tp);
+            auto tp = MakeType(bt_memberptr, sp->tp);
             tp->sp = sp->sb->parentClass;
             *exp = varNode(en_memberptr, sp);
             (*exp)->isfunc = true;
@@ -3015,6 +3015,12 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
 
         if (itl == itle)
         {
+            if (!*lptr)
+            {
+                *lptr = initListListFactory.CreateList();
+                itl = (*lptr)->begin();
+                itle = (*lptr)->end();
+            }
             deferredInitializeDefaultArg(sym, func);
             EXPRESSION* q;
             if (sym->sb->init && sym->sb->init->front()->exp)
@@ -4256,12 +4262,12 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     tp1 = basetype(tp1)->btp;
                 if (isfunction(tp1))
                 {
-                    it = basetype(tp1)->syms->begin();
-                    if (it != basetype(tp1)->syms->end())
+                    auto itq = basetype(tp1)->syms->begin();
+                    if (itq != basetype(tp1)->syms->end())
                     {
-                        if ((*it)->sb->thisPtr)
-                            ++it;
-                        TYPE* tp = (*it)->tp;
+                        if ((*itq)->sb->thisPtr)
+                            ++itq;
+                        TYPE* tp = (*itq)->tp;
                         if (isref(tp))
                         {
                             initializerRef = true;
@@ -4272,10 +4278,10 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                             SYMBOL* sym = (basetype(tp)->sp);
                             if (sym->sb->initializer_list && sym->sb->templateLevel)
                             {
-                                auto it = sym->templateParams->begin();
-                                ++it;
+                                auto itr = sym->templateParams->begin();
+                                ++itr;
                                 initializerListTemplate = sym->tp;
-                                initializerListType = it->second->byClass.val;
+                                initializerListType = itr->second->byClass.val;
                             }
                         }
                     }

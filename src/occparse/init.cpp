@@ -491,8 +491,9 @@ static void callDynamic(const char* name, int startupType, int index, std::list<
 }
 static void dumpDynamicInitializers(void)
 {
-    if (IsCompiler())
+    if (IsCompiler() && dynamicInitializers)
     {
+        AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
         int index = 0;
         int counter = 0;
         std::list<STATEMENT*> st;
@@ -547,6 +548,7 @@ static void dumpDynamicInitializers(void)
             dynamicInitializers = dynamicInitializers->next;
         }
         callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_STARTUP, index++, &st);
+        FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
     }
 }
 static void dumpTLSInitializers(void)
@@ -555,7 +557,7 @@ static void dumpTLSInitializers(void)
     {
         if (TLSInitializers)
         {
-            
+            AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);            
             std::list<STATEMENT*> st;
             SYMBOL* funcsp;
             TYPE* tp = MakeType(bt_ifunc, MakeType(bt_void));
@@ -585,13 +587,15 @@ static void dumpTLSInitializers(void)
             startlab = retlab = 0;
             Optimizer::tlsstartupseg();
             Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_STARTUP);
+            FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
         }
     }
 }
 static void dumpDynamicDestructors(void)
 {
-    if (IsCompiler())
+    if (IsCompiler() && dynamicDestructors)
     {
+        AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
         int index = 0;
         int counter = 0;
         std::list<STATEMENT*> st;
@@ -612,6 +616,7 @@ static void dumpDynamicDestructors(void)
             }
         }
         callDynamic("__DYNAMIC_RUNDOWN__", STARTUP_TYPE_RUNDOWN, index++, &st);
+        FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
     }
 }
 static void dumpTLSDestructors(void)
@@ -620,6 +625,7 @@ static void dumpTLSDestructors(void)
     {
         if (TLSDestructors)
         {
+            AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
             std::list<STATEMENT*> st;
             SYMBOL* funcsp;
             TYPE* tp = MakeType(bt_ifunc, MakeType(bt_void));
@@ -649,6 +655,7 @@ static void dumpTLSDestructors(void)
             startlab = retlab = 0;
             Optimizer::tlsrundownseg();
             Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_RUNDOWN);
+            FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
         }
     }
 }
@@ -3068,7 +3075,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                 lex = getArgs(lex, funcsp, funcparams, closepa, true, 0);
                 if (funcparams->arguments && funcparams->arguments->size() > 1)
                     error(ERR_EXPRESSION_SYNTAX);
-                else if (funcparams->arguments && !comparetypes(itype, funcparams->arguments->front()->tp, true))
+                else if (funcparams->arguments && funcparams->arguments->size() && !comparetypes(itype, funcparams->arguments->front()->tp, true))
                     error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
                 else
                 {
@@ -3083,7 +3090,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                     }
                     UpdateRootTypes(ttp);
                     tp1 = itype;
-                    if (funcparams->arguments && !isref(funcparams->arguments->front()->tp))
+                    if (funcparams->arguments &&  funcparams->arguments->size() && !isref(funcparams->arguments->front()->tp))
                     {
                         funcparams->arguments->front()->tp = CopyType(funcparams->arguments->front()->tp);
                         funcparams->arguments->front()->tp->lref = true;

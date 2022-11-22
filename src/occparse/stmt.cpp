@@ -296,15 +296,22 @@ static BLOCKDATA* getCommonParent(std::list<BLOCKDATA*>& src, std::list<BLOCKDAT
 {
     BLOCKDATA* rv = nullptr;
     for (auto s : src)
+    {
+        bool exit = false;
+        auto s1 = s->orig ? s->orig : s;
         for (auto d : dest)
         {
-            auto d1 = d->orig? d->orig : d, s1 = s->orig ? s->orig : s;
+            auto d1 = d->orig ? d->orig : d;
             if (d1 == s1)
             {
                 rv = d1;
+                exit = true;
                 break;
             }
         }
+        if (exit)
+            break;
+    }
     return rv;
 }
 void makeXCTab(SYMBOL* funcsp)
@@ -368,6 +375,8 @@ static void thunkCatchCleanup(STATEMENT* st, SYMBOL* funcsp, std::list<BLOCKDATA
     }
     for (auto srch : dest)
     {
+        if (srch == top)
+            break;
         if (srch->type == kw_try || srch->type == kw_catch)
         {
             error(ERR_GOTO_INTO_TRY_OR_CATCH_BLOCK);

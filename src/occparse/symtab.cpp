@@ -59,6 +59,7 @@ static std::list<std::list<SYMBOL*>*> usingDirectives;
 void syminit(void)
 {
     symbols.Reset();
+    labelSyms = nullptr;
     globalNameSpace = namespaceValueDataListFactory.CreateList();
     globalNameSpace->push_front(Allocate<NAMESPACEVALUEDATA>());
     globalNameSpace->front()->syms = symbols.CreateSymbolTable();

@@ -243,7 +243,6 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
                             error(ERR_CAPTURE_ITEM_LISTED_MULTIPLE_TIMES);
                         }
                         sym = sym2;
-                        --current;
                     }
                     else
                     {
@@ -256,8 +255,8 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
                             if (sp)
                                 break;
                         }
+                        ++current;
                     }
-                    current++;
                     // have to try to replicate the symbol into the current context
                     for (auto check = current; check != cilb;)
                     {

@@ -3650,9 +3650,9 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
     PLE = P->sp->templateParams->end();
     PA = A->sp->templateParams->begin();
     PAE = A->sp->templateParams->end();
-    if (PL == PLE || PA == PAE)
+    if (P->size == 1 || A->size == 1)
     {
-        if (P->size == 0 && !strcmp(P->sp->sb->decoratedName, A->sp->sb->decoratedName))
+        if (P->size == 1 && !strcmp(P->sp->sb->decoratedName, A->sp->sb->decoratedName))
             return true;
         return false;
     }
@@ -3692,8 +3692,6 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
                 pls.push(PLE);
                 pas.push(PA);
                 pas.push(PAE);
-                if (!PL->second->byPack.pack != !PA->second->byPack.pack)
-                    return false;
                 if (PL->second->byPack.pack)
                 {
                     PLE = PL->second->byPack.pack->end();
@@ -3778,6 +3776,10 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
                 ++PA;
             }
         }
+        while (!pls.empty())
+            pls.pop();
+        while (!pas.empty())
+            pas.pop();
         return PL == PLE && PA == PAE;
     }
     return false;
@@ -5421,7 +5423,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     {
                         auto it = argl->tp->syms->begin();
                         SYMBOL* func = *it;
-                        if (!func->sb->templateLevel && ++it != argl->tp->syms->end())
+                        if (!func->sb->templateLevel && ++it == argl->tp->syms->end())
                         {
                             argl->tp = func->tp;
                             argl->exp = varNode(en_pc, func);

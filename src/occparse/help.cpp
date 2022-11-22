@@ -1493,9 +1493,9 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         btp = basetype(btp)->btp;
                     btp = basetype(btp);
                     auto it = init->end();
-                    for (it = init->end(); it != init->begin() && *it != initItem;)
+                    --it;
+                    for (; it != init->end() && *it != initItem; --it)
                     {
-                        --it;
                         if ((*it)->exp)
                             if (!isarithmeticconst((*it)->exp) && !isconstaddress((*it)->exp))
                                 break;

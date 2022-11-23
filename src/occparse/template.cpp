@@ -3019,15 +3019,17 @@ static TYPE* SynthesizeStructure(TYPE* tp_in, std::list<TEMPLATEPARAMPAIR>* encl
             {
                 if (!templateNestingCount && sp->templateParams)
                 {
-                    bool found = false;
-                    for (auto&& l : *sp->templateParams)
+                    for (auto it = sp->templateParams->begin(); it != sp->templateParams->end(); ++it)
+                    {
+                        auto l = *it;
                         if (l.second->byClass.txtdflt && !l.second->byClass.val)
                         {
-                            found = true;
+                            std::list<TEMPLATEPARAMPAIR> a(it, sp->templateParams->end());
+                            if (!TemplateParseDefaultArgs(sp, nullptr, &a, &a, &a))
+                                return nullptr;
                             break;
                         }
-                    if (found && !TemplateParseDefaultArgs(sp, nullptr, sp->templateParams, sp->templateParams, sp->templateParams))
-                        return nullptr;
+                    }
                 }
                 if (!allTemplateArgsSpecified(sp, sp->templateParams))
                 {
@@ -5646,9 +5648,9 @@ static bool Deduce(TYPE* P, TYPE* A, EXPRESSION* exp, bool change, bool byClass,
                     return false;
                 if (isconst(Pin) != isconst(Ain) || isvolatile(Pin) != isvolatile(Ain))
                     return false;
-                if ((*itp)->sb->thisPtr)
+                if (itp != itpend && (*itp)->sb->thisPtr)
                     ++itp;
-                if ((*ita)->sb->thisPtr)
+                if (ita != itaend && (*ita)->sb->thisPtr)
                     ++ita;
                 clearoutDeduction(P);
                 if (Pb->btp->type != bt_auto && !Deduce(Pb->btp, Ab->btp, nullptr, change, byClass, allowSelectors, baseClasses))
@@ -6284,7 +6286,7 @@ static SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBO
             {
                 if (itspecial->second->type != kw_new)
                 {
-                    std::list<TEMPLATEPARAMPAIR> a{*itspecial};
+                    std::list<TEMPLATEPARAMPAIR> a(itspecial, itespecial);
                     TransferClassTemplates(func->templateParams, func->templateParams, &a);
                 }
             }

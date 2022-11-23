@@ -322,9 +322,9 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
             SYMBOL* sp_orig;
             lex = getIdName(lex, nullptr, buf, &ovdummy, nullptr);
             ++count4;
-//            if (count4 >= 231844)
+//            if (count4 >= 194449)
 //                printf("hi");
-//            if (count4 >= 231500)
+//            if (count4 >= 194000)
 //                printf("%d:%d:%s:%s\n", count4, lex->data->errline, buf, lex->data->errfile);
             lex = getsym();
             bool hasTemplateArgs = false;
@@ -3650,32 +3650,38 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
     PLE = P->sp->templateParams->end();
     PA = A->sp->templateParams->begin();
     PAE = A->sp->templateParams->end();
-    if (P->size == 1 || A->size == 1)
+    if (P->sp->templateParams->size() == 1 || A->sp->templateParams->size() == 1)
     {
         if (P->size == 1 && !strcmp(P->sp->sb->decoratedName, A->sp->sb->decoratedName))
             return true;
         return false;
     }
     PLd = PAd = false;
-    if (PL->second->bySpecialization.types)
+    if (PL != PLE)
     {
-        PLE = PL->second->bySpecialization.types->end();
-        PL = PL->second->bySpecialization.types->begin();
-        PLd = true;
+        if (PL->second->bySpecialization.types)
+        {
+            PLE = PL->second->bySpecialization.types->end();
+            PL = PL->second->bySpecialization.types->begin();
+            PLd = true;
+        }
+        else
+        {
+            ++PL;
+        }
     }
-    else
+    if (PA != PAE)
     {
-        ++PL;
-    }
-    if (PA->second->bySpecialization.types)
-    {
-        PAE = PA->second->bySpecialization.types->end();
-        PA = PA->second->bySpecialization.types->begin();
-        PAd = true;
-    }
-    else
-    {
-        ++PA;
+        if (PA->second->bySpecialization.types)
+        {
+            PAE = PA->second->bySpecialization.types->end();
+            PA = PA->second->bySpecialization.types->begin();
+            PAd = true;
+        }
+        else
+        {
+            ++PA;
+        }
     }
     if (PL != PLE && PA != PAE)
     {
@@ -5215,7 +5221,8 @@ static int insertFuncs(SYMBOL** spList, std::list<SYMBOL* >& gather, FUNCTIONCAL
     {
         for (auto sym : *sp->tp->syms)
         {
-            if (filters.find(sym) == filters.end() && filters.find(sym->sb->mainsym) == filters.end() && (!args || !args->astemplate || sym->sb->templateLevel) &&
+            if (filters.find(sym) == filters.end() && filters.find(sym->sb->mainsym) == filters.end() &&
+                (!args || !args->astemplate || sym->sb->templateLevel) &&
                 (!sym->sb->instantiated || sym->sb->specialized2 || sym->sb->isDestructor))
             {
                 auto it1 = basetype(sym->tp)->syms->begin();

@@ -1374,7 +1374,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
                                     {
                                         auto second = Allocate<TEMPLATEPARAM>();
                                         workingList->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
-                                        if (itsrc->second->packed)
+                                        if (itsrc->second->packed && itsrc->second->byPack.pack)
                                         {
                                             auto itp = itsrc->second->byPack.pack->begin();
                                             auto itpe = itsrc->second->byPack.pack->end();

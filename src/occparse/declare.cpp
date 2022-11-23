@@ -823,9 +823,6 @@ void resolveAnonymousUnions(SYMBOL* sp)
         // an anonymous structure or union
         if (isstructured(spm->tp) && spm->sb->anonymous && basetype(spm->tp)->sp->sb->anonymous)
         {
-#ifdef ERROR
-#    error NESTEDANONYUNION
-#endif
             resolveAnonymousUnions(spm);
             validateAnonymousUnion(sp, spm->tp);
 
@@ -844,6 +841,7 @@ void resolveAnonymousUnions(SYMBOL* sp)
             {
                 error(ERR_ANONYMOUS_STRUCT_WARNING);
             }
+            bool found = false;
             for (auto newsp : *spm->tp->syms)
             {
                 if ((newsp->sb->storage_class == sc_member || newsp->sb->storage_class == sc_mutable) && !isfunction(newsp->tp))
@@ -852,11 +850,12 @@ void resolveAnonymousUnions(SYMBOL* sp)
                     newsp->sb->parentClass = sp;
                     itmember = sp->tp->syms->insert(itmember, newsp);
                     ++itmember;
+                    found = true;
                 }
             }
+            if (found)
+                --itmember;
         }
-        if (itmember == sp->tp->syms->end())
-            break;
     }
 }
 static bool usesClass(SYMBOL* cls, SYMBOL* internal)

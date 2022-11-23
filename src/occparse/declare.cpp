@@ -6635,8 +6635,10 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                             }
                             else
                             {
-                                auto s = basetype(tp1)->syms->front();
-                                if (s->tp->type != bt_void)
+                                auto s = basetype(tp1)->syms->begin();
+                                if ((*s)->sb->thisPtr)
+                                    ++s;
+                                if ((*s)->tp->type != bt_void)
                                     errorsym(ERR_DESTRUCTOR_CANNOT_HAVE_PARAMETERS, sp->sb->parentClass);
                             }
                         }

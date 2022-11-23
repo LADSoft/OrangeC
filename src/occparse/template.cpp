@@ -1366,7 +1366,7 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                         {
                             std::list<TEMPLATEPARAMPAIR> a;
                             a.push_back(TEMPLATEPARAMPAIR{nullptr, Allocate<TEMPLATEPARAM>()});
-                            a.back().second->type == kw_typename;
+                            a.back().second->type = kw_typename;
                             a.back().second->byClass.dflt = tp;
                             lst = expandArgs(lst, start, funcsp, &a, true);
                         }

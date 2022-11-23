@@ -3070,7 +3070,8 @@ LEXLIST* insertNamespace(LEXLIST* lex, enum e_lk linkage, enum e_sc storage_clas
     {
         sym = makeID(sc_namespace, MakeType(bt_void), nullptr, litlate(buf));
         sym->sb->nameSpaceValues = namespaceValueDataListFactory.CreateList();
-        sym->sb->nameSpaceValues->push_back(Allocate<NAMESPACEVALUEDATA>());
+        *sym->sb->nameSpaceValues = *globalNameSpace;
+        sym->sb->nameSpaceValues->push_front(Allocate<NAMESPACEVALUEDATA>());
         sym->sb->nameSpaceValues->front()->syms = symbols.CreateSymbolTable();
         sym->sb->nameSpaceValues->front()->tags = symbols.CreateSymbolTable();
         sym->sb->nameSpaceValues->front()->origname = sym;

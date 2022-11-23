@@ -1330,7 +1330,7 @@ static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                 // this is going to presume that the expression involved
                 // is not too long to be cached by the LEXLIST mechanism.
                 expandPackedInitList(&temp, funcsp, start, *expr);
-                if (!temp)
+                if (!temp || !temp->size())
                 {
                     *expr = intNode(en_c_i, 0);
                     *tp = &stdint;

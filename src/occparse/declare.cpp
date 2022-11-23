@@ -233,8 +233,10 @@ TYPE* MakeType(TYPE& tp, enum e_bt type, TYPE* base)
             break;
         case bt_enum:
             tp.size = getSize(bt_int);
+            break;
         default:
             tp.size = getSize(type);
+            break;
     }
     return &tp;
 }
@@ -5648,7 +5650,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                     {
                         oldNameSpaceList = nameSpaceList;
                         oldGlobals = globalNameSpace;
-                        nsv->front()->name->sb->value.i++;
+                        if (nsv->size() > 1)
+                            nsv->front()->name->sb->value.i++;
 
                         auto list = Allocate<Optimizer::LIST>();
                         list->next = nullptr;
@@ -5725,7 +5728,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                             {
                                 if (oldGlobals)
                                 {
-                                    nameSpaceList.front()->sb->value.i--;
+                                    if (nsv->size() > 1)
+                                        nameSpaceList.front()->sb->value.i--;
                                     nameSpaceList = oldNameSpaceList;
                                     globalNameSpace = oldGlobals;
                                     oldGlobals = nullptr;
@@ -5792,7 +5796,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                             }
                             if (oldGlobals)
                             {
-                                nameSpaceList.front()->sb->value.i--;
+                                if (nsv->size() > 1)
+                                    nameSpaceList.front()->sb->value.i--;
                                 nameSpaceList = oldNameSpaceList;
                                 globalNameSpace = oldGlobals;
                                 oldGlobals = nullptr;
@@ -7078,7 +7083,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                     linkage2 = lk_none;
                     if (oldGlobals)
                     {
-                        nameSpaceList.front()->sb->value.i--;
+                        if (nsv->size() > 1)
+                            nameSpaceList.front()->sb->value.i--;
                         nameSpaceList = oldNameSpaceList;
                         globalNameSpace = oldGlobals;
                         oldGlobals = nullptr;

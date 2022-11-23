@@ -1206,11 +1206,14 @@ static void dumpStaticInitializers(void)
                 if (*sizep % al)
                 {
                     int n = al - *sizep % al;
-                    if (!(Optimizer::architecture == ARCHITECTURE_MSIL))
+                    if (n != al)
                     {
-                        Optimizer::genstorage(n);
+                        if (!(Optimizer::architecture == ARCHITECTURE_MSIL))
+                        {
+                            Optimizer::genstorage(n);
+                        }
+                        *sizep += n;
                     }
-                    *sizep += n;
                 }
                 //  have to thunk in a size for __arrCall
                 if (Optimizer::cparams.prm_cplusplus)
@@ -2126,7 +2129,7 @@ typedef struct _aggregate_descriptor
 } AGGREGATE_DESCRIPTOR;
 static void increment_desc(AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** cache);
 
-static void free_desc(AGGREGATE_DESCRIPTOR** descin, AGGREGATE_DESCRIPTOR** cache)
+__declspec(noinline) static void free_desc(AGGREGATE_DESCRIPTOR** descin, AGGREGATE_DESCRIPTOR** cache)
 {
     if (*descin)
     {
@@ -2211,6 +2214,7 @@ static void allocate_desc(TYPE* tp, int offset, AGGREGATE_DESCRIPTOR** descin, A
     desc->reloffset = 0;
     desc->next = *descin;
     desc->stopgap = false;
+    desc->max = 0;
     *descin = desc;
     if (isstructured(tp))
     {
@@ -3382,7 +3386,6 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
             free_desc(&desc, &cache);
         }
         set_array_sizes(cache);
-
         sort_aggregate_initializers(data);
 
         *init = data;

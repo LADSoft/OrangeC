@@ -591,7 +591,7 @@ static LEXLIST* statement_continue(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCK
     {
         auto c = *it;
         if (c->type != begin && c->type != kw_try && c->type != kw_catch &&
-            c->type != kw_if && c->type != kw_else)
+            c->type != kw_if && c->type != kw_else && c->type != kw_switch)
         {
             continuableStatement = it;
             found = true;

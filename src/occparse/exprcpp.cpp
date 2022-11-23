@@ -638,7 +638,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
             sym = anonymousVar(sc_auto, *tp)->v.sp;
 
             lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, *tp, sym, false, flags | _F_EXPLICIT);
-            if (init->size() == 1 && init->front()->exp->type == en_thisref)
+            if (init && init->size() == 1 && init->front()->exp->type == en_thisref)
             {
                 *exp = init->front()->exp;
                 if (sym)
@@ -660,8 +660,11 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                         if ((*e1)->type == en_void)
                             e1 = &(*e1)->left;
                         *e1 = exprNode(en_void, *e1, varNode(en_auto, sym));
-                        sym->sb->dest = initListFactory.CreateList();
-                        sym->sb->dest->insert(sym->sb->dest->begin(), init->begin(), init->end());
+                        if (init)
+                        {
+                            sym->sb->dest = initListFactory.CreateList();
+                            sym->sb->dest->insert(sym->sb->dest->begin(), init->begin(), init->end());
+                        }
                     }
                 }
             }

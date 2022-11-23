@@ -1739,6 +1739,7 @@ static LEXLIST* initialize_memberptr(LEXLIST* lex, SYMBOL* funcsp, int offset, e
             }
             else
             {
+                TYPE tp4;
                 if (Optimizer::cparams.prm_cplusplus && isstructured(tp))
                 {
                     castToPointer(&tp, &exp, (enum e_kw) - 1, itype);
@@ -1748,7 +1749,7 @@ static LEXLIST* initialize_memberptr(LEXLIST* lex, SYMBOL* funcsp, int offset, e
                     auto sp = basetype(tp)->syms->front();
                     if (sp->sb->thisPtr)
                     {
-                        TYPE tp4 = {};
+                        tp4 = {};
                         MakeType(tp4, bt_memberptr, tp);
                         tp4.sp = basetype(basetype(sp->tp)->btp)->sp;
                         tp = &tp4;

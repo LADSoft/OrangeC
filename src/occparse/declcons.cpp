@@ -839,13 +839,13 @@ static bool isDefaultDeleted(SYMBOL* sp)
     if (basetype(sp->tp)->type == bt_union)
     {
         bool allconst = true;
-        for (auto sp : *basetype(sp->tp)->syms)
+        for (auto sp1 : *basetype(sp->tp)->syms)
         {
-            if (!isconst(sp->tp) && sp->tp->type != bt_aggregate)
+            if (!isconst(sp1->tp) && sp1->tp->type != bt_aggregate)
                 allconst = false;
-            if (isstructured(sp->tp))
+            if (isstructured(sp1->tp))
             {
-                SYMBOL* consovl = basetype(sp->tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+                SYMBOL* consovl = basetype(sp1->tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
                 for (auto cons : *basetype(consovl->tp)->syms)
                 {
                     if (matchesDefaultConstructor(cons))
@@ -922,11 +922,11 @@ static bool isCopyConstructorDeleted(SYMBOL* sp)
 {
     if (basetype(sp->tp)->type == bt_union)
     {
-        for (auto sp : *basetype(sp->tp)->syms)
+        for (auto sp1 : *basetype(sp->tp)->syms)
         {
-            if (isstructured(sp->tp))
+            if (isstructured(sp1->tp))
             {
-                SYMBOL* consovl = basetype(sp->tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+                SYMBOL* consovl = basetype(sp1->tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
                 for (auto cons : *basetype(consovl->tp)->syms)
                 {
                     if (matchesCopy(cons, false))
@@ -985,11 +985,11 @@ static bool isCopyAssignmentDeleted(SYMBOL* sp)
 {
     if (basetype(sp->tp)->type == bt_union)
     {
-        for (auto sp : *basetype(sp->tp)->syms)
+        for (auto sp1 : *basetype(sp->tp)->syms)
         {
-            if (isstructured(sp->tp))
+            if (isstructured(sp1->tp))
             {
-                SYMBOL* consovl = basetype(sp->tp)->syms->search(overloadNameTab[assign - kw_new + CI_NEW]);
+                SYMBOL* consovl = basetype(sp1->tp)->syms->search(overloadNameTab[assign - kw_new + CI_NEW]);
                 for (auto cons : *basetype(consovl->tp)->syms)
                 {
                     if (matchesCopy(cons, false))
@@ -1035,11 +1035,11 @@ static bool isMoveConstructorDeleted(SYMBOL* sp)
 {
     if (basetype(sp->tp)->type == bt_union)
     {
-        for (auto sp : *basetype(sp->tp)->syms)
+        for (auto sp1 : *basetype(sp->tp)->syms)
         {
-            if (isstructured(sp->tp))
+            if (isstructured(sp1->tp))
             {
-                SYMBOL* consovl = basetype(sp->tp)->syms->search(overloadNameTab[assign - kw_new + CI_NEW]);
+                SYMBOL* consovl = basetype(sp1->tp)->syms->search(overloadNameTab[assign - kw_new + CI_NEW]);
                 for (auto cons : *basetype(consovl->tp)->syms)
                 {
                     if (matchesCopy(cons, true))
@@ -1096,11 +1096,11 @@ static bool isMoveAssignmentDeleted(SYMBOL* sp)
 {
     if (basetype(sp->tp)->type == bt_union)
     {
-        for (auto sp : *basetype(sp->tp)->syms)
+        for (auto sp1 : *basetype(sp->tp)->syms)
         {
-            if (isstructured(sp->tp))
+            if (isstructured(sp1->tp))
             {
-                SYMBOL* consovl = basetype(sp->tp)->syms->search(overloadNameTab[assign - kw_new + CI_NEW]);
+                SYMBOL* consovl = basetype(sp1->tp)->syms->search(overloadNameTab[assign - kw_new + CI_NEW]);
                 for (auto cons : *basetype(consovl->tp)->syms)
                 {
                     if (matchesCopy(cons, true))

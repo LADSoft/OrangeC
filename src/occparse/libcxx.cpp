@@ -276,12 +276,12 @@ static int FindBaseClassWithData(SYMBOL* sym, SYMBOL** result)
     if (sym->sb->baseClasses)
         for (auto bc : *sym->sb->baseClasses)
             n += FindBaseClassWithData(bc->cls, result);
-    for (auto sym : *basetype(sym->tp)->syms)
+    for (auto sym1 : *basetype(sym->tp)->syms)
     {
-        if (sym->sb->storage_class == sc_mutable || sym->sb->storage_class == sc_member)
+        if (sym1->sb->storage_class == sc_mutable || sym1->sb->storage_class == sc_member)
         {
             if (result)
-                *result = sym;
+                *result = sym1;
             return n + 1;
         }
     }

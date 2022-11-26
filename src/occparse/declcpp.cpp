@@ -596,36 +596,36 @@ void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos
             std::list<VTABENTRY*> temp;
             if (cur->sb->storage_class == sc_overloads)
             {
-                for (auto cur : *cur->tp->syms)
+                for (auto cur1 : *cur->tp->syms)
                 {
                     VTABENTRY *hold, *hold2;
                     bool found = false;
                     bool isfirst = false;
-                    bool isvirt = cur->sb->storage_class == sc_virtual;
+                    bool isvirt = cur1->sb->storage_class == sc_virtual;
                     temp.clear();
                     temp.push_back(sym->sb->vtabEntries->front());
                     auto children = sym->sb->vtabEntries->front()->children;
                     sym->sb->vtabEntries->front()->children = nullptr;
                     sym->sb->vtabEntries->pop_front();
-                    found = backpatchVirtualFunc(sym, sym->sb->vtabEntries, cur);
-                    found |= backpatchVirtualFunc(sym, children, cur);
-                    isfirst = backpatchVirtualFunc(sym, &temp, cur);
+                    found = backpatchVirtualFunc(sym, sym->sb->vtabEntries, cur1);
+                    found |= backpatchVirtualFunc(sym, children, cur1);
+                    isfirst = backpatchVirtualFunc(sym, &temp, cur1);
                     isvirt |= found | isfirst;
                     sym->sb->vtabEntries->push_front(temp.front());
                     sym->sb->vtabEntries->front()->children = children;
                     if (isvirt)
                     {
-                        cur->sb->storage_class = sc_virtual;
+                        cur1->sb->storage_class = sc_virtual;
                         if (!isfirst)
                         {
                             if (sym->sb->vtabEntries->front()->virtuals == nullptr)
                                 sym->sb->vtabEntries->front()->virtuals = symListFactory.CreateList();
-                            sym->sb->vtabEntries->front()->virtuals->push_back(cur);
+                            sym->sb->vtabEntries->front()->virtuals->push_back(cur1);
                         }
                     }
-                    if (cur->sb->isoverride && !found && !isfirst)
+                    if (cur1->sb->isoverride && !found && !isfirst)
                     {
-                        errorsym(ERR_FUNCTION_DOES_NOT_OVERRIDE, cur);
+                        errorsym(ERR_FUNCTION_DOES_NOT_OVERRIDE, cur1);
                     }
                 }
             }
@@ -3330,15 +3330,15 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                 {
                     if (sp->sb->storage_class == sc_overloads)
                     {
-                        for (auto sp : * sp->tp->syms)
+                        for (auto sp2 : * sp->tp->syms)
                         {
                             SYMBOL *ssp = getStructureDeclaration(), *ssp1;
-                            SYMBOL* sp1 = CopySymbol(sp);
+                            SYMBOL* sp1 = CopySymbol(sp2);
                             sp1->sb->wasUsing = true;
                             ssp1 = sp1->sb->parentClass;
                             if (ssp && ismember(sp1))
                                 sp1->sb->parentClass = ssp;
-                            sp1->sb->mainsym = sp;
+                            sp1->sb->mainsym = sp2;
                             sp1->sb->access = access;
                             InsertSymbol(sp1, storage_class, sp1->sb->attribs.inheritable.linkage, true);
                             InsertInline(sp1);
@@ -4224,9 +4224,9 @@ bool MatchesConstFunction(SYMBOL* sym)
         return false;
     if (!constArgValid(basetype(sym->tp)->btp))
         return false;
-    for (auto sym : *basetype(sym->tp)->syms)
+    for (auto sym1 : *basetype(sym->tp)->syms)
     {
-        if (sym->tp->type != bt_void && !constArgValid(sym->tp))
+        if (sym1->tp->type != bt_void && !constArgValid(sym1->tp))
             return false;
     }
     return true;

@@ -1057,9 +1057,9 @@ Optimizer::IMODE* gen_pmul(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
 /*-------------------------------------------------------------------------*/
 static void DumpLogicalDestructors(SYMBOL* funcsp, std::list<EXPRESSION*>* node)
 {
-    for (auto node : *node)
+    for (auto node1 : *node)
     {
-        gen_void(node, funcsp);
+        gen_void(node1, funcsp);
     }
 }
 Optimizer::IMODE* gen_hook(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)

@@ -3425,12 +3425,12 @@ std::list<TEMPLATEPARAMPAIR>* ExpandParams(EXPRESSION* exp)
             {
                 if (!rv)
                     rv = templateParamPairListFactory.CreateList();
-                for (auto tpx : *tpx.second->byPack.pack)
+                for (auto tpx1 : *tpx.second->byPack.pack)
                 {
-                    rv->push_back(tpx);
-                    rv->back().second = tpx.second;
-                    if (tpx.second->byClass.val)
-                        rv->back().second->byClass.dflt = tpx.second->byClass.val;
+                    rv->push_back(tpx1);
+                    rv->back().second = tpx1.second;
+                    if (tpx1.second->byClass.val)
+                        rv->back().second->byClass.dflt = tpx1.second->byClass.val;
                 }
             }
         }
@@ -8971,7 +8971,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
     if (nparams)
     {
         std::list<TEMPLATEPARAMPAIR>* spsyms = nparams->front().second->bySpecialization.types;
-        auto* params = spsyms ? spsyms : nparams, *origParams = params;
+        std::list<TEMPLATEPARAMPAIR>* params = spsyms ? spsyms : nparams, *origParams = params;
         std::list<TEMPLATEPARAMPAIR>* primary = spsyms ? spsyms : nparams;
         std::list<TEMPLATEPARAMPAIR>* initial = args;
         std::list<TEMPLATEPARAMPAIR>* max = nparams->size() > 1 ? nparams : spsyms;
@@ -9777,11 +9777,11 @@ static bool constOnly(SYMBOL** spList, SYMBOL** origList, int n)
             bool found = false;
             if (tpx)
             {
-                for (auto tpx : *tpx)
+                for (auto tpx1 : *tpx)
                 {
-                    if (tpx.second->type == kw_typename && tpx.second->byClass.dflt)
+                    if (tpx1.second->type == kw_typename && tpx1.second->byClass.dflt)
                     {
-                        TYPE* tp1 = tpx.second->byClass.dflt;
+                        TYPE* tp1 = tpx1.second->byClass.dflt;
                         if (isconst(tp1) || isvolatile(tp1))
                         {
                             found = true;

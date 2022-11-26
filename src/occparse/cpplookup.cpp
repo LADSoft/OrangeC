@@ -907,7 +907,7 @@ TEMPLATEPARAMPAIR* getTemplateStruct(char* name)
     {
         if (cls->templateParams)
         {
-            for (auto arg : *cls->templateParams)
+            for (auto&& arg : *cls->templateParams)
             {
                 if (!strcmp(arg.first->name, name))
                     return &arg;
@@ -1175,9 +1175,9 @@ LEXLIST* nestedSearch(LEXLIST* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
             if ((*sym)->sb->storage_class == sc_overloads)
             {
                 bool found = false;
-                for (auto sym : *basetype((*sym)->tp)->syms)
+                for (auto sym1 : *basetype((*sym)->tp)->syms)
                 {
-                    if (sym->sb->templateLevel)
+                    if (sym1->sb->templateLevel)
                     {
                         found = true;
                         break;
@@ -1391,9 +1391,9 @@ LEXLIST* id_expression(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strS
                 if ((*sym)->sb->storage_class == sc_overloads)
                 {
                     bool found = false;
-                    for (auto sym : *basetype((*sym)->tp)->syms)
+                    for (auto sym1 : *basetype((*sym)->tp)->syms)
                     {
-                        if (sym->sb->templateLevel)
+                        if (sym1->sb->templateLevel)
                         {
                             found = true;
                             break;
@@ -2636,8 +2636,8 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
 }
 static bool ellipsed(SYMBOL* sym)
 {
-    for (auto sym : *basetype(sym->tp)->syms)
-        if (basetype(sym->tp)->type == bt_ellipse)
+    for (auto sym1 : *basetype(sym->tp)->syms)
+        if (basetype(sym1->tp)->type == bt_ellipse)
             return true;
     return false;
 }

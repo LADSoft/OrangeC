@@ -3606,6 +3606,38 @@ bool sameTemplateSelector(TYPE* tnew, TYPE* told)
         }
         return tsn == tsne && tso == tsoe;
     }
+    else if (tnew->type == bt_templateselector || told->type == bt_templateselector)
+    {
+        auto y = tnew->type == bt_templateselector ? told : tnew;
+        if (!isstructured(y))
+            return false;
+        auto& x = tnew->type == bt_templateselector ? tnew->sp->sb->templateSelector : told->sp->sb->templateSelector;
+        auto ts = x->begin();
+        auto tse = x->end();
+        ++ts;
+        if (ts->isDeclType)
+            return false;
+        auto tp = ts->sp->tp;
+        for (++ts; ts != tse; ++ts)
+        {
+            if (!isstructured(tp))
+                return false;
+
+            auto sp = basetype(tp)->syms->search(ts->name);
+            if (!sp)
+            {
+                sp = classdata(ts->name, basetype(tp)->sp, nullptr, false, false);
+                if (sp == (SYMBOL*)-1 || sp == nullptr)
+                    return false;
+            }
+            if (sp->sb->access != ac_public && !resolvingStructDeclarations)
+            {
+                return false;
+            }
+            tp = sp->tp;
+        }
+        return comparetypes(tp, y, true) || sameTemplate(tp, y);
+    }
     return false;
 }
 bool sameTemplatePointedTo(TYPE* tnew, TYPE* told, bool quals)

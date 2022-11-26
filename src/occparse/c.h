@@ -570,7 +570,7 @@ typedef struct ifunc
     SymbolTable<struct sym>* tags;
 } INLINEFUNC;
 
-typedef struct
+typedef struct _nameSpaceValueData
 {
     SymbolTable<struct sym>* syms;
     SymbolTable<struct sym>* tags;

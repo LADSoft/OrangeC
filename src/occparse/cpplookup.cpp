@@ -322,9 +322,9 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
             SYMBOL* sp_orig;
             lex = getIdName(lex, nullptr, buf, &ovdummy, nullptr);
             ++count4;
-//            if (count4 >= 194449)
+//            if (count4 >= 735750)
 //                printf("hi");
-//            if (count4 >= 194000)
+//            if (count4 > 735000)
 //                printf("%d:%d:%s:%s\n", count4, lex->data->errline, buf, lex->data->errfile);
             lex = getsym();
             bool hasTemplateArgs = false;
@@ -3652,7 +3652,7 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
     PAE = A->sp->templateParams->end();
     if (P->sp->templateParams->size() == 1 || A->sp->templateParams->size() == 1)
     {
-        if (P->size == 1 && !strcmp(P->sp->sb->decoratedName, A->sp->sb->decoratedName))
+        if (P->sp->templateParams->size() == 1 && !strcmp(P->sp->sb->decoratedName, A->sp->sb->decoratedName))
             return true;
         return false;
     }
@@ -5212,6 +5212,7 @@ void weedgathering(std::list<SYMBOL*>& gather)
         }
     }
 }
+int count7;
 static int insertFuncs(SYMBOL** spList, std::list<SYMBOL* >& gather, FUNCTIONCALL* args, TYPE* atp, int flags)
 {
     std::set<SYMBOL*> filters;

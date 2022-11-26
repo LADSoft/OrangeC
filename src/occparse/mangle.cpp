@@ -1014,7 +1014,7 @@ bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& 
 {
 
     mangledNamesCount = 0;
-    if (!params)
+    if (!params || !params->size() || (params->size() == 1 && params->front().second->type == kw_new))
         result = "v";
     else
         result = "";

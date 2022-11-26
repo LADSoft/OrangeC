@@ -1238,6 +1238,7 @@ bool constructedInt(LEXLIST* lex, SYMBOL* funcsp)
     lex = prevsym(placeholder);
     return rv;
 }
+int count8;
 LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPARAMPAIR>** lst)
 {
     std::list<TEMPLATEPARAMPAIR>** start = lst;
@@ -9558,7 +9559,7 @@ bool allTemplateArgsSpecified(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, b
         {
             if (it->second->packed)
             {
-                if ((templateNestingCount && !instantiatingTemplate && !it->second->byPack.pack) ||
+                if ((templateNestingCount && !instantiatingTemplate && (!it->second->byPack.pack || !it->second->byPack.pack->size())) ||
                     !allTemplateArgsSpecified(sym, it->second->byPack.pack, checkDeduced, checkDeclaring))
                     return false;
             }

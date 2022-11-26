@@ -3021,7 +3021,9 @@ LEXLIST* insertNamespace(LEXLIST* lex, enum e_lk linkage, enum e_sc storage_clas
                             globalNameSpace->front()->tags->Add(sym);
                         }
                         sym->sb->nameSpaceValues = namespaceValueDataListFactory.CreateList();
-                        sym->sb->nameSpaceValues->push_back(Allocate<NAMESPACEVALUEDATA>());
+                        *sym->sb->nameSpaceValues = *src->sb->nameSpaceValues;
+                        *sym->sb->nameSpaceValues->begin() = Allocate<NAMESPACEVALUEDATA>();
+                        **sym->sb->nameSpaceValues->begin() = **src->sb->nameSpaceValues->begin();
                         sym->sb->nameSpaceValues->front()->name = sym;  // this is to rename it with the alias e.g. for errors
                     }
                 }

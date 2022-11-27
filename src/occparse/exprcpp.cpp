@@ -641,10 +641,10 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
             if (init && init->size() == 1 && init->front()->exp->type == en_thisref)
             {
                 *exp = init->front()->exp;
-                if (sym)
+                if (sym && dest)
                 {
                     sym->sb->dest = initListFactory.CreateList();
-                    sym->sb->dest->insert(sym->sb->dest->begin(), init->begin(), init->end());
+                    sym->sb->dest->insert(sym->sb->dest->begin(), dest->begin(), dest->end());
                 }
             }
             else
@@ -660,10 +660,10 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                         if ((*e1)->type == en_void)
                             e1 = &(*e1)->left;
                         *e1 = exprNode(en_void, *e1, varNode(en_auto, sym));
-                        if (init)
+                        if (dest)
                         {
                             sym->sb->dest = initListFactory.CreateList();
-                            sym->sb->dest->insert(sym->sb->dest->begin(), init->begin(), init->end());
+                            sym->sb->dest->insert(sym->sb->dest->begin(), dest->begin(), dest->end());
                         }
                     }
                 }

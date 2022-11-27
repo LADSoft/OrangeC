@@ -2865,17 +2865,48 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
                 }
                 else if (!(*itl)->nested && isstructured(initializerListType) && (comparetypes(initializerListType, (*itl)->tp, true) || sameTemplate(initializerListType, (*itl)->tp)))
                 {
+                    node = (*itl)->exp;
                     int offs;                    
                     auto exp = getFunc((*itl)->exp);
-                    if (exp && exp->v.func->thisptr)
+                    if (exp)
                     {
-                        int offs = 0;
-                        auto exp1 = relptr(exp->v.func->thisptr, offs);
-                        if (exp1)
-                            exp1->v.sp->sb->allocate = false;
-                        exp->v.func->thisptr = dest;
+                        if (exp->v.func->sp->sb->isConstructor)
+                        {
+                            if (exp->v.func->thisptr)
+                            {
+                                int offs = 0;
+                                auto exp1 = relptr(exp->v.func->thisptr, offs);
+                                if (exp1)
+                                    exp1->v.sp->sb->allocate = false;
+                                exp->v.func->thisptr = dest;
+                            }
+                        }
+                        else if (isref(basetype(exp->v.func->sp->tp)->btp))
+                        {
+                            TYPE* ctype = initializerListType;
+                            EXPRESSION* cdest = dest;
+                            FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
+                            params->arguments = initListListFactory.CreateList();
+                            params->arguments->push_back(*itl);
+
+                            callConstructor(&ctype, &cdest, params, false, nullptr, true, false, false, false, _F_INITLIST, false,
+                                            true);
+                            node = cdest;
+
+                        }
                     }
-                    node = (*itl)->exp;
+                    else
+                    {
+                        TYPE* ctype = initializerListType;
+                        EXPRESSION* cdest = dest;
+                        FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
+                        params->arguments = initListListFactory.CreateList();
+                        params->arguments->push_back(*itl);
+
+                        callConstructor(&ctype, &cdest, params, false, nullptr, true, false, false, false, _F_INITLIST, false,
+                                        true);
+                        node = cdest;
+                    }
                 }
                 else
                 {

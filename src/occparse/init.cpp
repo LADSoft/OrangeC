@@ -2130,7 +2130,7 @@ typedef struct _aggregate_descriptor
 } AGGREGATE_DESCRIPTOR;
 static void increment_desc(AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** cache);
 
-__declspec(noinline) static void free_desc(AGGREGATE_DESCRIPTOR** descin, AGGREGATE_DESCRIPTOR** cache)
+static void free_desc(AGGREGATE_DESCRIPTOR** descin, AGGREGATE_DESCRIPTOR** cache)
 {
     if (*descin)
     {
@@ -2216,6 +2216,7 @@ static void allocate_desc(TYPE* tp, int offset, AGGREGATE_DESCRIPTOR** descin, A
     desc->next = *descin;
     desc->stopgap = false;
     desc->max = 0;
+    desc->inbase = false;
     *descin = desc;
     if (isstructured(tp))
     {
@@ -2355,7 +2356,6 @@ static void increment_desc(AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** c
                     if ((*desc)->it == (*desc)->ite)
                     {
                         if ((*desc)->next && (*desc)->next->inbase)
-
                         {
                             free_desc(desc, cache);
 

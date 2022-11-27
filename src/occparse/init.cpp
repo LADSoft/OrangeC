@@ -3403,7 +3403,6 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
         {
             int s = (btp->size);
             std::list<INITIALIZER*>::iterator test = (*init)->begin();
-            std::list<INITIALIZER*>::iterator testd = (*dest)->begin();
             std::list<INITIALIZER*>* first = nullptr;
             int last = 0, i;
             for (; test!= (*init)->end()  || last < itype->size;)

@@ -1719,6 +1719,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
 }
 TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr)
 {
+    auto tp1 = tp;
     if (tp->type == bt_aggregate)
     {
         auto sp = tp->syms->front();
@@ -1726,8 +1727,8 @@ TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr)
             sp->sb->storage_class != sc_external)
         {
             EXPRESSION* rv;
-            auto tp = MakeType(bt_memberptr, sp->tp);
-            tp->sp = sp->sb->parentClass;
+            tp1 = MakeType(bt_memberptr, sp->tp);
+            tp1->sp = sp->sb->parentClass;
             *exp = varNode(en_memberptr, sp);
             (*exp)->isfunc = true;
         }
@@ -1761,7 +1762,7 @@ TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr)
             }
         }
     }
-    return tp;
+    return tp1;
 }
 static EXPRESSION* MsilRebalanceArray(EXPRESSION* in)
 {

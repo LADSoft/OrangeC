@@ -385,6 +385,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 }
                 auto find = (*tsl).begin();
                 ++find;
+                ++find;
                 for (; find != (*tsl).end(); ++find)
                 {
                     *buf++ = 't';

@@ -607,7 +607,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>
                     buf = mangleType(buf, it->second->byNonType.tp, true);
                     if (bySpecial || sym->sb->instantiated)
                     {
-                        EXPRESSION* exp = bySpecial ? it->second->byNonType.dflt : it->second->byNonType.val;
+                        EXPRESSION* exp = bySpecial && it->second->byNonType.dflt ? it->second->byNonType.dflt : it->second->byNonType.val;
                         buf = mangleExpression(buf, exp);
                     }
                     else if (it->second->byNonType.dflt)

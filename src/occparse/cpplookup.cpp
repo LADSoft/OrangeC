@@ -216,7 +216,6 @@ SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bo
     }
     return nullptr;
 }
-int count4;
 LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly, enum e_sc storage_class,
                     bool isType)
 {
@@ -321,11 +320,6 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
         {
             SYMBOL* sp_orig;
             lex = getIdName(lex, nullptr, buf, &ovdummy, nullptr);
-            ++count4;
-            //            if (count4 >= 735750)
-//                printf("hi");
-//            if (count4 > 735000)
-//                printf("%d:%d:%s:%s\n", count4, lex->data->errline, buf, lex->data->errfile);
             lex = getsym();
             bool hasTemplateArgs = false;
             bool deferred = false;

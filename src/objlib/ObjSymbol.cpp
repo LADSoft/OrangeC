@@ -173,9 +173,7 @@ static const char* unmangptr(char* buf, const char* name, const char* last)
             {
                 int n = 0;
                 name++;
-                while (isdigit(*name))
-                    n = n * 10 + (*name++ & 0xf);
-                sprintf(buf + strlen(buf), "[%d]", n);
+                strcat(buf, "[]");
             }
             name = unmangptr(buf, name, last);
         }

@@ -106,7 +106,6 @@ int mangledNamesCount;
 
 static char* lookupName(char* in, const char* name);
 static int uniqueID;
-static bool inKeyCreation;
 void mangleInit()
 {
     uniqueID = 0;
@@ -115,7 +114,6 @@ void mangleInit()
         memcpy(overloadNameTab, msiloverloadNameTab, sizeof(msiloverloadNameTab));
         memcpy(cpp_funcname_tab, msiloverloadNameTab, sizeof(msiloverloadNameTab));
     }
-    inKeyCreation = false;
 }
 char* mangleNameSpaces(char* in, SYMBOL* sym)
 {
@@ -858,15 +856,13 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     }
                     else
                     {
-                        if (!tp->array || first && !inKeyCreation)
+                        if (!tp->array)
                         {
                             *in++ = 'p';
                         }
                         else
                         {
-                            Optimizer::my_sprintf(in, "A%ld", tp->btp->size ? tp->size / tp->btp->size : 0);
-                            while (*in)
-                                in++;
+                            *in++ = 'A';
                         }
                     }
                     break;
@@ -887,7 +883,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     *in++ = 'v';
                     break;
                 case bt_templateparam:
-                    if (inKeyCreation && tp->templateParam->second->type == kw_typename && tp->templateParam->second->byClass.val &&
+                    if (tp->templateParam->second->type == kw_typename && tp->templateParam->second->byClass.val &&
                         basetype(tp->templateParam->second->byClass.val)->type != bt_templateparam)
                         in = mangleType(in, tp->templateParam->second->byClass.val, false);
                     else
@@ -1117,7 +1113,6 @@ bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& 
 
 void GetClassKey(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
 {
-    inKeyCreation = true;
     mangledNamesCount = 0;
     SYMBOL* lastParent = sym;
     while (lastParent->sb->parentClass)
@@ -1128,7 +1123,6 @@ void GetClassKey(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
     *p++ = '@';
     p = mangleTemplate(p, sym, params);
     *p = 0;
-    inKeyCreation = false;
 }
 void SetLinkerNames(SYMBOL* sym, enum e_lk linkage, bool isTemplateDefinition)
 {

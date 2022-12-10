@@ -161,7 +161,7 @@ void dumpInlines(void)
                         SYMBOL* parentTemplate = sym->sb->parentClass->sb->parentTemplate;
                         SYMBOL* origsym;
                         std::string argumentName;
-                        auto found2 = TemplateByValLookup(parentTemplate, sym->sb->parentClass, argumentName);
+                        auto found2 = classTemplateMap2[sym->sb->parentClass->sb->decoratedName];
                         if (found2)
                         {
                             parentTemplate = found2;

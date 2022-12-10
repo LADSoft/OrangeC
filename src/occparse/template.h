@@ -42,6 +42,7 @@ extern int instantiatingFunction;
 extern int instantiatingClass;
 extern int parsingDefaultTemplateArgs;
 extern int inTemplateArgs;
+extern std::unordered_map<std::string, SYMBOL*> classTemplateMap2;
 
 void templateInit(void);
 EXPRESSION* GetSymRef(EXPRESSION* n);

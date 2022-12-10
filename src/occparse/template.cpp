@@ -74,7 +74,8 @@ int parsingDefaultTemplateArgs;
 int count1;
 int inTemplateArgs;
 
-static std::unordered_map<SYMBOL*, std::unordered_map<std::string, SYMBOL*>> classTemplateMap, classTemplateMap2;
+static std::unordered_map<SYMBOL*, std::unordered_map<std::string, SYMBOL*>> classTemplateMap;
+std::unordered_map<std::string, SYMBOL*> classTemplateMap2;
 
 struct templateListData* currents;
 
@@ -9259,7 +9260,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                 ++itInitial;
             }
         }
-        if (itInitial != iteInitial && itInitial->second->packed && !itInitial->second->byPack.pack)
+        if (itInitial != iteInitial && itInitial->second->packed && (!itInitial->second->byPack.pack || !itInitial->second->byPack.pack->size()))
             itInitial = iteInitial;
         if (itInitial != iteInitial && (max && itmax != max->end() || !spsyms))
             rv = nullptr;
@@ -9486,6 +9487,8 @@ static bool checkArgType(TYPE* tp, bool checkDeduced, bool checkDeclaring)
     {
         if (!basetype(tp)->templateParam->second->byClass.val)
             return false;
+        if (basetype(tp)->templateParam->second->byClass.val->type == bt_templateparam)
+            return false;
     }
     else if (basetype(tp)->type == bt_templatedecltype)
         return false;
@@ -9597,7 +9600,6 @@ bool allTemplateArgsSpecified(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, b
             }
         }
     }
-
     return true;
 }
 void TemplateArgsAdd(TEMPLATEPARAMPAIR* current, TEMPLATEPARAMPAIR* dflt, std::list<TEMPLATEPARAMPAIR>* basetpl)
@@ -10570,31 +10572,6 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
         }
     }
 }
-SYMBOL* TemplateByValLookup(SYMBOL* parent, SYMBOL* test, std::string& argumentName)
-{
-    if (GetTemplateArgumentName(test->templateParams->front().second->bySpecialization.types ? test->templateParams->front().second->bySpecialization.types : test->templateParams, argumentName, true))
-    {
-        auto found2 = classTemplateMap2[parent][argumentName];
-        if (found2)
-            if (!!test->templateParams->front().second->bySpecialization.types == !!found2->templateParams->front().second->bySpecialization.types)
-                return found2;
-    }
-    else if (parent->sb->instantiations)
-    {
-        for (auto instant : *parent->sb->instantiations)
-        {
-            if (TemplateInstantiationMatch(instant, test, true))
-            {
-                if ((!instant->templateParams->front().second->bySpecialization.types || !test->templateParams->front().second->bySpecialization.types) || 
-                    TemplateInstantiationMatch(instant, test, false))
-                    return instant;
-            }
-        }
-        argumentName = "";
-    }
-    return nullptr;
-}
-int count5;
 SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool noErr)
 {
     // quick check for non-template
@@ -10617,7 +10594,6 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
         args1->insert(args1->begin(), it, args->end());
         args = args1;
     }
-
     if (sp->sb->parentTemplate && sp)
         sp = sp->sb->parentTemplate;
 
@@ -10627,11 +10603,10 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
         SYMBOL* found1 = classTemplateMap[sp][argumentName];
         if (found1)
         {
+
             return found1;
         }
     }
- //                printf("%d:%d:%s:%s:%s\n", ++count5, currentLex->data->errline, sp->name, argumentName.c_str(), currentLex->data->errfile);
-//fflush(stdout);
     if (sp->sb->specializations)
         n += sp->sb->specializations->size();
     spList = Allocate<SYMBOL*>(n);
@@ -10784,13 +10759,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
                         }
                 }
             }
-            std::string argumentName2 = "";
-            found2 = TemplateByValLookup(sp, &test, argumentName2);
-            if (found2)
-            {
-                restoreParams(origList, n);
-                return found2;
-            }
+
             found1 = CopySymbol(&test);
             found1->sb->maintemplate = sym;
 
@@ -10800,11 +10769,9 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
             found1->sb->gentemplate = true;
             found1->sb->instantiated = true;
             found1->sb->performedStructInitialization = false;
-            if (!parent->sb->instantiations)
-                parent->sb->instantiations = symListFactory.CreateList();
-            parent->sb->instantiations->push_back(found1);
             if (!partialCreation)
                 found1->templateParams = copyParams(found1->templateParams, true);
+
             if (found1->templateParams->front().second->bySpecialization.types)
             {
                 std::list<TEMPLATEPARAMPAIR>** pptr = &found1->templateParams->front().second->bySpecialization.types;
@@ -10812,8 +10779,18 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
             }
             copySyms(found1, sym);
             SetLinkerNames(found1, lk_cdecl);
-             
-            if (found1->templateParams->size() -1 == (args ? args->size() : 0))
+
+            auto found2 = classTemplateMap2[found1->sb->decoratedName];
+            if (found2)
+            {
+                restoreParams(origList, n);
+                return found2;
+            }
+
+            if (!parent->sb->instantiations)
+                parent->sb->instantiations = symListFactory.CreateList();
+            parent->sb->instantiations->push_back(found1);
+            if (found1->templateParams->size() - 1 == (args ? args->size() : 0))
             {
                 if (found1->sb->deferredCompile || (found1->sb->maintemplate && found1->sb->maintemplate->sb->deferredCompile) ||
                     (found1->sb->parentTemplate && found1->sb->parentTemplate->sb->deferredCompile))
@@ -10821,7 +10798,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
                     classTemplateMap[sp][argumentName] = found1;
                 }
             }
-            classTemplateMap2[sp][argumentName2] = found1;
+            classTemplateMap2[found1->sb->decoratedName] = found1;
         }
         else
         {
@@ -10985,16 +10962,6 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
                         }
                 }
             }
-            if (parent->sb->instantiations)
-            {
-                for (auto instant : *parent->sb->instantiations)
-                {
-                    if (TemplateInstantiationMatch(instant, &test, true))
-                    {
-                        return instant;
-                    }
-                }
-            }
             found1 = CopySymbol(&test);
             found1->sb->maintemplate = sym;
             found1->tp = CopyType(sym->tp);
@@ -11010,6 +10977,12 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
             }
             copySyms(found1, sym);
             SetLinkerNames(found1, lk_cdecl);
+            auto found2 = classTemplateMap2[found1->sb->decoratedName];
+            if (found2)
+            {
+                return found2;
+            }
+
             if (!parent->sb->instantiations)
                 parent->sb->instantiations = symListFactory.CreateList();
             parent->sb->instantiations->push_back(found1);
@@ -11023,6 +10996,7 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
                 found1->sb->init = init;
             }
             found1->sb->attribs.inheritable.linkage4 = lk_virtual;
+            classTemplateMap2[found1->sb->decoratedName] = found1;
             InsertInlineData(found1);
         }
         else

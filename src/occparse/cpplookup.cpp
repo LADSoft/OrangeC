@@ -3711,8 +3711,8 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
     }
     if (PL != PLE && PA != PAE)
     {
-        static std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> pls;
-        static std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> pas;
+        std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> pls;
+        std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> pas;
         while (PL != PLE && PA != PAE)
         {
             if (PL->second->packed != PA->second->packed)
@@ -3808,10 +3808,6 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
                 ++PA;
             }
         }
-        while (!pls.empty())
-            pls.pop();
-        while (!pas.empty())
-            pas.pop();
         return PL == PLE && PA == PAE;
     }
     return false;

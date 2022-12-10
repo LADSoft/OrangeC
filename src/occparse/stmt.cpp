@@ -3829,7 +3829,7 @@ static void checkUndefinedStructures(SYMBOL* funcsp)
             if (basetype(tp)->sp->sb->templateLevel)
             {
                 auto sym1 = basetype(tp)->sp;
-                static std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> stk;
+                std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> stk;
                 while (!stk.empty())
                     stk.pop();
                 auto it = sym1->templateParams->begin();

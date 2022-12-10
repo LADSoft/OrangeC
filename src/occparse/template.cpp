@@ -5082,7 +5082,7 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
                 ++itTP;
             }
         }
-        static std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
+        std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
         for (; itTP != itTPe && itTA != itTAe; ++itTP)
         {
             auto to = itTP;
@@ -5203,7 +5203,7 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
             }
             ++itTA;
         }
-        static std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tps;
+        std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tps;
         while (!tas.empty())
             tas.pop();
         if (itTP != itTPe && itTP->second->packed)
@@ -12961,7 +12961,7 @@ LEXLIST* TemplateDeclaration(LEXLIST* lex, SYMBOL* funcsp, enum e_ac access, enu
             currents = &l;
         }
 
-        static std::stack<std::list<TEMPLATEPARAMPAIR>**> currentHold;
+        std::stack<std::list<TEMPLATEPARAMPAIR>**> currentHold;
 
         currentHold.push(currents->plast);
         currents->plast = currents->ptail;

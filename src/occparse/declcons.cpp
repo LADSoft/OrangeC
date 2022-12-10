@@ -1537,7 +1537,7 @@ void DestructParams(std::list<INITLIST*>* il)
                 }
                 if (ref || !isstructured(tp))
                 {
-                    static std::stack<EXPRESSION*> stk;
+                    std::stack<EXPRESSION*> stk;
                     
                     stk.push(first->exp);
                     while (!stk.empty())

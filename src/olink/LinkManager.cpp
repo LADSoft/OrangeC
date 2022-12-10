@@ -801,7 +801,7 @@ bool LinkManager::ExternalErrors()
         bool found = importNames.find(pub->GetSymbol()->GetName()) != importNames.end();
         if (found)
         {
-            LinkError("Public '" + pub->GetSymbol()->GetDisplayName() + "' was also declared as an imported function");
+            LinkWarning("Public '" + pub->GetSymbol()->GetDisplayName() + "' was also declared as an imported function");
         }
     }
     return rv;

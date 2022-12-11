@@ -4350,24 +4350,22 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                         funcparams->arguments = funcparams->arguments->front()->nested;
                     CreateInitializerList(funcparams->sp, initializerListTemplate, initializerListType, &temp2, operands,
                                           initializerRef);
-                    **itl = *temp1.front();
+                    **itl = *temp2->front();
                     if (it != temp->end())
                     {
                         auto itx = itl;
                         ++itx;
                         temp1.clear();
                         temp1.insert(temp1.begin(), itx, itle);
-                        int n = temp1.size();
-                        AdjustParams(funcparams->sp, it, temp->end(), &temp2, operands, true);
-                        auto itt = temp1.begin();
-                        auto itte = temp1.end();
-                        for (auto i = 0; i < n; i++)
-                            ++itt;
-                        if (!funcparams->arguments)
-                            funcparams->arguments = initListListFactory.CreateList();
-                        for (;itt != itte; ++itt)
+                        temp2 = &temp1;
+                        auto itxn = it;
+                        ++itxn;
+                        AdjustParams(funcparams->sp, itxn, temp->end(), &temp2, operands, true);
+                        itx = itl;
+                        ++itx;
+                        for (auto t : temp1)
                         {
-                            funcparams->arguments->push_back(*itt);
+                            *itx = t;
                         }
                     }
                 }

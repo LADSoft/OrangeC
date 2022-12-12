@@ -1031,7 +1031,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             SYMBOL* sym = (*basetype(strSym->tp)->sp->sb->templateSelector)[1].sp;
             if ((!templateNestingCount || instantiatingTemplate) && (sym->sb && sym->sb->instantiated && !declaringTemplate(sym) && (!sym->sb->templateLevel || allTemplateArgsSpecified(sym, (*strSym->tp->sp->sb->templateSelector)[1].templateParams))))
             {
-                errorNotMember(sym, nsv->front(), ISID(lex) ? lex->data->value.s.a : "__unknown");
+                errorNotMember(sym, nsv ? nsv->front() : nullptr, ISID(lex) ? lex->data->value.s.a : "__unknown");
             }
             *exp = exprNode(en_templateselector, nullptr, nullptr);
             (*exp)->v.templateSelector = strSym->tp->sp->sb->templateSelector;

@@ -3840,8 +3840,8 @@ static void checkUndefinedStructures(SYMBOL* funcsp)
                     {
                         stk.push(it);
                         stk.push(ite);
-                        it = it->second->byPack.pack->begin();
                         ite = it->second->byPack.pack->end();
+                        it = it->second->byPack.pack->begin();
                     }
                     it->second->byClass.dflt = it->second->byClass.val;
                     if (++it != ite && !stk.empty())

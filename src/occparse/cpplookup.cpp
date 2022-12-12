@@ -2992,7 +2992,7 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                     {
                         found = true;
                         break;
-                    }
+                    }           
                 }
                 if (found)
                 {
@@ -3006,6 +3006,7 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                             if ((*it)->sb->thisPtr)
                                 ++it;
                             int n = 0;
+                            found = false;
                             for (auto arg : *funcparams->arguments)
                             {
                                 if (it == ite)
@@ -3049,7 +3050,7 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                                 }
                                 ++it;
                             }
-                            if (!found && it != ite)
+                            if (!found && it == ite)
                             {
                                 match[i] = n;
                             }

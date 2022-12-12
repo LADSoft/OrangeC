@@ -41,7 +41,6 @@ void DumpIncDec(SYMBOL* funcsp);
 void DumpLogicalDestructors(EXPRESSION* node, SYMBOL* funcsp);
 Optimizer::IMODE* LookupExpression(enum Optimizer::i_ops op, int size, Optimizer::IMODE* left, Optimizer::IMODE* right);
 int chksize(int lsize, int rsize);
-Optimizer::IMODE* make_imaddress(EXPRESSION* node, int size);
 Optimizer::IMODE* make_ioffset(EXPRESSION* node);
 Optimizer::IMODE* make_bf(EXPRESSION* node, Optimizer::IMODE* ap, int size);
 Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags);

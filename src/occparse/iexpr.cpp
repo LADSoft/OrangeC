@@ -148,7 +148,7 @@ Optimizer::IMODE* LookupExpression(enum Optimizer::i_ops op, int size, Optimizer
     }
     Optimizer::IMODE* ap = nullptr;
     Optimizer::QUAD head = {op, left, right};
-    if (!left->bits && (!right || !right->bits))
+    if (!left->bits && (!right || !right->bits) && (!right || left->mode != Optimizer::i_immed || right->mode != Optimizer::i_immed))
     {
         auto it = name_value_hash.find(&head);
         if (it != name_value_hash.end())
@@ -209,42 +209,6 @@ int chksize(int lsize, int rsize)
     if (r < 0)
         r = -r;
     return (l > r);
-}
-
-Optimizer::IMODE* make_imaddress(EXPRESSION* node, int size)
-{
-    Optimizer::SimpleExpression* node1 = Optimizer::SymbolManager::Get(node);
-    Optimizer::SimpleSymbol* sym = Optimizer::SymbolManager::Get(node->v.sp);
-    Optimizer::IMODE* ap2;
-    if (sym && sym->imaddress)
-        return sym->imaddress;
-    if (sym && sym->storage_class != Optimizer::scc_auto && sym->storage_class != Optimizer::scc_register)
-    {
-        sym->allocate = true;
-    }
-    ap2 = Allocate<Optimizer::IMODE>();
-    ap2->offset = node1;
-    ap2->mode = Optimizer::i_immed;
-    ap2->size = size;
-    if (!sym->imvalue)  // the aliasing needs this regardless of whether we really use it
-    {
-        TYPE* tp = node->v.sp->tp;
-        sym->imvalue = Allocate<Optimizer::IMODE>();
-        *(sym->imvalue) = *ap2;
-        sym->imvalue->mode = Optimizer::i_direct;
-        while (tp->array)
-            tp = tp->btp;
-        if (isstructured(tp) || basetype(tp)->type == bt_memberptr)
-            sym->imvalue->size = ISZ_UINT;
-        else
-            sym->imvalue->size = sizeFromType(tp);
-    }
-    if (sym)
-    {
-        sym->addressTaken = true;
-        sym->imaddress = ap2;
-    }
-    return ap2;
 }
 
 Optimizer::IMODE* make_ioffset(EXPRESSION* node)
@@ -1201,7 +1165,7 @@ Optimizer::IMODE* gen_clearblock(EXPRESSION* node, SYMBOL* funcsp)
         {
             return (0);
         }
-        ap3 = gen_expr(funcsp, node->left, F_VOL, ISZ_UINT);
+        ap3 = gen_expr(funcsp, node->left, F_VOL, ISZ_ADDR);
         ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap1 != ap3)
             Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
@@ -2336,7 +2300,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             type = Optimizer::i_int;
         if (!Optimizer::delegateforfuncptr)
         {
-            ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_UINT);
+            ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_ADDR);
         }
         if (ap->mode == Optimizer::i_immed && ap->offset->type == Optimizer::se_pc)
         {

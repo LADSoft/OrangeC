@@ -3677,9 +3677,9 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
     PLE = P->sp->templateParams->end();
     PA = A->sp->templateParams->begin();
     PAE = A->sp->templateParams->end();
-    if (P->sp->templateParams->size() == 1 || A->sp->templateParams->size() == 1)
+    if (P->sp->templateParams->size() == 0 || A->sp->templateParams->size() == 0)
     {
-        if (P->sp->templateParams->size() == 1 && !strcmp(P->sp->sb->decoratedName, A->sp->sb->decoratedName))
+        if (P->sp->templateParams->size() == 0 && !strcmp(P->sp->sb->decoratedName, A->sp->sb->decoratedName))
             return true;
         return false;
     }

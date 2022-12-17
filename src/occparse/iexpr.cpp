@@ -148,7 +148,7 @@ Optimizer::IMODE* LookupExpression(enum Optimizer::i_ops op, int size, Optimizer
     }
     Optimizer::IMODE* ap = nullptr;
     Optimizer::QUAD head = {op, left, right};
-    if (!left->bits && (!right || !right->bits) && (!right || left->mode != Optimizer::i_immed || right->mode != Optimizer::i_immed))
+    if (!left->bits && (!right || !right->bits))
     {
         auto it = name_value_hash.find(&head);
         if (it != name_value_hash.end())
@@ -1165,7 +1165,7 @@ Optimizer::IMODE* gen_clearblock(EXPRESSION* node, SYMBOL* funcsp)
         {
             return (0);
         }
-        ap3 = gen_expr(funcsp, node->left, F_VOL, ISZ_ADDR);
+        ap3 = gen_expr(funcsp, node->left, F_VOL, ISZ_UINT);
         ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap1 != ap3)
             Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
@@ -2300,7 +2300,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             type = Optimizer::i_int;
         if (!Optimizer::delegateforfuncptr)
         {
-            ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_ADDR);
+            ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_UINT);
         }
         if (ap->mode == Optimizer::i_immed && ap->offset->type == Optimizer::se_pc)
         {

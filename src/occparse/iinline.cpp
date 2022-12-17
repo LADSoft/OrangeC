@@ -152,7 +152,7 @@ static void inlineBindThis(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, EXPRESSIO
                     inlinesym_thisptr[inlinesym_count] = dest;
                     if (src->mode != Optimizer::i_direct || src->offset->type != Optimizer::se_tempref || src->size != ISZ_ADDR || src->offset->sp->loadTemp)
                     {
-                        if (src->size != ISZ_ADDR && src->mode != Optimizer::i_immed)
+                        if (src->size != ISZ_ADDR)
                         {
                             ap1 = Optimizer::tempreg(src->size, false);
                             Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
@@ -262,12 +262,9 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                     }
                     if (src->mode != Optimizer::i_direct || src->offset->type != Optimizer::se_tempref || src->size != n || src->offset->sp->loadTemp)
                     {
-                        if (src->size != ISZ_ADDR && (n != ISZ_ADDR || src->mode != Optimizer::i_immed))
-                        {
-                            ap1 = Optimizer::tempreg(src->size, false);
-                            Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
-                            src = ap1;
-                        }
+                        ap1 = Optimizer::tempreg(src->size, false);
+                        Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                        src = ap1;
                         if (src->size != n)
                         {
                             ap1 = Optimizer::tempreg(n, false);

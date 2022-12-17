@@ -894,6 +894,7 @@ typedef struct _templateParam
     int ellipsis : 1;  // ellipsis found after this item...
     int replaced : 1;  // replaced during type alias substitution
     int deduced : 1;   // filled in during deduction
+    int specializationParam : 1; // specialization paramneter
     SYMBOL* packsym;
     void* hold; /* value held during partial template ordering */
     Optimizer::LIST* stack;

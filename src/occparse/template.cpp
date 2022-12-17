@@ -2036,7 +2036,9 @@ SYMBOL* LookupSpecialization(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* template
                                          candidate->templateParams->front().second->bySpecialization.types))
             {
                 if (templateParams->size() == candidate->templateParams->size())
+                {
                     return candidate;
+                }
             }
         }
     }
@@ -4946,7 +4948,7 @@ static void ClearArgValues(std::list<TEMPLATEPARAMPAIR>* params, bool specialize
                     param.second->byPack.pack = nullptr;
                 else
                     param.second->byClass.val = param.second->byClass.temp = nullptr;
-                if (param.second->byClass.txtdflt && !specialized)
+                if (param.second->byClass.txtdflt && !specialized && !param.second->specializationParam)
                     param.second->byClass.dflt = nullptr;
                 if (param.second->byClass.dflt)
                 {

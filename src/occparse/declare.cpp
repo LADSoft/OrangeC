@@ -1443,6 +1443,11 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
                         sp->sb->attribs.inheritable.linkage2 = linkage2;
                     sp->templateParams =
                         TemplateMatching(lex, origParams, templateParams, sp, MATCHKW(lex, begin) || MATCHKW(lex, colon));
+                    if (sp->templateParams->front().second->bySpecialization.types)
+                        for (auto&& t : *templateParams->front().second->bySpecialization.types)
+                        {
+                            t.second->specializationParam = true;
+                        }
                 }
                 else
                 {

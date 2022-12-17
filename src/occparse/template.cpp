@@ -3327,7 +3327,7 @@ static std::list<INITLIST*>* ExpandArguments(EXPRESSION* exp)
                 }
             }
         }
-        else
+        else if (!rv)
         {
             rv = exp->v.func->arguments;
         }
@@ -6838,8 +6838,6 @@ void PushPopTemplateArgs(SYMBOL* func, bool push)
 }
 SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
 {
-    if (!strcmp(sym->name, "test_library_hash_specializations_available"))
-        printf("hi");
     std::list<TEMPLATEPARAMPAIR>* nparams = sym->templateParams;
     TYPE* thistp = args->thistp;
     std::list<INITLIST*>::iterator ita, itae;
@@ -12156,8 +12154,6 @@ static std::list<TEMPLATEPARAMPAIR>* TypeAliasAdjustArgs(std::list<TEMPLATEPARAM
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
 {
-    if (!strcmp(sp->name, "LibraryHashTypes"))
-        printf("hi");
     bool checked = false;
     TEMPLATEPARAMPAIR old;
     std::list<TEMPLATEPARAMPAIR> temp;

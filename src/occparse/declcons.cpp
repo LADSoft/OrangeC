@@ -1344,7 +1344,7 @@ void createDefaultConstructors(SYMBOL* sp)
     {
         bool defaulted = true;
         for (auto sp1 : *cons->tp->syms)
-            if (sp1->sb->defaulted || sp1->sb->isExplicit)
+            if (!sp1->sb->defaulted || sp1->sb->isExplicit)
             {
                 defaulted = false;
                 break;

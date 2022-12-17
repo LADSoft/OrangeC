@@ -6838,6 +6838,8 @@ void PushPopTemplateArgs(SYMBOL* func, bool push)
 }
 SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
 {
+    if (!strcmp(sym->name, "test_library_hash_specializations_available"))
+        printf("hi");
     std::list<TEMPLATEPARAMPAIR>* nparams = sym->templateParams;
     TYPE* thistp = args->thistp;
     std::list<INITLIST*>::iterator ita, itae;
@@ -10783,7 +10785,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
             SetLinkerNames(found1, lk_cdecl);
 
             auto found2 = classTemplateMap2[found1->sb->decoratedName];
-            if (found2)
+            if (found2 && (found2->sb->specialized || !found1->sb->specialized))
             {
                 restoreParams(origList, n);
                 return found2;
@@ -12154,6 +12156,8 @@ static std::list<TEMPLATEPARAMPAIR>* TypeAliasAdjustArgs(std::list<TEMPLATEPARAM
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
 {
+    if (!strcmp(sp->name, "LibraryHashTypes"))
+        printf("hi");
     bool checked = false;
     TEMPLATEPARAMPAIR old;
     std::list<TEMPLATEPARAMPAIR> temp;

@@ -3185,7 +3185,8 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         EXPRESSION* dexp = thisptr;
                         params->thisptr = thisptr;
                         auto itx = itpinit;
-                        ++itx;
+                        if (itpinit != itpinite)
+                            ++itx;
                         params->arguments = initListListFactory.CreateList();
                         if ((itpinit != itpinite && itx != itpinite) || (itpinit == itpinite && !p->tp && !p->exp))  // empty initializer list)
                         {
@@ -4337,8 +4338,16 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                             return lex;
                         }
                     }
-
-                    if ((*itl)->nested)
+                    bool isnested = false;
+                    if (funcparams->arguments->front()->nested && funcparams->arguments->front()->nested->front()->nested && !funcparams->arguments->front()->initializer_list)
+                    {
+                        funcparams->arguments = funcparams->arguments->front()->nested;
+                        itl = funcparams->arguments->begin();
+                        itle = funcparams->arguments->end();
+                        temp1.insert(temp1.begin(), itl, itle);
+                        isnested = true;
+                    }
+                    else if ((*itl)->nested)
                     {
                         temp1.push_back(*itl);
                     }
@@ -4346,11 +4355,19 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     {
                         temp1.insert(temp1.begin(), itl, itle);
                     }
-                    if (funcparams->arguments->front()->nested && funcparams->arguments->front()->nested->front()->nested && !funcparams->arguments->front()->initializer_list)
-                        funcparams->arguments = funcparams->arguments->front()->nested;
+
                     CreateInitializerList(funcparams->sp, initializerListTemplate, initializerListType, &temp2, operands,
                                           initializerRef);
-                    **itl = *temp2->front();
+                    if (isnested)
+                    {
+                        funcparams->arguments = temp2;
+                        itl = funcparams->arguments->begin();
+                        itle = funcparams->arguments->end();
+                    }
+                    else
+                    {
+                        **itl = *temp2->front();
+                    }
                     if (it != temp->end())
                     {
                         auto itx = itl;

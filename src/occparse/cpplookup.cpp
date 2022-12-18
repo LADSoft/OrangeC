@@ -4839,7 +4839,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                 }
                 if (initializerListType)
                 {
-                    if (ita != itae && (*ita)->nested)
+                    if (ita != itae && (*ita)->nested && (*ita)->nested->size())
                     {
                         if (isstructured(initializerListType))
                         {

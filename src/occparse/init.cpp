@@ -2587,7 +2587,8 @@ static TYPE* nexttp(AGGREGATE_DESCRIPTOR* desc)
     {
         if (!Optimizer::cparams.prm_cplusplus || !basetype(desc->tp)->sp->sb->hasUserCons)
         {
-            for (; desc->it != desc->ite && (istype(*desc->it) || (*desc->it)->tp->type == bt_aggregate); ++ desc->it)
+            for (; desc->it != desc->ite && (istype(*desc->it) || (*desc->it)->tp->type == bt_aggregate); ++desc->it)
+                ;
             if (desc->it == desc->ite)
                 return nullptr;
             rv = (*desc->it)->tp;

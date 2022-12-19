@@ -74,12 +74,21 @@
 #include <cstdio>
 void *dictionary[128];
 
+
+// this overloading of operator new/delete is a speed optimization
+// it basically caches small allocations for reuse
+// there are a lot of temporary containers created and maintained
+// and this keeps from having the full impact of new/delete any
+// time they are used
+// resulted in about a 20% speedup of the compiler on the worst files
+#define HASHBLKSIZE 128 * 4
+
 void *operator new(unsigned aa)
 {
     if (!aa)
         return nullptr;
 
-    if (aa + 3 < 128 * 4)
+    if (aa + 3 < HASHBLKSIZE)
     {
         int bb = aa + 3;
         if (dictionary[bb/4])
@@ -100,7 +109,7 @@ void operator delete(void *p)
     if (!p)
         return;
     int n = *(unsigned *)((char *)p-8);
-    if (n < 128 * 4)
+    if (n < HASHBLKSIZE)
     {
         *(void **)((char *)p-4) = dictionary[n/4];
         dictionary[n/4] = (void *)((char *)p-8);

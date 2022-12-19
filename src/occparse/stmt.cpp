@@ -548,6 +548,8 @@ static LEXLIST* statement_case(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
         val = exp->v.i;
         /* need error: lost conversion on case value */
         bool found = false;
+        if (!switchstmt->cases)
+            switchstmt->cases = casedataListFactory.CreateList();
         for (auto cases : *switchstmt->cases)
         {
             if (cases->val == val)

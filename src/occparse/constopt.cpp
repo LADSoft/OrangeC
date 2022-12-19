@@ -1574,7 +1574,7 @@ int opt0(EXPRESSION** node)
                     {
                         if (ep->type == en_sub)
                         {
-                            ep->right->v.f->Negate();
+                            *node = exprNode(en_uminus, ep->right, 0);
                         }
                         *node = ep->right;
                     }

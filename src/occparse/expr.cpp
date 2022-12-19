@@ -2314,6 +2314,8 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, std::list<INITLIST
                                     _F_PACKABLE | (finish == closepa ? _F_INARGS : 0) | (flags & _F_SIZEOF));
             if (p->tp && isvoid(p->tp) && finish != closepa)
                 error(ERR_NOT_AN_ALLOWED_TYPE);
+            if (!p->exp)
+                p->exp = intNode(en_c_i, 0);
             optimize_for_constants(&p->exp);
             if ((!templateNestingCount || instantiatingTemplate) && p->tp && p->tp->type == bt_templateselector)
                 p->tp = LookupTypeFromExpression(p->exp, nullptr, false);

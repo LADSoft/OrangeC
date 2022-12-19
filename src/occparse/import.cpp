@@ -565,7 +565,7 @@ bool Importer::EnterMethod(const Method* method)
                     structures_.back()->tp->syms->Add(funcs);
                 funcs->sb->parent = sp;
                 funcs->tp->syms = symbols.CreateSymbolTable();
-                sp->tp->syms->Add(sp);
+                funcs->tp->syms->Add(sp);
                 sp->sb->overloadName = funcs;
             }
             else if (funcs->sb->storage_class == sc_overloads)

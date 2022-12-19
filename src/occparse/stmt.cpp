@@ -3565,6 +3565,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
     }
     if (!lex)
     {
+        parent.pop_front();
         needkw(&lex, end);
         return lex;
     }

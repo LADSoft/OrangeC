@@ -379,7 +379,7 @@ static void DumpSymbol(SYMBOL* sym)
                 int order = 1;
                 auto it = sym->tp->syms->begin();
                 auto ite = sym->tp->syms->end();
-                while (it != ite && ((*it)->sb->storage_class == sc_parameter))
+                for ( ; it != ite && ((*it)->sb->storage_class == sc_parameter) ; ++it)
                 {
                     SYMBOL* st = *it;
                     const char* argName = GetSymName(st, st);

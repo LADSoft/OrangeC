@@ -3026,6 +3026,8 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
 }
 void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SYMBOL>::iterator itend, std::list<INITLIST*>** lptr, bool operands, bool implicit)
 {
+    if (!strcmp(func->name, "insert") && strstr(currentLex->data->errfile, "t2.cpp"))
+        printf("hi");
     std::list<INITLIST*>::iterator itl, itle;
     if (*lptr)
     {
@@ -3204,21 +3206,21 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             p->tp = InitializerListType(tp);
                             p->exp = intNode(en_c_i, 0);
                             CreateInitializerList(nullptr, p->tp, tp, &params->arguments, true, isref(sym->tp));
-                            if (itpinit == itpinite )
+                            **itl = *params->arguments->front();
+                            (*itl)->tp = sym->tp;
+                            if (itpinit == itpinite)
                             {
                                 auto itl1 = itl;
                                 ++itl1;
                                 params->arguments->insert(params->arguments->end(), itl1, itle);
                             }
-                            p->tp = sym->tp;
-                            p->nested = nullptr;
                         }
                         else
                         {
                             params->arguments->push_back(p);
+                            p->exp = thisptr;
+                            callConstructor(&ctype, &p->exp, params, false, nullptr, true, false, true, false, true, false, true);
                         }
-                        p->exp = thisptr;
-                        callConstructor(&ctype, &p->exp, params, false, nullptr, true, false, true, false, true, false, true);
                 
                         if (!isref(sym->tp))
                         {

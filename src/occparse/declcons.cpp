@@ -3260,14 +3260,14 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                 CreateInitializerList(cons1, initializerListTemplate, initializerListType, &temp2, false,
                                       initializerRef);
                 params->arguments = temp2;
-                if (temp.size() &&  (!temp.front()->initializer_list ||
-                             (temp.front()->nested && temp.front()->nested->front()->nested && !temp.front()->initializer_list)))
+                if (old->size() &&  (!old->front()->initializer_list ||
+                             (old->front()->nested && old->front()->nested->front()->nested && !old->front()->initializer_list)))
                 {
                     auto it1 = old->begin();
                     if (it1 != old->end())
                     {
                         ++it1;
-                        params->arguments->insert(params->arguments->begin(), it1, old->end());
+                        params->arguments->insert(params->arguments->end(), it1, old->end());
                     }
                 }
                 auto it = basetype(cons1->tp)->syms->begin();

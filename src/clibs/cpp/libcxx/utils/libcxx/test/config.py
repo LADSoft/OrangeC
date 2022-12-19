@@ -515,6 +515,7 @@ class Configuration(object):
             # and so that those tests don't have to be changed to tolerate
             # this insanity.
             self.cxx.compile_flags += ['-DNOMINMAX']
+            self.cxx.compile_flags += ['-DWIN32_LEAN_AND_MEAN'] #DAL
         additional_flags = self.get_lit_conf('test_compiler_flags')
         if additional_flags:
             self.cxx.compile_flags += shlex.split(additional_flags)

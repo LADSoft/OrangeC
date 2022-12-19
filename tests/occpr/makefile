@@ -10,6 +10,6 @@ clean:
 	del *.ods
 
 %.ods: %.c
-	occpr --nologo /Q /w /E999 /z$(ORANGEC)\include\c $^
+	occpr --nologo /Q /w /E999 /z$(ORANGEC)\include\c;$(ORANGEC)\include\c\win32 $^
 %.ods: %.cpp
-	occpr --nologo /Q /w /E999 /z$(ORANGEC)\include\c /Z$(ORANGEC)\include;$(ORANGEC)\include\c $^
+	occpr --nologo /Q /w /E999 /z$(ORANGEC)\include\c;$(ORANGEC)\include\c\win32 /Z$(ORANGEC)\include;$(ORANGEC)\include\c;$(ORANGEC)\include\c\win32 $^

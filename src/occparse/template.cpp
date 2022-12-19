@@ -5486,15 +5486,11 @@ static bool DeduceTemplateParam(TEMPLATEPARAMPAIR* Pt, TYPE* P, TYPE* A, EXPRESS
                 if (isconst(*tp) || !isconst(A))
                     return false;
             }
-            else if (isconst(*tp) != isconst(A))
-                return false;
             if (isvolatile(P))
             {
                 if (!isvolatile(A))
                     return false;
             }
-            else if (isvolatile(*tp) != isvolatile(A))
-                return false;
         }
         else
         {

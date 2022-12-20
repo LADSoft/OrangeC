@@ -961,16 +961,19 @@ bool doStaticCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* funcs
                 optimize_for_constants(&v);
                 if (v->type == en_c_i)  // check for no virtual base
                 {
-                    EXPRESSION* varsp = anonymousVar(sc_auto, &stdpointer);
-                    EXPRESSION* var = exprNode(en_l_p, varsp, nullptr);
-                    EXPRESSION* asn = exprNode(en_assign, var, *exp);
-                    EXPRESSION* left = exprNode(en_add, var, v);
-                    EXPRESSION* right = var;
-                    if (v->type == en_l_p)  // check for virtual base
-                        v->left = var;
-                    v = exprNode(en_cond, var, exprNode(en_void, left, right));
-                    v = exprNode(en_void, asn, v);
-                    *exp = exprNode(en_lvalue, v, nullptr);
+                    if (v->v.i != 0)
+                    {
+                        EXPRESSION* varsp = anonymousVar(sc_auto, &stdpointer);
+                        EXPRESSION* var = exprNode(en_l_p, varsp, nullptr);
+                        EXPRESSION* asn = exprNode(en_assign, var, *exp);
+                        EXPRESSION* left = exprNode(en_add, var, v);
+                        EXPRESSION* right = var;
+                        if (v->type == en_l_p)  // check for virtual base
+                            v->left = var;
+                        v = exprNode(en_cond, var, exprNode(en_void, left, right));
+                        v = exprNode(en_void, asn, v);
+                        *exp = exprNode(en_lvalue, v, nullptr);
+                    }
                     return true;
                 }
             }
@@ -983,16 +986,19 @@ bool doStaticCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* funcs
                 optimize_for_constants(&v);
                 if (v->type == en_c_i)  // check for no virtual base
                 {
-                    EXPRESSION* varsp = anonymousVar(sc_auto, &stdpointer);
-                    EXPRESSION* var = exprNode(en_l_p, varsp, nullptr);
-                    EXPRESSION* asn = exprNode(en_assign, var, *exp);
-                    EXPRESSION* left = exprNode(en_sub, var, v);
-                    EXPRESSION* right = var;
-                    if (v->type == en_l_p)  // check for virtual base
-                        v->left = var;
-                    v = exprNode(en_cond, var, exprNode(en_void, left, right));
-                    v = exprNode(en_void, asn, v);
-                    *exp = exprNode(en_lvalue, v, nullptr);
+                    if (v->v.i != 0)
+                    {
+                        EXPRESSION* varsp = anonymousVar(sc_auto, &stdpointer);
+                        EXPRESSION* var = exprNode(en_l_p, varsp, nullptr);
+                        EXPRESSION* asn = exprNode(en_assign, var, *exp);
+                        EXPRESSION* left = exprNode(en_sub, var, v);
+                        EXPRESSION* right = var;
+                        if (v->type == en_l_p)  // check for virtual base
+                            v->left = var;
+                        v = exprNode(en_cond, var, exprNode(en_void, left, right));
+                        v = exprNode(en_void, asn, v);
+                        *exp = exprNode(en_lvalue, v, nullptr);
+                    }
                     return true;
                 }
             }

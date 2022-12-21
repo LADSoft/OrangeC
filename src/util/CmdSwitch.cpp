@@ -200,7 +200,7 @@ int CmdSwitchFile::Parse(const char* data)
     int n = CmdSwitchString::Parse(data);
     if (n < 0 || argv)
         return n;
-    std::fstream in(CmdSwitchString::GetValue(), std::ios::in);
+    std::fstream in(CmdSwitchString::GetValue(), std::ios::in | std::ios::binary);
     if (!in.fail())
     {
         in.seekg(0, std::ios::end);

@@ -355,7 +355,7 @@ static bool trivialCopyConstructible(TYPE* tp, bool rref)
     if (isstructured(tp))
     {
         SYMBOL* ovl;
-        ovl = basetype(tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+        ovl = search(basetype(tp)->syms, overloadNameTab[CI_CONSTRUCTOR]);
         if (ovl)
         {
             if (!trivialFunc(ovl, rref))
@@ -379,7 +379,7 @@ static bool trivialAssignable(TYPE* tp, bool rref)
     if (isstructured(tp))
     {
         SYMBOL* ovl;
-        ovl = basetype(tp)->syms->search(overloadNameTab[assign - kw_new + CI_NEW]);
+        ovl = search(basetype(tp)->syms, overloadNameTab[assign - kw_new + CI_NEW]);
         if (ovl)
         {
             if (!trivialFunc(ovl, rref))
@@ -403,7 +403,7 @@ static bool trivialDestructor(TYPE* tp)
     if (isstructured(tp))
     {
         SYMBOL* ovl;
-        ovl = basetype(tp)->syms->search(overloadNameTab[CI_DESTRUCTOR]);
+        ovl = search(basetype(tp)->syms, overloadNameTab[CI_DESTRUCTOR]);
         if (ovl)
         {
             ovl = ovl->tp->syms->front();
@@ -428,7 +428,7 @@ static bool trivialDefaultConstructor(TYPE* tp)
     if (isstructured(tp))
     {
         SYMBOL* ovl;
-        ovl = basetype(tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+        ovl = search(basetype(tp)->syms, overloadNameTab[CI_CONSTRUCTOR]);
         if (ovl)
         {
             for (auto sym : *ovl->tp->syms)
@@ -620,7 +620,7 @@ static bool nothrowConstructible(TYPE* tp, std::list<INITLIST*>* args)
 {
     if (isstructured(tp))
     {
-        return __is_nothrow(tp, args, basetype(tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]));
+        return __is_nothrow(tp, args, search(basetype(tp)->syms, overloadNameTab[CI_CONSTRUCTOR]));
     }
     return true;
 }
@@ -628,7 +628,7 @@ static bool nothrowAssignable(TYPE* tp, std::list<INITLIST*>* args)
 {
     if (isstructured(tp))
     {
-        return __is_nothrow(tp, args, basetype(tp)->syms->search(overloadNameTab[CI_ASSIGN]));
+        return __is_nothrow(tp, args, search(basetype(tp)->syms, overloadNameTab[CI_ASSIGN]));
     }
     return true;
 }
@@ -763,7 +763,7 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                     {
                         // look for operator () with args from tp2
                         EXPRESSION* cexp = nullptr;
-                        SYMBOL* bcall = basetype(tp3)->syms->search(overloadNameTab[CI_FUNC]);
+                        SYMBOL* bcall = search(basetype(tp3)->syms, overloadNameTab[CI_FUNC]);
                         funcparams.thisptr = intNode(en_c_i, 0);
                         funcparams.thistp = MakeType(bt_pointer, basetype(tp3));
                         funcparams.ascall = true;
@@ -871,7 +871,7 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                     std::vector<bool>holdl, holdr;
                     INITLIST* temp;
                     EXPRESSION* cexp = nullptr;
-                    SYMBOL* cons = basetype(tp2)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+                    SYMBOL* cons = search(basetype(tp2)->syms, overloadNameTab[CI_CONSTRUCTOR]);
                     if (cons)
                     {
                         funcparams.thisptr = intNode(en_c_i, 0);
@@ -982,7 +982,7 @@ static bool is_convertible_to(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE**
             if (!rv && isstructured(from))
             {
                 CI_CONSTRUCTOR;
-                SYMBOL* sym = basetype(from)->syms->search(overloadNameTab[CI_CAST]);
+                SYMBOL* sym = search(basetype(from)->syms, overloadNameTab[CI_CAST]);
                 if (sym)
                 {
                     for (auto sp1 : *sym->tp->syms)
@@ -1320,7 +1320,7 @@ static bool is_union(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPR
 }
 static bool hasConstexprConstructor(TYPE* tp)
 {
-    auto ovl = basetype(tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+    auto ovl = search(basetype(tp)->syms, overloadNameTab[CI_CONSTRUCTOR]);
     if (ovl)
     {
         for (auto sym : *ovl->tp->syms)

@@ -83,7 +83,7 @@ void *dictionary[128];
 // resulted in about a 20% speedup of the compiler on the worst files
 #define HASHBLKSIZE 128 * 4
 
-void *operator new(unsigned aa)
+void *operator new(size_t aa)
 {
     if (!aa)
         return nullptr;

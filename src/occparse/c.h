@@ -60,11 +60,10 @@ public:
     inline void remove(iterator it);
     inline iterator insert(iterator it, struct sym* sym);
     inline T* Lookup(const std::string& name) const;
-    inline T* search(const std::string& name);
-    void Next(SymbolTable<struct sym>* next) { next_ = next; }
-    SymbolTable<struct sym>* Next() const { return next_; }
-    void Chain(SymbolTable<struct sym>* chain) { chain_ = chain; }
-    SymbolTable<struct sym>* Chain() const { return chain_; }
+    void Next(SymbolTable<T>* next) { next_ = next; }
+    SymbolTable<T>* Next() const { return next_; }
+    void Chain(SymbolTable<T>* chain) { chain_ = chain; }
+    SymbolTable<T>* Chain() const { return chain_; }
     auto ReleaseNext() { auto rv = next_; if (next_) next_ = next_->next_; return rv; }
     int Block() const { return blockLevel_; }
     void Block(int level) { blockLevel_ = level; }

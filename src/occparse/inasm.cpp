@@ -179,7 +179,7 @@ static void inasm_txsym(void)
 {
     if (lex && ISID(lex))
     {
-        ASM_HASH_ENTRY* e = asmHash->search(lex->data->value.s.a);
+        ASM_HASH_ENTRY* e = search(asmHash, lex->data->value.s.a);
         if (e)
         {
             if (e->instruction)
@@ -243,7 +243,7 @@ static EXPRESSION* inasm_ident(void)
         inasm_getsym();
         /* No such identifier */
         /* label, put it in the symbol table */
-        if ((sym = labelSyms->search(nm)) == 0 && (sym = gsearch(nm)) == 0)
+        if ((sym = search(labelSyms, nm)) == 0 && (sym = gsearch(nm)) == 0)
         {
             sym = SymAlloc();
             sym->sb->storage_class = sc_ulabel;
@@ -326,7 +326,7 @@ static EXPRESSION* inasm_label(void)
     }
     /* No such identifier */
     /* label, put it in the symbol table */
-    if ((sym = labelSyms->search(lex->data->value.s.a)) == 0)
+    if ((sym = search(labelSyms, lex->data->value.s.a)) == 0)
     {
         sym = SymAlloc();
         sym->sb->storage_class = sc_label;

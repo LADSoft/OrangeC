@@ -1087,7 +1087,7 @@ std::list<TEMPLATEPARAMPAIR>** expandTemplateSelector(std::list<TEMPLATEPARAMPAI
                 for ( ; sel != sele; ++ sel)
                 {
                     base = base1;
-                    s = base->syms->search(sel->name);
+                    s = search(base->syms, sel->name);
                     auto it1 = sel;
                     ++it1;
                     // it was written this way but could be optimized
@@ -4002,7 +4002,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     return nullptr;
                 if (isstructured(tp1))
                 {
-                    SYMBOL* cons = basetype(tp1)->syms->search(overloadNameTab[CI_ASSIGN]);
+                    SYMBOL* cons = search(basetype(tp1)->syms, overloadNameTab[CI_ASSIGN]);
                     if (!cons)
                         return nullptr;
                     TYPE* tp2 = LookupTypeFromExpression(exp->left, enclosing, alt);
@@ -4386,7 +4386,7 @@ TYPE* SynthesizeType(TYPE* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                         if (!isstructured(tp))
                             break;
 
-                        sp = basetype(tp)->syms->search(find->name);
+                        sp = search(basetype(tp)->syms, find->name);
                         if (!sp)
                         {
                             sp = classdata(find->name, basetype(tp)->sp, nullptr, false, false);
@@ -4809,7 +4809,7 @@ static SYMBOL* SynthesizeParentClass(SYMBOL* sym)
                 {
                     if (last)
                     {
-                        SYMBOL* found = last->tp->syms->search(syms[i]->name);
+                        SYMBOL* found = search(last->tp->syms, syms[i]->name);
                         if (!found || !isstructured(found->tp))
                         {
                             diag("SynthesizeParentClass mismatch 2");
@@ -5722,7 +5722,7 @@ static bool Deduce(TYPE* P, TYPE* A, EXPRESSION* exp, bool change, bool byClass,
                     return true;
                 }
                 {
-                    SYMBOL* cons = basetype(Pb)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+                    SYMBOL* cons = search(basetype(Pb)->syms, overloadNameTab[CI_CONSTRUCTOR]);
                     if (cons)
                     {
                         for (auto sp : *cons->tp->syms)
@@ -5871,7 +5871,7 @@ static bool ValidArg(TYPE* tp)
                         if (!isstructured(spo->tp))
                             break;
 
-                        sp = spo->tp->syms->search(find->name);
+                        sp = search(spo->tp->syms, find->name);
                         if (!sp)
                         {
                             sp = classdata(find->name, spo, nullptr, false, false);
@@ -6464,7 +6464,7 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
     {
         // this is basical a poor man's way to do GetOverloadedFunction on a constructor,
         // with an arithmetic or pointer arg
-        SYMBOL* cons = basetype(P)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+        SYMBOL* cons = search(basetype(P)->syms, overloadNameTab[CI_CONSTRUCTOR]);
         if (cons)
         {
             for (auto sp1 : *basetype(cons->tp)->syms)
@@ -7824,7 +7824,7 @@ void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
                 SYMBOL* ts = *os;
                 if (strcmp(ss->name, ts->name) != 0)
                 {
-                    ts = tmpl->tp->syms->search(ss->name);
+                    ts = search(tmpl->tp->syms, ss->name);
                     // we might get here with ts = nullptr for example when a using statement inside a template
                     // references base class template members which aren't defined yet.
                 }
@@ -7884,7 +7884,7 @@ void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
                 SYMBOL* ts = *os;
                 if (strcmp(ss->name, ts->name) != 0)
                 {
-                    ts = tmpl->tp->syms->search(ss->name);
+                    ts = search(tmpl->tp->syms, ss->name);
                     // we might get here with ts = nullptr for example when a using statement inside a template
                     // references base class template members which aren't defined yet.
                 }
@@ -10025,7 +10025,7 @@ static SYMBOL* FindTemplateSelector(std::vector<TEMPLATESELECTOR>* tso)
                     if (!isstructured(spo->tp))
                         break;
 
-                    sp = spo->tp->syms->search(find->name);
+                    sp = search(spo->tp->syms, find->name);
                     if (!sp)
                     {
                         sp = classdata(find->name, spo, nullptr, false, false);

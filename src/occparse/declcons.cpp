@@ -87,7 +87,7 @@ void ConsDestDeclarationErrors(SYMBOL* sp, bool notype)
 }
 static bool HasConstexprConstructorInternal(SYMBOL* sym)
 {
-    sym = sym->tp->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+    sym = search(sym->tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
     if (sym)
     {
         for (auto sp : *sym->tp->syms)
@@ -315,7 +315,7 @@ void SetParams(SYMBOL* cons)
 }
 SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl)
 {
-    SYMBOL* funcs = basetype(sp->tp)->syms->search(ovl->name);
+    SYMBOL* funcs = search(basetype(sp->tp)->syms, ovl->name);
     ovl->sb->parentClass = sp;
     ovl->sb->internallyGenned = true;
     ovl->sb->attribs.inheritable.linkage4 = lk_virtual;
@@ -355,7 +355,7 @@ static bool BaseWithVirtualDestructor(SYMBOL* sp)
     if (sp->sb->baseClasses)
         for (auto b : *sp->sb->baseClasses)
         {
-            SYMBOL* dest = b->cls->tp->syms->search(overloadNameTab[CI_DESTRUCTOR]);
+            SYMBOL* dest = search(b->cls->tp->syms, overloadNameTab[CI_DESTRUCTOR]);
             if (dest)
             {
                 dest = dest->tp->syms->front();
@@ -424,7 +424,7 @@ static SYMBOL* declareDestructor(SYMBOL* sp)
 }
 static bool hasConstFunc(SYMBOL* sp, int type, bool move)
 {
-    SYMBOL* ovl = basetype(sp->tp)->syms->search(overloadNameTab[type]);
+    SYMBOL* ovl = search(basetype(sp->tp)->syms, overloadNameTab[type]);
     if (ovl)
     {
         for (auto func : *basetype(ovl->tp)->syms)
@@ -580,7 +580,7 @@ static bool hasCopy(SYMBOL* func, bool move)
 }
 static bool checkDest(SYMBOL* sp, SYMBOL* parent, SymbolTable<SYMBOL>* syms, enum e_ac access)
 {
-    SYMBOL* dest = syms->search(overloadNameTab[CI_DESTRUCTOR]);
+    SYMBOL* dest = search(syms, overloadNameTab[CI_DESTRUCTOR]);
 
     if (dest)
     {
@@ -594,7 +594,7 @@ static bool checkDest(SYMBOL* sp, SYMBOL* parent, SymbolTable<SYMBOL>* syms, enu
 }
 static bool checkDefaultCons(SYMBOL* sp, SymbolTable<SYMBOL>* syms, enum e_ac access)
 {
-    SYMBOL* cons = syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+    SYMBOL* cons = search(syms, overloadNameTab[CI_CONSTRUCTOR]);
     if (cons)
     {
         SYMBOL* dflt = nullptr;
@@ -624,7 +624,7 @@ static bool checkDefaultCons(SYMBOL* sp, SymbolTable<SYMBOL>* syms, enum e_ac ac
 SYMBOL* getCopyCons(SYMBOL* base, bool move)
 {
     (void)move;
-    SYMBOL* ovl = basetype(base->tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+    SYMBOL* ovl = search(basetype(base->tp)->syms, overloadNameTab[CI_CONSTRUCTOR]);
     if (ovl)
     {
         for (auto sym2 : *basetype(ovl->tp)->syms)
@@ -671,7 +671,7 @@ SYMBOL* getCopyCons(SYMBOL* base, bool move)
 static SYMBOL* GetCopyAssign(SYMBOL* base, bool move)
 {
     (void)move;
-    SYMBOL* ovl = basetype(base->tp)->syms->search(overloadNameTab[assign - kw_new + CI_NEW]);
+    SYMBOL* ovl = search(basetype(base->tp)->syms, overloadNameTab[assign - kw_new + CI_NEW]);
     if (ovl)
     {
         for (auto sym2 : *basetype(ovl->tp)->syms)
@@ -845,7 +845,7 @@ static bool isDefaultDeleted(SYMBOL* sp)
                 allconst = false;
             if (isstructured(sp1->tp))
             {
-                SYMBOL* consovl = basetype(sp1->tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+                SYMBOL* consovl = search(basetype(sp1->tp)->syms, overloadNameTab[CI_CONSTRUCTOR]);
                 for (auto cons : *basetype(consovl->tp)->syms)
                 {
                     if (matchesDefaultConstructor(cons))
@@ -926,7 +926,7 @@ static bool isCopyConstructorDeleted(SYMBOL* sp)
         {
             if (isstructured(sp1->tp))
             {
-                SYMBOL* consovl = basetype(sp1->tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+                SYMBOL* consovl = search(basetype(sp1->tp)->syms, overloadNameTab[CI_CONSTRUCTOR]);
                 for (auto cons : *basetype(consovl->tp)->syms)
                 {
                     if (matchesCopy(cons, false))
@@ -989,7 +989,7 @@ static bool isCopyAssignmentDeleted(SYMBOL* sp)
         {
             if (isstructured(sp1->tp))
             {
-                SYMBOL* consovl = basetype(sp1->tp)->syms->search(overloadNameTab[assign - kw_new + CI_NEW]);
+                SYMBOL* consovl = search(basetype(sp1->tp)->syms, overloadNameTab[assign - kw_new + CI_NEW]);
                 for (auto cons : *basetype(consovl->tp)->syms)
                 {
                     if (matchesCopy(cons, false))
@@ -1039,7 +1039,7 @@ static bool isMoveConstructorDeleted(SYMBOL* sp)
         {
             if (isstructured(sp1->tp))
             {
-                SYMBOL* consovl = basetype(sp1->tp)->syms->search(overloadNameTab[assign - kw_new + CI_NEW]);
+                SYMBOL* consovl = search(basetype(sp1->tp)->syms, overloadNameTab[assign - kw_new + CI_NEW]);
                 for (auto cons : *basetype(consovl->tp)->syms)
                 {
                     if (matchesCopy(cons, true))
@@ -1100,7 +1100,7 @@ static bool isMoveAssignmentDeleted(SYMBOL* sp)
         {
             if (isstructured(sp1->tp))
             {
-                SYMBOL* consovl = basetype(sp1->tp)->syms->search(overloadNameTab[assign - kw_new + CI_NEW]);
+                SYMBOL* consovl = search(basetype(sp1->tp)->syms, overloadNameTab[assign - kw_new + CI_NEW]);
                 for (auto cons : *basetype(consovl->tp)->syms)
                 {
                     if (matchesCopy(cons, true))
@@ -1328,9 +1328,9 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
 }
 void createDefaultConstructors(SYMBOL* sp)
 {
-    SYMBOL* cons = basetype(sp->tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
-    SYMBOL* dest = basetype(sp->tp)->syms->search(overloadNameTab[CI_DESTRUCTOR]);
-    SYMBOL* asgn = basetype(sp->tp)->syms->search(overloadNameTab[assign - kw_new + CI_NEW]);
+    SYMBOL* cons = search(basetype(sp->tp)->syms, overloadNameTab[CI_CONSTRUCTOR]);
+    SYMBOL* dest = search(basetype(sp->tp)->syms, overloadNameTab[CI_DESTRUCTOR]);
+    SYMBOL* asgn = search(basetype(sp->tp)->syms, overloadNameTab[assign - kw_new + CI_NEW]);
     SYMBOL* newcons = nullptr;
     if (!dest)
     {
@@ -1356,7 +1356,7 @@ void createDefaultConstructors(SYMBOL* sp)
     {
         // create the default constructor
         newcons = declareConstructor(sp, true, false);
-        cons = basetype(sp->tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+        cons = search(basetype(sp->tp)->syms, overloadNameTab[CI_CONSTRUCTOR]);
     }
     conditionallyDeleteDefaultConstructor(cons);
     // see if the default constructor could be trivial
@@ -1432,7 +1432,7 @@ void createDefaultConstructors(SYMBOL* sp)
         if (hasCopy(cons, true) || (asgn && hasCopy(asgn, true)))
             newcons->sb->deleted = true;
         if (!asgn)
-            asgn = basetype(sp->tp)->syms->search(overloadNameTab[assign - kw_new + CI_NEW]);
+            asgn = search(basetype(sp->tp)->syms, overloadNameTab[assign - kw_new + CI_NEW]);
         conditionallyDeleteCopyConstructor(cons, false);
     }
     if (!asgn || !hasCopy(asgn, false))
@@ -1442,7 +1442,7 @@ void createDefaultConstructors(SYMBOL* sp)
         if (hasCopy(cons, true) || (asgn && hasCopy(asgn, true)))
             newsp->sb->deleted = true;
         if (!asgn)
-            asgn = basetype(sp->tp)->syms->search(overloadNameTab[assign - kw_new + CI_NEW]);
+            asgn = search(basetype(sp->tp)->syms, overloadNameTab[assign - kw_new + CI_NEW]);
         conditionallyDeleteCopyAssignment(asgn, false);
     }
     // now if there is no move constructor, no copy constructor,
@@ -1467,7 +1467,7 @@ void createDefaultConstructors(SYMBOL* sp)
         conditionallyDeleteCopyConstructor(cons, true);
         conditionallyDeleteCopyAssignment(asgn, true);
     }
-    dest = basetype(sp->tp)->syms->search(overloadNameTab[CI_DESTRUCTOR]);
+    dest = search(basetype(sp->tp)->syms, overloadNameTab[CI_DESTRUCTOR]);
     conditionallyDeleteDestructor(dest->tp->syms->front());
 }
 EXPRESSION* destructLocal(EXPRESSION* exp)
@@ -2053,7 +2053,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
             LEXLIST* lex;
             if (!first && hasDelegate)
                 error(ERR_DELEGATING_CONSTRUCTOR_ONLY_INITIALIZER);
-            init->sp = basetype(cls->tp)->syms->search(init->name);
+            init->sp = search(basetype(cls->tp)->syms, init->name);
             if (init->sp && (!init->basesym || !istype(init->sp)))
             {
                 if (init->sp->sb->storage_class == sc_typedef)
@@ -2062,7 +2062,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                     if (isstructured(tp))
                     {
                         init->name = basetype(tp)->sp->name;
-                        init->sp = basetype(cls->tp)->syms->search(init->name);
+                        init->sp = search(basetype(cls->tp)->syms, init->name);
                     }
                 }
             }
@@ -2669,7 +2669,7 @@ static void genAsnCall(std::list<BLOCKDATA*>& b, SYMBOL* cls, SYMBOL* base, int 
     FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
     TYPE* tp = CopyType(base->tp);
     SYMBOL* asn1;
-    SYMBOL* cons = basetype(base->tp)->syms->search(overloadNameTab[assign - kw_new + CI_NEW]);
+    SYMBOL* cons = search(basetype(base->tp)->syms, overloadNameTab[assign - kw_new + CI_NEW]);
     EXPRESSION* left = exprNode(en_add, thisptr, intNode(en_c_i, offset));
     EXPRESSION* right = exprNode(en_add, other, intNode(en_c_i, offset));
     if (move)
@@ -2844,7 +2844,7 @@ static void genDestructorCall(std::list<BLOCKDATA*>& b, SYMBOL* sp, SYMBOL* agai
     STATEMENT* st;
     TYPE* tp = PerformDeferredInitialization(sp->tp, nullptr);
     sp = tp->sp;
-    dest = basetype(sp->tp)->syms->search(overloadNameTab[CI_DESTRUCTOR]);
+    dest = search(basetype(sp->tp)->syms, overloadNameTab[CI_DESTRUCTOR]);
     if (!dest)  // error handling
         return;
     exp = base;
@@ -2951,7 +2951,7 @@ void thunkDestructorTail(std::list<BLOCKDATA*>& b, SYMBOL* sp, SYMBOL* dest, Sym
 void createDestructor(SYMBOL* sp)
 {
     SymbolTable<SYMBOL>* syms;
-    SYMBOL* dest = basetype(sp->tp)->syms->search(overloadNameTab[CI_DESTRUCTOR]);
+    SYMBOL* dest = search(basetype(sp->tp)->syms, overloadNameTab[CI_DESTRUCTOR]);
     bool oldNoExcept = noExcept;
     noExcept = true;
     BLOCKDATA bd = {};
@@ -3050,7 +3050,7 @@ bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     if (sp->tp->size == 0)
         sp = PerformDeferredInitialization(sp->tp, nullptr)->sp;
     stp = sp->tp;
-    dest = basetype(sp->tp)->syms->search(overloadNameTab[CI_DESTRUCTOR]);
+    dest = search(basetype(sp->tp)->syms, overloadNameTab[CI_DESTRUCTOR]);
     // if it isn't already defined get out, there will be an error from somewhere else..
     if (!basetype(sp->tp)->syms || !dest)
         return false;
@@ -3144,9 +3144,9 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     against = theCurrentFunc ? theCurrentFunc->sb->parentClass : top ? sp : sp->sb->parentClass;
 
     if (isAssign)
-        cons = basetype(sp->tp)->syms->search(overloadNameTab[assign - kw_new + CI_NEW]);
+        cons = search(basetype(sp->tp)->syms, overloadNameTab[assign - kw_new + CI_NEW]);
     else
-        cons = basetype(sp->tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+        cons = search(basetype(sp->tp)->syms, overloadNameTab[CI_CONSTRUCTOR]);
 
     if (!params)
     {
@@ -3302,7 +3302,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
             noExcept &= cons1->sb->noExcept;
             if (arrayElms)
             {
-                SYMBOL* dest = basetype(sp->tp)->syms->search(overloadNameTab[CI_DESTRUCTOR]);
+                SYMBOL* dest = search(basetype(sp->tp)->syms, overloadNameTab[CI_DESTRUCTOR]);
                 SYMBOL* dest1;
                 SYMBOL* against = top ? sp : sp->sb->parentClass;
                 TYPE* tp = nullptr;

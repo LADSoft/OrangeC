@@ -32,7 +32,7 @@
 #    include <fcntl.h>
 #else
 #    include <io.h>
-extern "C" char* getcwd(char*, int);
+extern "C" char* _getcwd(char*, int);
 #endif
 
 std::set<std::string> InputFile::fileNameCache;
@@ -40,7 +40,7 @@ std::set<std::string> InputFile::fileNameCache;
 InputFile::~InputFile()
 {
     if (streamid >= 3)
-        close(streamid);
+        _close(streamid);
     CheckErrors();
 }
 bool InputFile::Open()
@@ -54,7 +54,7 @@ bool InputFile::Open()
         streamid = 0;
     }
     else
-        streamid = open(name->c_str(), 0);  // readonly
+        streamid = _open(name->c_str(), 0);  // readonly
     if (streamid >= 0)
         CheckUTF8BOM();
     return streamid >= 0;
@@ -165,7 +165,7 @@ bool InputFile::ReadString(char* s, int len)
                 }
             }
         }
-        inputLen = read(streamid, inputBuffer, sizeof(inputBuffer));
+        inputLen = _read(streamid, inputBuffer, sizeof(inputBuffer));
         bufPtr = inputBuffer;
         if (inputLen <= 0)
         {
@@ -198,7 +198,7 @@ void InputFile::CheckUTF8BOM()
     static unsigned char BOM2[] = {0xff, 0xfe};  // only LE version at this time...
     unsigned char buf[4];
     int l;
-    if (4 == (l = read(streamid, buf, 4)))
+    if (4 == (l = _read(streamid, buf, 4)))
     {
         utf8BOM = !memcmp(BOM, buf, 3);
         if (utf8BOM)

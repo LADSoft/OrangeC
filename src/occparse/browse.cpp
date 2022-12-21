@@ -50,19 +50,19 @@ static int currentFile = 0;
 void abspath(char* name)
 {
     char projname[256], *p, *nname = name;
-    getcwd(projname, 256);
+    _getcwd(projname, 256);
     if (name[1] == ':')
         return;
     if (!strchr(name, '\\'))
     {
-        getcwd(projname, 256);
+        _getcwd(projname, 256);
         strcat(projname, "\\");
         strcat(projname, name);
         strcpy(name, projname);
     }
     else if (strstr(name, "..\\"))
     {
-        getcwd(projname, 256);
+        _getcwd(projname, 256);
         //   p = strrchr(projname,'\\') ;
         p = projname + strlen(projname);
         if (!p)

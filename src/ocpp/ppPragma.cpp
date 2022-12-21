@@ -187,12 +187,12 @@ void ppPragma::HandleWarning(Tokenizer& tk)
         {
             while (isspace(*p))
                 p++;
-            if (!strnicmp(p, "push", 4))
+            if (!_strnicmp(p, "push", 4))
             {
                 Warning::Instance()->Push();
                 p += 4;
             }
-            else if (!strnicmp(p, "pop", 3))
+            else if (!_strnicmp(p, "pop", 3))
             {
                 Warning::Instance()->Pop();
                 p += 3;
@@ -200,12 +200,12 @@ void ppPragma::HandleWarning(Tokenizer& tk)
             else
             {
                 bool enable = true;
-                if (!strnicmp(p, "enable", 6))
+                if (!_strnicmp(p, "enable", 6))
                 {
                     enable = true;
                     p += 6;
                 }
-                else if (!strnicmp(p, "disable", 7))
+                else if (!_strnicmp(p, "disable", 7))
                 {
                     enable = false;
                     p += 7;

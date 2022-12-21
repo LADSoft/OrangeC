@@ -500,7 +500,7 @@ KEYWORD* searchkw(const unsigned char** p)
         }
         *q = 0;
 #ifdef KW_HASH
-        kw = kwSymbols->search((char*)buf);
+        kw = search(kwSymbols, (char*) buf);
         if (kw)
 #else
         kw = (KEYWORD*)binarySearch(buf);
@@ -539,7 +539,7 @@ KEYWORD* searchkw(const unsigned char** p)
         if (len)
         {
             buf[len] = 0;
-            while (len && (found = kwSymbols->search((char*)buf)) == nullptr)
+            while (len && (found = search(kwSymbols, (char*) buf)) == nullptr)
             {
                 buf[--len] = 0;
             }

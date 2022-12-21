@@ -1276,7 +1276,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
         else if (isstructured(*tp))
         {
             // destructor
-            SYMBOL* sp2 = (basetype(*tp)->sp)->tp->syms->search(overloadNameTab[CI_DESTRUCTOR]);
+            SYMBOL* sp2 = search((basetype(*tp)->sp)->tp->syms, overloadNameTab[CI_DESTRUCTOR]);
             if (sp2)
             {
                 if (flags && _F_IS_NOTHROW)
@@ -1407,7 +1407,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
             SYMBOL* sp2 = nullptr;
             if ((*exp)->type == en_literalclass)
             {
-                CONSTEXPRSYM* ces = (CONSTEXPRSYM*)(*exp)->v.syms->search(lex->data->value.s.a);
+                CONSTEXPRSYM* ces = (CONSTEXPRSYM*)search((*exp)->v.syms, lex->data->value.s.a);
                 if (ces)
                 {
                     lex = getsym();
@@ -1492,7 +1492,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
             }
             else
             {
-                sp2 = (basetype(*tp)->sp)->tp->syms->search(lex->data->value.s.a);
+                sp2 = search((basetype(*tp)->sp)->tp->syms, lex->data->value.s.a);
             }
             if (!sp2)
             {
@@ -2730,8 +2730,8 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
     EXPRESSION *data, *initList;
     SYMBOL *begin, *size;
     EXPRESSION* dest;
-    begin = basetype(initializerListTemplate)->syms->search("__begin_");
-    size = basetype(initializerListTemplate)->syms->search("__size_");
+    begin = search(basetype(initializerListTemplate)->syms, "__begin_");
+    size = search(basetype(initializerListTemplate)->syms, "__size_");
     if (!begin || !size)
         Utils::fatal("Invalid definition of initializer-list");
     if (!initial->front()->nested && comparetypes(initial->front()->tp, initializerListTemplate, true))
@@ -3971,7 +3971,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     if (!isstructured(spo->tp))
                         break;
 
-                    sp = spo->tp->syms->search(find->name);
+                    sp = search(spo->tp->syms, find->name);
                     if (!sp)
                     {
                         sp = classdata(find->name, spo, nullptr, false, false);
@@ -5765,7 +5765,7 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                         lambda_capture(nullptr, cmThis, false);
                         if (lambdas.front()->captureThis)
                         {
-                            SYMBOL* ths = lambdas.front()->cls->tp->syms->search("$this");
+                            SYMBOL* ths = search(lambdas.front()->cls->tp->syms, "$this");
                             if (ths)
                             {
                                 *tp = MakeType(bt_pointer, basetype(lambdas.front()->lthis->tp)->btp);

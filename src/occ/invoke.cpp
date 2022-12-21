@@ -298,7 +298,7 @@ int RunExternalFiles()
             !Optimizer::showBanner ? "-!" : "", outName, args, verbosityString,
             !Optimizer::prm_OutputDefFile.empty() ? ("--output-def \"" + Optimizer::prm_OutputDefFile + "\"").c_str() : "",
             tempName.c_str());
-        unlink(tempName.c_str());
+        _unlink(tempName.c_str());
         if (Optimizer::cparams.verbosity > 1)
             printf("Return code: %d\n", rv);
 

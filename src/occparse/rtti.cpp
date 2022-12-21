@@ -261,7 +261,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
     }
     else if (isstructured(tp) && !basetype(tp)->sp->sb->trivialCons)
     {
-        sym = basetype(tp)->syms->search(overloadNameTab[CI_DESTRUCTOR]);
+        sym = search(basetype(tp)->syms, overloadNameTab[CI_DESTRUCTOR]);
         // at this point if the class was never instantiated the destructor
         // may not have been created...
         if (sym)
@@ -332,11 +332,11 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
                     SYMBOL* xtSym;
                     char name[4096];
                     RTTIGetName(name, vbase->cls->tp);
-                    xtSym = rttiSyms->search(name);
+                    xtSym = search(rttiSyms, name);
                     if (!xtSym)
                     {
                         RTTIDumpType(vbase->cls->tp);
-                        xtSym = rttiSyms->search(name);
+                        xtSym = search(rttiSyms, name);
                     }
                     Optimizer::genint(XD_CL_VIRTUAL);
                     Optimizer::genref(Optimizer::SymbolManager::Get(xtSym), 0);
@@ -360,7 +360,7 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
                     SYMBOL* xtSym;
                     char name[4096];
                     RTTIGetName(name, bc->cls->tp);
-                    xtSym = rttiSyms->search(name);
+                    xtSym = search(rttiSyms, name);
                     Optimizer::genint(XD_CL_BASE);
                     Optimizer::genref(Optimizer::SymbolManager::Get(xtSym), 0);
                     Optimizer::genint(bc->offset);
@@ -435,7 +435,7 @@ SYMBOL* RTTIDumpType(TYPE* tp)
         {
             char name[4096];
             RTTIGetName(name, tp);
-            xtSym = rttiSyms->search(name);
+            xtSym = search(rttiSyms, name);
             if (!xtSym)
             {
                 xtSym = makeID(sc_global, tp, nullptr, litlate(name));
@@ -484,7 +484,7 @@ SYMBOL* RTTIDumpType(TYPE* tp)
                     SYMBOL* xtSym2;
                     // xtSym *should* be there.
                     RTTIGetName(name, basetype(tp));
-                    xtSym2 = rttiSyms->search(name);
+                    xtSym2 = search(rttiSyms, name);
                     if (xtSym2 && xtSym2->sb->dontinstantiate)
                     {
                         xtSym2->sb->dontinstantiate = false;

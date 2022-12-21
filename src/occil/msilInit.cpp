@@ -321,6 +321,7 @@ void msil_end_generation(char* fileName)
 #ifndef ISPARSER
         if (Optimizer::pinning)
         {
+            
             CreateStringFunction();
         }
 #endif

@@ -532,7 +532,7 @@ static void checkExceptionSpecification(SYMBOL* sp)
                         for (auto bc : *sp->sb->baseClasses)
                         {
 
-                            SYMBOL* sym2 = basetype(bc->cls->tp)->syms->search(sym->name);
+                            SYMBOL* sym2 = search(basetype(bc->cls->tp)->syms, sym->name);
                             if (sym2)
                             {
                                 for (auto sym3 : *basetype(sym2->tp)->syms)
@@ -1507,7 +1507,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac de
                             {
                                 PerformDeferredInitialization(sym->tp, funcsp);
                                 auto lst = &(*tp->sp->sb->templateSelector)[i];
-                                sym = sym->tp->syms->search(lst->name);
+                                sym = search(sym->tp->syms, lst->name);
                             }
                             if (sym)
                             {
@@ -3159,7 +3159,7 @@ static void InsertTag(SYMBOL* sym, enum e_sc storage_class, bool allowDups)
     else
         table = globalNameSpace->front()->tags;
     if (allowDups)
-        sp1 = table->search(sym->name);
+        sp1 = search(table, sym->name);
     if (!allowDups || !sp1 || (sym != sp1 && sym->sb->mainsym && sym->sb->mainsym != sp1->sb->mainsym))
         table->Add(sym);
 }
@@ -3323,7 +3323,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
         if (sp)
         {
             if (sp->sb->mainsym && sp->sb->mainsym == strsym)
-                sp = strsym->tp->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+                sp = search(strsym->tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
             if (sp)
             {
                 if (!templateNestingCount)
@@ -4181,10 +4181,10 @@ static bool constArgValid(TYPE* tp)
         if (sym->sb->trivialCons)
             return true;
         tp = PerformDeferredInitialization(tp, nullptr);
-        sym1 = tp->syms->search(overloadNameTab[CI_DESTRUCTOR]);
+        sym1 = search(tp->syms, overloadNameTab[CI_DESTRUCTOR]);
         if (sym1 && !((SYMBOL*)sym1->tp->syms->front())->sb->defaulted)
             return false;
-        sym1 = tp->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+        sym1 = search(tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
         if (sym1)
         {
             cpy = getCopyCons(sym, false);

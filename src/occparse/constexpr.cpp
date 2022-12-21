@@ -452,7 +452,7 @@ static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, 
 
             if (m->init)
             {
-                SYMBOL* sp = sym->sb->parentClass->tp->syms->search(m->name);
+                SYMBOL* sp = search(sym->sb->parentClass->tp->syms, m->name);
                 if (sp)
                 {
                     if (m->init)

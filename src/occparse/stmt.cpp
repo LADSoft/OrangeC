@@ -968,8 +968,8 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                         // try to lookup in structure
                         TYPE thisTP = {};
                         MakeType(thisTP, bt_pointer, rangeSP->tp->btp);
-                        sbegin = basetype(selectTP)->syms->search("begin");
-                        send = basetype(selectTP)->syms->search("end");
+                        sbegin = search(basetype(selectTP)->syms, "begin");
+                        send = search(basetype(selectTP)->syms, "end");
                         if (sbegin && send)
                         {
                             SYMBOL *beginFunc = nullptr, *endFunc = nullptr;
@@ -1775,7 +1775,7 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
 }
 int GetLabelValue(LEXLIST* lex, std::list<BLOCKDATA*>* parent, STATEMENT* st)
 {
-    SYMBOL* spx = labelSyms->search(lex->data->value.s.a);
+    SYMBOL* spx = search(labelSyms, lex->data->value.s.a);
     if (!spx)
     {
         spx = makeID(sc_ulabel, nullptr, nullptr, litlate(lex->data->value.s.a));
@@ -1816,7 +1816,7 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
     if (ISID(lex))
     {
         // standard c/c++ goto
-        SYMBOL* spx = labelSyms->search(lex->data->value.s.a);
+        SYMBOL* spx = search(labelSyms, lex->data->value.s.a);
         BLOCKDATA* block = Allocate<BLOCKDATA>();
         parent.push_front(block);
         block->type = begin;
@@ -1881,7 +1881,7 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
 static LEXLIST* statement_label(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
     auto before = parent.front();
-    SYMBOL* spx = labelSyms->search(lex->data->value.s.a);
+    SYMBOL* spx = search(labelSyms, lex->data->value.s.a);
     STATEMENT* st;
     (void)funcsp;
     st = stmtNode(lex, parent, st_label);
@@ -2763,7 +2763,7 @@ static LEXLIST* asm_declare(LEXLIST* lex)
         {
             if (ISID(lex))
             {
-                SYMBOL* sym = globalNameSpace->front()->syms->search(lex->data->value.s.a);
+                SYMBOL* sym = search(globalNameSpace->front()->syms, lex->data->value.s.a);
                 if (!sym)
                 {
                     sym = makeID(sc_label, nullptr, nullptr, litlate(lex->data->value.s.a));

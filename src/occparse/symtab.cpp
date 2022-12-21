@@ -418,7 +418,7 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                                 if (!isstructured(sym->tp))
                                     break;
 
-                                fsp = basetype(sym->tp)->syms->search(find->name);
+                                fsp = search(basetype(sym->tp)->syms, find->name);
                                 if (!fsp)
                                 {
                                     fsp = classdata(find->name, basetype(sym->tp)->sp, nullptr, false, false);
@@ -521,16 +521,16 @@ SYMBOL* searchOverloads(SYMBOL* sym, SymbolTable<SYMBOL>* table)
 }
 SYMBOL* gsearch(const char* name)
 {
-    SYMBOL* sym = localNameSpace->front()->syms->search(name);
+    SYMBOL* sym = search(localNameSpace->front()->syms, name);
     if (sym)
         return sym;
-    return globalNameSpace->front()->syms->search(name);
+    return search(globalNameSpace->front()->syms, name);
 }
 SYMBOL* tsearch(const char* name)
 {
-    SYMBOL* sym = localNameSpace->front()->tags->search(name);
+    SYMBOL* sym = search(localNameSpace->front()->tags, name);
     if (sym)
         return sym;
-    return globalNameSpace->front()->tags->search(name);
+    return search(globalNameSpace->front()->tags,name);
 }
 }  // namespace Parser

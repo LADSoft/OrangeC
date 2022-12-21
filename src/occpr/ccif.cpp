@@ -542,7 +542,7 @@ void ccSetFileLine(char* filename, int lineno)
         }
         if (strcmp(filename, lastFile->name) != 0)
         {
-            lastFile = (LINEINCLUDES*)ccSymbols->search(filename);
+            lastFile = (LINEINCLUDES*)search(ccSymbols, filename);
             if (!lastFile)
                 lastFile = mainFile;
         }

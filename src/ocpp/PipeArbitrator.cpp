@@ -29,13 +29,13 @@
 #    include <unistd.h>
 #else
 #    include <io.h>
-extern "C" char* getcwd(char*, int);
+extern "C" char* _getcwd(char*, int);
 #endif
 
 PipeArbitrator::~PipeArbitrator()
 {
     if (main >= 3)
-        close(main);
+        _close(main);
 }
 
 void PipeArbitrator::Init(const std::string& pipeName)

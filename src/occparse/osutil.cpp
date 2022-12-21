@@ -1137,7 +1137,7 @@ int ccinit(int argc, char* argv[])
                 strcpy(buf1, "ORANGEC");
                 strcat(buf1, "=");
                 strcat(buf1, buffer);
-                putenv(buf1);
+                _putenv(buf1);
                 *q = '\\';
             }
             *p = '\\';
@@ -1267,7 +1267,7 @@ int ccinit(int argc, char* argv[])
             Optimizer::LIST* t = clist;
             while (t)
             {
-                t->data = strdup(Utils::FullQualify((char*)t->data));
+                t->data = _strdup(Utils::FullQualify((char*)t->data));
                 t = t->next;
             }
         }

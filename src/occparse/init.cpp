@@ -93,7 +93,7 @@ static SYMBOL* LookupMsilToString()
             sym = namespacesearch("CString", sym->sb->nameSpaceValues, true, false);
             if (sym && isstructured(sym->tp))
             {
-                sym = basetype(sym->tp)->syms->search("ToPointer");
+                sym = search(basetype(sym->tp)->syms, "ToPointer");
                 if (sym)
                 {
                     for (auto sp : *sym->tp->syms)
@@ -286,12 +286,12 @@ void dumpStartups(void)
                     started = true;
                     Optimizer::startupseg();
                 }
-                s = globalNameSpace->front()->syms->search(starts.first.c_str());
+                s = search(globalNameSpace->front()->syms, starts.first.c_str());
                 if (!s || s->sb->storage_class != sc_overloads)
                     errorstr(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
                 else
                 {
-                    s = s->tp->syms->search(starts.first.c_str());
+                    s = search(s->tp->syms, starts.first.c_str());
                     Optimizer::gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_STARTUP);
                     s->sb->attribs.inheritable.used = true;
                 }
@@ -307,12 +307,12 @@ void dumpStartups(void)
                     started = true;
                     Optimizer::rundownseg();
                 }
-                s = globalNameSpace->front()->syms->search(starts.first.c_str());
+                s = search(globalNameSpace->front()->syms, starts.first.c_str());
                 if (!s || s->sb->storage_class != sc_overloads)
                     errorstr(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
                 else
                 {
-                    s = s->tp->syms->search(starts.first.c_str());
+                    s = search(s->tp->syms, starts.first.c_str());
                     Optimizer::gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_RUNDOWN);
                     s->sb->attribs.inheritable.used = true;
                 }
@@ -3639,7 +3639,7 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, std::l
                 if (!isstructured(spo->tp))
                     break;
 
-                sym = spo->tp->syms->search(find->name);
+                sym = search(spo->tp->syms, find->name);
                 if (!sym)
                 {
                     sym = classdata(find->name, spo, nullptr, false, false);
@@ -4001,7 +4001,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
             {
                 bool assigned = false;
                 TYPE* t = !isassign && (Optimizer::architecture == ARCHITECTURE_MSIL) ? find_boxed_type(sym->tp) : 0;
-                if (!t || !basetype(t)->syms->search(overloadNameTab[CI_CONSTRUCTOR]))
+                if (!t || !search(basetype(t)->syms, overloadNameTab[CI_CONSTRUCTOR]))
                     t = sym->tp;
                 if (MATCHKW(lex, assign))
                 {
@@ -4039,7 +4039,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
         TYPE* t = ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions)
                       ? find_boxed_type(sym->tp)
                       : 0;
-        if (!t || !basetype(t)->syms->search(overloadNameTab[CI_CONSTRUCTOR]))
+        if (!t || !search(basetype(t)->syms, overloadNameTab[CI_CONSTRUCTOR]))
             t = sym->tp;
         if (isstructured(t))
         {

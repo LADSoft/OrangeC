@@ -370,7 +370,7 @@ void InsertSymbol(SYMBOL* sp, enum e_sc storage_class, enum e_lk linkage, bool a
                 errorsym(ERR_DUPLICATE_IDENTIFIER, sp);
             }
         }
-        else if (!allowDups || sp != table->search(sp->name))
+        else if (!allowDups || sp != search(table, sp->name))
             table->Add(sp);
     }
     else
@@ -1101,7 +1101,7 @@ static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac c
     }
     if (Optimizer::cparams.prm_cplusplus && sp->tp->syms && !templateNestingCount)
     {
-        SYMBOL* cons = basetype(sp->tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+        SYMBOL* cons = search(basetype(sp->tp)->syms, overloadNameTab[CI_CONSTRUCTOR]);
         if (!cons)
         {
             for (auto sp1 : *basetype(sp->tp)->syms)
@@ -4076,7 +4076,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                             }
                         }
                         sizeQualifiers(tpx);
-                        spo = (*tp)->syms->search(spi->name);
+                        spo = search((*tp)->syms, spi->name);
                         if (!spo)
                             errorsym(ERR_UNDEFINED_IDENTIFIER, spi);
                         else

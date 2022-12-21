@@ -269,20 +269,20 @@ TYPE* find_boxed_type(TYPE* in)
                                       "Double", "",      "",       "",       "",       "",       "String"};
     if (isarray(basetype(in)) && basetype(in)->msil)
     {
-        SYMBOL* sym = globalNameSpace->front()->syms->search("System");
+        SYMBOL* sym = search(globalNameSpace->front()->syms , "System");
         if (sym && sym->sb->storage_class == sc_namespace)
         {
-            SYMBOL* sym2 = sym->sb->nameSpaceValues->front()->syms->search("Array");
+            SYMBOL* sym2 = search(sym->sb->nameSpaceValues->front()->syms , "Array");
             if (sym2)
                 return sym2->tp;
         }
     }
     else if (basetype(in)->type < sizeof(typeNames) / sizeof(typeNames[0]))
     {
-        SYMBOL* sym = globalNameSpace->front()->syms->search("System");
+        SYMBOL* sym = search(globalNameSpace->front()->syms, "System");
         if (sym && sym->sb->storage_class == sc_namespace)
         {
-            SYMBOL* sym2 = sym->sb->nameSpaceValues->front()->syms->search(typeNames[basetype(in)->type]);
+            SYMBOL* sym2 = search(sym->sb->nameSpaceValues->front()->syms, typeNames[basetype(in)->type]);
             if (sym2)
                 return sym2->tp;
         }

@@ -102,7 +102,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3;..\olib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3;..\olib;..\exefmt</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -140,7 +140,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3;..\olib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3;..\olib;..\exefmt</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>

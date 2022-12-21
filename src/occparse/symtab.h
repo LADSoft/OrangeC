@@ -101,15 +101,15 @@ T* SymbolTable<T>::Lookup(const std::string& name) const
     return (*it).second;
 }
 template<class T>
-T* SymbolTable<T>::search(const std::string& name)
+T* search(const SymbolTable<T>* tbl, const std::string& name)
 {
-    auto p = this;
+    const SymbolTable<T>* p = tbl;
     while (p)
     {
         T* sym = p->Lookup(name);
         if (sym)
             return sym;
-        p = p->next_;
+        p = p->Next();
     }
     return nullptr;
 }
@@ -141,7 +141,7 @@ inline void SymbolTable<SYMBOL>::baseInsert(SYMBOL* in)
         {
             if (!IsCompiler())
             {
-                SYMBOL* sym = search(in->name);
+                SYMBOL* sym = search(this, in->name);
                 if (!sym || !sym->sb->wasUsing || !in->sb->wasUsing)
                     preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->sb->declfile, in->sb->declline);
             }
@@ -149,7 +149,7 @@ inline void SymbolTable<SYMBOL>::baseInsert(SYMBOL* in)
             {
                 if (!structLevel || !templateNestingCount)
                 {
-                    SYMBOL* sym = search(in->name);
+                    SYMBOL* sym = search(this, in->name);
                     if (!sym || !sym->sb->wasUsing || !in->sb->wasUsing)
                         preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->sb->declfile, in->sb->declline);
                 }

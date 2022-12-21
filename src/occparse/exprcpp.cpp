@@ -242,7 +242,7 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
             }
             else
             {
-                SYMBOL* sym = lambdas.front()->cls->tp->syms->search("$this");
+                SYMBOL* sym = search(lambdas.front()->cls->tp->syms, "$this");
                 enclosing = basetype(lambdas.front()->lthis->tp)->btp->sp;
                 if (sym)
                 {
@@ -697,7 +697,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
         {
             // auto-boxing for msil
             TYPE* tp1 = find_boxed_type(basetype(*tp));
-            if (tp1 && basetype(tp1)->syms->search(overloadNameTab[CI_CONSTRUCTOR]))
+            if (tp1 && search(basetype(tp1)->syms, overloadNameTab[CI_CONSTRUCTOR]))
             {
                 unboxed = *tp;
                 *tp = tp1;
@@ -1428,11 +1428,11 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         case ovcl_assign_numericptr:
         case ovcl_assign_numeric:
         case ovcl_assign_int:
-            s1 = localNameSpace->front()->syms->search(name);
+            s1 = search(localNameSpace->front()->syms, name);
             if (!s1)
                 s1 = namespacesearch(name, localNameSpace, false, false);
             if (!s1 && enumSyms)
-                s1 = enumSyms->tp->syms->search(name);
+                s1 = search(enumSyms->tp->syms, name);
             if (!s1)
                 s1 = namespacesearch(name, globalNameSpace, false, false);
             break;

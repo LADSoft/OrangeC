@@ -166,13 +166,13 @@ void dumpInlines(void)
                         {
                             parentTemplate = found2;
                         }
-                        origsym = parentTemplate->tp->syms->search(sym->name);
+                        origsym = search(parentTemplate->tp->syms, sym->name);
                         //            printf("%s\n", origsym->sb->decoratedName);
 
                         if (!origsym || origsym->sb->storage_class != sc_global)
                         {
                             parentTemplate = sym->sb->parentClass->sb->parentTemplate;
-                            origsym = parentTemplate->tp->syms->search(sym->name);
+                            origsym = search(parentTemplate->tp->syms, sym->name);
                         }
 
                         if (sym->sb->parentClass && sym->sb->parentClass->sb->dontinstantiate)
@@ -293,7 +293,7 @@ SYMBOL* getvc1Thunk(int offset)
     char name[256];
     SYMBOL* rv;
     Optimizer::my_sprintf(name, "@.vc1$B0$%d$0", offset + 1);
-    rv = vc1Thunks->search(name);
+    rv = search(vc1Thunks, name);
     if (!rv)
     {
         rv = SymAlloc();

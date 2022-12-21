@@ -68,9 +68,9 @@ SYMBOL* tablesearchone(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly)
 {
     SYMBOL* rv = nullptr;
     if (!tagsOnly)
-        rv = ns->syms->search(name);
+        rv = search(ns->syms, name);
     if (!rv)
-        rv = ns->tags->search(name);
+        rv = search(ns->tags, name);
     if (rv)
     {
         return rv;
@@ -836,9 +836,9 @@ SYMBOL* classdata(const char* name, SYMBOL* cls, SYMBOL* last, bool isvirtual, b
     }
 
     if (!rv && !tagsOnly)
-        rv = basetype(cls->tp)->syms->search(name);
+        rv = search(basetype(cls->tp)->syms, name);
     if (!rv)
-        rv = basetype(cls->tp)->tags->search(name);
+        rv = search(basetype(cls->tp)->tags, name);
     if (rv)
     {
         if (!last || ((last == rv || sameTemplate(last->tp, rv->tp) || (rv->sb->mainsym && rv->sb->mainsym == last->sb->mainsym)) &&
@@ -929,9 +929,9 @@ SYMBOL* classsearch(const char* name, bool tagsOnly, bool toErr)
         while (cls && !rv)
         {
             if (!tagsOnly)
-                rv = basetype(cls->tp)->syms->search(name);
+                rv = search(basetype(cls->tp)->syms, name);
             if (!rv)
-                rv = basetype(cls->tp)->tags->search(name);
+                rv = search(basetype(cls->tp)->tags, name);
             if (!rv && cls->sb->baseClasses)
             {
                 rv = classdata(name, cls, nullptr, false, tagsOnly);
@@ -976,9 +976,9 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
         if (funcLevel || !ssp)
         {
             if (!tagsOnly)
-                rv = localNameSpace->front()->syms->search(name);
+                rv = search(localNameSpace->front()->syms, name);
             if (!rv)
-                rv = localNameSpace->front()->tags->search(name);
+                rv = search(localNameSpace->front()->tags, name);
             if (lambdas.size())
             {
                 for (auto srch : lambdas)
@@ -986,9 +986,9 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
                     if (rv)
                         break;
                     if (Optimizer::cparams.prm_cplusplus || !tagsOnly)
-                        rv = srch->oldSyms->search(name);
+                        rv = search(srch->oldSyms, name);
                     if (!rv)
-                        rv = srch->oldTags->search(name);
+                        rv = search(srch->oldTags, name);
                 }
             }
             if (!rv)
@@ -999,14 +999,14 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
             rv = namespacesearch(name, globalNameSpace, false, tagsOnly);
         }
         if (!rv && enumSyms)
-            rv = enumSyms->tp->syms->search(name);
+            rv = search(enumSyms->tp->syms, name);
         if (!rv)
         {
             if (lambdas.size())
             {
                 if (lambdas.front()->lthis)
                 {
-                    rv = basetype(lambdas.front()->lthis->tp)->btp->syms->search(name);
+                    rv = search(basetype(lambdas.front()->lthis->tp)->btp->syms, name);
                     if (rv)
                         rv->sb->throughClass = true;
                 }
@@ -1336,7 +1336,7 @@ LEXLIST* id_expression(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strS
                 SYMBOL* ssp = getStructureDeclaration();
                 if (ssp)
                 {
-                    *sym = ssp->tp->syms->search(lex->data->value.s.a);
+                    *sym =search( ssp->tp->syms, lex->data->value.s.a);
                 }
                 if (*sym == nullptr)
                     *sym = gsearch(lex->data->value.s.a);
@@ -1425,9 +1425,9 @@ SYMBOL* LookupSym(char* name)
     {
         return gsearch(name);
     }
-    rv = localNameSpace->front()->syms->search(name);
+    rv = search(localNameSpace->front()->syms, name);
     if (!rv)
-        rv = localNameSpace->front()->tags->search(name);
+        rv = search(localNameSpace->front()->tags, name);
     if (!rv)
         rv = namespacesearch(name, localNameSpace, false, false);
     if (!rv)
@@ -3076,7 +3076,7 @@ static void GetMemberCasts(std::list<SYMBOL*>& gather, SYMBOL* sym)
 {
     if (sym)
     {
-        SYMBOL* find = basetype(sym->tp)->syms->search(overloadNameTab[CI_CAST]);
+        SYMBOL* find = search(basetype(sym->tp)->syms, overloadNameTab[CI_CAST]);
         if (find)
             gather.insert(gather.begin(), find);
         if (sym->sb->baseClasses)
@@ -3086,7 +3086,7 @@ static void GetMemberCasts(std::list<SYMBOL*>& gather, SYMBOL* sym)
 }
 static void GetMemberConstructors(std::list<SYMBOL*>& gather, SYMBOL* sym)
 {
-    SYMBOL* find = basetype(sym->tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+    SYMBOL* find = search(basetype(sym->tp)->syms, overloadNameTab[CI_CONSTRUCTOR]);
     if (find)
     {
         gather.insert(gather.begin(), find);
@@ -3618,7 +3618,7 @@ bool sameTemplateSelector(TYPE* tnew, TYPE* told)
             if (!isstructured(tp))
                 return false;
 
-            auto sp = basetype(tp)->syms->search(ts->name);
+            auto sp = search(basetype(tp)->syms, ts->name);
             if (!sp)
             {
                 sp = classdata(ts->name, basetype(tp)->sp, nullptr, false, false);
@@ -4537,7 +4537,7 @@ static void getInitListConversion(TYPE* tp, std::list<INITLIST*>* list, TYPE* tp
         }
         else
         {
-            SYMBOL* cons = basetype(tp)->syms->search(overloadNameTab[CI_CONSTRUCTOR]);
+            SYMBOL* cons = search(basetype(tp)->syms, overloadNameTab[CI_CONSTRUCTOR]);
             if (!cons)
             {
                 // should never happen

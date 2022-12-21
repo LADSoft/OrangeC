@@ -77,7 +77,7 @@ void _add_global_using(const char* str)
             str++;
         // using standard C allocators since this crosses multiple input files
         Optimizer::LIST *lst = (Optimizer::LIST*)calloc(sizeof(Optimizer::LIST), 1), **find = &_global_using_list;
-        lst->data = strdup(buf);
+        lst->data = _strdup(buf);
         while (*find)
             find = &(*find)->next;
         (*find) = lst;

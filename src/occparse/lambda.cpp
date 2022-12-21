@@ -229,7 +229,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
                     LAMBDA* check;
                     for ( ; current != cile; ++current)
                     {
-                        LAMBDASP* lsp = (*current)->captured->search(sym->name);
+                        LAMBDASP* lsp = search((*current)->captured, sym->name);
                         if (lsp)
                         {
                             sym2 = lsp->sp;
@@ -251,7 +251,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
                         SYMBOL* sp = nullptr;
                         for  ( ; ++ilt != cile ; ++ current)
                         {
-                            sp = (*current)->oldSyms->search(sym->name);
+                            sp = search((*current)->oldSyms, sym->name);
                             if (sp)
                                 break;
                         }
@@ -667,7 +667,7 @@ static EXPRESSION* createLambda(bool noinline)
             }
             else
             {
-                SYMBOL* parent = lambdas.front()->cls->tp->syms->search("$parent");
+                SYMBOL* parent = search(lambdas.front()->cls->tp->syms, "$parent");
                 en1 = varNode(en_auto, cls);
                 deref(&stdpointer, &en1);
                 en1 = exprNode(en_add, en1, intNode(en_c_i, parent->sb->offset));
@@ -679,7 +679,7 @@ static EXPRESSION* createLambda(bool noinline)
         }
         else if (sp->sb->lambdaMode)
         {
-            LAMBDASP* lsp = lambdas.front()->captured->search(sp->name);
+            LAMBDASP* lsp = search(lambdas.front()->captured, sp->name);
             if (lsp)
             {
                 en1 = exprNode(en_add, clsThs, intNode(en_c_i, sp->sb->offset));
@@ -911,10 +911,10 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     }
                     else
                     {
-                        sp = localNameSpace->front()->syms->search(idlex->data->value.s.a);
+                        sp = search(localNameSpace->front()->syms, idlex->data->value.s.a);
                         for (auto current : lambdas)
                         {
-                            sp = current->oldSyms->search(idlex->data->value.s.a);
+                            sp = search(current->oldSyms, idlex->data->value.s.a);
                             if (sp)
                                 break;
                         }

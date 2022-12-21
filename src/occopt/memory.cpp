@@ -52,13 +52,8 @@ static bool globalFlag = true;
 static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak, templatePeak, conflictPeak;
 
 #define MINALLOC ((int)(256 * 1024 - sizeof(MEMBLK)))
-#define MALIGN (4)
+#define MALIGN ((int)sizeof(void *))
 
-#ifdef __ORANGEC__
-#    include <windows.h>
-#    undef RtlZeroMemory
-extern VOID PASCAL WINBASEAPI RtlZeroMemory(PVOID Destination, DWORD Length);
-#endif
 //#define DEBUG
 void mem_summary(void)
 {

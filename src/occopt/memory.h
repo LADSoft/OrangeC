@@ -35,7 +35,6 @@ typedef struct _memblk_
     struct _memblk_* next;
     long size;
     long left;
-    void* handle;
     char m[1]; /* memory area */
 } MEMBLK;
 void mem_summary(void);

@@ -2610,7 +2610,7 @@ int opt0(EXPRESSION** node)
                             if (!isstructured(spo->tp))
                                 break;
 
-                            sym = spo->tp->syms->search((*find).name);
+                            sym = search(spo->tp->syms, (*find).name);
                             if (!sym)
                             {
                                 sym = classdata((*find).name, spo, nullptr, false, false);

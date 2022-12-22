@@ -1736,6 +1736,23 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         FreeLocalContext(parent, funcsp, codeLabel++);
     return lex;
 }
+int GetLabelValue(LEXLIST* lex, STATEMENT* st)
+{
+    SYMBOL* spx = search(lex->data->value.s.a, labelSyms);
+    if (!spx)
+    {
+        spx = makeID(sc_ulabel, nullptr, nullptr, litlate(lex->data->value.s.a));
+        spx->sb->declfile = spx->sb->origdeclfile = lex->data->errfile;
+        spx->sb->declline = spx->sb->origdeclline = lex->data->errline;
+        spx->sb->realdeclline = lex->data->linedata->lineno;
+        spx->sb->declfilenum = lex->data->linedata->fileindex;
+        SetLinkerNames(spx, lk_none);
+        spx->sb->offset = codeLabel++;
+        spx->sb->gotoTable = st;
+        insert(spx, labelSyms);
+    }
+    return spx->sb->offset;
+}
 static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     (void)funcsp;
@@ -1744,6 +1761,7 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     currentLineData(parent, lex, 0);
     if (ISID(lex))
     {
+        // standard c/c++ goto
         SYMBOL* spx = search(lex->data->value.s.a, labelSyms);
         BLOCKDATA* block = Allocate<BLOCKDATA>();
         STATEMENT* st = stmtNode(lex, block, st_goto);
@@ -1751,27 +1769,52 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         block->next = parent;
         block->type = begin;
         block->table = localNameSpace->valueData->syms;
+        int lbl;
         if (!spx)
         {
-            spx = makeID(sc_ulabel, nullptr, nullptr, litlate(lex->data->value.s.a));
-            spx->sb->declfile = spx->sb->origdeclfile = lex->data->errfile;
-            spx->sb->declline = spx->sb->origdeclline = lex->data->errline;
-            spx->sb->realdeclline = lex->data->linedata->lineno;
-            spx->sb->declfilenum = lex->data->linedata->fileindex;
-            SetLinkerNames(spx, lk_none);
-            spx->sb->offset = codeLabel++;
-            spx->sb->gotoTable = st;
-            insert(spx, labelSyms);
+            lbl = GetLabelValue(lex, st);
         }
         else
         {
-            thunkGotoDestructors(&st->destexp, block, spx->sb->gotoTable->parent);
-            thunkCatchCleanup(st, funcsp, block, spx->sb->gotoTable->parent);
+            lbl = spx->sb->offset;
+            if (spx->sb->gotoTable)
+            {
+                thunkGotoDestructors(&st->destexp, block, spx->sb->gotoTable->parent);
+                thunkCatchCleanup(st, funcsp, block, spx->sb->gotoTable->parent);
+            }
+            spx->sb->gotoTable = st;
         }
-        st->label = spx->sb->offset;
+        st->label = lbl;
         lex = getsym();
         parent->needlabel = true;
         AddBlock(lex, parent, block);
+    }
+    else if (MATCHKW(lex, star))
+    {
+        // extension: computed goto
+        BLOCKDATA* block = Allocate<BLOCKDATA>();
+        STATEMENT* st = stmtNode(lex, block, st_goto);
+        block->next = parent;
+        block->type = begin;
+        block->table = localNameSpace->valueData->syms;
+        st->explicitGoto = true;
+        st->indirectGoto = true;
+        Optimizer::functionHasAssembly = true; // don't optimize
+        // turn off optimizations
+        lex = getsym();
+        TYPE*tp = nullptr;
+        EXPRESSION* exp = nullptr;
+        lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, 0);
+        if (!tp)
+            error(ERR_IDENTIFIER_EXPECTED);
+        else if (!ispointer(tp))
+            error(ERR_INVALID_POINTER_CONVERSION);
+        else
+        {
+            st->select = exp;
+            AddBlock(lex, parent, block);
+        }
+        parent->needlabel = true;
     }
     else
     {
@@ -2294,7 +2337,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
         if (tp->type == bt_void)
         {
             if (!Optimizer::cparams.prm_cplusplus || returntype->type != bt_void)
-                error(ERR_CANNOT_RETURN_VOID_VALUE);
+                error(ERR_VOID_FUNCTION_RETURNS_VALUE);
         }
         else if (returntype && returntype->type == bt_void)
             error(ERR_RETURN_NO_VALUE);
@@ -3226,7 +3269,7 @@ static void insertXCInfo(SYMBOL* funcsp)
     char name[2048];
     SYMBOL* sym;
     makeXCTab(funcsp);
-    Optimizer::my_sprintf(name, "@$xc%s", funcsp->sb->decoratedName);
+    Optimizer::my_sprintf(name, "@.xc%s", funcsp->sb->decoratedName);
     sym = makeID(sc_global, &stdpointer, nullptr, litlate(name));
     sym->sb->attribs.inheritable.linkage4 = lk_virtual;
     sym->sb->decoratedName = sym->name;

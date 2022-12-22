@@ -322,7 +322,7 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
         while (true)
         {
             QUAD* q = tempInfo[im2->offset->sp->i]->instructionDefines;
-            if (q->dc.opcode != i_assn || q->dc.left->size != q->ans->size || q->dc.left->offset->type != se_tempref)
+            if (!q /* probably an RV */ || q->dc.opcode != i_assn || q->dc.left->size != q->ans->size || q->dc.left->offset->type != se_tempref)
                 break;
             im2 = q->dc.left;
         }

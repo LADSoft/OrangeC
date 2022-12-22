@@ -45,7 +45,14 @@ bool (*Tokenizer::IsSymbolChar)(const char*, bool) = Tokenizer::IsSymbolCharDefa
 
 bool Tokenizer::IsSymbolCharDefault(const char* data, bool startOnly)
 {
-    return *data == '_' || (startOnly ? UTF8::IsAlpha(data) : UTF8::IsAlnum(data));
+    switch (*data)
+    {
+        case '_':
+        case '$':
+            return true;
+        default:
+            return (startOnly ? UTF8::IsAlpha(data) : UTF8::IsAlnum(data));
+    }
 }
 
 unsigned long long llminus1 = (unsigned long long)-1LL;

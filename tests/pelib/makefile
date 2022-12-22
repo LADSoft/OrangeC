@@ -3,7 +3,7 @@ inc.o \
 pelib.o 
 
 %.o: %.cpp
-	occ /c /! -o$@ $^
+	occ /c /DWIN32_LEAN_AND_MEAN /! -o$@ $^
 
 test: inc.exe
 	-inc

@@ -381,7 +381,7 @@ EXTERN_C const IID IID_IQuerySolution;
 #if defined(__cplusplus) && !defined(CINTERFACE)
 MIDL_INTERFACE("D6EBC66B-8921-4193-AFDD-A1789FB7FF57") IQuerySolution:public IConditionFactory {
     public:
-    virtual HRESULT STDMETHODCALLTYPE GetQuery(__out_opt ICondition ** ppQueryNode, IEntity ** ppMainType) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetQuery(ICondition ** ppQueryNode, IEntity ** ppMainType) = 0;
     virtual HRESULT STDMETHODCALLTYPE GetErrors(REFIID riid, void **ppParseErrors) = 0;
     virtual HRESULT STDMETHODCALLTYPE GetLexicalData(LPWSTR * ppszInputString, ITokenCollection ** ppTokens, LCID * pLocale, IUnknown ** ppWordBreaker) = 0;
 };
@@ -435,7 +435,7 @@ MIDL_INTERFACE("0FC988D4-C935-4b97-A973-46282EA175C8") ICondition:public IPersis
     virtual HRESULT STDMETHODCALLTYPE GetComparisonInfo(LPWSTR * ppszPropertyName, CONDITION_OPERATION * pOperation, PROPVARIANT * pValue) = 0;
     virtual HRESULT STDMETHODCALLTYPE GetValueType(LPWSTR * ppszValueTypeName) = 0;
     virtual HRESULT STDMETHODCALLTYPE GetValueNormalization(LPWSTR * ppszNormalization) = 0;
-    virtual HRESULT STDMETHODCALLTYPE GetInputTerms(__out_opt IRichChunk ** ppPropertyTerm, IRichChunk ** ppOperationTerm, IRichChunk ** ppValueTerm) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetInputTerms(IRichChunk ** ppPropertyTerm, IRichChunk ** ppOperationTerm, IRichChunk ** ppValueTerm) = 0;
     virtual HRESULT STDMETHODCALLTYPE Clone(ICondition ** ppc) = 0;
 };
 #else
@@ -537,7 +537,7 @@ EXTERN_C const IID IID_IRichChunk;
 #if defined(__cplusplus) && !defined(CINTERFACE)
 MIDL_INTERFACE("4FDEF69C-DBC9-454e-9910-B34F3C64B510") IRichChunk:public IUnknown {
     public:
-    virtual HRESULT STDMETHODCALLTYPE GetData(__out_opt ULONG * pFirstPos, ULONG * pLength, LPWSTR * ppsz, PROPVARIANT * pValue) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetData(ULONG * pFirstPos, ULONG * pLength, LPWSTR * ppsz, PROPVARIANT * pValue) = 0;
 };
 #else
 typedef struct IRichChunkVtbl {

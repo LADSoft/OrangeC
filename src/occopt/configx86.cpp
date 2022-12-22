@@ -55,7 +55,7 @@ static char usage_text[] =
     "/axxx     - set assembler extension   /c        - compile only\n"
     "+e        - dump errors to file       /f{flags} - set flags\n"
     "/g        - enable debug symbols      +i        - dump preprocessed file\n"
-    "/lxxx     - include library           /oname    - specify output file name\n"
+    "/lxxx     - include library           /oxxx     - specify output file name\n"
     "/pxxx     - pass command to tool      /snn      - align stack\n"
     "/t        - display timing info       /wxxx     - warning control\n"
     "/x xxx    - specify language          /y[...]   - verbosity\n"
@@ -95,6 +95,7 @@ static char usage_text[] =
     "\n"
     "\nOptimization control:\n" OPTIMIZATION_DESCRIPTION "\nFlags:\n" OPTMODULES_DESCRIPTION
     "  -fsyntax-only                  compile only, don't produce an output file\n"
+    "  -funsigned-char                'char' type is unsigned\n"
     " -std=xxxx                       specify the language standard to use\n"
     "    note for C++, this only changes the definition of __cplusplus\n"
     "    it doesn't check for conformity to the standard or deprecate things properly\n"

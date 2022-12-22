@@ -1,9 +1,9 @@
 %.o: %.cpp
-	occ /! $^
+	occ /! /DWIN32_LEAN_AND_MEAN $^
 
 
 %.o: %.c
-	occ /9 /! $^
+	occ /9 /DWIN32_LEAN_AND_MEAN /! $^
 
 %.exe: %.o
 	olink /c /! /T:CON32 /o$@ c0xpe.o $^ clwin.l climp.l

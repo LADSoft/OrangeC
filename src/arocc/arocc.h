@@ -22,43 +22,20 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-extern int a;
-#define BUFSIZE 256
+class arocc
+{
+public:
+    int Run(int argc, char **argv);
 
-void process(char* name)
-{
-    FILE* fil = fopen(name, "r");
-    int count = 0;
-    if (!fil)
-        printf("cannot open %s\n", name);
-    else
-    {
-        printf("\n");
-        while (!feof(fil))
-        {
-            char buf[BUFSIZE], *p, data[BUFSIZE], *q;
-            buf[0] = 0;
-            fgets(buf, BUFSIZE, fil);
-            p = buf;
-            while ((p = (char *)strstr(p, "ERR_")))
-            {
-                q = data;
-                while (isalnum(*p) || *p == '_')
-                    *q++ = *p++;
-                *q = 0;
-                printf("#define %s %d\n", data, count++);
-            }
-        }
-        fclose(fil);
-    }
-}
-int main(int argc, char** argv)
-{
-    int i;
-    for (i = 1; i < argc; i++)
-        process(argv[i]);
-    return 0;
-}
+private:
+    static const char* usageText;
+
+    static CmdSwitchParser SwitchParser;
+    static CmdSwitchBool Replace;
+    static CmdSwitchBool Create;
+    static CmdSwitchBool WriteIndex;
+    static CmdSwitchBool Newer;
+    static CmdSwitchBool Verbose;
+    static CmdSwitchBool Extract;
+    static CmdSwitchBool Delete;
+};

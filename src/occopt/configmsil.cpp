@@ -46,7 +46,7 @@ static char usage_text[] =
     "/9        - C99 mode                  /c        - compile only\n"
     "-d        - don't allow extensions    +e        - dump errors to file\n"
     "+i        - dump preprocessed file    +l        - dump listing file\n"
-    "/oname    - specify output file name\n"
+    "/oxxx     - specify output file name\n"
     "+A        - disable extensions        /Dxxx     - define something\n"
     "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
     "/Kfile    - set strong name key       /Lxxx     - set dlls to import from\n"

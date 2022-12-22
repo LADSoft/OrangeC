@@ -24,8 +24,8 @@
 ifeq "$(COMPILER)" "gcc-linux"
 
 DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
-       oimplib omake onm orc occparse occpr occ occil coff2ieee ieeeconvert
+       oimplib omake onm orc occparse occpr occ occil coff2ieee gccocc arocc ieeeconvert
 else
 DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
-       oimplib omake onm orc ocl occparse occpr occ occil coff2ieee ieeeconvert help MSDNHelp
+       oimplib omake onm orc ocl occparse occpr occ occil coff2ieee ieeeconvert gccocc arocc help MSDNHelp
 endif

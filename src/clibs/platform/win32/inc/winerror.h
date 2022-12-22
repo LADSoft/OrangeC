@@ -7,6 +7,7 @@
 
 /* Windows error code definitions */
 
+#define __forceinline inline
 #ifndef FORCEINLINE
 #define FORCEINLINE  __forceinline
 #endif /* FORCEINLINE */

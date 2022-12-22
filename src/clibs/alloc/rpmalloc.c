@@ -2446,6 +2446,7 @@ _rpmalloc_adjust_size_class(size_t iclass) {
 //! Initialize the allocator and setup global data
 extern inline int
 rpmalloc_initialize(void) {
+
 	if (_rpmalloc_initialized) {
 		rpmalloc_thread_initialize();
 		return 0;
@@ -2464,7 +2465,12 @@ rpmalloc_initialize_config(const rpmalloc_config_t* config) {
 	if (config)
 		memcpy(&_memory_config, config, sizeof(rpmalloc_config_t));
 	else
+	{
 		memset(&_memory_config, 0, sizeof(rpmalloc_config_t));
+#ifdef __ORANGEC__
+		_memory_config.enable_huge_pages = 1;
+#endif
+	}
 
 	if (!_memory_config.memory_map || !_memory_config.memory_unmap) {
 		_memory_config.memory_map = _rpmalloc_mmap_os;
@@ -2530,9 +2536,19 @@ rpmalloc_initialize_config(const rpmalloc_config_t* config) {
 #if PLATFORM_WINDOWS
 	if (_memory_config.enable_huge_pages) {
 		HANDLE token = 0;
-		size_t large_page_minimum = GetLargePageMinimum();
-		if (large_page_minimum)
-			OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &token);
+		size_t large_page_minimum = 0;// GetLargePageMinimum();
+		HMODULE hLibrary = LoadLibrary("kernel32.dll");
+		if (hLibrary)
+		{
+			size_t (*glpm)(void) = (size_t (*)(void))GetProcAddress(hLibrary, "GetLargePageMinimum");
+			if (glpm)
+			{
+				large_page_minimum = (*glpm)();
+	 			if (large_page_minimum)
+					OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &token);
+			}
+			FreeLibrary(hLibrary);
+		}
 		if (token) {
 			LUID luid;
 			if (LookupPrivilegeValue(0, SE_LOCK_MEMORY_NAME, &luid)) {
@@ -2543,6 +2559,7 @@ rpmalloc_initialize_config(const rpmalloc_config_t* config) {
 				token_privileges.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 				if (AdjustTokenPrivileges(token, FALSE, &token_privileges, 0, 0, 0)) {
 					DWORD err = GetLastError();
+
 					if (err == ERROR_SUCCESS) {
 						_memory_huge_pages = 1;
 						if (large_page_minimum > _memory_page_size)

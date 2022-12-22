@@ -34,21 +34,14 @@ bool WINDOWSJobServer::TryTakeNewJob()
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
     }
-    // If we have no jobs running, we're allowed precisely *ONE* job, since this is atomic, we should be ensured (enough on a
-    // completely sqt_cst CPU) that this is good enough for now to ensure no funny business
-    if (current_jobs != 0)
-    {
-        // Increment beforehand so that we don't accidentally wait too much with this...
-        current_jobs++;
-        bool ret = semaphore.TryWait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
-        if (ret == false)
-        {
-            current_jobs--;
-        }
-        return ret;
-    }
+    // Increment beforehand so that we don't accidentally wait too much with this...
     current_jobs++;
-    return true;
+    bool ret = semaphore.TryWait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
+    if (ret == false)
+    {
+        current_jobs--;
+    }
+    return ret;
 }
 bool WINDOWSJobServer::TakeNewJob()
 {
@@ -56,15 +49,8 @@ bool WINDOWSJobServer::TakeNewJob()
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
     }
-    // If we have no jobs running, we're allowed precisely *ONE* job, since this is atomic, we should be ensured (enough on a
-    // completely sqt_cst CPU) that this is good enough for now to ensure no funny business
-    if (current_jobs != 0)
-    {
-        current_jobs++;
-        semaphore.Wait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
-        return true;
-    }
     current_jobs++;
+    semaphore.Wait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
     return true;
 }
 bool WINDOWSJobServer::ReleaseJob()
@@ -77,7 +63,7 @@ bool WINDOWSJobServer::ReleaseJob()
     {
         throw std::runtime_error("Job server has returned more jobs than it has consumed");
     }
-    else if (current_jobs != 1)
+    else
     {
         semaphore.Post();
     }

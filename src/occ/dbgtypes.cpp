@@ -332,7 +332,10 @@ ObjType* dbgtypes::ExtendedType(Optimizer::SimpleType* tp)
         {
             val = factory.MakeType(ObjType::eArray, val);
             val->SetSize(tp->size);
-            val->SetTop(tp->size / tp->btp->size);
+            if (tp->btp->size == 0)
+                val->SetTop(tp->size);
+            else
+                val->SetTop(tp->size / tp->btp->size);
         }
         else
         {

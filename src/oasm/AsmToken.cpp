@@ -43,12 +43,32 @@ bool NumericToken::c99;
 unsigned llminus1 = -1;
 static inline bool IsSymbolStartChar(const char* data)
 {
-    return *data == '@' || *data == '_' || *data == '?' || *data == '.' || UTF8::IsAlpha(data);
+    switch (*data)
+    {
+        case '_':
+        case '@':
+        case '.':
+            return true;
+        default:
+            return UTF8::IsAlpha(data);
+    }
 }
 static inline bool IsSymbolChar(const char* data)
 {
-    return *data == '_' || *data == '$' || *data == '#' || *data == '@' || *data == '~' || *data == '?' || *data == '.' ||
-           *data == '&' || UTF8::IsAlnum(data);
+    switch (*data)
+    {
+        case '_':
+        case '$':
+        case '#':
+        case '@':
+        case '~':
+        case '?':
+        case '.':
+        case '&':
+		return true;
+        default:
+            return UTF8::IsAlnum(data);
+    }
 }
 
 bool IsSymbolCharRoutine(const char* data, bool startOnly) { return startOnly ? IsSymbolStartChar(data) : IsSymbolChar(data); }

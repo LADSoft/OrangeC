@@ -34,24 +34,24 @@
 ; 
 
 %ifdef __BUILDING_LSCRTL_DLL
-[export @__GetTypeInfo$qpvpv]
+[export @__GetTypeInfo.qpvpv]
 %endif
-[global @__GetTypeInfo$qpvpv]
+[global @__GetTypeInfo.qpvpv]
 
 
 %ifdef __BUILDING_LSCRTL_DLL
-        export @__GetTypeInfo$qpvpv
+        export @__GetTypeInfo.qpvpv
 %endif
-extern @std@type_info@$bdtr$qv
+extern @std@type_info@.bdtr.qv
 
 SECTION data CLASS=DATA USE32
 @std@type_info_dtr:
     dd  0,0,0 ; pointer to xceptiontable goes here
-    dd  @std@type_info@$bdtr$qv
+    dd  @std@type_info@.bdtr.qv
     
 SECTION code CLASS=CODE USE32
-        global @__GetTypeInfo$qpvpv
-@__GetTypeInfo$qpvpv:
+        global @__GetTypeInfo.qpvpv
+@__GetTypeInfo.qpvpv:
         mov     eax,[ esp + 4] ; rv;
         mov     edx,[ esp + 8] ; tpid
         mov     dword [eax],@std@type_info_dtr + 12

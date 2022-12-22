@@ -32,6 +32,20 @@
 #include <cstdlib>
 #include <cstring>
 
+
+
+#ifdef __ORANGEC__
+#ifndef __LSCRTL_DLL
+#include <windows.h>
+#include <..\version.h>
+extern "C" void _RTL_FUNC __excepthook()
+{
+    printf("version: " STRING_VERSION "\n");
+    printf("Command Line: %s\n", GetCommandLineA());
+}
+#endif
+#endif
+
 CmdSwitchBase::CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar, std::deque<std::string> LongNames) :
     exists(false), switchChar(SwitchChar), longNames(LongNames)
 {

@@ -218,7 +218,7 @@ ERRLIST(ERR_GOTO_NEEDS_LABEL, 183, "goto statement needs a label specifier", CE_
 ERRLIST(ERR_DUPLICATE_LABEL, 184, "Duplicate label '%s'", CE_ERROR)
 ERRLIST(ERR_UNDEFINED_LABEL, 185, "Undefined label '%s'", CE_ERROR)
 ERRLIST(ERR_RETURN_MUST_RETURN_VALUE, 186, "Return statement should have value", CE_WARNING)
-ERRLIST(ERR_CANNOT_RETURN_VOID_VALUE, 187, "Attempt to return a value of type void", CE_ERROR)
+ERRLIST(ERR_VOID_FUNCTION_RETURNS_VALUE, 187, "'void' function returns a value", CE_CPLUSPLUSERROR)
 ERRLIST(ERR_RETURN_NO_VALUE, 188, "Value specified in return of function with return type 'void'", CE_WARNING)
 ERRLIST(ERR_RETMISMATCH, 189, "Type mismatch in return statement", CE_WARNING)
 ERRWITHWARNFLAG(ERR_FUNCTION_RETURNING_ADDRESS_STACK_VARIABLE, 190, "Returning address of a local variable", CE_WARNING,
@@ -530,7 +530,7 @@ ERRLIST(ERR_AUTO_NOT_ALLOWED_IN_CONVERSION_FUNCTION, 476, "'auto' not allowed as
 ERRLIST(ERR_ASSIGN_ONLY_MSIL_ARRAY_ELEMENTS, 477, "Only base elements of an MSIL array may be assigned", CE_ERROR)
 ERRLIST(ERR_SEH_HANDLER_WITHOUT_TRY, 478, "Use of __catch or __fault or __finally must be preceded by __try", CE_ERROR)
 ERRLIST(ERR_EXPECTED_SEH_HANDLER, 479, "Expected __catch or __fault or __finally", CE_ERROR)
-ERRLIST(ERR_FINALLY_FAULT_APPEAR_ONLY_ONCE, 480, "__fault or __finally can appear only once per __try block", CE_ERROR)
+ERRLIST(ERR_FINALLY_FAULT_APPEAR_ONLY_ONCE, 480, "__fault or __turn va can appear only once per __try block", CE_ERROR)
 ERRLIST(ERR_UNDEFINED_STATIC_FUNCTION, 481, "static or internally attributed function '%s' is undefined", CE_TRIVIALWARNING)
 ERRLIST(ERR_UNDEFINED_IDENTIFIER_EXPECTING_TYPE, 482, "Missing type specifier for identifier '%s'", CE_WARNING)
 ERRLIST(ERR_CANNOT_DEDUCE_AUTO_TYPE, 483, "Cannot deduce auto type '%s' from '%s'", CE_ERROR)

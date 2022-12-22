@@ -224,27 +224,29 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
         for (auto&& command : cmdList)
         {
             bool make1 = make;
-            //            if (command.find("omake") != std::string::npos)
-            //                make1 = true;
             OSTakeJobIfNotMake lockJob(!make1);
 
-            if (!stopAll)
+            auto cmdList = Utils::split(command, '\n');
+            for (auto&&cmd : cmdList)
             {
-                if (!silent)
-                {
-                    OS::WriteToConsole(OS::JobName() + command + "\n");
-                }
-                int rv1;
-                if (!dontrun)
-                {
-                    std::string str;
-                    rv1 = OS::Spawn(command, environment,
-                                    outputType != o_none && (outputType != o_recurse || !make) ? &str : nullptr);
-                    if (outputType != o_none && !str.empty())
-                        output.push_back(str);
-                    if (!rv)
-                        rv = rv1;
-                }
+               if (!stopAll)
+               {
+                   if (!silent)
+                   {
+                       OS::WriteToConsole(OS::JobName() + cmd + "\n");
+                   }
+                   int rv1;
+                   if (!dontrun)
+                   {
+                       std::string str;
+                       rv1 = OS::Spawn(cmd, environment,
+                                       outputType != o_none && (outputType != o_recurse || !make) ? &str : nullptr);
+                       if (outputType != o_none && !str.empty())
+                           output.push_back(str);
+                       if (!rv)
+                           rv = rv1;
+                   }
+               }
             }
             if (rv && posix)
                 return rv;
@@ -325,6 +327,11 @@ std::string Spawner::QualifyFiles(const std::string& cmd)
         else
             break;
         s = working.find_first_of(" \t\n");
+        int lfcount = 0;
+        for (int t=s; t< working.size() && isspace(working[t]); t++)
+            if (working[t] == '\n')
+               lfcount++;
+        std::string trailer = lfcount > 1 ? "\n" : "";
         if (s == std::string::npos)
             s = working.size();
         int p = working.find_first_of("'");
@@ -356,9 +363,9 @@ std::string Spawner::QualifyFiles(const std::string& cmd)
             working = working.substr(s);
         }
         cur = Maker::GetFullName(cur);
-        if (!rv.empty())
+        if (!rv.empty() && rv[rv.size()-1] != '\n')
             rv += " ";
-        rv += cur;
+        rv += cur + trailer;
     }
     return rv;
 }

@@ -49,7 +49,9 @@ alldirs: rtl_objs
 ifdef FINAL
 	$(MAKE) -Clsdbghelper
 ifneq "$(ORANGEC_ONLY)" "YES"
+ifneq "$(MSYSTEM)" "MSYS"
 	$(MAKE) -Coccil
+endif
 endif
 else
 	$(MAKE) -Cpe

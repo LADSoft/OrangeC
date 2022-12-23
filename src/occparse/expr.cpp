@@ -3028,8 +3028,6 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
 }
 void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SYMBOL>::iterator itend, std::list<INITLIST*>** lptr, bool operands, bool implicit)
 {
-    if (!strcmp(func->name, "insert") && strstr(currentLex->data->errfile, "t2.cpp"))
-        printf("hi");
     std::list<INITLIST*>::iterator itl, itle;
     if (*lptr)
     {

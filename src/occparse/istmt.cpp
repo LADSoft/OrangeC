@@ -458,25 +458,34 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
             }
             else
             {
-                EXPRESSION* en = anonymousVar(sc_parameter, &stdpointer);
-                SYMBOL* sym = en->v.sp;
-                ap = gen_expr(funcsp, stmt->select, 0, ISZ_ADDR);
-                DumpIncDec(funcsp);
-                sym->sb->offset = Optimizer::chosenAssembler->arch->retblocksize;
-                sym->name = "__retblock";
-                sym->sb->retblk = true;
-                sym->sb->allocate = false;
-                // instead of 'front()' the next line did table[0] without the ->p
-                if ((funcsp->sb->attribs.inheritable.linkage == lk_pascal) && basetype(funcsp->tp)->syms->size() &&
-                    ((SYMBOL*)basetype(funcsp->tp)->syms->front())->tp->type != bt_void)
+                if (inlinesym_structcount)
                 {
-                    sym->sb->offset = funcsp->sb->paramsize;
+                    ap = gen_expr(funcsp, stmt->select, 0, ISZ_ADDR);
+                    DumpIncDec(funcsp);
+                    ap = gen_expr(funcsp, inlinesym_structptr[inlinesym_structcount - 1], 0, ISZ_ADDR);
                 }
-                Optimizer::SimpleSymbol* ssym = Optimizer::SymbolManager::Get(sym);
-                ssym->offset = sym->sb->offset;
-                ssym->allocate = false;
-                deref(&stdpointer, &en);
-                ap = gen_expr(funcsp, en, 0, ISZ_ADDR);
+                else
+                {
+                    EXPRESSION* en = anonymousVar(sc_parameter, &stdpointer);
+                    SYMBOL* sym = en->v.sp;
+                    ap = gen_expr(funcsp, stmt->select, 0, ISZ_ADDR);
+                    DumpIncDec(funcsp);
+                    sym->sb->offset = Optimizer::chosenAssembler->arch->retblocksize;
+                    sym->name = "__retblock";
+                    sym->sb->retblk = true;
+                    sym->sb->allocate = false;
+                    // instead of 'front()' the next line did table[0] without the ->p
+                    if ((funcsp->sb->attribs.inheritable.linkage == lk_pascal) && basetype(funcsp->tp)->syms->size() &&
+                        ((SYMBOL*)basetype(funcsp->tp)->syms->front())->tp->type != bt_void)
+                    {
+                        sym->sb->offset = funcsp->sb->paramsize;
+                    }
+                    Optimizer::SimpleSymbol* ssym = Optimizer::SymbolManager::Get(sym);
+                    ssym->offset = sym->sb->offset;
+                    ssym->allocate = false;
+                    deref(&stdpointer, &en);
+                    ap = gen_expr(funcsp, en, 0, ISZ_ADDR);
+                }
             }
             size = ISZ_ADDR;
         }

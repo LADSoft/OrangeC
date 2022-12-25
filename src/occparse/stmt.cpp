@@ -945,8 +945,9 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                         select = select->left;
                     if (lvalue(select) && select->type != en_l_ref && !isstructured(selectTP))
                         select = select->left;
-                    st = stmtNode(lex, parent, st_expr);
-                    st->select = exprNode(en_assign, rangeExp, select);
+//                    st = stmtNode(lex, parent, st_expr);
+//                    st->select = exprNode(en_assign, rangeExp, select);
+                    rangeExp = select;
                     if (!isstructured(selectTP))
                     {
                         // create array references for begin and end

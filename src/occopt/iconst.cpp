@@ -1400,7 +1400,7 @@ static bool eval(QUAD* q)
                 rv = true;
             }
         }
-        else
+        else if (!tempInfo[tnum]->enode->sp->pushedtotemp)
         {
             tempInfo[tnum]->value.type = set;
             tempInfo[tnum]->value.imode = val;

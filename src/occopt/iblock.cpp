@@ -282,6 +282,7 @@ bool usesAddress(Optimizer::IMODE* im)
  */
 static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
 {
+    auto oldAns = newQuad->ans;
     Optimizer::QUAD* outnode;
 #ifdef DOING_LCSE
     Optimizer::QUAD* node;
@@ -412,7 +413,7 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
 
     {
         if (newQuad->ans && (newQuad->ans->mode == i_ind || newQuad->ans->offset->type != Optimizer::se_tempref))
-            flush_dag();
+            flush_dag(true);
         else if (newQuad->ans /* &&  (newQuad->dc.opcode != i_assn || (newQuad->livein & IM_LIVELEFT)) */
                  && ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) &&
                      ((newQuad->ans->offset->type == Optimizer::se_tempref && newQuad->ans->mode == i_direct) ||
@@ -430,11 +431,32 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
 }
 
 /*-------------------------------------------------------------------------*/
-void flush_dag(void)
+void flush_dag(bool leaveAddresses)
 {
 #ifdef DOING_LCSE
     ins_hash.clear();
-    name_hash.clear();
+    if (leaveAddresses)
+    {
+        for (auto it = name_hash.begin(); it != name_hash.end();)
+        {
+            auto n = it->second;
+            if (n->dc.opcode == i_assn)
+            {
+                if (n->dc.left->mode == i_immed && usesAddress(n->dc.left))
+                    ++it;
+                else
+                    it = name_hash.erase(it);
+            }
+            else
+            {
+               it = name_hash.erase(it);
+            }
+        }
+    }
+    else
+    {
+        name_hash.clear();
+    }
 #endif
 }
 

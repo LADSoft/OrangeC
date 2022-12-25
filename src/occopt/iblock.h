@@ -48,7 +48,7 @@ IMODE* liveout2(QUAD* q);
 QUAD* liveout(QUAD* node);
 int ToQuadConst(IMODE** im);
 bool usesAddress(IMODE* im);
-void flush_dag(void);
+void flush_dag(bool leaveAddresses = false);
 void dag_rundown(void);
 BLOCKLIST* newBlock(void);
 void addblock(int val);

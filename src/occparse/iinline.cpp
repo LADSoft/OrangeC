@@ -47,7 +47,9 @@ namespace Parser
 {
 int noinline;
 int inlinesym_count;
+int inlinesym_structcount;
 EXPRESSION* inlinesym_thisptr[1000];
+EXPRESSION* inlinesym_structptr[1000];
 #undef MAX_INLINE_NESTING
 #define MAX_INLINE_NESTING 3
 
@@ -56,6 +58,7 @@ static int inline_nesting;
 void iinlineInit(void)
 {
     inlinesym_count = 0;
+    inlinesym_structcount = 0;
     inline_nesting = 0;
 }
 static bool hasRelativeThis(EXPRESSION* thisPtr)
@@ -491,17 +494,6 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
             return nullptr;
         }
     }
-    if (f->returnEXP && !isref(basetype(f->sp->tp)->btp))
-    {
-        f->sp->sb->dumpInlineToFile = true;
-        return nullptr;
-    }
-    // if it has a structured return value or structured arguments we don't try to inline it
-    if (isstructured(basetype(f->sp->tp)->btp))
-    {
-        f->sp->sb->dumpInlineToFile = true;
-        return nullptr;
-    }
     if (basetype(basetype(f->sp->tp)->btp)->type == bt_memberptr)  // DAL FIXED
     {
         f->sp->sb->dumpInlineToFile = true;
@@ -542,6 +534,17 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     startlab = Optimizer::nextLabel++;
     retlab = Optimizer::nextLabel++;
     AllocateLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
+    bool found = false;
+    if (isstructured(basetype(f->sp->tp)->btp))
+    {
+        EXPRESSION* exp = f->returnEXP;
+        if (inlinesym_structcount && lvalue(exp) && exp->left->type == en_auto && exp->left->v.sp->sb->retblk)
+        {
+            exp = inlinesym_structptr[inlinesym_structcount-1];
+        }
+        inlinesym_structptr[inlinesym_structcount++] = exp;
+        found = true;
+    }
     inlineBindThis(funcsp, basetype(f->sp->tp)->syms, f->thisptr);
     inlineBindArgs(funcsp, basetype(f->sp->tp)->syms, f->arguments);
     inlinesym_list[inlinesym_count++] = f->sp;
@@ -571,6 +574,10 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         ap3 = ap4;
     }
     inlineUnbindArgs(basetype(f->sp->tp)->syms);
+    if (found)
+    {
+        inlinesym_structcount--;
+    }
     FreeLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
     returnImode = oldReturnImode;
     retlab = oldretlab;

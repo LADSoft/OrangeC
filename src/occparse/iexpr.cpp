@@ -519,6 +519,13 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                 }
                 break;
             case en_auto:
+                if (inlinesym_structcount)
+                {
+                    if (node->left->v.sp->sb->retblk)
+                    {
+                        return gen_expr(funcsp, inlinesym_structptr[inlinesym_structcount - 1], 0 ,ISZ_ADDR);
+                    }
+                }
                 sym = Optimizer::SymbolManager::Get(node->left->v.sp);
                 if (sym->thisPtr)
                 {
@@ -2104,7 +2111,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     {
         return gen_expr(funcsp, f->fcall, 0, ISZ_ADDR);
     }
-    if (f->sp->sb->attribs.inheritable.isInline)
+    if (f->sp->sb->attribs.inheritable.isInline || f->sp->sb->attribs.inheritable.excludeFromExplicitInstantiation)
     {
         if (f->sp->sb->noinline)
         {

@@ -282,7 +282,6 @@ bool usesAddress(Optimizer::IMODE* im)
  */
 static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
 {
-    auto oldAns = newQuad->ans;
     Optimizer::QUAD* outnode;
 #ifdef DOING_LCSE
     Optimizer::QUAD* node;

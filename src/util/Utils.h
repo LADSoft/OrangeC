@@ -25,7 +25,7 @@
 #ifndef UTIL_H
 #define UTIL_H
 #ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
+#    define _CRT_SECURE_NO_WARNINGS
 #endif
 #include <string>
 #include <stdlib.h>
@@ -77,8 +77,8 @@ class Utils
         memset(buf, 0, sizeof(buf));
         buf[0] = '"';
         strcpy(buf + 1, GetModuleName());
-        char* p = (char *)strrchr(buf, '/');
-        char* p1 = (char *)strrchr(buf, '\\');
+        char* p = (char*)strrchr(buf, '/');
+        char* p1 = (char*)strrchr(buf, '\\');
         if (p1 > p)
             p = p1;
         else if (!p)
@@ -125,7 +125,13 @@ class Utils
     static std::string FindOnPath(const std::string& name, const std::string& path);
     static std::vector<std::string> split(std::string strToSplit, char delimeter = ';');
     static void ReplaceAll(std::string& str, const std::string& from, const std::string& to);
-
+    static std::string ConvertWStringToString(std::wstring str)
+    {
+        char intStr[256];
+        size_t sz = wcstombs(nullptr, str.c_str(), 256);
+        sz = wcstombs(intStr, str.c_str(), sz);
+        return std::string(intStr, sz);
+    }
     static bool NamedPipe(int* fds, const std::string& name);
     static bool PipeWrite(int fileno, const std::string& data);
     static std::string PipeRead(int fileno);

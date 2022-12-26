@@ -33,6 +33,7 @@
 #include <set>
 #include <ctime>
 #include <stack>
+#include <vector>
 #include "Token.h"
 #include <functional>
 #define STD_PRAGMA_FENV 1
@@ -76,6 +77,46 @@ class Packing
   private:
     static Packing* instance;
     std::stack<int> list;
+};
+class AdditionalLinkerCommands
+{
+  public:
+    static std::shared_ptr<AdditionalLinkerCommands> Instance()
+    {
+        if (!instance)
+            instance = std::shared_ptr<AdditionalLinkerCommands>(new AdditionalLinkerCommands);
+        return instance;
+    }
+    void Add(std::string linkerCommand) { comments.push_back(linkerCommand); }
+    std::string Get() { return comments.back(); }
+    std::vector<std::string> GetAll() { return comments; }
+    void Clear() { comments.clear(); }
+    void Remove() { comments.pop_back(); }
+
+  private:
+    AdditionalLinkerCommands() {}
+    std::vector<std::string> comments;
+    static std::shared_ptr<AdditionalLinkerCommands> instance;
+};
+class ObjectComment
+{
+  public:
+    static std::shared_ptr<ObjectComment> Instance()
+    {
+        if (!instance)
+            instance = std::shared_ptr<ObjectComment>(new ObjectComment);
+        return instance;
+    }
+    void Add(std::string objComment) { comments.push_back(objComment); }
+    std::string Get() { return comments.back(); }
+    std::vector<std::string> GetAll() { return comments; }
+    void Clear() { comments.clear(); }
+    void Remove() { comments.pop_back(); }
+
+  private:
+    ObjectComment() {}
+    std::vector<std::string> comments;
+    static std::shared_ptr<ObjectComment> instance;
 };
 class FenvAccess
 {
@@ -387,6 +428,7 @@ class ppPragma
   public:
     ppPragma(ppInclude* Include, ppDefine* Define) : cppprio(0), ignoreGlobalInit(false)
     {
+        ObjectComment::Instance()->Clear();
         Packing::Instance()->Clear();
         FenvAccess::Instance()->Clear();
         CXLimitedRange::Instance()->Clear();
@@ -400,6 +442,7 @@ class ppPragma
     bool Check(kw token, const std::string& args);
     void ParsePragma(const std::string& args);
     int Pack() { return Packing::Instance()->Get(); }
+    std::vector<std::string> ObjComments() { return ObjectComment::Instance()->GetAll(); }
     int StdPragmas();
     int CppPrio() { return cppprio; }
     std::list<std::string>& IncludeLibs() { return Libraries::Instance()->Get(); }
@@ -434,6 +477,7 @@ class ppPragma
     void HandleOnce(Tokenizer& tk);
     void HandleIgnoreGlobalInit(Tokenizer& tk);
     void HandlePushPopMacro(Tokenizer& tk, bool push);
+    void HandleComment(Tokenizer& tk);
 
   private:
     ppDefine* define;

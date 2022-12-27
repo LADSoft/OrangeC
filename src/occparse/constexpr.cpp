@@ -654,7 +654,7 @@ static void pushArray(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<SYMBOL*, 
                 {
                     if (isarray(node->v.sp->tp) && node->v.sp->sb->init)
                     {
-                        int n = node->v.sp->tp->size / node->v.sp->tp->btp->size;
+                        int n = node->v.sp->sb->init->size();//node->v.sp->tp->size / node->v.sp->tp->btp->size;
                         auto arr = Allocate<EXPRESSION*>(n + 1);
                         argmap[node->v.sp] = {n, arr};
                         if (finalsym)

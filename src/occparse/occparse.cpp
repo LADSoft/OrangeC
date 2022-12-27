@@ -72,9 +72,9 @@
 
 #include <cstdlib>
 #include <cstdio>
-void *dictionary[128];
 
 
+#ifndef x64
 // this overloading of operator new/delete is a speed optimization
 // it basically caches small allocations for reuse
 // there are a lot of temporary containers created and maintained
@@ -82,6 +82,7 @@ void *dictionary[128];
 // time they are used
 // resulted in about a 20% speedup of the compiler on the worst files
 #define HASHBLKSIZE 128 * 4
+void *dictionary[128];
 
 void *operator new(size_t aa)
 {
@@ -119,6 +120,7 @@ void operator delete(void *p)
         free((char *)p-8);
     }
 }
+#endif
 
 using namespace DotNetPELib;
 PELib* peLib;

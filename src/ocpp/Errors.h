@@ -35,12 +35,12 @@ class Errors
     Errors() {}
     virtual ~Errors() {}
 
-    static void ErrorWithLine(const std::string& msg, std::string& filname, int lineno);
+    static void ErrorWithLine(const std::string& msg, const std::string& filname, int lineno);
     static void Error(const std::string& msg);
     static void Warning(const std::string& msg);
-    static void WarningWithLine(const std::string& msg, std::string& filname, int lineno);
+    static void WarningWithLine(const std::string& msg, const std::string& filname, int lineno);
     static void TrivialWarning(const std::string& msg);
-    static void TrivialWarningWithLine(const std::string& msg, std::string& filname, int lineno);
+    static void TrivialWarningWithLine(const std::string& msg, const std::string& filname, int lineno);
     static void Previous(const std::string& name, int lineNo, const std::string& file);
     static void SetShowWarnings(bool flag)
     {

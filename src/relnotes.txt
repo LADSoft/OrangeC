@@ -1,10 +1,55 @@
 Release notes:
 
-version 6.0.62:
+version 6.0.62: (2/18/22)
+    project: fix some problems found by static analysis
+    project: update to VS2022 community
+    project: clean up make files
+    project: fix some issues in the MD documentation
+    project: define WIN32_LEAN_AND_MEAN throughout
+    project: add hooks to provide more information on crashes
+    project: add wrappers to emulate GCC and AR (translates switches)
+
+    occ: assigning to a structure returned by pointer should work
+    occ: fix problems initializing substructures with structured values
+    occ: add declspec(deprecated)
+    occ: two macros could match even if they have arguments
+    occ: get rid of C++ error about not being able to pass an array of structured values
+    occ: update #pragma pack to allow the push, pop syntax (for pelles C headers)
+    occ: allow compiler to be build with MINGW64 on MSYS2
+    occ: fix crash when using a wildcard to specify files on the command line
+    occ: fix bug in optimizer: strength reduction with a value returned from a function crashes
+    occ: handle __forceinline a little better
+    occ: fix multicharacter character constants to work a little better
+    occ: fix declarator assignment of structure elements, to clear out the entire structure
+    occ: clean up 'void function returns value' error
+    occ: fix command line help text: /o option definition was confusing
+    occ: fix crash when multiple files on the command line use the make_integer_seq builtin template
+    occ: '$' is a valid character within symbols
+    occ: add -funsigned-char
+    occ: add computed-goto
+
+    orc: expand prototype and structure parsing to handle more use cases
+    omake: fix a bug where white space in a define should have resulted in an EOL being inserted when the define was used
+    omake: could take more than the allotted number of job slots
+
+    rtl: use PELLES C windows headers, this is a more complete and standard set of headers	
+    rtl: add missing flags to unix-style file headers
+    rtl: fix problem with inttypes.h macros not being declared in some cases
+    rtl: fix problem parsing signalling nans
     rtl: fix time_t value to be correct
     rtl: fix fstat to work a little better
     rtl: fix _stat to work with CRTDLL.DLL
     rtl: fix so that it can compile against lscrtl.dll again
+    rtl: add missing string, shift, and heap functions
+    rtl: fix some prototypes to use size_t
+    rtl: add wide character versions of various ANSI C functions
+    rtl: add 64-bit time_t and support it
+    rtl: add the various windows-style stat functions
+    rtl: fix bugs with wide character file i/o
+    rtl: add a 'placeholder' version of intrin.h which does nothing    
+    rtl: update climp.dll to have more imported functions from the OS
+    rtl: support Windows XP by performing an indirect usage of GetLargePageMinimum only when available
+    rtl: null terminate fmemopen buffer when flushed or closed.
 
 version 6.0.61: 09/08/2022
     occ: various template handling fixes

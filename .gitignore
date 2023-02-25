@@ -128,3 +128,4 @@ src/*/Debug
 src/*/Release
 src/occ/*/obj
 src/lib
+/tests/c-testsuite/*.c*

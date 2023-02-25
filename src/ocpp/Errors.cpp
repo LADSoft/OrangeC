@@ -37,7 +37,7 @@ bool Errors::showWarnings = true;
 bool Errors::showTrivialWarnings;
 bool Errors::warningsAsErrors;
 
-void Errors::ErrorWithLine(const std::string& msg, std::string& filname, int lineno)
+void Errors::ErrorWithLine(const std::string& msg, const std::string& filname, int lineno)
 {
     std::cout << "Error ";
     std::cout << filname << "(" << lineno << "): ";
@@ -57,7 +57,7 @@ void Errors::Error(const std::string& msg)
         Utils::fatal("Too Many Errors");
     }
 }
-void Errors::WarningWithLine(const std::string& msg, std::string& filname, int lineno)
+void Errors::WarningWithLine(const std::string& msg, const std::string& filname, int lineno)
 {
     if (showWarnings)
     {
@@ -93,7 +93,7 @@ void Errors::Warning(const std::string& msg)
         std::cout << msg << std::endl;
     }
 }
-void Errors::TrivialWarningWithLine(const std::string& msg, std::string& filname, int lineno)
+void Errors::TrivialWarningWithLine(const std::string& msg, const std::string& filname, int lineno)
 {
     if (showTrivialWarnings)
     {

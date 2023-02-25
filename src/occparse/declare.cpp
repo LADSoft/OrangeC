@@ -6723,7 +6723,11 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                             if ((*tn)->type == bt_typedef)
                                 while (*tn != basetype(*tn) && (*tn)->type != bt_va_list)
                                     tn = &(*tn)->btp;
-                            *tn = CopyType(*tn);
+                            // this next is a little buggy as if there are multiple typedefs for a struct
+                            // _Generic won't handle them right.   This is a rare case though and it is for the moment
+                            // expedient to do this...
+                            if ((*tn)->type != bt_struct)
+                                *tn = CopyType(*tn);
                         }
                         sp->tp = MakeType(bt_typedef, sp->tp);
                         UpdateRootTypes(tp);

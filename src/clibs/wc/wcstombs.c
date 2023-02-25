@@ -45,7 +45,7 @@ size_t _RTL_FUNC wcstombs(char* mbs, const wchar_t* pwcs, size_t n)
 {
     size_t rv;
     rv = wcsrtombs(mbs, &pwcs, n, &__getRtlData()->wcstombs_st);
-    if ((int)rv >= 0 && rv < n)
+    if ((int)rv >= 0 && rv < n && mbs)
         mbs[rv] = 0;
     return rv;
 }

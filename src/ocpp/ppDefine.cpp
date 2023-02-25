@@ -78,7 +78,7 @@ ppDefine::Definition::Definition(const Definition& old) : Symbol(old.GetName())
 }
 
 ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, bool C89, bool Asmpp) :
-    expr(false), include(Include), c89(C89), asmpp(Asmpp), ctx(nullptr), macro(nullptr), source_date_epoch((time_t)-1)
+    expr(false), include(Include), c89(C89), asmpp(Asmpp), ctx(nullptr), macro(nullptr), source_date_epoch((time_t)-1), counter_val(0)
 {
     char* sde = getenv("SOURCE_DATE_EPOCH");
     if (sde)
@@ -423,6 +423,10 @@ int ppDefine::LookupDefault(std::string& macro, int begin, int end, const std::s
         insert = dateiso;
     else if (name == "__TIME__")
         insert = time;
+    else if (name == "__COUNTER__")
+    {
+        insert = Utils::NumberToString(counter_val++);
+    }
     else
         return 0;
     macro.replace(begin, end - begin, insert);
@@ -655,7 +659,7 @@ bool ppDefine::ppNumber(const std::string& macro, int start, int pos)
 }
 /* replace macro args */
 bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs, const DefinitionArgList& newargs,
-                           const DefinitionArgList& expandedargs, const std::string varargs)
+                           const DefinitionArgList& expandedargs, std::deque<Definition*>& definitions, const std::string varargs)
 {
     std::string name;
     int waiting = 0;
@@ -686,8 +690,12 @@ bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs,
                 }
                 else
                 {
+                    int sv;
+                    std::string temp(varargs);
+                    ReplaceSegment(temp, 0, temp.size(), sv, p == macro.size(),
+                                                definitions, nullptr);
                     int rv;
-                    if ((rv = InsertReplacementString(macro, p, q, varargs, varargs)) < -MACRO_REPLACE_SIZE)
+                    if ((rv = InsertReplacementString(macro, p, q, temp, temp)) < -MACRO_REPLACE_SIZE)
                         return (false);
                     else
                         p = q + rv - 1;
@@ -916,7 +924,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
 
                     macro = d->GetValue();
                     if (count != 0 || !varargs.empty() || d->HasVarArgs())
-                        if (!ReplaceArgs(macro, *d->GetArgList(), args, expandedargs, varargs))
+                        if (!ReplaceArgs(macro, *d->GetArgList(), args, expandedargs, definitions, varargs))
                             return INT_MIN;
                     tokenized = Tokenize(macro);
                     Stringize(macro);

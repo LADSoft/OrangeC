@@ -263,11 +263,28 @@ void dumpLits(void)
  */
 {
     {
+        int n = 0;
         while (strtab != 0)
         {
             Optimizer::xstringseg();
+                switch (strtab->strtype)
+                {
+                    case l_wstr:
+                    case l_ustr:
+                        if (n % 2)
+                           Optimizer::genbyte(0);
+                        break;
+                    case l_Ustr:
+                        {
+                            int remainder = 4 - n % 4;
+                            if (remainder != 4)
+                                for (int i=0; i < remainder; i++)
+                                    Optimizer::genbyte(0);
+                        }
+                        break;
+                }
             Optimizer::put_string_label(strtab->label, strtab->strtype);
-            genstring(strtab);
+            n += genstring(strtab);
             strtab = strtab->next;
         }
     }

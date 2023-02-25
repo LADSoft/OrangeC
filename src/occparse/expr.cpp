@@ -4738,6 +4738,14 @@ static bool matchesAttributes(TYPE *tp1, TYPE *tp2)
     }
     return true;
 }
+static bool sameTypedef(TYPE* tp1, TYPE* tp2)
+{
+    while (tp1->btp && !tp1->typedefType)
+       tp1 = tp1->btp;
+    while (tp2->btp && !tp2->typedefType)
+       tp2 = tp2->btp;
+    return tp1->typedefType == tp2->typedefType;
+}
 static LEXLIST* expression_generic(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
     lex = getsym();
@@ -4802,7 +4810,7 @@ static LEXLIST* expression_generic(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                     {
                         if (scan->selector && next->selector && comparetypes(next->selector, scan->selector, true))
                         {
-                            if (matchesAttributes(next->selector, scan->selector))
+                            if (matchesAttributes(next->selector, scan->selector) && sameTypedef(next->selector, scan->selector))
                             {
                                 error(ERR_DUPLICATE_TYPE_IN_GENERIC);
                             }
@@ -4815,7 +4823,7 @@ static LEXLIST* expression_generic(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                     {
                         if (selectType && next->selector && comparetypes(next->selector, selectType, true))
                         {
-                            if (matchesAttributes(next->selector, selectType))
+                            if (matchesAttributes(next->selector, selectType) && sameTypedef(next->selector, selectType))
                             {
                                 if (selectedGeneric && selectedGeneric->selector)
                                     error(ERR_DUPLICATE_TYPE_IN_GENERIC);

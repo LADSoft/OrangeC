@@ -446,6 +446,7 @@ typedef struct typ
     struct typ* etype;            /* type of size field  when size isn't constant */
     int vlaindex;                 /* index into the vararray */
     EXPRESSION* templateDeclType; /* for bt_templatedecltype, used in templates */
+    struct typ* typedefType;            /* The typedef which describes this type */
 } TYPE;
 
 typedef struct stmt

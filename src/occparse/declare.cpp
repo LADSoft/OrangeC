@@ -6716,10 +6716,26 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         checkOperatorArgs(sp, asFriend);
                     if (sp->sb->storage_class == sc_typedef)
                     {
+                        TYPE**tn = &sp->tp;
                         // all this is so we can have multiple typedefs referring to the same thing...
+                        if (!Optimizer::cparams.prm_cplusplus)
+                        {
+                            if ((*tn)->type == bt_typedef)
+                                while (*tn != basetype(*tn) && (*tn)->type != bt_va_list)
+                                    tn = &(*tn)->btp;
+                            *tn = CopyType(*tn);
+                        }
                         sp->tp = MakeType(bt_typedef, sp->tp);
                         UpdateRootTypes(tp);
                         sp->tp->sp = sp;
+                        if (!Optimizer::cparams.prm_cplusplus)
+                        {
+                            sp->tp->typedefType = sp->tp;
+                            if (tn == &sp->tp)
+                                sp->tp->btp->typedefType = sp->tp;
+                            else
+                                (*tn)->typedefType = sp->tp;
+                        }
                     }
                     if (ispointer(sp->tp) && sp->sb->storage_class != sc_parameter)
                     {

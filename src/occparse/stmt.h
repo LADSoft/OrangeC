@@ -22,6 +22,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
+#include <stack>
 
 namespace Parser
 {
@@ -41,6 +42,9 @@ extern bool functionCanThrow;
 extern int bodyIsDestructor;
 
 extern Optimizer::LINEDATA *linesHead, *linesTail;
+
+extern std::stack<BLOCKDATA*> expressionStatements;
+extern std::deque<std::pair<EXPRESSION*, TYPE*>> expressionReturns;
 
 void statement_ini(bool global);
 bool msilManaged(SYMBOL* s);

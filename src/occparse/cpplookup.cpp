@@ -3054,7 +3054,7 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                             arg = arg->next;
                             hr = hr->next;
                         }
-                        if (!arg && !hr)
+                        if (!arg && (!hr || hr->p->sb->defaultarg))
                         {
                             match[i] = n;
                         }

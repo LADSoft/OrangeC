@@ -8871,7 +8871,8 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             TYPE* tp2 = nullptr;
             SYMBOL* funcsp;
             if ((*exp2)->v.func->sp->sb->parentClass && !(*exp2)->v.func->asaddress)
-                error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
+                if ((*exp2)->v.func->sp->sb->storage_class == sc_member || (*exp2)->v.func->sp->sb->storage_class == sc_mutable)
+                    error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
             funcsp = MatchOverloadedFunction((*tp), isfuncptr(*tp) || basetype(*tp)->type == bt_memberptr ? &tp1 : &tp2,
                                              (*exp2)->v.func->sp, exp2, flags);
             if (funcsp && basetype(*tp)->type == bt_memberptr)

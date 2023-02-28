@@ -12,7 +12,7 @@
          omake -DCOMPILER=MS clean -j:%NUMBER_OF_PROCESSORS%
          omake -DCOMPILER=CLANG clean -j:%NUMBER_OF_PROCESSORS%
          omake -DCOMPILER=MINGW64 clean -j:%NUMBER_OF_PROCESSORS%
-         set BUILD_PROFILE=MS
+         set BUILD_PROFILE=MSDEBUGBUILD
          set TESTS=TRUE
          set PARALLEL=%NUMBER_OF_PROCESSORS%
      )
@@ -53,7 +53,7 @@
                   goto done
 :msdebugbuild
                   REM  Build with Microsoft PDB files
-                  c:\orangec\temp\omake /DCOMPILER=MS /DMSPDB=%MSPDB% fullbuild
+                  c:\orangec\temp\omake -j:%PARALLEL% /DCOMPILER=MS /DMSPDB=%MSPDB% fullbuild
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )

@@ -153,13 +153,6 @@
 #    define PRIxMAX64 "llx"
 #    define PRIXMAX64 "llX"
 
-#    define PRIdMAX PRIdMAX64
-#    define PRIiMAX PRIiMAX64
-#    define PRIuMAX PRIuMAX64
-#    define PRIoMAX PRIoMAX64
-#    define PRIxMAX PRIxMAX64
-#    define PRIXMAX PRIXMAX64
-
 #    define PRIdPTR8 "hhd"
 #    define PRIiPTR8 "hhi"
 #    define PRIoPTR8 "hho"
@@ -311,12 +304,6 @@
 #    define SCNoMAX64 "llo"
 #    define SCNuMAX64 "llU"
 #    define SCNxMAX64 "llx"
-
-#    define SCNdMAX SCNdMAX64
-#    define SCNiMAX SCNiMAX64
-#    define SCNuMAX SCNuMAX64
-#    define SCNoMAX SCNoMAX64
-#    define SCNxMAX SCNxMAX64
 
 #    define SCNdPTR8 "hhd"
 #    define SCNiPTR8 "hhi"

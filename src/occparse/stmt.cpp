@@ -2198,7 +2198,20 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, BLOCKDATA* parent
                 if (!comparetypes(tp, tp1, true) &&
                     ((Optimizer::architecture != ARCHITECTURE_MSIL) || !isstructured(tp) || !isconstzero(&stdint, returnexp)))
                 {
-                    errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
+                    bool toErr = true;
+                    if (isstructured(tp) && isstructured(tp1) && classRefCount(basetype(tp)->sp,basetype(tp1)->sp))
+                    {
+                        toErr = false;
+                        EXPRESSION q = {}, *v = &q;
+                        v->type = en_c_i;
+                        v = baseClassOffset(basetype(tp)->sp, basetype(tp1)->sp, v);
+                        returnexp = exprNode(en_add, returnexp, v);
+                    
+                    }
+                    if (toErr)
+                    {
+                        errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
+                    }
                 }
                 else
                 {

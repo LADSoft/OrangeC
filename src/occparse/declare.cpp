@@ -5869,6 +5869,18 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                 l->data = (void*)tp1->sp;
                                 l->next = sym->sb->friends;
                                 sym->sb->friends = l;
+                                // have to add the friendship to all base classes
+                                BASECLASS* bc = sym->sb->baseClasses;
+                                while (bc)
+                                {
+                                    sym = bc->cls;
+                                    Optimizer::LIST* l = Allocate<Optimizer::LIST>();
+                                    l->data = (void*)tp1->sp;
+                                    l->next = sym->sb->friends;
+                                    sym->sb->friends = l;
+                                    bc = bc->next;
+                                }
+
                             }
                             if (oldGlobals)
                             {

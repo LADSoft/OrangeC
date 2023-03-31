@@ -3278,6 +3278,30 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
     }
     return rv;
 }
+static void PushPopDefaults(std::deque<TYPE*>& defaults, TEMPLATEPARAMLIST* tpl, bool dflt, bool push);
+static void PushPopDefaults(std::deque<TYPE*>& defaults, EXPRESSION* exp, bool dflt, bool push)
+{
+    std::stack<EXPRESSION*> stk;
+    stk.push(exp);
+    while (!stk.empty())
+    {
+        auto top = stk.top();
+        stk.pop();
+        if (top->type == en_templateselector)
+        {
+            auto ts = top->v.templateSelector->next;
+            if (ts->isTemplate && ts->templateParams)
+                PushPopDefaults(defaults, ts->templateParams, dflt, push);
+        }
+        else
+        {
+            if (top->left)
+                stk.push(top->left);
+            if (top->right)
+                stk.push(top->right);
+        }
+    }
+}
 static void PushPopDefaults(std::deque<TYPE*>& defaults, TEMPLATEPARAMLIST* tpl, bool dflt, bool push)
 {
     std::stack<TEMPLATEPARAMLIST*> stk;
@@ -3287,54 +3311,54 @@ static void PushPopDefaults(std::deque<TYPE*>& defaults, TEMPLATEPARAMLIST* tpl,
         {
             if (tpl->p->packed)
             {
-                stk.push(tpl->next);
-                tpl = tpl->p->byPack.pack;
-                continue;
-            }
-            if (push)
-            {
-                defaults.push_back(dflt ? tpl->p->byClass.dflt : tpl->p->byClass.val);
-            }
-            else if (defaults.size())
-            {
-                if (dflt)
-                {
-                    tpl->p->byClass.dflt = defaults.front();
-                }
-                else
-                {
-                    tpl->p->byClass.val = defaults.front();
-                }
-                defaults.pop_front();
+                if (tpl->p->byPack.pack)
+                    PushPopDefaults(defaults, tpl->p->byPack.pack, dflt, push);
             }
             else
             {
-                if (dflt)
+                if (push)
                 {
-                    tpl->p->byClass.dflt = nullptr;
+                    defaults.push_back(dflt ? tpl->p->byClass.dflt : tpl->p->byClass.val);
+                }
+                else if (defaults.size())
+                {
+                    if (dflt)
+                    {
+                        tpl->p->byClass.dflt = defaults.front();
+                    }
+                    else
+                    {
+                        tpl->p->byClass.val = defaults.front();
+                    }
+                    defaults.pop_front();
                 }
                 else
                 {
-                    tpl->p->byClass.val = nullptr;
+                    if (dflt)
+                    {
+                        tpl->p->byClass.dflt = nullptr;
+                    }
+                    else
+                    {
+                        tpl->p->byClass.val = nullptr;
+                    }
                 }
-            }
-            if ((dflt && tpl->p->type == kw_typename && tpl->p->byClass.dflt && isstructured(tpl->p->byClass.dflt) &&
-                 basetype(tpl->p->byClass.dflt)->sp->templateParams)
+                if ((dflt && tpl->p->type == kw_typename && tpl->p->byClass.dflt && isstructured(tpl->p->byClass.dflt) &&
+                     basetype(tpl->p->byClass.dflt)->sp->templateParams)
 
-                || (!dflt && tpl->p->type == kw_typename && tpl->p->byClass.val && isstructured(tpl->p->byClass.val) &&
-                    basetype(tpl->p->byClass.val)->sp->templateParams))
-            {
-                stk.push(tpl->next);
-                tpl = basetype(dflt ? tpl->p->byClass.dflt : tpl->p->byClass.val)->sp->templateParams->next;
-                continue;
+                    || (!dflt && tpl->p->type == kw_typename && tpl->p->byClass.val && isstructured(tpl->p->byClass.val) &&
+                        basetype(tpl->p->byClass.val)->sp->templateParams))
+                {
+                    PushPopDefaults(defaults, basetype(dflt ? tpl->p->byClass.dflt : tpl->p->byClass.val)->sp->templateParams->next, dflt, push);
+                }
+                if ((dflt && tpl->p->type == kw_int && tpl->p->byClass.dflt)
+                    || (!dflt && tpl->p->type == kw_typename && tpl->p->byClass.val))
+                {
+                    PushPopDefaults(defaults, dflt ? tpl->p->byNonType.dflt : tpl->p->byNonType.val, dflt, push);
+                }
             }
         }
         tpl = tpl->next;
-        while (!tpl && !stk.empty())
-        {
-            tpl = stk.top();
-            stk.pop();
-        }
     }
 }
 TEMPLATEPARAMLIST* ExpandParams(EXPRESSION* exp)

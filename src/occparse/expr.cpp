@@ -2444,8 +2444,7 @@ EXPRESSION* DerivedToBase(TYPE* tpn, TYPE* tpo, EXPRESSION* exp, int flags)
             if (n == 1)
             {
                 // derived to base
-                EXPRESSION q, *v = &q;
-                memset(&q, 0, sizeof(q));
+                EXPRESSION q = {}, *v = &q;
                 v->type = en_c_i;
                 v = baseClassOffset(spn, spo, v);
 
@@ -3961,6 +3960,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
     if (/*(!templateNestingCount || instantiatingTemplate) &&*/ funcparams->sp && funcparams->sp->name[0] == '_' &&
         parseBuiltInTypelistFunc(&lex, funcsp, funcparams->sp, tp, exp))
         return lex;
+
 
     if (lex)
     {
@@ -7577,10 +7577,15 @@ static LEXLIST* expression_add(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
             }
             else
             {
-                if (!ispointer(*tp) && !ispointer(tp1))
+                if (Optimizer::cparams.prm_cplusplus && *tp && isstructured(*tp))
                 {
-                    castToArithmetic(false, tp, exp, kw, tp1, true);
-                    castToArithmetic(false, &tp1, &exp1, (enum e_kw)-1, *tp, true);
+                    if (!castToArithmeticInternal(false, tp, exp, kw, isstructured(tp1) ? &stdint : tp1, false))
+                        castToPointer(tp, exp, kw, &stdpointer);
+                }
+                if (Optimizer::cparams.prm_cplusplus && tp1 && isstructured(tp1))
+                {
+                    if (!castToArithmeticInternal(false, &tp1, &exp1, (enum e_kw)-1, isstructured(*tp) ? &stdint : *tp, false))
+                        castToPointer(&tp1, &exp1, kw, &stdpointer);
                 }
                 LookupSingleAggregate(*tp, exp);
                 LookupSingleAggregate(tp1, &exp1);
@@ -7878,8 +7883,16 @@ static LEXLIST* expression_inequality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, T
                 else
                 {
                     checkscope(*tp, tp1);
-                    castToArithmetic(false, tp, exp, kw, tp1, true);
-                    castToArithmetic(false, &tp1, &exp1, (enum e_kw)-1, *tp, true);
+                    if (Optimizer::cparams.prm_cplusplus && *tp && isstructured(*tp))
+                    {
+                        if (!castToArithmeticInternal(false, tp, exp, kw, tp1, true))
+                            castToPointer(tp, exp, kw, ispointer(tp1) ? tp1 : &stdpointer);
+                    }
+                    if (Optimizer::cparams.prm_cplusplus && tp1 && isstructured(tp1))
+                    {
+                        if (!castToArithmeticInternal(false, &tp1, &exp1, (enum e_kw) - 1, *tp, true))
+                            castToPointer(&tp1, &exp1, (enum e_kw) -1, ispointer(*tp) ? *tp : &stdpointer);
+                    }
                 }
                 LookupSingleAggregate(*tp, exp);
                 LookupSingleAggregate(tp1, &exp1);
@@ -8006,8 +8019,16 @@ static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYP
             }
             else
             {
-                castToArithmetic(false, tp, exp, kw, tp1, true);
-                castToArithmetic(false, &tp1, &exp1, (enum e_kw)-1, *tp, true);
+                if (Optimizer::cparams.prm_cplusplus && *tp && isstructured(*tp))
+                {
+                    if (!castToArithmeticInternal(false, tp, exp, kw, tp1, true))
+                        castToPointer(tp, exp, kw, ispointer(tp1) ? tp1 : &stdpointer);
+                }
+                if (Optimizer::cparams.prm_cplusplus && tp1 && isstructured(tp1))
+                {
+                    if (!castToArithmeticInternal(false, &tp1, &exp1, (enum e_kw) - 1, *tp, true))
+                        castToPointer(&tp1, &exp1, (enum e_kw) -1, ispointer(*tp) ? *tp : &stdpointer);
+                }
             }
         }
         checkscope(*tp, tp1);
@@ -8248,6 +8269,13 @@ static LEXLIST* binop(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRES
         {
             first = false;
             GetLogicalDestructors(&logicaldestructorsleft, *exp);
+            if (Optimizer::cparams.prm_cplusplus && *tp && isstructured(*tp))
+            {
+                if (!castToArithmeticInternal(false, tp, exp, (enum e_kw) - 1, &stdbool, false))
+                    if (!castToArithmeticInternal(false, tp, exp, (enum e_kw) - 1, &stdint, false))
+                        if (!castToPointer(tp, exp, (enum e_kw) - 1, &stdpointer))
+                            errortype(ERR_CANNOT_CONVERT_TYPE, *tp, &stdint);
+            }
         }
         lex = getsym();
         lex = (*nextFunc)(lex, funcsp, atp, &tp1, &exp1, nullptr, flags);
@@ -8257,7 +8285,16 @@ static LEXLIST* binop(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRES
             break;
         }
         if (kw == land || kw == lor)
+        {
             GetLogicalDestructors(&logicaldestructorsright, exp1);
+            if (Optimizer::cparams.prm_cplusplus && tp1 && isstructured(tp1))
+            {
+                if (!castToArithmeticInternal(false, &tp1, &exp1, (enum e_kw) - 1, &stdbool, false))
+                    if (!castToArithmeticInternal(false, &tp1, &exp1, (enum e_kw) - 1, &stdint, false))
+                        if (!castToPointer(&tp1, &exp1, (enum e_kw) - 1, &stdpointer))
+                            errortype(ERR_CANNOT_CONVERT_TYPE, tp1, &stdint);
+            }
+        }
         if (isstructuredmath(*tp, tp1))
         {
             if (Optimizer::cparams.prm_cplusplus &&
@@ -8351,7 +8388,13 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
     {
         TYPE *tph = nullptr, *tpc = nullptr;
         EXPRESSION *eph = nullptr, *epc = nullptr;
-        castToArithmetic(false, tp, exp, (enum e_kw) - 1, &stdint, false);
+        if (Optimizer::cparams.prm_cplusplus && *tp && isstructured(*tp))
+        {
+            if (!castToArithmeticInternal(false, tp, exp, (enum e_kw) - 1, &stdbool, false))
+                if (!castToArithmeticInternal(false, tp, exp, (enum e_kw) - 1, &stdint, false))
+                    if (!castToPointer(tp, exp, (enum e_kw) - 1, &stdpointer))
+                        errortype(ERR_CANNOT_CONVERT_TYPE, *tp, &stdint);
+        }
         Optimizer::LIST* logicaldestructors = nullptr;
         GetLogicalDestructors(&logicaldestructors, *exp);
         LookupSingleAggregate(*tp, exp);
@@ -8414,7 +8457,30 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                         EXPRESSION* rv = nullptr;
                         if (!comparetypes(tph, tpc, false))
                         {
-                            if (isstructured(tph))
+                            if (atp && isstructured(atp))
+                            {
+                                if (!comparetypes(atp, tpc, false) || !sameTemplate(atp, tpc))
+                                {
+                                    rv = anonymousVar(sc_auto, tph);
+                                    EXPRESSION* exp = rv;
+                                    TYPE* ctype = atp;
+                                    callConstructorParam(&ctype, &exp, tpc, epc, true, false, false, false, true);
+                                    epc = exp;
+                                    tpc = atp;
+                                }
+
+                                if (!comparetypes(atp, tph, false) || !sameTemplate(atp, tph))
+                                {
+                                    rv = anonymousVar(sc_auto, tph);
+                                    EXPRESSION* exp = rv;
+                                    TYPE* ctype = atp;
+                                    callConstructorParam(&ctype, &exp, tph, eph, true, false, false, false, true);
+                                    eph = exp;
+                                    tph = CopyType(atp);
+                                    tph->lref = tph->rref = false;
+                                }
+                            }
+                            else if (isstructured(tph))
                             {
                                 rv = anonymousVar(sc_auto, tph);
                                 EXPRESSION* exp = rv;
@@ -8905,6 +8971,23 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         symRef = (Optimizer::architecture == ARCHITECTURE_MSIL) ? temp : nullptr;
         LookupSingleAggregate(tp1, &exp1);
 
+        if (isstructured(tp1))
+        {
+            SYMBOL* conv = lookupNonspecificCast(basetype(tp1)->sp, *tp);
+            if (conv)
+            {
+                FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
+                params->thisptr = exp1;
+                params->thistp = tp1;
+                params->ascall = true;
+                params->functp = conv->tp;
+                params->fcall = varNode(en_pc, conv);
+                params->sp = conv;
+                exp1 = exprNode(en_func, nullptr, nullptr);
+                exp1->v.func = params;
+                tp1 = basetype(conv->tp)->btp;
+            }
+        }
         if (((*exp)->type == en_const || isconstraw(*tp)) && !localMutable &&
             (!temp || temp->v.sp->sb->storage_class != sc_parameter || !isarray(*tp)) &&
             ((*exp)->type != en_func || !isconstraw(basetype((*exp)->v.func->sp->tp)->btp)))

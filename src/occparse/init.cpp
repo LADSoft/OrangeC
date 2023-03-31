@@ -2954,7 +2954,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                         // shortcut for conversion from single expression
                         EXPRESSION* exp1 = nullptr;
                         TYPE* tp1 = nullptr;
-                        lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, false,
+                        lex = init_expression(lex, funcsp, itype, &tp1, &exp1, false,
                                               [&exp, itype, &constructed](EXPRESSION* exp1, TYPE* tp1) {
                                                   if (exp1->type == en_thisref && exp1->left->type == en_func)
                                                   {
@@ -3231,10 +3231,22 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                             }
                             exp1 = exp2;
                         }
+                        else if (isstructured(itype) && classRefCount(basetype(itype)->sp, basetype(tp1)->sp) == 1)
+                        {
+                            toErr = false;
+                            EXPRESSION q = {}, *v = &q;
+                            v->type = en_c_i;
+                            v = baseClassOffset(basetype(tp1)->sp, basetype(itype)->sp, v);
+                            exp1 = exprNode(en_add, exp1, v);
+                            TYPE* ctype = itype; 
+                            auto exp2 = baseexp;
+                            callConstructorParam(&ctype, &exp2, ctype, exp1, true, false, false, false, false);
+                            exp1 = exp2;
+                        }
                     }
                     if (toErr)
                     {
-                        error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                        errortype(ERR_CANNOT_CONVERT_TYPE, tp1, itype);                        
                     }
                 }
                 if (exp1)

@@ -1071,11 +1071,8 @@ bool doReinterpretCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* 
     // pointer to int
     if (ispointer(oldType) && isint(*newType))
     {
-        if ((*newType)->size >= oldType->size)
-        {
-            cast(*newType, exp);
-            return true;
-        }
+        cast(*newType, exp);
+        return true;
     }
     // function to int
     if (isfunction(oldType) && isint(*newType))
@@ -1448,14 +1445,14 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
                 tp1->rref = true;
             }
         }
-        else if (tp1->sp)  // enum
+        else if (basetype(tp1)->type == bt_enum)  // enum
         {
-            Optimizer::LIST aa{nullptr, tp1->sp->sb->parentNameSpace};
-            tp1->sp->sb->templateNameSpace = aa.data ? &aa : nullptr;
+            Optimizer::LIST aa{nullptr, basetype(tp1)->sp->sb->parentNameSpace};
+            basetype(tp1)->sp->sb->templateNameSpace = aa.data ? &aa : nullptr;
             int n = PushTemplateNamespace(basetype(tp1)->sp);  // used for more than just templates here
             s5 = namespacesearch(name, globalNameSpace, false, false);
             PopTemplateNamespace(n);
-            tp1->sp->sb->templateNameSpace = nullptr;
+            basetype(tp1)->sp->sb->templateNameSpace = nullptr;
         }
     }
     // quit if there are no matches because we will use the default...

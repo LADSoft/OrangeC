@@ -840,6 +840,8 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                     if (d->GetArgCount() > 0)
                     {
                         int ln = name.size();
+                        for (auto d : definitions)
+                             d->SetPreprocessing(false);
                         do
                         {
                             int pb = p;
@@ -869,14 +871,17 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                             args.push_back(temp);
                             expandedargs.push_back(temp);
                             int sv;
+                            std::deque<Definition*> argDefinitions;
                             rv = ReplaceSegment(expandedargs[count], 0, expandedargs[count].size(), sv, p == line.size(),
-                                                definitions, nullptr);
+                                                argDefinitions, nullptr);
                             if (rv < -MACRO_REPLACE_SIZE)
                             {
                                 return rv;
                             }
                             count++;
                         } while (line[p] && line[p++] == ',' && count != d->GetArgCount());
+                        for (auto d : definitions)
+                             d->SetPreprocessing(true);
                     }
                     else
                     {

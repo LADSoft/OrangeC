@@ -12,7 +12,7 @@
          omake -DCOMPILER=MS clean -j:%NUMBER_OF_PROCESSORS%
          omake -DCOMPILER=CLANG clean -j:%NUMBER_OF_PROCESSORS%
          omake -DCOMPILER=MINGW64 clean -j:%NUMBER_OF_PROCESSORS%
-         set BUILD_PROFILE=MSDEBUGBUILD
+         set BUILD_PROFILE=MS
          set TESTS=TRUE
          set PARALLEL=%NUMBER_OF_PROCESSORS%
      )

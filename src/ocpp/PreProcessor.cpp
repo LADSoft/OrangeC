@@ -45,6 +45,8 @@ void PreProcessor::InitHash()
     hash["ifndef"] = kw::IFNDEF;
     hash["else"] = kw::ELSE;
     hash["endif"] = kw::ENDIF;
+    hash["elifdef"] = kw::ELIFDEF;
+    hash["elifndef"] = kw::ELIFNDEF;
     if (ppStart == '%')
     {
         hash["idefine"] = kw::IDEFINE;
@@ -73,8 +75,6 @@ void PreProcessor::InitHash()
         hash["elifnnum"] = kw::ELIFNNUM;
         hash["ifnstr"] = kw::IFNSTR;
         hash["elifnstr"] = kw::ELIFNSTR;
-        hash["elifdef"] = kw::ELIFDEF;
-        hash["elifndef"] = kw::ELIFNDEF;
         hash["assign"] = kw::ASSIGN;
         hash["rep"] = kw::REP;
         hash["endrep"] = kw::ENDREP;

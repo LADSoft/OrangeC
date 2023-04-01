@@ -363,7 +363,7 @@ typedef struct expr
     int isfunc : 1;
     int dest : 1;  // for thisref
     int noexprerr : 1;
-    int init : 1;  // for no replacement by a constexpr array
+    int init : 1;       // for no replacement by a constexpr array
     int preincdec : 1;  //  an assignment which is the 'pre' form of autoinc
     int keepZero : 1;
     int paramArray : 1;
@@ -446,7 +446,7 @@ typedef struct typ
     struct typ* etype;            /* type of size field  when size isn't constant */
     int vlaindex;                 /* index into the vararray */
     EXPRESSION* templateDeclType; /* for bt_templatedecltype, used in templates */
-    struct typ* typedefType;            /* The typedef which describes this type */
+    struct typ* typedefType;      /* The typedef which describes this type */
 } TYPE;
 
 typedef struct stmt
@@ -760,7 +760,7 @@ typedef struct sym
         Optimizer::LIST* friends;
         attributes attribs;
         /* Type declarations */
-    } * sb;
+    }* sb;
 } SYMBOL;
 
 typedef struct __lambda
@@ -1005,7 +1005,7 @@ struct balance
     {
         KW_NONE = 0, KW_CPLUSPLUS = 1, KW_INLINEASM = 2, KW_NONANSI = 4, KW_C99 = 8,
         KW_C1X = 16, KW_ASSEMBLER = 32, KW_MSIL = 64,
-        KW_386 = 128, KW_68K = 256, KW_ALL = 0x40000000
+        KW_386 = 128, KW_68K = 256, KW_C2X = 512, KW_ALL = 0x40000000
     };
 // clang-format on
 // clang-format off
@@ -1166,7 +1166,12 @@ typedef struct _atomicData
     TYPE* tp;
 } ATOMICDATA;
 
-constexpr inline TYPE* basetype(TYPE* a) { if (a) a = a->rootType; return a; }
+constexpr inline TYPE* basetype(TYPE* a)
+{
+    if (a)
+        a = a->rootType;
+    return a;
+}
 
 constexpr inline bool __isref(TYPE* x) { return (x)->type == bt_lref || (x)->type == bt_rref; }
 constexpr inline bool isref(TYPE* x)

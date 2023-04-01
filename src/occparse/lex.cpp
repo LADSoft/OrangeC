@@ -46,7 +46,7 @@
 #include "expr.h"
 #include "template.h"
 
-//#define TESTANNOTATE
+// #define TESTANNOTATE
 
 namespace Parser
 {
@@ -140,8 +140,8 @@ KEYWORD keywords[] = {
     */
     {"_Alignas", 8, kw_alignas, KW_C1X, TT_CONTROL},
     {"_Alignof", 8, kw_alignof, KW_C1X, TT_UNARY | TT_OPERATOR},
-    {"_Atomic", 7, kw_atomic, KW_C1X | KW_CPLUSPLUS, TT_POINTERQUAL | TT_TYPEQUAL | TT_BASETYPE},
-    {"_Bool", 5, kw_bool, 0, TT_BASETYPE | TT_BOOL},
+    {"_Atomic", 7, kw_atomic, KW_C1X | KW_CPLUSPLUS | KW_C2X, TT_POINTERQUAL | TT_TYPEQUAL | TT_BASETYPE},
+    {"_Bool", 5, kw_bool, KW_C99 | KW_C1X, TT_BASETYPE | TT_BOOL},
     {"_CR0", 4, kw_cr0, KW_NONANSI | KW_386, TT_VAR},
     {"_CR1", 4, kw_cr1, KW_NONANSI | KW_386, TT_VAR},
     {"_CR2", 4, kw_cr2, KW_NONANSI | KW_386, TT_VAR},
@@ -300,15 +300,15 @@ KEYWORD keywords[] = {
     {"_seg", 4, kw__seg, KW_NONANSI | KW_ALL, TT_TYPEQUAL | TT_POINTERQUAL},
     {"_stdcall", 8, kw__stdcall, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"_trap", 5, kw__trap, KW_NONANSI | KW_ALL, TT_OPERATOR | TT_UNARY},
-    {"alignas", 7, kw_alignas, KW_CPLUSPLUS, TT_CONTROL},
-    {"alignof", 7, kw_alignof, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
+    {"alignas", 7, kw_alignas, KW_CPLUSPLUS | KW_C2X, TT_CONTROL},
+    {"alignof", 7, kw_alignof, KW_CPLUSPLUS | KW_C2X, TT_UNARY | TT_OPERATOR},
     {"and", 3, land, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
     {"and_eq", 6, asand, KW_CPLUSPLUS, TT_ASSIGN | TT_OPERATOR},
     {"asm", 3, kw_asm, KW_NONANSI | KW_ALL, TT_CONTROL},
     {"auto", 4, kw_auto, 0, TT_STORAGE_CLASS},
     {"bitand", 6, andx, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
     {"bitor", 5, orx, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
-    {"bool", 4, kw_bool, KW_CPLUSPLUS, TT_BASETYPE | TT_BOOL},
+    {"bool", 4, kw_bool, KW_CPLUSPLUS | KW_C2X, TT_BASETYPE | TT_BOOL},
     {"break", 5, kw_break, 0, TT_CONTROL},
     {"case", 4, kw_case, 0, TT_CONTROL | TT_SWITCH},
     {"catch", 5, kw_catch, KW_CPLUSPLUS, TT_CONTROL},
@@ -333,7 +333,7 @@ KEYWORD keywords[] = {
     {"explicit", 8, kw_explicit, KW_CPLUSPLUS, TT_STORAGE_CLASS},
     {"export", 6, kw_export, KW_CPLUSPLUS, TT_UNKNOWN},
     {"extern", 6, kw_extern, KW_ASSEMBLER, TT_STORAGE_CLASS},
-    {"false", 5, kw_false, KW_CPLUSPLUS, TT_VAR},
+    {"false", 5, kw_false, KW_CPLUSPLUS | KW_C2X, TT_VAR},
     //	{ "far", 3,  kw__far, KW_NONANSI | KW_ALL, TT_POINTERQUAL | TT_TYPEQUAL},
     {"float", 5, kw_float, 0, TT_BASETYPE | TT_FLOAT},
     {"for", 3, kw_for, 0, TT_CONTROL},
@@ -351,7 +351,7 @@ KEYWORD keywords[] = {
     {"noexcept", 8, kw_noexcept, KW_CPLUSPLUS, TT_CONTROL},
     {"not", 3, notx, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
     {"not_eq", 6, neq, KW_CPLUSPLUS, TT_RELATION | TT_EQUALITY},
-    {"nullptr", 7, kw_nullptr, KW_CPLUSPLUS, TT_VAR},
+    {"nullptr", 7, kw_nullptr, KW_CPLUSPLUS | KW_C2X, TT_VAR},
     {"operator", 8, kw_operator, KW_CPLUSPLUS, TT_OPERATOR},
     {"or", 2, lor, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
     {"or_eq", 5, asor, KW_CPLUSPLUS, TT_ASSIGN | TT_OPERATOR},
@@ -374,7 +374,7 @@ KEYWORD keywords[] = {
     {"this", 4, kw_this, KW_CPLUSPLUS, TT_VAR},
     {"thread_local", 12, kw_thread_local, KW_CPLUSPLUS, TT_LINKAGE},
     {"throw", 5, kw_throw, KW_CPLUSPLUS, TT_OPERATOR | TT_UNARY},
-    {"true", 4, kw_true, KW_CPLUSPLUS, TT_VAR},
+    {"true", 4, kw_true, KW_CPLUSPLUS | KW_C2X, TT_VAR},
     {"try", 3, kw_try, KW_CPLUSPLUS, TT_CONTROL},
     {"typedef", 7, kw_typedef, 0, TT_BASETYPE | TT_TYPEDEF | TT_STORAGE_CLASS},
     {"typeid", 6, kw_typeid, KW_CPLUSPLUS, TT_UNKNOWN},
@@ -466,7 +466,8 @@ static bool kwmatches(KEYWORD* kw)
         return !!(kw->matchFlags & KW_ASSEMBLER);
     else if (!kw->matchFlags || kw->matchFlags == KW_ASSEMBLER)
         return true;
-    else if (((kw->matchFlags & KW_CPLUSPLUS) && Optimizer::cparams.prm_cplusplus) || (kw->matchFlags & (KW_C99 | KW_C1X)) ||
+    else if (((kw->matchFlags & KW_CPLUSPLUS) && Optimizer::cparams.prm_cplusplus) ||
+             (kw->matchFlags & (KW_C99 | KW_C1X | KW_C2X)) ||
              ((kw->matchFlags & KW_MSIL) && (Optimizer::architecture == ARCHITECTURE_MSIL) &&
               Optimizer::cparams.msilAllowExtensions) ||
              ((kw->matchFlags & (KW_NONANSI | KW_INLINEASM)) && !Optimizer::cparams.prm_ansi))
@@ -512,6 +513,8 @@ KEYWORD* searchkw(const unsigned char** p)
                     if (Optimizer::cparams.prm_c99 && (kw->matchFlags & KW_C99))
                         count++;
                     if (Optimizer::cparams.prm_c1x && (kw->matchFlags & KW_C1X))
+                        count++;
+                    if (Optimizer::cparams.prm_c2x && (kw->matchFlags & KW_C2X))
                         count++;
                     if (Optimizer::cparams.prm_cplusplus && (kw->matchFlags & KW_CPLUSPLUS))
                         count++;

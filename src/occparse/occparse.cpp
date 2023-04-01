@@ -139,6 +139,7 @@ Optimizer::COMPILER_PARAMS cparams_default = {
     true,  /* char prm_cmangle;*/
     true,  /* char prm_c99;*/
     true,  /* char prm_c1x;*/
+    false, /* char prm_c2x; */
     false, /* char prm_cplusplus;*/
     true,  /* char prm_xcept;*/
     false, /* char prm_icdfile;*/

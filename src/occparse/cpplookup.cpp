@@ -2795,6 +2795,10 @@ static int ChooseLessConstTemplate(SYMBOL* left, SYMBOL* right)
         int lcount = 0, rcount = 0;
         auto l = basetype(left->tp)->syms->table[0];
         auto r = basetype(right->tp)->syms->table[0];
+        if (isconst(left->tp))
+            lcount++;
+        if (isconst(right->tp))
+            rcount++;
         for (; l && r; l = l->next, r = r->next)
         {
             auto ltp = l->p->tp;
@@ -2846,6 +2850,7 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                     int left = 0, right = 0;
                     int l = 0, r = 0;
                     int k = 0;
+                    int lk = 0, rk = 0;
                     INITLIST* args = funcparams ? funcparams->arguments : nullptr;
                     SYMLIST* hrl = basetype(spList[i]->tp)->syms->table[0];
                     SYMLIST* hrr = basetype(spList[j]->tp)->syms->table[0];
@@ -2880,7 +2885,7 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                             if (br > 1)
                                 spList[j] = nullptr;
                         }
-                        else if (k == 0 && funcparams && funcparams->thisptr)
+                        else if (k == 0 && funcparams && funcparams->thisptr && (spList[i]->sb->castoperator || hrl->p->sb->thisPtr) && (spList[i]->sb->castoperator || hrr->p->sb->thisPtr))
                         {
                             TYPE *tpl, *tpr;
                             if (0 && spList[i]->sb->castoperator)
@@ -2908,6 +2913,21 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                         else
                         {
                             TYPE *tpl, *tpr;
+                            if (funcparams->thisptr)
+                            {
+                                if (hrl && hrl->p->sb->thisPtr)
+                                {
+                                    l += lenList[i][k + lk++];
+                                    lenl = lenList[i][k+lk];
+                                    hrl = hrl->next;
+                                }
+                                if (hrr && hrr->p->sb->thisPtr)
+                                {
+                                    r += lenList[j][k + rk++];
+                                    lenr = lenList[j][k+rk];
+                                    hrr = hrr->next;
+                                }
+                            }
                             if (spList[i]->sb->castoperator)
                                 tpl = spList[i]->tp;
                             else
@@ -2918,8 +2938,8 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                                 tpr = hrr ? (hrr->p)->tp : nullptr;
                             if (tpl && tpr)
                                 arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, args ? args->tp : 0,
-                                                            args ? args->exp : 0, funcList ? funcList[i][k] : nullptr,
-                                                            funcList ? funcList[j][k] : nullptr, lenl, lenr, false);
+                                                            args ? args->exp : 0, funcList ? funcList[i][k+lk] : nullptr,
+                                                            funcList ? funcList[j][k+rk] : nullptr, lenl, lenr, false);
                             else
                                 arr[k] = 0;
                             if (bothCast)
@@ -2927,8 +2947,8 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                                 tpl = basetype(spList[i]->tp)->btp;
                                 tpr = basetype(spList[j]->tp)->btp;
                                 arr[k + 1] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, args ? args->tp : 0,
-                                                                args ? args->exp : 0, funcList ? funcList[i][k] : nullptr,
-                                                                funcList ? funcList[j][k] : nullptr, lenl, lenr, false);
+                                                                args ? args->exp : 0, funcList ? funcList[i][k+lk] : nullptr,
+                                                                funcList ? funcList[j][k+rk] : nullptr, lenl, lenr, false);
                             }
                             if (hrl)
                                 hrl = hrl->next;
@@ -2937,8 +2957,8 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                             if (args)
                                 args = args->next;
                         }
-                        l += lenList[i][k];
-                        r += lenList[j][k];
+                        l += lenList[i][k + lk];
+                        r += lenList[j][k + rk];
                     }
                     for (k = 0; k < argCount + bothCast; k++)
                     {
@@ -3362,7 +3382,8 @@ SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int
                                     }
                                     else
                                     {
-                                        getSingleConversion(basetype(candidate->tp)->btp, tppp, lref ? nullptr : &exp, &n3, seq3 + n2,
+                                        getSingleConversion(tppp, basetype(candidate->tp)->btp, lref ? nullptr : &exp, &n3,
+                                                            seq3 + n2,
                                                         candidate, nullptr, false);
                                     }
                                 }
@@ -3600,10 +3621,6 @@ static void getPointerConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* exp, int* n, 
                 {
                     seq[(*n)++] = CV_DERIVEDFROMBASE;
                 }
-            }
-            else
-            {
-                seq[(*n)++] = CV_IDENTITY;
             }
         }
         else
@@ -4669,6 +4686,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
         tpp = argsym->tp;
         MakeType(tpx, bt_pointer, f->arguments->tp);
         m = 0;
+        seq[m++] = CV_USER;
         getSingleConversion(tpp, &tpx, f->thisptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr, true);
         m1 = m;
         while (m1 && seq[m1 - 1] == CV_IDENTITY)

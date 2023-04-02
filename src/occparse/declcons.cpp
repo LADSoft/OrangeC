@@ -559,7 +559,7 @@ static bool constAssignmentOp(SYMBOL* sp, bool move)
     {
         SYMBOL* cls = hr->p;
         if (isstructured(cls->tp) && cls->sb->storage_class != sc_typedef && !cls->sb->trivialCons)
-            if (!hasConstFunc(cls, assign - kw_new + CI_NEW, move))
+            if (!hasConstFunc(basetype(cls->tp)->sp, assign - kw_new + CI_NEW, move))
                 return false;
         hr = hr->next;
     }

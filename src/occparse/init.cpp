@@ -3234,7 +3234,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                         else if (isstructured(itype) && classRefCount(basetype(itype)->sp, basetype(tp1)->sp) == 1)
                         {
                             toErr = false;
-                            EXPRESSION q = {}, *v = &q;
+                            EXPRESSION* v = Allocate<EXPRESSION>();
                             v->type = en_c_i;
                             v = baseClassOffset(basetype(tp1)->sp, basetype(itype)->sp, v);
                             exp1 = exprNode(en_add, exp1, v);
@@ -4087,7 +4087,10 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
             if (sym->sb->storage_class == sc_absolute)
                 error(ERR_ABSOLUTE_NOT_INITIALIZED);
             else if (sym->sb->storage_class == sc_external)
+            {
                 sym->sb->storage_class = sc_global;
+                sym->sb->wasExternal = true;
+            }
             {
                 bool assigned = false;
                 TYPE* t = !isassign && (Optimizer::architecture == ARCHITECTURE_MSIL) ? find_boxed_type(sym->tp) : 0;
@@ -4375,6 +4378,8 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage
             }
             else
             {
+                if (sym->sb->attribs.inheritable.linkage2 != lk_export && !sym->sb->wasExternal)
+                    Optimizer::SymbolManager::Get(sym)->isinternal |= Optimizer::cparams.prm_cplusplus;
                 if ((sym->sb->init->exp && isintconst(sym->sb->init->exp) &&
                      (isint(sym->tp) || basetype(sym->tp)->type == bt_enum)))
                 {

@@ -6063,7 +6063,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         }
                         if (sp->sb->attribs.inheritable.linkage2 == lk_property && isfunction(tp1))
                             error(ERR_PROPERTY_QUALIFIER_NOT_ALLOWED_ON_FUNCTIONS);
-                        if (storage_class != sc_typedef && isstructured(tp1) && basetype(tp1)->sp->sb->isabstract)
+                        if (storage_class != sc_typedef && storage_class != sc_catchvar && isstructured(tp1) && basetype(tp1)->sp->sb->isabstract)
                             errorabstract(ERR_CANNOT_CREATE_INSTANCE_ABSTRACT, basetype(tp1)->sp);
                         if (sp->packed)
                             error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
@@ -6482,6 +6482,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                             spi->sb->declline = sp->sb->declline;
                                             spi->sb->realdeclline = sp->sb->realdeclline;
                                             spi->sb->declfilenum = sp->sb->declfilenum;
+                                            sp->sb->wasExternal = spi->sb->wasExternal = spi->sb->storage_class == sc_external;
                                             spi->sb->storage_class = sc_global;
                                         }
                                         break;
@@ -6885,29 +6886,39 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                         Optimizer::SymbolManager::Get(sp)->genreffed = true;
                                     }
                                 }
-                                else if (storage_class_in == sc_member || storage_class_in == sc_mutable ||
-                                         templateNestingCount == 1 || (asFriend && templateNestingCount == 2))
-                                {
-                                    STATEMENT* startStmt = currentLineData(nullptr, lex, 0);
-                                    if (startStmt)
-                                        sp->sb->linedata = startStmt->lineData;
-                                    lex = getDeferredData(lex, &sp->sb->deferredCompile, true);
-                                    InsertInline(sp);
-                                    if (sp->sb->parentClass && !templateNestingCount &&
-                                        (sp->sb->storage_class == sc_virtual || sp->sb->storage_class == sc_global))
-                                    {
-                                        if (sp->templateParams && !sp->templateParams->next)
-                                        {
-                                            sp->sb->templateLevel = 0;
-                                            sp->tp = SynthesizeType(sp->tp, sp->sb->parentClass->templateParams, false);
-                                            sp = TemplateFunctionInstantiate(sp, false, false);
-                                            sp->sb->specialized2 = true;
-                                        }
-                                    }
-                                }
                                 else
                                 {
-                                    lex = body(lex, sp);
+                                    if (Optimizer::cparams.prm_cplusplus && sp->sb->parentClass &&
+                                        storage_class_in != sc_member &&
+                                        sp->sb->attribs.inheritable.linkage4 != lk_virtual)
+                                    {
+                                        sp->sb->attribs.inheritable.linkage4 = lk_virtual;
+                                        Optimizer::SymbolManager::Get(sp)->genreffed = true;
+                                    }
+                                    if (storage_class_in == sc_member || storage_class_in == sc_mutable ||
+                                        templateNestingCount == 1 || (asFriend && templateNestingCount == 2))
+                                    {
+                                        STATEMENT* startStmt = currentLineData(nullptr, lex, 0);
+                                        if (startStmt)
+                                            sp->sb->linedata = startStmt->lineData;
+                                        lex = getDeferredData(lex, &sp->sb->deferredCompile, true);
+                                        InsertInline(sp);
+                                        if (sp->sb->parentClass && !templateNestingCount &&
+                                            (sp->sb->storage_class == sc_virtual || sp->sb->storage_class == sc_global))
+                                        {
+                                            if (sp->templateParams && !sp->templateParams->next)
+                                            {
+                                                sp->sb->templateLevel = 0;
+                                                sp->tp = SynthesizeType(sp->tp, sp->sb->parentClass->templateParams, false);
+                                                sp = TemplateFunctionInstantiate(sp, false, false);
+                                                sp->sb->specialized2 = true;
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        lex = body(lex, sp);
+                                    }
                                 }
                                 if (sp->sb->constexpression)
                                 {

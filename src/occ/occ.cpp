@@ -134,6 +134,10 @@ void global(Optimizer::SimpleSymbol* sym, int flags)
             oa_put_expfunc(sym);
         }
     }
+    else
+    {
+        omf_localdef(sym);
+    }
 }
 void ProcessData(Optimizer::BaseData* v)
 {

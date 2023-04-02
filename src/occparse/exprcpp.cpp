@@ -1180,7 +1180,9 @@ LEXLIST* GetCastInfo(LEXLIST* lex, SYMBOL* funcsp, TYPE** newType, TYPE** oldTyp
                     if (isfuncptr(tp))
                     {
                         tp = basetype(tp)->btp;
-                        auto sym = searchOverloads(basetype(tp)->sp, (*oldType)->syms);
+                        SYMBOL s = *basetype(tp)->sp;
+                        s.tp = tp;
+                        auto sym = searchOverloads(&s, (*oldType)->syms);
                         if (sym)
                         {
                             *oldType = MakeType(bt_pointer, sym->tp);

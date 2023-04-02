@@ -457,27 +457,32 @@ typedef int (CALLBACK *PFNPROPSHEETCALLBACK)(HWND, UINT, LPARAM);
 #define PROPSHEETHEADERW_V2_SIZE sizeof(PROPSHEETHEADERW_V2)
 #endif /* _WIN32_IE >= 0x400 */
 
-typedef struct _PROPSHEETHEADERA {
-    DWORD dwSize;
-    DWORD dwFlags;
-    HWND hwndParent;
-    HINSTANCE hInstance;
-    union {
-        HICON hIcon;
-        LPCSTR pszIcon;
-    } DUMMYUNIONNAME;
-    LPCSTR pszCaption;
-    UINT nPages;
-    union {
-        UINT nStartPage;
-        LPCSTR pStartPage;
-    } DUMMYUNIONNAME2;
-    union {
-        LPCPROPSHEETPAGEA ppsp;
-        HPROPSHEETPAGE *phpage;
-    } DUMMYUNIONNAME3;
+#define _PROPSHEETHEADERA_FIELDS \
+    DWORD dwSize; \
+    DWORD dwFlags; \
+    HWND hwndParent; \
+    HINSTANCE hInstance; \
+    union { \
+        HICON hIcon; \
+        LPCSTR pszIcon; \
+    } DUMMYUNIONNAME; \
+    LPCSTR pszCaption; \
+    UINT nPages; \
+    union { \
+        UINT nStartPage; \
+        LPCSTR pStartPage; \
+    } DUMMYUNIONNAME2; \
+    union { \
+        LPCPROPSHEETPAGEA ppsp; \
+        HPROPSHEETPAGE *phpage; \
+    } DUMMYUNIONNAME3; \
     PFNPROPSHEETCALLBACK pfnCallback;
-#if (_WIN32_IE >= 0x0400)
+
+typedef struct _PROPSHEETHEADERA_V1 {
+    _PROPSHEETHEADERA_FIELDS
+} PROPSHEETHEADERA_V1, *LPPROPSHEETHEADERA_V1;
+typedef struct _PROPSHEETHEADERA_V2 {
+    _PROPSHEETHEADERA_FIELDS
     union {
         HBITMAP hbmWatermark;
         LPCSTR pszbmWatermark;
@@ -487,42 +492,63 @@ typedef struct _PROPSHEETHEADERA {
         HBITMAP hbmHeader;
         LPCSTR pszbmHeader;
     } DUMMYUNIONNAME5;
+} PROPSHEETHEADERA_V2, *LPPROPSHEETHEADERA_V2;
+
+#if (_WIN32_IE >= 0x0400)
+#define PROPSHEETHEADERA PROPSHEETHEADERA_V2
+#define LPPROPSHEETHEADERA LPPROPSHEETHEADERA_V2
+#else
+#define PROPSHEETHEADERA PROPSHEETHEADERA_V1
+#define LPPROPSHEETHEADERA LPPROPSHEETHEADERA_V1
 #endif /* _WIN32_IE >= 0x0400 */
-} PROPSHEETHEADERA, *LPPROPSHEETHEADERA;
+
 typedef const PROPSHEETHEADERA *LPCPROPSHEETHEADERA;
 
-typedef struct _PROPSHEETHEADERW {
-    DWORD dwSize;
-    DWORD dwFlags;
-    HWND hwndParent;
-    HINSTANCE hInstance;
-    union {
-        HICON hIcon;
-        LPCWSTR pszIcon;
-    } DUMMYUNIONNAME;
-    LPCWSTR pszCaption;
-    UINT nPages;
-    union {
-        UINT nStartPage;
-        LPCWSTR pStartPage;
-    } DUMMYUNIONNAME2;
-    union {
-        LPCPROPSHEETPAGEW ppsp;
-        HPROPSHEETPAGE *phpage;
-    } DUMMYUNIONNAME3;
+#define _PROPSHEETHEADERW_FIELDS \
+    DWORD dwSize; \
+    DWORD dwFlags; \
+    HWND hwndParent; \
+    HINSTANCE hInstance; \
+    union { \
+        HICON hIcon; \
+        LPCWSTR pszIcon; \
+    } DUMMYUNIONNAME; \
+    LPCWSTR pszCaption; \
+    UINT nPages; \
+    union { \
+        UINT nStartPage; \
+        LPCWSTR pStartPage; \
+    } DUMMYUNIONNAME2; \
+    union { \
+        LPCPROPSHEETPAGEW ppsp; \
+        HPROPSHEETPAGE *phpage; \
+    } DUMMYUNIONNAME3; \
     PFNPROPSHEETCALLBACK pfnCallback;
+
+typedef struct _PROPSHEETHEADERW_V1 {
+    _PROPSHEETHEADERW_FIELDS
+} PROPSHEETHEADERW_V1, *LPPROPSHEETHEADERW_V1;
+typedef struct _PROPSHEETHEADERW_V2 {
+    _PROPSHEETHEADERW_FIELDS
+    union {
+        HBITMAP hbmWatermark;
+        LPCWSTR pszbmWatermark;
+    } DUMMYUNIONNAME4;
+    HPALETTE hplWatermark;
+    union {
+        HBITMAP hbmHeader;
+        LPCWSTR pszbmHeader;
+    } DUMMYUNIONNAME5;
+} PROPSHEETHEADERW_V2, *LPPROPSHEETHEADERW_V2;
+
 #if (_WIN32_IE >= 0x0400)
-        union {
-            HBITMAP hbmWatermark;
-            LPCWSTR pszbmWatermark;
-        } DUMMYUNIONNAME4;
-        HPALETTE hplWatermark;
-        union {
-            HBITMAP hbmHeader;
-            LPCWSTR pszbmHeader;
-        } DUMMYUNIONNAME5;
+#define PROPSHEETHEADERW PROPSHEETHEADERW_V2
+#define LPPROPSHEETHEADERW LPPROPSHEETHEADERW_V2
+#else
+#define PROPSHEETHEADERW PROPSHEETHEADERW_V1
+#define LPPROPSHEETHEADERW LPPROPSHEETHEADERW_V1
 #endif /* _WIN32_IE >= 0x0400 */
-} PROPSHEETHEADERW, *LPPROPSHEETHEADERW;
+
 typedef const PROPSHEETHEADERW *LPCPROPSHEETHEADERW;
 
 typedef BOOL (CALLBACK *LPFNADDPROPSHEETPAGE)(HPROPSHEETPAGE, LPARAM);

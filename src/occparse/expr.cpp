@@ -4356,7 +4356,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                             funcparams->returnSP->tp = TemplateClassInstantiate(sym, sym->templateParams, false, sc_global)->tp;
                     }
                 }
-                if (!funcparams->novtab && funcparams->sp && funcparams->sp->sb->storage_class == sc_virtual)
+                if ((!funcparams->novtab || (funcparams->sp && funcparams->sp->sb->ispure)) && funcparams->sp && funcparams->sp->sb->storage_class == sc_virtual)
                 {
                     exp_in = funcparams->thisptr;
                     deref(&stdpointer, &exp_in);

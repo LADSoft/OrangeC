@@ -4668,7 +4668,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
         SYMBOL* argsym = (SYMBOL*)(*hr)->p;
         memset(&tpx, 0, sizeof(tpx));
         m = 0;
-        getSingleConversion(parent->tp, basetype(sym->tp)->btp, nullptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr, true);
+        getSingleConversion(parent->tp, basetype(sym->tp)->btp, nullptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr, false);
         m1 = m;
         while (m1 && seq[m1 - 1] == CV_IDENTITY)
             m1--;

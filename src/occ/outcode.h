@@ -35,6 +35,7 @@ void dbginit(void);
 void outcode_file_init(void);
 void outcode_func_init(void);
 void omf_globaldef(Optimizer::SimpleSymbol* sym);
+void omf_localdef(Optimizer::SimpleSymbol* sym);
 void omf_put_extern(Optimizer::SimpleSymbol* sym, int code);
 void omf_put_impfunc(Optimizer::SimpleSymbol* sym, const char* file);
 void omf_put_expfunc(Optimizer::SimpleSymbol* sym);

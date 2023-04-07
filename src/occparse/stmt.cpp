@@ -86,6 +86,9 @@ bool functionCanThrow;
 int bodyIsDestructor;
 std::list<BLOCKDATA*> emptyBlockdata;
 
+std::stack<std::list<BLOCKDATA*>*> expressionStatements;
+std::deque<std::pair<EXPRESSION*, TYPE*>> expressionReturns;
+
 std::list<Optimizer::LINEDATA*>* lines;
 
 static int matchReturnTypes;
@@ -113,6 +116,8 @@ void statement_ini(bool global)
     expressions = 0;
     inLoopOrConditional = 0;
     bodyIsDestructor = 0;
+    while (!expressionStatements.empty())
+        expressionStatements.pop();
 }
 bool msilManaged(SYMBOL* s)
 {
@@ -2261,7 +2266,20 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                 if (!comparetypes(tp, tp1, true) &&
                     ((Optimizer::architecture != ARCHITECTURE_MSIL) || !isstructured(tp) || !isconstzero(&stdint, returnexp)))
                 {
-                    errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
+                    bool toErr = true;
+                    if (isstructured(tp) && isstructured(tp1) && classRefCount(basetype(tp)->sp,basetype(tp1)->sp))
+                    {
+                        toErr = false;
+                        EXPRESSION q = {}, *v = &q;
+                        v->type = en_c_i;
+                        v = baseClassOffset(basetype(tp)->sp, basetype(tp1)->sp, v);
+                        returnexp = exprNode(en_add, returnexp, v);
+                    
+                    }
+                    if (toErr)
+                    {
+                        errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
+                    }
                 }
                 else
                 {
@@ -2702,7 +2720,6 @@ static bool checkNoEffect(EXPRESSION* exp)
         case en__initobj:
         case en__sizeof:
             return false;
-            break;
         case en_not_lvalue:
         case en_lvalue:
         case en_thisref:
@@ -2726,7 +2743,10 @@ static LEXLIST* statement_expr(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
 
     auto prevlex = lex;
     lex = optimized_expression(prevlex, funcsp, nullptr, &tp, &select, true);
+    if (expressionReturns.size())
+        expressionReturns.back() = std::move(std::pair<EXPRESSION*, TYPE*>(select, tp));
     lines = oldLines;
+
     currentLineData(parent, prevlex, 0);
     st = stmtNode(lex, parent, st_expr);
     st->select = select;
@@ -3163,6 +3183,7 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
             before->needlabel = false;
     }
     before->nosemi = false;
+    expressionStatements.push(&parent);
     switch (KW(lex))
     {
         case kw_try:
@@ -3187,16 +3208,18 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
             //			error(ERR_UNEXPECTED_END_OF_BLOCKDATA);
             //			lex = getsym();
             before->hassemi = true;
+            expressionStatements.pop();
             return lex;
-            break;
         case kw_do:
             lex = statement_do(lex, funcsp, parent);
             break;
         case kw_while:
             lex = statement_while(lex, funcsp, parent);
+            expressionStatements.pop();
             return lex;
         case kw_for:
             lex = statement_for(lex, funcsp, parent);
+            expressionStatements.pop();
             return lex;
         case kw_switch:
             lex = statement_switch(lex, funcsp, parent);
@@ -3222,8 +3245,8 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
             StartOfCaseGroup(funcsp, parent);
             lex = nononconststatement(lex, funcsp, parent, false);
             before->nosemi = true;
+            expressionStatements.pop();
             return lex;
-            break;
         case kw_default:
             EndOfCaseGroup(funcsp, parent);
             if (Optimizer::cparams.prm_cplusplus)
@@ -3234,8 +3257,8 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
             StartOfCaseGroup(funcsp, parent);
             lex = nononconststatement(lex, funcsp, parent, false);
             before->nosemi = true;
+            expressionStatements.pop();
             return lex;
-            break;
         case kw_continue:
             lex = statement_continue(lex, funcsp, parent);
             if (Optimizer::cparams.prm_cplusplus)
@@ -3260,6 +3283,7 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
             break;
         case kw_asm:
             lex = statement_asm(lex, funcsp, parent);
+            expressionStatements.pop();
             return lex;
         case kw___try:
             lex = statement_SEH(lex, funcsp, parent);
@@ -3308,7 +3332,11 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
                     {
                         markInitializers(*before->statements);
                         if (prev)
-                            before->statements->insert(before->statements->begin(), prev->begin(), prev->end());
+                        {
+                            auto temp = before->statements;
+                            before->statements = prev;
+                            before->statements->insert(before->statements->end(), temp->begin(), temp->end());
+                        }
                     }
                     else
                     {
@@ -3326,6 +3354,7 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
                 {
                     FreeLocalContext(parent, funcsp, codeLabel++);
                 }
+                expressionStatements.pop();
                 return lex;
             }
             else
@@ -3336,6 +3365,9 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
             }
         }
     }
+    if (before->nosemi && expressionReturns.size())
+        expressionReturns.back() = std::move(std::pair<EXPRESSION*, TYPE*>(nullptr, &stdvoid));
+    expressionStatements.pop();
     if (MATCHKW(lex, semicolon))
     {
         before->hassemi = true;
@@ -3493,6 +3525,8 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
     if (!Optimizer::cparams.prm_cplusplus)
     {
         auto prev = blockstmt->statements;
+        std::list<BLOCKDATA*> tempBlockData = {blockstmt};
+        expressionStatements.push(&tempBlockData);
         // have to defer so we can get expression like constructor calls
         while (startOfType(lex, nullptr, false))
         {
@@ -3517,6 +3551,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
             }
         }
         blockstmt->statements = prev;
+        expressionStatements.pop();
     }
     if (before->type == kw_switch)
     {
@@ -3570,6 +3605,9 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
     {
         parent.pop_front();
         needkw(&lex, end);
+        if (expressionReturns.size())
+            expressionReturns.pop_back();
+        
         return lex;
     }
     browse_blockend(endline = lex->data->errline);

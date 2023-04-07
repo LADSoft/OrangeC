@@ -247,7 +247,10 @@ bool PreProcessor::GetLine(std::string& line)
                             {
                                 goto join;
                             }
-                            Errors::Error("Invalid preprocessor directive");
+                            if (!include.Skipping())
+                            {
+                                Errors::Error("Invalid preprocessor directive");
+                            }
                         }
                         line.erase(0, line.size());
                     }

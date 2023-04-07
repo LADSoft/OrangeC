@@ -91,6 +91,7 @@ typedef struct atomic_flag
     unsigned long long: ATOMIC_LLONG_LOCK_FREE == 2,   \
     __char16_t: ATOMIC_CHAR16_T_LOCK_FREE == 2,\
     __char32_t: ATOMIC_CHAR32_T_LOCK_FREE == 2,\
+    wchar_t: ATOMIC_WCHAR_T_LOCK_FREE == 2,\
     struct atomic_flag *: 1, \ 
     void *: ATOMIC_POINTER_LOCK_FREE == 2, \
     _Bool *: ATOMIC_BOOL_LOCK_FREE == 2, \
@@ -107,6 +108,7 @@ typedef struct atomic_flag
     unsigned long long *: ATOMIC_POINTER_LOCK_FREE == 2,   \
     __char16_t *: ATOMIC_POINTER_LOCK_FREE == 2,\
     __char32_t *: ATOMIC_POINTER_LOCK_FREE == 2,\
+    wchar_t *: ATOMIC_POINTER_LOCK_FREE == 2,\
     void **: ATOMIC_POINTER_LOCK_FREE == 2, \
     default: 0)
 

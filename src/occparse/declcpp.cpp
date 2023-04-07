@@ -561,7 +561,7 @@ void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos
 {
     auto lst = base->sb->baseClasses;
     *pos = vtabEntryListFactory.CreateList();
-    if (sym->sb->hasvtab && (!lst || lst->front()->isvirtual || !lst->front()->cls->sb->vtabEntries))
+    if (sym->sb->hasvtab && (!lst || !lst->size() || lst->front()->isvirtual || !lst->front()->cls->sb->vtabEntries))
     {
         VTABENTRY* vt = Allocate<VTABENTRY>();
         vt->cls = sym;
@@ -4413,6 +4413,7 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
             auto body = decl->sb->dest->front()->exp;
 
             Optimizer::temporarySymbols.clear();
+            Optimizer::functionVariables.clear();
             structret_imode = 0;
             Optimizer::tempCount = 0;
             Optimizer::blockCount = 0;

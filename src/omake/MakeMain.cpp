@@ -251,12 +251,19 @@ void MakeMain::SetMakeFlags()
     }
     SetVariable("MAKEOVERRIDES", vals, Variable::o_command_line, true);
 }
-void MakeMain::LoadJobArgs()
+bool MakeMain::LoadJobArgs()
 {
     int jobCount = 1;
     if (jobs.GetExists())
     {
         jobCount = jobs.GetValue();
+        if (jobCount == 0)
+            return false;
+        
+    }
+    else
+    {
+        jobs.SetValue(1);
     }
     OS::PushJobCount(jobCount);
     if (jobOutputMode.GetExists())
@@ -272,6 +279,7 @@ void MakeMain::LoadJobArgs()
         else
             Utils::fatal((std::string("Unknown output mode: ") + jobOutputMode.GetValue()));
     }
+    return true;
 }
 void MakeMain::LoadEnvironment()
 {
@@ -491,7 +499,8 @@ int MakeMain::Run(int argc, char** argv)
         keepGoing.SetValue(false);
     }
 
-    LoadJobArgs();
+    if (!LoadJobArgs())
+        Utils::usage(argv[0], usageText);
 
     bool done = false;
     Eval::SetWarnings(warnUndef.GetValue());

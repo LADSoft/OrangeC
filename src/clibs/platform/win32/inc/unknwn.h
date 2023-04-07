@@ -22,6 +22,7 @@
 #define _UNKNWN_H
 
 #ifdef __ORANGEC__ 
+#define _FORCENAMELESSUNION
 #pragma once
 #endif
 

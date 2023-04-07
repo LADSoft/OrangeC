@@ -152,7 +152,7 @@ class ppDefine
     bool NotSlashed(const std::string& macro, int pos);
     bool ppNumber(const std::string& macro, int begin, int pos);
     bool ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs, const DefinitionArgList& newArgs,
-                     const DefinitionArgList& expandedargs, const std::string varargs);
+                     const DefinitionArgList& expandedargs, std::deque<Definition*>& definitions, const std::string varargs);
     void SetupAlreadyReplaced(std::string& macro);
     int ReplaceSegment(std::string& line, int begin, int end, int& pptr, bool eol, std::deque<Definition*>& definitions,
                        std::deque<TokenPos>* positions);
@@ -176,6 +176,7 @@ class ppDefine
     ppCtx* ctx;
     ppMacro* macro;
     bool asmpp;
+    int counter_val;
     time_t source_date_epoch;
 };
 #endif

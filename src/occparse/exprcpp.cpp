@@ -1107,11 +1107,8 @@ bool doReinterpretCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* 
     // pointer to int
     if (ispointer(oldType) && isint(*newType))
     {
-        if ((*newType)->size >= oldType->size)
-        {
-            cast(*newType, exp);
-            return true;
-        }
+        cast(*newType, exp);
+        return true;
     }
     // function to int
     if (isfunction(oldType) && isint(*newType))
@@ -1219,7 +1216,9 @@ LEXLIST* GetCastInfo(LEXLIST* lex, SYMBOL* funcsp, TYPE** newType, TYPE** oldTyp
                     if (isfuncptr(tp))
                     {
                         tp = basetype(tp)->btp;
-                        auto sym = searchOverloads(basetype(tp)->sp, (*oldType)->syms);
+                        SYMBOL s = *basetype(tp)->sp;
+                        s.tp = tp;
+                        auto sym = searchOverloads(&s, (*oldType)->syms);
                         if (sym)
                         {
                             *oldType = MakeType(bt_pointer, sym->tp);
@@ -1480,14 +1479,14 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
                 tp1->rref = true;
             }
         }
-        else if (tp1->sp)  // enum
+        else if (basetype(tp1)->type == bt_enum)  // enum
         {
-            std::list<SYMBOL*> aa{ tp1->sp->sb->parentNameSpace };
-            tp1->sp->sb->templateNameSpace = tp1->sp->sb->parentNameSpace ? &aa : nullptr;
+            std::list<SYMBOL*> aa{ basetype(tp1)->sp->sb->parentNameSpace };
+            basetype(tp1)->sp->sb->templateNameSpace = basetype(tp1)->sp->sb->parentNameSpace ? &aa : nullptr;
             int n = PushTemplateNamespace(basetype(tp1)->sp);  // used for more than just templates here
             s5 = namespacesearch(name, globalNameSpace, false, false);
             PopTemplateNamespace(n);
-            tp1->sp->sb->templateNameSpace = nullptr;
+            basetype(tp1)->sp->sb->templateNameSpace = nullptr;
         }
     }
     // quit if there are no matches because we will use the default...

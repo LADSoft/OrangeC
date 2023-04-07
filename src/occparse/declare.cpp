@@ -577,7 +577,7 @@ void calculateStructOffsets(SYMBOL* sp)
         else
             bases->offset = 0;
     }
-    if (sp->sb->hasvtab && (!sp->sb->baseClasses || !sp->sb->baseClasses->front()->cls->sb->hasvtab || sp->sb->baseClasses->front()->isvirtual))
+    if (sp->sb->hasvtab && (!sp->sb->baseClasses || !sp->sb->baseClasses->size() || !sp->sb->baseClasses->front()->cls->sb->hasvtab || sp->sb->baseClasses->front()->isvirtual))
     {
         size += getSize(bt_pointer);
         totalAlign = getAlign(sc_member, &stdpointer);
@@ -5798,6 +5798,15 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                 if (!sym->sb->friends)
                                     sym->sb->friends = symListFactory.CreateList();
                                 sym->sb->friends->push_front(tp1->sp);
+                                if (sym->sb->baseClasses)
+                                {
+                                    for (auto bc : *sym->sb->baseClasses)
+                                    {
+                                        if (!bc->cls->sb->friends)
+                                            bc->cls->sb->friends = symListFactory.CreateList();
+                                        bc->cls->sb->friends->push_front(tp1->sp);
+                                    }
+                                }
                             }
                             if (oldGlobals)
                             {
@@ -5981,7 +5990,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         }
                         if (sp->sb->attribs.inheritable.linkage2 == lk_property && isfunction(tp1))
                             error(ERR_PROPERTY_QUALIFIER_NOT_ALLOWED_ON_FUNCTIONS);
-                        if (storage_class != sc_typedef && isstructured(tp1) && basetype(tp1)->sp->sb->isabstract)
+                        if (storage_class != sc_typedef && storage_class != sc_catchvar && isstructured(tp1) && basetype(tp1)->sp->sb->isabstract)
                             errorabstract(ERR_CANNOT_CREATE_INSTANCE_ABSTRACT, basetype(tp1)->sp);
                         if (sp->packed)
                             error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
@@ -6406,6 +6415,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                             spi->sb->declline = sp->sb->declline;
                                             spi->sb->realdeclline = sp->sb->realdeclline;
                                             spi->sb->declfilenum = sp->sb->declfilenum;
+                                            sp->sb->wasExternal = spi->sb->wasExternal = spi->sb->storage_class == sc_external;
                                             spi->sb->storage_class = sc_global;
                                         }
                                         break;
@@ -6666,10 +6676,30 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         checkOperatorArgs(sp, asFriend);
                     if (sp->sb->storage_class == sc_typedef)
                     {
+                        TYPE**tn = &sp->tp;
                         // all this is so we can have multiple typedefs referring to the same thing...
+                        if (!Optimizer::cparams.prm_cplusplus)
+                        {
+                            if ((*tn)->type == bt_typedef)
+                                while (*tn != basetype(*tn) && (*tn)->type != bt_va_list)
+                                    tn = &(*tn)->btp;
+                            // this next is a little buggy as if there are multiple typedefs for a struct
+                            // _Generic won't handle them right.   This is a rare case though and it is for the moment
+                            // expedient to do this...
+                            if ((*tn)->type != bt_struct)
+                                *tn = CopyType(*tn);
+                        }
                         sp->tp = MakeType(bt_typedef, sp->tp);
                         UpdateRootTypes(tp);
                         sp->tp->sp = sp;
+                        if (!Optimizer::cparams.prm_cplusplus)
+                        {
+                            sp->tp->typedefType = sp->tp;
+                            if (tn == &sp->tp)
+                                sp->tp->btp->typedefType = sp->tp;
+                            else
+                                (*tn)->typedefType = sp->tp;
+                        }
                     }
                     if (ispointer(sp->tp) && sp->sb->storage_class != sc_parameter)
                     {
@@ -6797,29 +6827,39 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                         Optimizer::SymbolManager::Get(sp)->genreffed = true;
                                     }
                                 }
-                                else if (storage_class_in == sc_member || storage_class_in == sc_mutable ||
-                                         templateNestingCount == 1 || (asFriend && templateNestingCount == 2))
-                                {
-                                    auto startStmt = currentLineData(emptyBlockdata, lex, 0);
-                                    if (startStmt)
-                                        sp->sb->linedata = startStmt->front()->lineData;
-                                    lex = getDeferredData(lex, &sp->sb->deferredCompile, true);
-                                    InsertInline(sp);
-                                    if (sp->sb->parentClass && !templateNestingCount &&
-                                        (sp->sb->storage_class == sc_virtual || sp->sb->storage_class == sc_global))
-                                    {
-                                        if (sp->templateParams && sp->templateParams->size() == 1)
-                                        {
-                                            sp->sb->templateLevel = 0;
-                                            sp->tp = SynthesizeType(sp->tp, sp->sb->parentClass->templateParams, false);
-                                            sp = TemplateFunctionInstantiate(sp, false, false);
-                                            sp->sb->specialized2 = true;
-                                        }
-                                    }
-                                }
                                 else
                                 {
-                                    lex = body(lex, sp);
+                                    if (Optimizer::cparams.prm_cplusplus && sp->sb->parentClass &&
+                                        storage_class_in != sc_member &&
+                                        sp->sb->attribs.inheritable.linkage4 != lk_virtual)
+                                    {
+                                        sp->sb->attribs.inheritable.linkage4 = lk_virtual;
+                                        Optimizer::SymbolManager::Get(sp)->genreffed = true;
+                                    }
+                                    if (storage_class_in == sc_member || storage_class_in == sc_mutable ||
+                                        templateNestingCount == 1 || (asFriend && templateNestingCount == 2))
+                                    {
+                                        auto startStmt = currentLineData(emptyBlockdata, lex, 0);
+                                        if (startStmt)
+                                            sp->sb->linedata = startStmt->front()->lineData;
+                                        lex = getDeferredData(lex, &sp->sb->deferredCompile, true);
+                                        InsertInline(sp);
+                                        if (sp->sb->parentClass && !templateNestingCount &&
+                                            (sp->sb->storage_class == sc_virtual || sp->sb->storage_class == sc_global))
+                                        {
+                                            if (sp->templateParams && sp->templateParams->size() == 1)
+                                            {
+                                                sp->sb->templateLevel = 0;
+                                                sp->tp = SynthesizeType(sp->tp, sp->sb->parentClass->templateParams, false);
+                                                sp = TemplateFunctionInstantiate(sp, false, false);
+                                                sp->sb->specialized2 = true;
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        lex = body(lex, sp);
+                                    }
                                 }
                                 if (sp->sb->constexpression)
                                 {

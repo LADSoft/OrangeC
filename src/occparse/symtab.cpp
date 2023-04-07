@@ -202,26 +202,48 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                 break;
             else
             {
+                bool matchconst = false;
                 TYPE* tps = sold->tp;
                 TYPE* tpn = snew->tp;
                 if (isref(tps))
-                    tps = basetype(tps)->btp;
-                if (isref(tpn))
-                    tpn = basetype(tpn)->btp;
-                while (ispointer(tpn) && ispointer(tps))
                 {
+                    matchconst = true;
+                    tps = basetype(tps)->btp;
+                }
+                if (isref(tpn))
+                {
+                    matchconst = true;
+                    tpn = basetype(tpn)->btp;
+                }
+                while (tps != tps->rootType && tps->type != bt_typedef && tps->type != bt_const && tps->type != bt_volatile)
+                    tps = tps->btp;
+                while (tpn != tpn->rootType && tpn->type != bt_typedef && tpn->type != bt_const && tpn->type != bt_volatile)
+                    tpn = tpn->btp;
+                if (tpn->type != bt_typedef && tps->type != bt_typedef && (ispointer(tpn) || ispointer(tps)))
+                {
+                    while (ispointer(tpn) && ispointer(tps) && tpn->type != bt_typedef && tps->type != bt_typedef)
+                    {
+                        if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
+                        {
+                            matchOverloadLevel--;
+                            return false;
+                        }
+                        tpn = basetype(tpn)->btp;
+                        tps = basetype(tps)->btp;
+                    }
                     if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
                     {
                         matchOverloadLevel--;
                         return false;
                     }
-                    tpn = basetype(tpn)->btp;
-                    tps = basetype(tps)->btp;
                 }
-                if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
+                else if (matchconst)
                 {
-                    matchOverloadLevel--;
-                    return false;
+                    if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
+                    {
+                        matchOverloadLevel--;
+                        return false;
+                    }                
                 }
                 tpn = basetype(tpn);
                 tps = basetype(tps);

@@ -118,6 +118,7 @@ struct symname
     }
 };
 static std::set<Optimizer::SimpleSymbol*, symname> globals;
+static std::set<Optimizer::SimpleSymbol*, symname> locals;
 static std::set<Optimizer::SimpleSymbol*, symname> externs;
 static std::map<Optimizer::SimpleSymbol*, int> autos;
 static std::vector<ObjSymbol*> autovector;
@@ -142,6 +143,7 @@ void omfInit(void)
     memset(sections, 0, sizeof(sections));
     currentSection = nullptr;
     globals.clear();
+    locals.clear();
     externs.clear();
     autos.clear();
     autotab.clear();
@@ -198,6 +200,7 @@ void outcode_func_init(void)
 }
 
 void omf_globaldef(Optimizer::SimpleSymbol* sym) { globals.insert(sym); }
+void omf_localdef(Optimizer::SimpleSymbol* sym) { locals.insert(sym); }
 void omf_put_extern(Optimizer::SimpleSymbol* sym, int code)
 {
     externs.insert(sym);
@@ -386,6 +389,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
             {
                 std::string name = l->GetName();
                 s.outputName = (char*)name.c_str();
+                bool local = false;
                 auto g = globals.find(&s);
                 if (g != globals.end())
                 {
@@ -405,6 +409,26 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                     l->SetObjSymbol(s1);
                     l->SetObjectSection(objSectionsByNumber[GETSECT(l, sectofs)]);
                     objGlobals[*g] = s1;
+                }
+                else
+                {
+                    auto l1 = locals.find(&s);
+                    if (l1 != locals.end())
+                    {
+                        ObjSymbol* s1;
+                        strcpy(buf, (*l1)->outputName);
+                        s1 = factory.MakeLocalSymbol(buf);
+                        ObjExpression* left = factory.MakeExpression(objSectionsByNumber[GETSECT(l, sectofs)]);
+                        ObjExpression* right = factory.MakeExpression(l->GetOffset()->ival);
+                        ObjExpression* sum = factory.MakeExpression(ObjExpression::eAdd, left, right);
+                        s1->SetOffset(sum);
+                        if (Optimizer::cparams.prm_debug)
+                            s1->SetBaseType(types.Put((*l1)->tp));
+                        fi->Add(s1);
+                        l->SetObjSymbol(s1);
+                        l->SetObjectSection(objSectionsByNumber[GETSECT(l, sectofs)]);
+                        objGlobals[*l1] = s1;                    
+                    }
                 }
             }
             for (auto e : externs)

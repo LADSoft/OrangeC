@@ -32,7 +32,8 @@
 #include "sys/stat.h"
 #include <algorithm>
 #include <iostream>
-
+#include <cassert>
+#include <tuple>
 Packing* Packing::instance;
 FenvAccess* FenvAccess::instance;
 CXLimitedRange* CXLimitedRange::instance;
@@ -42,7 +43,8 @@ Aliases* Aliases::instance;
 Startups* Startups::instance;
 Once* Once::instance;
 Warning* Warning::instance;
-
+std::shared_ptr<AdditionalLinkerCommands> AdditionalLinkerCommands::instance;
+std::shared_ptr<ObjectComment> ObjectComment::instance;
 KeywordHash ppPragma::hash = {
     {"(", kw::openpa},
     {")", kw::closepa},
@@ -94,6 +96,8 @@ void ppPragma::ParsePragma(const std::string& args)
             HandlePushPopMacro(tk, true);
         else if (str == "POP_MACRO")
             HandlePushPopMacro(tk, false);
+        else if (str == "COMMENT")
+            HandleComment(tk);
         else if (catchAll)
             catchAll(str, tk.GetString());
         // unmatched is not an error
@@ -144,9 +148,9 @@ void ppPragma::HandlePack(Tokenizer& tk)
         {
             if (tok->GetId() == "push" || tok->GetId() == "pop")
             {
-               tok = tk.Next();
-               if (tok->GetKeyword() == kw::comma)
-                   tok = tk.Next();
+                tok = tk.Next();
+                if (tok->GetKeyword() == kw::comma)
+                    tok = tk.Next();
             }
             if (tok->IsNumeric())
             {
@@ -324,7 +328,7 @@ void ppPragma::HandleLibrary(Tokenizer& tk)
         {
             p++;
         } while (isspace(*p));
-        q = (char *)strchr(p, ')');
+        q = (char*)strchr(p, ')');
         if (q)
         {
             while (q != p && isspace(q[-1]))
@@ -355,6 +359,172 @@ void ppPragma::HandleAlias(Tokenizer& tk)
 void ppPragma::HandleFar(Tokenizer& tk)
 {
     // fixme
+}
+
+static std::tuple<std::wstring, const Token*> MunchStrings(Tokenizer& tk)
+{
+    std::wstring finalStr;
+    const Token* tok;
+    for (tok = tk.Next(); tok->IsString(); tok = tk.Next())
+    {
+        finalStr.append(tok->GetString());
+    }
+    return {finalStr, tok};
+}
+void ppPragma::HandleComment(Tokenizer& tk)
+{
+    const Token* checkCode = tk.Next();
+    if (!checkCode->IsKeyword() && checkCode->GetKeyword() != kw::openpa)
+    {
+        Errors::WarningWithLine("pragma comment invalid, no starting parenthesis", Errors::GetFileName(), Errors::GetErrorLine());
+    }
+    const Token* tok = tk.Next();
+    const Token* afterTok = nullptr;
+    bool needEndParenErrors = true;
+    if (tok->IsIdentifier())
+    {
+        enum switchVals
+        {
+            COMPILER,
+            LIB,
+            LINKER,
+            USER
+        };
+        const std::unordered_map<std::string, switchVals> switchMap = {
+            {"compiler", COMPILER}, {"lib", LIB}, {"linker", LINKER}, {"user", USER}};
+        auto idVal = tok->GetId();
+        std::transform(idVal.begin(), idVal.end(), idVal.begin(), ::tolower);
+        auto switchVal = switchMap.find(idVal);
+        if (switchVal != switchMap.end())
+        {
+            switch (switchVal->second)
+            {
+                case COMPILER: {
+                    // We need to insert into the object library a comment about the compile date & time, currently unsupported
+                    const Token* parenTok = tk.Next();
+                    if (parenTok->IsKeyword() && parenTok->GetKeyword() != kw::closepa)
+                    {
+                        Errors::WarningWithLine(
+                            "Did not place a ending parenthesis for the compiler comment pragma in the correct spot",
+                            Errors::GetFileName(), Errors::GetErrorLine());
+                    }
+                    else
+                    {
+                        Errors::WarningWithLine(
+                            "Pragma compiler is currently unsupported, other warnings are generated for MSVC compat",
+                            Errors::GetFileName(), Errors::GetErrorLine());
+                    }
+                }
+
+                break;
+                case LIB: {
+                    // Send info to the linker like we do with pragma library
+                    const Token* commaTok = tk.Next();
+                    if (commaTok->IsKeyword() && commaTok->GetKeyword() == kw::comma)
+                    {
+                        std::tuple<std::wstring, const Token*> tup = MunchStrings(tk);
+                        std::wstring myString = std::get<0>(tup);
+                        afterTok = std::get<1>(tup);
+                        if (myString.empty())
+                        {
+                            Errors::WarningWithLine("Specified adding a library with pragma comment but did not name the library",
+                                                    Errors::GetFileName(), Errors::GetErrorLine());
+                            needEndParenErrors = false;
+                        }
+                        else
+                        {
+                            Libraries::Instance()->Add(Utils::ConvertWStringToString(myString));
+                        }
+                    }
+                    else
+                    {
+                        Errors::WarningWithLine("Specified a comment pragma for a library, but missed the comma",
+                                                Errors::GetFileName(), Errors::GetErrorLine());
+                        needEndParenErrors = false;
+                    }
+                    break;
+                }
+                case LINKER: {
+                    // Send specific commands to the linker
+                    const Token* commaTok = tk.Next();
+                    if (commaTok->IsKeyword() && commaTok->GetKeyword() == kw::comma)
+                    {
+                        std::tuple<std::wstring, const Token*> tup = MunchStrings(tk);
+                        std::wstring myString = std::get<0>(tup);
+                        afterTok = std::get<1>(tup);
+                        if (myString.empty())
+                        {
+                            Errors::WarningWithLine("Specified adding a library with pragma comment but did not name the library",
+                                                    Errors::GetFileName(), Errors::GetErrorLine());
+                            needEndParenErrors = false;
+                        }
+                        else
+                        {
+                            Errors::WarningWithLine("Currently pragma comment(linker) is unsupported.", Errors::GetFileName(),
+                                                    Errors::GetErrorLine());
+                            // AdditionalLinkerCommands::Instance()->Add(Utils::ConvertWStringToString(myString));
+                        }
+                    }
+                    else
+                    {
+                        Errors::WarningWithLine("Specified a comment pragma for a library, but missed the comma",
+                                                Errors::GetFileName(), Errors::GetErrorLine());
+                        needEndParenErrors = false;
+                    }
+                    break;
+                }
+                break;
+                case USER: {
+                    const Token* commaTok = tk.Next();
+                    // Send specific info into the object comments
+                    if (commaTok->IsKeyword() && commaTok->GetKeyword() == kw::comma)
+                    {
+                        std::tuple<std::wstring, const Token*> tup = MunchStrings(tk);
+                        std::wstring myString = std::get<0>(tup);
+                        afterTok = std::get<1>(tup);
+                        if (myString.empty())
+                        {
+                            Errors::WarningWithLine(
+                                "Specified adding a comment to the generated object file, but did not specify what",
+                                Errors::GetFileName(), Errors::GetErrorLine());
+                            needEndParenErrors = false;
+                        }
+                        else
+                        {
+                            Errors::WarningWithLine(
+                                "Pragma user is currently unsupported, other warnings are generated for MSVC compat",
+                                Errors::GetFileName(), Errors::GetErrorLine());
+                            ObjectComment::Instance()->Add(Utils::ConvertWStringToString(myString));
+                        }
+                    }
+                    else
+                    {
+                        Errors::WarningWithLine(
+                            "Specified a comment pragma for a user generated object comment but missed the comma",
+                            Errors::GetFileName(), Errors::GetErrorLine());
+                    }
+                }
+                break;
+                default:
+                    assert(false);
+                    break;
+            }
+        }
+        else
+        {
+            Errors::WarningWithLine("Pragma comment invalid, no valid comment type listed", Errors::GetFileName(),
+                                    Errors::GetErrorLine());
+        }
+    }
+    const Token* endCode = afterTok ? afterTok : tk.Next();
+    if (!endCode->IsKeyword() && endCode->GetKeyword() != kw::closepa)
+    {
+        if (needEndParenErrors)
+        {
+            Errors::WarningWithLine("pragma comment invalid, no ending parenthesis where expected", Errors::GetFileName(),
+                                    Errors::GetErrorLine());
+        }
+    }
 }
 void ppPragma::HandleOnce(Tokenizer& tk) { Once::Instance()->CheckForMultiple(); }
 

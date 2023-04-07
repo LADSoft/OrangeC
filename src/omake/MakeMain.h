@@ -87,7 +87,7 @@ class MakeMain
     void SetMakeFlags();
     void SetInternalVars();
     void SetupImplicit();
-    void LoadJobArgs();
+    bool LoadJobArgs();
     void LoadEnvironment();
     void LoadCmdDefines();
     void ShowRule(RuleList* ruleList);

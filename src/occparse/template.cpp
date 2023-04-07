@@ -3334,79 +3334,88 @@ static std::list<INITLIST*>* ExpandArguments(EXPRESSION* exp)
     }
     return rv;
 }
+static void PushPopDefaults(std::deque<TYPE*>& defaults, std::list<TEMPLATEPARAMPAIR>* tpx, bool dflt, bool push);
+static void PushPopDefaults(std::deque<TYPE*>& defaults, EXPRESSION* exp, bool dflt, bool push)
+{
+    std::stack<EXPRESSION*> stk;
+    stk.push(exp);
+    while (!stk.empty())
+    {
+        auto top = stk.top();
+        stk.pop();
+        if (top->type == en_templateselector)
+        {
+            auto ts = top->v.templateSelector->begin();
+            ++ts;
+            if (ts->isTemplate && ts->templateParams)
+                PushPopDefaults(defaults, ts->templateParams, dflt, push);
+        }
+        else
+        {
+            if (top->left)
+                stk.push(top->left);
+            if (top->right)
+                stk.push(top->right);
+        }
+    }
+}
 static void PushPopDefaults(std::deque<TYPE*>& defaults, std::list<TEMPLATEPARAMPAIR>* tpx, bool dflt, bool push)
 {
     std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> stk;
     if (tpx)
     {
-        auto itl = tpx->begin();
-        auto itel = tpx->end();
-        for (; itl != itel ;)
+        for (auto&& item : *tpx)
         {
-            if (itl->second->type != kw_new)
+            if (item.second->type != kw_new)
             {
-                if (itl->second->packed)
+                if (item.second->packed)
                 {
-                    if (!itl->second->byPack.pack || itl->second->byPack.pack->size() == 0)
-                        return;
-                    stk.push(itl);
-                    stk.push(itel);
-                    itel = itl->second->byPack.pack->end();
-                    itl = itl->second->byPack.pack->begin();
-                    continue;
-                }
-                if (push)
-                {
-                    defaults.push_back(dflt ? itl->second->byClass.dflt : itl->second->byClass.val);
-                }
-                else if (defaults.size())
-                {
-                    if (dflt)
-                    {
-                        itl->second->byClass.dflt = defaults.front();
-                    }
-                    else
-                    {
-                        itl->second->byClass.val = defaults.front();
-                    }
-                    defaults.pop_front();
+                    PushPopDefaults(defaults, item.second->byPack.pack, dflt, push);
                 }
                 else
                 {
-                    if (dflt)
+                    if (push)
                     {
-                        itl->second->byClass.dflt = nullptr;
+                        defaults.push_back(dflt ? item.second->byClass.dflt : item.second->byClass.val);
+                    }
+                    else if (defaults.size())
+                    {
+                        if (dflt)
+                        {
+                            item.second->byClass.dflt = defaults.front();
+                        }
+                        else
+                        {
+                            item.second->byClass.val = defaults.front();
+                        }
+                        defaults.pop_front();
                     }
                     else
                     {
-                        itl->second->byClass.val = nullptr;
+                        if (dflt)
+                        {
+                            item.second->byClass.dflt = nullptr;
+                        }
+                        else
+                        {
+                            item.second->byClass.val = nullptr;
+                        }
+                    }
+                    if ((dflt && item.second->type == kw_typename && item.second->byClass.dflt &&
+                         isstructured(item.second->byClass.dflt) && basetype(item.second->byClass.dflt)->sp->templateParams) ||
+                        (!dflt && item.second->type == kw_typename && item.second->byClass.val &&
+                         isstructured(item.second->byClass.val) && basetype(item.second->byClass.val)->sp->templateParams))
+                    {
+                        PushPopDefaults(defaults,
+                                        basetype(dflt ? item.second->byClass.dflt : item.second->byClass.val)->sp->templateParams,
+                                        dflt, push);
+                    }
+                    if ((dflt && item.second->type == kw_int && item.second->byClass.dflt) ||
+                        (!dflt && item.second->type == kw_typename && item.second->byClass.val))
+                    {
+                        PushPopDefaults(defaults, dflt ? item.second->byNonType.dflt : item.second->byNonType.val, dflt, push);
                     }
                 }
-                if ((dflt && itl->second->type == kw_typename && itl->second->byClass.dflt &&
-                     isstructured(itl->second->byClass.dflt) && basetype(itl->second->byClass.dflt)->sp->templateParams)
-                    || (!dflt && itl->second->type == kw_typename && itl->second->byClass.val &&
-                        isstructured(itl->second->byClass.val) && basetype(itl->second->byClass.val)->sp->templateParams))
-                {
-                    stk.push(itl);
-                    stk.push(itel);
-                    itel = basetype(dflt ? itl->second->byClass.dflt : itl->second->byClass.val)->sp->templateParams->end();
-                    itl = basetype(dflt ? itl->second->byClass.dflt : itl->second->byClass.val)->sp->templateParams->begin();
-                    if (itel != itl)
-                        continue;
-                    itel = stk.top();
-                    stk.pop();
-                    itl = stk.top();
-                    stk.pop();
-                }
-            }
-            ++itl;
-            while (itl == itel &&!stk.empty())
-            {
-                itel = stk.top();
-                stk.pop();
-                itl = stk.top();
-                stk.pop();
-                ++itl;
             }
         }
     }

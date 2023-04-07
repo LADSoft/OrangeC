@@ -22,6 +22,7 @@
 #define _UNKNWNBASE_H
 
 #ifdef __ORANGEC__ 
+#define _FORCENAMELESSUNION
 #pragma once
 #endif
 
@@ -62,7 +63,7 @@ EXTERN_C const IID IID_IUnknown;
 
 #if defined(__cplusplus) && !defined(CINTERFACE)
 
-MIDL_INTERFACE("00000000-0000-0000-C000-000000000046") IUnknownv {
+MIDL_INTERFACE("00000000-0000-0000-C000-000000000046") IUnknown {
     public:
     BEGIN_INTERFACE
     virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void **ppvObject) = 0;

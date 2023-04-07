@@ -2428,6 +2428,28 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
                 }
             }
         }
+        // make sure base types are same
+        if (atype)
+        {
+            while (ispointer(ltype) || isref(ltype))
+                ltype = basetype(ltype)->btp;
+            while (ispointer(rtype) || isref(rtype))
+                rtype = basetype(rtype)->btp;
+            while (ispointer(atype) || isref(atype))
+                atype = basetype(atype)->btp;
+            ltype = basetype(ltype);
+            rtype = basetype(rtype);
+            atype = basetype(atype);
+            if (atype->type == ltype->type)
+            {
+                if (atype->type != rtype->type)
+                    return -1;
+            }
+            else if (atype->type == rtype->type)
+            {
+                return 1;
+            }
+        }
     }
     else if (xl == user)
     {
@@ -2745,7 +2767,11 @@ static int ChooseLessConstTemplate(SYMBOL* left, SYMBOL* right)
         auto lend = basetype(left->tp)->syms->end();
         auto r = basetype(right->tp)->syms->begin();
         auto rend = basetype(right->tp)->syms->end();
-        for (; l !=lend && r != rend; ++l, ++r)
+        if (isconst(left->tp))
+            lcount++;
+        if (isconst(right->tp))
+            rcount++;
+        for (; l != lend && r != rend; ++l, ++r)
         {
             auto ltp = (*l)->tp;
             auto rtp = (*r)->tp;
@@ -2796,6 +2822,7 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                     int left = 0, right = 0;
                     int l = 0, r = 0;
                     int k = 0;
+                    int lk = 0, rk = 0;
                     std::list<INITLIST*>* args = funcparams ? funcparams->arguments : nullptr;
                     std::list<INITLIST*>::iterator argit;
                     std::list<INITLIST*>::iterator argite;
@@ -2845,10 +2872,10 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                             if (br > 1)
                                 spList[j] = nullptr;
                         }
-                        else if (k == 0 && funcparams && funcparams->thisptr)
+                        else if (k == 0 && funcparams && funcparams->thisptr && (spList[i]->sb->castoperator || (*itl)->sb->thisPtr) && (spList[i]->sb->castoperator || (*itr)->sb->thisPtr))
                         {
                             TYPE *tpl, *tpr;
-                            if (spList[i]->sb->castoperator)
+                            if (0 && spList[i]->sb->castoperator)
                             {
                                 tpl = toThis(basetype(spList[i]->tp)->btp);
                             }
@@ -2857,7 +2884,7 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                                 tpl = (*itl)->tp;
                                 ++itl;
                             }
-                            if (spList[j]->sb->castoperator)
+                            if (0 && spList[j]->sb->castoperator)
                             {
                                 tpr = toThis(basetype(spList[j]->tp)->btp);
                             }
@@ -2873,6 +2900,21 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                         else
                         {
                             TYPE *tpl, *tpr;
+                            if (funcparams->thisptr)
+                            {
+                                if (itl != itlend && (*itl)->sb->thisPtr)
+                                {
+                                    l += lenList[i][k + lk++];
+                                    lenl = lenList[i][k+lk];
+                                    ++itl;
+                                }
+                                if (itr != itrend && (*itr)->sb->thisPtr)
+                                {
+                                    r += lenList[j][k + rk++];
+                                    lenr = lenList[j][k+rk];
+                                    ++itr;
+                                }
+                            }
                             if (spList[i]->sb->castoperator)
                                 tpl = spList[i]->tp;
                             else
@@ -2883,8 +2925,8 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                                 tpr = itr != itrend ? (*itr)->tp : nullptr;
                             if (tpl && tpr)
                                 arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, argit != argite ? (*argit)->tp : 0,
-                                    argit != argite ? (*argit)->exp : 0, funcList ? funcList[i][k] : nullptr,
-                                                            funcList ? funcList[j][k] : nullptr, lenl, lenr, false);
+                                    argit != argite ? (*argit)->exp : 0, funcList ? funcList[i][k + lk] : nullptr,
+                                                            funcList ? funcList[j][k + rk] : nullptr, lenl, lenr, false);
                             else
                                 arr[k] = 0;
                             if (bothCast)
@@ -2892,8 +2934,8 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                                 tpl = basetype(spList[i]->tp)->btp;
                                 tpr = basetype(spList[j]->tp)->btp;
                                 arr[k + 1] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, argit != argite ? (*argit)->tp : 0,
-                                                                argit != argite ? (*argit)->exp : 0, funcList ? funcList[i][k] : nullptr,
-                                                                funcList ? funcList[j][k] : nullptr, lenl, lenr, false);
+                                                                argit != argite ? (*argit)->exp : 0, funcList ? funcList[i][k + lk] : nullptr,
+                                                                funcList ? funcList[j][k + rk] : nullptr, lenl, lenr, false);
                             }
                             if (itl != itlend)
                                 ++itl;
@@ -2902,8 +2944,8 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                             if (argit != argite)
                                 ++argit;
                         }
-                        l += lenList[i][k];
-                        r += lenList[j][k];
+                        l += lenList[i][k + lk];
+                        r += lenList[j][k + rk];
                     }
                     for (k = 0; k < argCount + bothCast; k++)
                     {
@@ -3050,7 +3092,7 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                                 }
                                 ++it;
                             }
-                            if (!found && it == ite)
+                            if (!found && (it == ite || (*it)->sb->defaultarg))
                             {
                                 match[i] = n;
                             }
@@ -3095,8 +3137,6 @@ static void GetMemberConstructors(std::list<SYMBOL*>& gather, SYMBOL* sym)
         for (auto bcl : *sym->sb->baseClasses)
             GetMemberConstructors(gather, bcl->cls);
 }
-void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
-                         bool allowUser);
 SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate_in,
                                  SYMBOL** userFunc, bool honorExplicit)
 {
@@ -3293,8 +3333,19 @@ SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int
                                 }
                                 else if (!comparetypes(basetype(candidate->tp)->btp, tpa, true) && !sameTemplate(basetype(candidate->tp)->btp, tpa))
                                 {
-                                    getSingleConversion(tppp, basetype(candidate->tp)->btp, lref ? nullptr : &exp, &n3, seq3 + n2,
-                                                        candidate, nullptr, true);
+                                    if (isvoidptr(tppp))
+                                    {
+                                        if (isvoidptr(basetype(candidate->tp)->btp))
+                                            seq3[n3++ + n2] = CV_IDENTITY;
+                                        else 
+                                            seq3[n3++ + n2] = CV_POINTERCONVERSION;
+                                    }
+                                    else
+                                    {
+                                        getSingleConversion(tppp, basetype(candidate->tp)->btp, lref ? nullptr : &exp, &n3,
+                                                            seq3 + n2,
+                                                        candidate, nullptr, false);
+                                    }
                                 }
                                 inGetUserConversion++;
                             }
@@ -3530,10 +3581,6 @@ static void getPointerConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* exp, int* n, 
                 {
                     seq[(*n)++] = CV_DERIVEDFROMBASE;
                 }
-            }
-            else
-            {
-                seq[(*n)++] = CV_IDENTITY;
             }
         }
         else
@@ -3878,18 +3925,18 @@ void GetRefs(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref)
            !lref && !tpa->lref;
 }
 void getSingleConversionWrapped(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate,
-                                SYMBOL** userFunc, bool allowUser)
+                                SYMBOL** userFunc, bool ref, bool allowUser)
 {
     int rref = tpa->rref;
     int lref = tpa->lref;
     tpa->rref = false;
     tpa->lref = false;
-    getSingleConversion(tpp, tpa, expa, n, seq, candidate, userFunc, allowUser);
+    getSingleConversion(tpp, tpa, expa, n, seq, candidate, userFunc, allowUser, ref);
     tpa->rref = rref;
     tpa->lref = lref;
 }
 void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
-                         bool allowUser)
+                         bool allowUser, bool ref)
 {
     bool lref = false;
     bool rref = false;
@@ -4100,7 +4147,9 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         else
         {
             if (allowUser)
-                getSingleConversionWrapped(tppp, tpa, expa, n, seq, candidate, userFunc, allowUser);
+            {
+                getSingleConversionWrapped(tppp, tpa, expa, n, seq, candidate, userFunc, !isconst(tppp), allowUser);
+            }
             else
                 seq[(*n)++] = CV_NONE;
         }
@@ -4149,7 +4198,10 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
                 }
                 else if (basetype(tpp)->sp->sb->trivialCons)
                 {
-                    seq[(*n)++] = CV_NONE;
+                    if (lookupSpecificCast(basetype(tpa)->sp, tpp))
+                        getUserConversion(F_WITHCONS, tpp, tpa, expa, n, seq, candidate, userFunc, true);
+                    else
+                        seq[(*n)++] = CV_NONE;
                 }
                 else
                 {
@@ -4179,7 +4231,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
             if (basetype(tpa)->nullptrType || (expa && isconstzero(tpa, expa)))
                 seq[(*n)++] = CV_POINTERCONVERSION;
             else if (isarray(tpa) && basetype(tpa)->msil)
-                getSingleConversionWrapped(basetype(tpp)->btp, basetype(tpa)->btp, nullptr, n, seq, candidate, userFunc, allowUser);
+                getSingleConversionWrapped(basetype(tpp)->btp, basetype(tpa)->btp, nullptr, n, seq, candidate, userFunc, false, allowUser);
             else
                 seq[(*n)++] = CV_NONE;
         }
@@ -4235,8 +4287,18 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         {
             if (ispointer(tpa))
             {
-                // cvqual
-                getPointerConversion(tpp, tpa, expa, n, seq);
+                if (isvoidptr(tpp))
+                {
+                    if (isvoidptr(tpa))
+                        seq[(*n)++] = CV_IDENTITY;
+                    else
+                        seq[(*n)++] = CV_POINTERCONVERSION;
+                }
+                else
+                {
+                    // cvqual
+                    getPointerConversion(tpp, tpa, expa, n, seq);
+                }
             }
             else if (isint(tpa) && expa && (isconstzero(tpa, expa) || expa->type == en_nullptr))
             {
@@ -4435,7 +4497,11 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
             }
             if (basetype(tpp)->type != basetype(tpa)->type)
             {
-                if (isint(tpa))
+                if (ref)
+                {
+                    seq[(*n)++] = CV_NONE;
+                }
+                else if (isint(tpa))
                     if (basetype(tpp)->type == bt_bool)
                     {
                         seq[(*n)++] = CV_BOOLCONVERSION;
@@ -4642,7 +4708,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
         SYMBOL* argsym = *it;
         memset(&tpx, 0, sizeof(tpx));
         m = 0;
-        getSingleConversion(parent->tp, basetype(sym->tp)->btp, nullptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr, true);
+        getSingleConversion(parent->tp, basetype(sym->tp)->btp, nullptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr, false);
         m1 = m;
         while (m1 && seq[m1 - 1] == CV_IDENTITY)
             m1--;
@@ -4660,6 +4726,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
         tpp = argsym->tp;
         MakeType(tpx, bt_pointer, f->arguments->front()->tp);
         m = 0;
+        seq[m++] = CV_USER;
         getSingleConversion(tpp, &tpx, f->thisptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr, true);
         m1 = m;
         while (m1 && seq[m1 - 1] == CV_IDENTITY)
@@ -5613,7 +5680,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         found2 = nullptr;
 #if !NDEBUG
                     // this block to aid in debugging unfound functions...
-                    if (toErr && (!found1 || (found1 && found2)) && !templateNestingCount)
+                    if ((toErr & F_GOFERR) && !inDeduceArgs && (!found1 || (found1 && found2)) && !templateNestingCount)
                     {
 
                         n = insertFuncs(spList, gather, args, atp, flags);

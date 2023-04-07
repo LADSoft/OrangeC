@@ -2467,8 +2467,7 @@ EXPRESSION* DerivedToBase(TYPE* tpn, TYPE* tpo, EXPRESSION* exp, int flags)
             if (n == 1)
             {
                 // derived to base
-                EXPRESSION q, *v = &q;
-                memset(&q, 0, sizeof(q));
+                EXPRESSION q = {}, *v = &q;
                 v->type = en_c_i;
                 v = baseClassOffset(spn, spo, v);
 
@@ -4051,6 +4050,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         parseBuiltInTypelistFunc(&lex, funcsp, funcparams->sp, tp, exp))
         return lex;
 
+
     if (lex)
     {
         lex = getArgs(lex, funcsp, funcparams, closepa, true, flags);
@@ -4503,7 +4503,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                             funcparams->returnSP->tp = TemplateClassInstantiate(sym, sym->templateParams, false, sc_global)->tp;
                     }
                 }
-                if (!funcparams->novtab && funcparams->sp && funcparams->sp->sb->storage_class == sc_virtual)
+                if ((!funcparams->novtab || (funcparams->sp && funcparams->sp->sb->ispure)) && funcparams->sp && funcparams->sp->sb->storage_class == sc_virtual)
                 {
                     exp_in = funcparams->thisptr;
                     deref(&stdpointer, &exp_in);
@@ -4886,6 +4886,27 @@ static LEXLIST* expression_string(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
         (*tp)->size = (elems + 1) * (*tp)->btp->size;
     return lex;
 }
+static bool matchesAttributes(TYPE *tp1, TYPE *tp2)
+{
+    while (tp1 && tp2)
+    {
+       if (isconst(tp1) != isconst(tp2) ||
+           isvolatile(tp1) != isvolatile(tp2) ||
+           isrestrict(tp1) != isrestrict(tp2))
+           return false;
+       tp1 = basetype(tp1)->btp;
+       tp2 = basetype(tp2)->btp;
+    }
+    return true;
+}
+static bool sameTypedef(TYPE* tp1, TYPE* tp2)
+{
+    while (tp1->btp && !tp1->typedefType)
+       tp1 = tp1->btp;
+    while (tp2->btp && !tp2->typedefType)
+       tp2 = tp2->btp;
+    return tp1->typedefType == tp2->typedefType;
+}
 static LEXLIST* expression_generic(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
     lex = getsym();
@@ -4950,9 +4971,7 @@ static LEXLIST* expression_generic(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                     {
                         if (scan->selector && next->selector && comparetypes(next->selector, scan->selector, true))
                         {
-                            if (isconst(next->selector) == isconst(scan->selector) &&
-                                isvolatile(next->selector) == isvolatile(scan->selector) &&
-                                isrestrict(next->selector) == isrestrict(scan->selector))
+                            if (matchesAttributes(next->selector, scan->selector) && sameTypedef(next->selector, scan->selector))
                             {
                                 error(ERR_DUPLICATE_TYPE_IN_GENERIC);
                             }
@@ -4965,9 +4984,7 @@ static LEXLIST* expression_generic(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                     {
                         if (selectType && next->selector && comparetypes(next->selector, selectType, true))
                         {
-                            if (isconst(next->selector) == isconst(selectType) &&
-                                isvolatile(next->selector) == isvolatile(selectType) &&
-                                isrestrict(next->selector) == isrestrict(selectType))
+                            if (matchesAttributes(next->selector, selectType) && sameTypedef(next->selector, selectType))
                             {
                                 if (selectedGeneric && selectedGeneric->selector)
                                     error(ERR_DUPLICATE_TYPE_IN_GENERIC);
@@ -5731,6 +5748,32 @@ static LEXLIST* expression___typeid(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXP
     }
     return lex;
 }
+static LEXLIST* expression_statement(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags)
+{
+	// gcc extension
+     if (expressionStatements.size())
+     {
+         expressionReturns.push_back(std::pair<EXPRESSION*, TYPE*>(nullptr, nullptr));
+         lex = compound(lex, funcsp, *expressionStatements.top(), false);
+         std::pair<EXPRESSION*, TYPE*> rv = std::move(expressionReturns.back());
+         expressionReturns.pop_back();
+         *tp = rv.second;
+         *exp = rv.first;
+         if (!*tp)
+             *tp = &stdvoid;
+         if (!*exp)
+             *exp = intNode(en_c_i, 0);
+     }
+     else
+     {
+         errskim(&lex, skim_end);
+         if (lex)
+             needkw(&lex, end);
+         *tp = &stdvoid;
+         *exp = intNode(en_c_i, 0);
+     }
+     return lex;
+}
 
 static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
@@ -5865,66 +5908,75 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                     break;
                 case openpa: {
                     lex = getsym();
-                    LEXLIST* start = lex;
-                    lex = expression_comma(lex, funcsp, nullptr, tp, exp, ismutable, flags & ~(_F_INTEMPLATEPARAMS | _F_SELECTOR));
-                    if (!*tp)
-                        error(ERR_EXPRESSION_SYNTAX);
-                    if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, ellipse))
+                    if (MATCHKW(lex, begin))
                     {
-                        // lose p
-                        lex = getsym();
-                        if (!templateNestingCount && *exp && (*exp)->type != en_packedempty)
-                        {
-                            if (!isstructured(*tp) && !(*tp)->templateParam)
-                                checkPackedExpression(*exp);
-                            // this is going to presume that the expression involved
-                            // is not too long to be cached by the LEXLIST mechanism.
-                            int oldPack = packIndex;
-                            int count = 0;
-                            SYMBOL* arg[200];
-                            GatherPackedVars(&count, arg, *exp);
-                            expandingParams++;
-                            if (count)
-                            {
-                                *exp = nullptr;
-                                EXPRESSION** next = exp;
-                                int i;
-                                int n = CountPacks(arg[0]->tp->templateParam->second->byPack.pack);
-                                for (i = 0; i < n; i++)
-                                {
-                                    INITLIST* p = Allocate<INITLIST>();
-                                    LEXLIST* lex = SetAlternateLex(start);
-                                    TYPE* tp1;
-                                    EXPRESSION* exp1;
-                                    packIndex = i;
-                                    expression_comma(lex, funcsp, nullptr, &tp1, &exp1, nullptr, _F_PACKABLE);
-                                    SetAlternateLex(nullptr);
-                                    if (tp1)
-                                    {
-                                        if (!*next)
-                                        {
-                                            *next = exp1;
-                                        }
-                                        else
-                                        {
-                                            *next = exprNode(en_void, *next, exp1);
-                                            next = &(*next)->right;
-                                        }
-                                    }
-                                }
-                            }
-                            expandingParams--;
-                            packIndex = oldPack;
-                        }
+                        lex = expression_statement(lex, funcsp, nullptr, tp, exp, ismutable, flags);
+                        needkw(&lex, closepa);
+                        break;
                     }
                     else
                     {
-                        if (argumentNesting <= 1)
-                            checkUnpackedExpression(*exp);
+                        LEXLIST* start = lex;
+                        lex = expression_comma(lex, funcsp, nullptr, tp, exp, ismutable, flags & ~(_F_INTEMPLATEPARAMS | _F_SELECTOR));
+                        if (!*tp)
+                            error(ERR_EXPRESSION_SYNTAX);
+                        if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, ellipse))
+                        {
+                            // lose p
+                            lex = getsym();
+                            if (!templateNestingCount && *exp && (*exp)->type != en_packedempty)
+                            {
+                                if (!isstructured(*tp) && !(*tp)->templateParam)
+                                    checkPackedExpression(*exp);
+                                // this is going to presume that the expression involved
+                                // is not too long to be cached by the LEXLIST mechanism.
+                                int oldPack = packIndex;
+                                int count = 0;
+                                SYMBOL* arg[200];
+                                GatherPackedVars(&count, arg, *exp);
+                                expandingParams++;
+                                if (count)
+                                {
+                                    *exp = nullptr;
+                                    EXPRESSION** next = exp;
+                                    int i;
+                                    int n = CountPacks(arg[0]->tp->templateParam->second->byPack.pack);
+                                    for (i = 0; i < n; i++)
+                                    {
+                                        INITLIST* p = Allocate<INITLIST>();
+                                        LEXLIST* lex = SetAlternateLex(start);
+                                        TYPE* tp1;
+                                        EXPRESSION* exp1;
+                                        packIndex = i;
+                                        expression_comma(lex, funcsp, nullptr, &tp1, &exp1, nullptr, _F_PACKABLE);
+                                        SetAlternateLex(nullptr);
+                                        if (tp1)
+                                        {
+                                            if (!*next)
+                                            {
+                                                *next = exp1;
+                                            }
+                                            else
+                                            {
+                                                *next = exprNode(en_void, *next, exp1);
+                                                next = &(*next)->right;
+                                            }
+                                        }
+                                    }
+                                }
+                                expandingParams--;
+                                packIndex = oldPack;
+                            }
+                        }
+                        else
+                        {
+                            if (argumentNesting <= 1)
+                                checkUnpackedExpression(*exp);
+                        }
+                        needkw(&lex, closepa);
+                        break;
                     }
-                    needkw(&lex, closepa);
-                    break;
-                }
+                }  
                 case kw___func__:
                     *tp = &std__func__;
                     if (!funcsp->sb->__func__label || Optimizer::msilstrings)
@@ -7689,10 +7741,15 @@ static LEXLIST* expression_add(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
             }
             else
             {
-                if (!ispointer(*tp) && !ispointer(tp1))
+                if (Optimizer::cparams.prm_cplusplus && *tp && isstructured(*tp))
                 {
-                    castToArithmetic(false, tp, exp, kw, tp1, true);
-                    castToArithmetic(false, &tp1, &exp1, (enum e_kw)-1, *tp, true);
+                    if (!castToArithmeticInternal(false, tp, exp, kw, isstructured(tp1) ? &stdint : tp1, false))
+                        castToPointer(tp, exp, kw, &stdpointer);
+                }
+                if (Optimizer::cparams.prm_cplusplus && tp1 && isstructured(tp1))
+                {
+                    if (!castToArithmeticInternal(false, &tp1, &exp1, (enum e_kw)-1, isstructured(*tp) ? &stdint : *tp, false))
+                        castToPointer(&tp1, &exp1, kw, &stdpointer);
                 }
                 LookupSingleAggregate(*tp, exp);
                 LookupSingleAggregate(tp1, &exp1);
@@ -7990,8 +8047,16 @@ static LEXLIST* expression_inequality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, T
                 else
                 {
                     checkscope(*tp, tp1);
-                    castToArithmetic(false, tp, exp, kw, tp1, true);
-                    castToArithmetic(false, &tp1, &exp1, (enum e_kw)-1, *tp, true);
+                    if (Optimizer::cparams.prm_cplusplus && *tp && isstructured(*tp))
+                    {
+                        if (!castToArithmeticInternal(false, tp, exp, kw, tp1, true))
+                            castToPointer(tp, exp, kw, ispointer(tp1) ? tp1 : &stdpointer);
+                    }
+                    if (Optimizer::cparams.prm_cplusplus && tp1 && isstructured(tp1))
+                    {
+                        if (!castToArithmeticInternal(false, &tp1, &exp1, (enum e_kw) - 1, *tp, true))
+                            castToPointer(&tp1, &exp1, (enum e_kw) -1, ispointer(*tp) ? *tp : &stdpointer);
+                    }
                 }
                 LookupSingleAggregate(*tp, exp);
                 LookupSingleAggregate(tp1, &exp1);
@@ -8118,8 +8183,16 @@ static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYP
             }
             else
             {
-                castToArithmetic(false, tp, exp, kw, tp1, true);
-                castToArithmetic(false, &tp1, &exp1, (enum e_kw)-1, *tp, true);
+                if (Optimizer::cparams.prm_cplusplus && *tp && isstructured(*tp))
+                {
+                    if (!castToArithmeticInternal(false, tp, exp, kw, tp1, true))
+                        castToPointer(tp, exp, kw, ispointer(tp1) ? tp1 : &stdpointer);
+                }
+                if (Optimizer::cparams.prm_cplusplus && tp1 && isstructured(tp1))
+                {
+                    if (!castToArithmeticInternal(false, &tp1, &exp1, (enum e_kw) - 1, *tp, true))
+                        castToPointer(&tp1, &exp1, (enum e_kw) -1, ispointer(*tp) ? *tp : &stdpointer);
+                }
             }
         }
         checkscope(*tp, tp1);
@@ -8359,6 +8432,13 @@ static LEXLIST* binop(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRES
         {
             first = false;
             GetLogicalDestructors(&logicaldestructorsleft, *exp);
+            if (Optimizer::cparams.prm_cplusplus && *tp && isstructured(*tp))
+            {
+                if (!castToArithmeticInternal(false, tp, exp, (enum e_kw) - 1, &stdbool, false))
+                    if (!castToArithmeticInternal(false, tp, exp, (enum e_kw) - 1, &stdint, false))
+                        if (!castToPointer(tp, exp, (enum e_kw) - 1, &stdpointer))
+                            errortype(ERR_CANNOT_CONVERT_TYPE, *tp, &stdint);
+            }
         }
         lex = getsym();
         lex = (*nextFunc)(lex, funcsp, atp, &tp1, &exp1, nullptr, flags);
@@ -8368,7 +8448,16 @@ static LEXLIST* binop(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRES
             break;
         }
         if (kw == land || kw == lor)
+        {
             GetLogicalDestructors(&logicaldestructorsright, exp1);
+            if (Optimizer::cparams.prm_cplusplus && tp1 && isstructured(tp1))
+            {
+                if (!castToArithmeticInternal(false, &tp1, &exp1, (enum e_kw) - 1, &stdbool, false))
+                    if (!castToArithmeticInternal(false, &tp1, &exp1, (enum e_kw) - 1, &stdint, false))
+                        if (!castToPointer(&tp1, &exp1, (enum e_kw) - 1, &stdpointer))
+                            errortype(ERR_CANNOT_CONVERT_TYPE, tp1, &stdint);
+            }
+        }
         if (isstructuredmath(*tp, tp1))
         {
             if (Optimizer::cparams.prm_cplusplus &&
@@ -8462,7 +8551,13 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
     {
         TYPE *tph = nullptr, *tpc = nullptr;
         EXPRESSION *eph = nullptr, *epc = nullptr;
-        castToArithmetic(false, tp, exp, (enum e_kw) - 1, &stdint, false);
+        if (Optimizer::cparams.prm_cplusplus && *tp && isstructured(*tp))
+        {
+            if (!castToArithmeticInternal(false, tp, exp, (enum e_kw) - 1, &stdbool, false))
+                if (!castToArithmeticInternal(false, tp, exp, (enum e_kw) - 1, &stdint, false))
+                    if (!castToPointer(tp, exp, (enum e_kw) - 1, &stdpointer))
+                        errortype(ERR_CANNOT_CONVERT_TYPE, *tp, &stdint);
+        }
         std::list<EXPRESSION*>* logicaldestructors = nullptr;
         GetLogicalDestructors(&logicaldestructors, *exp);
         LookupSingleAggregate(*tp, exp);
@@ -8525,7 +8620,30 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                         EXPRESSION* rv = nullptr;
                         if (!comparetypes(tph, tpc, false))
                         {
-                            if (isstructured(tph))
+                            if (atp && isstructured(atp))
+                            {
+                                if (!comparetypes(atp, tpc, false) || !sameTemplate(atp, tpc))
+                                {
+                                    rv = anonymousVar(sc_auto, tph);
+                                    EXPRESSION* exp = rv;
+                                    TYPE* ctype = atp;
+                                    callConstructorParam(&ctype, &exp, tpc, epc, true, false, false, false, true);
+                                    epc = exp;
+                                    tpc = atp;
+                                }
+
+                                if (!comparetypes(atp, tph, false) || !sameTemplate(atp, tph))
+                                {
+                                    rv = anonymousVar(sc_auto, tph);
+                                    EXPRESSION* exp = rv;
+                                    TYPE* ctype = atp;
+                                    callConstructorParam(&ctype, &exp, tph, eph, true, false, false, false, true);
+                                    eph = exp;
+                                    tph = CopyType(atp);
+                                    tph->lref = tph->rref = false;
+                                }
+                            }
+                            else if (isstructured(tph))
                             {
                                 rv = anonymousVar(sc_auto, tph);
                                 EXPRESSION* exp = rv;
@@ -8984,7 +9102,8 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             TYPE* tp2 = nullptr;
             SYMBOL* funcsp;
             if ((*exp2)->v.func->sp->sb->parentClass && !(*exp2)->v.func->asaddress)
-                error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
+                if ((*exp2)->v.func->sp->sb->storage_class == sc_member || (*exp2)->v.func->sp->sb->storage_class == sc_mutable)
+                    error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
             funcsp = MatchOverloadedFunction((*tp), isfuncptr(*tp) || basetype(*tp)->type == bt_memberptr ? &tp1 : &tp2,
                                              (*exp2)->v.func->sp, exp2, flags);
             if (funcsp && basetype(*tp)->type == bt_memberptr)
@@ -9017,6 +9136,23 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         symRef = (Optimizer::architecture == ARCHITECTURE_MSIL) ? temp : nullptr;
         LookupSingleAggregate(tp1, &exp1);
 
+        if (isstructured(tp1))
+        {
+            SYMBOL* conv = lookupNonspecificCast(basetype(tp1)->sp, *tp);
+            if (conv)
+            {
+                FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
+                params->thisptr = exp1;
+                params->thistp = tp1;
+                params->ascall = true;
+                params->functp = conv->tp;
+                params->fcall = varNode(en_pc, conv);
+                params->sp = conv;
+                exp1 = exprNode(en_func, nullptr, nullptr);
+                exp1->v.func = params;
+                tp1 = basetype(conv->tp)->btp;
+            }
+        }
         if (((*exp)->type == en_const || isconstraw(*tp)) && !localMutable &&
             (!temp || temp->v.sp->sb->storage_class != sc_parameter || !isarray(*tp)) &&
             ((*exp)->type != en_func || !isconstraw(basetype((*exp)->v.func->sp->tp)->btp)))

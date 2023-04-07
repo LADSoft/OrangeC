@@ -34,46 +34,21 @@
  * 
  */
 
-#include <errno.h>
-#include <string.h>
+#include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"
+#include <string.h>
 
-size_t mbsnrtowcs(wchar_t* restrict dst, const char** restrict src, size_t nms, size_t len, mbstate_t* restrict p)
+int _RTL_FUNC wctomb(char* s, wchar_t wchar)
 {
-    unsigned char b;
-    size_t used = 0;
-    const char* r = *src;
-
-    if (!p)
-        p = &__getRtlData()->mbsrtowcs_st;
-
-    while (used < len && p->left <= nms)
+    size_t rv;
+    if (!s)
     {
-        b = (unsigned char)*r++;
-        nms--;
-        if (p->left == 0)
-        {
-            if (!nms)
-            {
-                *src = r - 1;
-                return used;
-            }
-            if (dst)
-                *dst++ = (wchar_t)b;
-            if (b == L'\0')
-            {
-                *src = NULL;
-                return used;
-            }
-            used++;
-        }
+        return 0;
     }
-
-    *src = r;
-
-    return used;
+    rv = wcrtomb(s, wchar, &__getRtlData()->wctomb_st);
+    return (int)rv;
 }

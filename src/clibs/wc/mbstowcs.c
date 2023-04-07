@@ -34,46 +34,21 @@
  * 
  */
 
-#include <errno.h>
-#include <string.h>
+#include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"
+#include <string.h>
 
-size_t mbsnrtowcs(wchar_t* restrict dst, const char** restrict src, size_t nms, size_t len, mbstate_t* restrict p)
+size_t _RTL_FUNC mbstowcs(wchar_t* pwcs, const char* mbs, size_t n)
 {
-    unsigned char b;
-    size_t used = 0;
-    const char* r = *src;
-
-    if (!p)
-        p = &__getRtlData()->mbsrtowcs_st;
-
-    while (used < len && p->left <= nms)
-    {
-        b = (unsigned char)*r++;
-        nms--;
-        if (p->left == 0)
-        {
-            if (!nms)
-            {
-                *src = r - 1;
-                return used;
-            }
-            if (dst)
-                *dst++ = (wchar_t)b;
-            if (b == L'\0')
-            {
-                *src = NULL;
-                return used;
-            }
-            used++;
-        }
-    }
-
-    *src = r;
-
-    return used;
+    size_t rv;
+    rv = mbsrtowcs(pwcs, &mbs, n, &__getRtlData()->mbstowcs_st);
+    if (rv == (size_t)-2)
+        rv = (size_t)-1;
+    if ((int)rv >= 0 && rv != n)
+        pwcs[rv] = 0;
+    return rv;
 }

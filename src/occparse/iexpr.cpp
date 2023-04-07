@@ -3765,7 +3765,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
 
 Optimizer::IMODE* gen_void(EXPRESSION* node, SYMBOL* funcsp)
 {
-    if (node->type != en_auto)
+    if (node->type != en_auto && node->type != en_cshimthis)
         gen_expr(funcsp, node, F_NOVALUE, natural_size(node));
     return 0;
 }

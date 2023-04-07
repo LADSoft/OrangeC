@@ -3690,6 +3690,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
         case en_c_ui:
         case en_x_ui:
         case en_l_ui:
+        case en_sizeofellipse:
             return &stdunsigned;
         case en_x_inative:
         case en_l_inative:

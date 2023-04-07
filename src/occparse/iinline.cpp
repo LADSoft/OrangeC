@@ -207,9 +207,14 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
             {
                 Optimizer::IMODE *src, *ap1, *idest;
                 EXPRESSION* dest;
-                int n = sizeFromType(sym->tp);
                 int m = natural_size((*ita)->exp);
-                if (sym->sb->addressTaken || n == ISZ_ULONGLONG || n == -ISZ_ULONGLONG || m == ISZ_ULONGLONG || m == -ISZ_ULONGLONG || Optimizer::architecture == ARCHITECTURE_MSIL)
+                int n;
+                if (sym->tp->type == bt_ellipse)
+                    n = m;
+                else
+                    n = sizeFromType(sym->tp);
+                if (sym->sb->addressTaken || n == ISZ_ULONGLONG || n == -ISZ_ULONGLONG || m == ISZ_ULONGLONG ||
+                    m == -ISZ_ULONGLONG || Optimizer::architecture == ARCHITECTURE_MSIL)
                 {
                     SYMBOL* sym2;
                     sym2 = makeID(sc_auto, sym->tp, nullptr, AnonymousName());
@@ -223,6 +228,10 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                     if (isarray(sym->tp))
                     {
                         dest = exprNode(en_l_p, dest, nullptr);
+                    }
+                    else if (sym->tp->type == bt_ellipse)
+                    {
+                        deref((*ita)->tp, &dest);
                     }
                     else
                     {
@@ -250,6 +259,10 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                     else if (sym->tp->type == bt_templateselector)
                     {
                         deref(&stdpointer, &dest);
+                    }
+                    else if (sym->tp->type == bt_ellipse)
+                    {
+                        deref((*ita)->tp, &dest);
                     }
                     else
                     {

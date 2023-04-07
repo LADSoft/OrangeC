@@ -53,7 +53,7 @@
                   goto done
 :msdebugbuild
                   REM  Build with Microsoft PDB files
-                  c:\orangec\temp\omake -j:%PARALLEL% /DCOMPILER=MS /DMSPDB=%MSPDB% fullbuild
+                  c:\orangec\temp\omake /DCOMPILER=MS /DMSPDB=%MSPDB% fullbuild
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )

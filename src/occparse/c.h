@@ -362,7 +362,7 @@ typedef struct expr
     struct expr *left, *right;
     enum e_node type;
     int pragmas;
-    long size; /* For block moves */
+    struct typ* size; /* For block moves */
     void* altdata;
     struct
     {
@@ -806,8 +806,8 @@ typedef struct sym
         // clang-format on
         struct xcept* xc;
         std::list<struct sym*>* friends;
+        TYPE* structuredAliasType;
         attributes attribs;
-        /* Type declarations */
     } * sb;
 } SYMBOL;
 

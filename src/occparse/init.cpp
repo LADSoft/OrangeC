@@ -161,7 +161,8 @@ EXPRESSION* stringlit(STRING* s)
                 {
                     rv = intNode(en_labcon, lp->label);
                     rv->string = s;
-                    rv->size = s->size;
+                    rv->size = MakeType(bt_struct);
+                    rv->size->size;
                     rv->altdata = intNode(en_c_i, s->strtype);
                     lp->refCount++;
                     if (Optimizer::msilstrings)
@@ -177,7 +178,8 @@ EXPRESSION* stringlit(STRING* s)
     strtab.push_back(s);
     rv = intNode(en_labcon, s->label);
     rv->string = s;
-    rv->size = s->size;
+    rv->size = MakeType(bt_struct);
+    rv->size->size;
     rv->altdata = intNode(en_c_i, s->strtype);
     s->refCount++;
     if (Optimizer::msilstrings)
@@ -2069,7 +2071,7 @@ static LEXLIST* initialize_reference_type(LEXLIST* lex, SYMBOL* funcsp, int offs
                     if (sc != sc_parameter)
                         exp1 = createTemporary(itype1, nullptr);
                     exp = exprNode(en_blockassign, exp1, exp);
-                    exp->size = getSize(bt_memberptr);
+                    exp->size = MakeType(bt_memberptr);
                     exp->altdata = (void*)(&stdpointer);
                     exp = exprNode(en_void, exp, exp1);
                 }

@@ -140,8 +140,8 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
 {
     SimpleType* tp;
     /* needed for pointer aliasing */
-    if (!sym->imvalue && sym->tp->type != st_any && sym->tp->type != st_memberptr && sym->tp->type != st_struct &&
-        sym->tp->type != st_union && sym->tp->type != st_ellipse && sym->tp->type != st_aggregate)
+    if (!sym->imvalue && sym->tp->type != st_any && sym->tp->type != st_memberptr && ((sym->tp->type != st_struct &&
+        sym->tp->type != st_union) || sym->tp->structuredAlias) && sym->tp->type != st_ellipse && sym->tp->type != st_aggregate)
     {
         if (sym->imaddress)
         {
@@ -171,6 +171,7 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
         (!sym->addressTaken && (cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) || fastcallCandidate) &&
         !sym->inasm && (!sym->inCatch || fastcallCandidate) &&
         (((chosenAssembler->arch->hasFloatRegs || tp->type < st_f) && tp->type < st_void) ||
+         sym->tp->structuredAlias ||
          (tp->type == st_pointer && tp->btp->type != st_func) || tp->type == st_lref || tp->type == st_rref) &&
         (sym->storage_class == scc_auto || sym->storage_class == scc_register || sym->storage_class == scc_parameter) &&
         (!sym->usedasbit || fastcallCandidate) && !sym->tp->isvolatile)
@@ -183,12 +184,12 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
         SimpleExpression* ep;
         if (sym->imaddress || sym->inCatch)
         {
-            ep = anonymousVar(scc_auto, sym->tp);  // fastcall which takes an address
+            ep = anonymousVar(scc_auto, sym->tp->structuredAlias ? sym->tp->structuredAlias : sym->tp);  // fastcall which takes an address
         }
         else
         {
             ep = tempenode();
-            ep->sp->tp = sym->tp;
+            ep->sp->tp = sym->tp->structuredAlias ? sym->tp->structuredAlias : sym->tp;
             ep->right = (SimpleExpression*)sym;
             /* marking both the orignal var and the new temp as pushed to temp*/
             sym->pushedtotemp = true;

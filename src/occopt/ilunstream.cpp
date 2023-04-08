@@ -194,6 +194,7 @@ static Optimizer::SimpleType* UnstreamType()
             rv->sp = (Optimizer::SimpleSymbol*)UnstreamIndex();
             rv->flags = UnstreamIndex();
             rv->btp = UnstreamType();
+            rv->structuredAlias = UnstreamType();
         }
     });
     return rv;

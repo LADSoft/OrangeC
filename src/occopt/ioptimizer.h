@@ -91,6 +91,7 @@ enum st_type
 struct SimpleType
 {
     SimpleType* btp;
+    SimpleType* structuredAlias;
     struct SimpleSymbol* sp;
 
     st_type type;

@@ -727,7 +727,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                 else if (!funcparams->arguments || funcparams->arguments->size() == 0)  // empty parens means value constructed, e.g. set the thing to zero...
                 {
                     EXPRESSION* clr = exprNode(en_blockclear, exp2, nullptr);
-                    clr->size = sym->tp->size;
+                    clr->size = sym->tp;
                     *exp = exprNode(en_void, clr, *exp);
                 }
                 initInsert(&sym->sb->dest, *tp, exp1, 0, true);
@@ -1849,7 +1849,7 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
             {
                 // empty arguments means value construct...
                 EXPRESSION* clr = exprNode(en_blockclear, val, nullptr);
-                clr->size = (*tp)->size;
+                clr->size = *tp;
                 *exp = exprNode(en_void, clr, *exp);
             }
         }
@@ -1931,6 +1931,7 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
                 if (arrSize && !isstructured(*tp))
                 {
                     exp1 = exprNode(en_blockclear, base, exprNode(en_mul, arrSize, intNode(en_c_i, (*tp)->size)));
+                    exp1->size = *tp;
                     *exp = *exp ? exprNode(en_void, exp1, *exp) : exp1;
                 }
                 else if (isstructured(*tp) && (arrSize || !init->front()->exp))

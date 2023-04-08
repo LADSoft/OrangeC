@@ -455,14 +455,30 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
                 else
                     ap = gen_expr(funcsp, stmt->select, F_OBJECT | F_INRETURN, ISZ_ADDR);
                 DumpIncDec(funcsp);
+                size = ISZ_ADDR;
             }
             else
             {
-                if (inlinesym_structcount)
+                if (isstructured(basetype(funcsp->tp)->btp) && basetype(basetype(funcsp->tp)->btp)->sp->sb->structuredAliasType)
+                {
+                    size = natural_size(stmt->select);
+                      
+                    ap1 = gen_expr(funcsp, stmt->select, 0, size);
+                    ap = Optimizer::LookupLoadTemp(nullptr, ap1);
+                    if (ap != ap1)
+                    {
+                        Optimizer::gen_icode(Optimizer::i_assn, ap, ap1, nullptr);
+                    }
+                    DumpIncDec(funcsp);
+                    if (abs(size) < ISZ_UINT)
+                        size = -ISZ_UINT;
+                }
+                else if (inlineSymStructPtr.size())
                 {
                     ap = gen_expr(funcsp, stmt->select, 0, ISZ_ADDR);
                     DumpIncDec(funcsp);
-                    ap = gen_expr(funcsp, inlinesym_structptr[inlinesym_structcount - 1], 0, ISZ_ADDR);
+                    ap = gen_expr(funcsp, inlineSymStructPtr.back(), 0, ISZ_ADDR);
+                    size = ISZ_ADDR;
                 }
                 else
                 {
@@ -485,9 +501,9 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
                     ssym->allocate = false;
                     deref(&stdpointer, &en);
                     ap = gen_expr(funcsp, en, 0, ISZ_ADDR);
+                    size = ISZ_ADDR;
                 }
             }
-            size = ISZ_ADDR;
         }
         else
         {
@@ -503,16 +519,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
             ap = Optimizer::LookupLoadTemp(nullptr, ap3);
             if (ap != ap3)
             {
-                Optimizer::IMODE* barrier;
-                //                if (stmt->select->isatomic)
-                //                {
-                //                    barrier = doatomicFence(funcsp, nullptr, stmt->select, nullptr);
-                //                }
                 Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
-                //                if (stmt->select->isatomic)
-                //                {
-                //                    doatomicFence(funcsp, nullptr, stmt->select, barrier);
-                //                }
             }
             if (abs(size) < ISZ_UINT)
                 size = -ISZ_UINT;
@@ -526,7 +533,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
     {
         gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
     }
-    if (ap && (inlinesym_count || !isvoid(basetype(funcsp->tp)->btp) || funcsp->sb->isConstructor))
+    if (ap && (inlineSymThisPtr.size() || !isvoid(basetype(funcsp->tp)->btp) || funcsp->sb->isConstructor))
     {
         bool needsOCP = funcsp->sb->retcount <= 1;
         if (returnImode)
@@ -536,7 +543,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
         else
         {
             ap1 = Optimizer::tempreg(ap->size, 0);
-            if (!inlinesym_count)
+            if (!inlineSymThisPtr.size())
             {
                 ap1->retval = true;
                 needsOCP = false;
@@ -560,7 +567,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
         {
             retsize = funcsp->sb->paramsize;
         }
-        if (!inlinesym_count || retLabs[retlab] >= 2)
+        if (!inlineSymThisPtr.size() || retLabs[retlab] >= 2)
         {
             // main function or multiple returns, label is needed
             Optimizer::gen_label(retlab);
@@ -592,7 +599,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
         if (!noepilogue)
         {
 
-            if (!inlinesym_count)
+            if (!inlineSymThisPtr.size())
             {
                 if (allocaAP && (Optimizer::architecture != ARCHITECTURE_MSIL))
                 {

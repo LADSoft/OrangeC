@@ -519,19 +519,19 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                 }
                 break;
             case en_auto:
-                if (inlinesym_structcount)
+                if (inlineSymStructPtr.size())
                 {
                     if (node->left->v.sp->sb->retblk)
                     {
-                        return gen_expr(funcsp, inlinesym_structptr[inlinesym_structcount - 1], 0 ,ISZ_ADDR);
+                        return gen_expr(funcsp, inlineSymStructPtr.back(), 0 ,ISZ_ADDR);
                     }
                 }
                 sym = Optimizer::SymbolManager::Get(node->left->v.sp);
                 if (sym->thisPtr)
                 {
-                    if (inlinesym_count)
+                    if (inlineSymThisPtr.size())
                     {
-                        EXPRESSION* exp = inlinesym_thisptr[inlinesym_count - 1];
+                        EXPRESSION* exp = inlineSymThisPtr.back();
                         if (exp)
                         {
                             if (lvalue(exp) && exp->left->type == en_paramsubstitute)
@@ -1120,6 +1120,22 @@ Optimizer::IMODE* gen_moveblock(EXPRESSION* node, SYMBOL* funcsp)
             Optimizer::intermed_tail->oldmode = mode;
         }
     }
+    else if (node->size && isstructured(node->size) && basetype(node->size)->sp && basetype(node->size)->sp->sb->structuredAliasType)
+    {
+        EXPRESSION *varl = node->left;
+        EXPRESSION *varr = node->right;
+        if (varl->type != en_func && varl->type != en_thisref)
+            deref(basetype(node->size)->sp->sb->structuredAliasType, &varl);
+        if (varr->type != en_func && varr->type != en_thisref)
+            deref(basetype(node->size)->sp->sb->structuredAliasType, &varr);
+        int size = sizeFromType(node->size->sp->sb->structuredAliasType);
+        ap1 = gen_expr(funcsp, varl, F_STORE, size);
+        ap3 = gen_expr(funcsp, varr, F_VOL, size);
+        ap2 = Optimizer::LookupLoadTemp(nullptr, ap3);
+        if (ap2 != ap3)
+            Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
+        Optimizer::gen_icode(Optimizer::i_assn, ap1, ap2, nullptr);
+    }
     else
     {
         ap3 = gen_expr(funcsp, node->left, F_VOL, ISZ_UINT);
@@ -1130,7 +1146,7 @@ Optimizer::IMODE* gen_moveblock(EXPRESSION* node, SYMBOL* funcsp)
         ap2 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap2 != ap3)
             Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
-        ap6 = Optimizer::make_immed(ISZ_UINT, node->size);
+        ap6 = Optimizer::make_immed(ISZ_UINT, node->size->size);
         Optimizer::gen_icode(Optimizer::i_assnblock, ap6, ap1, ap2);
     }
     return (ap1);
@@ -1154,12 +1170,23 @@ Optimizer::IMODE* gen_clearblock(EXPRESSION* node, SYMBOL* funcsp)
         Optimizer::gen_icode(Optimizer::i__initobj, nullptr, ap, nullptr);
         return ap1;
     }
+    else if (node->size && isstructured(node->size) && basetype(node->size)->sp && basetype(node->size)->sp->sb->structuredAliasType)
+    {
+        Optimizer::IMODE *ap1;
+        EXPRESSION *var = node->left;
+        if (var->type != en_func && var->type != en_thisref)
+            deref(basetype(node->size)->sp->sb->structuredAliasType, &var);
+        int size = sizeFromType(basetype(node->size)->sp->sb->structuredAliasType);
+        ap1 = gen_expr(funcsp, var, F_STORE, size);
+        Optimizer::gen_icode(Optimizer::i_assn, ap1, Optimizer::make_immed(ISZ_UINT, 0), nullptr);
+        return (ap1);
+    }
     else
     {
         Optimizer::IMODE *ap1, *ap3, *ap4, *ap5, *ap6, *ap7, *ap8;
         if (node->size)
         {
-            ap4 = Optimizer::make_immed(ISZ_UINT, node->size);
+            ap4 = Optimizer::make_immed(ISZ_UINT, node->size->size);
         }
         else if (node->right)
         {
@@ -1787,14 +1814,31 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
                 rv = push_param(a->exp, funcsp, a->valist ? a->exp : nullptr, a->tp, F_OBJECT);
             }
         }
+        else if (basetype(a->tp)->sp->sb->structuredAliasType)
+        {
+            EXPRESSION* val = a->exp->left;
+            if (val->type != en_func && val->type != en_thisref)
+                deref(basetype(a->tp)->sp->sb->structuredAliasType, &val);
+            rv = push_param(val, funcsp, nullptr, a->tp, 0);
+        }
         else
         {
-            rv = push_stackblock(a->tp, a->exp->left, funcsp, a->exp->size, a->valist ? a->exp : nullptr);
+            rv = push_stackblock(a->tp, a->exp->left, funcsp, a->exp->size->size, a->valist ? a->exp : nullptr);
         }
     }
     else if (a->exp->type == en_stackblock)
     {
-        rv = push_stackblock(a->tp, a->exp->left, funcsp, a->tp->size, a->valist ? a->exp : nullptr);
+        if (basetype(a->tp)->sp->sb->structuredAliasType)
+        {
+           EXPRESSION *val = a->exp->left;
+            if (val->type != en_func && val->type != en_thisref)
+                deref(basetype(a->tp)->sp->sb->structuredAliasType, &val);
+           rv = push_param(val, funcsp, nullptr, a->tp, 0);
+        }
+        else
+        {
+            rv = push_stackblock(a->tp, a->exp->left, funcsp, a->tp->size, a->valist ? a->exp : nullptr);
+        }
     }
     else if (isstructured(a->tp) && a->exp->type == en_thisref)  // constructor
     {
@@ -3620,6 +3664,10 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 gen_void(search->left, funcsp);
                 search = search->right;
             }
+            if (search && search->type == en_auto && isstructured(search->v.sp->tp) && basetype(search->v.sp->tp)->sp->sb->structuredAliasType)
+            {
+                deref(basetype(search->v.sp->tp)->sp->sb->structuredAliasType, &search);
+            }
             ap1 = gen_expr(funcsp, search, flags, size);
             rv = ap1;
         }
@@ -4439,7 +4487,7 @@ void truejmp(EXPRESSION* node, SYMBOL* funcsp, int label)
             break;
         case en_mp_compare:
             lab0 = Optimizer::nextLabel++;
-            siz1 = node->size;
+            siz1 = node->size->size;
             siz2 = getSize(bt_int);
             ap2 = gen_expr(funcsp, node->left, 0, ISZ_UINT);
             ap3 = Optimizer::tempreg(ISZ_UINT, 0);
@@ -4466,7 +4514,7 @@ void truejmp(EXPRESSION* node, SYMBOL* funcsp, int label)
             Optimizer::gen_label(lab0);
             break;
         case en_mp_as_bool:
-            siz1 = node->size;
+            siz1 = node->size->size;
             siz2 = getSize(bt_int);
             ap2 = gen_expr(funcsp, node->left, F_ADDR, ISZ_UINT);
             ap3 = Optimizer::tempreg(ISZ_UINT, 0);
@@ -4635,7 +4683,7 @@ void falsejmp(EXPRESSION* node, SYMBOL* funcsp, int label)
             truejmp(node->left, funcsp, label);
             break;
         case en_mp_compare:
-            siz1 = node->size;
+            siz1 = node->size->size;
             siz2 = getSize(bt_int);
             ap2 = gen_expr(funcsp, node->left, 0, ISZ_UINT);
             ap3 = Optimizer::tempreg(ISZ_UINT, 0);
@@ -4662,7 +4710,7 @@ void falsejmp(EXPRESSION* node, SYMBOL* funcsp, int label)
             break;
         case en_mp_as_bool:
             lab0 = Optimizer::nextLabel++;
-            siz1 = node->size;
+            siz1 = node->size->size;
             siz2 = getSize(bt_int);
             ap2 = gen_expr(funcsp, node->left, F_ADDR, ISZ_UINT);
             ap3 = Optimizer::tempreg(ISZ_UINT, 0);

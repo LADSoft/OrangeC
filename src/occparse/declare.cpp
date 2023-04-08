@@ -1011,6 +1011,29 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
         }
     }
 }
+static void GetStructAliasType(SYMBOL *sym)
+{
+    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+        return;
+    if ((!Optimizer::cparams.prm_optimize_for_speed && !Optimizer::cparams.prm_optimize_for_size) || Optimizer::cparams.prm_debug)
+        return;
+    SYMBOL* cache = nullptr;
+    if (!sym->sb->trivialCons)
+        return;
+    for (auto m : *sym->tp->syms)
+    {
+        if (ismemberdata(m))
+        {
+            if (cache)
+                return;
+            else
+                cache = m;
+        }
+    }
+    if (!cache || isstructured(cache->tp) || isatomic(cache->tp) || isarray(cache->tp) || basetype(cache->tp)->type == bt_long_long || basetype(cache->tp)->type == bt_unsigned_long_long || basetype(cache->tp)->bits || isfuncptr(cache->tp) || isref(cache->tp))
+        return;
+    sym->sb->structuredAliasType = cache->tp;
+}
 static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac currentAccess)
 {
     STRUCTSYM sl;
@@ -1093,6 +1116,7 @@ static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac c
         if (Optimizer::cparams.prm_cplusplus)
             deferredInitializeStructMembers(sp);
     }
+    GetStructAliasType(sp);
     if (!Optimizer::cparams.prm_cplusplus || structLevel == 1)
     {
         structLevel--;
@@ -5222,7 +5246,8 @@ static void allocateVLA(LEXLIST* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<BLOC
         *rptr = exprNode(en_void, nullptr, nullptr);
         rptr = &(*rptr)->right;
         result->left = exprNode(en_blockassign, varNode(en_auto, dest), varNode(en_auto, src));
-        result->left->size = dest->tp->size = src->tp->size;
+        dest->tp->size = src->tp->size;
+        result->left->size = src->tp;
         result->altdata = (void*)src->tp;
     }
     else

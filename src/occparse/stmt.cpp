@@ -253,7 +253,7 @@ static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent
         if (tp->type == bt_memberptr)
         {
             *exp = exprNode(en_mp_as_bool, *exp, nullptr);
-            (*exp)->size = tp->size;
+            (*exp)->size = tp;
             tp = &stdint;
         }
     }
@@ -271,7 +271,7 @@ static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent
             if (tp->type == bt_memberptr)
             {
                 *exp = exprNode(en_mp_as_bool, *exp, nullptr);
-                (*exp)->size = tp->size;
+                (*exp)->size = tp;
                 tp = &stdint;
             }
             optimize_for_constants(exp);
@@ -2309,9 +2309,16 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                     if ((Optimizer::architecture != ARCHITECTURE_MSIL) ||
                         funcsp->sb->attribs.inheritable.linkage2 == lk_unmanaged || !msilManaged(funcsp))
                     {
-                        returnexp = exprNode(en_blockassign, en, returnexp);
-                        returnexp->size = basetype(tp)->size;
-                        returnexp->altdata = (void*)(basetype(tp));
+                        if (!isstructured(tp) || !basetype(tp)->sp->sb->structuredAliasType)
+                        {
+                            returnexp = exprNode(en_blockassign, en, returnexp);
+                            returnexp->size = tp;
+                            returnexp->altdata = (void*)(basetype(tp));
+                        }
+                        else
+                        {
+                            deref(basetype(tp)->sp->sb->structuredAliasType, &returnexp);
+                        }
                     }
                     returntype = tp;
                 }
@@ -3823,7 +3830,7 @@ static void assignParameterSizes(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
     }
     else
     {
-        if (isstructured(basetype(funcsp->tp)->btp) || basetype(basetype(funcsp->tp)->btp)->type == bt_memberptr)
+        if ((isstructured(basetype(funcsp->tp)->btp) && !basetype(basetype(funcsp->tp)->btp)->sp->sb->structuredAliasType) || basetype(basetype(funcsp->tp)->btp)->type == bt_memberptr)
         {
             // handle structured return values
             if (Optimizer::chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)

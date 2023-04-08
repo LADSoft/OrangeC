@@ -1631,6 +1631,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                             errorsym(ERR_CANNOT_ACCESS, sp2);
                         }
                     }
+                    bool structuredAlias = false;
                     if (sp2->sb->storage_class == sc_constant)
                     {
                         *exp = varNode(en_const, sp2);
@@ -1653,18 +1654,40 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                     }
                     else
                     {
-                        EXPRESSION* offset;
-                        if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                        if (isstructured(typein) && basetype(typein)->sp->sb->structuredAliasType)
                         {
-                            offset = varNode(en_structelem, sp2);  // prepare for the MSIL ldflda instruction
+                            structuredAlias = true;
+                            // use it as-is
                         }
                         else
-                            offset = intNode(en_c_i, sp2->sb->offset);
-                        if (!typein2 && sp2->sb->parentClass != basetype(typ2)->sp)
                         {
-                            *exp = baseClassOffset(sp2->sb->parentClass, basetype(typ2)->sp, *exp);
+                            EXPRESSION* offset;
+                            if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                            {
+                                offset = varNode(en_structelem, sp2);  // prepare for the MSIL ldflda instruction
+                            }
+                            else
+                                offset = intNode(en_c_i, sp2->sb->offset);
+                            if (!typein2 && sp2->sb->parentClass != basetype(typ2)->sp)
+                            {
+                                *exp = baseClassOffset(sp2->sb->parentClass, basetype(typ2)->sp, *exp);
+                            }
+                            *exp = exprNode(en_structadd, *exp, offset);
+                            if (sp3)
+                            {
+                                do
+                                {
+                                    if (basetype(sp3->tp)->type == bt_union)
+                                    {
+                                        offset->unionoffset = true;
+                                        break;
+                                    }
+                                    if (sp3 != sp2 && ispointer(sp3->tp))
+                                        break;
+                                    sp3 = sp3->sb->parent;
+                                } while (sp3);
+                            }
                         }
-                        *exp = exprNode(en_structadd, *exp, offset);
                         if (isref(*tp))
                         {
                             deref(*tp, exp);
@@ -1672,20 +1695,6 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                         }
                         if (typein2)
                             deref(typein2, exp);
-                        if (sp3)
-                        {
-                            do
-                            {
-                                if (basetype(sp3->tp)->type == bt_union)
-                                {
-                                    offset->unionoffset = true;
-                                    break;
-                                }
-                                if (sp3 != sp2 && ispointer(sp3->tp))
-                                    break;
-                                sp3 = sp3->sb->parent;
-                            } while (sp3);
-                        }
                     }
                     if (tpb->hasbits)
                     {
@@ -1693,11 +1702,11 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                         (*exp)->bits = tpb->bits;
                         (*exp)->startbit = tpb->startbit;
                     }
-                    if (sp2->sb->storage_class != sc_constant && sp2->sb->storage_class != sc_enumconstant)
+                    if (sp2->sb->storage_class != sc_constant && sp2->sb->storage_class != sc_enumconstant && (!structuredAlias || ((*exp)->type != en_func && (*exp)->type != en_thisref ) ))
                     {
                         deref(*tp, exp);
                     }
-                    if (sp2->sb->storage_class != sc_enumconstant)
+                    if (sp2->sb->storage_class != sc_enumconstant && !structuredAlias)
                     {
                         (*exp)->v.sp = sp2;  // caching the member symbol in the enode for constexpr handling
                     }
@@ -2747,7 +2756,7 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
         {
             initial->front()->tp = initializerListTemplate;
             initial->front()->exp = exprNode(en_stackblock, exp, nullptr);
-            initial->front()->exp->size = basetype(initializerListTemplate)->size;
+            initial->front()->exp->size = initializerListTemplate;
         }
     }
     else
@@ -3021,7 +3030,7 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
         {
             initial->front()->tp = initializerListTemplate;
             initial->front()->exp = exprNode(en_stackblock, exprNode(en_void, rv, initList), nullptr);
-            initial->front()->exp->size = basetype(initializerListTemplate)->size;
+            initial->front()->exp->size = initializerListTemplate;
         }
     }
 }
@@ -3088,6 +3097,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
             if (isstructured(sym->tp))
             {
                 il->exp = exprNode(en_stackblock, il->exp, nullptr);
+                il->exp->size = sym->tp;
                 ++it;
                 ++itl;
                 continue;
@@ -3379,7 +3389,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                     else if (basetype(sym->tp)->sp->sb->trivialCons)
                     {
                         p->exp = exprNode(en_stackblock, p->exp, nullptr);
-                        p->exp->size = basetype(p->tp)->size;
+                        p->exp->size = p->tp;
                     }
                     else
                     {
@@ -3491,7 +3501,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         {
                             EXPRESSION* dest = createTemporary(tp2, nullptr);
                             p->exp = exprNode(en_blockclear, dest, nullptr);
-                            p->exp->size = tp2->size;
+                            p->exp->size = tp2;
                             p->exp = exprNode(en_void, p->exp, dest);
                         }
                         else if (p->exp->type == en_func && p->exp->v.func->returnSP)
@@ -3599,7 +3609,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                     if (sym->tp->type == bt_ellipse)
                     {
                         p->exp = exprNode(en_stackblock, p->exp, nullptr);
-                        p->exp->size = p->tp->size;
+                        p->exp->size = p->tp;
                     }
                     else
                     {
@@ -3648,16 +3658,16 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         int lbl = dumpMemberPtr(p->exp->v.sp, sym->tp, true);
                         p->exp = intNode(en_labcon, lbl);
                         p->exp = exprNode(en_stackblock, p->exp, nullptr);
-                        p->exp->size = sym->tp->size;
+                        p->exp->size = sym->tp;
                     }
                     else if (isconstzero(p->tp, p->exp) || p->exp->type == en_nullptr)
                     {
                         EXPRESSION* dest = createTemporary(sym->tp, nullptr);
                         p->exp = exprNode(en_blockclear, dest, nullptr);
-                        p->exp->size = sym->tp->size;
+                        p->exp->size = sym->tp;
                         p->exp = exprNode(en_void, p->exp, dest);
                         p->exp = exprNode(en_stackblock, p->exp, nullptr);
-                        p->exp->size = sym->tp->size;
+                        p->exp->size = sym->tp;
                     }
                     else if (p->exp->type == en_func && p->exp->v.func->returnSP)
                     {
@@ -3667,19 +3677,19 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         esp->sb->stackblock = true;
                         p->exp = intNode(en_labcon, lbl);
                         p->exp = exprNode(en_stackblock, p->exp, nullptr);
-                        p->exp->size = sym->tp->size;
+                        p->exp->size = sym->tp;
                     }
                     else if (p->exp->type == en_pc)
                     {
                         int lbl = dumpMemberPtr(p->exp->v.sp, sym->tp, true);
                         p->exp = intNode(en_labcon, lbl);
                         p->exp = exprNode(en_stackblock, p->exp, nullptr);
-                        p->exp->size = sym->tp->size;
+                        p->exp->size = sym->tp;
                     }
                     else
                     {
                         p->exp = exprNode(en_stackblock, p->exp, nullptr);
-                        p->exp->size = sym->tp->size;
+                        p->exp->size = sym->tp;
                     }
                     p->tp = sym->tp;
                 }
@@ -3787,7 +3797,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                 else if (p && p->tp && isstructured(p->tp) && (!basetype(p->tp)->sp->sb->msil || !isconstzero(p->tp, p->exp)))
                 {
                     p->exp = exprNode(en_stackblock, p->exp, nullptr);
-                    p->exp->size = p->tp->size;
+                    p->exp->size = p->tp;
                 }
             }
         }
@@ -3799,7 +3809,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                 if (isstructured(p->tp))
                 {
                     p->exp = exprNode(en_stackblock, p->exp, nullptr);
-                    p->exp->size = p->tp->size;
+                    p->exp->size = p->tp;
                 }
                 else if (isfloat(sym->tp) || isimaginary(sym->tp) || iscomplex(sym->tp))
                 {
@@ -3827,7 +3837,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
         if (isstructured(p->tp))
         {
             p->exp = exprNode(en_stackblock, p->exp, nullptr);
-            p->exp->size = p->tp->size;
+            p->exp->size = p->tp;
             if (Optimizer::cparams.prm_cplusplus)
             {
                 auto dexp = p->exp;
@@ -4444,7 +4454,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                 }
                 if (isstructured(basetype(*tp)->btp) || basetype(basetype(*tp)->btp)->type == bt_memberptr)
                 {
-                    if (!(flags & _F_SIZEOF))
+                    if (!(flags & _F_SIZEOF) && !basetype(basetype((*tp)->btp))->sp->sb->structuredAliasType)
                     {
                         funcparams->returnEXP = anonymousVar(sc_auto, basetype(*tp)->btp);
                         funcparams->returnSP = funcparams->returnEXP->v.sp;
@@ -7049,7 +7059,7 @@ LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EX
                 if ((*tp)->type == bt_memberptr)
                 {
                     *exp = exprNode(en_mp_as_bool, *exp, nullptr);
-                    (*exp)->size = (*tp)->size;
+                    (*exp)->size = *tp;
                     *exp = exprNode(en_not, *exp, nullptr);
                 }
                 else
@@ -8264,7 +8274,7 @@ static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYP
                     error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
                 }
                 *exp = exprNode(en_mp_compare, *exp, exp1);
-                (*exp)->size = (*tp)->size;
+                (*exp)->size = *tp;
                 if (kw == neq)
                     *exp = exprNode(en_not, *exp, nullptr);
                 done = true;
@@ -8272,7 +8282,7 @@ static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYP
             else if (isconstzero(tp1, exp1))
             {
                 *exp = exprNode(en_mp_as_bool, *exp, nullptr);
-                (*exp)->size = (*tp)->size;
+                (*exp)->size = *tp;
                 if (kw == eq)
                     *exp = exprNode(en_not, *exp, nullptr);
                 done = true;
@@ -8282,7 +8292,7 @@ static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYP
                 int lbl = dumpMemberPtr(exp1->v.sp, *tp, true);
                 exp1 = intNode(en_labcon, lbl);
                 *exp = exprNode(en_mp_compare, *exp, exp1);
-                (*exp)->size = (*tp)->size;
+                (*exp)->size = *tp;
                 if (kw == neq)
                     *exp = exprNode(en_not, *exp, nullptr);
                 done = true;
@@ -8297,7 +8307,7 @@ static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYP
             if (isconstzero(*tp, *exp))
             {
                 *exp = exprNode(en_mp_as_bool, exp1, nullptr);
-                (*exp)->size = (tp1)->size;
+                (*exp)->size = tp1;
                 if (kw == eq)
                     *exp = exprNode(en_not, *exp, nullptr);
                 done = true;
@@ -8307,7 +8317,7 @@ static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYP
                 int lbl = dumpMemberPtr((*exp)->v.sp, tp1, true);
                 *(exp) = intNode(en_labcon, lbl);
                 *exp = exprNode(en_mp_compare, *exp, exp1);
-                (*exp)->size = tp1->size;
+                (*exp)->size = tp1;
                 if (kw == neq)
                     *exp = exprNode(en_not, *exp, nullptr);
                 done = true;
@@ -8508,12 +8518,12 @@ static LEXLIST* binop(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRES
         if (basetype(*tp)->type == bt_memberptr)
         {
             *exp = exprNode(en_mp_as_bool, *exp, nullptr);
-            (*exp)->size = (*tp)->size;
+            (*exp)->size = *tp;
         }
         if (basetype(tp1)->type == bt_memberptr)
         {
             exp1 = exprNode(en_mp_as_bool, exp1, nullptr);
-            exp1->size = (tp1)->size;
+            exp1->size = tp1;
         }
         *exp = exprNode(type, *exp, exp1);
         (*exp)->v.logicaldestructors.left = logicaldestructorsleft;
@@ -8604,7 +8614,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                 if (basetype(*tp)->type == bt_memberptr)
                 {
                     *exp = exprNode(en_mp_as_bool, *exp, nullptr);
-                    (*exp)->size = (*tp)->size;
+                    (*exp)->size = *tp;
                 }
                 if (tph->type == bt_void)
                     tph = tpc;
@@ -9534,13 +9544,13 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 int lbl = dumpMemberPtr(exp1->v.sp, *tp, true);
                 exp1 = intNode(en_labcon, lbl);
                 *exp = exprNode(en_blockassign, *exp, exp1);
-                (*exp)->size = (*tp)->size;
+                (*exp)->size = *tp;
                 (*exp)->altdata = (void*)(*tp);
             }
             else if (isconstzero(tp1, exp1) || exp1->type == en_nullptr)
             {
                 *exp = exprNode(en_blockclear, *exp, nullptr);
-                (*exp)->size = (*tp)->size;
+                (*exp)->size = *tp;
             }
             else if (exp1->type == en_func && exp1->v.func->returnSP)
             {
@@ -9551,7 +9561,7 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             else
             {
                 *exp = exprNode(en_blockassign, *exp, exp1);
-                (*exp)->size = (*tp)->size;
+                (*exp)->size = *tp;
                 (*exp)->altdata = (void*)(*tp);
             }
         }
@@ -9571,10 +9581,13 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             else
             {
                 *exp = exprNode(en_blockassign, *exp, exp1);
-                (*exp)->size = (*tp)->size;
+                (*exp)->size = *tp;
                 (*exp)->altdata = (void*)(*tp);
                 if (isatomic(*tp))
-                    (*exp)->size -= ATOMIC_FLAG_SPACE;
+                {
+                    (*exp)->size = CopyType((*exp)->size);
+                    (*exp)->size->size -= ATOMIC_FLAG_SPACE;
+                }
             }
             *exp = exprNode(en_not_lvalue, *exp, nullptr);
         }

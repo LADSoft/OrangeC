@@ -44,6 +44,7 @@
 #include "memory.h"
 #include "OptUtils.h"
 #include "beinterf.h"
+#include "initbackend.h"
 
 using namespace Parser;
 
@@ -270,6 +271,15 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
         if (tp->type == bt_typedef)
             istypedef = true;
         tp = tp->btp;
+    }
+    if (isstructured(tp) && basetype(tp)->sp && basetype(tp)->sp->sb->structuredAliasType)
+    {
+        auto tp1 = basetype(tp)->sp->sb->structuredAliasType;
+        if (ispointer(tp1))
+            tp1 = &stdpointer;
+        if (basetype(tp1)->type == bt_enum)
+            tp1 = tp1->btp;
+        rv->structuredAlias = Get(tp1);
     }
     if ((isstructured(tp) && basetype(tp)->sp->sb->templateLevel && !basetype(tp)->sp->sb->instantiated) ||
         basetype(tp)->type == bt_auto)

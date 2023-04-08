@@ -1419,6 +1419,10 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
         *pos = exprNode(en_assign, expsym, exp);
         noClear = true;
     }
+    if (sym && isstructured(sym->tp) && basetype(sym->tp)->sp->sb->structuredAliasType)
+    {
+        noClear = true;
+    }
     for (auto initItem : *init)
     {
         exp = nullptr;
@@ -1449,7 +1453,8 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             {
                 // usually empty braces, coudl be an error though
                 exp = exprNode(en_blockclear, copy_expression(expsym), nullptr);
-                exp->size = initItem->offset;
+                exp->size = MakeType(bt_struct);
+                exp->size->size = initItem->offset;                
             }
             else if (isstructured(initItem->basetp) || isarray(initItem->basetp))
             {
@@ -1480,8 +1485,11 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     }
                     else
                     {
-                        exp = exprNode(en_blockassign, exprNode(en_add, copy_expression(expsym), intNode(en_c_i, initItem->offset)), exp2);
-                        exp->size = initItem->basetp->size;
+                        exp = copy_expression(expsym);
+                        if (initItem->offset)
+                            exp = exprNode(en_add, exp, intNode(en_c_i, initItem->offset));
+                        exp = exprNode(en_blockassign, exp, exp2);
+                        exp->size = initItem->basetp;
                         exp->altdata = (void*)(initItem->basetp);
                         noClear = comparetypes(initItem->basetp, tp, true);
                     }
@@ -1515,7 +1523,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         if (!isstructured(btp) || btp->sp->sb->trivialCons)
                         {
                             exp = exprNode(en_blockclear, copy_expression(expsym), nullptr);
-                            exp->size = initItem->basetp->size;
+                            exp->size = initItem->basetp;
                             exp = exprNode(en_void, exp, nullptr);
                             expp = &exp->right;
                         }
@@ -1576,7 +1584,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                             else
                             {
                                 exp = exprNode(en_blockassign, copy_expression(expsym), exp);
-                                exp->size = initItem->basetp->size;
+                                exp->size = initItem->basetp;
                                 exp->altdata = (void*)(initItem->basetp);
                             }
                         }
@@ -1603,7 +1611,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         exp2 = intNode(en_labcon, lab);
                     }
                     exp = exprNode(en_blockassign, copy_expression(expsym), exp2);
-                    exp->size = initItem->basetp->size;
+                    exp->size = initItem->basetp;
                     exp->altdata = (void*)(initItem->basetp);
                 }
             }
@@ -1718,7 +1726,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
         if (fexp->type == en_thisref)
             fexp = fexp->left->v.func->thisptr;
         exp = exprNode(en_blockclear, fexp, nullptr);
-        exp->size = tp->size;
+        exp->size = tp;
         rv = exprNode(en_void, exp, rv);
     }
     if (sym && sym->sb->storage_class == sc_localstatic && !(Optimizer::architecture == ARCHITECTURE_MSIL))

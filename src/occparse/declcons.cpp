@@ -1637,7 +1637,7 @@ static void genConsData(std::list<BLOCKDATA*>& b, SYMBOL* cls, std::list<MEMBERI
         {
             EXPRESSION* exp = exprNode(en_blockassign, thisptr, otherptr);
             STATEMENT* st = stmtNode(nullptr, b, st_expr);
-            exp->size = member->tp->size;
+            exp->size = member->tp;
             exp->altdata = (void*)member->tp;
             optimize_for_constants(&exp);
             st->select = exp;
@@ -1677,7 +1677,7 @@ static void genConstructorCall(std::list<BLOCKDATA*>& b, SYMBOL* cls, std::list<
             {
                 auto ths = exprNode(en_add, thisptr, intNode(en_c_i, member->sb->offset));
                 auto clr = exprNode(en_blockclear, ths, 0);
-                clr->size = member->tp->size;
+                clr->size = member->tp;
                 exp = exprNode(en_void, clr, exp);
             }
         }
@@ -1685,7 +1685,7 @@ static void genConstructorCall(std::list<BLOCKDATA*>& b, SYMBOL* cls, std::list<
         {
             exp = exprNode(en_add, thisptr, intNode(en_c_i, member->sb->offset));
             exp = exprNode(en_blockclear, exp, 0);
-            exp->size = member->tp->size;
+            exp->size = member->tp;
         }
         st = stmtNode(nullptr, b, st_expr);
         optimize_for_constants(&exp);
@@ -1781,7 +1781,7 @@ static void genConstructorCall(std::list<BLOCKDATA*>& b, SYMBOL* cls, std::list<
                 if (mix->sp && !mix->init)
                 {
                     EXPRESSION* clr = exprNode(en_blockclear, exp, nullptr);
-                    clr->size = mix->sp->tp->size;
+                    clr->size = mix->sp->tp;
                     exp = exprNode(en_void, clr, exp);
                 }
                 // previously, callConstructor can return false here, meaning that funcparams->sp is null
@@ -2647,7 +2647,7 @@ static void genAsnData(std::list<BLOCKDATA*>& b, SYMBOL* cls, SYMBOL* member, in
     if (isstructured(member->tp) || isarray(member->tp))
     {
         left = exprNode(en_blockassign, left, right);
-        left->size = member->tp->size;
+        left->size = member->tp;
         left->altdata = (void*)member->tp;
     }
     else

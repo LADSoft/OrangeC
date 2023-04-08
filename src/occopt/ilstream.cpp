@@ -209,6 +209,7 @@ static void StreamType(SimpleType* type)
             }
             StreamIndex(type->flags);
             StreamType(type->btp);
+            StreamType(type->structuredAlias);
         }
     });
 }

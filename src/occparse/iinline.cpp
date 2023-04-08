@@ -17,7 +17,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  *
- *     contact information:
+ *     contact information:i
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
@@ -42,24 +42,29 @@
 #include "initbackend.h"
 #include "template.h"
 #include "symtab.h"
+#include <unordered_set>
 
 namespace Parser
 {
 int noinline;
-int inlinesym_count;
-int inlinesym_structcount;
-EXPRESSION* inlinesym_thisptr[1000];
-EXPRESSION* inlinesym_structptr[1000];
+std::vector<EXPRESSION*> inlineSymStructPtr;
+std::vector<EXPRESSION*> inlineSymThisPtr;
 #undef MAX_INLINE_NESTING
 #define MAX_INLINE_NESTING 3
 
-static SYMBOL* inlinesym_list[1000];
-static int inline_nesting;
+static std::unordered_set<SYMBOL*> inlineSymList;
+static int inlineNesting;
+static std::unordered_set<Optimizer::SimpleSymbol*> argTable;
+static Optimizer::SimpleSymbol* argCurrentFunction;
+
 void iinlineInit(void)
 {
-    inlinesym_count = 0;
-    inlinesym_structcount = 0;
-    inline_nesting = 0;
+    inlineNesting = 0;
+    argCurrentFunction = nullptr;
+    inlineSymList.clear();
+    inlineSymStructPtr.clear();
+    inlineSymThisPtr.clear();
+    argTable.clear();
 }
 static bool hasRelativeThis(EXPRESSION* thisPtr)
 {
@@ -86,7 +91,7 @@ static EXPRESSION* inlineGetThisPtr(EXPRESSION* exp)
 
         if (lvalue(exp) && exp->left->type == en_auto && exp->left->v.sp->sb->thisPtr)
         {
-            return inlinesym_thisptr[inlinesym_count - 1];
+            return inlineSymThisPtr.back();
         }
         else
         {
@@ -99,12 +104,12 @@ static EXPRESSION* inlineGetThisPtr(EXPRESSION* exp)
     }
     return nullptr;
 }
-static void inlineBindThis(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, EXPRESSION* thisptr)
+static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, EXPRESSION* thisptr)
 {
+    EXPRESSION *rv = nullptr;
     if (table->size())
     {
         SYMBOL* sym = table->front();
-        inlinesym_thisptr[inlinesym_count] = 0;
         if (sym->sb->thisPtr)
         {
             if (thisptr)
@@ -114,7 +119,7 @@ static void inlineBindThis(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, EXPRESSIO
                     Optimizer::SimpleSymbol* simpleSym;
                     Optimizer::IMODE *src, *ap1, *idest;
                     EXPRESSION* dest;
-                    thisptr = inlinesym_count == 0 || inlinesym_thisptr[inlinesym_count - 1] == nullptr || !hasRelativeThis(thisptr)
+                    thisptr = inlineSymThisPtr.size() == 0 || inlineSymThisPtr.back() == nullptr || !hasRelativeThis(thisptr)
                               ? thisptr
                               : inlineGetThisPtr(thisptr);
                     simpleSym = Optimizer::SymbolManager::Get(sym = makeID(sc_auto, sym->tp, nullptr, AnonymousName()));
@@ -124,7 +129,7 @@ static void inlineBindThis(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, EXPRESSIO
                     Optimizer::temporarySymbols.push_back(simpleSym);
                     dest = varNode(en_auto, sym);
                     deref(sym->tp, &dest);
-                    inlinesym_thisptr[inlinesym_count] = dest;
+                    rv = dest;
                     idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
                     src = gen_expr(funcsp, thisptr, 0, natural_size(thisptr));
                     ap1 = Optimizer::LookupLoadTemp(nullptr, src);
@@ -140,7 +145,7 @@ static void inlineBindThis(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, EXPRESSIO
                     Optimizer::SimpleSymbol* simpleSym;
                     Optimizer::IMODE *src, *ap1, *idest;
                     EXPRESSION* dest;
-                    thisptr = inlinesym_count == 0 || inlinesym_thisptr[inlinesym_count - 1] == nullptr || !hasRelativeThis(thisptr)
+                    thisptr = inlineSymThisPtr.size() == 0 || inlineSymThisPtr.back() == nullptr || !hasRelativeThis(thisptr)
                               ? thisptr
                               : inlineGetThisPtr(thisptr);
                     dest = exprNode(en_paramsubstitute, nullptr, nullptr);
@@ -152,7 +157,7 @@ static void inlineBindThis(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, EXPRESSIO
                         Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
                         src = ap1;
                     }
-                    inlinesym_thisptr[inlinesym_count] = dest;
+                    rv = dest;
                     if (src->mode != Optimizer::i_direct || src->offset->type != Optimizer::se_tempref || src->size != ISZ_ADDR || src->offset->sp->loadTemp)
                     {
                         if (src->size != ISZ_ADDR)
@@ -172,11 +177,12 @@ static void inlineBindThis(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, EXPRESSIO
                 }
             }
         }
-        else if (inlinesym_count)
+        else if (inlineSymThisPtr.size())
         {
-            inlinesym_thisptr[inlinesym_count] = inlinesym_thisptr[inlinesym_count - 1];
+            rv = inlineSymThisPtr.back();
         }
     }
+    return rv;
 }
 static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list<INITLIST*>* args)
 {
@@ -212,7 +218,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                 if (sym->tp->type == bt_ellipse)
                     n = m;
                 else
-                    n = sizeFromType(sym->tp);
+                    n = sizeFromType(isstructured(sym->tp) ? basetype(sym->tp)->sp->sb->structuredAliasType : sym->tp);
                 if (sym->sb->addressTaken || n == ISZ_ULONGLONG || n == -ISZ_ULONGLONG || m == ISZ_ULONGLONG ||
                     m == -ISZ_ULONGLONG || Optimizer::architecture == ARCHITECTURE_MSIL)
                 {
@@ -232,6 +238,10 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                     else if (sym->tp->type == bt_ellipse)
                     {
                         deref((*ita)->tp, &dest);
+                    }
+                    else if (isstructured(sym->tp))
+                    {
+                        deref(basetype(sym->tp)->sp->sb->structuredAliasType, &dest);
                     }
                     else
                     {
@@ -264,12 +274,25 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                     {
                         deref((*ita)->tp, &dest);
                     }
+                    else if (isstructured(sym->tp))
+                    {
+                        deref(basetype(sym->tp)->sp->sb->structuredAliasType, &dest);
+                    }
                     else
                     {
                         deref(sym->tp, &dest);
                     }
                     list[cnt++] = dest;
-                    src = gen_expr(funcsp, (*ita)->exp, 0, natural_size((*ita)->exp));
+                    auto val = (*ita)->exp;
+                    if (val->type == en_stackblock)
+                    {
+                        val = val->left;
+                        if (val->type != en_func && val->type != en_thisref)
+                        {
+                            deref(basetype(sym->tp)->sp->sb->structuredAliasType, &val);
+                        }
+                    }
+                    src = gen_expr(funcsp, val, 0, natural_size(val));
                     ap1 = Optimizer::LookupLoadTemp(nullptr, src);
                     if (ap1 != src)
                     {
@@ -325,40 +348,17 @@ static void inlineUnbindArgs(SymbolTable<SYMBOL>* table)
         Optimizer::SymbolManager::Get(sym)->paramSubstitute = nullptr;
     }
 }
-static void inlineResetTable(SymbolTable<SYMBOL>* table)
+static void inlineResetSym(Optimizer::SimpleSymbol* sym) 
 {
-    for (auto sp : * table)
+    if (sym->storage_class != Optimizer::scc_localstatic)
     {
-        Optimizer::SimpleSymbol* sym = Optimizer::SymbolManager::Get((SYMBOL*)sp);
-        if (sym->storage_class != Optimizer::scc_localstatic)
-        {
-            sym->imvalue = nullptr;
-            sym->imind = nullptr;
-            sym->imaddress = nullptr;
-            sym->imstore = nullptr;
-            if (sym->anonymous)
-                sym->allocate = false;
-            sym->inAllocTable = false;
-        }
-    }
-}
-// this is overkill since stmt.c disallows inlines with variables other than
-// at the opening of the first block.
-static void inlineResetVars(SymbolTable<SYMBOL>* syms, SymbolTable<SYMBOL>* params)
-{
-    SymbolTable<SYMBOL>* old = syms;
-    inlineResetTable(params);
-    while (syms)
-    {
-
-        inlineResetTable(syms);
-        syms = syms->Next();
-    }
-    while (old)
-    {
-
-        inlineResetTable(old);
-        old = old->Chain();
+        sym->imvalue = nullptr;
+        sym->imind = nullptr;
+        sym->imaddress = nullptr;
+        sym->imstore = nullptr;
+        if (sym->anonymous)
+            sym->allocate = false;
+        sym->inAllocTable = false;
     }
 }
 static void inlineCopySyms(SymbolTable<SYMBOL>* src)
@@ -371,17 +371,18 @@ static void inlineCopySyms(SymbolTable<SYMBOL>* src)
                 sym->sb->storage_class != sc_localstatic)
             {
                 Optimizer::SimpleSymbol* simpleSym = Optimizer::SymbolManager::Get(sym);
-                if (!simpleSym->inAllocTable)
+                if (argTable.find(simpleSym) == argTable.end())
                 {
+                    inlineResetSym(simpleSym);
                     Optimizer::temporarySymbols.push_back(simpleSym);
-                    simpleSym->inAllocTable = true;
+                    argTable.insert(simpleSym);
                 }
             }
         }
         src = src->Next();
     }
 }
-static bool inlineTooComplex(FUNCTIONCALL* f) { return f->sp->sb->endLine - f->sp->sb->startLine > 15 / (inline_nesting * 2 + 1); }
+static bool inlineTooComplex(FUNCTIONCALL* f) { return f->sp->sb->endLine - f->sp->sb->startLine > 15 / (inlineNesting * 2 + 1); }
 static bool hasaincdec(EXPRESSION* exp)
 {
     if (exp)
@@ -408,7 +409,6 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     int oldretlab = retlab, oldstartlab = startlab;
     int oldretcount = retcount;
     int oldOffset = codeLabelOffset;
-    EXPRESSION* oldthis = inlinesym_thisptr[inlinesym_count];
 //        return nullptr;
     if (noinline)
         return nullptr;
@@ -416,6 +416,11 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         return nullptr;
 
     if (Optimizer::cparams.prm_debug)
+    {
+        f->sp->sb->dumpInlineToFile = true;
+        return nullptr;
+    }
+    if (inlineSymList.find(f->sp) != inlineSymList.end())
     {
         f->sp->sb->dumpInlineToFile = true;
         return nullptr;
@@ -475,7 +480,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     {
         return nullptr;
     }
-    if (inlinesym_count >= MAX_INLINE_NESTING && !f->sp->sb->simpleFunc)
+    if (inlineSymThisPtr.size() >= MAX_INLINE_NESTING && !f->sp->sb->simpleFunc)
     {
         f->sp->sb->dumpInlineToFile = true;
         return nullptr;
@@ -514,18 +519,12 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     }
     for (auto sp : *basetype(f->sp->tp)->syms)
     {
-        if (isstructured(sp->tp) || basetype(sp->tp)->type == bt_memberptr)
+        if ((isstructured(sp->tp) && !basetype(sp->tp)->sp->sb->structuredAliasType) || basetype(sp->tp)->type == bt_memberptr)
         {
             f->sp->sb->dumpInlineToFile = true;
             return nullptr;
         }
     }
-    for (i = 0; i < inlinesym_count; i++)
-        if (f->sp == inlinesym_list[i])
-        {
-            f->sp->sb->dumpInlineToFile = true;
-            return nullptr;
-        }
     // this is here because cmdswitch uses a unique_ptr and autoincrement of a structure member together, and the resulting code gen
     // fails
     if (f->arguments)
@@ -539,7 +538,12 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
             }
         }
     }
-    inline_nesting++;
+    if (currentFunction != argCurrentFunction)
+    {
+        argTable.clear();
+        argCurrentFunction = currentFunction;
+    }
+    inlineNesting++;
     codeLabelOffset = Optimizer::nextLabel - INT_MIN;
     Optimizer::nextLabel += f->sp->sb->labelCount + 10;
     retcount = 0;
@@ -551,17 +555,17 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     if (isstructured(basetype(f->sp->tp)->btp))
     {
         EXPRESSION* exp = f->returnEXP;
-        if (inlinesym_structcount && lvalue(exp) && exp->left->type == en_auto && exp->left->v.sp->sb->retblk)
+        if (inlineSymStructPtr.size() && lvalue(exp) && exp->left->type == en_auto && exp->left->v.sp->sb->retblk)
         {
-            exp = inlinesym_structptr[inlinesym_structcount-1];
+             exp = inlineSymStructPtr.back();
         }
-        inlinesym_structptr[inlinesym_structcount++] = exp;
+        inlineSymStructPtr.push_back(exp);
         found = true;
     }
-    inlineBindThis(funcsp, basetype(f->sp->tp)->syms, f->thisptr);
+    auto thisptr = inlineBindThis(funcsp, basetype(f->sp->tp)->syms, f->thisptr);
     inlineBindArgs(funcsp, basetype(f->sp->tp)->syms, f->arguments);
-    inlinesym_list[inlinesym_count++] = f->sp;
-    inlineResetVars(f->sp->sb->inlineFunc.syms, basetype(f->sp->tp)->syms);
+    inlineSymList.insert(f->sp);
+    inlineSymThisPtr.push_back(thisptr);
     inlineCopySyms(f->sp->sb->inlineFunc.syms);
     genstmt(f->sp->sb->inlineFunc.stmt->front()->lower, f->sp);
     if (f->sp->sb->inlineFunc.stmt->front()->blockTail)
@@ -589,7 +593,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     inlineUnbindArgs(basetype(f->sp->tp)->syms);
     if (found)
     {
-        inlinesym_structcount--;
+        inlineSymStructPtr.pop_back();
     }
     FreeLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
     returnImode = oldReturnImode;
@@ -597,9 +601,9 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     startlab = oldstartlab;
     retcount = oldretcount;
     codeLabelOffset = oldOffset;
-    inlinesym_count--;
-    inlinesym_thisptr[inlinesym_count] = oldthis;
-    inline_nesting--;
+    inlineSymThisPtr.pop_back();
+    inlineNesting--;
+    inlineSymList.erase(inlineSymList.find(f->sp));
     return ap3;
 }
 }  // namespace Parser

@@ -4828,12 +4828,13 @@ static LEXLIST* expression_string(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
         {
             SYMBOL *sym1 = nullptr, *sym2 = nullptr;
             bool found = false;
-            for (auto sym1 : *sym->tp->syms)
+            for (auto sym3 : *sym->tp->syms)
             {
-                sym2 = sym1->tp->syms->front();
-                if (sym1->tp->syms->size() > 1 && ispointer(sym2->tp))
+                sym2 = sym3->tp->syms->front();
+                if (sym3->tp->syms->size() > 1 && ispointer(sym2->tp))
                     if (isconst(sym2->tp->btp) && basetype(sym2->tp->btp)->type == tpb)
                     {
+                        sym1 = sym3;
                         found = true;
                         break;
                     }

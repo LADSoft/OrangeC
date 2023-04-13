@@ -232,6 +232,7 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     ABM_USESIZE,       /* bool is determined by sizing above */
     ARM_FUNCTIONSCOPE, /* register allocation across entire function */
     8,                 /* number of bits in a MAU.  values other than 8 not supported */
+    4,                 /* natural size for this architecture, e.g. 4 for 32 bit arches and 8 for 64 bits */
     false,             /* little endian */
     false,             /* normal bit allocation*/
     false,             /* locals in stack memory*/

@@ -184,22 +184,41 @@ static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, EX
     }
     return rv;
 }
+static void ArgDeref(TYPE* desttp, TYPE* srctp, EXPRESSION **dest)
+{
+    if (isarray(desttp))
+    {
+        *dest = exprNode(en_l_p, *dest, nullptr);
+    }
+    else if (desttp->type == bt_templateselector)
+    {
+        deref(&stdpointer, dest);
+    }
+    else if (desttp->type == bt_ellipse)
+    {
+        deref(srctp, dest);
+    }
+    else if (isstructured(desttp))
+    {
+        deref(basetype(desttp)->sp->sb->structuredAliasType, dest);
+    }
+    else
+    {
+        deref(desttp, dest);
+    }
+}
 static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list<INITLIST*>* args)
 {
     if (table->size())
     {
-        EXPRESSION** list;
-        int cnt = table->size();
+        std::list<EXPRESSION*> argList;
         auto it = table->begin();
         SYMBOL* sym = *it;
         if (sym->sb->thisPtr)
         {
             ++it;
-            cnt--;
         }
         
-        list = Allocate<EXPRESSION*>(cnt);
-        cnt = 0;
         std::list<INITLIST*>::iterator ita, itae;
         if (args)
         {
@@ -219,8 +238,11 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                     n = m;
                 else
                     n = sizeFromType(isstructured(sym->tp) ? basetype(sym->tp)->sp->sb->structuredAliasType : sym->tp);
-                if (sym->sb->addressTaken || n == ISZ_ULONGLONG || n == -ISZ_ULONGLONG || m == ISZ_ULONGLONG ||
-                    m == -ISZ_ULONGLONG || Optimizer::architecture == ARCHITECTURE_MSIL)
+                TYPE *tpr = nullptr;
+                if (isref(sym->tp))
+                    tpr = basetype(sym->tp)->btp;
+                if ((!tpr && sym->sb->addressTaken) || Optimizer::sizeFromISZ(m) > Optimizer::chosenAssembler->arch->word_size ||
+                    Optimizer::sizeFromISZ(n) > Optimizer::chosenAssembler->arch->word_size || Optimizer::architecture == ARCHITECTURE_MSIL)
                 {
                     SYMBOL* sym2;
                     sym2 = makeID(sc_auto, sym->tp, nullptr, AnonymousName());
@@ -231,24 +253,9 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                     simpleSym->allocate = true;
                     simpleSym->inAllocTable = true;
                     dest = varNode(en_auto, sym2);
-                    if (isarray(sym->tp))
-                    {
-                        dest = exprNode(en_l_p, dest, nullptr);
-                    }
-                    else if (sym->tp->type == bt_ellipse)
-                    {
-                        deref((*ita)->tp, &dest);
-                    }
-                    else if (isstructured(sym->tp))
-                    {
-                        deref(basetype(sym->tp)->sp->sb->structuredAliasType, &dest);
-                    }
-                    else
-                    {
-                        deref(sym->tp, &dest);
-                    }
+                    ArgDeref(sym->tp, (*ita)->tp, &dest);
 
-                    list[cnt++] = dest;
+                    argList.push_back(dest);
                     idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
                     src = gen_expr(funcsp, (*ita)->exp, 0, natural_size((*ita)->exp));
                     ap1 = Optimizer::LookupLoadTemp(nullptr, src);
@@ -259,30 +266,35 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                     }
                     Optimizer::gen_icode(Optimizer::i_assn, idest, src, nullptr);
                 }
-                else
+                else if (0 && tpr && (!isstructured(tpr) || basetype(tpr)->sp->sb->structuredAliasType) && tpr->size < Optimizer::chosenAssembler->arch->word_size && (*ita)->tp->type != en_l_ref)
                 {
-                    dest = exprNode(en_paramsubstitute, nullptr, nullptr);
-                    if (isarray(sym->tp))
+                    // can pass reference by value...
+                    dest = exprNode(en_paramsubstitute, nullptr, (*ita)->exp);
+                    ArgDeref(sym->tp, (*ita)->tp, &dest);
+
+                    argList.push_back(dest);
+                    auto val = (*ita)->exp;
+                    if (val->type == en_stackblock)
                     {
-                        dest = exprNode(en_l_p, dest, nullptr);
-                    }
-                    else if (sym->tp->type == bt_templateselector)
-                    {
-                        deref(&stdpointer, &dest);
-                    }
-                    else if (sym->tp->type == bt_ellipse)
-                    {
-                        deref((*ita)->tp, &dest);
-                    }
-                    else if (isstructured(sym->tp))
-                    {
-                        deref(basetype(sym->tp)->sp->sb->structuredAliasType, &dest);
+                        val = val->left;
+                        if (val->type != en_func && val->type != en_thisref)
+                        {
+                            deref(basetype(sym->tp)->sp->sb->structuredAliasType, &val);
+                        }
                     }
                     else
                     {
-                        deref(sym->tp, &dest);
+                        ArgDeref(tpr, (*ita)->tp, &val);
+                        
                     }
-                    list[cnt++] = dest;
+                    src = gen_expr(funcsp, val, F_STORE, natural_size(val));
+                    dest->left->v.imode = src;
+                }
+                else
+                {
+                    dest = exprNode(en_paramsubstitute, nullptr, nullptr);
+                    ArgDeref(sym->tp, (*ita)->tp, &dest);
+                    argList.push_back(dest);
                     auto val = (*ita)->exp;
                     if (val->type == en_stackblock)
                     {
@@ -330,12 +342,13 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
         // in multiple arguments...
         // also deals with things like the << and >> operators, where an expression can have arguments chained into the same
           // operator over and over...
-        cnt = 0;
+        auto ital = argList.begin();
         for (auto sym : *table)
         {
             if (!sym->sb->thisPtr && !isvoid(sym->tp))
             {
-                Optimizer::SymbolManager::Get(sym)->paramSubstitute = list[cnt++];
+                Optimizer::SymbolManager::Get(sym)->paramSubstitute = *ital;
+                ++ital;
             }
         }
     }

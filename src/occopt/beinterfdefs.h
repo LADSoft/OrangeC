@@ -256,6 +256,7 @@ typedef struct
 #define ARM_FUNCTIONSCOPE 1           /* register allocation across entire function */
     char regallocmode;                /* register allocation mode */
     char bits_per_mau;                /* number of bits in a MAU.  values other than 8 not supported */
+    char word_size;                   /* natural size for this architecture, e.g. 4 for 32 bit arches and 8 for 64 bits */
     char big_endian;                  /* true if the architecture uses big endian numbering scheme */
                                       /* used minimally in front end */
     char reversedefaultbitallocation; /* architecture requires default bit allocation to be reversed */

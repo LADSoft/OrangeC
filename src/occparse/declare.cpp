@@ -1015,6 +1015,9 @@ static void GetStructAliasType(SYMBOL *sym)
 {
     if (Optimizer::architecture == ARCHITECTURE_MSIL)
         return;
+    /* this conveniently takes care of situations where a VTAB would be required */
+    if (sym->tp->size > Optimizer::chosenAssembler->arch->word_size)
+        return;
     if ((!Optimizer::cparams.prm_optimize_for_speed && !Optimizer::cparams.prm_optimize_for_size) || Optimizer::cparams.prm_debug)
         return;
     SYMBOL* cache = nullptr;
@@ -1030,7 +1033,7 @@ static void GetStructAliasType(SYMBOL *sym)
                 cache = m;
         }
     }
-    if (!cache || isstructured(cache->tp) || isatomic(cache->tp) || isarray(cache->tp) || basetype(cache->tp)->type == bt_long_long || basetype(cache->tp)->type == bt_unsigned_long_long || basetype(cache->tp)->bits || isfuncptr(cache->tp) || isref(cache->tp))
+    if (!cache || isstructured(cache->tp) || isatomic(cache->tp) || isarray(cache->tp) || basetype(cache->tp)->bits || isfuncptr(cache->tp) || isref(cache->tp))
         return;
     sym->sb->structuredAliasType = cache->tp;
 }

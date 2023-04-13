@@ -58,6 +58,7 @@ typedef struct
     bool prm_cmangle;            /* add underscore to names */
     bool prm_c99;                /* C99 mode */
     bool prm_c1x;                /* C1x mode */
+    bool prm_c2x;                /* C2x mode */
     bool prm_cplusplus;          /* C++ mode */
     bool prm_xcept;              /* generate RTTI in C++ mode */
     bool prm_icdfile;            /* dump intermediate code peep list to file */

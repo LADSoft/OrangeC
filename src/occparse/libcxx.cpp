@@ -119,7 +119,7 @@ void libcxx_builtins(void)
         preProcessor->Define("__has_cxx_access_control_sfinae", "0");
         preProcessor->Define("__has_cxx_alias_templates", "1");
         preProcessor->Define("__has_cxx_alignas", "1");
-        preProcessor->Define("__has_cxx_atomic", "0");
+        preProcessor->Define("__has_cxx_atomic", "1");
         preProcessor->Define("__has_cxx_attributes", "1");
         preProcessor->Define("__has_cxx_auto_type", "1");
         preProcessor->Define("__has_cxx_constexpr", "1");

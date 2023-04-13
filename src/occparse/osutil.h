@@ -81,6 +81,7 @@ extern CmdSwitchParser switchParser;
 extern CmdSwitchBool prm_c89;
 extern CmdSwitchBool prm_c99;
 extern CmdSwitchBool prm_c11;
+extern CmdSwitchBool prm_c2x;
 extern CmdSwitchBool prm_ansi;
 extern CmdSwitchBool prm_errfile;
 extern CmdSwitchBool prm_cppfile;

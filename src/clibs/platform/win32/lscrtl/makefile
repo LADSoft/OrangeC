@@ -64,7 +64,8 @@ DLLOBJS = $(shell dir $(B) $(CLIBOBJECT)\\*.o)
 	$(CC) /c /C-E $(CFLAGS) $(STDINCLUDE) -o$@ $^
 
 $(RCFILE).res: $(RCFILE).rc ..\..\..\..\version.h
-	orc -i..\wininc $(RCFILE).rc
+	echo $(CURDIR)
+	orc -i..\inc $(RCFILE).rc
 
 #DISTRIBUTE:
 #	$(ZIP) -porangec a $(DISTADDON)\lscrtl $(LSCRTLOBJECT)\*.*

@@ -4520,6 +4520,7 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
             auto body = decl->sb->dest->exp;
 
             Optimizer::temporarySymbols.clear();
+            Optimizer::functionVariables.clear();
             structret_imode = 0;
             Optimizer::tempCount = 0;
             Optimizer::blockCount = 0;

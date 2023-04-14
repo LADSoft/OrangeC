@@ -423,7 +423,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                         ObjExpression* sum = factory.MakeExpression(ObjExpression::eAdd, left, right);
                         s1->SetOffset(sum);
                         if (Optimizer::cparams.prm_debug)
-                            s1->SetBaseType(types.Put((*g)->tp));
+                            s1->SetBaseType(types.Put((*l1)->tp));
                         fi->Add(s1);
                         l->SetObjSymbol(s1);
                         l->SetObjectSection(objSectionsByNumber[GETSECT(l, sectofs)]);

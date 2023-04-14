@@ -433,6 +433,7 @@ static void ParamTransfer(char* name)
  * activation routine (callback) for boolean command line arguments
  */
 {
+    Optimizer::prm_include = prm_cinclude.GetValue();
     bool nsi = prm_nostdinc.GetValue();
     bool nspp = prm_nostdincpp.GetValue();
     if (nspp && nsi)

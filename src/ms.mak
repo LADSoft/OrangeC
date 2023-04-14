@@ -48,7 +48,7 @@ LLIB_DEPENDENCIES := $(notdir $(filter-out $(addsuffix .obj,$(EXCLUDE)) $(MAIN_D
 
 CC=cl.exe
 ifneq "$(MSPDB)" ""
-CCFLAGS =/Od /Zi /FS /EHs /c /nologo /MTd
+CCFLAGS =/Od /Zi /FS /EHs /c /nologo /MTd /std::c++14
 else
 CCFLAGS = /O2 /EHs /c /nologo /MT
 endif
@@ -56,7 +56,7 @@ endif
 LINK=link.exe
 
 ifneq "$(MSPDB)" ""
-LFLAGS=/LTCG:incremental /nologo /NXCOMPAT /MACHINE:x86 /TLBID:1 /DEBUG
+LFLAGS=/LTCG:off /nologo /NXCOMPAT /MACHINE:x86 /TLBID:1 /SAFESEH /DEBUG
 else
 LFLAGS=/LTCG:incremental /nologo /NXCOMPAT /DYNAMICBASE /MACHINE:x86 /OPT:REF /SAFESEH  /OPT:ICF /TLBID:1
 endif

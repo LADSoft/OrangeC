@@ -508,7 +508,7 @@ KEYWORD* searchkw(const unsigned char** p)
             if (len == kw->len)
             {
                 int count = 0;
-                if (kw->matchFlags & (KW_C99 | KW_C1X))
+                if (kw->matchFlags & (KW_C99 | KW_C1X | KW_C2X))
                 {
                     if (Optimizer::cparams.prm_c99 && (kw->matchFlags & KW_C99))
                         count++;
@@ -1185,7 +1185,7 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
         radix = 16;
         (*ptr)++;
     }
-    while ((Optimizer::cparams.prm_cplusplus && **ptr == '\'') || radix36(**ptr) < radix ||
+    while (((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c2x) && **ptr == '\'') || radix36(**ptr) < radix ||
            (Optimizer::cparams.prm_assemble && radix36(**ptr) < 16))
     {
         if (**ptr != '\'')

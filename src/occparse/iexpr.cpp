@@ -3537,10 +3537,26 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
         case en_l_fp:
         case en_l_sp:
         case en_l_bit:
-        case en_l_string:
+        case en_l_string: {
+            EXPRESSION* ps;
+            if (node->left->type == en_l_ref && node->left->left->type == en_auto && (ps = Optimizer::SymbolManager::Get(node->left->left->v.sp)->paramSubstitute))
+            {
+                 if (ps->left && ps->left->type == en_paramsubstitute && ps->left->left)
+                 {
+                     return ps->left->v.imode;
+                 }
+            }
+            else if (node->type == en_l_ref && node->left->type == en_auto && (ps = Optimizer::SymbolManager::Get(node->left->v.sp)->paramSubstitute))
+            {
+                 if (ps->left && ps->left->type == en_paramsubstitute && ps->left->left)
+                 {
+                     return gen_expr(funcsp, ps->left->left, 0, natural_size(ps->left->left));
+                 }
+            }
             ap1 = gen_deref(node, funcsp, flags | store);
             rv = ap1;
             break;
+        }
         case en_l_object:
             ap1 = gen_deref(node, funcsp, flags | store);
             ap1->offset->sp->tp = Optimizer::SymbolManager::Get(node->v.tp);

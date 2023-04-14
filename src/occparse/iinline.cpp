@@ -266,27 +266,15 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                     }
                     Optimizer::gen_icode(Optimizer::i_assn, idest, src, nullptr);
                 }
-                else if (0 && tpr && (!isstructured(tpr) || basetype(tpr)->sp->sb->structuredAliasType) && tpr->size < Optimizer::chosenAssembler->arch->word_size && (*ita)->tp->type != en_l_ref)
+                else if (tpr && (!isstructured(tpr) /*|| basetype(tpr)->sp->sb->structuredAliasType*/) && tpr->size <= Optimizer::chosenAssembler->arch->word_size && ((*ita)->exp->type == en_auto || (*ita)->exp->type == en_global || (*ita)->exp->type == en_pc))
                 {
                     // can pass reference by value...
-                    dest = exprNode(en_paramsubstitute, nullptr, (*ita)->exp);
+                    dest = exprNode(en_paramsubstitute, (*ita)->exp, nullptr);
                     ArgDeref(sym->tp, (*ita)->tp, &dest);
 
                     argList.push_back(dest);
                     auto val = (*ita)->exp;
-                    if (val->type == en_stackblock)
-                    {
-                        val = val->left;
-                        if (val->type != en_func && val->type != en_thisref)
-                        {
-                            deref(basetype(sym->tp)->sp->sb->structuredAliasType, &val);
-                        }
-                    }
-                    else
-                    {
-                        ArgDeref(tpr, (*ita)->tp, &val);
-                        
-                    }
+                    deref(tpr, &val);
                     src = gen_expr(funcsp, val, F_STORE, natural_size(val));
                     dest->left->v.imode = src;
                 }

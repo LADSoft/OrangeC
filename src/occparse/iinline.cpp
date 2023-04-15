@@ -575,7 +575,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         genstmt(f->sp->sb->inlineFunc.stmt->front()->blockTail, funcsp);
         Optimizer::gen_icode(Optimizer::i_functailend, 0, 0, 0);
     }
-    genreturn(0, f->sp, 1, 0, nullptr);
+    genreturn(0, f->sp, F_NEEDEPILOG, nullptr);
     ap3 = returnImode;
     if (!ap3)
     {

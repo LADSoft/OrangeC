@@ -45,6 +45,8 @@
 #define F_SWITCHVALUE 32
 #define F_OBJECT 64
 #define F_INRETURN 128
+#define F_NEEDEPILOG 256
+#define F_RETURNREFBYVAL 512
 
 namespace Parser
 {

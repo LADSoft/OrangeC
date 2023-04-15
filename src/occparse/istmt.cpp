@@ -432,7 +432,7 @@ static void gen___try(SYMBOL* funcsp, std::list<STATEMENT*> stmts)
 /*
  *      generate a return statement.
  */
-void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimizer::IMODE* allocaAP)
+void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* allocaAP)
 {
     Optimizer::IMODE *ap = nullptr, *ap1 = nullptr, *ap3;
     EXPRESSION ep;
@@ -560,7 +560,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
     /* create the return or a branch to the return
      * return is put at end of function...
      */
-    if (flag)
+    if (flags & F_NEEDEPILOG)
     {
         int retsize = 0;
         if (funcsp->sb->attribs.inheritable.linkage == lk_pascal || funcsp->sb->attribs.inheritable.linkage == lk_stdcall)
@@ -596,42 +596,32 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
             Optimizer::gen_label(retlab);
         }
         Optimizer::intermed_tail->retcount = retcount;
-        if (!noepilogue)
+        if (!inlineSymThisPtr.size())
         {
-
-            if (!inlineSymThisPtr.size())
+            if (allocaAP && (Optimizer::architecture != ARCHITECTURE_MSIL))
             {
-                if (allocaAP && (Optimizer::architecture != ARCHITECTURE_MSIL))
-                {
-                    Optimizer::gen_icode(Optimizer::i_loadstack, 0, allocaAP, 0);
-                }
-                /*			if (funcsp->sb->loadds && funcsp->sb->farproc)
-                                Optimizer::gen_icode(Optimizer::i_unloadcontext,0,0,0);
-                */
-                if (Optimizer::cparams.prm_xcept && funcsp->sb->xc && funcsp->sb->xc->xcRundownFunc)
-                    gen_expr(funcsp, funcsp->sb->xc->xcRundownFunc, F_NOVALUE, ISZ_UINT);
-                SubProfilerData();
-                if (returnSym && !isvoid(basetype(funcsp->tp)->btp))
-                {
-                    ap1 = Optimizer::tempreg(returnSym->size, 0);
-                    ap1->retval = true;
-                    Optimizer::gen_icode(Optimizer::i_assn, ap1, returnSym, nullptr);
-                }
-                Optimizer::gen_icode(Optimizer::i_epilogue, 0, 0, 0);
-                if (funcsp->sb->attribs.inheritable.linkage == lk_interrupt || funcsp->sb->attribs.inheritable.linkage == lk_fault)
-                {
-                    /*				if (funcsp->sb->loadds)
-                                        Optimizer::gen_icode(Optimizer::i_unloadcontext,0,0,0);
-                    */
-                    Optimizer::gen_icode(Optimizer::i_popcontext, 0, 0, 0);
-                    Optimizer::gen_icode(Optimizer::i_rett, 0,
-                                         Optimizer::make_immed(ISZ_UINT, funcsp->sb->attribs.inheritable.linkage == lk_interrupt),
-                                         0);
-                }
-                else
-                {
-                    Optimizer::gen_icode(Optimizer::i_ret, 0, Optimizer::make_immed(ISZ_UINT, retsize), nullptr);
-                }
+                Optimizer::gen_icode(Optimizer::i_loadstack, 0, allocaAP, 0);
+            }
+            if (Optimizer::cparams.prm_xcept && funcsp->sb->xc && funcsp->sb->xc->xcRundownFunc)
+                gen_expr(funcsp, funcsp->sb->xc->xcRundownFunc, F_NOVALUE, ISZ_UINT);
+            SubProfilerData();
+            if (returnSym && !isvoid(basetype(funcsp->tp)->btp))
+            {
+                ap1 = Optimizer::tempreg(returnSym->size, 0);
+                ap1->retval = true;
+                Optimizer::gen_icode(Optimizer::i_assn, ap1, returnSym, nullptr);
+            }
+            Optimizer::gen_icode(Optimizer::i_epilogue, 0, 0, 0);
+            if (funcsp->sb->attribs.inheritable.linkage == lk_interrupt || funcsp->sb->attribs.inheritable.linkage == lk_fault)
+            {
+                Optimizer::gen_icode(Optimizer::i_popcontext, 0, 0, 0);
+                Optimizer::gen_icode(Optimizer::i_rett, 0,
+                                     Optimizer::make_immed(ISZ_UINT, funcsp->sb->attribs.inheritable.linkage == lk_interrupt),
+                                     0);
+            }
+            else
+            {
+                Optimizer::gen_icode(Optimizer::i_ret, 0, Optimizer::make_immed(ISZ_UINT, retsize), nullptr);
             }
         }
     }
@@ -787,7 +777,7 @@ Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp)
                         rv = gen_expr(funcsp, stmt->select, F_NOVALUE, natural_size(stmt->select));
                     break;
                 case st_return:
-                    genreturn(stmt, funcsp, 0, 0, nullptr);
+                    genreturn(stmt, funcsp, 0, nullptr);
                     break;
                 case st_line:
                     Optimizer::gen_line(stmt->lineData);
@@ -1083,7 +1073,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
         genstmt(funcsp->sb->inlineFunc.stmt->front()->blockTail, funcsp);
         Optimizer::gen_icode(Optimizer::i_functailend, 0, 0, 0);
     }
-    genreturn(0, funcsp, 1, 0, allocaAP);
+    genreturn(0, funcsp, F_NEEDEPILOG, allocaAP);
     gen_func(funcexp, 0);
     tFree();
 

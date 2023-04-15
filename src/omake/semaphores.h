@@ -104,7 +104,10 @@ class Semaphore
         }
         if (this != &other)
         {
-            CloseHandle(handle);
+            if (!null)
+            {
+                CloseHandle(handle);
+            }
             named = other.named;
             semaphoreName = other.semaphoreName;
             this->null = other.null;

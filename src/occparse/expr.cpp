@@ -1654,7 +1654,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                     }
                     else
                     {
-                        if (isstructured(typein) && basetype(typein)->sp->sb->structuredAliasType)
+                        if (isstructured(typein) && !typein->lref && !typein->rref && basetype(typein)->sp->sb->structuredAliasType)
                         {
                             structuredAlias = true;
                             // use it as-is

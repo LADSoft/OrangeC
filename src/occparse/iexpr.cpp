@@ -447,14 +447,24 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
     }
     else if (node->left->type == en_add || node->left->type == en_arrayadd || node->left->type == en_structadd)
     {
-        ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
+        if (node->left->type == en_structadd && isconstzero(&stdint, node->left->right) && (node->left->left->type == en_func || node->left->left->type == en_thisref))
+        {
+            ap1 = gen_expr(funcsp, node->left->left, store ? 0 : F_RETURNREFBYVAL, ISZ_ADDR);
+        }
+        else
+        {
+            ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
+        }
         ap2 = Optimizer::LookupLoadTemp(nullptr, ap1);
         if (ap2 != ap1)
         {
             Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
             ap1 = ap2;
         }
-        ap1 = Optimizer::indnode(ap1, siz1);
+        if (!ap1->returnRefByVal)
+        {
+            ap1 = Optimizer::indnode(ap1, siz1);
+        }
         if (ap1->offset)
         {
             ap1->vol = node->isvolatile;
@@ -596,22 +606,25 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                 }
             // fall through
             default:
-                ap1 = gen_expr(funcsp, node->left, 0, natural_size(node->left)); /* generate address */
+                ap1 = gen_expr(funcsp, node->left, store ? 0 : F_RETURNREFBYVAL, natural_size(node->left)); /* generate address */
                 ap2 = Optimizer::LookupLoadTemp(nullptr, ap1);
-                if (ap2 != ap1)
+                if (!ap1->returnRefByVal)
                 {
-                    Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
-                    ap2 = Optimizer::indnode(ap2, siz1);
-                    ap2->bits = ap1->bits;
-                    ap2->startbit = ap1->startbit;
-                    ap1 = ap2;
-                }
-                else
-                {
-                    ap2 = Optimizer::indnode(ap1, siz1);
-                    ap2->bits = ap1->bits;
-                    ap2->startbit = ap1->startbit;
-                    ap1 = ap2;
+                    if (ap2 != ap1)
+                    {
+                        Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                        ap2 = Optimizer::indnode(ap2, siz1);
+                        ap2->bits = ap1->bits;
+                        ap2->startbit = ap1->startbit;
+                        ap1 = ap2;
+                    }
+                    else
+                    {
+                        ap2 = Optimizer::indnode(ap1, siz1);
+                        ap2->bits = ap1->bits;
+                        ap2->startbit = ap1->startbit;
+                       ap1 = ap2;
+                    }
                 }
                 break;
             case en_paramsubstitute:
@@ -1953,7 +1966,7 @@ Optimizer::IMODE* gen_stmt_from_expr(SYMBOL* funcsp, EXPRESSION* node, int flags
     Optimizer::IMODE* rv;
     (void)flags;
     /* relies on stmt only being used for inlines */
-    rv = genstmt(node->v.stmt, funcsp);
+    rv = genstmt(node->v.stmt, funcsp, 0);
     if (node->left)
         rv = gen_expr(funcsp, node->left, 0, natural_size(node->left));
     return rv;

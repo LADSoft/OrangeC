@@ -79,8 +79,6 @@ static int tryStart, tryEnd;
 static int plabel;
 static Optimizer::IMODE* returnSym;
 
-Optimizer::IMODE* genstmt(STATEMENT* stmt, SYMBOL* funcsp);
-
 void genstmtini(void)
 {
     mpthunklist = nullptr;
@@ -353,7 +351,7 @@ static void gen_try(SYMBOL* funcsp, STATEMENT* stmt, int startLab, int endLab, i
     stmt->tryStart = ++consIndex;
     xcexp->right->v.i = consIndex;
     gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
-    genstmt(lower, funcsp);
+    genstmt(lower, funcsp, 0);
     stmt->tryEnd = ++consIndex;
     xcexp->right->v.i = consIndex;
     gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
@@ -372,7 +370,7 @@ static void gen_catch(SYMBOL* funcsp, STATEMENT* stmt, int startLab, int transfe
     Optimizer::currentBlock->alwayslive = true;
     Optimizer::intermed_tail->alwayslive = true;
     catchLevel++;
-    genstmt(lower, funcsp);
+    genstmt(lower, funcsp, 0);
     catchLevel--;
     /* not using gen_igoto because it will make a new block */
     Optimizer::gen_icode(Optimizer::i_goto, nullptr, nullptr, nullptr);
@@ -420,7 +418,7 @@ static void gen___try(SYMBOL* funcsp, std::list<STATEMENT*> stmts)
         Optimizer::intermed_tail->alwayslive = true;
         Optimizer::intermed_tail->sehMode = mode | 0x80;
         Optimizer::intermed_tail->dc.v.label = label;
-        genstmt(stmt->lower, funcsp);
+        genstmt(stmt->lower, funcsp, 0);
         Optimizer::gen_icode(Optimizer::i_seh, nullptr, left, nullptr);
         Optimizer::intermed_tail->sehMode = mode;
         Optimizer::intermed_tail->dc.v.label = label;
@@ -434,6 +432,7 @@ static void gen___try(SYMBOL* funcsp, std::list<STATEMENT*> stmts)
  */
 void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* allocaAP)
 {
+    bool refbyval = false;
     Optimizer::IMODE *ap = nullptr, *ap1 = nullptr, *ap3;
     EXPRESSION ep;
     int size;
@@ -507,22 +506,56 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
         }
         else
         {
-            EXPRESSION* exp = stmt->select;
-            while (castvalue(exp))
-                exp = exp->left;
-            size = natural_size(stmt->select);
-            if (size == ISZ_OBJECT && isconstzero(&stdint, exp))
-                ap3 = Optimizer::make_immed(ISZ_OBJECT, 0);  // LDNULL
-            else
-                ap3 = gen_expr(funcsp, stmt->select, 0, size);
-            DumpIncDec(funcsp);
-            ap = Optimizer::LookupLoadTemp(nullptr, ap3);
-            if (ap != ap3)
+            auto tpr = (TYPE*)nullptr;
+            if ((flags & F_RETURNREFBYVAL) && funcsp->sb->retcount == 1 && isref(basetype(funcsp->tp)->btp))
             {
-                Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
+                 tpr = basetype(basetype(funcsp->tp)->btp)->btp;
+                 if (!isstructured(tpr))
+                 {
+                    size = sizeFromType(tpr);
+                    if (size == ISZ_OBJECT)
+                        tpr = nullptr;
+                 }
+                 else
+                 {
+                    tpr = basetype(tpr)->sp->sb->structuredAliasType;
+                 }
             }
-            if (abs(size) < ISZ_UINT)
-                size = -ISZ_UINT;
+            if (tpr && isint(tpr) && tpr->size <= Optimizer::chosenAssembler->arch->word_size)
+            {
+                size = sizeFromType(tpr);
+                EXPRESSION* exp = stmt->select;
+                deref(tpr, &exp);
+                ap3 = gen_expr(funcsp, exp, 0, size);
+                DumpIncDec(funcsp);
+                ap = Optimizer::LookupLoadTemp(nullptr, ap3);
+                if (ap != ap3)
+                {
+                    Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
+                }
+                refbyval = true;
+                if (abs(size) < ISZ_UINT)
+                    size = -ISZ_UINT;
+            }
+            else
+            {
+                EXPRESSION* exp = stmt->select;
+                while (castvalue(exp))
+                    exp = exp->left;
+                size = natural_size(stmt->select);
+                if (size == ISZ_OBJECT && isconstzero(&stdint, exp))
+                    ap3 = Optimizer::make_immed(ISZ_OBJECT, 0);  // LDNULL
+                else
+                    ap3 = gen_expr(funcsp, stmt->select, 0, size);
+                DumpIncDec(funcsp);
+                ap = Optimizer::LookupLoadTemp(nullptr, ap3);
+                if (ap != ap3)
+                {
+                    Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
+                }
+                if (abs(size) < ISZ_UINT)
+                    size = -ISZ_UINT;
+            }
         }
     }
     else
@@ -543,6 +576,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
         else
         {
             ap1 = Optimizer::tempreg(ap->size, 0);
+            ap1->returnRefByVal = refbyval;
             if (!inlineSymThisPtr.size())
             {
                 ap1->retval = true;
@@ -692,7 +726,7 @@ void gen_asmdata(STATEMENT* stmt)
 
 /*-------------------------------------------------------------------------*/
 
-Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp)
+Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp, int flags)
 /*
  *      genstmt will generate a statement and follow the next pointer
  *      until the block is generated.
@@ -719,8 +753,8 @@ Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp)
                     break;
                     break;
                 case st_block:
-                    rv = genstmt(stmt->lower, funcsp);
-                    genstmt(stmt->blockTail, funcsp);
+                    rv = genstmt(stmt->lower, funcsp, flags);
+                    genstmt(stmt->blockTail, funcsp, flags);
                     break;
                 case st_label:
                     Optimizer::gen_label((int)stmt->label + codeLabelOffset);
@@ -777,7 +811,7 @@ Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp)
                         rv = gen_expr(funcsp, stmt->select, F_NOVALUE, natural_size(stmt->select));
                     break;
                 case st_return:
-                    genreturn(stmt, funcsp, 0, nullptr);
+                    genreturn(stmt, funcsp, flags, nullptr);
                     break;
                 case st_line:
                     Optimizer::gen_line(stmt->lineData);
@@ -1066,11 +1100,11 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     }
     /* Generate the icode */
     /* LCSE is done while code is generated */
-    genstmt(funcsp->sb->inlineFunc.stmt->front()->lower, funcsp);
+    genstmt(funcsp->sb->inlineFunc.stmt->front()->lower, funcsp, 0);
     if (funcsp->sb->inlineFunc.stmt->front()->blockTail)
     {
         Optimizer::gen_icode(Optimizer::i_functailstart, 0, 0, 0);
-        genstmt(funcsp->sb->inlineFunc.stmt->front()->blockTail, funcsp);
+        genstmt(funcsp->sb->inlineFunc.stmt->front()->blockTail, funcsp, 0);
         Optimizer::gen_icode(Optimizer::i_functailend, 0, 0, 0);
     }
     genreturn(0, funcsp, F_NEEDEPILOG, allocaAP);
@@ -1122,6 +1156,6 @@ void genASM(std::list<STATEMENT*>* st)
     Optimizer::blockCount = 0;
     Optimizer::blockMax = 0;
     Optimizer::exitBlock = 0;
-    genstmt(st, nullptr);
+    genstmt(st, nullptr, 0);
 }
 }  // namespace Parser

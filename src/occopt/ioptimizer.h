@@ -472,6 +472,7 @@ typedef struct _imode_
             unsigned char altretval : 1;  /* true if an alternate return value should be used (e.g. SSE instead of FP)*/
             unsigned char fieldname : 1;  /* vararg is an en_structelem field name */
             unsigned char msilObject : 1; /* true if this is an MSIL object that shouldn't be loaded by address */
+            unsigned char returnRefByVal : 1; /* true if this return value is a by value reference value */
         };
         unsigned flags;
     };

@@ -568,14 +568,14 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     inlineSymList.insert(f->sp);
     inlineSymThisPtr.push_back(thisptr);
     inlineCopySyms(f->sp->sb->inlineFunc.syms);
-    genstmt(f->sp->sb->inlineFunc.stmt->front()->lower, f->sp);
+    genstmt(f->sp->sb->inlineFunc.stmt->front()->lower, f->sp, flags & F_RETURNREFBYVAL);
     if (f->sp->sb->inlineFunc.stmt->front()->blockTail)
     {
         Optimizer::gen_icode(Optimizer::i_functailstart, 0, 0, 0);
-        genstmt(f->sp->sb->inlineFunc.stmt->front()->blockTail, funcsp);
+        genstmt(f->sp->sb->inlineFunc.stmt->front()->blockTail, funcsp, 0);
         Optimizer::gen_icode(Optimizer::i_functailend, 0, 0, 0);
     }
-    genreturn(0, f->sp, F_NEEDEPILOG, nullptr);
+    genreturn(0, f->sp, F_NEEDEPILOG | (flags & F_RETURNREFBYVAL), nullptr);
     ap3 = returnImode;
     if (!ap3)
     {
@@ -588,6 +588,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     else
     {
         auto ap4 = LookupLoadTemp(nullptr,ap3);
+        ap4->returnRefByVal = ap3->returnRefByVal;
         gen_icode(Optimizer::i_assn, ap4, ap3, nullptr);
         ap3 = ap4;
     }

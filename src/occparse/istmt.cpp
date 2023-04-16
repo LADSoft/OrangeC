@@ -785,10 +785,21 @@ Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp, int flag
                             stmt->breaklabel + codeLabelOffset, stmt->lower);
                     break;
                 case st_catch:
-                    // the following adjustment to altlabel is required to get the XT info proper
-                    gen_catch(funcsp, stmt, stmt->altlabel += codeLabelOffset, stmt->breaklabel + codeLabelOffset, stmt->lower);
-                    Optimizer::gen_label(stmt->breaklabel + codeLabelOffset);
-                    break;
+                {
+                    int breaklab = 0;
+                    while (stmt->type == st_catch)
+                    {
+                        // the following adjustment to altlabel is required to get the XT info proper
+                        gen_catch(funcsp, stmt, stmt->altlabel += codeLabelOffset, stmt->breaklabel + codeLabelOffset, stmt->lower);
+                        breaklab = stmt->breaklabel + codeLabelOffset;
+                        ++il;
+                        if (il == ile)
+                            break;
+                        stmt = *il;
+                    }
+                    Optimizer::gen_label(breaklab);
+                    continue;
+                }
                 case st___try:
                 case st___catch:
                 case st___finally:

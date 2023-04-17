@@ -503,9 +503,12 @@ void ObjIeeeAscii::RenderExpression(ObjExpression* Expression)
             break;
         case ObjExpression::eAdd:
             RenderExpression(Expression->GetLeft());
-            RenderCstr(",");
-            RenderExpression(Expression->GetRight());
-            RenderCstr(",+");
+            if (Expression->GetRight()->GetOp() != ObjExpression::eValue || Expression->GetRight()->GetValue() != 0)
+            {
+                RenderCstr(",");
+                RenderExpression(Expression->GetRight());
+                RenderCstr(",+");
+            }
             break;
         case ObjExpression::eSub:
             RenderExpression(Expression->GetLeft());

@@ -527,8 +527,11 @@ void ObjIeeeBinary::RenderExpression(ObjByte* buf, ObjExpression* Expression)
             break;
         case ObjExpression::eAdd:
             RenderExpression(buf, Expression->GetLeft());
-            RenderExpression(buf, Expression->GetRight());
-            ContinueMessage(buf, embed('+'), nullptr);
+            if (Expression->GetRight()->GetOp() != ObjExpression::eValue || Expression->GetRight()->GetValue() != 0)
+            {
+                RenderExpression(buf, Expression->GetRight());
+                ContinueMessage(buf, embed('+'), nullptr);
+            }
             break;
         case ObjExpression::eSub:
             RenderExpression(buf, Expression->GetLeft());

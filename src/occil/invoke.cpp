@@ -129,7 +129,7 @@ void GetOutputFileName(char* name, char* path, bool obj)
         if (!objPosition)
             Utils::fatal("Cannot get object file name");
         strcpy(name, outFileName);
-        p = (char *)strrchr(name, '\\');
+        p = (char*)strrchr(name, '\\');
         if (!p)
             p = name;
         else

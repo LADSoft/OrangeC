@@ -248,8 +248,8 @@ int msil_main_preprocess(char* fileName)
     strcpy(path, fileName);
     //    GetOutputFileName(fileName, path, cparams.prm_compileonly && !cparams.prm_asmfile);
     uniqueId = Utils::CRC32((unsigned char*)fileName, strlen(fileName));
-    char* p = (char *)strrchr(path, '.');
-    char* q = (char *)strrchr(path, '\\');
+    char* p = (char*)strrchr(path, '.');
+    char* q = (char*)strrchr(path, '\\');
     if (!q)
         q = path;
     else

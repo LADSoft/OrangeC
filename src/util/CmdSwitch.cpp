@@ -251,9 +251,9 @@ char* CmdSwitchFile::GetStr(char* data)
     *p = 0;
     if (quote && *data)
         data++;
-    while ((p = (char *)strstr(buf, "%")))
+    while ((p = (char*)strstr(buf, "%")))
     {
-        char* q = (char *)strchr(p + 1, '%');
+        char* q = (char*)strchr(p + 1, '%');
         if (q)
         {
             int len = q + 1 - p;

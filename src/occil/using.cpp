@@ -44,7 +44,7 @@ bool _using_(const char* file)
 {
     char name[260], *p;
     strcpy(name, file);
-    p = (char *)strrchr(name, '.');
+    p = (char*)strrchr(name, '.');
     if (p && Utils::iequal(p, ".dll"))
         *p = 0;
     if (!peLib->LoadAssembly(name))
@@ -89,7 +89,7 @@ void _apply_global_using(void)
     {
         char buf[256];
         strcpy(buf, Optimizer::pinvoke_dll);
-        char* p = (char *)strrchr(buf, '.');
+        char* p = (char*)strrchr(buf, '.');
         if (p)
             *p = 0;
         _using_(buf);

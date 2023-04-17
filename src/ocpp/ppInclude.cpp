@@ -372,7 +372,7 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
         }
         AddName(buf, name);
 
-        while (char* p = (char *)strchr(buf, '/'))
+        while (char* p = (char*)strchr(buf, '/'))
         {
             *p = CmdFiles::DIR_SEP[0];
         }

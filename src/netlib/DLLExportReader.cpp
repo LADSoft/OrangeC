@@ -45,7 +45,7 @@ DLLExportReader::~DLLExportReader()
 
 bool DLLExportReader::FindDLL()
 {
-    char* p = (char *)strrchr((char*)name.c_str(), '.');
+    char* p = (char*)strrchr((char*)name.c_str(), '.');
     if (!p || p[1] == DIR_SEP[0])
     {
         name += ".dll";

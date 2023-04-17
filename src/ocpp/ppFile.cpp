@@ -39,7 +39,7 @@ bool ppFile::GetLine(std::string& line)
         StripComment(buf);
         if (trigraphs)
             StripTrigraphs(buf);
-        char* p = (char *)strrchr(buf, '\\');
+        char* p = (char*)strrchr(buf, '\\');
         if (p)
         {
             char* q = p;

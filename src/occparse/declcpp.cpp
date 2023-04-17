@@ -526,7 +526,7 @@ static void checkExceptionSpecification(SYMBOL* sp)
             {
                 if (sym1->sb->storage_class == sc_virtual)
                 {
-                    const char* f1 = (char *)strrchr(sym1->sb->decoratedName, '@');
+                    const char* f1 = (char*)strrchr(sym1->sb->decoratedName, '@');
                     if (f1 && sp->sb->baseClasses)
                     {
                         for (auto bc : *sp->sb->baseClasses)

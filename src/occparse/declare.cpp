@@ -2148,7 +2148,7 @@ LEXLIST* parse_declspec(LEXLIST* lex, enum e_lk* linkage, enum e_lk* linkage2, e
                 }
                 else if (!strcmp(lex->data->value.s.a, "deprecated") || !strcmp(lex->data->value.s.a, "__deprecated__"))
                 {
-                    basisAttribs.uninheritable.deprecationText = (char *)-1;
+                    basisAttribs.uninheritable.deprecationText = (char*)-1;
                 }
                 else
                 {

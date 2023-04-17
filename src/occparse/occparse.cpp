@@ -95,29 +95,29 @@ void *operator new(size_t aa)
         if (dictionary[bb/4])
         {
             void *rv = dictionary[bb/4];
-            dictionary[bb/4] = *(void **)((char *)rv+4);
-            return (void *)((char *)rv + 8);
+            dictionary[bb/4] = *(void **)((char*)rv+4);
+            return (void *)((char*)rv + 8);
         }
     }
     aa += 11;
     aa = aa * 8 / 8;
     void *rv = malloc(aa);
     *(unsigned *)rv = aa - 8;
-    return (void *)((char *)rv + 8);
+    return (void *)((char*)rv + 8);
 }
 void operator delete(void *p)
 {
     if (!p)
         return;
-    int n = *(unsigned *)((char *)p-8);
+    int n = *(unsigned *)((char*)p-8);
     if (n < HASHBLKSIZE)
     {
-        *(void **)((char *)p-4) = dictionary[n/4];
-        dictionary[n/4] = (void *)((char *)p-8);
+        *(void **)((char*)p-4) = dictionary[n/4];
+        dictionary[n/4] = (void *)((char*)p-8);
     }
     else
     {
-        free((char *)p-8);
+        free((char*)p-8);
     }
 }
 #endif

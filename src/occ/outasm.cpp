@@ -92,7 +92,7 @@ static void AsmOutput(const char* fmt, ...)
     vsprintf(buf, fmt, lst);
     va_end(lst);
 
-    while ((q = (char *)strrchr(p, '\n')) != 0)
+    while ((q = (char*)strrchr(p, '\n')) != 0)
     {
         linepos = 0;
         q++;

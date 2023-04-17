@@ -47,6 +47,18 @@ namespace Parser
 
 bool IsCompiler();
 
+class StringHash
+{
+public:
+    unsigned operator() (const std::string& aa) const
+    {
+        unsigned rv = 0;
+        const unsigned char *x = (const unsigned char *)aa.c_str();
+        for (;*x; ++x)
+            rv = (rv << 8) + (rv << 1) + rv + *x;
+        return rv;
+    }
+};
 template <class T>
 class SymbolTable
 {
@@ -76,7 +88,7 @@ public:
     inline void AddName(T* sym);
 private:
     std::list<T*> inOrder_;
-    std::unordered_map<std::string, T*> lookupTable_;
+    std::unordered_map<std::string, T*, StringHash> lookupTable_;
     int blockLevel_;
     SymbolTable<T>* next_ = nullptr;
     SymbolTable<T>* chain_ = nullptr;

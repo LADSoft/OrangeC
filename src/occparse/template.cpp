@@ -75,7 +75,7 @@ int count1;
 int inTemplateArgs;
 
 static std::unordered_map<SYMBOL*, std::unordered_map<std::string, SYMBOL*>> classTemplateMap;
-std::unordered_map<std::string, SYMBOL*> classTemplateMap2;
+std::unordered_map<std::string, SYMBOL*, StringHash> classTemplateMap2;
 
 struct templateListData* currents;
 

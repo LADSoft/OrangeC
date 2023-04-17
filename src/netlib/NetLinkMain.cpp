@@ -296,7 +296,7 @@ class PInvokeWeeder : public Callback
   private:
     PELib& peLib;
     bool scanning;
-    std::map<std::string, int> pinvokeCounters;
+    std::unordered_map<std::string, int, StringHash> pinvokeCounters;
 };
 bool NetLinkMain::Validate()
 {

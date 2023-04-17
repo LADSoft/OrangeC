@@ -451,7 +451,7 @@ void Method::CalculateLive()
 }
 void Method::CalculateMaxStack()
 {
-    std::map<std::string, int> labels;
+    std::unordered_map<std::string, int, StringHash> labels;
     maxStack_ = 0;
     int n = 0;
     bool lastBranch = false;

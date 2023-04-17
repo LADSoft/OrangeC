@@ -520,7 +520,7 @@ Instruction* Instruction::ObjIn(PELib& peLib)
         rv->Offset(offset);
     return rv;
 }
-size_t Instruction::Render(PELib& peLib, Byte* result, std::map<std::string, Instruction*>& labels)
+size_t Instruction::Render(PELib& peLib, Byte* result, std::unordered_map<std::string, Instruction*, StringHash>& labels)
 {
 
     int sz = 0;

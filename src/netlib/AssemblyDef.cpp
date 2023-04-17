@@ -76,7 +76,7 @@ bool AssemblyDef::PEHeaderDump(PELib& peLib)
     peIndex_ = peLib.PEOut().AddTableEntry(table);
     return true;
 }
-Namespace* AssemblyDef::InsertNameSpaces(PELib& lib, std::map<std::string, Namespace*>& nameSpaces, const std::string& name)
+Namespace* AssemblyDef::InsertNameSpaces(PELib& lib, std::unordered_map<std::string, Namespace*, StringHash>& nameSpaces, const std::string& name)
 {
     if (nameSpaces.find(name) == nameSpaces.end())
     {
@@ -331,7 +331,7 @@ void AssemblyDef::Load(PELib& lib, PEReader& reader)
                 refClasses.push_back(val);
             }
         }
-        std::map<std::string, Namespace*> nameSpaces;
+        std::unordered_map<std::string, Namespace*, StringHash> nameSpaces;
         std::vector<Class*> classes;
         classes.push_back(nullptr);
         std::vector<int> fields, methods;

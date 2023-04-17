@@ -27,7 +27,7 @@
 #include <list>
 #include <vector>
 #include <deque>
-#include <map>
+#include <unordered_map>
 #include <string>
 #include <set>
 #include <iostream>
@@ -35,6 +35,7 @@
 #include <stdexcept>
 #include <string.h>
 #include <memory>
+#include <map>
 // reference changelog.txt to see what the changes are
 //
 #define DOTNETPELIB_VERSION "3.01"
@@ -225,6 +226,18 @@ namespace DotNetPELib
         oe_typemismatch,
         oe_corFlagsMismatch,
     };
+    class StringHash
+    {
+    public:
+        unsigned operator() (const std::string& aa) const
+        {
+            unsigned rv = 0;
+            const unsigned char *x = (const unsigned char *)aa.c_str();
+            for (;*x; ++x)
+                rv = (rv << 8) + (rv << 1) + rv + *x;
+            return rv;
+        }
+    };
     // Qualifiers is a generic class that holds all the 'tags' you would see on various objects in
     // the assembly file.   Where possible things are handled implicitly for example 'nested'
     // will automatically be added when a class is nested in another class.
@@ -377,7 +390,7 @@ namespace DotNetPELib
         std::list<Instruction *>::iterator end() { return instructions_.end(); }
 
     protected:
-        std::map<std::string, Instruction *> labels;
+        std::unordered_map<std::string, Instruction *, StringHash> labels;
         void LoadLabels();
         void OptimizeLDC(PELib &);
         void OptimizeLDLOC(PELib &);
@@ -484,7 +497,7 @@ namespace DotNetPELib
     protected:
         std::list<DataContainer *> children_;
         std::list<CodeContainer *> methods_;
-        std::map<std::string, std::deque<DataContainer *>> sortedChildren_;
+        std::unordered_map<std::string, std::deque<DataContainer *>, StringHash> sortedChildren_;
         std::list<Field *> fields_;
         DataContainer *parent_;
         Qualifiers flags_;
@@ -565,7 +578,7 @@ namespace DotNetPELib
         static AssemblyDef *ObjIn(PELib &, bool definition = true);
 
     protected:
-        Namespace *InsertNameSpaces(PELib &lib, std::map<std::string, Namespace *> &nameSpaces, const std::string& name);
+        Namespace *InsertNameSpaces(PELib &lib, std::unordered_map<std::string, Namespace *, StringHash> &nameSpaces, const std::string& name);
         Namespace *InsertNameSpaces(PELib &lib, Namespace *nameSpace, std::string nameSpaceName);
         Class *InsertClasses(PELib &lib, Namespace *nameSpace, Class *cls, std::string name);
     private:
@@ -575,8 +588,8 @@ namespace DotNetPELib
         int major_, minor_, build_, revision_;
         bool loaded_;
         CustomAttributeContainer customAttributes_;
-        std::map<std::string, Namespace *> namespaceCache;
-        std::map<std::string, Class *> classCache;
+        std::unordered_map<std::string, Namespace *, StringHash> namespaceCache;
+        std::unordered_map<std::string, Class *, StringHash> classCache;
     };
     ///** a namespace
     class Namespace : public DataContainer
@@ -1072,7 +1085,7 @@ namespace DotNetPELib
 
         // internal methods and structures
         virtual bool ILSrcDump(PELib &) const;
-        size_t Render(PELib & peLib, Byte *, std::map<std::string, Instruction *> &labels);
+        size_t Render(PELib & peLib, Byte *, std::unordered_map<std::string, Instruction *, StringHash> &labels);
         virtual void ObjOut(PELib &, int pass) const;
         static Instruction *ObjIn(PELib &);
         enum ioperand {
@@ -1623,7 +1636,7 @@ namespace DotNetPELib
         std::iostream &Out() const { return *outputStream_; }
         void Swap(std::unique_ptr<std::iostream>& stream) { outputStream_.swap(stream); }
         PEWriter &PEOut() const { return *peWriter_; }
-        std::map<size_t, size_t> moduleRefs;
+        std::unordered_map<size_t, size_t> moduleRefs;
         void PushContainer(DataContainer *container) { containerStack_.push_back(container); }
         DataContainer *GetContainer() { if (containerStack_.size()) return containerStack_.back(); else return nullptr; }
         void PopContainer() { containerStack_.pop_back(); }
@@ -1636,13 +1649,13 @@ namespace DotNetPELib
         bool ILSrcDumpFile();
         bool DumpPEFile(std::string name, bool isexe, bool isgui);
         std::list<AssemblyDef *>assemblyRefs_;
-        std::map<std::string, Method *>pInvokeSignatures_;
+        std::unordered_map<std::string, Method *, StringHash>pInvokeSignatures_;
         std::multimap<std::string, MethodSignature *> pInvokeReferences_;
         std::string assemblyName_;
         std::unique_ptr<std::iostream> outputStream_;
         std::fstream *inputStream_;
         std::string fileName_;
-    	std::map<std::string, std::string> unmanagedRoutines_;
+    	  std::unordered_map<std::string, std::string, StringHash> unmanagedRoutines_;
         int corFlags_;
         PEWriter *peWriter_;
         std::vector<Namespace *> usingList_;

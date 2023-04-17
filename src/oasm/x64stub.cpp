@@ -800,11 +800,15 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
             int count = 0;
             bool canceled = false;
             AsmExprNode* expr = fixup->GetExpr();
-            RepRemoveCancellations(expr, false, count, sect, sign, true);
-            if (count == 2 && sect[0] == sect[1] && sign[0] == !sign[1])
+            if (!fixup->IsCanceled())
             {
-                canceled = true;
-                RepRemoveCancellations(expr, true, count, sect, sign, true);
+                RepRemoveCancellations(expr, false, count, sect, sign, true);
+                if (count == 2 && sect[0] == sect[1] && sign[0] == !sign[1])
+                {
+                    canceled = true;
+                    RepRemoveCancellations(expr, true, count, sect, sign, true);
+                }
+                fixup->SetCanceled(true);
             }
             expr = AsmExpr::Eval(expr, pc);
             if (fixup->GetExpr()->IsAbsolute() || canceled || (fixup->IsRel() && expr->GetType() == AsmExprNode::IVAL))

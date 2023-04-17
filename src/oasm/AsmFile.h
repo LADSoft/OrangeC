@@ -112,14 +112,11 @@ class AsmFile
     ObjSection* GetSectionByName(std::string& name);
     Section* GetCurrentSection() { return currentSection; }
 
-    static Section* GetLabelSection(std::string& label)
+    static Section* GetLabelSection(const ObjString& label)
     {
-        for (auto s : numericSections)
-        {
-            auto it = s->Lookup(label);
-            if (it != s->GetLabels().end())
-                return s;
-        }
+        auto it = labelSections.find(label);
+        if (it != labelSections.end())
+            return it->second;
         return nullptr;
     }
 
@@ -209,6 +206,7 @@ class AsmFile
     bool attSyntax;
     bool noGASdirectivewarning;
     std::stack<SectionPair> sectionStack;
+    static std::unordered_map<ObjString, Section*> labelSections;
 };
 
 #endif

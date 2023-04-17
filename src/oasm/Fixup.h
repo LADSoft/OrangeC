@@ -33,9 +33,11 @@ class AsmExprNode;
 class Fixup
 {
   public:
-    Fixup() : expr(nullptr), rel(0), size(0), relOffs(0), resolved(false), insOffs(0), errorLine(0), adjustable(false) {}
+    Fixup() : expr(nullptr), rel(0), size(0), relOffs(0), resolved(false), insOffs(0), errorLine(0), adjustable(false),
+        canceled() {}
     Fixup(AsmExprNode* Expr, int Size, int Rel, int RelOffs = 0, bool Adjustable = false) :
-        expr(Expr), rel(Rel), size(Size), relOffs(RelOffs), resolved(false), insOffs(0), errorLine(0), adjustable(Adjustable)
+        expr(Expr), rel(Rel), size(Size), relOffs(RelOffs), resolved(false), insOffs(0), errorLine(0), adjustable(Adjustable),
+        canceled()
     {
     }
     void SetRel(bool Rel) { rel = Rel; }
@@ -56,8 +58,10 @@ class Fixup
     int GetErrorLine() { return errorLine; }
     void SetFileName(std::string& name) { fileName = name; }
     std::string GetFileName() { return fileName; }
-
+    void SetCanceled(bool val) { canceled = val; }
+    bool IsCanceled() const { return canceled; }
   private:
+    bool canceled;
     AsmExprNode* expr;
     int errorLine;
     std::string fileName;

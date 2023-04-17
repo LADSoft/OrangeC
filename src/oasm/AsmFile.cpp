@@ -44,6 +44,7 @@
 
 std::unordered_map<ObjString, std::unique_ptr<Section>> AsmFile::sections;
 std::vector<Section*> AsmFile::numericSections;
+std::unordered_map<ObjString, Section *> AsmFile::labelSections;
 
 AsmFile::~AsmFile()
 {
@@ -1486,6 +1487,15 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
         fi->SetFileTime(*std::localtime(&x));
         ObjSourceFile* sf = factory.MakeSourceFile(ObjString(name.c_str()));
         fi->Add(sf);
+
+        labelSections.clear();
+        for (int i = 0; i < numericSections.size(); ++i)
+        {
+            for (auto&& g : numericSections[i]->GetLabels())
+            {
+                labelSections[g.first] = numericSections[i];
+            }
+        }
         for (int i = 0; i < numericSections.size(); ++i)
         {
             numericSections[i]->MergeSubsections();

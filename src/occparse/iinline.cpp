@@ -333,6 +333,8 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
         auto ital = argList.begin();
         for (auto sym : *table)
         {
+            if (ital == argList.end())
+                break;
             if (!sym->sb->thisPtr && !isvoid(sym->tp))
             {
                 Optimizer::SymbolManager::Get(sym)->paramSubstitute = *ital;

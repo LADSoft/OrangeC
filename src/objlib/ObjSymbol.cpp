@@ -36,6 +36,17 @@ static const char* unmangle(char* val, const char* name);
 ObjString ObjSymbol::GetDisplayName()
 {
     char val[8192];
+    if (!strncmp(name.c_str(), "@.xt@", 5))
+    {
+        unmangle(val, name.c_str() + 4);
+        char *p = val;
+        if (isdigit(*p))
+        {
+             while (isdigit(*p)) p++;
+             while (*p == ':') p++;               
+        }
+        return std::string(".xt:") + p;
+    }
     return unmangle(val, (const char*)name.c_str());
 }
 

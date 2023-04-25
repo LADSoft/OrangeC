@@ -971,29 +971,36 @@ static bool is_convertible_to(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE**
                 to = to->templateParam->second->byClass.val;
             if (from->type == bt_templateparam)
                 from = from->templateParam->second->byClass.val;
-            rv = comparetypes(to, from, false);
-            if (!rv && isstructured(from) && isstructured(to))
+            if (to && from)
             {
-                if (classRefCount(basetype(to)->sp, basetype(from)->sp) == 1)
-                    rv = true;
-                else if (lookupGenericConversion(basetype(from)->sp, basetype(to)))
-                    rv = true;
-            }
-            if (!rv && isstructured(from))
-            {
-                CI_CONSTRUCTOR;
-                SYMBOL* sym = search(basetype(from)->syms, overloadNameTab[CI_CAST]);
-                if (sym)
+                rv = comparetypes(to, from, false);
+                if (!rv && isstructured(from) && isstructured(to))
                 {
-                    for (auto sp1 : *sym->tp->syms)
+                    if (classRefCount(basetype(to)->sp, basetype(from)->sp) == 1)
+                        rv = true;
+                    else if (lookupGenericConversion(basetype(from)->sp, basetype(to)))
+                        rv = true;
+                }
+                if (!rv && isstructured(from))
+                {
+                    CI_CONSTRUCTOR;
+                    SYMBOL* sym = search(basetype(from)->syms, overloadNameTab[CI_CAST]);
+                    if (sym)
                     {
-                        if (comparetypes(basetype(sp1->tp)->btp, to, false))
+                        for (auto sp1 : *sym->tp->syms)
                         {
-                            rv = true;
-                            break;
+                            if (comparetypes(basetype(sp1->tp)->btp, to, false))
+                            {
+                                rv = true;
+                                break;
+                            }
                         }
                     }
                 }
+            }
+            else
+            {
+                rv = false;
             }
         }
     }

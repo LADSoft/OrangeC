@@ -2659,7 +2659,7 @@ void asm_parmblock(Optimizer::QUAD* q) /* push a block of memory */
             apl->mode = am_direct;
     }
 
-    if (n <= 24 && q->dc.left->mode == Optimizer::i_immed)
+    if (n <= 24 && (q->dc.left->mode == Optimizer::i_immed || (q->dc.left->mode == Optimizer::i_direct && q->dc.left->offset->type == Optimizer::se_tempref)))
     {
         while (n > 0)
         {

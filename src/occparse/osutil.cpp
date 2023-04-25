@@ -562,18 +562,23 @@ static void ParamTransfer(char* name)
             Optimizer::cparams.prm_maxerr = n;
         DisableTrivialWarnings();
     }
+    checks = Utils::split(prm_warning.GetValue());
+    for (auto&& v : checks)
+    {
+        warning_setup('w', v.c_str());
+    }
     if (prm_Werror.GetExists())
     {
         const std::string& string = prm_Werror.GetValue();
         size_t errstart = 0;
         while (true)
         {
-            size_t commaloc = string.find_first_of(',');
+            size_t commaloc = string.find_first_of(',', errstart);
             if (commaloc != std::string::npos)
             {
                 std::string thing = string.substr(errstart, commaloc);
                 WarningAsError(thing.c_str());
-                errstart = commaloc;
+                errstart = commaloc + 1;
             }
             else
             {
@@ -582,11 +587,6 @@ static void ParamTransfer(char* name)
                 break;
             }
         }
-    }
-    checks = Utils::split(prm_warning.GetValue());
-    for (auto&& v : checks)
-    {
-        warning_setup('w', v.c_str());
     }
     if (prmWall.GetValue())
     {

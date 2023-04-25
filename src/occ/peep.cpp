@@ -1665,6 +1665,28 @@ void peep_fld(OCODE* ip)
         }
     }
 }
+void peep_setne(OCODE *ip)
+{
+    if (ip->back->opcode == op_and && ip->oper1->mode == am_dreg && ip->back->oper1->mode == am_dreg && ip->back->oper2->mode == am_immed)
+    {
+        if (ip->oper1->preg  == ip->back->oper1->preg)
+        {
+            if (ip->back->oper2->offset->type == Optimizer::se_i && ip->back->oper2->offset->i == 1)
+            {
+                OCODE *ip1 = ip->fwd;
+                while (ip1->opcode <= op_blockend) ip1 = ip1->fwd;
+                if (ip1->opcode == op_and && ip1->oper1->mode == am_dreg && ip1->oper2->mode == am_dreg)
+                {
+                    if (ip1->oper1->preg == ip1->oper2->preg)
+                    {
+                        remove_peep_entry(ip1);
+                    }
+                }
+                remove_peep_entry(ip);
+            }
+        }
+    }
+}
 void insert_peep_entry(OCODE* after, enum e_opcode opcode, int size, AMODE* ap1, AMODE* ap2)
 {
     OCODE* a = beLocalAllocate<OCODE>();
@@ -1808,6 +1830,9 @@ void oa_peep(void)
                     break;
                 case op_fld:
                     peep_fld(ip);
+                    break;
+                case op_setne:
+                    peep_setne(ip);
                     break;
                 default:
                     break;

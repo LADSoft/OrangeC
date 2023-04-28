@@ -225,86 +225,117 @@ int RunExternalFiles()
     }
     if (!Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile && objlist)
     {
-        std::string tempName;
-        FILE* fil = Utils::TempName(tempName);
-        if (!Optimizer::prm_libPath.empty())
-        {
-            fprintf(fil, "\"/L%s\" ", Optimizer::prm_libPath.c_str());
-        }
-
-        strcpy(args, winflags[Optimizer::cparams.prm_targettype]);
-
-        c0 = winc0[Optimizer::cparams.prm_targettype + Optimizer::cparams.prm_lscrtdll * 8];
-        if (Optimizer::cparams.prm_debug)
-        {
-            //            strcat(args, " /DEB");
-            if (Optimizer::cparams.prm_targettype == DOS)
-                c0 = "c0pmd.o";
-            else if (Optimizer::cparams.prm_targettype == DOS32A)
-                c0 = "c0watd.o";
-            if (!Optimizer::cparams.compile_under_dos)  // this because I don't want to vet sqlite3 under DOS at this time.
-                strcat(args, " /v");
-        }
-        fprintf(fil, "  %s", c0);
-        while (objlist)
-        {
-            fprintf(fil, " \"%s%s\"", temp, (char*)objlist->data);
-            objlist = objlist->next;
-        }
-        //        fprintf(fil, "  \"/o%s\" ", outName);
-        while (liblist)
-        {
-            fprintf(fil, " \"%s\"", (char*)liblist->data);
-            liblist = liblist->next;
-        }
-        if (Optimizer::cparams.prm_msvcrt)
-            fprintf(fil, " climp.l msvcrt.l ");
-        else if (Optimizer::cparams.prm_lscrtdll)
-            fprintf(fil, " climp.l lscrtl.l ");
-        else if (Optimizer::cparams.prm_crtdll)
-            fprintf(fil, " climp.l crtdll.l ");
-        else if (Optimizer::cparams.prm_targettype == DOS || Optimizer::cparams.prm_targettype == DOS32A ||
-                 Optimizer::cparams.prm_targettype == RAW || Optimizer::cparams.prm_targettype == WHXDOS)
-        {
-            if (Optimizer::cparams.prm_farkeyword)
-                fprintf(fil, " farmem");
-            fprintf(fil, " cldos.l ");
-        }
-        else
-            fprintf(fil, " climp.l clwin.l ");
-        while (reslist)
-        {
-            fprintf(fil, " \"%s\"", (char*)reslist->data);
-            reslist = reslist->next;
-        }
-        fclose(fil);
         char with[50000];
         with[0] = 0;
-        if (Optimizer::cparams.verbosity)
+        std::string tempName;
+        FILE* fil = Utils::TempName(tempName);
+        if (Optimizer::cparams.prm_makelib)
         {
-            FILE* fil = fopen(tempName.c_str(), "r");
-            if (fil)
+            while (objlist)
             {
-                sprintf(with, "with %s=\n", tempName.c_str());
-                while (fgets(with + strlen(with), 1000, fil) != 0)
-                    ;
-                fclose(fil);
-                strcat(with, "\n");
+                fprintf(fil, " \"%s%s\"", temp, (char*)objlist->data);
+                objlist = objlist->next;
             }
+            fclose(fil);
+            if (Optimizer::cparams.verbosity)
+            {
+                FILE* fil = fopen(tempName.c_str(), "r");
+                if (fil)
+                {
+                    sprintf(with, "with %s=\n", tempName.c_str());
+                    while (fgets(with + strlen(with), 1000, fil) != 0)
+                        ;
+                    fclose(fil);
+                    strcat(with, "\n");
+                }
+            }
+            Utils::StripExt(outName);
+            strcat(outName, ".l");
+            rv = Utils::ToolInvoke(
+                "olib.exe", Optimizer::cparams.verbosity ? with : nullptr, "%s %s +- @%s", 
+                !Optimizer::showBanner ? "-!" : "", 
+                outName,
+                tempName.c_str());
         }
-        rv = Utils::ToolInvoke(
-            "olink.exe", Optimizer::cparams.verbosity ? with : nullptr, "%s %s %s /c+ \"/o%s\" %s %s %s @%s",
-            link_params ? link_params : "", Optimizer::cparams.prm_targettype == WHXDOS ? "-DOBJECTALIGN=65536" : "",
-            !Optimizer::showBanner ? "-!" : "", outName, args, verbosityString,
-            !Optimizer::prm_OutputDefFile.empty() ? ("--output-def \"" + Optimizer::prm_OutputDefFile + "\"").c_str() : "",
-            tempName.c_str());
+        else
+        {
+            if (!Optimizer::prm_libPath.empty())
+            {
+                fprintf(fil, "\"/L%s\" ", Optimizer::prm_libPath.c_str());
+            }
+
+            strcpy(args, winflags[Optimizer::cparams.prm_targettype]);
+
+            c0 = winc0[Optimizer::cparams.prm_targettype + Optimizer::cparams.prm_lscrtdll * 8];
+            if (Optimizer::cparams.prm_debug)
+            {
+                //            strcat(args, " /DEB");
+                if (Optimizer::cparams.prm_targettype == DOS)
+                    c0 = "c0pmd.o";
+                else if (Optimizer::cparams.prm_targettype == DOS32A)
+                    c0 = "c0watd.o";
+                if (!Optimizer::cparams.compile_under_dos)  // this because I don't want to vet sqlite3 under DOS at this time.
+                    strcat(args, " /v");
+            }
+            fprintf(fil, "  %s", c0);
+            while (objlist)
+            {
+                fprintf(fil, " \"%s%s\"", temp, (char*)objlist->data);
+                objlist = objlist->next;
+            }
+            //        fprintf(fil, "  \"/o%s\" ", outName);
+            while (liblist)
+            {
+                fprintf(fil, " \"%s\"", (char*)liblist->data);
+                liblist = liblist->next;
+            }
+            if (Optimizer::cparams.prm_msvcrt)
+                fprintf(fil, " climp.l msvcrt.l ");
+            else if (Optimizer::cparams.prm_lscrtdll)
+                fprintf(fil, " climp.l lscrtl.l ");
+            else if (Optimizer::cparams.prm_crtdll)
+                fprintf(fil, " climp.l crtdll.l ");
+            else if (Optimizer::cparams.prm_targettype == DOS || Optimizer::cparams.prm_targettype == DOS32A ||
+                 Optimizer::cparams.prm_targettype == RAW || Optimizer::cparams.prm_targettype == WHXDOS)
+            {
+                if (Optimizer::cparams.prm_farkeyword)
+                    fprintf(fil, " farmem");
+                fprintf(fil, " cldos.l ");
+            }
+            else
+               fprintf(fil, " climp.l clwin.l ");
+            while (reslist)
+            {
+                fprintf(fil, " \"%s\"", (char*)reslist->data);
+                reslist = reslist->next;
+            }
+            fclose(fil);
+            if (Optimizer::cparams.verbosity)
+            {
+                FILE* fil = fopen(tempName.c_str(), "r");
+                if (fil)
+                {
+                    sprintf(with, "with %s=\n", tempName.c_str());
+                    while (fgets(with + strlen(with), 1000, fil) != 0)
+                        ;
+                    fclose(fil);
+                    strcat(with, "\n");
+                }
+            }
+            rv = Utils::ToolInvoke(
+                "olink.exe", Optimizer::cparams.verbosity ? with : nullptr, "%s %s %s /c+ \"/o%s\" %s %s %s @%s",
+                link_params ? link_params : "", Optimizer::cparams.prm_targettype == WHXDOS ? "-DOBJECTALIGN=65536" : "",
+                !Optimizer::showBanner ? "-!" : "", outName, args, verbosityString,
+                !Optimizer::prm_OutputDefFile.empty() ? ("--output-def \"" + Optimizer::prm_OutputDefFile + "\"").c_str() : "",
+                tempName.c_str());
+        }
         _unlink(tempName.c_str());
         if (Optimizer::cparams.verbosity > 1)
             printf("Return code: %d\n", rv);
 
         if (rv)
             return rv;
-        if (Optimizer::cparams.prm_targettype == WHXDOS)
+        if (Optimizer::cparams.prm_targettype == WHXDOS && !Optimizer::cparams.prm_makelib)
         {
             rv = Utils::ToolInvoke("patchpe.exe", Optimizer::cparams.verbosity ? "" : nullptr, "%s",
                                    Optimizer::outputFileName.c_str());

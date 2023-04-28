@@ -137,7 +137,7 @@ CmdSwitchString AssemblerExtension(switchParser, 'a');
 CmdSwitchString prmLink(switchParser, 0, 0, {"link"});
 CmdSwitchString prmDll(switchParser, 0, 0, {"dll"});
 CmdSwitchString prmShared(switchParser, 0, 0, {"shared"});
-
+CmdSwitchString prmStatic(switchParser, 0, 0, {"static"});
 CmdSwitchBool prmDumpVersion(switchParser, 0, 0, {"dumpversion"});
 CmdSwitchBool prmDumpMachine(switchParser, 0, 0, {"dumpmachine"});
 CmdSwitchCombineString prmPrintFileName(switchParser, 0, 0, {"print-file-name"});
@@ -666,6 +666,10 @@ static void ParamTransfer(char* name)
                 Optimizer::WinmodeSetup("d");
                 break;
         }
+    }
+    if (prmStatic.GetExists())
+    {
+        Optimizer::cparams.prm_makelib = true;
     }
     if (prm_pipe.GetExists())
     {

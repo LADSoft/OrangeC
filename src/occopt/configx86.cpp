@@ -121,6 +121,7 @@ static char usage_text[] =
     " --export-all-symbols            reserved\n"
     " -link                           reserved\n"
     " -dll or -shared                 compile as DLL (same as /Wd)\n"
+    " -static                         build a static library\n"
     " -dumpversion                    print(to stdout) the version of the compiler\n"
     " -dumpmachine                    print(to stdout) a representation of the target architecture\n"
     " -print-file-name=xxx            print(to stdout) the runtime library file path\n"

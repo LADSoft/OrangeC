@@ -237,6 +237,7 @@ Optimizer::COMPILER_PARAMS cparams_default = {
     false,       /* char no_default_libs;*/
     false,       /*char replacePInvoke;*/
     true,        /* char msilAllowExtensions;*/
+    false,       /* char makelib; */
 };
 
 /*

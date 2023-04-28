@@ -100,6 +100,7 @@ typedef struct
     bool replacePInvoke;         /* occil */
     bool msilAllowExtensions;    /* occil: allow extensions*/
     bool prm_displaytiming;      /* display timing info */
+    bool prm_makelib;            /* make library */
 } COMPILER_PARAMS;
 
 /* Sizing and alignment info uses this structure */

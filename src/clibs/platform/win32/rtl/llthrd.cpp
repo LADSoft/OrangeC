@@ -96,6 +96,7 @@ static PASCAL unsigned char* __getTlsData(int eip, int thread)
         __ll_enter_critical();
         __load_local_data(true);
         __ll_exit_critical();
+        r = __getRtlData();
     }
     HMODULE hModule;
     HandleMap* map = (HandleMap*)r->thread_local_data;

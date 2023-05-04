@@ -410,7 +410,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     if (Optimizer::chosenAssembler->arch->denyopts & DO_NOINLINE)
         return nullptr;
 
-    if (Optimizer::cparams.prm_debug)
+    if (Optimizer::cparams.prm_debug && (!f->sp->sb->isDestructor || !f->sp->sb->parentClass->sb->pureDest))
     {
         f->sp->sb->dumpInlineToFile = true;
         return nullptr;

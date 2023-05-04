@@ -3549,7 +3549,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                                             MakeType(tp2, bt_lref, &stdpointer);
                                             exp = createTemporary(&tp2, exp);
                                         }
-                                        else
+                                        else if (!isref(sym->tp) || exp->type != en_func || (p1->tp->type == bt_aggregate || !isref(basetype(exp->v.func->sp->tp)->btp)))
                                         {
                                             exp = createTemporary(sym->tp, exp);
                                         }
@@ -4059,7 +4059,6 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
     if (/*(!templateNestingCount || instantiatingTemplate) &&*/ funcparams->sp && funcparams->sp->name[0] == '_' &&
         parseBuiltInTypelistFunc(&lex, funcsp, funcparams->sp, tp, exp))
         return lex;
-
 
     if (lex)
     {

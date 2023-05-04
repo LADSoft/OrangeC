@@ -17,7 +17,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  *
- *     contact information:i
+ *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
@@ -418,7 +418,8 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     if (Optimizer::chosenAssembler->arch->denyopts & DO_NOINLINE)
         return nullptr;
 
-    if (Optimizer::cparams.prm_debug)
+    // don't put unnecessary destructor calls into the final output file
+    if (Optimizer::cparams.prm_debug && (!f->sp->sb->isDestructor || !f->sp->sb->parentClass->sb->pureDest))
     {
         f->sp->sb->dumpInlineToFile = true;
         return nullptr;

@@ -3892,6 +3892,8 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                         rv = rve;
                         if (!exp->v.func || !insertOperatorParams(nullptr, &rv, &exp1, exp->v.func, 0))
                             rv = &stdany;
+                        if (isfunction(rv))
+                            rv = basetype(rv)->btp;
                     }
                     else if (isfunction(rve))
                     {

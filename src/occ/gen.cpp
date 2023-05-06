@@ -4031,22 +4031,16 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
                 gen_code(op_jnz, make_label(lbl1), NULL);
                 gen_code_sse(op_ucomiss, op_ucomisd, q->dc.left->size, apl1, apz);
                 oa_gen_label(lbl1);
-                gen_code(op_setne, apa, NULL);
-                gen_codes(op_and, ISZ_UINT, apa, aimmed(1));
             }
             else if (q->dc.left->size >= ISZ_IFLOAT)
             {
                 gen_code_sse(op_ucomiss, op_ucomisd, q->dc.left->size, apl, floatzero(apl));
                 zerocleanup();
-                gen_code(op_setne, apa, NULL);
-                gen_codes(op_and, ISZ_UINT, apa, aimmed(1));
             }
             else if (q->dc.left->size >= ISZ_FLOAT)
             {
                 gen_code_sse(op_ucomiss, op_ucomisd, q->dc.left->size, apl, floatzero(apl));
                 zerocleanup();
-                gen_code(op_setne, apa, NULL);
-                gen_codes(op_and, ISZ_UINT, apa, aimmed(1));
             }
             else if (q->dc.left->size == ISZ_ULONGLONG || q->dc.left->size == -ISZ_ULONGLONG)
             {
@@ -4086,7 +4080,8 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
             {
                 gen_codes(op_cmp, q->dc.left->size, apl, aimmed(0));
             }
-            gen_codes(op_setne, ISZ_UCHAR, apa, 0);
+            gen_code(op_setne, apa, NULL);
+            gen_codes(op_and, ISZ_UINT, apa, aimmed(1));
         }
         else if (q->dc.left->size >= ISZ_CFLOAT)
         {

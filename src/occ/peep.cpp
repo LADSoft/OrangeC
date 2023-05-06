@@ -1665,25 +1665,70 @@ void peep_fld(OCODE* ip)
         }
     }
 }
+static int matches_set(OCODE* ip)
+{
+    switch (ip->opcode)
+    {
+                case op_seta:
+                case op_setnbe:
+                case op_setae:
+                case op_setnb:
+                case op_setnc:
+                case op_setb:
+                case op_setc:
+                case op_setnae:
+                case op_setbe:
+                case op_setna:
+                case op_sete:
+                case op_setz:
+                case op_setg:
+                case op_setnle:
+                case op_setl:
+                case op_setnge:
+                case op_setge:
+                case op_setnl:
+                case op_setle:
+                case op_setng:
+                case op_setne:
+                case op_setnz:
+                case op_seto:
+                case op_setno:
+                case op_setp:
+                case op_setnp:
+                case op_setpe:
+                case op_setpo:
+                case op_sets:
+                case op_setns:
+                    break;
+                default: 
+                    return -1;
+    }
+    if (ip->fwd->opcode == op_and && ip->fwd->oper1->mode == am_dreg && ip->fwd-> oper2->mode == am_immed && ip->oper1->mode == am_dreg)
+    {
+         if (ip->oper1->preg == ip->fwd->oper1->preg && ip->fwd->oper2->offset->type == Optimizer::se_i && ip->fwd->oper2->offset->i == 1)
+         {
+             return ip->oper1->preg;
+         }
+    }
+    return -1;
+}
+// we can elide a setne reg followed by an and reg,1 if there was a previous set & and
+//
 void peep_setne(OCODE *ip)
 {
-    if (ip->back->opcode == op_and && ip->oper1->mode == am_dreg && ip->back->oper1->mode == am_dreg && ip->back->oper2->mode == am_immed)
+    int final = matches_set(ip);
+    if (final >= 0)
     {
-        if (ip->oper1->preg  == ip->back->oper1->preg)
+        OCODE *ip1 = ip->back;
+        while (ip1->opcode <= op_blockend) ip1 = ip1->back;
+        ip1 = ip1->back;
+        int initial = matches_set(ip1);
+        if (initial >= 0)
         {
-            if (ip->back->oper2->offset->type == Optimizer::se_i && ip->back->oper2->offset->i == 1)
-            {
-                OCODE *ip1 = ip->fwd;
-                while (ip1->opcode <= op_blockend) ip1 = ip1->fwd;
-                if (ip1->opcode == op_and && ip1->oper1->mode == am_dreg && ip1->oper2->mode == am_dreg)
-                {
-                    if (ip1->oper1->preg == ip1->oper2->preg)
-                    {
-                        remove_peep_entry(ip1);
-                    }
-                }
-                remove_peep_entry(ip);
-            }
+            remove_peep_entry(ip->fwd);
+            remove_peep_entry(ip);
+            ip1->oper1->preg = final;
+            ip1->fwd->oper1->preg = final;
         }
     }
 }

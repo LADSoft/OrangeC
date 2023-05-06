@@ -47,6 +47,8 @@
 #define F_INRETURN 128
 #define F_NEEDEPILOG 256
 #define F_RETURNREFBYVAL 512
+#define F_NORETURNVALUE 1024
+#define F_INARG 2048
 
 namespace Parser
 {
@@ -473,6 +475,7 @@ typedef struct _imode_
             unsigned char fieldname : 1;  /* vararg is an en_structelem field name */
             unsigned char msilObject : 1; /* true if this is an MSIL object that shouldn't be loaded by address */
             unsigned char returnRefByVal : 1; /* true if this return value is a by value reference value */
+            unsigned char wasinlined : 1;        /* true if this is the result of an inlining operation */
         };
         unsigned flags;
     };

@@ -140,7 +140,8 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
 {
     SimpleType* tp;
     /* needed for pointer aliasing */
-    if (!sym->imvalue && sym->tp->type != st_any && sym->tp->type != st_memberptr && ((sym->tp->type != st_struct &&
+    if (!sym->imvalue && sym->tp->type != st_any && sym->tp->type != st_memberptr &&
+        ((sym->tp->type != st_struct &&
         sym->tp->type != st_union) || sym->tp->structuredAlias) && sym->tp->type != st_ellipse && sym->tp->type != st_aggregate)
     {
         if (sym->imaddress)

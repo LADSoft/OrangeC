@@ -1351,62 +1351,62 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
         {
             switch (sym->sb->storage_class)
             {
-                case sc_auto:
-                case sc_register:
-                case sc_parameter:
+            case sc_auto:
+            case sc_register:
+            case sc_parameter:
+                local = true;
+                expsym = varNode(en_auto, sym);
+                break;
+            case sc_localstatic:
+                if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
+                {
+                    expsym = thisptr;
+                }
+                else
+                {
                     local = true;
-                    expsym = varNode(en_auto, sym);
-                    break;
-                case sc_localstatic:
-                    if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
-                    {
-                        expsym = thisptr;
-                    }
-                    else
-                    {
-                        local = true;
-                        expsym = varNode(en_global, sym);
-                    }
-                    break;
-                case sc_static:
-                case sc_global:
-                    if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
-                    {
-                        expsym = thisptr;
-                    }
-                    else
-                    {
-                        local = true;
-                        expsym = varNode(en_global, sym);
-                    }
-                    break;
-                case sc_member:
-                case sc_mutable:
-                    if (thisptr)
-                        expsym = thisptr;
-                    else if (funcsp)
-                        expsym = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->front());  // this ptr
-                    else
-                    {
-                        expsym = intNode(en_c_i, 0);
-                        diag("convertInitToExpression: no this ptr");
-                    }
-                    if (Optimizer::architecture == ARCHITECTURE_MSIL)
-                        expsym = exprNode(en_structadd, expsym, varNode(en_structelem, sym));
-                    else
-                        expsym = exprNode(en_structadd, expsym, intNode(en_c_i, sym->sb->offset));
-                    break;
-                case sc_external:
-                    /*			expsym = varNode(en_global, sym);
-                                local = true;
-                                break;
-                    */
-                case sc_constant:
-                    return nullptr;
-                default:
-                    diag("convertInitToExpression: unknown sym type");
+                    expsym = varNode(en_global, sym);
+                }
+                break;
+            case sc_static:
+            case sc_global:
+                if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
+                {
+                    expsym = thisptr;
+                }
+                else
+                {
+                    local = true;
+                    expsym = varNode(en_global, sym);
+                }
+                break;
+            case sc_member:
+            case sc_mutable:
+                if (thisptr)
+                    expsym = thisptr;
+                else if (funcsp)
+                    expsym = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->front());  // this ptr
+                else
+                {
                     expsym = intNode(en_c_i, 0);
-                    break;
+                    diag("convertInitToExpression: no this ptr");
+                }
+                if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                    expsym = exprNode(en_structadd, expsym, varNode(en_structelem, sym));
+                else
+                    expsym = exprNode(en_structadd, expsym, intNode(en_c_i, sym->sb->offset));
+                break;
+            case sc_external:
+                /*			expsym = varNode(en_global, sym);
+                            local = true;
+                            break;
+                */
+            case sc_constant:
+                return nullptr;
+            default:
+                diag("convertInitToExpression: unknown sym type");
+                expsym = intNode(en_c_i, 0);
+                break;
             }
         }
     }
@@ -1436,8 +1436,8 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 if (thisptr && exp->type == en_func)
                 {
                     EXPRESSION* exp1 = initItem->offset || (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)
-                                           ? exprNode(en_add, copy_expression(expsym), intNode(en_c_i, initItem->offset))
-                                           : copy_expression(expsym);
+                        ? exprNode(en_add, copy_expression(expsym), intNode(en_c_i, initItem->offset))
+                        : copy_expression(expsym);
                     if (isarray(tp))
                     {
                         exp->v.func->arguments->front()->exp = exp1;
@@ -1446,8 +1446,12 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     {
                         exp->v.func->thisptr = exp1;
                     }
+                    exp = initItem->exp;
                 }
-                exp = initItem->exp;
+                else
+                {
+                    exp = initItem->exp;
+                }
             }
             else if (!initItem->exp)
             {
@@ -1460,38 +1464,50 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             {
                 if (isstructured(initItem->basetp))
                 {
-                    EXPRESSION* exp2 = initItem->exp;
-                    while (exp2->type == en_not_lvalue)
-                        exp2 = exp2->left;
-                    if (exp2->type == en_func && exp2->v.func->returnSP)
-                    {
-                        exp2->v.func->returnSP->sb->allocate = false;
-                        exp2->v.func->returnEXP = copy_expression(expsym);
-                        exp = exp2;
-                        noClear = true;
-                    }
-                    else if (exp2->type == en_thisref && exp2->left->v.func->returnSP)
-                    {
-                        exp2->left->v.func->returnSP->sb->allocate = false;
-                        exp2->left->v.func->returnEXP = copy_expression(expsym);
-                        exp = exp2;
-                        noClear = true;
-                    }
-                    else if ((Optimizer::cparams.prm_cplusplus) && !basetype(initItem->basetp)->sp->sb->trivialCons)
-                    {
-                        TYPE* ctype = initItem->basetp;
-                        callConstructorParam(&ctype, &expsym, ctype, exp2, true, false, false, false, true);
-                        exp = expsym;
-                    }
-                    else
+                    if (0 && basetype(initItem->basetp)->sp->sb->structuredAliasType)
                     {
                         exp = copy_expression(expsym);
                         if (initItem->offset)
                             exp = exprNode(en_add, exp, intNode(en_c_i, initItem->offset));
-                        exp = exprNode(en_blockassign, exp, exp2);
-                        exp->size = initItem->basetp;
-                        exp->altdata = (void*)(initItem->basetp);
-                        noClear = comparetypes(initItem->basetp, tp, true);
+                        deref(basetype(initItem->basetp)->sp->sb->structuredAliasType, &exp);
+                        exp = exprNode(en_assign, exp, initItem->exp);
+                        noClear = true;
+                    }
+                    else
+                    {
+                        EXPRESSION* exp2 = initItem->exp;
+                        while (exp2->type == en_not_lvalue)
+                            exp2 = exp2->left;
+                        if (exp2->type == en_func && exp2->v.func->returnSP)
+                        {
+                            exp2->v.func->returnSP->sb->allocate = false;
+                            exp2->v.func->returnEXP = copy_expression(expsym);
+                            exp = exp2;
+                            noClear = true;
+                        }
+                        else if (exp2->type == en_thisref && exp2->left->v.func->returnSP)
+                        {
+                            exp2->left->v.func->returnSP->sb->allocate = false;
+                            exp2->left->v.func->returnEXP = copy_expression(expsym);
+                            exp = exp2;
+                            noClear = true;
+                        }
+                        else if ((Optimizer::cparams.prm_cplusplus) && !basetype(initItem->basetp)->sp->sb->trivialCons)
+                        {
+                            TYPE* ctype = initItem->basetp;
+                            callConstructorParam(&ctype, &expsym, ctype, exp2, true, false, false, false, true);
+                            exp = expsym;
+                        }
+                        else
+                        {
+                            exp = copy_expression(expsym);
+                            if (initItem->offset)
+                                exp = exprNode(en_add, exp, intNode(en_c_i, initItem->offset));
+                            exp = exprNode(en_blockassign, exp, exp2);
+                            exp->size = initItem->basetp;
+                            exp->altdata = (void*)(initItem->basetp);
+                            noClear = comparetypes(initItem->basetp, tp, true);
+                        }
                     }
                 }
                 else

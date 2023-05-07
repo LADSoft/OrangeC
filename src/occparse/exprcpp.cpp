@@ -726,9 +726,17 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                     *exp = exprNode(en_void, *exp, exp2);
                 else if (!funcparams->arguments || funcparams->arguments->size() == 0)  // empty parens means value constructed, e.g. set the thing to zero...
                 {
-                    EXPRESSION* clr = exprNode(en_blockclear, exp2, nullptr);
-                    clr->size = sym->tp;
-                    *exp = exprNode(en_void, clr, *exp);
+                    if (basetype(sym->tp)->sp->sb->structuredAliasType)
+                    {
+                        deref(basetype(sym->tp)->sp->sb->structuredAliasType, &exp2);
+                        *exp = exprNode(en_void, exprNode(en_assign, exp2, intNode(en_c_i, 0)), *exp);
+                    }
+                    else
+                    {
+                        EXPRESSION* clr = exprNode(en_blockclear, exp2, nullptr);
+                        clr->size = sym->tp;
+                        *exp = exprNode(en_void, clr, *exp);
+                    }
                 }
                 initInsert(&sym->sb->dest, *tp, exp1, 0, true);
             }

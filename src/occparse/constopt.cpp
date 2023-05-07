@@ -1302,7 +1302,7 @@ EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add)
     }
     return rv;
 }
-static bool expressionHasSideEffects(EXPRESSION *exp)
+bool expressionHasSideEffects(EXPRESSION *exp)
 {
     std::stack<EXPRESSION*> stk;
     stk.push(exp);
@@ -1312,11 +1312,12 @@ static bool expressionHasSideEffects(EXPRESSION *exp)
         stk.pop();
         switch (p->type)
         {
-           case en_func:
-           case en_thisref:
-           case en_assign:
-           case en_autoinc:
-           case en_autodec:
+            case en_atomic:
+            case en_func:
+            case en_thisref:
+            case en_assign:
+            case en_autoinc:
+            case en_autodec:
                return true;
         }
         if (p->right)

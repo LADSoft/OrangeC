@@ -5406,6 +5406,7 @@ static bool IsMove(SYMBOL* sp)
     }
     return rv;
 }
+int count3;
 SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, int toErr,
                               bool maybeConversion, bool toInstantiate, int flags)
 {

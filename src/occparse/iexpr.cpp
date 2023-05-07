@@ -35,6 +35,7 @@
 #include "rtti.h"
 #include "optmodules.h"
 #include "Utils.h"
+#include "istmt.h"
 /*
  *      this module contains all of the code generation routines
  *      for evaluating expressions and conditions.
@@ -111,6 +112,10 @@ void iexpr_func_init(void)
     incdecList = nullptr;
 }
 
+bool HasIncDec()
+{ 
+    return incdecList;
+}
 void DumpIncDec(SYMBOL* funcsp)
 {
     Optimizer::LIST* l = incdecList;
@@ -400,7 +405,8 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
             siz1 = ISZ_UINT;
     }
     EXPRESSION* esym = GetSymRef(node->left);
-    if (Optimizer::architecture != ARCHITECTURE_MSIL && esym && esym->type != en_labcon && !isstructured(esym->v.sp->tp) &&
+    if (Optimizer::architecture != ARCHITECTURE_MSIL && esym && esym->type != en_labcon && !isstructured(esym->v.sp->tp) && (!isref(esym->v.sp->tp) || !isstructured(basetype(esym->v.sp->tp)->btp)) && !esym->v.sp->sb->thisPtr &&
+//    if (Optimizer::architecture != ARCHITECTURE_MSIL && esym && esym->type != en_labcon && !isstructured(esym->v.sp->tp) && !esym->v.sp->sb->thisPtr &&
         siz1 != sizeFromType(esym->v.sp->tp))
     {
         // natural size of the symbol isn't the same as the size we are saving/loading
@@ -447,9 +453,71 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
     }
     else if (node->left->type == en_add || node->left->type == en_arrayadd || node->left->type == en_structadd)
     {
-        if (node->left->type == en_structadd && isconstzero(&stdint, node->left->right) && (node->left->left->type == en_func || node->left->left->type == en_thisref))
+        if (node->left->type == en_structadd && isconstzero(&stdint, node->left->right))
         {
-            ap1 = gen_expr(funcsp, node->left->left, store ? 0 : F_RETURNREFBYVAL, ISZ_ADDR);
+            if  (node->left->left->type == en_func || node->left->left->type == en_thisref)
+            {
+                ap1 = gen_expr(funcsp, node->left->left, store ? 0 : F_RETURNREFBYVAL, ISZ_ADDR);
+            }
+            else if (node->left->left->type == en_l_p && node->left->left->left->type == en_auto)
+            {
+                if (node->left->left->left->v.sp->sb->thisPtr && inlineSymThisPtr.size() && inlineSymThisPtr.back())
+                {
+                    EXPRESSION* exp = inlineSymThisPtr.back();
+                    if (lvalue(exp) && exp->left->type == en_paramsubstitute && exp->left->left)
+                    {
+                        return exp->left->v.imode;
+                    }
+                    else
+                    {
+                        ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
+                    }
+                }
+                else
+                {
+                    auto sym = Optimizer::SymbolManager::Get(node->left->left->left->v.sp);
+                    if (sym->paramSubstitute && sym->paramSubstitute->left->left)
+                    {
+                        return sym->paramSubstitute->left->v.imode;
+                    }
+                    else
+                    {
+                        ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
+                    }
+                }
+            }
+            else if (node->left->left->type == en_l_p && node->left->left->left->type == en_paramsubstitute && node->left->left->left->left)
+            {
+                return node->left->left->left->v.imode;
+            }
+            else
+            {
+                ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
+            }
+        }
+        else if (node->left->type == en_structadd && isconstzero(&stdint, node->left->left))
+        {
+            if (node->left->right->type == en_func || node->left->right->type == en_thisref)
+            {
+                ap1 = gen_expr(funcsp, node->left->right, store ? 0 : F_RETURNREFBYVAL, ISZ_ADDR);
+            }
+            else if (node->left->right->type == en_l_p && node->left->right->left->type == en_auto &&
+                     node->left->right->left->v.sp->sb->thisPtr && inlineSymThisPtr.size() && inlineSymThisPtr.back())
+            {
+                EXPRESSION* exp = inlineSymThisPtr.back();
+                if (lvalue(exp) && exp->left->type == en_paramsubstitute && exp->left->left)
+                {
+                    return exp->left->v.imode;
+                }
+                else
+                {
+                    ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
+                }
+            }
+            else
+            {
+                ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
+            }
         }
         else
         {
@@ -533,6 +601,11 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                 {
                     if (node->left->v.sp->sb->retblk)
                     {
+                        auto exp = inlineSymStructPtr.back();
+                        if (lvalue(exp) && exp->left->type == en_paramsubstitute)
+                        {
+                            return gen_expr(funcsp, exp->left->left, 0, ISZ_ADDR);
+                        }
                         return gen_expr(funcsp, inlineSymStructPtr.back(), 0 ,ISZ_ADDR);
                     }
                 }
@@ -545,7 +618,11 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                         if (exp)
                         {
                             if (lvalue(exp) && exp->left->type == en_paramsubstitute)
+                            {
+                               if (exp->left->left)
+                                    return gen_expr(funcsp, exp->left->left, 0, natural_size(exp->left->left));
                                 return exp->left->v.imode;
+                            }
                             return gen_expr(funcsp, exp, 0, natural_size(exp));
                         }
                     }
@@ -560,12 +637,17 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                 if (sym->storage_class == Optimizer::scc_parameter && sym->paramSubstitute)
                 {
                     node = sym->paramSubstitute;
-                    if (node->left->type == en_paramsubstitute)
+                    if (node->left && node->left->type == en_paramsubstitute)
                     {
                         ap1 = node->left->v.imode;
                         break;
                     }
-                    // paramsubstitute is a NORMAL expression which is a derefed auto constant
+                    // paramsubstitute is a NORMAL expression which is either an lvalue reference
+                    // or the address of a symbol
+                    if (!node->left)
+                    {
+                        return gen_expr(funcsp, node, 0, ISZ_ADDR);
+                    }
                     sym = Optimizer::SymbolManager::Get(sym->paramSubstitute->left->v.sp);
                 }
                 sym->allocate = true;
@@ -1137,17 +1219,16 @@ Optimizer::IMODE* gen_moveblock(EXPRESSION* node, SYMBOL* funcsp)
     {
         EXPRESSION *varl = node->left;
         EXPRESSION *varr = node->right;
-        if (varl->type != en_func && varl->type != en_thisref)
-            deref(basetype(node->size)->sp->sb->structuredAliasType, &varl);
         if (varr->type != en_func && varr->type != en_thisref)
             deref(basetype(node->size)->sp->sb->structuredAliasType, &varr);
-        int size = sizeFromType(node->size->sp->sb->structuredAliasType);
-        ap1 = gen_expr(funcsp, varl, F_STORE, size);
+        int size = sizeFromType(basetype(node->size)->sp->sb->structuredAliasType);
+        ap1 = gen_expr(funcsp, varl, 0, size);
+            ap6 = indnode(ap1, sizeFromType(basetype(node->size)->sp->sb->structuredAliasType));
         ap3 = gen_expr(funcsp, varr, F_VOL, size);
         ap2 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap2 != ap3)
             Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
-        Optimizer::gen_icode(Optimizer::i_assn, ap1, ap2, nullptr);
+        Optimizer::gen_icode(Optimizer::i_assn, ap6, ap2, nullptr);
     }
     else
     {
@@ -1590,7 +1671,66 @@ static EXPRESSION* getAddress(EXPRESSION* exp)
     }
     return rv;
 }
-/*-------------------------------------------------------------------------*/
+static EXPRESSION* aliasToTemp(SYMBOL* funcsp, EXPRESSION* in)
+{
+    auto expt = in;
+    if (expt->type == en_thisref)
+        expt = expt->left;
+    if (expt->type == en_func)
+    {
+        if (!expt->v.func->sp->sb->isConstructor)
+        {
+            if (isstructured(basetype(expt->v.func->sp->tp)->btp))
+            {
+                auto srp = basetype(basetype(expt->v.func->sp->tp)->btp);
+                if (srp && srp->sp->sb->structuredAliasType)
+                {
+                    auto expx = tempVar(srp);
+                    expx = exprNode(en_assign, expx, in);
+                    in = exprNode(en_void, expx, expx->left);
+                }
+            }
+        }
+    }
+    return in;
+}
+Optimizer::IMODE* ArgToPointer(SYMBOL* funcsp, EXPRESSION* ep, Optimizer::IMODE* ap3)
+{
+    TYPE* aliasType = nullptr;
+    if (ep->type == en_structadd && isconstzero(&stdint, ep->right))
+    {
+        ep = ep->left;
+    }
+    if (ap3->wasinlined)
+    {
+        if (ep->type == en_thisref && ep->left->v.func->sp->sb->isConstructor)
+        {
+            aliasType = basetype(ep->left->v.func->sp->sb->parentClass->tp)->sp->sb->structuredAliasType;
+        }
+        else if (ep->type == en_l_ref && ep->left->type == en_auto && ep->left->v.sp->sb->storage_class == sc_parameter)
+        {
+            if (isref(ep->left->v.sp->tp) && isstructured(basetype(ep->left->v.sp->tp)->btp))
+                aliasType = basetype(basetype(ep->left->v.sp->tp)->btp)->sp->sb->structuredAliasType;
+        }
+    }
+    else
+    {
+        if (ep->type == en_func)
+        {
+            if (isstructured(basetype(ep->v.sp->tp)->btp))
+                aliasType = basetype(basetype(ep->v.sp->tp)->btp)->sp->sb->structuredAliasType;
+        }
+    }
+    if (aliasType)
+    {
+        auto val = tempVar(aliasType);
+        Optimizer::IMODE* ap2 = gen_expr(funcsp, val, F_STORE, sizeof(val));
+        gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
+        ap3 = gen_expr(funcsp, val->left, 0, ISZ_ADDR);
+    }
+    return ap3;
+}
+    /*-------------------------------------------------------------------------*/
 int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE* argtp, int flags)
 /*
  *      push the operand expression onto the stack.
@@ -1635,12 +1775,13 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE* argtp, 
             Optimizer::gen_icode(Optimizer::i_parmstack, ap = Optimizer::tempreg(ISZ_ADDR, 0), Optimizer::make_immed(ISZ_UINT, rv),
                                  nullptr);
             Optimizer::SymbolManager::Get(exp->v.sp)->imvalue = ap;
-            gen_expr(funcsp, ep, 0, ISZ_UINT);
+            gen_expr(funcsp, ep, flags, ISZ_UINT);
         }
         else
         {
             temp = natural_size(ep);
-            ap3 = gen_expr(funcsp, ep, 0, temp);
+            ap3 = gen_expr(funcsp, ep, flags, temp);
+            ap3 = ArgToPointer(funcsp, ep, ap3);
             ap = Optimizer::LookupLoadTemp(nullptr, ap3);
             if (ap != ap3)
                 Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
@@ -1659,7 +1800,7 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE* argtp, 
             case en_void:
                 while (ep->type == en_void)
                 {
-                    gen_expr(funcsp, ep->left, 0, ISZ_UINT);
+                    gen_expr(funcsp, ep->left, flags, ISZ_UINT);
                     ep = ep->right;
                 }
                 // the next handles structures that have been used with constexpr...
@@ -1669,7 +1810,7 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE* argtp, 
                 }
                 break;
             case en_argnopush:
-                gen_expr(funcsp, ep->left, 0, ISZ_UINT);
+                gen_expr(funcsp, ep->left, flags, ISZ_UINT);
                 break;
             case en_imode:
                 ap = (Optimizer::IMODE*)ep->left;
@@ -1682,9 +1823,18 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE* argtp, 
                     exp1 = exp1->left;
                 temp = natural_size(ep);
                 if (temp == ISZ_OBJECT && isconstzero(&stdint, exp1))
+                {
                     ap3 = Optimizer::make_immed(ISZ_OBJECT, 0);  // LDNULL
+                }
                 else
+                {
+                    if (ep->type == en_structadd && isconstzero(&stdint, ep->right))
+                    {
+                        ep = ep->left;
+                    }
                     ap3 = gen_expr(funcsp, ep, flags, temp);
+                    ap3 = ArgToPointer(funcsp, ep, ap3);
+                }
                 if (ap3->bits > 0)
                     ap3 = gen_bit_load(ap3);
                 ap = Optimizer::LookupLoadTemp(nullptr, ap3);
@@ -1843,10 +1993,14 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
     {
         if (basetype(a->tp)->sp->sb->structuredAliasType)
         {
-           EXPRESSION *val = a->exp->left;
-            if (val->type != en_func && val->type != en_thisref)
+            EXPRESSION *val = a->exp->left, *val2 = val;
+            if (val2->type == en_void)
+                val2 = val2->right;
+            if (val2->type != en_func && val2->type != en_thisref)
+            {
                 deref(basetype(a->tp)->sp->sb->structuredAliasType, &val);
-           rv = push_param(val, funcsp, nullptr, a->tp, 0);
+            }
+            rv = push_param(val, funcsp, nullptr, a->tp, 0);
         }
         else
         {
@@ -1880,7 +2034,26 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
     }
     else
     {
-        rv = push_param(a->exp, funcsp, a->valist ? a->exp : nullptr, a->tp, 0);
+        auto expx = a->exp;
+        /*
+        if (a->exp->type == en_func && isref(a->tp))
+        {
+            auto tp = basetype(a->exp->v.func->sp->tp)->btp;
+            if (isstructured(tp))
+            {
+                tp = basetype(tp)->sp->sb->structuredAliasType;
+                if (tp && !expx->v.func->sp->sb->attribs.inheritable.isInline && !expx->v.func->sp->sb->attribs.inheritable.excludeFromExplicitInstantiation)
+                {
+                    auto exp = tempVar(tp);
+                    auto sp = Optimizer::SymbolManager::Get(exp->left->v.sp);
+                    sp->addressTaken = true;
+                    sp->allocate = true;
+                    expx = exprNode(en_void, exprNode(en_assign, exp, a->exp), exp->left);
+                }
+            }
+        }
+        */
+        rv = push_param(expx, funcsp, a->valist ? a->exp : nullptr, a->tp, F_INARG);
     }
     DumpIncDec(funcsp);
     push_nesting += rv;
@@ -2190,6 +2363,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             }
         }
     }
+    flags &= ~F_INARG;
     if ((Optimizer::architecture == ARCHITECTURE_MSIL) &&
         (f->sp->sb->attribs.inheritable.linkage2 != lk_unmanaged && msilManaged(f->sp)))
         managed = true;
@@ -2324,7 +2498,12 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             genCdeclArgs(f->arguments, funcsp);
             if (f->thisptr)
             {
-                push_param(f->thisptr, funcsp, nullptr, f->thistp, F_OBJECT);
+                // now we have to check, is the thisptr being derived from a structuredAliasType?
+                // if so we have to create a temporary, store the value, and generate a thisptr off the
+                // address of the temporary
+                // this can only happen if we are using a function as the this pointer...
+                auto ths = aliasToTemp(funcsp, f->thisptr);
+                push_param(ths, funcsp, nullptr, f->thistp, F_OBJECT);
             }
         }
         if (f->callLab == -1)
@@ -3022,7 +3201,6 @@ Optimizer::IMODE* doatomicFence(SYMBOL* funcsp, EXPRESSION* parent, EXPRESSION* 
 }
 */
 /*-------------------------------------------------------------------------*/
-
 Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
 /*
  *      general expression evaluation. returns the addressing mode
@@ -3566,6 +3744,39 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                      return gen_expr(funcsp, ps->left->left, 0, natural_size(ps->left->left));
                  }
             }
+            else if (node->left->type == en_l_p && node->left->left->type == en_auto)
+            {
+                if (inlineSymStructPtr.size() && node->left->left->v.sp->sb->retblk)
+                {
+                     auto exp = inlineSymStructPtr.back();
+                     if (lvalue(exp) && exp->left->type == en_paramsubstitute)
+                     {
+                        return exp->left->v.imode;
+                     }
+
+                }
+                else if (inlineSymThisPtr.size() && inlineSymThisPtr.back() && node->left->left->v.sp->sb->thisPtr)
+                {
+                     auto exp = inlineSymThisPtr.back();
+                     if (lvalue(exp) && exp->left->type == en_paramsubstitute && exp->left->left)
+                     {
+                        return exp->left->v.imode;
+                     }
+                }
+            }
+            else if (node->left->type == en_l_p && node->left->left->type == en_paramsubstitute && node->left->left->left)
+            {
+                return node->left->left->v.imode;
+            }
+            else if (inlineSymStructPtr.size() && node->type == en_l_p && node->left->type == en_l_p &&
+                         node->left->left->type == en_auto && node->left->left->v.sp->sb->retblk)
+            {
+                 auto exp = inlineSymStructPtr.back();
+                 if (lvalue(exp) && exp->left->type == en_paramsubstitute)
+                 {
+                     return exp->left->v.imode;
+                 }
+            }
             ap1 = gen_deref(node, funcsp, flags | store);
             rv = ap1;
             break;
@@ -3692,10 +3903,6 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             {
                 gen_void(search->left, funcsp);
                 search = search->right;
-            }
-            if (search && search->type == en_auto && isstructured(search->v.sp->tp) && basetype(search->v.sp->tp)->sp->sb->structuredAliasType)
-            {
-                deref(basetype(search->v.sp->tp)->sp->sb->structuredAliasType, &search);
             }
             ap1 = gen_expr(funcsp, search, flags, size);
             rv = ap1;

@@ -37,6 +37,7 @@ extern int inlinesp_count;
 
 void iexpr_init(void);
 void iexpr_func_init(void);
+bool HasIncDec();
 void DumpIncDec(SYMBOL* funcsp);
 void DumpLogicalDestructors(EXPRESSION* node, SYMBOL* funcsp);
 Optimizer::IMODE* LookupExpression(enum Optimizer::i_ops op, int size, Optimizer::IMODE* left, Optimizer::IMODE* right);

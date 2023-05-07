@@ -2951,7 +2951,23 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
             if (!constructed)
             {
                 bool toContinue = true;
-                if (flags & _F_ASSIGNINIT)
+                if (basetype(ctype)->sp->sb->structuredAliasType)
+                {
+                    if (funcparams && funcparams->arguments && funcparams->arguments->size() == 1)
+                        if (comparetypes(ctype, funcparams->arguments->front()->tp, 0) ||
+                            sameTemplate(ctype, funcparams->arguments->front()->tp))
+                        {
+                            if (comparetypes(ctype, funcparams->arguments->front()->tp, 0) ||
+                                sameTemplate(ctype, funcparams->arguments->front()->tp))
+                            {
+                                exp = exprNode(en_blockassign, exp, funcparams->arguments->front()->exp);
+                                exp->size = ctype;
+                                exp->altdata = (void*)(ctype);
+                                toContinue = false;
+                            }
+                        }
+                }
+                if (toContinue && (flags & _F_ASSIGNINIT))
                 {
                     toContinue = !callConstructor(&ctype, &exp, funcparams, false, nullptr, false, maybeConversion, implicit, false,
                                                   isList ? _F_INITLIST : 0, true, true);

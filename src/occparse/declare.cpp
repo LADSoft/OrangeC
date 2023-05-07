@@ -885,6 +885,42 @@ static bool usesClass(SYMBOL* cls, SYMBOL* internal)
     }
     return false;
 }
+static void GetStructAliasType(SYMBOL* sym)
+{
+    if (templateNestingCount && !instantiatingTemplate)
+        return;
+    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+        return;
+    /* this conveniently takes care of situations where a VTAB would be required */
+    if (sym->tp->size > Optimizer::chosenAssembler->arch->word_size)
+        return;
+    if ((!Optimizer::cparams.prm_optimize_for_speed && !Optimizer::cparams.prm_optimize_for_size) || Optimizer::cparams.prm_debug)
+        return;
+    if ((sym->sb->baseClasses && sym->sb->baseClasses->size()) || (sym->sb->vbaseEntries && sym->sb->vbaseEntries->size()))
+        return;
+    if (sym->sb->hasvtab)
+        return;
+    SYMBOL* cache = nullptr;
+    for (auto m : *sym->tp->syms)
+    {
+        if (ismemberdata(m))
+        {
+            if (cache)
+                return;
+            else
+                cache = m;
+        }
+        if (m->sb->storage_class == sc_overloads)
+        {
+            if (m->tp->syms->front()->sb->isDestructor && !m->tp->syms->front()->sb->defaulted)
+                return;
+        }
+    }
+    if (!cache || isstructured(cache->tp) || isatomic(cache->tp) || isarray(cache->tp) || basetype(cache->tp)->bits ||
+        isfuncptr(cache->tp) || isref(cache->tp))
+        return;
+    sym->sb->structuredAliasType = cache->tp;
+}
 static void baseFinishDeclareStruct(SYMBOL* funcsp)
 {
     (void)funcsp;
@@ -949,6 +985,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
             {
                 calculateStructOffsets(sp);
             }
+            GetStructAliasType(sp);
         }
     }
     -- resolvingStructDeclarations;
@@ -1010,32 +1047,6 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
             }
         }
     }
-}
-static void GetStructAliasType(SYMBOL *sym)
-{
-    if (Optimizer::architecture == ARCHITECTURE_MSIL)
-        return;
-    /* this conveniently takes care of situations where a VTAB would be required */
-    if (sym->tp->size > Optimizer::chosenAssembler->arch->word_size)
-        return;
-    if ((!Optimizer::cparams.prm_optimize_for_speed && !Optimizer::cparams.prm_optimize_for_size) || Optimizer::cparams.prm_debug)
-        return;
-    SYMBOL* cache = nullptr;
-    if (!sym->sb->trivialCons)
-        return;
-    for (auto m : *sym->tp->syms)
-    {
-        if (ismemberdata(m))
-        {
-            if (cache)
-                return;
-            else
-                cache = m;
-        }
-    }
-    if (!cache || isstructured(cache->tp) || isatomic(cache->tp) || isarray(cache->tp) || basetype(cache->tp)->bits || isfuncptr(cache->tp) || isref(cache->tp))
-        return;
-    sym->sb->structuredAliasType = cache->tp;
 }
 static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac currentAccess)
 {
@@ -1118,8 +1129,8 @@ static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac c
         sp->sb->trivialCons = true;
         if (Optimizer::cparams.prm_cplusplus)
             deferredInitializeStructMembers(sp);
+        GetStructAliasType(sp);
     }
-    GetStructAliasType(sp);
     if (!Optimizer::cparams.prm_cplusplus || structLevel == 1)
     {
         structLevel--;

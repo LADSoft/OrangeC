@@ -104,7 +104,7 @@ static EXPRESSION* inlineGetThisPtr(EXPRESSION* exp)
     }
     return nullptr;
 }
-static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, EXPRESSION* thisptr)
+static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, SymbolTable<SYMBOL>* table, EXPRESSION* thisptr)
 {
     EXPRESSION *rv = nullptr;
     if (table->size())
@@ -148,32 +148,48 @@ static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, EX
                     thisptr = inlineSymThisPtr.size() == 0 || inlineSymThisPtr.back() == nullptr || !hasRelativeThis(thisptr)
                               ? thisptr
                               : inlineGetThisPtr(thisptr);
-                    dest = exprNode(en_paramsubstitute, nullptr, nullptr);
                     deref(&stdpointer, &dest);
-                    src = gen_expr(funcsp, thisptr, 0, natural_size(thisptr));
-                    ap1 = Optimizer::LookupLoadTemp(nullptr, src);
-                    if (ap1 != src)
+                    TYPE* tr = nullptr;
+                    
+                    if (func->sb->isConstructor || func->sb->isDestructor || !isstructured(basetype(func->tp)->btp))
+                        tr = basetype(basetype(sym->tp)->btp);
+                    if (tr && tr->sp->sb->structuredAliasType && (thisptr->type != en_l_p || thisptr->left->type != en_auto || !thisptr->left->v.sp->sb->thisPtr || basetype(basetype(thisptr->left->v.sp->tp)->btp)->sp->sb->structuredAliasType))
                     {
-                        Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
-                        src = ap1;
+                        auto val = thisptr;
+                        deref(tr->sp->sb->structuredAliasType, &val); 
+                        src = gen_expr(funcsp, val, F_STORE, natural_size(val));
+                        dest = makeParamSubs(thisptr, src);
+                        deref(&stdpointer, &dest);
                     }
-                    rv = dest;
-                    if (src->mode != Optimizer::i_direct || src->offset->type != Optimizer::se_tempref || src->size != ISZ_ADDR || src->offset->sp->loadTemp)
+                    else
                     {
-                        if (src->size != ISZ_ADDR)
+                        src = gen_expr(funcsp, thisptr, 0, natural_size(thisptr));
+                        ap1 = Optimizer::LookupLoadTemp(nullptr, src);
+                        if (ap1 != src)
                         {
-                            ap1 = Optimizer::tempreg(src->size, false);
                             Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
                             src = ap1;
                         }
-                        ap1 = Optimizer::tempreg(ISZ_ADDR, false);
-                        Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
-                        src = ap1;
-                        src->offset->sp->pushedtotemp = true;
+                        if (src->mode != Optimizer::i_direct || src->offset->type != Optimizer::se_tempref || src->size != ISZ_ADDR || src->offset->sp->loadTemp)
+                        {
+                            if (src->size != ISZ_ADDR)
+                            {
+                                ap1 = Optimizer::tempreg(src->size, false);
+                                Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                                src = ap1;
+                            }
+                            ap1 = Optimizer::tempreg(ISZ_ADDR, false);
+                            Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                            src = ap1;
+                            src->offset->sp->pushedtotemp = true;
+                            src->offset->sp->pushedtotemp = true;
+                        }
+                        dest = makeParamSubs(nullptr, Optimizer::tempreg(ISZ_ADDR, 0));
+                        deref(&stdpointer, &dest);
+                        idest = dest->left->v.imode;
+                        gen_icode(Optimizer::i_assn, idest, src, nullptr);
                     }
-                    dest->left->v.imode = Optimizer::tempreg(ISZ_ADDR, 0);
-                    idest = dest->left->v.imode;
-                    gen_icode(Optimizer::i_assn, idest, src, nullptr);
+                    rv = dest;
                 }
             }
         }
@@ -241,50 +257,49 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                 TYPE *tpr = nullptr;
                 if (isref(sym->tp))
                     tpr = basetype(sym->tp)->btp;
-                if ((!tpr && sym->sb->addressTaken) || Optimizer::sizeFromISZ(m) > Optimizer::chosenAssembler->arch->word_size ||
-                    Optimizer::sizeFromISZ(n) > Optimizer::chosenAssembler->arch->word_size || Optimizer::architecture == ARCHITECTURE_MSIL)
-                {
-                    SYMBOL* sym2;
-                    sym2 = makeID(sc_auto, sym->tp, nullptr, AnonymousName());
-                    SetLinkerNames(sym2, lk_cdecl);
-
-                    Optimizer::SimpleSymbol* simpleSym = Optimizer::SymbolManager::Get(sym2);
-                    Optimizer::temporarySymbols.push_back(simpleSym);
-                    simpleSym->allocate = true;
-                    simpleSym->inAllocTable = true;
-                    dest = varNode(en_auto, sym2);
-                    ArgDeref(sym->tp, (*ita)->tp, &dest);
-
-                    argList.push_back(dest);
-                    idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
-                    src = gen_expr(funcsp, (*ita)->exp, 0, natural_size((*ita)->exp));
-                    ap1 = Optimizer::LookupLoadTemp(nullptr, src);
-                    if (ap1 != src)
-                    {
-                        Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
-                        src = ap1;
-                    }
-                    Optimizer::gen_icode(Optimizer::i_assn, idest, src, nullptr);
-                }
-                else if (tpr && (!isstructured(tpr) || basetype(tpr)->sp->sb->structuredAliasType) && tpr->size <= Optimizer::chosenAssembler->arch->word_size && ((*ita)->exp->type == en_auto || (*ita)->exp->type == en_global || (*ita)->exp->type == en_pc))
+                if (tpr && (isstructured(tpr) && basetype(tpr)->sp->sb->structuredAliasType) && tpr->size <= Optimizer::chosenAssembler->arch->word_size && Optimizer::architecture != ARCHITECTURE_MSIL)
                 {
                     // can pass reference by value...
-                    dest = exprNode(en_paramsubstitute, (*ita)->exp, nullptr);
-                    ArgDeref(sym->tp, (*ita)->tp, &dest);
-
-                    argList.push_back(dest);
                     auto val = (*ita)->exp;
-                    deref(isstructured(tpr) ? basetype(tpr)->sp->sb->structuredAliasType : tpr, &val);
+                    auto addr = val;
+                    if (val->type != en_func && val->type != en_thisref)
+                    {
+                        deref(basetype(tpr)->sp->sb->structuredAliasType, &val);
+                    }
                     src = gen_expr(funcsp, val, F_STORE, natural_size(val));
-                    dest->left->v.imode = src;
+
+                    if (sym->sb->addressTaken && val->type == en_func)
+                    {
+                        dest = tempVar(basetype(tpr)->sp->sb->structuredAliasType);
+                        addr = dest->left;
+                        idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
+                        gen_icode(Optimizer::i_assn, idest, src, nullptr);
+                        src = idest;
+                    }
+                    else
+                    {
+                        if (!src->wasinlined && val->type == en_thisref && val->left->v.func->sp->sb->isConstructor)
+                        {
+                            src = indnode(src, sizeFromType(basetype(tpr)->sp->sb->structuredAliasType));
+                        }
+                    }
+                    dest = makeParamSubs(addr, src);
+                    ArgDeref(sym->tp, (*ita)->tp, &dest);
+                    argList.push_back(dest);
                 }
                 else
                 {
-                    dest = exprNode(en_paramsubstitute, nullptr, nullptr);
-                    ArgDeref(sym->tp, (*ita)->tp, &dest);
-                    argList.push_back(dest);
                     auto val = (*ita)->exp;
-                    if (val->type == en_stackblock)
+                    if (val->type == en_structadd && isconstzero(&stdint, val->right))
+                    {
+                        val = val->left;
+                    }
+                    bool createTemp = sym->sb->addressTaken ||
+                                      Optimizer::sizeFromISZ(m) > Optimizer::chosenAssembler->arch->word_size ||
+                                      Optimizer::sizeFromISZ(n) > Optimizer::chosenAssembler->arch->word_size ||
+                                      Optimizer::architecture == ARCHITECTURE_MSIL;
+                    bool createTempByRef = false;
+                    if (!createTemp && val->type == en_stackblock)
                     {
                         val = val->left;
                         if (val->type != en_func && val->type != en_thisref)
@@ -293,35 +308,78 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                         }
                     }
                     src = gen_expr(funcsp, val, 0, natural_size(val));
-                    ap1 = Optimizer::LookupLoadTemp(nullptr, src);
-                    if (ap1 != src)
+
+                    if (src->wasinlined && !createTemp)
                     {
-                        Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
-                        src = ap1;
-                    }
-                    if (src->mode != Optimizer::i_direct || src->offset->type != Optimizer::se_tempref || src->size != n || src->offset->sp->loadTemp)
-                    {
-                        ap1 = Optimizer::tempreg(src->size, false);
-                        Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
-                        src = ap1;
-                        if (src->size != n)
+                        if (val->type == en_l_ref && val->left->type == en_auto && val->left->v.sp->sb->storage_class == sc_parameter)
                         {
-                            ap1 = Optimizer::tempreg(n, false);
+                            if (isref(val->left->v.sp->tp) && isstructured(basetype(val->left->v.sp->tp)->btp))
+                                if (basetype(basetype(val->left->v.sp->tp)->btp)->sp->sb->structuredAliasType)
+                                {
+                                    createTemp = true;
+                                    createTempByRef = true;
+                                }
+                        }
+                    }
+                    if (createTemp)
+                    {
+                        SYMBOL* sym2;
+                        sym2 = makeID(sc_auto, sym->tp, nullptr, AnonymousName());
+                        SetLinkerNames(sym2, lk_cdecl);
+
+                        Optimizer::SimpleSymbol* simpleSym = Optimizer::SymbolManager::Get(sym2);
+                        Optimizer::temporarySymbols.push_back(simpleSym);
+                        simpleSym->allocate = true;
+                        simpleSym->inAllocTable = true;
+                        dest = varNode(en_auto, sym2);
+                        ArgDeref(sym->tp, (*ita)->tp, &dest);
+
+                        argList.push_back(createTempByRef ? dest->left : dest);
+                        idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
+                        ap1 = Optimizer::LookupLoadTemp(nullptr, src);
+                        if (ap1 != src)
+                        {
                             Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
                             src = ap1;
                         }
-                    }
-                    if (!src->retval && !sym->sb->assigned && !sym->sb->altered)
-                    {
-                        dest->left->v.imode = src;
+                        Optimizer::gen_icode(Optimizer::i_assn, idest, src, nullptr);
+
                     }
                     else
                     {
-                        dest->left->v.imode = Optimizer::tempreg(n, false);
-                        idest = dest->left->v.imode;
-                        Optimizer::gen_icode(Optimizer::i_assn, idest, src, nullptr);
-                        if (sym->sb->assigned || sym->sb->altered)
-                            idest->offset->sp->pushedtotemp = true;
+                        ap1 = Optimizer::LookupLoadTemp(nullptr, src);
+                        if (ap1 != src)
+                        {
+                            Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                            src = ap1;
+                        }
+                        if (src->mode != Optimizer::i_direct || src->offset->type != Optimizer::se_tempref || src->size != n ||
+                            src->offset->sp->loadTemp)
+                        {
+                            ap1 = Optimizer::tempreg(src->size, false);
+                            Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                            src = ap1;
+                            if (src->size != n)
+                            {
+                                ap1 = Optimizer::tempreg(n, false);
+                                Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                                src = ap1;
+                            }
+                        }
+                        if (!src->retval && !sym->sb->assigned && !sym->sb->altered)
+                        {
+                            dest = makeParamSubs(nullptr, src);
+                        }
+                        else
+                        {
+                            dest = makeParamSubs(nullptr, Optimizer::tempreg(n, false));
+                            idest = dest->v.imode;
+                            Optimizer::gen_icode(Optimizer::i_assn, idest, src, nullptr);
+                            if (sym->sb->assigned || sym->sb->altered)
+                                idest->offset->sp->pushedtotemp = true;
+                        }
+                        ArgDeref(sym->tp, (*ita)->tp, &dest);
+                        argList.push_back(dest);
                     }
                 }
             }
@@ -559,19 +617,36 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     if (isstructured(basetype(f->sp->tp)->btp))
     {
         EXPRESSION* exp = f->returnEXP;
-        if (inlineSymStructPtr.size() && lvalue(exp) && exp->left->type == en_auto && exp->left->v.sp->sb->retblk)
+        if (exp && inlineSymStructPtr.size() && lvalue(exp) && exp->left->type == en_auto && exp->left->v.sp->sb->retblk)
         {
-             exp = inlineSymStructPtr.back();
+            exp = inlineSymStructPtr.back();
+        }
+        else
+        {
+            auto spr = basetype(basetype(f->sp->tp)->btp)->sp;
+            if (spr->sb->structuredAliasType)
+            {
+                auto val = exp ? exp : tempVar(spr->sb->structuredAliasType);
+                if (exp)
+                {
+                    deref(spr->sb->structuredAliasType, &val);
+                }
+                auto src = gen_expr(funcsp, val, F_STORE, natural_size(val));
+                exp = makeParamSubs(val->left, src);
+                deref(&stdpointer, &exp);
+            }
         }
         inlineSymStructPtr.push_back(exp);
         found = true;
     }
-    auto thisptr = inlineBindThis(funcsp, basetype(f->sp->tp)->syms, f->thisptr);
+    auto thisptr = inlineBindThis(funcsp, f->sp, basetype(f->sp->tp)->syms, f->thisptr);
     inlineBindArgs(funcsp, basetype(f->sp->tp)->syms, f->arguments);
     inlineSymList.insert(f->sp);
     inlineSymThisPtr.push_back(thisptr);
     inlineCopySyms(f->sp->sb->inlineFunc.syms);
-    genstmt(f->sp->sb->inlineFunc.stmt->front()->lower, f->sp, flags & F_RETURNREFBYVAL);
+    genstmt(f->sp->sb->inlineFunc.stmt->front()->lower, f->sp,
+            flags & (F_RETURNREFBYVAL | F_INARG) |
+                ((flags & F_NOVALUE) && !isstructured(basetype(f->sp->tp)->btp) ? F_NORETURNVALUE : 0));
     if (f->sp->sb->inlineFunc.stmt->front()->blockTail)
     {
         Optimizer::gen_icode(Optimizer::i_functailstart, 0, 0, 0);
@@ -609,6 +684,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     inlineSymThisPtr.pop_back();
     inlineNesting--;
     inlineSymList.erase(inlineSymList.find(f->sp));
+    ap3->wasinlined = true;
     return ap3;
 }
 }  // namespace Parser

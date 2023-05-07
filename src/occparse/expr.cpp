@@ -1654,7 +1654,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                     }
                     else
                     {
-                        if (isstructured(typein) && !typein->lref && !typein->rref && basetype(typein)->sp->sb->structuredAliasType)
+                        if (isstructured(typein) && !typein->lref && !typein->rref && !(flags & _F_AMPERSAND) && basetype(typein)->sp->sb->structuredAliasType)
                         {
                             structuredAlias = true;
                             // use it as-is
@@ -3456,9 +3456,9 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             initInsert(&esp->sb->dest, basetype(sym->tp)->btp, dexp, 0, true);
                         }
                         else if ((!isconst(basetype(sym->tp)->btp) && !isconst(sym->tp) &&
-                                  (sym->tp->type != bt_rref &&
+                                 (sym->tp->type != bt_rref &&
                                    (!func->sb->templateLevel &&
-                                    (!func->sb->parentClass || !func->sb->parentClass->sb->templateLevel) /*forward*/)) &&
+                                   (!func->sb->parentClass || !func->sb->parentClass->sb->templateLevel) /*forward*/)) &&
                                   isconst(tpx)) ||
                                  (!comparetypes(sym->tp, tpx, true) && !sameTemplate(sym->tp, tpx) &&
                                   !classRefCount(basetype(basetype(sym->tp)->btp)->sp, basetype(tpx)->sp)))
@@ -4064,7 +4064,6 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
     {
         lex = getArgs(lex, funcsp, funcparams, closepa, true, flags);
     }
-
     if (funcparams->astemplate && argumentNesting)
     {
         // if we hit a packed template param here, then this is going to be a candidate
@@ -4453,7 +4452,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                 }
                 if (isstructured(basetype(*tp)->btp) || basetype(basetype(*tp)->btp)->type == bt_memberptr)
                 {
-                    if (!(flags & _F_SIZEOF) && !basetype(basetype((*tp)->btp))->sp->sb->structuredAliasType)
+                    if (!(flags & _F_SIZEOF) && !basetype(basetype(*tp)->btp)->sp->sb->structuredAliasType)
                     {
                         funcparams->returnEXP = anonymousVar(sc_auto, basetype(*tp)->btp);
                         funcparams->returnSP = funcparams->returnEXP->v.sp;
@@ -4463,39 +4462,38 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                 }
                 funcparams->ascall = true;
                 funcparams->functp = *tp;
+
+                *tp = ResolveTemplateSelectors(basetype(*tp)->sp, basetype(*tp)->btp);
+                if (isref(*tp))
                 {
-                    *tp = ResolveTemplateSelectors(basetype(*tp)->sp, basetype(*tp)->btp);
-                    if (isref(*tp))
+                    *tp = CopyType((*tp)->btp);
+                    UpdateRootTypes(*tp);
+                    if ((*tp)->type == bt_rref)
                     {
-                        *tp = CopyType((*tp)->btp);
-                        UpdateRootTypes(*tp);
-                        if ((*tp)->type == bt_rref)
-                        {
-                            (*tp)->rref = true;
-                            (*tp)->lref = false;
-                        }
-                        else
-                        {
-                            (*tp)->lref = true;
-                            (*tp)->rref = false;
-                        }
+                        (*tp)->rref = true;
+                        (*tp)->lref = false;
                     }
-                    else if (ispointer(*tp) && (*tp)->array)
+                    else
                     {
-                        *tp = CopyType(*tp);
-                        UpdateRootTypes(*tp);
                         (*tp)->lref = true;
                         (*tp)->rref = false;
                     }
-                    auto tp1 = tp;
-                    while (ispointer(*tp1) || basetype(*tp1)->type == bt_memberptr)
-                        tp1 = &basetype(*tp1)->btp;
-                    while ((*tp1)->btp)
-                        tp1 = &(*tp1)->btp;
-                    if (isstructured(*tp1))
-                    {
-                        *tp1 = (*tp1)->sp->tp;
-                    }
+                }
+                else if (ispointer(*tp) && (*tp)->array)
+                {
+                    *tp = CopyType(*tp);
+                    UpdateRootTypes(*tp);
+                    (*tp)->lref = true;
+                    (*tp)->rref = false;
+                }
+                auto tp1 = tp;
+                while (ispointer(*tp1) || basetype(*tp1)->type == bt_memberptr)
+                    tp1 = &basetype(*tp1)->btp;
+                while ((*tp1)->btp)
+                    tp1 = &(*tp1)->btp;
+                if (isstructured(*tp1))
+                {
+                    *tp1 = (*tp1)->sp->tp;
                 }
                 if (!(flags & _F_SIZEOF))
                 {
@@ -4512,7 +4510,8 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                             funcparams->returnSP->tp = TemplateClassInstantiate(sym, sym->templateParams, false, sc_global)->tp;
                     }
                 }
-                if ((!funcparams->novtab || (funcparams->sp && funcparams->sp->sb->ispure)) && funcparams->sp && funcparams->sp->sb->storage_class == sc_virtual)
+                if ((!funcparams->novtab || (funcparams->sp && funcparams->sp->sb->ispure)) && funcparams->sp &&
+                    funcparams->sp->sb->storage_class == sc_virtual)
                 {
                     exp_in = funcparams->thisptr;
                     deref(&stdpointer, &exp_in);
@@ -4574,6 +4573,14 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     }
                     while (isref(*tp))
                         *tp = basetype(*tp)->btp;
+                }
+                //structure returned by value is having its address taken...
+                if ((flags & _F_AMPERSAND) && isstructured(*tp) &&
+                    basetype(*tp)->sp->sb->structuredAliasType)
+                {
+                    TYPE tp1 = {};
+                    MakeType(tp1, bt_lref, basetype(*tp)->sp->sb->structuredAliasType);
+                    *exp = createTemporary(&tp1, *exp);
                 }
             }
             else if (templateNestingCount && !instantiatingTemplate && (*tp)->type == bt_aggregate)
@@ -6559,6 +6566,14 @@ static LEXLIST* expression_ampersand(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TY
                 if (!lvalue(exp1))
                     if (Optimizer::cparams.prm_ansi || !castvalue(exp1))
                         error(ERR_MUST_TAKE_ADDRESS_OF_MEMORY_LOCATION);
+            if (lvalue(exp1))
+            {
+                if (exp1->left->type == en_structadd && isconstzero(&stdint, exp1->left->right) && exp1->left->left->type == en_l_ref && exp1->left->left->left->type == en_auto)
+                {
+                    if (exp1->left->left->left->v.sp->sb->storage_class == sc_parameter)
+                        exp1->left->left->left->v.sp->sb->addressTaken = true;
+                }
+            }
         }
         else
             switch ((exp1)->type)
@@ -9066,9 +9081,24 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         ResolveTemplateVariable(tp, exp, tp1, nullptr);
         ResolveTemplateVariable(&tp1, &exp1, *tp, nullptr);
         ConstExprPromote(*exp, false);
+        if (0 & isstructured(*tp) && basetype(*tp)->sp->sb->structuredAliasType)
+        {
+            deref(basetype(*tp)->sp->sb->structuredAliasType, exp);
+            *exp = exprNode(en_assign, *exp, exp1);
+            (*exp)->size = *tp;
+            (*exp)->altdata = (void*)(*tp);
+            continue;
+        }
         if (isstructuredmath(*tp, tp1))
         {
-            if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
+            if (basetype(*tp)->sp->sb->structuredAliasType && (comparetypes(*tp, tp1, 0) || sameTemplate(*tp, tp1)))
+            {
+                *exp = exprNode(en_blockassign, *exp, exp1);
+                (*exp)->size = *tp;
+                (*exp)->altdata = (void*)(*tp);
+                continue;
+            }
+            else if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
                 insertOperatorFunc(selovcl, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags))
             {
                 // unallocated var for destructor

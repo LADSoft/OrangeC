@@ -1008,6 +1008,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                         std::list<INITIALIZER*>* dest = nullptr;
                                         EXPRESSION* exp;
                                         fcb.returnEXP = anonymousVar(sc_auto, iteratorType);
+                                        fcb.returnEXP->v.sp->sb->anonymous = false;
                                         fcb.returnSP = fcb.returnEXP->v.sp;
                                         exp = fcb.returnEXP;
                                         dest = nullptr;
@@ -1017,6 +1018,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
 
                                         dest = nullptr;
                                         fce.returnEXP = anonymousVar(sc_auto, iteratorType);
+                                        fce.returnEXP->v.sp->sb->anonymous = false;
                                         fce.returnSP = fcb.returnEXP->v.sp;
                                         exp = fce.returnEXP;
                                         dest = nullptr;
@@ -2317,7 +2319,14 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                         }
                         else
                         {
-                            deref(basetype(tp)->sp->sb->structuredAliasType, &returnexp);
+                            EXPRESSION** expx = &returnexp;
+                            if (*expx && (*expx)->type == en_void)
+                            {
+                                while ((*expx)->right && (*expx)->right->type == en_void)
+                                    expx = &(*expx)->right;
+                                expx = &(*expx)->right;
+                            }
+                            deref(basetype(tp)->sp->sb->structuredAliasType, expx);
                         }
                     }
                     returntype = tp;

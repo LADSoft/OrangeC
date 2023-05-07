@@ -416,7 +416,9 @@ static SYMBOL* declareDestructor(SYMBOL* sp)
                 }
             }
             if (!found)
+            {
                 sp->sb->pureDest = true;
+            }
         }
     }
 
@@ -3082,6 +3084,9 @@ bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     if (dest1)
     {
         CheckCalledException(dest1, params->thisptr);
+        if (params->thisptr->type == en_auto && !dest1->sb->defaulted)
+            params->thisptr->v.sp->sb->addressTaken = true;
+
         if (!skipAccess && dest1 &&
             !isAccessible(against, sp, dest1, theCurrentFunc,
                           top ? (theCurrentFunc && theCurrentFunc->sb->parentClass == sp ? ac_protected : ac_public) : ac_protected,
@@ -3144,9 +3149,13 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     against = theCurrentFunc ? theCurrentFunc->sb->parentClass : top ? sp : sp->sb->parentClass;
 
     if (isAssign)
+    {
         cons = search(basetype(sp->tp)->syms, overloadNameTab[assign - kw_new + CI_NEW]);
+    }
     else
+    {
         cons = search(basetype(sp->tp)->syms, overloadNameTab[CI_CONSTRUCTOR]);
+    }
 
     if (!params)
     {
@@ -3181,7 +3190,6 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     if (cons1 && isfunction(cons1->tp))
     {
         CheckCalledException(cons1, params->thisptr);
-
         if (cons1->sb->castoperator)
         {
             FUNCTIONCALL* oparams = Allocate<FUNCTIONCALL>();

@@ -1717,8 +1717,8 @@ Optimizer::IMODE* ArgToPointer(SYMBOL* funcsp, EXPRESSION* ep, Optimizer::IMODE*
     {
         if (ep->type == en_func)
         {
-            if (isstructured(basetype(ep->v.sp->tp)->btp))
-                aliasType = basetype(basetype(ep->v.sp->tp)->btp)->sp->sb->structuredAliasType;
+            if (isstructured(basetype(ep->v.func->sp->tp)->btp))
+                aliasType = basetype(basetype(ep->v.func->sp->tp)->btp)->sp->sb->structuredAliasType;
         }
     }
     if (aliasType)
@@ -2356,6 +2356,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 {
                     Optimizer::IMODE* ap1 = Optimizer::tempreg(ap->size, 0);
                     Optimizer::gen_icode(Optimizer::i_assn, ap1, ap, nullptr);
+                    ap->wasinlined = ap1->wasinlined;
                     ap = ap1;
                 }
                 gen_arg_destructors(funcsp, f->arguments, f->destructors);
@@ -2525,6 +2526,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     Optimizer::gen_icode(Optimizer::i_tag, nullptr, nullptr, nullptr);
     Optimizer::intermed_tail->beforeGosub = true;
     Optimizer::intermed_tail->ignoreMe = true;
+
     /* named function */
     if (f->fcall->type == en_imode)
     {

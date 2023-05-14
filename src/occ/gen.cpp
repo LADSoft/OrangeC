@@ -2658,13 +2658,17 @@ void asm_parmblock(Optimizer::QUAD* q) /* push a block of memory */
         else
             apl->mode = am_direct;
     }
-
     if (n <= 24 && (q->dc.left->mode == Optimizer::i_immed || (q->dc.left->mode == Optimizer::i_direct && q->dc.left->offset->type == Optimizer::se_tempref)))
     {
+        if (q->dc.left->mode == Optimizer::i_direct && q->dc.left->offset->type == Optimizer::se_tempref)
+            apl->mode = am_indisp;
         while (n > 0)
         {
             n -= 4;
-            apl->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofs, Optimizer::simpleIntNode(Optimizer::se_i, n));
+            if (ofs)
+                apl->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofs, Optimizer::simpleIntNode(Optimizer::se_i, n));
+            else
+                apl->offset = Optimizer::simpleIntNode(Optimizer::se_i, n);
             gen_codes(op_push, ISZ_UINT, apl, 0);
             pushlevel += 4;
         }

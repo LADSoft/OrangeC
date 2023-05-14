@@ -2099,7 +2099,7 @@ static LEXLIST* initialize_reference_type(LEXLIST* lex, SYMBOL* funcsp, int offs
         {
             exp = ConvertInitToRef(exp, itype, tp, sc);
         }
-        else if (itype->type == bt_rref && isstructured(itype->btp) && exp->type != en_lvalue && exp->type != en_l_ref)
+        if (itype->type == bt_rref && isstructured(itype->btp) && exp->type != en_lvalue && exp->type != en_l_ref)
         {
             EXPRESSION* expx = exp;
             bool lref = false;
@@ -2120,6 +2120,10 @@ static LEXLIST* initialize_reference_type(LEXLIST* lex, SYMBOL* funcsp, int offs
             if (lref)
                 errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype, tp);
         }
+    }
+    if (sc != sc_auto)
+    {
+        exp->referenceInit = true;
     }
     initInsert(init, itype, exp, offset, false);
     if (needend)

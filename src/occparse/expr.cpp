@@ -4574,14 +4574,6 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     while (isref(*tp))
                         *tp = basetype(*tp)->btp;
                 }
-                //structure returned by value is having its address taken...
-                if ((flags & _F_AMPERSAND) && isstructured(*tp) &&
-                    basetype(*tp)->sp->sb->structuredAliasType)
-                {
-                    TYPE tp1 = {};
-                    MakeType(tp1, bt_lref, basetype(*tp)->sp->sb->structuredAliasType);
-                    *exp = createTemporary(&tp1, *exp);
-                }
             }
             else if (templateNestingCount && !instantiatingTemplate && (*tp)->type == bt_aggregate)
             {
@@ -9081,14 +9073,6 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         ResolveTemplateVariable(tp, exp, tp1, nullptr);
         ResolveTemplateVariable(&tp1, &exp1, *tp, nullptr);
         ConstExprPromote(*exp, false);
-        if (0 & isstructured(*tp) && basetype(*tp)->sp->sb->structuredAliasType)
-        {
-            deref(basetype(*tp)->sp->sb->structuredAliasType, exp);
-            *exp = exprNode(en_assign, *exp, exp1);
-            (*exp)->size = *tp;
-            (*exp)->altdata = (void*)(*tp);
-            continue;
-        }
         if (isstructuredmath(*tp, tp1))
         {
             if (basetype(*tp)->sp->sb->structuredAliasType && (comparetypes(*tp, tp1, 0) || sameTemplate(*tp, tp1)))

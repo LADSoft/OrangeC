@@ -266,22 +266,16 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                     {
                         deref(basetype(tpr)->sp->sb->structuredAliasType, &val);
                     }
-                    src = gen_expr(funcsp, val, F_STORE, natural_size(val));
-
-                    if (sym->sb->addressTaken && val->type == en_func)
+                    if (sym->sb->addressTaken && (val->type == en_func || val->type == en_thisref))
                     {
-                        dest = tempVar(basetype(tpr)->sp->sb->structuredAliasType);
-                        addr = dest->left;
-                        idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
-                        gen_icode(Optimizer::i_assn, idest, src, nullptr);
-                        src = idest;
+                        src = nullptr;
+                        addr = tempVar(&stdpointer);
+                        val = exprNode(en_assign, addr, val);
+                        gen_expr(funcsp, val, F_STORE, natural_size(val));
                     }
                     else
                     {
-                        if (!src->wasinlined && val->type == en_thisref && val->left->v.func->sp->sb->isConstructor)
-                        {
-                            src = indnode(src, sizeFromType(basetype(tpr)->sp->sb->structuredAliasType));
-                        }
+                        src = gen_expr(funcsp, val, F_STORE | F_RETURNSTRUCTBYVALUE, natural_size(val));
                     }
                     dest = makeParamSubs(addr, src);
                     ArgDeref(sym->tp, (*ita)->tp, &dest);
@@ -645,7 +639,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     inlineSymThisPtr.push_back(thisptr);
     inlineCopySyms(f->sp->sb->inlineFunc.syms);
     genstmt(f->sp->sb->inlineFunc.stmt->front()->lower, f->sp,
-            flags & (F_RETURNREFBYVAL | F_INARG) |
+            flags & (F_RETURNREFBYVALUE | F_RETURNSTRUCTBYVALUE) |
                 ((flags & F_NOVALUE) && !isstructured(basetype(f->sp->tp)->btp) ? F_NORETURNVALUE : 0));
     if (f->sp->sb->inlineFunc.stmt->front()->blockTail)
     {
@@ -653,7 +647,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         genstmt(f->sp->sb->inlineFunc.stmt->front()->blockTail, funcsp, 0);
         Optimizer::gen_icode(Optimizer::i_functailend, 0, 0, 0);
     }
-    genreturn(0, f->sp, F_NEEDEPILOG | (flags & F_RETURNREFBYVAL), nullptr);
+    genreturn(0, f->sp, F_NEEDEPILOG | (flags & F_RETURNREFBYVALUE), nullptr);
     ap3 = returnImode;
     if (!ap3)
     {

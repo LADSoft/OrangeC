@@ -917,7 +917,7 @@ static void GetStructAliasType(SYMBOL* sym)
         }
     }
     if (!cache || isstructured(cache->tp) || isatomic(cache->tp) || isarray(cache->tp) || basetype(cache->tp)->bits ||
-        isfuncptr(cache->tp) || isref(cache->tp))
+        isfuncptr(cache->tp) || isref(cache->tp) || isfloat(cache->tp) || isimaginary(cache->tp))
         return;
     sym->sb->structuredAliasType = cache->tp;
 }

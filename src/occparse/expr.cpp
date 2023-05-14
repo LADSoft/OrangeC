@@ -9075,7 +9075,7 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         ConstExprPromote(*exp, false);
         if (isstructuredmath(*tp, tp1))
         {
-            if (basetype(*tp)->sp->sb->structuredAliasType && (comparetypes(*tp, tp1, 0) || sameTemplate(*tp, tp1)))
+            if (isstructured(*tp) && basetype(*tp)->sp->sb->structuredAliasType && (comparetypes(*tp, tp1, 0) || sameTemplate(*tp, tp1)))
             {
                 *exp = exprNode(en_blockassign, *exp, exp1);
                 (*exp)->size = *tp;

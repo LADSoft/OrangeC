@@ -592,6 +592,7 @@ int	_RTL_FUNC dpmi_get_memory_info( DPMI_FREEMEM_INFO *info)
     __asm jc xout
     __asm inc eax
 xout:
+    __asm pop edi
 }
 int	_RTL_FUNC dpmi_get_memory( ULONG *linear, DPMI_MEM_HANDLE *handle, ULONG size)		
 {

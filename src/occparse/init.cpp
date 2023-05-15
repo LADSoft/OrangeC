@@ -1692,6 +1692,7 @@ static LEXLIST* initialize_pointer_type(LEXLIST* lex, SYMBOL* funcsp, int offset
                 cast(tp, &exp);
         }
     }
+    exp->structByAddress = true;
     initInsert(init, itype, exp, offset, false);
     if (needend)
     {
@@ -2121,10 +2122,7 @@ static LEXLIST* initialize_reference_type(LEXLIST* lex, SYMBOL* funcsp, int offs
                 errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype, tp);
         }
     }
-    if (sc != sc_auto)
-    {
-        exp->referenceInit = true;
-    }
+    exp->structByAddress = true;
     initInsert(init, itype, exp, offset, false);
     if (needend)
     {

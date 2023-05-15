@@ -1506,7 +1506,10 @@ Optimizer::IMODE* gen_assign(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
         }
         else
         {
-            if (node->right->referenceInit)
+            auto n = node->right;
+            while (castvalue(n))
+                n = n->left;
+            if (n->structByAddress)
                 flags &= ~F_RETURNSTRUCTBYVALUE;
             ap2 = gen_expr(funcsp, node->right, flags & ~F_NOVALUE, natural_size(node->left));
             ap4 = Optimizer::LookupLoadTemp(ap2, ap2);
@@ -2677,7 +2680,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 if (basetype(basetype(f->functp)->btp)->sp->sb->structuredAliasType)
                 {
                     auto tpr = basetype(basetype(f->functp)->btp)->sp->sb->structuredAliasType;
-                    auto expr = tempVar(tpr, node->referenceInit);
+                    auto expr = tempVar(tpr, node->structByAddress);
                     Optimizer::IMODE* ap2 = gen_expr(funcsp, expr, F_STORE, natural_size(expr));
                     gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
                     ap1 = gen_expr(funcsp, expr->left, 0, natural_size(expr->left));

@@ -42,6 +42,8 @@
 #include "initbackend.h"
 #include "template.h"
 #include "symtab.h"
+#include "cpplookup.h"
+#include "types.h"
 #include <unordered_set>
 
 namespace Parser
@@ -151,7 +153,9 @@ static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, SymbolTable<SYMB
                     deref(&stdpointer, &dest);
                     TYPE* tr = nullptr;
                     
-                    if (func->sb->isConstructor || func->sb->isDestructor || !isstructured(basetype(func->tp)->btp))
+                    if (func->sb->isConstructor || func->sb->isDestructor ||
+                        (!isstructured(basetype(func->tp)->btp) && !comparetypes(sym->tp, basetype(func->tp)->btp, 1) &&
+                         !sameTemplatePointedTo(sym->tp, basetype(func->tp)->btp)))
                         tr = basetype(basetype(sym->tp)->btp);
                     if (tr && tr->sp->sb->structuredAliasType && (thisptr->type != en_l_p || thisptr->left->type != en_auto || !thisptr->left->v.sp->sb->thisPtr || basetype(basetype(thisptr->left->v.sp->tp)->btp)->sp->sb->structuredAliasType))
                     {

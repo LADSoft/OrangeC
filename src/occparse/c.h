@@ -435,7 +435,7 @@ typedef struct expr
     int keepZero : 1;
     int paramArray : 1;
     int adjustLabel : 1;
-    int referenceInit : 1;
+    int structByAddress : 1;
 } EXPRESSION;
 
 typedef struct _msilarray

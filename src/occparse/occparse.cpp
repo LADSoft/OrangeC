@@ -121,20 +121,6 @@ void operator delete(void *p)
     }
 }
 
-void FreeMemCache()
-{
-    for (int i=0; i < HASHBLKSIZE/4; i++)
-    {
-        void *p = dictionary[i];
-        while (p)
-        {
-            void * q = *(void **)((char *)p+4);
-            free((char *)p);
-            p = q;
-        }
-        dictionary[i] = 0;
-    }
-}
 #endif
 
 using namespace DotNetPELib;
@@ -479,9 +465,6 @@ int main(int argc, char* argv[])
     bool first = true;
     while (clist)
     {
-#ifndef x64_compiler
-        FreeMemCache();
-#endif
         identityValue = Utils::CRC32((const unsigned char*)clist->data, strlen((char*)clist->data));
         if (IsCompiler())
         {

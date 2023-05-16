@@ -1202,13 +1202,30 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                         EXPRESSION* declDest = nullptr;
                         if (isstructured(selectTP) && isstructured(iteratorType) && ibegin->type == en_func &&
                             iend->type == en_func)
-                        {
-                            st = stmtNode(lex, parent, st_expr);
-                            st->select = ibegin;
-                            st = stmtNode(lex, parent, st_expr);
-                            st->select = iend;
+                        {       
                             eBegin = ibegin->v.func->returnEXP;
                             eEnd = iend->v.func->returnEXP;
+                            if (basetype(iteratorType)->sp->sb->structuredAliasType)
+                            {
+                                deref(basetype(iteratorType)->sp->sb->structuredAliasType, &ibegin->v.func->returnEXP);
+                                deref(basetype(iteratorType)->sp->sb->structuredAliasType, &iend->v.func->returnEXP);
+                                st = stmtNode(lex, parent, st_expr);
+                                st->select = exprNode(en_assign, ibegin->v.func->returnEXP, ibegin);
+                                ibegin->v.func->returnEXP = nullptr;
+                                ibegin->v.func->returnSP = nullptr;
+                                st = stmtNode(lex, parent, st_expr);
+                                st->select = exprNode(en_assign, iend->v.func->returnEXP, iend);
+                                iend->v.func->returnEXP = nullptr;
+                                iend->v.func->returnSP = nullptr;
+
+                            }
+                            else
+                            {
+                                st = stmtNode(lex, parent, st_expr);
+                                st->select = ibegin;
+                                st = stmtNode(lex, parent, st_expr);
+                                st->select = iend;
+                            }
                         }
                         else
                         {

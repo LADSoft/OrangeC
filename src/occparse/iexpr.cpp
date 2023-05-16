@@ -2306,6 +2306,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     {
         return gen_expr(funcsp, f->fcall, 0, ISZ_ADDR);
     }
+
     if (f->sp->sb->attribs.inheritable.isInline || f->sp->sb->attribs.inheritable.excludeFromExplicitInstantiation)
     {
         if (f->sp->sb->noinline)
@@ -2686,7 +2687,6 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                     ap1 = gen_expr(funcsp, expr->left, 0, natural_size(expr->left));
                 }
             }
-            ap = ap1;
         }
     }
     else

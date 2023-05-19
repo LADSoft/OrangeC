@@ -2685,6 +2685,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                     Optimizer::IMODE* ap2 = gen_expr(funcsp, expr, F_STORE, natural_size(expr));
                     gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
                     ap1 = gen_expr(funcsp, expr->left, 0, natural_size(expr->left));
+                    ap = ap1;
                 }
             }
         }

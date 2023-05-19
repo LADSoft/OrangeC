@@ -1864,7 +1864,7 @@ int x86_examine_icode(QUAD* head)
                     {
                         // this selects the least recently assigned IND node and
                         // replaces one of the temps with it...
-                        if (head->dc.left != head->dc.right)
+                        if (!head->ans->offset->sp->imind && head->dc.left != head->dc.right)
                         {
                             QUAD* q = head->back;
                             QUAD *first = nullptr, *second = nullptr;

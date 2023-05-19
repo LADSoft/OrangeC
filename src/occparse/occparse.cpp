@@ -73,7 +73,6 @@
 #include <cstdlib>
 #include <cstdio>
 
-
 #ifndef x64_compiler
 // this overloading of operator new/delete is a speed optimization
 // it basically caches small allocations for reuse
@@ -240,29 +239,6 @@ Optimizer::COMPILER_PARAMS cparams_default = {
     true,        /* char msilAllowExtensions;*/
     false,       /* char makelib; */
 };
-
-/*
-void doPragma(const char *key, const char *tag)
-{
-    bePragma[key] = tag;
-    if (Utils::iequal(key, "netlib"))
-    {
-        while (isspace(*tag))
-            tag++;
-        if (*tag)
-        {
-            std::string temp = tag;
-            int npos = temp.find_last_not_of(" \t\v\n");
-            if (npos != std::string::npos)
-            {
-                temp = temp.substr(0, npos + 1);
-            }
-            peLib->LoadAssembly(temp);
-            Import();
-        }
-    }
-}
-    */
 
 int usingEsp;
 

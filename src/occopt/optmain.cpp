@@ -245,6 +245,7 @@ void Optimize(SimpleSymbol* funcsp)
 
     /* backend modifies ICODE to improve code generation */
     examine_icode(intermed_head);
+
     /* register allocation - this first where we go into SSA form and backi s because
      * at this point for global allocation we had to reuse original
      * register names, but the register allocation phase works better

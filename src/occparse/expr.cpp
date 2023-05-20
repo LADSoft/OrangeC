@@ -3084,15 +3084,6 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                 memset(ths, 0, sizeof(ths));
                 memset(newval, 0, sizeof(newval));
                 cloneTempExpr(&il->exp, &ths[0], &newval[0]);
-                for (i = 0; i < CLONED_SYMS && ths[i]; i++)
-                    if (ths[i] && ths[i]->sb->dest)
-                    {
-                        EXPRESSION* exp = ths[i]->sb->dest->front()->exp;
-                        cloneTempExpr(&exp, &ths[0], &newval[0]);
-                        if (!il->destructors)
-                            il->destructors = exprListFactory.CreateList();
-                        il->destructors->push_front(exp);
-                    }
             }
             if (isstructured(sym->tp))
             {

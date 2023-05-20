@@ -266,11 +266,15 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                     // can pass reference by value...
                     auto val = (*ita)->exp;
                     auto addr = val;
-                    if (val->type != en_func && val->type != en_thisref)
+
+                    auto ext = val;
+                    if (ext->type == en_thisref)
+                        ext = ext->left;
+                    if (ext->type != en_func || isref(basetype(ext->v.func->sp->tp)->btp))
                     {
                         deref(basetype(tpr)->sp->sb->structuredAliasType, &val);
                     }
-                    if (sym->sb->addressTaken && (val->type == en_func || val->type == en_thisref))
+                    if (sym->sb->addressTaken && (ext->type == en_func && !isref(basetype(ext->v.func->sp->tp)->btp)))   
                     {
                         src = nullptr;
                         addr = tempVar(&stdpointer);
@@ -591,7 +595,10 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     {
         for (auto fargs : *f->arguments)
         {
-            if (hasaincdec(fargs->exp))
+            auto exp = fargs->exp;
+            if (exp->type == en_void)
+                exp = exp->left;
+            if (hasaincdec(fargs->exp) || (exp->type == en_thisref && exp->left->v.func->sp->sb->isConstructor) )
             {
                 f->sp->sb->dumpInlineToFile = true;
                 return nullptr;

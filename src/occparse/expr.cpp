@@ -8671,61 +8671,76 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                                 tph->lref = tph->rref = false;
                             }
                         }
-                        // now make sure both sides are in an anonymous variable
-                        if (tph->lref || tph->rref || (eph->type != en_func && eph->type != en_thisref))
+                        // now check for structured alias types
+                        if (basetype(tpc)->sp->sb->structuredAliasType)
                         {
+                            auto srp = basetype(tpc)->sp->sb->structuredAliasType;
+                            rv = anonymousVar(sc_auto, srp);
+                            epc = exprNode(en_blockassign, rv, epc);
+                            epc->size = tpc;
+                            epc->altdata = (void*)(tpc);
+                            eph = exprNode(en_blockassign, rv, eph);
+                            eph->size = tph;
+                            eph->altdata = (void*)(tph);
+                        }
+                        else
+                        {
+                            // now make sure both sides are in an anonymous variable
+                            if (tph->lref || tph->rref || (eph->type != en_func && eph->type != en_thisref))
+                            {
+                                if (!rv)
+                                    rv = anonymousVar(sc_auto, tph);
+                                EXPRESSION* exp = rv;
+                                TYPE* ctype = tph;
+                                callConstructorParam(&ctype, &exp, tph, eph, true, false, false, false, true);
+                                eph = exp;
+                            }
+                            if (tpc->lref || tpc->rref || (epc->type != en_func && epc->type != en_thisref))
+                            {
+                                if (!rv)
+                                    rv = anonymousVar(sc_auto, tph);
+                                EXPRESSION* exp = rv;
+                                TYPE* ctype = tpc;
+                                callConstructorParam(&ctype, &exp, tpc, epc, true, false, false, false, true);
+                                epc = exp;
+                            }
+                            // now make sure both sides are using the same anonymous variable
                             if (!rv)
                                 rv = anonymousVar(sc_auto, tph);
-                            EXPRESSION* exp = rv;
-                            TYPE* ctype = tph;
-                            callConstructorParam(&ctype, &exp, tph, eph, true, false, false, false, true);
-                            eph = exp;
-                        }
-                        if (tpc->lref || tpc->rref || (epc->type != en_func && epc->type != en_thisref))
-                        {
-                            if (!rv);
-                            rv = anonymousVar(sc_auto, tph);
-                            EXPRESSION* exp = rv;
-                            TYPE* ctype = tpc;
-                            callConstructorParam(&ctype, &exp, tpc, epc, true, false, false, false, true);
-                            epc = exp;
-                        }
-                        // now make sure both sides are using the same anonymous variable
-                        if (!rv)
-                            rv = anonymousVar(sc_auto, tph);
-                        EXPRESSION* dexp = rv;
-                        callDestructor(rv->v.sp, nullptr, &dexp, nullptr, true, false, false, true);
-                        initInsert(&rv->v.sp->sb->dest, rv->v.sp->tp, dexp, 0, true);
+                            EXPRESSION* dexp = rv;
+                            callDestructor(rv->v.sp, nullptr, &dexp, nullptr, true, false, false, true);
+                            initInsert(&rv->v.sp->sb->dest, rv->v.sp->tp, dexp, 0, true);
 
-                        EXPRESSION* exp = eph;
-                        if (exp->type == en_thisref)
-                            exp = exp->left;
-                        if (exp->v.func->returnSP)
-                        {
-                            if (exp->v.func->returnEXP->type == en_auto && exp->v.func->returnEXP->v.sp != rv->v.sp)
-                                exp->v.func->returnEXP->v.sp->sb->allocate = false;
-                            exp->v.func->returnEXP = rv;
-                        }
-                        else if (exp->v.func->thisptr)
-                        {
-                            if (exp->v.func->thisptr->type == en_auto && exp->v.func->thisptr->v.sp != rv->v.sp)
-                                exp->v.func->thisptr->v.sp->sb->allocate = false;
-                            exp->v.func->thisptr = rv;
-                        }
-                        exp = epc;
-                        if (exp->type == en_thisref)
-                            exp = exp->left;
-                        if (exp->v.func->returnSP)
-                        {
-                            if (exp->v.func->returnEXP->type == en_auto && exp->v.func->returnEXP->v.sp != rv->v.sp)
-                                exp->v.func->returnEXP->v.sp->sb->allocate = false;
-                            exp->v.func->returnEXP = rv;
-                        }
-                        else if (exp->v.func->thisptr)
-                        {
-                            if (exp->v.func->thisptr->type == en_auto && exp->v.func->thisptr->v.sp != rv->v.sp)
-                                exp->v.func->thisptr->v.sp->sb->allocate = false;
-                            exp->v.func->thisptr = rv;
+                            EXPRESSION* exp = eph;
+                            if (exp->type == en_thisref)
+                                exp = exp->left;
+                            if (exp->v.func->returnSP)
+                            {
+                                if (exp->v.func->returnEXP->type == en_auto && exp->v.func->returnEXP->v.sp != rv->v.sp)
+                                    exp->v.func->returnEXP->v.sp->sb->allocate = false;
+                                exp->v.func->returnEXP = rv;
+                            }
+                            else if (exp->v.func->thisptr)
+                            {
+                                if (exp->v.func->thisptr->type == en_auto && exp->v.func->thisptr->v.sp != rv->v.sp)
+                                    exp->v.func->thisptr->v.sp->sb->allocate = false;
+                                exp->v.func->thisptr = rv;
+                            }
+                            exp = epc;
+                            if (exp->type == en_thisref)
+                                exp = exp->left;
+                            if (exp->v.func->returnSP)
+                            {
+                                if (exp->v.func->returnEXP->type == en_auto && exp->v.func->returnEXP->v.sp != rv->v.sp)
+                                    exp->v.func->returnEXP->v.sp->sb->allocate = false;
+                                exp->v.func->returnEXP = rv;
+                            }
+                            else if (exp->v.func->thisptr)
+                            {
+                                if (exp->v.func->thisptr->type == en_auto && exp->v.func->thisptr->v.sp != rv->v.sp)
+                                    exp->v.func->thisptr->v.sp->sb->allocate = false;
+                                exp->v.func->thisptr = rv;
+                            }
                         }
                     }
                     else
@@ -8798,7 +8813,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                 (*exp)->v.logicaldestructors.left = logicaldestructors;
                 // when assigning a structure to itself, need an intermediate copy
                 // this always puts it in...
-                if (Optimizer::cparams.prm_cplusplus && isstructured(*tp) && atp)
+                if (Optimizer::cparams.prm_cplusplus && isstructured(*tp) && atp && !basetype(*tp)->sp->sb->structuredAliasType)
                 {
                     EXPRESSION* rv = anonymousVar(sc_auto, *tp);
                     TYPE* ctype = *tp;

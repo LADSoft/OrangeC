@@ -8697,7 +8697,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                             }
                             if (tpc->lref || tpc->rref || (epc->type != en_func && epc->type != en_thisref))
                             {
-                                if (!rv)
+                                //if (!rv)
                                     rv = anonymousVar(sc_auto, tph);
                                 EXPRESSION* exp = rv;
                                 TYPE* ctype = tpc;

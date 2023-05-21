@@ -35,6 +35,7 @@ extern int catchLevel;
 extern int codeLabelOffset;
 
 void genstmtini(void);
+Optimizer::QUAD* gen_xcexp_expression(int n);
 Optimizer::IMODE* imake_label(int label);
 Optimizer::IMODE* make_direct(int i);
 void gen_genword(STATEMENT* stmt, SYMBOL* funcsp);

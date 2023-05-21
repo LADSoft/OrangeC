@@ -85,6 +85,16 @@ void genstmtini(void)
     returnImode = nullptr;
 }
 
+Optimizer::QUAD* gen_xcexp_expression(int n)
+{
+    Optimizer::IMODE* ap = Allocate<Optimizer::IMODE>();
+    ap->mode = Optimizer::i_direct;
+    ap->offset = Optimizer::SymbolManager::Get(xcexp);
+    ap->size = ISZ_UINT;
+
+    Optimizer::IMODE* ap2 = Optimizer::make_immed(ISZ_UINT, n);
+    return gen_icode(Optimizer::i_assn, ap, ap2, nullptr);
+}
 /*-------------------------------------------------------------------------*/
 
 Optimizer::IMODE* imake_label(int label)
@@ -99,6 +109,7 @@ Optimizer::IMODE* imake_label(int label)
     ap->offset->type = Optimizer::se_labcon;
     ap->offset->i = label;
     ap->size = ISZ_ADDR;
+
     return ap;
 }
 /*-------------------------------------------------------------------------*/
@@ -374,12 +385,10 @@ static void gen_try(SYMBOL* funcsp, STATEMENT* stmt, int startLab, int endLab, i
 {
     Optimizer::gen_label(startLab);
     stmt->tryStart = ++consIndex;
-    xcexp->right->v.i = consIndex;
-    gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
+    gen_xcexp_expression(consIndex);
     genstmt(lower, funcsp, 0);
     stmt->tryEnd = ++consIndex;
-    xcexp->right->v.i = consIndex;
-    gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
+    gen_xcexp_expression(consIndex);
     Optimizer::gen_label(endLab);
     /* not using gen_igoto because it will make a new block */
     Optimizer::gen_icode(Optimizer::i_goto, nullptr, nullptr, nullptr);
@@ -1121,9 +1130,6 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
         Optimizer::temporarySymbols.push_back(Optimizer::SymbolManager::Get(funcsp->sb->xc->xctab));
         xcexp = varNode(en_auto, funcsp->sb->xc->xctab);
         xcexp = exprNode(en_add, xcexp, intNode(en_c_i, XCTAB_INDEX_OFS));
-        deref(&stdpointer, &xcexp);
-        exp = intNode(en_c_i, 0);
-        xcexp = exprNode(en_assign, xcexp, exp);
     }
     else
     {

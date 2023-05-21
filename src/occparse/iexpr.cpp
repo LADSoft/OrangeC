@@ -2500,8 +2500,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         ap = f->fcall->v.imode;
         if (f->callLab && xcexp)
         {
-            xcexp->right->v.i = f->callLab;
-            gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
+            gen_xcexp_expression(f->callLab);
         }
         gosub = Optimizer::gen_igosub(node->type == en_intcall ? Optimizer::i_int : Optimizer::i_gosub, ap);
     }
@@ -2541,8 +2540,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         }
         if (f->callLab && xcexp)
         {
-            xcexp->right->v.i = f->callLab;
-            gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
+            gen_xcexp_expression(f->callLab);
         }
         gosub = Optimizer::gen_igosub(type, ap);
     }
@@ -3909,26 +3907,30 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
         case en_thisref:
             if (node->dest && xcexp)
             {
-                node->v.t.thisptr->xcDest = ++consIndex;
-                xcexp->right->v.i = consIndex;
-                gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
-                __xclist* t = Allocate<__xclist>();
-                ;
-                t->byStmt = false;
-                t->exp = node;
-                rttiStatements[node->v.t.thisptr->xcInit][node->v.t.thisptr->xcDest] = t;
+                if (!basetype(node->v.t.tp)->sp->sb->pureDest)
+                {
+                    node->v.t.thisptr->xcDest = ++consIndex;
+                    gen_xcexp_expression(consIndex);
+                    __xclist* t = Allocate<__xclist>();
+                    ;
+                    t->byStmt = false;
+                    t->exp = node;
+                    rttiStatements[node->v.t.thisptr->xcInit][node->v.t.thisptr->xcDest] = t;
+                }
             }
             ap1 = gen_expr(funcsp, node->left, flags, size);
             if (!node->dest && xcexp)
             {
-                node->v.t.thisptr->xcInit = ++consIndex;
-                xcexp->right->v.i = consIndex;
-                gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
-                __xclist* t = Allocate<__xclist>();
-                ;
-                t->byStmt = false;
-                t->exp = node;
-                rttiStatements[node->v.t.thisptr->xcInit][node->v.t.thisptr->xcDest] = t;
+                if (!basetype(node->v.t.tp)->sp->sb->pureDest)
+                {
+                    node->v.t.thisptr->xcInit = ++consIndex;
+                    gen_xcexp_expression(consIndex);
+                    __xclist* t = Allocate<__xclist>();
+                    ;
+                    t->byStmt = false;
+                    t->exp = node;
+                    rttiStatements[node->v.t.thisptr->xcInit][node->v.t.thisptr->xcDest] = t;
+                }
             }
             if (node->left->type == en_stmt)
             {

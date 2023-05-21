@@ -614,16 +614,19 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                 {
                     if (inlineSymThisPtr.size())
                     {
-                        EXPRESSION* exp = inlineSymThisPtr.back();
-                        if (exp)
+                        if (sym != baseThisPtr)
                         {
-                            if (lvalue(exp) && exp->left->type == en_paramsubstitute)
+                            EXPRESSION* exp = inlineSymThisPtr.back();
+                            if (exp)
                             {
-                               if (exp->left->left)
-                                    return gen_expr(funcsp, exp->left->left, 0, natural_size(exp->left->left));
-                                return exp->left->v.imode;
+                                if (lvalue(exp) && exp->left->type == en_paramsubstitute)
+                                {
+                                    if (exp->left->left)
+                                        return gen_expr(funcsp, exp->left->left, 0, natural_size(exp->left->left));
+                                    return exp->left->v.imode;
+                                }
+                                return gen_expr(funcsp, exp, 0, natural_size(exp));
                             }
-                            return gen_expr(funcsp, exp, 0, natural_size(exp));
                         }
                     }
                     else if (baseThisPtr)  // for this ptrs inherited in a constructor

@@ -117,22 +117,21 @@ typedef struct _xctab
     XCEPT* thisxt; /* pointer to this XT table list in case of throws */
 } XCTAB;
 
-typedef struct __xclist
+typedef struct __xcentry
 {
-    struct __xclist* next;
     EXPRESSION* exp;
     STATEMENT* stmt;
     SYMBOL* xtSym;
     char byStmt : 1;
     char used : 1;
-} XCLIST;
+} XCENTRY;
 
 static const int XCTAB_SIZE = 9 * 4;
 static const int XCTAB_INDEX_OFS = 5 * 4;
 static const int XCTAB_INSTANCE_OFS = 6 * 4;
 
 extern SymbolTable<SYMBOL>* rttiSyms;
-extern std::map<int, std::map<int, __xclist*>> rttiStatements;
+extern std::map<int, std::map<int, __xcentry*>> rttiStatements;
 
 void rtti_init(void);
 bool equalnode(EXPRESSION* node1, EXPRESSION* node2);

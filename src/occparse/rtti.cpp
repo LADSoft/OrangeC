@@ -49,7 +49,7 @@ SymbolTable<SYMBOL>* rttiSyms;
 
 static std::set<SYMBOL*> defaultRecursionMap;
 
-std::map<int, std::map<int, __xclist*>> rttiStatements;
+std::map<int, std::map<int, __xcentry*>> rttiStatements;
 
 // in enum e_bt order
 static const char* typeNames[] = {"bit",
@@ -496,8 +496,8 @@ SYMBOL* RTTIDumpType(TYPE* tp)
     }
     return xtSym;
 }
-static void XCStmt(std::list<STATEMENT*>* block, std::map<int, std::map<int, __xclist*>>& lst);
-static void XCExpression(EXPRESSION* node, std::map<int, std::map<int, __xclist*>>& lst)
+static void XCStmt(std::list<STATEMENT*>* block, std::list<XCENTRY*>& lst);
+static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
 {
     FUNCTIONCALL* fp;
     if (node == 0)
@@ -710,7 +710,7 @@ static void XCExpression(EXPRESSION* node, std::map<int, std::map<int, __xclist*
             break;
     }
 }
-static void XCStmt(std::list<STATEMENT*>* block, std::map<int, std::map<int, __xclist*>>& lst)
+static void XCStmt(std::list<STATEMENT*>* block, std::list<XCENTRY*>& lst)
 {
     if (block)
     {
@@ -724,10 +724,10 @@ static void XCStmt(std::list<STATEMENT*>* block, std::map<int, std::map<int, __x
                 case st___catch:
                 case st___finally:
                 case st___fault: {
-                    __xclist* temp = Allocate<__xclist>();
+                    __xcentry* temp = Allocate<__xcentry>();
                     temp->stmt = stmt;
                     temp->byStmt = true;
-                    lst[stmt->tryStart][stmt->tryEnd] = temp;
+                    lst.push_back(temp);
                     XCStmt(stmt->lower, lst);
                     break;
                 }
@@ -905,22 +905,16 @@ void XTDumpTab(SYMBOL* funcsp)
 {
     if (funcsp->sb->xc && funcsp->sb->xc->xctab && Optimizer::cparams.prm_xcept)
     {
-        XCLIST *list = nullptr, *p, *last = nullptr;
+        std::list<XCENTRY*> list;
         SYMBOL* throwSym;
-        XCStmt(funcsp->sb->inlineFunc.stmt, rttiStatements);
+        XCStmt(funcsp->sb->inlineFunc.stmt, list);
         // this is done this way because the nested maps form a natural sorting mechanism...
         for (auto& s : rttiStatements)
             for (auto& e : s.second)
             {
-                p = e.second;
-                if (last)
-                    last->next = p;
-                else
-                    list = p;
-                last = p;
+                list.push_back(e.second);
             }
-        p = list;
-        while (p)
+        for (auto p : list)
         {
             if (p->byStmt)
             {
@@ -933,7 +927,6 @@ void XTDumpTab(SYMBOL* funcsp)
                 if (basetype(p->exp->v.t.tp)->sp->sb->hasDest)
                     p->xtSym = RTTIDumpType(basetype(p->exp->v.t.tp));
             }
-            p = p->next;
         }
         throwSym = DumpXCSpecifiers(funcsp);
         Optimizer::gen_virtual(Optimizer::SymbolManager::Get(funcsp->sb->xc->xclab), false);
@@ -946,10 +939,9 @@ void XTDumpTab(SYMBOL* funcsp)
             Optimizer::genaddress(0);
         }
         Optimizer::gen_autoref(Optimizer::SymbolManager::Get(funcsp->sb->xc->xctab), 0);
-        //        genint(funcsp->sb->xc->xctab->sb->offset);
-        p = list;
-        while (p)
+        for (auto it = list.begin(); it != list.end(); ++it)
         {
+            auto p = *it;
             if (p->byStmt)
             {
                 Optimizer::genint(XD_CL_TRYBLOCK);
@@ -971,15 +963,15 @@ void XTDumpTab(SYMBOL* funcsp)
             {
                 if (p->xtSym && !p->exp->dest && allocatedXC(p->exp->v.t.thisptr))
                 {
-                    XCLIST* q = p;
-                    while (q)
+                    auto it1 = it;
+                    for (; it1 != list.end(); ++it1)
                     {
+                        auto q = *it1;
                         if (!q->byStmt && q->exp->dest)
                         {
                             if (equalnode(p->exp->v.t.thisptr, q->exp->v.t.thisptr))
                                 q->used = true;
                         }
-                        q = q->next;
                     }
                     auto thsym = evalsp(p->exp->v.t.thisptr);
                     if (thsym && thsym->genreffed)
@@ -992,11 +984,9 @@ void XTDumpTab(SYMBOL* funcsp)
                     }
                 }
             }
-            p = p->next;
         }
         // for arguments which are destructed
-        p = list;
-        while (p)
+        for (auto p : list)
         {
             if (!p->byStmt && p->xtSym && p->exp->dest && !p->used)
             {
@@ -1011,7 +1001,6 @@ void XTDumpTab(SYMBOL* funcsp)
                     Optimizer::genint(p->exp->v.t.thisptr->xcDest);
                 }
             }
-            p = p->next;
         }
         Optimizer::genint(0);
         Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(funcsp->sb->xc->xclab));

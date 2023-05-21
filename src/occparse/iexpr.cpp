@@ -3911,7 +3911,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 {
                     node->v.t.thisptr->xcDest = ++consIndex;
                     gen_xcexp_expression(consIndex);
-                    __xclist* t = Allocate<__xclist>();
+                    __xcentry* t = Allocate<__xcentry>();
                     ;
                     t->byStmt = false;
                     t->exp = node;
@@ -3925,7 +3925,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 {
                     node->v.t.thisptr->xcInit = ++consIndex;
                     gen_xcexp_expression(consIndex);
-                    __xclist* t = Allocate<__xclist>();
+                    __xcentry* t = Allocate<__xcentry>();
                     ;
                     t->byStmt = false;
                     t->exp = node;

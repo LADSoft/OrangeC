@@ -34,7 +34,7 @@ namespace Parser
 extern int inDefaultParam;
 extern char deferralBuf[100000];
 extern SYMBOL* enumSyms;
-extern std::list<STRUCTSYM*> structSyms;
+extern std::list<STRUCTSYM> structSyms;
 extern int expandingParams;
 extern Optimizer::LIST* deferred;
 extern int structLevel;

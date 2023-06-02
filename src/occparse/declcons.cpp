@@ -1315,14 +1315,11 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
                 consfunc->sb->inlineFunc.syms = basetype(consfunc->tp)->syms;
                 consfunc->sb->retcount = 1;
                 consfunc->sb->attribs.inheritable.isInline = true;
-                InsertInline(consfunc);
                 // now get rid of the first default arg
                 // leave others so the old constructor can be considered
                 // under other circumstances
                 ++it;
                 (*it)->sb->init = nullptr;
-                if (match->sb->deferredCompile && !match->sb->inlineFunc.stmt)
-                    deferredCompileOne(match);
                 localNameSpace->front()->syms = syms;
             }
         }
@@ -1749,7 +1746,7 @@ static void genConstructorCall(std::list<BLOCKDATA*>& b, SYMBOL* cls, std::list<
         else
         {
             MEMBERINITIALIZERS* mix = nullptr;
-            if (mi && mi->front() && mi->front()->sp && baseClass)
+            if (mi && mi->size() && mi->front() && mi->front()->sp && baseClass)
             {
                 for (auto mi2 : *mi)
                 {
@@ -1869,6 +1866,7 @@ static void dovtabThunks(std::list<BLOCKDATA*>& b, SYMBOL* sym, EXPRESSION* this
     STATEMENT* st;
     SYMBOL* localsp;
     localsp = sym->sb->vtabsp;
+    InsertInline(localsp);
     EXPRESSION* vtabBase = varNode(en_global, localsp);
     if (localsp->sb->attribs.inheritable.linkage2 == lk_import)
         deref(&stdpointer, &vtabBase);
@@ -2048,7 +2046,15 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
     bool hasDelegate = false;
     if (cons->sb->memberInitializers)
     {
+        int pushcount = pushContext(cls, true);
         auto ite = cons->sb->memberInitializers->end();
+        STRUCTSYM tpl;
+        if (cons->templateParams)
+        {
+            tpl.tmpl = cons->templateParams;
+            addTemplateDeclaration(&tpl);
+            pushcount++;
+        }
         for (auto it = cons->sb->memberInitializers->begin(); it != ite;)
         {
             auto init = *it;
@@ -2382,6 +2388,8 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
             ++it;
             first = false;
         }
+        for (int i = 0; i < pushcount; i++)
+            dropStructureDeclaration();
     }
 }
 static void allocInitializers(SYMBOL* cls, SYMBOL* cons, EXPRESSION* ths)
@@ -2451,7 +2459,7 @@ EXPRESSION* thunkConstructorHead(std::list<BLOCKDATA*>& b, SYMBOL* sym, SYMBOL* 
     deref(&stdpointer, &otherptr);
     if (parseInitializers)
         allocInitializers(sym, cons, thisptr);
-    if (cons->sb->memberInitializers && cons->sb->memberInitializers->front()->delegating)
+    if (cons->sb->memberInitializers && cons->sb->memberInitializers->size() && cons->sb->memberInitializers->front()->delegating)
     {
         genConstructorCall(b, sym, cons->sb->memberInitializers, sym, 0, false, thisptr, otherptr, cons, true, doCopy,
                            !cons->sb->defaulted);
@@ -2595,7 +2603,6 @@ void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
         consfunc->sb->retcount = 1;
         consfunc->sb->attribs.inheritable.isInline = true;
         //    consfunc->sb->inlineFunc.stmt->blockTail = b.tail;
-        InsertInline(consfunc);
         defaultRecursionMap.clear();
         if (noExcept)
         {
@@ -2700,7 +2707,7 @@ static void genAsnCall(std::list<BLOCKDATA*>& b, SYMBOL* cls, SYMBOL* base, int 
     params->thisptr = left;
     params->thistp = MakeType(bt_pointer, base->tp);
     params->ascall = true;
-    asn1 = GetOverloadedFunction(&tp, &params->fcall, cons, params, nullptr, true, false, true, 0);
+    asn1 = GetOverloadedFunction(&tp, &params->fcall, cons, params, nullptr, true, false, 0);
 
     if (asn1)
     {
@@ -2809,7 +2816,6 @@ void createAssignment(SYMBOL* sym, SYMBOL* asnfunc)
         asnfunc->sb->inlineFunc.syms = basetype(asnfunc->tp)->syms;
         asnfunc->sb->attribs.inheritable.isInline = true;
         //    asnfunc->sb->inlineFunc.stmt->blockTail = b.tail;
-        InsertInline(asnfunc);
 
         defaultRecursionMap.clear();
         if (noExcept)
@@ -2972,7 +2978,6 @@ void createDestructor(SYMBOL* sp)
         dest->sb->inlineFunc.syms = basetype(dest->tp)->syms;
         dest->sb->retcount = 1;
         dest->sb->attribs.inheritable.isInline = dest->sb->attribs.inheritable.linkage2 != lk_export;
-        InsertInline(dest);
     }
     if (noExcept)
     {
@@ -3023,7 +3028,7 @@ void makeArrayConsDest(TYPE** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, 
     arg4->tp = &stdint;
 
     params->ascall = true;
-    asn1 = GetOverloadedFunction(tp, &params->fcall, ovl, params, nullptr, true, false, true, 0);
+    asn1 = GetOverloadedFunction(tp, &params->fcall, ovl, params, nullptr, true, false, 0);
     if (!asn1)
     {
         diag("makeArrayConsDest: Can't call array iterator");
@@ -3067,7 +3072,7 @@ bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     dest1 = basetype(dest->tp)->syms->front();
     if (!dest1 || !dest1->sb->defaulted || dest1->sb->storage_class == sc_virtual)
     {
-        dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, nullptr, true, false, true, inNothrowHandler ? _F_IS_NOTHROW : 0);
+        dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, nullptr, true, false, inNothrowHandler ? _F_IS_NOTHROW : 0);
         if (!novtab && dest1 && dest1->sb->storage_class == sc_virtual)
         {
             auto exp_in = params->thisptr;
@@ -3185,7 +3190,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     params->thistp = MakeType(bt_pointer, sp->tp);
     params->ascall = true;
 
-    cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, nullptr, toErr, maybeConversion, true, usesInitList | _F_INCONSTRUCTOR | (inNothrowHandler ? _F_IS_NOTHROW : 0));
+    cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, nullptr, toErr, maybeConversion, usesInitList | _F_INCONSTRUCTOR | (inNothrowHandler ? _F_IS_NOTHROW : 0));
 
     if (cons1 && isfunction(cons1->tp))
     {
@@ -3322,7 +3327,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                 params->thisptr = *exp;
                 params->thistp = MakeType(bt_pointer, sp->tp);
                 params->ascall = true;
-                dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, nullptr, true, false, true, 0);
+                dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, nullptr, true, false, 0);
                 if (dest1 &&
                     !isAccessible(against, sp, dest1, nullptr,
                                   top ? (theCurrentFunc && theCurrentFunc->sb->parentClass == sp ? ac_protected : ac_public)

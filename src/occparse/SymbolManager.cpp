@@ -4,7 +4,7 @@
  *
  *     This file is part of the Orange C Compiler package.
  *
- *     The Orange C Compiler package is free software: you can redistribute it and/or modify
+ *     The Orange C Compiler package is free software: you can redisteribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
@@ -316,7 +316,7 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
             if (rv->sp->storage_class == scc_type || rv->sp->storage_class == scc_parameter ||
                 (rv->sp->storage_class == scc_cast && rv->sp->tp))
             {
-                typeSymbols.push_back(rv->sp);
+                EnterType(rv->sp);
             }
             else if (rv->sp->storage_class == scc_typedef)
                 typedefs.push_back(rv->sp);
@@ -338,11 +338,11 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
                         *ns = *(Optimizer::SimpleSymbol*)(*p)->data;
                         (*p)->data = ns;
                     }
-                    typeSymbols.push_back((Optimizer::SimpleSymbol*)(*p)->data);
+                    EnterType((Optimizer::SimpleSymbol*)(*p)->data);
                 }
                 else if (isfunction(tp))
                 {
-                    typeSymbols.push_back((Optimizer::SimpleSymbol*)(*p)->data);
+                    EnterType((Optimizer::SimpleSymbol*)(*p)->data);
                 }
                 if (((Optimizer::SimpleSymbol*)(*p)->data)->storage_class == scc_static ||
                     ((Optimizer::SimpleSymbol*)(*p)->data)->storage_class == scc_external)
@@ -416,7 +416,7 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
             (*p)->offset = src->offset;
             (*p)->sym = Get(src->cls);
             if ((*p)->sym->tp && (*p)->sym->tp->type == st_i)
-                typeSymbols.push_back((*p)->sym);
+                EnterType((*p)->sym);
             p = &(*p)->next;
         }
     }
@@ -452,7 +452,6 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     rv->entrypoint = sym->sb->attribs.inheritable.linkage3 == lk_entrypoint;
     rv->ispure = sym->sb->ispure;
     rv->dontinstantiate = sym->sb->dontinstantiate;
-    rv->noextern = sym->sb->noextern;
     rv->initialized = !!sym->sb->init;
     rv->importThunk = sym->sb->importThunk;
 
@@ -466,7 +465,6 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     rv->usesEsp = cparams.prm_useesp;
 
     rv->outputName = beDecorateSymName(sym);
-
     return rv;
 }
 Optimizer::st_type Optimizer::SymbolManager::Get(enum Parser::e_bt type)

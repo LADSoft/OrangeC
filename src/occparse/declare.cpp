@@ -66,7 +66,7 @@ namespace Parser
 int inDefaultParam;
 char deferralBuf[100000];
 SYMBOL* enumSyms;
-std::list<STRUCTSYM*> structSyms;
+std::list<STRUCTSYM> structSyms;
 int expandingParams;
 Optimizer::LIST* deferred;
 int structLevel;
@@ -110,20 +110,14 @@ void WeedExterns()
     for (auto it = Optimizer::externals.begin(); it != Optimizer::externals.end();)
     {
         Optimizer::SimpleSymbol* sym = *it;
-        if (!sym->ispure &&
-            ((sym->dontinstantiate && sym->genreffed) ||
-             (!sym->initialized &&
-              (sym->tp->type == Optimizer::st_func ||
-               (sym->tp->type != Optimizer::st_func && sym->storage_class != Optimizer::scc_global &&
-                sym->storage_class != Optimizer::scc_static && sym->storage_class != Optimizer::scc_localstatic)) &&
-              (sym->genreffed && (sym->parentClass || sym->storage_class == Optimizer::scc_external)))) &&
-            !sym->noextern)
+        if ((sym->ispure || sym->generated) && !sym->dontinstantiate)
+            
         {
-            ++it;
+            it = Optimizer::externals.erase(it);
         }
         else
         {
-            it = Optimizer::externals.erase(it);
+            ++it;
         }
     }
 }
@@ -160,7 +154,7 @@ SYMBOL* SymAlloc()
     return sp;
 }
 SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
-{
+{    
     SYMBOL* sp = SymAlloc();
     LEXLIST* lex = context->cur ? context->cur->prev : context->last;
     if (name && strstr(name, "++"))
@@ -271,12 +265,12 @@ TYPE* CopyType(TYPE* tp, bool deep, std::function<void(TYPE*&, TYPE*&)> callback
 void addStructureDeclaration(STRUCTSYM* decl)
 {
     decl->tmpl = nullptr;
-    structSyms.push_front(decl);
+    structSyms.push_front(*decl);
 }
 void addTemplateDeclaration(STRUCTSYM* decl)
 {
     decl->str = nullptr;
-    structSyms.push_front(decl);
+    structSyms.push_front(*decl);
 }
 void dropStructureDeclaration(void) 
 { 
@@ -285,8 +279,8 @@ void dropStructureDeclaration(void)
 SYMBOL* getStructureDeclaration(void)
 {
     for (auto&& l : structSyms)
-        if (l->str)
-            return l->str;
+        if (l.str)
+            return l.str;
     return nullptr;
 }
 void InsertSymbol(SYMBOL* sp, enum e_sc storage_class, enum e_lk linkage, bool allowDups)
@@ -1105,21 +1099,16 @@ static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac c
         if (sp->sb->vtabEntries && sp->sb->vtabEntries->size())
         {
             char* buf = (char*)alloca(4096);
-            //            InsertInline(sp);
             Optimizer::my_sprintf(buf, "%s@_.vt", sp->sb->decoratedName);
             sp->sb->vtabsp = makeID(sc_static, &stdvoid, nullptr, litlate(buf));
             sp->sb->vtabsp->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
             sp->sb->vtabsp->sb->attribs.inheritable.linkage4 = lk_virtual;
             sp->sb->vtabsp->sb->decoratedName = sp->sb->vtabsp->name;
+            Optimizer::SymbolManager::Get(sp->sb->vtabsp)->inlineSym = sp;
             if (sp->sb->vtabsp->sb->attribs.inheritable.linkage2 == lk_import)
             {
                 sp->sb->vtabsp->sb->dontinstantiate = true;
             }
-            else if (sp->sb->vtabsp->sb->attribs.inheritable.linkage2 == lk_export)
-            {
-                Optimizer::SymbolManager::Get(sp->sb->vtabsp);
-            }
-            InsertInline(sp);
             warnCPPWarnings(sp, funcsp != nullptr);
         }
     }
@@ -2975,7 +2964,7 @@ founddecltype:
                                 diag("getBasicType: expected typename template param");
                             }
                         }
-                        else if (expandingParams && tpx->type == bt_templateparam)
+                        else if (expandingParams && tpx->type == bt_templateparam && tpx->templateParam->second->byPack.pack)
                         {
 
                             auto packed = tpx->templateParam->second->byPack.pack->begin();
@@ -4570,8 +4559,12 @@ static LEXLIST* getAfterType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** s
                         std::list<TEMPLATEPARAMPAIR>* lst = templateParamPairListFactory.CreateList();
                         lst->push_back(TEMPLATEPARAMPAIR{ nullptr, templateParam });
                         DoInstantiateTemplateFunction(*tp, sp, nullptr, nullptr, lst, true);
+                        if ((*sp)->sb->attribs.inheritable.linkage4 == lk_virtual)
+                            basisAttribs.inheritable.linkage4 = lk_virtual;
                         if (!(*sp)->templateParams)
+                        {
                             (*sp)->templateParams = lst;
+                        }
                     }
                 }
                 break;
@@ -5743,7 +5736,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                             {
                                 if (strcmp(sp->name, "main") != 0)
                                 {
-                                    sp->sb->attribs.inheritable.isInline = sp->sb->dumpInlineToFile = sp->sb->promotedToInline =
+                                    sp->sb->attribs.inheritable.isInline = sp->sb->promotedToInline =
                                         true;
                                 }
                             }
@@ -5823,17 +5816,17 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                 SYMBOL* sym = nullptr;
                                 auto lsit = structSyms.begin();
                                 auto lsite = structSyms.end();
-                                while (lsit != lsite && !(*lsit)->str)
+                                while (lsit != lsite && !(*lsit).str)
                                     ++lsit;
                                 if (strSym && strSym->tp->type != bt_enum && strSym->tp->type != bt_templateselector &&
                                     strSym->tp->type != bt_templatedecltype)
                                 {
                                     ++lsit;
-                                    while (lsit != lsite && !(*lsite)->str)
+                                    while (lsit != lsite && !(*lsite).str)
                                         ++lsit;
                                 }
                                 if (lsit != lsite)
-                                    sym = (*lsit)->str;
+                                    sym = (*lsit).str;
                                 if (!sym->sb->friends)
                                     sym->sb->friends = symListFactory.CreateList();
                                 sym->sb->friends->push_front(tp1->sp);
@@ -6295,9 +6288,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         if ((!spi || (spi->sb->storage_class != sc_member && spi->sb->storage_class != sc_mutable)) &&
                             sp->sb->storage_class == sc_global && sp->sb->attribs.inheritable.isInline && !sp->sb->promotedToInline)
                         {
-                            if (spi && spi->sb->storage_class == sc_external)
-                                sp->sb->dumpInlineToFile = true;
-                            else
+                            if (!spi || spi->sb->storage_class != sc_external)
                                 sp->sb->storage_class = sc_static;
                         }
                         if (spi && !sp->sb->parentClass && !isfunction(spi->tp) && spi->sb->storage_class != sc_type &&
@@ -6563,7 +6554,6 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                             spi->sb->hasTry = sp->sb->hasTry;
 
                             spi->sb->attribs.inheritable.isInline |= sp->sb->attribs.inheritable.isInline;
-                            spi->sb->dumpInlineToFile |= sp->sb->dumpInlineToFile;
                             spi->sb->promotedToInline |= sp->sb->promotedToInline;
 
                             spi->sb->parentClass = sp->sb->parentClass;
@@ -6612,36 +6602,11 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                         (asFriend && !MATCHKW(lex, begin) && !MATCHKW(lex, colon)))
                                     {
                                         InsertSymbol(sp, sc_external, linkage, false);
-                                        if (sp->sb->templateLevel)
-                                        {
-                                            InsertInline(sp);
-                                        }
                                     }
                                     else
                                     {
                                         InsertSymbol(sp, storage_class == sc_typedef ? storage_class_in : storage_class, linkage,
                                                      false);
-                                        if (isfunction(sp->tp))
-                                        {
-                                            if (getStructureDeclaration() || asFriend)
-                                            {
-                                                SYMBOL* parent = getStructureDeclaration();
-
-                                                while (parent)
-                                                {
-                                                    if (parent->sb->templateLevel)
-                                                    {
-                                                        InsertInline(sp);
-                                                        break;
-                                                    }
-                                                    parent = parent->sb->parentClass;
-                                                }
-                                            }
-                                        }
-                                        else if (sp->sb->templateLevel && (sp->sb->storage_class == sc_type || isfunction(sp->tp)))
-                                        {
-                                            InsertInline(sp);
-                                        }
                                     }
                                 }
                             }
@@ -6658,17 +6623,17 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                 SYMBOL* sym = nullptr;
                                 auto lsit = structSyms.begin();
                                 auto lsite = structSyms.end();
-                                while (lsit != lsite && !(*lsit)->str)
+                                while (lsit != lsite && !(*lsit).str)
                                     ++lsit;
                                 if (strSym && strSym->tp->type != bt_enum && strSym->tp->type != bt_templateselector &&
                                     strSym->tp->type != bt_templatedecltype)
                                 {
                                     ++lsit;
-                                    while (lsit != lsite && !(*lsit)->str)
+                                    while (lsit != lsite && !(*lsit).str)
                                         ++lsit;
                                 }
                                 if (lsit != lsite)
-                                    sym = (*lsit)->str;
+                                    sym = (*lsit).str;
                                 if (!sym->sb->friends)
                                     sym->sb->friends = symListFactory.CreateList();
                                 sym->sb->friends->push_front(sp);
@@ -6860,20 +6825,28 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                     sp->sb->attribs.inheritable.linkage4 = lk_virtual;
                                     if (sp->sb->constexpression && sp->sb->isConstructor)
                                         ConstexprMembersNotInitializedErrors(sp);
-                                    lex = body(lex, sp);
-                                    if (!inTemplate && sp->sb->parentClass && sp->sb->parentClass->sb->templateLevel)
-                                    {
-                                        Optimizer::SymbolManager::Get(sp)->genreffed = true;
-                                    }
+                                    auto startStmt = currentLineData(emptyBlockdata, lex, 0);
+                                    if (startStmt)
+                                        sp->sb->linedata =   startStmt->front()->lineData;
+                                    lex = getDeferredData(lex, &sp->sb->deferredCompile, true);
+                                    Optimizer::SymbolManager::Get(sp);
+                                    sp->sb->attribs.inheritable.linkage4 = lk_virtual;
+                                    InsertInline(sp);
                                 }
                                 else
                                 {
-                                    if (Optimizer::cparams.prm_cplusplus && sp->sb->parentClass &&
+                                    if (Optimizer::cparams.prm_cplusplus &&
                                         storage_class_in != sc_member &&
-                                        sp->sb->attribs.inheritable.linkage4 != lk_virtual)
+                                        sp->sb->attribs.inheritable.linkage4 != lk_virtual && sp->sb->attribs.inheritable.linkage != lk_c)
                                     {
-                                        sp->sb->attribs.inheritable.linkage4 = lk_virtual;
-                                        Optimizer::SymbolManager::Get(sp)->genreffed = true;
+                                        if (!sp->sb->parentNameSpace &&
+                                            (!sp->sb->parentClass || !sp->sb->parentClass->templateParams || !templateNestingCount) &&
+                                            strcmp(sp->name, "main"))
+                                        {
+                                            sp->sb->attribs.inheritable.linkage4 = lk_virtual;
+                                            if (!templateNestingCount || instantiatingTemplate || (sp->sb->specialized && sp->templateParams->size() == 1))
+                                                InsertInline(sp);
+                                        }
                                     }
                                     if (storage_class_in == sc_member || storage_class_in == sc_mutable ||
                                         templateNestingCount == 1 || (asFriend && templateNestingCount == 2))
@@ -6882,22 +6855,23 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                         if (startStmt)
                                             sp->sb->linedata = startStmt->front()->lineData;
                                         lex = getDeferredData(lex, &sp->sb->deferredCompile, true);
-                                        InsertInline(sp);
-                                        if (sp->sb->parentClass && !templateNestingCount &&
-                                            (sp->sb->storage_class == sc_virtual || sp->sb->storage_class == sc_global))
+                                        Optimizer::SymbolManager::Get(sp);
+                                        if (asFriend)
+                                            sp->sb->attribs.inheritable.linkage4 = lk_virtual;
+                                        if (sp->sb->parentClass && sp->templateParams && (!templateNestingCount || instantiatingTemplate))
                                         {
-                                            if (sp->templateParams && sp->templateParams->size() == 1)
-                                            {
-                                                sp->sb->templateLevel = 0;
-                                                sp->tp = SynthesizeType(sp->tp, sp->sb->parentClass->templateParams, false);
-                                                sp = TemplateFunctionInstantiate(sp, false, false);
-                                                sp->sb->specialized2 = true;
-                                            }
+                                            sp->sb->templateLevel = 0;
+                                            sp->tp = SynthesizeType(sp->tp, sp->sb->parentClass->templateParams, false);
+                                            sp = TemplateFunctionInstantiate(sp, false);
+                                            sp->sb->specialized2 = true;
                                         }
+                                        if (sp->templateParams && sp->templateParams->size() == 1)
+                                            InsertInline(sp);
                                     }
                                     else
                                     {
                                         lex = body(lex, sp);
+                                        bodygen(sp);
                                     }
                                 }
                                 if (sp->sb->constexpression)
@@ -6950,7 +6924,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                             else
                                                 createAssignment(sp->sb->parentClass, sp);
                                             sp->sb->forcedefault = true;
-                                            Optimizer::SymbolManager::Get(sp)->genreffed = true;
+                                            InsertInline(sp);
                                         }
                                         lex = getsym();
                                     }

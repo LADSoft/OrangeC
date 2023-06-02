@@ -986,13 +986,13 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                             fcb.thisptr = rangeExp;
                             fcb.ascall = true;
                             ctp = rangeSP->tp;
-                            beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, sbegin, &fcb, nullptr, false, false, true, 0);
+                            beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, sbegin, &fcb, nullptr, false, false, 0);
                             memset(&fce, 0, sizeof(fce));
                             fce.thistp = &thisTP;
                             fce.thisptr = rangeExp;
                             fce.ascall = true;
                             ctp = rangeSP->tp;
-                            endFunc = GetOverloadedFunction(&ctp, &fce.fcall, send, &fce, nullptr, false, false, true, 0);
+                            endFunc = GetOverloadedFunction(&ctp, &fce.fcall, send, &fce, nullptr, false, false, 0);
                             if (beginFunc && endFunc)
                             {
                                 if (!comparetypes(basetype(beginFunc->tp)->btp, basetype(endFunc->tp)->btp, true))
@@ -1086,13 +1086,13 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                 fcb.arguments->push_back(&args);
                                 fcb.ascall = true;
                                 ctp = rangeSP->tp;
-                                beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, sbegin, &fcb, nullptr, false, false, true, 0);
+                                beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, sbegin, &fcb, nullptr, false, false, 0);
                                 memset(&fce, 0, sizeof(fce));
                                 fce.arguments = initListListFactory.CreateList();
                                 fce.arguments->push_back(&args);
                                 fce.ascall = true;
                                 ctp = rangeSP->tp;
-                                endFunc = GetOverloadedFunction(&ctp, &fce.fcall, send, &fce, nullptr, false, false, true, 0);
+                                endFunc = GetOverloadedFunction(&ctp, &fce.fcall, send, &fce, nullptr, false, false, 0);
                                 if (beginFunc && endFunc)
                                 {
                                     TYPE* it2;
@@ -4205,51 +4205,17 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
             funcsp->sb->declaring = false;
             if (funcsp->sb->attribs.inheritable.isInline &&
                 (Optimizer::functionHasAssembly || funcsp->sb->attribs.inheritable.linkage2 == lk_export))
-                funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
+                funcsp->sb->attribs.inheritable.isInline = funcsp->sb->promotedToInline = false;
             if (!Optimizer::cparams.prm_allowinline)
-                funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
+                funcsp->sb->attribs.inheritable.isInline = funcsp->sb->promotedToInline = false;
             // if it is variadic don't allow it to be inline
             if (funcsp->sb->attribs.inheritable.isInline)
             {
                 if (basetype(funcsp->tp)->syms->size())
                 {
                     if (basetype(funcsp->tp)->syms->back()->tp->type == bt_ellipse)
-                        funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline =
+                        funcsp->sb->attribs.inheritable.isInline = funcsp->sb->promotedToInline =
                             false;
-                }
-            }
-            if (funcsp->sb->attribs.inheritable.linkage4 == lk_virtual || funcsp->sb->attribs.inheritable.isInline)
-            {
-                if (funcsp->sb->attribs.inheritable.isInline)
-                    funcsp->sb->attribs.inheritable.linkage2 = lk_none;
-                InsertInline(funcsp);
-                if (!Optimizer::cparams.prm_cplusplus && funcsp->sb->storage_class != sc_static)
-                    Optimizer::SymbolManager::Get(funcsp);
-            }
-            else if (!funcsp->sb->constexpression && IsCompiler())
-            {
-                bool isTemplate = false;
-                SYMBOL* spt = funcsp;
-                while (spt && !isTemplate)
-                {
-                    if (spt->sb->templateLevel)
-                        isTemplate = true;
-                    else
-                        spt = spt->sb->parentClass;
-                }
-
-                if (!isTemplate)
-                {
-                    if (!TotalErrors())
-                    {
-                        int oldstartlab = startlab;
-                        int oldretlab = retlab;
-                        startlab = Optimizer::nextLabel++;
-                        retlab = Optimizer::nextLabel++;
-                        genfunc(funcsp, true);
-                        retlab = oldretlab;
-                        startlab = oldstartlab;
-                    }
                 }
             }
         }
@@ -4279,5 +4245,43 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     if (funcsp->sb->isDestructor)
         bodyIsDestructor--;
     return lex;
+}
+void bodygen(SYMBOL* funcsp)
+{
+    if (funcsp->sb->inlineFunc.stmt)
+    {
+        if (funcsp->sb->attribs.inheritable.linkage4 == lk_virtual || (funcsp->sb->attribs.inheritable.isInline && !funcsp->sb->promotedToInline))
+        {
+            if (funcsp->sb->attribs.inheritable.isInline)
+                funcsp->sb->attribs.inheritable.linkage2 = lk_none;
+            if (!Optimizer::cparams.prm_cplusplus && funcsp->sb->storage_class != sc_static)
+                Optimizer::SymbolManager::Get(funcsp);
+        }
+        else if (!funcsp->sb->constexpression && IsCompiler())
+        {
+            bool isTemplate = false;
+            SYMBOL* spt = funcsp;
+            while (spt && !isTemplate)
+            {
+                if (spt->sb->templateLevel)
+                    isTemplate = true;
+                else
+                    spt = spt->sb->parentClass;
+            }
+            if (!isTemplate)
+            {
+                if (!TotalErrors())
+                {
+                    int oldstartlab = startlab;
+                    int oldretlab = retlab;
+                    startlab = Optimizer::nextLabel++;
+                    retlab = Optimizer::nextLabel++;
+                    genfunc(funcsp, true);
+                    retlab = oldretlab;
+                    startlab = oldstartlab;
+                }
+            }
+        }
+    }
 }
 }  // namespace Parser

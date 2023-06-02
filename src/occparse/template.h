@@ -61,7 +61,6 @@ bool matchTemplateSpecializationToParams(std::list<TEMPLATEPARAMPAIR>* param, st
 std::list<TEMPLATEPARAMPAIR>* TemplateMatching(LEXLIST* lex, std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym, SYMBOL* sp, bool definition);
 bool typeHasTemplateArg(TYPE* t);
 void TemplateValidateSpecialization(std::list<TEMPLATEPARAMPAIR>* arg);
-std::list<TEMPLATEPARAMPAIR>** expandArgs(std::list<TEMPLATEPARAMPAIR>** lst, LEXLIST* start, SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* select, bool packable);
 std::list<TEMPLATEPARAMPAIR>** expandTemplateSelector(std::list<TEMPLATEPARAMPAIR>** lst, std::list<TEMPLATEPARAMPAIR>* orig, TYPE* tp);
 bool constructedInt(LEXLIST* lex, SYMBOL* funcsp);
 LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPARAMPAIR>** lst);
@@ -95,6 +94,7 @@ bool TemplateInstantiationMatch(SYMBOL* orig, SYMBOL* sym);
 void SetTemplateNamespace(SYMBOL* sym);
 int PushTemplateNamespace(SYMBOL* sym);
 void PopTemplateNamespace(int n);
+void PushPopDefaults(std::deque<TYPE*>& defaults, std::list<TEMPLATEPARAMPAIR>* tpx, bool dflt, bool push);
 void SwapMainTemplateArgs(SYMBOL* cls);
 std::list<TEMPLATEPARAMPAIR>* copyParams(std::list<TEMPLATEPARAMPAIR>* t, bool alsoSpecializations);
 bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* args, std::list<TEMPLATEPARAMPAIR>* dest, std::list<TEMPLATEPARAMPAIR>* src,
@@ -102,7 +102,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
 SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, bool isExtern);
 SYMBOL* TemplateClassInstantiate(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, bool isExtern, enum e_sc storage_class);
 void TemplateDataInstantiate(SYMBOL* sym, bool warning, bool isExtern);
-SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern);
+SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning);
 bool allTemplateArgsSpecified(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, bool checkDeduced = false, bool checkDeclaring = false);
 void DuplicateTemplateParamList(std::list<TEMPLATEPARAMPAIR>** pptr);
 SYMBOL* TemplateByValLookup(SYMBOL* parent, SYMBOL* test, std::string& argumentName);

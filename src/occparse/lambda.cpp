@@ -1042,6 +1042,7 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             LEXLIST* lex1 = SetAlternateLex(self->func->sb->deferredCompile);
             SetLinkerNames(self->func, lk_cdecl);
             body(lex1, self->func);
+            bodygen(self->func);
             lex1 = self->func->sb->deferredCompile;
             while (lex1)
             {

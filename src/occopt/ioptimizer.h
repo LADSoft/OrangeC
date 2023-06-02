@@ -214,7 +214,7 @@ struct SimpleSymbol
             unsigned canThrow : 1;
             unsigned usesEsp : 1;
             unsigned addressTaken : 1;
-            unsigned genreffed : 1;
+            unsigned generated : 1;
             unsigned msilObjectArray : 1;
         };
         unsigned long long flags;
@@ -224,7 +224,6 @@ struct SimpleSymbol
     unsigned hasInlineFunc : 1;
     unsigned ispure : 1;
     unsigned dontinstantiate : 1;
-    unsigned noextern : 1;
     unsigned initialized : 1;
     // new for intermediate
     unsigned inCatch : 1;          // used inside a catch block
@@ -245,6 +244,7 @@ struct SimpleSymbol
     struct _imode_* imvalue;
     struct _im_list* imind;
     struct _imode_* imstore;
+    struct Parser::sym* inlineSym;
 };
 enum se_type
 {

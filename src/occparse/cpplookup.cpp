@@ -51,6 +51,8 @@
 #include "template.h"
 #include "symtab.h"
 #include "ListFactory.h"
+#include "constopt.h"
+
 namespace Parser
 {
 int inGetUserConversion;
@@ -869,7 +871,7 @@ SYMBOL* classdata(const char* name, SYMBOL* cls, SYMBOL* last, bool isvirtual, b
 }
 SYMBOL* templatesearch(const char* name, std::list<TEMPLATEPARAMPAIR>* args)
 {
-    if (args)
+    if (args && args->size())
     {
         auto old = args->front().second->type == kw_new ? args->front().second->bySpecialization.next : nullptr;
         for (auto&& arg : *args)
@@ -919,9 +921,9 @@ SYMBOL* classsearch(const char* name, bool tagsOnly, bool toErr)
     decltype(structSyms)::iterator its;
     for( its = structSyms.begin(); its != structSyms.end(); ++its)
     {
-        if (!(*its)->tmpl || rv)
+        if (!(*its).tmpl || rv)
             break;
-        rv = templatesearch(name, (*its)->tmpl);
+        rv = templatesearch(name, (*its).tmpl);
     }
     if (cls && !rv)
     {
@@ -950,8 +952,8 @@ SYMBOL* classsearch(const char* name, bool tagsOnly, bool toErr)
     {
         if (rv)
             break;
-        if ((*its)->tmpl)
-            rv = templatesearch(name, (*its)->tmpl);
+        if ((*its).tmpl)
+            rv = templatesearch(name, (*its).tmpl);
     }
     cls = getStructureDeclaration();
     if (cls && !rv)
@@ -1467,6 +1469,8 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
     bool matched;
     if (!Optimizer::cparams.prm_cplusplus)
         return true;
+    if (member->sb->access == ac_public)
+        return true;
     ssp = getStructureDeclaration();
     if (ssp)
     {
@@ -1603,9 +1607,9 @@ static SYMBOL* AccessibleClassInstance(SYMBOL* parent)
     // to try to find a structure which is derived from parent...
     for (auto&& s : structSyms)
     {
-        if (s->str)
+        if (s.str)
         {
-            SYMBOL* srch = s->str;
+            SYMBOL* srch = s.str;
             while (srch)
             {
                 if (srch == parent || classRefCount(parent, srch))
@@ -3449,15 +3453,7 @@ SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int
                         if (found1->sb->templateLevel && !templateNestingCount && found1->templateParams)
                         {
                             if (!inSearchingFunctions || inTemplateArgs)
-                                found1 = TemplateFunctionInstantiate(found1, false, false);
-                        }
-                        else
-                        {
-                            if (found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt)
-                            {
-                                if  (!inSearchingFunctions || inTemplateArgs)
-                                    deferredCompileOne(found1);
-                            }
+                                found1 = TemplateFunctionInstantiate(found1, false);
                         }
                     }
                     return found1;
@@ -3865,7 +3861,6 @@ void GetRefs(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref)
     bool func = false;
     bool func2 = false;
     bool notlval = false;
-    // if it is going to file a conversion function or constructor it is an rref...
     if (tpp)
     {
         TYPE *tpp1 = tpp;
@@ -4622,7 +4617,7 @@ static void getInitListConversion(TYPE* tp, std::list<INITLIST*>* list, TYPE* tp
                 funcparams.thistp = &thistp;
                 funcparams.thisptr = &exp;
                 funcparams.ascall = true;
-                cons = GetOverloadedFunction(&ctype, &expp, cons, &funcparams, nullptr, false, true, true, _F_SIZEOF);
+                cons = GetOverloadedFunction(&ctype, &expp, cons, &funcparams, nullptr, false, true, _F_SIZEOF);
                 if (!cons)
                 {
                     seq[(*n)++] = CV_NONE;
@@ -5235,27 +5230,29 @@ static void WeedTemplates(SYMBOL** table, int count, FUNCTIONCALL* args, TYPE* a
 SYMBOL* GetOverloadedTemplate(SYMBOL* sp, FUNCTIONCALL* args)
 {
     SYMBOL *found1 = nullptr, *found2 = nullptr;
-    SYMBOL **spList;
+    std::vector<SYMBOL *> spList;
+    std::vector<enum e_cvsrn*> icsList;
+    std::vector<int*> lenList;
+    std::vector<SYMBOL**> funcList;
     std::list<SYMBOL*> gather;
-    enum e_cvsrn** icsList;
-    int** lenList;
-    SYMBOL*** funcList;
-    int n = 0, i, argCount = args->arguments? args->arguments->size() : 0;
+    int n = 0, i, argCount = args->arguments ? args->arguments->size() : 0;
     gather.push_front(sp);
     n += sp->tp->syms->size();
-    spList = Allocate<SYMBOL*>(n);
-    icsList = Allocate<e_cvsrn*>(n);
-    lenList = Allocate<int*>(n);
-    funcList = Allocate<SYMBOL**>(n);
-    n = insertFuncs(spList, gather, args, nullptr, 0);
+    if (n == 0)
+        return nullptr;
+    spList.resize(n);
+    icsList.resize(n);
+    lenList.resize(n);
+    funcList.resize(n);
+    n = insertFuncs(&spList[0], gather, args, nullptr, 0);
     if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor))
     {
         if (args->ascall)
         {
-            GatherConversions(sp, spList, n, args, nullptr, icsList, lenList, argCount, funcList, 0);
-            SelectBestFunc(spList, icsList, lenList, args, argCount, n, funcList);
+            GatherConversions(sp, &spList[0], n, args, nullptr, &icsList[0], &lenList[0], argCount, &funcList[0], 0);
+            SelectBestFunc(&spList[0], &icsList[0], &lenList[0], args, argCount, n, &funcList[0]);
         }
-        WeedTemplates(spList, n, args, nullptr);
+        WeedTemplates(&spList[0], n, args, nullptr);
         for (i = 0; i < n && !found1; i++)
         {
             int j;
@@ -5407,7 +5404,7 @@ static bool IsMove(SYMBOL* sp)
     return rv;
 }
 SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, int toErr,
-                              bool maybeConversion, bool toInstantiate, int flags)
+                              bool maybeConversion, int flags)
 {
     STRUCTSYM s;
     s.tmpl = 0;
@@ -5524,19 +5521,17 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         {
                             argl->tp = func->tp;
                             argl->exp = varNode(en_pc, func);
-                            InsertInline(func);
                         }
                         else if (argl->exp->type == en_func && argl->exp->v.func->astemplate && !argl->exp->v.func->ascall)
                         {
                             TYPE* ctype = argl->tp;
                             EXPRESSION* exp = nullptr;
                             auto sp = GetOverloadedFunction(&ctype, &exp, argl->exp->v.func->sp, argl->exp->v.func, nullptr, toErr,
-                                false, false, 0);
+                                false, 0);
                             if (sp)
                             {
                                 argl->tp = ctype;
                                 argl->exp = exp;
-                                InsertInline(sp);
                             }
                         }
                     }
@@ -5555,10 +5550,10 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
             if (args || atp)
             {
                 int i;
-                SYMBOL **spList;
-                SYMBOL*** funcList;
-                enum e_cvsrn** icsList;
-                int** lenList;
+                std::vector<SYMBOL*> spList;
+                std::vector<enum e_cvsrn*> icsList;
+                std::vector<int*> lenList;
+                std::vector<SYMBOL**> funcList;
                 int argCount = 0;
                 if (args)
                 {
@@ -5583,12 +5578,13 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         }
                     }
                 }
-
-                spList = Allocate<SYMBOL*>(n);
-                icsList = Allocate<e_cvsrn*>(n);
-                lenList = Allocate<int*>(n);
-                funcList = Allocate<SYMBOL**>(n);
-                n = insertFuncs(spList, gather, args, atp, flags);
+                if (n == 0)
+                    return nullptr;
+                spList.resize(n);
+                icsList.resize(n);
+                lenList.resize(n);
+                funcList.resize(n);
+                n = insertFuncs(&spList[0], gather, args, atp, flags);
                 if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor && !spList[0]->sb->specialized2))
                 {
                     bool hasDest = false;
@@ -5596,15 +5592,16 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     
                     std::unordered_map<int, SYMBOL*> storage;
                     if (atp || args->ascall)
-                        GatherConversions(sp, spList, n, args, atp, icsList, lenList, argCount, funcList, flags & _F_INITLIST);
+                        GatherConversions(sp, &spList[0], n, args, atp, &icsList[0], &lenList[0], argCount, &funcList[0],
+                                          flags & _F_INITLIST);
                     for (int i = 0; i < n; i++)
                     {
                         storage[i] = spList[i];
                         hasDest |= spList[i] && spList[i]->sb->deleted;
                     }
                     if (atp || args->ascall)
-                        SelectBestFunc(spList, icsList, lenList, args, argCount, n, funcList);
-                    WeedTemplates(spList, n, args, atp);
+                        SelectBestFunc(&spList[0], &icsList[0], &lenList[0], args, argCount, n, &funcList[0]);
+                    WeedTemplates(&spList[0], n, args, atp);
                     for (i = 0; i < n && !found1; i++)
                     {
                         if (spList[i] && !spList[i]->sb->deleted && !spList[i]->sb->castoperator)
@@ -5643,8 +5640,8 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                             else
                                 spList[v.first] = nullptr;
                         if (atp || args->ascall)
-                            SelectBestFunc(spList, icsList, lenList, args, argCount, n, funcList);
-                        WeedTemplates(spList, n, args, atp);
+                            SelectBestFunc(&spList[0], &icsList[0], &lenList[0], args, argCount, n, &funcList[0]);
+                        WeedTemplates(&spList[0], n, args, atp);
                         for (i = 0; i < n && !found1; i++)
                         {
                             if (spList[i] && !spList[i]->sb->deleted && !spList[i]->sb->castoperator)
@@ -5683,13 +5680,14 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     if ((toErr & F_GOFERR) && !inDeduceArgs && (!found1 || (found1 && found2)) && !templateNestingCount)
                     {
 
-                        n = insertFuncs(spList, gather, args, atp, flags);
+                        n = insertFuncs(&spList[0], gather, args, atp, flags);
                         if (atp || args->ascall)
                         {
-                            GatherConversions(sp, spList, n, args, atp, icsList, lenList, argCount, funcList, flags & _F_INITLIST);
-                            SelectBestFunc(spList, icsList, lenList, args, argCount, n, funcList);
+                            GatherConversions(sp, &spList[0], n, args, atp, &icsList[0], &lenList[0], argCount, &funcList[0],
+                                              flags & _F_INITLIST);
+                            SelectBestFunc(&spList[0], &icsList[0], &lenList[0], args, argCount, n, &funcList[0]);
                         }
-                        WeedTemplates(spList, n, args, atp);
+                        WeedTemplates(&spList[0], n, args, atp);
                     }
 #endif
                 }
@@ -5845,6 +5843,18 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                             found1 = detemplate(found1, args, atp);
                         }
                         inSearchingFunctions--;
+                        found1->sb->attribs.inheritable.linkage4 = lk_virtual;
+                    }
+                    else if (!found1->sb->templateLevel && found1->sb->parentClass && found1->sb->parentClass->templateParams && (!templateNestingCount || instantiatingTemplate) && !found1->sb->isDestructor)
+                    {
+                        auto old = found1;
+                        if (found1->sb->mainsym)
+                            found1 = found1->sb->mainsym;
+                        found1 = CopySymbol(found1);
+                        found1->sb->mainsym = old;
+                        found1->sb->parentClass = CopySymbol(found1->sb->parentClass);
+                        found1->sb->parentClass->sb->mainsym = old->sb->parentClass;
+                        found1->sb->parentClass->templateParams = copyParams(found1->sb->parentClass->templateParams, true);
                     }
                     if (isstructured(basetype(found1->tp)->btp))
                     {
@@ -5861,36 +5871,35 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     if (found1->sb->templateLevel && (!templateNestingCount || instantiatingTemplate) && found1->templateParams)
                     {
                         if (!inSearchingFunctions || inTemplateArgs)
-                            found1 = TemplateFunctionInstantiate(found1, false, false);
+                        {
+                            found1 = TemplateFunctionInstantiate(found1, false);
+                        }
                     }
-                    else
+                        
+                    if ((flags & _F_IS_NOTHROW) || (found1->sb->constexpression && (!templateNestingCount || instantiatingTemplate)))
                     {
-                        if (toInstantiate && found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt)
+                        if (found1->sb->deferredNoexcept && (!found1->sb->constexpression || (templateNestingCount && !instantiatingTemplate)))
+                        {
+                            STRUCTSYM s;
+                            if (!found1->sb->deferredCompile && !found1->sb->deferredNoexcept)
+                                propagateTemplateDefinition(found1);
+                            if (found1->templateParams)
+                            {
+                                s.tmpl = found1->templateParams;
+                                addTemplateDeclaration(&s);
+                            }
+                            parseNoexcept(found1);
+                            if (found1->templateParams)
+                            {
+                                dropStructureDeclaration();
+                            }
+                        }
+                        else if (found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt)
                         {
                             if (!inSearchingFunctions || inTemplateArgs)
                             {
-                                if (found1->templateParams)
-                                    instantiatingTemplate++;
-                                if (found1->sb->templateLevel ||
-                                    (found1->sb->parentClass && found1->sb->parentClass->sb->templateLevel))
-                                    EnterInstantiation(nullptr, found1);
-                                deferredCompileOne(found1);
-                                if (found1->sb->templateLevel ||
-                                    (found1->sb->parentClass && found1->sb->parentClass->sb->templateLevel))
-                                    LeaveInstantiation();
-                                if (found1->templateParams)
-                                    instantiatingTemplate--;
+                                CompileInline(found1, false);
                             }
-                        }
-                        else
-                        {
-                            if (flags & _F_IS_NOTHROW)
-                            {
-                                if (!found1->sb->deferredCompile && !found1->sb->deferredNoexcept)
-                                    propagateTemplateDefinition(found1);
-                                parseNoexcept(found1);
-                            }
-                            InsertInline(found1);
                         }
                     }
                     if (found1->sb->inlineFunc.stmt)
@@ -5902,6 +5911,8 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 {
                     CollapseReferences(basetype(found1->tp)->btp);
                 }
+                if (found1->templateParams)
+                    SetLinkerNames(found1, lk_cdecl);
                 if (isautotype(basetype(found1->tp)->btp))
                     errorsym(ERR_AUTO_FUNCTION_RETURN_TYPE_NOT_DEFINED, found1);
                 if (flags & _F_IS_NOTHROW)
@@ -5992,6 +6003,6 @@ SYMBOL* MatchOverloadedFunction(TYPE* tp, TYPE** mtp, SYMBOL* sym, EXPRESSION** 
     if (exp2 && exp2->type == en_func)
         fpargs.templateParams = exp2->v.func->templateParams;
     fpargs.ascall = true;
-    return GetOverloadedFunction(mtp, exp, sym, &fpargs, nullptr, true, false, true, flags);
+    return GetOverloadedFunction(mtp, exp, sym, &fpargs, nullptr, true, false, flags);
 }
 }  // namespace Parser

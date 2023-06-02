@@ -700,7 +700,6 @@ typedef struct sym
         unsigned inasm : 1;                       /* a way to force the local optimizer to leave autos on the stack */
         unsigned assigned : 1;                    /* value has been assigned */
         unsigned altered : 1;
-        unsigned noextern : 1;    /* no external reference needed, it was inlined */
         unsigned wasExternal : 1;  /* was originally declared as external */
         unsigned gentemplate : 1; /* template instantiation or reference generated */
         unsigned allocaUsed : 1;
@@ -751,7 +750,6 @@ typedef struct sym
         unsigned instantiating : 1;    // template is currently being instantiated
         unsigned copiedTemplateFunction : 1;
         unsigned instantiatedInlineInClass : 1;  // function instantiated inside a class body
-        unsigned dumpInlineToFile : 1;           /* inline function needs to be placed in the output file */
         unsigned promotedToInline : 1;           /* function wasn't declare inline but was promoted to it */
         unsigned temp : 1;                       // temporary boolean...
         unsigned
@@ -1005,6 +1003,8 @@ typedef struct functioncall
     TYPE* thistp;
     std::list<TEMPLATEPARAMPAIR>* templateParams;
     NAMESPACEVALUEDATA* nameSpace;
+    SYMBOL* rttiType;
+    SYMBOL* rttiType2;
     int callLab;
     int novtab : 1;
     int ascall : 1;

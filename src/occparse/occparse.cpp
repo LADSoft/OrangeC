@@ -702,8 +702,6 @@ int main(int argc, char* argv[])
                 Optimizer::OutputIntermediate(parserMem);
             }
     }
-    oFree();
-    globalFree();
     if (compileToFile)
     {
         // compile to file
@@ -720,6 +718,8 @@ int main(int argc, char* argv[])
         Optimizer::WriteMappingFile(parserMem, fil);
         fclose(fil);
     }
+    oFree();
+    globalFree();
     delete parserMem;
     if (Optimizer::cparams.prm_displaytiming)
     {

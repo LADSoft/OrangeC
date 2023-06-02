@@ -212,6 +212,7 @@ LEXLIST* initialize_property(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_s
                 else
                 {
                     lex = body(lex, prototype);
+                    bodygen(prototype);
                     insertfunc(prototype, globalNameSpace->front()->syms);
                 }
             }

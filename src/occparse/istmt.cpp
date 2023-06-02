@@ -153,7 +153,6 @@ Optimizer::IMODE* set_symbol(const char* name, int isproc)
         sym->sb->safefunc = true;
         globalNameSpace->front()->syms->Add(sym);
         auto osym = Optimizer::SymbolManager::Get(sym);
-        osym->genreffed = true;
         Optimizer::externalSet.insert(osym);
         Optimizer::externals.push_back(osym);
     }
@@ -1081,6 +1080,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     if (TotalErrors())
         return;
 
+    Optimizer::SymbolManager::Get(funcsp)->generated = true;
     // if returning struct by val set up an expression for the return value
     if (isstructured(basetype(funcsp->tp)->btp))
     {

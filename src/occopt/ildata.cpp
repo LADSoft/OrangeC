@@ -60,6 +60,7 @@ std::vector<Optimizer::SimpleSymbol*> functionVariables;
 std::vector<BROWSEINFO*> browseInfo;
 std::vector<BROWSEFILE*> browseFiles;
 std::set<Optimizer::SimpleSymbol*> externalSet;
+std::set<Optimizer::SimpleSymbol*> typeSet;
 std::set<Optimizer::SimpleSymbol*> definedFunctions;
 
 std::list<std::string> inputFiles;
@@ -124,6 +125,7 @@ void InitIntermediate()
         bePragma.clear();
         msilProperties.clear();
         typeSymbols.clear();
+        typeSet	.clear();
         definedFunctions.clear();
     }
 }
@@ -171,6 +173,7 @@ void gen_vtt(int dataOffset, Optimizer::SimpleSymbol* func, Optimizer::SimpleSym
     auto val = AddData(DT_VTT);
     val->symbol.i = dataOffset;
     val->symbol.sym = func;
+    name->generated = true;
     globalCache.push_back(val->symbol.sym);
 }
 void gen_importThunk(Optimizer::SimpleSymbol* func)
@@ -178,24 +181,15 @@ void gen_importThunk(Optimizer::SimpleSymbol* func)
     auto val = AddData(DT_IMPORTTHUNK);
     val->symbol.sym = func;
     globalCache.push_back(val->symbol.sym);
-    func->genreffed = true;
-    if (externalSet.find(func) == externalSet.end())
-    {
-        externals.push_back(func);
-        externalSet.insert(func);
-    }
+
 }
 void gen_vc1(Optimizer::SimpleSymbol* func)
 {
     auto val = AddData(DT_VC1);
     val->symbol.sym = func;
     globalCache.push_back(val->symbol.sym);
-    func->genreffed = true;
-    if (externalSet.find(func) == externalSet.end())
-    {
-        externals.push_back(func);
-        externalSet.insert(func);
-    }
+    func->generated = true;
+    Optimizer::EnterExternal(func);
 }
 /*-------------------------------------------------------------------------*/
 
@@ -206,7 +200,7 @@ void gen_strlab(Optimizer::SimpleSymbol* sym)
 {
     auto val = AddData(DT_DEFINITION);
     val->symbol.sym = sym;
-    sym->genreffed = true;
+    sym->generated = true;
 
     if (sym->storage_class == scc_global || (sym->storage_class == scc_constant && !sym->inFunc))
         val->symbol.i |= BaseData::DF_GLOBAL;
@@ -379,12 +373,7 @@ void gensrref(Optimizer::SimpleSymbol* sym, int val, int type)
     v->symbol.sym = sym;
     v->symbol.i = val;
     globalCache.push_back(v->symbol.sym);
-    sym->genreffed = true;
-    if (externalSet.find(sym) == externalSet.end())
-    {
-        externals.push_back(sym);
-        externalSet.insert(sym);
-    }
+    Optimizer::EnterExternal(sym);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -397,12 +386,7 @@ void genref(Optimizer::SimpleSymbol* sym, int offset)
     v->symbol.sym = sym;
     v->symbol.i = offset;
     globalCache.push_back(v->symbol.sym);
-    sym->genreffed = true;
-    if (externalSet.find(sym) == externalSet.end())
-    {
-        externals.push_back(sym);
-        externalSet.insert(sym);
-    }
+    Optimizer::EnterExternal(sym);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -415,12 +399,7 @@ void genpcref(Optimizer::SimpleSymbol* sym, int offset)
     auto v = AddData(DT_PCREF);
     v->symbol.sym = sym;
     globalCache.push_back(v->symbol.sym);
-    sym->genreffed = true;
-    if (externalSet.find(sym) == externalSet.end())
-    {
-        externals.push_back(sym);
-        externalSet.insert(sym);
-    }
+    Optimizer::EnterExternal(sym);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -595,6 +574,22 @@ void nl(void)
             outcol = 0;
             gentype = nogen;
         }
+    }
+}
+void EnterExternal(Optimizer::SimpleSymbol* sym)
+{
+    if (Optimizer::externalSet.find(sym) == Optimizer::externalSet.end())
+    {
+        Optimizer::externals.push_back(sym);
+        Optimizer::externalSet.insert(sym);
+    }
+}
+void EnterType(Optimizer::SimpleSymbol* sym)
+{
+    if (Optimizer::typeSet.find(sym) == Optimizer::typeSet.end())
+    {
+        Optimizer::typeSymbols.push_back(sym);
+        Optimizer::typeSet.insert(sym);
     }
 }
 }  // namespace Optimizer

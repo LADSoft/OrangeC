@@ -587,7 +587,7 @@ static bool __is_nothrow(TYPE* tp, std::list<INITLIST*>* args, SYMBOL* ovl)
         }
         int oldSpecialize = inTemplateSpecialization;
         inTemplateSpecialization = 0;
-        SYMBOL* sp = GetOverloadedFunction(&tp, &funcparams.fcall, ovl, &funcparams, nullptr, false, false, true,
+        SYMBOL* sp = GetOverloadedFunction(&tp, &funcparams.fcall, ovl, &funcparams, nullptr, false, false,
                                            _F_SIZEOF | _F_IS_NOTHROW | _F_RETURN_DELETED);
         inTemplateSpecialization = oldSpecialize;
         while (stk.size())
@@ -776,7 +776,7 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                             arg->exp = intNode(en_c_i, 0);
                             funcparams.arguments->push_back(arg);
                         }
-                        auto spx = GetOverloadedFunction(tp, &funcparams.fcall, bcall, &funcparams, nullptr, false, false, false,
+                        auto spx = GetOverloadedFunction(tp, &funcparams.fcall, bcall, &funcparams, nullptr, false, false,
                                                          _F_SIZEOF | _F_RETURN_DELETED);
                         rv = spx && spx->sb->access == ac_public && !spx->sb->deleted;
                     }
@@ -908,7 +908,7 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                                 PushPopTemplateArgs(spl, true);
                             }
                         }
-                        auto sym = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, nullptr, false, false, false,
+                        auto sym = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, nullptr, false, false,
                                                          _F_SIZEOF);
                         rv = sym && sym->sb->access == ac_public;
 
@@ -1518,7 +1518,7 @@ static TYPE* TypePackElementType(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args
                 return &stdany;
             ite = it->second->byPack.pack->end();
             it = it->second->byPack.pack->begin();
-            if (it->second->type == kw_new)
+            if (it != ite && it->second->type == kw_new)
                 ++it;        
         }
         while (n-- && it != ite)

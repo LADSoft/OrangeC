@@ -65,4 +65,5 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
 void assignParam(SYMBOL* funcsp, int* base, SYMBOL* param);
 void parseNoexcept(SYMBOL* funcsp);
 LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp);
+void bodygen(SYMBOL* funcsp);
 }  // namespace Parser

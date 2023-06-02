@@ -103,6 +103,7 @@ void iexpr_init(void)
     this_bound = 0;
     inline_level = 0;
     Optimizer::externalSet.clear();
+    Optimizer::externals.clear();
 }
 void iexpr_func_init(void)
 {
@@ -589,12 +590,7 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                 if (ap1 != ap2)
                     Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
                 ap1 = Optimizer::indnode(ap2, siz1);
-                sym->genreffed = true;
-                if (Optimizer::externalSet.find(sym) == Optimizer::externalSet.end())
-                {
-                    Optimizer::externals.push_back(sym);
-                    Optimizer::externalSet.insert(sym);
-                }
+                Optimizer::EnterExternal(sym);
                 break;
             case en_auto:
                 if (inlineSymStructPtr.size())
@@ -668,12 +664,7 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                 if (nt == en_global || nt == en_pc || nt == en_absolute)
                 {
                     sym = Optimizer::SymbolManager::Get(node->left->v.sp);
-                    sym->genreffed = true;
-                    if (Optimizer::externalSet.find(sym) == Optimizer::externalSet.end())
-                    {
-                        Optimizer::externals.push_back(sym);
-                        Optimizer::externalSet.insert(sym);
-                    }
+                    Optimizer::EnterExternal(sym);
                 }
                 if (!sym->stackblock)
                 {
@@ -2244,7 +2235,6 @@ Optimizer::SimpleExpression* CreateMsilVarargs(SYMBOL* funcsp, FUNCTIONCALL* f)
             tp->size = 0;
             tp->array = tp->msil = true;
             rv = Optimizer::SymbolManager::Get(anonymousVar(sc_auto, tp));
-            Optimizer::cacheTempSymbol(rv->sp);
             rv->sp->anonymous = false;
             rv->sp->msilObjectArray = true;
 
@@ -2307,15 +2297,16 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     Optimizer::SimpleExpression* varargarray = nullptr;
     if (!f->ascall)
     {
+        InsertInline(f->sp);
         return gen_expr(funcsp, f->fcall, 0, ISZ_ADDR);
     }
+    if (f->rttiType)
+        InsertRttiType(f->rttiType);
+    if (f->rttiType2)
+        InsertRttiType(f->rttiType2);
     if (f->sp->sb->attribs.inheritable.isInline || f->sp->sb->attribs.inheritable.excludeFromExplicitInstantiation)
     {
-        if (f->sp->sb->noinline)
-        {
-            f->sp->sb->dumpInlineToFile = true;
-        }
-        else
+        if (CompileInline(f->sp, false) && !f->sp->sb->noinline)
         {
             ap = gen_inline(funcsp, node, flags);
             if (ap)
@@ -2332,6 +2323,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             }
         }
     }
+    InsertInline(f->sp);
     if ((Optimizer::architecture == ARCHITECTURE_MSIL) &&
         (f->sp->sb->attribs.inheritable.linkage2 != lk_unmanaged && msilManaged(f->sp)))
         managed = true;
@@ -2417,7 +2409,6 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             Optimizer::SimpleSymbol* sym = Optimizer::SymbolManager::Get(exp->v.sp);
             sym->imvalue = ap;
             sym->offset = -rv + stackblockOfs;
-            Optimizer::cacheTempSymbol(Optimizer::SymbolManager::Get(exp->v.sp));
             genCdeclArgs(f->arguments, funcsp);
             ap3 = gen_expr(funcsp, exp, 0, ISZ_UINT);
             ap = Optimizer::LookupLoadTemp(nullptr, ap3);
@@ -2501,7 +2492,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         if (f->callLab && xcexp)
         {
             gen_xcexp_expression(f->callLab);
-        }
+        }   
         gosub = Optimizer::gen_igosub(node->type == en_intcall ? Optimizer::i_int : Optimizer::i_gosub, ap);
     }
     else
@@ -2515,17 +2506,6 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         }
         if (ap->mode == Optimizer::i_immed && ap->offset->type == Optimizer::se_pc)
         {
-            /*
-                            if (f->sp && !ap->offset->sp->importThunk && !f->sp->sb->attribs.inheritable.linkage2 == lk_import &&
-               (Optimizer::architecture != ARCHITECTURE_MSIL))
-                            {
-                                Optimizer::IMODE* ap1 = Allocate<Optimizer::IMODE>();
-                                *ap1 = *ap;
-                                ap1->retval = false;
-                                ap = ap1;
-                                ap->mode = Optimizer::i_direct;
-                            }
-            */
         }
         else if (f->sp && f->sp->sb->attribs.inheritable.linkage2 == lk_import && f->sp->sb->storage_class != sc_virtual)
         {
@@ -2535,7 +2515,6 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             *ap1 = *ap;
             ap1->retval = false;
             ap = ap1;
-            //            ap->mode = Optimizer::i_ind;
             ap->mode = Optimizer::i_direct;
         }
         if (f->callLab && xcexp)
@@ -3473,12 +3452,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
             rv = ap2;
             sym = ap1->offset->sp;
-            sym->genreffed = true;
-            if (Optimizer::externalSet.find(sym) == Optimizer::externalSet.end())
-            {
-                Optimizer::externals.push_back(sym);
-                Optimizer::externalSet.insert(sym);
-            }
+            Optimizer::EnterExternal(sym);
             break;
         case en_auto:
             if (node->v.sp->sb->stackblock)
@@ -3497,14 +3471,13 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
         case en_global:
         case en_absolute:
             sym = Optimizer::SymbolManager::Get(node->v.sp);
-            sym->genreffed = true;
             if (node->type == en_pc || node->type == en_global || node->type == en_absolute)
             {
-                if (Optimizer::externalSet.find(sym) == Optimizer::externalSet.end())
-                {
-                    Optimizer::externals.push_back(sym);
-                    Optimizer::externalSet.insert(sym);
-                }
+                Optimizer::EnterExternal(sym);
+                if (sym->inlineSym)
+                    InsertInline(sym->inlineSym);
+                else if (isfunction(node->v.sp->tp))
+                    InsertInline(node->v.sp);
             }
             if (sym->imaddress && (Optimizer::architecture != ARCHITECTURE_MSIL))
             {
@@ -3909,6 +3882,13 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             {
                 if (!basetype(node->v.t.tp)->sp->sb->pureDest)
                 {
+                    int offset = 0;
+                    auto exp = relptr(node->v.t.thisptr, offset, true);
+                    if (exp && exp->type == en_auto)
+                    {
+                        Optimizer::SymbolManager::Get(exp->v.sp)->generated = true;
+                        Optimizer::SymbolManager::Get(exp->v.sp)->allocate = true;
+                    }
                     node->v.t.thisptr->xcDest = ++consIndex;
                     gen_xcexp_expression(consIndex);
                     __xcentry* t = Allocate<__xcentry>();

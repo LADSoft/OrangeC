@@ -74,6 +74,7 @@ const char* xlate_tab[] = {
 
 static const char* unmangcpptype(char* buf, const char* name, const char* last);
 const char* unmang1(char* buf, const char* name, const char* last, bool tof);
+char* unmang2(char* val, const char *name);
 static const char* unmangTemplate(char* buf, const char* name, const char* last);
 char* unmangle(char* val, const char* name);
 
@@ -228,7 +229,7 @@ char* unmangleExpression(char* dest, const char** name)
             char* buf = (char*)alloca(10000);
             memcpy(buf, *name, n);
             buf[n] = 0;
-            unmangle(dest, buf);
+            unmang2(dest, buf);
             *name += n;
         }
         return dest + strlen(dest);
@@ -629,7 +630,7 @@ static const char* unmangTemplate(char* buf, const char* name, const char* last)
                                 char temp[5000];
                                 memset(temp, 0, sizeof(temp));
                                 unmangleExpression(temp, &name);
-                                unmangle(tname + strlen(tname), temp);
+                                unmang2(tname + strlen(tname), temp);
                             }
                         }
                         strcpy(buf, tname);
@@ -1142,15 +1143,12 @@ static const char* unmangcpptype(char* buf, const char* name, const char* last)
     *buf = 0;
     return name;
 }
-char hold[10000];
 /* Name unmangling in general */
-char* unmangle(char* val, const char* name)
+char* unmang2(char* val, const char* name)
 {
-    strcpy(hold, name);
     char* buf = val;
     char* last = buf;
     buf[0] = 0;
-    manglenamecount = 0;
     if (!strncmp(name, "_Anonymous++", 12))
     {
         strcpy(buf, "{anonymous}");
@@ -1230,11 +1228,14 @@ char* unmangle(char* val, const char* name)
                                 *buf++ = '=';
                                 *buf = 0;
                                 unmangleExpression(temp, &name);
-                                unmangle(buf, temp);
+                                unmang2(buf, temp);
                                 buf += strlen(buf);
                             }
-                            *buf++ = ',';
-                            *buf++ = ' ';
+                            if (*name && *name != '.')
+                            {
+                                *buf++ = ',';
+                                *buf++ = ' ';
+                            }
                         }
                         buf[-2] = '>';
                         buf--;
@@ -1265,4 +1266,10 @@ char* unmangle(char* val, const char* name)
     }
     return val;
 }
+char* unmangle(char* val, const char* name)
+{
+    manglenamecount = 0;
+    return unmang2(val, name);
+}
+
 }  // namespace Parser

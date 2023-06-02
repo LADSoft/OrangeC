@@ -139,7 +139,7 @@ static void DumpInstantiations()
     {
         errorsym(ERR_REFERENCED_IN_INSTANTIATION, std::get<2>(i), std::get<1>(i), std::get<0>(i));
     }
-    if (!instantiationList.empty())
+    if (!instantiationList.empty() && preProcessor->GetErrLineNo())
     {
         printerr(ERR_TEMPLATE_INSTANTIATION_STARTED_IN, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo());
     }
@@ -454,7 +454,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     }
     else
     {
-        disabledNote = true;
+        disabledNote = true;    
         if (Warning::Instance()->IsSet(err, Warning::Disable))
             return false;
         if (Warning::Instance()->IsSet(err, Warning::OnlyOnce))

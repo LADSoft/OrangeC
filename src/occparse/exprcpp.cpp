@@ -705,45 +705,82 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
         }
         if (isstructured(*tp))
         {
-            SYMBOL* sym;
             TYPE* ctype = *tp;
-            FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
             EXPRESSION* exp1;
             ctype = PerformDeferredInitialization(ctype, funcsp);
-            lex = getArgs(lex, funcsp, funcparams, closepa, true, flags);
-            EXPRESSION* exp2;
-            exp2 = exp1 = *exp = anonymousVar(sc_auto, unboxed ? unboxed : basetype(*tp)->sp->tp);
-            sym = exp1->v.sp;
-            if (!(flags & _F_SIZEOF))
+            auto bcall = search(basetype(ctype)->syms, overloadNameTab[CI_FUNC]);
+            FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
+            if (bcall && MATCHKW(lex, openpa))
             {
-                sym->sb->constexpression = true;
-                callConstructor(&ctype, exp, funcparams, false, nullptr, true, true, false, false, false, false, true);
-                if ((*exp)->type == en_thisref && !(*exp)->left->v.func->sp->sb->constexpression)
-                    sym->sb->constexpression = false;
-                PromoteConstructorArgs(funcparams->sp, funcparams);
-                callDestructor(basetype(*tp)->sp, nullptr, &exp1, nullptr, true, false, false, true);
-                if (Optimizer::architecture == ARCHITECTURE_MSIL)
-                    *exp = exprNode(en_void, *exp, exp2);
-                else if (!funcparams->arguments || funcparams->arguments->size() == 0)  // empty parens means value constructed, e.g. set the thing to zero...
+                lex = getsym();
+                if (MATCHKW(lex, closepa))
                 {
-                    if (basetype(sym->tp)->sp->sb->structuredAliasType)
+                    lex = getsym();
+                    if (!MATCHKW(lex, openpa))
                     {
-                        deref(basetype(sym->tp)->sp->sb->structuredAliasType, &exp2);
-                        *exp = exprNode(en_void, exprNode(en_assign, exp2, intNode(en_c_i, 0)), *exp);
+                        lex = backupsym();
+                        lex = backupsym();
+                        bcall = nullptr;
                     }
-                    else
-                    {
-                        EXPRESSION* clr = exprNode(en_blockclear, exp2, nullptr);
-                        clr->size = sym->tp;
-                        *exp = exprNode(en_void, clr, *exp);
-                    }
+
                 }
-                initInsert(&sym->sb->dest, *tp, exp1, 0, true);
+                else
+                {
+                    lex = backupsym();
+                    bcall = nullptr;
+                }
+            }
+            if (bcall)
+            {
+                exp1 = anonymousVar(sc_auto, basetype(ctype)->sp->tp);
+                *exp = exprNode(en_func, nullptr, nullptr);
+                *tp = bcall->tp;
+                (*exp)->v.func = funcparams;
+                (*exp)->v.func->ascall = true;
+                (*exp)->v.func->thisptr = exp1;
+                (*exp)->v.func->thistp = MakeType(bt_pointer, basetype(ctype)->sp->tp);
+                lex = expression_arguments(lex, funcsp, tp, exp, 0);
             }
             else
-                *exp = exp1;
-            if (unboxed)
-                *tp = unboxed;
+            {
+                SYMBOL* sym;
+                lex = getArgs(lex, funcsp, funcparams, closepa, true, flags);
+                EXPRESSION* exp2;
+                exp2 = exp1 = *exp = anonymousVar(sc_auto, unboxed ? unboxed : basetype(*tp)->sp->tp);
+                sym = exp1->v.sp;
+                if (!(flags & _F_SIZEOF))
+                {
+                    sym->sb->constexpression = true;
+                    callConstructor(&ctype, exp, funcparams, false, nullptr, true, true, false, false, false, false, true);
+                    if ((*exp)->type == en_thisref && !(*exp)->left->v.func->sp->sb->constexpression)
+                        sym->sb->constexpression = false;
+                    PromoteConstructorArgs(funcparams->sp, funcparams);
+                    callDestructor(basetype(*tp)->sp, nullptr, &exp1, nullptr, true, false, false, true);
+                    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                        *exp = exprNode(en_void, *exp, exp2);
+                    else if (!funcparams->arguments ||
+                             funcparams->arguments->size() ==
+                                 0)  // empty parens means value constructed, e.g. set the thing to zero...
+                    {
+                        if (basetype(sym->tp)->sp->sb->structuredAliasType)
+                        {
+                            deref(basetype(sym->tp)->sp->sb->structuredAliasType, &exp2);
+                            *exp = exprNode(en_void, exprNode(en_assign, exp2, intNode(en_c_i, 0)), *exp);
+                        }
+                        else
+                        {
+                            EXPRESSION* clr = exprNode(en_blockclear, exp2, nullptr);
+                            clr->size = sym->tp;
+                            *exp = exprNode(en_void, clr, *exp);
+                        }
+                    }
+                    initInsert(&sym->sb->dest, *tp, exp1, 0, true);
+                }
+                else
+                    *exp = exp1;
+                if (unboxed)
+                    *tp = unboxed;
+            }
         }
         else if (Optimizer::architecture == ARCHITECTURE_MSIL)
         {
@@ -848,8 +885,8 @@ bool doDynamicCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* func
                         INITLIST* arg2 = Allocate<INITLIST>();  // excepttab from thisptr
                         INITLIST* arg3 = Allocate<INITLIST>();  // oldxt
                         INITLIST* arg4 = Allocate<INITLIST>();  // newxt
-                        SYMBOL* oldrtti = RTTIDumpType(tpo);
-                        SYMBOL* newrtti = basetype(tpn)->type == bt_void ? nullptr : RTTIDumpType(tpn);
+                        SYMBOL* oldrtti = RTTIDumpType(tpo, true);
+                        SYMBOL* newrtti = basetype(tpn)->type == bt_void ? nullptr : RTTIDumpType(tpn, true);
                         deref(&stdpointer, &exp1);
                         sym = (SYMBOL*)basetype(sym->tp)->syms->front();
                         arg1->exp = *exp;
@@ -870,6 +907,8 @@ bool doDynamicCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* func
                         funcparams->functp = sym->tp;
                         funcparams->fcall = varNode(en_pc, sym);
                         funcparams->ascall = true;
+                        funcparams->rttiType = oldrtti;
+                        funcparams->rttiType2 = newrtti;
                         *exp = exprNode(en_lvalue, 0, 0);
                         (*exp)->left = exprNode(en_func, 0, 0);
                         (*exp)->left->v.func = funcparams;
@@ -1025,7 +1064,7 @@ bool doStaticCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* funcs
                 if ((vbo && vbn) || !vbn)
                 {
                     if (isAccessible(basetype(oldType)->sp, basetype(oldType)->sp, basetype(*newType)->sp, funcsp, ac_public,
-                                     false))
+                        false))
                         return true;
                 }
             }
@@ -1039,9 +1078,23 @@ bool doStaticCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* funcs
             return true;
     }
     // class via constructor
-    if (isstructured(*newType))
+    if (isstructured(*newType) && isref(orig))
     {
         TYPE* ctype = *newType;
+        if (isstructured(oldType))
+        {
+            if (classRefCount(basetype(*newType)->sp, basetype(oldType)->sp) == 1)
+            {
+                EXPRESSION* exp1 = intNode(en_c_i, 0);
+                exp1 = baseClassOffset(basetype(*newType)->sp, basetype(oldType)->sp, exp1);
+                if (exp1->type == en_c_i)
+                {
+                    if (exp1->v.c->i != 0)
+                        *exp = exprNode(en_add, *exp, exp1);
+                    return true;
+                }
+            }
+        }
         if (callConstructorParam(&ctype, exp, oldType, *exp, true, true, false, false, false))
         {
             EXPRESSION* exp2 = anonymousVar(sc_auto, *newType);
@@ -1304,8 +1357,9 @@ LEXLIST* expression_typeid(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION**
                 }
                 else
                 {
-                    rtti = RTTIDumpType(*tp);
+                    rtti = RTTIDumpType(*tp, true);
                     arg2->exp = rtti ? varNode(en_global, rtti) : intNode(en_c_i, 0);
+                    funcparams->rttiType = rtti;
                 }
                 *exp = exprNode(en_func, 0, 0);
                 (*exp)->v.func = funcparams;
@@ -1368,7 +1422,7 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
     }
     funcparams->ascall = true;
 
-    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, nullptr, F_GOFDELETEDERR, false, true, flags);
+    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, nullptr, F_GOFDELETEDERR, false, flags);
     if (s3)
     {
         if (!isExpressionAccessible(nullptr, s3, funcsp, funcparams->thisptr, false))
@@ -1611,7 +1665,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
     }
     funcparams->ascall = true;
     TYPE* ctype = *tp;
-    s3 = GetOverloadedFunction(&ctype, &funcparams->fcall, s3, funcparams, nullptr, F_GOFDELETEDERR, false, true, flags);
+    s3 = GetOverloadedFunction(&ctype, &funcparams->fcall, s3, funcparams, nullptr, F_GOFDELETEDERR, false, flags);
     if (s3)
     {
         if (!isExpressionAccessible(nullptr, s3, funcsp, funcparams->thisptr, false))
@@ -1814,7 +1868,7 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
     }
     // should have always found something
     placement->ascall = true;
-    s1 = GetOverloadedFunction(&tpf, &placement->fcall, s1, placement, nullptr, true, false, true, flags);
+    s1 = GetOverloadedFunction(&tpf, &placement->fcall, s1, placement, nullptr, true, false, flags);
     if (s1)
     {
         SYMBOL* sym;
@@ -2054,7 +2108,7 @@ LEXLIST* expression_delete(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION**
     funcparams->arguments = initListListFactory.CreateList();
     funcparams->arguments->push_back(one);
     funcparams->ascall = true;
-    s1 = GetOverloadedFunction(&tpf, &funcparams->fcall, s1, funcparams, nullptr, true, false, true, flags);
+    s1 = GetOverloadedFunction(&tpf, &funcparams->fcall, s1, funcparams, nullptr, true, false, flags);
     if (s1)
     {
         s1->sb->throughClass = s1->sb->parentClass != nullptr;

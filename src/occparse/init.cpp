@@ -55,6 +55,7 @@
 #include "browse.h"
 #include "constexpr.h"
 #include "symtab.h"
+#include "inline.h"
 #include "ListFactory.h"
 
  /* initializers, local... can do w/out c99 */
@@ -679,7 +680,7 @@ static void dumpTLSDestructors(void)
 }
 int dumpMemberPtr(SYMBOL* sym, TYPE* membertp, bool make_label)
 {
-    int lbl = 0;
+    int lbl = -1;
     if (IsCompiler())
     {
         int vbase = 0, ofs;
@@ -693,21 +694,17 @@ int dumpMemberPtr(SYMBOL* sym, TYPE* membertp, bool make_label)
             lbl = Optimizer::nextLabel++;
             if (sym)
                 sym->sb->label = lbl;
-            Optimizer::put_label(lbl);
         }
         if (!sym)
         {
             // null...
             if (isfunction(membertp->btp))
             {
-                Optimizer::genaddress(0);
-                Optimizer::genint(0);
-                Optimizer::genint(0);
+                InsertMemberPointer(lbl, (Optimizer::SimpleSymbol*)-1, 0, 0);
             }
             else
             {
-                Optimizer::genint(0);
-                Optimizer::genint(0);
+                InsertMemberPointer(lbl, nullptr, 0, 0);
             }
         }
         else
@@ -720,66 +717,69 @@ int dumpMemberPtr(SYMBOL* sym, TYPE* membertp, bool make_label)
             optimize_for_constants(&exp);
             if (isfunction(sym->tp))
             {
-                SYMBOL* genned;
+                Optimizer::SimpleSymbol* genned;
+                SYMBOL* genned1;
                 if (sym->sb->storage_class == sc_virtual)
-                    genned = getvc1Thunk(sym->sb->vtaboffset);
+                    genned = Optimizer::SymbolManager::Get(genned1 = getvc1Thunk(sym->sb->vtaboffset));
                 else
-                    genned = sym;
-                Optimizer::genref(Optimizer::SymbolManager::Get(genned), 0);
+                    genned = Optimizer::SymbolManager::Get(genned1 = sym);
+
+                int offset1 = 0;
+                int offset2 = 0;
                 if (exp->type == en_add)
                 {
                     if (exp->left->type == en_l_p)
                     {
-                        Optimizer::genint(exp->right->v.i + 1);
-                        Optimizer::genint(exp->left->left->v.i + 1);
+                        offset1 = exp->right->v.i + 1;
+                        offset2 = exp->left->left->v.i + 1;
                     }
                     else
                     {
-                        Optimizer::genint(exp->left->v.i);
-                        Optimizer::genint(exp->right->left->v.i + 1);
+                        offset1 = exp->left->v.i;
+                        offset2 = exp->right->left->v.i + 1;
                     }
                 }
                 else if (exp->type == en_l_p)
                 {
-                    Optimizer::genint(0);
-                    Optimizer::genint(exp->left->v.i + 1);
+                    offset1 = 0;
+                    offset2 = exp->left->v.i + 1;
                 }
                 else
                 {
-                    Optimizer::genint(exp->v.i);
-                    Optimizer::genint(0);
+                    offset1 = exp->v.i;
+                    offset2 = 0;
                 }
-                if (genned->sb->deferredCompile && !genned->sb->inlineFunc.stmt)
-                {
-                    deferredCompileOne(genned);
-                }
+                InsertMemberPointer(lbl, genned, offset1, offset2);
+                InsertInline(genned1);
             }
             else
             {
+                int offset1 = 0;
+                int offset2 = 0;
                 if (exp->type == en_add)
                 {
                     if (exp->left->type == en_l_p)
                     {
-                        Optimizer::genint(exp->right->v.i + sym->sb->offset + 1);
-                        Optimizer::genint(exp->left->left->v.i + 1);
+                        offset1 = exp->right->v.i + sym->sb->offset + 1;
+                        offset2 = exp->left->left->v.i + 1;
                     }
                     else
                     {
-                        Optimizer::genint(exp->left->v.i + sym->sb->offset + 1);
-                        Optimizer::genint(exp->right->left->v.i + 1);
+                        offset1 = exp->left->v.i + sym->sb->offset + 1;
+                        offset2 = exp->right->left->v.i + 1;
                     }
                 }
                 else if (exp->type == en_l_p)
                 {
-                    Optimizer::genint(1 + sym->sb->offset);
-                    Optimizer::genint(exp->left->v.i + 1);
+                    offset1 = 1 + sym->sb->offset;
+                    offset2 = exp->left->v.i + 1;
                 }
                 else
                 {
-                    Optimizer::genint(exp->v.i + sym->sb->offset + 1);
-                    Optimizer::genint(0);
+                    offset1 = exp->v.i + sym->sb->offset + 1;
+                    offset2 = 0;
                 }
-                Optimizer::genint(0);  // padding
+                InsertMemberPointer(lbl, nullptr, offset1, offset2);
             }
         }
     }
@@ -1276,6 +1276,7 @@ void dumpInitializers(void)
             dumpDynamicDestructors();
             dumpTLSDestructors();
             dumpvc1Thunks();
+            dumpMemberPointers();
             dumpStaticInitializers();
         }
     }
@@ -1630,8 +1631,14 @@ static LEXLIST* initialize_pointer_type(LEXLIST* lex, SYMBOL* funcsp, int offset
                 if (sp2)
                 {
                     if ((*exp2)->type == en_pc || ((*exp2)->type == en_func && !(*exp2)->v.func->ascall))
+                    {
                         thunkForImportTable(exp2);
+                    }
                 }
+            }
+            if ((*exp2)->type == en_func && !(*exp2)->v.func->ascall)
+            {
+                InsertInline((*exp2)->v.func->sp);
             }
             if (tp->type == bt_memberptr)
             {

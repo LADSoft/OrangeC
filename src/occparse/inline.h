@@ -30,10 +30,14 @@ void inlineinit(void);
 void dumpInlines(void);
 void dumpImportThunks(void);
 void dumpvc1Thunks(void);
+void dumpMemberPointers();
+
 SYMBOL* getvc1Thunk(int offset);
+bool CompileInline(SYMBOL* sym, bool toplevel);
 void InsertInline(SYMBOL* sym);
 void InsertInlineData(SYMBOL* sym);
-EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval);
+void InsertRttiType(SYMBOL *tp);
+void InsertMemberPointer(int label, Optimizer::SimpleSymbol *sym, int offset1, int offset2); EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval);
 std::list<STATEMENT*>* inlinestmt(std::list<STATEMENT*>* blocks);
 void SetupVariables(SYMBOL* sym);
 EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp);

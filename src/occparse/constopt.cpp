@@ -2480,7 +2480,7 @@ int opt0(EXPRESSION** node)
                         func->sp = sym;
                         func->thistp = MakeType(bt_pointer, tp);
                         func->thisptr = newExpr;
-                        sym = GetOverloadedFunction(&ctype, &func->fcall, sym, func, nullptr, true, false, true, 0);
+                        sym = GetOverloadedFunction(&ctype, &func->fcall, sym, func, nullptr, true, false, 0);
                         if (!sym)
                         {
                             dropStructureDeclaration();
@@ -2629,7 +2629,7 @@ int opt0(EXPRESSION** node)
                                 EXPRESSION* exp = intNode(en_c_i, 0);
                                 FUNCTIONCALL funcparams = { };
                                 funcparams.arguments = (*find).arguments;
-                                auto sp1 = GetOverloadedFunction(&ctype, &exp, sym, &funcparams, nullptr, false, false, false, 0);
+                                auto sp1 = GetOverloadedFunction(&ctype, &exp, sym, &funcparams, nullptr, false, false, 0);
                                 if (sp1)
                                 {
                                     sym = sp1;
@@ -2662,9 +2662,9 @@ int opt0(EXPRESSION** node)
                 {
                     if (found)
                         break;
-                    if (search->tmpl)
+                    if (search.tmpl)
                     {
-                        for (auto&& tpl : *search->tmpl)
+                        for (auto&& tpl : *search.tmpl)
                         {
                             if (tpl.first && !strcmp(tpl.first->name, sym->name))
                             {
@@ -3843,6 +3843,7 @@ void RemoveSizeofOperators(EXPRESSION* constant)
         constant->v.i = tp->size;
     }
 }
+
 void optimize_for_constants(EXPRESSION** expr)
 {
     if ((*expr)->type == en_select)

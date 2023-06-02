@@ -33,7 +33,6 @@
 #include "initbackend.h"
 #include "occparse.h"
 #include "template.h"
-#include "declare.h"
 #include "lambda.h"
 #include "help.h"
 #include "stmt.h"
@@ -80,7 +79,7 @@ static bool MustSpecialize(const char* name)
         return false;
     for (auto&& sst : structSyms)
     {
-        if (sst->str && !strcmp(sst->str->name, name))
+        if (sst.str && !strcmp(sst.str->name, name))
             return false;
     }
     return true;
@@ -136,7 +135,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                                 }
                                 fcall.ascall = true;
                                 auto oldnoExcept = noExcept;
-                                sp = GetOverloadedFunction(&tp, &exp, sp, &fcall, nullptr, true, false, true, 0);
+                                sp = GetOverloadedFunction(&tp, &exp, sp, &fcall, nullptr, true, false, 0);
                                 noExcept = oldnoExcept;
                                 if (sp)
                                     func = sp;
@@ -170,7 +169,6 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                                 localsp->sb->decoratedName = localsp->name;
                                 localsp->sb->attribs.inheritable.linkage4 = lk_virtual;
                                 Optimizer::genref(Optimizer::SymbolManager::Get(localsp), 0);
-                                InsertInline(localsp);
                                 count++;
                             }
                             else
@@ -1053,9 +1051,9 @@ bool declaringTemplate(SYMBOL* sym)
 {
     for (auto&& l : structSyms)
     {
-        if (l->str && l->str->sb->templateLevel)
+        if (l.str && l.str->sb->templateLevel)
         {
-            if (sym->sb->decoratedName && !strcmp(sym->sb->decoratedName, l->str->sb->decoratedName))
+            if (sym->sb->decoratedName && !strcmp(sym->sb->decoratedName, l.str->sb->decoratedName))
                 return true;
         }
     }
@@ -1807,7 +1805,7 @@ void GatherTemplateParams(int* count, SYMBOL** arg, std::list<TEMPLATEPARAMPAIR>
     {
         for (auto&& tpl : *tplx)
         {
-            if (tpl.second->packed && tpl.first)
+            if (tpl.second->packed && tpl.first && tpl.second->type == kw_typename)
             {
                 arg[(*count)++] = /*sym*/ tpl.first;
                 NormalizePacked(tpl.first->tp);
@@ -1818,6 +1816,8 @@ void GatherTemplateParams(int* count, SYMBOL** arg, std::list<TEMPLATEPARAMPAIR>
                 {
                     if (tpl.second->packed)
                     {
+                        if (tpl.first)
+                            arg[(*count)++] = tpl.first;
                         if (tpl.second->byPack.pack)
                             for (auto&& tpl1 : *tpl.second->byPack.pack)
                                 GatherPackedVars(count, arg, tpl1.second->byNonType.dflt);
@@ -1925,7 +1925,7 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
     }
 }
 EXPRESSION* ReplicatePackedVars(int count, SYMBOL** arg, EXPRESSION* packedExp, int index);
-TYPE* ReplicatePackedTypes(int count, SYMBOL** arg, TYPE* tp, int index);
+    TYPE* ReplicatePackedTypes(int count, SYMBOL** arg, TYPE* tp, int index);
 std::list<TEMPLATEPARAMPAIR>* ReplicateTemplateParams(int count, SYMBOL** arg, std::list<TEMPLATEPARAMPAIR>* tplx, int index)
 {
     if (tplx)
@@ -2102,14 +2102,20 @@ int CountPacks(std::list<TEMPLATEPARAMPAIR>* packs)
     int rv = 0;
     if (packs)
     {
+        return packs->size();
+        /*
         std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tps;
         for (auto it = packs->begin(); it != packs->end();)
         {
             if (it->second->packed)
             {
-                tps.push(it);
+                if (it->second->byPack.pack && it->second->byPack.pack->size())
+                {
+                    tps.push(it);
+                    it = it->second->byPack.pack->begin();
+                }
             }
-            else
+            if (!it->second->packed)
             {
                 rv++;
             }
@@ -2120,6 +2126,7 @@ int CountPacks(std::list<TEMPLATEPARAMPAIR>* packs)
                 tps.pop();
             }
         }
+        */
     }
     return rv;
 }
@@ -2320,6 +2327,29 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
             int n = -1;
             std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
             LEXLIST* arglex = GetTemplateArguments(lex, funcsp, linit->sp, &lst);
+            std::deque<TYPE*> defaults;
+            PushPopDefaults(defaults, funcsp->templateParams, true, true);
+            std::stack <TEMPLATEPARAM*> stk; 
+            if (funcsp->templateParams)
+            {
+                for (auto l : *funcsp->templateParams)
+                {
+                    if (l.second->packed)
+                    {
+                        if (l.second->byPack.pack)
+                            for (auto i : *l.second->byPack.pack)
+                                stk.push(i.second);
+                    }
+                    else if (l.second->type != kw_new)
+                        stk.push(l.second);
+                }
+                while (!stk.empty())
+                {
+                    auto t = stk.top();
+                    stk.pop();
+                    t->byClass.dflt = t->byClass.val;
+                }
+            }
             SetAlternateLex(nullptr);
             if (lst)
             {
@@ -2349,6 +2379,8 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                 // I have also seen n be 0 during parsing...
                 auto itb = baseEntries.begin();
                 auto itv = vbaseEntries.begin();
+                int oldArgumentNesting = argumentNesting;
+                argumentNesting = -1;
                 for (i = 0; i < n; i++)
                 {
                     int oldPack = packIndex;
@@ -2402,7 +2434,9 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                     SetAlternateLex(nullptr);
                     packIndex = oldPack;
                 }
+                argumentNesting = oldArgumentNesting;
             }
+            PushPopDefaults(defaults, funcsp->templateParams, true, false);
         }
         else
         {
@@ -3341,7 +3375,6 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc 
                             sp1->sb->mainsym = sp2;
                             sp1->sb->access = access;
                             InsertSymbol(sp1, storage_class, sp1->sb->attribs.inheritable.linkage, true);
-                            InsertInline(sp1);
                             sp1->sb->parentClass = ssp1;
                         }
                         if (isTypename)

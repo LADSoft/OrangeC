@@ -271,21 +271,18 @@ static EXPRESSION* inasm_ident(void)
                     break;
                 case sc_overloads:
                     node = varNode(en_pc, (SYMBOL*)sym->tp->syms->front());
-                    Optimizer::SymbolManager::Get(sym->tp->syms->front())->genreffed = true;
+                    InsertInline(sym->tp->syms->front());
                     break;
                 case sc_localstatic:
                 case sc_global:
                 case sc_external:
                 case sc_static: {
                     Optimizer::SimpleSymbol* sym1 = Optimizer::SymbolManager::Get(sym);
-                    sym1->genreffed = true;
                     node = varNode(en_global, sym);
                     InsertGlobal(sym);
-                    if (Optimizer::externalSet.find(sym1) == Optimizer::externalSet.end())
-                    {
-                        Optimizer::externals.push_back(sym1);
-                        Optimizer::externalSet.insert(sym1);
-                    }
+                    if (isfunction(sym->tp))
+                        InsertInline(sym);
+                    Optimizer::EnterExternal(sym1);
                     break;
                 }
                 case sc_const:
@@ -980,7 +977,7 @@ enum e_opcode inasm_op(void)
     }
     op = insdata->atype;
     inasm_getsym();
-    floating = op >= op_f2xm1 & op <= op_fyl2xp1;
+    floating = op >= op_f2xm1 && op <= op_fyl2xp1;
     return (e_opcode)op;
 }
 

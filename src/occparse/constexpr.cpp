@@ -50,6 +50,8 @@
 #include "floatconv.h"
 #include "symtab.h"
 #include "ListFactory.h"
+#include "inline.h"
+
 namespace Parser
 {
 static int functionNestingCount = 0;
@@ -1373,21 +1375,14 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                 }
                 if (found1)
                 {
+                    int pushCount = pushContext(found1, false);
                     if (found1->sb->templateLevel && !templateNestingCount && node->v.func->templateParams)
                     {
-                        int pushCount = pushContext(found1, false);
-                        found1 = TemplateFunctionInstantiate(found1, false, false);
-                        while (pushCount--)
-                            dropStructureDeclaration();
+                        found1 = TemplateFunctionInstantiate(found1, false);
                     }
-                    else
-                    {
-                        if (found1->templateParams)
-                            instantiatingTemplate++;
-                        deferredCompileOne(found1);
-                        if (found1->templateParams)
-                            instantiatingTemplate--;
-                    }
+                    CompileInline(found1, false);
+                    while (pushCount--)
+                        dropStructureDeclaration();
                 }
             }
             if (found1 && found1->sb->inlineFunc.stmt)

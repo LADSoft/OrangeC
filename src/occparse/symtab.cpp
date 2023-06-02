@@ -512,7 +512,7 @@ SYMBOL* searchOverloads(SYMBOL* sym, SymbolTable<SYMBOL>* table)
                     return spp;
                 if (sym->sb->templateLevel == spp->sb->templateLevel ||
                     (sym->sb->templateLevel && !spp->sb->templateLevel && sym->templateParams->size() == 1))
-                    return spp;
+                        return spp;
 
                 if (!!spp->templateParams == !!sym->templateParams)
                 {

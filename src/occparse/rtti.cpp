@@ -279,7 +279,10 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
                     EXPRESSION* exp = intNode(en_c_i, 0);
                     callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, true, true);
                     if (exp && exp->left)
+                    {
                         sym = exp->left->v.func->sp;
+                        InsertInline(sym);
+                    }
                 }
             }
             else
@@ -297,6 +300,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
     }
 
     Optimizer::cseg();
+    Optimizer::SymbolManager::Get(xtSym)->generated = true;
     Optimizer::gen_virtual(Optimizer::SymbolManager::Get(xtSym), false);
     if (sym)
     {
@@ -398,7 +402,7 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
 }
 static void RTTIDumpStruct(SYMBOL* xtSym, TYPE* tp)
 {
-    Optimizer::SymbolManager::Get(xtSym)->noextern = true;
+    Optimizer::SymbolManager::Get(xtSym)->generated = true;
     DumpEnclosedStructs(tp, true);
     RTTIDumpHeader(xtSym, tp, XD_CL_PRIMARY);
     DumpEnclosedStructs(tp, false);
@@ -426,7 +430,7 @@ static void RTTIDumpArithmetic(SYMBOL* xtSym, TYPE* tp)
     RTTIDumpHeader(xtSym, tp, 0);
     Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
 }
-SYMBOL* RTTIDumpType(TYPE* tp)
+SYMBOL* RTTIDumpType(TYPE*tp, bool symOnly)
 {
     SYMBOL* xtSym = nullptr;
     if (IsCompiler())
@@ -436,23 +440,21 @@ SYMBOL* RTTIDumpType(TYPE* tp)
             char name[4096];
             RTTIGetName(name, tp);
             xtSym = search(rttiSyms, name);
-            if (!xtSym)
+            if (!xtSym || !Optimizer::SymbolManager::Get(xtSym)->generated)
             {
-                xtSym = makeID(sc_global, tp, nullptr, litlate(name));
-                xtSym->sb->attribs.inheritable.linkage4 = lk_virtual;
-                if (isstructured(tp))
-                    xtSym->sb->attribs.inheritable.linkage2 = basetype(tp)->sp->sb->attribs.inheritable.linkage2;
-                xtSym->sb->decoratedName = xtSym->name;
-                xtSym->sb->xtEntry = true;
-                rttiSyms->Add(xtSym);
-                if (isstructured(tp) && basetype(tp)->sp->sb->dontinstantiate &&
-                    basetype(tp)->sp->sb->attribs.inheritable.linkage2 != lk_import)
+                if (!xtSym)
                 {
-                    xtSym->sb->dontinstantiate = true;
-                    Optimizer::SymbolManager::Get(xtSym);
+                    xtSym = makeID(sc_global, tp, nullptr, litlate(name));
+                    xtSym->sb->attribs.inheritable.linkage4 = lk_virtual;
+                    if (isstructured(tp))
+                        xtSym->sb->attribs.inheritable.linkage2 = basetype(tp)->sp->sb->attribs.inheritable.linkage2;
+                    xtSym->sb->decoratedName = xtSym->name;
+                    xtSym->sb->xtEntry = true;
+                    rttiSyms->Add(xtSym);
                 }
-                else
+                if (!symOnly)
                 {
+                    Optimizer::SymbolManager::Get(xtSym)->generated = true;
                     switch (basetype(tp)->type)
                     {
                         case bt_lref:
@@ -475,7 +477,7 @@ SYMBOL* RTTIDumpType(TYPE* tp)
                     }
                 }
             }
-            else
+            else if (!symOnly)
             {
                 while (ispointer(tp) || isref(tp))
                     tp = basetype(tp)->btp;
@@ -811,6 +813,7 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
         xcSym->sb->attribs.inheritable.linkage4 = lk_virtual;
         xcSym->sb->decoratedName = xcSym->name;
         Optimizer::cseg();
+        Optimizer::SymbolManager::Get(xcSym)->generated = true;
         Optimizer::gen_virtual(Optimizer::SymbolManager::Get(xcSym), false);
         switch (funcsp->sb->xcMode)
         {
@@ -929,7 +932,9 @@ void XTDumpTab(SYMBOL* funcsp)
             }
         }
         throwSym = DumpXCSpecifiers(funcsp);
+        Optimizer::SymbolManager::Get(funcsp->sb->xc->xclab)->generated = true;
         Optimizer::gen_virtual(Optimizer::SymbolManager::Get(funcsp->sb->xc->xclab), false);
+
         if (throwSym)
         {
             Optimizer::genref(Optimizer::SymbolManager::Get(throwSym), 0);
@@ -974,7 +979,7 @@ void XTDumpTab(SYMBOL* funcsp)
                         }
                     }
                     auto thsym = evalsp(p->exp->v.t.thisptr);
-                    if (thsym && thsym->genreffed)
+                    if (thsym && thsym->generated)
                     {
                         Optimizer::genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
                         Optimizer::genref(Optimizer::SymbolManager::Get(p->xtSym), 0);
@@ -992,7 +997,7 @@ void XTDumpTab(SYMBOL* funcsp)
             {
                 p->used = true;
                 auto thsym = evalsp(p->exp->v.t.thisptr);
-                if (thsym && thsym->genreffed)
+                if (thsym && thsym->generated)
                 {
                     Optimizer::genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
                     Optimizer::genref(Optimizer::SymbolManager::Get(p->xtSym), 0);

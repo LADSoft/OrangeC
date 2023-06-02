@@ -1,3 +1,5 @@
+#include <unordered_map>
+#include <stack>
 /* Software License Agreement
  *
  *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)
@@ -59,6 +61,7 @@
 #include "AsmLexer.h"
 #include "symtab.h"
 #include "ListFactory.h"
+#include "inline.h"
 // there is a bug where the compiler needs constant values for the memory order,
 // but parsed code may not provide it directly.
 // e.g. when an atomic primitive is called from inside a function.
@@ -135,6 +138,8 @@ void thunkForImportTable(EXPRESSION** exp)
             newThunk->sb->importThunk = true;
             importThunks.push_back(newThunk);
             *exp = varNode(en_pc, newThunk);
+            Optimizer::SymbolManager::Get(newThunk)->generated = true;
+            Optimizer::EnterExternal(Optimizer::SymbolManager::Get(sym));
         }
     }
 }
@@ -579,8 +584,8 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                             {
                                 if (rv)
                                     break;
-                                if (s->tmpl)
-                                    rv = templatesearch((*tp)->templateParam->first->name, s->tmpl);
+                                if (s.tmpl)
+                                    rv = templatesearch((*tp)->templateParam->first->name, s.tmpl);
                             }
                             if (rv && rv->tp->templateParam->second->type == kw_typename)
                                 *tp = rv->tp->templateParam->second->byClass.val;
@@ -721,7 +726,8 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                             funcparams->sp->sb->attribs.inheritable.used = true;
                             funcparams->fcall = varNode(en_pc, funcparams->sp);
                             if (!MATCHKW(lex, openpa))
-                                funcparams->sp->sb->dumpInlineToFile = funcparams->sp->sb->attribs.inheritable.isInline;
+                                if (funcparams->sp->sb->attribs.inheritable.isInline)
+                                    InsertInline(funcparams->sp);
                         }
                         funcparams->functp = funcparams->sp->tp;
                         *tp = funcparams->sp->tp;
@@ -860,7 +866,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                         {
                             if (funcsp->sb->promotedToInline || Optimizer::cparams.prm_cplusplus)
                             {
-                                funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile =
+                                funcsp->sb->attribs.inheritable.isInline =
                                     funcsp->sb->promotedToInline = false;
                             }
                         }
@@ -1119,7 +1125,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                 (*tp)->sp = sym;
                 funcparams = Allocate<FUNCTIONCALL>();
                 funcparams->ascall = true;
-                sym = GetOverloadedFunction(tp, &funcparams->fcall, sym, nullptr, atp, true, false, true, flags);
+                sym = GetOverloadedFunction(tp, &funcparams->fcall, sym, nullptr, atp, true, false, flags);
                 if (sym)
                 {
                     sym->sb->throughClass = sym->sb->throughClass;
@@ -1455,7 +1461,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                         funcparams->thisptr = intNode(en_c_i, 0);
                         funcparams->thistp = MakeType(bt_pointer, *tp);
                         funcparams->ascall = true;
-                        match = GetOverloadedFunction(&tp1, &exp1, sp2, funcparams, nullptr, true, false, true, flags);
+                        match = GetOverloadedFunction(&tp1, &exp1, sp2, funcparams, nullptr, true, false, flags);
                         if (match)
                         {
                             funcparams->sp = match;
@@ -1754,7 +1760,7 @@ TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr)
                 {
                     if (sp->sb->templateLevel && !templateNestingCount && sp->templateParams)
                     {
-                        sp = TemplateFunctionInstantiate(sp, false, false);
+                        sp = TemplateFunctionInstantiate(sp, false);
                     }
                 }
             }
@@ -3540,7 +3546,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                                             MakeType(tp2, bt_lref, &stdpointer);
                                             exp = createTemporary(&tp2, exp);
                                         }
-                                        else if (!isref(sym->tp) || exp->type != en_func || (p1->tp->type == bt_aggregate || !isref(basetype(exp->v.func->sp->tp)->btp)))
+                                        else if (!isref(sym->tp) || exp->type != en_func || (p1->tp->type == bt_aggregate || (isfunction(exp->v.func->sp->tp) && !isref(basetype(exp->v.func->sp->tp)->btp))))
                                         {
                                             exp = createTemporary(sym->tp, exp);
                                         }
@@ -3881,9 +3887,9 @@ static std::list<TEMPLATEPARAMPAIR>* LiftTemplateParams(std::list<TEMPLATEPARAMP
                 TEMPLATEPARAMPAIR* rv1 = nullptr;
                 for (auto&& s : structSyms)
                 {
-                    if (s->tmpl)
+                    if (s.tmpl)
                     {
-                        for (auto&& tpl1 : *s->tmpl)
+                        for (auto&& tpl1 : *s.tmpl)
                         {
                             if (tpl1.first && !strcmp(tpl1.first->name, rv->back().first->name))
                             {
@@ -4080,7 +4086,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
             // it will be added after we select a member function that needs it.
             funcparams->ascall = true;
             SYMBOL* sym =
-                GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, nullptr, true, false, true, flags);
+                GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, nullptr, true, false, flags);
             if (sym)
             {
                 sym->sb->attribs.inheritable.used = true;
@@ -4123,7 +4129,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
             // note at this pointer the arglist does NOT have the this pointer,
             // it will be added after we select a member function that needs it.
             funcparams->ascall = true;
-            sym = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, nullptr, true, false, true, flags);
+            sym = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, nullptr, true, false, flags);
             if (isfunction(*tp))
             {
                 if (isstructured(basetype(*tp)->btp))
@@ -4204,10 +4210,12 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         }
         else
         {
+            /*
             operands = !ismember(funcparams->sp) && funcparams->thisptr && !addedThisPointer;
             if (!isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, funcparams->sp, funcsp, funcparams->thisptr,
                                         false))
                 errorsym(ERR_CANNOT_ACCESS, funcparams->sp);
+             */
         }
         if (sym)
         {
@@ -4457,9 +4465,10 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                 *tp = ResolveTemplateSelectors(basetype(*tp)->sp, basetype(*tp)->btp);
                 if (isref(*tp))
                 {
+                    auto reftype = (*tp)->type;
                     *tp = CopyType((*tp)->btp);
                     UpdateRootTypes(*tp);
-                    if ((*tp)->type == bt_rref)
+                    if (reftype == bt_rref)
                     {
                         (*tp)->rref = true;
                         (*tp)->lref = false;
@@ -8866,7 +8875,7 @@ LEXLIST* expression_throw(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** 
             INITLIST* arg3 = Allocate<INITLIST>();  // array size
             INITLIST* arg4 = Allocate<INITLIST>();  // constructor
             INITLIST* arg5 = Allocate<INITLIST>();  // exception block
-            SYMBOL* rtti = RTTIDumpType(tp1);
+            SYMBOL* rtti = RTTIDumpType(tp1, true);
             SYMBOL* cons = nullptr;
             if (isstructured(tp1))
             {
@@ -8875,8 +8884,6 @@ LEXLIST* expression_throw(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** 
                 {
                     if (cons->sb->defaulted)
                         createConstructor(basetype(tp1)->sp, cons);
-                    else if (cons->sb->deferredCompile)
-                        deferredCompileOne(cons);
                 }
             }
             sym = (SYMBOL*)basetype(sym->tp)->syms->front();
@@ -8915,6 +8922,7 @@ LEXLIST* expression_throw(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** 
             params->sp = sym;
             params->functp = sym->tp;
             params->fcall = varNode(en_pc, sym);
+            params->rttiType = rtti;
             *exp = exprNode(en_func, nullptr, nullptr);
             (*exp)->v.func = params;
         }

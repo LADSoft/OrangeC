@@ -150,7 +150,6 @@ static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, SymbolTable<SYMB
                     thisptr = inlineSymThisPtr.size() == 0 || inlineSymThisPtr.back() == nullptr || !hasRelativeThis(thisptr)
                               ? thisptr
                               : inlineGetThisPtr(thisptr);
-                    deref(&stdpointer, &dest);
                     TYPE* tr = nullptr;
                     
                     if (func->sb->isConstructor || func->sb->isDestructor ||
@@ -481,63 +480,51 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     // don't put unnecessary destructor calls into the final output file
     if (Optimizer::cparams.prm_debug && (!f->sp->sb->isDestructor || !f->sp->sb->parentClass->sb->pureDest))
     {
-        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (inlineSymList.find(f->sp) != inlineSymList.end())
     {
-        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     /* measure of complexity */
     if (!f->sp->sb->simpleFunc && (inlineTooComplex(f) || (funcsp->sb->endLine - funcsp->sb->startLine > 400)))
     {
-        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (f->fcall->type != en_pc)
     {
-        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (f->sp->sb->storage_class == sc_virtual)
     {
-        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (f->sp == theCurrentFunc)
     {
-        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (f->sp->sb->canThrow)
     {
-        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (f->sp->sb->xc && f->sp->sb->xc->xclab)
     {
-        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (f->sp->sb->allocaUsed)
     {
-        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (f->sp->sb->templateLevel && f->sp->templateParams && !f->sp->sb->instantiated)  // specialized)
     {
-        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (!f->sp->sb->inlineFunc.syms)
     {
-        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (!f->sp->sb->inlineFunc.stmt)
     {
-        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (f->sp->sb->dontinstantiate)
@@ -546,7 +533,6 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     }
     if (inlineSymThisPtr.size() >= MAX_INLINE_NESTING && !f->sp->sb->simpleFunc)
     {
-        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (f->thisptr)
@@ -563,7 +549,6 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
             }
             else
             {
-                f->sp->sb->dumpInlineToFile = true;
                 return nullptr;
             }
         }
@@ -572,20 +557,21 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
             ex = ex->left;
         if (ex->type == en_void)
         {
-            f->sp->sb->dumpInlineToFile = true;
             return nullptr;
         }
     }
     if (basetype(basetype(f->sp->tp)->btp)->type == bt_memberptr)  // DAL FIXED
     {
-        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     for (auto sp : *basetype(f->sp->tp)->syms)
     {
         if ((isstructured(sp->tp) && !basetype(sp->tp)->sp->sb->structuredAliasType) || basetype(sp->tp)->type == bt_memberptr)
         {
-            f->sp->sb->dumpInlineToFile = true;
+            return nullptr;
+        }
+        if (sp->tp->type == bt_ellipse)
+        {
             return nullptr;
         }
     }
@@ -600,7 +586,6 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 exp = exp->left;
             if (hasaincdec(fargs->exp) || (exp->type == en_thisref && exp->left->v.func->sp->sb->isConstructor) )
             {
-                f->sp->sb->dumpInlineToFile = true;
                 return nullptr;
             }
         }

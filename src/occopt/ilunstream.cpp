@@ -35,7 +35,6 @@
 #include "../occ/winmode.h"
 #include "../occ/be.h"
 #include <deque>
-#include <functional>
 #include <map>
 #include <unordered_map>
 #include <stdexcept>
@@ -83,13 +82,6 @@ inline static void UnstreamBlockType(int blockType, bool end)
         dothrow();
     }
 }
-template <class T>
-inline static void UnstreamBlock(T blockType, std::function<void(void)> blockRenderer)
-{
-    UnstreamBlockType(blockType, false);
-    blockRenderer();
-    UnstreamBlockType(blockType, true);
-}
 
 inline static int UnstreamIndex()
 {
@@ -133,20 +125,20 @@ static void UnstreamBuffer(void* buf, int len)
 }
 inline static void UnstreamIntValue(void* buf, int len)
 {
-    UnstreamBlock(STT_INT, [buf, len]() {
-        for (int i = len - 1; i >= 0; i--)
-            ((unsigned char*)buf)[i] = UnstreamByte();
-    });
+    UnstreamBlockType(STT_INT, false);
+    for (int i = len - 1; i >= 0; i--)
+        ((unsigned char*)buf)[i] = UnstreamByte();
+    UnstreamBlockType(STT_INT, true);
 }
 static void UnstreamFloatValue(FPF& fv)
 {
-    UnstreamBlock(STT_FLOAT, [&fv]() {
-        fv.type = UnstreamIndex();
-        fv.sign = UnstreamIndex();
-        UnstreamIntValue(&fv.exp, sizeof(int));
-        for (int i = 0; i < INTERNAL_FPF_PRECISION; i++)
-            fv.mantissa[i] = UnstreamIndex();
-    });
+    UnstreamBlockType(STT_FLOAT, false);
+    fv.type = UnstreamIndex();
+    fv.sign = UnstreamIndex();
+    UnstreamIntValue(&fv.exp, sizeof(int));
+    for (int i = 0; i < INTERNAL_FPF_PRECISION; i++)
+        fv.mantissa[i] = UnstreamIndex();
+    UnstreamBlockType(STT_FLOAT, true);
 }
 static Optimizer::SimpleSymbol* UnstreamSymbol();
 static LIST* UnstreamSymbolTable()
@@ -170,10 +162,10 @@ static BaseList* UnstreamBases()
     for (; i > 0; i--)
     {
         *p = Allocate<BaseList>();
-        UnstreamBlock(STT_BASE, [p]() {
-            (*p)->sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
-            (*p)->offset = UnstreamIndex();
-        });
+        UnstreamBlockType(STT_BASE, false);
+        (*p)->sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
+        (*p)->offset = UnstreamIndex();
+        UnstreamBlockType(STT_BASE, true);
         p = &(*p)->next;
     }
     return bases;
@@ -181,53 +173,54 @@ static BaseList* UnstreamBases()
 static Optimizer::SimpleType* UnstreamType()
 {
     Optimizer::SimpleType* rv = nullptr;
-    UnstreamBlock(STT_TYPE, [&rv]() {
-        st_type type = (st_type)UnstreamIndex();
-        if (type != st_none)
-        {
-            rv = Allocate<Optimizer::SimpleType>();
-            rv->type = type;
-            rv->size = UnstreamIndex();
-            UnstreamIntValue(&rv->sizeFromType, sizeof(int));
-            rv->bits = UnstreamIndex();
-            rv->startbit = UnstreamIndex();
-            rv->sp = (Optimizer::SimpleSymbol*)UnstreamIndex();
-            rv->flags = UnstreamIndex();
-            rv->btp = UnstreamType();
-            rv->structuredAlias = UnstreamType();
-        }
-    });
+    UnstreamBlockType(STT_TYPE, false);
+
+    st_type type = (st_type)UnstreamIndex();
+    if (type != st_none)
+    {
+        rv = Allocate<Optimizer::SimpleType>();
+        rv->type = type;
+        rv->size = UnstreamIndex();
+        UnstreamIntValue(&rv->sizeFromType, sizeof(int));
+        rv->bits = UnstreamIndex();
+        rv->startbit = UnstreamIndex();
+        rv->sp = (Optimizer::SimpleSymbol*)UnstreamIndex();
+        rv->flags = UnstreamIndex();
+        rv->btp = UnstreamType();
+        rv->structuredAlias = UnstreamType();
+    }
+    UnstreamBlockType(STT_TYPE, true);
     return rv;
 }
 static Optimizer::SimpleSymbol* UnstreamSymbol()
 {
     Optimizer::SimpleSymbol* rv = nullptr;
-    UnstreamBlock(STT_SYMBOL, [&rv]() {
-        int storage_class = UnstreamIndex();
-        if (storage_class != scc_none)
-        {
-            rv = Allocate<Optimizer::SimpleSymbol>();
-            rv->storage_class = (e_scc_type)storage_class;
-            rv->name = (const char*)UnstreamTextIndex();
-            rv->outputName = (const char*)UnstreamTextIndex();
-            rv->importfile = (const char*)UnstreamTextIndex();
-            rv->namespaceName = (const char*)UnstreamTextIndex();
-            rv->msil = (const char*)UnstreamTextIndex();
-            rv->i = UnstreamIndex();
-            rv->regmode = UnstreamIndex();
-            UnstreamIntValue(&rv->offset, 4);
-            rv->label = UnstreamIndex();
-            rv->templateLevel = UnstreamIndex();
-            UnstreamIntValue(&rv->flags, 8);
-            UnstreamIntValue(&rv->sizeFromType, sizeof(int));
-            rv->align = UnstreamIndex();
-            rv->size = UnstreamIndex();
-            rv->parentClass = (Optimizer::SimpleSymbol*)UnstreamIndex();
-            rv->tp = UnstreamType();
-            rv->syms = UnstreamSymbolTable();
-            rv->baseClasses = UnstreamBases();
-        }
-    });
+    UnstreamBlockType(STT_SYMBOL, false);
+    int storage_class = UnstreamIndex();
+    if (storage_class != scc_none)
+    {
+        rv = Allocate<Optimizer::SimpleSymbol>();
+        rv->storage_class = (e_scc_type)storage_class;
+        rv->name = (const char*)UnstreamTextIndex();
+        rv->outputName = (const char*)UnstreamTextIndex();
+        rv->importfile = (const char*)UnstreamTextIndex();
+        rv->namespaceName = (const char*)UnstreamTextIndex();
+        rv->msil = (const char*)UnstreamTextIndex();
+        rv->i = UnstreamIndex();
+        rv->regmode = UnstreamIndex();
+        UnstreamIntValue(&rv->offset, 4);
+        rv->label = UnstreamIndex();
+        rv->templateLevel = UnstreamIndex();
+        UnstreamIntValue(&rv->flags, 8);
+        UnstreamIntValue(&rv->sizeFromType, sizeof(int));
+        rv->align = UnstreamIndex();
+        rv->size = UnstreamIndex();
+        rv->parentClass = (Optimizer::SimpleSymbol*)UnstreamIndex();
+        rv->tp = UnstreamType();
+        rv->syms = UnstreamSymbolTable();
+        rv->baseClasses = UnstreamBases();
+    }
+    UnstreamBlockType(STT_SYMBOL, true);
     return rv;
 }
 static Optimizer::SimpleSymbol* GetTempref(int n, int size, int sizeFromType)
@@ -250,102 +243,102 @@ static Optimizer::SimpleSymbol* GetTempref(int n, int size, int sizeFromType)
 static Optimizer::SimpleExpression* UnstreamExpression()
 {
     Optimizer::SimpleExpression* rv = nullptr;
-    UnstreamBlock(STT_EXPRESSION, [&rv]() {
-        int type = UnstreamIndex();
-        if (type != se_none)
+    UnstreamBlockType(STT_EXPRESSION, false);
+    int type = UnstreamIndex();
+    if (type != se_none)
+    {
+        rv = Allocate<Optimizer::SimpleExpression>();
+        rv->type = (se_type)type;
+        rv->flags = UnstreamIndex();
+        UnstreamIntValue(&rv->sizeFromType, sizeof(int));
+        switch (rv->type)
         {
-            rv = Allocate<Optimizer::SimpleExpression>();
-            rv->type = (se_type)type;
-            rv->flags = UnstreamIndex();
-            UnstreamIntValue(&rv->sizeFromType, sizeof(int));
-            switch (rv->type)
-            {
-                case se_i:
-                case se_ui:
-                    UnstreamIntValue(&rv->i, 8);
-                    break;
-                case se_f:
-                case se_fi:
-                    UnstreamFloatValue(rv->f);
-                    break;
-                case se_fc:
-                    UnstreamFloatValue(rv->c.r);
-                    UnstreamFloatValue(rv->c.i);
-                    break;
-                case se_const:
-                case se_absolute:
-                case se_auto:
-                case se_global:
-                case se_threadlocal:
-                case se_pc:
-                case se_structelem:
-                    rv->sp = (Optimizer::SimpleSymbol*)UnstreamIndex();
-                    break;
-                case se_labcon:
-                    rv->i = UnstreamIndex();
-                    break;
-                case se_tempref: {
-                    int n = UnstreamIndex();
-                    int size = UnstreamIndex();
-                    int sizeFromType = UnstreamIndex();
-                    rv->sp = GetTempref(n, size, sizeFromType);
-                    break;
-                }
-                case se_msil_array_access:
-                    rv->msilArrayTP = UnstreamType();
-                    break;
-                case se_msil_array_init:
-                    rv->tp = UnstreamType();
-                    break;
-                case Optimizer::se_typeref:
-                    rv->tp = UnstreamType();
-                    break;
-                case se_string: {
-                    std::string val;
-                    int count = UnstreamIndex();
-                    val.resize(count, 0);
-                    for (auto&& c : val)
-                        c = UnstreamByte();
-                    rv->astring.str = (char*)Alloc(count);
-                    memcpy(rv->astring.str, val.c_str(), count);
-                    rv->astring.len = count;
-                    break;
-                }
+            case se_i:
+            case se_ui:
+                UnstreamIntValue(&rv->i, 8);
+                break;
+            case se_f:
+            case se_fi:
+                UnstreamFloatValue(rv->f);
+                break;
+            case se_fc:
+                UnstreamFloatValue(rv->c.r);
+                UnstreamFloatValue(rv->c.i);
+                break;
+            case se_const:
+            case se_absolute:
+            case se_auto:
+            case se_global:
+            case se_threadlocal:
+            case se_pc:
+            case se_structelem:
+                rv->sp = (Optimizer::SimpleSymbol*)UnstreamIndex();
+                break;
+            case se_labcon:
+                rv->i = UnstreamIndex();
+                break;
+            case se_tempref: {
+                int n = UnstreamIndex();
+                int size = UnstreamIndex();
+                int sizeFromType = UnstreamIndex();
+                rv->sp = GetTempref(n, size, sizeFromType);
+                break;
             }
-            rv->left = UnstreamExpression();
-            if (type == se_tempref)
-            {
-                rv->right = (Optimizer::SimpleExpression*)UnstreamIndex();
+            case se_msil_array_access:
+                rv->msilArrayTP = UnstreamType();
+                break;
+            case se_msil_array_init:
+                rv->tp = UnstreamType();
+                break;
+            case Optimizer::se_typeref:
+                rv->tp = UnstreamType();
+                break;
+            case se_string: {
+                std::string val;
+                int count = UnstreamIndex();
+                val.resize(count, 0);
+                for (auto&& c : val)
+                    c = UnstreamByte();
+                rv->astring.str = (char*)Alloc(count);
+                memcpy(rv->astring.str, val.c_str(), count);
+                rv->astring.len = count;
+                break;
             }
-            else
-            {
-                rv->right = UnstreamExpression();
-            }
-            rv->altData = UnstreamExpression();
         }
-    });
+        rv->left = UnstreamExpression();
+        if (type == se_tempref)
+        {
+            rv->right = (Optimizer::SimpleExpression*)UnstreamIndex();
+        }
+        else
+        {
+            rv->right = UnstreamExpression();
+        }
+        rv->altData = UnstreamExpression();
+    }
+    UnstreamBlockType(STT_EXPRESSION, true);
     return rv;
 }
 static BROWSEFILE* UnstreamBrowseFile()
 {
     BROWSEFILE* rv = Allocate<BROWSEFILE>();
-    UnstreamBlock(STT_BROWSEFILE, [&rv]() {
-        rv->name = (const char*)UnstreamTextIndex();
-        rv->filenum = UnstreamIndex();
-    });
+    UnstreamBlockType(STT_BROWSEFILE, false);
+    rv->name = (const char*)UnstreamTextIndex();
+    rv->filenum = UnstreamIndex();
+    UnstreamBlockType(STT_BROWSEFILE, true);
     return rv;
 }
 static BROWSEINFO* UnstreamBrowseInfo()
 {
     BROWSEINFO* rv = Allocate<BROWSEINFO>();
-    UnstreamBlock(STT_BROWSEINFO, [&rv]() {
-        rv->name = (const char*)UnstreamTextIndex();
-        rv->filenum = UnstreamIndex();
-        rv->type = UnstreamIndex();
-        rv->lineno = UnstreamIndex();
-        rv->charpos = UnstreamIndex();
-        rv->flags = UnstreamIndex();
-    });
+    UnstreamBlockType(STT_BROWSEINFO, false);
+    rv->name = (const char*)UnstreamTextIndex();
+    rv->filenum = UnstreamIndex();
+    rv->type = UnstreamIndex();
+    rv->lineno = UnstreamIndex();
+    rv->charpos = UnstreamIndex();
+    rv->flags = UnstreamIndex();
+    UnstreamBlockType(STT_BROWSEINFO, true);
     return rv;
 }
 
@@ -386,161 +379,161 @@ static OCODE* UnstreamAssemblyInstruction()
 static Optimizer::IMODE* UnstreamOperand()
 {
     Optimizer::IMODE* rv = Allocate<Optimizer::IMODE>();
-    UnstreamBlock(STT_OPERAND, [&rv]() {
-        rv->mode = (i_adr)UnstreamIndex();
-        rv->scale = UnstreamIndex();
-        rv->useindx = UnstreamIndex();
-        rv->size = UnstreamIndex();
-        rv->ptrsize = UnstreamIndex();
-        rv->startbit = UnstreamIndex();
-        rv->bits = UnstreamIndex();
-        rv->seg = UnstreamIndex();
-        rv->flags = UnstreamIndex();
-        rv->offset = UnstreamExpression();
-        rv->offset2 = UnstreamExpression();
-        rv->offset3 = UnstreamExpression();
-        if (rv->mode == i_ind && rv->offset && rv->offset->type == se_tempref)
-        {
-            rv->offset->sp->tp = UnstreamType();
-        }
-        rv->vararg = UnstreamExpression();
-    });
+    UnstreamBlockType(STT_OPERAND, false);
+    rv->mode = (i_adr)UnstreamIndex();
+    rv->scale = UnstreamIndex();
+    rv->useindx = UnstreamIndex();
+    rv->size = UnstreamIndex();
+    rv->ptrsize = UnstreamIndex();
+    rv->startbit = UnstreamIndex();
+    rv->bits = UnstreamIndex();
+    rv->seg = UnstreamIndex();
+    rv->flags = UnstreamIndex();
+    rv->offset = UnstreamExpression();
+    rv->offset2 = UnstreamExpression();
+    rv->offset3 = UnstreamExpression();
+    if (rv->mode == i_ind && rv->offset && rv->offset->type == se_tempref)
+    {
+        rv->offset->sp->tp = UnstreamType();
+    }
+    rv->vararg = UnstreamExpression();
+    UnstreamBlockType(STT_OPERAND, true);
     return rv;
 }
 
 static Optimizer::QUAD* UnstreamInstruction(FunctionData& fd)
 {
     Optimizer::QUAD* rv = Allocate<Optimizer::QUAD>();
-    UnstreamBlock(STT_INSTRUCTION, [&rv, &fd]() {
-        rv->dc.opcode = (i_ops)UnstreamIndex();
-        rv->block = currentBlock;
-        if (currentBlock)
-        {
-            currentBlock->tail->fwd = rv;
-            rv->back = currentBlock->tail;
+    UnstreamBlockType(STT_INSTRUCTION, false);
+    rv->dc.opcode = (i_ops)UnstreamIndex();
+    rv->block = currentBlock;
+    if (currentBlock)
+    {
+        currentBlock->tail->fwd = rv;
+        rv->back = currentBlock->tail;
 
-            if (rv->dc.opcode != i_block)
-                currentBlock->tail = rv;
-        }
-        if (rv->dc.opcode == i_passthrough)
+        if (rv->dc.opcode != i_block)
+            currentBlock->tail = rv;
+    }
+    if (rv->dc.opcode == i_passthrough)
+    {
+        rv->dc.left = (Optimizer::IMODE*)UnstreamAssemblyInstruction();
+    }
+    else
+    {
+        int i;
+        switch (rv->dc.opcode)
         {
-            rv->dc.left = (Optimizer::IMODE*)UnstreamAssemblyInstruction();
-        }
-        else
-        {
-            int i;
-            switch (rv->dc.opcode)
-            {
-                case i_icon:
-                    UnstreamIntValue(&rv->dc.v.i, 8);
-                    break;
-                case i_imcon:
-                case i_fcon:
-                    UnstreamFloatValue(rv->dc.v.f);
-                    break;
-                case i_cxcon:
-                    UnstreamFloatValue(rv->dc.v.c.r);
-                    UnstreamFloatValue(rv->dc.v.c.i);
-                    break;
-                case i_label:
-                case i_expressiontag:
-                    rv->dc.v.label = UnstreamIndex();
-                    break;
-                case i_line: {
-                    i = UnstreamIndex();
-                    if (i)
-                    {
-                        auto lineData = Allocate<LINEDATA>();
-                        lineData->fileindex = UnstreamIndex();
-                        lineData->lineno = UnstreamIndex();
-                        lineData->line = (const char*)UnstreamTextIndex();
-                        rv->dc.left = (Optimizer::IMODE*)lineData;
-                    }
-                }
+            case i_icon:
+                UnstreamIntValue(&rv->dc.v.i, 8);
                 break;
-                case i_block:
-                    currentBlock = Allocate<BLOCK>();
-                    rv->dc.v.label = currentBlock->blocknum = UnstreamIndex();
-                    currentBlock->head = currentBlock->tail = rv;
-                    rv->block = currentBlock;
-                    break;
-                case i_blockend:
-                    rv->dc.v.label = currentBlock->blocknum = UnstreamIndex();
-                    break;
-                case i_dbgblock:
-                case i_dbgblockend:
-                case i_livein:
-                    break;
-                case i_func: {
-                    rv->dc.v.label = UnstreamIndex();
-                    int n = UnstreamIndex();
-                    if (n)
-                        rv->dc.left = fd.imodeList[n - 1];
-                    break;
+            case i_imcon:
+            case i_fcon:
+                UnstreamFloatValue(rv->dc.v.f);
+                break;
+            case i_cxcon:
+                UnstreamFloatValue(rv->dc.v.c.r);
+                UnstreamFloatValue(rv->dc.v.c.i);
+                break;
+            case i_label:
+            case i_expressiontag:
+                rv->dc.v.label = UnstreamIndex();
+                break;
+            case i_line: {
+                i = UnstreamIndex();
+                if (i)
+                {
+                    auto lineData = Allocate<LINEDATA>();
+                    lineData->fileindex = UnstreamIndex();
+                    lineData->lineno = UnstreamIndex();
+                    lineData->line = (const char*)UnstreamTextIndex();
+                    rv->dc.left = (Optimizer::IMODE*)lineData;
                 }
-                case i_jc:
-                case i_jnc:
-                case i_jbe:
-                case i_ja:
-                case i_je:
-                case i_jne:
-                case i_jge:
-                case i_jg:
-                case i_jle:
-                case i_jl:
-                case i_swbranch:
-                case i_coswitch:
-                case i_goto:
-                case i_cmpblock:
-                    rv->dc.v.label = UnstreamIndex();
-                    // fallthrough
-                default:
-                    int n = UnstreamIndex();
-                    if (n)
-                        rv->dc.left = fd.imodeList[n - 1];
-                    n = UnstreamIndex();
-                    if (n)
-                        rv->dc.right = fd.imodeList[n - 1];
-                    break;
             }
-            int n = UnstreamIndex();
-            if (n)
-                rv->ans = fd.imodeList[n - 1];
-            rv->altsp = (Optimizer::SimpleSymbol*)UnstreamIndex();
-            rv->alttp = UnstreamType();
-            i = UnstreamIndex();
-            ArgList** p = (ArgList**)&rv->altargs;
-            for (; i; i--)
-            {
-                *p = Allocate<ArgList>();
-                (*p)->tp = UnstreamType();
-                if (UnstreamByte())
-                    (*p)->exp = UnstreamExpression();
-                p = &(*p)->next;
+            break;
+            case i_block:
+                currentBlock = Allocate<BLOCK>();
+                rv->dc.v.label = currentBlock->blocknum = UnstreamIndex();
+                currentBlock->head = currentBlock->tail = rv;
+                rv->block = currentBlock;
+                break;
+            case i_blockend:
+                rv->dc.v.label = currentBlock->blocknum = UnstreamIndex();
+                break;
+            case i_dbgblock:
+            case i_dbgblockend:
+            case i_livein:
+                break;
+            case i_func: {
+                rv->dc.v.label = UnstreamIndex();
+                int n = UnstreamIndex();
+                if (n)
+                    rv->dc.left = fd.imodeList[n - 1];
+                break;
             }
-            rv->ansColor = UnstreamIndex();
-            rv->leftColor = UnstreamIndex();
-            rv->rightColor = UnstreamIndex();
-            rv->scaleColor = UnstreamIndex();
-            rv->flags = UnstreamIndex();
-            rv->definition = UnstreamIndex();
-            rv->available = UnstreamIndex();
-            rv->sourceindx = UnstreamIndex();
-            rv->copy = UnstreamIndex();
-            rv->retcount = UnstreamIndex();
-            rv->sehMode = UnstreamIndex();
-            rv->fastcall = UnstreamIndex();
-            rv->oldmode = UnstreamIndex();
-            rv->novalue = UnstreamIndex();
-            rv->temps = UnstreamIndex();
-            rv->precolored = UnstreamIndex();
-            rv->moved = UnstreamIndex();
-            rv->livein = UnstreamIndex();
-            rv->liveRegs = UnstreamIndex();
-            if (rv->alwayslive)
-                rv->block->alwayslive = true;
+            case i_jc:
+            case i_jnc:
+            case i_jbe:
+            case i_ja:
+            case i_je:
+            case i_jne:
+            case i_jge:
+            case i_jg:
+            case i_jle:
+            case i_jl:
+            case i_swbranch:
+            case i_coswitch:
+            case i_goto:
+            case i_cmpblock:
+                rv->dc.v.label = UnstreamIndex();
+                // fallthrough
+            default:
+                int n = UnstreamIndex();
+                if (n)
+                    rv->dc.left = fd.imodeList[n - 1];
+                n = UnstreamIndex();
+                if (n)
+                    rv->dc.right = fd.imodeList[n - 1];
+                break;
         }
-    });
+        int n = UnstreamIndex();
+        if (n)
+            rv->ans = fd.imodeList[n - 1];
+        rv->altsp = (Optimizer::SimpleSymbol*)UnstreamIndex();
+        rv->alttp = UnstreamType();
+        i = UnstreamIndex();
+        ArgList** p = (ArgList**)&rv->altargs;
+        for (; i; i--)
+        {
+            *p = Allocate<ArgList>();
+            (*p)->tp = UnstreamType();
+            if (UnstreamByte())
+                (*p)->exp = UnstreamExpression();
+            p = &(*p)->next;
+        }
+        rv->ansColor = UnstreamIndex();
+        rv->leftColor = UnstreamIndex();
+        rv->rightColor = UnstreamIndex();
+        rv->scaleColor = UnstreamIndex();
+        rv->flags = UnstreamIndex();
+        rv->definition = UnstreamIndex();
+        rv->available = UnstreamIndex();
+        rv->sourceindx = UnstreamIndex();
+        rv->copy = UnstreamIndex();
+        rv->retcount = UnstreamIndex();
+        rv->sehMode = UnstreamIndex();
+        rv->fastcall = UnstreamIndex();
+        rv->oldmode = UnstreamIndex();
+        rv->novalue = UnstreamIndex();
+        rv->temps = UnstreamIndex();
+        rv->precolored = UnstreamIndex();
+        rv->moved = UnstreamIndex();
+        rv->livein = UnstreamIndex();
+        rv->liveRegs = UnstreamIndex();
+        if (rv->alwayslive)
+            rv->block->alwayslive = true;
+    }
+    UnstreamBlockType(STT_INSTRUCTION, true);
     return rv;
 }
 static void UnstreamSymbolList(std::vector<Optimizer::SimpleSymbol*>& list)
@@ -572,101 +565,110 @@ static void UnstreamHeader()
 }
 static void UnstreamParams()
 {
-    UnstreamBlock(SBT_PARAMS, []() { UnstreamBuffer(&cparams, sizeof(cparams)); });
+    UnstreamBlockType(SBT_PARAMS, false);
+    UnstreamBuffer(&cparams, sizeof(cparams));
+    UnstreamBlockType(SBT_PARAMS, true);
 }
 static void UnstreamXParams()
 {
-    UnstreamBlock(SBT_XPARAMS, []() {
-        UnstreamString(compilerName);
-        UnstreamString(intermediateName);
-        UnstreamString(backendName);
-        showBanner = UnstreamIndex();
-        assembling = UnstreamIndex();
-        dataAlign = UnstreamIndex();
-        bssAlign = UnstreamIndex();
-        constAlign = UnstreamIndex();
-        nextLabel = UnstreamIndex();
-        pinning = !!UnstreamIndex();
-        msilstrings = !!UnstreamIndex();
-        delegateforfuncptr = !!UnstreamIndex();
-        initializeScalars = !!UnstreamIndex();
-        registersAssigned = UnstreamIndex();
-        UnstreamString(prm_assemblerSpecifier);
-        UnstreamString(prm_libPath);
-        UnstreamString(prm_include);
-        std::string temp;
-        UnstreamString(outputFileName);
-        UnstreamString(assemblerFileExtension);
-        UnstreamString(prm_OutputDefFile);
-        UnstreamString(temp);
-        pinvoke_dll = litlate(temp.c_str());
-        UnstreamString(prm_snkKeyFile);
-        UnstreamString(prm_assemblyVersion);
-        UnstreamString(prm_namespace_and_class);
-        UnstreamStringList(inputFiles);
-        UnstreamStringList(backendFiles);
-        UnstreamStringList(libIncludes);
-        UnstreamStringList(toolArgs);
-        UnstreamStringList(prm_Using);
-        int i = UnstreamIndex();
-        for (; i; i--)
-        {
-            std::string key, val;
-            UnstreamString(key);
-            UnstreamString(val);
-            bePragma[key] = val;
-        }
-    });
+    UnstreamBlockType(SBT_XPARAMS, false);
+    UnstreamString(compilerName);
+    UnstreamString(intermediateName);
+    UnstreamString(backendName);
+    showBanner = UnstreamIndex();
+    assembling = UnstreamIndex();
+    dataAlign = UnstreamIndex();
+    bssAlign = UnstreamIndex();
+    constAlign = UnstreamIndex();
+    nextLabel = UnstreamIndex();
+    pinning = !!UnstreamIndex();
+    msilstrings = !!UnstreamIndex();
+    delegateforfuncptr = !!UnstreamIndex();
+    initializeScalars = !!UnstreamIndex();
+    registersAssigned = UnstreamIndex();
+    UnstreamString(prm_assemblerSpecifier);
+    UnstreamString(prm_libPath);
+    UnstreamString(prm_include);
+    std::string temp;
+    UnstreamString(outputFileName);
+    UnstreamString(assemblerFileExtension);
+    UnstreamString(prm_OutputDefFile);
+    UnstreamString(temp);
+    pinvoke_dll = litlate(temp.c_str());
+    UnstreamString(prm_snkKeyFile);
+    UnstreamString(prm_assemblyVersion);
+    UnstreamString(prm_namespace_and_class);
+    UnstreamStringList(inputFiles);
+    UnstreamStringList(backendFiles);
+    UnstreamStringList(libIncludes);
+    UnstreamStringList(toolArgs);
+    UnstreamStringList(prm_Using);
+    int i = UnstreamIndex();
+    for (; i; i--)
+    {
+        std::string key, val;
+        UnstreamString(key);
+        UnstreamString(val);
+        bePragma[key] = val;
+    }
+    UnstreamBlockType(SBT_XPARAMS, true);
 }
 static void UnstreamGlobals()
 {
-    UnstreamBlock(SBT_GLOBALSYMS, []() { UnstreamSymbolList(globalCache); });
+    UnstreamBlockType(SBT_GLOBALSYMS, false);
+    UnstreamSymbolList(globalCache);
+    UnstreamBlockType(SBT_GLOBALSYMS, true);
 }
 static void UnstreamExternals()
 {
-    UnstreamBlock(SBT_EXTERNALS, []() { UnstreamSymbolList(externals); });
+    UnstreamBlockType(SBT_EXTERNALS, false);
+    UnstreamSymbolList(externals);
+    UnstreamBlockType(SBT_EXTERNALS, true);
 }
 static void UnstreamTypes()
 {
-    UnstreamBlock(SBT_TYPES, []() {
-        UnstreamSymbolList(typeSymbols);
-        UnstreamSymbolList(typedefs);
-    });
+    UnstreamBlockType(SBT_TYPES, false);
+    UnstreamSymbolList(typeSymbols);
+    UnstreamSymbolList(typedefs);
+    UnstreamBlockType(SBT_TYPES, true);
 }
 static void UnstreamMSILProperties()
 {
-    UnstreamBlock(SBT_MSILPROPS, []() {
-        int i = UnstreamIndex();
-        for (; i; i--)
-        {
-            MsilProperty p;
-            p.prop = (Optimizer::SimpleSymbol*)UnstreamIndex();
-            p.getter = (Optimizer::SimpleSymbol*)UnstreamIndex();
-            p.setter = (Optimizer::SimpleSymbol*)UnstreamIndex();
-            msilProperties.push_back(p);
-        }
-    });
+    UnstreamBlockType(SBT_MSILPROPS, false);
+    int i = UnstreamIndex();
+    for (; i; i--)
+    {
+        MsilProperty p;
+        p.prop = (Optimizer::SimpleSymbol*)UnstreamIndex();
+        p.getter = (Optimizer::SimpleSymbol*)UnstreamIndex();
+        p.setter = (Optimizer::SimpleSymbol*)UnstreamIndex();
+        msilProperties.push_back(p);
+    }
+    UnstreamBlockType(SBT_MSILPROPS, true);
 }
 static void UnstreamTypedefs()
 {
-    UnstreamBlock(SBT_TYPEDEFS, []() { UnstreamSymbolList(typedefs); });
+    UnstreamBlockType(SBT_TYPEDEFS, false);
+    UnstreamSymbolList(typedefs);
+    UnstreamBlockType(SBT_TYPEDEFS, true);
 }
 static void UnstreamBrowse()
 {
-    UnstreamBlock(SBT_BROWSEFILES, []() {
-        int i = UnstreamIndex();
-        for (; i; i--)
-        {
-            browseFiles.push_back(UnstreamBrowseFile());
-        }
-    });
-    UnstreamBlock(SBT_BROWSEINFO, []() {
-        int i = UnstreamIndex();
-        for (; i; i--)
-        {
-            browseInfo.push_back(UnstreamBrowseInfo());
-        }
-    });
+    UnstreamBlockType(SBT_BROWSEFILES, false);
+    int i = UnstreamIndex();
+    for (; i; i--)
+    {
+        browseFiles.push_back(UnstreamBrowseFile());
+    }
+    UnstreamBlockType(SBT_BROWSEFILES, true);
+
+    UnstreamBlockType(SBT_BROWSEINFO, false);
+    i = UnstreamIndex();
+    for (; i; i--)
+    {
+        browseInfo.push_back(UnstreamBrowseInfo());
+    }
+    UnstreamBlockType(SBT_BROWSEINFO, true);
 }
 static Optimizer::QUAD* UnstreamInstructions(FunctionData& fd)
 {
@@ -687,13 +689,13 @@ static Optimizer::QUAD* UnstreamInstructions(FunctionData& fd)
 }
 static void UnstreamIModes(FunctionData& fd)
 {
-    UnstreamBlock(SBT_IMODES, [&fd]() {
-        int len = UnstreamIndex();
-        for (int i = 0; i < len; i++)
-        {
-            fd.imodeList.push_back(UnstreamOperand());
-        }
-    });
+    UnstreamBlockType(SBT_IMODES, false);
+    int len = UnstreamIndex();
+    for (int i = 0; i < len; i++)
+    {
+        fd.imodeList.push_back(UnstreamOperand());
+    }
+    UnstreamBlockType(SBT_IMODES, true);
 }
 static void UnstreamTemps()
 {
@@ -762,165 +764,165 @@ static FunctionData* UnstreamFunc()
 static void UnstreamData()
 {
     temps.clear();
-    UnstreamBlock(SBT_DATA, []() {
-        int len = UnstreamIndex();
-        for (int i = 0; i < len; i++)
+    UnstreamBlockType(SBT_DATA, false);
+    int len = UnstreamIndex();
+    for (int i = 0; i < len; i++)
+    {
+        BaseData* data = Allocate<BaseData>();
+        baseData.push_back(data);
+        data->type = (DataType)UnstreamIndex();
+        UnstreamBlockType(data->type, false);
+        switch (data->type)
         {
-            BaseData* data = Allocate<BaseData>();
-            baseData.push_back(data);
-            data->type = (DataType)UnstreamIndex();
-            UnstreamBlock(data->type, [data]() {
-                switch (data->type)
+            case DT_NONE:
+                break;
+            case DT_SEG:
+            case DT_SEGEXIT:
+                data->i = UnstreamIndex();
+                break;
+            case DT_DEFINITION:
+                data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
+                data->symbol.i = UnstreamIndex();
+                break;
+            case DT_LABELDEFINITION:
+                data->i = UnstreamIndex();
+                break;
+            case DT_RESERVE:
+                data->i = UnstreamIndex();
+                break;
+            case DT_SYM:
+                data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
+                data->symbol.i = UnstreamIndex();
+                break;
+            case DT_SRREF:
+                data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
+                data->symbol.i = UnstreamIndex();
+                break;
+            case DT_PCREF:
+                data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
+                break;
+            case DT_FUNCREF:
+                data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
+                data->symbol.i = UnstreamIndex();
+                break;
+            case DT_LABEL:
+                data->i = UnstreamIndex();
+                break;
+            case DT_LABDIFFREF:
+                data->diff.l1 = UnstreamIndex();
+                data->diff.l2 = UnstreamIndex();
+                break;
+            case DT_STRING: {
+                bool instring = false;
+                data->astring.i = UnstreamIndex();
+                data->astring.str = (char*)Alloc(data->astring.i + 1);
+                for (int i = 0; i < data->astring.i; i++)
                 {
-                    case DT_NONE:
-                        break;
-                    case DT_SEG:
-                    case DT_SEGEXIT:
-                        data->i = UnstreamIndex();
-                        break;
-                    case DT_DEFINITION:
-                        data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
-                        data->symbol.i = UnstreamIndex();
-                        break;
-                    case DT_LABELDEFINITION:
-                        data->i = UnstreamIndex();
-                        break;
-                    case DT_RESERVE:
-                        data->i = UnstreamIndex();
-                        break;
-                    case DT_SYM:
-                        data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
-                        data->symbol.i = UnstreamIndex();
-                        break;
-                    case DT_SRREF:
-                        data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
-                        data->symbol.i = UnstreamIndex();
-                        break;
-                    case DT_PCREF:
-                        data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
-                        break;
-                    case DT_FUNCREF:
-                        data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
-                        data->symbol.i = UnstreamIndex();
-                        break;
-                    case DT_LABEL:
-                        data->i = UnstreamIndex();
-                        break;
-                    case DT_LABDIFFREF:
-                        data->diff.l1 = UnstreamIndex();
-                        data->diff.l2 = UnstreamIndex();
-                        break;
-                    case DT_STRING: {
-                        bool instring = false;
-                        data->astring.i = UnstreamIndex();
-                        data->astring.str = (char*)Alloc(data->astring.i + 1);
-                        for (int i = 0; i < data->astring.i; i++)
-                        {
-                            data->astring.str[i] = UnstreamByte();
-                        }
-                    }
-                    break;
-                    case DT_BIT:
-                        break;
-                    case DT_BOOL:
-                        UnstreamIntValue(&data->i, 1);
-                        break;
-                    case DT_BYTE:
-                        UnstreamIntValue(&data->i, 1);
-                        break;
-                    case DT_USHORT:
-                        UnstreamIntValue(&data->i, 2);
-                        break;
-                    case DT_UINT:
-                        UnstreamIntValue(&data->i, 4);
-                        break;
-                    case DT_ULONG:
-                        UnstreamIntValue(&data->i, 8);
-                        break;
-                    case DT_ULONGLONG:
-                        UnstreamIntValue(&data->i, 8);
-                        break;
-                    case DT_16:
-                        UnstreamIntValue(&data->i, 2);
-                        break;
-                    case DT_32:
-                        UnstreamIntValue(&data->i, 4);
-                        break;
-                    case DT_ENUM:
-                        UnstreamIntValue(&data->i, 4);
-                        break;
-                    case DT_FLOAT:
-                        UnstreamFloatValue(data->f);
-                        break;
-                    case DT_DOUBLE:
-                        UnstreamFloatValue(data->f);
-                        break;
-                    case DT_LDOUBLE:
-                        UnstreamFloatValue(data->f);
-                        break;
-                    case DT_CFLOAT:
-                        UnstreamFloatValue(data->c.r);
-                        UnstreamFloatValue(data->c.i);
-                        break;
-                    case DT_CDOUBLE:
-                        UnstreamFloatValue(data->c.r);
-                        UnstreamFloatValue(data->c.i);
-                        break;
-                    case DT_CLONGDOUBLE:
-                        UnstreamFloatValue(data->c.r);
-                        UnstreamFloatValue(data->c.i);
-                        break;
-                    case DT_ADDRESS:
-                        UnstreamIntValue(&data->i, 8);
-                        break;
-                    case DT_VIRTUAL:
-                        data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
-                        data->symbol.i = UnstreamIndex();
-                        break;
-                    case DT_ENDVIRTUAL:
-                        data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
-                        break;
-                    case DT_ALIGN:
-                        data->i = UnstreamIndex();
-                        break;
-                    case DT_VTT:
-                        data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
-                        UnstreamIntValue(&data->symbol.i, sizeof(data->symbol.i));
-                        break;
-                    case DT_IMPORTTHUNK:
-                        data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
-                        break;
-                    case DT_VC1:
-                        data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
-                        break;
-                    case DT_AUTOREF:
-                        data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
-                        data->symbol.i = UnstreamIndex();
-                        break;
-                    case DT_FUNC:
-                        data->funcData = UnstreamFunc();
-                        break;
+                    data->astring.str[i] = UnstreamByte();
                 }
-            });
+            }
+            break;
+            case DT_BIT:
+                break;
+            case DT_BOOL:
+                UnstreamIntValue(&data->i, 1);
+                break;
+            case DT_BYTE:
+                UnstreamIntValue(&data->i, 1);
+                break;
+            case DT_USHORT:
+                UnstreamIntValue(&data->i, 2);
+                break;
+            case DT_UINT:
+                UnstreamIntValue(&data->i, 4);
+                break;
+            case DT_ULONG:
+                UnstreamIntValue(&data->i, 8);
+                break;
+            case DT_ULONGLONG:
+                UnstreamIntValue(&data->i, 8);
+                break;
+            case DT_16:
+                UnstreamIntValue(&data->i, 2);
+                break;
+            case DT_32:
+                UnstreamIntValue(&data->i, 4);
+                break;
+            case DT_ENUM:
+                UnstreamIntValue(&data->i, 4);
+                break;
+            case DT_FLOAT:
+                UnstreamFloatValue(data->f);
+                break;
+            case DT_DOUBLE:
+                UnstreamFloatValue(data->f);
+                break;
+            case DT_LDOUBLE:
+                UnstreamFloatValue(data->f);
+                break;
+            case DT_CFLOAT:
+                UnstreamFloatValue(data->c.r);
+                UnstreamFloatValue(data->c.i);
+                break;
+            case DT_CDOUBLE:
+                UnstreamFloatValue(data->c.r);
+                UnstreamFloatValue(data->c.i);
+                break;
+            case DT_CLONGDOUBLE:
+                UnstreamFloatValue(data->c.r);
+                UnstreamFloatValue(data->c.i);
+                break;
+            case DT_ADDRESS:
+                UnstreamIntValue(&data->i, 8);
+                break;
+            case DT_VIRTUAL:
+                data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
+                data->symbol.i = UnstreamIndex();
+                break;
+            case DT_ENDVIRTUAL:
+                data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
+                break;
+            case DT_ALIGN:
+                data->i = UnstreamIndex();
+                break;
+            case DT_VTT:
+                data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
+                UnstreamIntValue(&data->symbol.i, sizeof(data->symbol.i));
+                break;
+            case DT_IMPORTTHUNK:
+                data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
+                break;
+            case DT_VC1:
+                data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
+                break;
+            case DT_AUTOREF:
+                data->symbol.sym = (Optimizer::SimpleSymbol*)UnstreamIndex();
+                data->symbol.i = UnstreamIndex();
+                break;
+            case DT_FUNC:
+                data->funcData = UnstreamFunc();
+                break;
         }
-    });
+        UnstreamBlockType(data->type, true);
+    }
+    UnstreamBlockType(SBT_DATA, true);
 }
 void ReadText(std::map<int, std::string>& texts)
 {
-    UnstreamBlock(SBT_TEXT, [&texts]() {
-        textOffset = UnstreamIndex();
-        for (int i = 1; i < textOffset;)
-        {
-            int len = UnstreamIndex();
-            std::string val;
-            val.resize(len, 0);
+    UnstreamBlockType(SBT_TEXT, false);
+    textOffset = UnstreamIndex();
+    for (int i = 1; i < textOffset;)
+    {
+        int len = UnstreamIndex();
+        std::string val;
+        val.resize(len, 0);
 
-            for (auto&& c : val)
-                c = UnstreamByte();
-            texts[i] = val;
-            i += len;
-        }
-    });
+        for (auto&& c : val)
+            c = UnstreamByte();
+        texts[i] = val;
+        i += len;
+    }
+    UnstreamBlockType(SBT_TEXT, true);
 }
 static Optimizer::SimpleSymbol* SymbolName(Optimizer::SimpleSymbol* selection, std::vector<Optimizer::SimpleSymbol*>* table)
 {

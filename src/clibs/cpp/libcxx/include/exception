@@ -109,6 +109,7 @@ extern int uncaught_exceptions() noexcept;
       {
           decrement();
           exc = nullptr;
+          return *this;
       }
       friend bool operator!(const exception_ptr& e);
       friend bool operator==(const exception_ptr& left, const exception_ptr& right);

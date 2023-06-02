@@ -75,7 +75,7 @@ struct __thrownExceptions
             auto rv = this->prev;
             if (rv)
             	rv->next = nullptr;
-            this->~exception_ptr();
+            (&exception)->~exception_ptr();
             free(this);
             return rv;
         }

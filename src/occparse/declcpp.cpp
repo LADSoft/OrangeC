@@ -59,6 +59,8 @@
 #include "iinline.h"
 #include "symtab.h"
 #include "ListFactory.h"
+#include "inline.h"
+
 namespace CompletionCompiler
 {
 void ccInsertUsing(Parser::SYMBOL* ns, Parser::SYMBOL* parentns, const char* file, int line);
@@ -4461,46 +4463,9 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
             }
             auto newFunc = makeID(sc_global, &stdfunc, nullptr, litlate((std::string(decl->sb->decoratedName) + "_dest").c_str()));
             SetLinkerNames(newFunc, lk_c);
-            auto body = decl->sb->dest->front()->exp;
-
-            Optimizer::temporarySymbols.clear();
-            Optimizer::functionVariables.clear();
-            structret_imode = 0;
-            Optimizer::tempCount = 0;
-            Optimizer::blockCount = 0;
-            Optimizer::blockMax = 0;
-            Optimizer::exitBlock = 0;
-            consIndex = 0;
-            retcount = 0;
-            auto oldCurrentFunction = currentFunction;
-            currentFunction = Optimizer::SymbolManager::Get(newFunc);
-            currentFunction->initialized = true;
-
-            newFunc->sb->attribs.inheritable.linkage4 = lk_virtual;
-            iexpr_func_init();
-            gen_func(varNode(en_global, newFunc), 1);
-            Optimizer::gen_virtual(currentFunction, false);
-            Optimizer::addblock(-1);
-            Optimizer::gen_icode(Optimizer::i_prologue, 0, 0, 0);
-
-            codeLabelOffset = Optimizer::nextLabel - INT_MIN;
-            Optimizer::nextLabel += 2;
-
-            Optimizer::gen_label(Optimizer::nextLabel - 2);
-            noinline++;
             optimize_for_constants(&decl->sb->dest->front()->exp);
-            gen_expr(newFunc, decl->sb->dest->front()->exp, F_NOVALUE, ISZ_UINT);
-            noinline--;
-            Optimizer::gen_label(Optimizer::nextLabel - 1);
-
-            Optimizer::gen_icode(Optimizer::i_epilogue, 0, 0, 0);
-
-            gen_icode(Optimizer::i_ret, nullptr, Optimizer::make_immed(ISZ_UINT, 0), nullptr);
-
-            Optimizer::AddFunction();
-            Optimizer::gen_endvirtual(currentFunction);
-            Optimizer::intermed_head = nullptr;
-            currentFunction = oldCurrentFunction;
+            auto body = decl->sb->dest->front()->exp;
+            InsertLocalStaticUnInitializer(newFunc, body);
 
             EXPRESSION* callexp = exprNode(en_func, nullptr, nullptr);
             callexp->v.func = Allocate<FUNCTIONCALL>();

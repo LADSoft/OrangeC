@@ -48,6 +48,9 @@
 #include "symtab.h"
 #include "ListFactory.h"
 #include "rtti.h"
+#include "iexpr.h"
+#include "iblock.h"
+#include "iinline.h"
 
 namespace Parser
 {
@@ -57,6 +60,7 @@ static std::unordered_map<SYMBOL *, SYMBOL*> contextMap;
 static SYMBOL* inlinesp_list[MAX_INLINE_NESTING];
 static int PushInline(SYMBOL* sym, bool traceback);
 static std::list<std::tuple<int, Optimizer::SimpleSymbol*, int, int>> inlineMemberPtrData;
+static std::list<std::pair<SYMBOL*, EXPRESSION *>> inlineLocalUninitializers;
 
 static int inlinesp_count;
 static SymbolTable<SYMBOL>* vc1Thunks;
@@ -84,6 +88,8 @@ static void GenInline(SYMBOL* sym);
 static bool inSearch(SYMBOL* sp) { return didInlines.find(sp->sb->decoratedName) != didInlines.end(); }
 static void inInsert(SYMBOL* sym) { didInlines.insert(sym->sb->decoratedName); }
 static void UndoPreviousCodegen(SYMBOL* sym) {}
+static void DumpInlineLocalUninitializer(std::pair<SYMBOL*, EXPRESSION *>& uninit);
+
 void dumpInlines(void)
 {
     if (IsCompiler())
@@ -91,7 +97,6 @@ void dumpInlines(void)
         if (!TotalErrors())
         {
             bool done;
-            Optimizer::cseg();
             do
             {
                 done = true;
@@ -182,6 +187,11 @@ void dumpInlines(void)
                         }
                     }
                 }
+                for (auto&& local : inlineLocalUninitializers)
+                {
+                     DumpInlineLocalUninitializer(local);
+                }
+                inlineLocalUninitializers.clear();
             } while (!done);
             for (auto sym : inlineData)
             {
@@ -348,6 +358,47 @@ void dumpMemberPointers()
          dumpMemberPointer(p);
     }
 }
+static void DumpInlineLocalUninitializer(std::pair<SYMBOL*, EXPRESSION *>& uninit)
+{
+    auto newFunc = uninit.first;
+    auto body = uninit.second;
+    Optimizer::temporarySymbols.clear();
+    Optimizer::functionVariables.clear();
+    structret_imode = 0;
+    Optimizer::tempCount = 0;
+    Optimizer::blockCount = 0;
+    Optimizer::blockMax = 0;
+    Optimizer::exitBlock = 0;
+    consIndex = 0;
+    retcount = 0;
+    currentFunction = Optimizer::SymbolManager::Get(newFunc);
+    currentFunction->initialized = true;
+    newFunc->sb->attribs.inheritable.linkage4 = lk_virtual;
+    Optimizer::cseg();
+
+    iexpr_func_init();
+    gen_func(varNode(en_global, newFunc), 1);
+    Optimizer::gen_virtual(currentFunction, false);
+    Optimizer::addblock(-1);
+    Optimizer::gen_icode(Optimizer::i_prologue, 0, 0, 0);
+    codeLabelOffset = Optimizer::nextLabel - INT_MIN;
+    Optimizer::nextLabel += 2;
+
+    Optimizer::gen_label(Optimizer::nextLabel - 2);
+    noinline++;
+    gen_expr(newFunc, body, F_NOVALUE, ISZ_UINT);
+    noinline--;
+    Optimizer::gen_label(Optimizer::nextLabel - 1);
+
+    Optimizer::gen_icode(Optimizer::i_epilogue, 0, 0, 0);
+
+    gen_icode(Optimizer::i_ret, nullptr, Optimizer::make_immed(ISZ_UINT, 0), nullptr);
+
+    Optimizer::AddFunction();
+    Optimizer::gen_endvirtual(currentFunction);
+    Optimizer::intermed_head = nullptr;
+    currentFunction = nullptr;
+}
 SYMBOL* getvc1Thunk(int offset)
 {
     char name[256];
@@ -495,6 +546,10 @@ void InsertMemberPointer(int label, Optimizer::SimpleSymbol* sym, int offset1, i
         dumpMemberPointer(value);
     else
         inlineMemberPtrData.push_back(value);
+}
+void InsertLocalStaticUnInitializer(SYMBOL* func, EXPRESSION* body)
+{
+	inlineLocalUninitializers.push_back(std::pair<SYMBOL*, EXPRESSION*>(func, body));
 }
 /*-------------------------------------------------------------------------*/
 

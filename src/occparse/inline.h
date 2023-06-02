@@ -38,6 +38,7 @@ void InsertInline(SYMBOL* sym);
 void InsertInlineData(SYMBOL* sym);
 void InsertRttiType(SYMBOL *tp);
 void InsertMemberPointer(int label, Optimizer::SimpleSymbol *sym, int offset1, int offset2); EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval);
+void InsertLocalStaticUnInitializer(SYMBOL* func, EXPRESSION* body);
 std::list<STATEMENT*>* inlinestmt(std::list<STATEMENT*>* blocks);
 void SetupVariables(SYMBOL* sym);
 EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp);

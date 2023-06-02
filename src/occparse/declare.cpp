@@ -6831,7 +6831,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                     lex = getDeferredData(lex, &sp->sb->deferredCompile, true);
                                     Optimizer::SymbolManager::Get(sp);
                                     sp->sb->attribs.inheritable.linkage4 = lk_virtual;
-                                    InsertInline(sp);
+                                    if (!sp->sb->attribs.inheritable.isInline)
+                                        InsertInline(sp);
                                 }
                                 else
                                 {
@@ -6865,7 +6866,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                             sp = TemplateFunctionInstantiate(sp, false);
                                             sp->sb->specialized2 = true;
                                         }
-                                        if (sp->templateParams && sp->templateParams->size() == 1)
+                                        if (sp->templateParams && sp->templateParams->size() == 1 && (!templateNestingCount || instantiatingTemplate))
                                             InsertInline(sp);
                                     }
                                     else

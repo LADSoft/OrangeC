@@ -1206,11 +1206,13 @@ static void ResolveNames(std::map<int, std::string>& texts)
         ResolveSymbol(v.getter, texts, globalCache);
         ResolveSymbol(v.setter, texts, globalCache);
     }
+    /*
     for (auto&& t : temps)
     {
         if (t)
             ResolveType(t->tp, texts, typeSymbols);
     }
+    */
 }
 bool InputIntermediate(SharedMemory* inputMem)
 {

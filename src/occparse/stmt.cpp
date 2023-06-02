@@ -3444,46 +3444,6 @@ static void insertXCInfo(SYMBOL* funcsp)
     funcsp->sb->xc->xcInitLab = codeLabel++;
     funcsp->sb->xc->xcDestLab = codeLabel++;
     funcsp->sb->xc->xclab = sym;
-
-    sym = namespacesearch("_InitializeException", globalNameSpace, false, false);
-    if (sym)
-    {
-        FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
-        INITLIST* arg1 = Allocate<INITLIST>();
-        INITLIST* arg2 = Allocate<INITLIST>();
-        EXPRESSION* exp;
-        sym = (SYMBOL*)basetype(sym->tp)->syms->front();
-        funcparams->functp = sym->tp;
-        funcparams->sp = sym;
-        funcparams->fcall = varNode(en_pc, sym);
-        funcparams->ascall = true;
-        funcparams->arguments = initListListFactory.CreateList();
-        funcparams->arguments->push_back(arg1);
-        funcparams->arguments->push_back(arg2);
-
-        arg1->tp = &stdpointer;
-        arg1->exp = varNode(en_auto, funcsp->sb->xc->xctab);
-
-        arg2->tp = &stdpointer;
-        arg2->exp = varNode(en_global, funcsp->sb->xc->xclab);
-
-        exp = exprNode(en_func, 0, 0);
-        exp->v.func = funcparams;
-        funcsp->sb->xc->xcInitializeFunc = exp;
-        sym = namespacesearch("_RundownException", globalNameSpace, false, false);
-        if (sym)
-        {
-            sym = (SYMBOL*)basetype(sym->tp)->syms->front();
-            funcparams = Allocate<FUNCTIONCALL>();
-            funcparams->functp = sym->tp;
-            funcparams->sp = sym;
-            funcparams->fcall = varNode(en_pc, sym);
-            funcparams->ascall = true;
-            exp = exprNode(en_func, 0, 0);
-            exp->v.func = funcparams;
-            funcsp->sb->xc->xcRundownFunc = exp;
-        }
-    }
 }
 static bool isvoidreturntype(TYPE* tp, SYMBOL* funcsp)
 {

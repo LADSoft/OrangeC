@@ -53,8 +53,6 @@ static std::string cppbuiltin =
     "[[noreturn]]void __rtllinkage _ThrowException(void *,void *,int,void*,void *); "
     "[[noreturn]]void __rtllinkage _RethrowException(void *); "
     "void __rtllinkage _CatchCleanup(void *); "
-    "void __rtllinkage _InitializeException(void *, void *); "
-    "void __rtllinkage _RundownException(); "
     "void __rtllinkage __arrCall(void *, void *, void *, int, int); "
     "extern \"C\" bool __rtllinkage __static_guard(void *); "
     "extern \"C\" void __rtllinkage atexit(void (*__func)(void)); "

@@ -244,7 +244,7 @@ typedef struct
         st_loopgoto, st_select, st_notselect, st_varstart, st_dbgblock,
         st_switch, st_return, st_block, st_throw, st_try, st_catch,
         st__genword, st_passthrough, st_datapassthrough, st_abs, st_label,
-        st___try, st___catch, st___finally, st___fault
+        st___try, st___catch, st___finally, st___fault,
     };
 // clang-format on
 
@@ -614,8 +614,6 @@ struct xcept
     int xcInitLab, xcDestLab;    // for auto vars
     struct sym* xctab;
     struct sym* xclab;
-    EXPRESSION* xcInitializeFunc;
-    EXPRESSION* xcRundownFunc;
 };
 
 struct attributes

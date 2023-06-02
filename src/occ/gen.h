@@ -134,6 +134,8 @@ void asm_jge(Optimizer::QUAD* q);
 void asm_cppini(Optimizer::QUAD* q);
 void asm_prologue(Optimizer::QUAD* q);
 void asm_epilogue(Optimizer::QUAD* q);
+void asm_excbegin(Optimizer::QUAD* q);
+void asm_excend(Optimizer::QUAD* q);
 void asm_pushcontext(Optimizer::QUAD* q);
 void asm_popcontext(Optimizer::QUAD* q);
 void asm_loadcontext(Optimizer::QUAD* q);

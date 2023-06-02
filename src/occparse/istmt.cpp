@@ -460,6 +460,25 @@ static void gen___try(SYMBOL* funcsp, std::list<STATEMENT*> stmts)
     }
     Optimizer::gen_label(label);
 }
+void gen_except(bool begin, xcept* xc)
+{
+    auto tab = Allocate<Optimizer::IMODE>();
+    tab->mode = Optimizer::i_immed;
+    tab->size = ISZ_ADDR;
+    tab->offset = Optimizer::SymbolManager::Get(varNode(en_auto, xc->xctab));
+    if (begin)
+    {
+        auto lab = Allocate<Optimizer::IMODE>();
+        lab->mode = Optimizer::i_immed;
+        lab->size = ISZ_ADDR;
+        lab->offset = Optimizer::SymbolManager::Get(varNode(en_pc, xc->xclab));
+        gen_icode(Optimizer::i_beginexcept, nullptr, tab, lab);
+    }
+    else
+    {
+        gen_icode(Optimizer::i_endexcept, nullptr, tab, nullptr);
+    }
+}
 /*
  *      generate a return statement.
  */
@@ -704,8 +723,8 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
             {
                 Optimizer::gen_icode(Optimizer::i_loadstack, 0, allocaAP, 0);
             }
-            if (Optimizer::cparams.prm_xcept && funcsp->sb->xc && funcsp->sb->xc->xcRundownFunc)
-                gen_expr(funcsp, funcsp->sb->xc->xcRundownFunc, F_NOVALUE, ISZ_UINT);
+            if (Optimizer::cparams.prm_xcept && funcsp->sb->xc && funcsp->sb->xc->xclab)
+                gen_except(false, funcsp->sb->xc);
             SubProfilerData();
             if (returnSym && !isvoid(basetype(funcsp->tp)->btp))
             {
@@ -1177,10 +1196,9 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     }
     Optimizer::gen_label(startlab);
     AddProfilerData(funcsp);
-    if (Optimizer::cparams.prm_xcept && funcsp->sb->xc && funcsp->sb->xc->xcInitializeFunc)
+    if (Optimizer::cparams.prm_xcept && funcsp->sb->xc && funcsp->sb->xc->xclab)
     {
-        gen_expr(funcsp, funcsp->sb->xc->xcInitializeFunc, F_NOVALUE, ISZ_UINT);
-        Optimizer::gen_label(funcsp->sb->xc->xcInitLab + codeLabelOffset);
+         gen_except(true, funcsp->sb->xc);
     }
     /*    if (funcsp->sb->loadds && funcsp->sb->farproc) */
     /*	        Optimizer::gen_icode(Optimizer::i_loadcontext, 0,0,0); */

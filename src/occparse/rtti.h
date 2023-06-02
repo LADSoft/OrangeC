@@ -24,6 +24,7 @@
  */
 
 #include <map>
+
 #define XD_X_MASK 0x3f /* a count for extension bytes */
 #define XD_ARRAY 0x40
 #define XD_POINTER 0x80
@@ -42,8 +43,10 @@
 #define XD_VARARRAY 0x100000
 #define XD_INUSE 0x200000
 #define VTAB_XT_OFFS 12 /* VTAB offset - pointer to exception data offset */
+
 namespace Parser
 {
+#ifndef CONSTS_ONLY
 typedef struct _rttiArray
 {
     int elems;  // number of elems
@@ -126,10 +129,6 @@ typedef struct __xcentry
     char used : 1;
 } XCENTRY;
 
-static const int XCTAB_SIZE = 9 * 4;
-static const int XCTAB_INDEX_OFS = 5 * 4;
-static const int XCTAB_INSTANCE_OFS = 6 * 4;
-
 extern SymbolTable<SYMBOL>* rttiSyms;
 extern std::map<int, std::map<int, __xcentry*>> rttiStatements;
 
@@ -138,4 +137,15 @@ bool equalnode(EXPRESSION* node1, EXPRESSION* node2);
 Optimizer::SimpleSymbol* evalsp(EXPRESSION* exp);
 SYMBOL* RTTIDumpType(TYPE* tp, bool symonly = false);
 void XTDumpTab(SYMBOL* funcsp);
+#endif
+
+static const int XCTAB_SIZE = 9 * 4;
+static const int XCTAB_NEXT_PTR_OFS = 0 * 4;
+static const int XCTAB_XCHANDLER_OFS = 1 * 4;
+static const int XCTAB_ESP_OFS = 2 * 4;
+static const int XCTAB_EBP_OFS = 3 * 4;
+static const int XCTAB_XCFUNC_OFS = 4 * 4;
+static const int XCTAB_INDEX_OFS = 5 * 4;
+static const int XCTAB_INSTANCE_OFS = 6 * 4;
+
 }  // namespace Parser

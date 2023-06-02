@@ -39,7 +39,8 @@
 #include "symfuncs.h"
 #include "gen.h"
 #include "ioptutil.h"
-
+#define CONSTS_ONLY
+#include "rtti.h"
 #define MAX_ALIGNS 50
 namespace occx86
 {
@@ -392,7 +393,6 @@ AMODE* setSymbol(const char* name)
         sym->name = sym->outputName = litlate(name);
         sym->tp = Allocate<Optimizer::SimpleType>();
         sym->tp->type = Optimizer::st_func;
-        //        Optimizer::SymbolManager::Add(name, sym);
         Optimizer::SymbolManager::Put(sym);
         Optimizer::externals.push_back(sym);
     }
@@ -5149,6 +5149,84 @@ void asm_epilogue(Optimizer::QUAD* q) /* function epilogue */
             gen_codes(op_pop, ISZ_UINT, makedreg(EBP), 0);
         }
     }
+}
+AMODE* base(AMODE *in, int offs)
+{
+    AMODE* rv = Allocate<AMODE>();
+    *rv = *in;
+    rv->offset = Allocate<Optimizer::SimpleExpression>();
+    rv->offset->type = Optimizer::se_add;
+    rv->offset->left = in->offset;
+    rv->offset->right = Allocate<Optimizer::SimpleExpression>();
+    rv->offset->right->type = Optimizer::se_i;
+    rv->offset->right->i = offs;
+    return rv;
+}
+void asm_excbegin(Optimizer::QUAD* q) /* function prologue */
+{
+    #if 0
+    push eax
+    push ecx
+    push edx
+    mov eax,[esp+4 + 12] ; pointer to xception block
+    mov ecx,[fs:0]      ; next pointer in chain
+    mov [eax],ecx
+    mov DWORD [eax+4], ___cppexceptionhandle
+    lea ecx,[esp + 12 + 12] ; pointer to what ESP should be when a catch block is entered
+    mov [eax + 8],ecx
+    mov ecx,[esp+8 + 12]  ; function xcept block
+    mov edx, eax
+    sub edx, [ecx + 4] ; offset from start of xcept block to where EBP would be
+    mov [eax+12], edx   ; pointer to ebp
+    mov [eax+16], ecx   ; function xception block
+    mov DWORD [eax + 20], 0 ; constructor progress
+    mov [fs:0],eax
+    pop edx
+    pop ecx
+    pop eax
+    ret
+
+        static const int XCTAB_NEXT_PTR_OFS = 0 * 4;
+static const int XCTAB_XCHANDLER_OFS = 1 * 4;
+static const int XCTAB_ESP_OFS = 2 * 4;
+static const int XCTAB_EBP_OFS = 3 * 4;
+static const int XCTAB_XCFUNC_OFS = 4 * 4;
+static const int XCTAB_INDEX_OFS = 5 * 4;
+
+        #endif
+    enum e_opcode opla, opra;
+    AMODE *apll, *aplh, *aprl, *aprh;
+        getAmodes(q, &opla, q->dc.left, &apll, &aplh);
+        getAmodes(q, &opra, q->dc.right, &aprl, &aprh);
+    auto fs0 = aimmed(0);
+    fs0->seg = FS;
+    fs0->mode = am_direct;
+    auto handler = setSymbol("___cppexceptionhandle"); // handler
+
+    auto eax = makedreg(EAX);
+    gen_codes(op_push, ISZ_ADDR, eax, nullptr);
+    gen_codes(op_mov, ISZ_ADDR, eax, fs0);
+    gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_NEXT_PTR_OFS), eax);
+    gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_XCHANDLER_OFS), handler);
+    gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_ESP_OFS), makedreg(ESP));
+    gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_EBP_OFS), makedreg(EBP));
+    gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_XCFUNC_OFS), aprl);
+    gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_INDEX_OFS), aimmed(0));
+    gen_codes(op_lea, ISZ_ADDR, eax, apll);
+    gen_codes(op_mov, ISZ_ADDR, fs0, eax);
+    gen_codes(op_pop, ISZ_ADDR, eax, nullptr);
+}
+void asm_excend(Optimizer::QUAD* q)
+{
+    auto ind = aimmed(0);
+    ind->mode = am_indisp;
+    ind->preg = ECX;
+    auto fs0 = aimmed(0);
+    fs0->seg = FS;
+    fs0->mode = am_direct;
+    gen_codes(op_mov, ISZ_ADDR, makedreg(ECX), fs0);
+    gen_codes(op_mov, ISZ_ADDR, makedreg(ECX), ind);
+    gen_codes(op_mov, ISZ_ADDR, fs0, makedreg(ECX));
 }
 /*
  * in an interrupt handler, push the current context

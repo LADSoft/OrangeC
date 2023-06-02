@@ -282,6 +282,8 @@ static void (*oplst[])(Optimizer::QUAD* q) = {
     iop_xchg,
     asm_prologue,
     asm_epilogue,
+    asm_excbegin,
+    asm_excend,
     asm_pushcontext,
     asm_popcontext,
     asm_loadcontext,

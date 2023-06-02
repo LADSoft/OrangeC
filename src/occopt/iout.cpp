@@ -638,6 +638,22 @@ static void iop_epilogue(Optimizer::QUAD* q)
         putamode(q, q->dc.left);
     }
 }
+static void iop_beginexcept(Optimizer::QUAD* q)
+{
+    oprintf(icdFile, "\tEXCBEGIN");
+    oputc('\t', icdFile);
+
+    putamode(q, q->dc.left);
+    oputc(',', icdFile);
+    putamode(q, q->dc.right);
+}
+static void iop_endexcept(Optimizer::QUAD* q)
+{
+    oprintf(icdFile, "\tEXCEND");
+    oputc('\t', icdFile);
+
+    putamode(q, q->dc.left);
+}
 static void iop_pushcontext(Optimizer::QUAD* q) { oprintf(icdFile, "\tPUSHCONTEXT", q->dc.v.label); }
 static void iop_popcontext(Optimizer::QUAD* q) { oprintf(icdFile, "\tPOPCONTEXT", q->dc.v.label); }
 static void iop_loadcontext(Optimizer::QUAD* q) { oprintf(icdFile, "\tLOADCONTEXT", q->dc.v.label); }
@@ -834,6 +850,8 @@ static void (*oplst[])(Optimizer::QUAD* q) = {
     iop_xchg,
     iop_prologue,
     iop_epilogue,
+    iop_beginexcept,
+    iop_endexcept,
     iop_pushcontext,
     iop_popcontext,
     iop_loadcontext,

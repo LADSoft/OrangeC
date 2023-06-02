@@ -424,7 +424,7 @@ struct ArgList
         i_atomic_flag_test_and_set, i_atomic_flag_clear,
         i_atomic_thread_fence, i_atomic_signal_fence, i_atomic_flag_fence, i_cmpxchgweak, i_cmpxchgstrong, 
         i_kill_dependency, i_xchg,
-        i_prologue, i_epilogue, i_pushcontext, i_popcontext, i_loadcontext, i_unloadcontext,
+        i_prologue, i_epilogue, i_beginexcept, i_endexcept, i_pushcontext, i_popcontext, i_loadcontext, i_unloadcontext,
         i_tryblock, i_substack, i_parmstack, i_loadstack, i_savestack, i_functailstart, i_functailend,
         i_gcsestub, i_expressiontag, i_tag, i_seh,
         /* msil */

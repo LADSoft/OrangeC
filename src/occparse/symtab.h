@@ -139,20 +139,11 @@ inline void SymbolTable<SYMBOL>::baseInsert(SYMBOL* in)
     {
         if (IsCompiler() || this != CompletionCompiler::ccSymbols)
         {
-            if (!IsCompiler())
+            if (!structLevel || !templateNestingCount)
             {
                 SYMBOL* sym = search(this, in->name);
                 if (!sym || !sym->sb->wasUsing || !in->sb->wasUsing)
                     preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->sb->declfile, in->sb->declline);
-            }
-            else
-            {
-                if (!structLevel || !templateNestingCount)
-                {
-                    SYMBOL* sym = search(this, in->name);
-                    if (!sym || !sym->sb->wasUsing || !in->sb->wasUsing)
-                        preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->sb->declfile, in->sb->declline);
-                }
             }
         }
     }

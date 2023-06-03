@@ -115,7 +115,12 @@ static void basicFlowInfo(void)
 {
     QUAD *head = intermed_head, *block;
     int low = INT_MAX, high = 0;
-    blockArray = oAllocate<BLOCK*>(blockCount + 1000);
+    if (!blockArray || blockCount > blockMax)
+    {
+        free(blockArray);
+        blockMax = (blockCount + 999) /1000 * 1000;
+        blockArray = (BLOCK**)calloc(sizeof(BLOCK *), blockMax);
+    }
     while (head)
     {
         criticalThunks = intermed_head;
@@ -1177,7 +1182,13 @@ void doms_only(bool always)
     if (blockCount != n)
     {
         QUAD* head = intermed_head;
-        blockArray = oAllocate<BLOCK*>(blockCount + 1000);  // fixme...
+        if (!blockArray || blockCount > blockMax)
+        {
+            // fixme
+            free(blockArray);
+            blockMax = (blockCount + 999) /1000 * 1000;
+            blockArray = (BLOCK**)calloc(sizeof(BLOCK *), blockMax);
+        }
         while (head)
         {
             if (head->dc.opcode == i_block)

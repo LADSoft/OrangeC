@@ -1466,8 +1466,11 @@ void createDefaultConstructors(SYMBOL* sp)
         conditionallyDeleteCopyConstructor(cons, true);
         conditionallyDeleteCopyAssignment(asgn, true);
     }
-    dest = search(basetype(sp->tp)->syms, overloadNameTab[CI_DESTRUCTOR]);
-    conditionallyDeleteDestructor(dest->tp->syms->front());
+    if (sp->sb->defaulted)
+    {
+        dest = search(basetype(sp->tp)->syms, overloadNameTab[CI_DESTRUCTOR]);
+        conditionallyDeleteDestructor(dest->tp->syms->front());
+    }
 }
 EXPRESSION* destructLocal(EXPRESSION* exp)
 {

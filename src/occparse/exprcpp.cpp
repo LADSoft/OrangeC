@@ -1078,10 +1078,10 @@ bool doStaticCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* funcs
             return true;
     }
     // class via constructor
-    if (isstructured(*newType) && isref(orig))
+    if (isstructured(*newType))
     {
         TYPE* ctype = *newType;
-        if (isstructured(oldType))
+        if (isstructured(oldType)&& isref(orig))
         {
             if (classRefCount(basetype(*newType)->sp, basetype(oldType)->sp) == 1)
             {

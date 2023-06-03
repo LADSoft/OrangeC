@@ -1135,7 +1135,6 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     structret_imode = 0;
     Optimizer::tempCount = 0;
     Optimizer::blockCount = 0;
-    Optimizer::blockMax = 0;
     Optimizer::exitBlock = 0;
     consIndex = 0;
     retcount = 0;
@@ -1266,7 +1265,6 @@ void genASM(std::list<STATEMENT*>* st)
     structret_imode = 0;
     Optimizer::tempCount = 0;
     Optimizer::blockCount = 0;
-    Optimizer::blockMax = 0;
     Optimizer::exitBlock = 0;
     genstmt(st, nullptr, 0);
 }

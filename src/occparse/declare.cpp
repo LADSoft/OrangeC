@@ -6792,6 +6792,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                 SetTemplateNamespace(sp);
                             if (MATCHKW(lex, begin))
                             {
+                                if (asFriend)
+                                    sp->sb->friendContext = getStructureDeclaration();
                                 if (!templateNestingCount)
                                     sp->sb->hasBody = true;
                                 TYPE* tp = sp->tp;

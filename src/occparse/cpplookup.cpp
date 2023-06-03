@@ -1462,14 +1462,12 @@ static bool IsFriend(SYMBOL* cls, SYMBOL* frnd)
 // works by searching the tree for the base or member symbol, and stopping any
 // time the access wouldn't work.  If the symbol is found it is accessible.
 static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, enum e_ac minAccess,
-                                 int level, bool asAddress)
+                                 enum e_ac maxAccess, int level)
 {
+    enum e_ac memberAccess = member->sb->access > maxAccess ? maxAccess : member->sb->access;
     BASECLASS* lst;
     SYMBOL* ssp;
-    bool matched;
     if (!Optimizer::cparams.prm_cplusplus)
-        return true;
-    if (member->sb->access == ac_public)
         return true;
     ssp = getStructureDeclaration();
     if (ssp)
@@ -1484,113 +1482,26 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
         return true;
     if (!basetype(currentBase->tp)->syms)
         return false;
-    matched = false;
-    for (auto sym : *basetype(currentBase->tp)->syms)
-    {
-        if (sym == member || sym == member->sb->mainsym)
-        {
-            matched = true;
-            break;
-        }
-        if (sym->sb->storage_class == sc_overloads && isfunction(member->tp) && sym->tp->syms)
-        {
-            bool found = false;
-            for (auto sym1 : *sym->tp->syms)
-            {
-                if (sym1 == member || sym1 == member->sb->mainsym)
-                {
-                    found = true;
-                    break;
-                }
-                else if (sym1->sb->instantiations)
-                {
-                    for (auto sym : *sym1->sb->instantiations)
-                    {
-                        if (sym == member)
-                        {
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            if (found)
-            {
-                matched = true;
-                break;
-            }
-        }
-        else if (sym->sb->storage_class == sc_typedef && sym->sb->instantiations)
-        {
-            bool found = false;
-            for (auto sp : *sym->sb->instantiations)
-            {
-                if (sp == member)
-                {
-                    found = true;
-                    break;
-                }
-            }
-            if (found)
-            {
-                matched = true;
-                break;
-            }
-        }
-    }
-    if (!matched)
-    {
-        for (auto sym : *basetype(currentBase->tp)->tags)
-        {
-            if (sym == member || sym == member->sb->mainsym || sameTemplate(sym->tp, member->tp))
-            {
-                matched = true;
-                break;
-            }
-            else if (sym->sb->instantiations)
-            {
-                bool found = false;
-                for (auto sp : *sym->sb->instantiations)
-                {
-                    if (sp == member)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-                if (found)
-                {
-                    matched = true;
-                    break;
-                }
-            }
-        }
-    }
-    if (matched)
-    {
-        SYMBOL* sym = member;
-        return ((level == 0 || (level == 1 && (minAccess < ac_public || sym->sb->access == ac_public))) &&
-                derived == currentBase) ||
-               sym->sb->access >= minAccess;
-    }
+    /*
+    if (currentBase && derived)
+        if (derived == currentBase || derived == currentBase->sb->mainsym)
+            return member->sb->access >= minAccess;
+            */
+    if (member->sb->parentClass == currentBase || member->sb->parentClass == currentBase->sb->mainsym)
+        return memberAccess >= minAccess || level == 0;
+    else if (member->sb->mainsym)
+        if (member->sb->mainsym->sb->parentClass == currentBase || member->sb->mainsym->sb->parentClass == currentBase->sb->mainsym)
+            return memberAccess >= minAccess || level == 0;
     if (currentBase->sb->baseClasses)
     {
         for (auto lst : *currentBase->sb->baseClasses)
         {
             SYMBOL* sym = lst->cls;
             sym = basetype(sym->tp)->sp;
+            
             // we have to go through the base classes even if we know that a normal
             // lookup wouldn't work, so we can check their friends lists...
-            if (sym == member || sameTemplate(sym->tp, member->tp))
-            {
-                return ((level == 0 || (level == 1 && (minAccess < ac_public || sym->sb->access == ac_public))) &&
-                        (derived == currentBase || sym->sb->access != ac_private)) ||
-                       sym->sb->access >= minAccess;
-            }
-            if (isAccessibleInternal(derived, sym, member, funcsp,
-                                     level != 0 && (lst->accessLevel == ac_private || minAccess == ac_private) ? ac_none
-                                                                                                               : minAccess,
-                                     level + 1, asAddress))
+            if (isAccessibleInternal(derived, sym, member, funcsp, minAccess, lst->accessLevel < maxAccess ? ac_protected : maxAccess, lst->accessLevel == ac_private ? 2 : 1))
                 return true;
         }
     }
@@ -1599,7 +1510,7 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
 bool isAccessible(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, enum e_ac minAccess, bool asAddress)
 {
     return (templateNestingCount && !instantiatingTemplate) || instantiatingFunction || member->sb->accessibleTemplateArgument ||
-           isAccessibleInternal(derived, currentBase, member, funcsp, minAccess, 0, asAddress);
+           isAccessibleInternal(derived, currentBase, member, funcsp, minAccess, ac_public, 0);
 }
 static SYMBOL* AccessibleClassInstance(SYMBOL* parent)
 {
@@ -1626,35 +1537,29 @@ bool isExpressionAccessible(SYMBOL* derived, SYMBOL* sym, SYMBOL* funcsp, EXPRES
 {
     if (sym->sb->parentClass)
     {
-        bool throughClass = sym->sb->throughClass;
-        if (exp)
+        SYMBOL* parent = sym->sb->parentClass;
+        enum e_ac minAccess = ac_public;
+        if (exp && exp->type == en_auto)
         {
-            throughClass = true;
+            parent = basetype(exp->v.sp->tp)->sp;
         }
-        SYMBOL* ssp;
-        if (throughClass && (ssp = AccessibleClassInstance(sym->sb->parentClass)) != nullptr)
+        SYMBOL* ssp = nullptr;
+        if (sym->sb->throughClass && (ssp = AccessibleClassInstance(sym->sb->parentClass)) != nullptr)
         {
-            if (!isAccessible(ssp, ssp, sym, funcsp, ac_protected, asAddress))
-                return false;
-        }
-        else
-        {
-            if (derived)
-            {
-                while (derived)
-                {
-                    if (isAccessible(derived, sym->sb->parentClass, sym, funcsp, ac_public, asAddress))
-                        return true;
-                    derived = derived->sb->parentClass;
-                }
-                return false;
-            }
+            if (ssp == parent)
+                minAccess = ac_private;
             else
-            {
-                if (!isAccessible(derived, sym->sb->parentClass, sym, funcsp, ac_public, asAddress))
-                    return false;
-            }
+                minAccess = ac_protected;
+            derived = parent = ssp;
         }
+        do
+        {
+            if (isAccessible(derived, parent, sym, funcsp, minAccess, asAddress))
+                return true;
+            if (derived)
+                derived = derived->sb->parentClass;
+        } while (derived && !ssp);
+        return false;
     }
     return true;
 }
@@ -5378,6 +5283,7 @@ static void doNames(SYMBOL* sym)
         doNames(sym->sb->parentClass);
     SetLinkerNames(sym, lk_cdecl);
 }
+int count3;
 static bool IsMove(SYMBOL* sp)
 {
     bool rv = false;

@@ -3596,13 +3596,13 @@ static LEXLIST* initialize_auto(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e
             if (sym->sb->storage_class != sc_auto && sym->sb->storage_class != sc_parameter &&
                 sym->sb->storage_class != sc_member && sym->sb->storage_class != sc_mutable)
             {
-                callDestructor(sym, nullptr, &expl, nullptr, true, false, false, true);
+                callDestructor(basetype(sym->tp)->sp, nullptr, &expl, nullptr, true, false, false, true);
                 initInsert(&dest, sym->tp, expl, offset, true);
                 insertDynamicDestructor(sym, dest);
             }
             else if (dest)
             {
-                callDestructor(sym, nullptr, &expl, nullptr, true, false, false, true);
+                callDestructor(basetype(sym->tp)->sp, nullptr, &expl, nullptr, true, false, false, true);
                 initInsert(&dest, sym->tp, expl, offset, true);
                 sym->sb->dest = dest;
             }

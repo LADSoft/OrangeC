@@ -250,8 +250,12 @@ void internalClassRefCount(SYMBOL* base, SYMBOL* derived, int* vcount, int* ccou
             }
             else
             {
-                (*ccount)++;
-                ok = true;
+                if (exactMatchOnTemplateArgs(derived->templateParams,
+                                             base->templateParams))
+                {
+                    (*ccount)++;
+                    ok = true;
+                }
             }
         }
         else

@@ -2790,7 +2790,7 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
         {
             EXPRESSION* exp = data;
             EXPRESSION* elms = intNode(en_c_i, count);
-            callDestructor(initializerListType->sp, nullptr, &exp, elms, true, false, false, true);
+            callDestructor(basetype(initializerListType)->sp, nullptr, &exp, elms, true, false, false, true);
             initInsert(&data->v.sp->sb->dest, tp, exp, 0, false);
         }
         std::deque<EXPRESSION*> listOfScalars;
@@ -3449,7 +3449,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                                 }
                             }
                             EXPRESSION* dexp = consexp;
-                            callDestructor(esp, nullptr, &dexp, nullptr, true, false, false, true);
+                            callDestructor(basetype(esp->tp)->sp, nullptr, &dexp, nullptr, true, false, false, true);
                             initInsert(&esp->sb->dest, basetype(sym->tp)->btp, dexp, 0, true);
                         }
                         else if ((!isconst(basetype(sym->tp)->btp) && !isconst(sym->tp) &&
@@ -3476,7 +3476,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                                 }
                             }
                             EXPRESSION* dexp = consexp;
-                            callDestructor(esp, nullptr, &dexp, nullptr, true, false, false, true);
+                            callDestructor(basetype(esp->tp)->sp, nullptr, &dexp, nullptr, true, false, false, true);
                             initInsert(&esp->sb->dest, basetype(sym->tp)->btp, dexp, 0, true);
                         }
                         else
@@ -8717,7 +8717,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                             if (!rv)
                                 rv = anonymousVar(sc_auto, tph);
                             EXPRESSION* dexp = rv;
-                            callDestructor(rv->v.sp, nullptr, &dexp, nullptr, true, false, false, true);
+                            callDestructor(basetype(tph)->sp, nullptr, &dexp, nullptr, true, false, false, true);
                             initInsert(&rv->v.sp->sb->dest, rv->v.sp->tp, dexp, 0, true);
 
                             EXPRESSION* exp = eph;
@@ -9107,7 +9107,7 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 if (asndest)
                 {
                     SYMBOL* sym = anonymousVar(sc_auto, tp1)->v.sp;
-                    callDestructor(sym, nullptr, &asndest, nullptr, true, false, false, true);
+                    callDestructor(basetype(tp1)->sp, nullptr, &asndest, nullptr, true, false, false, true);
                     initInsert(&sym->sb->dest, tp1, asndest, 0, true);
                 }
 

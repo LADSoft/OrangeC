@@ -1012,7 +1012,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                         fcb.returnSP = fcb.returnEXP->v.sp;
                                         exp = fcb.returnEXP;
                                         dest = nullptr;
-                                        callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, true, false, true);
+                                        callDestructor(basetype(fcb.returnSP->tp)->sp, nullptr, &exp, nullptr, true, true, false, true);
                                         initInsert(&dest, iteratorType, exp, 0, true);
                                         fcb.returnSP->sb->dest = dest;
 
@@ -1022,7 +1022,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                         fce.returnSP = fcb.returnEXP->v.sp;
                                         exp = fce.returnEXP;
                                         dest = nullptr;
-                                        callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, true, false, true);
+                                        callDestructor(basetype(fce.returnSP->tp)->sp, nullptr, &exp, nullptr, true, true, false, true);
                                         initInsert(&dest, iteratorType, exp, 0, true);
                                         fce.returnSP->sb->dest = dest;
                                     }
@@ -1292,7 +1292,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                 callConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false, true);
                                 st->select = decl;
                                 declDest = declExp;
-                                callDestructor(declSP, nullptr, &declDest, nullptr, true, true, false, true);
+                                callDestructor(basetype(declSP->tp)->sp, nullptr, &declDest, nullptr, true, true, false, true);
                             }
                             else if (isarray(selectTP))
                             {
@@ -1339,7 +1339,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                                     true);
                                     st->select = decl;
                                     declDest = declExp;
-                                    callDestructor(declSP, nullptr, &declDest, nullptr, true, true, false, true);
+                                    callDestructor(basetype(declSP->tp)->sp, nullptr, &declDest, nullptr, true, true, false, true);
                                 }
                             }
                             else if (!insertOperatorFunc(ovcl_unary_prefix, star, funcsp, &starType, &st->select, nullptr, nullptr,
@@ -1389,7 +1389,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                                     true);
                                     st->select = decl;
                                     declDest = declExp;
-                                    callDestructor(declSP, nullptr, &declDest, nullptr, true, true, false, true);
+                                    callDestructor(basetype(declSP->tp)->sp, nullptr, &declDest, nullptr, true, true, false, true);
                                 }
                             }
                         }
@@ -1439,7 +1439,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                     st->select->v.func->returnEXP = anonymousVar(sc_auto, ppType);
                                     st->select->v.func->returnSP = st->select->v.func->returnEXP->v.sp;
                                     declDest = st->select->v.func->returnEXP;
-                                    callDestructor(st->select->v.func->returnSP, nullptr, &declDest, nullptr, true, true, false,
+                                    callDestructor(basetype(st->select->v.func->returnSP->tp)->sp, nullptr, &declDest, nullptr, true, true, false,
                                                    true);
                                     st = stmtNode(lex, parent, st_expr);
                                     st->select = declDest;

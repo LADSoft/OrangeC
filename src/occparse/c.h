@@ -663,6 +663,7 @@ typedef struct sym
         int sizeNoVirtual;                        /* size without virtual classes and thunks */
         struct sym* parent;
         struct sym* parentClass;
+        struct sym* friendContext;
         struct sym* parentNameSpace;
         std::list<NAMESPACEVALUEDATA*>* nameSpaceValues; /* for a namespace SP */
         struct sym* vtabsp;

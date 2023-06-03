@@ -472,6 +472,10 @@ void dag_rundown(void)
 /*-------------------------------------------------------------------------*/
 BLOCKLIST* newBlock(void)
 {
+    if (blockCount == 0)
+    {
+        memset(blockArray, 0, sizeof(BLOCK*) * blockMax);
+    }
     BLOCK* block = Allocate<BLOCK>();
     BLOCKLIST* list = Allocate<BLOCKLIST>();
     list->next = 0;
@@ -479,8 +483,9 @@ BLOCKLIST* newBlock(void)
     block->blocknum = blockCount++;
     if (blockCount >= blockMax)
     {
-        BLOCK** newBlocks = (BLOCK**)Alloc(sizeof(BLOCK*) * (blockMax + 1000));
+        BLOCK** newBlocks = (BLOCK**)calloc(sizeof(BLOCK*), blockMax + 1000);
         memcpy(newBlocks, blockArray, sizeof(BLOCK*) * blockMax);
+        free(blockArray);
         blockMax += 1000;
         blockArray = newBlocks;
     }

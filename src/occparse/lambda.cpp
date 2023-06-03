@@ -636,7 +636,7 @@ static EXPRESSION* createLambda(bool noinline)
         if (!init)
             init = initListFactory.CreateList();
         EXPRESSION* exp = clsThs;
-        callDestructor(cls, NULL, &exp, NULL, true, false, false, true);
+        callDestructor(basetype(cls->tp)->sp, NULL, &exp, NULL, true, false, false, true);
         initInsert(&init, cls->tp, exp, 0, true);
         if (cls->sb->storage_class != sc_auto)
         {

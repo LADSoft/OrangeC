@@ -367,7 +367,6 @@ static void DumpInlineLocalUninitializer(std::pair<SYMBOL*, EXPRESSION *>& unini
     structret_imode = 0;
     Optimizer::tempCount = 0;
     Optimizer::blockCount = 0;
-    Optimizer::blockMax = 0;
     Optimizer::exitBlock = 0;
     consIndex = 0;
     retcount = 0;
@@ -445,7 +444,6 @@ static int PushInline(SYMBOL* sym, bool traceback)
         sym = reverseOrder.top();
         reverseOrder.pop();
         STRUCTSYM t, s, r;
-        SYMBOL* thsprospect = nullptr;
         if ((SYMBOL*)basetype(sym->tp)->syms && (SYMBOL*) basetype(sym->tp)->syms->size())
             (SYMBOL*)basetype(sym->tp)->syms->front();
         t.tmpl = nullptr;
@@ -456,12 +454,12 @@ static int PushInline(SYMBOL* sym, bool traceback)
             addTemplateDeclaration(&r);
             n++;
         }
-        if (thsprospect && thsprospect->sb->thisPtr)
+        if (!sym->sb->parentClass && sym->sb->friendContext)
         {
-            s.str = sym->sb->parentClass;
+            s.str = sym->sb->friendContext;
             addStructureDeclaration(&s);
             n++;
-            SYMBOL* spt = basetype(basetype(thsprospect->tp)->btp)->sp;
+            SYMBOL* spt = basetype(s.str->tp)->sp;
             t.tmpl = spt->templateParams;
             if (t.tmpl)
             {
@@ -480,6 +478,12 @@ bool CompileInline(SYMBOL* sym, bool toplevel)
     }
     if (sym->sb->deferredCompile && !sym->sb->inlineFunc.stmt)
     {
+        int oldPackIndex = packIndex;
+        int oldArgumentNesting = argumentNesting;
+        int oldExpandingParams = expandingParams;
+        packIndex = -1;
+        argumentNesting = 0;
+        expandingParams = 0;
         if (sym->sb->specialized && sym->templateParams->size() == 1)
             sym->sb->instantiated = true;
         int n1 = 0;
@@ -493,6 +497,9 @@ bool CompileInline(SYMBOL* sym, bool toplevel)
         instantiationList = std::move(hold2);
         structSyms.clear();
         structSyms = std::move(hold);
+        expandingParams = oldExpandingParams;
+        argumentNesting = oldArgumentNesting;
+        packIndex = oldPackIndex;
     }
     return sym->sb->inlineFunc.stmt;
 }

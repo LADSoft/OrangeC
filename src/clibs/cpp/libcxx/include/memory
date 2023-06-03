@@ -3414,8 +3414,8 @@ template<class _Tp> class _LIBCPP_TEMPLATE_VIS weak_ptr;
 
 class _LIBCPP_TYPE_VIS __shared_count
 {
-    __shared_count(const __shared_count&);
-    __shared_count& operator=(const __shared_count&);
+    __shared_count(const __shared_count&) = delete;
+    __shared_count& operator=(const __shared_count&) = delete;
 
 protected:
     long __shared_owners_;

@@ -80,43 +80,46 @@
 // and this keeps from having the full impact of new/delete any
 // time they are used
 // resulted in about a 20% speedup of the compiler on the worst files
-#define HASHBLKSIZE 128 * 4
-void *dictionary[128];
+#define HASHBLKSIZE 128
 
-void *operator new(size_t aa)
+struct __preheader
+{
+    int size;
+    __preheader* link;
+};
+__preheader* dictionary[HASHBLKSIZE];
+void* operator new(size_t aa)
 {
     if (!aa)
         return nullptr;
-
-    if (aa + 3 < HASHBLKSIZE)
+    int bb = (aa + 7) / 8 * 8;
+    if (bb/8 < HASHBLKSIZE)
     {
-        int bb = aa + 3;
-        if (dictionary[bb/4])
+        if (dictionary[bb / 8])
         {
-            void *rv = dictionary[bb/4];
-            dictionary[bb/4] = *(void **)((char*)rv+4);
-            return (void *)((char*)rv + 8);
+            __preheader* rv = dictionary[bb / 8];
+            dictionary[bb / 8] = rv->link;
+            return (void*)(rv + 1);
         }
     }
-    aa += 11;
-    aa = aa * 8 / 8;
-    void *rv = malloc(aa);
-    *(unsigned *)rv = aa - 8;
-    return (void *)((char*)rv + 8);
+    __preheader* rv = (__preheader*)malloc(aa + sizeof(__preheader));
+    rv->size = bb;
+    rv->link = nullptr;
+    return (void *)(rv + 1);
 }
-void operator delete(void *p)
+void operator delete(void* p)
 {
     if (!p)
         return;
-    int n = *(unsigned *)((char*)p-8);
-    if (n < HASHBLKSIZE)
+    __preheader* item = ((__preheader *)p)-1;
+    if (item->size/8 < HASHBLKSIZE)
     {
-        *(void **)((char*)p-4) = dictionary[n/4];
-        dictionary[n/4] = (void *)((char*)p-8);
+        item->link = dictionary[item->size / 8];
+        dictionary[item->size/8] = item;
     }
     else
     {
-        free((char*)p-8);
+        free(item);
     }
 }
 

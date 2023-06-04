@@ -107,6 +107,7 @@ int Runner::RunOne(std::list<RuleList*>* ruleStack_in, Depends* depend, Environm
         w.join();
     if (stop)
     {
+        rl->Release();
         return 1;
     }
     if (touch)

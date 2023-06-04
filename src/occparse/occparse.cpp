@@ -73,6 +73,7 @@
 #include <cstdlib>
 #include <cstdio>
 
+#define x64_compiler
 #ifndef x64_compiler
 // this overloading of operator new/delete is a speed optimization
 // it basically caches small allocations for reuse

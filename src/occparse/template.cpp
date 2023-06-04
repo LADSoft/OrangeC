@@ -8416,6 +8416,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning)
             break;
         }
     }
+    auto tp = basetype(basetype(sym->tp)->btp);
     sym->templateParams = copyParams(sym->templateParams, true);
     sym->sb->instantiated = true;
     SetLinkerNames(sym, lk_cdecl);
@@ -12455,10 +12456,12 @@ void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, std::list<NAMESPACEVAL
             {
                 if (instance->sb->templateLevel)
                 {
-                    instance = TemplateFunctionInstantiate(instance, true);
-                    spi->sb->attribs.inheritable.linkage4 = lk_virtual;
                     if (!isExtern)
+                    {
+                        instance = TemplateFunctionInstantiate(instance, true);
+                        spi->sb->attribs.inheritable.linkage4 = lk_virtual;
                         InsertInline(instance);
+                    }
                 }
                 *sp = instance;
             }

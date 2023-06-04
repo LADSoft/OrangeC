@@ -44,6 +44,7 @@
 #include "symtab.h"
 #include "cpplookup.h"
 #include "types.h"
+#include "constopt.h"
 #include <unordered_set>
 
 namespace Parser
@@ -156,7 +157,7 @@ static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, SymbolTable<SYMB
                         (!isstructured(basetype(func->tp)->btp) && !comparetypes(sym->tp, basetype(func->tp)->btp, 1) &&
                          !sameTemplatePointedTo(sym->tp, basetype(func->tp)->btp)))
                         tr = basetype(basetype(sym->tp)->btp);
-                    if (tr && tr->sp->sb->structuredAliasType && (thisptr->type != en_l_p || thisptr->left->type != en_auto || !thisptr->left->v.sp->sb->thisPtr || basetype(basetype(thisptr->left->v.sp->tp)->btp)->sp->sb->structuredAliasType))
+                    if (tr && tr->sp->sb->structuredAliasType && (thisptr->type != en_l_p || thisptr->left->type != en_auto || !thisptr->left->v.sp->sb->thisPtr || basetype(basetype(thisptr->left->v.sp->tp)->btp)->sp->sb->structuredAliasType) && !expressionHasSideEffects(thisptr))
                     {
                         auto val = thisptr;
                         deref(tr->sp->sb->structuredAliasType, &val); 
@@ -260,7 +261,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                 TYPE *tpr = nullptr;
                 if (isref(sym->tp))
                     tpr = basetype(sym->tp)->btp;
-                if (tpr && (isstructured(tpr) && basetype(tpr)->sp->sb->structuredAliasType) && tpr->size <= Optimizer::chosenAssembler->arch->word_size && Optimizer::architecture != ARCHITECTURE_MSIL)
+                if (tpr && (isstructured(tpr) && basetype(tpr)->sp->sb->structuredAliasType) && tpr->size <= Optimizer::chosenAssembler->arch->word_size && Optimizer::architecture != ARCHITECTURE_MSIL && !expressionHasSideEffects((*ita)->exp))
                 {
                     // can pass reference by value...
                     auto val = (*ita)->exp;

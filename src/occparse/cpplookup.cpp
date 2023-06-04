@@ -5641,7 +5641,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         {
                             char *buf = (char*)alloca(4096), *p;
                             int n;
-                            memset(buf, 0, sizeof(buf));
+                            buf[0] = 0;
                             unmangle(buf, basetype(*tp)->sp->sb->decoratedName);
                             n = strlen(buf);
                             p = (char*)strrchr(buf, ':');

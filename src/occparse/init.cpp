@@ -163,7 +163,6 @@ EXPRESSION* stringlit(STRING* s)
                     rv = intNode(en_labcon, lp->label);
                     rv->string = s;
                     rv->size = MakeType(bt_struct);
-                    rv->size->size;
                     rv->altdata = intNode(en_c_i, s->strtype);
                     lp->refCount++;
                     if (Optimizer::msilstrings)
@@ -180,7 +179,6 @@ EXPRESSION* stringlit(STRING* s)
     rv = intNode(en_labcon, s->label);
     rv->string = s;
     rv->size = MakeType(bt_struct);
-    rv->size->size;
     rv->altdata = intNode(en_c_i, s->strtype);
     s->refCount++;
     if (Optimizer::msilstrings)
@@ -286,7 +284,7 @@ void dumpLits(void)
             break;
         }
         Optimizer::put_string_label(s->label, s->strtype);
-        n +- genstring(s);
+        n += genstring(s);
     }
 }
 

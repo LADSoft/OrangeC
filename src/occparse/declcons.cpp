@@ -3264,11 +3264,13 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                 std::list<INITLIST*>* temp2 = &temp;
 
                 if (params->arguments && params->arguments->size())
+                {
                     if (params->arguments->front()->nested && params->arguments->front()->nested->front()->nested &&
                         !params->arguments->front()->initializer_list)
                         temp.push_back(params->arguments->front());
                     else
                         temp = *params->arguments;
+                }
                 if (!params->arguments->front()->initializer_list)
                 {
                     temp = *params->arguments->front()->nested;

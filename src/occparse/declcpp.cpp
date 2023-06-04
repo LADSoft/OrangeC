@@ -372,7 +372,7 @@ static bool backpatchVirtualFunc(SYMBOL* sym, std::list<VTABENTRY*>* entries, SY
                     {
                         if (func->sb->isfinal)
                             errorsym(ERR_OVERRIDING_FINAL_VIRTUAL_FUNC, func);
-                        if (func->sb->deleted != func->sb->deleted)
+                        if (func->sb->deleted)
                             errorsym2(ERR_DELETED_VIRTUAL_FUNC, func->sb->deleted ? func : func_in,
                                 func->sb->deleted ? func_in : func);
 

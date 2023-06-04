@@ -32,9 +32,6 @@ extern int calling_inline;
 extern Optimizer::IMODE* inlinereturnap;
 extern Optimizer::IMODE* structret_imode;
 
-extern SYMBOL* inlinesp_list[MAX_INLINE_NESTING];
-extern int inlinesp_count;
-
 void iexpr_init(void);
 void iexpr_func_init(void);
 bool HasIncDec();

@@ -445,8 +445,6 @@ static int PushInline(SYMBOL* sym, bool traceback)
         sym = reverseOrder.top();
         reverseOrder.pop();
         STRUCTSYM t, s, r;
-        if ((SYMBOL*)basetype(sym->tp)->syms && (SYMBOL*) basetype(sym->tp)->syms->size())
-            (SYMBOL*)basetype(sym->tp)->syms->front();
         t.tmpl = nullptr;
         r.tmpl = nullptr;
         if (sym->templateParams)

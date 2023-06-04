@@ -1720,7 +1720,7 @@ void peep_setne(OCODE *ip)
     if (final >= 0)
     {
         OCODE *ip1 = ip->back;
-        while (ip1->opcode <= op_blockend) ip1 = ip1->back;
+        while (ip1->opcode <= (e_opcode)op_blockend) ip1 = ip1->back;
         ip1 = ip1->back;
         int initial = matches_set(ip1);
         if (initial >= 0)

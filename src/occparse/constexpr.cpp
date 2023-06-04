@@ -1,4 +1,3 @@
-#pragma once
 /* Software License Agreement
  *
  *     Copyright(C) 1994-2022 David Lindauer, (LADSoft)

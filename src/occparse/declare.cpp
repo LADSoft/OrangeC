@@ -6735,11 +6735,12 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                     }
 
                     if (sp->sb->constexpression)
+                    {
                         if (ismemberdata(sp))
                             error(ERR_CONSTEXPR_MEMBER_MUST_BE_STATIC);
-                        else {
+                        else
                             CheckIsLiteralClass(sp->tp);
-                        }
+                    }
                     if (lex)
                     {
                         if (linkage != lk_cdecl)

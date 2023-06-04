@@ -1,6 +1,6 @@
 #pragma once
 #ifdef _WIN32
-#    define NOMINMAX
+#    define NOMINMAX 1
 #    include <windows.h>
 #elif defined(__linux__)
 #    include <semaphore.h>

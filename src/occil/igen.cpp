@@ -178,7 +178,8 @@ static void iop_cmpxchgweak(Optimizer::QUAD* q) { asm_atomic(q); }
 static void iop_cmpxchgstrong(Optimizer::QUAD* q) { asm_atomic(q); }
 static void iop_kill_dependency(Optimizer::QUAD* q) { asm_atomic(q); }
 static void iop_xchg(Optimizer::QUAD* q) { asm_atomic(q); }
-
+static void iop_beginexcept(Optimizer::QUAD* q) { }
+static void iop_endexcept(Optimizer::QUAD* q) {}
 /* List of opcodes
  * This list MUST be in the same order as the op_ enums
  */
@@ -276,6 +277,8 @@ static void (*oplst[])(Optimizer::QUAD* q) = {
     iop_xchg,
     asm_prologue,
     asm_epilogue,
+    iop_beginexcept,
+    iop_endexcept,
     asm_pushcontext,
     asm_popcontext,
     asm_loadcontext,

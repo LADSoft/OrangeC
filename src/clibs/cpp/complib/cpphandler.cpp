@@ -123,7 +123,7 @@ bool _RTL_FUNC std::uncaught_exception()
      return uncaught_exceptions() != 0;
 }
 
-std::exception_ptr std::current_exception() noexcept
+std::exception_ptr _RTL_FUNC std::current_exception() noexcept
 {
     if (thrownExceptions.size())
     {
@@ -319,7 +319,7 @@ static BOOL matchBlock(XCTAB* record, PEXCEPTION_RECORD p, PCONTEXT context)
     }
     return FALSE;
 }
-extern "C" LONG __cppexceptionhandle(PEXCEPTION_RECORD p, void* record, PCONTEXT context, void* param)
+__export extern "C" LONG __cppexceptionhandle(PEXCEPTION_RECORD p, void* record, PCONTEXT context, void* param)
 {
     if (p->ExceptionFlags & 2)  // unwinding
     {
@@ -432,7 +432,7 @@ void _RTL_FUNC _CatchCleanup(void* r)
     thrownExceptions.pop_back();
 }
 
-[[noreturn]] void std::rethrow_exception(std::exception_ptr arg)
+[[noreturn]] void _RTL_FUNC std::rethrow_exception(std::exception_ptr arg)
 {
     ULONG_PTR params[1];
     void *thrd;

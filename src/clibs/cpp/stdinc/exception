@@ -7,7 +7,7 @@
 #include <type_traits>
 #include <typeinfo>
 
-extern bool uncaught_exception();
+extern bool _RTL_FUNC uncaught_exception();
 
 struct _xctab;
 struct _rtti;
@@ -18,17 +18,17 @@ namespace __dls {
 namespace std {
 
 typedef void (*terminate_handler) ();
-extern terminate_handler set_terminate(terminate_handler f) __NOTHROW ;
-extern void terminate( );
+extern terminate_handler _RTL_FUNC set_terminate(terminate_handler f) __NOTHROW ;
+extern void _RTL_FUNC terminate( );
 
 typedef void (*unexpected_handler) ();
-extern unexpected_handler set_unexpected( unexpected_handler f)  __NOTHROW ;
-extern unexpected_handler get_unexpected() __NOTHROW;
-extern void unexpected();
+extern unexpected_handler _RTL_FUNC set_unexpected( unexpected_handler f)  __NOTHROW ;
+extern unexpected_handler _RTL_FUNC get_unexpected() __NOTHROW;
+extern void _RTL_FUNC unexpected();
 
-extern bool uncaught_exception();
+extern bool _RTL_FUNC uncaught_exception();
 
-extern int uncaught_exceptions() noexcept;
+extern int _RTL_FUNC uncaught_exceptions() noexcept;
 
   class _RTL_CLASS exception     
   {
@@ -148,7 +148,7 @@ extern int uncaught_exceptions() noexcept;
    [[noreturn]] void _RTL_FUNC rethrow_exception(exception_ptr arg);
 
 
-   __exceptionInternal* __make_exception_ptr(void*, int, void*, void*);
+   __exceptionInternal* _RTL_FUNC __make_exception_ptr(void*, int, void*, void*);
 
    template <class __T>
    void __consptr_scalar(__T& dest, __T& src) { dest = src; }
@@ -167,7 +167,7 @@ extern int uncaught_exceptions() noexcept;
         return std::exception_ptr(__make_exception_ptr((void*)&e, 1, (void *)&__consptr_struct<E>, (void*)typeid(E).tpp));
    }
 
-   std::exception_ptr current_exception() noexcept;
+   std::exception_ptr _RTL_FUNC current_exception() noexcept;
 
     class _RTL_CLASS nested_exception 
     {

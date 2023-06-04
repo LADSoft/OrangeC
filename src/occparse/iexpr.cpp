@@ -75,9 +75,6 @@ int calling_inline;
 Optimizer::IMODE* inlinereturnap;
 Optimizer::IMODE* structret_imode;
 
-SYMBOL* inlinesp_list[MAX_INLINE_NESTING];
-int inlinesp_count;
-
 static std::unordered_map<Optimizer::QUAD*, Optimizer::IMODE*, OrangeC::Utils::fnv1a32_binary<DAGCOMPARE>,
                           OrangeC::Utils::bin_eql<DAGCOMPARE>>
     name_value_hash;
@@ -98,7 +95,6 @@ void iexpr_init(void)
 {
     stackblockOfs = 0;
     calling_inline = 0;
-    inlinesp_count = 0;
     push_nesting = 0;
     this_bound = 0;
     inline_level = 0;

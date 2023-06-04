@@ -73,6 +73,7 @@ static int namenumber;
 void inlineinit(void)
 {
     namenumber = 0;
+    inlinesp_count = 0;
     inlines.clear();
     inlineVTabs.clear();
     inlineData.clear();

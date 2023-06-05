@@ -17,7 +17,6 @@ install:
 branches:
    only:
      - master
-     - symtab
      - /v\d*\.\d*\.\d*\.\d*/
 
 configuration:

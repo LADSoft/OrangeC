@@ -52,8 +52,21 @@ extern "C" void _RTL_FUNC __call_unexpected(std::exception_ptr *e);
 
 extern "C" LONG ___xceptionhandle(PEXCEPTION_RECORD p, void* record, PCONTEXT context, void* param);
 
+std::nested_exception::nested_exception() noexcept : captured(std::current_exception()) 
+{ 
+}
 std::nested_exception::~nested_exception() __NOTHROW
 {
+}
+std::exception_ptr::~exception_ptr()
+{
+    decrement();
+    if (exc && !exc->referenceCount)
+    {
+        auto temp = exc;
+        exc = nullptr;
+        FreeExceptionObject(temp);
+    }
 }
 
 struct __thrownExceptions

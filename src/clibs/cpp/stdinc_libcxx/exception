@@ -111,16 +111,7 @@ extern int _RTL_FUNC uncaught_exceptions() noexcept;
       friend bool operator!=(const exception_ptr& left, const exception_ptr& right);
       friend bool operator==(const exception_ptr& left, nullptr_t right);
       friend bool operator!=(const exception_ptr& left, nullptr_t right);
-      ~exception_ptr()
-      {
-          decrement();
-          if (exc && !exc->referenceCount)
-          {
-              auto temp = exc;
-              exc = nullptr;
-              FreeExceptionObject(temp);
-          }
-      }
+      virtual ~exception_ptr();
       friend __exceptionInternal* __getxc(const exception_ptr& p);
       private:
           void FreeExceptionObject(__exceptionInternal *);
@@ -167,7 +158,7 @@ extern int _RTL_FUNC uncaught_exceptions() noexcept;
     class _RTL_CLASS nested_exception 
     {
        public:
-           inline nested_exception() noexcept : captured(current_exception()) { }
+           nested_exception() noexcept;
            inline nested_exception(const nested_exception&) noexcept = default;
            inline nested_exception& operator=(const nested_exception&) noexcept = default;
            virtual ~nested_exception() __NOTHROW;

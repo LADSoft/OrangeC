@@ -5207,7 +5207,16 @@ static const int XCTAB_INDEX_OFS = 5 * 4;
     gen_codes(op_push, ISZ_ADDR, eax, nullptr);
     gen_codes(op_mov, ISZ_ADDR, eax, fs0);
     gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_NEXT_PTR_OFS), eax);
-    gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_XCHANDLER_OFS), handler);
+    if (Optimizer::cparams.prm_lscrtdll)
+    {
+        handler->mode = am_direct;
+        gen_codes(op_mov, ISZ_ADDR, eax, handler);
+        gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_XCHANDLER_OFS), eax);
+    }
+    else
+    {
+        gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_XCHANDLER_OFS), handler);
+    }
     gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_ESP_OFS), makedreg(ESP));
     gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_EBP_OFS), makedreg(EBP));
     gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_XCFUNC_OFS), aprl);

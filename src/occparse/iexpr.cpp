@@ -98,8 +98,11 @@ void iexpr_init(void)
     push_nesting = 0;
     this_bound = 0;
     inline_level = 0;
-    Optimizer::externalSet.clear();
-    Optimizer::externals.clear();
+    if (Optimizer::architecture != ARCHITECTURE_MSIL)
+    {
+        Optimizer::externalSet.clear();
+        Optimizer::externals.clear();
+    }
 }
 void iexpr_func_init(void)
 {

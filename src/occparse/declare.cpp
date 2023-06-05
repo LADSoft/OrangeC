@@ -7078,12 +7078,15 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                                 ++it;
                                                 if ((*it)->type == kw_switch)
                                                 {
-                                                    // have to put initializations before the switch not in the switch body they cannot
+                                                    // have to put initializations before the switch not in the switch body they
+                                                    // cannot
                                                     // be accesed in the switch body
                                                     ++it;
-                                                    auto itb = (*it)->statements->end();
-                                                    ++itb;
+                                                    int n = (*it)->statements->size();
                                                     st = stmtNode(hold, emptyBlockdata, st_expr);
+                                                    auto itb = (*it)->statements->begin();
+                                                    for (int i = 0; i < n; i++, ++itb)
+                                                        ;
                                                     (*it)->statements->insert(itb, st);
                                                 }
                                                 else

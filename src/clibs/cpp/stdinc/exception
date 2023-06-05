@@ -35,9 +35,7 @@ extern int _RTL_FUNC uncaught_exceptions() noexcept;
   public:
     exception () __NOTHROW
     { ; }
-    exception (const exception&) __NOTHROW 
-    { ; }
-    exception& operator= (const exception& e)  __NOTHROW
+    inline exception& operator= (const exception& e)  __NOTHROW
     { return *this; }
     virtual ~exception ()  __NOTHROW;
 
@@ -50,11 +48,8 @@ extern int _RTL_FUNC uncaught_exceptions() noexcept;
   class _RTL_CLASS bad_exception : public exception     
   { 
   public:
-    bad_exception () __NOTHROW : exception( )
-    { ; }
-    bad_exception(const bad_exception&) __NOTHROW
-    { ; }
-    bad_exception& operator=(const bad_exception&) __NOTHROW
+    inline bad_exception () __NOTHROW  {}
+    inline bad_exception& operator=(const bad_exception&) __NOTHROW
     { return *this; }
     virtual ~bad_exception ()  __NOTHROW;
 
@@ -175,7 +170,7 @@ extern int _RTL_FUNC uncaught_exceptions() noexcept;
            inline nested_exception() noexcept : captured(current_exception()) { }
            inline nested_exception(const nested_exception&) noexcept = default;
            inline nested_exception& operator=(const nested_exception&) noexcept = default;
-           virtual ~nested_exception() {};
+           virtual ~nested_exception() __NOTHROW;
            // access functions
            [[noreturn]] void rethrow_nested() const;
            inline exception_ptr nested_ptr() const noexcept

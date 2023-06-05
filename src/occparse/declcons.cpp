@@ -1869,7 +1869,6 @@ static void dovtabThunks(std::list<BLOCKDATA*>& b, SYMBOL* sym, EXPRESSION* this
     STATEMENT* st;
     SYMBOL* localsp;
     localsp = sym->sb->vtabsp;
-    InsertInline(localsp);
     EXPRESSION* vtabBase = varNode(en_global, localsp);
     if (localsp->sb->attribs.inheritable.linkage2 == lk_import)
         deref(&stdpointer, &vtabBase);
@@ -2919,6 +2918,7 @@ static void undoBases(std::list<BLOCKDATA*>& b, SYMBOL* against, std::list<BASEC
 }
 void thunkDestructorTail(std::list<BLOCKDATA*>& b, SYMBOL* sp, SYMBOL* dest, SymbolTable<SYMBOL>* syms, bool defaulted)
 {
+    InsertInline(sp);
     if (sp->tp->type != bt_union)
     {
         EXPRESSION* thisptr;

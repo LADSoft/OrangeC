@@ -3736,6 +3736,9 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
             pushlevel += 8;
             if (apa->mode != am_dreg)
             {
+                gen_codes(op_push, ISZ_UINT, makedreg(EDX), nullptr);
+                gen_codes(op_push, ISZ_UINT, makedreg(EAX), nullptr);
+                pushlevel += 8;
                 if (regflagsa & used_mask)
                 {
                     apa = atomic_lea(apl, apa, regflags | used_mask, reg1, pushreg1);
@@ -3815,6 +3818,12 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
             else if (pushpair)
             {
                 gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
+                pushlevel -= 8;
+            }
+            if (apa->mode != am_dreg)
+            {
+                gen_codes(op_pop, ISZ_UINT, makedreg(EAX), nullptr);
+                gen_codes(op_pop, ISZ_UINT, makedreg(EDX), nullptr);
                 pushlevel -= 8;
             }
             if (apa->preg != EBX && (!apa1 || apa1->preg != EBX))

@@ -3169,6 +3169,8 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                     error(ERR_EXPRESSION_SYNTAX);
                 else if (!comparetypes(itype, tp1, true))
                 {
+                    if (lex->data->errline == 31 && strstr(lex->data->errfile, "t3.cpp"))
+                        printf("hi");
                     bool toErr = true;
                     if (isstructured(tp1))
                     {
@@ -3186,8 +3188,17 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                             exp2->v.func->thistp = MakeType(bt_pointer, tp1);
                             if (isstructured(basetype(sym->tp)->btp))
                             {
-                                exp2->v.func->returnSP = basetype(basetype(sym->tp)->btp)->sp;
-                                exp2->v.func->returnEXP = anonymousVar(sc_auto, exp2->v.func->returnSP->tp);
+                                if (basetype(basetype(sym->tp)->btp)->sp->sb->structuredAliasType)
+                                {
+                                    auto bn = baseexp;
+                                    deref(basetype(basetype(sym->tp)->btp)->sp->sb->structuredAliasType, &bn);
+                                    exp2 = exprNode(en_assign, bn, exp2);
+                                }
+                                else
+                                {
+                                    exp2->v.func->returnSP = basetype(basetype(sym->tp)->btp)->sp;
+                                    exp2->v.func->returnEXP = baseexp;
+                                }
                             }
                             exp1 = exp2;
                         }

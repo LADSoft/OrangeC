@@ -740,6 +740,7 @@ typedef struct sym
         unsigned pureDest : 1;         // destructor is pure
         unsigned isConstructor : 1;    // is a constructor
         unsigned isDestructor : 1;     // is  adestructor
+        unsigned isAssign : 1;         // is an assignment operator
         unsigned literalClass : 1;     // is a literal class
         unsigned xtEntry : 1;          // is an exception table label
         unsigned isExplicit : 1;       // explicit constructor or conversion function

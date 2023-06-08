@@ -3169,8 +3169,6 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                     error(ERR_EXPRESSION_SYNTAX);
                 else if (!comparetypes(itype, tp1, true))
                 {
-                    if (lex->data->errline == 31 && strstr(lex->data->errfile, "t3.cpp"))
-                        printf("hi");
                     bool toErr = true;
                     if (isstructured(tp1))
                     {

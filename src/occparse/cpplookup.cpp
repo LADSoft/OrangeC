@@ -4098,7 +4098,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
                 }
                 else if (basetype(tpp)->sp->sb->trivialCons)
                 {
-                    if (!candidate->sb->isConstructor && !candidate->sb->castoperator && lookupSpecificCast(basetype(tpa)->sp, tpp))
+                    if (!candidate->sb->isConstructor && !candidate->sb->castoperator && !candidate->sb->isAssign && lookupSpecificCast(basetype(tpa)->sp, tpp))
                         getUserConversion(F_WITHCONS, tpp, tpa, expa, n, seq, candidate, userFunc, true);
                     else
                         seq[(*n)++] = CV_NONE;

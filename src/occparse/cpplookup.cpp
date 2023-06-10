@@ -1444,7 +1444,7 @@ static bool IsFriend(SYMBOL* cls, SYMBOL* frnd)
         {
             for (auto sym : *cls->sb->friends)
             {
-                if (sym == frnd || sym->sb->maintemplate == frnd || sym == frnd->sb->parentTemplate)
+                if (sym == frnd || sym->sb->maintemplate == frnd || sym == frnd->sb->mainsym || sym == frnd->sb->parentTemplate)
                     return true;
                 if (isfunction(sym->tp) && sym->sb->parentClass == frnd->sb->parentClass && !strcmp(sym->name, frnd->name) &&
                     sym->sb->overloadName && searchOverloads(frnd, sym->sb->overloadName->tp->syms))
@@ -4046,7 +4046,8 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         {
             if (allowUser)
             {
-                getSingleConversionWrapped(tppp, tpa, expa, n, seq, candidate, userFunc, !isconst(tppp), allowUser);
+                getSingleConversionWrapped(tppp, tpa, expa, n, seq, candidate, userFunc,
+                                           !isconst(tppp) && (basetype(tpp)->type == bt_lref || !isarithmetic(tppp)), allowUser);
             }
             else
                 seq[(*n)++] = CV_NONE;
@@ -4576,7 +4577,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
     int n = 0;
     int i;
     std::list<INITLIST*> a;
-    enum e_cvsrn seq[100];
+    enum e_cvsrn seq[500];
     TYPE* initializerListType = nullptr;
     int m = 0, m1;
     if (sym->tp->type == bt_any)

@@ -2880,14 +2880,18 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                         lex = getArgs(lex, funcsp, funcparams, end, true, 0);
                         if (funcparams->arguments && funcparams->arguments->size())
                         {
-                            /*
-                            for (auto a : *funcparams->arguments)
-                                a->initializer_list = true;
-                                */
-                            auto p = Allocate<INITLIST>();
-                            p->nested = funcparams->arguments;
-                            funcparams->arguments = initListListFactory.CreateList();
-                            funcparams->arguments->push_back(p);
+                            if (funcparams->arguments->front()->nested)
+                            {
+                                for (auto a : *funcparams->arguments)
+                                    a->initializer_list = true;
+                            }
+                            else
+                            {
+                                auto p = Allocate<INITLIST>();
+                                p->nested = funcparams->arguments;
+                                funcparams->arguments = initListListFactory.CreateList();
+                                funcparams->arguments->push_back(p);
+                            }
                         }
                         maybeConversion = false;
                     }

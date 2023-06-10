@@ -4015,6 +4015,7 @@ void parseNoexcept(SYMBOL* funcsp)
         dontRegisterTemplate++;
         LEXLIST* lex = SetAlternateLex(funcsp->sb->deferredNoexcept);
         STRUCTSYM s, t;
+        int n = PushTemplateNamespace(funcsp);
         if (funcsp->sb->parentClass)
         {
             s.str = funcsp->sb->parentClass;
@@ -4050,6 +4051,7 @@ void parseNoexcept(SYMBOL* funcsp)
                 dropStructureDeclaration();
             dropStructureDeclaration();
         }
+        PopTemplateNamespace(n);
         funcsp->sb->deferredNoexcept = (LEXLIST*)-1;
         dontRegisterTemplate--;
     }

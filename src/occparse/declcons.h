@@ -39,6 +39,7 @@ SYMBOL* getCopyCons(SYMBOL* base, bool move);
 bool hasVTab(SYMBOL* sp);
 void createConstructorsForLambda(SYMBOL* sp);
 void createDefaultConstructors(SYMBOL* sp);
+void ConditionallyDeleteClassMethods(SYMBOL* sp);
 EXPRESSION* destructLocal(EXPRESSION* exp);
 void DestructParams(std::list<INITLIST*>* il);
 void destructBlock(EXPRESSION** exp, SymbolTable<SYMBOL> *table, bool mainDestruct);

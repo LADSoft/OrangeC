@@ -450,8 +450,14 @@ bool exactMatchOnTemplateArgs(std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPL
             case kw_typename:
                 if (sameTemplate(ito->second->byClass.dflt, its->second->byClass.dflt))
                 {
-                    if (!exactMatchOnTemplateArgs(basetype(ito->second->byClass.dflt)->sp->templateParams,
-                        basetype(its->second->byClass.dflt)->sp->templateParams))
+                    auto to = ito->second->byClass.dflt;
+                    auto ts = its->second->byClass.dflt;
+                    if (isref(to))
+                        to = basetype(to)->btp;
+                    if (isref(ts))
+                        ts = basetype(ts)->btp;
+                    if (!exactMatchOnTemplateArgs(basetype(to)->sp->templateParams,
+                        basetype(ts)->sp->templateParams))
                         return false;
                 }
                 else
@@ -6897,8 +6903,33 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
 
     if (args->arguments)
     {
-        ita = args->arguments->begin();
-        itae = args->arguments->end();
+        if (args->arguments->size() == 1 && args->arguments->front()->nested)
+        {
+            auto itx = basetype(sym->tp)->syms->begin();
+            if ((*itx)->sb->thisPtr)
+                ++itx;
+            bool il = false;
+            if (isstructured((*itx)->tp))
+            {
+                SYMBOL* sym1 = basetype((*itx)->tp)->sp;
+                il = sym1->sb->initializer_list && sym1->sb->templateLevel;
+            }
+            if (!il)
+            {
+                ita = args->arguments->front()->nested->begin();
+                itae = args->arguments->front()->nested->end();
+            }
+            else
+            {
+                ita = args->arguments->begin();
+                itae = args->arguments->end();
+            }
+        }
+        else
+        {
+            ita = args->arguments->begin();
+            itae = args->arguments->end();
+        }
     }
     SYMBOL* rv;
 

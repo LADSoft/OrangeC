@@ -1438,21 +1438,24 @@ SYMBOL* LookupSym(char* name)
 }
 static bool IsFriend(SYMBOL* cls, SYMBOL* frnd)
 {
-    if (cls && frnd && cls->sb->friends)
+    if (cls != frnd)
     {
-        for (auto sym : *cls->sb->friends)
+        if (cls && frnd && cls->sb->friends)
         {
-            if (sym == frnd || sym->sb->maintemplate == frnd || sym == frnd->sb->parentTemplate)
-                return true;
-            if (isfunction(sym->tp) && sym->sb->parentClass == frnd->sb->parentClass && !strcmp(sym->name, frnd->name) &&
-                sym->sb->overloadName && searchOverloads(frnd, sym->sb->overloadName->tp->syms))
-                return true;
-            if (sym->sb->templateLevel && sym->sb->instantiations)
+            for (auto sym : *cls->sb->friends)
             {
-                for (auto instants : *sym->sb->instantiations)
+                if (sym == frnd || sym->sb->maintemplate == frnd || sym == frnd->sb->parentTemplate)
+                    return true;
+                if (isfunction(sym->tp) && sym->sb->parentClass == frnd->sb->parentClass && !strcmp(sym->name, frnd->name) &&
+                    sym->sb->overloadName && searchOverloads(frnd, sym->sb->overloadName->tp->syms))
+                    return true;
+                if (sym->sb->templateLevel && sym->sb->instantiations)
                 {
-                    if (instants == frnd || instants == frnd->sb->parentTemplate)
-                        return true;
+                    for (auto instants : *sym->sb->instantiations)
+                    {
+                        if (instants == frnd || instants == frnd->sb->parentTemplate)
+                            return true;
+                    }
                 }
             }
         }
@@ -1482,11 +1485,6 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
         return true;
     if (!basetype(currentBase->tp)->syms)
         return false;
-    /*
-    if (currentBase && derived)
-        if (derived == currentBase || derived == currentBase->sb->mainsym)
-            return member->sb->access >= minAccess;
-            */
     if (member->sb->parentClass == currentBase || member->sb->parentClass == currentBase->sb->mainsym)
         return memberAccess >= minAccess || level == 0;
     else if (member->sb->mainsym)
@@ -4861,7 +4859,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                     {
                         auto ita1 = ita;
                         ++ita1;
-                        if ((*ita)->nested->front()->initializer_list || (*ita)->initializer_list || ita1 != itae ||
+                        if ((*ita)->nested->front()->nested || (*ita)->initializer_list || ita1 != itae ||
                             (isstructured(tp1) &&
                              (!sym->sb->isConstructor || (!comparetypes(basetype(tp1), sym->sb->parentClass->tp, true) &&
                                                           !sameTemplate(basetype(tp1), sym->sb->parentClass->tp)))))
@@ -5840,8 +5838,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
             }
         }
     }
-
-    if (s.tmpl)
+     if (s.tmpl)
         dropStructureDeclaration();
     return sp;
 }

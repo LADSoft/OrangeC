@@ -772,6 +772,9 @@ typedef struct sym
         unsigned retblk : 1;                             // is a return block address
         unsigned initializer_list : 1;                   // struct is initializer_list
         unsigned externShim : 1;                         // symbol is an automatically generated external
+        unsigned deleteCopyCons : 1;                     // check if copy constructor needs deletion
+        unsigned deleteCopyAssign : 1;                   // check if copy assignment operator needs deleteion
+        unsigned deleteMove : 1;                         // check if move constructor/assignment ops need deleteion
         int __func__label;                               /* label number for the __func__ keyword */
         int labelCount;                                  /* number of code labels within a function body */
         int offset;                                      /* address offset of data in the given seg, or optimize register */

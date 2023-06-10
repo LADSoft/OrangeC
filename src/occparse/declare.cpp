@@ -980,6 +980,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                 calculateStructOffsets(sp);
             }
             GetStructAliasType(sp);
+            ConditionallyDeleteClassMethods(sp);
         }
     }
     -- resolvingStructDeclarations;

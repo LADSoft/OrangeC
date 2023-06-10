@@ -2733,7 +2733,7 @@ EXPRESSION* getThisNode(SYMBOL* sym)
 static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* base, int offset, enum e_sc sc, TYPE* itype,
                                           std::list<INITIALIZER*>** init, std::list<INITIALIZER*>** dest, bool arrayMember, int flags)
 {
-    std::list<INITIALIZER *>* data = nullptr;
+    std::list<INITIALIZER*>* data = nullptr;
     AGGREGATE_DESCRIPTOR *desc = nullptr, *cache = nullptr;
     bool c99 = false;
     bool toomany = false;
@@ -2878,9 +2878,17 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                     if (MATCHKW(lex, begin))
                     {
                         lex = getArgs(lex, funcsp, funcparams, end, true, 0);
-                        if (funcparams->arguments)
+                        if (funcparams->arguments && funcparams->arguments->size())
+                        {
+                            /*
                             for (auto a : *funcparams->arguments)
                                 a->initializer_list = true;
+                                */
+                            auto p = Allocate<INITLIST>();
+                            p->nested = funcparams->arguments;
+                            funcparams->arguments = initListListFactory.CreateList();
+                            funcparams->arguments->push_back(p);
+                        }
                         maybeConversion = false;
                     }
                     else

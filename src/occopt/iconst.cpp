@@ -1652,7 +1652,7 @@ static void iterateMark(int n)
     {
         if ((uses->ins->temps & TEMP_ANS) && uses->ins->ans->mode == i_direct)
         {
-            if (!uses->ins->ans->offset->sp->pushedtotemp)
+            if (!uses->ins->ans->offset->sp->pushedtotemp && uses->ins->ans->size != ISZ_ADDR)
             {
                 int t = uses->ins->ans->offset->sp->i;
                 tempInfo[t]->preSSATemp = -1;

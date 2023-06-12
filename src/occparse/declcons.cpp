@@ -589,11 +589,23 @@ static bool checkDest(SYMBOL* sp, SYMBOL* parent, SymbolTable<SYMBOL>* syms, enu
         dest = basetype(dest->tp)->syms->front();
         if (dest->sb->deleted)
             return true;
-        if (!isAccessible(sp, parent, dest, nullptr, access, false))
+        if (dest->sb->access < access)
             return true;
     }
     return false;
 }
+static bool noexceptDest(SYMBOL* sp) 
+{
+    SYMBOL* dest = search(sp->tp->syms, overloadNameTab[CI_DESTRUCTOR]);
+
+    if (dest)
+    {
+        dest = basetype(dest->tp)->syms->front();
+        return dest->sb->noExcept;
+    }
+    return true;
+}
+
 static bool checkDefaultCons(SYMBOL* sp, SymbolTable<SYMBOL>* syms, enum e_ac access)
 {
     SYMBOL* cons = search(syms, overloadNameTab[CI_CONSTRUCTOR]);
@@ -613,7 +625,7 @@ static bool checkDefaultCons(SYMBOL* sp, SymbolTable<SYMBOL>* syms, enum e_ac ac
         {
             if (dflt->sb->deleted)
                 return true;
-            if (!isAccessible(sp, dflt->sb->parentClass, dflt, nullptr, access, false))
+            if (dflt->sb->access < access)
                 return true;
         }
         else
@@ -782,7 +794,7 @@ static bool checkCopyCons(SYMBOL* sp, SYMBOL* base, enum e_ac access)
     {
         if (dflt->sb->deleted)
             return true;
-        if (!isAccessible(sp, dflt->sb->parentClass, dflt, nullptr, access, false))
+        if (dflt->sb->access < access)
             return true;
     }
     else
@@ -798,7 +810,7 @@ static bool checkCopyAssign(SYMBOL* sp, SYMBOL* base, enum e_ac access)
     {
         if (dflt->sb->deleted)
             return true;
-        if (!isAccessible(sp, dflt->sb->parentClass, dflt, nullptr, access, false))
+        if (dflt->sb->access < access)
             return true;
     }
     else
@@ -814,7 +826,7 @@ static bool checkMoveCons(SYMBOL* sp, SYMBOL* base, enum e_ac access)
     {
         if (dflt->sb->deleted)
             return true;
-        if (!isAccessible(sp, dflt->sb->parentClass, dflt, nullptr, access, false))
+        if (dflt->sb->access < access)
             return true;
     }
     return false;
@@ -826,7 +838,7 @@ static bool checkMoveAssign(SYMBOL* sp, SYMBOL* base, enum e_ac access)
     {
         if (dflt->sb->deleted)
             return true;
-        if (!isAccessible(sp, dflt->sb->parentClass, dflt, nullptr, access, false))
+        if (dflt->sb->access < access)
             return true;
     }
     else
@@ -1175,6 +1187,38 @@ static bool isDestructorDeleted(SYMBOL* sp)
                     return true;
     return false;
 }
+static bool isDestructorNoexcept(SYMBOL* sp)
+{
+    BASECLASS* base;
+    VBASEENTRY* vbase;
+    if (basetype(sp->tp)->type == bt_union)
+    {
+        return false;
+    }
+    for (auto sp1 : *basetype(sp->tp)->syms)
+    {
+        TYPE* m;
+        if (sp1->sb->storage_class == sc_member || sp1->sb->storage_class == sc_mutable)
+        {
+            if (isstructured(sp1->tp))
+            {
+                if (!noexceptDest(basetype(sp1->tp)->sp))
+                    return false;
+            }
+        }
+    }
+
+    if (sp->sb->baseClasses)
+        for (auto base : *sp->sb->baseClasses)
+            if (!noexceptDest(base->cls))
+                return false;
+    if (sp->sb->vbaseEntries)
+        for (auto vbase : *sp->sb->vbaseEntries)
+            if (vbase->alloc)
+                if (!noexceptDest(vbase->cls))
+                    return false;
+    return true;
+}
 static void conditionallyDeleteDefaultConstructor(SYMBOL* func)
 {
     for (auto sp : *basetype(func->tp)->syms)
@@ -1223,6 +1267,20 @@ static bool conditionallyDeleteDestructor(SYMBOL* sp)
         sp->sb->deleted = true;
     }
     return false;
+}
+static void SetDestructorNoexcept(SYMBOL* sp)
+{
+    if (!templateNestingCount || instantiatingTemplate)
+    {
+        if (sp->sb->deferredNoexcept && sp->sb->deferredNoexcept != (LEXLIST*)-1)
+        {
+            parseNoexcept(sp);
+        }
+        else if (sp->sb->deferredNoexcept == 0)
+        {
+            sp->sb->noExcept = isDestructorNoexcept(sp->sb->parentClass);
+        }
+    }
 }
 void createConstructorsForLambda(SYMBOL* sp)
 {
@@ -1334,10 +1392,13 @@ void createDefaultConstructors(SYMBOL* sp)
     if (!dest)
     {
         declareDestructor(sp);
+        auto dest1 = search(basetype(sp->tp)->syms, overloadNameTab[CI_DESTRUCTOR]);
+        SetDestructorNoexcept(dest1->tp->syms->front());
     }
     else
     {
         sp->sb->hasDest = true;
+        SetDestructorNoexcept(dest->tp->syms->front());
     }
     if (cons)
     {

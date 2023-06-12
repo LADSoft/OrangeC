@@ -2411,6 +2411,7 @@ static bool noexceptStmt(std::list<STATEMENT*>* blocks)
     }
     return rv;
 }
+int count;
 LEXLIST* expression_noexcept(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp)
 {
     lex = getsym();

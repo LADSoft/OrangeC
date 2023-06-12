@@ -723,7 +723,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
             {
                 Optimizer::gen_icode(Optimizer::i_loadstack, 0, allocaAP, 0);
             }
-            if (Optimizer::cparams.prm_xcept && funcsp->sb->xc && funcsp->sb->xc->xclab)
+            if (Optimizer::cparams.prm_xcept && Optimizer::SymbolManager::Get(funcsp)->xc && funcsp->sb->xc && funcsp->sb->xc->xclab)
                 gen_except(false, funcsp->sb->xc);
             SubProfilerData();
             if (returnSym && !isvoid(basetype(funcsp->tp)->btp))
@@ -1195,7 +1195,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     }
     Optimizer::gen_label(startlab);
     AddProfilerData(funcsp);
-    if (Optimizer::cparams.prm_xcept && funcsp->sb->xc && funcsp->sb->xc->xclab)
+    if (Optimizer::cparams.prm_xcept && Optimizer::SymbolManager::Get(funcsp)->xc && funcsp->sb->xc && funcsp->sb->xc->xclab)
     {
          gen_except(true, funcsp->sb->xc);
     }

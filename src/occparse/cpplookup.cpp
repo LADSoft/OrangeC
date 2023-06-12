@@ -4482,17 +4482,35 @@ static void getInitListConversion(TYPE* tp, std::list<INITLIST*>* list, TYPE* tp
             {
                 auto it = list->begin();
                 auto ite = list->end();
-                for (auto member : *tp->syms)
+                while (it != ite)
                 {
-                    if (it == ite)
-                        break;
-                    if (ismemberdata(member))
+                    if (comparetypes((*it)->tp, tp, 0) || sameTemplate((*it)->tp, tp))
                     {
-                        getSingleConversion(member->tp, (*it)->tp, (*it)->exp, n, seq, candidate, userFunc, true);
-                        if (*n > 10)
-                            break;
+                        getSingleConversion(tp, (*it)->tp, (*it)->exp, n, seq, candidate, userFunc, true);
                         ++it;
+
                     }
+                    else
+                    {
+                        bool changed = false;
+                        for (auto member : *tp->syms)
+                        {
+                           if (it == ite)
+                               break;
+                           if (ismemberdata(member))
+                           {
+                               getSingleConversion(member->tp, (*it)->tp, (*it)->exp, n, seq, candidate, userFunc, true);
+                               if (*n > 10)
+                                    break;
+                               ++it;
+                               changed = true;
+                           }
+                        }
+                        if (!changed)
+                           break;
+                    }
+                    if (*n > 10)
+                        break;
                 }
                 if (it != ite)
                 {
@@ -4868,16 +4886,11 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                             initializerListType = basetype(tp1);
                             if (!sym->sb->parentClass || (!matchesCopy(sym, false) && !matchesCopy(sym, true)))
                             {
+                                getInitListConversion(basetype(tp1), (*ita)->nested, nullptr, &m, seq, sym,
+                                                          userFunc ? &userFunc[n] : nullptr);
                                 if ((*ita)->initializer_list)
                                 {
-                                    getInitListConversion(basetype(tp1), (*ita)->nested, nullptr, &m, seq, sym,
-                                                          userFunc ? &userFunc[n] : nullptr);
                                     ++it;
-                                }
-                                else
-                                {
-                                    getInitListConversion(basetype(tp1), (*ita)->nested, nullptr, &m, seq, sym,
-                                                          userFunc ? &userFunc[n] : nullptr);
                                 }
                             }
                             else

@@ -2460,8 +2460,8 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 // if so we have to create a temporary, store the value, and generate a thisptr off the
                 // address of the temporary
                 // this can only happen if we are using a function as the this pointer...
-                auto ths = aliasToTemp(funcsp, f->thisptr);
-                push_param(ths, funcsp, nullptr, f->thistp, F_OBJECT);
+                //auto ths = aliasToTemp(funcsp, f->thisptr);
+                push_param(f->thisptr, funcsp, nullptr, f->thistp, F_OBJECT);
             }
         }
         if (f->callLab == -1)

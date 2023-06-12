@@ -882,7 +882,7 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                         {
                             while (arg->tp->type == bt_typedef)
                                 arg->tp = arg->tp->btp;
-                            bool rref = isstructured(arg->tp);
+                            bool rref = arg->tp->type == bt_rref;
                             if (isref(arg->tp) && !isstructured(basetype(arg->tp)->btp))
                                 arg->tp = basetype(arg->tp)->btp;
                             holdl.push_back(arg->tp->lref);

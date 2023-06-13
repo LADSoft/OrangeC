@@ -5295,7 +5295,6 @@ static void doNames(SYMBOL* sym)
         doNames(sym->sb->parentClass);
     SetLinkerNames(sym, lk_cdecl);
 }
-int count3;
 static bool IsMove(SYMBOL* sp)
 {
     bool rv = false;

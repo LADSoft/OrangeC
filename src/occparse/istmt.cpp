@@ -587,15 +587,13 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
             if ((flags & F_RETURNREFBYVALUE) && funcsp->sb->retcount == 1 && isref(basetype(funcsp->tp)->btp))
             {
                  tpr = basetype(basetype(funcsp->tp)->btp)->btp;
-                 if (!isstructured(tpr))
+                 if (isstructured(tpr))
                  {
-                    size = sizeFromType(tpr);
-                    if (size == ISZ_OBJECT)
-                        tpr = nullptr;
+                    tpr = basetype(tpr)->sp->sb->structuredAliasType;
                  }
                  else
                  {
-                    tpr = basetype(tpr)->sp->sb->structuredAliasType;
+                    tpr = nullptr;
                  }
             }
             if (tpr && isint(tpr) && tpr->size <= Optimizer::chosenAssembler->arch->word_size)

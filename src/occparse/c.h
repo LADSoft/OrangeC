@@ -437,6 +437,7 @@ typedef struct expr
     int paramArray : 1;
     int adjustLabel : 1;
     int structByAddress : 1;
+    int isStructAddress : 1;
 } EXPRESSION;
 
 typedef struct _msilarray

@@ -107,7 +107,7 @@ static EXPRESSION* inlineGetThisPtr(EXPRESSION* exp)
     }
     return nullptr;
 }
-static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, SymbolTable<SYMBOL>* table, EXPRESSION* thisptr)
+static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, int flags, SymbolTable<SYMBOL>* table, EXPRESSION* thisptr)
 {
     EXPRESSION *rv = nullptr;
     if (table->size())
@@ -153,9 +153,9 @@ static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, SymbolTable<SYMB
                               : inlineGetThisPtr(thisptr);
                     TYPE* tr = nullptr;
                     
-                    if (func->sb->isConstructor || func->sb->isDestructor ||
+                    if (!(flags & F_RETURNSTRUCTBYADDRESS) && (func->sb->isConstructor || func->sb->isDestructor ||
                         (!isstructured(basetype(func->tp)->btp) && !comparetypes(sym->tp, basetype(func->tp)->btp, 1) &&
-                         !sameTemplatePointedTo(sym->tp, basetype(func->tp)->btp)))
+                         !sameTemplatePointedTo(sym->tp, basetype(func->tp)->btp))))
                         tr = basetype(basetype(sym->tp)->btp);
                     if (tr && tr->sp->sb->structuredAliasType && (thisptr->type != en_l_p || thisptr->left->type != en_auto || !thisptr->left->v.sp->sb->thisPtr || basetype(basetype(thisptr->left->v.sp->tp)->btp)->sp->sb->structuredAliasType) && !expressionHasSideEffects(thisptr))
                     {
@@ -167,7 +167,7 @@ static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, SymbolTable<SYMB
                     }
                     else
                     {
-                        src = gen_expr(funcsp, thisptr, 0, natural_size(thisptr));
+                        src = gen_expr(funcsp, thisptr, F_RETURNSTRUCTBYADDRESS, natural_size(thisptr));
                         ap1 = Optimizer::LookupLoadTemp(nullptr, src);
                         if (ap1 != src)
                         {
@@ -301,15 +301,26 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                                       Optimizer::sizeFromISZ(n) > Optimizer::chosenAssembler->arch->word_size ||
                                       Optimizer::architecture == ARCHITECTURE_MSIL;
                     bool createTempByRef = false;
-                    if (!createTemp && val->type == en_stackblock)
+                    if (!createTemp)
                     {
-                        val = val->left;
-                        if (val->type != en_func && val->type != en_thisref)
+                        if (val->type == en_stackblock)
                         {
-                            deref(basetype(sym->tp)->sp->sb->structuredAliasType, &val);
+                            val = val->left;
+                            if (val->type != en_func && val->type != en_thisref)
+                            {
+                                deref(basetype(sym->tp)->sp->sb->structuredAliasType, &val);
+                            }
+                        }
+                        else if (val->type == en_void)
+                        {
+                            auto val1 = &val;
+                            while ((*val1)->type == en_void && (*val1)->right)
+                                val1 = &(*val1)->right;
+                            if ((*val1)->isStructAddress)
+                                deref(basetype(sym->tp)->sp->sb->structuredAliasType, val1);
                         }
                     }
-                    src = gen_expr(funcsp, val, 0, natural_size(val));
+                    src = gen_expr(funcsp, val, F_RETURNSTRUCTBYADDRESS, natural_size(val));
 
                     if (src->wasinlined && !createTemp)
                     {
@@ -630,13 +641,13 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         inlineSymStructPtr.push_back(exp);
         found = true;
     }
-    auto thisptr = inlineBindThis(funcsp, f->sp, basetype(f->sp->tp)->syms, f->thisptr);
+    auto thisptr = inlineBindThis(funcsp, f->sp, flags, basetype(f->sp->tp)->syms, f->thisptr);
     inlineBindArgs(funcsp, basetype(f->sp->tp)->syms, f->arguments);
     inlineSymList.insert(f->sp);
     inlineSymThisPtr.push_back(thisptr);
     inlineCopySyms(f->sp->sb->inlineFunc.syms);
     genstmt(f->sp->sb->inlineFunc.stmt->front()->lower, f->sp,
-            flags & (F_RETURNREFBYVALUE | F_RETURNSTRUCTBYVALUE) |
+            (flags & (F_RETURNREFBYVALUE | F_RETURNSTRUCTBYVALUE)) |
                 ((flags & F_NOVALUE) && !isstructured(basetype(f->sp->tp)->btp) ? F_NORETURNVALUE : 0));
     if (f->sp->sb->inlineFunc.stmt->front()->blockTail)
     {

@@ -226,7 +226,7 @@ static LEXLIST* getTypeList(LEXLIST* lex, SYMBOL* funcsp, std::list<INITLIST*>**
             arg->tp = tp;
             if (initialize)
                 arg->tp = PerformDeferredInitialization(arg->tp, funcsp);
-            arg->exp = intNode(en_c_i, 1);
+//            arg->exp = intNode(en_c_i, 1);
             (*lptr)->push_back(arg);
         }
         else
@@ -245,7 +245,7 @@ static LEXLIST* getTypeList(LEXLIST* lex, SYMBOL* funcsp, std::list<INITLIST*>**
                             arg->tp = tpl.second->byClass.val;
                             if (initialize)
                                 arg->tp = PerformDeferredInitialization(arg->tp, funcsp);
-                            arg->exp = intNode(en_c_i, 1);
+//                            arg->exp = intNode(en_c_i, 1);
                             (*lptr)->push_back(arg);
                         }
                     }
@@ -258,7 +258,7 @@ static LEXLIST* getTypeList(LEXLIST* lex, SYMBOL* funcsp, std::list<INITLIST*>**
                     arg->tp = tp->templateParam->second->byClass.val;
                     if (initialize)
                         arg->tp = PerformDeferredInitialization(arg->tp, funcsp);
-                    arg->exp = intNode(en_c_i, 1);
+//                    arg->exp = intNode(en_c_i, 1);
                     (*lptr)->push_back(arg);
                 }
             }

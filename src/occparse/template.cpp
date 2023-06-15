@@ -6492,7 +6492,7 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
                 A = basetype(A)->btp;
         }
     }
-    if (ispointer(P) && (isint(A) || (ispointer(A) && A->nullptrType)) && isconstzero(A, exp))
+    if (ispointer(P) && (isint(A) || (ispointer(A) && A->nullptrType)) && exp && isconstzero(A, exp))
     {
         // might get in here with a non-template argument that needs to be matched
         // usually the two types would just match and it would be fine

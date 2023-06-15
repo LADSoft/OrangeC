@@ -4482,35 +4482,37 @@ static void getInitListConversion(TYPE* tp, std::list<INITLIST*>* list, TYPE* tp
             {
                 auto it = list->begin();
                 auto ite = list->end();
-                while (it != ite)
+                if (it != ite && !(*it)->nested)
                 {
-                    if (comparetypes((*it)->tp, tp, 0) || sameTemplate((*it)->tp, tp))
+                    while (it != ite)
                     {
-                        getSingleConversion(tp, (*it)->tp, (*it)->exp, n, seq, candidate, userFunc, true);
-                        ++it;
-
-                    }
-                    else
-                    {
-                        bool changed = false;
-                        for (auto member : *tp->syms)
+                        if (comparetypes((*it)->tp, tp, 0) || sameTemplate((*it)->tp, tp))
                         {
-                           if (it == ite)
-                               break;
-                           if (ismemberdata(member))
-                           {
-                               getSingleConversion(member->tp, (*it)->tp, (*it)->exp, n, seq, candidate, userFunc, true);
-                               if (*n > 10)
-                                    break;
-                               ++it;
-                               changed = true;
-                           }
+                           getSingleConversion(tp, (*it)->tp, (*it)->exp, n, seq, candidate, userFunc, true);
+                           ++it;
                         }
-                        if (!changed)
+                        else
+                        {
+                           bool changed = false;
+                           for (auto member : *tp->syms)
+                           {
+                               if (it == ite)
+                                    break;
+                               if (ismemberdata(member))
+                               {
+                                    getSingleConversion(member->tp, (*it)->tp, (*it)->exp, n, seq, candidate, userFunc, true);
+                                    if (*n > 10)
+                                        break;
+                                    ++it;
+                                    changed = true;
+                               }
+                           }
+                           if (!changed)
+                               break;
+                        }
+                        if (*n > 10)
                            break;
                     }
-                    if (*n > 10)
-                        break;
                 }
                 if (it != ite)
                 {

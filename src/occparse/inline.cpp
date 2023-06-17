@@ -431,7 +431,6 @@ static int PushInline(SYMBOL* sym, bool traceback)
             {
                 visited.insert(sym);
                 reverseOrder.push(sym);
-                EnterInstantiation(nullptr, sym);
             }
             else
             {
@@ -444,6 +443,7 @@ static int PushInline(SYMBOL* sym, bool traceback)
     {
         sym = reverseOrder.top();
         reverseOrder.pop();
+        EnterInstantiation(nullptr, sym);
         STRUCTSYM t, s, r;
         t.tmpl = nullptr;
         r.tmpl = nullptr;

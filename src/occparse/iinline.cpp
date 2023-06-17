@@ -152,7 +152,9 @@ static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, int flags, Symbo
                               ? thisptr
                               : inlineGetThisPtr(thisptr);
                     TYPE* tr = nullptr;
-                    
+
+                    // special case the -> operator, as it always must return a pointer
+                    if (func->name[0] != '.' || func->name[2] !=  'a' || strcmp(func->name, overloadNameTab[CI_POINTSTO]) != 0)
                     if (!(flags & F_RETURNSTRUCTBYADDRESS) && (func->sb->isConstructor || func->sb->isDestructor ||
                         (!isstructured(basetype(func->tp)->btp) && !comparetypes(sym->tp, basetype(func->tp)->btp, 1) &&
                          !sameTemplatePointedTo(sym->tp, basetype(func->tp)->btp))))

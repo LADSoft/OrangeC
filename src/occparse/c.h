@@ -34,6 +34,7 @@ namespace Parser
 #define CI_DELETE 4
 #define CI_ASSIGN (assign + 3)
 #define CI_FUNC (openpa + 3)
+#define CI_POINTSTO (pointsto + 3)
 #define CI_NEWA (complx + 1 + 3)
 #define CI_DELETEA (complx + 2 + 3)
 #define CI_LIT (complx + 3 + 3)

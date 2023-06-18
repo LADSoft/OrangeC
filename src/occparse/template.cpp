@@ -74,6 +74,7 @@ int parsingDefaultTemplateArgs;
 int count1;
 int inTemplateArgs;
 
+static int templateNameTag;
 static std::unordered_map<SYMBOL*, std::unordered_map<std::string, SYMBOL*>> classTemplateMap;
 std::unordered_map<std::string, SYMBOL*, StringHash> classTemplateMap2;
 
@@ -108,6 +109,7 @@ void templateInit(void)
     inDeduceArgs = 0;
     classTemplateMap.clear();
     classTemplateMap2.clear();
+    templateNameTag = 1;
 }
 EXPRESSION* GetSymRef(EXPRESSION* n)
 {
@@ -2276,11 +2278,15 @@ LEXLIST* TemplateArgGetDefault(LEXLIST** lex, bool isExpression)
     *lex = end;
     return rv;
 }
-static SYMBOL* templateParamId(TYPE* tp, const char* name)
+static SYMBOL* templateParamId(TYPE* tp, const char* name, int tag )
 {
     SYMBOL* rv = Allocate<SYMBOL>();
     rv->tp = tp;
-    rv->name = name;
+    int len = strlen(name);
+    char* buf = Allocate<char>(len + 5);
+    strcpy(buf, name);
+    *(int*)(buf + len + 1) = tag;
+    rv->name = buf;
     return rv;
 }
 static LEXLIST* TemplateHeader(LEXLIST* lex, SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* args)
@@ -2359,7 +2365,7 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
                 {
                     if (strsym->tp->type == bt_templateselector)
                     {
-                        sp = sym = templateParamId(strsym->tp, strsym->sb->templateSelector->back().name);
+                        sp = sym = templateParamId(strsym->tp, strsym->sb->templateSelector->back().name, 0);
                         lex = getsym();
                         tp = strsym->tp;
                         goto non_type_join;
@@ -2367,7 +2373,7 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
                     else if (ISID(lex))
                     {
                         tp = MakeType(bt_templateselector);
-                        sp = sym = templateParamId(tp, litlate(lex->data->value.s.a));
+                        sp = sym = templateParamId(tp, lex->data->value.s.a, templateNameTag++);
                         tp->sp = sym;
                         auto last = sym->sb->templateSelector = templateSelectorListFactory.CreateVector();
                         last->push_back(TEMPLATESELECTOR{});
@@ -2395,7 +2401,7 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
                 {
                     TYPE* tp = MakeType(bt_templateparam);
                     tp->templateParam = &arg;
-                    arg.first = templateParamId(tp, litlate(lex->data->value.s.a));
+                    arg.first = templateParamId(tp, lex->data->value.s.a, templateNameTag++);
                     lex = getsym();
                 }
                 else
@@ -2409,7 +2415,7 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
             {
                 TYPE* tp = MakeType(bt_templateparam);
                 tp->templateParam = &arg;
-                arg.first = templateParamId(tp, AnonymousName());
+                arg.first = templateParamId(tp, AnonymousName(), templateNameTag++);
             }
             if (MATCHKW(lex, assign))
             {
@@ -2454,14 +2460,14 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
             {
                 TYPE* tp = MakeType(bt_templateparam);
                 tp->templateParam = &arg;
-                arg.first = templateParamId(tp, litlate(lex->data->value.s.a));
+                arg.first = templateParamId(tp, lex->data->value.s.a, templateNameTag++);
                 lex = getsym();
             }
             else
             {
                 TYPE* tp = MakeType(bt_templateparam);
                 tp->templateParam = &arg;
-                arg.first = templateParamId(tp, AnonymousName());
+                arg.first = templateParamId(tp, AnonymousName(), templateNameTag++);
             }
             if (MATCHKW(lex, assign))
             {
@@ -2530,12 +2536,12 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
                             tp = itlist->first->tp;
                             if (ISID(lex))
                             {
-                                sp = templateParamId(tp, litlate(lex->data->value.s.a));
+                                sp = templateParamId(tp, lex->data->value.s.a, templateNameTag++);
                                 lex = getsym();
                             }
                             else
                             {
-                                sp = templateParamId(tp, AnonymousName());
+                                sp = templateParamId(tp, AnonymousName(), templateNameTag++);
                             }
                             goto non_type_join;
                         }
@@ -2547,7 +2553,7 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
             {
                 if (!sp)
                 {
-                    sp = templateParamId(nullptr, AnonymousName());
+                    sp = templateParamId(nullptr, AnonymousName(), templateNameTag++);
                 }
             non_type_join:
                 if (sp->sb)
@@ -4088,7 +4094,18 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
         }
         // the following several work because the front end should have cast both expressions already
         case en_cond:
-            return LookupTypeFromExpression(exp->right->left, enclosing, alt);
+        {
+            TYPE* tl = LookupTypeFromExpression(exp->right->left, enclosing, alt);
+            TYPE* tr = LookupTypeFromExpression(exp->right->right, enclosing, alt);
+            if (isarithmetic(tl))
+            {
+                return destSize(tl, tr, &exp->right->left, &exp->right->right, false, nullptr);
+            }
+            else
+            {
+                return tl;
+            }
+        }
         case en_lsh:
             return LookupBinaryMathFromExpression(exp, leftshift, enclosing, alt);
         case en_rsh:
@@ -10486,7 +10503,9 @@ static TEMPLATEPARAMPAIR* TypeAliasSearch(const char* name, bool toponly)
             {
                 if (arg.first && !strcmp(arg.first->name, name))
                 {
-                    return &arg;
+                    int len = strlen(name) + 1;
+                    if (*(int*)(name + len) == *(int*)(arg.first->name + len))
+                        return &arg;
                 }
             }
             if (toponly)

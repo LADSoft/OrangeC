@@ -2389,8 +2389,9 @@ int opt0(EXPRESSION** node)
             break;
 
         case en_cond:
-            opt0(&ep->left);
-            if (isoptconst(ep->left))
+            rv |= opt0(&(ep->right));
+            rv |= opt0(&(ep->left));
+            if (isoptconst(ep->left) && (parsingPreprocessorConstant || isoptconst(ep->right->left) && isoptconst(ep->right->right)))
             {
                 if (isfloatconst(ep->left))
                 {
@@ -2398,7 +2399,6 @@ int opt0(EXPRESSION** node)
                         *node = ep->right->left;
                     else
                         *node = ep->right->right;
-                    rv |= opt0(node);
                     break;
                 }
                 else if (isintconst(ep->left))
@@ -2407,11 +2407,10 @@ int opt0(EXPRESSION** node)
                         *node = ep->right->left;
                     else
                         *node = ep->right->right;
-                    rv |= opt0(node);
                     break;
                 }
             }
-            /* Fall Through*/
+            break;
         case en_void:
         case en_intcall:
         case en_voidnz:

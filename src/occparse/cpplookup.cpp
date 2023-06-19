@@ -1481,29 +1481,32 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
     if (IsFriend(derived, funcsp) || (funcsp && IsFriend(derived, funcsp->sb->parentClass)) || IsFriend(derived, ssp) ||
         IsFriend(member->sb->parentClass, funcsp) || IsFriend(member->sb->parentClass, derived))
         return true;
-    if (argFriend && IsFriend(currentBase, argFriend))
-        return true;
-    if (!basetype(currentBase->tp)->syms)
-        return false;
-    if (member->sb->parentClass == currentBase || member->sb->parentClass == currentBase->sb->mainsym)
-        return memberAccess >= minAccess || level == 0;
-    else if (member->sb->mainsym)
-        if (member->sb->mainsym->sb->parentClass == currentBase || member->sb->mainsym->sb->parentClass == currentBase->sb->mainsym)
-            return memberAccess >= minAccess || level == 0;
-    if (currentBase->sb->baseClasses)
+    if (currentBase)
     {
-        for (auto lst : *currentBase->sb->baseClasses)
+        if (argFriend && IsFriend(currentBase, argFriend))
+            return true;
+        if (!basetype(currentBase->tp)->syms)
+            return false;
+        if (member->sb->parentClass == currentBase || member->sb->parentClass == currentBase->sb->mainsym)
+            return memberAccess >= minAccess || level == 0;
+        else if (member->sb->mainsym)
+            if (member->sb->mainsym->sb->parentClass == currentBase || member->sb->mainsym->sb->parentClass == currentBase->sb->mainsym)
+                return memberAccess >= minAccess || level == 0;
+        if (currentBase->sb->baseClasses)
         {
-            SYMBOL* sym = lst->cls;
-            sym = basetype(sym->tp)->sp;
-            
-            // we have to go through the base classes even if we know that a normal
-            // lookup wouldn't work, so we can check their friends lists...
-            if (isAccessibleInternal(derived, sym, member, funcsp, minAccess, lst->accessLevel < maxAccess ? ac_protected : maxAccess, lst->accessLevel == ac_private ? 2 : 1))
-                return true;
+            for (auto lst : *currentBase->sb->baseClasses)
+            {
+                SYMBOL* sym = lst->cls;
+                sym = basetype(sym->tp)->sp;
+
+                // we have to go through the base classes even if we know that a normal
+                // lookup wouldn't work, so we can check their friends lists...
+                if (isAccessibleInternal(derived, sym, member, funcsp, minAccess, lst->accessLevel < maxAccess ? ac_protected : maxAccess, lst->accessLevel == ac_private ? 2 : 1))
+                    return true;
+            }
         }
     }
-    return false;
+    return (level == 0 && memberAccess >= minAccess);
 }
 bool isAccessible(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, enum e_ac minAccess, bool asAddress)
 {
@@ -1540,6 +1543,13 @@ bool isExpressionAccessible(SYMBOL* derived, SYMBOL* sym, SYMBOL* funcsp, EXPRES
         if (exp && exp->type == en_auto)
         {
             parent = basetype(exp->v.sp->tp)->sp;
+        }
+        else if (!derived && funcsp && !sym->sb->throughClass)
+        {
+            if (funcsp->sb->parentClass)
+                parent = funcsp->sb->parentClass;
+            else
+                return sym->sb->access == ac_public;
         }
         SYMBOL* ssp = nullptr;
         if (sym->sb->throughClass && (ssp = AccessibleClassInstance(sym->sb->parentClass)) != nullptr)

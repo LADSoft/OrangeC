@@ -3238,7 +3238,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     PerformDeferredInitialization(stp, nullptr);
     sp = basetype(*tp)->sp;
     against = theCurrentFunc ? theCurrentFunc->sb->parentClass : top ? sp : sp->sb->parentClass;
-    against2 = theCurrentFunc && theCurrentFunc->sb->parentClass ? theCurrentFunc->sb->parentClass : sp;
+    against2 = theCurrentFunc && theCurrentFunc->sb->parentClass ? theCurrentFunc->sb->parentClass : nullptr;
     if (isAssign)
     {
         cons = search(basetype(sp->tp)->syms, overloadNameTab[assign - kw_new + CI_NEW]);

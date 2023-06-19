@@ -2978,10 +2978,15 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                             if (comparetypes(ctype, funcparams->arguments->front()->tp, 0) ||
                                 sameTemplate(ctype, funcparams->arguments->front()->tp))
                             {
+                                auto exp1 = exp;
                                 exp = exprNode(en_blockassign, exp, funcparams->arguments->front()->exp);
                                 exp->size = ctype;
                                 exp->altdata = (void*)(ctype);
                                 toContinue = false;
+                                // have to do this to check for deletion
+                                callConstructor(&ctype, &exp1, funcparams, false, nullptr, false, maybeConversion, implicit, false,
+                                                isList ? _F_INITLIST : 0, false, true);
+
                             }
                         }
                 }

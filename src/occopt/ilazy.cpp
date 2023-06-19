@@ -236,6 +236,14 @@ void SetunMoveableTerms(void)
                             clearbit(unMoveableTerms, termMap[n]);
                             if (tempInfo[n]->terms)
                                 andmap(unMoveableTerms, tempInfo[n]->terms);
+                            auto im = GetLoadTemp(head->dc.left);
+                            if (im)
+                            {
+                                int n = im->offset->sp->i;
+                                clearbit(unMoveableTerms, termMap[n]);
+                                if (tempInfo[n]->terms)
+                                    andmap(unMoveableTerms, tempInfo[n]->terms);
+                            }
                         }
                     }
                     else if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct)

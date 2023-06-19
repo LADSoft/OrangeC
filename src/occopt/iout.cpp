@@ -179,7 +179,10 @@ static void putbin(Optimizer::QUAD* q, const char* str)
     putamode(q, q->ans);
     oprintf(icdFile, " = ");
     putamode(q, q->dc.left);
-    oprintf(icdFile, " %s ", str);
+    if (q->atomic)
+        oprintf(icdFile, " A%s ", str);
+    else
+        oprintf(icdFile, " %s ", str);
     putamode(q, q->dc.right);
 }
 

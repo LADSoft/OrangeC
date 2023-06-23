@@ -16,7 +16,7 @@
  * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ * pu
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
@@ -3381,53 +3381,61 @@ void PushPopDefaults(std::deque<TYPE*>& defaults, std::list<TEMPLATEPARAMPAIR>* 
         {
             if (item.second->type != kw_new)
             {
-                if (item.second->packed)
+                if (push)
                 {
-                    PushPopDefaults(defaults, item.second->byPack.pack, dflt, push);
-                }
-                else
-                {
-                    if (push)
+                    defaults.push_back(item.second->packed ? (TYPE*)1 : (TYPE*)0);
+                    defaults.push_back(dflt ? item.second->byClass.dflt : item.second->byClass.val);
+                    if (item.second->packed)
                     {
-                        defaults.push_back(dflt ? item.second->byClass.dflt : item.second->byClass.val);
+                        PushPopDefaults(defaults, item.second->byPack.pack, dflt, push);
+
                     }
-                    else if (defaults.size())
+                }
+                else if (defaults.size())
+                {
+                    if (dflt)
                     {
-                        if (dflt)
-                        {
-                            item.second->byClass.dflt = defaults.front();
-                        }
-                        else
-                        {
-                            item.second->byClass.val = defaults.front();
-                        }
+                        item.second->packed = !! defaults.front();
                         defaults.pop_front();
+                        if (dflt)
+                            item.second->byClass.dflt = defaults.front();
+                        else
+                            item.second->byClass.val = defaults.front();
                     }
                     else
                     {
-                        if (dflt)
-                        {
-                            item.second->byClass.dflt = nullptr;
-                        }
-                        else
-                        {
-                            item.second->byClass.val = nullptr;
-                        }
+                        item.second->byClass.val = defaults.front();
                     }
-                    if ((dflt && item.second->type == kw_typename && item.second->byClass.dflt &&
-                         isstructured(item.second->byClass.dflt) && basetype(item.second->byClass.dflt)->sp->templateParams) ||
-                        (!dflt && item.second->type == kw_typename && item.second->byClass.val &&
-                         isstructured(item.second->byClass.val) && basetype(item.second->byClass.val)->sp->templateParams))
+                    defaults.pop_front();
+                    if (item.second->packed)
                     {
-                        PushPopDefaults(defaults,
-                                        basetype(dflt ? item.second->byClass.dflt : item.second->byClass.val)->sp->templateParams,
-                                        dflt, push);
+                        PushPopDefaults(defaults, item.second->byPack.pack, dflt, push);
                     }
-                    if ((dflt && item.second->type == kw_int && item.second->byClass.dflt) ||
-                        (!dflt && item.second->type == kw_typename && item.second->byClass.val))
+                }
+                else
+                {
+                    if (dflt)
                     {
-                        PushPopDefaults(defaults, dflt ? item.second->byNonType.dflt : item.second->byNonType.val, dflt, push);
+                        item.second->byClass.dflt = nullptr;
                     }
+                    else
+                    {
+                        item.second->byClass.val = nullptr;
+                    }
+                }
+                if (!item.second->packed && ((dflt && item.second->type == kw_typename && item.second->byClass.dflt &&
+                        isstructured(item.second->byClass.dflt) && basetype(item.second->byClass.dflt)->sp->templateParams) ||
+                    (!dflt && item.second->type == kw_typename && item.second->byClass.val &&
+                        isstructured(item.second->byClass.val) && basetype(item.second->byClass.val)->sp->templateParams)))
+                {
+                    PushPopDefaults(defaults,
+                                    basetype(dflt ? item.second->byClass.dflt : item.second->byClass.val)->sp->templateParams,
+                                    dflt, push);
+                }
+                if (!item.second->packed && ((dflt && item.second->type == kw_int && item.second->byClass.dflt) ||
+                    (!dflt && item.second->type == kw_typename && item.second->byClass.val)))
+                {
+                    PushPopDefaults(defaults, dflt ? item.second->byNonType.dflt : item.second->byNonType.val, dflt, push);
                 }
             }
         }
@@ -4300,6 +4308,7 @@ TYPE* SynthesizeType(TYPE* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                             args = templateParamPairListFactory.CreateList();
                         for ( ;current != currente;)
                         {
+                            bool gennedPack = false;
                             if (current->second->packed && current->second->byPack.pack)
                             {
                                 tps.push(current);
@@ -4311,11 +4320,29 @@ TYPE* SynthesizeType(TYPE* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                             {
                                 if (current->second->type == kw_typename && current->second->byClass.dflt)
                                 {
-                                    current->second->byClass.dflt = SynthesizeType(current->second->byClass.dflt, enclosing, alt);
-                                    if (!current->second->byClass.dflt || current->second->byClass.dflt->type == bt_any)
+                                    if (current->second->byClass.dflt->type == bt_templateselector &&
+                                        current->second->byClass.dflt->sp->sb->postExpansion)
                                     {
-                                        failed = true;
-                                        break;
+                                        auto dflt = current->second->byClass.dflt;
+                                        current->second->byPack.pack = nullptr;
+                                        current->second->packed = true;
+                                        std::list<TEMPLATEPARAMPAIR>* pt = nullptr;
+                                        expandTemplateSelector(&pt, enclosing, dflt);
+                                        if (pt)
+                                        {
+                                            current->second->byPack.pack = pt->back().second->byPack.pack;
+                                        }
+                                        gennedPack = true;
+                                    }
+                                    else
+                                    {
+                                        current->second->byClass.dflt =
+                                            SynthesizeType(current->second->byClass.dflt, enclosing, alt);
+                                        if (!current->second->byClass.dflt || current->second->byClass.dflt->type == bt_any)
+                                        {
+                                            failed = true;
+                                            break;
+                                        }
                                     }
                                 }
                                 else if (current->second->type == kw_int)
@@ -4341,30 +4368,59 @@ TYPE* SynthesizeType(TYPE* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                                         }
                                     }
                                 }
-                                // this assumes there will only be one pack...
-                                if (args->size() && args->back().second->packed)
+                                if (!gennedPack)
                                 {
-                                    args->back().second->byPack.pack->push_back(TEMPLATEPARAMPAIR(nullptr, current->second));
+                                    // this assumes there will only be one pack...
+                                    if (args->size() && args->back().second->packed)
+                                    {
+                                        args->back().second->byPack.pack->push_back(TEMPLATEPARAMPAIR(nullptr, current->second));
+                                    }
+                                    else
+                                    {
+                                        if (symit != symite)
+                                        {
+                                            if (symit->second->packed)
+                                            {
+                                                auto x = Allocate<TEMPLATEPARAM>();
+                                                *x = *symit->second;
+                                                x->byClass.val = nullptr;
+                                                x->byClass.dflt = nullptr;
+                                                if (current->second->packed)
+                                                {
+                                                    if (current->second->byPack.pack)
+                                                    {
+                                                        x->byPack.pack = templateParamPairListFactory.CreateList();
+                                                        for (auto&& t : *current->second->byPack.pack)
+                                                        {
+                                                            x->byPack.pack->push_back(TEMPLATEPARAMPAIR(nullptr, t.second));
+                                                        }
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    x->byPack.pack = templateParamPairListFactory.CreateList();
+                                                    x->byPack.pack->push_back(TEMPLATEPARAMPAIR(nullptr, current->second));
+                                                }
+                                                args->push_back(TEMPLATEPARAMPAIR(symit->first, x));
+                                            }
+                                            else
+                                            {    
+                                                args->push_back(TEMPLATEPARAMPAIR(symit->first, current->second));
+                                            }
+                                            ++symit;
+                                        }
+                                        else
+                                        {
+                                            args->push_back(TEMPLATEPARAMPAIR(nullptr, current->second));
+                                        }
+                                    }
                                 }
                                 else
                                 {
                                     if (symit != symite)
                                     {
-                                        if (symit->second->packed)
-                                        {
-                                            auto x = Allocate<TEMPLATEPARAM>();
-                                            *x = *symit->second;
-                                            x->byClass.val = nullptr;
-                                            x->byClass.dflt = nullptr;
-                                            x->byPack.pack = templateParamPairListFactory.CreateList();
-                                            x->byPack.pack->push_back(TEMPLATEPARAMPAIR(nullptr, current->second));
-                                            args->push_back(TEMPLATEPARAMPAIR(symit->first, x));
-                                        }
-                                        else
-                                        {
-                                            args->push_back(TEMPLATEPARAMPAIR(symit->first, current->second));
-                                        }
-                                        ++ symit;
+                                        args->push_back(TEMPLATEPARAMPAIR(symit->first, current->second));
+                                        ++symit;
                                     }
                                     else
                                     {

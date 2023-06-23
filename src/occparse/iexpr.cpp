@@ -2294,6 +2294,8 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     int adjust2 = 0;
     Optimizer::QUAD* gosub = nullptr;
     Optimizer::SimpleExpression* varargarray = nullptr;
+    if (!f->sp)
+        return Optimizer::make_immed(ISZ_UINT, 0);
     if (!f->ascall)
     {
         InsertInline(f->sp);

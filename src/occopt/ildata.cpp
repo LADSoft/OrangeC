@@ -465,9 +465,12 @@ int wchart_cmp(LCHAR* left, LCHAR* right, int len)
 
 static void exitseg(void)
 {
-    auto v = AddData(DT_SEGEXIT);
-    v->i = curseg;
-    curseg = noseg;
+    if (curseg != noseg)
+    {
+        auto v = AddData(DT_SEGEXIT);
+        v->i = curseg;
+        curseg = noseg;
+    }
 }
 static void enterseg(enum e_sg seg)
 {

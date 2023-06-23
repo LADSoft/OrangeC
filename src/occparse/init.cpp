@@ -687,7 +687,6 @@ int dumpMemberPtr(SYMBOL* sym, TYPE* membertp, bool make_label)
             // well if we wanted we could reuse existing structures, but,
             // it doesn't seem like the amount of duplicates there might be is
             // really worth the work.  Borland didn't think so anyway...
-            Optimizer::cseg();
             lbl = Optimizer::nextLabel++;
             if (sym)
                 sym->sb->label = lbl;
@@ -2969,27 +2968,6 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
             if (!constructed)
             {
                 bool toContinue = true;
-                if (basetype(ctype)->sp->sb->structuredAliasType)
-                {
-                    if (funcparams && funcparams->arguments && funcparams->arguments->size() == 1)
-                        if (comparetypes(ctype, funcparams->arguments->front()->tp, 0) ||
-                            sameTemplate(ctype, funcparams->arguments->front()->tp))
-                        {
-                            if (comparetypes(ctype, funcparams->arguments->front()->tp, 0) ||
-                                sameTemplate(ctype, funcparams->arguments->front()->tp))
-                            {
-                                auto exp1 = exp;
-                                exp = exprNode(en_blockassign, exp, funcparams->arguments->front()->exp);
-                                exp->size = ctype;
-                                exp->altdata = (void*)(ctype);
-                                toContinue = false;
-                                // have to do this to check for deletion
-                                callConstructor(&ctype, &exp1, funcparams, false, nullptr, false, maybeConversion, implicit, false,
-                                                isList ? _F_INITLIST : 0, false, true);
-
-                            }
-                        }
-                }
                 if (toContinue && (flags & _F_ASSIGNINIT))
                 {
                     toContinue = !callConstructor(&ctype, &exp, funcparams, false, nullptr, false, maybeConversion, implicit, false,

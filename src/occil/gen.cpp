@@ -124,8 +124,6 @@ Operand* make_constant(int sz, Optimizer::SimpleExpression* exp)
     }
     else if (exp->type == Optimizer::se_labcon)
     {
-        char lbl[256];
-        sprintf(lbl, "L_%d_%x", (int)exp->i, uniqueId);
         Value* field = GetStringFieldData(exp->i, exp->altData->i);
         operand = peLib->AllocateOperand(field);
     }
@@ -148,8 +146,6 @@ Operand* make_constant(int sz, Optimizer::SimpleExpression* exp)
     }
     else if (exp->type == Optimizer::se_labcon)
     {
-        char lbl[256];
-        sprintf(lbl, "L_%d_%x", (int)exp->i, uniqueId);
         Value* field = GetStringFieldData(exp->i, exp->altData->i);
         operand = peLib->AllocateOperand(field);
     }
@@ -320,8 +316,6 @@ Operand* getOperand(Optimizer::IMODE* oper)
                 }
                 else if (oper->offset->type == Optimizer::se_labcon)
                 {
-                    char lbl[256];
-                    sprintf(lbl, "L_%d_%x", (int)oper->offset->i, uniqueId);
                     Value* field = GetStringFieldData(oper->offset->i, oper->offset->altData->i);
                     rv = peLib->AllocateOperand(field);
                 }

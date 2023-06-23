@@ -1332,7 +1332,6 @@ void msil_oa_gen_strlab(Optimizer::SimpleSymbol* sp)
 }
 Type* GetStringType(int lab, int type)
 {
-
     std::string name;
     switch (type)
     {

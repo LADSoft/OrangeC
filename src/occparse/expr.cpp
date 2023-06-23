@@ -8006,6 +8006,10 @@ static LEXLIST* expression_shift(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                 *tp = &stdint;
                 cast(*tp, exp);
             }
+            if (Optimizer::architecture == ARCHITECTURE_MSIL && tp1->size != stdint.size)
+            {
+                cast(&stdint, &exp1);
+            } 
             *exp = exprNode(type, *exp, exprNode(en_shiftby, exp1, 0));
         }
     }

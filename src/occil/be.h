@@ -54,7 +54,7 @@ struct byLabel
 {
     bool operator()(const Optimizer::SimpleSymbol* left, const Optimizer::SimpleSymbol* right) const
     {
-        if (left->storage_class == Optimizer::scc_localstatic || right->storage_class == Optimizer::scc_localstatic)
+        if (left->storage_class == Optimizer::scc_localstatic || right->storage_class == Optimizer::scc_localstatic || left->storage_class == Optimizer::scc_constant || right->storage_class == Optimizer::scc_constant)
         {
             if (left->storage_class != right->storage_class)
                 return left->storage_class < right->storage_class;

@@ -106,14 +106,13 @@
                   copy c:\orangec\bin\*.exe c:\orangec\temp2 2> NUL
                   c:\orangec\bin\occ /V
                   copy omake\omake.exe \orangec\temp
-                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:%PARALLEL%
                   REM  in this last one we add in OCCIL so it will be in the install packages...
-                  IF "%WITHDEBUG%" EQU "" (
-                      c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% /DWITHMSDOS fullbuild -j:%PARALLEL%
-                      goto cont
+                  IF "%WITHDEBUG%" NEQ "" (
+                      goto nosecondbuild:
                   )
-                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:%PARALLEL%
-:cont
+                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:%PARALLEL%
+                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% /DWITHMSDOS fullbuild -j:%PARALLEL%
+                  )
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
@@ -121,6 +120,7 @@
                   IF %ERRORLEVEL% NEQ 0 (
                        goto error;
                   )
+:nosecondbuild
                   if "%TRAVIS_OS_NAME%" NEQ "" (
                        goto done;
                   )

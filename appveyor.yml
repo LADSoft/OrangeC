@@ -98,6 +98,7 @@ for:
       environment:
           BUILD_PROFILE: MS
           WITHDEBUG: YES
+          TESTS: TRUE
 -
       matrix:
             only:

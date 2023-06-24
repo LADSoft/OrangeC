@@ -1104,7 +1104,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                 funcparams = Allocate<FUNCTIONCALL>();
                 funcparams->sp = sym;
                 funcparams->functp = sym->tp;
-                funcparams->fcall = intNode(en_c_i, 0);
+                funcparams->fcall = varNode(en_pc, sym);
                 funcparams->nameSpace = strSym ? nullptr : nsv ? nsv->front() : nullptr;
                 *tp = sym->tp;
                 *exp = varNode(en_func, nullptr);

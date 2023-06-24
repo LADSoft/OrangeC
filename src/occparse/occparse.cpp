@@ -441,7 +441,7 @@ int main(int argc, char* argv[])
     {
         enter_filename((const char*)c->data);
     }
-    //    mainPreprocess();
+
     bool first = true;
     while (clist)
     {
@@ -562,8 +562,15 @@ int main(int argc, char* argv[])
         {
             if (Optimizer::cparams.prm_cppfile)
             {
-                Utils::StripExt(buffer);
-                Utils::AddExt(buffer, ".i");
+                if (prm_output.GetExists())
+                {
+                    strcpy(buffer, prm_output.GetValue().c_str());
+                }
+                else
+                {
+                    Utils::StripExt(buffer);
+                    Utils::AddExt(buffer, ".i");
+                }
                 strcpy(cppfile, buffer);
                 cppFile = fopen(buffer, "w");
                 if (!cppFile)
@@ -730,8 +737,8 @@ int main(int argc, char* argv[])
         stopTime = clock();
         printf("occparse timing: %d.%03d\n", (stopTime - startTime) / 1000, (stopTime - startTime) % 1000);
     }
-    if (!Optimizer::cparams.prm_makestubs || (MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue()) &&
-                                                 (!prm_error.GetExists() || !prm_error.GetValue().empty()))
+    if (!Optimizer::cparams.prm_cppfile && (!Optimizer::cparams.prm_makestubs || (MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue()) &&
+                                                 (!prm_error.GetExists() || !prm_error.GetValue().empty())))
         rv = IsCompiler() ? !!stoponerr : 0;
     else
         rv = 255;

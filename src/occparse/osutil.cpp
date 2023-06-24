@@ -1258,8 +1258,7 @@ int ccinit(int argc, char* argv[])
 
     if (IsCompiler())
     {
-
-        if (prm_output.GetExists() && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
+        if (prm_output.GetExists() && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue() && ! Optimizer::cparams.prm_cppfile)
         {
             Optimizer::outputFileName = prm_output.GetValue();
             if (!Optimizer::cparams.prm_compileonly)

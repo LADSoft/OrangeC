@@ -1,10 +1,63 @@
 Release notes:
 
-version 6.0.63:
+version 6.0.70: (6/25/23)
+    fix various problems with the builds
+    adjust VC projects to use narrow character support
+    fix bugs compiling with clang
+    clean up some compiler warnings, clang/gcc
+    fix to compile various problematic third-party packages
+    occ: internal rewrites to improve the quality of source code/debugging experience
+    occ: internal rewrites to not compile functions that aren't needed
+    occ: internal rewrites to the inliner, for better code quality and faster optimization and less space used
+    occ: speed up parser
+    occ: add __COUNTER__ predefined preprocessor variable
+    occ: fix problems with __VA_ARGS__
+    occ: fix preprocessor problem : macro arguments should be scanned for replacements before replacing the token
+    occ: allow __alignof__ in C mode
+    occ: add the gcc extension for statements in expressions
+    occ: fix _Generic to work with typedefs
+    occ: fix problems with generating wide characters strings on odd byte boundaries
+    occ: optimize single element structures that can be stored in a register, to be returned in a register
     occ: improve line data at the beginning of a function
     occ: improve debug information within do-while blocks
+    occ: optimize the object files a little bit
+    occ: fix problems with -werror switch
+    occ: fix problems with C++14 switch
+    occ: clean up code generation for setne instructions
+    occ: add -static switch to generate static library directly from command line
+    occ: fix various problems compiling __invoke
+    occ: fix various problems that were highlighted due to all the rewrites
+    occ: inline destructors in debug mode
+    occ: fix code generation bugs
+    occ: clean up rtti accounting code generation
+    occ: 'empty' destructors don't need to be called during wind down of stack from during throw/catch
+    occ: fix some bugs with catch blocks being considered in an order other than the one presented in the source code
+    occ: interleave various things like member ptr and atexit code generation with the function generation a little better
+    occ: inline exception block creation/teardown, instead of calling library functions
+    occ: rework how accessibility checks are done
+    occ: standardize generation of vtabs: wherever the destructor is generated.
+    occ: fix bug with atomic long long stores
+    occ: fix optimizer bug where atomic-modify and store instructions could sometimes result in bad code
+    occ: beginnings of support for C23
+    occil: speed up code generation
+    occil: fix problem with duplicate field definitions
+    occil: fix problem where using a long as a shift count causes problems on windows 11
+    occpr: clean up extraneous errors
+    oasm: speed up assembler, and compiler back end
+    omake:  don't create an error when .PHONY targets are used
+    omake: fix -j:0 not to crash omake
+    omake: fix default to be -j:1
+    omake: fix for lockup when a tool generated an error for -j > 1
+    rtl:  add wchar_t to stdatomic.h
+    rtl:  get rid of compiler warnings that occurred when #including inttypes.h
+    rtl:  fix some problems with the windows headers
+    rtl:  fix some problems with wide character functions
+    rtl:  fix push/pop bug in dpmi.c
+    rtl:  fix some bugs in the exception handling library
+    rtl:  tag more functions for export
+    rtl:  fix various problems that caused lscrtl.dll not to work
 
-version 6.0.62: (2/18/22)
+version 6.0.62: (2/18/23)
     project: fix some problems found by static analysis
     project: update to VS2022 community
     project: clean up make files

@@ -5,6 +5,7 @@ comctl32.def
 comdlg32.def
 ctl3d32.def
 gdi32.def
+gdiplus.def
 glu32.def
 imagehlp.def
 imm32.def

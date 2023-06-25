@@ -327,6 +327,8 @@ static bool vfMatch(SYMBOL* sym, SYMBOL* oldFunc, SYMBOL* newFunc)
                     {
                         if (isconst(tp1) == isconst(tp2) && isvolatile(tp1) == isvolatile(tp2))
                         {
+                            tp1 = basetype(tp1)->btp;
+                            tp2 = basetype(tp2)->btp;
                             if (isstructured(tp1) && isstructured(tp2))
                             {
                                 if ((!isconst(tp1) || isconst(tp2)) && (!isvolatile(tp1) || isvolatile(tp2)))
@@ -2753,8 +2755,10 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     errortype(ERR_OPERATOR_NONSTATIC, basetype(sp->tp)->btp, nullptr);
                 }
                 else if ((enum e_kw)(sp->sb->operatorId - CI_NEW) != kw_new &&
-                         (enum e_kw)(sp->sb->operatorId - CI_NEW) != kw_delete)
-                {
+                         (enum e_kw)(sp->sb->operatorId - CI_NEW) != kw_delete &&
+                         (enum e_kw)(sp->sb->operatorId - CI_NEW) != kw_newa &&
+                         (enum e_kw)(sp->sb->operatorId - CI_NEW) != kw_dela)
+                    {
                     errorstr(ERR_OPERATOR_NONSTATIC, overloadXlateTab[sp->sb->operatorId]);
                 }
             }

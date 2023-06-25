@@ -40,6 +40,7 @@
 #include <cstring>
 
 CmdSwitchParser dlLeMain::SwitchParser;
+CmdSwitchBool dlLeMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchString dlLeMain::stubSwitch(SwitchParser, 's');
 CmdSwitchString dlLeMain::modeSwitch(SwitchParser, 'm');
 CmdSwitchString dlLeMain::outputFileSwitch(SwitchParser, 'o');
@@ -47,7 +48,7 @@ CmdSwitchString dlLeMain::DebugFile(SwitchParser, 'v');
 
 unsigned dlLeMain::fileVersion = 0;
 
-const char* dlLeMain::usageText =
+const char* dlLeMain::helpText =
     "[options] relfile\n"
     "\n"
     "/mxxx          Set output file type\n"
@@ -55,11 +56,13 @@ const char* dlLeMain::usageText =
     "/sxxx          Set stub file name\n"
     "/V, --version  Show version and date\n"
     "/!, --nologo   No logo\n"
+    "/?, --help     This text\n"
     "\n"
     "Available output file types:\n"
     "   LE (default)\n"
     "   LX\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
+const char* dlLeMain::usageText = "[options] relfile";
 
 int main(int argc, char** argv)
 {
@@ -302,10 +305,12 @@ int dlLeMain::Run(int argc, char** argv)
         if (!internalConfig.Parse(configName.c_str()))
             Utils::fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || argc < 2)
+    if (!SwitchParser.Parse(&argc, argv) || (argc < 2 && !ShowHelp.GetExists()))
     {
         Utils::usage(argv[0], usageText);
     }
+    if (ShowHelp.GetExists())
+        Utils::usage(argv[0], helpText);
     if (argc != 2)
     {
         Utils::usage(argv[0], usageText);

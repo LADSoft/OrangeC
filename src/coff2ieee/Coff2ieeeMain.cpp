@@ -38,18 +38,22 @@
 #include <fstream>
 
 CmdSwitchParser Coff2ieeeMain::SwitchParser;
+CmdSwitchBool Coff2ieeeMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchCombineString Coff2ieeeMain::outputFileSwitch(SwitchParser, 'o');
 
-const char* Coff2ieeeMain::usageText =
+const char* Coff2ieeeMain::helpText =
     "[options] <coff file>\n"
     "\n"
     "/oxxx          Set output file name\n"
     "/V, --version  Show version and date\n"
     "/!, --nologo   No logo\n"
+    "/?, --help     This text\n"
     "\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
 
-int main(int argc, char** argv)
+const char* Coff2ieeeMain::usageText = " [options] <coff file>";
+
+    int main(int argc, char** argv)
 {
     Coff2ieeeMain translator;
     return translator.Run(argc, argv);
@@ -105,10 +109,13 @@ int Coff2ieeeMain::Run(int argc, char** argv)
         if (!internalConfig.Parse(configName.c_str()))
             Utils::fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || argc < 2)
+    if (!SwitchParser.Parse(&argc, argv) || (argc < 2 && !ShowHelp.GetExists()))
     {
         Utils::usage(argv[0], usageText);
     }
+    if (ShowHelp.GetExists())
+        Utils::usage(argv[0], helpText);
+
     if (argc != 2)
     {
         Utils::usage(argv[0], usageText);

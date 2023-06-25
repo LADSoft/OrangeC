@@ -48,16 +48,18 @@ int main(int argc, char** argv)
 }
 
 CmdSwitchParser BRCMain::SwitchParser;
-
+CmdSwitchBool BRCMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchFile BRCMain::File(SwitchParser, '@');
-const char* BRCMain::usageText =
+const char* BRCMain::helpText =
     "[options] outputfile filelist \n"
     "\n"
     "/V, --version  Show version and date\n"
     "/!, --nologo   No logo\n"
+    "/?, --help     This text\n"
     "@xxx           Read commands from file\n"
     "\n"
     "Time: " __TIME__ "  Date: " __DATE__;
+const char* BRCMain::usageText = "[options] outputfile filelist";
 
 int BRCMain::Run(int argc, char** argv)
 {
@@ -76,6 +78,8 @@ int BRCMain::Run(int argc, char** argv)
     {
         Utils::usage(argv[0], usageText);
     }
+    if (ShowHelp.GetExists())
+        Utils::usage(argv[0], helpText);
     if (argc < 2 || (argc == 2 && File.GetCount() < 2))
     {
         Utils::usage(argv[0], usageText);

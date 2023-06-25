@@ -43,6 +43,7 @@ extern bool IsSymbolCharRoutine(const char*, bool);
 bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
 
 CmdSwitchParser AsmMain::SwitchParser;
+CmdSwitchBool AsmMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool AsmMain::CaseInsensitive(SwitchParser, 'i', false, {"case-insensitive"});
 CmdSwitchCombo AsmMain::CreateListFile(SwitchParser, 'l', "m", {"list"});
 CmdSwitchFile AsmMain::File(SwitchParser, '@');
@@ -56,7 +57,7 @@ CmdSwitchBool AsmMain::GAS(SwitchParser, '\0', false, {"gas"});
 CmdSwitchInt AsmMain::ProcessorMode(SwitchParser, 's', 32, 0, 100, {"processor-mode"});
 CmdSwitchBool AsmMain::WarningsAsErrors(SwitchParser, '\0', false, {"warningsaserrors"});
 CmdSwitchBool AsmMain::NoGasDirectiveWarning(SwitchParser, '\0', false, {"nogasdirectivewarning"});
-const char* AsmMain::usageText =
+const char* AsmMain::helpText =
     "[options] file"
     "\n"
     "  @filename                          Use response file\n"
@@ -70,12 +71,14 @@ const char* AsmMain::usageText =
     "  /Ixxx, --include-path              Set include file path\n"
     "  /V, --version                      Show version and date\n"
     "  /!, --nologo                       Don't show logo\n"
+    "  /?, --help                         This text\n"
     "  --intel                            Use intel syntax\n"
     "  --gas                              Use extended AT&T syntax\n"
     "  --warningsaserrors                 Warnings should be generated as errors\n"
     "  --nogasdirectivewarning            Don't show warnings for missing GAS directives\n"
     "\n"
     "Time: " __TIME__ "  Date: " __DATE__;
+const char* AsmMain::usageText = "[options] file";
 
 int main(int argc, char* argv[])
 {
@@ -176,10 +179,12 @@ int AsmMain::Run(int argc, char* argv[])
         if (!internalConfig.Parse(configName.c_str()))
             Utils::fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || (argc == 1 && File.GetCount() <= 1))
+    if (!SwitchParser.Parse(&argc, argv) || (argc == 1 && File.GetCount() <= 1 && !ShowHelp.GetExists()))
     {
         Utils::usage(argv[0], usageText);
     }
+    if (ShowHelp.GetExists())
+        Utils::usage(argv[0], helpText);
     Errors::WarningsAsErrors(WarningsAsErrors.GetValue());
     CmdFiles files(argv + 1);
     if (File.GetValue())

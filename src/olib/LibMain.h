@@ -54,11 +54,13 @@ class LibMain
     CmdFiles replaceFiles;
 
     static CmdSwitchParser SwitchParser;
+    static CmdSwitchBool ShowHelp;
     static CmdSwitchBool caseSensitiveSwitch;
     static CmdSwitchOutput OutputFile;
     static CmdSwitchFile File;
     static CmdSwitchBool noExport;
 
     static const char* usageText;
+    static const char* helpText;
 };
 #endif

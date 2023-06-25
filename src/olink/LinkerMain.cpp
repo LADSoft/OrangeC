@@ -70,7 +70,7 @@ int main(int argc, char** argv)
 }
 
 CmdSwitchParser LinkerMain::SwitchParser;
-
+CmdSwitchBool LinkerMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool LinkerMain::CaseSensitive(SwitchParser, 'c', true);
 CmdSwitchCombo LinkerMain::Map(SwitchParser, 'm', "x");
 CmdSwitchBool LinkerMain::DebugInfo(SwitchParser, 'v', false);
@@ -87,7 +87,7 @@ CmdSwitchCombineString LinkerMain::OutputDefFile(SwitchParser, 0, 0, {"output-de
 CmdSwitchCombineString LinkerMain::PrintFileName(SwitchParser, 0, 0, {"print-file-name"});
 
 SwitchConfig LinkerMain::TargetConfig(SwitchParser, 'T');
-const char* LinkerMain::usageText =
+const char* LinkerMain::helpText =
     "[options] inputfiles\n"
     "\n"
     "/Dxxx=val Define something           /Lpath         Set Library Path\n"
@@ -97,11 +97,13 @@ const char* LinkerMain::usageText =
     "/m[x]     Generate Map file          /oxxx          Set output file\n"
     "/r+       Relative output file       /sxxx          Read specification file\n"
     "/y[...]   Verbose                    /!, --nologo   No logo\n"
+    "/?, --help This text\n"
     "\n"
     " --output-def filename    create a .def file for DLLs\n"
     " --shared                 create a dll\n"
     "@xxx      Read commands from file\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
+const char* LinkerMain::usageText = "[options] inputfiles";
 
 const ObjString& LinkerMain::GetOutputFile(CmdFiles& files)
 {
@@ -298,6 +300,8 @@ int LinkerMain::Run(int argc, char** argv)
     {
         Utils::usage(argv[0], usageText);
     }
+    if (ShowHelp.GetExists())
+        Utils::usage(argv[0], helpText);
     if (argc == 1 && File.GetCount() <= 1 && !PrintFileName.GetExists())
     {
         Utils::usage(argv[0], usageText);

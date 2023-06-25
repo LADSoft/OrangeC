@@ -31,6 +31,7 @@
 #include "arocc.h"
 
 CmdSwitchParser arocc::SwitchParser;
+CmdSwitchBool arocc::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool arocc::Replace(arocc::SwitchParser, 'r');
 CmdSwitchBool arocc::Create(arocc::SwitchParser, 'c');
 CmdSwitchBool arocc::WriteIndex(arocc::SwitchParser, 's');
@@ -40,7 +41,7 @@ CmdSwitchBool arocc::Extract(arocc::SwitchParser, 'x');
 CmdSwitchBool arocc::Delete(arocc::SwitchParser, 'd');
 
 
-const char* arocc::usageText =
+const char* arocc::helpText =
     "[options] library files...\n"
     "\n"
     "-c             reserved for compatibility\n"
@@ -52,8 +53,10 @@ const char* arocc::usageText =
     "-x             extract files from library\n"
     "-V, --version  show version information\n"
     "--nologo       no logo\n"
+    "/?, --help     This text\n"
     "\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
+const char* arocc::usageText = "[options] library files...";
 
 int main(int argc, char** argv)
 {
@@ -74,10 +77,12 @@ int arocc::Run(int argc, char** argv)
         if (!internalConfig.Parse(configName.c_str()))
             Utils::fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || argc < 2)
+    if (!SwitchParser.Parse(&argc, argv) || (argc < 2 && !ShowHelp.GetExists()))
     {
         Utils::usage(argv[0], usageText);
     }	
+    if (ShowHelp.GetExists())
+        Utils::usage(argv[0], helpText);
     if (Replace.GetValue())
     {
         if (Delete.GetValue() || Extract.GetValue())

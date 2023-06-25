@@ -39,7 +39,7 @@ class GrepMain
 
   private:
     static CmdSwitchParser SwitchParser;
-
+    static CmdSwitchBool ShowHelp;
     static CmdSwitchBool recurseDirs;
     static CmdSwitchBool caseInSensitive;
     static CmdSwitchBool completeWords;
@@ -50,7 +50,6 @@ class GrepMain
     static CmdSwitchBool unixMode;
     static CmdSwitchBool displayNonMatching;
     static CmdSwitchBool verboseMode;
-    static CmdSwitchBool showHelp;
     static CmdSwitchInt showAfter;
     static CmdSwitchInt showBefore;
     static CmdSwitchInt showBoth;

@@ -29,6 +29,7 @@
 using namespace DotNetPELib;
 
 CmdSwitchParser NetLinkMain::SwitchParser;
+CmdSwitchBool NetLinkMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchString NetLinkMain::StrongName(SwitchParser, 'k');
 CmdSwitchBool NetLinkMain::LibraryFile(SwitchParser, 'L');
 CmdSwitchBool NetLinkMain::AssemblyFile(SwitchParser, 'S');
@@ -40,7 +41,7 @@ CmdSwitchBool NetLinkMain::CManaged(SwitchParser, 'M');
 CmdSwitchBool NetLinkMain::NoDefaultlibs(SwitchParser, 'n');
 CmdSwitchBool NetLinkMain::WeedPInvokes(SwitchParser, 'P');
 
-const char* NetLinkMain::usageText =
+const char* NetLinkMain::helpText =
     "[options] inputfiles\n"
     "\n"
     "/L         generate library          /S         generate .IL file\n"
@@ -49,7 +50,9 @@ const char* NetLinkMain::usageText =
     "/vx.x.x.x  set assembly version      /M         managed mode\n"
     "/P         replace pinvokes\n"
     "@xxx       Read commands from file\n"
+    "/?, --help This text\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
+const char* NetLinkMain::usageText = "[options] inputfiles";
 
 int main(int argc, char** argv)
 {
@@ -696,10 +699,12 @@ int NetLinkMain::Run(int argc, char** argv)
         if (!internalConfig.Parse(configName.c_str()))
             Utils::fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || (argc == 1 && File.GetCount() <= 1))
+    if (!SwitchParser.Parse(&argc, argv) || (argc == 1 && File.GetCount() <= 1 && !ShowHelp.GetExists()))
     {
         Utils::usage(argv[0], usageText);
     }
+    if (ShowHelp.GetExists())
+        Utils::usage(argv[0], helpText);
     CmdFiles files(argv + 1);
     if (File.GetValue())
         files.Add(File.GetValue() + 1);

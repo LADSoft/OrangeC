@@ -54,8 +54,10 @@ class Coff2ieeeMain
         lib = 2
     } mode;
     static CmdSwitchParser SwitchParser;
+    static CmdSwitchBool ShowHelp;
     static CmdSwitchCombineString outputFileSwitch;
     static const char* usageText;
+    static const char* helpText;
 
     std::string outputName;
 };

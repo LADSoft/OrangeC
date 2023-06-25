@@ -33,5 +33,6 @@ int funcvaluesize(int val);
 int alignment(int sc, TYPE* tp);
 int getAlign(int sc, TYPE* tp);
 const char* getUsageText(void);
+const char* getHelpText(void);
 KEYWORD* GetProcKeywords(void);
 }  // namespace Parser

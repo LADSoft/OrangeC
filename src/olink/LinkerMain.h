@@ -49,6 +49,7 @@ class LinkerMain
     static CmdSwitchParser SwitchParser;
 
     static CmdSwitchBool CaseSensitive;
+    static CmdSwitchBool ShowHelp;
     static CmdSwitchCombo Map;
     static CmdSwitchBool DebugInfo;
     static CmdSwitchBool DebugInfo2;
@@ -64,5 +65,6 @@ class LinkerMain
     static CmdSwitchCombineString PrintFileName;
     static SwitchConfig TargetConfig;
     static const char* usageText;
+    static const char* helpText;
 };
 #endif

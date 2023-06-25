@@ -53,12 +53,14 @@ class dlHexMain
 
   private:
     static CmdSwitchParser SwitchParser;
+    static CmdSwitchBool ShowHelp;
     static CmdSwitchString modeSwitch;
     static CmdSwitchString sectionsSwitch;
     static CmdSwitchHex padSwitch;
     static CmdSwitchString outputFileSwitch;
     static CmdSwitchString DebugFile;
     static const char* usageText;
+    static const char* helpText;
 
     std::vector<std::unique_ptr<Section>> sections;
     enum OutputMode

@@ -89,6 +89,7 @@ class dlPeMain
 
   private:
     static CmdSwitchParser SwitchParser;
+    static CmdSwitchBool ShowHelp;
     static CmdSwitchString modeSwitch;
     static CmdSwitchString stubSwitch;
     static CmdSwitchString outputFileSwitch;
@@ -97,6 +98,7 @@ class dlPeMain
     static CmdSwitchBool Verbose;
     static CmdSwitchCombineString OutputDefFile;
     static const char* usageText;
+    static const char* helpText;
     ObjInt fileAlign;
     ObjInt objectAlign;
     ObjInt imageBase;

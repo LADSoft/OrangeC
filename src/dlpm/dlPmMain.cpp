@@ -33,18 +33,20 @@
 #include "MZHeader.h"
 
 CmdSwitchParser dlPmMain::SwitchParser;
-
+CmdSwitchBool dlPmMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchString dlPmMain::outputFileSwitch(SwitchParser, 'o');
 CmdSwitchString dlPmMain::DebugFile(SwitchParser, 'v');
 
-const char* dlPmMain::usageText =
+const char* dlPmMain::helpText =
     "[options] relfile\n"
     "\n"
     "/oxxx          Set ouput file name\n"
     "/V, --version  Show version and date\n"
     "/!, --nologo   No logo\n"
+    "/?, --help     This text\n"
     "\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
+const char* dlPmMain::usageText = "[options] relfile";
 
 int main(int argc, char** argv)
 {
@@ -284,10 +286,12 @@ int dlPmMain::Run(int argc, char** argv)
         if (!internalConfig.Parse(configName.c_str()))
             Utils::fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || argc != 2)
+    if (!SwitchParser.Parse(&argc, argv) || (argc != 2 && !ShowHelp.GetExists()))
     {
         Utils::usage(argv[0], usageText);
     }
+    if (ShowHelp.GetExists())
+        Utils::usage(argv[0], helpText);
     if (!LoadStub(argv[0]))
         Utils::fatal("Missing or invalid stub file");
     if (!ReadSections(std::string(argv[1])))

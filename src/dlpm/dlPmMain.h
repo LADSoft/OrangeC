@@ -62,9 +62,11 @@ class dlPmMain
     int uninitBase;
     int uninitSize;
     static CmdSwitchParser SwitchParser;
+    static CmdSwitchBool ShowHelp;
     static CmdSwitchString outputFileSwitch;
     static CmdSwitchString DebugFile;
     static const char* usageText;
+    static const char* helpText;
     ObjInt startAddress;
     ObjFile* file;
     std::vector<std::unique_ptr<Section>> sections;

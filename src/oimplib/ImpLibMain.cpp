@@ -56,12 +56,12 @@ int main(int argc, char** argv)
 }
 
 CmdSwitchParser ImpLibMain::SwitchParser;
-
+CmdSwitchBool ImpLibMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool ImpLibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
 CmdSwitchBool ImpLibMain::CDLLSwitch(SwitchParser, 'C');
 CmdSwitchOutput ImpLibMain::OutputFile(SwitchParser, 'o', ".a");
 CmdSwitchFile ImpLibMain::File(SwitchParser, '@');
-const char* ImpLibMain::usageText =
+const char* ImpLibMain::helpText =
     "[options] outputfile [+ files] [- files] [* files]\n"
     "\n"
     "/c-            Case insensitive library\n"
@@ -69,12 +69,14 @@ const char* ImpLibMain::usageText =
     "/C             C language compatibility\n"
     "/V, --version  Show version and date\n"
     "/!, --nologo   No logo\n"
+    "/?, --help     This text\n"
     "@xxx           Read commands from file\n"
     "\n"
     "outputfile can be a library, object, or def file\n"
     "the input files can be objects, def files, or dll files\n"
     "\n"
     "Time: " __TIME__ "  Date: " __DATE__;
+const char* ImpLibMain::usageText = "[options] outputfile [+ files] [- files] [* files]";
 
 ImpLibMain::~ImpLibMain() {}
 
@@ -393,6 +395,8 @@ int ImpLibMain::Run(int argc, char** argv)
     {
         Utils::usage(argv[0], usageText);
     }
+    if (ShowHelp.GetExists())
+        Utils::usage(argv[0], helpText);
     if (argc < 2 && File.GetCount() < 3)
     {
         Utils::usage(argv[0], usageText);

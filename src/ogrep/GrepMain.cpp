@@ -36,7 +36,7 @@
 #    include <io.h>
 #endif
 CmdSwitchParser GrepMain::SwitchParser;
-
+CmdSwitchBool GrepMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool GrepMain::recurseDirs(SwitchParser, 'd');
 CmdSwitchBool GrepMain::caseInSensitive(SwitchParser, 'i', false);
 CmdSwitchBool GrepMain::completeWords(SwitchParser, 'w');
@@ -47,7 +47,6 @@ CmdSwitchBool GrepMain::displayLineNumbers(SwitchParser, 'n');
 CmdSwitchBool GrepMain::unixMode(SwitchParser, 'o');
 CmdSwitchBool GrepMain::displayNonMatching(SwitchParser, 'v');
 CmdSwitchBool GrepMain::verboseMode(SwitchParser, 'z');
-CmdSwitchBool GrepMain::showHelp(SwitchParser, '?', false, {"help"});
 // not actual parameters
 CmdSwitchBool GrepMain::displayFileNames(SwitchParser, '#');
 CmdSwitchBool GrepMain::displayHeaderFileName(SwitchParser, '#');
@@ -57,7 +56,7 @@ CmdSwitchInt GrepMain::showBoth(SwitchParser, 'C', 0, 0, INT_MAX);
 CmdSwitchInt GrepMain::maxMatches(SwitchParser, 'm', INT_MAX, 0, INT_MAX);
 CmdSwitchBool GrepMain::quiet(SwitchParser, 'q');
 
-const char* GrepMain::usageText = "[-rlcnvidzwomABC?] searchstring file[s]\n";
+const char* GrepMain::usageText = "[options] searchstring file[s]";
 const char* GrepMain::helpText =
     "[options] searchstring file[s]"
     "\n"
@@ -300,7 +299,7 @@ int GrepMain::Run(int argc, char** argv)
         showAfter.SetValue(showBoth.GetValue());
         showBefore.SetValue(showBoth.GetValue());
     }
-    if (showHelp.GetValue() || (argc >= 2 && !strcmp(argv[1], "?")))
+    if (ShowHelp.GetValue() || (argc >= 2 && !strcmp(argv[1], "?")))
     {
         Utils::banner(argv[0]);
         usage(argv[0], helpText, 0);

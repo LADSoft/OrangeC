@@ -37,12 +37,13 @@
 CmdSwitchParser dlHexMain::SwitchParser;
 
 CmdSwitchString dlHexMain::modeSwitch(SwitchParser, 'm');
+CmdSwitchBool dlHexMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchString dlHexMain::sectionsSwitch(SwitchParser, 'c');
 CmdSwitchHex dlHexMain::padSwitch(SwitchParser, 'p', -1, 0, 0x100);
 CmdSwitchString dlHexMain::outputFileSwitch(SwitchParser, 'o');
 CmdSwitchString dlHexMain::DebugFile(SwitchParser, 'v');
 
-const char* dlHexMain::usageText =
+const char* dlHexMain::helpText =
     "[options] relfile\n"
     "\n"
     "/cxxx          Specify sections\n"
@@ -51,12 +52,14 @@ const char* dlHexMain::usageText =
     "/p:xx          Set pad value\n"
     "/V, --version  Show version and date\n"
     "/!, --nologo   No logo\n"
+    "/?, --help     This text\n"
     "\n"
     "Available output file types:\n"
     "   M# Motorola Hex (# = 1,2,3 sets srecord type)\n"
     "   I# Intel Hex    (# = 1,2,4)\n"
     "   B  Binary file  (default)\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
+const char* dlHexMain::usageText = "[options] relfile";
 
 int main(int argc, char** argv)
 {
@@ -288,10 +291,12 @@ int dlHexMain::Run(int argc, char** argv)
         if (!internalConfig.Parse(configName.c_str()))
             Utils::fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || argc != 2 || !GetOutputMode())
+    if (!SwitchParser.Parse(&argc, argv) || ((argc != 2 || !GetOutputMode()) && !ShowHelp.GetExists()))
     {
         Utils::usage(argv[0], usageText);
     }
+    if (ShowHelp.GetExists())
+        Utils::usage(argv[0], helpText);
     if (!ReadSections(std::string(argv[1])))
         Utils::fatal("Invalid .rel file failed to read sections");
 

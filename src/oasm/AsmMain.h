@@ -42,6 +42,7 @@ class AsmMain
 
   private:
     static CmdSwitchParser SwitchParser;
+    static CmdSwitchBool ShowHelp;
     static CmdSwitchBool CaseInsensitive;
     static CmdSwitchCombo CreateListFile;
     static CmdSwitchFile File;
@@ -57,5 +58,6 @@ class AsmMain
     static CmdSwitchBool NoGasDirectiveWarning;
 
     static const char* usageText;
+    static const char* helpText;
 };
 #endif

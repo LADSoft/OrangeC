@@ -33,6 +33,7 @@
 #include <cstring>
 
 CmdSwitchParser nmMain::SwitchParser;
+CmdSwitchBool nmMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool nmMain::filePerLine(SwitchParser, 'A');
 CmdSwitchBool nmMain::filePerLine2(SwitchParser, 'o');
 CmdSwitchBool nmMain::allSymbols(SwitchParser, 'a');
@@ -51,7 +52,7 @@ CmdSwitchBool nmMain::reservedP(SwitchParser, 'P');
 CmdSwitchBool nmMain::reservedS(SwitchParser, 'S');
 CmdSwitchBool nmMain::reservedX(SwitchParser, 'X');
 
-const char* nmMain::usageText =
+const char* nmMain::helpText =
     "[options] inputfile\n"
     "\n"
     "/a             Show all symbols\n"
@@ -71,7 +72,10 @@ const char* nmMain::usageText =
     "/X             reserved\n"
     "/V, --version  Show version and date\n"
     "/!, --nologo   No logo\n"
+    "/?, --help     This text\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
+
+const char* nmMain::usageText = "[options] inputfile"; 
 
 int main(int argc, char** argv)
 {
@@ -104,10 +108,12 @@ int nmMain::Run(int argc, char** argv)
         if (!internalConfig.Parse(configName.c_str()))
             Utils::fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || help.GetValue() || argc < 2)
+    if (!SwitchParser.Parse(&argc, argv) || ((help.GetValue() || argc < 2) && !ShowHelp.GetExists()))
     {
         Utils::usage(argv[0], usageText);
     }
+    if (ShowHelp.GetExists())
+        Utils::usage(argv[0], helpText);
     CmdFiles files(argv + 1);
     SymbolTable s(allSymbols.GetValue(), externalSymbols.GetValue(), undefinedSymbols.GetValue());
     s.Load(files);

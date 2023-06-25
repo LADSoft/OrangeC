@@ -39,7 +39,7 @@
 
 namespace Optimizer
 {
-static char usage_text[] =
+static char help_text[] =
     "[options] [@response file] files\n"
     "\n"
     "/1        - C1x mode                  /8        - c89 mode\n"
@@ -55,6 +55,7 @@ static char usage_text[] =
     "+Q        - quiet mode                /T        - translate trigraphs\n"
     "/Vx.x.x.x - set assembly version      /!        - No logo\n"
     "--version - show version info\n"
+    "/?, --help  - This text\n"
     "\nCodegen parameters: (/C[+][-][params])\n"
     "  +a   - use delegate for func ptr    +d   - display diagnostics\n"
     "  -b   - no BSS                       +f   - generated pinned addresses\n"
@@ -91,6 +92,8 @@ static char usage_text[] =
     "  /MMD           - basic generation and continue, user files only\n"
     "\nCommand line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior\n\n"
     "Time: " __TIME__ "  Date: " __DATE__;
+static char usage_text[] =
+    "[options] [@response file] files";
 
 char msil_bltins[] =
     " void exit(int); "
@@ -414,6 +417,7 @@ ARCH_ASM msilAssemblerInterface[] = {
         "occil",          /* name of the program, for usage */
         "occil",          /* name of a config file if you want to use one, or NULL (sans extension) */
         usage_text,       /* pointer to usage text */
+        help_text,        /* pointer to help text */
         "",               /* lib file */
         "msil-w32-occil", /* machine string */
         nullptr,          // args,                           /* extra args */

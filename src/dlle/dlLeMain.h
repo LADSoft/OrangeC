@@ -77,11 +77,13 @@ class dlLeMain
 
   private:
     static CmdSwitchParser SwitchParser;
+    static CmdSwitchBool ShowHelp;
     static CmdSwitchString modeSwitch;
     static CmdSwitchString stubSwitch;
     static CmdSwitchString outputFileSwitch;
     static CmdSwitchString DebugFile;
     static const char* usageText;
+    static const char* helpText;
 
     ObjInt stackSize;
     std::string outputName;

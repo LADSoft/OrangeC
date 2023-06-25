@@ -39,6 +39,7 @@ extern "C"
 
 //#define TESTANNOTATE
 CmdSwitchParser ppMain::SwitchParser;
+CmdSwitchBool ppMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool ppMain::assembly(SwitchParser, 'a', false);
 CmdSwitchBool ppMain::disableExtensions(SwitchParser, 'A', false);
 CmdSwitchBool ppMain::c99Mode(SwitchParser, '9', true);
@@ -63,7 +64,7 @@ CmdSwitchCombineString ppMain::MakeStubsQuotedTargets(SwitchParser, 0, ';', {"MQ
 CmdSwitchBool ppMain::MakeStubsContinue(SwitchParser, 0, 0, {"MD"});
 CmdSwitchBool ppMain::MakeStubsContinueUser(SwitchParser, 0, 0, {"MMD"});
 
-const char* ppMain::usageText =
+const char* ppMain::helpText =
     "[options] files\n"
     "\n"
     "/1             - C11 mode                  /9          - C99 mode\n"
@@ -73,6 +74,7 @@ const char* ppMain::usageText =
     "/T             - translate trigraphs       /Uxxx       - Undefine something\n"
     "/V, --version  - Show version and date     /!,--nologo - No logo\n"
     "/oxxx          - set output file           /zxxx,/Zxxx - set system path\n"
+    "/?, --help     - This text\n"
     "\nDependency generation:\n"
     "  /M             - basic generation\n"
     "  /MM            - basic generation, user files only\n"
@@ -84,6 +86,7 @@ const char* ppMain::usageText =
     "  /MD            - basic generation and continue\n"
     "  /MMD           - basic generation and continue, user files only\n"
     "Time: " __TIME__ "  Date: " __DATE__;
+const char* ppMain::usageText = "[options] files";
 
 int main(int argc, char* argv[])
 {
@@ -160,10 +163,15 @@ int ppMain::Run(int argc, char* argv[])
             Utils::fatal("Corrupt configuration file");
         }
     }
-    if (!SwitchParser.Parse(&argc, argv) || (argc == 1 && File.GetCount() <= 1))
+    if (!SwitchParser.Parse(&argc, argv) || (argc == 1 && File.GetCount() <= 1 && !ShowHelp.GetExists()))
     {
         Utils::banner(argv[0]);
         Utils::usage(argv[0], usageText);
+    }
+    if (ShowHelp.GetExists())
+    {
+        Utils::banner(argv[0]);
+        Utils::usage(argv[0], helpText);
     }
     if (!MakeStubs.GetValue() && !MakeStubsUser.GetValue() && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
     {

@@ -32,10 +32,12 @@ protected:
 
 private:
     static const char* usageText;
+    static const char* helpText;
 
     static CmdSwitchParser SwitchParser;
 
     static CmdSwitchBool prm_compileonly;
+    static CmdSwitchBool ShowHelp;
     static CmdSwitchString prm_directory_options;
     static CmdSwitchBool prm_debug;
     static CmdSwitchBool prm_verbose;

@@ -33,6 +33,7 @@
 #include "gccocc.h"
 
 CmdSwitchParser gccocc::SwitchParser;
+CmdSwitchBool gccocc::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool gccocc::prm_compileonly(SwitchParser, 'c');
 CmdSwitchString gccocc::prm_directory_options(SwitchParser, 'i'); // ignored
 CmdSwitchBool gccocc::prm_debug(SwitchParser, 'g');
@@ -63,7 +64,7 @@ CmdSwitchCombineString gccocc::prmPrintFileName(SwitchParser, 0, 0, {"print-file
 CmdSwitchCombineString gccocc::prmPrintProgName(SwitchParser, 0, 0, {"print-prog-name"});
 
 
-const char* gccocc::usageText =
+const char* gccocc::helpText =
     "[options] files...\n"
     "\n"
     "   -c              compile only\n"
@@ -85,6 +86,7 @@ const char* gccocc::usageText =
     "   -Wl,xxx         specify a linker flag\n"
     "   -V, --version   show version information\n"
     "   --nologo        no logo\n"
+    "   /?, --help      this text\n"
     "Other options\n"
     "   -dll            generate a DLL\n"
     "   -dumpmachine    dump machine string\n"
@@ -102,6 +104,8 @@ const char* gccocc::usageText =
     "   -static         generate an executable\n"
     "\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
+const char* gccocc::usageText = "[options] files...";
+
 int main(int argc, char** argv)
 {
     gccocc gcc;
@@ -129,9 +133,11 @@ int gccocc::Run(int argc, char** argv)
     }
     if (!SwitchParser.Parse(&argc, argv) || argc < 2)
     {
-        if (argc < 2 && !prmDumpVersion.GetExists() && !prmDumpMachine.GetExists() && !prmPrintFileName.GetExists() && !prmPrintProgName.GetExists())
+        if (argc < 2 && !prmDumpVersion.GetExists() && !prmDumpMachine.GetExists() && !prmPrintFileName.GetExists() && !prmPrintProgName.GetExists() && !ShowHelp.GetExists())
             Utils::usage(argv[0], usageText);
     }	
+    if (ShowHelp.GetExists())
+        Utils::usage(argv[0], helpText);
     std::string tempName;
     FILE* fil = Utils::TempName(tempName);
     if (prm_compileonly.GetValue())

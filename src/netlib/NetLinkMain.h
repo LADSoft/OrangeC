@@ -83,6 +83,7 @@ private:
     bool hasEntryPoint;
 
     static CmdSwitchParser SwitchParser;
+    static CmdSwitchBool ShowHelp;
     static CmdSwitchString StrongName;
     static CmdSwitchBool LibraryFile;
     static CmdSwitchBool AssemblyFile;
@@ -96,5 +97,6 @@ private:
     static CmdSwitchBool WeedPInvokes;
 
     static const char *usageText;
+    static const char* helpText;
 };
 #endif

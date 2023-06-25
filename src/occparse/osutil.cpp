@@ -76,6 +76,7 @@ int cplusplusversion = 14;
 std::deque<DefValue> defines;
 
 CmdSwitchParser switchParser;
+CmdSwitchBool ShowHelp(switchParser, '?', false, {"help"});
 CmdSwitchBool prm_c89(switchParser, '8');
 CmdSwitchBool prm_c99(switchParser, '9');
 CmdSwitchBool prm_c11(switchParser, '1');
@@ -1160,10 +1161,12 @@ int ccinit(int argc, char* argv[])
     int ecnt = 0;
     char* eargs[200];
     bool need_usage = false;
-    if (!switchParser.Parse(&argc, argv) || (argc == 1 && prm_file.GetCount() <= 1 && ecnt <= 1))
+    if (!switchParser.Parse(&argc, argv) || (argc == 1 && prm_file.GetCount() <= 1 && ecnt <= 1 && !ShowHelp.GetExists()))
     {
         need_usage = true;
     }
+    if (ShowHelp.GetExists())
+        need_usage = true;
     /* initialize back end */
     if (prm_assemble.GetExists())
     {
@@ -1202,7 +1205,10 @@ int ccinit(int argc, char* argv[])
         return true;
     if (need_usage)
     {
-        Utils::usage(argv[0], getUsageText());
+        if (ShowHelp.GetExists())
+            Utils::usage(argv[0], getHelpText());
+        else
+            Utils::usage(argv[0], getUsageText());
     }
 
     if (Optimizer::chosenAssembler->envname)

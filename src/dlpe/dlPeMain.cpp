@@ -40,6 +40,7 @@
 #include <cstdlib>
 
 CmdSwitchParser dlPeMain::SwitchParser;
+CmdSwitchBool dlPeMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchString dlPeMain::stubSwitch(SwitchParser, 's');
 CmdSwitchString dlPeMain::modeSwitch(SwitchParser, 'm');
 CmdSwitchString dlPeMain::outputFileSwitch(SwitchParser, 'o');
@@ -77,7 +78,7 @@ unsigned char dlPeMain::defaultStubData[] = {
     0x72, 0x65, 0x73, 0x20, 0x57, 0x69, 0x6E, 0x33, 0x32, 0x0D, 0x0A, 0x24, 0x00, 0x00, 0x00, 0x00};
 int dlPeMain::defaultStubSize = sizeof(defaultStubData);
 
-const char* dlPeMain::usageText =
+const char* dlPeMain::helpText =
     "[options] relfile\n"
     "\n"
     "/f             remove underscore from exports\n"
@@ -87,6 +88,7 @@ const char* dlPeMain::usageText =
     "/y             Verbose\n"
     "/V, --version  Show version and date\n"
     "/!             No logo\n"
+    "/?, --help     This text\n"
     "\n"
     "--output-def filename    for DLL, output a .def file instead of a .lib\n"
     "\n"
@@ -95,6 +97,8 @@ const char* dlPeMain::usageText =
     "   GUI - Windows GUI\n"
     "   DLL - Windows DLL\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
+
+const char* dlPeMain::usageText = "[options] relfile";
 
 int main(int argc, char** argv)
 {
@@ -525,10 +529,12 @@ int dlPeMain::Run(int argc, char** argv)
         if (!internalConfig.Parse(configName.c_str()))
             Utils::fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || argc < 2)
+    if (!SwitchParser.Parse(&argc, argv) || (argc < 2 && !ShowHelp.GetExists()))
     {
         Utils::usage(argv[0], usageText);
     }
+    if (ShowHelp.GetExists())
+        Utils::usage(argv[0], helpText);
     ParseOutResourceFiles(&argc, argv);
     if (!ParseOutDefFile(&argc, argv))
     {

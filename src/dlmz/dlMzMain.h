@@ -52,10 +52,13 @@ class dlMzMain
     bool ReadSections(const std::string& path);
     std::string GetOutputName(char* infile) const;
     static CmdSwitchParser SwitchParser;
+    static CmdSwitchBool ShowHelp;
     static CmdSwitchString outputFileSwitch;
     static CmdSwitchString modeSwitch;
     static CmdSwitchString DebugFile;
     static const char* usageText;
+    static const char* helpText;
+
     ObjFile* file;
     std::unique_ptr<OutFile> data;
 };

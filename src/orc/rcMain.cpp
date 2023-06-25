@@ -35,6 +35,7 @@
 #endif
 
 CmdSwitchParser rcMain::SwitchParser;
+CmdSwitchBool rcMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchFile rcMain::File(SwitchParser, '@');
 CmdSwitchBool rcMain::Boolr(SwitchParser, 'r');
 CmdSwitchBool rcMain::Boolt(SwitchParser, 't');
@@ -44,7 +45,7 @@ CmdSwitchDefine rcMain::Defines(SwitchParser, 'D');
 CmdSwitchCombineString rcMain::includePath(SwitchParser, 'i', ';');
 CmdSwitchString rcMain::Language(SwitchParser, 'L');
 
-const char* rcMain::usageText =
+const char* rcMain::helpText =
     "[options] file"
     "\n"
     "  @filename  use response file\n"
@@ -53,8 +54,10 @@ const char* rcMain::usageText =
     "  /r     reserved for compatability   /t                reserved for compatability\n"
     "  /v     reserved for compatability   /V, --version     Show version and date\n"
     "  /!, --nologo   No logo\n"
+    "  /?, --help     This text\n"
     "\n"
     "Time: " __TIME__ "  Date: " __DATE__;
+const char* rcMain::usageText = "[options] file";
 
 int main(int argc, char* argv[])
 {
@@ -81,10 +84,12 @@ int rcMain::Run(int argc, char* argv[])
         if (!internalConfig.Parse(configName.c_str()))
             Utils::fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || (argc == 1 && File.GetCount() <= 1))
+    if (!SwitchParser.Parse(&argc, argv) || (argc == 1 && File.GetCount() <= 1 && !ShowHelp.GetExists()))
     {
         Utils::usage(argv[0], usageText);
     }
+    if (ShowHelp.GetExists())
+        Utils::usage(argv[0], helpText);
     CmdFiles files(argv + 1);
     if (File.GetValue())
         files.Add(File.GetValue() + 1);

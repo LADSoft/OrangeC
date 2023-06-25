@@ -46,7 +46,7 @@ bool doBackendInit = false;
 static char BackendIntrinsicPrototypes[] =
 #include "../occ/beIntrinsicProtos.h"
     ;
-static char usage_text[] =
+static char help_text[] =
     "[options] [@response file] files\n"
     "\n"
     "/1        - C1x mode                  /8        - c89 mode\n"
@@ -68,6 +68,7 @@ static char usage_text[] =
     "/V,/v,--version - show version/date   /Wxx      - set executable type\n"
     "/X-       - don't include RTTI info   /Y        - output intermediate code\n"
     "/!,--nologo - No logo\n"
+    "/?, --help  - This text\n"
     "\nCodegen parameters: (/C[+][-][params])\n"
     "  +d   - display diagnostics          -b        - no BSS\n"
     "  +F   - flat model                   -l        - no C source in ASM file\n"
@@ -140,6 +141,7 @@ static char usage_text[] =
     "  /MMD           - basic generation and continue, user files only\n"
     "\nCommand line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior\n\n"
     "Time: " __TIME__ "  Date: " __DATE__;
+static char usage_text[] = "[options] [@response file] files";
 
 void WinmodeSetup(const char* string);
 static void chkdos(void)
@@ -514,6 +516,7 @@ ARCH_ASM x86AssemblerInterface[] = {
         "occ",                                      /* name of the program, for usage */
         "occ",                                      /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                                 /* pointer to usage text */
+        help_text,                                  /* pointer to help text */
         "clwin.l",                                  /* lib file */
         "i686-w32-occ",                             /* machine string */
         nullptr,                                    // args,                           /* extra args */
@@ -562,6 +565,7 @@ ARCH_ASM x86AssemblerInterface[] = {
         "occ",                                 /* name of the program, for usage */
         "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                            /* pointer to usage text */
+        help_text,                                  /* pointer to help text */
         "clwin.l",                             /* lib file */
         "i686-w32-occ",                        /* machine string */
         nullptr,                               // args,                           /* extra args */
@@ -610,6 +614,7 @@ ARCH_ASM x86AssemblerInterface[] = {
         "occ",                                 /* name of the program, for usage */
         "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                            /* pointer to usage text */
+        help_text,                                  /* pointer to help text */
         "clwin.l",                             /* lib file */
         "i686-w32-occ",                        /* machine string */
         nullptr,                               // args,                           /* extra args */
@@ -658,6 +663,7 @@ ARCH_ASM x86AssemblerInterface[] = {
         "occ",                                 /* name of the program, for usage */
         "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                            /* pointer to usage text */
+        help_text,                                  /* pointer to help text */
         "clwin.l",                             /* lib file */
         "i686-w32-occ",                        /* machine string */
         nullptr,                               // args,                           /* extra args */
@@ -706,6 +712,7 @@ ARCH_ASM x86AssemblerInterface[] = {
         "occ",                                 /* name of the program, for usage */
         "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                            /* pointer to usage text */
+        help_text,                                  /* pointer to help text */
         "clwin.l",                             /* lib file */
         "i686-w32-occ",                        /* machine string */
         nullptr,                               // args,                           /* extra args */
@@ -754,6 +761,7 @@ ARCH_ASM x86AssemblerInterface[] = {
         "occ",                                 /* name of the program, for usage */
         "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                            /* pointer to usage text */
+        help_text,                                  /* pointer to help text */
         "clwin.l",                             /* lib file */
         "i686-w32-occ",                        /* machine string */
         nullptr,                               // args,                           /* extra args */

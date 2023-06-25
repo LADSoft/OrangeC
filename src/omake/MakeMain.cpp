@@ -55,7 +55,7 @@ CmdSwitchCombineString MakeMain::dir(switchParser, 'C', '+', {"directory"});
 CmdSwitchBool MakeMain::debug(switchParser, 'd');  // not implemented
 CmdSwitchBool MakeMain::environOverride(switchParser, 'e', false, {"environment-overrides"});
 CmdSwitchBool MakeMain::help(switchParser, 'h');
-CmdSwitchBool MakeMain::help2(switchParser, '?', false, {"help"});
+CmdSwitchBool MakeMain::ShowHelp(switchParser, '?', false, {"help"});
 CmdSwitchCombineString MakeMain::includes(switchParser, 'I', ';', {"include-dir"});
 CmdSwitchBool MakeMain::showDatabase(switchParser, 'p', false, {"print-data-base"});
 CmdSwitchBool MakeMain::noBuiltinRules(switchParser, 'r', false, {"no-builtin-rules"});
@@ -70,7 +70,7 @@ CmdSwitchInt MakeMain::jobs(switchParser, 'j', INT_MAX, 1, INT_MAX);
 CmdSwitchString MakeMain::jobServer(switchParser, 0, 0, {"jobserver-auth"});
 CmdSwitchCombineString MakeMain::jobOutputMode(switchParser, 'O');
 
-const char* MakeMain::usageText =
+const char* MakeMain::helpText =
     "[options] goals\n"
     "\n"
     "/B    Rebuild all             /C    Set directory\n"
@@ -471,10 +471,10 @@ int MakeMain::Run(int argc, char** argv)
         Dispatch(cmdLine.c_str());
     }
     LoadEquates(argc, argv);
-    if (!switchParser.Parse(&argc, argv) || help.GetValue() || help2.GetValue())
+    if (!switchParser.Parse(&argc, argv) || help.GetValue() || ShowHelp.GetValue())
     {
         Utils::banner(argv[0]);
-        Utils::usage(argv[0], usageText);
+        Utils::usage(argv[0], helpText);
     }
     char* cpath = getenv("CPATH");
     if (cpath)
@@ -500,7 +500,7 @@ int MakeMain::Run(int argc, char** argv)
     }
 
     if (!LoadJobArgs())
-        Utils::usage(argv[0], usageText);
+        Utils::usage(argv[0], helpText);
 
     bool done = false;
     Eval::SetWarnings(warnUndef.GetValue());

@@ -37,8 +37,10 @@ class BRCMain
 
   private:
     static CmdSwitchParser SwitchParser;
+    static CmdSwitchBool ShowHelp;
     static CmdSwitchFile File;
 
     static const char* usageText;
+    static const char* helpText;
 };
 #endif

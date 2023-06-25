@@ -36,21 +36,25 @@
 CmdSwitchParser dlMzMain::SwitchParser;
 
 CmdSwitchString dlMzMain::outputFileSwitch(SwitchParser, 'o');
+CmdSwitchBool dlMzMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchString dlMzMain::modeSwitch(SwitchParser, 'm');
 CmdSwitchString dlMzMain::DebugFile(SwitchParser, 'v');
 
-const char* dlMzMain::usageText =
+const char* dlMzMain::helpText =
     "[options] relfile\n"
     "\n"
     "/oxxx          Set output file name\n"
     "/mxxx          Set output file type\n"
     "/V, --version  Show version and date\n"
     "/!, --nologo   No logo\n"
+    "/?, --help     This text\n"
     "\n"
     "Available output file types:\n"
     "    TINY\n"
     "    REAL (segmented, default)\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
+
+const char* dlMzMain::usageText = "[options] relfile";
 
 int main(int argc, char** argv)
 {
@@ -139,10 +143,12 @@ int dlMzMain::Run(int argc, char** argv)
         if (!internalConfig.Parse(configName.c_str()))
             Utils::fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || argc != 2)
+    if (!SwitchParser.Parse(&argc, argv) || (argc != 2 && !ShowHelp.GetExists()))
     {
         Utils::usage(argv[0], usageText);
     }
+    if (ShowHelp.GetExists())
+        Utils::usage(argv[0], helpText);
     if (!GetMode())
     {
         Utils::usage(argv[0], usageText);

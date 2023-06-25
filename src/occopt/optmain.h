@@ -40,6 +40,7 @@ extern CmdSwitchBool WriteIcdFile;
 extern CmdSwitchCombineString output;
 
 extern const char* usageText;
+extern const char* helpText;
 
 extern int usingEsp;
 

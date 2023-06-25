@@ -52,23 +52,25 @@ int main(int argc, char** argv)
 }
 
 CmdSwitchParser LibMain::SwitchParser;
-
+CmdSwitchBool LibMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool LibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
 CmdSwitchOutput LibMain::OutputFile(SwitchParser, 'o', ".a");
 CmdSwitchFile LibMain::File(SwitchParser, '@');
 CmdSwitchBool LibMain::noExport(SwitchParser, 0, false, {"noexports"});
-const char* LibMain::usageText =
+const char* LibMain::helpText =
     "[options] libfile [+ files] [- files] [* files]\n"
     "\n"
     "/c-            Case insensitive library\n"
     "/oxxx          Set output file name\n"
     "/V, --version  Show version and date\n"
     "/!, --nologo   No logo\n"
+    "/?, --help     This text\n"
     "@xxx           Read commands from file\n"
     "\n"
     "--noexports    Remove export records\n"
     "\n"
     "Time: " __TIME__ "  Date: " __DATE__;
+const char* LibMain::usageText = "[options] libfile [+ files] [- files] [* files]";
 
 void LibMain::AddFile(LibManager& librarian, const char* arg)
 {
@@ -146,6 +148,8 @@ int LibMain::Run(int argc, char** argv)
     {
         Utils::usage(argv[0], usageText);
     }
+    if (ShowHelp.GetExists())
+        Utils::usage(argv[0], helpText);
     int fileCount = argc - 1 + File.GetCount() + !!OutputFile.GetValue().size();
     if (fileCount < 2)
     {

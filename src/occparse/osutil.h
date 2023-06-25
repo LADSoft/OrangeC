@@ -142,6 +142,7 @@ extern CmdSwitchBool MakeStubsContinue;
 extern CmdSwitchBool MakeStubsContinueUser;
 
 extern const char* getUsageText(void);
+extern const char* getHelpText(void);
 
 void EXEPath(char* buffer, char* filename);
 void optimize_setup(char select, const char* string);

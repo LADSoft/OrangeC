@@ -244,5 +244,6 @@ int getAlign(int sc, TYPE* tp)
     return align;
 }
 const char* getUsageText(void) { return Optimizer::chosenAssembler->usage_text; }
+const char* getHelpText(void) { return Optimizer::chosenAssembler->help_text; }
 KEYWORD* GetProcKeywords(void) { return (KEYWORD*)Optimizer::chosenAssembler->keywords; }
 }  // namespace Parser

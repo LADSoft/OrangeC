@@ -37,6 +37,7 @@ class rcMain
 
   private:
     static CmdSwitchParser SwitchParser;
+    static CmdSwitchBool ShowHelp;
     static CmdSwitchFile File;
     static CmdSwitchBool Boolr;
     static CmdSwitchBool Boolt;
@@ -47,5 +48,6 @@ class rcMain
     static CmdSwitchString Language;
 
     static const char* usageText;
+    static const char* helpText;
 };
 #endif

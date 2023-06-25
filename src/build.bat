@@ -137,7 +137,7 @@
 :notests
                   IF "%WITHDEBUG%" NEQ "" (
                       goto finish
-                  }
+                  )
                   omake /fzip7z.mak
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;

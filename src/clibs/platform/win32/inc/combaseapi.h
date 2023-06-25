@@ -44,10 +44,37 @@
 
 #define interface  struct
 
+#if defined(__cplusplus) && !defined(CINTERFACE)
+#define interface struct
+#define STDMETHOD(method)  virtual HRESULT STDMETHODCALLTYPE method
+#define STDMETHOD_(type,method)  virtual type STDMETHODCALLTYPE method
+#define STDMETHODV(method)  virtual HRESULT STDMETHODVCALLTYPE method
+#define STDMETHODV_(type,method)  virtual type STDMETHODVCALLTYPE method
+#define PURE  = 0
+#define THIS_
+#define THIS  void
+#define DECLARE_INTERFACE(iface)  interface iface
+#define DECLARE_INTERFACE_(iface,baseiface)  interface iface : public baseiface
+#else /* defined(__cplusplus) && !defined(CINTERFACE) */
+#define interface struct
 #define STDMETHOD(method)  HRESULT (STDMETHODCALLTYPE *method)
 #define STDMETHOD_(type,method)  type (STDMETHODCALLTYPE *method)
 #define STDMETHODV(method)  HRESULT (STDMETHODVCALLTYPE *method)
 #define STDMETHODV_(type,method)  type (STDMETHODVCALLTYPE *method)
+#define PURE
+#define THIS_ INTERFACE *This,
+#define THIS INTERFACE *This
+#ifdef CONST_VTABLE
+#undef CONST_VTBL
+#define CONST_VTBL const
+#define DECLARE_INTERFACE(iface)  typedef interface iface { const struct iface##Vtbl *lpVtbl; } iface; typedef const struct iface##Vtbl iface##Vtbl; const struct iface##Vtbl
+#else
+#undef CONST_VTBL
+#define CONST_VTBL
+#define DECLARE_INTERFACE(iface)  typedef interface iface { struct iface##Vtbl *lpVtbl; } iface; typedef struct iface##Vtbl iface##Vtbl; struct iface##Vtbl
+#endif /* CONST_VTABLE */
+#define DECLARE_INTERFACE_(iface,baseiface)  DECLARE_INTERFACE(iface)
+#endif /* defined(__cplusplus) && !defined(CINTERFACE) */
 
 #define IFACEMETHOD(method)  STDMETHOD(method)
 #define IFACEMETHOD_(type,method)  STDMETHOD_(type,method)
@@ -59,31 +86,6 @@
 #define END_INTERFACE
 #endif /* BEGIN_INTERFACE */
 
-#define PURE
-#define THIS_  INTERFACE *This,
-#define THIS  INTERFACE *This
-
-#ifdef CONST_VTABLE
-#undef CONST_VTBL
-#define CONST_VTBL const
-#define DECLARE_INTERFACE(iface)  \
-    typedef interface iface { \
-        const struct iface##Vtbl *lpVtbl; \
-    } iface; \
-    typedef const struct iface##Vtbl iface##Vtbl; \
-    const struct iface##Vtbl
-#else /* !CONST_VTABLE */
-#undef CONST_VTBL
-#define CONST_VTBL
-#define DECLARE_INTERFACE(iface)  \
-    typedef interface iface { \
-        struct iface##Vtbl  * lpVtbl; \
-    } iface; \
-    typedef struct iface##Vtbl iface##Vtbl; \
-    struct iface##Vtbl
-#endif /* !CONST_VTABLE */
-
-#define DECLARE_INTERFACE_(iface, baseiface)  DECLARE_INTERFACE(iface)
 #define DECLARE_INTERFACE_IID(iface,iid)  DECLARE_INTERFACE(iface)
 #define DECLARE_INTERFACE_IID_(iface,baseiface,iid)  DECLARE_INTERFACE_(iface, baseiface)
 

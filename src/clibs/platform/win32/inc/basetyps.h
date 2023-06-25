@@ -40,10 +40,10 @@
 #define DECLARE_INTERFACE_(iface,baseiface)  interface iface : public baseiface
 #else /* defined(__cplusplus) && !defined(CINTERFACE) */
 #define interface struct
-#define STDMETHOD(method)  HRESULT (STDMETHODCALLTYPE * method)
-#define STDMETHOD_(type,method)  type (STDMETHODCALLTYPE * method)
-#define STDMETHODV(method)  HRESULT (STDMETHODVCALLTYPE * method)
-#define STDMETHODV_(type,method)  type (STDMETHODVCALLTYPE * method)
+#define STDMETHOD(method)  HRESULT (STDMETHODCALLTYPE *method)
+#define STDMETHOD_(type,method)  type (STDMETHODCALLTYPE *method)
+#define STDMETHODV(method)  HRESULT (STDMETHODVCALLTYPE *method)
+#define STDMETHODV_(type,method)  type (STDMETHODVCALLTYPE *method)
 #define PURE
 #define THIS_ INTERFACE *This,
 #define THIS INTERFACE *This

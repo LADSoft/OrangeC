@@ -97,6 +97,7 @@ copyfiles: mkdir
 	-copy  stdinc ..\..\include\c 2>NUL
 	-copy  stdinc\sys ..\..\include\c\sys 2>NUL
 	-copy  platform\win32\inc ..\..\include\c\win32 2>NUL
+	-copy  platform\win32\inc\gdiplus ..\..\include\c\win32 2>NUL
 	-copy  platform\win32\inc\gl ..\..\include\c\win32\gl 2>NUL
 
 $(C_CLIBS) : %.clibs :

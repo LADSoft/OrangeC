@@ -14,7 +14,7 @@
 #define ANYSIZE_ARRAY  1
 
 #ifndef DUMMYUNIONNAME
-#if defined(NONAMELESSUNION) || !defined(_MSC_EXTENSIONS)
+#if defined(NONAMELESSUNION)
 #define DUMMYUNIONNAME  u
 #define DUMMYUNIONNAME2  u2
 #define DUMMYUNIONNAME3  u3
@@ -38,7 +38,7 @@
 #endif /* !DUMMYUNIONNAME */
 
 #ifndef DUMMYSTRUCTNAME
-#if defined(NONAMELESSUNION) || !defined(_MSC_EXTENSIONS)
+#if defined(NONAMELESSUNION)
 #define DUMMYSTRUCTNAME  s
 #define DUMMYSTRUCTNAME2 s2
 #define DUMMYSTRUCTNAME3 s3
@@ -380,7 +380,11 @@ typedef DWORD FLONG;
 typedef long HRESULT;
 #endif /* _HRESULT_DEFINED */
 
+#ifdef __cplusplus
+#define EXTERN_C  extern "C"
+#else
 #define EXTERN_C  extern
+#endif
 
 #ifdef _68K_
 #define STDMETHODCALLTYPE  __cdecl

@@ -5735,7 +5735,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         {
                             if (MATCHKW(lex, colon) || MATCHKW(lex, begin) || MATCHKW(lex, kw_try))
                             {
-                                if (strcmp(sp->name, "main") != 0)
+                                if (strcmp(sp->name, "main") != 0 && strcmp(sp->name, "WinMain") != 0)
                                 {
                                     sp->sb->attribs.inheritable.isInline = sp->sb->promotedToInline =
                                         true;
@@ -6846,7 +6846,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                     {
                                         if (!sp->sb->parentNameSpace &&
                                             (!sp->sb->parentClass || !sp->sb->parentClass->templateParams || !templateNestingCount) &&
-                                            strcmp(sp->name, "main"))
+                                            strcmp(sp->name, "main") != 0 && strcmp(sp->name, "WinMain") != 0)
                                         {
                                             sp->sb->attribs.inheritable.linkage4 = lk_virtual;
                                             if (!templateNestingCount || instantiatingTemplate || (sp->sb->specialized && sp->templateParams->size() == 1))

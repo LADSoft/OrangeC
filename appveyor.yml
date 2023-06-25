@@ -1,4 +1,4 @@
-version: '6.0.62.{BUILD}'
+version: '6.0.70.{BUILD}'
 
 image: Visual Studio 2019
 

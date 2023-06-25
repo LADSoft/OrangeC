@@ -135,10 +135,14 @@
                   )
                   cd ..\src
 :notests
+                  IF "%WITHDEBUG%" NEQ "" (
+                      goto finish
+                  }
                   omake /fzip7z.mak
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
+:finish
                   echo succeeded
                   goto done
 :error

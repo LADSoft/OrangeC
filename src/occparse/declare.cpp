@@ -1316,10 +1316,10 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
     const char* tagname;
     char newName[4096];
     enum e_bt type = bt_none;
-    SYMBOL* sp = nullptr;
+    SYMBOL* sp;
     int charindex;
-    std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
-    SYMBOL* strSym = nullptr;
+    std::list<NAMESPACEVALUEDATA*>* nsv;
+    SYMBOL* strSym;
     enum e_ac defaultAccess;
     bool addedNew = false;
     int declline = lex->data->errline;
@@ -1377,8 +1377,7 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
     if (inTemplate)
         inTemplateSpecialization++;
 
-    if (!anonymous)
-        lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
+    lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
 
     if (inTemplate)
         inTemplateSpecialization--;
@@ -1794,9 +1793,9 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc stor
     bool noname = false;
     bool scoped = false;
     TYPE* fixedType = nullptr;
-    SYMBOL* sp = nullptr;
-    std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
-    SYMBOL* strSym = nullptr;
+    SYMBOL* sp;
+    std::list<NAMESPACEVALUEDATA*>* nsv;
+    SYMBOL* strSym;
     int declline = lex->data->errline;
     int realdeclline = lex->data->linedata->lineno;
     bool anonymous = false;

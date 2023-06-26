@@ -9761,10 +9761,15 @@ LEXLIST* expression_no_comma(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
 LEXLIST* expression_no_check(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, int flags)
 {
     if (flags & _F_TYPETEST)
+    {
         anonymousNotAlloc++;
-    lex = expression_comma(lex, funcsp, atp, tp, exp, nullptr, flags);
-    if (flags & _F_TYPETEST)
+        lex = expression_no_comma(lex, funcsp, atp, tp, exp, nullptr, flags);        
         anonymousNotAlloc--;
+    }
+    else
+    {
+        lex = expression_comma(lex, funcsp, atp, tp, exp, nullptr, flags);
+    }
     return lex;
 }
 

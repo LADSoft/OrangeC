@@ -811,6 +811,8 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                 }
                 lex = getsym();
 
+                auto page = localNameSpace->front()->syms;
+                localNameSpace->front()->syms = static_cast<SymbolTable<SYMBOL>*>(localNameSpace->front()->syms->Next());
                 if (MATCHKW(lex, begin))
                 {
                     TYPE* matchtp = &stdint;
@@ -930,6 +932,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                 {
                     lex = expression_no_comma(lex, funcsp, nullptr, &selectTP, &select, nullptr, 0);
                 }
+                localNameSpace->front()->syms = page;
                 if (!selectTP || selectTP->type == bt_any)
                 {
                     error(ERR_EXPRESSION_SYNTAX);

@@ -44,7 +44,6 @@ class ppFile : public InputFile
         extendedComment(extended),
         cond(isunsignedchar, c89, extended, asmpp),
         ctx(Ctx),
-        anonymousIndex(1),
         directoriesTraversed(directories_travelled)
     {
         cond.SetParams(define, &ctx);
@@ -56,7 +55,6 @@ class ppFile : public InputFile
     void Mark() { cond.Mark(); }
     void Drop() { cond.Drop(); }
     void Release() { cond.Release(); }
-    int AnonymousIndex() { return anonymousIndex++; }
     int getDirsTravelled() { return directoriesTraversed; }
 
   protected:
@@ -68,7 +66,6 @@ class ppFile : public InputFile
     bool extendedComment;
     ppCond cond;
     ppCtx& ctx;
-    int anonymousIndex;
     int directoriesTraversed = 0;
 };
 #endif

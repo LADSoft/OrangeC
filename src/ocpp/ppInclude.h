@@ -126,13 +126,6 @@ class ppInclude
     std::set<std::string>& GetSysIncludes() { return sysIncludes; }
 
     static void SetCommentChar(char ch) { commentChar = ch; }
-    int AnonymousIndex() const
-    {
-        if (current)
-            return current->AnonymousIndex();
-        else
-            return 1;
-    }
 
   protected:
     void StripAsmComment(std::string& line);

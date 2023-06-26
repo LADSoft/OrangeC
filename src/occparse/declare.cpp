@@ -139,13 +139,35 @@ const char* AnonymousName(void)
     Optimizer::my_sprintf(buf, "Anonymous++Identifier %d", unnamed_id++);
     return litlate(buf);
 }
-const char* AnonymousTypeName(void)
+static unsigned TypeCRC(SYMBOL* sp);
+const char* AnonymousTypeName(SYMBOL* sp, SymbolTable<SYMBOL>* table)
 {
     char buf[512];
-    std::string name = preProcessor->GetRealFile();
-    int index = name == "" ? unnamed_id++ : preProcessor->GetAnonymousIndex();
-    sprintf(buf, "__anontype_%08x_%04d", Utils::CRC32((const unsigned char*)name.c_str(), name.size()), index);
-    return litlate(buf);
+    // type name will depend on file name
+    auto name = preProcessor->GetRealFile().c_str();
+    unsigned fileCRC = Utils::CRC32((const unsigned char *)name, strlen(name));
+    // type name will also depend on the structure/enum elements defined for the type
+    unsigned typeCRC = TypeCRC(sp);
+
+    // generate type name
+    sprintf(buf, "__anontype_%08x_%08x", fileCRC, typeCRC);
+    // if it doesn't exist we are done...
+    if (search(table, buf) == nullptr)
+        return litlate(buf);
+
+    // ok so now we have the rare case where two type names collide, add an index value to make it unique...
+    // note this may not result in 'correct' behavior if we also have the case where the two names are colliding
+    // and they are also being conditionally included in different source files...   we could use a stronger hash function
+    // i guess but for now this will do...
+    int i = 0;
+    for (i=1; i; ++i)
+    {
+        sprintf(buf, "__anontype_%08x_%08x_%d", fileCRC, typeCRC, i);
+        if (search(table, buf) == nullptr)
+           return litlate(buf);        
+    }
+    // should never get here...
+    return nullptr;
 }
 SYMBOL* SymAlloc()
 {
@@ -1159,6 +1181,39 @@ static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac c
     }
     return lex;
 }
+// this ignores typedef declarations and goes for the 'bare' version of the types...
+static void TypeCRC(TYPE *tp, unsigned& crc)
+{
+    const int constval = 0xffeeccdd;
+    const int volval = 0xaabbccdd;
+    const int arrval = 0x11223344;
+    while (tp)
+    {
+        if (isconst(tp))
+            crc = Utils::PartialCRC32(crc, (const unsigned char *)&constval, sizeof(constval));
+        if (isvolatile(tp))
+            crc = Utils::PartialCRC32(crc, (const unsigned char *)&volval, sizeof(volval));
+        crc = Utils::PartialCRC32(crc, (const unsigned char *)&basetype(tp)->type, sizeof(tp->type));
+        if (basetype(tp)->type == bt_struct || basetype(tp)->type == bt_enum)
+            crc = Utils::PartialCRC32(crc, (const unsigned char *)basetype(tp)->sp->name, strlen(basetype(tp)->sp->name));
+        crc = Utils::PartialCRC32(crc, (const unsigned char *)&basetype(tp)->size, sizeof(tp->size));
+        if (tp->array)
+           crc = Utils::PartialCRC32(crc, (const unsigned char *)&arrval, sizeof(arrval));
+        crc = Utils::PartialCRC32(crc, (const unsigned char *)&basetype(tp)->bits, sizeof(tp->bits));
+        tp = basetype(tp)->btp;    
+    }
+}
+static unsigned TypeCRC(SYMBOL* sp)
+{
+    unsigned crc = 0xffffffff;
+    crc = Utils::PartialCRC32(crc, (const unsigned char *)&basetype(sp->tp)->alignment, sizeof(basetype(sp->tp)->alignment));
+    for (auto s : *sp->tp->syms)
+    {
+        crc = Utils::PartialCRC32(crc, (const unsigned char *)s->name, strlen(s->name));
+        TypeCRC(s->tp, crc);
+    }
+    return crc;
+}
 LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, enum e_ac defaultAccess, bool isfinal,
                          bool* defd)
 {
@@ -1257,14 +1312,14 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
                            enum e_ac access, bool* defd, bool constexpression)
 {
     bool isfinal = false;
-    SymbolTable<SYMBOL>* table;
+    SymbolTable<SYMBOL>* table = nullptr;
     const char* tagname;
     char newName[4096];
     enum e_bt type = bt_none;
-    SYMBOL* sp;
+    SYMBOL* sp = nullptr;
     int charindex;
-    std::list<NAMESPACEVALUEDATA*>* nsv;
-    SYMBOL* strSym;
+    std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
+    SYMBOL* strSym = nullptr;
     enum e_ac defaultAccess;
     bool addedNew = false;
     int declline = lex->data->errline;
@@ -1313,7 +1368,7 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
     {
         if (!MATCHKW(lex, begin) && !MATCHKW(lex, colon))
             errorint(ERR_NEEDY, '{');
-        tagname = AnonymousTypeName();
+        tagname = "";
         charindex = -1;
         anonymous = true;
     }
@@ -1322,7 +1377,8 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
     if (inTemplate)
         inTemplateSpecialization++;
 
-    lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
+    if (!anonymous)
+        lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
 
     if (inTemplate)
         inTemplateSpecialization--;
@@ -1400,18 +1456,21 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
             sp->sb->attribs.inheritable.linkage2 = linkage2;
         if (asfriend)
             sp->sb->parentClass = nullptr;
-        SetLinkerNames(sp, lk_cdecl);
-        if (inTemplate && templateNestingCount)
+        if (!anonymous)
         {
-            if (MATCHKW(lex, lt))
-                errorsym(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
-            sp->templateParams = TemplateGetParams(sp);
-            sp->sb->templateLevel = templateNestingCount;
-            TemplateMatching(lex, nullptr, sp->templateParams, sp, MATCHKW(lex, begin) || MATCHKW(lex, colon));
             SetLinkerNames(sp, lk_cdecl);
+            if (inTemplate && templateNestingCount)
+            {
+                if (MATCHKW(lex, lt))
+                    errorsym(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
+                sp->templateParams = TemplateGetParams(sp);
+                sp->sb->templateLevel = templateNestingCount;
+                TemplateMatching(lex, nullptr, sp->templateParams, sp, MATCHKW(lex, begin) || MATCHKW(lex, colon));
+                SetLinkerNames(sp, lk_cdecl);
+            }
+            browse_variable(sp);
+            (Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass ? globalNameSpace->front()->tags : table)->Add(sp);
         }
-        browse_variable(sp);
-        (Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass ? globalNameSpace->front()->tags : table)->Add(sp);
     }
     else
     {
@@ -1544,6 +1603,13 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
             error(ERR_CONSTEXPR_NO_STRUCT);
         }
         *tp = sp->tp;
+    }
+    if (anonymous)
+    {
+        sp->name = AnonymousTypeName(sp, Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass ? globalNameSpace->front()->tags : table);
+        SetLinkerNames(sp, lk_cdecl);
+        browse_variable(sp);
+        (Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass ? globalNameSpace->front()->tags : table)->Add(sp);     
     }
     basisAttribs = oldAttribs;
     return lex;
@@ -1728,9 +1794,9 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc stor
     bool noname = false;
     bool scoped = false;
     TYPE* fixedType = nullptr;
-    SYMBOL* sp;
-    std::list<NAMESPACEVALUEDATA*>* nsv;
-    SYMBOL* strSym;
+    SYMBOL* sp = nullptr;
+    std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
+    SYMBOL* strSym = nullptr;
     int declline = lex->data->errline;
     int realdeclline = lex->data->linedata->lineno;
     bool anonymous = false;
@@ -1758,7 +1824,7 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc stor
     else
     {
         noname = true;
-        tagname = AnonymousTypeName();
+        tagname = "";
         charindex = -1;
         anonymous = true;
     }
@@ -1820,9 +1886,12 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc stor
         if (nsv)
             sp->sb->parentNameSpace = nsv->front()->name;
         sp->sb->anonymous = charindex == -1;
-        SetLinkerNames(sp, lk_cdecl);
-        browse_variable(sp);
-        (Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass ? globalNameSpace->front()->tags : table)->Add(sp);
+        if (!anonymous)
+        {
+           SetLinkerNames(sp, lk_cdecl);
+           browse_variable(sp);
+           (Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass ? globalNameSpace->front()->tags : table)->Add(sp);
+        }
     }
     else if (sp->tp->type != bt_enum)
     {
@@ -1854,6 +1923,13 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc stor
     }
     sp->tp->sp = sp;
     *tp = sp->tp;
+    if (anonymous)
+    {
+        sp->name = AnonymousTypeName(sp, Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass ? globalNameSpace->front()->tags : table);
+        SetLinkerNames(sp, lk_cdecl);
+        browse_variable(sp);
+        (Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass ? globalNameSpace->front()->tags : table)->Add(sp);     
+    }
     basisAttribs = oldAttribs;
     return lex;
 }

@@ -619,8 +619,8 @@ static void ParamTransfer(char* name)
     {
         char buf[260];
         strcpy(buf, v.c_str());
-        Utils::StripExt(buf);
-        Utils::AddExt(buf, ".l");
+        if (strlen(buf) < 2 || (strcmp(buf + strlen(buf) - 2, ".l") != 0 && strcmp(buf + strlen(buf) - 2, ".L") != 0))
+           strcat(buf, ".l");
         InsertAnyFile(buf, 0, -1);
     }
     if (prm_libpath.GetExists())

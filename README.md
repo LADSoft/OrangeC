@@ -5,6 +5,9 @@ OrangeC Compiler And Tool Chain
 
 Project Build Status:
 [![Build status Appveyor](https://ci.appveyor.com/api/projects/status/4ts7bsgas67osyht?svg=true)](https://ci.appveyor.com/project/LADSoft/orangec)
+[![Build status Github Actions](https://github.com/LADSoft/OrangeC/actions/workflows/github_actions_build.yml/badge.svg)](https://github.com/LADSoft/OrangeC/actions/workflows/github_actions_build.yml)
+
+
 Documentation status: 
 [![Documentation Status](https://readthedocs.org/projects/orangec/badge/?version=latest)](http://orangec.readthedocs.io/en/latest/Tools/)
 

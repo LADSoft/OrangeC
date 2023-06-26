@@ -54,20 +54,20 @@ bool ppFile::GetLine(std::string& line)
             }
             if (*p)
             {
-                line = line + buf;
+                line += buf;
                 break;
             }
             *q = '\0';
-            line = line + buf;
+            line += buf;
         }
         else
         {
-            line = line + buf;
+            line += buf;
             if (!inComment)
                 break;
         }
     }
-    line = line + " ";  // trailing spaced needed for function argument matching in replacesegment
+    line += " ";  // trailing spaced needed for function argument matching in replacesegment
     return true;
 }
 int ppFile::StripComment(char* line)

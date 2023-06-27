@@ -29,6 +29,7 @@
 #include <string>
 #include <list>
 #include <set>
+#include <stack>
 
 class Include
 {
@@ -52,6 +53,7 @@ class Include
     std::list<std::string> files;
     std::set<std::string> ignoredFiles;
 
+    std::stack<std::string> currentPath;
     static std::shared_ptr<Include> instance;
 };
 #endif

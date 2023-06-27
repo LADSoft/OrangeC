@@ -161,6 +161,10 @@ bool Include::AddFileList(const std::string& name, bool ignoreOk, bool MakeFile)
             includeDirs = r.Evaluate();
         }
     }
+    if (!currentPath.empty())
+    {
+        includeDirs = currentPath.top() + CmdFiles::PATH_SEP + includeDirs;
+    }
     while (!iname.empty())
     {
         std::string current = Eval::ExtractFirst(iname, seps);
@@ -186,7 +190,18 @@ bool Include::AddFileList(const std::string& name, bool ignoreOk, bool MakeFile)
             v->SetValue(v->GetValue() + " " + (*it));
         }
         files.push_back((*it));
+        auto path = (*it);
+        int n = path.find_last_of("/\\");
+        if (n != std::string::npos)
+        {
+            path = path.substr(0, n);
+            currentPath.push(path);
+        }
         rv &= Parse((*it), ignoreOk || MakeFile, MakeFile);
+        if (n != std::string::npos)
+        {
+            currentPath.pop();
+        }
     }
     return rv;
 }

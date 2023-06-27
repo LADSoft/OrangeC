@@ -142,6 +142,7 @@ bool Include::Parse(const std::string& name, bool ignoreOk, bool MakeFiles)
     }
     return rv;
 }
+#include <direct.h>
 bool Include::AddFileList(const std::string& name, bool ignoreOk, bool MakeFile)
 {
     Eval e(name, false);
@@ -161,10 +162,6 @@ bool Include::AddFileList(const std::string& name, bool ignoreOk, bool MakeFile)
             includeDirs = r.Evaluate();
         }
     }
-    if (!currentPath.empty())
-    {
-        includeDirs = currentPath.top() + CmdFiles::PATH_SEP + includeDirs;
-    }
     while (!iname.empty())
     {
         std::string current = Eval::ExtractFirst(iname, seps);
@@ -174,7 +171,12 @@ bool Include::AddFileList(const std::string& name, bool ignoreOk, bool MakeFile)
         }
         else
         {
-            cmdFiles.AddFromPath(current, includeDirs);
+            auto includes = includeDirs;
+            if (!currentPath.empty() && current[0] == '.')
+            {
+                includes = currentPath.top() + CmdFiles::PATH_SEP + includes;
+            }
+            cmdFiles.AddFromPath(current, includes);
         }
     }
     for (auto it = cmdFiles.FileNameBegin(); rv && it != cmdFiles.FileNameEnd(); ++it)

@@ -137,51 +137,51 @@ bool CmdFiles::Add(const std::string& name, bool recurseDirs)
 bool CmdFiles::AddFromPath(const std::string& name, const std::string& path)
 {
     bool rv = false;
-
-    if (!rv)
+    size_t n = name.find_last_of(DIR_SEP[0]);
+    size_t n1 = name.find_last_of('/');
+    if (n1 != std::string::npos && n != std::string::npos)
+        n = n1 > n ? n1 : n;
+    if (n != std::string::npos)
     {
-        size_t n = name.find_last_of(DIR_SEP[0]);
-        size_t n1 = name.find_last_of('/');
-        if (n1 != std::string::npos && n != std::string::npos)
-            n = n1 > n ? n1 : n;
+        n++;
+    }
+    else
+    {
+        n = name.find_first_of(":");
         if (n != std::string::npos)
-        {
             n++;
-        }
         else
+            n = 0;
+    }
+    std::string internalName = name.substr(n, name.size());
+    n = 0;
+    bool done = false;
+    while (!done)
+    {
+        size_t m = path.find_first_of(PATH_SEP, n);
+        if (m == std::string::npos)
         {
-            n = name.find_first_of(":");
-            if (n != std::string::npos)
-                n++;
-            else
-                n = 0;
+            m = path.size();
+            done = true;
         }
-        std::string internalName = name.substr(n, name.size());
-        n = 0;
-        bool done = false;
-        while (!done)
+        std::string curpath = path.substr(n, m - n);
+        n = m + 1;
+        if (curpath.size() != 0 && curpath.substr(curpath.size() - 1, curpath.size()) != DIR_SEP)
         {
-            size_t m = path.find_first_of(PATH_SEP, n);
-            if (m == std::string::npos)
-            {
-                m = path.size();
-                done = true;
-            }
-            std::string curpath = path.substr(n, m - n);
-            n = m + 1;
-            if (curpath.size() != 0 && curpath.substr(curpath.size() - 1, curpath.size()) != DIR_SEP)
-            {
-                curpath += DIR_SEP;
-            }
-            curpath += internalName;
-            if (access(curpath.c_str(), 0) == 0)
-            {
-                names.push_back(curpath);
-                return true;
-            }
+           curpath += DIR_SEP;
+        }
+        curpath += internalName;
+        if (access(curpath.c_str(), 0) == 0)
+        {
+            names.push_back(curpath);
+            rv = true;
+            break;
         }
     }
     if (!rv)
-        rv = Add(name, false);
+    {
+        names.push_back(name);
+        rv = true;
+    }
     return rv;
 }

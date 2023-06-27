@@ -56,9 +56,9 @@ int main(int argc, char** argv)
 }
 
 CmdSwitchParser ImpLibMain::SwitchParser;
+CmdSwitchBool ImpLibMain::CDLLSwitch(SwitchParser, 'C', false);
 CmdSwitchBool ImpLibMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool ImpLibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
-CmdSwitchBool ImpLibMain::CDLLSwitch(SwitchParser, 'C');
 CmdSwitchOutput ImpLibMain::OutputFile(SwitchParser, 'o', ".a");
 CmdSwitchFile ImpLibMain::File(SwitchParser, '@');
 const char* ImpLibMain::helpText =
@@ -66,7 +66,7 @@ const char* ImpLibMain::helpText =
     "\n"
     "/c-            Case insensitive library\n"
     "/oxxx          Set output file name\n"
-    "/C             C language compatibility\n"
+    "/C             Legacy, unused\n"
     "/V, --version  Show version and date\n"
     "/!, --nologo   No logo\n"
     "/?, --help     This text\n"
@@ -130,7 +130,7 @@ void ImpLibMain::AddFile(LibManager& librarian, const char* arg)
                         transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
                         if (ext == ".def")
                         {
-                            DefFile defFile(inputFile, CDLLSwitch.GetValue());
+                            DefFile defFile(inputFile);
                             if (!defFile.Read())
                             {
                                 std::cout << "Def file '" << inputFile << "' is missing or in wrong format" << std::endl;
@@ -235,7 +235,7 @@ int ImpLibMain::HandleDefFile(const std::string& outputFile, int argc, char** ar
     {
         // def to def is basically a copy operation lol...  but it will reformat
         // the file :)
-        DefFile defFile(inputFile, CDLLSwitch.GetValue());
+        DefFile defFile(inputFile);
         if (!defFile.Read())
             return 1;
         defFile.SetFileName(outputFile);
@@ -246,7 +246,7 @@ int ImpLibMain::HandleDefFile(const std::string& outputFile, int argc, char** ar
         DLLExportReader dllFile(inputFile);
         if (dllFile.Read())
             return 1;
-        DefFile defFile(outputFile, CDLLSwitch.GetValue());
+        DefFile defFile(outputFile);
         int npos = inputFile.find_last_of(CmdFiles::DIR_SEP);
         if (npos == std::string::npos)
             npos = 0;
@@ -264,24 +264,47 @@ int ImpLibMain::HandleDefFile(const std::string& outputFile, int argc, char** ar
     }
     return 0;
 }
+void ImpLibMain::CreateImportEntry(DefFile& def, ObjFile* obj, const char *externalName, DefFile::Export* exp)
+{
+        ObjImportSymbol* p = objectData.back()->factory.MakeImportSymbol(externalName);
+        p->SetExternalName(exp->entry);
+        p->SetByOrdinal(exp->byOrd);
+        p->SetOrdinal(exp->ord);
+        if (!exp->module.empty())
+            p->SetDllName(exp->module);
+        else
+            p->SetDllName(def.GetLibraryName());
+        obj->Add(p);
+}
 ObjFile* ImpLibMain::DefFileToObjFile(DefFile& def)
 {
     objectData.push_back(std::make_unique<ObjectData>());
     ObjFile* obj = new ObjFile(def.GetLibraryName());
     for (auto it = def.ExportBegin(); it != def.ExportEnd(); ++it)
     {
-        ObjImportSymbol* p = objectData.back()->factory.MakeImportSymbol(
-            (CDLLSwitch.GetValue() && (*it)->id.find('@') == std::string::npos ? "_" : "") + (*it)->id);
-        p->SetExternalName((*it)->entry);
-        p->SetByOrdinal((*it)->byOrd);
-        p->SetOrdinal((*it)->ord);
-        if (!(*it)->module.empty())
-            p->SetDllName((*it)->module);
-        else
-            p->SetDllName(def.GetLibraryName());
-        obj->Add(p);
+        CreateImportEntry(def, obj, (*it)->id.c_str(), (*it).get());
+        CreateImportEntry(def, obj, ("_" + (*it)->id).c_str(), (*it).get());
+        int n = (*it)->id.find('@');
+        if (n != 0 && n != std::string::npos)
+        {
+            auto id = (*it)->id.substr(0, n);
+            CreateImportEntry(def, obj, id.c_str(), (*it).get());
+            if (id[0] == '_')
+            {
+               CreateImportEntry(def, obj, id.substr(1, id.size()-1).c_str(), (*it).get());
+            }
+        }
     }
     return obj;
+}
+void ImpLibMain::CreateDLLImportEntry(ObjFile* obj, const char *dllName, const char *externalName, DLLExport* exp)
+{
+    ObjImportSymbol* p = objectData.back()->factory.MakeImportSymbol(externalName);
+    p->SetExternalName(exp->name);
+    p->SetByOrdinal(exp->byOrd);
+    p->SetOrdinal(exp->ordinal);
+    p->SetDllName(dllName);
+    obj->Add(p);
 }
 ObjFile* ImpLibMain::DllFileToObjFile(DLLExportReader& dll)
 {
@@ -293,15 +316,20 @@ ObjFile* ImpLibMain::DllFileToObjFile(DLLExportReader& dll)
     if (npos != std::string::npos)
         name.erase(0, npos + 1);
     ObjFile* obj = new ObjFile(name);
-    for (auto& exp : dll)
+    for (auto&& exp : dll)
     {
-        ObjImportSymbol* p = objectData.back()->factory.MakeImportSymbol(
-            (CDLLSwitch.GetValue() && exp->name.find("@") == std::string::npos ? "_" : "") + exp->name);
-        p->SetExternalName(exp->name);
-        p->SetByOrdinal(exp->byOrd);
-        p->SetOrdinal(exp->ordinal);
-        p->SetDllName(name);
-        obj->Add(p);
+        CreateDLLImportEntry(obj, name.c_str(), exp->name.c_str(), exp.get());
+        CreateDLLImportEntry(obj, name.c_str(), ("_" + exp->name).c_str(), exp.get());
+        int n = exp->name.find('@');
+        if (n != 0 && n != std::string::npos)
+        {
+            auto id = exp->name.substr(0, n);
+            CreateDLLImportEntry(obj, name.c_str(), id.c_str(), exp.get());
+            if (id[0] == '_')
+            {
+               CreateDLLImportEntry(obj, name.c_str(), id.substr(1, id.size()-1).c_str(), exp.get());
+            }
+        }
     }
     return obj;
 }
@@ -315,7 +343,7 @@ int ImpLibMain::HandleObjFile(const std::string& outputFile, int argc, char** ar
 
     if (def)
     {
-        DefFile defFile(inputFile, CDLLSwitch.GetValue());
+        DefFile defFile(inputFile);
         if (!defFile.Read())
             return 1;
         obj.reset(DefFileToObjFile(defFile));
@@ -415,6 +443,7 @@ int ImpLibMain::Run(int argc, char** argv)
         transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
         if (ext == ".def")
         {
+            std::cout << "Creating " << outputFile << std::endl;
             if (HandleDefFile(outputFile, argc, argv))
             {
                 std::cout << "Missing or invalid input file" << std::endl;
@@ -427,6 +456,7 @@ int ImpLibMain::Run(int argc, char** argv)
         }
         else if (ext == ".o")
         {
+            std::cout << "Creating " << outputFile << std::endl;
             if (HandleObjFile(outputFile, argc, argv))
             {
                 std::cout << "Missing or invalid input file" << std::endl;
@@ -443,5 +473,6 @@ int ImpLibMain::Run(int argc, char** argv)
             return 1;
         }
     }
+    std::cout << "Modifying " << outputFile << std::endl;
     return HandleLibrary(outputFile, argc, argv);
 }

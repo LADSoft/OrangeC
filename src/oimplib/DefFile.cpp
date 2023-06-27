@@ -500,31 +500,51 @@ void DefFile::WriteLibrary()
         stream << std::endl;
     }
 }
+void DefFile::WriteExportLine(const char *modifiedId, Export* exp)
+{
+    if (modifiedId)
+        stream << "\t" << modifiedId;
+    stream << "\t" << exp->id;
+    if ((!exp->entry.empty() && exp->entry != exp->id) || !exp->module.empty())
+    {
+        stream << "=" << exp->entry;
+        if (!exp->module.empty())
+            stream << "." << exp->module;
+    }
+    if (!modifiedId && exp->ord != -1)
+        stream << " @" << exp->ord;    
+    if (exp->byOrd)
+        stream << " "
+               << "NONAME";
+    stream << std::endl;
+}
 void DefFile::WriteExports()
 {
     bool first = true;
-    for (auto& exp : exports)
+    for (auto&& exp : exports)
     {
         if (first)
         {
             stream << "EXPORTS" << std::endl;
             first = false;
         }
-        if (cdll && !exp->byOrd)
-            stream << "\t_" << exp->id;
-        stream << "\t" << exp->id;
-        if ((!exp->entry.empty() && exp->entry != exp->id) || !exp->module.empty())
+        WriteExportLine(nullptr, exp.get());
+        if (!exp->byOrd)
         {
-            stream << "=" << exp->entry;
-            if (!exp->module.empty())
-                stream << "." << exp->module;
+            auto id = "_" + exp->id;
+            WriteExportLine(id.c_str(), exp.get());
+            int n = exp->id.find('@');
+            if (n != 0 && n != std::string::npos)
+            {
+                auto id = exp->id.substr(0, n);
+                WriteExportLine(id.c_str(), exp.get());
+                if (id[0] == '_')
+                {
+                    id = id.substr(1, id.size()-1);
+                    WriteExportLine(id.c_str(), exp.get());
+                }
+            }
         }
-        if ((!cdll || exp->byOrd) && exp->ord != -1)
-            stream << " @" << exp->ord;
-        if (exp->byOrd)
-            stream << " "
-                   << "NONAME";
-        stream << std::endl;
     }
 }
 void DefFile::WriteImports()
@@ -535,7 +555,7 @@ void DefFile::WriteImports()
         if (first)
         {
             stream << "IMPORTS" << std::endl;
-            first = false;
+            first = false;	
         }
         if (!import->module.empty())
         {

@@ -61,8 +61,8 @@ enum class kw
 class DefFile
 {
   public:
-    DefFile(const std::string& fname, bool CDLL) :
-        fileName(fname), tokenizer("", &keywords), lineno(0), imageBase(-1), stackSize(-1), heapSize(-1), token(nullptr), cdll(CDLL)
+    DefFile(const std::string& fname) :
+        fileName(fname), tokenizer("", &keywords), lineno(0), imageBase(-1), stackSize(-1), heapSize(-1), token(nullptr)
     {
         Init();
     }
@@ -115,6 +115,7 @@ class DefFile
 
     void WriteName();
     void WriteLibrary();
+    void WriteExportLine(const char *modifiedId, Export* exp);
     void WriteExports();
     void WriteImports();
     void WriteDescription();
@@ -137,7 +138,6 @@ class DefFile
     const Token* token;
     std::fstream stream;
     int lineno;
-    bool cdll;
     std::map<std::string, unsigned> sectionMap;
     std::deque<std::unique_ptr<Export>> exports;
     std::deque<std::unique_ptr<Import>> imports;

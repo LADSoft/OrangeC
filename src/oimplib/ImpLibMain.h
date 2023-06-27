@@ -27,10 +27,12 @@
 
 #include "LibManager.h"
 #include "CmdFiles.h"
+#include "Deffile.h"
 
 class ObjFile;
 class DefFile;
 class DLLExportReader;
+class DLLExport;
 
 class ImpLibMain
 {
@@ -54,6 +56,8 @@ class ImpLibMain
     int HandleObjFile(const std::string& outputFile, int argc, char** argv);
     int HandleDefFile(const std::string& outputFile, int argc, char** argv);
     int HandleLibrary(const std::string& outputFile, int argc, char** argv);
+    void CreateImportEntry(DefFile& def, ObjFile* obj, const char *externalName, DefFile::Export* exp);
+    void CreateDLLImportEntry(ObjFile* obj, const char *dllName, const char *externalName, DLLExport* exp);
 
   private:
     struct ObjectData
@@ -72,10 +76,10 @@ class ImpLibMain
 
     static CmdSwitchParser SwitchParser;
     static CmdSwitchBool ShowHelp;
+    static CmdSwitchBool CDLLSwitch;
     static CmdSwitchBool caseSensitiveSwitch;
     static CmdSwitchOutput OutputFile;
     static CmdSwitchFile File;
-    static CmdSwitchBool CDLLSwitch;
 
     static const char* usageText;
     static const char* helpText;

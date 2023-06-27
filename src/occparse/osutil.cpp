@@ -563,10 +563,20 @@ static void ParamTransfer(char* name)
             Optimizer::cparams.prm_maxerr = n;
         DisableTrivialWarnings();
     }
-    checks = Utils::split(prm_warning.GetValue());
-    for (auto&& v : checks)
+    if (prm_warning.GetExists())
     {
-        warning_setup('w', v.c_str());
+        checks = Utils::split(prm_warning.GetValue());
+        if (checks.empty())
+        {
+            warning_setup('w', "");
+        }
+        else
+        {
+            for (auto&& v : checks)
+            {
+                warning_setup('w', v.c_str());
+            }
+        }
     }
     if (prm_Werror.GetExists())
     {

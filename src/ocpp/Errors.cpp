@@ -131,7 +131,18 @@ void Errors::TrivialWarning(const std::string& msg)
 }
 void Errors::Previous(const std::string& name, int lineNo, const std::string& file)
 {
-    std::cout << "Warning " << file << "(" << lineNo << "): Previous definition here" << std::endl;
+    if (showWarnings)
+    {
+        if (warningsAsErrors)
+        {
+            std::cout << "Error ";
+        }
+        else
+        {
+            std::cout << "Warning ";
+        }
+        std::cout << file << "(" << lineNo << "): Previous definition here" << std::endl;
+    }
 }
 bool Errors::ErrorCount()
 {

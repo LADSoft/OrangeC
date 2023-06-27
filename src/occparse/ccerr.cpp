@@ -210,11 +210,15 @@ void WarningAsError(int num)
 }
 void AllWarningsAsError()
 {
+    Errors::WarningsAsErrors(true);
+    Errors::SetShowWarnings(true);
     for (int i = 0; i < sizeof(errors) / sizeof(errors[0]); i++)
         Warning::Instance()->SetFlag(i, Warning::AsError);
 }
 void AllWarningsDisable()
 {
+    Errors::WarningsAsErrors(false);
+    Errors::SetShowWarnings(false);
     for (int i = 0; i < sizeof(errors) / sizeof(errors[0]); i++)
         Warning::Instance()->SetFlag(i, Warning::Disable);
 }

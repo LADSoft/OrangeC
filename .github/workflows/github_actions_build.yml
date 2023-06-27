@@ -12,24 +12,23 @@ jobs:
     runs-on: windows-latest
 
     env:
-      ORANGEC: /orangec
+      ORANGEC: d:\a\orangec\orangec
       
     steps:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
 
-    - name: Config
-      run: echo '\orangec\bin' >> "${GITHUB_PATH}"
+    - name: Configs
+      run: echo 'd:\a\orangec\orangec\bin' >> "${GITHUB_PATH}"
 
     - name: Build
       run: |
-         cd src
+         cd d:\a\orangec\orangec\src
          omake /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:2
-         cd ..
 
     - name: Test
       run: |
-         cd tests
+         cd d:\a\orangec\orangec\tests
          omake -B -j:2 /DCOMPILER=OCC
          cd ..

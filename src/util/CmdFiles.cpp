@@ -138,7 +138,6 @@ bool CmdFiles::AddFromPath(const std::string& name, const std::string& path)
 {
     bool rv = false;
 
-    rv = Add(name, false);
     if (!rv)
     {
         size_t n = name.find_last_of(DIR_SEP[0]);
@@ -168,15 +167,21 @@ bool CmdFiles::AddFromPath(const std::string& name, const std::string& path)
                 m = path.size();
                 done = true;
             }
-            std::string curpath = path.substr(m, n);
+            std::string curpath = path.substr(n, m - n);
             n = m + 1;
             if (curpath.size() != 0 && curpath.substr(curpath.size() - 1, curpath.size()) != DIR_SEP)
             {
                 curpath += DIR_SEP;
             }
             curpath += internalName;
-            rv = Add(curpath, false);
+            if (access(curpath.c_str(), 0) == 0)
+            {
+                names.push_back(curpath);
+                return true;
+            }
         }
     }
+    if (!rv)
+        rv = Add(name, false);
     return rv;
 }

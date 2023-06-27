@@ -115,7 +115,7 @@ class RuleList
     typedef std::list<std::unique_ptr<Rule>>::iterator iterator;
     iterator begin() { return rules.begin(); }
     iterator end() { return rules.end(); }
-    typedef std::map<std::string, std::unique_ptr<Variable>>::iterator VariableIterator;
+    typedef std::map<std::string, std::shared_ptr<Variable>>::iterator VariableIterator;
     const VariableIterator VariableBegin() { return specificVariables.begin(); }
     const VariableIterator VariableEnd() { return specificVariables.end(); }
     void SecondaryEval();
@@ -124,6 +124,7 @@ class RuleList
     void SetBuilt();
     void Wait() { onHold.Wait(); }
     void Release() { onHold.Post(60000); }
+    void CopyExports(RuleList* source);
 
   private:
     Semaphore onHold;
@@ -131,7 +132,7 @@ class RuleList
     std::string target;
     std::string relatedPatternRules;
     std::list<std::unique_ptr<Rule>> rules;
-    std::map<std::string, std::unique_ptr<Variable>> specificVariables;
+    std::map<std::string, std::shared_ptr<Variable>> specificVariables;
     std::string newerPrerequisites;
     bool doubleColon;
     bool intermediate;
@@ -159,7 +160,6 @@ class RuleContainer
     bool OnList(const std::string& goal, const char* what);
     bool NoList(const char* what);
     bool ScanList(const std::string& v, const std::string& goal);
-
   protected:
     RuleContainer() {}
 

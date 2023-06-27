@@ -89,6 +89,20 @@ Variable* RuleList::Lookup(const std::string& name)
     else
         return nullptr;
 }
+void RuleList::CopyExports(RuleList* source)
+{
+    if (source)
+    {
+        for (auto&& a : source->specificVariables)
+        {
+            if (a.second->GetExport())
+            {
+                if (specificVariables.find(a.first) == specificVariables.end())
+                    specificVariables[a.first] = a.second;                
+            }
+        }
+    }
+}
 bool RuleList::Touch(const Time& time)
 {
     if (!IsImplicit())

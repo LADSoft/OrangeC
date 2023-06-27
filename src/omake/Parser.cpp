@@ -318,7 +318,7 @@ bool Parser::ParseLine(const std::string& line)
         {
             if (eq != std::string::npos && colon == eq - 1)
             {
-                rv = ParseAssign(iline.substr(0, colon), iline.substr(eq + 1), dooverride);
+                rv = ParseAssign(iline.substr(0, colon), iline.substr(eq + 1), dooverride, false);
             }
             else
             {
@@ -331,15 +331,15 @@ bool Parser::ParseLine(const std::string& line)
         {
             if (q != std::string::npos && q == eq - 1)
             {
-                rv = ParseQuestionAssign(iline.substr(0, q), iline.substr(eq + 1), dooverride);
+                rv = ParseQuestionAssign(iline.substr(0, q), iline.substr(eq + 1), dooverride, false);
             }
             else if (r != std::string::npos && r == eq - 1)
             {
-                rv = ParsePlusAssign(iline.substr(0, r), iline.substr(eq + 1), dooverride);
+                rv = ParsePlusAssign(iline.substr(0, r), iline.substr(eq + 1), dooverride, false);
             }
             else
             {
-                rv = ParseRecursiveAssign(iline.substr(0, eq), iline.substr(eq + 1), dooverride);
+                rv = ParseRecursiveAssign(iline.substr(0, eq), iline.substr(eq + 1), dooverride, false);
             }
         }
         else
@@ -356,7 +356,7 @@ bool Parser::ParseLine(const std::string& line)
     }
     return rv;
 }
-bool Parser::ParseAssign(const std::string& left, const std::string& right, bool dooverride, RuleList* ruleList)
+bool Parser::ParseAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, RuleList* ruleList)
 {
     if (left == ".VARIABLES")
         return true;
@@ -385,9 +385,11 @@ bool Parser::ParseAssign(const std::string& left, const std::string& right, bool
     }
     if (v && !ruleList && (left == "MAKEFILES" || autoExport))
         v->SetExport(true);
+    else if (v && ruleList)
+        v->SetExport(exportSpecific);
     return true;
 }
-bool Parser::ParseRecursiveAssign(const std::string& left, const std::string& right, bool dooverride, RuleList* ruleList)
+bool Parser::ParseRecursiveAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, RuleList* ruleList)
 {
     if (left == ".VARIABLES")
         return true;
@@ -415,9 +417,11 @@ bool Parser::ParseRecursiveAssign(const std::string& left, const std::string& ri
     }
     if (v && !ruleList && (left == "MAKEFILES" || autoExport))
         v->SetExport(true);
+    else if (v && ruleList)
+        v->SetExport(exportSpecific);
     return true;
 }
-bool Parser::ParsePlusAssign(const std::string& left, const std::string& right, bool dooverride, RuleList* ruleList)
+bool Parser::ParsePlusAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, RuleList* ruleList)
 {
     if (left == ".VARIABLES")
         return true;
@@ -450,9 +454,11 @@ bool Parser::ParsePlusAssign(const std::string& left, const std::string& right, 
     }
     if (v && !ruleList && (left == "MAKEFILES" || autoExport))
         v->SetExport(true);
+    else if (v && ruleList)
+        v->SetExport(exportSpecific);
     return true;
 }
-bool Parser::ParseQuestionAssign(const std::string& left, const std::string& right, bool dooverride, RuleList* ruleList)
+bool Parser::ParseQuestionAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, RuleList* ruleList)
 {
     if (left == ".VARIABLES")
         return true;
@@ -476,6 +482,8 @@ bool Parser::ParseQuestionAssign(const std::string& left, const std::string& rig
     }
     if (v && !ruleList && (left == "MAKEFILES" || autoExport))
         v->SetExport(true);
+    else if (v && ruleList)
+        v->SetExport(exportSpecific);
     return true;
 }
 std::string Parser::ReplaceAllStems(const std::string& stem, const std::string value)
@@ -538,6 +546,9 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
     size_t p = UnfetteredChar(line, ';');
     if (n != 0 && n != std::string::npos && (p == std::string::npos || n < p))
     {
+        size_t q = 0;
+        std::string first = FirstWord(line, q);
+        bool private_ = first != "export";
         enum e_mode
         {
             asn,
@@ -562,6 +573,8 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
         {
             l = line.substr(0, n - 1);
         }
+        if (first == "private" || first == "export")
+            l = l.substr(q);
         Eval l1(l, false);
         l = l1.strip(l);
         r = line.substr(n + 1);
@@ -577,10 +590,10 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
             switch (mode)
             {
                 case rasn:
-                    rv &= ParseRecursiveAssign(l, r, false, ruleList);
+                    rv &= ParseRecursiveAssign(l, r, false, !private_, ruleList);
                     break;
                 case pasn:
-                    rv &= ParsePlusAssign(l, r, false, ruleList);
+                    rv &= ParsePlusAssign(l, r, false, !private_, ruleList);
                     break;
                 case qasn:
                     rv &= ParseQuestionAssign(l, r, false, ruleList);

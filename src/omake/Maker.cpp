@@ -199,6 +199,8 @@ std::unique_ptr<Depends> Maker::Dependencies(const std::string& goal, const std:
                     Time current;
                     std::string thisOne = Eval::ExtractFirst(working, " ");
                     auto dp = Dependencies(thisOne, foundPath, current, err && !rule->IsDontCare(), rule->File(), rule->Line());
+                    auto dependentRuleList = RuleContainer::Instance()->Lookup(thisOne);
+                    ruleList->CopyExports(dependentRuleList);
                     if (current > dependsTime)
                     {
                         dependsTime = current;
@@ -227,6 +229,8 @@ std::unique_ptr<Depends> Maker::Dependencies(const std::string& goal, const std:
                     {
                         auto dp =
                             Dependencies(thisOne, preferredPath, current, err && !rule->IsDontCare(), rule->File(), rule->Line());
+                        auto dependentRuleList = RuleContainer::Instance()->Lookup(thisOne);
+                        ruleList->CopyExports(dependentRuleList);
                         if (dp)
                         {
                             dp->SetOrdered(true);

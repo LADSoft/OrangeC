@@ -3300,7 +3300,9 @@ founddecltype:
             if (notype)
                 *notype = true;
             else
+            {
                 error(ERR_MISSING_TYPE_SPECIFIER);
+            }
         }
     }
 exit:
@@ -4414,7 +4416,14 @@ static LEXLIST* GetFunctionQualifiersAndTrailingReturn(LEXLIST* lex, SYMBOL* fun
                 lex = getsym();
             }
             else
+            {
+                if (templateNestingCount)
+                {
+                    while (lex && ISID(lex))
+                        lex = getsym();
+                }
                 done = true;
+            }
         }
         else
             switch (KW(lex))
@@ -7035,7 +7044,11 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                             LEXLIST* hold = lex;
                             bool structuredArray = false;
                             if (notype)
+                            {
                                 errorsym(ERR_UNDEFINED_IDENTIFIER_EXPECTING_TYPE, sp);
+                                errskim(&lex, skim_semi);
+                                return lex;
+                            }
                             if (linkage3 == lk_entrypoint)
                             {
                                 errorsym(ERR_ENTRYPOINT_FUNC_ONLY, sp);

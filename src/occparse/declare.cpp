@@ -1065,7 +1065,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
         }
     }
 }
-static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac currentAccess)
+static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac currentAccess, SymbolTable<SYMBOL>* anonymousTable)
 {
     STRUCTSYM sl;
     (void)funcsp;
@@ -1112,6 +1112,15 @@ static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac c
     dropStructureDeclaration();
     sp->sb->hasvtab = usesVTab(sp);
     calculateStructOffsets(sp);
+
+    if (anonymousTable)
+    {
+        sp->name = AnonymousTypeName(sp, Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass ? globalNameSpace->front()->tags
+                                                                                                  : anonymousTable);
+        SetLinkerNames(sp, lk_cdecl);
+        browse_variable(sp);
+        (Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass ? globalNameSpace->front()->tags : anonymousTable)->Add(sp);
+    }
 
     if (Optimizer::cparams.prm_cplusplus)
     {
@@ -1217,7 +1226,7 @@ static unsigned TypeCRC(SYMBOL* sp)
     return crc;
 }
 LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, enum e_ac defaultAccess, bool isfinal,
-                         bool* defd)
+                         bool* defd, SymbolTable<SYMBOL>* anonymousTable)
 {
     int oldParsingTemplateArgs;
     oldParsingTemplateArgs = parsingDefaultTemplateArgs;
@@ -1260,7 +1269,7 @@ LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
     if (KW(lex) == begin)
     {
         sp->sb->isfinal = isfinal;
-        lex = structbody(lex, funcsp, sp, defaultAccess);
+        lex = structbody(lex, funcsp, sp, defaultAccess, anonymousTable);
         *defd = true;
     }
     if (inTemplate && templateNestingCount == 1)
@@ -1598,19 +1607,12 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
         {
             errorsym(ERR_CANNOT_REDEFINE_ACCESS_FOR, sp);
         }
-        lex = innerDeclStruct(lex, funcsp, sp, inTemplate, defaultAccess, isfinal, defd);
+        lex = innerDeclStruct(lex, funcsp, sp, inTemplate, defaultAccess, isfinal, defd, anonymous ? table : nullptr);
         if (constexpression)
         {
             error(ERR_CONSTEXPR_NO_STRUCT);
         }
         *tp = sp->tp;
-    }
-    if (anonymous)
-    {
-        sp->name = AnonymousTypeName(sp, Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass ? globalNameSpace->front()->tags : table);
-        SetLinkerNames(sp, lk_cdecl);
-        browse_variable(sp);
-        (Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass ? globalNameSpace->front()->tags : table)->Add(sp);     
     }
     basisAttribs = oldAttribs;
     return lex;

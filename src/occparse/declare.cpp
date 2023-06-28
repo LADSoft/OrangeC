@@ -1207,9 +1207,11 @@ static unsigned TypeCRC(SYMBOL* sp)
 {
     unsigned crc = 0xffffffff;
     crc = Utils::PartialCRC32(crc, (const unsigned char *)&basetype(sp->tp)->alignment, sizeof(basetype(sp->tp)->alignment));
+    crc = Utils::PartialCRC32(crc, (const unsigned char *)&basetype(sp->tp)->size, sizeof(basetype(sp->tp)->size));
     for (auto s : *sp->tp->syms)
     {
         crc = Utils::PartialCRC32(crc, (const unsigned char *)s->name, strlen(s->name));
+        crc = Utils::PartialCRC32(crc, (const unsigned char *)&s->sb->offset, sizeof(s->sb->offset));
         TypeCRC(s->tp, crc);
     }
     return crc;

@@ -7061,8 +7061,12 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                 checkauto(sp->tp, ERR_AUTO_NOT_ALLOWED);
                             if (sp->sb->storage_class == sc_auto || sp->sb->storage_class == sc_register)
                             {
-                                STATEMENT* s = stmtNode(lex, block, st_varstart);
-                                s->select = varNode(en_auto, sp);
+                                /* special case consts that can later have their address taken, because they are not autos and it will cause errors later*/
+                                if (!isint(sp->tp) || !isconst(sp->tp))
+                                {
+                                    STATEMENT* s = stmtNode(lex, block, st_varstart);
+                                    s->select = varNode(en_auto, sp);
+                                }
                             }
                             if (!sp->sb->label && (sp->sb->storage_class == sc_static || sp->sb->storage_class == sc_localstatic) &&
                                 (Optimizer::architecture == ARCHITECTURE_MSIL))

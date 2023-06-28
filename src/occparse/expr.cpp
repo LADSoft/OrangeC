@@ -6617,7 +6617,9 @@ static LEXLIST* expression_ampersand(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TY
                             done = true;
                     } while (!done);
                     sym->tp = tpn;
-                    sym->sb->storage_class = sc_static;
+                    sym->sb->storage_class = sc_localstatic;
+                    SetLinkerNames(sym, lk_cdecl);
+                    Optimizer::SymbolManager::Get(sym)->storage_class = Optimizer::scc_localstatic;
                     insertInitSym(sym);
                 }
                 else

@@ -32,7 +32,6 @@
 #include "Fixup.h"
 #include <stdexcept>
 #include <iostream>
-#include "Token.h"
 #include "be.h"
 #include "symfuncs.h"
 #include "config.h"

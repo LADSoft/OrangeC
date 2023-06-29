@@ -27,7 +27,7 @@ NAME=occ
 MAIN_FILE=occ.cpp
 INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occopt ..$(PATHEXT2)objlib ..$(PATHEXT2)oasm ..$(PATHEXT2)occparse
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=oasm objlib occopt ocpplib util
+LIB_DEPENDENCIES=oasm occopt objlib ocpplib util
 DEFINES=x64 USE_LONGLONG
 H_FILES=$(wildcard *.h)
 

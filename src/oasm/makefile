@@ -24,7 +24,7 @@
 include ../pathext2.mak
 
 NAME=oasm
-MAIN_FILE=AsmMain.cpp
+MAIN_FILE=AsmMain.cpp AsmToken.cpp
 INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)objlib
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=ocpplib objlib util

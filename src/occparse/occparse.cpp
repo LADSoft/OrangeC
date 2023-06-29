@@ -285,6 +285,15 @@ Optimizer::COMPILER_PARAMS cparams_default = {
 
 int usingEsp;
 
+bool IsCompiler() 
+{
+#ifdef PARSER_ONLY
+    return false;
+#else
+    return true;
+#endif 
+}
+
 static void debug_dumptypedefs(std::list<NAMESPACEVALUEDATA*>* nameSpace)
 {
     for (auto sym : *nameSpace->front()->syms)

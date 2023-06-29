@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="occparse.cpp" />
+    <ClCompile Include="occprstub.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="occparse.h" />

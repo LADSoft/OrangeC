@@ -42,15 +42,8 @@ using namespace Parser;
 namespace Parser
 {
 extern PreProcessor* preProcessor;
-bool IsCompiler() { return false; }
 }  // namespace Parser
 
-#ifdef VSIDE
-namespace occmsil
-{
-void CreateStringFunction() {}
-};  // namespace occmsil
-#endif
 namespace CompletionCompiler
 {
 

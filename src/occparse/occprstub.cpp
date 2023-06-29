@@ -28,11 +28,6 @@
 #include "declare.h"
 #include "symtab.h"
 
-namespace Parser
-{
-bool IsCompiler() { return true; }
-}  // namespace Parser
-
 namespace CompletionCompiler
 {
 void ccInsertUsing(Parser::SYMBOL* ns, Parser::SYMBOL* parentns, const char* file, int line) {}

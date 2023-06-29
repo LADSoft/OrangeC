@@ -126,9 +126,6 @@
     <ClCompile Include="SymbolManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="occprstub.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="constexpr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

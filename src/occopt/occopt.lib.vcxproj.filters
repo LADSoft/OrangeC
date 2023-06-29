@@ -1,0 +1,237 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ialias.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iblock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iconfl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iconst.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iflow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iinvar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ilive.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ilocal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iloop.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ioptutil.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ipeep.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="irc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ireshape.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="irewrite.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="issa.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="istren.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ifloatconv.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="symfuncs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="memory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rewritemsil.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rewritex86.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="configmsil.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="configx86.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="config.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ilstream.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ildata.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ilunstream.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OptUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="output.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ilazy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ipinning.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="optmodules.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="optmodulerun.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="iopt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ctypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="beinterf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ildata.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ioptimizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ialias.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iblock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iconfl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iconst.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ifloatconv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iflow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iinvar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ilazy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ilive.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ilocal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iloop.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ilstream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ilunstream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ioptutil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iout.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ipeep.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="irc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ireshape.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="irewrite.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="issa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="istren.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="memory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OptUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="output.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rewritemsil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rewritex86.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="symfuncs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="configx86.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="configmsil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="beinterfdefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="browsedefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="optmodules.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

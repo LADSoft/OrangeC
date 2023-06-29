@@ -23,12 +23,7 @@ jobs:
       run: echo 'd:\a\orangec\orangec\bin' >> "${GITHUB_PATH}"
 
     - name: Build
-      run: |
-         cd d:\a\orangec\orangec\src
-         omake /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:2
+      run: d:\a\orangec\orangec\src\omake -Cd:\a\orangec\orangec\src /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:2
 
     - name: Test
-      run: |
-         cd d:\a\orangec\orangec\tests
-         omake -B -j:2 /DCOMPILER=OCC
-         cd ..
+      run: d:\a\orangec\orangec\src\omake -Cd:\a\orangec\orangec\tests  -B -j:2 /DCOMPILER=OCC

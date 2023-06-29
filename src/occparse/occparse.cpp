@@ -386,8 +386,16 @@ void compile(bool global)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, nullptr, nullptr, sc_global, lk_none, emptyBlockdata, true, false, false, ac_public)) != nullptr)
-                ;
+            while ((lex = declare(lex, nullptr, nullptr, sc_global, lk_none, emptyBlockdata, true, false, false, ac_public)) !=
+                   nullptr)
+            {
+                if (MATCHKW(lex, end))
+                {
+                    lex = getsym();
+                    if (!lex)
+                        break;
+                }
+            }
         }
     }
     if (!IsCompiler())

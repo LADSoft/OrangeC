@@ -30,13 +30,13 @@
 
 #include "ctypes.h"
 
-#include <stdio.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <time.h>
-#include <string.h>
-#include <float.h>
+#include <cstdio>
+#include <cctype>
+#include <cstdlib>
+#include <climits>
+#include <ctime>
+#include <cstring>
+#include <cfloat>
 #include "Floating.h"
 #include "osutil.h"
 #include "ioptimizer.h"

@@ -31,7 +31,7 @@
 #include "PreProcessor.h"
 #include "Listing.h"
 #include "UTF8.h"
-#include <stdlib.h>
+#include <cstdlib>
 #include "Token.h"
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>

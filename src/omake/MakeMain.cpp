@@ -31,13 +31,13 @@
 #include "Parser.h"
 #include "Eval.h"
 #include "CmdFiles.h"
-#include <ctype.h>
+#include <cctype>
 #include <iostream>
 #include <iomanip>
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 #include <ios>
-#include <stdio.h>
+#include <cstdio>
 #include <algorithm>
 
 CmdSwitchParser MakeMain::switchParser;

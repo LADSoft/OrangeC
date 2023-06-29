@@ -23,7 +23,7 @@
  */
 
 #include "compiler.h"
-#include <stdarg.h>
+#include <cstdarg>
 #include "PreProcessor.h"
 #include "Utils.h"
 #include "Errors.h"

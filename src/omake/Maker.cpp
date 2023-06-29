@@ -33,7 +33,7 @@
 #include "Utils.h"
 #include <fstream>
 #include <list>
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
 #include <algorithm>
 #include <unordered_set>

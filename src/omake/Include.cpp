@@ -31,7 +31,7 @@
 #include "Rule.h"
 #include <fstream>
 #include <iostream>
-#include <string.h>
+#include <cstring>
 #include <algorithm>
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>

@@ -23,11 +23,11 @@
  */
 
 #include "compiler.h"
-#include <signal.h>
-#include <setjmp.h>
-#include <stdarg.h>
-#include <ctype.h>
-#include <stdlib.h>
+#include <csignal>
+#include <csetjmp>
+#include <cstdarg>
+#include <cctype>
+#include <cstdlib>
 #include <string>
 #include <deque>
 #include "PreProcessor.h"

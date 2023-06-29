@@ -25,9 +25,9 @@
 /*
  * C configuration when we are using ICODE code generator output
  */
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
+#include <cstdio>
+#include <cstring>
+#include <ctime>
 #include "be.h"
 #include "beinterfdefs.h"
 #include "Utils.h"

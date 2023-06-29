@@ -23,7 +23,7 @@
  */
 
 #include "compiler.h"
-#include <assert.h>
+#include <cassert>
 #include "rtti.h"
 #include "ccerr.h"
 #include "config.h"

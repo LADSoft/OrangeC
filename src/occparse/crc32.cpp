@@ -22,7 +22,7 @@
  * 
  */
 
-#include <stdlib.h>
+#include <cstdlib>
 namespace Parser
 {
 static unsigned crctab[256] = {

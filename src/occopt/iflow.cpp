@@ -30,9 +30,9 @@
 /* Define this to get a dump of the flow graph and dominator tree
  * These are dumped into ccfg.$$$
  */
-#include <stdio.h>
+#include <cstdio>
 #include <malloc.h>
-#include <string.h>
+#include <cstring>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include "iflow.h"

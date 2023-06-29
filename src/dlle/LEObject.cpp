@@ -29,7 +29,7 @@
 #include "ObjMemory.h"
 #include "ObjExpression.h"
 #include "LEHeader.h"
-#include <string.h>
+#include <cstring>
 ObjFile* LEObject::file;
 
 bool LEObject::IsRel(ObjExpression* e)

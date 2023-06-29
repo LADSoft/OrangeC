@@ -22,8 +22,8 @@
  * 
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include "compiler.h"
 #include "ccerr.h"
 #include "assert.h"

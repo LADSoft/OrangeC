@@ -30,7 +30,7 @@
 #include "Variable.h"
 #include <fstream>
 #include <list>
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
 
 void Runner::DeleteOne(Depends* depend)

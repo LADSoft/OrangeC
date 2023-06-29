@@ -24,10 +24,10 @@
 
 #include "InstructionParser.h"
 #include "Errors.h"
-#include <ctype.h>
+#include <cctype>
 #include <fstream>
 #include <cassert>
-#include <stdio.h>
+#include <cstdio>
 #include "Instruction.h"
 #include "Fixup.h"
 #include <stdexcept>

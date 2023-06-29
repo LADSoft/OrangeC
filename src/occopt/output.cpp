@@ -22,11 +22,11 @@
  * 
  */
 
-#include <stdio.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
+#include <cstdio>
+#include <cctype>
+#include <cstdlib>
+#include <cstring>
+#include <cstdarg>
 
 namespace Optimizer
 {

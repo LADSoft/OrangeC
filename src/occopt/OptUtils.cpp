@@ -22,13 +22,13 @@
  * 
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <malloc.h>
-#include <string.h>
-#include <limits.h>
+#include <cstring>
+#include <climits>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
-#include <stdarg.h>
+#include <cstdarg>
 #include <map>
 #include "config.h"
 #include "ildata.h"

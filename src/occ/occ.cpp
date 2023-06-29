@@ -22,10 +22,10 @@
  * 
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <time.h>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <ctime>
 #include "be.h"
 #include "winmode.h"
 #include "Utils.h"

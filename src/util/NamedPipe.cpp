@@ -24,7 +24,7 @@
 
 #include "Utils.h"
 #include <cstdio>
-#include <stdlib.h>
+#include <cstdlib>
 #ifndef HAVE_UNISTD_H
 #    include <windows.h>
 #    include "io.h"

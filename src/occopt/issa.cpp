@@ -22,9 +22,9 @@
  * 
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <malloc.h>
-#include <string.h>
+#include <cstring>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include "config.h"

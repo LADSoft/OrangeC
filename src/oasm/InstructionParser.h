@@ -29,7 +29,7 @@
 #include <unordered_map>
 #include <list>
 #include <vector>
-#include <stdlib.h>
+#include <cstdlib>
 #include <climits>
 #include "AsmExpr.h"
 #include <memory>

@@ -33,7 +33,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
-#include <string.h>
+#include <cstring>
 #include <memory>
 #include <map>
 // reference changelog.txt to see what the changes are

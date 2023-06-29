@@ -23,7 +23,7 @@
  */
 
 #include "OutputObjects.h"
-#include <string.h>
+#include <cstring>
 
 int OutputObject::Pad(std::fstream& stream, ObjInt addr, ObjInt size, ObjInt padChar)
 {

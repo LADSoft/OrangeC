@@ -26,9 +26,9 @@
  * any variable that does not have its address taken is also made a temp
  * variable
  */
-#include <stdio.h>
+#include <cstdio>
 #include <malloc.h>
-#include <string.h>
+#include <cstring>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include "config.h"

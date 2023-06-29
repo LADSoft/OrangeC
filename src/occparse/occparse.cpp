@@ -26,8 +26,8 @@
 #include "PreProcessor.h"
 #include "Utils.h"
 #include "CmdSwitch.h"
-#include <setjmp.h>
-#include <time.h>
+#include <csetjmp>
+#include <ctime>
 #include "../version.h"
 #include "winmode.h"
 #include "InstructionParser.h"

@@ -23,8 +23,8 @@
  */
 
 #include "compiler.h"
-#include <assert.h>
-#include <limits.h>
+#include <cassert>
+#include <climits>
 #include "PreProcessor.h"
 #include "init.h"
 #include "ccerr.h"

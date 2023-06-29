@@ -46,7 +46,7 @@
 #        define chdir _chdir
 #    endif
 #endif
-#include <string.h>
+#include <cstring>
 #undef WriteConsole
 #define __MT__  // BCC55 support
 #include <cstdio>

@@ -25,7 +25,7 @@
 #include "LEObjectPage.h"
 #include "LEObject.h"
 #include "LEHeader.h"
-#include <string.h>
+#include <cstring>
 unsigned LEObjectPage::CountPages()
 {
     int n = 0;

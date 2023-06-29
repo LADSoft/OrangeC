@@ -24,12 +24,12 @@
 
 #include "ObjFactory.h"
 #include "ObjIeee.h"
-#include <stdio.h>
+#include <cstdio>
 #include <sstream>
 #include <deque>
-#include <stdarg.h>
-#include <assert.h>
-#include <limits.h>
+#include <cstdarg>
+#include <cassert>
+#include <climits>
 
 template <typename T>
 inline constexpr int min(T x, T y)

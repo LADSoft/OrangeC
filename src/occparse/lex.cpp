@@ -27,7 +27,7 @@
  */
 #include "compiler.h"
 #include "math.h"
-#include <limits.h>
+#include <climits>
 #include "Utils.h"
 #include "PreProcessor.h"
 #include <stack>

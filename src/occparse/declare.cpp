@@ -23,7 +23,7 @@
  */
 
 #include "compiler.h"
-#include <wchar.h>
+#include <cwchar>
 #include "Utils.h"
 #include "PreProcessor.h"
 #include "ioptimizer.h"

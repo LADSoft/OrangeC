@@ -26,8 +26,8 @@
 #include "PEFile.h"
 #include "MZHeader.h"
 #include "PEHeader.h"
-#include <time.h>
-#include <stdio.h>
+#include <ctime>
+#include <cstdio>
 namespace DotNetPELib
 {
 size_t IndexBase::Render(size_t sizes[MaxTables + ExtraIndexes], Byte* dest) const

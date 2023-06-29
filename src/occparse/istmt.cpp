@@ -28,10 +28,10 @@
  * change the statement list to icode
  */
 #include <cstdint>
-#include <stdio.h>
-#include <string.h>
-#include <limits.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstring>
+#include <climits>
+#include <cstdlib>
 #include "compiler.h"
 #include "ccerr.h"
 #include "config.h"

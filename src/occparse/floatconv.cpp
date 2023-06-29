@@ -22,10 +22,10 @@
  * 
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <malloc.h>
-#include <string.h>
-#include <limits.h>
+#include <cstring>
+#include <climits>
 #include "compiler.h"
 #include "Floating.h"
 #include "config.h"

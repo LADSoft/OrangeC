@@ -27,8 +27,8 @@
  *
  * Does branch optimizationns of various sorts
  */
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include "config.h"

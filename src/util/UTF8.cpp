@@ -23,8 +23,8 @@
  */
 
 #include "UTF8.h"
-#include <ctype.h>
-#include <string.h>
+#include <cctype>
+#include <cstring>
 int UTF8::Decode(const char* str)
 {
     if ((*str & 0x80) == 0)

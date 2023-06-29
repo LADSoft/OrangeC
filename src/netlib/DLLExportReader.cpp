@@ -22,8 +22,8 @@
  * 
  */
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include "DLLExportReader.h"
 #include "DotNetPELib.h"
 #include "PEHeader.h"

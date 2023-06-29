@@ -24,11 +24,11 @@
 
 #include "ObjFactory.h"
 #include "ObjIeee.h"
-#include <stdio.h>
+#include <cstdio>
 #include <stack>
-#include <ctype.h>
-#include <stdio.h>
-#include <assert.h>
+#include <cctype>
+#include <cstdio>
+#include <cassert>
 
 ObjString ObjIeeeBinary::ParseString(const ObjByte* buffer, int* pos)
 {

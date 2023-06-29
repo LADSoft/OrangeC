@@ -66,7 +66,7 @@ SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp);
 void calculateStructOffsets(SYMBOL* sp);
 void resolveAnonymousUnions(SYMBOL* sp);
 LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, enum e_ac defaultAccess, bool isfinal,
-                         bool* defd);
+                         bool* defd, SymbolTable<SYMBOL>* anonymousTable);
 void sizeQualifiers(TYPE* tp);
 LEXLIST* parse_declspec(LEXLIST* lex, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3);
 LEXLIST* getQualifiers(LEXLIST* lex, TYPE** tp, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3, bool* asFriend);

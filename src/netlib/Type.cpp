@@ -24,7 +24,7 @@
 
 #include "DotNetPELib.h"
 #include "PEFile.h"
-#include <stdio.h>
+#include <cstdio>
 namespace DotNetPELib
 {
 

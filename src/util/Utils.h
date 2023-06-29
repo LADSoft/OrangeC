@@ -28,8 +28,8 @@
 #    define _CRT_SECURE_NO_WARNINGS
 #endif
 #include <string>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #include <vector>
 
 #ifdef _WIN32

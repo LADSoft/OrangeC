@@ -23,7 +23,7 @@
  */
 
 #include "DotNetPELib.h"
-#include <float.h>
+#include <cfloat>
 namespace DotNetPELib
 {
 Instruction::InstructionName Instruction::instructions_[] = {

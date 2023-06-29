@@ -28,9 +28,9 @@
  * Constant folding/ dead block removal
  *
  */
-#include <stdio.h>
+#include <cstdio>
 #include <malloc.h>
-#include <string.h>
+#include <cstring>
 #include "ppPragma.h"
 #include "ioptimizer.h"
 #include "beinterfdefs.h"

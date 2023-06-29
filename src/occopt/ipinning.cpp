@@ -22,10 +22,10 @@
  * 
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <malloc.h>
-#include <string.h>
-#include <limits.h>
+#include <cstring>
+#include <climits>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include "ildata.h"

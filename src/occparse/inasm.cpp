@@ -25,8 +25,8 @@
 /*
  * inline assembler (386)
  */
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include "compiler.h"
 #include "../occ/be.h"
 #include "Instruction.h"

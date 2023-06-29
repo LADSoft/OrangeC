@@ -32,8 +32,8 @@
 #include "Errors.h"
 #include "Section.h"
 #include "AsmLexer.h"
-#include <float.h>
-#include <limits.h>
+#include <cfloat>
+#include <climits>
 #include <fstream>
 
 bool CharacterToken::unsignedchar;

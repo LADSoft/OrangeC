@@ -25,7 +25,7 @@
 #include "DotNetPELib.h"
 #include "PEFile.h"
 #include <search.h>
-#include <stdio.h>
+#include <cstdio>
 #include <set>
 #include <typeinfo>
 #include <algorithm>

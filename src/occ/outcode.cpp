@@ -22,10 +22,10 @@
  * 
  */
 
-#include <stdio.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cctype>
+#include <cstdlib>
+#include <cstring>
 #include "be.h"
 #include "Label.h"
 #include "Fixup.h"

@@ -110,7 +110,7 @@ bool GenParser::GenerateAdlHeader()
 {
     (*file) << "#ifndef ADLSTRUCTURES" << std::endl;
     (*file) << "#define ADLSTRUCTURES" << std::endl;
-    (*file) << "#include <string.h>" << std::endl;
+    (*file) << "#include <cstring>" << std::endl;
     (*file) << std::endl;
     (*file) << "class AdlExprNode" << std::endl;
     (*file) << "{" << std::endl;

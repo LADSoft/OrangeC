@@ -27,8 +27,8 @@
  *
  * routies to take an enode list and generate icode
  */
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include "compiler.h"
 #include "assert.h"
 #include "ppPragma.h"
@@ -46,15 +46,7 @@
 #include "beinterf.h"
 #include "initbackend.h"
 
-using namespace Parser;
-
-void Optimizer::SymbolManager::clear()
-{
-    if (architecture != ARCHITECTURE_MSIL || (cparams.prm_compileonly && !cparams.prm_asmfile))
-        symbols.clear();
-    globalSymbols.clear();
-}
-
+namespace Parser {
 const char* beDecorateSymName(SYMBOL* sym)
 {
     const char* q;
@@ -76,6 +68,15 @@ const char* beDecorateSymName(SYMBOL* sym)
             return sym->sb->decoratedName;
         }
     }
+}
+}
+using namespace Parser;
+
+void Optimizer::SymbolManager::clear()
+{
+    if (architecture != ARCHITECTURE_MSIL || (cparams.prm_compileonly && !cparams.prm_asmfile))
+        symbols.clear();
+    globalSymbols.clear();
 }
 
 Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym* sym)

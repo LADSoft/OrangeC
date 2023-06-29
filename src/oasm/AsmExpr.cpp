@@ -30,7 +30,7 @@
 #include "AsmLexer.h"
 #include <exception>
 #include <fstream>
-#include <limits.h>
+#include <climits>
 #include <stdexcept>
 
 KeywordHash AsmExpr::hash = {

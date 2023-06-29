@@ -2,7 +2,7 @@
 
 #ifndef ADLSTRUCTURES
 #define ADLSTRUCTURES
-#include <string.h>
+#include <cstring>
 
 class AdlExprNode
 {

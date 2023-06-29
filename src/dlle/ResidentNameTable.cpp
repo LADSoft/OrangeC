@@ -23,7 +23,7 @@
  */
 
 #include "ResidentNameTable.h"
-#include <string.h>
+#include <cstring>
 
 void ResidentNameTable::Setup()
 {

@@ -30,7 +30,7 @@
 #include "Include.h"
 #include "Maker.h"
 #include "UTF8.h"
-#include <ctype.h>
+#include <cctype>
 #include <fstream>
 #include <iostream>
 #include <algorithm>

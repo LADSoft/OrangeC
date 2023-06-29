@@ -27,8 +27,8 @@
  *
  * routies to take an enode list and generate icode
  */
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include "compiler.h"
 #include "assert.h"
 #include "ppPragma.h"

@@ -24,8 +24,8 @@
 
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
-#include <stdio.h>
-#include <time.h>
+#include <cstdio>
+#include <ctime>
 #include "CmdSwitch.h"
 #include "Utils.h"
 #include "config.h"

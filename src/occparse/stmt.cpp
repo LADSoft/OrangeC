@@ -24,8 +24,8 @@
 
 /* declare in select has multiple vars */
 #include "compiler.h"
-#include <limits.h>
-#include <assert.h>
+#include <climits>
+#include <cassert>
 #include "PreProcessor.h"
 #include "ccerr.h"
 #include "config.h"

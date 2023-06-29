@@ -8398,7 +8398,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
             lex = SetAlternateLex(lex);
             cls->sb->instantiating = true;
             lex = innerDeclStruct(lex, nullptr, cls, false, cls->tp->type == bt_class ? ac_private : ac_public, cls->sb->isfinal,
-                                  &defd);
+                                  &defd, nullptr);
             cls->sb->instantiating = false;
             SetAlternateLex(nullptr);
             SwapMainTemplateArgs(cls);

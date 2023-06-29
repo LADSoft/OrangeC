@@ -26,8 +26,8 @@
 #include "PEFile.h"
 #include "MZHeader.h"
 #include "PEHeader.h"
-#include <time.h>
-#include <stdio.h>
+#include <ctime>
+#include <cstdio>
 namespace DotNetPELib
 {
 

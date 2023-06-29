@@ -28,9 +28,9 @@
  * output routines for icode code gen->  Used only in optimizer tests.
  *
  */
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
+#include <cstdio>
+#include <cstring>
+#include <cctype>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include "CmdSwitch.h"

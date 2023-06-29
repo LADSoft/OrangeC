@@ -20,11 +20,11 @@
 #ifndef BIGDTYPES_H_
 #define BIGDTYPES_H_ 1
 
-#include <stddef.h>
+#include <cstddef>
 
 /*
 The following PP instructions assume that all Linux systems have a C99-conforming 
-<stdint.h>; that other Unix systems have the uint32_t definitions in <sys/types.h>;
+<cstdint>; that other Unix systems have the uint32_t definitions in <sys/types.h>;
 and that MS et al don't have them at all. This version assumes that a long is 32 bits.
 Adjust if necessary to suit your system. 
 You can override by defining HAVE_C99INCLUDES or HAVE_SYS_TYPES.
@@ -43,7 +43,7 @@ You can override by defining HAVE_C99INCLUDES or HAVE_SYS_TYPES.
 	#endif
 #endif
 #ifdef HAVE_C99INCLUDES
-	#include <stdint.h>
+	#include <cstdint>
 #elif defined(HAVE_SYS_TYPES)
 	#include <sys/types.h>
 #else 
@@ -56,7 +56,7 @@ You can override by defining HAVE_C99INCLUDES or HAVE_SYS_TYPES.
 /* Macros for format specifiers 
 -- change to "u", "x" and "X" if necessary */
 #ifdef HAVE_C99INCLUDES
-	#include <inttypes.h>
+	#include <cinttypes>
 #else 
 	#define PRIu32 "lu" 
 	#define PRIx32 "lx" 

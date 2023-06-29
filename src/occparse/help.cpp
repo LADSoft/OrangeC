@@ -23,7 +23,7 @@
  */
 
 #include "compiler.h"
-#include <stdarg.h>
+#include <cstdarg>
 #include "ccerr.h"
 #include "config.h"
 #include "initbackend.h"

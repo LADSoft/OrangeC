@@ -30,7 +30,7 @@
 #include "Spawner.h"
 #include "os.h"
 #include "Maker.h"
-#include <ctype.h>
+#include <cctype>
 #include <iostream>
 #include <fstream>
 #include <algorithm>

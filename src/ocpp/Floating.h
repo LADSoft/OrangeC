@@ -27,7 +27,7 @@
 
 #include <string>
 #include <cstring>
-#include <limits.h>
+#include <climits>
 #ifndef M_LN2
 #    define M_LN2 0.693147180559945309417
 #endif

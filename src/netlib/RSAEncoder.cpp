@@ -22,9 +22,9 @@
  * 
  */
 
-#include <stdio.h>
-#include <limits.h>
-#include <string.h>
+#include <cstdio>
+#include <climits>
+#include <cstring>
 #include <random>
 #include <functional>
 #include <algorithm>

@@ -22,10 +22,10 @@
  * 
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <climits>
 #include "be.h"
 #include <stack>
 #include "ioptimizer.h"

@@ -1,6 +1,6 @@
 #include "LinkDebugAux.h"
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 int LinkerColumnsWithNameVirtualTable::id;
 

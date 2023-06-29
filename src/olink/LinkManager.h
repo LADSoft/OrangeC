@@ -36,7 +36,7 @@
 #include <map>
 #include <memory>
 #include <deque>
-#include <stdio.h>
+#include <cstdio>
 
 class LibManager;
 class LinkPartition;

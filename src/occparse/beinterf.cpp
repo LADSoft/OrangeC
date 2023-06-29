@@ -25,9 +25,9 @@
 /*
  * C configuration when we are using ICODE code generator output
  */
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
+#include <cstdio>
+#include <cstring>
+#include <cctype>
 #include "compiler.h"
 #include "PreProcessor.h"
 #include "Utils.h"

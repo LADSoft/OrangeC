@@ -27,7 +27,7 @@
 
 #include "LibManager.h"
 #include "CmdFiles.h"
-#include "Deffile.h"
+#include "DefFile.h"
 
 class ObjFile;
 class DefFile;

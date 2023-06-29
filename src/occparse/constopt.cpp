@@ -27,9 +27,9 @@
  * for evaluating static assignments, but an initial folding of variable
  * expressions is done as well to slightly improve the code generation
  */
-#include <stdio.h>
-#include <string.h>
-#include <float.h>
+#include <cstdio>
+#include <cstring>
+#include <cfloat>
 #include "compiler.h"
 #include "ppPragma.h"
 

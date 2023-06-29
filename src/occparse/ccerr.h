@@ -40,6 +40,7 @@ enum ERROR_LIST
 #define ERRWITHWARNFLAGHELP(x, y, ...) x = y,
 #include "errorlist.h"
 };
+
 void diag(const char* fmt, ...);
 
 namespace Parser

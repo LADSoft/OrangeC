@@ -818,29 +818,7 @@ bool needkw(LEXLIST** lex, enum e_kw kw)
     }
 }
 void specerror(int err, const char* name, const char* file, int line) { printerr(err, file, line, name); }
-}  // namespace Parser
-void diag(const char* fmt, ...)
-{
-    using namespace Parser;
-    if (!templateNestingCount)
-    {
-        if (Optimizer::cparams.prm_diag)
-        {
-            va_list argptr;
 
-            va_start(argptr, fmt);
-            printf("Diagnostic: ");
-            vprintf(fmt, argptr);
-            if (theCurrentFunc)
-                printf(":%s", theCurrentFunc->sb->decoratedName);
-            printf("\n");
-            va_end(argptr);
-        }
-        diagcount++;
-    }
-}
-namespace Parser
-{
 static bool hasGoto(std::list<STATEMENT*>* statements)
 {
     if (!statements)

@@ -52,9 +52,6 @@
 #    include <unistd.h>
 #endif
 
-extern bool IsSymbolCharRoutine(const char*, bool);
-bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
-
 int usingEsp;
 Optimizer::SimpleSymbol* currentFunction;
 

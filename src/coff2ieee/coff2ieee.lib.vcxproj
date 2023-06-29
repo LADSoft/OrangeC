@@ -140,9 +140,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="CoffFile.cpp" />
     <ClCompile Include="CoffLibrary.cpp" />
     <ClCompile Include="LibFromCoffDictionary.cpp" />

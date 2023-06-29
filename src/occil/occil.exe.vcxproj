@@ -41,9 +41,6 @@
       <Project>{2ea2458c-20ca-494a-8c2f-38c19eb80f77}</Project>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\adl\Release\adl.Build.CppClean.log" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{658E5D2A-CF60-4DA7-8CBC-AD91F998822B}</ProjectGuid>

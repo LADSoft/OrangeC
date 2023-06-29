@@ -140,9 +140,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="OutputFormats.h" />
     <ClInclude Include="OutputObjects.h" />
   </ItemGroup>

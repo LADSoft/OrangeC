@@ -140,9 +140,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="RegExp.cpp" />
   </ItemGroup>
   <ItemGroup>

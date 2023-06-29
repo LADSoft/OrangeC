@@ -39,9 +39,6 @@
     <ClInclude Include="winmode.h" />
     <ClInclude Include="x86regs.h" />
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\adl\Release\adl.Build.CppClean.log" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{2EA2458C-20CA-494A-8C2F-38C19EB80F77}</ProjectGuid>

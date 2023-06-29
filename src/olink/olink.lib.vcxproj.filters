@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="LinkAttribs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -60,22 +57,7 @@
     <ClCompile Include="LinkTokenizer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\sqlite3\sqlite3.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\olib\LibDictionaryLinker.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\olib\LibFilesLinker.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SwitchConfig.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\olib\LibManagerLinker.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\olib\FileDescriptor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="LinkDll.cpp">

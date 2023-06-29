@@ -150,9 +150,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="ObjExpression.cpp" />
     <ClCompile Include="ObjFactory.cpp" />
     <ClCompile Include="ObjFile.cpp" />

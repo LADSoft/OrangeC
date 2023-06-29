@@ -140,12 +140,8 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="LibDictionary.h" />
     <ClInclude Include="LibFiles.h" />
-    <ClInclude Include="LibMain.h" />
     <ClInclude Include="LibManager.h" />
   </ItemGroup>
   <ItemGroup>
@@ -154,7 +150,6 @@
     <ClCompile Include="LibDictionaryLinker.cpp" />
     <ClCompile Include="LibFilesLibrarian.cpp" />
     <ClCompile Include="LibFilesLinker.cpp" />
-    <ClCompile Include="LibMain.cpp" />
     <ClCompile Include="LibManagerLibrarian.cpp" />
     <ClCompile Include="LibManagerLinker.cpp" />
   </ItemGroup>

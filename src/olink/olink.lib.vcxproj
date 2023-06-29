@@ -140,9 +140,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="LinkAttribs.cpp" />
     <ClCompile Include="LinkDebugAux.cpp" />
     <ClCompile Include="LinkDebugFile.cpp" />

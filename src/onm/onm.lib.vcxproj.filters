@@ -24,6 +24,9 @@
     <ClInclude Include="SymbolTable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="PrintFormatter.cpp">
@@ -35,5 +38,5 @@
     <ClCompile Include="SymbolTable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
- </ItemGroup>
+  </ItemGroup>
 </Project>

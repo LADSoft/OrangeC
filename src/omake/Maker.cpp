@@ -178,7 +178,9 @@ std::unique_ptr<Depends> Maker::Dependencies(const std::string& goal, const std:
             for (it = ruleList->begin(); it != ruleList->end(); ++it)
             {
                 if ((*it)->HasCommands())
+                {
                     break;
+                }
             }
             if (it == ruleList->end())
             {
@@ -517,6 +519,28 @@ bool Maker::SearchImplicitRules(const std::string& goal, const std::string& pref
             }
         }
     }
+    bool nobuiltin = false;
+    for (auto&& rl : matchedRules)
+        for (auto&& r : *rl)
+        {
+            nobuiltin |= !r->GetBuiltin();
+        }
+    if (nobuiltin)
+    {
+        for (auto it = matchedRules.begin(); it != matchedRules.end();)
+        {
+            auto it1 = it;
+            ++it;
+            for (auto&& r : **it1)
+            {
+                if (r->GetBuiltin())
+                {
+                    matchedRules.erase(it1);
+                    break;
+                }
+            }
+        }
+    }
     if (nonMatchAnything)
     {
         for (auto it = matchedRules.begin(); it != matchedRules.end();)
@@ -582,6 +606,7 @@ void Maker::EnterSuffixTerminals()
                 {
                     ruleList = new RuleList(target);
                     Rule* rule = new Rule(target, "", "", nullptr, "<implicitbuild>", 1);
+                    rule->SetBuiltin(true);
                     ruleList->Add(rule);
                     *RuleContainer::Instance() += ruleList;
                 }

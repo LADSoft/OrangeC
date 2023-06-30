@@ -7,17 +7,10 @@ TESTS := $(TESTS:.asm=.tst)
 TESTS := $(TESTS) fastcall1.tst
 all: $(TESTS)
 
-%.o: %.c
-	occ /1 /DWIN32_LEAN_AND_MEAN /c /! $<
-
-%.o: %.cpp
-	occ /c /DWIN32_LEAN_AND_MEAN /! $<
-
-%.o: %.asm
-	oasm /! $<
-	
-%.exe: %.o
-	occ /! $<
+CFLAGS= /! /1 /DWIN32_LEAN_AND_MEAN
+CXXFLAGS= /! /DWIN32_LEAN_AND_MEAN
+ASFLAGS= /!
+LDFLAGS= /!
 	
 mpfrdll.dll: mpfr.c
 	occ /! /Wd /ompfrdll.dll /DDLL mpfr.c

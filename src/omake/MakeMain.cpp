@@ -39,6 +39,7 @@
 #include <ios>
 #include <cstdio>
 #include <algorithm>
+#include <sstream>
 
 CmdSwitchParser MakeMain::switchParser;
 CmdSwitchCombineString MakeMain::specifiedFiles(switchParser, 'f', ' ', {"file"});
@@ -89,10 +90,13 @@ const char* MakeMain::helpText =
     "/w    Print make status       --eval=STRING evaluate a statement\n"
     "/!    No logo                 /? or --help  this help\n"
     "--jobserver-auth=xxxx               Name a jobserver to use for getting jobs\n"
-    "--version show version info\n"
+    "--version                           Show version info\n"
+    "--no-builtin-rules                  Ignore builtin rules\n" 
+    "--no-builtin-vars                   Ignore builtin variables\n" 
     "\nTime: " __TIME__ "  Date: " __DATE__;
-const char* MakeMain::builtinVars = "";
-const char* MakeMain::builtinRules = "";
+const char* MakeMain::builtinVars = "CC=${ORANGEC}/bin/occ\n"
+"CXX=${ORANGEC}/bin/occ\n"
+"AS=${ORANGEC}/bin/oasm\n";
 
 int MakeMain::makeLevel;
 
@@ -327,8 +331,19 @@ void MakeMain::SetupImplicit()
 {
     if (!noBuiltinVars.GetValue() && !noBuiltinRules.GetValue())
     {
-        Parser p(builtinRules, "<builtins>", 1, false, Variable::o_default);
-        p.Parse();
+        char *occ = getenv("ORANGEC");
+        if (occ)
+        {
+            std::string name = occ;
+            if (name.size() && name[name.size()-1] != CmdFiles::DIR_SEP[0])
+                name += CmdFiles::DIR_SEP[0];
+            name += "bin/builtins.mak";
+            std::ifstream t(name);
+            std::stringstream buffer;
+            buffer << t.rdbuf();
+            Parser p(buffer.str(), "<builtins>", 1, false, Variable::o_default);
+            p.Parse();
+        }
     }
 }
 void MakeMain::ShowRule(RuleList* ruleList)

@@ -135,7 +135,6 @@ int Runner::RunOne(std::list<RuleList*>* ruleStack_in, Depends* depend, Environm
     }
     if (depend->GetRule() && depend->GetRule()->GetCommands())
     {
-
         Eval::SetRuleStack(ruleStack);
         Spawner sp(*env, ig, sil, oneShell, posix, displayOnly && !make, keepResponseFiles);
         sp.Run(*depend->GetRule()->GetCommands(), outputType, rl, nullptr);

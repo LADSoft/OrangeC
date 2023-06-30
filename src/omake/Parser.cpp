@@ -524,6 +524,7 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
     bool make = false;
     bool notMain = false;
     bool precious = false;
+    bool builtin = false;
     std::string iline;
     bool hasCmd = false;
     if (line[0] == ':')
@@ -697,6 +698,8 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
                     make = true;
                 else if (cur == ".PRECIOUS")
                     precious = true;
+                else if (cur == ".__BUILTIN")
+                    builtin = true;
                 else if (cur == ".EXEC" || cur == ".EXPORT" || cur == ".EXPORTSAME" || cur == ".INVISIBLE" || cur == ".JOIN" ||
                          cur == ".NOEXPORT" || cur == ".USE" || cur == ".WAIT")
                     Eval::warning(std::string("Target Attribute '") + cur + "' ignored");
@@ -804,7 +807,10 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
                 }
                 ruleList->SetTargetPatternStem(stem);
                 if (rule)
+                {
+                    rule->SetBuiltin(builtin);
                     ruleList->Add(rule, Double);
+                }
             }
         }
     }

@@ -78,7 +78,6 @@ class MakeMain
     static CmdSwitchString jobServer;
     static const char* helpText;
     static const char* builtinVars;
-    static const char* builtinRules;
 
   protected:
     void Dispatch(const char* data);

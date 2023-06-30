@@ -61,6 +61,8 @@ class Rule
     Command* GetCommands() { return commands; }
     std::string& GetPrerequisites() { return prerequisites; }
     std::string& GetOrderPrerequisites() { return orderPrerequisites; }
+    void SetBuiltin(bool flag) { builtin = flag; }
+    bool GetBuiltin() const { return builtin; }
     bool IsUpToDate() const { return uptodate; }
     void SetUpToDate(bool flag) { uptodate = flag; }
     void SecondaryEval(RuleList* ruleList);
@@ -86,6 +88,7 @@ class Rule
     bool silent;
     bool make;
     bool precious;
+    bool builtin = false;
 };
 class RuleList
 {

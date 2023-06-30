@@ -40,7 +40,7 @@ void rpmalloc_thread_initilaize(void);
 void rpmalloc_thread_finalize(void);
 extern char _TLSINITSTART[], _TLSINITEND[];
 
-#pragma startup thrd_init 240
+#pragma startup thrd_init 16
 
 // this func is a compiler helper... it is not visible to the optimizer so it
 // cannot muddle with any registers.  The return value is stacked back where

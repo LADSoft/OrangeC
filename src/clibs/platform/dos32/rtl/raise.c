@@ -83,7 +83,7 @@ const struct sigaction __defsigtab[NSIG] = {
 struct sigaction __sigtab[NSIG];
 static char insignal[NSIG];
 
-#pragma startup siginit 227
+#pragma startup siginit 29
 
 static void siginit(void)
 {

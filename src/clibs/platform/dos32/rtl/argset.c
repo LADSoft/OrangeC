@@ -32,7 +32,7 @@ extern short __pspseg, __envseg;
 int _RTL_DATA _argc, _RTL_DATA __argc;
 char _RTL_DATA **_argv, _RTL_DATA **__argv;
 
-#pragma startup argset 225
+#pragma startup argset 31
 
 static void get_progname(char *buf)
 {

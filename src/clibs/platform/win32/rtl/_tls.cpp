@@ -34,7 +34,7 @@
 #include <set>
 #include <stdio.h>
 
-#pragma startup tlsStartup 255
+#pragma startup tlsStartup 1
 #pragma rundown tlsShutdown 1
 static int __rtlTlsIndex;
 

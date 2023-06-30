@@ -42,7 +42,7 @@ FILE _RTL_DATA* __stderr;
 FILE _RTL_DATA* __stdaux;
 FILE _RTL_DATA* __stdprn;
 
-#pragma startup __fileinit 226
+#pragma startup __fileinit 30
 #pragma rundown __closeall 10
 
 void __fileinit(void)

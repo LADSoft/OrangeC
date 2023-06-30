@@ -5,7 +5,7 @@
 /* Special thanks to Joushua Grass (of Microsoft) for pointing out an error
    in the initialization routine "rand_seed()" */
 
-#pragma startup preinit 224
+#pragma startup preinit 32
 
 int rand();             /* returns a random 32 bit integer */
 static void rand_seed( unsigned int, unsigned int, unsigned int );

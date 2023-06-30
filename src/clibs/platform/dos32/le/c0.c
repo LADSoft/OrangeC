@@ -70,7 +70,7 @@ int __startup()
     __asm	mov	[__pm308],edx
     Lock();
     memset(BSSSTART, 0, BSSEND-BSSSTART);
-    __srproc(INITSTART, INITEND);
+    __srproc(INITSTART, INITEND, 1);
     if (!(rv = setjmp(__abortbranch)))
     {
         if (!(rv = setjmp(__exitbranch)))
@@ -78,7 +78,7 @@ int __startup()
             monitor_init();
             rv = main(_argc, _argv, _environ) + 1;
         }
-        __srproc(EXITSTART, EXITEND);
+        __srproc(EXITSTART, EXITEND, 0);
     }
     UnLock();
     return rv - 1;

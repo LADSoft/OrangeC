@@ -57,7 +57,7 @@ void (*userRundown)();
 void PASCAL __xceptinit(int* block);
 void PASCAL __xceptrundown(void);
 
-#pragma startup init 253
+#pragma startup init 3
 #pragma rundown destroy 3
 
 static void init(void)
@@ -112,7 +112,7 @@ void __export __stdcall ___lsdllinit(void* tlsStart, void* tlsEnd, DWORD flags, 
             userRundown();
             __xceptrundown();
         }
-        __srproc(EXITSTART, EXITEND);
+        __srproc(EXITSTART, EXITEND, 0);
         ExitProcess(rv);
     }
     _osenv = GetEnvironmentStrings();
@@ -120,7 +120,7 @@ void __export __stdcall ___lsdllinit(void* tlsStart, void* tlsEnd, DWORD flags, 
     __hInstance = GetModuleHandle(0);
     _llfpinit();
     __threadinit();
-    __srproc(INITSTART, INITEND);
+    __srproc(INITSTART, INITEND, 1);
 }
 void __export __getmainargs(int** pargc, char*** pargv, char*** penviron, int flags, void** newmode)
 {

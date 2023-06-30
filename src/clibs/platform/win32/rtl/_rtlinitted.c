@@ -26,8 +26,8 @@
 
 bool ___rtl_initted;
 
-#pragma startup DoInit 224
-#pragma rundown DoStop 31
+#pragma startup DoInit 97
+#pragma rundown DoStop 97
 
 static void DoInit()
 {

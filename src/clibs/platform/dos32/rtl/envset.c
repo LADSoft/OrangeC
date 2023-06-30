@@ -32,7 +32,7 @@
 
 char _RTL_DATA **_environ;
 
-#pragma startup envset 225
+#pragma startup envset 31
 
 static void envset(void)
 {

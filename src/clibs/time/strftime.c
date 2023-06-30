@@ -31,7 +31,7 @@
 extern ABBREVIATED_TIME_DATA C_time_data;
 extern void* __locale_data[LC_LAST + 1];
 
-#pragma startup init 149 /* sequencing with the locale stuff is important */
+#pragma startup init 96 /* sequencing with the locale stuff is important */
 static void init() { __locale_data[LC_TIME] = &C_time_data; }
 
 static int weekbasedoffset(struct tm* t)

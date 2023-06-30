@@ -86,7 +86,7 @@ struct sigaction __defsigtab[NSIG] = {{SIG_ERR}, {SIG_ERR}, {sigint},  {SIG_ERR}
 struct sigaction __sigtab[NSIG];
 static char insignal[NSIG];
 
-#pragma startup siginit 227
+#pragma startup siginit 29
 
 static void siginit(void)
 {

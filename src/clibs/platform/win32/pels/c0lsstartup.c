@@ -48,7 +48,7 @@ extern __import char* _oscmd;
 extern __import char* _osenv;
 static unsigned dllexists = 0;
 
-#pragma startup init 253
+#pragma startup init 3
 #pragma rundown destroy 3
 
 static void init(void)
@@ -70,7 +70,7 @@ static void _dorundown(void);
 // in the follow, the args are ONLY valid for DLLs
 int __stdcall DllMain(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved);
 void __stdcall __import ___lsdllinit(void* tlsStart, void* tlsEnd, DWORD flags, void (*rundown)(void), unsigned* exceptBlock);
-void __srproc(char*, char*);
+void __srproc(char*, char*, int);
 int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
 {
     int flags;
@@ -95,7 +95,7 @@ int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvRese
         }
         hInst = GetModuleHandleA(0);
     }
-    __srproc(INITSTART, INITEND);
+    __srproc(INITSTART, INITEND, 1);
     if (flags & DLL)
     {
         rv = DllMain(hInst, fdwReason, lpvReserved) + 1;
@@ -119,7 +119,7 @@ int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvRese
     }
     if ((flags & DLL) && fdwReason == DLL_PROCESS_DETACH)
     {
-        __srproc(EXITSTART, EXITEND);
+        __srproc(EXITSTART, EXITEND, 0);
     }
     rv--;
     if (!(flags & DLL))
@@ -129,4 +129,4 @@ int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvRese
     }
     return rv;
 }
-static void _dorundown(void) { __srproc(EXITSTART, EXITEND); }
+static void _dorundown(void) { __srproc(EXITSTART, EXITEND, 0); }

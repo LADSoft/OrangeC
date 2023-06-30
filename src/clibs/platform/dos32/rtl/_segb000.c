@@ -26,7 +26,7 @@
 
 SELECTOR _RTL_DATA __segB000 ;
 
-#pragma startup __init 226
+#pragma startup __init 30
 
 static void __init(void)
 {

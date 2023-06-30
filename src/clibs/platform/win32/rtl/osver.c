@@ -31,7 +31,7 @@
 
 unsigned char _RTL_DATA _osmajor, _RTL_DATA _osminor;
 
-#pragma startup checkver 225
+#pragma startup checkver 31
 
 static void checkver(void)
 {

@@ -58,6 +58,7 @@
 #include "ListFactory.h"
 
  /* initializers, local... can do w/out c99 */
+#define CPP_BASE_PRIO 99 // this is low prio, high prio is 98 
 
 namespace Parser
 {
@@ -535,7 +536,7 @@ static void callDynamic(const char* name, int startupType, int index, std::list<
                     Optimizer::startupseg();
                 else
                     Optimizer::rundownseg();
-                Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32 + preProcessor->GetCppPrio(), startupType);
+                Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), CPP_BASE_PRIO + preProcessor->GetCppPrio(), startupType);
             }
         }
     }

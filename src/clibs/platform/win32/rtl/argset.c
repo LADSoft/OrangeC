@@ -33,7 +33,7 @@ extern HINSTANCE* __hInstance;
 int _RTL_DATA _argc, _RTL_DATA __argc;
 char _RTL_DATA **_argv, _RTL_DATA **__argv;
 char* _passed_name;
-#pragma startup argset 225
+#pragma startup argset 31
 
 static void argset(void)
 {

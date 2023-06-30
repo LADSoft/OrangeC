@@ -37,7 +37,7 @@ int ungetchar;
 SELECTOR realdata;
 static struct text_info the_info = { 0,0,80,25,7,7,0,25,80,0,0 };
 
-#pragma startup conio_init 225
+#pragma startup conio_init 31
 
 #pragma rundown conio_rundown 31
 

@@ -33,7 +33,7 @@
 
 unsigned char _RTL_DATA _osmajor, _RTL_DATA _osminor ;
 
-#pragma startup checkver 225
+#pragma startup checkver 31
 
 /* this is only required if we don't use pmode/308 */
 

@@ -45,7 +45,7 @@ static int xceptretval, xceptxcept, xceptip, xceptcs, xceptflags;
 
 int _breakflag;
 
-#pragma startup llsignal 250
+#pragma startup llsignal 6
 #pragma rundown llsig_rundown 5
 
 // This ditty detects DPMI exception handling.

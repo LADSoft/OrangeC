@@ -40,7 +40,7 @@ static fenv_t dfltenv;
 fenv_t _RTL_DATA * const __fe_default_env = &dfltenv;
 
 static unsigned oldcr0;
-#pragma startup llfpini 255
+#pragma startup llfpini 1
 #pragma rundown llfprundown 1
         
 unsigned short oldint75[2];

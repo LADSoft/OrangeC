@@ -63,9 +63,9 @@ typedef std::map<int, HandleMap, std::less<int>, LocalAllocAllocator<std::pair<c
 static Registered* registered;
 static Handles* handles;
 
-#pragma startup thrd_init 254
+#pragma startup thrd_init 2
 #pragma rundown thrd_end 2
-#pragma startup main_init 49
+#pragma startup main_init 255
 #pragma rundown main_end 31
 
 static void main_init()

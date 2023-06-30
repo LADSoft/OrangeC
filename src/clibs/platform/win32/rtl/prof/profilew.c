@@ -32,7 +32,7 @@
 #define HASH_SIZE 4096
 
 #pragma rundown show_profile 50
-#pragma startup init_profile 50
+#pragma startup init_profile 225
 extern char** _argv;
 
 unsigned long long _current_time(void);

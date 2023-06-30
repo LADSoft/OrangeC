@@ -30,7 +30,7 @@
 int _fltused;
 
 // this next assumes nothing in the startup code uses SSE on DOS
-#pragma startup SSEInit 31
+#pragma startup SSEInit 254
 
 static fenv_t dfltenv;
 

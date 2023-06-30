@@ -61,7 +61,7 @@ static int jumped;
 void PASCAL __xceptinit(int* block);
 void PASCAL __xceptrundown(void);
 
-#pragma startup init 253
+#pragma startup init 3
 #pragma rundown destroy 3
 
 static void init(void) { __thrdRegisterModule(__hInstance, _TLSINITSTART, _TLSINITEND); }
@@ -96,7 +96,7 @@ int __stdcall ___startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
         _llfpinit();
 
         __threadinit();
-        __srproc(INITSTART, INITEND);
+        __srproc(INITSTART, INITEND, 1);
     }
     if (!(rv = setjmp(__abortbranch)))
     {
@@ -130,7 +130,7 @@ int __stdcall ___startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
             jumped++;
         if (!(startupStruct.flags & DLL) || fdwReason == DLL_PROCESS_DETACH)
         {
-            __srproc(EXITSTART, EXITEND);
+            __srproc(EXITSTART, EXITEND, 0);
         }
     }
     else

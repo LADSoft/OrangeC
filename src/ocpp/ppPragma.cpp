@@ -89,7 +89,7 @@ void ppPragma::ParsePragma(const std::string& args)
         else if (str == "ONCE")
             HandleOnce(tk);
         else if (str == "PRIORITYCPP")
-            cppprio++;
+            cppprio--;
         else if (str == "IGNORE_GLOBAL_INIT")
             HandleIgnoreGlobalInit(tk);
         else if (str == "PUSH_MACRO")

@@ -34,7 +34,7 @@ static HANDLE end;
 CRITICAL_SECTION critical;
 
 static std::map<DWORD, HANDLE> pidList;
-#pragma startup init 224
+#pragma startup init 32
 #pragma rundown rundown 32
 static void InsertPid(DWORD pid)
 {

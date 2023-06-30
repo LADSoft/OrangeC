@@ -31,7 +31,7 @@
 #define HASH_SIZE 4091
 
 #pragma rundown show_profile 100
-#pragma startup init_profile 100
+#pragma startup init_profile 254
 extern char **_argv;
 
 unsigned _elapsed_time(void);

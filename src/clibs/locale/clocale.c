@@ -87,7 +87,7 @@ LOCALE_HEADER _C_locale_data = {&C_unqualified_name, &C_qualified_name, {&C_coll
 static void* __init_locale_data[LC_LAST + 1] = {
     0, &C_collate_data, &C_ctype_data, &C_monetary_data, &C_numeric_data, &C_time_data, &C_message_data, &C_userdef_data};
 
-#pragma startup __locale_reinit 230
+#pragma startup __locale_reinit 26
 void __locale_reinit()
 {
     memcpy(__locale_data, __init_locale_data, sizeof(__locale_data));

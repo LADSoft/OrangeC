@@ -1,4 +1,4 @@
-#pragma startup memstart 252
+#pragma startup memstart 4
 #pragma rundown memdelete 4
 
 static void memdelete(void)

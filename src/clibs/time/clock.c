@@ -31,7 +31,7 @@
 
 static __int64 startTime;
 
-#pragma startup initClock 224
+#pragma startup initClock 32
 
 static void initClock() { startTime = __ll_ticks(); }
 clock_t _RTL_FUNC clock(void) { return (int)(__ll_ticks() - startTime); }

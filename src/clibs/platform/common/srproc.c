@@ -49,7 +49,7 @@ void writenum(unsigned int x)
     WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), data, buf - data, &temp, 0);
 }
 #endif
-void __srproc(SRDATA* start, SRDATA* end)
+void __srproc(SRDATA* start, SRDATA* end, int startup)
 {
     SRDATA* pos;
     // wipe because load-unload-load behavior for DLLs doesn't seem to reinitialize this region of memory
@@ -63,7 +63,7 @@ void __srproc(SRDATA* start, SRDATA* end)
         {
             if (!pos->flag)
             {
-                if (!cur || pos->prio > cur->prio)
+                if (!cur || (!startup && pos->prio > cur->prio) || (startup && pos->prio < cur->prio))
                 {
                     cur = pos;
                 }

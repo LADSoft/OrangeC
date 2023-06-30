@@ -31,8 +31,14 @@
     <ProjectReference Include="..\objlib\objlib.lib.vcxproj">
       <Project>{22e147d5-e684-4b10-9cb4-d6cd8ef02118}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\occopt\occopt.exe.vcxproj">
+      <Project>{3c58e290-51e1-4163-9842-e804e3920be5}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\occopt\occopt.lib.vcxproj">
       <Project>{c65e7b6c-45fc-4299-8b41-6a6181169e2b}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\occparse\occparse.exe.vcxproj">
+      <Project>{6f4a4182-7acb-4c9f-934b-394768e49574}</Project>
     </ProjectReference>
     <ProjectReference Include="..\ocpp\ocpp.lib.vcxproj">
       <Project>{15b031ac-a404-4064-be4e-cd5705b6293c}</Project>

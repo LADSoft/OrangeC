@@ -43,6 +43,5 @@ int __ll_settime(struct tm* tm2)
 
     timex.wMilliseconds = 0;
 
-    SetLocalTime(&timex);
-    return 0;
+    return !SetLocalTime(&timex);
 }

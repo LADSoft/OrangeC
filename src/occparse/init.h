@@ -55,6 +55,7 @@ EXPRESSION* ConvertToMSILString(EXPRESSION* val);
 int genstring(STRING* str);
 void dumpLits(void);
 void dumpStartups(void);
+void insert_file_constructor(SYMBOL* sym);
 void insertDynamicInitializer(SYMBOL* sym, std::list<INITIALIZER*>* init);
 void insertDynamicDestructor(SYMBOL* sym, std::list<INITIALIZER*>* init);
 int dumpMemberPtr(SYMBOL* sym, TYPE* membertp, bool make_label);

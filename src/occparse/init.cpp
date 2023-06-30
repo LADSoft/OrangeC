@@ -70,6 +70,7 @@ static Optimizer::LIST *symListHead, *symListTail;
 static int inittag = 0;
 static std::list<STRING*> strtab;
 static SYMBOL* msilToString;
+static std::list<SYMBOL*> file_level_constructors;
 LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, std::list<INITIALIZER*>** init, std::list<INITIALIZER*>** dest, TYPE* itype,
                   SYMBOL* sym, bool arrayMember, int flags);
 
@@ -81,6 +82,7 @@ void init_init(void)
     dynamicDestructors = TLSDestructors = nullptr;
     initializingGlobalVar = false;
     strtab.clear();
+    file_level_constructors.clear();
 }
 
 static SYMBOL* LookupMsilToString()
@@ -313,6 +315,19 @@ void dumpStartups(void)
                 }
             }
         }
+        for (auto s : file_level_constructors)
+        {
+            if (s->sb->attribs.uninheritable.constructorPriority)
+            {
+                if (!started)
+                {
+                    started = true;
+                    Optimizer::startupseg();
+                }
+                Optimizer::gensrref(Optimizer::SymbolManager::Get(s), s->sb->attribs.uninheritable.constructorPriority < 256 ? s->sb->attribs.uninheritable.constructorPriority : 255, STARTUP_TYPE_STARTUP);
+                s->sb->attribs.inheritable.used = true;
+            }
+        }
         started = false;
         for (auto&& starts : preProcessor->GetStartups())
         {
@@ -332,6 +347,19 @@ void dumpStartups(void)
                     Optimizer::gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_RUNDOWN);
                     s->sb->attribs.inheritable.used = true;
                 }
+            }
+        }
+        for (auto s : file_level_constructors)
+        {
+            if (s->sb->attribs.uninheritable.destructorPriority)
+            {
+                if (!started)
+                {
+                    started = true;
+                    Optimizer::rundownseg();
+                }
+                Optimizer::gensrref(Optimizer::SymbolManager::Get(s), s->sb->attribs.uninheritable.destructorPriority < 256 ?s->sb->attribs.uninheritable.destructorPriority : 255, STARTUP_TYPE_RUNDOWN);
+                s->sb->attribs.inheritable.used = true;
             }
         }
     }
@@ -419,6 +447,13 @@ static int dumpBits(std::list<INITIALIZER*>::iterator &it)
     }
     return 4;
 }
+void insert_file_constructor(SYMBOL* sym)
+{
+    if (sym->sb->attribs.uninheritable.constructorPriority || sym->sb->attribs.uninheritable.destructorPriority)
+    {
+        file_level_constructors.push_back(sym);
+    }
+} 
 void insertDynamicInitializer(SYMBOL* sym, std::list<INITIALIZER*>* init)
 {
     if (!ignore_global_init && !templateNestingCount)

@@ -3524,7 +3524,12 @@ static const std::unordered_map<std::string, int> gccStyleAttribNames = {
     {"format", 27},
     {"internal_linkage", 28},
     {"exclude_from_explicit_instantiation", 29},
+    {"constructor", 30 },
+    {"destructor", 31 },
 };
+#define DEFAULT_CONSTRUCTOR_PRIORITY 101
+#define DEFAULT_DESTRUCTOR_PRIORITY 101
+
 void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
 {
     if (MATCHKW(*lex, kw__attribute))
@@ -3788,6 +3793,49 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                             case 29:  // exclude_from_explicit_instantiation
                                 basisAttribs.inheritable.excludeFromExplicitInstantiation = true;
                                 break;
+                            case 30: // constructor
+                                if (MATCHKW(*lex, openpa))
+                                {
+                                    *lex = getsym();
+                                    TYPE* tp = nullptr;
+                                    EXPRESSION* exp = nullptr;
+
+                                    *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
+                                    if (!tp || !isint(tp))
+                                        error(ERR_NEED_INTEGER_TYPE);
+                                    else if (!isintconst(exp))
+                                        error(ERR_CONSTANT_VALUE_EXPECTED);
+                                    basisAttribs.uninheritable.constructorPriority = exp->v.i;
+                                    basisAttribs.inheritable.warnAlign = exp->v.i;
+                                    needkw(lex, closepa);
+                                }
+                                else
+                                {
+                                    basisAttribs.uninheritable.constructorPriority = DEFAULT_CONSTRUCTOR_PRIORITY;
+                                }
+                                break;
+                            case 31: // destructor
+                                if (MATCHKW(*lex, openpa))
+                                {
+                                    *lex = getsym();
+                                    TYPE* tp = nullptr;
+                                    EXPRESSION* exp = nullptr;
+
+                                    *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
+                                    if (!tp || !isint(tp))
+                                        error(ERR_NEED_INTEGER_TYPE);
+                                    else if (!isintconst(exp))
+                                        error(ERR_CONSTANT_VALUE_EXPECTED);
+                                    basisAttribs.uninheritable.destructorPriority = exp->v.i;
+                                    basisAttribs.inheritable.warnAlign = exp->v.i;
+                                    needkw(lex, closepa);
+                                }
+                                else
+                                {
+                                    basisAttribs.uninheritable.destructorPriority = DEFAULT_DESTRUCTOR_PRIORITY;
+                                }
+                                break;
+                             
                         }
                     }
                 }

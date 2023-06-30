@@ -1097,6 +1097,8 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     if (TotalErrors())
         return;
 
+    insert_file_constructor(funcsp);
+
     Optimizer::SymbolManager::Get(funcsp)->generated = true;
     // if returning struct by val set up an expression for the return value
     if (isstructured(basetype(funcsp->tp)->btp))

@@ -644,6 +644,8 @@ struct attributes
         const char* deprecationText;  // C++ declaration was deprecated
         const char* alias;            // link-time alias
         struct sym* copyFrom;         // symbol to copy attributes from
+        int constructorPriority;      // is a file-scope constructor, set the priority
+        int destructorPriority;       // is a file-scope destructor, set the priority
     } uninheritable;
 };
 /* symbols */

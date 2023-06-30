@@ -84,6 +84,7 @@ CmdSwitchCombineString LinkerMain::LibPath(SwitchParser, 'L', ';');
 CmdSwitchOutput LinkerMain::OutputFile(SwitchParser, 'o', ".rel");
 CmdSwitchBool LinkerMain::Verbosity(SwitchParser, 'y');
 CmdSwitchCombineString LinkerMain::OutputDefFile(SwitchParser, 0, 0, {"output-def"});
+CmdSwitchCombineString LinkerMain::OutputImportLibrary(SwitchParser, 0, 0, {"out-implib"});
 CmdSwitchCombineString LinkerMain::PrintFileName(SwitchParser, 0, 0, {"print-file-name"});
 
 SwitchConfig LinkerMain::TargetConfig(SwitchParser, 'T');
@@ -100,6 +101,7 @@ const char* LinkerMain::helpText =
     "/?, --help This text\n"
     "\n"
     " --output-def filename    create a .def file for DLLs\n"
+    " --out-implib filename    specify name for import library when generating DLLs\n"
     " --shared                 create a dll\n"
     "@xxx      Read commands from file\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
@@ -394,7 +396,7 @@ int LinkerMain::Run(int argc, char** argv)
             else
                 path.erase(n + 1);
             int rv = TargetConfig.RunApp(path, outputFile, Utils::AbsolutePath(debugFile), Verbosity.GetExists(),
-                                         OutputDefFile.GetValue());
+                                         OutputDefFile.GetValue(), OutputImportLibrary.GetValue());
             if (!Verbosity.GetExists())
                 _unlink(outputFile.c_str());
             return rv;

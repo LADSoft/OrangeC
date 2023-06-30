@@ -283,7 +283,7 @@ bool SwitchConfig::InterceptFile(const std::string& file)
     return false;
 }
 int SwitchConfig::RunApp(const std::string& path, const std::string& file, const std::string& debugFile, bool verbose,
-                         std::string outDefFile)
+                         std::string outDefFile, std::string outImportLibrary)
 {
     std::string flags;
     std::string name;
@@ -305,7 +305,10 @@ int SwitchConfig::RunApp(const std::string& path, const std::string& file, const
     std::string outdef;
     if (!outDefFile.empty())
         outdef = " --output-def \"" + outDefFile + "\"";
-    return Utils::ToolInvoke(name, verbose ? "" : nullptr, "%s %s %s %s \"%s\" %s", flags.c_str(), outdef.c_str(), sverbose.c_str(),
+    std::string outimp;
+    if (!outImportLibrary.empty())
+        outimp = " --out-implib \"" + outImportLibrary + "\"";
+    return Utils::ToolInvoke(name, verbose ? "" : nullptr, "%s %s %s %s %s \"%s\"%s", flags.c_str(), outdef.c_str(), outimp.c_str(),  sverbose.c_str(),
                              sdebug.c_str(), file.c_str(), sfiles.c_str());
 }
 bool SwitchConfig::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData) { return false; }

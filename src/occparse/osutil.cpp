@@ -120,6 +120,7 @@ CmdSwitchCombineString prm_CPPsysinclude(switchParser, 'Z', ';');
 CmdSwitchCombineString prm_libpath(switchParser, 'L', ';');
 CmdSwitchString prm_pipe(switchParser, 'P', ';');
 CmdSwitchCombineString prm_output_def_file(switchParser, 0, 0, {"output-def"});
+CmdSwitchCombineString prm_output_import_library_file(switchParser, 0, 0, {"out-implib"});
 CmdSwitchCombineString prm_flags(switchParser, 'f', ';');
 CmdSwitchBool prm_export_all(switchParser, 0, false, {"export-all-symbols"});
 
@@ -130,8 +131,6 @@ CmdSwitchString prm_msil_version(switchParser, 'V');
 CmdSwitchCombineString prm_architecture(switchParser, 0, 0, {"architecture"});
 
 CmdSwitchString prm_Winmode(switchParser, 'W');
-CmdSwitchCombineString OutputDefFile(switchParser, 0, 0, {"output-def"});
-CmdSwitchBool ExportAll(switchParser, 0, false, {"export-all-symbols"});
 
 CmdSwitchString AssemblerExtension(switchParser, 'a');
 
@@ -717,6 +716,10 @@ static void ParamTransfer(char* name)
     if (prm_output_def_file.GetExists())
     {
         Optimizer::prm_OutputDefFile = prm_output_def_file.GetValue();
+    }
+    if (prm_output_import_library_file.GetExists())
+    {
+        Optimizer::prm_OutputImportLibraryFile = prm_output_import_library_file.GetValue();
     }
     if (AssemblerExtension.GetExists())
     {

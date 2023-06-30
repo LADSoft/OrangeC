@@ -48,6 +48,7 @@ CmdSwitchString dlPeMain::DebugFile(SwitchParser, 'v');
 CmdSwitchBool dlPeMain::FlatExports(SwitchParser, 'f');
 CmdSwitchBool dlPeMain::Verbose(SwitchParser, 'y');
 CmdSwitchCombineString dlPeMain::OutputDefFile(SwitchParser, 0, 0, {"output-def"});
+CmdSwitchCombineString dlPeMain::OutputImportLibrary(SwitchParser, 0, 0, {"out-implib"});
 
 time_t dlPeMain::timeStamp;
 
@@ -91,6 +92,7 @@ const char* dlPeMain::helpText =
     "/?, --help     This text\n"
     "\n"
     "--output-def filename    for DLL, output a .def file instead of a .lib\n"
+    "--out-implib filename    for DLL, set the name of the import library\n"
     "\n"
     "Available output file types:\n"
     "   CON - Windows console (default)\n"
@@ -594,7 +596,15 @@ int dlPeMain::Run(int argc, char** argv)
             {
                 std::string sverbose = Verbose.GetExists() ? "" : "/!";
                 std::string usesC = exportObject && exportObject->ImportsNeedUnderscore() ? "/C" : "";
-                std::string implibName = Utils::QualifiedFile(outputName.c_str(), ".l");
+                std::string implibName;
+                if (OutputImportLibrary.GetValue().empty())
+                {
+                    implibName = Utils::QualifiedFile(outputName.c_str(), ".l");
+                }
+                else
+                {
+                    implibName = Utils::QualifiedFile(OutputImportLibrary.GetValue().c_str(), ".l");
+                }
                 return Utils::ToolInvoke("oimplib", Verbose.GetExists() ? "" : nullptr, "%s %s \"%s\" \"%s\"", usesC.c_str(),
                                          sverbose.c_str(), implibName.c_str(), outputName.c_str());
             }

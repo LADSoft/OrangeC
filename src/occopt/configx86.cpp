@@ -119,6 +119,7 @@ static char help_text[] =
     "       c++14 2014 version of C++\n"
     " -nostdinc, nostdinc++           disable system include file path\n"
     " --output-def-file filename      output a .def file instead of a .lib file for DLLs\n"
+    " --out-implib filename           specify the name of the import library for DLLs\n"
     " --export-all-symbols            reserved\n"
     " -link                           reserved\n"
     " -dll or -shared                 compile as DLL (same as /Wd)\n"

@@ -583,6 +583,7 @@ static void StreamXParams()
     StreamString(outputFileName);
     StreamString(assemblerFileExtension);
     StreamString(prm_OutputDefFile);
+    StreamString(prm_OutputImportLibraryFile);
     StreamString(pinvoke_dll);
     StreamString(prm_snkKeyFile);
     StreamString(prm_assemblyVersion);

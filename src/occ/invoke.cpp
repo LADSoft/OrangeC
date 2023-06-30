@@ -323,10 +323,11 @@ int RunExternalFiles()
                 }
             }
             rv = Utils::ToolInvoke(
-                "olink.exe", Optimizer::cparams.verbosity ? with : nullptr, "%s %s %s /c+ \"/o%s\" %s %s %s @%s",
+                "olink.exe", Optimizer::cparams.verbosity ? with : nullptr, "%s %s %s /c+ \"/o%s\" %s %s %s %s @%s",
                 link_params ? link_params : "", Optimizer::cparams.prm_targettype == WHXDOS ? "-DOBJECTALIGN=65536" : "",
                 !Optimizer::showBanner ? "-!" : "", outName, args, verbosityString,
                 !Optimizer::prm_OutputDefFile.empty() ? ("--output-def \"" + Optimizer::prm_OutputDefFile + "\"").c_str() : "",
+                !Optimizer::prm_OutputImportLibraryFile.empty() ? ("--out-implib \"" + Optimizer::prm_OutputImportLibraryFile + "\"").c_str() : "",
                 tempName.c_str());
         }
         _unlink(tempName.c_str());

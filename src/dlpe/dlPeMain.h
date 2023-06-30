@@ -97,6 +97,7 @@ class dlPeMain
     static CmdSwitchBool FlatExports;
     static CmdSwitchBool Verbose;
     static CmdSwitchCombineString OutputDefFile;
+    static CmdSwitchCombineString OutputImportLibrary;
     static const char* usageText;
     static const char* helpText;
     ObjInt fileAlign;

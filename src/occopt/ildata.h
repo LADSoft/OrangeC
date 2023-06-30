@@ -207,6 +207,7 @@ extern std::string prm_namespace_and_class;
 extern std::map<std::string, std::string> bePragma;
 extern std::list<MsilProperty> msilProperties;
 extern std::string prm_OutputDefFile;
+extern std::string prm_OutputImportLibraryFile;
 
 extern std::string prm_assemblerSpecifier;
 extern std::string outputFileName;

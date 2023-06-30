@@ -593,6 +593,7 @@ static void UnstreamXParams()
     UnstreamString(outputFileName);
     UnstreamString(assemblerFileExtension);
     UnstreamString(prm_OutputDefFile);
+    UnstreamString(prm_OutputImportLibraryFile);
     UnstreamString(temp);
     pinvoke_dll = litlate(temp.c_str());
     UnstreamString(prm_snkKeyFile);

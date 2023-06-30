@@ -77,6 +77,7 @@ std::string prm_namespace_and_class;
 std::map<std::string, std::string> bePragma;
 std::list<MsilProperty> msilProperties;
 std::string prm_OutputDefFile;
+std::string prm_OutputImportLibraryFile;
 
 std::string prm_assemblerSpecifier;
 std::string outputFileName;

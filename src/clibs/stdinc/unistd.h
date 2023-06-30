@@ -46,6 +46,9 @@ extern "C"
 
     int _RTL_FUNC _IMPORT getpid(void);
     int _RTL_FUNC _IMPORT getppid(void);
+
+    unsigned _RTL_FUNC _IMPORT alarm(unsigned sec);
+
 #endif
 
 #ifdef __cplusplus

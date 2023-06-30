@@ -77,7 +77,7 @@ const struct sigaction __defsigtab[NSIG] = {
     { sigfp }, { SIG_ERR },  { SIG_ERR }, { __ll_sigsegv }, 
     { SIG_ERR }, { SIG_ERR }, { SIG_ERR }, { sigterm }, 
     { SIG_IGN }, { SIG_IGN },{ SIG_ERR }, { SIG_ERR }, 
-    { SIG_IGN }, { sigint }, { sigabort }
+    { SIG_IGN }, { sigint }, { sigabort }, { SIG_IGN },
 };
 
 struct sigaction __sigtab[NSIG];

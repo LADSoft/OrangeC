@@ -62,13 +62,14 @@ extern "C"
 #define SIGUSR2 17  /* User-defined signal 2 */
 #define SIGUSR3 20  /* User-defined signal 3 */
 #define SIGBREAK 21 /* Control-Break interrupt */
+#define SIGALRM 23 /* alarm */
 
 #ifndef RC_INVOKED
     int _RTL_FUNC _IMPORT raise(int __sig);
     sighandler_t _RTL_FUNC _IMPORT signal(int __sig, sighandler_t __func);
 #endif
 
-#define NSIG 23 /* highest defined signal no. + 1 */
+#define NSIG 24 /* highest defined signal no. + 1 */
 
 #define SA_SIGINFO 1
 #define SA_NOCLDSTOP 2
@@ -129,7 +130,7 @@ extern "C"
 
 #ifndef RC_INVOKED
     typedef unsigned sigval_t;
-    typedef unsigned sigset_t;  // there are a max of 23 signals in this implementation
+    typedef unsigned sigset_t;  // there are a max of 24 signals in this implementation
 
     typedef struct _siginfo_t
     {

@@ -2248,7 +2248,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
             {
                 SYMBOL* sp = init->basesym;
                 if (!sp)
-                    sp = classsearch(init->name, false, true);
+                    sp = classsearch(init->name, false, false, true);
                 else
                     init->sp = sp;
                 if (sp && sp->tp->type == bt_templateparam)

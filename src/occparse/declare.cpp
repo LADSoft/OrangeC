@@ -545,7 +545,7 @@ SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp)
                     STRUCTSYM l;
                     l.str = (SYMBOL*)top;
                     addStructureDeclaration(&l);
-                    pq = classsearch(pi->name, false, true);
+                    pq = classsearch(pi->name, false, false, true);
                     dropStructureDeclaration();
                     if (pq)
                     {
@@ -3008,7 +3008,7 @@ founddecltype:
                                             }
                                             else
                                             {
-                                                SYMBOL* sp = classsearch(itl->first->name, false, false);
+                                                SYMBOL* sp = classsearch(itl->first->name, false, false, false);
                                                 if (sp && sp->tp->type == bt_templateparam)
                                                 {
                                                     tnew->push_back(TEMPLATEPARAMPAIR{ sp->tp->templateParam->first, sp->tp->templateParam->second });
@@ -3251,7 +3251,7 @@ founddecltype:
                 tn = PerformDeferredInitialization(strSym->tp, funcsp);
                 s.str = tn->sp;
                 addStructureDeclaration(&s);
-                sp = classsearch(lex->data->value.s.a, false, true);
+                sp = classsearch(lex->data->value.s.a, false, false, true);
                 if (sp)
                 {
                     tn = sp->tp;

@@ -1166,7 +1166,7 @@ std::list<TEMPLATEPARAMPAIR>** expandTemplateSelector(std::list<TEMPLATEPARAMPAI
                             STRUCTSYM ss;
                             ss.str = basetype(base)->sp;
                             addStructureDeclaration(&ss);
-                            s = classsearch(sel->name, false, false);
+                            s = classsearch(sel->name, false, false, false);
                             dropStructureDeclaration();
                             auto it1 = sel;
                             ++it1;
@@ -3596,7 +3596,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                 if (next->type == en_func)
                 {
                     TYPE* ctype = tp;
-                    SYMBOL* sym = classsearch(next->v.func->sp->name, false, false);
+                    SYMBOL* sym = classsearch(next->v.func->sp->name, false, false, false);
                     if (!sym)
                     {
                         dropStructureDeclaration();
@@ -3625,7 +3625,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                 }
                 else
                 {
-                    SYMBOL* sym = classsearch(GetSymRef(next)->v.sp->name, false, false);
+                    SYMBOL* sym = classsearch(GetSymRef(next)->v.sp->name, false, false, false);
                     if (!sym)
                     {
                         dropStructureDeclaration();

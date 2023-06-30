@@ -1393,7 +1393,7 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
         STRUCTSYM l;
         l.str = (SYMBOL*)basetype(*tp)->sp;
         addStructureDeclaration(&l);
-        s2 = classsearch(name, false, true);
+        s2 = classsearch(name, false, false, true);
         dropStructureDeclaration();
         funcparams->thistp = MakeType(bt_pointer, basetype(*tp));
         funcparams->thisptr = *exp;
@@ -1506,7 +1506,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         int n;
         l.str = (SYMBOL*)basetype(*tp)->sp;
         addStructureDeclaration(&l);
-        s2 = classsearch(name, false, true);
+        s2 = classsearch(name, false, false, true);
         n = PushTemplateNamespace(basetype(*tp)->sp);  // used for more than just templates here
         s4 = namespacesearch(name, globalNameSpace, false, false);
         PopTemplateNamespace(n);
@@ -1863,7 +1863,7 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
 
             l.str = (SYMBOL*)basetype(*tp)->sp;
             addStructureDeclaration(&l);
-            s1 = classsearch(name, false, true);
+            s1 = classsearch(name, false, false, true);
             dropStructureDeclaration();
         }
     }
@@ -2097,7 +2097,7 @@ LEXLIST* expression_delete(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION**
             STRUCTSYM l;
             l.str = (SYMBOL*)basetype(*tp)->sp;
             addStructureDeclaration(&l);
-            s1 = classsearch(name, false, true);
+            s1 = classsearch(name, false, false, true);
             dropStructureDeclaration();
         }
     }

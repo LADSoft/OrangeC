@@ -356,12 +356,12 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                                 STRUCTSYM s;
                                 s.str = basetype(t->lthis->tp)->btp->sp;
                                 addStructureDeclaration(&s);
-                                sp = classsearch(buf, false, false);
+                                sp = classsearch(buf, false, MATCHKW(lex, classsel), false);
                                 dropStructureDeclaration();
                             }
                         }
                         if (!sp)
-                            sp = classsearch(buf, false, false);
+                            sp = classsearch(buf, false, MATCHKW(lex, classsel), false);
                         if (sp && sp->tp->type == bt_templateparam)
                         {
                             TEMPLATEPARAMPAIR* params = sp->tp->templateParam;
@@ -417,12 +417,20 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                 }
                 if (!sp && !templateParamAsTemplate)
                 {
+                    SYMBOL *cached = nullptr;
                     if (!qualified)
                         sp = namespacesearch(buf, localNameSpace, qualified, tagsOnly);
+                    if (sp && MATCHKW(lex, classsel) && !istype(sp))
+                    {
+                        cached = sp;
+                        sp = nullptr;
+                    }
                     if (!sp && nssym)
                     {
                         sp = namespacesearch(buf, nssym, qualified, tagsOnly);
                     }
+                    if (!sp)
+                        sp = cached;
                 }
                 if (sp && sp->sb && sp->sb->storage_class == sc_typedef && !sp->sb->typeAlias)
                 {
@@ -467,7 +475,7 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                     STRUCTSYM s;
                     s.str = strSym;
                     addStructureDeclaration(&s);
-                    sp = classsearch(buf, false, false);
+                    sp = classsearch(buf, false, MATCHKW(lex, classsel), false);
                     dropStructureDeclaration();
                 }
                 if (!sp)
@@ -913,9 +921,10 @@ TEMPLATEPARAMPAIR* getTemplateStruct(char* name)
     }
     return nullptr;
 }
-SYMBOL* classsearch(const char* name, bool tagsOnly, bool toErr)
+SYMBOL* classsearch(const char* name, bool tagsOnly, bool needTypeOrNamespace, bool toErr)
 {
     SYMBOL* rv = nullptr;
+    SYMBOL* symrv = nullptr;
     SYMBOL* cls = getStructureDeclaration();
 
     decltype(structSyms)::iterator its;
@@ -924,6 +933,11 @@ SYMBOL* classsearch(const char* name, bool tagsOnly, bool toErr)
         if (!(*its).tmpl || rv)
             break;
         rv = templatesearch(name, (*its).tmpl);
+        if (rv && needTypeOrNamespace && !istype(rv))
+        {
+            symrv = rv;
+            rv = nullptr;
+        }
     }
     if (cls && !rv)
     {
@@ -932,8 +946,18 @@ SYMBOL* classsearch(const char* name, bool tagsOnly, bool toErr)
         {
             if (!tagsOnly)
                 rv = search(basetype(cls->tp)->syms, name);
+            if (rv && needTypeOrNamespace && !istype(rv))
+            {
+                symrv = rv;
+                rv = nullptr;
+            }
             if (!rv)
                 rv = search(basetype(cls->tp)->tags, name);
+            if (rv && needTypeOrNamespace && !istype(rv))
+            {
+                symrv = rv;
+                rv = nullptr;
+            }
             if (!rv && cls->sb->baseClasses)
             {
                 rv = classdata(name, cls, nullptr, false, tagsOnly);
@@ -954,6 +978,11 @@ SYMBOL* classsearch(const char* name, bool tagsOnly, bool toErr)
             break;
         if ((*its).tmpl)
             rv = templatesearch(name, (*its).tmpl);
+        if (rv && needTypeOrNamespace && !istype(rv))
+        {
+            symrv = rv;
+            rv = nullptr;
+        }
     }
     cls = getStructureDeclaration();
     if (cls && !rv)
@@ -963,9 +992,16 @@ SYMBOL* classsearch(const char* name, bool tagsOnly, bool toErr)
         {
             if (!rv && cls->templateParams)
                 rv = templatesearch(name, cls->templateParams);
+            if (rv && needTypeOrNamespace && !istype(rv))
+            {
+                symrv = rv;
+                rv = nullptr;
+            }
             cls = cls->sb->parentClass;
         }
     }
+    if (!rv)
+        rv = symrv;
     return rv;
 }
 SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALUEDATA*>* ns, bool tagsOnly, bool throughClass,
@@ -1015,7 +1051,7 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
             }
             if (!rv)
             {
-                rv = classsearch(name, tagsOnly, true);
+                rv = classsearch(name, tagsOnly, false, true);
                 if (rv && rv->sb)
                     rv->sb->throughClass = true;
             }
@@ -1046,7 +1082,7 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
             STRUCTSYM l;
             l.str = (SYMBOL*)encloser;
             addStructureDeclaration(&l);
-            rv = classsearch(name, tagsOnly, true);
+            rv = classsearch(name, tagsOnly, false, true);
             dropStructureDeclaration();
             if (rv && rv->sb)
                 rv->sb->throughClass = throughClass;
@@ -5513,6 +5549,8 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 icsList.resize(n);
                 lenList.resize(n);
                 funcList.resize(n);
+                if (!strcmp(sp->name, "ne"))
+                    printf("hi");
                 n = insertFuncs(&spList[0], gather, args, atp, flags);
                 if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor && !spList[0]->sb->specialized2))
                 {

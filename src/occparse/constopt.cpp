@@ -2468,7 +2468,7 @@ int opt0(EXPRESSION** node)
                     if (next->type == en_func)
                     {
                         TYPE* ctype = tp;
-                        SYMBOL* sym = classsearch(next->v.func->sp->name, false, false);
+                        SYMBOL* sym = classsearch(next->v.func->sp->name, false, false, false);
                         if (!sym)
                         {
                             dropStructureDeclaration();
@@ -2495,7 +2495,7 @@ int opt0(EXPRESSION** node)
                     }
                     else
                     {
-                        SYMBOL* sym = classsearch(GetSymRef(next)->v.sp->name, false, false);
+                        SYMBOL* sym = classsearch(GetSymRef(next)->v.sp->name, false, false, false);
                         if (!sym)
                         {
                             dropStructureDeclaration();

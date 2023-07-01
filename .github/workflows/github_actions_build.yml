@@ -25,5 +25,5 @@ jobs:
       run: d:\a\orangec\orangec\src\omake -Cd:\a\orangec\orangec\src /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:2
     - name: Test
       run: |
-          echo "d:\a\orangec\orangec\bin" >> "$GITHUB_PATH"
+          Add-Content $env:GITHUB_PATH "d:\a\orangec\orangec\bin"
           d:\a\orangec\orangec\src\omake -Cd:\a\orangec\orangec\tests  -B -j:2 /DCOMPILER=OCC

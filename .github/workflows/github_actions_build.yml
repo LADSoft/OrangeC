@@ -19,7 +19,8 @@ jobs:
       with:
         fetch-depth: 0
     - uses: ilammy/msvc-dev-cmd@v1
-
+      with:
+        arch: x86
     - name: Configs
       run: echo 'd:\a\orangec\orangec\bin' >> "${GITHUB_PATH}"
 

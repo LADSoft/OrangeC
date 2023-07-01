@@ -60,6 +60,8 @@ CmdSwitchBool gccocc::prmStatic(SwitchParser, 0, 0, {"static"});
 CmdSwitchBool gccocc::prmShared(SwitchParser, 0, 0, {"shared"});
 CmdSwitchBool gccocc::prmDumpVersion(SwitchParser, 0, 0, {"dumpversion"});
 CmdSwitchBool gccocc::prmDumpMachine(SwitchParser, 0, 0, {"dumpmachine"});
+CmdSwitchBool gccocc::prm_mtune(SwitchParser, 0, 0, {"mtune"});
+CmdSwitchBool gccocc::prm_march(SwitchParser, 0, 0, {"march"});
 CmdSwitchCombineString gccocc::prmPrintFileName(SwitchParser, 0, 0, {"print-file-name"});
 CmdSwitchCombineString gccocc::prmPrintProgName(SwitchParser, 0, 0, {"print-prog-name"});
 
@@ -102,6 +104,8 @@ const char* gccocc::helpText =
     "   -print-prog-name=xxx  print the full path of one of the executables\n"
     "   -shared         generate a DLL\n"
     "   -static         generate an executable\n"
+    "   -march          ignored\n"
+    "   -mtune          ignored\n"
     "\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
 const char* gccocc::usageText = "[options] files...";
@@ -173,7 +177,29 @@ int gccocc::Run(int argc, char** argv)
     if (prm_export_all.GetValue())
         fputs(" -export-all-symbols", fil);
     if (prm_optimize.GetExists())
-        fprintf(fil, " -O%s", prm_optimize.GetValue().c_str());
+    {
+        char ch = '1';
+        if (!prm_optimize.GetValue().empty())
+            ch = prm_optimize.GetValue()[0];
+        switch (ch)
+        {
+             default:
+                 Utils::fatal("Unknown optimizer flag");
+                 break;
+             case '1':
+             case '2':
+             case '3':
+                 fputs(" -O2", fil);
+                 break;
+             case 's':
+                 fputs(" -O1", fil);
+                 break;
+        }
+    }
+    else
+    {
+         fputs(" -O-", fil);
+    }
     if (prm_warning_and_flags.GetExists())
     {
         if (prm_warning_and_flags.GetValue() == "")

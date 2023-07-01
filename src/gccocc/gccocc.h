@@ -40,6 +40,8 @@ private:
     static CmdSwitchBool ShowHelp;
     static CmdSwitchString prm_directory_options;
     static CmdSwitchBool prm_debug;
+    static CmdSwitchBool prm_march;
+    static CmdSwitchBool prm_mtune;
     static CmdSwitchBool prm_verbose;
     static CmdSwitchString prm_libs;
     static CmdSwitchString prm_output;

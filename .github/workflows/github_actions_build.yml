@@ -22,7 +22,9 @@ jobs:
       with:
         arch: x86
     - name: Build
-      run: d:\a\orangec\orangec\src\omake -Cd:\a\orangec\orangec\src /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:2
+      run: |
+          Add-Content $env:GITHUB_PATH "d:\a\orangec\orangec\bin"
+          d:\a\orangec\orangec\src\omake -Cd:\a\orangec\orangec\src /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:2
     - name: Test
       run: |
           Add-Content $env:GITHUB_PATH "d:\a\orangec\orangec\bin"

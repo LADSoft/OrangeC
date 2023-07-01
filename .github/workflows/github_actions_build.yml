@@ -13,7 +13,7 @@ jobs:
 
     env:
       ORANGEC: d:\a\orangec\orangec
-      GITHUB_PATH: d:\a\orangec\orangec\bin
+
     steps:
     - uses: actions/checkout@v3
       with:
@@ -25,5 +25,5 @@ jobs:
       run: d:\a\orangec\orangec\src\omake -Cd:\a\orangec\orangec\src /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:2
     - name: Test
       run: |
-          echo "d:\a\orangec\orangec\bin" >> "${GITHUB_PATH}"
+          echo "d:\a\orangec\orangec\bin" >> "$GITHUB_PATH"
           d:\a\orangec\orangec\src\omake -Cd:\a\orangec\orangec\tests  -B -j:2 /DCOMPILER=OCC

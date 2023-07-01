@@ -12,7 +12,7 @@ jobs:
     runs-on: windows-latest
 
     env:
-      ORANGEC: d:\a\orangec\orangec
+      ORANGEC: $env:GITHUB_WORKSPACE
 
     steps:
     - uses: actions/checkout@v3
@@ -23,9 +23,9 @@ jobs:
         arch: x86
     - name: Build
       run: |
-          echo "d:/a/orangec/orangec/bin/" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          d:\a\orangec\orangec\src\omake -Cd:\a\orangec\orangec\src /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:2
+          echo "$env:GITHUB_WORKSPACE/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          $env:GITHUB_WORKSPACE\src\omake -C$env:GITHUB_WORKSPACE\src /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:2
     - name: Test
       run: |
-          echo "d:/a/orangec/orangec/bin/" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          d:\a\orangec\orangec\src\omake -Cd:\a\orangec\orangec\tests  -B -j:2 /DCOMPILER=OCC
+          echo "$env:GITHUB_WORKSPACE/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          $env:GITHUB_WORKSPACE\src\omake -C$env:GITHUB_WORKSPACE\tests  -B -j:2 /DCOMPILER=OCC

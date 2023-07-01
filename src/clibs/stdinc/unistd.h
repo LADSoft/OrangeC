@@ -48,6 +48,7 @@ extern "C"
     int _RTL_FUNC _IMPORT getppid(void);
 
     unsigned _RTL_FUNC _IMPORT alarm(unsigned sec);
+    ssize_t _RTL_FUNC readlink(const char *path, char *buf, size_t bufsiz);
 
 #endif
 

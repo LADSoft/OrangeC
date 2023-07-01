@@ -24,8 +24,8 @@ jobs:
     - name: Build
       run: |
           echo "$env:GITHUB_WORKSPACE/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          "$env:GITHUB_WORKSPACE/src/omake" -C$env:GITHUB_WORKSPACE/src /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:2
+          &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/src" /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:2
     - name: Test
       run: |
           echo "$env:GITHUB_WORKSPACE/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          "$env:GITHUB_WORKSPACE/src/omake" -C$env:GITHUB_WORKSPACE/tests  -B -j:2 /DCOMPILER=OCC
+          &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests"  -B -j:2 /DCOMPILER=OCC

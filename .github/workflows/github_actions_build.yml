@@ -22,6 +22,7 @@ jobs:
       with:
         arch: x86
     - name: Configs
+      run echo "placeholder"
 
     - name: Build
       run: d:\a\orangec\orangec\src\omake -Cd:\a\orangec\orangec\src /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:2

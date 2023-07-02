@@ -21,13 +21,15 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
-ifeq "$(COMPILER)" "gcc-linux"
+include ../pathext2.mak
 
-DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
-       oimplib omake onm orc occparse occpr occ occil coff2ieee gccocc arocc ieeeconvert
-else
-DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
-       oimplib omake onm orc ocl occparse occpr occ occil coff2ieee ieeeconvert \
-       gccocc arocc clocc linkocc libocc \
-       help MSDNHelp
-endif
+NAME=libocc
+MAIN_FILE=libocc.cpp
+INCLUDES=..$(PATHEXT2)util
+CPP_DEPENDENCIES=$(wildcard *.cpp)
+LIB_DEPENDENCIES=util
+H_FILES=$(wildcard *.h)
+
+include ../redirect.mak
+
+DISTRIBUTE: copyexe

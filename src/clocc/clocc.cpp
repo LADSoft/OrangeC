@@ -1,0 +1,648 @@
+/* Software License Agreement
+ * 
+ *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
+ * 
+ *     This file is part of the Orange C Compiler package.
+ * 
+ *     The Orange C Compiler package is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ * 
+ *     The Orange C Compiler package is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ * 
+ *     You should have received a copy of the GNU General Public License
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ *     contact information:
+ *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <string>
+#include <algorithm>
+/* these here are the only 2 function using win32-specific APIs */
+#include <process.h>
+#include "Utils.h"
+#include "CmdSwitch.h"
+#include "clocc.h"
+#include "../exefmt/PEHeader.h" 
+
+#define DLL_STUB_SUBSYS 10
+
+CmdSwitchParser clocc::SwitchParser;
+CmdSwitchBool clocc::ShowHelp(SwitchParser, '?', false, {"help"});
+CmdSwitchBool clocc::prm_compileonly(SwitchParser, 'c');
+CmdSwitchBool clocc::prm_verbose(SwitchParser, 'v');
+CmdSwitchCombineString clocc::prm_define(SwitchParser, 'D', ';');
+CmdSwitchCombineString clocc::prm_cinclude(SwitchParser, 'I', ';');
+CmdSwitchCombineString clocc::prm_optimize(SwitchParser, 'O', ';');
+CmdSwitchCombineString clocc::prm_undefine(SwitchParser, 'U', ';');
+CmdSwitchBool clocc::prmDll(SwitchParser, 0, false, {"LD"});
+CmdSwitchString clocc::prmOutputFile(SwitchParser, 'F');
+CmdSwitchBool clocc::prmPreprocessToStdout(SwitchParser, 'E');
+CmdSwitchBool clocc::prmPreprocessToFile(SwitchParser, 'P');
+CmdSwitchString clocc::prmStandard(SwitchParser, 0, 0, {"std"});
+CmdSwitchCombineString clocc::prmExtensions(SwitchParser, 'Z');
+CmdSwitchBool clocc::prmCharTypeIsUnsigned(SwitchParser, 'J');
+CmdSwitchFile clocc::prmFile(SwitchParser, '@');
+CmdSwitchBool clocc::prmShowIncludes(SwitchParser, 0, false, {"showIncludes"});
+CmdSwitchString clocc::prmCompileAs(SwitchParser, 'T', ';');
+CmdSwitchCombineString clocc::prmLinkOptions(SwitchParser, 0, ';', {"link"});
+CmdSwitchString clocc::prmLinkWithMSVCRT(SwitchParser, 'M', false);
+CmdSwitchCombineString clocc::prmWarningSetup(SwitchParser, 'W', ';', {"w"});
+
+const char* clocc::helpText =
+    "[options] files...\n"
+    "\n"
+    "/c                   compile only\n"
+    "/Dxxx                define a macro\n"
+    "/E                   reserved for compatibility\n"
+    "/F#                  set stack size\n" 
+    "/Fe{file}            link to exe and set executable file name\n"
+    "/Fm{file}            reserved for compatibility\n"
+    "/Fo{file}            compile only and set object file name\n"
+    "/Fi{file}            preprocess only and set preprocessor output name\n"
+    "/Fa{file}            generate assembly file only and set preprocessor output name\n"
+    "/Fe:{file}           link to exe and set executable file name\n"
+    "/Fm:{file}           reserved for compatibility\n"
+    "/Fo:{file}           compile only and set object file name\n"
+    "/Fi:{file}           preprocess only and set preprocessor output name\n"
+    "/Fa:{file}           generate assembly file only and set preprocessor output name\n"
+    "/Ixxx                add to include path\n"
+    "/J                   char is unsigned\n"
+    "/link option         set a linker option or library\n"
+    "/LD                  create dll\n"
+    "/MD                  link with msvcrt.lib\n"
+    "/MPx                 reserved for compatibility\n"
+    "/Ox                  set optimizer option\n"
+    "/P                   preprocess to file\n"
+    "/std:xxx             set C or C++ standard version\n"
+    "/Tcfile              reserved for compatibility\n"
+    "/Tpfile              reserved for compatibility\n"
+    "/TC                  compile all files as C\n"
+    "/TP                  compile all files as CXX\n"
+    "/Uxxx                undefine a macro\n"
+    "/wxxx                warning control\n"
+    "/Wxxx                warning control\n"
+    "/Za                  disable extensions\n"
+    "/Ze                  enable extensions\n"
+    "/Zi                  compile for debug\n"
+    "-V, --version        show version information\n"
+    "--nologo             no logo\n"
+    "/?, --help           this text\n"
+    "\n"
+    "\nTime: " __TIME__ "  Date: " __DATE__;
+const char* clocc::usageText = "[options] files...";
+
+int main(int argc, char** argv)
+{
+    clocc cl;
+    return cl.Run(argc, argv);
+}
+
+int clocc::LinkOptions(std::string& args) 
+{
+    int subsys = prmDll.GetValue() ? DLL_STUB_SUBSYS : PE_SUBSYS_CONSOLE;
+    if (prmLinkOptions.GetExists())
+    {
+        bool err = false;
+        auto a = Utils::split(prmLinkOptions.GetValue());
+        if (!a.size())
+            Utils::fatal("invalid link options");
+        bool debug = false;
+        for (auto&& o : a)
+        {
+            std::string select = o; 
+            std::string val;
+            int n = o.find_first_of(':');
+            if (n != std::string::npos)
+            {
+                select = o.substr(0, n);
+                val = o.substr(n+1);
+            }
+            std::transform(select.begin(), select.end(), select.begin(), ::toupper);
+            if (select == "/DEBUG")
+            {
+                debug = val == "FULL";
+            }
+            else if (select == "/LIBPATH" && val.size())
+            {
+                args += " -L" + val;
+            }
+            else if (select == "/BASE" && val.size())
+            {
+                int m = val.find(",");
+                if (m != std::string::npos)
+                    Utils::fatal("Cannot set image size");
+                args += " -pl-DIMAGEBASE=" + val;
+            }
+            else if (select == "/FILEALIGN" && val.size())
+            {
+                args += " -pl-DFILEALIGN=" + val;
+            }
+            else if (select == "/IMPLIB" && val.size())
+            {
+                args += " --out-implib \"" + val + "\"";
+            }
+            else if (select == "/MAP" && !val.size())
+            {
+                args += " -pl-mx";
+            }
+            else if (select == "/STACK")
+            {
+                auto a = Utils::split(val, ',');
+                if (a.size() != 1 && a.size() != 2)
+                    Utils::fatal("Invalid stack linker option");
+                args += " -pl-DSTACKSIZE=" + a[0];
+                if (a.size() == 2)
+                    args += " -pl-DSTACKCOMMIT=" + a[1];
+
+            }
+            else if (select == "/SUBSYSTEM" && val.size())
+            {
+                int type = 0;
+                if (val == "CONSOLE")
+                {
+                    type = PE_SUBSYS_CONSOLE;
+                }
+                else if (val == "NATIVE")
+                {
+                    type = PE_SUBSYS_NATIVE;
+                }
+                else if (val == "WINDOWS")
+                {
+                    type = PE_SUBSYS_WINDOWS;
+                }
+                else
+                {
+                    Utils::fatal("unsupported subsystem linker option");
+                }
+                char buf[256];
+                sprintf(buf, "%d", type);
+                args += std::string(" -pl-DSUBSYSTEM=") + buf;
+                if (subsys != DLL_STUB_SUBSYS && type != PE_SUBSYS_NATIVE)
+                    subsys = type;
+            }
+            else if (select == "/ENTRY" || select == "/EXPORT" || select == "/MACHINE" || select == "/MANIFESTFILE" ||
+                select == "/NODEFAULTLIB" || select == "/OPT" || select == "/PROFILE" || select == "/RELEASE" ||
+                     select == "/SAFESEH" || select == "/STUB" || select == "/WX" || select == "/DEF")
+            {
+                // ignored;
+            }
+            else
+            {
+                Utils::fatal("unsupported linker option");
+            }
+        }
+        if (debug)
+            args += " -pl-g";
+    }
+    return subsys; 
+}
+std::string clocc::SanitizeExtension(std::string fileName, std::string ext)
+    {
+    int n = fileName.rfind(".obj");
+    if (n != std::string::npos && n == fileName.size() - 4)
+    {
+        return fileName.substr(0, fileName.size() - 4) + ".o";
+    }
+    n = fileName.rfind(".lib");
+    if (n != std::string::npos && n == fileName.size() - 4)
+    {
+        return fileName.substr(0, fileName.size() - 4) + ".l";
+    }
+    n = fileName.rfind(".asm");
+    if (n != std::string::npos && n == fileName.size() - 4)
+    {
+        return fileName.substr(0, fileName.size() - 4) + ".s";
+    }
+    else if (ext.size())
+    {
+        if (fileName.size() <= ext.size() || fileName.substr(fileName.size() - ext.size()) != ext)
+            fileName += ext;
+        return fileName;
+    }
+    else
+    {
+        return fileName;
+    }
+}
+int clocc::Run(int argc, char** argv)
+{
+    Utils::banner(argv[0]);
+    Utils::SetEnvironmentToPathParent("ORANGEC");
+    CmdSwitchFile internalConfig(SwitchParser);
+    std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
+    std::fstream configTest(configName, std::ios::in);
+    if (!configTest.fail())
+    {
+        configTest.close();
+        if (!internalConfig.Parse(configName.c_str()))
+            Utils::fatal("Corrupt configuration file");
+    }
+    if (!SwitchParser.Parse(&argc, argv) || argc < 2)
+    {
+        if (argc < 2 && !ShowHelp.GetExists())
+            Utils::usage(argv[0], usageText);
+    }	
+    if (ShowHelp.GetExists())
+        Utils::usage(argv[0], helpText);
+    char compileType = 0;
+    std::string outputFile;
+    std::string args;
+    if (prm_compileonly.GetValue())
+    {
+        compileType = 'c';
+        outputFile = Utils::QualifiedFile(argv[1], ".o");
+    }
+    if (prmPreprocessToFile.GetValue())
+    {
+        compileType = 'i';
+        outputFile = Utils::QualifiedFile(argv[1], ".i");
+    }
+    if (!compileType)
+    {
+        outputFile = Utils::QualifiedFile(argv[1], ".exe");
+    }
+    if (prmOutputFile.GetExists())
+    {
+        std::string val = prmOutputFile.GetValue();
+        if (val.size() < 1)
+        {
+            Utils::fatal("Missing output file type");
+        }
+        bool err = false;
+        bool map = false;
+        switch (val[0])
+        {
+            case 'a':
+                if (compileType)
+                    err = true;
+                compileType = 'S';
+                break;
+            case 'm':
+                map = true;
+                break;
+            case 'e':
+                if (compileType)
+                    err = true;
+                compileType = '\0';
+                break;
+            case 'i':
+                if (compileType && compileType != 'i')
+                    err = true;
+                compileType = 'i';
+                break;
+            case 'o':
+                if (compileType && compileType != 'c')
+                    err = true;
+                compileType = 'c';
+                break;
+            default:
+                if (isdigit(val[0]))
+                {
+                    compileType = 0;
+                    args += " -pl-DSTACKSIZE=" + val;
+                }
+                else
+                {
+                    Utils::fatal("Unsupported output file type");
+                }
+                break;
+        }
+        if (err)
+            Utils::fatal("Conflicting output types requested");
+        if (val.size() > 1)
+        {
+            val = val.substr(1);
+            if (val[0] == ':')
+            {
+                if (val.size() < 1)
+                    Utils::fatal("Expected output file name");
+                val = val.substr(1);
+            }
+            outputFile = val;
+        }
+        else
+        {
+            val = argv[1];
+            int n = val.find_last_of('.');
+            if (n != std::string::npos)
+            {
+                auto temp = val.substr(n);
+                if (temp == ".c" || temp == ".cpp" || temp == ".asm" || temp == ".s")
+                    val = val.substr(0, n);
+            }
+            switch (compileType)
+            {
+                case '\0':
+                    outputFile = Utils::QualifiedFile(val.c_str(), ".exe");
+                    break;
+                case 'c':
+                    outputFile = SanitizeExtension(val, ".o");
+                    break;
+                case 'i':
+                    outputFile = Utils::QualifiedFile(val.c_str(), ".i");
+                    break;
+                case 'S':
+                    outputFile = SanitizeExtension(val, ".s");
+                    break;
+            }
+        }
+        if (map)
+            args += " -pl-mx";
+    }
+    if (compileType)
+        args += std::string(" -") + compileType;
+    args += " -o \"" + outputFile + "\""; 
+
+    char optimizeType = '-';
+    char optimizeType2 = 0;
+    if (prm_optimize.GetExists())
+    {
+        bool err = false;
+        auto a = Utils::split(prm_optimize.GetValue(), ';');
+        if (!a.size())
+            err = true;
+        for (auto&& o : a)
+        {
+            if (o.size() == 0)
+                err = true;
+            else switch (o[0])
+            {
+                case 'd':
+                    optimizeType = '-';
+                    err = o.size() != 1;
+                    break;
+                case '1':
+                case 's':
+                    optimizeType = '1';
+                    err = o.size() != 1;
+                    break;
+                case '2':
+                case 't':
+                case 'x':
+                    optimizeType = '2';
+                    err = o.size() != 1;
+                    break;
+                case 'y':
+                    if (o.size() == 2)
+                    {
+                        if (o[1] != '-')
+                            err = true;
+                        optimizeType2 = 'B';
+                    }
+                    else
+                    {
+                        optimizeType2 = 'S';
+                        err = o.size() != 1;
+                    }
+                    break;
+                default:
+                    err = true;
+                    break;
+            }
+        }
+        if (err)
+            Utils::fatal("Invalid optimizer parameter");
+
+    }
+    args += std::string(" -O") + optimizeType;
+    if (optimizeType2 == 'S')
+    {
+        args += " -C+E";
+    }
+    else if (optimizeType2 == 'B')
+    {
+        args += " -C-E";
+    }
+    if (prm_undefine.GetExists())
+    {
+        auto a = Utils::split(prm_undefine.GetValue(), ';');
+        for (auto&& u : a)
+        {
+            args += " /U" + u;
+        }
+    }
+    if (prm_define.GetExists())
+    {
+        auto a = Utils::split(prm_define.GetValue(), ';');
+        for (auto&& u : a)
+        {
+            args += " /D" + u;
+        }
+    }
+    if (prm_cinclude.GetExists())
+        args += " /I" + prm_cinclude.GetValue();
+    if (prmStandard.GetExists())
+    {
+        auto a = prmStandard.GetValue();
+        if (a == "c++11")
+        {
+
+        }
+        else if (a == "c++14")
+        {
+
+        }
+        else if (a == "c++17")
+        {
+        }
+        else if (a == "c89")
+        {
+
+        }
+        else if (a == "c99")
+        {
+
+        }
+        else if (a == "c11")
+        {
+
+        }
+        else
+        {
+            Utils::fatal("Unknown language standard");
+        }
+        args += " -std:" + a;
+    }
+    if (prmExtensions.GetExists())
+    {
+        auto a = Utils::split(prmExtensions.GetValue(), ';');
+        bool err = false;
+        bool noExtensions = false;
+        bool debug = false;
+        if (a.size() == 0)
+        {
+            err = true;
+        }
+        else
+        {
+            for (auto&& e : a)
+            {
+                bool err = false;
+                if (e.size() != 1)
+                    err = true;
+                else
+                {
+                    switch (e[0])
+                    {
+                        case 'a':
+                            noExtensions = true;
+                            break;
+                        case 'e':
+                            noExtensions = false;
+                            break;
+                        case 'i':
+                            debug = true;
+                            break;
+                        default:
+                            err = true;
+                            break;
+                    }
+                }
+            }
+        }
+        if (err)
+            Utils::fatal("Invalid extension parameter");
+        if (noExtensions)
+        {
+            args += " -A";
+        }
+        if (debug)
+            args += " -g";
+          
+    }
+    if (prmCharTypeIsUnsigned.GetValue())
+        args += " -C+u";
+    int subsys = LinkOptions(args);
+    args += " -W";
+    switch (subsys)
+    {
+        case PE_SUBSYS_NATIVE: // native
+        case PE_SUBSYS_CONSOLE: // console
+            args += "c";
+            break;
+        case PE_SUBSYS_WINDOWS: // gui
+            args += "g";
+            break;
+        case DLL_STUB_SUBSYS: //dll
+            args += "d";
+            break;
+        default:
+            Utils::fatal("internal error");
+            break;
+    }
+    if (prmLinkWithMSVCRT.GetExists())
+    {
+        auto val = prmLinkWithMSVCRT.GetValue();
+        if (val.size() == 1 && val[0] == 'D')
+            args += 'm';  // appends to the -W switch...
+        else if (val.size() < 2 || val[0] != 'P')
+            Utils::fatal(std::string("Invalid switch /M") + val);
+    }
+    char compileAllAs = 0;
+    if (prmCompileAs.GetExists())
+    {
+        bool err = false;
+        auto a = Utils::split(prmCompileAs.GetValue());
+        if (a.size() == 0)
+        {
+            err = true;
+        }
+        for (auto&& c : a)
+        {
+            if (c.size() == 0)
+                err = true;
+            else
+            {
+                switch (c[0])
+                {
+                    case 'c':
+                    case 'p':
+                        if (c.size() == 1)
+                            err = true;
+                        // ignore if it actually has a file name
+                        break;
+                    case 'C':
+                        if (compileAllAs)
+                            Utils::fatal("Conflicting compile as types");
+                        compileAllAs = 'C';
+                        break;
+                    case 'P':
+                        if (compileAllAs)
+                            Utils::fatal("Conflicting compile as types");
+                        compileAllAs = 'P';
+                        break;
+                    default:
+                        err = true;
+                        break;
+                }
+            }
+        }
+        if (err)
+            Utils::fatal("Invalid compile as specification");
+        if (compileAllAs)
+        {
+            if (compileAllAs == 'C')
+                args += " -x c";
+            else
+                args += " -x c++";
+        }
+    }
+    if (prmWarningSetup.GetExists())
+    {
+        bool err = false;
+        auto a = Utils::split(prmWarningSetup.GetValue(), ';');
+        if (a.size() == 0)
+            err = true;
+        else
+            for (auto&& w : a)
+            {
+                if (w.size() == 0)
+                {
+                    args += " -w";
+                }
+                else
+                {
+                    if (w == "all")
+                    {
+                        args += " -w+";
+                    }
+                    else if (w == "X")
+                    {
+                        args += " -wx";
+                    }
+                    else if (w[0] == 'd')
+                    {
+                        args += " -w" + w;
+                    }
+                    else if (w[0] == 'e')
+                    {
+                        args += " -w" + w;
+                    }
+                    else if (w[0] == 'o' || isdigit(w[0]))
+                    {
+                        // ignored;
+                    }
+                }
+            }
+    }
+    for (int i = 1; i < argc; i++)
+        args += std::string(" \"") + argv[i] + "\"";
+    std::string tempName;
+    FILE* fil = Utils::TempName(tempName);
+    fputs(args.c_str(), fil);
+    fclose(fil);
+    auto rv = Utils::ToolInvoke("occ.exe", nullptr, " -! @%s", tempName.c_str());
+    unlink(tempName.c_str());
+    return rv;
+}
+

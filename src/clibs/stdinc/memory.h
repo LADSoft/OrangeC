@@ -48,7 +48,11 @@ extern "C"
     void* _RTL_FUNC _IMPORT memmove(void* __dest, const void* __src, size_t __n);
     void* _RTL_FUNC _IMPORT memset(void* __s, int __c, size_t __n);
 
-    void* _RTL_FUNC _IMPORT memchr(const void* __s, int __c, size_t __n);
+#ifdef __cplusplus
+    const void* _RTL_INTRINS _IMPORT memchr(const void* __s, int __c, size_t __n);
+#else
+    void* _RTL_INTRINS _IMPORT memchr(const void* __s, int __c, size_t __n);
+#endif
 
     int _RTL_FUNC _IMPORT _memicmp(const void*, const void*, unsigned int);
     void* _RTL_FUNC _IMPORT _memccpy(void*, const void*, int, unsigned int);

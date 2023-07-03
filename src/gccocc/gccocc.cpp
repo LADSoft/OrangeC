@@ -29,11 +29,11 @@
 /* these here are the only 2 function using win32-specific APIs */
 #include <process.h>
 #include "Utils.h"
+#include "ToolChain.h"
 #include "CmdSwitch.h"
 #include "gccocc.h"
 
 CmdSwitchParser gccocc::SwitchParser;
-CmdSwitchBool gccocc::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool gccocc::prm_compileonly(SwitchParser, 'c');
 CmdSwitchString gccocc::prm_directory_options(SwitchParser, 'i'); // ignored
 CmdSwitchBool gccocc::prm_debug(SwitchParser, 'g');
@@ -124,24 +124,10 @@ void gccocc::PutMultiple(FILE* fil, const char* switchName, std::string lst)
 }
 int gccocc::Run(int argc, char** argv) 
 {
-    Utils::banner(argv[0]);
-    Utils::SetEnvironmentToPathParent("ORANGEC");
-    CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName, std::ios::in);
-    if (!configTest.fail())
-    {
-        configTest.close();
-        if (!internalConfig.Parse(configName.c_str()))
-            Utils::fatal("Corrupt configuration file");
-    }
-    if (!SwitchParser.Parse(&argc, argv) || argc < 2)
-    {
-        if (argc < 2 && !prmDumpVersion.GetExists() && !prmDumpMachine.GetExists() && !prmPrintFileName.GetExists() && !prmPrintProgName.GetExists() && !ShowHelp.GetExists())
-            Utils::usage(argv[0], usageText);
-    }	
-    if (ShowHelp.GetExists())
-        Utils::usage(argv[0], helpText);
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    if (files.size() < 2 & !prmDumpVersion.GetExists() && !prmDumpMachine.GetExists() && !prmPrintFileName.GetExists() &&
+        !prmPrintProgName.GetExists())
+        ToolChain::Usage(usageText);
     std::string tempName;
     FILE* fil = Utils::TempName(tempName);
     if (prm_compileonly.GetValue())
@@ -184,7 +170,7 @@ int gccocc::Run(int argc, char** argv)
         switch (ch)
         {
              default:
-                 Utils::fatal("Unknown optimizer flag");
+                 Utils::Fatal("Unknown optimizer flag");
                  break;
              case '1':
              case '2':
@@ -215,13 +201,13 @@ int gccocc::Run(int argc, char** argv)
                 else if (prm_warning_and_flags.GetValue()[0] == 'a')
                    fprintf(fil, " \"-pa%s\"", prm_warning_and_flags.GetValue().substr(2).c_str());
                 else
-                   Utils::fatal("unknown warning flags");
+                   Utils::Fatal("unknown warning flags");
             }
             else
-               Utils::fatal("unknown warning flags");
+               Utils::Fatal("unknown warning flags");
         }
         else
-            Utils::fatal("unknown warning flags");
+            Utils::Fatal("unknown warning flags");
     }
     if (prm_output_def_file.GetExists())
         fprintf(fil, " -output-def %s", prm_output_def_file.GetValue().c_str());
@@ -237,8 +223,8 @@ int gccocc::Run(int argc, char** argv)
         PutMultiple(fil, "I", prm_cinclude.GetValue());
     if (prm_libpath.GetExists())
         PutMultiple(fil, "L", prm_libpath.GetValue());
-    for (int i=1; i < argc; i++)
-       fprintf(fil, " \"%s\"", argv[i]);
+    for (int i=1; i < files.size(); i++)
+        fprintf(fil, " \"%s\"", files[i].c_str());
     auto libs = Utils::split(prm_libs.GetValue(),';');
     for (int i=0; i < libs.size(); i++)
     {
@@ -248,7 +234,7 @@ int gccocc::Run(int argc, char** argv)
      
     } 
     fclose(fil);
-    auto rv = Utils::ToolInvoke("occ.exe", nullptr, " -! @%s", tempName.c_str());
+    auto rv = ToolChain::ToolInvoke("occ.exe", nullptr, " -! @%s", tempName.c_str());
     unlink(tempName.c_str());
     return rv;
 }

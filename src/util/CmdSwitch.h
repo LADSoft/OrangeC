@@ -236,6 +236,7 @@ class CmdSwitchFile : public CmdSwitchString
     char* GetStr(char*);
 
   private:
+    friend class CmdFiles;
     int argc;
     std::unique_ptr<char*[]> argv;
     CmdSwitchParser* Parser;
@@ -243,7 +244,7 @@ class CmdSwitchFile : public CmdSwitchString
 class CmdSwitchParser
 {
   public:
-    CmdSwitchParser() : nologo(*this, '!', false, {"nologo"}) {}
+    CmdSwitchParser() {}
     ~CmdSwitchParser() {}
 
     bool Parse(const std::string& v, int* argc, char* argv[]);
@@ -263,6 +264,5 @@ class CmdSwitchParser
 
   private:
     std::set<CmdSwitchBase*> switches;
-    CmdSwitchBool nologo;
 };
 #endif

@@ -25,6 +25,7 @@
 #include "dlhexmain.h"
 #include "CmdSwitch.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include "OutputObjects.h"
 #include "ObjSection.h"
 #include "ObjMemory.h"
@@ -37,7 +38,6 @@
 CmdSwitchParser dlHexMain::SwitchParser;
 
 CmdSwitchString dlHexMain::modeSwitch(SwitchParser, 'm');
-CmdSwitchBool dlHexMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchString dlHexMain::sectionsSwitch(SwitchParser, 'c');
 CmdSwitchHex dlHexMain::padSwitch(SwitchParser, 'p', -1, 0, 0x100);
 CmdSwitchString dlHexMain::outputFileSwitch(SwitchParser, 'o');
@@ -196,12 +196,12 @@ bool dlHexMain::ReadSections(const std::string& path)
     ObjIeee ieee("");
     FILE* in = fopen(path.c_str(), "rb");
     if (!in)
-        Utils::fatal("Cannot open input file");
+        Utils::Fatal("Cannot open input file");
     ObjFile* file = ieee.Read(in, ObjIeee::eAll, &factory);
     fclose(in);
     if (!ieee.GetAbsolute())
     {
-        Utils::fatal("Input file is in relative format");
+        Utils::Fatal("Input file is in relative format");
     }
     if (file != nullptr)
     {
@@ -247,7 +247,7 @@ bool dlHexMain::GetOutputMode()
     }
     return true;
 }
-std::string dlHexMain::GetOutputName(char* infile) const
+std::string dlHexMain::GetOutputName(const char* infile) const
 {
     std::string name;
     if (!outputFileSwitch.GetValue().empty())
@@ -280,27 +280,13 @@ std::string dlHexMain::GetOutputName(char* infile) const
 }
 int dlHexMain::Run(int argc, char** argv)
 {
-    Utils::banner(argv[0]);
-    Utils::SetEnvironmentToPathParent("ORANGEC");
-    CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName, std::ios::in);
-    if (!configTest.fail())
-    {
-        configTest.close();
-        if (!internalConfig.Parse(configName.c_str()))
-            Utils::fatal("Corrupt configuration file");
-    }
-    if (!SwitchParser.Parse(&argc, argv) || ((argc != 2 || !GetOutputMode()) && !ShowHelp.GetExists()))
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    if (ShowHelp.GetExists())
-        Utils::usage(argv[0], helpText);
-    if (!ReadSections(std::string(argv[1])))
-        Utils::fatal("Invalid .rel file failed to read sections");
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    if (files.size() != 2 || !GetOutputMode())
+        ToolChain::Usage(usageText);
+    if (!ReadSections(files[1]))
+        Utils::Fatal("Invalid .rel file failed to read sections");
 
-    std::string outputName = GetOutputName(argv[1]);
+    std::string outputName = GetOutputName(files[1].c_str());
     OutputObject* o = nullptr;
     switch (outputMode)
     {
@@ -333,7 +319,7 @@ int dlHexMain::Run(int argc, char** argv)
     }
     else
     {
-        Utils::fatal("Cannot open '%s' for write", outputName.c_str());
+        Utils::Fatal("Cannot open '%s' for write", outputName.c_str());
     }
     return 1;
 }

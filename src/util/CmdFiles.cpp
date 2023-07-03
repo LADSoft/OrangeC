@@ -27,6 +27,8 @@
 #endif
 
 #include "CmdFiles.h"
+#include "CmdSwitch.h"
+
 using namespace std;  // borland puts the io stuff in the std namespace...
                       // microsoft does not seem to.
 
@@ -184,4 +186,23 @@ bool CmdFiles::AddFromPath(const std::string& name, const std::string& path)
         rv = true;
     }
     return rv;
+}
+bool CmdFiles::Add(CmdSwitchFile& switchFile)
+{
+    if (switchFile.argv)
+        Add(switchFile.argv.get() + 1);
+    return true;
+}
+void CmdFiles::Remove(const std::string& name)
+{
+    for (int i = 0; i < names.size(); i++)
+    {
+        if (names[i] == name)
+        {
+            for (; i < names.size() - 1; i++)
+                names[i] = names[i + 1];
+            names.pop_back();
+            break;
+        }
+    }
 }

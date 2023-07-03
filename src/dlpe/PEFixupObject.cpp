@@ -37,7 +37,7 @@ void PEFixupObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     else
     {
         if (virtual_addr != endVa)
-            Utils::fatal("Internal error");
+            Utils::Fatal("Internal error");
     }
     raw_addr = endPhys;
     // setup fixups for the rel branch import thunk table
@@ -154,7 +154,7 @@ void PEFixupObject::LoadFixups()
                 if (fixup)
                 {
                     if (msize != 4)
-                        Utils::fatal("Invalid fixup type");
+                        Utils::Fatal("Invalid fixup type");
                     if (!IsRel(fixup) && !IsInternal(fixup))
                         fixups.insert(base + ofs);
                 }

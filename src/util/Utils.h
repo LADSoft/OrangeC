@@ -34,18 +34,12 @@
 
 #ifdef _WIN32
 #    include "io.h"
-#    define mysystem(x) winsystem(x)
-extern "C" int winsystem(const char*);
-#else
-#    define mysystem(x) system(x)
 #endif
 
 class Utils
 {
   public:
-    static void banner(const char* progName);
-    static void usage(const char* progName, const char* text);
-    [[noreturn]] static void fatal(const char* format)
+    [[noreturn]] static void Fatal(const char* format)
     {
         fprintf(stderr, "Fatal error: ");
         fputs(format, stderr);
@@ -54,7 +48,7 @@ class Utils
         exit(1);
     }
     template <typename... Args>  // templates are MUCH more portable than varargs
-    [[noreturn]] static void fatal(const char* format, Args... arg)
+    [[noreturn]] static void Fatal(const char* format, Args... arg)
     {
         fprintf(stderr, "Fatal error: ");
         fprintf(stderr, format, arg...);
@@ -63,46 +57,13 @@ class Utils
             cleanup();
         exit(1);
     }
-    [[noreturn]] static void fatal(const std::string& format) { fatal(format.c_str()); }
+    [[noreturn]] static void Fatal(const std::string& format) { Fatal(format.c_str()); }
     template <typename... Args>
-    [[noreturn]] static void fatal(const std::string& format, Args... arg)
+    [[noreturn]] static void Fatal(const std::string& format, Args... arg)
     {
-        fatal(format.c_str(), arg...);
+        Fatal(format.c_str(), arg...);
     }
     static bool HasLocalExe(const std::string& exeName);
-    template <typename... Args>
-    static int ToolInvoke(const std::string& exeName, const char* with, const char* fmt, const Args... arg)
-    {
-        char buf[10000];
-        memset(buf, 0, sizeof(buf));
-        buf[0] = '"';
-        strcpy(buf + 1, GetModuleName());
-        char* p = (char*)strrchr(buf, '/');
-        char* p1 = (char*)strrchr(buf, '\\');
-        if (p1 > p)
-            p = p1;
-        else if (!p)
-            p = p1;
-        if (p)
-        {
-            p++;
-        }
-        else
-        {
-            p = buf + 1;
-        }
-        *p = 0;
-        strcat(p, exeName.c_str());
-        strcat(p, "\" ");
-        sprintf(buf + strlen(buf), fmt, arg...);
-        if (with)
-        {
-            printf("%s\n", buf);
-            if (with[0])
-                printf("   with %s", with);
-        }
-        return mysystem(buf);
-    }
     static void SetCleanup(void(Cleanup)()) { cleanup = Cleanup; }
     static char* GetModuleName();
     static void SetEnvironmentToPathParent(const char* name);
@@ -177,8 +138,6 @@ class Utils
     static unsigned crctab[256];
 
   private:
-    static int ScreenHeight();
-    static bool GetLine(const char** text, std::string& buf);
     static void (*cleanup)();
 };
 #endif

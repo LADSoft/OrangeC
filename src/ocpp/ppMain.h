@@ -35,7 +35,10 @@ class ppMain
 
   private:
     static CmdSwitchParser SwitchParser;
+    static CmdSwitchBool NoLogo;
+    static CmdSwitchBool ShowVersion;
     static CmdSwitchBool ShowHelp;
+    static CmdSwitchFile File;
     static CmdSwitchBool assembly;
     static CmdSwitchBool disableExtensions;
     static CmdSwitchBool c99Mode;
@@ -47,7 +50,6 @@ class ppMain
     static CmdSwitchString CPPsysIncludePath;
     static CmdSwitchString CsysIncludePath;
     static CmdSwitchString errorMax;
-    static CmdSwitchFile File;
     static CmdSwitchString outputPath;
 
     static CmdSwitchBool MakeStubs;

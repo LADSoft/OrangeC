@@ -28,6 +28,7 @@
 #include <vector>
 #include <string>
 
+class CmdSwitchFile;
 class CmdFiles
 {
     typedef std::vector<std::string> FileName;
@@ -41,12 +42,25 @@ class CmdFiles
     bool Add(const std::string& name, bool recurseSubdirs = false);
     bool AddFromPath(const std::string& name, const std::string& path);
     bool Add(char** fileList, bool recurseSubdirs = false);
+    bool Add(CmdFiles& other)
+    {
+        for (auto a : other.names)
+        {
+            Add(a);
+        }
+        return true;
+    }
+    bool Add(CmdSwitchFile& switchFile);
+    void Remove(const std::string& name);
+    typedef FileName::iterator iterator;
 
-    typedef FileName::iterator FileNameIterator;
-
-    size_t GetSize() const { return names.size(); }
-    FileNameIterator FileNameBegin() { return names.begin(); }
-    FileNameIterator FileNameEnd() { return names.end(); }
+    iterator begin() { return names.begin(); }
+    iterator end() { return names.end(); }
+    size_t size() const { return names.size(); }
+    inline std::string operator[](int index) const 
+    { 
+        return names[index];
+    }
     static const char* DIR_SEP;
     static const char* PATH_SEP;
 

@@ -103,7 +103,7 @@ MethodSignature* FindMethodSignature(const char* name)
     {
         return static_cast<Method*>(result)->Signature();
     }
-    Utils::fatal("could not find built in method %s", name);
+    Utils::Fatal("could not find built in method %s", name);
     return NULL;
 }
 
@@ -114,7 +114,7 @@ MethodSignature* FindMethodSignature(const char* name, std::vector<Type*>& typeL
     {
         return result->Signature();
     }
-    Utils::fatal("could not find built in method %s", name);
+    Utils::Fatal("could not find built in method %s", name);
     return NULL;
 }
 
@@ -126,7 +126,7 @@ Type* FindType(const char* name, bool toErr)
         return peLib->AllocateType(static_cast<Class*>(result));
     }
     if (toErr)
-        Utils::fatal("could not find built in type %s", name);
+        Utils::Fatal("could not find built in type %s", name);
     return NULL;
 }
 
@@ -137,7 +137,7 @@ static void CreateExternalCSharpReferences()
         // have to create various function signatures if not loading the library
         Namespace* ns = nullptr;
         if (peLib->Find("lsmsilcrtl", (void**)&ns, 0) != PELib::s_namespace)
-            Utils::fatal("namespace lsmsilcrtl does not exist");
+            Utils::Fatal("namespace lsmsilcrtl does not exist");
         Type* object = peLib->AllocateType(Type::object, 0);
         Type* voidPtr = peLib->AllocateType(Type::Void, 1);
         Type* objectArray = peLib->AllocateType(Type::object, 0);
@@ -235,7 +235,7 @@ static void CreateExternalCSharpReferences()
         toStr = result->Signature();
     }
     if (!concatStr || !concatObj || !toStr)
-        Utils::fatal("could not find builtin function");
+        Utils::Fatal("could not find builtin function");
 }
 
 int msil_main_preprocess(char* fileName)
@@ -265,11 +265,11 @@ int msil_main_preprocess(char* fileName)
 
         if (peLib->LoadAssembly("mscorlib"))
         {
-            Utils::fatal("could not load mscorlib.dll");
+            Utils::Fatal("could not load mscorlib.dll");
         }
         if (!Optimizer::cparams.no_default_libs && peLib->LoadAssembly("lsmsilcrtl"))
         {
-            Utils::fatal("could not load lsmsilcrtl.dll");
+            Utils::Fatal("could not load lsmsilcrtl.dll");
         }
         _apply_global_using();
 

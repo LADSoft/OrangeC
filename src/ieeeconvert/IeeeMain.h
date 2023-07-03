@@ -31,10 +31,11 @@ class IeeeMain
   public:
     int Run(int argc, char** argv);
 
+    static CmdSwitchParser SwitchParser;
+
   private:
     static const char* usageText;
     static const char* helpText;
 
-    static void usage(const char* prog_name, const char* text, int retcode);
 };
 #endif

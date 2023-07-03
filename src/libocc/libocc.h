@@ -34,7 +34,6 @@ private:
     static const char* helpText;
 
     static CmdSwitchParser SwitchParser;
-    static CmdSwitchBool ShowHelp;
     static CmdSwitchBool Verbose;
     static CmdSwitchCombineString Extract;
     static CmdSwitchCombineString Remove;

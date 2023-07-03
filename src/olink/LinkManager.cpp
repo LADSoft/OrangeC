@@ -437,17 +437,16 @@ void LinkManager::LoadFiles()
     }
     int bpmau = INT_MAX;
     int mau = 1;
-    for (auto it = objectFiles.FileNameBegin(); it != objectFiles.FileNameEnd(); ++it)
+    for (auto&& name : objectFiles)
     {
-        ObjString name = (*it);
         std::string path;
-        FILE* infile = GetLibraryPath(*it, path);
+        FILE* infile = GetLibraryPath(name, path);
         if (infile)
         {
             ObjFile* file = ioBase->Read(infile, ObjIOBase::eAll, factory);
             if (!file)
             {
-                LinkError("Invalid object file " + ioBase->GetErrorQualifier() + " in " + *it);
+                LinkError("Invalid object file " + ioBase->GetErrorQualifier() + " in " + name);
             }
             else
             {
@@ -495,9 +494,9 @@ std::unique_ptr<LinkLibrary> LinkManager::OpenLibrary(const ObjString& name)
 }
 void LinkManager::LoadLibraries()
 {
-    for (auto it = libFiles.FileNameBegin(); it != libFiles.FileNameEnd(); ++it)
+    for (auto name : libFiles)
     {
-        LinkDll checker((*it), libPath, true);
+        LinkDll checker(name, libPath, true);
         if (checker.IsDll())
         {
             if (checker.MatchesArchitecture())
@@ -505,33 +504,33 @@ void LinkManager::LoadLibraries()
                 // stdcall version preferred
                 auto temp = std::move(checker.LoadLibrary(true));
                 if (!temp)
-                    LinkError("Internal error while processing '" + (*it) + "'");
+                    LinkError("Internal error while processing '" + name + "'");
                 else
                 {
                     dictionaries.push_back(std::move(temp));
                     // will fall back to C version
                     temp = std::move(checker.LoadLibrary(false));
                     if (!temp)
-                        LinkError("Internal error while processing '" + (*it) + "'");
+                        LinkError("Internal error while processing '" + name + "'");
                     else
                         dictionaries.push_back(std::move(temp));
                 }
             }
             else
             {
-                LinkError("Dll Library '" + (*it) + "' doesn't match architecture");
+                LinkError("Dll Library '" + name + "' doesn't match architecture");
             }
         }
         else
         {
-            std::unique_ptr<LinkLibrary> newLibrary = std::move(OpenLibrary((*it)));
+            std::unique_ptr<LinkLibrary> newLibrary = std::move(OpenLibrary(name));
             if (newLibrary)
             {
                 dictionaries.push_back(std::move(newLibrary));
             }
             else
             {
-                LinkError("Library '" + (*it) + "' does not exist or is not a library");
+                LinkError("Library '" + name + "' does not exist or is not a library");
             }
         }
     }
@@ -859,7 +858,7 @@ void LinkManager::CreateOutputFile()
                         LinkDebugFile df(debugFile, file, this->virtualSections, this->parentSections);
                         if (!df.CreateOutput())
                         {
-                            Utils::fatal("Cannot open database '%s' for write", debugFile.c_str());
+                            Utils::Fatal("Cannot open database '%s' for write", debugFile.c_str());
                         }
                     }
                 }
@@ -873,14 +872,14 @@ void LinkManager::CreateOutputFile()
         }
         else
         {
-            Utils::fatal("Cannot open '%s' for write", outputFile.c_str());
+            Utils::Fatal("Cannot open '%s' for write", outputFile.c_str());
         }
         delete file;
     }
 }
 void LinkManager::Link()
 {
-    if (!objectFiles.GetSize())
+    if (!objectFiles.size())
     {
         LinkError("No input files specified");
         return;

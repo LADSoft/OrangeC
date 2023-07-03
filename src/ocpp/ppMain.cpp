@@ -24,6 +24,7 @@
 
 #include "ppMain.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include "CmdFiles.h"
 #include "PreProcessor.h"
 #include "Errors.h"
@@ -39,7 +40,10 @@ extern "C"
 
 //#define TESTANNOTATE
 CmdSwitchParser ppMain::SwitchParser;
+CmdSwitchBool ppMain::NoLogo(SwitchParser, '!', false, {"nologo"});
+CmdSwitchBool ppMain::ShowVersion(SwitchParser, 'v', false, {"version"});
 CmdSwitchBool ppMain::ShowHelp(SwitchParser, '?', false, {"help"});
+CmdSwitchFile ppMain::File(SwitchParser, '@');
 CmdSwitchBool ppMain::assembly(SwitchParser, 'a', false);
 CmdSwitchBool ppMain::disableExtensions(SwitchParser, 'A', false);
 CmdSwitchBool ppMain::c99Mode(SwitchParser, '9', true);
@@ -51,7 +55,6 @@ CmdSwitchString ppMain::includePath(SwitchParser, 'I', ';');
 CmdSwitchString ppMain::CsysIncludePath(SwitchParser, 'z', ';');
 CmdSwitchString ppMain::CPPsysIncludePath(SwitchParser, 'Z', ';');
 CmdSwitchString ppMain::errorMax(SwitchParser, 'E');
-CmdSwitchFile ppMain::File(SwitchParser, '@');
 CmdSwitchString ppMain::outputPath(SwitchParser, 'o');
 
 CmdSwitchBool ppMain::MakeStubs(SwitchParser, 0, 0, {"M"});
@@ -150,52 +153,30 @@ int ppMain::Run(int argc, char* argv[])
 #else
     strcpy(buffer, argv[0]);
 #endif
-    Utils::SetEnvironmentToPathParent("ORANGEC");
-    CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(buffer, ".cfg");
-    std::fstream configTest(configName, std::ios::in);
-    if (!configTest.fail())
-    {
-        configTest.close();
-        if (!internalConfig.Parse(configName.c_str()))
-        {
-            Utils::banner(argv[0]);
-            Utils::fatal("Corrupt configuration file");
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText,
+                                                [this]() {
+        return !MakeStubs.GetValue() && !MakeStubsUser.GetValue() && !MakeStubsContinue.GetValue() &&
+               !MakeStubsContinueUser.GetValue();
         }
-    }
-    if (!SwitchParser.Parse(&argc, argv) || (argc == 1 && File.GetCount() <= 1 && !ShowHelp.GetExists()))
-    {
-        Utils::banner(argv[0]);
-        Utils::usage(argv[0], usageText);
-    }
-    if (ShowHelp.GetExists())
-    {
-        Utils::banner(argv[0]);
-        Utils::usage(argv[0], helpText);
-    }
-    if (!MakeStubs.GetValue() && !MakeStubsUser.GetValue() && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
-    {
-        Utils::banner(argv[0]);
-    }
-    CmdFiles files(argv + 1);
-    if (File.GetValue())
-        files.Add(File.GetValue() + 1);
+    );
+    if (files.size() < 2)
+        ToolChain::Usage(usageText);
 
     Tokenizer::SetAnsi(disableExtensions.GetValue());
     Tokenizer::SetC99(c99Mode.GetValue() || c11Mode.GetValue());
-    for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
+    for (int i = 1; i < files.size(); i++)
     {
         bool cplusplus = false;
         static const std::list<std::string> cppExtensions = {".h", ".hh", ".hpp", ".hxx", ".hm", ".cpp", ".cxx", ".cc", ".c++"};
         for (auto& str : cppExtensions)
         {
-            if (Utils::HasExt((*it).c_str(), str.c_str()))
+            if (Utils::HasExt(files[i].c_str(), str.c_str()))
             {
                 cplusplus = true;
                 break;
             }
         }
-        PreProcessor pp((*it), includePath.GetValue(), cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(), false,
+        PreProcessor pp(files[i], includePath.GetValue(), cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(), false,
                         trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false, !c99Mode.GetValue() && !c11Mode.GetValue(),
                         !disableExtensions.GetValue(),
                         (MakeStubs.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(), "");
@@ -283,14 +264,14 @@ int ppMain::Run(int argc, char* argv[])
         if (!outputPath.GetValue().empty() && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
             working = outputPath.GetValue();
         else if (getenv("OCC_LEGACY_OPTIONS"))
-            working = Utils::QualifiedFile((*it).c_str(), ".i");
+            working = Utils::QualifiedFile(files[i].c_str(), ".i");
 
         std::ostream* outstream = nullptr;
         if (!working.empty())
         {
             outstream = new std::fstream(working, std::ios::out);
             if (!outstream->good())
-                Utils::fatal("Cannot open '%s' for write", working.c_str());
+                Utils::Fatal("Cannot open '%s' for write", working.c_str());
         }
         else
         {
@@ -378,7 +359,7 @@ int ppMain::Run(int argc, char* argv[])
         if (MakeStubs.GetValue() || MakeStubsUser.GetValue() || MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue())
         {
             std::string inFile;
-            inFile = *it;
+            inFile = files[i];
             int end = inFile.find_last_of('/');
             if (end == std::string::npos)
                 end = -1;

@@ -77,7 +77,7 @@ extern int cplusplusversion;
 
 extern std::deque<DefValue> defines;
 
-extern CmdSwitchParser switchParser;
+extern CmdSwitchParser SwitchParser;
 extern CmdSwitchBool prm_c89;
 extern CmdSwitchBool prm_c99;
 extern CmdSwitchBool prm_c11;
@@ -100,7 +100,6 @@ extern CmdSwitchInt prm_stackaligns;
 extern CmdSwitchString prm_error;
 extern CmdSwitchString prm_define;
 extern CmdSwitchString prm_undefine;
-extern CmdSwitchFile prm_file;
 extern CmdSwitchString prm_codegen;
 extern CmdSwitchString prm_optimize;
 extern CmdSwitchString prm_verbose;

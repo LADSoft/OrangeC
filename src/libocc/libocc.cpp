@@ -27,11 +27,11 @@
 #include <string.h>
 #include <string>
 #include "Utils.h"
+#include "ToolChain.h"
 #include "CmdSwitch.h"
 #include "libocc.h"
 
 CmdSwitchParser libocc::SwitchParser;
-CmdSwitchBool libocc::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool libocc::Verbose(SwitchParser, 0, false, {"verbose"});
 CmdSwitchCombineString libocc::Extract(SwitchParser, 0, ';', {"extract"});
 CmdSwitchCombineString libocc::Remove(SwitchParser, 0, ';', {"remove"});
@@ -98,25 +98,9 @@ std::string libocc::SanitizeExtension(std::string fileName, std::string ext)
 }
 int libocc::Run(int argc, char** argv) 
 {
-    Utils::banner(argv[0]);
-    Utils::SetEnvironmentToPathParent("ORANGEC");
-    CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName, std::ios::in);
-    if (!configTest.fail())
-    {
-        configTest.close();
-        if (!internalConfig.Parse(configName.c_str()))
-            Utils::fatal("Corrupt configuration file");
-    }
-    if (!SwitchParser.Parse(&argc, argv) && !ShowHelp.GetExists())
-    {
-        Utils::usage(argv[0], usageText);
-    }	
-    if (ShowHelp.GetExists())
-        Utils::usage(argv[0], helpText);
-
-
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    if (files.size() < 2 && !Remove.GetExists() && !Extract.GetExists())
+        ToolChain::Usage(usageText);
     std::string outputFile;
     std::string toolName;
 
@@ -146,8 +130,8 @@ int libocc::Run(int argc, char** argv)
         else
         {
             if (argc == 1)
-                Utils::fatal("Cannot automatically derive library name when not adding or replacing files");
-            outputFile = Utils::QualifiedFile(argv[1], ".l");
+                Utils::Fatal("Cannot automatically derive library name when not adding or replacing files");
+            outputFile = Utils::QualifiedFile(files[1].c_str(), ".l");
         }
     }
     std::string args;
@@ -157,13 +141,13 @@ int libocc::Run(int argc, char** argv)
         toolName = "oimplib.exe";
     }
 
-    if (argc > 1)
+    if (files.size() > 1)
     {
         args += " +- ";
-        for (int i = 1; i < argc; i++)
+        for (int i = 1; i < files.size(); i++)
         {
             args += "\"";
-            args += SanitizeExtension(argv[i],"");
+            args += SanitizeExtension(files[i], "");
             args += "\"";
         }
     }
@@ -193,7 +177,7 @@ int libocc::Run(int argc, char** argv)
     FILE* fil = Utils::TempName(tempName);
     fputs(args.c_str(), fil);
     fclose(fil);
-    auto rv = Utils::ToolInvoke(toolName, nullptr, " -! -c \"%s\" @%s", outputFile.c_str(), tempName.c_str());
+    auto rv = ToolChain::ToolInvoke(toolName, nullptr, " -! -c \"%s\" @%s", outputFile.c_str(), tempName.c_str());
     unlink(tempName.c_str());
     return rv;
 }

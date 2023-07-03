@@ -27,11 +27,11 @@
 #include <string.h>
 #include <string>
 #include "Utils.h"
+#include "ToolChain.h"
 #include "CmdSwitch.h"
 #include "arocc.h"
 
 CmdSwitchParser arocc::SwitchParser;
-CmdSwitchBool arocc::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool arocc::Replace(arocc::SwitchParser, 'r');
 CmdSwitchBool arocc::Create(arocc::SwitchParser, 'c');
 CmdSwitchBool arocc::WriteIndex(arocc::SwitchParser, 's');
@@ -66,32 +66,18 @@ int main(int argc, char** argv)
 
 int arocc::Run(int argc, char** argv) 
 {
-    Utils::banner(argv[0]);
-    Utils::SetEnvironmentToPathParent("ORANGEC");
-    CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName, std::ios::in);
-    if (!configTest.fail())
-    {
-        configTest.close();
-        if (!internalConfig.Parse(configName.c_str()))
-            Utils::fatal("Corrupt configuration file");
-    }
-    if (!SwitchParser.Parse(&argc, argv) || (argc < 2 && !ShowHelp.GetExists()))
-    {
-        Utils::usage(argv[0], usageText);
-    }	
-    if (ShowHelp.GetExists())
-        Utils::usage(argv[0], helpText);
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    if (files.size() < 2)
+        ToolChain::Usage(usageText);
     if (Replace.GetValue())
     {
         if (Delete.GetValue() || Extract.GetValue())
-           Utils::fatal("can only specify one of -r, -d, -x");
+           Utils::Fatal("can only specify one of -r, -d, -x");
     }
     else if (Delete.GetValue() && Extract.GetValue())
-       Utils::fatal("can only specify one of -r, -d, -x");
+       Utils::Fatal("can only specify one of -r, -d, -x");
     else if (!Replace.GetValue() && !Delete.GetValue() && !Extract.GetValue())
-       Utils::fatal("must specify one of -r, -d, -x");
+       Utils::Fatal("must specify one of -r, -d, -x");
 
     const char *select = "";
     if (Replace.GetValue())
@@ -103,10 +89,10 @@ int arocc::Run(int argc, char** argv)
     std::string tempName;
     FILE* fil = Utils::TempName(tempName);
     fputs(select, fil);
-    for (int i=2; i < argc; i++)
-       fprintf(fil, " %s", argv[i]);
+    for (int i=2; i < files.size(); i++)
+        fprintf(fil, " %s", files[i].c_str());
     fclose(fil);
-    auto rv = Utils::ToolInvoke("olib.exe", nullptr, " -! -c %s @%s", argv[1], tempName.c_str());
+    auto rv = ToolChain::ToolInvoke("olib.exe", nullptr, " -! -c %s @%s", files[1].c_str(), tempName.c_str());
     unlink(tempName.c_str());
     return rv;
 }

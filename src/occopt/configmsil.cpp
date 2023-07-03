@@ -498,7 +498,7 @@ void msilWinmodeSetup(const char* string)
             defines[6].respect = false;
             break;
         default:
-            Utils::fatal("Invalid executable type");
+            Utils::Fatal("Invalid executable type");
             break;
     }
     if (string[1] == 'l')

@@ -26,6 +26,7 @@
 #include "CmdSwitch.h"
 #include "CmdFiles.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include "ObjSection.h"
 #include "ObjMemory.h"
 #include "ObjIeee.h"
@@ -33,7 +34,6 @@
 #include "MZHeader.h"
 
 CmdSwitchParser dlPmMain::SwitchParser;
-CmdSwitchBool dlPmMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchString dlPmMain::outputFileSwitch(SwitchParser, 'o');
 CmdSwitchString dlPmMain::DebugFile(SwitchParser, 'v');
 
@@ -148,16 +148,16 @@ bool dlPmMain::ReadSections(const std::string& path)
     ObjIeee ieee("");
     FILE* in = fopen(path.c_str(), "rb");
     if (!in)
-        Utils::fatal("Cannot open input file");
+        Utils::Fatal("Cannot open input file");
     file = ieee.Read(in, ObjIeee::eAll, &factory);
     fclose(in);
     if (!ieee.GetAbsolute())
     {
-        Utils::fatal("Input file is in relative format");
+        Utils::Fatal("Input file is in relative format");
     }
     if (ieee.GetStartAddress() == nullptr)
     {
-        Utils::fatal("No start address specified");
+        Utils::Fatal("No start address specified");
     }
     startAddress = ieee.GetStartAddress()->Eval(0);
     if (file != nullptr)
@@ -170,7 +170,7 @@ bool dlPmMain::ReadSections(const std::string& path)
     }
     return false;
 }
-std::string dlPmMain::GetOutputName(char* infile) const
+std::string dlPmMain::GetOutputName(const char* infile) const
 {
     std::string name;
     if (outputFileSwitch.GetValue().size() != 0)
@@ -275,30 +275,16 @@ bool dlPmMain::LoadStub(const std::string& exeName)
 }
 int dlPmMain::Run(int argc, char** argv)
 {
-    Utils::banner(argv[0]);
-    Utils::SetEnvironmentToPathParent("ORANGEC");
-    CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName, std::ios::in);
-    if (!configTest.fail())
-    {
-        configTest.close();
-        if (!internalConfig.Parse(configName.c_str()))
-            Utils::fatal("Corrupt configuration file");
-    }
-    if (!SwitchParser.Parse(&argc, argv) || (argc != 2 && !ShowHelp.GetExists()))
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    if (ShowHelp.GetExists())
-        Utils::usage(argv[0], helpText);
-    if (!LoadStub(argv[0]))
-        Utils::fatal("Missing or invalid stub file");
-    if (!ReadSections(std::string(argv[1])))
-        Utils::fatal("Invalid .rel file failed to read sections");
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    if (files.size() != 2)
+        ToolChain::Usage(usageText);
+    if (!LoadStub(files[0]))
+        Utils::Fatal("Missing or invalid stub file");
+    if (!ReadSections(files[1]))
+        Utils::Fatal("Invalid .rel file failed to read sections");
     if (sections.size() != 1)
-        Utils::fatal("Invalid .rel file invalid section count");
-    std::string outputName = GetOutputName(argv[1]);
+        Utils::Fatal("Invalid .rel file invalid section count");
+    std::string outputName = GetOutputName(files[1].c_str());
     std::fstream out(outputName, std::ios::out | std::ios::binary);
     if (!out.fail())
     {
@@ -319,7 +305,7 @@ int dlPmMain::Run(int argc, char** argv)
     }
     else
     {
-        Utils::fatal("Cannot open '%s' for write", outputName.c_str());
+        Utils::Fatal("Cannot open '%s' for write", outputName.c_str());
     }
     return 1;
 }

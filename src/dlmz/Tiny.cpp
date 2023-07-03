@@ -32,7 +32,7 @@ bool Tiny::ReadSections(ObjFile* file, ObjExpression* start)
 {
     startOffs = start->Eval(0);
     if (startOffs != 0x100)
-        Utils::fatal("Start address for tiny program must be 0100h");
+        Utils::Fatal("Start address for tiny program must be 0100h");
     int count = 0;
     ObjSection* sect;
     for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
@@ -57,7 +57,7 @@ bool Tiny::ReadSections(ObjFile* file, ObjExpression* start)
             if (fixup)
             {
                 if (fixup->GetOperator() == ObjExpression::eDiv)
-                    Utils::fatal("Tiny program cannot have fixups");
+                    Utils::Fatal("Tiny program cannot have fixups");
                 int sbase = sect->GetOffset()->Eval(0);
                 int n = fixup->Eval(sbase + ofs);
                 int bigEndian = file->GetBigEndian();

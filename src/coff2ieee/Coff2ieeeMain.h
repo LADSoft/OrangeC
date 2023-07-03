@@ -43,8 +43,8 @@ class Coff2ieeeMain
     int Run(int argc, char** argv);
 
   protected:
-    std::string GetOutputName(char* infile) const;
-    bool GetMode(char* infile);
+    std::string GetOutputName(const char* infile) const;
+    bool GetMode(const char* infile);
 
   private:
     enum
@@ -54,7 +54,6 @@ class Coff2ieeeMain
         lib = 2
     } mode;
     static CmdSwitchParser SwitchParser;
-    static CmdSwitchBool ShowHelp;
     static CmdSwitchCombineString outputFileSwitch;
     static const char* usageText;
     static const char* helpText;

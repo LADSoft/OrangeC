@@ -53,7 +53,7 @@ class dlPmMain
     void GetInputSections(const std::vector<std::string>& names, ObjFile* file, ObjFactory* factory);
     void LoadVars(ObjFile* file);
     bool ReadSections(const std::string& path);
-    std::string GetOutputName(char* infile) const;
+    std::string GetOutputName(const char* infile) const;
     bool LoadStub(const std::string& name);
     int stubSize;
     std::unique_ptr<char[]> stubData;
@@ -62,6 +62,8 @@ class dlPmMain
     int uninitBase;
     int uninitSize;
     static CmdSwitchParser SwitchParser;
+    static CmdSwitchBool NoLogo;
+    static CmdSwitchBool ShowVersion;
     static CmdSwitchBool ShowHelp;
     static CmdSwitchString outputFileSwitch;
     static CmdSwitchString DebugFile;

@@ -40,7 +40,7 @@ void PEDataObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     else
     {
         if (virtual_addr != endVa)
-            Utils::fatal("Internal error");
+            Utils::Fatal("Internal error");
     }
     raw_addr = endPhys;
     endVa = ObjectAlign(objectAlign, endVa + size);

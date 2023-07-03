@@ -72,7 +72,7 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     else
     {
         if (virtual_addr != endVa)
-            Utils::fatal("Internal error");
+            Utils::Fatal("Internal error");
     }
     raw_addr = endPhys;
     std::map<std::string, ObjInt> publics;

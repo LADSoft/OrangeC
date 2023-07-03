@@ -33,6 +33,9 @@
     <ClInclude Include="..\..\version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\util\ToolChain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="NetLinkMain.cpp">
@@ -46,6 +49,9 @@
     </ClCompile>
     <ClCompile Include="..\util\Utils.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\util\ToolChain.cpp">
+      <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

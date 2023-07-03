@@ -26,6 +26,7 @@
 #include "CmdSwitch.h"
 #include "CmdFiles.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include "ObjSection.h"
 #include "ObjMemory.h"
 #include "ObjIeee.h"
@@ -40,7 +41,6 @@
 #include <cstdlib>
 
 CmdSwitchParser dlPeMain::SwitchParser;
-CmdSwitchBool dlPeMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchString dlPeMain::stubSwitch(SwitchParser, 's');
 CmdSwitchString dlPeMain::modeSwitch(SwitchParser, 'm');
 CmdSwitchString dlPeMain::outputFileSwitch(SwitchParser, 'o');
@@ -114,40 +114,46 @@ int main(int argc, char** argv)
         std::cout << e.what() << std::endl;
     }
 }
-void dlPeMain::ParseOutResourceFiles(int* argc, char** argv)
+void dlPeMain::ParseOutResourceFiles(CmdFiles& files)
 {
-    for (int i = 0; i < *argc; i++)
+    std::deque<std::string> toRemove;
+    for (auto name : files)
     {
-        int npos = std::string(argv[i]).find_last_of(".");
+        int npos = std::string(name).find_last_of(".");
         if (npos != std::string::npos)
         {
-            if (Utils::iequal(argv[i] + npos, ".res"))
+            if (Utils::iequal(name.substr(npos), ".res"))
             {
-                resources.AddFile(argv[i]);
-                memcpy(argv + i, argv + i + 1, sizeof(argv[0]) * *argc - i - 1);
-                (*argc)--, i--;
+                resources.AddFile(name);
+                toRemove.push_back(name);
             }
         }
+    }
+    for (auto&& name: toRemove)
+    {
+        files.Remove(name);
     }
 }
-bool dlPeMain::ParseOutDefFile(int* argc, char** argv)
+bool dlPeMain::ParseOutDefFile(CmdFiles& files)
 {
-    int n = 0;
-    for (int i = 0; i < *argc; i++)
+    std::deque<std::string> toRemove;
+    for (auto name : files)
     {
-        int npos = std::string(argv[i]).find_last_of(".");
+        int npos = std::string(name).find_last_of(".");
         if (npos != std::string::npos)
         {
-            if (Utils::iequal(argv[i] + npos, ".def"))
+            if (Utils::iequal(name.substr(npos), ".def"))
             {
-                defFile = argv[i];
-                memcpy(argv + i, argv + i + 1, sizeof(argv[0]) * *argc - i - 1);
-                (*argc)--, i--;
-                n++;
+                defFile = name;
+                break;
             }
         }
+        for (auto&& name : toRemove)
+        {
+            files.Remove(name);
+        }
     }
-    return n <= 1;
+    return (toRemove.size() <= 1);
 }
 bool dlPeMain::GetMode()
 {
@@ -255,16 +261,16 @@ bool dlPeMain::ReadSections(const std::string& path)
     ObjIeee ieee("");
     FILE* in = fopen(path.c_str(), "rb");
     if (!in)
-        Utils::fatal("Cannot open input file");
+        Utils::Fatal("Cannot open input file");
     file = ieee.Read(in, ObjIeee::eAll, factory.get());
     fclose(in);
     if (!ieee.GetAbsolute())
     {
-        Utils::fatal("Input file is in relative format");
+        Utils::Fatal("Input file is in relative format");
     }
     if (ieee.GetStartAddress() == nullptr)
     {
-        Utils::fatal("No start address specified");
+        Utils::Fatal("No start address specified");
     }
     startAddress = ieee.GetStartAddress()->Eval(0);
     if (file != nullptr)
@@ -294,7 +300,7 @@ bool dlPeMain::ReadSections(const std::string& path)
         }
         else
         {
-            Utils::fatal("Input file internal error in import list");
+            Utils::Fatal("Input file internal error in import list");
         }
     }
     else
@@ -303,7 +309,7 @@ bool dlPeMain::ReadSections(const std::string& path)
     }
     return false;
 }
-std::string dlPeMain::GetOutputName(char* infile) const
+std::string dlPeMain::GetOutputName(const char* infile) const
 {
     std::string name;
     if (!outputFileSwitch.GetValue().empty())
@@ -515,54 +521,32 @@ void dlPeMain::PadHeader(std::fstream& out)
 }
 int dlPeMain::Run(int argc, char** argv)
 {
-    Utils::banner(argv[0]);
-    Utils::SetEnvironmentToPathParent("ORANGEC");
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    ParseOutResourceFiles(files);
+    if (!ParseOutDefFile(files))
+    {
+        ToolChain::Usage(usageText);
+    }
+    if (files.size() != 2 || !GetMode())
+        ToolChain::Usage(usageText);
     char* sde = getenv("SOURCE_DATE_EPOCH");
     if (sde)
         timeStamp = (time_t)strtoul(sde, nullptr, 10);
     else
         timeStamp = time(0);
-    CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName, std::ios::in);
-    if (!configTest.fail())
-    {
-        configTest.close();
-        if (!internalConfig.Parse(configName.c_str()))
-            Utils::fatal("Corrupt configuration file");
-    }
-    if (!SwitchParser.Parse(&argc, argv) || (argc < 2 && !ShowHelp.GetExists()))
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    if (ShowHelp.GetExists())
-        Utils::usage(argv[0], helpText);
-    ParseOutResourceFiles(&argc, argv);
-    if (!ParseOutDefFile(&argc, argv))
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    if (argc != 2)
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    if (!GetMode())
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    if (!LoadStub(argv[0]))
-        Utils::fatal("Missing or invalid stub file");
+    if (!LoadStub(files[0]))
+        Utils::Fatal("Missing or invalid stub file");
 
-    outputName = GetOutputName(argv[1]);
-    if (!ReadSections(std::string(argv[1])))
-        Utils::fatal("Invalid .rel file failed to read sections");
+    outputName = GetOutputName(files[1].c_str());
+    if (!ReadSections(files[1]))
+        Utils::Fatal("Invalid .rel file failed to read sections");
 
     ObjInt endPhys = sizeof(PEHeader) + objects.size() * PEObject::HeaderSize + stubSize;
     endPhys = ObjectAlign(fileAlign, endPhys + fileAlign);  // extra space for optional PE header
     ObjInt headerSize = endPhys;
     ObjInt endVa = objects[0]->GetAddr();
     if (endVa < endPhys)
-        Utils::fatal("ObjectAlign too small");
+        Utils::Fatal("ObjectAlign too small");
     for (auto& obj : objects)
     {
         obj->Setup(endVa, endPhys);
@@ -605,7 +589,7 @@ int dlPeMain::Run(int argc, char** argv)
                 {
                     implibName = Utils::QualifiedFile(OutputImportLibrary.GetValue().c_str(), ".l");
                 }
-                return Utils::ToolInvoke("oimplib", Verbose.GetExists() ? "" : nullptr, "%s %s \"%s\" \"%s\"", usesC.c_str(),
+                return ToolChain::ToolInvoke("oimplib", Verbose.GetExists() ? "" : nullptr, "%s %s \"%s\" \"%s\"", usesC.c_str(),
                                          sverbose.c_str(), implibName.c_str(), outputName.c_str());
             }
             return 0;
@@ -614,7 +598,7 @@ int dlPeMain::Run(int argc, char** argv)
     }
     else
     {
-        Utils::fatal("Cannot open '%s' for write", outputName.c_str());
+        Utils::Fatal("Cannot open '%s' for write", outputName.c_str());
     }
     return 1;
 }

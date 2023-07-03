@@ -300,6 +300,8 @@ CmdSwitchBase* CmdSwitchParser::Find(const char* name, bool useLongName, bool to
         const char* s = strchr(name, '=');
         if (!s)
             s = strchr(name, ',');
+        if (!s)
+            s = strchr(name, ':');
         if (s && s - name < max)
             max = s - name;
         for (auto s : switches)
@@ -374,6 +376,8 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
                     const char* p = strchr(data, '=');
                     if (!p)
                         p = strchr(data, ',');
+                    if (!p)
+                        p = strchr(data, ':');
                     if (p)
                         data = p + 1;
                     else

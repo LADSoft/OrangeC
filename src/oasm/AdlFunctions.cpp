@@ -27,7 +27,7 @@ void BitStream::Add(int val, int cnt)
         {
             if (bigEndian)
             {
-                Utils::fatal("big endian not supported in BitStream::Add");
+                Utils::Fatal("big endian not supported in BitStream::Add");
             }
             bytes[bits >> 3] = (val & 0xff);
             val >>= 8;

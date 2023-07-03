@@ -29,11 +29,11 @@
 /* these here are the only 2 function using win32-specific APIs */
 #include <process.h>
 #include "Utils.h"
+#include "ToolChain.h"
 #include "CmdSwitch.h"
 #include "linkocc.h"
 
 CmdSwitchParser linkocc::SwitchParser;
-CmdSwitchBool linkocc::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool linkocc::prm_verbose(SwitchParser, 'v');
 CmdSwitchString linkocc::prm_output(SwitchParser, 0, ';', {"out"});
 CmdSwitchString linkocc::prm_debug(SwitchParser, 0, ';', {"debug"});
@@ -125,23 +125,9 @@ std::string linkocc::SanitizeExtension(std::string fileName, std::string ext)
 }
 int linkocc::Run(int argc, char** argv) 
 {
-    Utils::banner(argv[0]);
-    Utils::SetEnvironmentToPathParent("ORANGEC");
-    CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName, std::ios::in);
-    if (!configTest.fail())
-    {
-        configTest.close();
-        if (!internalConfig.Parse(configName.c_str()))
-            Utils::fatal("Corrupt configuration file");
-    }
-    if (!SwitchParser.Parse(&argc, argv) || (argc < 2 && !ShowHelp.GetExists()))
-    {
-        Utils::usage(argv[0], usageText);
-    }	
-    if (ShowHelp.GetExists())
-        Utils::usage(argv[0], helpText);
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    if (files.size() < 2)
+        ToolChain::Usage(usageText);
     std::string args;
     if (prm_output.GetExists())
     {
@@ -149,14 +135,14 @@ int linkocc::Run(int argc, char** argv)
     }
     else
     {
-        args += " -o" + Utils::QualifiedFile(argv[1], ".exe");
+        args += " -o" + Utils::QualifiedFile(files[1].c_str(), ".exe");
     }
     if (prm_debug.GetExists())
     {
         if (prm_debug.GetValue() == "FULL")
             args += " -g";
         else if (prm_debug.GetValue() != "NONE")
-            Utils::fatal("invalid debug option");
+            Utils::Fatal("invalid debug option");
     }
     if (prm_libpath.GetExists())
     {
@@ -167,7 +153,7 @@ int linkocc::Run(int argc, char** argv)
     {
         auto a = Utils::split(prm_base.GetValue(), ',');
         if (a.size() > 1)
-            Utils::fatal("Specifying image size not supported");
+            Utils::Fatal("Specifying image size not supported");
         args += " -DIMAGEBASE=" + prm_base.GetValue();
     }
     if (prm_def.GetExists())
@@ -198,7 +184,7 @@ int linkocc::Run(int argc, char** argv)
         else if (prm_subsystem.GetValue() == "WINDOWS")
             args += " -DSUBSYSTEM=2";
         else
-            Utils::fatal("Unknown subsystem");
+            Utils::Fatal("Unknown subsystem");
     }
     if (prm_filealign.GetExists())
     {
@@ -216,7 +202,7 @@ int linkocc::Run(int argc, char** argv)
     {
         auto a = Utils::split(prm_base.GetValue(), ',');
         if (a.size() > 2)
-            Utils::fatal("Invalid stack specifier");
+            Utils::Fatal("Invalid stack specifier");
         args += " -DSTACKSIZE=" + a[0];
         if (a.size() == 2)
             args += " -DSTACKCOMMIT=" + a[1];
@@ -234,9 +220,9 @@ int linkocc::Run(int argc, char** argv)
         }
         args += c0;
     }
-    for (int i = 1; i < argc; i++)
+    for (int i = 1; i < files.size(); i++)
     {
-        args += " \"" + SanitizeExtension(argv[i], "") + "\"";
+        args += " \"" + SanitizeExtension(files[i], "") + "\"";
     }
     if (!prm_nodefaultlib.GetExists())
     {
@@ -246,7 +232,7 @@ int linkocc::Run(int argc, char** argv)
     FILE* fil = Utils::TempName(tempName);
     fputs(args.c_str(), fil);
     fclose(fil);
-    auto rv = Utils::ToolInvoke("olink.exe", nullptr, " -! @%s", tempName.c_str());
+    auto rv = ToolChain::ToolInvoke("olink.exe", nullptr, " -! @%s", tempName.c_str());
     unlink(tempName.c_str());
     return rv;
 }

@@ -30,6 +30,7 @@
 #include "LibManager.h"
 #include "CmdSwitch.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include "LibMain.h"
 #include <iostream>
 
@@ -42,7 +43,7 @@ int main(int argc, char** argv)
     }
     catch (std::ios_base::failure)
     {
-        Utils::fatal("Fatal Error...");
+        Utils::Fatal("Fatal Error...");
     }
     catch (ObjIeeeBinary::SyntaxError e)
     {
@@ -52,10 +53,8 @@ int main(int argc, char** argv)
 }
 
 CmdSwitchParser LibMain::SwitchParser;
-CmdSwitchBool LibMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool LibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
 CmdSwitchOutput LibMain::OutputFile(SwitchParser, 'o', ".a");
-CmdSwitchFile LibMain::File(SwitchParser, '@');
 CmdSwitchBool LibMain::noExport(SwitchParser, 0, false, {"noexports"});
 const char* LibMain::helpText =
     "[options] libfile [+ files] [- files] [* files]\n"
@@ -133,42 +132,21 @@ void LibMain::AddFile(LibManager& librarian, const char* arg)
 }
 int LibMain::Run(int argc, char** argv)
 {
-    Utils::banner(argv[0]);
-    Utils::SetEnvironmentToPathParent("ORANGEC");
-    CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName, std::ios::in);
-    if (!configTest.fail())
-    {
-        configTest.close();
-        if (!internalConfig.Parse(configName.c_str()))
-            Utils::fatal("Corrupt configuration file");
-    }
-    if (!SwitchParser.Parse(&argc, argv))
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    if (ShowHelp.GetExists())
-        Utils::usage(argv[0], helpText);
-    int fileCount = argc - 1 + File.GetCount() + !!OutputFile.GetValue().size();
-    if (fileCount < 2)
-    {
-        Utils::usage(argv[0], usageText);
-    }
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    if (files.size() < 3)
+        ToolChain::Usage(usageText);
 
     // ar-like behavior for autoconf support
-    if (!strcmp(argv[1], "cru"))
+    if (!strcmp(files[1].c_str(), "cru"))
     {
         mode = REPLACE;
-        memmove(argv + 1, argv + 2, (argc - 1) * sizeof(char*));
-        --argc;
+        files.Remove(files[1]);
     }
     ObjString outputFile = OutputFile.GetValue();
     if (outputFile.empty())
     {
-        outputFile = argv[1];
-        memmove(argv + 1, argv + 2, (argc - 1) * sizeof(char*));
-        --argc;
+        outputFile = files[1];
+        files.Remove(outputFile);
     }
     // setup
     size_t n = outputFile.find_last_of('.');
@@ -190,17 +168,15 @@ int LibMain::Run(int argc, char** argv)
             std::cout << outputFile << " is not a library" << std::endl;
             return 1;
         }
-    for (int i = 1; i < argc; i++)
-        AddFile(librarian, argv[i]);
-    for (int i = 1; i < File.GetCount(); i++)
-        AddFile(librarian, File.GetValue()[i]);
-    for (auto it = addFiles.FileNameBegin(); it != addFiles.FileNameEnd(); ++it)
+    for (int i = 1; i < files.size(); i++)
+        AddFile(librarian, files[i].c_str());
+    for (auto&& name : addFiles)
     {
-        librarian.AddFile((*it));
+        librarian.AddFile(name);
     }
-    for (auto it = replaceFiles.FileNameBegin(); it != replaceFiles.FileNameEnd(); ++it)
+    for (auto&& name : replaceFiles)
     {
-        librarian.ReplaceFile((*it));
+        librarian.AddFile(name);
     }
     if (modified)
         switch (librarian.SaveLibrary())

@@ -44,7 +44,7 @@ void Errors::ErrorWithLine(const std::string& msg, const std::string& filname, i
     std::cout << msg << std::endl;
     if (errorCount++ > maxErrors)
     {
-        Utils::fatal("Too Many Errors");
+        Utils::Fatal("Too Many Errors");
     }
 }
 void Errors::Error(const std::string& msg)
@@ -54,7 +54,7 @@ void Errors::Error(const std::string& msg)
     std::cout << msg << std::endl;
     if (errorCount++ > maxErrors)
     {
-        Utils::fatal("Too Many Errors");
+        Utils::Fatal("Too Many Errors");
     }
 }
 void Errors::WarningWithLine(const std::string& msg, const std::string& filname, int lineno)

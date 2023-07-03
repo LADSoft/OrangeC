@@ -27,6 +27,7 @@
 #include "AsmFile.h"
 
 #include "Utils.h"
+#include "ToolChain.h"
 #include "CmdFiles.h"
 #include "PreProcessor.h"
 #include "Listing.h"
@@ -43,10 +44,8 @@ extern bool IsSymbolCharRoutine(const char*, bool);
 bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
 
 CmdSwitchParser AsmMain::SwitchParser;
-CmdSwitchBool AsmMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool AsmMain::CaseInsensitive(SwitchParser, 'i', false, {"case-insensitive"});
 CmdSwitchCombo AsmMain::CreateListFile(SwitchParser, 'l', "m", {"list"});
-CmdSwitchFile AsmMain::File(SwitchParser, '@');
 CmdSwitchBool AsmMain::PreprocessOnly(SwitchParser, 'e', false, {"preprocess-only"});
 CmdSwitchOutput AsmMain::OutputFile(SwitchParser, 'o', ".o", false, {"output-file"});
 CmdSwitchDefine AsmMain::Defines(SwitchParser, 'D');
@@ -93,7 +92,7 @@ int main(int argc, char* argv[])
     }
     catch (std::ios_base::failure)
     {
-        Utils::fatal("Fatal Error...");
+        Utils::Fatal("Fatal Error...");
     }
     return 1;
 }
@@ -168,31 +167,14 @@ void AsmMain::CheckAssign(std::string& line, PreProcessor& pp)
 int AsmMain::Run(int argc, char* argv[])
 {
     int rv = 0;
-    Utils::banner(argv[0]);
-    Utils::SetEnvironmentToPathParent("ORANGEC");
-    CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName.c_str(), std::ios::in);
-    if (!configTest.fail())
-    {
-        configTest.close();
-        if (!internalConfig.Parse(configName.c_str()))
-            Utils::fatal("Corrupt configuration file");
-    }
-    if (!SwitchParser.Parse(&argc, argv) || (argc == 1 && File.GetCount() <= 1 && !ShowHelp.GetExists()))
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    if (ShowHelp.GetExists())
-        Utils::usage(argv[0], helpText);
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    if (files.size() < 2)
+        ToolChain::Usage(usageText);
     Errors::WarningsAsErrors(WarningsAsErrors.GetValue());
-    CmdFiles files(argv + 1);
-    if (File.GetValue())
-        files.Add(File.GetValue() + 1);
-    if (files.GetSize() > 1 && OutputFile.GetValue().size())
-        Utils::fatal("Cannot specify output file for multiple input files");
+    if (files.size() > 2 && OutputFile.GetValue().size())
+        Utils::Fatal("Cannot specify output file for multiple input files");
     if (!InstructionParser::SetProcessorMode(ProcessorMode.GetValue()))
-        Utils::fatal("Invalid processor mode");
+        Utils::Fatal("Invalid processor mode");
     std::string sysSrchPth;
     std::string srchPth;
     if (includePath.GetValue().size())
@@ -215,14 +197,14 @@ int AsmMain::Run(int argc, char* argv[])
             srchPth += ";";
         srchPth += cpath;
     }
-    for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
+    for (int i=1; i < files.size(); i++)
     {
-        std::string inName = (*it).c_str();
+        std::string inName = files[i];
         int npos = inName.find_last_of(".");
         if (npos == std::string::npos || (npos && inName[npos - 1] == '.') ||
             (npos != inName.size() - 1 && inName[npos + 1] == CmdFiles::DIR_SEP[0]))
         {
-            inName = Utils::QualifiedFile((*it).c_str(), ".asm");
+            inName = Utils::QualifiedFile(files[i].c_str(), ".asm");
         }
         PreProcessor pp(inName, srchPth, sysSrchPth, false, false, '%', false, false, true, false, "");
         int n = Defines.GetCount();
@@ -235,14 +217,14 @@ int AsmMain::Run(int argc, char* argv[])
         if (OutputFile.GetValue().size() != 0)
             outName = OutputFile.GetValue();
         else
-            outName = Utils::QualifiedFile((*it).c_str(), ".o");
+            outName = Utils::QualifiedFile(files[i].c_str(), ".o");
         if (PreprocessOnly.GetValue())
         {
-            std::string working = Utils::QualifiedFile((*it).c_str(), ".i");
+            std::string working = Utils::QualifiedFile(files[i].c_str(), ".i");
             std::fstream out(working.c_str(), std::ios::out);
             if (!out.is_open())
             {
-                Utils::fatal("Cannot open '%s' for write", working.c_str());
+                Utils::Fatal("Cannot open '%s' for write", working.c_str());
             }
             else
             {
@@ -267,7 +249,7 @@ int AsmMain::Run(int argc, char* argv[])
                 }
                 else if (CreateListFile.GetValue())
                 {
-                    std::string listingName = Utils::QualifiedFile((*it).c_str(), ".lst");
+                    std::string listingName = Utils::QualifiedFile(files[i].c_str(), ".lst");
                     if (!listing.Write(listingName, inName, CreateListFile.GetValue('m')))
                     {
                         rv = 1;

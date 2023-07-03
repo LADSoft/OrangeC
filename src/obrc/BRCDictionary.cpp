@@ -146,7 +146,7 @@ void BRCDictionary::CreateDictionary(void)
         blockCount++;
         running = false;
         if (blockCount > primes[sizeof(primes) / sizeof(int) - 1])
-            Utils::fatal("Library dictionary too large");
+            Utils::Fatal("Library dictionary too large");
         for (int i = 0; i < sizeof(primes) / sizeof(int); i++)
             if (primes[i] >= blockCount)
             {

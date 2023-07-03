@@ -49,11 +49,8 @@ class LinkerMain
     static CmdSwitchParser SwitchParser;
 
     static CmdSwitchBool CaseSensitive;
-    static CmdSwitchBool ShowHelp;
     static CmdSwitchCombo Map;
     static CmdSwitchBool DebugInfo;
-    static CmdSwitchBool DebugInfo2;
-    static CmdSwitchFile File;
     static CmdSwitchCombineString Specification;
     static CmdSwitchDefine Defines;
     static CmdSwitchCombineString LibPath;

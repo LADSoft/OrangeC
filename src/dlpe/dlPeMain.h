@@ -78,9 +78,9 @@ class dlPeMain
     void ReadValues();
     bool LoadImports(ObjFile* file);
     bool ReadSections(const std::string& path);
-    std::string GetOutputName(char* infile) const;
-    void ParseOutResourceFiles(int* argc, char** argv);
-    bool ParseOutDefFile(int* argc, char** argv);
+    std::string GetOutputName(const char* infile) const;
+    void ParseOutResourceFiles(CmdFiles& files);
+    bool ParseOutDefFile(CmdFiles& files);
     void InitHeader(unsigned headerSize, ObjInt endVa);
     bool LoadStub(const std::string& exeName);
     void WriteStub(std::fstream& out);
@@ -89,6 +89,8 @@ class dlPeMain
 
   private:
     static CmdSwitchParser SwitchParser;
+    static CmdSwitchBool NoLogo;
+    static CmdSwitchBool ShowVersion;
     static CmdSwitchBool ShowHelp;
     static CmdSwitchString modeSwitch;
     static CmdSwitchString stubSwitch;

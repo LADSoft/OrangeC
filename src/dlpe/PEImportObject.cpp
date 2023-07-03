@@ -41,7 +41,7 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     else
     {
         if (virtual_addr != endVa)
-            Utils::fatal("Internal error");
+            Utils::Fatal("Internal error");
     }
     size = 0;
     raw_addr = endPhys;

@@ -28,6 +28,7 @@
 #include "be.h"
 #include "winmode.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include "config.h"
 #include "ildata.h"
 #ifdef HAVE_UNISTD_H
@@ -127,7 +128,7 @@ void GetOutputFileName(char* name, char* path, bool obj)
         if (!objPosition)
             objPosition = objlist;
         if (!objPosition)
-            Utils::fatal("Cannot get object file name");
+            Utils::Fatal("Cannot get object file name");
         strcpy(name, outFileName);
         p = (char*)strrchr(name, '\\');
         if (!p)
@@ -169,7 +170,7 @@ int RunExternalFiles()
     Utils::AddExt(outName, ".il");
     while (rclist)
     {
-        rv = Utils::ToolInvoke("orc.exe", nullptr, " -r %s \"%s\"", !Optimizer::showBanner ? "-!" : "", (char*)rclist->data);
+        rv = ToolChain::ToolInvoke("orc.exe", nullptr, " -r %s \"%s\"", !Optimizer::showBanner ? "-!" : "", (char*)rclist->data);
         if (rv)
             return rv;
         rclist = rclist->next;

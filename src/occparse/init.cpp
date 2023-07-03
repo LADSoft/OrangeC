@@ -112,7 +112,7 @@ static SYMBOL* LookupMsilToString()
         }
         if (!msilToString)
         {
-            Utils::fatal("internal error");
+            Utils::Fatal("internal error");
         }
     }
     return msilToString;

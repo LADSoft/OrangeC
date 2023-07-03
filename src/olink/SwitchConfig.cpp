@@ -27,6 +27,7 @@
 #include "ObjExpression.h"
 #include "LinkExpression.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include <fstream>
 #include <cstdlib>
 #include <cctype>
@@ -308,7 +309,7 @@ int SwitchConfig::RunApp(const std::string& path, const std::string& file, const
     std::string outimp;
     if (!outImportLibrary.empty())
         outimp = " --out-implib \"" + outImportLibrary + "\"";
-    return Utils::ToolInvoke(name, verbose ? "" : nullptr, "%s %s %s %s %s \"%s\"%s", flags.c_str(), outdef.c_str(), outimp.c_str(),  sverbose.c_str(),
+    return ToolChain::ToolInvoke(name, verbose ? "" : nullptr, "%s %s %s %s %s \"%s\"%s", flags.c_str(), outdef.c_str(), outimp.c_str(),  sverbose.c_str(),
                              sdebug.c_str(), file.c_str(), sfiles.c_str());
 }
 bool SwitchConfig::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData) { return false; }

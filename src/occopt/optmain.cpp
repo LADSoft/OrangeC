@@ -28,6 +28,7 @@
 #include <ctime>
 #include "CmdSwitch.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include "config.h"
 #include "ildata.h"
 #include "SharedMemory.h"
@@ -78,7 +79,7 @@ CmdSwitchBool useSharedMemory(SwitchParser, 'S');
 CmdSwitchString prm_verbosity(SwitchParser, 'y');
 CmdSwitchString prm_optimize(SwitchParser, 'O', ';');
 
-const char* usageText =
+const char* helpText =
     "[options] inputfile\n"
     "\n"
     "-f{flag}     set or clear a flag\n"
@@ -91,6 +92,8 @@ const char* usageText =
     "-Y output icd file\n"
     "\nOptimization control:\n" OPTIMIZATION_DESCRIPTION "\nFlags:\n" OPTMODULES_DESCRIPTION "\nTime: " __TIME__
     "  Date: " __DATE__;
+
+const char* usageText = "[options] inputfile";
 
 bool InputIntermediate(SharedMemory* mem);
 void OutputIntermediate(SharedMemory* mem);
@@ -365,7 +368,7 @@ void SaveFile(std::string& name, SharedMemory* optimizerMem)
     localFree();
     globalFree();
 }
-void ParseParams(char* argv[])
+void ParseParams(CmdFiles& files)
 {
     std::vector<std::string> checks = Utils::split(prm_optimize.GetValue());
     for (auto&& v : checks)
@@ -376,7 +379,7 @@ void ParseParams(char* argv[])
         }
     }
     if (ParseOptimizerParams(prm_flags.GetValue()) != "")
-        Utils::usage(argv[0], usageText);
+        ToolChain::Usage(usageText);
     if (prm_verbosity.GetExists())
     {
         cparams.verbosity = 1 + prm_verbosity.GetValue().size();
@@ -387,24 +390,20 @@ int main(int argc, char* argv[])
 {
     using namespace Optimizer;
     unsigned startTime, stopTime;
-    Utils::banner(argv[0]);
-    Utils::SetEnvironmentToPathParent("ORANGEC");
-
-    if (!SwitchParser.Parse(&argc, argv) || argc < 2 || argc > 3)
-    {
-        Utils::usage(argv[0], usageText);
-    }
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
     cparams.optimizer_modules = ~0;
     bool fileMode = true;
     if (useSharedMemory.GetValue())
     {
-        if (argc != 3)
-            Utils::usage(argv[0], usageText);
+        if (files.size() != 3)
+        {
+            ToolChain::Usage(usageText);
+        }
         fileMode = false;
     }
-    else if (argc != 2)
+    else if (files.size() != 2)
     {
-        Utils::usage(argv[0], usageText);
+        ToolChain::Usage(usageText);
     }
     SharedMemory* parserMem = nullptr;
     SharedMemory* optimizerMem = nullptr;
@@ -418,13 +417,13 @@ int main(int argc, char* argv[])
         else
         {
             char buf[260];
-            strcpy(buf, argv[1]);
+            strcpy(buf, files[1].c_str());
             Utils::StripExt(buf);
             strcat(buf, "_1");
             Utils::AddExt(buf, ".icf");
             outputFile = buf;
         }
-        FILE* fil = fopen(argv[1], "rb");
+        FILE* fil = fopen(files[1].c_str(), "rb");
         if (fil)
         {
             parserMem = new SharedMemory(MAX_SHARED_REGION);
@@ -436,21 +435,21 @@ int main(int argc, char* argv[])
         }
         else
         {
-            Utils::fatal("cannot open input file");
+            Utils::Fatal("cannot open input file");
         }
     }
     else
     {
-        parserMem = new SharedMemory(0, argv[1]);
-        optimizerMem = new SharedMemory(0, argv[2]);
+        parserMem = new SharedMemory(0, files[1].c_str());
+        optimizerMem = new SharedMemory(0, files[2].c_str());
         if (!parserMem->Open() || !optimizerMem->Open())
         {
-            Utils::fatal("invalid shared memory specifiers");
+            Utils::Fatal("invalid shared memory specifiers");
         }
     }
     if (!LoadFile(parserMem))
-        Utils::fatal("internal error: could not load intermediate file");
-    Optimizer::ParseParams(argv);
+        Utils::Fatal("internal error: could not load intermediate file");
+    Optimizer::ParseParams(files);
     Optimizer::OptimizerStats();
     if (Optimizer::cparams.prm_displaytiming || displayTiming.GetValue())
     {
@@ -470,7 +469,7 @@ int main(int argc, char* argv[])
             for (auto p : files)
             {
                 if (!LoadFile(parserMem))
-                    Utils::fatal("internal error: could not load intermediate file");
+                    Utils::Fatal("internal error: could not load intermediate file");
                 ProcessFunctions();
                 SaveFile(p, optimizerMem);
             }
@@ -481,7 +480,7 @@ int main(int argc, char* argv[])
         // compile to file
         FILE* fil = fopen(outputFile.c_str(), "wb");
         if (!fil)
-            Utils::fatal("Cannot open '%s' for write", outputFile.c_str());
+            Utils::Fatal("Cannot open '%s' for write", outputFile.c_str());
         Optimizer::WriteMappingFile(optimizerMem, fil);
         fclose(fil);
     }

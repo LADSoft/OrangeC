@@ -88,7 +88,6 @@ c17 - ISO/IEC 9899:2018
 */
 
     static CmdSwitchBool prm_compileonly;
-    static CmdSwitchBool ShowHelp;
     static CmdSwitchBool prm_debug;
     static CmdSwitchBool prm_verbose;
     static CmdSwitchCombineString prm_define;
@@ -102,7 +101,6 @@ c17 - ISO/IEC 9899:2018
     static CmdSwitchString prmStandard;
     static CmdSwitchCombineString prmExtensions;
     static CmdSwitchBool prmCharTypeIsUnsigned;
-    static CmdSwitchFile prmFile;
     static CmdSwitchBool prmShowIncludes;
     static CmdSwitchString prmCompileAs;
     static CmdSwitchCombineString prmLinkOptions;

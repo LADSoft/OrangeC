@@ -71,7 +71,7 @@ bool Real::ReadSections(ObjFile* file, ObjExpression* start)
                         int n = GetFixupOffset(fixup, sbase, ofs);
                         int bigEndian = file->GetBigEndian();
                         if (n < 0)
-                            Utils::fatal("Fixup offset negative");
+                            Utils::Fatal("Fixup offset negative");
                         if (msize == 1)
                         {
                             pdata[ofs] = n & 0xff;
@@ -79,7 +79,7 @@ bool Real::ReadSections(ObjFile* file, ObjExpression* start)
                         else if (msize == 2)
                         {
                             if (n > 65535)
-                                Utils::fatal("16-bit offset outside of segment");
+                                Utils::Fatal("16-bit offset outside of segment");
                             if (bigEndian)
                             {
                                 pdata[ofs] = n >> 8;
@@ -258,7 +258,7 @@ int Real::GetFixupOffset(ObjExpression* fixup, int sbase, int pc)
     {
         if (Balanced(fixup, false))
             return fixup->Eval(pc);
-        Utils::fatal("Invalid fixup");
+        Utils::Fatal("Invalid fixup");
     }
     return 0;
 }
@@ -271,6 +271,6 @@ int Real::GetFirstSeg(ObjExpression* exp)
         find = find->GetLeft();
     }
     if (find->GetOperator() != ObjExpression::eSection)
-        Utils::fatal("Invalid fixup");
+        Utils::Fatal("Invalid fixup");
     return find->GetSection()->GetOffset()->Eval(0) & ~15;
 }

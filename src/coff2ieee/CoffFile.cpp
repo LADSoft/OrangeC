@@ -151,7 +151,7 @@ std::string CoffFile::GetSectionName(int sect)
         }
         if (sym > symbols.get() + header.NumberOfSymbols)
         {
-            Utils::fatal("Comdat symbol name not found, exiting");
+            Utils::Fatal("Comdat symbol name not found, exiting");
         }
         if (*(unsigned*)sym->Name == 0)
         {

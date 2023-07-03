@@ -32,6 +32,7 @@
 #include <deque>
 #include "PreProcessor.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include "CmdFiles.h"
 #include "CmdSwitch.h"
 #include <vector>
@@ -75,87 +76,85 @@ int cplusplusversion = 14;
 
 std::deque<DefValue> defines;
 
-CmdSwitchParser switchParser;
-CmdSwitchBool ShowHelp(switchParser, '?', false, {"help"});
-CmdSwitchBool prm_c89(switchParser, '8');
-CmdSwitchBool prm_c99(switchParser, '9');
-CmdSwitchBool prm_c11(switchParser, '1');
-CmdSwitchBool prm_c2x(switchParser, '2');
-CmdSwitchBool prm_ansi(switchParser, 'A');
-CmdSwitchBool prm_errfile(switchParser, 'e');
-CmdSwitchBool prm_cppfile(switchParser, 'i');
-CmdSwitchBool prm_quiet(switchParser, 'Q');
-CmdSwitchBool prm_icdfile(switchParser, 'Y');
-CmdSwitchBool prm_trigraph(switchParser, 'T');
-CmdSwitchBool prm_debug(switchParser, 'v');
-CmdSwitchBool prm_debug2(switchParser, 'g');
-CmdSwitchBool prm_compileonly(switchParser, 'c');
-CmdSwitchString prm_assemble(switchParser, 'S');
-CmdSwitchBool prm_xcept(switchParser, 'X');
-CmdSwitchBool prm_viaassembly(switchParser, '#');
-CmdSwitchBool displayTiming(switchParser, 't');
-CmdSwitchInt prm_stackalign(switchParser, 's', 16, 0, 2048);
-CmdSwitchString prm_error(switchParser, 'E');
-CmdSwitchString prm_Werror(switchParser, 0, 0, {"Werror"});  // doesn't do anything, just to help the libcxx tests...
-CmdSwitchString prm_define(switchParser, 'D', ';');
-CmdSwitchString prm_undefine(switchParser, 'U', ';');
-CmdSwitchFile prm_file(switchParser, '@');
-CmdSwitchString prm_codegen(switchParser, 'C', ';');
-CmdSwitchString prm_optimize(switchParser, 'O', ';');
-CmdSwitchString prm_verbose(switchParser, 'y');
-CmdSwitchString prm_warning(switchParser, 'w', ';');
-CmdSwitchCombineString prm_output(switchParser, 'o');
-CmdSwitchCombineString prm_tool(switchParser, 'p', ';');
-CmdSwitchCombineString prm_language(switchParser, 'x');
-CmdSwitchBool prm_nostdinc(switchParser, 0, false, {"nostdinc"});
-CmdSwitchBool prm_nostdincpp(switchParser, 0, false, {"nostdinc++"});
-CmdSwitchString prm_std(switchParser, 0, 0, {"std"});
-CmdSwitchCombineString prm_library(switchParser, 'l', ';');
-CmdSwitchBool prm_prmSyntaxOnly(switchParser, 0, false, {"fsyntax-only"});  // doesn't do anything yet
-CmdSwitchBool prm_prmCharIsUnsigned(switchParser, 0, false, {"funsigned-char"});
+CmdSwitchParser SwitchParser;
+CmdSwitchBool prm_c89(SwitchParser, '8');
+CmdSwitchBool prm_c99(SwitchParser, '9');
+CmdSwitchBool prm_c11(SwitchParser, '1');
+CmdSwitchBool prm_c2x(SwitchParser, '2');
+CmdSwitchBool prm_ansi(SwitchParser, 'A');
+CmdSwitchBool prm_errfile(SwitchParser, 'e');
+CmdSwitchBool prm_cppfile(SwitchParser, 'i');
+CmdSwitchBool prm_quiet(SwitchParser, 'Q');
+CmdSwitchBool prm_icdfile(SwitchParser, 'Y');
+CmdSwitchBool prm_trigraph(SwitchParser, 'T');
+CmdSwitchBool prm_debug(SwitchParser, 'v');
+CmdSwitchBool prm_debug2(SwitchParser, 'g');
+CmdSwitchBool prm_compileonly(SwitchParser, 'c');
+CmdSwitchString prm_assemble(SwitchParser, 'S');
+CmdSwitchBool prm_xcept(SwitchParser, 'X');
+CmdSwitchBool prm_viaassembly(SwitchParser, '#');
+CmdSwitchBool displayTiming(SwitchParser, 't');
+CmdSwitchInt prm_stackalign(SwitchParser, 's', 16, 0, 2048);
+CmdSwitchString prm_error(SwitchParser, 'E');
+CmdSwitchString prm_Werror(SwitchParser, 0, 0, {"Werror"});  // doesn't do anything, just to help the libcxx tests...
+CmdSwitchString prm_define(SwitchParser, 'D', ';');
+CmdSwitchString prm_undefine(SwitchParser, 'U', ';');
+CmdSwitchString prm_codegen(SwitchParser, 'C', ';');
+CmdSwitchString prm_optimize(SwitchParser, 'O', ';');
+CmdSwitchString prm_verbose(SwitchParser, 'y');
+CmdSwitchString prm_warning(SwitchParser, 'w', ';');
+CmdSwitchCombineString prm_output(SwitchParser, 'o');
+CmdSwitchCombineString prm_tool(SwitchParser, 'p', ';');
+CmdSwitchCombineString prm_language(SwitchParser, 'x');
+CmdSwitchBool prm_nostdinc(SwitchParser, 0, false, {"nostdinc"});
+CmdSwitchBool prm_nostdincpp(SwitchParser, 0, false, {"nostdinc++"});
+CmdSwitchString prm_std(SwitchParser, 0, 0, {"std"});
+CmdSwitchCombineString prm_library(SwitchParser, 'l', ';');
+CmdSwitchBool prm_prmSyntaxOnly(SwitchParser, 0, false, {"fsyntax-only"});  // doesn't do anything yet
+CmdSwitchBool prm_prmCharIsUnsigned(SwitchParser, 0, false, {"funsigned-char"});
 
-CmdSwitchCombineString prm_cinclude(switchParser, 'I', ';');
-CmdSwitchCombineString prm_Csysinclude(switchParser, 'z', ';');
-CmdSwitchCombineString prm_CPPsysinclude(switchParser, 'Z', ';');
-CmdSwitchCombineString prm_libpath(switchParser, 'L', ';');
-CmdSwitchString prm_pipe(switchParser, 'P', ';');
-CmdSwitchCombineString prm_output_def_file(switchParser, 0, 0, {"output-def"});
-CmdSwitchCombineString prm_output_import_library_file(switchParser, 0, 0, {"out-implib"});
-CmdSwitchCombineString prm_flags(switchParser, 'f', ';');
-CmdSwitchBool prm_export_all(switchParser, 0, false, {"export-all-symbols"});
+CmdSwitchCombineString prm_cinclude(SwitchParser, 'I', ';');
+CmdSwitchCombineString prm_Csysinclude(SwitchParser, 'z', ';');
+CmdSwitchCombineString prm_CPPsysinclude(SwitchParser, 'Z', ';');
+CmdSwitchCombineString prm_libpath(SwitchParser, 'L', ';');
+CmdSwitchString prm_pipe(SwitchParser, 'P', ';');
+CmdSwitchCombineString prm_output_def_file(SwitchParser, 0, 0, {"output-def"});
+CmdSwitchCombineString prm_output_import_library_file(SwitchParser, 0, 0, {"out-implib"});
+CmdSwitchCombineString prm_flags(SwitchParser, 'f', ';');
+CmdSwitchBool prm_export_all(SwitchParser, 0, false, {"export-all-symbols"});
 
-CmdSwitchBool prm_msil_noextensions(switchParser, 'd');
-CmdSwitchString prm_msil_strongnamekeyfile(switchParser, 'K');
-CmdSwitchString prm_msil_namespace(switchParser, 'N');
-CmdSwitchString prm_msil_version(switchParser, 'V');
-CmdSwitchCombineString prm_architecture(switchParser, 0, 0, {"architecture"});
+CmdSwitchBool prm_msil_noextensions(SwitchParser, 'd');
+CmdSwitchString prm_msil_strongnamekeyfile(SwitchParser, 'K');
+CmdSwitchString prm_msil_namespace(SwitchParser, 'N');
+CmdSwitchString prm_msil_version(SwitchParser, 'V');
+CmdSwitchCombineString prm_architecture(SwitchParser, 0, 0, {"architecture"});
 
-CmdSwitchString prm_Winmode(switchParser, 'W');
+CmdSwitchString prm_Winmode(SwitchParser, 'W');
 
-CmdSwitchString AssemblerExtension(switchParser, 'a');
+CmdSwitchString AssemblerExtension(SwitchParser, 'a');
 
-CmdSwitchString prmLink(switchParser, 0, 0, {"link"});
-CmdSwitchString prmDll(switchParser, 0, 0, {"dll"});
-CmdSwitchString prmShared(switchParser, 0, 0, {"shared"});
-CmdSwitchString prmStatic(switchParser, 0, 0, {"static"});
-CmdSwitchBool prmDumpVersion(switchParser, 0, 0, {"dumpversion"});
-CmdSwitchBool prmDumpMachine(switchParser, 0, 0, {"dumpmachine"});
-CmdSwitchCombineString prmPrintFileName(switchParser, 0, 0, {"print-file-name"});
-CmdSwitchCombineString prmPrintProgName(switchParser, 0, 0, {"print-prog-name"});
+CmdSwitchString prmLink(SwitchParser, 0, 0, {"link"});
+CmdSwitchString prmDll(SwitchParser, 0, 0, {"dll"});
+CmdSwitchString prmShared(SwitchParser, 0, 0, {"shared"});
+CmdSwitchString prmStatic(SwitchParser, 0, 0, {"static"});
+CmdSwitchBool prmDumpVersion(SwitchParser, 0, 0, {"dumpversion"});
+CmdSwitchBool prmDumpMachine(SwitchParser, 0, 0, {"dumpmachine"});
+CmdSwitchCombineString prmPrintFileName(SwitchParser, 0, 0, {"print-file-name"});
+CmdSwitchCombineString prmPrintProgName(SwitchParser, 0, 0, {"print-prog-name"});
 
-CmdSwitchBool prmPIC(switchParser, 0, 0, {"fPIC"});       // ignored for now
-CmdSwitchBool prmWall(switchParser, 0, 0, {"Wall"});      // ignored for now
-CmdSwitchBool prmWextra(switchParser, 0, 0, {"Wextra"});  // ignored for now
+CmdSwitchBool prmPIC(SwitchParser, 0, 0, {"fPIC"});       // ignored for now
+CmdSwitchBool prmWall(SwitchParser, 0, 0, {"Wall"});      // ignored for now
+CmdSwitchBool prmWextra(SwitchParser, 0, 0, {"Wextra"});  // ignored for now
 
-CmdSwitchBool MakeStubsOption(switchParser, 0, 0, {"M"});
-CmdSwitchBool MakeStubsUser(switchParser, 0, 0, {"MM"});
-CmdSwitchCombineString MakeStubsOutputFile(switchParser, 0, ';', {"MF"});
-CmdSwitchBool MakeStubsMissingHeaders(switchParser, 0, 0, {"MG"});
-CmdSwitchBool MakeStubsPhonyTargets(switchParser, 0, 0, {"MP"});
-CmdSwitchCombineString MakeStubsTargets(switchParser, 0, ';', {"MT"});
-CmdSwitchCombineString MakeStubsQuotedTargets(switchParser, 0, ';', {"MQ"});
-CmdSwitchBool MakeStubsContinue(switchParser, 0, 0, {"MD"});
-CmdSwitchBool MakeStubsContinueUser(switchParser, 0, 0, {"MMD"});
+CmdSwitchBool MakeStubsOption(SwitchParser, 0, 0, {"M"});
+CmdSwitchBool MakeStubsUser(SwitchParser, 0, 0, {"MM"});
+CmdSwitchCombineString MakeStubsOutputFile(SwitchParser, 0, ';', {"MF"});
+CmdSwitchBool MakeStubsMissingHeaders(SwitchParser, 0, 0, {"MG"});
+CmdSwitchBool MakeStubsPhonyTargets(SwitchParser, 0, 0, {"MP"});
+CmdSwitchCombineString MakeStubsTargets(SwitchParser, 0, ';', {"MT"});
+CmdSwitchCombineString MakeStubsQuotedTargets(SwitchParser, 0, ';', {"MQ"});
+CmdSwitchBool MakeStubsContinue(SwitchParser, 0, 0, {"MD"});
+CmdSwitchBool MakeStubsContinueUser(SwitchParser, 0, 0, {"MMD"});
 
 static std::string firstFile;
 
@@ -288,7 +287,7 @@ void codegen_setup(char select, const char* string)
                         return;
                     case 0:
                     default:
-                        Utils::fatal("Invalid codegen parameter ");
+                        Utils::Fatal("Invalid codegen parameter ");
                         break;
                 }
         }
@@ -428,7 +427,7 @@ static int DisplayerParams()
 
     return rv;
 }
-static void ParamTransfer(char* name)
+static void ParamTransfer(const char* name)
 /*
  * activation routine (callback) for boolean command line arguments
  */
@@ -451,7 +450,7 @@ static void ParamTransfer(char* name)
     }
     Optimizer::cparams.optimizer_modules = ~0;
     if (Optimizer::ParseOptimizerParams(prm_flags.GetValue()) != "")
-        Utils::usage(name, getUsageText());
+        ToolChain::Usage(getUsageText());
     // booleans
     if (prm_c89.GetExists())
         Optimizer::cparams.prm_c99 = Optimizer::cparams.prm_c1x = !prm_c89.GetValue();
@@ -541,7 +540,7 @@ static void ParamTransfer(char* name)
     {
         int n = prm_stackalign.GetValue();
         if (!n || (n % Optimizer::chosenAssembler->arch->stackalign))
-            Utils::fatal("Invalid stack alignment parameter ");
+            Utils::Fatal("Invalid stack alignment parameter ");
         Optimizer::cparams.prm_stackalign = n;
     }
     if (prm_error.GetExists())
@@ -705,7 +704,7 @@ static void ParamTransfer(char* name)
     if (prm_msil_namespace.GetExists() && prm_msil_namespace.GetValue().size() != 0)
     {
         if (!validatenamespaceAndClass(prm_msil_namespace.GetValue().c_str()))
-            Utils::fatal("namesplace/class info in wrong format");
+            Utils::Fatal("namesplace/class info in wrong format");
 
         Optimizer::prm_namespace_and_class = prm_msil_namespace.GetValue();
     }
@@ -1101,17 +1100,17 @@ int ccinit(int argc, char* argv[])
     char* p;
     int rv;
     int i;
-
+#if defined(WIN32) || defined(MICROSOFT)
+    GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
+#else
+    strcpy(buffer, argv[0]);
+#endif
+    std::string architecture;
     Optimizer::doBackendInit = true;
-
     for (i = 1; i < argc; i++)
         if (argv[i][0] == '-' || argv[i][0] == '/')
         {
-            if (argv[i][1] == '!' || !strcmp(argv[i], "--nologo"))
-            {
-                Optimizer::showBanner = false;
-            }
-            else if ((argv[i][1] == 'V' && argv[i][2] == 0) || !strcmp(argv[i], "--version"))
+            if ((argv[i][1] == 'V' && argv[i][2] == 0) || !strcmp(argv[i], "--version"))
             {
                 showVersion = true;
             }
@@ -1119,76 +1118,22 @@ int ccinit(int argc, char* argv[])
             {
                 showVersion = true;
             }
-            else if (!strncmp(&argv[i][1], "print", 5) || !strncmp(&argv[i][1], "dump", 4))
+            else if (!strcmp(argv[i], "--architecture") && i < argc-1)
             {
-                Optimizer::showBanner = false;
-            }
-            else if (!strncmp(&argv[i][1], "-print", 6) || !strncmp(&argv[i][1], "-dump", 5))
-            {
-                Optimizer::showBanner = false;
-            }
-            else if (!strcmp(&argv[i][1], "M") || !strcmp(&argv[i][1], "MM"))
-            {
-                Optimizer::showBanner = false;
+                architecture = argv[i + 1];
             }
         }
 
-    if (Optimizer::showBanner || showVersion)
-    {
-        Utils::banner(argv[0]);
-    }
     if (showVersion)
     {
+        // have to handle version specially because of the return code...
+        ToolChain::ShowBanner();
         printf("\nCompile date: " __DATE__ ", time: " __TIME__ "\n");
         exit(255);
     }
-
-#if defined(WIN32) || defined(MICROSOFT)
-    GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
-#else
-    strcpy(buffer, argv[0]);
-#endif
-
-    if (!getenv("ORANGEC"))
+    if (!architecture.empty())
     {
-        char* p = (char*)strrchr(buffer, '\\');
-        if (p)
-        {
-            *p = 0;
-            char* q = (char*)strrchr(buffer, '\\');
-            if (q)
-            {
-                *q = 0;
-                char* buf1 = (char*)calloc(1, strlen("ORANGEC") + strlen(buffer) + 2);
-                strcpy(buf1, "ORANGEC");
-                strcat(buf1, "=");
-                strcat(buf1, buffer);
-                _putenv(buf1);
-                *q = '\\';
-            }
-            *p = '\\';
-        }
-    }
-    DisableTrivialWarnings();
-    /* parse the environment and command line */
-    int ecnt = 0;
-    char* eargs[200];
-    bool need_usage = false;
-    if (!switchParser.Parse(&argc, argv) || (argc == 1 && prm_file.GetCount() <= 1 && ecnt <= 1 && !ShowHelp.GetExists()))
-    {
-        need_usage = true;
-    }
-    if (ShowHelp.GetExists())
-        need_usage = true;
-    /* initialize back end */
-    if (prm_assemble.GetExists())
-    {
-        Optimizer::cparams.prm_asmfile = true;
-        Optimizer::prm_assemblerSpecifier = prm_assemble.GetValue();
-    }
-    if (prm_architecture.GetExists())
-    {
-        auto splt = Utils::split(prm_architecture.GetValue(), ';');
+        auto splt = Utils::split(architecture, ';');
         static std::map<std::string, int> architectures = {
             {"x86", ARCHITECTURE_X86},
             {"msil", ARCHITECTURE_MSIL},
@@ -1199,7 +1144,7 @@ int ccinit(int argc, char* argv[])
         }
         else
         {
-            Utils::fatal("invalid Optimizer::architecture");
+            Utils::Fatal("invalid Optimizer::architecture");
         }
         if (splt.size() > 1)
         {
@@ -1212,29 +1157,12 @@ int ccinit(int argc, char* argv[])
         Optimizer::architecture = ARCHITECTURE_X86;
     }
     if (!init_backend())
-        Utils::fatal("Could not initialize back end");
+        Utils::Fatal("Could not initialize back end");
 
-    if (DisplayerParams())
-        return true;
-    if (need_usage)
-    {
-        if (ShowHelp.GetExists())
-            Utils::usage(argv[0], getHelpText());
-        else
-            Utils::usage(argv[0], getUsageText());
-    }
-
-    if (Optimizer::chosenAssembler->envname)
-    {
-        const char* env = getenv(Optimizer::chosenAssembler->envname);
-        if (env && !switchParser.Parse(std::string(env), &ecnt, eargs))
-            Utils::usage(argv[0], getUsageText());
-    }
-
-    CmdSwitchFile internalConfig(switchParser);
+    static char temp[260];
+    strcpy(temp, argv[0]);
     if (Optimizer::chosenAssembler->cfgname)
     {
-        char temp[260];
         strcpy(temp, buffer);
         char *p1 = (char*)strrchr(temp, '/'), *p2 = (char*)strrchr(temp, '\\');
         if (p2 > p1)
@@ -1246,33 +1174,54 @@ int ccinit(int argc, char* argv[])
         else
             p1 = temp;
         strcpy(p1, Optimizer::chosenAssembler->progname);
-        std::string configName = Utils::QualifiedFile(temp, ".cfg");
-        std::fstream configTest(configName, std::ios::in);
-        if (!configTest.fail())
-        {
-            configTest.close();
-            if (!internalConfig.Parse(configName.c_str()))
-                Utils::fatal("Corrupt configuration file");
-        }
+    }
+    auto old = argv[0];
+    argv[0] = temp;
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, getUsageText(), getHelpText(), []() {
+        return prmDumpVersion.GetValue() || prmDumpMachine.GetValue() || prmPrintFileName.GetExists() ||
+               prmPrintProgName.GetExists() || MakeStubsOption.GetValue() ||
+               MakeStubsUser.GetValue();
+        });
+    argv[0] = old;
+    Optimizer::showBanner = prm_verbose.GetExists(); 
+
+
+    DisableTrivialWarnings();   
+    /* parse the environment and command line */
+    int ecnt = 0;
+    char* eargs[200];
+    /* initialize back end */
+    if (prm_assemble.GetExists())
+    {
+        Optimizer::cparams.prm_asmfile = true;
+        Optimizer::prm_assemblerSpecifier = prm_assemble.GetValue();
     }
 
-    ParamTransfer(argv[0]);
+    if (DisplayerParams())
+        return true;
+
+    if (Optimizer::chosenAssembler->envname)
+    {
+        const char* env = getenv(Optimizer::chosenAssembler->envname);
+        if (env && !SwitchParser.Parse(std::string(env), &ecnt, eargs))
+            ToolChain::Usage(getUsageText());
+    }
+
+
+    ParamTransfer(files[0].c_str());
+    if (files.size() < 2)
+        ToolChain::Usage(getUsageText());
+
     /* tack the environment includes in */
     addinclude();
 
     /* Scan the command line for file names or response files */
     {
         int i;
-        for (i = 1; i < argc; i++)
-            InsertAnyFile(argv[i], 0, -1);
+        for (i = 1; i < files.size(); i++)
+            InsertAnyFile(files[i].c_str(), 0, -1);
         for (i = 1; i < ecnt; i++)
             InsertAnyFile(eargs[i], 0, -1);
-        int count = prm_file.GetCount();
-        char** value = prm_file.GetValue();
-        for (int i = 1; i < count; i++)
-        {
-            InsertAnyFile(value[i], 0, -1);
-        }
     }
 
     if (IsCompiler())
@@ -1287,7 +1236,7 @@ int ccinit(int argc, char* argv[])
             else
             {
                 if (clist && clist->next && prm_output.GetValue()[prm_output.GetValue().size() - 1] != '\\')
-                    Utils::fatal("Cannot specify output file for multiple input files\n");
+                    Utils::Fatal("Cannot specify output file for multiple input files\n");
             }
         }
     }

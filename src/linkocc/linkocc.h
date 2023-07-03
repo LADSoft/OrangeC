@@ -59,15 +59,13 @@ public:
     int Run(int argc, char **argv);
 
 protected:
-    std::string linkocc::SanitizeExtension(std::string fileName, std::string ext); 
+    std::string SanitizeExtension(std::string fileName, std::string ext); 
 
 private:
     static const char* usageText;
     static const char* helpText;
 
     static CmdSwitchParser SwitchParser;
-
-    static CmdSwitchBool ShowHelp;
     static CmdSwitchString prm_debug;
     static CmdSwitchBool prm_verbose;
     static CmdSwitchString prm_output;

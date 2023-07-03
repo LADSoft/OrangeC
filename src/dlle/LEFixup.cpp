@@ -79,7 +79,7 @@ void LEFixup::LoadFixups(ObjFile& file)
                 if (fixup && !IsRel(fixup))
                 {
                     if (msize != 4)
-                        Utils::fatal("Invalid fixup type");
+                        Utils::Fatal("Invalid fixup type");
                     int so = SectionOf(fixup);
                     if (so >= 0)
                     {

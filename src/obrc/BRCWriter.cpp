@@ -659,7 +659,7 @@ bool BRCWriter::write()
     }
     else
     {
-        Utils::fatal("Cannot open database '%s' for write", outputFile.c_str());
+        Utils::Fatal("Cannot open database '%s' for write", outputFile.c_str());
     }
     if (dbPointer)
         sqlite3_close(dbPointer);

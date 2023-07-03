@@ -79,7 +79,7 @@ static MEMBLK* galloc(MEMORY* arena, int size)
 #endif
     if (!selected)
     {
-        Utils::fatal("out of memory");
+        Utils::Fatal("out of memory");
     }
     arena->used += allocsize + sizeof(MEMBLK) - 1;
     selected->size = allocsize;

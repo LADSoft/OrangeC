@@ -46,7 +46,7 @@ class MakeMain
         }
     }
 
-    static CmdSwitchParser switchParser;
+    static CmdSwitchParser SwitchParser;
     static CmdSwitchCombineString specifiedFiles;
     static CmdSwitchBool displayOnly;
     static CmdSwitchBool touch;
@@ -61,7 +61,6 @@ class MakeMain
     static CmdSwitchBool debug;
     static CmdSwitchBool environOverride;
     static CmdSwitchBool help;
-    static CmdSwitchBool ShowHelp;
     static CmdSwitchCombineString includes;
     static CmdSwitchCombineString oldFiles;
     static CmdSwitchBool showDatabase;
@@ -77,6 +76,7 @@ class MakeMain
     static CmdSwitchCombineString jobOutputMode;
     static CmdSwitchString jobServer;
     static const char* helpText;
+    static const char* usageText;
     static const char* builtinVars;
 
   protected:
@@ -92,7 +92,7 @@ class MakeMain
     void ShowRule(RuleList* ruleList);
     void ShowDatabase();
     void SetTreePath(std::string& files);
-    void LoadEquates(int& argc, char** argv);
+    void LoadEquates(CmdFiles& files);
     void RunEquates();
 
   private:

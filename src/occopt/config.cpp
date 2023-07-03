@@ -86,7 +86,7 @@ void SelectBackendData()
             a++;
         }
         if (!a->name)
-            Utils::fatal("Chosen assembler format '%s' not found", assembler);
+            Utils::Fatal("Chosen assembler format '%s' not found", assembler);
     }
     else
     {

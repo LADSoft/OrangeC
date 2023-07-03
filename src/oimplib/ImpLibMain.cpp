@@ -30,6 +30,7 @@
 #include "LibManager.h"
 #include "CmdSwitch.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include "ImpLibMain.h"
 #include "DefFile.h"
 #include "DLLExportReader.h"
@@ -57,10 +58,8 @@ int main(int argc, char** argv)
 
 CmdSwitchParser ImpLibMain::SwitchParser;
 CmdSwitchBool ImpLibMain::CDLLSwitch(SwitchParser, 'C', false);
-CmdSwitchBool ImpLibMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool ImpLibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
 CmdSwitchOutput ImpLibMain::OutputFile(SwitchParser, 'o', ".a");
-CmdSwitchFile ImpLibMain::File(SwitchParser, '@');
 const char* ImpLibMain::helpText =
     "[options] outputfile [+ files] [- files] [* files]\n"
     "\n"
@@ -186,23 +185,11 @@ void ImpLibMain::AddFile(LibManager& librarian, const char* arg)
         }
     }
 }
-std::string ImpLibMain::GetInputFile(int argc, char** argv, bool& def)
+std::string ImpLibMain::GetInputFile(CmdFiles& files, bool& def)
 {
     std::string name;
     def = false;
-    if (argc == 3)
-    {
-        name = argv[2];
-    }
-    else if (File.GetCount() == 2)
-    {
-        name = File.GetValue()[1];
-    }
-    else
-    {
-        std::cout << "Must be exactly one input file" << std::endl;
-        return "";
-    }
+    name = files[2];
     int npos = name.find_last_of(".");
     if (npos == std::string::npos)
     {
@@ -224,10 +211,10 @@ std::string ImpLibMain::GetInputFile(int argc, char** argv, bool& def)
     }
     return name;
 }
-int ImpLibMain::HandleDefFile(const std::string& outputFile, int argc, char** argv)
+int ImpLibMain::HandleDefFile(const std::string& outputFile, CmdFiles& file)
 {
     bool def;
-    std::string inputFile = GetInputFile(argc, argv, def);
+    std::string inputFile = GetInputFile(file, def);
 
     if (inputFile == "")
         return 1;
@@ -333,11 +320,11 @@ ObjFile* ImpLibMain::DllFileToObjFile(DLLExportReader& dll)
     }
     return obj;
 }
-int ImpLibMain::HandleObjFile(const std::string& outputFile, int argc, char** argv)
+int ImpLibMain::HandleObjFile(const std::string& outputFile, CmdFiles& files)
 {
     bool def;
     std::unique_ptr<ObjFile> obj;
-    std::string inputFile = GetInputFile(argc, argv, def);
+    std::string inputFile = GetInputFile(files, def);
     if (inputFile == "")
         return 1;
 
@@ -367,7 +354,7 @@ int ImpLibMain::HandleObjFile(const std::string& outputFile, int argc, char** ar
     }
     return 1;
 }
-int ImpLibMain::HandleLibrary(const std::string& outputFile, int argc, char** argv)
+int ImpLibMain::HandleLibrary(const std::string& outputFile, CmdFiles& files)
 {
     // only get here if it is a library
     LibManager librarian(outputFile, false, caseSensitiveSwitch.GetValue());
@@ -377,17 +364,16 @@ int ImpLibMain::HandleLibrary(const std::string& outputFile, int argc, char** ar
             std::cout << outputFile << " is not a library" << std::endl;
             return 1;
         }
-    for (int i = 2; i < argc; i++)
-        AddFile(librarian, argv[i]);
-    for (int i = 1; i < File.GetCount(); i++)
-        AddFile(librarian, File.GetValue()[i]);
-    for (auto it = addFiles.FileNameBegin(); it != addFiles.FileNameEnd(); ++it)
+
+    for (int i = 2; i < files.size(); i++)
+        AddFile(librarian, files[i].c_str());
+    for (auto&& name : addFiles)
     {
-        librarian.AddFile((*it));
+        librarian.AddFile(name);
     }
-    for (auto it = replaceFiles.FileNameBegin(); it != replaceFiles.FileNameEnd(); ++it)
+    for (auto&& name : replaceFiles)
     {
-        librarian.ReplaceFile((*it));
+        librarian.AddFile(name);
     }
     if (modified)
         switch (librarian.SaveLibrary())
@@ -408,30 +394,11 @@ int ImpLibMain::HandleLibrary(const std::string& outputFile, int argc, char** ar
 }
 int ImpLibMain::Run(int argc, char** argv)
 {
-    Utils::banner(argv[0]);
-    Utils::SetEnvironmentToPathParent("ORANGEC");
-    CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName, std::ios::in);
-    if (!configTest.fail())
-    {
-        configTest.close();
-        if (!internalConfig.Parse(configName.c_str()))
-            Utils::fatal("Corrupt configuration file");
-    }
-    if (!SwitchParser.Parse(&argc, argv))
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    if (ShowHelp.GetExists())
-        Utils::usage(argv[0], helpText);
-    if (argc < 2 && File.GetCount() < 3)
-    {
-        Utils::usage(argv[0], usageText);
-    }
-
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    if (files.size() < 3)
+        ToolChain::Usage(usageText);
     // setup
-    ObjString outputFile = argv[1];
+    ObjString outputFile = files[1];
     size_t n = outputFile.find_last_of('.');
     if (n == std::string::npos)
     {
@@ -444,7 +411,7 @@ int ImpLibMain::Run(int argc, char** argv)
         if (ext == ".def")
         {
             std::cout << "Creating " << outputFile << std::endl;
-            if (HandleDefFile(outputFile, argc, argv))
+            if (HandleDefFile(outputFile, files))
             {
                 std::cout << "Missing or invalid input file" << std::endl;
                 return 1;
@@ -457,7 +424,7 @@ int ImpLibMain::Run(int argc, char** argv)
         else if (ext == ".o")
         {
             std::cout << "Creating " << outputFile << std::endl;
-            if (HandleObjFile(outputFile, argc, argv))
+            if (HandleObjFile(outputFile, files))
             {
                 std::cout << "Missing or invalid input file" << std::endl;
                 return 1;
@@ -474,5 +441,5 @@ int ImpLibMain::Run(int argc, char** argv)
         }
     }
     std::cout << "Modifying " << outputFile << std::endl;
-    return HandleLibrary(outputFile, argc, argv);
+    return HandleLibrary(outputFile, files);
 }

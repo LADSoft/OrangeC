@@ -266,7 +266,7 @@ bool Importer::EnterNamespace(const Namespace* nameSpace)
     {
         if (sp->sb->storage_class != sc_namespace)
         {
-            Utils::fatal("internal error: misuse of namespace");
+            Utils::Fatal("internal error: misuse of namespace");
         }
     }
     sp->sb->value.i++;
@@ -337,7 +337,7 @@ bool Importer::EnterClass(const Class* cls)
         {
             if (!isstructured(sp->tp) && sp->tp->type != bt_enum)
             {
-                Utils::fatal("internal error: misuse of class");
+                Utils::Fatal("internal error: misuse of class");
             }
         }
         structures_.push_back(sp);
@@ -575,7 +575,7 @@ bool Importer::EnterMethod(const Method* method)
             }
             else
             {
-                Utils::fatal("backend: invalid overload tab");
+                Utils::Fatal("backend: invalid overload tab");
             }
         }
     }

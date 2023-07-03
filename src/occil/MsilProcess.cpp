@@ -289,7 +289,7 @@ MethodSignature* GetMethodSignature(Optimizer::SimpleType* tp, bool pinvoke)
             }
             else
             {
-                Utils::fatal("missing rtl function: %s", buf);
+                Utils::Fatal("missing rtl function: %s", buf);
             }
         }
         else
@@ -512,7 +512,7 @@ void msil_create_property(Optimizer::SimpleSymbol* property, Optimizer::SimpleSy
     }
     else
     {
-        Utils::fatal("Cannot add property at non-class level");
+        Utils::Fatal("Cannot add property at non-class level");
     }
 }
 void AddType(Optimizer::SimpleSymbol* sym, Type* type) { typeList[sym->outputName] = type; }
@@ -1414,7 +1414,7 @@ void msil_oa_genbyte(int bt)
         dataPointer = (Byte*)realloc(dataPointer, dataMax);
     }
     if (!dataPointer)
-        Utils::fatal("out of memory");
+        Utils::Fatal("out of memory");
     dataPointer[dataPos++] = bt;
 }
 

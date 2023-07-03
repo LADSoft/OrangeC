@@ -179,27 +179,28 @@ bool Include::AddFileList(const std::string& name, bool ignoreOk, bool MakeFile)
             cmdFiles.AddFromPath(current, includes);
         }
     }
-    for (auto it = cmdFiles.FileNameBegin(); rv && it != cmdFiles.FileNameEnd(); ++it)
+    for (auto it = cmdFiles.begin(); rv && it != cmdFiles.end(); ++it)
     {
+        auto name = *it;
         Variable* v = VariableContainer::Instance()->Lookup("MAKEFILE_LIST");
         if (!v)
         {
-            v = new Variable(std::string("MAKEFILE_LIST"), (*it), Variable::f_simple, Variable::o_file);
+            v = new Variable(std::string("MAKEFILE_LIST"), name, Variable::f_simple, Variable::o_file);
             *VariableContainer::Instance() += v;
         }
         else
         {
-            v->SetValue(v->GetValue() + " " + (*it));
+            v->SetValue(v->GetValue() + " " + name);
         }
-        files.push_back((*it));
-        auto path = (*it);
+        files.push_back(name);
+        auto path = name;
         int n = path.find_last_of("/\\");
         if (n != std::string::npos)
         {
             path = path.substr(0, n);
             currentPath.push(path);
         }
-        rv &= Parse((*it), ignoreOk || MakeFile, MakeFile);
+        rv &= Parse(name, ignoreOk || MakeFile, MakeFile);
         if (n != std::string::npos)
         {
             currentPath.pop();

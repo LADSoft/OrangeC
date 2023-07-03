@@ -142,21 +142,21 @@ void SymbolTable::ProcessObjectFile(ObjFile* file)
 }
 void SymbolTable::Load(CmdFiles& files)
 {
-    for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
+    for (auto name : files)
     {
-        LibManager librarian((*it), false, true);
+        LibManager librarian(name, false, true);
         if (librarian.IsOpen())
         {
             if (!librarian.LoadLibrary())
             {
-                FILE* stream = fopen((*it).c_str(), "rb");
+                FILE* stream = fopen(name.c_str(), "rb");
                 ObjIeeeIndexManager im1;
                 ObjFactory factory(&im1);
-                ObjIeee ieee((*it).c_str(), true);
+                ObjIeee ieee(name.c_str(), true);
                 ObjFile* f = ieee.Read(stream, ObjIeee::eAll, &factory);
                 if (!f)
                 {
-                    std::cout << "'" << (*it) << "' is not an object file or library, not loading" << std::endl;
+                    std::cout << "'" << name << "' is not an object file or library, not loading" << std::endl;
                 }
                 else
                 {
@@ -175,7 +175,7 @@ void SymbolTable::Load(CmdFiles& files)
         }
         else
         {
-            std::cout << "'" << (*it) << "' is not an object file or library, not loading" << std::endl;
+            std::cout << "'" << name << "' is not an object file or library, not loading" << std::endl;
         }
     }
     ResolveExternalTypes();

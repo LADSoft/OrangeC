@@ -863,27 +863,27 @@ void WinmodeSetup(const char* string)
             defines[6].respect = false;
             break;
         default:
-            Utils::fatal("Invalid executable type");
+            Utils::Fatal("Invalid executable type");
             break;
     }
     if (string[1] == 'm')
     {
         if (!defines[0].respect)
-            Utils::fatal("Invalid use of LSCRTDLL");
+            Utils::Fatal("Invalid use of LSCRTDLL");
         cparams.prm_msvcrt = true;
         defines[4].respect = true;
     }
     if (string[1] == 'c')
     {
         if (!defines[0].respect)
-            Utils::fatal("Invalid use of CRTDLL");
+            Utils::Fatal("Invalid use of CRTDLL");
         cparams.prm_crtdll = true;
         defines[5].respect = true;
     }
     else if (string[1] == 'l')
     {
         if (!defines[0].respect)
-            Utils::fatal("Invalid use of LSCRTDLL");
+            Utils::Fatal("Invalid use of LSCRTDLL");
         cparams.prm_lscrtdll = true;
         defines[1].respect = true;
         Optimizer::chosenAssembler->arch->libsasimports = true;

@@ -209,7 +209,7 @@ bool CoffLibrary::ConvertImportMods()
             switch (hdr.ImportNameType)
             {
                 case 0:
-                    Utils::fatal("Can't import by ordinal");
+                    Utils::Fatal("Can't import by ordinal");
                     exit(1);
                     break;
                 case 1:  // identical to public
@@ -261,7 +261,7 @@ bool CoffLibrary::SaveLibrary(std::string name)
     header.filesInModule = files.size();
     FILE* ostr = fopen(name.c_str(), "wb");
     if (!ostr)
-        Utils::fatal("Cannot open '%s' for write", name.c_str());
+        Utils::Fatal("Cannot open '%s' for write", name.c_str());
     fwrite(&header, sizeof(header), 1, ostr);
     Align(ostr, 16);
     header.namesOffset = ftell(ostr);

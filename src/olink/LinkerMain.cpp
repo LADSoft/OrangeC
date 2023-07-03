@@ -33,6 +33,7 @@
 #include "SwitchConfig.h"
 #include "xml.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include "LinkerMain.h"
 #include "LinkPartition.h"
 #include "LinkOverlay.h"
@@ -65,19 +66,16 @@ int main(int argc, char** argv)
     {
         std::cout << e.what() << std::endl;
     }
-    Utils::fatal("Fatal Error...");
+    Utils::Fatal("Fatal Error...");
     return 1;
 }
 
 CmdSwitchParser LinkerMain::SwitchParser;
-CmdSwitchBool LinkerMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool LinkerMain::CaseSensitive(SwitchParser, 'c', true);
 CmdSwitchCombo LinkerMain::Map(SwitchParser, 'm', "x");
-CmdSwitchBool LinkerMain::DebugInfo(SwitchParser, 'v', false);
-CmdSwitchBool LinkerMain::DebugInfo2(SwitchParser, 'g', false);
+CmdSwitchBool LinkerMain::DebugInfo(SwitchParser, 'g', false);
 CmdSwitchCombineString LinkerMain::LinkOnly(SwitchParser, 'l', ';');
 CmdSwitchBool LinkerMain::RelFile(SwitchParser, 'r', false);
-CmdSwitchFile LinkerMain::File(SwitchParser, '@');
 CmdSwitchCombineString LinkerMain::Specification(SwitchParser, 's');
 CmdSwitchDefine LinkerMain::Defines(SwitchParser, 'D');
 CmdSwitchCombineString LinkerMain::LibPath(SwitchParser, 'L', ';');
@@ -118,10 +116,9 @@ const ObjString& LinkerMain::GetOutputFile(CmdFiles& files)
         else if (outputFile.find(".rel") == std::string::npos)
             outputFile += ".rel";
     }
-    else if (files.GetSize())
+    else if (files.size())
     {
-        auto it = files.FileNameBegin();
-        outputFile = Utils::QualifiedFile((*it).c_str(), ".rel");
+        outputFile = Utils::QualifiedFile(files[0].c_str(), ".rel");
     }
     else if (!PrintFileName.GetExists())
     {
@@ -137,10 +134,9 @@ const ObjString& LinkerMain::GetMapFile(CmdFiles& files)
     {
         mapFile = Utils::QualifiedFile(OutputFile.GetValue().c_str(), ".map");
     }
-    else if (files.GetSize())
+    else if (files.size())
     {
-        auto it = files.FileNameBegin();
-        mapFile = Utils::QualifiedFile((*it).c_str(), ".map");
+        mapFile = Utils::QualifiedFile(files[0].c_str(), ".map");
     }
     else if (!PrintFileName.GetExists())
     {
@@ -170,8 +166,8 @@ void LinkerMain::AddFile(LinkManager& linker, std::string& name)
 }
 void LinkerMain::AddFiles(LinkManager& linker, CmdFiles& files)
 {
-    for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
-        AddFile(linker, (*it));
+    for (int i = 1; i < files.size(); i++)
+        AddFile(linker, files[i]);
 }
 void LinkerMain::SetDefines(LinkManager& linker)
 {
@@ -263,59 +259,31 @@ void LinkerMain::ParseSpecifiedLibFiles(CmdFiles& files, LinkManager& manager)
 }
 int LinkerMain::Run(int argc, char** argv)
 {
-    bool showBanner = true;
     RewriteArgs(argc, argv);
-    if (!getenv("OLINK_LEGACY_OPTIONS"))
+    if (getenv("OLINK_LEGACY_OPTIONS"))
     {
         for (int i = 0; i < argc; i++)
         {
-            if (!strcmp(argv[i], "-v"))
+            if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "/v"))
             {
-                printf("%s Version " STRING_VERSION, Utils::ShortName(argv[0]));
+                DebugInfo.SetValue(true);
                 exit(0);
-            }
-            else if (!strcmp(argv[i], "--print-file-name"))
-            {
-                showBanner = false;
             }
         }
     }
-    if (showBanner)
-        Utils::banner(argv[0]);
-    Utils::SetEnvironmentToPathParent("ORANGEC");
     char* modName = Utils::GetModuleName();
     std::string appName = Utils::QualifiedFile(modName, ".app");
     if (!TargetConfig.ReadConfigFile(appName))
     {
-        Utils::fatal("Corrupt configuration file");
-    }
-    CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(modName, ".cfg");
-    std::fstream configTest(configName, std::ios::in);
-    if (!configTest.fail())
-    {
-        configTest.close();
-        if (!internalConfig.Parse(configName.c_str()))
-            Utils::fatal("Corrupt configuration file");
-    }
-    if (!SwitchParser.Parse(&argc, argv))
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    if (ShowHelp.GetExists())
-        Utils::usage(argv[0], helpText);
-    if (argc == 1 && File.GetCount() <= 1 && !PrintFileName.GetExists())
-    {
-        Utils::usage(argv[0], usageText);
+        Utils::Fatal("Corrupt configuration file");
     }
     if (!TargetConfig.Validate())
     {
-        Utils::fatal("Incompatible target configurations");
+        Utils::Fatal("Incompatible target configurations");
     }
-    CmdFiles files(argv + 1);
-    if (File.GetValue())
-        files.Add(File.GetValue() + 1);
-
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    if (files.size() < 2 && !PrintFileName.GetExists())
+        ToolChain::Usage(usageText);
     // setup
     const ObjString& outputFile = GetOutputFile(files);
     unlink(outputFile.c_str());
@@ -347,7 +315,7 @@ int LinkerMain::Run(int argc, char** argv)
     ObjIeeeIndexManager im1;
     ObjIeeeIndexManager im2;
     ObjFactory fact1(&im2);
-    if (DebugInfo.GetValue() || DebugInfo2.GetValue())
+    if (DebugInfo.GetValue())
         debugFile = Utils::QualifiedFile(outputFile.c_str(), ".odx");
     char* lpath = getenv("LIBRARY_PATH");
     if (lpath)
@@ -365,7 +333,7 @@ int LinkerMain::Run(int argc, char** argv)
     linker.SetIndexManager(&im1);
     linker.SetFactory(&fact1);
     ObjIeee ieee(outputFile, CaseSensitive.GetValue());
-    ieee.SetDebugInfoFlag(DebugInfo.GetValue() || DebugInfo2.GetValue());
+    ieee.SetDebugInfoFlag(DebugInfo.GetValue());
     linker.SetObjIo(&ieee);
     // enter files and link
     AddFiles(linker, files);

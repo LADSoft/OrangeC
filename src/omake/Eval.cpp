@@ -1238,11 +1238,11 @@ std::string Eval::wildcardinternal(std::string& names)
         files.Add(current);
     }
     std::string rv;
-    for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
+    for (auto&& name : files)
     {
         if (!rv.empty())
             rv += " ";
-        rv += (*it);
+        rv += name;
     }
     return rv;
 }

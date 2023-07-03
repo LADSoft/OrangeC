@@ -2745,7 +2745,7 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
     begin = search(basetype(initializerListTemplate)->syms, "__begin_");
     size = search(basetype(initializerListTemplate)->syms, "__size_");
     if (!begin || !size)
-        Utils::fatal("Invalid definition of initializer-list");
+        Utils::Fatal("Invalid definition of initializer-list");
     if (!initial->front()->nested && comparetypes(initial->front()->tp, initializerListTemplate, true))
     {
         auto exp = initial->front()->exp;
@@ -4397,6 +4397,8 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                 {
                     temp1.insert(temp1.begin(), itl, itle);
                     int n = temp1.size();
+//                    if (!strcmp(funcparams->sp->name, "ne"))
+//                        printf("hi");
                     AdjustParams(funcparams->sp, it, temp->end(), &temp2, operands, true);
                     auto itt = temp1.begin();
                     auto itte = temp1.end();

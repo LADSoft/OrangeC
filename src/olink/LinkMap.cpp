@@ -68,7 +68,7 @@ ObjInt LinkMap::PublicBase(ObjExpression* exp, int& group)
         find = find->GetLeft();
     }
     if (find->GetOperator() != ObjExpression::eSection)
-        Utils::fatal("Invalid fixup");
+        Utils::Fatal("Invalid fixup");
     group = find->GetSection()->GetIndex() + 1;
     find->GetSection()->SetOffset(new ObjExpression(0));  // this wrecks the link but is done last so it is ok
     return overlays[group - 1]->GetAttribs().GetAddress();

@@ -49,23 +49,23 @@ void ObjMemory::SetData(ObjExpression* Data, ObjInt Size)
 void ObjMemoryManager::ResolveSymbols(ObjFactory* Factory, ObjSection* Section)
 {
     int offset = 0;
-    for (auto itm = MemoryBegin(); itm != MemoryEnd(); ++itm)
+    for (auto mem : *this)
     {
-        if ((*itm)->HasDebugTags())
+        if (mem->HasDebugTags())
         {
-            for (auto itd = (*itm)->DebugTagBegin(); itd != (*itm)->DebugTagEnd(); ++itd)
+            for (auto tag : *mem)
             {
-                if ((*itd)->GetType() == ObjDebugTag::eVar)
+                if (tag->GetType() == ObjDebugTag::eVar)
                 {
-                    if ((*itd)->GetSymbol()->IsSectionRelative())
+                    if (tag->GetSymbol()->IsSectionRelative())
                     {
                         ObjExpression* left = Factory->MakeExpression(Section);
                         ObjExpression* right = Factory->MakeExpression(offset);
-                        (*itd)->GetSymbol()->SetOffset(Factory->MakeExpression(ObjExpression::eAdd, left, right));
+                        tag->GetSymbol()->SetOffset(Factory->MakeExpression(ObjExpression::eAdd, left, right));
                     }
                 }
             }
         }
-        offset += (*itm)->GetSize();
+        offset += mem->GetSize();
     }
 }

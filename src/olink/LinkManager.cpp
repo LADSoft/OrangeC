@@ -147,11 +147,11 @@ void LinkManager::LoadSectionExternals(ObjFile* file, ObjSection* section)
     {
         section->SetUsed(true);
         ObjMemoryManager& memManager = section->GetMemoryManager();
-        for (auto it = memManager.MemoryBegin(); it != memManager.MemoryEnd(); ++it)
+        for (auto mem : memManager)
         {
-            if ((*it)->GetFixup())
+            if (mem->GetFixup())
             {
-                LoadExterns(file, (*it)->GetFixup());
+                LoadExterns(file, mem->GetFixup());
             }
         }
     }
@@ -437,7 +437,7 @@ void LinkManager::LoadFiles()
     }
     int bpmau = INT_MAX;
     int mau = 1;
-    for (auto&& name : objectFiles)
+    for (auto name : objectFiles)
     {
         std::string path;
         FILE* infile = GetLibraryPath(name, path);

@@ -50,10 +50,10 @@ class LinkPartition
 
     LinkAttribs& GetAttribs() { return attribs; }
 
-    typedef OverlayContainer::iterator OverlayIterator;
+    typedef OverlayContainer::iterator iterator;
 
-    OverlayIterator OverlayBegin() { return overlays.begin(); }
-    OverlayIterator OverlayEnd() { return overlays.end(); }
+    iterator begin() { return overlays.begin(); }
+    iterator end() { return overlays.end(); }
 
     bool CreateSeparateRegions(LinkManager* manager, CmdFiles& files, LinkTokenizer& spec);
     bool ParsePartitionSpec(LinkManager* manager, CmdFiles& files, LinkTokenizer& spec);

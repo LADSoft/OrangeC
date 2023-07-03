@@ -26,9 +26,9 @@
 
 void ObjFactory::Deallocate()
 {
-    for (auto it = MemoryBegin(); it != MemoryEnd(); ++it)
+    for (auto mem : *this)
     {
-        delete *it;
+        delete mem;
     }
     allocated.clear();
 }

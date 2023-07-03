@@ -146,11 +146,11 @@ void LinkMap::NormalSections(std::fstream& stream)
         ShowPartitionLine(stream, (*it)->GetPartition());
         if ((*it)->GetPartition())
         {
-            for (auto itc = (*it)->GetPartition()->OverlayBegin(); itc != (*it)->GetPartition()->OverlayEnd(); ++itc)
+            for (auto&& overlay : *(*it)->GetPartition())
             {
-                if ((*itc)->GetOverlay())
+                if (overlay->GetOverlay())
                 {
-                    overlays.push_back((*itc)->GetOverlay());
+                    overlays.push_back(overlay->GetOverlay());
                 }
             }
         }
@@ -165,33 +165,33 @@ void LinkMap::DetailedSections(std::fstream& stream)
         if ((*it)->GetPartition())
         {
             ShowPartitionLine(stream, (*it)->GetPartition());
-            for (auto itc = (*it)->GetPartition()->OverlayBegin(); itc != (*it)->GetPartition()->OverlayEnd(); ++itc)
+            for (auto&& overlay : *(*it)->GetPartition())
             {
-                if ((*itc)->GetOverlay())
+                if (overlay->GetOverlay())
                 {
-                    overlays.push_back((*itc)->GetOverlay());
-                    ShowOverlayLine(stream, (*itc)->GetOverlay());
-                    for (auto itr = (*itc)->GetOverlay()->RegionBegin(); itr != (*itc)->GetOverlay()->RegionEnd(); ++itr)
+                    overlays.push_back(overlay->GetOverlay());
+                    ShowOverlayLine(stream, overlay->GetOverlay());
+                    for (auto&& region : *overlay->GetOverlay())
                     {
-                        if ((*itr)->GetRegion())
+                        if (region->GetRegion())
                         {
-                            int n = (*itc)->GetOverlay()->GetAttribs().GetAddress();
-                            ShowRegionLine(stream, (*itr)->GetRegion(), n, group);
-                            for (auto it = (*itr)->GetRegion()->NowDataBegin(); it != (*itr)->GetRegion()->NowDataEnd(); ++it)
+                            int n = overlay->GetOverlay()->GetAttribs().GetAddress();
+                            ShowRegionLine(stream, region->GetRegion(), n, group);
+                            for (auto it = region->GetRegion()->NowDataBegin(); it != region->GetRegion()->NowDataEnd(); ++it)
                             {
                                 for (auto sect : (*it)->sections)
                                 {
                                     ShowFileLine(stream, &sect, n);
                                 }
                             }
-                            for (auto it = (*itr)->GetRegion()->NormalDataBegin(); it != (*itr)->GetRegion()->NormalDataEnd(); ++it)
+                            for (auto it = region->GetRegion()->NormalDataBegin(); it != region->GetRegion()->NormalDataEnd(); ++it)
                             {
                                 for (auto sect : (*it)->sections)
                                 {
                                     ShowFileLine(stream, &sect, n);
                                 }
                             }
-                            for (auto it = (*itr)->GetRegion()->PostponeDataBegin(); it != (*itr)->GetRegion()->PostponeDataEnd();
+                            for (auto it = region->GetRegion()->PostponeDataBegin(); it != region->GetRegion()->PostponeDataEnd();
                                  ++it)
                             {
                                 for (auto sect : (*it)->sections)
@@ -224,20 +224,20 @@ void LinkMap::Publics(std::fstream& stream)
     {
         if ((*it)->GetPartition())
         {
-            for (auto itc = (*it)->GetPartition()->OverlayBegin(); itc != (*it)->GetPartition()->OverlayEnd(); ++itc)
+            for (auto&& overlay : *(*it)->GetPartition())
             {
-                if ((*itc)->GetOverlay())
+                if (overlay->GetOverlay())
                 {
-                    ObjInt base = (*itc)->GetOverlay()->GetAttribs().GetAddress();
-                    for (auto itr = (*itc)->GetOverlay()->RegionBegin(); itr != (*itc)->GetOverlay()->RegionEnd(); ++itr)
+                    ObjInt base = overlay->GetOverlay()->GetAttribs().GetAddress();
+                    for (auto&& region : *overlay->GetOverlay())
                     {
-                        if ((*itr)->GetRegion())
+                        if (region->GetRegion())
                         {
-                            if ((*itr)->GetRegion()->GetName() == " vsc* " || (*itr)->GetRegion()->GetName() == " vsd* " ||
-                                (*itr)->GetRegion()->GetName() == " vsb* ")
+                            if (region->GetRegion()->GetName() == " vsc* " || region->GetRegion()->GetName() == " vsd* " ||
+                                region->GetRegion()->GetName() == " vsb* ")
                             {
-                                int base = (*itc)->GetOverlay()->GetAttribs().GetAddress();
-                                for (auto it = (*itr)->GetRegion()->NowDataBegin(); it != (*itr)->GetRegion()->NowDataEnd(); ++it)
+                                int base = overlay->GetOverlay()->GetAttribs().GetAddress();
+                                for (auto it = region->GetRegion()->NowDataBegin(); it != region->GetRegion()->NowDataEnd(); ++it)
                                 {
                                     for (auto sect : (*it)->sections)
                                     {
@@ -251,7 +251,7 @@ void LinkMap::Publics(std::fstream& stream)
                                         byValue.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
                                     }
                                 }
-                                for (auto it = (*itr)->GetRegion()->NormalDataBegin(); it != (*itr)->GetRegion()->NormalDataEnd();
+                                for (auto it = region->GetRegion()->NormalDataBegin(); it != region->GetRegion()->NormalDataEnd();
                                      ++it)
                                 {
                                     for (auto sect : (*it)->sections)
@@ -266,8 +266,8 @@ void LinkMap::Publics(std::fstream& stream)
                                         byValue.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
                                     }
                                 }
-                                for (auto it = (*itr)->GetRegion()->PostponeDataBegin();
-                                     it != (*itr)->GetRegion()->PostponeDataEnd(); ++it)
+                                for (auto it = region->GetRegion()->PostponeDataBegin();
+                                     it != region->GetRegion()->PostponeDataEnd(); ++it)
                                 {
                                     for (auto sect : (*it)->sections)
                                     {

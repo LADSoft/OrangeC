@@ -70,7 +70,7 @@ void LibFiles::Remove(const ObjString& Name)
     std::string internalName = Name;
     if (npos != std::string::npos)
         internalName = Name.substr(npos + 1);
-    for (auto it = FileBegin(); it != FileEnd(); ++it)
+    for (auto it = begin(); it != end(); ++it)
     {
         if ((*it)->name == internalName)
         {
@@ -89,9 +89,9 @@ void LibFiles::Extract(FILE* stream, const ObjString& Name)
     int count = 0;
     ObjIeeeIndexManager im1;
     ObjFactory fact1(&im1);
-    for (auto it = FileBegin(); it != FileEnd(); ++it)
+    for (auto&& file : *this)
     {
-        if ((*it)->name == internalName)
+        if (file->name == internalName)
         {
             ObjFile* p = LoadModule(stream, count, &fact1);
             if (p)
@@ -99,7 +99,7 @@ void LibFiles::Extract(FILE* stream, const ObjString& Name)
                 FILE* ostr = fopen(Name.c_str(), "wb");
                 if (ostr != nullptr)
                 {
-                    if (!WriteData(ostr, p, (*it)->name))
+                    if (!WriteData(ostr, p, file->name))
                     {
 
                         std::cout << "Warning: Module '" << Name << "' not extracted, could not write output file" << std::endl;
@@ -132,17 +132,17 @@ void LibFiles::Replace(ObjFile& obj)
     std::string internalName = Name;
     if (npos != std::string::npos)
         internalName = Name.substr(npos + 1);
-    for (auto it = FileBegin(); it != FileEnd(); ++it)
+    for (auto&& file : *this)
     {
-        if ((*it)->name == internalName)
+        if (file->name == internalName)
         {
-            if ((*it)->data)
+            if (file->data)
             {
-                (*it)->data = nullptr;
+                file->data = nullptr;
             }
-            (*it)->data = &obj;
-            (*it)->name = Name;
-            (*it)->offset = 0;
+            file->data = &obj;
+            file->name = Name;
+            file->offset = 0;
             return;
         }
     }
@@ -154,16 +154,16 @@ void LibFiles::Replace(const ObjString& Name)
     std::string internalName = Name;
     if (npos != std::string::npos)
         internalName = Name.substr(npos + 1);
-    for (auto it = FileBegin(); it != FileEnd(); ++it)
+    for (auto&& file : *this)
     {
-        if ((*it)->name == internalName)
+        if (file->name == internalName)
         {
-            if ((*it)->data)
+            if (file->data)
             {
-                (*it)->data = nullptr;
+                file->data = nullptr;
             }
-            (*it)->name = Name;
-            (*it)->offset = 0;
+            file->name = Name;
+            file->offset = 0;
             return;
         }
     }
@@ -178,9 +178,9 @@ bool LibFiles::WriteData(FILE* stream, ObjFile* file, const ObjString& name)
 }
 bool LibFiles::WriteNames(FILE* stream)
 {
-    for (auto it = FileBegin(); it != FileEnd(); ++it)
+    for (auto&& file : *this)
     {
-        const char* p = (*it)->name.c_str();
+        const char* p = file->name.c_str();
         const char* q = strrchr(p, '\\');
         const char* q1 = strrchr(p, '/');
         if (q && q1)
@@ -198,9 +198,9 @@ bool LibFiles::WriteNames(FILE* stream)
 }
 bool LibFiles::WriteOffsets(FILE* stream)
 {
-    for (auto it = FileBegin(); it != FileEnd(); ++it)
+    for (auto&& file : *this)
     {
-        ObjInt ofs = (*it)->offset;
+        ObjInt ofs = file->offset;
         if (fwrite(&ofs, 4, 1, stream) != 1)
             return false;
     }
@@ -223,7 +223,7 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
     while (!done)
     {
         done = true;
-        for (auto it = FileBegin(); it != FileEnd();)
+        for (auto it = begin(); it != end();)
         {
             auto itn = it;
             ++it;
@@ -281,12 +281,12 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
 bool LibFiles::WriteFiles(FILE* stream, ObjInt align)
 {
     int i = 0;
-    for (auto it = FileBegin(); it != FileEnd(); ++it)
+    for (auto&& file : *this)
     {
         if (!Align(stream, align))
             return false;
-        (*it)->offset = ftell(stream);
-        if (!WriteData(stream, (*it)->data, (*it)->name))
+        file->offset = ftell(stream);
+        if (!WriteData(stream, file->data, file->name))
             return false;
     }
     return true;

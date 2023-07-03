@@ -58,13 +58,13 @@ bool Real::ReadSections(ObjFile* file, ObjExpression* start)
         {
             ObjSection* sect = *it;
             ObjMemoryManager& m = sect->GetMemoryManager();
-            for (auto it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
+            for (auto&& memory : m)
             {
-                int msize = (*it)->GetSize();
-                ObjByte* mdata = (*it)->GetData();
+                int msize = memory->GetSize();
+                ObjByte* mdata = memory->GetData();
                 if (msize)
                 {
-                    ObjExpression* fixup = (*it)->GetFixup();
+                    ObjExpression* fixup = memory->GetFixup();
                     if (fixup)
                     {
                         int sbase = sect->GetOffset()->Eval(0);
@@ -111,8 +111,8 @@ bool Real::ReadSections(ObjFile* file, ObjExpression* start)
                     }
                     else
                     {
-                        if ((*it)->IsEnumerated())
-                            memset(pdata + ofs, (*it)->GetFill(), msize);
+                        if (memory->IsEnumerated())
+                            memset(pdata + ofs, memory->GetFill(), msize);
                         else
                             memcpy(pdata + ofs, mdata, msize);
                     }

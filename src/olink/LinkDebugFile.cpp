@@ -246,15 +246,15 @@ bool LinkDebugFile::WriteLineNumbers()
     {
         ObjMemoryManager& m = (*it)->GetMemoryManager();
         ObjInt address = m.GetBase();
-        for (auto it1 = m.MemoryBegin(); it1 != m.MemoryEnd(); ++it1)
+        for (auto memory : m)
         {
-            if ((*it1)->HasDebugTags())
+            if (memory->HasDebugTags())
             {
                 ObjLineNo* ln = nullptr;
                 // full list of line numbers needed for symbol data...
-                for (auto it2 = (*it1)->DebugTagBegin(); it2 != (*it1)->DebugTagEnd(); ++it2)
+                for (auto tag : *memory)
                 {
-                    ObjLineNo* ln2 = (*it2)->GetLineNo();
+                    ObjLineNo* ln2 = tag->GetLineNo();
                     if (ln2)
                     {
                         //                        int line = ln2->GetLineNumber();
@@ -275,7 +275,7 @@ bool LinkDebugFile::WriteLineNumbers()
                     v.push_back(line);
                 }
             }
-            address += (*it1)->GetSize();
+            address += memory->GetSize();
         }
     }
     IntegerColumnsVirtualTable lines(v, 3);
@@ -487,10 +487,10 @@ bool LinkDebugFile::WriteVariableTypes()
             case ObjType::eFunction: {
                 ObjFunction* func = static_cast<ObjFunction*>(type);
                 int order = 0;
-                for (auto it = func->ParameterBegin(); it != func->ParameterEnd(); ++it)
+                for (auto param : *func)
                 {
                     v.push_back(func->GetIndex());
-                    v.push_back(GetTypeIndex((*it)));
+                    v.push_back(GetTypeIndex(param));
                     v.push_back(order++);
                 }
             }
@@ -513,12 +513,12 @@ bool LinkDebugFile::WriteVariableTypes()
             case ObjType::eUnion:
             case ObjType::eEnum: {
                 int order = 0;
-                for (auto it = type->FieldBegin(); it != type->FieldEnd(); ++it)
+                for (auto field : *type)
                 {
                     v.push_back(type->GetIndex());
-                    v.push_back(GetTypeIndex((*it)->GetBase()));
-                    v.push_back(GetSQLNameId((*it)->GetName()));
-                    v.push_back((*it)->GetConstVal());
+                    v.push_back(GetTypeIndex(field->GetBase()));
+                    v.push_back(GetSQLNameId(field->GetName()));
+                    v.push_back(field->GetConstVal());
                     v.push_back(order++);
                 }
             }
@@ -695,44 +695,44 @@ bool LinkDebugFile::WriteAutosTable()
         ObjMemoryManager& m = (*it)->GetMemoryManager();
         ObjInt address = m.GetBase();
         ObjLineNo* currentLine = nullptr;
-        for (auto it1 = m.MemoryBegin(); it1 != m.MemoryEnd(); ++it1)
+        for (auto mem : m)
         {
             // find the line number first.  This is because it is difficult to get the line number
             // out of the compiler before the variable name is listed.
-            if ((*it1)->HasDebugTags())
+            if (mem->HasDebugTags())
             {
-                for (auto it2 = (*it1)->DebugTagBegin(); it2 != (*it1)->DebugTagEnd(); ++it2)
+                for (auto tag : *mem)
                 {
-                    switch ((*it2)->GetType())
+                    switch (tag->GetType())
                     {
                         case ObjDebugTag::eLineNo:
-                            if ((*it2)->GetLineNo() > currentLine)  // e.g. for statements can have their first statement last
-                                currentLine = (*it2)->GetLineNo();
+                            if (tag->GetLineNo() > currentLine)  // e.g. for statements can have their first statement last
+                                currentLine = tag->GetLineNo();
                             break;
                         default:
                             break;
                     }
                 }
-                for (auto it2 = (*it1)->DebugTagBegin(); it2 != (*it1)->DebugTagEnd(); ++it2)
+                for (auto tag : *mem)
                 {
-                    switch ((*it2)->GetType())
+                    switch (tag->GetType())
                     {
                         case ObjDebugTag::eLineNo:
-                            currentLine = (*it2)->GetLineNo();
+                            currentLine = tag->GetLineNo();
                             break;
                         case ObjDebugTag::eVar:
 
-                            currentContext->vars[(*it2)->GetSymbol()] = currentLine;
+                            currentContext->vars[tag->GetSymbol()] = currentLine;
                             break;
                         case ObjDebugTag::eVirtualFunctionStart: {
-                            ObjSection* func = (*it2)->GetSection();
+                            ObjSection* func = tag->GetSection();
                             funcId = sectionMap[func->GetName()];
                         }
                             // fall through
                         case ObjDebugTag::eFunctionStart:
-                            if ((*it2)->GetType() == ObjDebugTag::eFunctionStart)
+                            if (tag->GetType() == ObjDebugTag::eFunctionStart)
                             {
-                                ObjSymbol* func = (*it2)->GetSymbol();
+                                ObjSymbol* func = tag->GetSymbol();
                                 if (func->GetType() == ObjSymbol::ePublic)
                                 {
                                     funcId = publicMap[func->GetIndex()];
@@ -779,7 +779,7 @@ bool LinkDebugFile::WriteAutosTable()
                         currentContext->currentLine = currentLine;
                 }
             }
-            address += (*it1)->GetSize();
+            address += mem->GetSize();
         }
     }
     IntegerColumnsVirtualTable autos(v, 7);

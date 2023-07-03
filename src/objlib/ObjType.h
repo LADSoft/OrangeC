@@ -129,11 +129,11 @@ class ObjType : public ObjWrapper
     int GetBitCount() { return bitCount; }
 
     ObjInt GetFieldSize() { return fields.size(); }
-    typedef FieldContainer::iterator FieldIterator;
-    typedef FieldContainer::const_iterator const_FieldIterator;
+    typedef FieldContainer::iterator iterator;
+    typedef FieldContainer::const_iterator const_iterator;
 
-    FieldIterator FieldBegin() { return fields.begin(); }
-    FieldIterator FieldEnd() { return fields.end(); }
+    iterator begin() { return fields.begin(); }
+    iterator end() { return fields.end(); }
 
   private:
     ObjString name;

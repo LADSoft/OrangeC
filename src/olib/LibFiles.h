@@ -62,9 +62,9 @@ class LibFiles
 
     ObjFile* LoadModule(FILE* stream, ObjInt FileIndex, ObjFactory* factory);
 
-    typedef std::deque<std::unique_ptr<FileDescriptor>>::iterator FileIterator;
-    FileIterator FileBegin() { return files.begin(); }
-    FileIterator FileEnd() { return files.end(); }
+    typedef std::deque<std::unique_ptr<FileDescriptor>>::iterator iterator;
+    iterator begin() { return files.begin(); }
+    iterator end() { return files.end(); }
 
   protected:
     ObjFile* ReadData(FILE* stream, const ObjString& name, ObjFactory* factory);

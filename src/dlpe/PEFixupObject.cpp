@@ -144,13 +144,13 @@ void PEFixupObject::LoadFixups()
         ObjInt base = (*it)->GetOffset()->Eval(0);
         ObjMemoryManager& m = (*it)->GetMemoryManager();
         int ofs = 0;
-        for (auto it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
+        for (auto mem : m)
         {
-            int msize = (*it)->GetSize();
-            ObjByte* mdata = (*it)->GetData();
+            int msize = mem->GetSize();
+            ObjByte* mdata = mem->GetData();
             if (msize)
             {
-                ObjExpression* fixup = (*it)->GetFixup();
+                ObjExpression* fixup = mem->GetFixup();
                 if (fixup)
                 {
                     if (msize != 4)

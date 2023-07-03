@@ -69,13 +69,13 @@ void LEFixup::LoadFixups(ObjFile& file)
         ObjInt base = (*it)->GetOffset()->Eval(0);
         ObjMemoryManager& m = (*it)->GetMemoryManager();
         int ofs = 0;
-        for (auto it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
+        for (auto&& mem : m)
         {
-            int msize = (*it)->GetSize();
-            ObjByte* mdata = (*it)->GetData();
+            int msize = mem->GetSize();
+            ObjByte* mdata = mem->GetData();
             if (msize)
             {
-                ObjExpression* fixup = (*it)->GetFixup();
+                ObjExpression* fixup = mem->GetFixup();
                 if (fixup && !IsRel(fixup))
                 {
                     if (msize != 4)
@@ -87,7 +87,7 @@ void LEFixup::LoadFixups(ObjFile& file)
                         fixups[base + ofs] = Target(n, so, i);
                         // in the section we put a segment relative offset
                         // DOS32A doesn't need it, but UPX depends on it...
-                        (*it)->SetFixup(new ObjExpression(n));
+                        mem->SetFixup(new ObjExpression(n));
                     }
                 }
                 ofs += msize;

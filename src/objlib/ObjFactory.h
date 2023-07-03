@@ -266,11 +266,11 @@ class ObjFactory
         Tag(f);
         return f;
     }
-    typedef MemoryContainer::iterator MemoryIterator;
-    typedef MemoryContainer::const_iterator const_MemoryIterator;
+    typedef MemoryContainer::iterator iterator;
+    typedef MemoryContainer::const_iterator const_iterator;
 
-    MemoryIterator MemoryBegin() { return allocated.begin(); }
-    MemoryIterator MemoryEnd() { return allocated.end(); }
+    iterator begin() { return allocated.begin(); }
+    iterator end() { return allocated.end(); }
 
   protected:
     virtual void Deallocate();

@@ -60,11 +60,11 @@ class ObjMemory : public ObjWrapper
     bool HasDebugTags() { return debugTags != nullptr; }
 
     typedef std::vector<ObjDebugTag*> DebugTagContainer;
-    typedef DebugTagContainer::iterator DebugTagIterator;
-    typedef DebugTagContainer::const_iterator const_DebugTagIterator;
+    typedef DebugTagContainer::iterator iterator;
+    typedef DebugTagContainer::const_iterator const_iterator;
 
-    DebugTagIterator DebugTagBegin() { return debugTags->begin(); }
-    DebugTagIterator DebugTagEnd() { return debugTags->end(); }
+    iterator begin() { return debugTags->begin(); }
+    iterator end() { return debugTags->end(); }
     void SetDebugTags(std::unique_ptr<DebugTagContainer> d)
     {
         if (debugTags)
@@ -111,11 +111,11 @@ class ObjMemoryManager : public ObjWrapper
         memory.push_back(om);
     }
     void ResolveSymbols(ObjFactory* Factory, ObjSection* Section);
-    typedef MemoryContainer::iterator MemoryIterator;
-    typedef MemoryContainer::const_iterator const_MemoryIterator;
+    typedef MemoryContainer::iterator iterator;
+    typedef MemoryContainer::const_iterator const_iterator;
 
-    MemoryIterator MemoryBegin() { return memory.begin(); }
-    MemoryIterator MemoryEnd() { return memory.end(); }
+    iterator begin() { return memory.begin(); }
+    iterator end() { return memory.end(); }
 
   private:
     ObjInt base;

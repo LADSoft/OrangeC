@@ -82,13 +82,13 @@ void dlPmMain::GetInputSections(const std::vector<std::string>& names, ObjFile* 
         s->ResolveSymbols(factory);
         ObjMemoryManager& m = s->GetMemoryManager();
         int ofs = 0;
-        for (auto it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
+        for (auto && memory : m)
         {
-            int msize = (*it)->GetSize();
-            ObjByte* mdata = (*it)->GetData();
+            int msize = memory->GetSize();
+            ObjByte* mdata = memory->GetData();
             if (msize)
             {
-                ObjExpression* fixup = (*it)->GetFixup();
+                ObjExpression* fixup = memory->GetFixup();
                 if (fixup)
                 {
                     int sbase = s->GetOffset()->Eval(0);
@@ -131,8 +131,8 @@ void dlPmMain::GetInputSections(const std::vector<std::string>& names, ObjFile* 
                 }
                 else
                 {
-                    if ((*it)->IsEnumerated())
-                        memset(p->data.get() + ofs, (*it)->GetFill(), msize);
+                    if (memory->IsEnumerated())
+                        memset(p->data.get() + ofs, memory->GetFill(), msize);
                     else
                         memcpy(p->data.get() + ofs, mdata, msize);
                 }

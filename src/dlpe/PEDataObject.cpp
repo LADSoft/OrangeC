@@ -125,17 +125,17 @@ void PEDataObject::Fill()
     int ofs = 0;
     bool hasVA = name == ".text";
     int top = importThunkVA - virtual_addr - imageBase;
-    for (auto it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
+    for (auto&& mem : m)
     {
-        int msize = (*it)->GetSize();
-        ObjByte* mdata = (*it)->GetData();
+        int msize = mem->GetSize();
+        ObjByte* mdata = mem->GetData();
         if (hasVA && msize + ofs > top)
             msize = top - ofs;
         if (msize + ofs > initSize)
             msize = initSize - ofs;
         if (msize >= 0)
         {
-            ObjExpression* fixup = (*it)->GetFixup();
+            ObjExpression* fixup = mem->GetFixup();
             if (fixup)
             {
                 int sbase = sect->GetOffset()->Eval(0);
@@ -178,8 +178,8 @@ void PEDataObject::Fill()
             }
             else
             {
-                if ((*it)->IsEnumerated())
-                    memset(pdata + ofs, (*it)->GetFill(), msize);
+                if (mem->IsEnumerated())
+                    memset(pdata + ofs, mem->GetFill(), msize);
                 else
                     memcpy(pdata + ofs, mdata, msize);
             }

@@ -47,13 +47,13 @@ bool Tiny::ReadSections(ObjFile* file, ObjExpression* start)
     unsigned char* pdata = data.get();
     ObjMemoryManager& m = sect->GetMemoryManager();
     int ofs = 0;
-    for (auto it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
+    for (auto&& mem : m)
     {
-        int msize = (*it)->GetSize();
-        ObjByte* mdata = (*it)->GetData();
+        int msize = mem->GetSize();
+        ObjByte* mdata = mem->GetData();
         if (msize)
         {
-            ObjExpression* fixup = (*it)->GetFixup();
+            ObjExpression* fixup = mem->GetFixup();
             if (fixup)
             {
                 if (fixup->GetOperator() == ObjExpression::eDiv)
@@ -98,8 +98,8 @@ bool Tiny::ReadSections(ObjFile* file, ObjExpression* start)
             }
             else
             {
-                if ((*it)->IsEnumerated())
-                    memset(pdata + ofs, (*it)->GetFill(), msize);
+                if (mem->IsEnumerated())
+                    memset(pdata + ofs, mem->GetFill(), msize);
                 else
                     memcpy(pdata + ofs, mdata, msize);
             }

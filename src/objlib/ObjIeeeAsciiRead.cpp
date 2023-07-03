@@ -653,8 +653,8 @@ void ObjIeeeAscii::DefineStruct(ObjType::eType stype, int index, const char* buf
         // chaining to next field definition?
         if (fieldTypeBase->GetType() == ObjType::eField)
         {
-            for (auto it = fieldTypeBase->FieldBegin(); it != fieldTypeBase->FieldEnd(); ++it)
-                type->Add(*it);
+            for (auto field : *fieldTypeBase)
+                type->Add(field);
             break;
         }
         else

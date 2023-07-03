@@ -52,10 +52,10 @@ class LinkOverlay
     LinkPartition* GetParent() { return parent; }
     void SetParent(LinkPartition* Parent) { parent = Parent; }
 
-    typedef RegionContainer::iterator RegionIterator;
+    typedef RegionContainer::iterator iterator;
 
-    RegionIterator RegionBegin() { return regions.begin(); }
-    RegionIterator RegionEnd() { return regions.end(); }
+    iterator begin() { return regions.begin(); }
+    iterator end() { return regions.end(); }
 
     void Add(LinkRegionSpecifier* region);
 

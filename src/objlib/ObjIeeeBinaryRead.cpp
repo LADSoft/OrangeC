@@ -618,8 +618,8 @@ void ObjIeeeBinary::DefineStruct(ObjType::eType stype, int index, const ObjByte*
         // chaining to next field definition?
         if (fieldTypeBase->GetType() == ObjType::eField)
         {
-            for (ObjType::FieldIterator it = fieldTypeBase->FieldBegin(); it != fieldTypeBase->FieldEnd(); ++it)
-                type->Add(*it);
+            for (auto field : *fieldTypeBase)
+                type->Add(field);
             break;
         }
         else

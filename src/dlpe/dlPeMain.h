@@ -40,6 +40,7 @@ class ObjFile;
 class ObjFactory;
 class PEObject;
 class PEExportObject;
+class CmdFiles;
 
 class dlPeMain
 {

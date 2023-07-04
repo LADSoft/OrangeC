@@ -29,6 +29,9 @@
 #include "Rule.h"
 #include "Maker.h"
 #include <string>
+
+class CmdFiles;
+
 class MakeMain
 {
   public:

@@ -11,23 +11,25 @@ jobs:
 
     runs-on: windows-latest
 
-    env:
-      ORANGEC: $env:GITHUB_WORKSPACE
+    timeout-minutes : 15
 
     steps:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
+    - uses: actions/checkout@v3
+      with:
+        repository: c-testsuite/c-testsuite
+        path: c-testsuite
+        fetch-depth: 0
     - uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: x86
     - name: Config
-      run: mkdir "$env:GITHUB_WORKSPACE/bin"
+      run: copy "$env:GITHUB_WORKSPACE/c-testsuite/tests/single-exec/*.*" "$env:GITHUB_WORKSPACE/tests/c-testsuite" > NUL
     - name: Build
       run: |
-          echo "$env:GITHUB_WORKSPACE/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/src" /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:2
+         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/src" PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:8
     - name: Test
       run: |
-          echo "$env:GITHUB_WORKSPACE/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests"  -B -j:2 /DCOMPILER=OCC
+         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests"  -B -j:8 PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC

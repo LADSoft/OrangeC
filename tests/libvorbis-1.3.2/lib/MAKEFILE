@@ -24,7 +24,7 @@ clean:
 	$(CLEAN)
 
 
-CC = \orangec\bin\occ
+CC = occ
 AS = d:\ccdl\bin\nasm
 LD = d:\ccdl\bin\valx
 RC = d:\ccdl\bin\xrc
@@ -32,7 +32,7 @@ RC = d:\ccdl\bin\xrc
 
 $(OUT): $(OBJ)
 	@del $(OUT)
-	\orangec\bin\olib $(OUT) $(OBJ)
+	$(ORANGEC)\bin\olib $(OUT) $(OBJ)
 
 $(OBJ): $(INC)
 

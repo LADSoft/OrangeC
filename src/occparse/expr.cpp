@@ -6420,8 +6420,17 @@ static LEXLIST* expression_sizeof(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
             lex = get_type_id(lex, tp, funcsp, sc_cast, Optimizer::cparams.prm_cplusplus, true, false);
             if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, openpa))
             {
-                lex = prevsym(prev);
-                lex = expression_func_type_cast(lex, funcsp, tp, exp, 0);
+                lex = getsym();
+                if (MATCHKW(lex, star) || MATCHKW(lex, kw__cdecl) || MATCHKW(lex, kw__stdcall))
+                {
+                    lex = prevsym(prev);
+                    lex = get_type_id(lex, tp, funcsp, sc_cast, false, true, false);
+                }
+                else
+                {
+                    lex = prevsym(prev);
+                    lex = expression_func_type_cast(lex, funcsp, tp, exp, 0);
+                }
             }
             if (paren)
                 needkw(&lex, closepa);

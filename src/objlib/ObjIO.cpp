@@ -38,7 +38,7 @@ void ObjIOContainer::Add(ObjIOBase* ObjIO)
 }
 void ObjIOContainer::Remove(ObjIOBase* ObjIO)
 {
-    for (auto it = IOBaseBegin(); it != IOBaseEnd(); ++it)
+    for (auto it = begin(); it != end(); ++it)
     {
         if ((*it)->GetName() == ObjIO->GetName())
         {

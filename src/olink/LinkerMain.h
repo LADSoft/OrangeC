@@ -37,7 +37,7 @@ class LinkerMain
   protected:
     const ObjString& GetOutputFile(CmdFiles& files);
     const ObjString& GetMapFile(CmdFiles& files);
-    void AddFile(LinkManager& linker, std::string& name);
+    void AddFile(LinkManager& linker, const std::string& name);
     void AddFiles(LinkManager& linker, CmdFiles& files);
     void SetDefines(LinkManager& linker);
     std::string SpecFileContents(const std::string& specFile);

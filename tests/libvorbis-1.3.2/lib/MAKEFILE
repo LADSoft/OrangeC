@@ -32,7 +32,7 @@ RC = d:\ccdl\bin\xrc
 
 $(OUT): $(OBJ)
 	@del $(OUT)
-	$(ORANGEC)\olib $(OUT) $(OBJ)
+	$(ORANGEC)\bin\olib $(OUT) $(OBJ)
 
 $(OBJ): $(INC)
 

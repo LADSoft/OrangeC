@@ -11,6 +11,8 @@ jobs:
 
     runs-on: windows-latest
 
+    timeout-minutes : 15
+
     steps:
     - uses: actions/checkout@v3
       with:
@@ -26,8 +28,6 @@ jobs:
     - name: Config
       run: copy "$env:GITHUB_WORKSPACE/c-testsuite/tests/single-exec/*.*" "$env:GITHUB_WORKSPACE/tests/c-testsuite" > NUL
     - name: Build
-      run: |
-          &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/src" PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:8
+      run: &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/src" PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:8
     - name: Test
-      run: |
-          &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests"  -B -j:8 PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
+      run: &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests"  -B -j:8 PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC

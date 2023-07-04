@@ -40,9 +40,9 @@ class Label
     }
     int GetLabel() { return label; }
     std::string& GetName() { return name; }
-    AsmExprNode* GetOffset() { return node.get(); }
-    void SetOffset(AsmExprNode* Offset) { node.reset(Offset); }
-    void SetOffset(int offs) { SetOffset(new AsmExprNode(offs)); }
+    std::shared_ptr<AsmExprNode> GetOffset() { return node; }
+    void SetOffset(std::shared_ptr<AsmExprNode> Offset) { node = Offset; }
+    void SetOffset(int offs) { SetOffset(std::make_shared<AsmExprNode>(offs)); }
     int GetSect() { return sect; }
     void SetSect(int Sect) { sect = Sect; }
     void SetObjectSection(ObjSection* os) { objSection = os; }
@@ -56,7 +56,7 @@ class Label
 
   private:
     std::string name;
-    std::unique_ptr<AsmExprNode> node;
+    std::shared_ptr<AsmExprNode> node;
     int sect;
     int label;
     bool publc;

@@ -42,13 +42,13 @@ void Runner::DeleteOne(Depends* depend)
     if (depend->ShouldDelete())
         OS::RemoveFile(depend->GetGoal());
 }
-void Runner::CallRunner(Runner* runner, std::list<RuleList*>* list, Depends* depend, EnvironmentStrings* env, bool keepGoing, std::promise<int> promise) {
+void Runner::CallRunner(Runner* runner, std::list<std::shared_ptr<RuleList>>* list, Depends* depend, EnvironmentStrings* env, bool keepGoing, std::promise<int> promise) {
     auto retval = runner->RunOne(list, depend, env, keepGoing);
     promise.set_value(retval);
 }
-int Runner::RunOne(std::list<RuleList*>* ruleStack_in, Depends* depend, EnvironmentStrings* env, bool keepGoing)
+int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* depend, EnvironmentStrings* env, bool keepGoing)
 {
-    RuleList* rl = depend->GetRuleList();
+    std::shared_ptr<RuleList> rl = depend->GetRuleList();
     if (rl->IsBuilt())
     {
         rl->Wait();
@@ -137,7 +137,7 @@ int Runner::RunOne(std::list<RuleList*>* ruleStack_in, Depends* depend, Environm
     {
         Eval::SetRuleStack(ruleStack);
         Spawner sp(*env, ig, sil, oneShell, posix, displayOnly && !make, keepResponseFiles);
-        sp.Run(*depend->GetRule()->GetCommands(), outputType, rl, nullptr);
+        sp.Run(depend->GetRule()->GetCommands(), outputType, rl, nullptr);
         Eval::ClearRuleStack();
         rv = sp.RetVal();
         if (rv)

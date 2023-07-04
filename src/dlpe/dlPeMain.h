@@ -113,7 +113,7 @@ class dlPeMain
     ObjInt stackSize;
     ObjFile* file;
     std::string outputName;
-    std::deque<std::unique_ptr<PEObject>> objects;
+    std::deque<std::shared_ptr<PEObject>> objects;
     ResourceContainer resources;
     std::string defFile;
     enum Mode mode;
@@ -122,7 +122,7 @@ class dlPeMain
     PEHeader header;
     ObjInt startAddress;
     std::unique_ptr<ObjFactory> factory;
-    PEExportObject* exportObject;
+    std::shared_ptr<PEObject> exportObject;
     static unsigned char defaultStubData[];
     static int defaultStubSize;
     static int osMajor;

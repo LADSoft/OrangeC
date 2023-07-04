@@ -556,7 +556,7 @@ const char* Lexer::preDataGas =
     "    [unknowndirective \".vtable_inherit\"]\n"
     "%endmacro\n"
     "%macro .cfi_sections 0+ .nolist\n"
-    "    [unknowndirective \".cfi_sections\"]\n"
+    "    [unknowndirective \".cfi_Section::sections\"]\n"
     "%endmacro\n"
     "%macro .cfi_startproc 0+ .nolist\n"
     "    [unknowndirective \".cfi_startproc\"]\n"
@@ -698,11 +698,11 @@ bool IsSymbolCharRoutine(const char* data, bool startOnly);
 
 InstructionParser* InstructionParser::GetInstance() { return static_cast<InstructionParser*>(new x64Parser()); }
 
-void Instruction::RepRemoveCancellations(AsmExprNode* exp, bool commit, int& count, Section* sect[], bool sign[], bool plus)
+void Instruction::RepRemoveCancellations(std::shared_ptr<AsmExprNode> exp, bool commit, int& count, Section* sect[], bool sign[], bool plus)
 {
     if (exp->GetType() == AsmExprNode::LABEL)
     {
-        AsmExprNode* num = AsmExpr::GetEqu(exp->label);
+        std::shared_ptr<AsmExprNode> num = AsmExpr::GetEqu(exp->label);
         if (!num)
         {
             auto s = AsmFile::GetLabelSection(exp->label);
@@ -715,7 +715,7 @@ void Instruction::RepRemoveCancellations(AsmExprNode* exp, bool commit, int& cou
                 }
                 else
                 {
-                    sect[count] = s;
+                    sect[count] = s.get();
                     sign[count++] = plus;
                 }
             }
@@ -727,7 +727,7 @@ void Instruction::RepRemoveCancellations(AsmExprNode* exp, bool commit, int& cou
     {
         if (!commit)
         {
-            sect[count] = exp->GetSection();
+            sect[count] = exp->GetSection().get();
             sign[count++] = plus;
         }
         else
@@ -760,8 +760,8 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
         }
         else
         {
-            Fixup* f = fixups[0].get();
-            AsmExprNode* expr = AsmExpr::Eval(f->GetExpr(), pc);
+            std::shared_ptr<Fixup> f = fixups[0];
+            std::shared_ptr<AsmExprNode> expr = AsmExpr::Eval(f->GetExpr(), pc);
             if (expr->IsAbsolute())
             {
                 memmove(pdata, pdata + 1, size - 1);
@@ -783,12 +783,11 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
                 memmove(pdata, pdata + 2, size - 2);
                 size -= 2;
                 f->SetInsOffs(f->GetInsOffs() - 2);
-                AsmExprNode* n = new AsmExprNode(AsmExprNode::DIV, f->GetExpr(), new AsmExprNode(16));
-                fixups.push_back(std::make_unique<Fixup>(n, 2, false));
-                f = fixups.back().get();
+                std::shared_ptr<AsmExprNode> n = std::make_shared<AsmExprNode>(AsmExprNode::DIV, f->GetExpr(), std::make_shared<AsmExprNode>(16));
+                fixups.push_back(std::make_shared       <Fixup>(n, 2, false));
+                f = fixups.back();
                 f->SetInsOffs(size - 2);
             }
-            delete expr;
         }
     }
     if (type == CODE || type == DATA || type == RESERVE)
@@ -799,7 +798,7 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
             bool sign[10];
             int count = 0;
             bool canceled = false;
-            AsmExprNode* expr = fixup->GetExpr();
+            std::shared_ptr<AsmExprNode> expr = fixup->GetExpr();
             if (!fixup->IsCanceled())
             {
                 RepRemoveCancellations(expr, false, count, sect, sign, true);
@@ -937,7 +936,6 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
                     }
                 }
             }
-            delete expr;
         }
     }
 }

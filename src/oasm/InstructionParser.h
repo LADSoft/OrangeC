@@ -60,7 +60,7 @@ class InstructionParser
     bool MatchesOpcode(std::string opcode);
     std::unordered_map<std::string, int>::iterator GetOpcode(const std::string& opcode, int& size1, int& size2);
 
-    Instruction* Parse(const std::string& args, int PC);
+    std::shared_ptr<Instruction> Parse(const std::string& args, int PC);
     virtual void Setup(Section* sect) = 0;
     virtual void Init() = 0;
     virtual bool ParseSection(AsmFile* fil, Section* sect) = 0;
@@ -103,7 +103,7 @@ class InstructionParser
     std::string line;
     bool eol;
     int id;
-    AsmExprNode* val;
+    std::shared_ptr<AsmExprNode> val;
     int tokenPos;
     Numeric* numeric;
     std::unordered_map<std::string, int> tokenTable;
@@ -123,7 +123,7 @@ class InstructionParser
 
   public:
     std::string FormatInstruction(ocode* ins);
-    asmError GetInstruction(ocode* ins, Instruction*& newIns, std::list<Numeric*>& operands);
+    asmError GetInstruction(ocode* ins, std::shared_ptr<Instruction>& newIns, std::list<Numeric*>& operands);
 
   protected:
     void SetRegToken(int reg, int sz);

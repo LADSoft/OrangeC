@@ -1070,12 +1070,11 @@ static void AssembleInstruction(OCODE* ins)
             AMODE oper1;
             AMODE oper2;
             AMODE oper3;
-            Instruction* newIns = nullptr;
+            std::shared_ptr<Instruction> newIns;
             std::list<Numeric*> operands;
             Optimizer::assembling = true;
             asmError err = instructionParser->GetInstruction(&ins1, newIns, operands);
             Optimizer::assembling = false;
-            delete newIns;
             switch (err)
             {
                 case AERR_NONE:

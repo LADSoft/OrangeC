@@ -71,7 +71,7 @@ class AsmExprNode : public AdlExprNode
         BASED,
         REG
     };
-    AsmExprNode(Type xType, AsmExprNode* Left = nullptr, AsmExprNode* Right = nullptr) :
+    AsmExprNode(Type xType, std::shared_ptr<AsmExprNode> Left = nullptr, std::shared_ptr<AsmExprNode> Right = nullptr) :
         AdlExprNode(0), type(xType), left(Left), right(Right), sect(nullptr)
     {
     }
@@ -81,7 +81,7 @@ class AsmExprNode : public AdlExprNode
     }
     AsmExprNode(const FPF& Fval) : AdlExprNode(0), type(FVAL), fval(Fval), sect(nullptr), left(nullptr), right(nullptr) {}
     AsmExprNode(std::string lbl) : AdlExprNode(0), type(LABEL), label(lbl), sect(nullptr), left(nullptr), right(nullptr) {}
-    AsmExprNode(Section* Sect, int offs) : AdlExprNode(offs), type(BASED), sect(Sect), left(nullptr), right(nullptr) {}
+    AsmExprNode(std::shared_ptr<Section>& Sect, int offs) : AdlExprNode(offs), type(BASED), sect(Sect), left(nullptr), right(nullptr) {}
     AsmExprNode(const AsmExprNode& old) : AdlExprNode(old)
     {
         fval = old.fval;
@@ -94,11 +94,11 @@ class AsmExprNode : public AdlExprNode
     ~AsmExprNode() {}
     FPF fval;
     std::string label;
-    AsmExprNode* GetLeft() { return left; }
-    void SetLeft(AsmExprNode* n) { left = n; }
-    AsmExprNode* GetRight() { return right; }
-    void SetRight(AsmExprNode* n) { right = n; };
-    Section* GetSection() { return sect; }
+    std::shared_ptr<AsmExprNode> GetLeft() { return left; }
+    void SetLeft(std::shared_ptr<AsmExprNode> n) { left = n; }
+    std::shared_ptr<AsmExprNode> GetRight() { return right; }
+    void SetRight(std::shared_ptr<AsmExprNode> n) { right = n; };
+    std::shared_ptr<Section> GetSection() { return sect; }
     Type GetType() { return type; }
     void SetType(Type tType) { type = tType; }
     bool IsAbsolute();
@@ -108,9 +108,9 @@ class AsmExprNode : public AdlExprNode
 
   private:
     Type type;
-    AsmExprNode* left;
-    AsmExprNode* right;
-    Section* sect;
+    std::shared_ptr<AsmExprNode> left;
+    std::shared_ptr<AsmExprNode> right;
+    std::shared_ptr<Section> sect;
 };
 class AsmExpr
 {
@@ -118,17 +118,17 @@ class AsmExpr
     AsmExpr() : define(nullptr), token(nullptr) {}
     AsmExpr(ppDefine* Define) : define(Define), token(nullptr) {}
     ~AsmExpr() {}
-    AsmExprNode* Build(std::string& line);
+    std::shared_ptr<AsmExprNode> Build(std::string& line);
     static void ReInit();
-    static AsmExprNode* Eval(AsmExprNode* n, int PC);
+    static std::shared_ptr<AsmExprNode> Eval(std::shared_ptr<AsmExprNode> n, int PC);
     std::string GetString() { return tokenizer->GetString(); }
     static void SetCurrentLabel(std::string lbl) { currentLabel = lbl; }
-    static void SetSection(Section* Sect) { section = Sect; }
-    static Section* GetSection() { return section; }
-    static void SetEqu(std::string name, AsmExprNode* n) { equs[name] = n; }
-    static AsmExprNode* ConvertToBased(AsmExprNode* n, int pc);
+    static void SetSection(std::shared_ptr<Section>& Sect) { section = Sect; }
+    static std::shared_ptr<Section> GetSection() { return section; }
+    static void SetEqu(std::string name, std::shared_ptr<AsmExprNode>& n) { equs[name] = n; }
+    static std::shared_ptr<AsmExprNode> ConvertToBased(std::shared_ptr<AsmExprNode>& n, int pc);
 
-    static AsmExprNode* GetEqu(std::string& name)
+    static std::shared_ptr<AsmExprNode> GetEqu(std::string& name)
     {
         auto it = equs.find(name);
         if (it != equs.end())
@@ -142,18 +142,18 @@ class AsmExpr
     }
 
   protected:
-    AsmExprNode* primary();
-    AsmExprNode* unary();
-    AsmExprNode* multiply();
-    AsmExprNode* add();
-    AsmExprNode* shift();
-    AsmExprNode* relation();
-    AsmExprNode* equal();
-    AsmExprNode* and_();
-    AsmExprNode* xor_();
-    AsmExprNode* or_();
-    AsmExprNode* logicaland();
-    AsmExprNode* logicalor();
+    std::shared_ptr<AsmExprNode> primary();
+    std::shared_ptr<AsmExprNode> unary();
+    std::shared_ptr<AsmExprNode> multiply();
+    std::shared_ptr<AsmExprNode> add();
+    std::shared_ptr<AsmExprNode> shift();
+    std::shared_ptr<AsmExprNode> relation();
+    std::shared_ptr<AsmExprNode> equal();
+    std::shared_ptr<AsmExprNode> and_();
+    std::shared_ptr<AsmExprNode> xor_();
+    std::shared_ptr<AsmExprNode> or_();
+    std::shared_ptr<AsmExprNode> logicaland();
+    std::shared_ptr<AsmExprNode> logicalor();
 
   private:
     ppDefine* define;
@@ -161,7 +161,7 @@ class AsmExpr
     const Token* token;
     static KeywordHash hash;
     static std::string currentLabel;
-    static Section* section;
-    static std::unordered_map<std::string, AsmExprNode*> equs;
+    static std::shared_ptr<Section> section;
+    static std::unordered_map<std::string, std::shared_ptr<AsmExprNode>> equs;
 };
 #endif

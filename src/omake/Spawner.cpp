@@ -66,9 +66,9 @@ const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
 bool Spawner::stopAll;
 
-void Spawner::Run(Command& Commands, OutputType Type, RuleList* RuleListx, Rule* Rulex)
+void Spawner::Run(std::shared_ptr<Command>& Commands, OutputType Type, std::shared_ptr<RuleList> RuleListx, std::shared_ptr<Rule> Rulex)
 {
-    commands = &Commands;
+    commands = Commands;
     outputType = Type;
     ruleList = RuleListx;
     rule = Rulex;

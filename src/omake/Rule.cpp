@@ -29,26 +29,25 @@
 #include "Spawner.h"
 #include "CmdFiles.h"
 #include <iostream>
-std::shared_ptr<CommandContainer> CommandContainer::instance = nullptr;
+CommandContainer* CommandContainer::instance = nullptr;
 std::shared_ptr<RuleContainer> RuleContainer::instance = nullptr;
 
-std::shared_ptr<CommandContainer> CommandContainer::Instance()
+CommandContainer* CommandContainer::Instance()
 {
     if (!instance)
-        instance = std::shared_ptr<CommandContainer>(new CommandContainer);
+        instance = new CommandContainer();
     return instance;
 }
 
-CommandContainer& CommandContainer::operator+=(Command* p)
+CommandContainer& CommandContainer::operator+=(std::shared_ptr<Command>& p)
 {
-    std::unique_ptr<Command> temp(p);
-    commands.push_back(std::move(temp));
+    commands.push_back(p);
     return *this;
 }
 
 void CommandContainer::Clear() { commands.clear(); }
 
-Rule::Rule(const std::string& Target, const std::string& Prerequisites, const std::string& OrderPrerequisites, Command* Commands,
+Rule::Rule(const std::string& Target, const std::string& Prerequisites, const std::string& OrderPrerequisites, std::shared_ptr<Command> Commands,
            const std::string& File, int Lineno, bool DontCare, bool Ignore, bool Silent, bool Make, bool Precious,
            bool SecondExpansion) :
     target(Target),
@@ -66,13 +65,13 @@ Rule::Rule(const std::string& Target, const std::string& Prerequisites, const st
     precious(Precious)
 {
 }
-void Rule::SecondaryEval(RuleList* ruleList)
+void Rule::SecondaryEval(std::shared_ptr<RuleList> ruleList, std::shared_ptr<Rule> rule)
 {
     if (secondExpansion)
     {
-        Eval a(prerequisites, true, ruleList, this);
+        Eval a(prerequisites, true, ruleList, rule);
         prerequisites = a.Evaluate();
-        Eval b(orderPrerequisites, true, ruleList, this);
+        Eval b(orderPrerequisites, true, ruleList, rule);
         orderPrerequisites = b.Evaluate();
     }
 }
@@ -89,7 +88,7 @@ Variable* RuleList::Lookup(const std::string& name)
     else
         return nullptr;
 }
-void RuleList::CopyExports(RuleList* source)
+void RuleList::CopyExports(std::shared_ptr<RuleList>& source)
 {
     if (source)
     {
@@ -118,28 +117,26 @@ bool RuleList::HasCommands()
     }
     return false;
 }
-bool RuleList::Add(Rule* rule, bool Double)
+bool RuleList::Add(std::shared_ptr<Rule>& rule, bool Double)
 {
     if (!rules.empty() && Double != doubleColon)
         return false;
-    std::unique_ptr<Rule> temp(rule);
-    rules.push_back(std::move(temp));
+    rules.push_back(rule);
     return true;
 }
-void RuleList::InsertFirst(Rule* rule)
+void RuleList::InsertFirst(std::shared_ptr<Rule>& rule)
 {
-    std::unique_ptr<Rule> temp(rule);
-    rules.push_front(std::move(temp));
+    rules.push_front(rule);
 }
 void RuleList::operator+=(Variable* variable)
 {
     std::unique_ptr<Variable> temp(variable);
     specificVariables[variable->GetName()] = std::move(temp);
 }
-void RuleList::SecondaryEval()
+void RuleList::SecondaryEval(std::shared_ptr<RuleList>& ruleList)
 {
     for (auto& rule : rules)
-        rule->SecondaryEval(this);
+        rule->SecondaryEval(ruleList, rule);
 }
 bool RuleList::IsUpToDate()
 {
@@ -155,7 +152,7 @@ void RuleList::SetBuilt()
     while (!working.empty())
     {
         std::string temp = Eval::ExtractFirst(working, " ");
-        RuleList* rl = RuleContainer::Instance()->Lookup(temp);
+        std::shared_ptr<RuleList> rl = RuleContainer::Instance()->Lookup(temp);
         if (rl)
             rl->SetBuilt();
     }
@@ -166,17 +163,17 @@ std::shared_ptr<RuleContainer> RuleContainer::Instance()
         instance = std::shared_ptr<RuleContainer>(new RuleContainer);
     return instance;
 }
-RuleList* RuleContainer::Lookup(const std::string& name)
+std::shared_ptr<RuleList> RuleContainer::Lookup(const std::string& name)
 {
     auto it = namedRules.find(name);
     if (it != namedRules.end())
-        return it->second.get();
+        return it->second;
     else
         return nullptr;
 }
-void RuleContainer::operator+=(RuleList* list)
+void RuleContainer::operator+=(std::shared_ptr<RuleList>& list)
 {
-    std::unique_ptr<RuleList> temp(list);
+    std::shared_ptr<RuleList> temp(list);
     if (Eval::FindPercent(list->GetTarget()) != std::string::npos)
     {
         implicitRules.push_back(std::move(temp));
@@ -186,7 +183,7 @@ void RuleContainer::operator+=(RuleList* list)
         namedRules[list->GetName()] = std::move(temp);
     }
 }
-void RuleContainer::operator-=(RuleList* list)
+void RuleContainer::operator-=(std::shared_ptr<RuleList>& list)
 {
     if (Eval::FindPercent(list->GetTarget()) != std::string::npos)
     {
@@ -204,9 +201,9 @@ void RuleContainer::operator-=(RuleList* list)
 void RuleContainer::SecondaryEval()
 {
     for (auto& rule : namedRules)
-        rule.second->SecondaryEval();
-    for (auto& rule : implicitRules)
-        rule->SecondaryEval();
+        rule.second->SecondaryEval(rule.second);
+    for (auto& ruleList : implicitRules)
+        ruleList->SecondaryEval(ruleList);
 }
 void RuleContainer::Clear()
 {
@@ -216,7 +213,7 @@ void RuleContainer::Clear()
 bool RuleContainer::OnList(const std::string& goal, const char* what)
 {
     bool rv = false;
-    RuleList* rl = Lookup(what);
+    std::shared_ptr<RuleList> rl = Lookup(what);
     if (rl)
     {
         for (auto it = rl->begin(); !rv && it != rl->end(); ++it)
@@ -230,7 +227,7 @@ bool RuleContainer::OnList(const std::string& goal, const char* what)
 bool RuleContainer::NoList(const char* what)
 {
     bool rv = false;
-    RuleList* rl = Lookup(what);
+    std::shared_ptr<RuleList> rl = Lookup(what);
     if (rl)
     {
         rv = true;

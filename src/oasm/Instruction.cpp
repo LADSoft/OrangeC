@@ -30,7 +30,7 @@
 
 bool Instruction::bigEndian;
 
-Instruction::Instruction(Label* lbl) :
+Instruction::Instruction(std::shared_ptr<Label>& lbl) :
     label(lbl), type(LABEL), altdata(nullptr), pos(0), fpos(0), size(0), offs(0), repeat(1), xrepeat(1), lost(false)
 {
 }
@@ -105,12 +105,10 @@ std::unique_ptr<unsigned char[]> Instruction::LoadData(bool isCode, unsigned cha
         std::cerr << "Diag: missing REX prefix" << std::endl;
     return rv;
 }
-void Instruction::Add(Fixup* fixup)
+void Instruction::Add(std::shared_ptr<Fixup> fixup)
 {
     // taking ownership now...
-    std::unique_ptr<Fixup> temp;
-    temp.reset(fixup);
-    fixups.push_back(std::move(temp));
+    fixups.push_back(fixup);
 }
 
 int Instruction::GetNext(Fixup& fixup, unsigned char* buf)

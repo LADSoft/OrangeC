@@ -110,7 +110,7 @@ class PEDataObject : public PEObject
 class PEImportObject : public PEObject
 {
   public:
-    PEImportObject(std::deque<std::unique_ptr<PEObject>>& Objects) : PEObject(".idata"), objects(Objects)
+    PEImportObject(std::deque<std::shared_ptr<PEObject>>& Objects) : PEObject(".idata"), objects(Objects)
     {
         SetFlags(WINF_INITDATA | WINF_READABLE | WINF_WRITEABLE | WINF_NEG_FLAGS);
     }
@@ -141,7 +141,7 @@ class PEImportObject : public PEObject
         std::deque<std::string> publicNames;
         std::deque<int> ordinals;
     };
-    std::deque<std::unique_ptr<PEObject>>& objects;
+    std::deque<std::shared_ptr<PEObject>>& objects;
 };
 class PEExportObject : public PEObject
 {

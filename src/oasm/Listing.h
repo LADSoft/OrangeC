@@ -37,19 +37,19 @@ static const int Bytes = 8;
 class ListedLine
 {
   public:
-    ListedLine(Instruction* Ins, int LineNo) : lineno(LineNo), label(nullptr), ins(Ins) {}
-    ListedLine(Label* lbl, int LineNo) : lineno(LineNo), label(lbl), ins(nullptr) {}
+    ListedLine(std::shared_ptr<Instruction>& Ins, int LineNo) : lineno(LineNo), label(nullptr), ins(Ins) {}
+    ListedLine(std::shared_ptr<Label>& lbl, int LineNo) : lineno(LineNo), label(lbl), ins(nullptr) {}
     int lineno;
-    Label* label;
-    Instruction* ins;
+    std::shared_ptr<Label> label;
+    std::shared_ptr<Instruction> ins;
 };
 class Listing
 {
   public:
     Listing();
     ~Listing();
-    void Add(Instruction* ins, int lineno, bool inMacro) { list.push_back(std::make_unique<ListedLine>(ins, lineno)); }
-    void Add(Label* lbl, int lineno, bool inMacro) { list.push_back(std::make_unique<ListedLine>(lbl, lineno)); }
+    void Add(std::shared_ptr<Instruction>& ins, int lineno, bool inMacro) { list.push_back(std::make_unique<ListedLine>(ins, lineno)); }
+    void Add(std::shared_ptr<Label>& lbl, int lineno, bool inMacro) { list.push_back(std::make_unique<ListedLine>(lbl, lineno)); }
     bool Write(std::string& listingName, std::string& inName, bool listMacros);
     void SetBigEndian(bool flag) { bigEndian = flag; }
 

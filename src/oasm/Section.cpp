@@ -37,6 +37,7 @@
 #include <iostream>
 
 bool Section::dontShowError;
+std::unordered_map<ObjString, std::shared_ptr<Section>> Section::sections;
 
 Section::~Section() {}
 void Section::Parse(AsmFile* fil)
@@ -63,7 +64,7 @@ void Section::Parse(AsmFile* fil)
         }
         else if (fil->GetKeyword() == kw::VIRTUAL)
         {
-            Section* old = fil->GetCurrentSection();
+            std::shared_ptr<Section> old = fil->GetCurrentSection();
             if (!old)
                 throw new std::runtime_error("Virtual section must be enclosed in other section");
             align = old->align;
@@ -79,16 +80,16 @@ void Section::Parse(AsmFile* fil)
             throw new std::runtime_error("Invalid section qualifier");
     }
 }
-void Section::Optimize()
+void Section::Optimize(std::shared_ptr<Section>& name)
 {
-    AsmExpr::SetSection(this);
+    AsmExpr::SetSection(name);
     bool done = false;
     int pc = 0;
     for (int i = 0; i < instructions.size(); i++)
     {
         if (instructions[i]->IsLabel())
         {
-            Label* l = instructions[i]->GetLabel();
+            std::shared_ptr<Label> l = instructions[i]->GetLabel();
             if (l)
             {
                 l->SetOffset(pc);
@@ -105,7 +106,7 @@ void Section::Optimize()
         {
             if (instructions[i]->IsLabel())
             {
-                Label* l = instructions[i]->GetLabel();
+                std::shared_ptr<Label> l = instructions[i]->GetLabel();
                 if (l)
                 {
                     l->SetOffset(pc);
@@ -131,7 +132,7 @@ void Section::Optimize()
     {
         if (instructions[i]->IsLabel())
         {
-            Label* l = instructions[i]->GetLabel();
+            std::shared_ptr<Label> l = instructions[i]->GetLabel();
             if (l)
             {
                 l->SetOffset(pc);
@@ -143,13 +144,13 @@ void Section::Optimize()
         pc += instructions[i]->GetSize();
     }
 }
-void Section::MergeSubsections()
+void Section::MergeSections()
 {
-    for (auto&& s : subsections)
+    for (auto&& s : subSections)
     {
         for (auto&& i : s.second->GetInstructions())
         {
-            instructions.push_back(std::move(i));
+            instructions.push_back(i);
             if (instructions.back()->IsLabel())
             {
                 labels[instructions.back()->GetLabel()->GetName()] = pc;
@@ -164,37 +165,35 @@ void Section::MergeSubsections()
     }
 }
 
-void Section::Resolve() { Optimize(); }
-void Section::InsertInstruction(Instruction* ins)
+void Section::Resolve(std::shared_ptr<Section>& name) { Optimize(name); }
+void Section::InsertInstruction(std::shared_ptr<Instruction>& ins)
 {
     if (subSection == 0)
     {
-        std::unique_ptr<Instruction> temp;
-        temp.reset(ins);
-        instructions.push_back(std::move(temp));
+        instructions.push_back(ins);
         ins->SetOffset(pc);
         pc += ins->GetSize();
     }
     else
     {
-        subsections[subSection]->InsertInstruction(ins);
+        subSections[subSection]->InsertInstruction(ins);
     }
 }
-Instruction* Section::InsertLabel(Label* label)
+std::shared_ptr<Instruction> Section::InsertLabel(std::shared_ptr<Label>& label)
 {
     if (subSection == 0)
-        instructions.push_back(std::make_unique<Instruction>(label));
+        instructions.push_back(std::make_shared<Instruction>(label));
     else
-        subsections[subSection]->GetInstructions().push_back(std::make_unique<Instruction>(label));
+        subSections[subSection]->GetInstructions().push_back(std::make_shared<Instruction>(label));
     labels[label->GetName()] = pc;
-    return subSection == 0 ? instructions.back().get() : subsections[subSection]->GetInstructions().back().get();
+    return subSection == 0 ? instructions.back(): subSections[subSection]->GetInstructions().back();
 }
 void Section::pop_back()
 {
     if (subSection == 0)
         instructions.pop_back();
     else
-        subsections[subSection]->pop_back();
+        subSections[subSection]->pop_back();
 }
 ObjSection* Section::CreateObject(ObjFactory& factory)
 {
@@ -206,7 +205,7 @@ ObjSection* Section::CreateObject(ObjFactory& factory)
         objectSection->SetQuals(objectSection->GetQuals() | ObjSection::max | ObjSection::virt);
     return objectSection;
 }
-ObjExpression* Section::ConvertExpression(AsmExprNode* node, std::function<Label*(std::string&)> Lookup,
+ObjExpression* Section::ConvertExpression(std::shared_ptr<AsmExprNode>& node, std::function<std::shared_ptr<Label>(std::string&)> Lookup,
                                           std::function<ObjSection*(std::string&)> SectLookup, ObjFactory& factory)
 {
     ObjExpression* xleft = nullptr;
@@ -232,14 +231,14 @@ ObjExpression* Section::ConvertExpression(AsmExprNode* node, std::function<Label
         }
         break;
         case AsmExprNode::LABEL: {
-            AsmExprNode* num = AsmExpr::GetEqu(node->label);
+            std::shared_ptr<AsmExprNode> num = AsmExpr::GetEqu(node->label);
             if (num)
             {
                 return ConvertExpression(num, Lookup, SectLookup, factory);
             }
             else
             {
-                Label* label = Lookup(node->label);
+                std::shared_ptr<Label> label = Lookup(node->label);
                 if (label != nullptr)
                 {
 
@@ -345,9 +344,9 @@ bool Section::SwapSectionIntoPlace(ObjExpression* t)
         return t->GetOperator() == ObjExpression::eSection;
     }
 }
-bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> Lookup,
+bool Section::MakeData(ObjFactory& factory, std::function<std::shared_ptr<Label>(std::string&)> Lookup,
                        std::function<ObjSection*(std::string&)> SectLookup,
-                       std::function<void(ObjFactory&, Section*, Instruction*)> HandleAlt)
+                       std::function<void(ObjFactory&, Section*, std::shared_ptr<Instruction>&)> HandleAlt)
 {
     bool rv = true;
     int pc = 0;
@@ -386,7 +385,7 @@ bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> 
                     ObjMemory* mem = factory.MakeData(buf, 0);
                     sect->Add(mem);
                     while (instructionPos < instructions.size() && instructions[instructionPos]->GetType() == Instruction::ALT)
-                        HandleAlt(factory, this, instructions[instructionPos++].get());
+                        HandleAlt(factory, this, instructions[instructionPos++]);
                 }
                 else
                 {

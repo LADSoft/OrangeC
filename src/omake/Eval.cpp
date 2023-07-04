@@ -48,7 +48,7 @@ std::unordered_map<std::string, std::string> Eval::vpaths;
 bool Eval::internalWarnings;
 int Eval::lineno;
 std::string Eval::file;
-std::list<RuleList*> Eval::ruleStack;
+std::list<std::shared_ptr<RuleList>> Eval::ruleStack;
 std::list<Variable*> Eval::foreachVars;
 std::set<std::string> Eval::macroset;
 std::string Eval::GPath;
@@ -92,7 +92,7 @@ std::unordered_map<std::string, Eval::StringFunc> Eval::builtins = {{"subst", &E
                                                                     {"info", &Eval::info},
                                                                     {"exists", &Eval::exists}};
 
-Eval::Eval(const std::string name, bool ExpandWildcards, RuleList* RuleList, Rule* Rule) :
+Eval::Eval(const std::string name, bool ExpandWildcards, std::shared_ptr<RuleList> RuleList, std::shared_ptr<Rule> Rule) :
     str(name), expandWildcards(ExpandWildcards), ruleList(RuleList), rule(Rule)
 {
 }
@@ -327,7 +327,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
                 ++it;
             if (it != ruleList->end())
             {
-                if (!rule || (*it).get() != rule)
+                if (!rule || (*it) != rule)
                 {
                     extra = (*it)->GetPrerequisites();
                     rv = ExtractFirst(extra, " ");
@@ -340,7 +340,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
         {
             for (auto& item : *ruleList)
             {
-                if (item.get() == rule)
+                if (item == rule)
                     break;
                 extra = item->GetPrerequisites();
                 while (!extra.empty())
@@ -361,7 +361,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
         {
             for (auto& item : *ruleList)
             {
-                if (item.get() == rule)
+                if (item == rule)
                     break;
                 extra = item->GetPrerequisites();
                 while (!extra.empty())
@@ -383,7 +383,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
                 size_t n = rv.find_last_of('.');
                 if (n != std::string::npos)
                 {
-                    RuleList* rl = RuleContainer::Instance()->Lookup(".SUFFIXES");
+                    std::shared_ptr<RuleList> rl = RuleContainer::Instance()->Lookup(".SUFFIXES");
                     if (rl)
                     {
                         std::string sfx = rv.substr(n);
@@ -422,7 +422,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
             std::set<std::string> set;
             for (auto& item : *ruleList)
             {
-                if (item.get() == rule)
+                if (item == rule)
                     break;
                 extra = item->GetOrderPrerequisites();
                 while (!extra.empty())

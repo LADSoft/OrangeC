@@ -289,7 +289,7 @@ bool dlPeMain::ReadSections(const std::string& path)
             if (file->ExportBegin() != file->ExportEnd())
             {
                 objects.push_back(std::make_unique<PEExportObject>(outputName, FlatExports.GetValue()));
-                exportObject = static_cast<PEExportObject*>(objects.back().get());
+                exportObject = objects.back();
             }
             objects.push_back(std::make_unique<PEFixupObject>());
             if (!resources.empty())
@@ -579,7 +579,7 @@ int dlPeMain::Run(int argc, char** argv)
             if (mode == DLL)
             {
                 std::string sverbose = Verbose.GetExists() ? "" : "/!";
-                std::string usesC = exportObject && exportObject->ImportsNeedUnderscore() ? "/C" : "";
+                std::string usesC = exportObject && static_cast<PEExportObject*>(exportObject.get())->ImportsNeedUnderscore() ? "/C" : "";
                 std::string implibName;
                 if (OutputImportLibrary.GetValue().empty())
                 {

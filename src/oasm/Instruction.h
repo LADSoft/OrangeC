@@ -34,7 +34,7 @@
 class Fixup;
 class AsmFile;
 
-typedef std::vector<std::unique_ptr<Fixup>> FixupContainer;
+typedef std::vector<std::shared_ptr<Fixup>> FixupContainer;
 class Instruction
 {
   public:
@@ -47,16 +47,16 @@ class Instruction
         RESERVE,
         ALT
     };
-    Instruction(Label* lbl);
+    Instruction(std::shared_ptr<Label>& lbl);
     Instruction(void* data, int Size, bool isData = false);
     Instruction(int aln);
     Instruction(int Repeat, int Size);
     Instruction(void* data);
     virtual ~Instruction();
 
-    void RepRemoveCancellations(AsmExprNode* exp, bool commit, int& count, Section* sect[], bool sign[], bool plus);
+    void RepRemoveCancellations(std::shared_ptr<AsmExprNode> exp, bool commit, int& count, Section* sect[], bool sign[], bool plus);
     void* GetAltData() const { return altdata; }
-    Label* GetLabel() const { return label; }
+    std::shared_ptr<Label> GetLabel() const { return label; }
     bool IsLabel() { return type == LABEL; }
     int GetType() const { return type; }
     void Optimize(Section* sect, int pc, bool doErrors);
@@ -85,7 +85,7 @@ class Instruction
     int GetNext(Fixup& fixup, unsigned char* buf);
     void Rewind() { pos = fpos = 0; }
     static bool ParseSectionAttrib(AsmFile* file);
-    void Add(Fixup* fixup);
+    void Add(std::shared_ptr<Fixup> fixup);
     unsigned char* GetBytes() const { return data.get(); }
     FixupContainer* GetFixups();
     static void SetBigEndian(bool be) { bigEndian = be; }
@@ -94,7 +94,7 @@ class Instruction
 
   private:
     enum iType type;
-    Label* label;
+    std::shared_ptr<Label> label;
     int size;
     int offs;
     int pos;

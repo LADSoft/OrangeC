@@ -358,7 +358,7 @@ void MakeMain::ShowRule(RuleList* ruleList)
         std::cout << "\tOrder Prerequisites:" << std::endl;
         std::cout << "\t\t" << rule->GetOrderPrerequisites() << std::endl;
         std::cout << "\tCommands:" << std::endl;
-        Command* commands = rule->GetCommands();
+        std::shared_ptr<Command> commands = rule->GetCommands();
         for (auto&& command : *rule->GetCommands())
         {
             std::cout << "\t\t" << command << std::endl;
@@ -581,8 +581,8 @@ int MakeMain::Run(int argc, char** argv)
             v->SetExport(true);
             Include::Instance()->AddFileList(v->GetValue(), true, true);
         }
-        Rule* rule = new Rule(".SUFFIXES", ".c .o .cpp .nas .asm .s", "", new Command("", 0), "", 0, false);
-        RuleList* ruleList = new RuleList(".SUFFIXES");
+        std::shared_ptr<Rule> rule = std::make_shared<Rule>(".SUFFIXES", ".c .o .cpp .nas .asm .s", "", std::make_shared<Command>("", 0), "", 0, false);
+        std::shared_ptr<RuleList> ruleList = std::make_shared<RuleList>(".SUFFIXES");
         ruleList->Add(rule, false);
         *RuleContainer::Instance() += ruleList;
         std::string files = specifiedFiles.GetValue();
@@ -608,7 +608,7 @@ int MakeMain::Run(int argc, char** argv)
             restarts++;
     }
     // now low for .MAKEFLAGS || .MFLAGS
-    RuleList* rl = nullptr;
+    std::shared_ptr<RuleList> rl;
     if ((rl = RuleContainer::Instance()->Lookup(".MAKEFLAGS")) || (rl = RuleContainer::Instance()->Lookup(".MFLAGS")))
     {
         for (auto& rule : *rl)

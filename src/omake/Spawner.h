@@ -91,7 +91,7 @@ class Spawner
     }
     ~Spawner() {}
     int InternalRun();
-    void Run(Command& Commands, OutputType Type, RuleList* RuleList = nullptr, Rule* Rule = nullptr);
+    void Run(std::shared_ptr<Command>& Commands, OutputType Type, std::shared_ptr<RuleList> RuleList = nullptr, std::shared_ptr<Rule> Rule = nullptr);
     static void Stop() { stopAll = true; }
     std::string shell(const std::string& command);
     void SetLineLength(size_t length) { lineLength = length; }
@@ -113,9 +113,9 @@ class Spawner
 
   private:
     std::deque<std::string> output;
-    Command* commands;
-    RuleList* ruleList;
-    Rule* rule;
+    std::shared_ptr<Command> commands;
+    std::shared_ptr<RuleList> ruleList;
+    std::shared_ptr<Rule> rule;
     size_t lineLength;
     std::list<std::string> cmdList;
     EnvironmentStrings environment;

@@ -42,13 +42,12 @@
 #include <climits>
 #include <algorithm>
 
-std::unordered_map<ObjString, std::unique_ptr<Section>> AsmFile::sections;
-std::vector<Section*> AsmFile::numericSections;
-std::unordered_map<ObjString, Section *> AsmFile::labelSections;
+std::vector<std::shared_ptr<Section>> AsmFile::numericSections;
+std::unordered_map<ObjString, std::shared_ptr<Section>> AsmFile::labelSections;
 
 AsmFile::~AsmFile()
 {
-    sections.clear();
+    Section::sections.clear();
     numericSections.clear();
 }
 bool AsmFile::Read()
@@ -89,7 +88,7 @@ bool AsmFile::Read()
                     NeedSection();
                     inInstruction = true;
                     int lineno = preProcessor.GetMainLineNo();
-                    Instruction* ins = parser->Parse(lexer.GetRestOfLine(), currentSection->GetPC());
+                    std::shared_ptr<Instruction> ins = parser->Parse(lexer.GetRestOfLine(), currentSection->GetPC());
                     if (lineno >= 0)
                         listing.Add(ins, lineno, preProcessor.InMacro());
                     NextToken();
@@ -144,7 +143,7 @@ bool AsmFile::Read()
 void AsmFile::DoLabel(std::string& name, int lineno)
 {
     NeedSection();
-    Label* label;
+    std::shared_ptr<Label> label;
     if (caseInsensitive)
     {
         name = UTF8::ToUpper(name);
@@ -190,17 +189,17 @@ void AsmFile::DoLabel(std::string& name, int lineno)
     {
         if (inAbsolute)
         {
-            labels[realName] = std::make_unique<Label>(realName, labels.size(), 0);
-            label = labels[realName].get();
+            labels[realName] = std::make_shared<Label>(realName, labels.size(), 0);
+            label = labels[realName];
             label->SetOffset(absoluteValue);
-            AsmExpr::SetEqu(realName, new AsmExprNode(absoluteValue));
+            AsmExpr::SetEqu(realName, std::make_shared<AsmExprNode>(absoluteValue));
             if (lineno >= 0)
                 listing.Add(label, lineno, preProcessor.InMacro());
         }
         else
         {
-            labels[realName] = std::make_unique<Label>(realName, labels.size(), currentSection->GetSect() - 1);
-            label = labels[realName].get();
+            labels[realName] = std::make_shared<Label>(realName, labels.size(), currentSection->GetSect() - 1);
+            label = labels[realName];
         }
         if (name[0] != '.')
         {
@@ -228,7 +227,7 @@ void AsmFile::DoDB()
     int size = 0;
     bool byte = GetKeyword() == kw::DB;
     short val = 0;
-    std::deque<Fixup*> fixups;
+    std::deque<std::shared_ptr<Fixup>> fixups;
     NeedSection();
     int lineno = preProcessor.GetMainLineNo();
     do
@@ -277,8 +276,8 @@ void AsmFile::DoDB()
         }
         else
         {
-            AsmExprNode* num = GetNumber();
-            Fixup* f = new Fixup(num, byte ? 1 : 2, false, 0);
+            std::shared_ptr<AsmExprNode> num = GetNumber();
+            std::shared_ptr<Fixup> f = std::make_shared<Fixup>(num, byte ? 1 : 2, false, 0);
             f->SetInsOffs(size);
             f->SetFileName(errFile);
             f->SetErrorLine(errLine);
@@ -288,13 +287,13 @@ void AsmFile::DoDB()
                 buf[size++] = 0;
         }
     } while (GetKeyword() == kw::comma);
-    Instruction* ins = new Instruction((unsigned char*)buf, size, true);
+    std::shared_ptr<Instruction> ins = std::make_shared<Instruction>((unsigned char*)buf, size, true);
     if (lineno >= 0)
         listing.Add(ins, lineno, preProcessor.InMacro());
     currentSection->InsertInstruction(ins);
     while (fixups.size())
     {
-        Fixup* f = fixups.front();
+        std::shared_ptr<Fixup> f = fixups.front();
         fixups.pop_front();
         ins->Add(f);
     }
@@ -306,12 +305,12 @@ void AsmFile::DoDD()
     NeedSection();
     int val = 0;
     int lineno = preProcessor.GetMainLineNo();
-    std::deque<Fixup*> fixups;
+    std::deque<std::shared_ptr<Fixup>> fixups;
     do
     {
         int errLine = Errors::GetErrorLine();
         std::string errFile = Errors::GetFileName();
-        AsmExprNode* num;
+        std::shared_ptr<AsmExprNode> num;
         NextToken();
         if (IsString())
         {
@@ -333,7 +332,7 @@ void AsmFile::DoDD()
         else
         {
             num = GetNumber();
-            Fixup* f = new Fixup(num, 4, false, 0);
+            std::shared_ptr<Fixup> f = std::make_shared<Fixup>(num, 4, false, 0);
             f->SetInsOffs(size);
             f->SetFileName(errFile);
             f->SetErrorLine(errLine);
@@ -342,13 +341,13 @@ void AsmFile::DoDD()
             size += 4;
         }
     } while (GetKeyword() == kw::comma);
-    Instruction* ins = new Instruction((unsigned char*)buf, size, true);
+    std::shared_ptr<Instruction> ins = std::make_shared<Instruction>((unsigned char*)buf, size, true);
     if (lineno >= 0)
         listing.Add(ins, lineno, preProcessor.InMacro());
     currentSection->InsertInstruction(ins);
     while (fixups.size())
     {
-        Fixup* f = fixups.front();
+        std::shared_ptr<Fixup> f = fixups.front();
         fixups.pop_front();
         ins->Add(f);
     }
@@ -360,15 +359,15 @@ void AsmFile::DoDQ()
     NeedSection();
     int val = 0;
     int lineno = preProcessor.GetMainLineNo();
-    std::deque<Fixup*> fixups;
+    std::deque<std::shared_ptr<Fixup>> fixups;
     do
     {
         int errLine = Errors::GetErrorLine();
         std::string errFile = Errors::GetFileName();
-        AsmExprNode* num;
+        std::shared_ptr<AsmExprNode> num;
         NextToken();
         num = GetNumber();
-        Fixup* f = new Fixup(num, 8, false, 0);
+        std::shared_ptr<Fixup> f = std::make_shared<Fixup>(num, 8, false, 0);
         f->SetInsOffs(size);
         f->SetFileName(errFile);
         f->SetErrorLine(errLine);
@@ -376,13 +375,13 @@ void AsmFile::DoDQ()
         *((unsigned long long*)(buf + size)) = 0;
         size += 8;
     } while (GetKeyword() == kw::comma);
-    Instruction* ins = new Instruction((unsigned char*)buf, size, true);
+    std::shared_ptr<Instruction> ins = std::make_shared<Instruction>((unsigned char*)buf, size, true);
     if (lineno >= 0)
         listing.Add(ins, lineno, preProcessor.InMacro());
     currentSection->InsertInstruction(ins);
     while (fixups.size())
     {
-        Fixup* f = fixups.front();
+        std::shared_ptr<Fixup> f = fixups.front();
         fixups.pop_front();
         ins->Add(f);
     }
@@ -394,30 +393,30 @@ void AsmFile::DoFloat()
     bool tbyte = GetKeyword() == kw::DT;
     NeedSection();
     int lineno = preProcessor.GetMainLineNo();
-    std::deque<Fixup*> fixups;
+    std::deque<std::shared_ptr<Fixup>> fixups;
     memset(buf, 0, sizeof(buf));
     do
     {
         int errLine = Errors::GetErrorLine();
         std::string errFile = Errors::GetFileName();
         int lineno = preProcessor.GetMainLineNo();
-        AsmExprNode* num;
+        std::shared_ptr<AsmExprNode> num;
         NextToken();
         num = GetNumber();
-        Fixup* f = new Fixup(num, tbyte ? 10 : 8, false, 0);
+        std::shared_ptr<Fixup> f = std::make_shared<Fixup>(num, tbyte ? 10 : 8, false, 0);
         f->SetInsOffs(size);
         f->SetFileName(errFile);
         f->SetErrorLine(errLine);
         fixups.push_back(f);
         size += tbyte ? 10 : 8;
     } while (GetKeyword() == kw::comma);
-    Instruction* ins = new Instruction((unsigned char*)buf, size, true);
+    std::shared_ptr<Instruction> ins = std::make_shared<Instruction>((unsigned char*)buf, size, true);
     if (lineno >= 0)
         listing.Add(ins, lineno, preProcessor.InMacro());
     currentSection->InsertInstruction(ins);
     while (fixups.size())
     {
-        Fixup* f = fixups.front();
+        std::shared_ptr<Fixup> f = fixups.front();
         fixups.pop_front();
         ins->Add(f);
     }
@@ -432,7 +431,7 @@ void AsmFile::ReserveDirective(int n)
     int num = GetValue();
     if (num <= 0)
         throw new std::runtime_error("Invalid reserve size");
-    Instruction* ins = new Instruction(num, n);
+    std::shared_ptr<Instruction> ins = std::make_shared<Instruction>(num, n);
     bool added = false;
     if (lineno >= 0)
     {
@@ -448,7 +447,7 @@ void AsmFile::ReserveDirective(int n)
         if (GetKeyword() == kw::comma)
         {
             NextToken();
-            Fixup* f = new Fixup(GetNumber(), n, false, 0);
+            std::shared_ptr<Fixup> f = std::make_shared<Fixup>(GetNumber(), n, false, 0);
             f->SetFileName(errFile);
             f->SetErrorLine(errLine);
             ins->Add(f);
@@ -457,7 +456,7 @@ void AsmFile::ReserveDirective(int n)
         added = true;
     }
     if (!added)
-        delete ins;
+        ins.reset();
 }
 void AsmFile::EquDirective()
 {
@@ -465,24 +464,25 @@ void AsmFile::EquDirective()
         throw new std::runtime_error("Label needed");
     int lineno = preProcessor.GetMainLineNo();
     NextToken();
-    std::unique_ptr<AsmExprNode> num(GetNumber());
+    std::shared_ptr<AsmExprNode> num(GetNumber());
     int n = 0;
     if (inAbsolute)
         n = absoluteValue;
     else if (currentSection)
         n = currentSection->GetPC();
-    num.reset(AsmExpr::ConvertToBased(num.release(), n));
+    num = (AsmExpr::ConvertToBased(num, n));
     if (num->IsAbsolute())
     {
-        num.reset(AsmExpr::Eval(num.get(), n));
+        num = (AsmExpr::Eval(num, n));
     }
-    thisLabel->SetOffset(num.get());
+    thisLabel->SetOffset(num);
     thisLabel->SetSect(-1);
     if (lineno >= 0)
         listing.Add(thisLabel, lineno, preProcessor.InMacro());
     if (currentSection && !inAbsolute)
         currentSection->pop_back();
-    AsmExpr::SetEqu(thisLabel->GetName(), num.release());
+    AsmExpr::SetEqu(thisLabel->GetName(), num);
+    num = nullptr;
 }
 void AsmFile::Directive()
 {
@@ -638,7 +638,7 @@ void AsmFile::Directive()
             return;
         default:
             NeedSection();
-            if (!GetParser()->ParseDirective(this, currentSection))
+            if (!GetParser()->ParseDirective(this, currentSection.get()))
                 throw new std::runtime_error("Expected directive");
     }
     if (GetKeyword() == kw::closebr)
@@ -686,7 +686,7 @@ void AsmFile::AlignDirective()
         int v = GetValue();
         if ((v & (v - 1)) != 0)
             throw new std::runtime_error("Alignment must be power of two");
-        Instruction* ins = new Instruction(v);
+        std::shared_ptr<Instruction> ins = std::make_shared<Instruction>(v);
         currentSection->InsertInstruction(ins);
         int n = currentSection->GetAlign();
         if (v > n)
@@ -715,7 +715,7 @@ void AsmFile::GnuAlignDirective(bool p2)
     {
         NeedSection();
         int v = p2 ? 1 << GetValue() : GetValue();
-        Instruction* ins = new Instruction(v);
+        std::shared_ptr<Instruction> ins = std::make_shared<Instruction>(v);
         ins->SetFillWidth(width);
         currentSection->InsertInstruction(ins);
         int n = currentSection->GetAlign();
@@ -782,7 +782,7 @@ void AsmFile::TimesDirective()
         }
         else if (parser->MatchesOpcode(GetToken()->GetChars()))
         {
-            Instruction* ins = parser->Parse(lexer.GetRestOfLine(), currentSection->GetPC());
+            std::shared_ptr<Instruction> ins = parser->Parse(lexer.GetRestOfLine(), currentSection->GetPC());
             for (auto& f : *ins->GetFixups())
             {
                 f->SetExpr(AsmExpr::Eval(f->GetExpr(), currentSection->GetPC()));
@@ -836,7 +836,7 @@ void AsmFile::IncbinDirective()
     in.seekg(start, std::ios::beg);
     std::unique_ptr<unsigned char[]> data = std::make_unique<unsigned char[]>(size);
     in.read((char*)data.get(), size);
-    Instruction* ins = new Instruction(data.get(), size);
+    std::shared_ptr<Instruction> ins = std::make_shared<Instruction>(data.get(), size);
     currentSection->InsertInstruction(ins);
 }
 void AsmFile::PublicDirective()
@@ -868,9 +868,9 @@ void AsmFile::InsertExtern(const std::string& name1)
     {
         if (labels.find(name) == labels.end())
         {
-            labels[name] = std::make_unique<Label>(name, labels.size(), sections.size() - 1);
+            labels[name] = std::make_shared<Label>(name, labels.size(), Section::sections.size() - 1);
         }
-        Label* label = labels[name].get();
+        std::shared_ptr<Label> label = labels[name];
         label->SetExtern(true);
         numericLabels.push_back(label);
     }
@@ -927,10 +927,10 @@ void AsmFile::SectionDirective()
 {
     NextToken();
     std::string name = GetId();
-    if (sections[name] == nullptr)
+    if (Section::sections[name] == nullptr)
     {
-        sections[name] = std::make_unique<Section>(name, sections.size());
-        Section* section = sections[name].get();
+        Section::sections[name] = std::make_shared<Section>(name, Section::sections.size());
+        std::shared_ptr<Section> section = Section::sections[name];
         ;
         numericSections.push_back(section);
         section->Parse(this);
@@ -938,10 +938,10 @@ void AsmFile::SectionDirective()
     }
     else
     {
-        currentSection = sections[name].get();
+        currentSection = Section::sections[name];
     }
     AsmExpr::SetSection(currentSection);
-    parser->Setup(currentSection);
+    parser->Setup(currentSection.get());
     currentLabel = nullptr;
     AsmExpr::SetCurrentLabel(std::string(""));
     inAbsolute = false;
@@ -981,7 +981,7 @@ void AsmFile::StringDirective()
             }
         }
     } while (GetKeyword() == kw::comma);
-    Instruction* ins = new Instruction((unsigned char*)buf, size, true);
+    std::shared_ptr<Instruction> ins = std::make_shared<Instruction>((unsigned char*)buf, size, true);
     if (lineno >= 0)
         listing.Add(ins, lineno, preProcessor.InMacro());
     currentSection->InsertInstruction(ins);
@@ -992,14 +992,14 @@ void AsmFile::SingleDirective()
     int size = 0;
     NeedSection();
     int lineno = preProcessor.GetMainLineNo();
-    std::deque<Fixup*> fixups;
+    std::deque<std::shared_ptr<Fixup>> fixups;
     memset(buf, 0, sizeof(buf));
     do
     {
         int errLine = Errors::GetErrorLine();
         std::string errFile = Errors::GetFileName();
         int lineno = preProcessor.GetMainLineNo();
-        AsmExprNode* num;
+        std::shared_ptr<AsmExprNode> num;
         NextToken();
         num = GetNumber();
         if (num->GetType() == AsmExprNode::IVAL)
@@ -1008,20 +1008,20 @@ void AsmFile::SingleDirective()
             num->SetType(AsmExprNode::FVAL);
         }
 
-        Fixup* f = new Fixup(num, 4, false, 0);
+        std::shared_ptr<Fixup> f = std::make_shared<Fixup>(num, 4, false, 0);
         f->SetInsOffs(size);
         f->SetFileName(errFile);
         f->SetErrorLine(errLine);
         fixups.push_back(f);
         size += 4;
     } while (GetKeyword() == kw::comma);
-    Instruction* ins = new Instruction((unsigned char*)buf, size, true);
+    std::shared_ptr<Instruction> ins = std::make_shared<Instruction>((unsigned char*)buf, size, true);
     if (lineno >= 0)
         listing.Add(ins, lineno, preProcessor.InMacro());
     currentSection->InsertInstruction(ins);
     while (fixups.size())
     {
-        Fixup* f = fixups.front();
+        std::shared_ptr<Fixup> f = fixups.front();
         fixups.pop_front();
         ins->Add(f);
     }
@@ -1032,14 +1032,14 @@ void AsmFile::DoubleDirective()
     int size = 0;
     NeedSection();
     int lineno = preProcessor.GetMainLineNo();
-    std::deque<Fixup*> fixups;
+    std::deque<std::shared_ptr<Fixup>> fixups;
     memset(buf, 0, sizeof(buf));
     do
     {
         int errLine = Errors::GetErrorLine();
         std::string errFile = Errors::GetFileName();
         int lineno = preProcessor.GetMainLineNo();
-        AsmExprNode* num;
+        std::shared_ptr<AsmExprNode> num;
         NextToken();
         num = GetNumber();
         if (num->GetType() == AsmExprNode::IVAL)
@@ -1047,20 +1047,20 @@ void AsmFile::DoubleDirective()
             num->fval = num->ival;
             num->SetType(AsmExprNode::FVAL);
         }
-        Fixup* f = new Fixup(num, 8, false, 0);
+        std::shared_ptr<Fixup> f = std::make_shared<Fixup>(num, 8, false, 0);
         f->SetInsOffs(size);
         f->SetFileName(errFile);
         f->SetErrorLine(errLine);
         fixups.push_back(f);
         size += 8;
     } while (GetKeyword() == kw::comma);
-    Instruction* ins = new Instruction((unsigned char*)buf, size, true);
+    std::shared_ptr<Instruction> ins = std::make_shared<Instruction>((unsigned char*)buf, size, true);
     if (lineno >= 0)
         listing.Add(ins, lineno, preProcessor.InMacro());
     currentSection->InsertInstruction(ins);
     while (fixups.size())
     {
-        Fixup* f = fixups.front();
+        std::shared_ptr<Fixup> f = fixups.front();
         fixups.pop_front();
         ins->Add(f);
     }
@@ -1180,7 +1180,7 @@ void AsmFile::FillDirective()
         {
             memcpy(buf + i * size, val, size);
         }
-        Instruction* ins = new Instruction((unsigned char*)buf, repeat * size, true);
+        std::shared_ptr<Instruction> ins = std::make_shared<Instruction>((unsigned char*)buf, repeat * size, true);
         if (lineno >= 0)
             listing.Add(ins, lineno, preProcessor.InMacro());
         currentSection->InsertInstruction(ins);
@@ -1221,7 +1221,7 @@ void AsmFile::SpaceDirective()
     {
         unsigned char* buf = new unsigned char[repeat];
         memset(buf, value, repeat);
-        Instruction* ins = new Instruction(buf, repeat, true);
+        std::shared_ptr<Instruction> ins = std::make_shared<Instruction>(buf, repeat, true);
         if (lineno >= 0)
             listing.Add(ins, lineno, preProcessor.InMacro());
         currentSection->InsertInstruction(ins);
@@ -1248,7 +1248,7 @@ void AsmFile::NopsDirective()
     {
         unsigned char* buf = new unsigned char[repeat];
         memset(buf, value, repeat);
-        Instruction* ins = new Instruction(buf, repeat, true);
+        std::shared_ptr<Instruction> ins = std::make_shared<Instruction>(buf, repeat, true);
         if (lineno >= 0)
             listing.Add(ins, lineno, preProcessor.InMacro());
         currentSection->InsertInstruction(ins);
@@ -1258,10 +1258,10 @@ void AsmFile::GnuSectionDirective()
 {
     NextToken();
     std::string name = GetId();
-    if (sections[name] == nullptr)
+    if (Section::sections[name] == nullptr)
     {
-        sections[name] = std::make_unique<Section>(name, sections.size());
-        Section* section = sections[name].get();
+        Section::sections[name] = std::make_shared<Section>(name, Section::sections.size());
+        std::shared_ptr<Section> section = Section::sections[name];
         ;
         numericSections.push_back(section);
         section->Parse(this);
@@ -1269,7 +1269,7 @@ void AsmFile::GnuSectionDirective()
     }
     else
     {
-        currentSection = sections[name].get();
+        currentSection = Section::sections[name];
     }
     if (GetKeyword() == kw::comma)
     {
@@ -1286,7 +1286,7 @@ void AsmFile::GnuSectionDirective()
         SetSubsection(currentSection, 0);
     }
     AsmExpr::SetSection(currentSection);
-    parser->Setup(currentSection);
+    parser->Setup(currentSection.get());
     currentLabel = nullptr;
     AsmExpr::SetCurrentLabel(std::string(""));
     inAbsolute = false;
@@ -1318,10 +1318,10 @@ void AsmFile::PushsectionDirective()
         }
     }
     PushSection(currentSection->GetName(), currentSection->GetSubsection());
-    if (sections[name] == nullptr)
+    if (Section::sections[name] == nullptr)
     {
-        sections[name] = std::make_unique<Section>(name, sections.size());
-        Section* section = sections[name].get();
+        Section::sections[name] = std::make_shared<Section>(name, Section::sections.size());
+        std::shared_ptr<Section> section = Section::sections[name];
         ;
         numericSections.push_back(section);
         section->Parse(this);
@@ -1329,7 +1329,7 @@ void AsmFile::PushsectionDirective()
     }
     else
     {
-        currentSection = sections[name].get();
+        currentSection = Section::sections[name];
     }
     AsmExpr::SetSection(currentSection);
     currentSection->SetSubsection(subsection);
@@ -1351,10 +1351,10 @@ void AsmFile::TextDirective()
     if (IsNumber())
         subsection = GetValue();
     std::string name = "code";
-    if (sections[name] == nullptr)
+    if (Section::sections[name] == nullptr)
     {
-        sections[name] = std::make_unique<Section>(name, sections.size());
-        Section* section = sections[name].get();
+        Section::sections[name] = std::make_shared<Section>(name, Section::sections.size());
+        std::shared_ptr<Section> section = Section::sections[name];
         ;
         numericSections.push_back(section);
         section->Parse(this);
@@ -1362,7 +1362,7 @@ void AsmFile::TextDirective()
     }
     else
     {
-        currentSection = sections[name].get();
+        currentSection = Section::sections[name];
     }
     AsmExpr::SetSection(currentSection);
     SetSubsection(currentSection, subsection);
@@ -1374,10 +1374,10 @@ void AsmFile::DataDirective()
     if (IsNumber())
         subsection = GetValue();
     std::string name = "data";
-    if (sections[name] == nullptr)
+    if (Section::sections[name] == nullptr)
     {
-        sections[name] = std::make_unique<Section>(name, sections.size());
-        Section* section = sections[name].get();
+        Section::sections[name] = std::make_shared<Section>(name, Section::sections.size());
+        std::shared_ptr<Section> section = Section::sections[name];
         ;
         numericSections.push_back(section);
         section->Parse(this);
@@ -1385,7 +1385,7 @@ void AsmFile::DataDirective()
     }
     else
     {
-        currentSection = sections[name].get();
+        currentSection = Section::sections[name];
     }
     AsmExpr::SetSection(currentSection);
     SetSubsection(currentSection, subsection);
@@ -1415,14 +1415,14 @@ void AsmFile::NoAbsolute()
 }
 void AsmFile::NeedSection()
 {
-    if (sections.size() == 0 && !inAbsolute)
+    if (Section::sections.size() == 0 && !inAbsolute)
     {
-        sections["text"] = std::make_unique<Section>("text", 1);
-        Section* section = sections["text"].get();
+        Section::sections["text"] = std::make_shared<Section>("text", 1);
+        auto section = Section::sections["text"];
         numericSections.push_back(section);
         currentSection = section;
         AsmExpr::SetSection(currentSection);
-        parser->Setup(currentSection);
+        parser->Setup(currentSection.get());
         currentLabel = nullptr;
         AsmExpr::SetCurrentLabel(std::string(""));
     }
@@ -1498,8 +1498,8 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
         }
         for (int i = 0; i < numericSections.size(); ++i)
         {
-            numericSections[i]->MergeSubsections();
-            numericSections[i]->Resolve();
+            numericSections[i]->MergeSections();
+            numericSections[i]->Resolve(numericSections[i]);
             ObjSection* s = numericSections[i]->CreateObject(factory);
             if (s)
             {
@@ -1516,7 +1516,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
         {
             for (int i = 0; i < numericLabels.size(); ++i)
             {
-                Label* l = numericLabels[i];
+                std::shared_ptr<Label> l = numericLabels[i];
                 if (l->GetSect() != 0xffffffff)
                 {
                     l->SetObjectSection(objSections[l->GetSect()]);
@@ -1563,7 +1563,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
         {
             if (!numericSections[i]->MakeData(
                     factory, [this](std::string& aa) { return Lookup(aa); },
-                    [this](std::string& aa) { return GetSectionByName(aa); }, [](ObjFactory&, Section*, Instruction*) {}))
+                    [this](std::string& aa) { return GetSectionByName(aa); }, [](ObjFactory&, Section*, std::shared_ptr<Instruction>&) {}))
                 rv = false;
         }
     }
@@ -1600,7 +1600,7 @@ bool AsmFile::IsNumber()
 }
 unsigned AsmFile::GetValue()
 {
-    std::unique_ptr<AsmExprNode> num(GetNumber());
+    std::shared_ptr<AsmExprNode> num(GetNumber());
     if (!inAbsolute && !num->IsAbsolute())
         throw new std::runtime_error("Constant value expected");
     int n = 0;
@@ -1608,17 +1608,18 @@ unsigned AsmFile::GetValue()
         n = absoluteValue;
     else if (currentSection)
         n = currentSection->GetPC();
-    std::unique_ptr<AsmExprNode> num1(AsmExpr::Eval(num.get(), n));
+    auto temp = AsmExpr::Eval(num, n);
+    std::shared_ptr<AsmExprNode> num1(temp);
     if (num1->GetType() != AsmExprNode::IVAL)
         throw new std::runtime_error("Integer constant expected");
     return num1->ival;
 }
-AsmExprNode* AsmFile::GetNumber()
+std::shared_ptr<AsmExprNode> AsmFile::GetNumber()
 {
     std::string line = lexer.GetRestOfLine();
     if (currentLabel)
         asmexpr.SetCurrentLabel(currentLabel->GetName());
-    AsmExprNode* rv = asmexpr.Build(line);
+    std::shared_ptr<AsmExprNode> rv = asmexpr.Build(line);
     if (line == "")
         NextToken();
     else
@@ -1670,22 +1671,22 @@ void AsmFile::NeedEol()
 }
 ObjSection* AsmFile::GetSectionByName(std::string& name)
 {
-    auto it = sections.find(name);
-    if (it != sections.end())
+    auto it = Section::sections.find(name);
+    if (it != Section::sections.end())
         return it->second->GetObjectSection();
     return nullptr;
 }
-void AsmFile::SetSubsection(Section* sect, int sid)
+void AsmFile::SetSubsection(std::shared_ptr<Section>& sect, int sid)
 {
     sid &= 0x1fff;
     sect->SetSubsection(sid);
 }
 void AsmFile::PushSection(const std::string& name, int sid)
 {
-    auto it = sections.find(name);
-    if (it == sections.end())
+    auto it = Section::sections.find(name);
+    if (it == Section::sections.end())
         throw new std::runtime_error("Unknown section: " + name);
-    SectionPair v{it->second.get(), sid};
+    SectionPair v{it->second, sid};
     sectionStack.push(v);
 }
 void AsmFile::PopSection()

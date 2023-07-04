@@ -43,7 +43,7 @@ bool InstructionParser::ParseNumber(int relOfs, int sign, int bits, int needCons
 {
     if (inputTokens[tokenPos]->type == InputToken::NUMBER)
     {
-        val = (AsmExprNode*)inputTokens[tokenPos]->val;
+        val = std::make_shared<AsmExprNode>(*(AsmExprNode*)inputTokens[tokenPos]->val);
         bool isConst = val->IsAbsolute();
         if (isConst || !needConstant)
         {
@@ -66,7 +66,7 @@ bool InstructionParser::ParseNumber(int relOfs, int sign, int bits, int needCons
                 }
             }
             numeric = new Numeric;
-            numeric->node = val;
+            numeric->node = new AsmExprNode(*val.get());
             numeric->pos = 0;
             numeric->relOfs = relOfs;
             numeric->size = bits;
@@ -81,7 +81,7 @@ bool InstructionParser::SetNumber(int tokenPos, int oldVal, int newVal)
     bool rv = false;
     if (tokenPos < inputTokens.size() && inputTokens[tokenPos]->type == InputToken::NUMBER)
     {
-        val = (AsmExprNode*)inputTokens[tokenPos]->val;
+        val = std::make_shared<AsmExprNode>(*(AsmExprNode*) inputTokens[tokenPos]->val);
         bool isConst = val->IsAbsolute();
         if (isConst)
         {
@@ -235,7 +235,7 @@ std::unordered_map<std::string, int>::iterator InstructionParser::GetOpcode(cons
     }
     return it;
 }
-Instruction* InstructionParser::Parse(const std::string& args, int PC)
+std::shared_ptr<Instruction> InstructionParser::Parse(const std::string& args, int PC)
 {
     int errLine = Errors::GetErrorLine();
     std::string errName = Errors::GetFileName();
@@ -293,7 +293,7 @@ Instruction* InstructionParser::Parse(const std::string& args, int PC)
         {
             unsigned char buf[64];
             bits.GetBytes(buf, (bits.GetBits() + 7) / 8);
-            return new Instruction(buf, (bits.GetBits() + 7) / 8);
+            return std::make_shared<Instruction>(buf, (bits.GetBits() + 7) / 8);
         }
     }
     else
@@ -310,7 +310,7 @@ Instruction* InstructionParser::Parse(const std::string& args, int PC)
             }
             eol = false;
             auto rv = DispatchOpcode(opcode);
-            Instruction* s = nullptr;
+            std::shared_ptr<Instruction> s = nullptr;
             switch (rv)
             {
                 case AERR_NONE: {
@@ -324,7 +324,7 @@ Instruction* InstructionParser::Parse(const std::string& args, int PC)
 #endif
                     if (!eol)
                         throw new std::runtime_error("Extra characters at end of line");
-                    s = new Instruction(buf, (bits.GetBits() + 7) / 8);
+                    s = std::make_shared<Instruction>(buf, (bits.GetBits() + 7) / 8);
                     //			std::cout << bits.GetBits() << std::endl;
                     for (auto& operand : operands)
                     {
@@ -338,7 +338,8 @@ Instruction* InstructionParser::Parse(const std::string& args, int PC)
                                 int n = operand->relOfs;
                                 if (n < 0)
                                     n = -n;
-                                Fixup* f = new Fixup((AsmExprNode*)operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n,
+                                auto temp = std::make_shared<AsmExprNode>(*(AsmExprNode*)operand->node);
+                                auto f = std::make_shared<Fixup>(temp, (operand->size + 7) / 8, operand->relOfs != 0, n,
                                                      operand->relOfs > 0);
                                 f->SetInsOffs((operand->pos + 7) / 8);
                                 f->SetFileName(errName);
@@ -629,7 +630,7 @@ void InstructionParser::InsertTokens(std::string&& line, int PC, bool hasBracket
                 inputTokens.push_back(new InputToken);
                 auto next = inputTokens.back();
                 next->type = InputToken::NUMBER;
-                next->val = new AsmExprNode(accum);
+                next->val = new AsmExprNode(*std::make_shared<AsmExprNode>(accum).get());
             }
             else if (IsSymbolCharRoutine(line.c_str(), true))
             {
@@ -661,9 +662,9 @@ void InstructionParser::InsertTokens(std::string&& line, int PC, bool hasBracket
                     auto next = inputTokens.back();
                     next->type = InputToken::NUMBER;
                     auto temp = asmexpr.Build(line);
-                    next->val = temp;
+                    next->val = new AsmExprNode(*temp.get());
                     if (temp->IsAbsolute())
-                        next->val = asmexpr.Eval(temp, PC);
+                        next->val = new AsmExprNode(*asmexpr.Eval(temp, PC).get());
                 }
             }
             else if (isdigit(line[0]) || line[0] == '+' || line[0] == '-' || line[0] == '(' || line[0] == '$' || line[0] == '~')
@@ -679,9 +680,10 @@ void InstructionParser::InsertTokens(std::string&& line, int PC, bool hasBracket
                 auto next = inputTokens.back();
                 next->type = InputToken::NUMBER;
                 auto temp = asmexpr.Build(line);
-                next->val = temp;
                 if (temp->IsAbsolute())
-                    next->val = asmexpr.Eval(temp, PC);
+                    next->val = new AsmExprNode(*asmexpr.Eval(temp, PC).get());
+                else
+                    next->val = new AsmExprNode(*temp.get());
             }
             else if (ispunct(line[0]))
             {

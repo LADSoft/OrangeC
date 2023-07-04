@@ -691,7 +691,7 @@ void oa_put_code(OCODE* cd)
         /*
                 if (cd->ins)
                 {
-                    if ((((Instruction*)cd->ins)->GetBytes()[0] & 0xf0) == 0x70 || ((Instruction*)cd->ins)->GetBytes()[0] == 0xeb)
+                    if ((static_cast<Instruction*>(cd->ins)->GetBytes()[0] & 0xf0) == 0x70 || ((std::shared_ptr<Instruction>)cd->ins)->GetBytes()[0] == 0xeb)
                     {
                         ColumnPosition(16);
                         AsmOutput("short");
@@ -709,7 +709,7 @@ void oa_put_code(OCODE* cd)
     {
         if (cd->ins)
         {
-            if (((Instruction*)cd->ins)->GetBytes()[0] == 0xeb)
+            if (static_cast<Instruction*>(cd->ins)->GetBytes()[0] == 0xeb)
             {
                 nosize = true;
             }

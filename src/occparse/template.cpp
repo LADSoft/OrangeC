@@ -3532,6 +3532,12 @@ static TYPE* LookupBinaryMathFromExpression(EXPRESSION* exp, e_kw kw, std::list<
             if (ispointer(tp1) || ispointer(tp2))
                 return nullptr;
         }
+        else if (kw == lt || kw == gt || kw == leq || kw == geq || kw == eq || kw == neq || kw == land || kw == lor)
+        {
+            if (isstructured(tp1) || isstructured(tp2))
+                return nullptr;
+            return &stdbool;
+        }
         else if ((kw != plus && kw != minus) || (!ispointer(tp1) && !ispointer(tp2)))
         {
             castToArithmetic(false, &tp1, &exp1, kw, tp2, true);
@@ -3956,62 +3962,38 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
         case en_lt:
         case en_ult:
         {
-            auto tp = LookupBinaryMathFromExpression(exp, lt, enclosing, alt);
-            if (tp)
-                tp = &stdbool;
-            return tp;
+            return LookupBinaryMathFromExpression(exp, lt, enclosing, alt);
         }
         case en_le:
         case en_ule:
         {
-            auto tp = LookupBinaryMathFromExpression(exp, leq, enclosing, alt);
-            if (tp)
-                tp = &stdbool;
-            return tp;
+            return LookupBinaryMathFromExpression(exp, leq, enclosing, alt);
         }
         case en_gt:
         case en_ugt:
         {
-            auto tp = LookupBinaryMathFromExpression(exp, gt, enclosing, alt);
-            if (tp)
-                tp = &stdbool;
-            return tp;
+            return LookupBinaryMathFromExpression(exp, gt, enclosing, alt);
         }
         case en_ge:
         case en_uge:
         {
-            auto tp = LookupBinaryMathFromExpression(exp, geq, enclosing, alt);
-            if (tp)
-                tp = &stdbool;
-            return tp;
+            return LookupBinaryMathFromExpression(exp, geq, enclosing, alt);
         }
         case en_eq:
         {
-            auto tp = LookupBinaryMathFromExpression(exp, eq, enclosing, alt);
-            if (tp)
-                tp = &stdbool;
-            return tp;
+            return LookupBinaryMathFromExpression(exp, eq, enclosing, alt);
         }
         case en_ne:
         {
-            auto tp = LookupBinaryMathFromExpression(exp, neq, enclosing, alt);
-            if (tp)
-                tp = &stdbool;
-            return tp;
+            return LookupBinaryMathFromExpression(exp, neq, enclosing, alt);
         }
         case en_land:
         {
-            auto tp = LookupBinaryMathFromExpression(exp, land, enclosing, alt);
-            if (tp)
-                tp = &stdbool;
-            return tp;
+            return LookupBinaryMathFromExpression(exp, land, enclosing, alt);
         }
         case en_lor:
         {
-            auto tp = LookupBinaryMathFromExpression(exp, lor, enclosing, alt);
-            if (tp)
-                tp = &stdbool;
-            return tp;
+            return LookupBinaryMathFromExpression(exp, lor, enclosing, alt);
         }
         case en_uminus:
             return LookupUnaryMathFromExpression(exp, minus, enclosing, alt);

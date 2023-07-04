@@ -145,7 +145,7 @@ const ObjString& LinkerMain::GetMapFile(CmdFiles& files)
     }
     return mapFile;
 }
-void LinkerMain::AddFile(LinkManager& linker, std::string& name)
+void LinkerMain::AddFile(LinkManager& linker, const std::string& name)
 {
     if (!TargetConfig.InterceptFile(name))
     {

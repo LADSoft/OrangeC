@@ -125,7 +125,7 @@ void gccocc::PutMultiple(FILE* fil, const char* switchName, std::string lst)
 int gccocc::Run(int argc, char** argv) 
 {
     auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
-    if (files.size() < 2 & !prmDumpVersion.GetExists() && !prmDumpMachine.GetExists() && !prmPrintFileName.GetExists() &&
+    if (files.size() < 2 && !prmDumpVersion.GetExists() && !prmDumpMachine.GetExists() && !prmPrintFileName.GetExists() &&
         !prmPrintProgName.GetExists())
         ToolChain::Usage(usageText);
     std::string tempName;

@@ -23,7 +23,7 @@ test: $(EXE)
 	fc /b test.cmpx test.out
 
 
-CC = \orangec\bin\occ
+CC = occ
 AS = d:\ccdl\bin\nasm
 LD = d:\ccdl\bin\valx
 RC = d:\ccdl\bin\xrc

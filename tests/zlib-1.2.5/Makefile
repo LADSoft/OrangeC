@@ -23,10 +23,10 @@ test: $(EXE)
 clean:
 	$(CLEAN)
 
-CC = c:\orangec\bin\occ
-AS = c:\orangec\bin\nasm
-LD = c:\orangec\bin\valx
-RC = c:\orangec\bin\xrc
+CC = $(ORANGEC)\bin\occ
+AS = $(ORANGEC)\bin\nasm
+LD = $(ORANGEC)\bin\valx
+RC = $(ORANGEC)\bin\xrc
 
 .SUFFIXES:
 .SUFFIXES: .c .o

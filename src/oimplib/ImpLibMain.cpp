@@ -373,7 +373,7 @@ int ImpLibMain::HandleLibrary(const std::string& outputFile, CmdFiles& files)
     }
     for (auto&& name : replaceFiles)
     {
-        librarian.AddFile(name);
+        librarian.ReplaceFile(name);
     }
     if (modified)
         switch (librarian.SaveLibrary())

@@ -176,7 +176,7 @@ int LibMain::Run(int argc, char** argv)
     }
     for (auto&& name : replaceFiles)
     {
-        librarian.AddFile(name);
+        librarian.ReplaceFile(name);
     }
     if (modified)
         switch (librarian.SaveLibrary())

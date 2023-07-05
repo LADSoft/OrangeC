@@ -555,7 +555,7 @@ void DefFile::WriteImports()
         if (first)
         {
             stream << "IMPORTS" << std::endl;
-            first = false;	
+            first = false;
         }
         if (!import->module.empty())
         {

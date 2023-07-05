@@ -97,8 +97,8 @@ CmdSwitchBool displayTiming(SwitchParser, 't');
 CmdSwitchInt prm_stackalign(SwitchParser, 's', 16, 0, 2048);
 CmdSwitchString prm_error(SwitchParser, 'E');
 CmdSwitchString prm_Werror(SwitchParser, 0, 0, {"Werror"});  // doesn't do anything, just to help the libcxx tests...
-CmdSwitchString prm_define(SwitchParser, 'D', ';');
-CmdSwitchString prm_undefine(SwitchParser, 'U', ';');
+CmdSwitchCombineString prm_define(SwitchParser, 'D', ';');
+CmdSwitchCombineString prm_undefine(SwitchParser, 'U', ';');
 CmdSwitchString prm_codegen(SwitchParser, 'C', ';');
 CmdSwitchString prm_optimize(SwitchParser, 'O', ';');
 CmdSwitchString prm_verbose(SwitchParser, 'y');

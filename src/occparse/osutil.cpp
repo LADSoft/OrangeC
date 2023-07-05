@@ -76,6 +76,8 @@ int cplusplusversion = 14;
 
 std::deque<DefValue> defines;
 
+#define DEFINES_DELIMITER '\x1b'
+
 CmdSwitchParser SwitchParser;
 CmdSwitchBool prm_c89(SwitchParser, '8');
 CmdSwitchBool prm_c99(SwitchParser, '9');
@@ -97,7 +99,7 @@ CmdSwitchBool displayTiming(SwitchParser, 't');
 CmdSwitchInt prm_stackalign(SwitchParser, 's', 16, 0, 2048);
 CmdSwitchString prm_error(SwitchParser, 'E');
 CmdSwitchString prm_Werror(SwitchParser, 0, 0, {"Werror"});  // doesn't do anything, just to help the libcxx tests...
-CmdSwitchCombineString prm_define(SwitchParser, 'D', ';');
+CmdSwitchCombineString prm_define(SwitchParser, 'D', DEFINES_DELIMITER);
 CmdSwitchCombineString prm_undefine(SwitchParser, 'U', ';');
 CmdSwitchString prm_codegen(SwitchParser, 'C', ';');
 CmdSwitchString prm_optimize(SwitchParser, 'O', ';');
@@ -612,7 +614,7 @@ static void ParamTransfer(const char* name)
     {
         Optimizer::toolArgs.push_back(v);
     }
-    checks = Utils::split(prm_define.GetValue());
+    checks = Utils::split(prm_define.GetValue(), DEFINES_DELIMITER);
     for (auto&& v : checks)
     {
         defines.push_back(DefValue{v.c_str(), 0});

@@ -419,7 +419,6 @@ int main(int argc, char* argv[])
     fflush(stdout);
     Utils::SetEnvironmentToPathParent("ORANGEC");
     unsigned startTime, stopTime;
-    bool syntaxOnly = false;
 
     if (!Utils::HasLocalExe("occopt") || !Utils::HasLocalExe("occparse"))
     {
@@ -429,8 +428,6 @@ int main(int argc, char* argv[])
     {
         if (strstr(*p, "/y") || strstr(*p, "-y"))
             occ_verbosity = "";
-        if (strstr(*p, "/fsyntax-only") || strstr(*p, "-fsyntax-only"))
-            syntaxOnly = true;
     }
     auto optimizerMem = new SharedMemory(MAX_SHARED_REGION);
     optimizerMem->Create();
@@ -457,46 +454,49 @@ int main(int argc, char* argv[])
             rv = InvokeOptimizer(parserMem, optimizerMem);
         delete parserMem;
     }
-    if (!rv && !syntaxOnly)
+    if (!rv)
     {
         if (!LoadFile(optimizerMem))
         {
             Utils::Fatal("internal error: could not load intermediate file");
         }
-        if (Optimizer::cparams.prm_displaytiming)
+        if (!Optimizer::syntaxOnly)
         {
-            startTime = clock();
+            if (Optimizer::cparams.prm_displaytiming)
+            {
+                startTime = clock();
+            }
+            for (auto v : Optimizer::toolArgs)
+            {
+                InsertOption(v.c_str());
+            }
+            for (auto f : Optimizer::backendFiles)
+            {
+                InsertExternalFile(f.c_str(), false);
+            }
+            std::list<std::string> files = Optimizer::inputFiles;
+            if (files.size())
+            {
+                if (!ProcessData(files.front().c_str()) || !SaveFile(files.front().c_str()))
+                    Utils::Fatal("File I/O error");
+                files.pop_front();
+            }
+            for (auto p : files)
+            {
+                if (!LoadFile(optimizerMem))
+                    Utils::Fatal("internal error: could not load intermediate file");
+                if (!ProcessData(p.c_str()))
+                    Utils::Fatal("File I/O error");
+                if (!SaveFile(p.c_str()))
+                    Utils::Fatal("Cannot open '%s' for write", Parser::outFile);
+            }
+            if (Optimizer::cparams.prm_displaytiming)
+            {
+                stopTime = clock();
+                printf("occ timing: %d.%03d\n", (stopTime - startTime) / 1000, (stopTime - startTime) % 1000);
+            }
+            rv = RunExternalFiles();
         }
-        for (auto v : Optimizer::toolArgs)
-        {
-            InsertOption(v.c_str());
-        }
-        for (auto f : Optimizer::backendFiles)
-        {
-            InsertExternalFile(f.c_str(), false);
-        }
-        std::list<std::string> files = Optimizer::inputFiles;
-        if (files.size())
-        {
-            if (!ProcessData(files.front().c_str()) || !SaveFile(files.front().c_str()))
-                Utils::Fatal("File I/O error");
-            files.pop_front();
-        }
-        for (auto p : files)
-        {
-            if (!LoadFile(optimizerMem))
-                Utils::Fatal("internal error: could not load intermediate file");
-            if (!ProcessData(p.c_str()))
-                Utils::Fatal("File I/O error");
-            if (!SaveFile(p.c_str()))
-                Utils::Fatal("Cannot open '%s' for write", Parser::outFile);
-        }
-        if (Optimizer::cparams.prm_displaytiming)
-        {
-            stopTime = clock();
-            printf("occ timing: %d.%03d\n", (stopTime - startTime) / 1000, (stopTime - startTime) % 1000);
-        }
-        rv = RunExternalFiles();
     }
     delete optimizerMem;
     if (rv == 255)  // means don't run the optimizer or backend

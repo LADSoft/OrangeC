@@ -236,6 +236,8 @@ extern int registersAssigned;
 
 extern std::deque<BaseData*> baseData;
 
+extern bool syntaxOnly;
+
 void InitIntermediate(void);
 void AddFunction(void);
 void gen_vtt(int dataOffset, Optimizer::SimpleSymbol* func, Optimizer::SimpleSymbol* name);

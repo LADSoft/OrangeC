@@ -495,6 +495,10 @@ static void ParamTransfer(const char* name)
     {
         Optimizer::cparams.prm_charisunsigned = true;
     }
+    if (prm_prmSyntaxOnly.GetValue())
+    {
+        Optimizer::syntaxOnly = true;
+    }
     if (displayTiming.GetExists())
         Optimizer::cparams.prm_displaytiming = true;
 

@@ -50,7 +50,7 @@ CmdSwitchCombineString gccocc::prm_undefine(SwitchParser, 'U', ';');
 CmdSwitchString gccocc::prm_warning_and_flags(SwitchParser, 'W');
 CmdSwitchBool gccocc::prm_nostdinc(SwitchParser, 0, false, {"nostdinc"});
 CmdSwitchBool gccocc::prm_nostdincpp(SwitchParser, 0, false, {"nostdinc++"});
-CmdSwitchBool gccocc::prmSyntaxOnly(SwitchParser, 0, false, {"fsyntax-only"});  // doesn't do anything yet
+CmdSwitchBool gccocc::prmSyntaxOnly(SwitchParser, 0, false, {"fsyntax-only"});
 CmdSwitchBool gccocc::prmCharIsUnsigned(SwitchParser, 0, false, {"funsigned-char"});
 CmdSwitchCombineString gccocc::prm_output_def_file(SwitchParser, 0, 0, {"output-def"});
 CmdSwitchBool gccocc::prm_export_all(SwitchParser, 0, false, {"export-all-symbols"});

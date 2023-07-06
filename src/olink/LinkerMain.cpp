@@ -118,7 +118,7 @@ const ObjString& LinkerMain::GetOutputFile(CmdFiles& files)
     }
     else if (files.size())
     {
-        outputFile = Utils::QualifiedFile(files[0].c_str(), ".rel");
+        outputFile = Utils::QualifiedFile(files[1].c_str(), ".rel");
     }
     else if (!PrintFileName.GetExists())
     {

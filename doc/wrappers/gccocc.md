@@ -1,6 +1,6 @@
 # gccocc
 
- ** gccocc** is a wrapper around the gcc command line.   It reinterprets the command line arguments and issues them to occ
+ **gccocc** is a wrapper around the gcc command line.   It reinterprets the command line arguments and issues them to occ
 
 ## Command Line Options
 
@@ -50,9 +50,11 @@ compiles without optimizing, and generates debug information
 
 sets the optimization level:
 
-x = 0 means no optimization
-x = 1 means size optimization
-x = 2 means time optimization
+level (x) | result | translated to 
+----|--------------|--------
+0   | means no optimization   | `occ -O-` 
+s   | means size optimization | `occ -O1`
+1-3, no level specified | means time optimization | `occ -O2`
 
 
 ### Linker commands
@@ -149,3 +151,4 @@ Several commands are parsed, but don't do anything.   These include
 >     gcc -export-all-symbols file.c
 >     gcc -static file.c
 >     gcc -fsyntax-only file.c
+>     gcc -march=native -mtune=native file.c

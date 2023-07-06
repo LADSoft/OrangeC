@@ -304,11 +304,14 @@ int SwitchConfig::RunApp(const std::string& path, const std::string& file, const
     for (auto name : files)
         sfiles = sfiles + " \"" + name + "\"";
     std::string outdef;
+        std::string outimp;
     if (!outDefFile.empty())
         outdef = " --output-def \"" + outDefFile + "\"";
-    std::string outimp;
-    if (!outImportLibrary.empty())
-        outimp = " --out-implib \"" + outImportLibrary + "\"";
+    else
+    {
+        if (!outImportLibrary.empty())
+            outimp = " --out-implib \"" + outImportLibrary + "\"";
+    }
     return ToolChain::ToolInvoke(name, verbose ? "" : nullptr, "%s %s %s %s %s \"%s\"%s", flags.c_str(), outdef.c_str(), outimp.c_str(),  sverbose.c_str(),
                              sdebug.c_str(), file.c_str(), sfiles.c_str());
 }

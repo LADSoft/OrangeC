@@ -102,8 +102,8 @@ const char* gccocc::helpText =
     "   -output-def xxxx  create a .def file\n"  
     "   -print-file-name=xxx  print the full path of a library\n"
     "   -print-prog-name=xxx  print the full path of one of the executables\n"
-    "   -shared         generate a DLL\n"
-    "   -static         generate an executable\n"
+    "   -shared         generate a DLL instead of an executable\n"
+    "   -static         generate a static library instead of an executable\n"
     "   -march=xxx      ignored\n"
     "   -mtune=xxx      ignored\n"
     "\n"
@@ -156,6 +156,8 @@ int gccocc::Run(int argc, char** argv)
         fputs(" -dll", fil);
     if (prmShared.GetValue())
         fputs(" -shared", fil);
+    if (prmStatic.GetValue())
+        fputs(" -static", fil);
     if (prmDumpVersion.GetValue())
         fputs(" -dumpversion", fil);
     if (prmDumpMachine.GetValue())

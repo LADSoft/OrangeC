@@ -581,7 +581,11 @@ int dlPeMain::Run(int argc, char** argv)
                 std::string sverbose = Verbose.GetExists() ? "" : "/!";
                 std::string usesC = exportObject && exportObject->ImportsNeedUnderscore() ? "/C" : "";
                 std::string implibName;
-                if (OutputImportLibrary.GetValue().empty())
+                if (!OutputDefFile.GetValue().empty())
+                {
+                    implibName = Utils::QualifiedFile(outputName.c_str(), ".def");
+                }
+                else if (OutputImportLibrary.GetValue().empty())
                 {
                     implibName = Utils::QualifiedFile(outputName.c_str(), ".l");
                 }

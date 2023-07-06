@@ -35,10 +35,19 @@
 
 ## Compiler wrappers
 
-  Compiler wrappers are wrappers that convert the command line for other compilers to a format that OCC can use
+  Compiler wrappers are wrappers that convert the command line for other compilers to a format that OCC can use.
+  Currently we support the basic tools from GCC and MSVC as wrappers.
+
+### GCC
 
 * [gccocc](wrappers/gccocc.md) wrapper for the gcc command line
 * [arocc](wrappers/arocc.md) wrapper for the ar command line
+
+### MSVC
+
+* [clocc](wrappers/clocc.md) wrapper for the cl.exe command line
+* [libocc](wrappers/libocc.md) wrapper for the lib.exe command line
+* [linkocc](wrappers/linkocc.md) wrapper for the link.exe command line
 
 ## WIN32 Specific tools
  

@@ -4,7 +4,7 @@
 
 ## Command Line Options
 
- The general format of an **gcc** command line is:
+ The general format of an **gccocc** command line is:
  
 >     gccocc [options] [list of files]
  

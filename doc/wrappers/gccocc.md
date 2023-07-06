@@ -140,14 +140,23 @@ searches for the program name within the occ distributions, and displays the ful
 
 compiles and links file.c, treating the 'char' type as if it were unsigned.
 
+>     gccocc -fsyntax-only file.c
+
+compiles file.c, but doesn't generate any output
+
+>     gccocc -static file.c
+
+builds a static library file.l
+
+>     gccocc -output-def deffile.def file.c
+
+when building a dll, output a .def file instead of an import library
+
 ### Compatibility commands
 
 Several commands are parsed, but don't do anything.   These include
 
->     gcc -output-def deffile.def file.c
 >     gcc -ixxx file.c
 >     gcc -export-all-symbols file.c
->     gcc -static file.c
->     gcc -fsyntax-only file.c
 >     gcc -mtune=xxx file.c
 >     gcc -march=xxx file.c

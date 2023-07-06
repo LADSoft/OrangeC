@@ -46,7 +46,7 @@ CmdSwitchString libocc::WarningsAsErrors(SwitchParser, 0, ';', {"wx"});
 ;
 
 
-const char* libocc::helpText =
+	const char* libocc::helpText =
     "[options] library files...\n"
     "\n"
     "/EXTRACT:name     add file to extract\n"
@@ -54,7 +54,7 @@ const char* libocc::helpText =
     "/LIST:xxx         reserved for compatibility\n"
     "/MACHINE:xxx      reserved for compatibility\n"
     "/NAME:xxx         create import library from dll\n" 
-    "/NODEFALTLIB:xxx  reserved for compatibility\n"
+    "/NODEFAULTLIB:xxx  reserved for compatibility\n"
     "/OUT:xxx          specify output file name\n"
     "/REMOVE:name      add file to remove\n"
     "/SUBSYSTEM:xxx    reserved for compatibility\n"

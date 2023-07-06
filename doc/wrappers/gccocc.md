@@ -149,3 +149,5 @@ Several commands are parsed, but don't do anything.   These include
 >     gcc -export-all-symbols file.c
 >     gcc -static file.c
 >     gcc -fsyntax-only file.c
+>     gcc -mtune=xxx file.c
+>     gcc -march=xxx file.c

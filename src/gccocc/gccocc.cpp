@@ -60,8 +60,8 @@ CmdSwitchBool gccocc::prmStatic(SwitchParser, 0, 0, {"static"});
 CmdSwitchBool gccocc::prmShared(SwitchParser, 0, 0, {"shared"});
 CmdSwitchBool gccocc::prmDumpVersion(SwitchParser, 0, 0, {"dumpversion"});
 CmdSwitchBool gccocc::prmDumpMachine(SwitchParser, 0, 0, {"dumpmachine"});
-CmdSwitchBool gccocc::prm_mtune(SwitchParser, 0, 0, {"mtune"});
-CmdSwitchBool gccocc::prm_march(SwitchParser, 0, 0, {"march"});
+CmdSwitchString gccocc::prm_mtune(SwitchParser, 0, 0, {"mtune"});
+CmdSwitchString gccocc::prm_march(SwitchParser, 0, 0, {"march"});
 CmdSwitchCombineString gccocc::prmPrintFileName(SwitchParser, 0, 0, {"print-file-name"});
 CmdSwitchCombineString gccocc::prmPrintProgName(SwitchParser, 0, 0, {"print-prog-name"});
 
@@ -104,8 +104,8 @@ const char* gccocc::helpText =
     "   -print-prog-name=xxx  print the full path of one of the executables\n"
     "   -shared         generate a DLL\n"
     "   -static         generate an executable\n"
-    "   -march          ignored\n"
-    "   -mtune          ignored\n"
+    "   -march=xxx      ignored\n"
+    "   -mtune=xxx      ignored\n"
     "\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
 const char* gccocc::usageText = "[options] files...";

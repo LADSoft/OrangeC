@@ -132,11 +132,11 @@ class Semaphore
 #elif defined(__linux__)
         if (named)
         {
-            sem_close(handle);
+            sem_close(&handle);
         }
         else
         {
-            sem_destroy(handle);
+            sem_destroy(&handle);
         }
 #endif
             }
@@ -163,11 +163,11 @@ class Semaphore
 #elif defined(__linux__)
         if (named)
         {
-            sem_close(handle);
+            sem_close(&handle);
         }
         else
         {
-            sem_destroy(handle);
+            sem_destroy(&handle);
         }
 #endif
         }
@@ -182,11 +182,11 @@ class Semaphore
 #elif defined(__linux__)
         if (named)
         {
-            sem_close(handle);
+            sem_close(&handle);
         }
         else
         {
-            sem_destroy(handle);
+            sem_destroy(&handle);
         }
 #endif
     }
@@ -201,12 +201,12 @@ class Semaphore
     bool WaitFor(std::chrono::duration<Rep, Period> time)
     {
         std::chrono::milliseconds milli = std::chrono::duration_cast(time);
-        if (milli.count() >= INFINITE)
+        int waitTime = milli.count();
+#ifdef WIN32
+        if (waitTime >= INFINITE)
         {
             throw std::invalid_argument("The time spent for waiting is too long to handle normally");
         }
-        int waitTime = milli.count();
-#ifdef WIN32
         DWORD ret = WaitForSingleObject(handle, waitTime);
         switch (ret)
         {

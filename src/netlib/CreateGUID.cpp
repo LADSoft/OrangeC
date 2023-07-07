@@ -39,9 +39,8 @@ void DotNetPELib::PEWriter::CreateGuid(Byte* Guid)
     // that shouldn't be a problem on OS we are interested in.
     std::random_device dev;
     std::mt19937 engine(dev());
-    auto generator = std::bind(distribution, engine);
-
-    std::generate(rnd.begin(), rnd.end(), generator);
+    
+    std::generate(rnd.begin(), rnd.end(), [&distribution, &engine]() { return distribution(engine); });
 
     // make it a valid version 4 (random) GUID
     // remember that on windows GUIDs are native endianness so this may need

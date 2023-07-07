@@ -221,7 +221,7 @@ class Semaphore
         }
 #elif defined(__linux__)
         timespec ts = { waitTime/1000, (waitTime%1000) * 1000000 };
-        sem_timedwaitwait(handle, &ts);
+        sem_timedwait(&handle, &ts);
 #endif
 
     }
@@ -241,7 +241,7 @@ class Semaphore
                 return false;
         }
 #elif defined(__linux__)
-        return !! sem_trywait(handle);
+        return !! sem_trywait(&handle);
 #endif
     }
     void Wait()
@@ -253,7 +253,7 @@ class Semaphore
 #ifdef _WIN32
         WaitForSingleObject(handle, INFINITE);
 #elif defined(__linux__)
-        sem_wait(handle);
+        sem_wait(&handle);
 #endif
     }
     void Post()

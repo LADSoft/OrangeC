@@ -40,4 +40,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: Artifacts
-        path: "$env:GITHUB_WORKSPACE/dist"
+        path: $env:GITHUB_WORKSPACE/dist/ZippedBinaries.zip

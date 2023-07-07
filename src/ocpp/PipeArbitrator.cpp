@@ -27,9 +27,9 @@
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#    define _close close
 #else
 #    include <io.h>
-extern "C" char* _getcwd(char*, int);
 #endif
 
 PipeArbitrator::~PipeArbitrator()

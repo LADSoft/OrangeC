@@ -37,7 +37,7 @@ struct TempFileDeleter
     ~TempFileDeleter()
     {
         for (auto q : list)
-            unlink(q.c_str());
+            _unlink(q.c_str());
     }
     void Add(const std::string& name) { list.push_back(name); }
 

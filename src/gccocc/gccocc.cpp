@@ -237,7 +237,7 @@ int gccocc::Run(int argc, char** argv)
     } 
     fclose(fil);
     auto rv = ToolChain::ToolInvoke("occ.exe", nullptr, " -! @%s", tempName.c_str());
-    unlink(tempName.c_str());
+    _unlink(tempName.c_str());
     return rv;
 }
 

@@ -93,6 +93,6 @@ int arocc::Run(int argc, char** argv)
         fprintf(fil, " %s", files[i].c_str());
     fclose(fil);
     auto rv = ToolChain::ToolInvoke("olib.exe", nullptr, " -! -c %s @%s", files[1].c_str(), tempName.c_str());
-    unlink(tempName.c_str());
+    _unlink(tempName.c_str());
     return rv;
 }

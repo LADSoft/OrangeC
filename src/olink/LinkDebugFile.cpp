@@ -204,7 +204,7 @@ bool LinkDebugFile::DBOpen(char* name)
 {
     bool rv = false;
     dbPointer = nullptr;
-    unlink(name);
+    _unlink(name);
     if (sqlite3_open_v2(name, &dbPointer, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr) == SQLITE_OK)
     {
         rv = CreateTables();

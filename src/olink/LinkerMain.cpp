@@ -286,7 +286,7 @@ int LinkerMain::Run(int argc, char** argv)
         ToolChain::Usage(usageText);
     // setup
     const ObjString& outputFile = GetOutputFile(files);
-    unlink(outputFile.c_str());
+    _unlink(outputFile.c_str());
     const ObjString& mapFile = GetMapFile(files);
     ObjString specificationFile = Specification.GetValue();
     if (specificationFile.empty())

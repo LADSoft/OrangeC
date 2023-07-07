@@ -178,6 +178,6 @@ int libocc::Run(int argc, char** argv)
     fputs(args.c_str(), fil);
     fclose(fil);
     auto rv = ToolChain::ToolInvoke(toolName, nullptr, " -! -c \"%s\" @%s", outputFile.c_str(), tempName.c_str());
-    unlink(tempName.c_str());
+    _unlink(tempName.c_str());
     return rv;
 }

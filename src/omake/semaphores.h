@@ -4,6 +4,8 @@
 #    include <windows.h>
 #elif defined(__linux__)
 #    include <semaphore.h>
+#    include <errno.h>
+#    #include <fcntl.h>
 #    pragma warning \
         "This platform is unsupported for named sempahores due to POSIX semaphores (named ones) being legitimately several times worse than Windows ones"
 #else
@@ -41,13 +43,13 @@ class Semaphore
     {
 #ifdef _WIN32
         handle = CreateSemaphore(nullptr, value, value, name.c_str());
+#elif defined(__linux__)
+        handle = sem_open(name.c_str(), O_CREAT, O_RDWR, value);
+#endif
         if (!handle)
         {
             throw std::runtime_error("CreateSemaphore failed, Error code: " + std::to_string(GetLastError()));
         }
-#elif defined(__linux__)
-        handle = sem_open(name.c_str(), O_CREAT, O_RDWR, value);
-#endif
     }
     Semaphore(int value)
     {
@@ -72,11 +74,20 @@ class Semaphore
     {
 #ifdef _WIN32
         handle = OpenSemaphore(EVENT_ALL_ACCESS, FALSE, name.c_str());
+#elif defined(__linux__)
+        handle = sem_open(name.c_str(), O_RDWR, O_RDWR, value);
+#endif
         if (!handle)
         {
-            throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(GetLastError()));
-        }
+            throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " +
+#ifdef _WIN32
+  std::to_string(GetLastError()));
+#elif defined(__linux__)
+  std::to_string(errno);
+#else
+   "unknown";
 #endif
+        }
     }
     Semaphore& operator=(const Semaphore& other)
     {
@@ -91,7 +102,11 @@ class Semaphore
             this->null = other.null;
             if (!this->null)
             {
+#ifdef _WIN32
                 handle = OpenSemaphore(EVENT_ALL_ACCESS, false, semaphoreName.c_str());
+#elif defined(__linux__)
+                handle = sem_open(name.c_str(), O_RDWR, O_RDWR, value);
+#endif
             }
         }
         return *this;
@@ -106,18 +121,44 @@ class Semaphore
         {
             if (!null)
             {
-                CloseHandle(handle);
+#ifdef _WIN32
+            CloseHandle(other.handle);
+#elif defined(__linux__)
+        if (named)
+        {
+            sem_close(handle);
+        }
+        else
+        {
+            sem_destroy(handle);
+        }
+#endif
             }
             named = other.named;
             semaphoreName = other.semaphoreName;
             this->null = other.null;
             if (!this->null)
             {
+#ifdef _WIN32
                 handle = OpenSemaphore(EVENT_ALL_ACCESS, false, semaphoreName.c_str());
+#elif defined(__linux__)
+                handle = sem_open(name.c_str(), O_RDWR, O_RDWR, value);
+#endif
             }
             other.named = false;
             other.null = true;
+#ifdef _WIN32
             CloseHandle(other.handle);
+#elif defined(__linux__)
+        if (named)
+        {
+            sem_close(handle);
+        }
+        else
+        {
+            sem_destroy(handle);
+        }
+#endif
         }
         return *this;
     }
@@ -203,7 +244,7 @@ class Semaphore
 #ifdef _WIN32
         ReleaseSemaphore(handle, 1, nullptr);
 #elif defined(__linux__)
-        sem_post(handle);
+        sem_post(&handle);
 #endif
     }
     void Post(int value)
@@ -217,7 +258,7 @@ class Semaphore
 #elif defined(__linux__)
         for (int i = 0; i < value; i++)
         {
-            sem_post(handle);
+            sem_post(&handle);
         }
 #endif
     }

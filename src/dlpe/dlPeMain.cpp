@@ -44,7 +44,7 @@ CmdSwitchParser dlPeMain::SwitchParser;
 CmdSwitchString dlPeMain::stubSwitch(SwitchParser, 's');
 CmdSwitchString dlPeMain::modeSwitch(SwitchParser, 'm');
 CmdSwitchString dlPeMain::outputFileSwitch(SwitchParser, 'o');
-CmdSwitchString dlPeMain::DebugFile(SwitchParser, 'v');
+CmdSwitchString dlPeMain::DebugFile(SwitchParser, 'g');
 CmdSwitchBool dlPeMain::FlatExports(SwitchParser, 'f');
 CmdSwitchBool dlPeMain::Verbose(SwitchParser, 'y');
 CmdSwitchCombineString dlPeMain::OutputDefFile(SwitchParser, 0, 0, {"output-def"});

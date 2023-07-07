@@ -299,7 +299,7 @@ int SwitchConfig::RunApp(const std::string& path, const std::string& file, const
     if (name.empty())
         return 0;  // nothing to do, all ok
     std::string sverbose = verbose ? "/y" : "/!";
-    std::string sdebug = debugFile.empty() ? "" : "\"/v" + debugFile + "\"";
+    std::string sdebug = debugFile.empty() ? "" : "\"/g" + debugFile + "\"";
     std::string sfiles;
     for (auto name : files)
         sfiles = sfiles + " \"" + name + "\"";

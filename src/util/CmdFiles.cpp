@@ -22,7 +22,10 @@
  * 
  */
 
-#ifndef HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#    define _access access
+#else
 #    include <io.h>
 #endif
 
@@ -173,7 +176,7 @@ bool CmdFiles::AddFromPath(const std::string& name, const std::string& path)
            curpath += DIR_SEP;
         }
         curpath += internalName;
-        if (access(curpath.c_str(), 0) == 0)
+        if (_access(curpath.c_str(), 0) == 0)
         {
             names.push_back(curpath);
             rv = true;

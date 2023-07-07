@@ -142,7 +142,6 @@ bool Include::Parse(const std::string& name, bool ignoreOk, bool MakeFiles)
     }
     return rv;
 }
-#include <direct.h>
 bool Include::AddFileList(const std::string& name, bool ignoreOk, bool MakeFile)
 {
     Eval e(name, false);

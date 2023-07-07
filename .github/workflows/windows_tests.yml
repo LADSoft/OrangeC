@@ -1,4 +1,4 @@
-name: windows smoke test
+name: windows tests
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
 
     runs-on: windows-latest
 
-    timeout-minutes : 20
+    timeout-minutes : 30
 
     steps:
     - uses: actions/checkout@v3
@@ -33,11 +33,12 @@ jobs:
     - name: Orange C Test
       run: |
          &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests"  -B -j:8 PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
-    - name: Create Artifacts
+    - name: occil test
       run: |
-         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/src" ORANGEC="$env:GITHUB_WORKSPACE" zip
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: Binaries
-        path: dist/ZippedBinaries.zip
+         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/occil" -B -j:8 PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
+    - name: occpr test
+      run: |
+         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/occpr" -B -j:8 PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
+    - name: LIBCXX tests
+      run: |
+         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE" -B -j:8 PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC test

@@ -31,6 +31,12 @@
 #include "CmdSwitch.h"
 #include "arocc.h"
 
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#else
+#    include <io.h>
+#endif
+
 CmdSwitchParser arocc::SwitchParser;
 CmdSwitchBool arocc::Replace(arocc::SwitchParser, 'r');
 CmdSwitchBool arocc::Create(arocc::SwitchParser, 'c');
@@ -93,6 +99,6 @@ int arocc::Run(int argc, char** argv)
         fprintf(fil, " %s", files[i].c_str());
     fclose(fil);
     auto rv = ToolChain::ToolInvoke("olib.exe", nullptr, " -! -c %s @%s", files[1].c_str(), tempName.c_str());
-    _unlink(tempName.c_str());
+    unlink(tempName.c_str());
     return rv;
 }

@@ -39,6 +39,8 @@
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#else
+#    include <io.h>
 #endif
 namespace occx86
 {
@@ -331,7 +333,7 @@ int RunExternalFiles()
                 !Optimizer::prm_OutputImportLibraryFile.empty() ? ("--out-implib \"" + Optimizer::prm_OutputImportLibraryFile + "\"").c_str() : "",
                 tempName.c_str());
         }
-        _unlink(tempName.c_str());
+        unlink(tempName.c_str());
         if (Optimizer::cparams.verbosity > 1)
             printf("Return code: %d\n", rv);
 

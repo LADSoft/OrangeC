@@ -30,6 +30,11 @@
 #include <algorithm>
 #include <fstream>
 #include <deque>
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#else
+#    include <io.h>
+#endif
 
 #include <cstdlib>
 struct TempFileDeleter
@@ -37,7 +42,7 @@ struct TempFileDeleter
     ~TempFileDeleter()
     {
         for (auto q : list)
-            _unlink(q.c_str());
+            unlink(q.c_str());
     }
     void Add(const std::string& name) { list.push_back(name); }
 

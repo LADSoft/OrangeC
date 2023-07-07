@@ -656,7 +656,7 @@ void OS::CreateThread(void* func, void* data)
 #endif
 }
 bool OS::SetWorkingDir(const std::string name) { return !chdir(name.c_str()); }
-void OS::RemoveFile(const std::string name) { _unlink(name.c_str()); }
+void OS::RemoveFile(const std::string name) { unlink(name.c_str()); }
 std::string OS::NormalizeFileName(const std::string file)
 {
     std::string name = file;

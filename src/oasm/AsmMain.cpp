@@ -34,6 +34,7 @@
 #include "UTF8.h"
 #include <cstdlib>
 #include "Token.h"
+
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #else
@@ -261,7 +262,7 @@ int AsmMain::Run(int argc, char* argv[])
                 rv = 1;
             }
             if (rv)
-                _unlink(outName.c_str());
+                unlink(outName.c_str());
             Errors::ErrorCount();
         }
     }

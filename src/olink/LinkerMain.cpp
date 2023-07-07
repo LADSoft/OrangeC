@@ -286,7 +286,7 @@ int LinkerMain::Run(int argc, char** argv)
         ToolChain::Usage(usageText);
     // setup
     const ObjString& outputFile = GetOutputFile(files);
-    _unlink(outputFile.c_str());
+    unlink(outputFile.c_str());
     const ObjString& mapFile = GetMapFile(files);
     ObjString specificationFile = Specification.GetValue();
     if (specificationFile.empty())
@@ -366,7 +366,7 @@ int LinkerMain::Run(int argc, char** argv)
             int rv = TargetConfig.RunApp(path, outputFile, Utils::AbsolutePath(debugFile), Verbosity.GetExists(),
                                          OutputDefFile.GetValue(), OutputImportLibrary.GetValue());
             if (!Verbosity.GetExists())
-                _unlink(outputFile.c_str());
+                unlink(outputFile.c_str());
             return rv;
         }
     }

@@ -33,6 +33,12 @@
 #include "CmdSwitch.h"
 #include "linkocc.h"
 
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#else
+#    include <io.h>
+#endif
+
 CmdSwitchParser linkocc::SwitchParser;
 CmdSwitchBool linkocc::prm_verbose(SwitchParser, 'v');
 CmdSwitchString linkocc::prm_output(SwitchParser, 0, ';', {"out"});
@@ -233,7 +239,7 @@ int linkocc::Run(int argc, char** argv)
     fputs(args.c_str(), fil);
     fclose(fil);
     auto rv = ToolChain::ToolInvoke("olink.exe", nullptr, " -! @%s", tempName.c_str());
-    _unlink(tempName.c_str());
+    unlink(tempName.c_str());
     return rv;
 }
 

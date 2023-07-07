@@ -31,6 +31,12 @@
 #include "CmdSwitch.h"
 #include "libocc.h"
 
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#else
+#    include <io.h>
+#endif
+
 CmdSwitchParser libocc::SwitchParser;
 CmdSwitchBool libocc::Verbose(SwitchParser, 0, false, {"verbose"});
 CmdSwitchCombineString libocc::Extract(SwitchParser, 0, ';', {"extract"});
@@ -40,6 +46,7 @@ CmdSwitchString libocc::List(SwitchParser, 0, ';', {"list"});
 CmdSwitchString libocc::Machine(SwitchParser, 0, ';', {"machine"});
 CmdSwitchString libocc::DllName(SwitchParser, 0, ';', {"name"});
 CmdSwitchString libocc::NoDefaultLib(SwitchParser, 0, ';', {"nodefaultlib"});
+
 CmdSwitchString libocc::OutFile(SwitchParser, 0, ';', {"out"});
 CmdSwitchString libocc::Subsytem(SwitchParser, 0, ';', {"subsystem"});
 CmdSwitchString libocc::WarningsAsErrors(SwitchParser, 0, ';', {"wx"});
@@ -178,6 +185,6 @@ int libocc::Run(int argc, char** argv)
     fputs(args.c_str(), fil);
     fclose(fil);
     auto rv = ToolChain::ToolInvoke(toolName, nullptr, " -! -c \"%s\" @%s", outputFile.c_str(), tempName.c_str());
-    _unlink(tempName.c_str());
+    unlink(tempName.c_str());
     return rv;
 }

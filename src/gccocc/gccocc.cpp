@@ -33,6 +33,12 @@
 #include "CmdSwitch.h"
 #include "gccocc.h"
 
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#else
+#    include <io.h>
+#endif
+
 CmdSwitchParser gccocc::SwitchParser;
 CmdSwitchBool gccocc::prm_compileonly(SwitchParser, 'c');
 CmdSwitchString gccocc::prm_directory_options(SwitchParser, 'i'); // ignored
@@ -237,7 +243,7 @@ int gccocc::Run(int argc, char** argv)
     } 
     fclose(fil);
     auto rv = ToolChain::ToolInvoke("occ.exe", nullptr, " -! @%s", tempName.c_str());
-    _unlink(tempName.c_str());
+    unlink(tempName.c_str());
     return rv;
 }
 

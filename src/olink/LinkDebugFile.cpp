@@ -43,6 +43,8 @@
 #include <algorithm>
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#else
+#    include <io.h>
 #endif
 #define STRINGVERSION "120"
 #define DBVersion atoi(STRINGVERSION)
@@ -204,7 +206,7 @@ bool LinkDebugFile::DBOpen(char* name)
 {
     bool rv = false;
     dbPointer = nullptr;
-    _unlink(name);
+    unlink(name);
     if (sqlite3_open_v2(name, &dbPointer, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr) == SQLITE_OK)
     {
         rv = CreateTables();

@@ -32,7 +32,6 @@
 #include <cstdlib>
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
-#    define _unlink unlink
 #else
 #    include <io.h>
 #endif
@@ -190,7 +189,7 @@ int BRCWriter::CreateTables(void)
 int BRCWriter::DBOpen(char* name)
 {
     int rv = false;
-    _unlink(name);
+    unlink(name);
     if (sqlite3_open_v2(name, &dbPointer, SQLITE_OPEN_READWRITE, nullptr) == SQLITE_OK)
     {
 #ifdef TEST
@@ -200,7 +199,7 @@ int BRCWriter::DBOpen(char* name)
         if (!rv || !SQLiteExec(deletion))
         {
             sqlite3_close(dbPointer);
-            _unlink(name);
+            unlink(name);
             goto doCreate;
         }
     }

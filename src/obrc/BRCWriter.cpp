@@ -32,6 +32,7 @@
 #include <cstdlib>
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#    define _unlink unlink
 #else
 #    include <io.h>
 #endif

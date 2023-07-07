@@ -33,3 +33,11 @@ jobs:
     - name: Test
       run: |
          &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests"  -B -j:8 PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
+    - name: Create Artifacts
+      run: |
+         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/src" ORANGEC="$env:GITHUB_WORKSPACE" zip
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: Artifacts
+        path: $env:GITHUB_WORKSPACE/dist

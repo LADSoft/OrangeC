@@ -39,7 +39,7 @@ endif
 
 LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP_deps) $(C_deps) $(ASM_deps) $(TASM_deps)))
 
-CCFLAGS = -c -D__MSVCRT__ -U__STRICT_ANSI__ -DHAVE_UNISTD_H=1 -DSQLITE_OS_UNIX -D_unlink=unlink -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -Wno-int-to-pointer-cast -D_strnicmp=strncasecmp -m32 -march=i686
+CCFLAGS = -c -D__MSVCRT__ -DHAVE_UNISTD_H=1 -DSQLITE_OS_UNIX -D_unlink=unlink -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -Wno-int-to-pointer-cast -D_strnicmp=strncasecmp
 
 CPPFLAGS = -std=c++14
 LINK=ld
@@ -64,7 +64,7 @@ DEFINES:=$(addprefix -D,$(DEFINES))
 DEFINES:=$(subst @, ,$(DEFINES))
 
 CFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) -DGNUC -std=c99
-CXXFLAGS := $(CCFLAGS) $(CINCLUDES) -fpermissive -Wcpp $(DEFINES) -DGNUC -std=c++14
+CXXFLAGS := $(CCFLAGS) $(CINCLUDES) -fpermissive $(DEFINES) -DGNUC -std=c++14
 
 ifeq "$(TARGET)" "GUI"
 LFLAGS := $(LFLAGS) -s -Wl,--subsystem,windows

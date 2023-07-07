@@ -17,12 +17,6 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - name: Install multilib
-      run: |
-        sudo add-apt-repository --remove ppa:ubuntu-toolchain-r/test -y
-        sudo apt update
-        sudo env ACCEPT_EULA=Y apt upgrade
-        sudo apt install gcc-multilib
     - name: Build
       run: |
          make -C "$GITHUB_WORKSPACE/src" ORANGEC="$GITHUB_WORKSPACE" COMPILER=gcc-linux -j 8

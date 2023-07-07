@@ -47,6 +47,7 @@
 #include "FNV_hash.h"
 #include <cstdio>
 #include "symtab.h"
+#include "osutil.h"
 
 namespace Parser
 {
@@ -369,6 +370,8 @@ bool IsNothrowError(int err)
 }
 bool printerrinternal(int err, const char* file, int line, va_list args)
 {
+    if (prm_cppfile.GetValue())
+        return false;
     if (inNothrowHandler && IsNothrowError(err))
     {
         noExcept = false;

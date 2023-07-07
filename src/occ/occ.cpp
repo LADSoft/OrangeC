@@ -51,6 +51,9 @@
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#    define CONSOLE_DEVICE "/dev/tty"
+#else
+#    define CONSOLE_DEVICE "con:"
 #endif
 
 int usingEsp;
@@ -393,6 +396,8 @@ int main(int argc, char* argv[])
 {
     using namespace occx86;
     bool showBanner = true;
+    bool hasi = false;
+    bool haso = false;
     for (int i = 0; i < argc; i++)
         if (argv[i][0] == '-' || argv[i][0] == '/')
         {
@@ -412,9 +417,16 @@ int main(int argc, char* argv[])
             {
                 showBanner = false;
             }
+            else if (!strcmp(&argv[i][1], "i"))
+            {
+                hasi = true;
+            }
+            else if (!strcmp(&argv[i][1], "o" CONSOLE_DEVICE))
+            {
+                haso = true;
+            }
         }
-
-    if (showBanner)
+    if (showBanner && !(haso && hasi))
         ToolChain::ShowBanner();
     fflush(stdout);
     Utils::SetEnvironmentToPathParent("ORANGEC");

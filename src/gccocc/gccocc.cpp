@@ -35,8 +35,10 @@
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#    define CONSOLE_DEVICE "/dev/tty"
 #else
 #    include <io.h>
+#    define CONSOLE_DEVICE "con:"
 #endif
 
 CmdSwitchParser gccocc::SwitchParser;
@@ -86,7 +88,7 @@ const char* gccocc::helpText =
     "   -o xxx          set output file\n"
     "   -v              verbose\n"
     "   -D xxx          define something\n"
-    "   -E              compile as c++\n"
+    "   -E              preprocess\n"
     "   -I xxx          specify include directory\n"
     "   -L xxx          specify library directory\n"
     "   -Ox             specify optimize level\n"
@@ -178,7 +180,7 @@ void gccocc::PutWarnings(FILE* fil)
 }
 int gccocc::Run(int argc, char** argv) 
 {
-    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText, [this]() { return prm_cppmode.GetValue();});
     if (files.size() < 2 && !prmDumpVersion.GetExists() && !prmDumpMachine.GetExists() && !prmPrintFileName.GetExists() &&
         !prmPrintProgName.GetExists())
         ToolChain::Usage(usageText);
@@ -195,7 +197,7 @@ int gccocc::Run(int argc, char** argv)
     if (prm_output.GetExists())
         fprintf(fil, " \"-o%s\"", prm_output.GetValue().c_str());
     if (prm_cppmode.GetValue())
-        fputs(" -x c++", fil);
+        fputs(" -i -o" CONSOLE_DEVICE, fil);
     if (prm_nostdinc.GetValue())
         fputs(" -nostdinc", fil);
     if (prm_nostdincpp.GetValue())

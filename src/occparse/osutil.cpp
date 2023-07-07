@@ -57,6 +57,12 @@ extern bool doBackendInit;
 namespace Parser
 {
 
+#if defined HAVE_UNISTD_H
+#    define CONSOLE_DEVICE "/dev/tty"
+#else
+#    define CONSOLE_DEVICE "con:"
+#endif
+
 #include "../version.h"
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
 #    include <io.h>
@@ -1186,8 +1192,9 @@ int ccinit(int argc, char* argv[])
     auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, getUsageText(), getHelpText(), []() {
         return prmDumpVersion.GetValue() || prmDumpMachine.GetValue() || prmPrintFileName.GetExists() ||
                prmPrintProgName.GetExists() || MakeStubsOption.GetValue() ||
-               MakeStubsUser.GetValue();
+               MakeStubsUser.GetValue() || (prm_cppfile.GetExists() && prm_output.GetValue() == CONSOLE_DEVICE);
         });
+
     argv[0] = old;
     Optimizer::showBanner = prm_verbose.GetExists(); 
 

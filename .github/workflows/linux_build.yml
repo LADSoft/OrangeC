@@ -19,4 +19,4 @@ jobs:
         fetch-depth: 0
     - name: Build
       run: |
-         make -C "$GITHUB_WORKSPACE/src" ORANGEC="$GITHUB_WORKSPACE" /DCOMPILER=gcc-linux -j:8
+         make -C "$GITHUB_WORKSPACE/src" ORANGEC="$GITHUB_WORKSPACE" COMPILER=gcc-linux -j 8

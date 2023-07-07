@@ -19,13 +19,11 @@ class Semaphore
 {
 #ifdef _WIN32
     using semaphore_type = HANDLE;
-    using semaphore_pointer_type = HANDLE;
 #    ifdef UNICODE
 #        define USE_WIDE_STRING
 #    endif
 #elif defined(__linux__)
     using semaphore_type = sem_t;
-    using semaphore_pointer_type = sem_t*;
 #endif
 #ifdef USE_WIDE_STRING
     using string_type = std::wstring;
@@ -43,13 +41,18 @@ class Semaphore
     {
 #ifdef _WIN32
         handle = CreateSemaphore(nullptr, value, value, name.c_str());
-#elif defined(__linux__)
-        handle = sem_open(name.c_str(), O_CREAT, O_RDWR, value);
-#endif
         if (!handle)
         {
             throw std::runtime_error("CreateSemaphore failed, Error code: " + std::to_string(GetLastError()));
         }
+#elif defined(__linux__)
+        // 0 in this case means this is shared internally, not externally
+        int ret = sem_init(&handle, 0, value);
+        if (!ret)
+        {
+            throw std::runtime_error("Semaphore init failed, errno is: " + std::to_string(errno));
+        }
+#endif
     }
     Semaphore(int value)
     {
@@ -74,20 +77,18 @@ class Semaphore
     {
 #ifdef _WIN32
         handle = OpenSemaphore(EVENT_ALL_ACCESS, FALSE, name.c_str());
-#elif defined(__linux__)
-        handle = sem_open(name.c_str(), O_RDWR, O_RDWR, value);
-#endif
         if (!handle)
         {
-            throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " +
-#ifdef _WIN32
-  std::to_string(GetLastError()));
-#elif defined(__linux__)
-  std::to_string(errno);
-#else
-   "unknown";
-#endif
+            throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(GetLastError()));
         }
+#elif defined(__linux__)
+        auto ret = sem_open(name.c_str(), O_RDWR, O_RDWR, value);
+        if (ret == SEM_FAILED)
+        {
+            throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(errno));
+        }
+        handle =*ret;
+#endif
     }
     Semaphore& operator=(const Semaphore& other)
     {
@@ -105,7 +106,12 @@ class Semaphore
 #ifdef _WIN32
                 handle = OpenSemaphore(EVENT_ALL_ACCESS, false, semaphoreName.c_str());
 #elif defined(__linux__)
-                handle = sem_open(name.c_str(), O_RDWR, O_RDWR, value);
+                auto ret = sem_open(name.c_str(), O_RDWR, O_RDWR, value);
+                if (ret == SEM_FAILED)
+                {
+                    throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(errno));
+                }
+                handle =*ret;
 #endif
             }
         }
@@ -142,7 +148,12 @@ class Semaphore
 #ifdef _WIN32
                 handle = OpenSemaphore(EVENT_ALL_ACCESS, false, semaphoreName.c_str());
 #elif defined(__linux__)
-                handle = sem_open(name.c_str(), O_RDWR, O_RDWR, value);
+                auto ret = sem_open(name.c_str(), O_RDWR, O_RDWR, value);
+                if (ret == SEM_FAILED)
+                {
+                    throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(errno));
+                }
+                handle =*ret;
 #endif
             }
             other.named = false;
@@ -195,6 +206,7 @@ class Semaphore
             throw std::invalid_argument("The time spent for waiting is too long to handle normally");
         }
         int waitTime = milli.count();
+#ifdef WIN32
         DWORD ret = WaitForSingleObject(handle, waitTime);
         switch (ret)
         {
@@ -207,9 +219,15 @@ class Semaphore
             default:
                 return false;
         }
+#elif defined(__linux__)
+        timespec ts = { waitTime/1000, (waitTime%1000) * 1000000 };
+        sem_timedwaitwait(handle, &ts);
+#endif
+
     }
     bool TryWait()
     {
+#ifdef _WIN32
         DWORD ret = WaitForSingleObject(handle, 0);
         switch (ret)
         {
@@ -222,6 +240,9 @@ class Semaphore
             default:
                 return false;
         }
+#elif defined(__linux__)
+        return !! sem_trywait(handle);
+#endif
     }
     void Wait()
     {

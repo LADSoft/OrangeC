@@ -22,7 +22,6 @@ jobs:
         sudo add-apt-repository --remove ppa:ubuntu-toolchain-r/test -y
         sudo apt update
         sudo env ACCEPT_EULA=Y apt upgrade
-        sudo apt-get purge gcc-5 gcc-5-base gcc-6-base
         sudo apt install gcc-multilib
     - name: Build
       run: |

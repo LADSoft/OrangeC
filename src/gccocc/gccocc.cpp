@@ -76,7 +76,11 @@ CmdSwitchCombineString gccocc::prmPrintFileName(SwitchParser, 0, 0, {"print-file
 CmdSwitchCombineString gccocc::prmPrintProgName(SwitchParser, 0, 0, {"print-prog-name"});
 CmdSwitchBool gccocc::prmInhibitWarnings(SwitchParser, 'w'); 
 CmdSwitchInt  gccocc::prmMaxErrors(SwitchParser, 0, 24, 1,999, {"fmax-errors"});
-CmdSwitchBool gccocc::prmPedantic(SwitchParser, 0, 0, {"pedantic", "pedantic-errors"});
+
+// the next two should be one switch, but the problem in github issue #856 prevents it
+// should be revisited later...
+CmdSwitchBool gccocc::prmPedantic(SwitchParser, 0, 0, {"pedantic"});
+CmdSwitchBool gccocc::prmPedantic_errors(SwitchParser, 0, 0, {"pedantic-errors"});
 
 const char* gccocc::helpText =
     "[options] files...\n"

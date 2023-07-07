@@ -73,5 +73,6 @@ private:
     static CmdSwitchBool prmInhibitWarnings;
     static CmdSwitchInt  prmMaxErrors;
     static CmdSwitchBool prmPedantic;
+    static CmdSwitchBool prmPedantic_errors;
 
 };

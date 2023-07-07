@@ -32,13 +32,13 @@ jobs:
          &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/src" PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:8
     - name: Orange C Test
       run: |
-         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests"  -B -j:8 PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
+         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests" -j:8 PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
     - name: occil test
       run: |
-         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests/occil" -B -j:8 PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
+         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests/occil" PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
     - name: occpr test
       run: |
-         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests/occpr" -B -j:8 PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
+         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests/occpr" PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
     - name: LIBCXX tests
       run: |
-         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE" -B -j:8 PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC test
+         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE" PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC test

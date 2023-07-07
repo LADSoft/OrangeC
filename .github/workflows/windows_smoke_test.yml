@@ -32,7 +32,7 @@ jobs:
          &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/src" PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild -j:8
     - name: Orange C Test
       run: |
-         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests"  -B -j:8 PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
+         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests"  -j:8 PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
     - name: Create Artifacts
       run: |
          &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/src" ORANGEC="$env:GITHUB_WORKSPACE" zip

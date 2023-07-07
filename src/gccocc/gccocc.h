@@ -22,6 +22,8 @@
  * 
  */
 
+#include <stdio.h>
+
 class gccocc
 {
 public:
@@ -29,6 +31,7 @@ public:
 
 protected:
     void PutMultiple(FILE* fil, const char* switchName, std::string lst);
+    void PutWarnings(FILE* fil);
 
 private:
     static const char* usageText;
@@ -50,7 +53,7 @@ private:
     static CmdSwitchString prm_optimize;
     static CmdSwitchBool prm_assemble;
     static CmdSwitchCombineString prm_undefine;
-    static CmdSwitchString prm_warning_and_flags;
+    static CmdSwitchCombineString prm_warning_and_flags;
     static CmdSwitchBool prm_nostdinc;
     static CmdSwitchBool prm_nostdincpp;
     static CmdSwitchBool prmSyntaxOnly;
@@ -65,5 +68,10 @@ private:
     static CmdSwitchBool prmDumpMachine;
     static CmdSwitchCombineString prmPrintFileName;
     static CmdSwitchCombineString prmPrintProgName;
+    static CmdSwitchBool prmExceptions;
+    static CmdSwitchString prm_std;
+    static CmdSwitchBool prmInhibitWarnings;
+    static CmdSwitchInt  prmMaxErrors;
+    static CmdSwitchBool prmPedantic;
 
 };

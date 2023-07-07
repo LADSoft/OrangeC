@@ -53,11 +53,13 @@ CmdSwitchCombineString gccocc::prm_cinclude(SwitchParser, 'I', ';');
 CmdSwitchString gccocc::prm_optimize(SwitchParser, 'O');
 CmdSwitchBool gccocc::prm_assemble(SwitchParser, 'S');
 CmdSwitchCombineString gccocc::prm_undefine(SwitchParser, 'U', ';');
-CmdSwitchString gccocc::prm_warning_and_flags(SwitchParser, 'W');
+CmdSwitchCombineString gccocc::prm_warning_and_flags(SwitchParser, 'W', ';');
+CmdSwitchString gccocc::prm_std(SwitchParser,0, 0, {"std"});
 CmdSwitchBool gccocc::prm_nostdinc(SwitchParser, 0, false, {"nostdinc"});
 CmdSwitchBool gccocc::prm_nostdincpp(SwitchParser, 0, false, {"nostdinc++"});
 CmdSwitchBool gccocc::prmSyntaxOnly(SwitchParser, 0, false, {"fsyntax-only"});
 CmdSwitchBool gccocc::prmCharIsUnsigned(SwitchParser, 0, false, {"funsigned-char"});
+CmdSwitchBool gccocc::prmExceptions(SwitchParser, 0, false, {"fexceptions"});
 CmdSwitchCombineString gccocc::prm_output_def_file(SwitchParser, 0, 0, {"output-def"});
 CmdSwitchBool gccocc::prm_export_all(SwitchParser, 0, false, {"export-all-symbols"});
 CmdSwitchBool gccocc::prmLink(SwitchParser, 0, 0, {"link"});
@@ -70,7 +72,9 @@ CmdSwitchString gccocc::prm_mtune(SwitchParser, 0, 0, {"mtune"});
 CmdSwitchString gccocc::prm_march(SwitchParser, 0, 0, {"march"});
 CmdSwitchCombineString gccocc::prmPrintFileName(SwitchParser, 0, 0, {"print-file-name"});
 CmdSwitchCombineString gccocc::prmPrintProgName(SwitchParser, 0, 0, {"print-prog-name"});
-
+CmdSwitchBool gccocc::prmInhibitWarnings(SwitchParser, 'w'); 
+CmdSwitchInt  gccocc::prmMaxErrors(SwitchParser, 0, 24, 1,999, {"fmax-errors"});
+CmdSwitchBool gccocc::prmPedantic(SwitchParser, 0, 0, {"pedantic", "pedantic-errors"});
 
 const char* gccocc::helpText =
     "[options] files...\n"
@@ -88,24 +92,31 @@ const char* gccocc::helpText =
     "   -Ox             specify optimize level\n"
     "   -S              generate assembler code\n"
     "   -Uxxx           undefine something\n"
-    "   -W              show warnings\n"
-    "   -Wno            no warnings\n"
-    "   -Wa,xxx         specify an assembler flag\n"
-    "   -Wl,xxx         specify a linker flag\n"
+    "   -w              don't show warnings\n"
+    "   -Wno            don't show warnings\n"
+    "   -Wall           show all warnings\n"
+    "   -Wextra         show all warnings\n"
+    "   -Werror         display warnings as errors\n"
+    "   -Wfatal-errors  stop after first error\n"
+    "   -Wxxxxxxxxxx    ignored\n"
     "   -V, --version   show version information\n"
-    "   --nologo        no logo\n"
+    "   --nologo        no logo\n"	
     "   /?, --help      this text\n"
     "Other options\n"
     "   -dll            generate a DLL\n"
     "   -dumpmachine    dump machine string\n"
     "   -dumpversion    dump compiler version\n"
     "   -export-all-symbols force export of symbols\n"
+    "   -fexceptions    ignored\n"
+    "   -fmax-errors=n  show a maximum of 'n' errors\n"
     "   -fsyntax-only   compile, don't generate output\n"
     "   -funsigned-char treat char as unsigned\n"
     "   -link           reserved for compitiblity\n"
     "   -nostdinc       disable c language system include files\n"
     "   -nostdinc++     disable c++ language system include files\n"
     "   -output-def xxxx  create a .def file\n"  
+    "   -pedantic       ignored\n"
+    "   -pedantic-errors ignored\n"
     "   -print-file-name=xxx  print the full path of a library\n"
     "   -print-prog-name=xxx  print the full path of one of the executables\n"
     "   -shared         generate a DLL instead of an executable\n"
@@ -127,6 +138,43 @@ void gccocc::PutMultiple(FILE* fil, const char* switchName, std::string lst)
     auto splt = Utils::split(lst,';');
     for (int i=0; i < splt.size(); i++)
         fprintf(fil, " -%s%s\n", switchName, splt[i].c_str());
+}
+void gccocc::PutWarnings(FILE* fil)
+{
+    if (prmMaxErrors.GetExists())
+    {
+        fprintf(fil,  " /E%d", prmMaxErrors.GetValue());
+    }
+    if (prmInhibitWarnings.GetValue())
+    {
+        fputs(" /w", fil);
+    }
+    else if (prm_warning_and_flags.GetExists())
+    {
+        auto warnings = Utils::split(prm_warning_and_flags.GetValue());
+        if (!warnings.size())
+            fputs(" /w+", fil);
+        else
+        {
+            for (auto w : warnings)
+            {
+                if (w == "no")
+                   fputs(" /w", fil);
+                else if (w == "error")
+                   fputs(" /wx", fil);
+                else if (w == "all" || w == "extra")
+                   fputs(" /w+", fil);
+                else if (w == "fatal-errors")
+                {
+                   fputs(" /E1", fil);
+                }
+                else
+                {
+                    // anything else is ignored
+                }                   
+            }
+        }
+    }
 }
 int gccocc::Run(int argc, char** argv) 
 {
@@ -170,6 +218,11 @@ int gccocc::Run(int argc, char** argv)
         fputs(" -dumpmachine", fil);
     if (prm_export_all.GetValue())
         fputs(" -export-all-symbols", fil);
+    if (prm_std.GetExists())
+    {
+        fputs(" -std=", fil);
+        fputs(prm_std.GetValue().c_str(), fil);
+    }
     if (prm_optimize.GetExists())
     {
         char ch = '1';
@@ -194,29 +247,7 @@ int gccocc::Run(int argc, char** argv)
     {
          fputs(" -O-", fil);
     }
-    if (prm_warning_and_flags.GetExists())
-    {
-        if (prm_warning_and_flags.GetValue() == "")
-            fputs(" /w+", fil);
-        else if (prm_warning_and_flags.GetValue() == "no")
-            fputs(" /E-", fil);
-        else if (prm_warning_and_flags.GetValue().size() >= 3)
-        {
-            if (prm_warning_and_flags.GetValue()[1] == ',')
-            {
-                if (prm_warning_and_flags.GetValue()[0] == 'l')
-                   fprintf(fil, " \"-pl%s\"", prm_warning_and_flags.GetValue().substr(2).c_str());
-                else if (prm_warning_and_flags.GetValue()[0] == 'a')
-                   fprintf(fil, " \"-pa%s\"", prm_warning_and_flags.GetValue().substr(2).c_str());
-                else
-                   Utils::Fatal("unknown warning flags");
-            }
-            else
-               Utils::Fatal("unknown warning flags");
-        }
-        else
-            Utils::Fatal("unknown warning flags");
-    }
+    PutWarnings(fil);
     if (prm_output_def_file.GetExists())
         fprintf(fil, " -output-def %s", prm_output_def_file.GetValue().c_str());
     if (prmPrintFileName.GetExists())

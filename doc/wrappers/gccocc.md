@@ -72,6 +72,14 @@ compiles and links against mylib.l, searching for mylib.l in the current directo
 
 either will compile r.c into a dll
 
+>     gccocc -static file.c
+
+builds a static library file.l
+
+>     gccocc -output-def deffile.def file.c
+
+when building a dll, output a .def file instead of an import library
+
 >     gccocc -link r.c
 
 links r.c after compiling.   This is the default behavior so the option doesn't do anything
@@ -100,13 +108,44 @@ don't search the system C++ language include directory
 
 ### Warning control
 
+>     gccocc -fsyntax-only file.c
+
+compiles file.c, but doesn't generate any files as output
+useful to see diagnostics without attempting to generate output files
+
 >     gccocc -W file.c
 
 shows additional warnings that wouldn't normally be shown
 
 >     gccocc -Wno file.c
+>     gccocc -w file.c
 
 doesn't show any warnings
+
+>     gccocc -Werror               warnings become errrors
+
+>     gccocc -fmax-errors=n file.c
+
+stops the compile after n errors are encountered
+
+>     gccocc -Wfatal-errors
+
+stops the compile after the first error.
+
+>     gccocc -Wall file.c
+>     gccocc -Wextra file.c
+
+shows more warnings.   gccocc doesn't distinguish between the two switches
+
+Anything else following '-W' is ignored
+
+for example:
+
+>     gccocc -Wno-int-to-pointer-cast file.c
+
+would ignore the flag.   Other warning specifies are also ignored.
+This also means things like -Wa,xxx and -Wl,xxxx will also be ignored.
+
 
 ### Miscellaneous commands
 
@@ -142,18 +181,6 @@ searches for the program name within the occ distributions, and displays the ful
 
 compiles and links file.c, treating the 'char' type as if it were unsigned.
 
->     gccocc -fsyntax-only file.c
-
-compiles file.c, but doesn't generate any output
-
->     gccocc -static file.c
-
-builds a static library file.l
-
->     gccocc -output-def deffile.def file.c
-
-when building a dll, output a .def file instead of an import library
-
 ### Compatibility commands
 
 Several commands are parsed, but don't do anything.   These include
@@ -161,3 +188,7 @@ Several commands are parsed, but don't do anything.   These include
 >     gccocc -ixxx file.c
 >     gccocc -export-all-symbols file.c
 >     gccocc -march=native -mtune=native file.c
+>     gccocc -Werror=xxxxxx file.c
+>     gccocc -pedantic file.c
+>     gccocc -pedantic-errors file.c
+

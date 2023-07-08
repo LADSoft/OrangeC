@@ -8642,7 +8642,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                     tph = tpc;
                 else if (tpc->type == bt_void)
                     tpc = tph;
-                if (Optimizer::cparams.prm_cplusplus && (isstructured(tpc) || isstructured(tph)))
+                if (Optimizer::cparams.prm_cplusplus && (isstructured(tpc) || isstructured(tph)) && (!tpc->lref || !tph->lref))
                 {
                     if ( ! isstructured(tpc) || !isstructured(tph) || (comparetypes(tph, tpc, false) && !sameTemplate(tph, tpc, false)) || epc->type == en_thisref || epc->type == en_func || eph->type == en_thisref || eph->type == en_func)
                     {
@@ -8696,7 +8696,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                             }
                         }
                         // now check for structured alias types
-                        if (basetype(tpc)->sp->sb->structuredAliasType)
+                        if (isstructured(tpc) && basetype(tpc)->sp->sb->structuredAliasType)
                         {
                             auto srp = basetype(tpc)->sp->sb->structuredAliasType;
                             rv = anonymousVar(sc_auto, srp);
@@ -8805,11 +8805,23 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                     }
                 }
                 if (isfunction(tph))
+                {
                     *tp = tph;
+                }
                 else if (isfunction(tpc))
+                {
                     *tp = tpc;
+                }
+                else if (tpc->lref && tph->lref)
+                {
+                    if (!comparetypes(tpc, tph, 1) || sameTemplate(tpc, tph))
+                        errortype(ERR_TWO_OPERANDS_SAME_TYPE, tpc, tph);
+                    *tp = tpc;
+                }
                 else if (!isvoid(tpc))
+                {
                     *tp = destSize(tpc, tph, &epc, &eph, false, nullptr);
+                }
                 else
                 {
                     if (Optimizer::architecture == ARCHITECTURE_MSIL)
@@ -8837,7 +8849,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                 (*exp)->v.logicaldestructors.left = logicaldestructors;
                 // when assigning a structure to itself, need an intermediate copy
                 // this always puts it in...
-                if (Optimizer::cparams.prm_cplusplus && isstructured(*tp) && atp && !basetype(*tp)->sp->sb->structuredAliasType)
+                if (Optimizer::cparams.prm_cplusplus && isstructured(*tp) && !(*tp)->lref && atp && !basetype(*tp)->sp->sb->structuredAliasType)
                 {
                     EXPRESSION* rv = anonymousVar(sc_auto, *tp);
                     TYPE* ctype = *tp;

@@ -7,7 +7,9 @@
 #include <type_traits>
 #include <utility>
 #include <memory>
-#include "semaphores.h"
+#ifdef _WIN32
+#    include "semaphores.h"
+#endif
 // The main issue with using semaphores alone for Linux is that named semaphores
 // on linux can't be used without knowing the state of every application taking
 // the named semaphores, a solution to this is to use a jobserver, in order for
@@ -70,20 +72,21 @@ class POSIXJobServer : public JobServer
     POSIXJobServer(int max_jobs);
     POSIXJobServer(int read, int write);
 };
+#ifdef _WIN32
 class WINDOWSJobServer : public JobServer
 {
     friend class JobServer;
-#ifdef _WIN32
-#    ifdef UNICODE
+#    ifdef _WIN32
+#        ifdef UNICODE
     // Use a consistent strategy so that windows doesn't yell at us, I know we don't work in wide strings except in obrc often
     // so this is here for posterity *AND* ease of use
     using string_type = std::wstring;
+#        else
+    using string_type = std::string;
+#        endif
 #    else
     using string_type = std::string;
 #    endif
-#else
-    using string_type = std::string;
-#endif
   private:
     // Name of the server, use std::string or std::wstring, we do this for compatibility reasons
     string_type server_name;
@@ -103,4 +106,5 @@ class WINDOWSJobServer : public JobServer
     // Interprocess semaphores require names
     WINDOWSJobServer(const string_type& server_name);
 };
+#endif
 }  // namespace OMAKE

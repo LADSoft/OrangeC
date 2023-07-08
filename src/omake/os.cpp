@@ -200,7 +200,7 @@ std::string OS::GetFullPath(const std::string& fullname)
 {
     std::lock_guard<decltype(DirectoryMutex)> lg(DirectoryMutex);
     std::string recievingbuffer;
-
+#ifdef _WIN32
     DWORD return_val = GetFullPathNameA(fullname.c_str(), 0, nullptr, nullptr);
     if (!return_val)
     {
@@ -212,6 +212,7 @@ std::string OS::GetFullPath(const std::string& fullname)
     {
         // Do error handling somewhere
     }
+#endif
     return recievingbuffer;
 }
 std::string OS::JobName() { return jobName; }

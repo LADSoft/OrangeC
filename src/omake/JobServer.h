@@ -48,9 +48,12 @@ class JobServer : public IJobServer
     static std::shared_ptr<JobServer> GetJobServer(int max_jobs);
     // Opens a job server with a specified authorization code, this is *AFAR* parsing the --jobserver-auth string
     static std::shared_ptr<JobServer> GetJobServer(const std::string& auth_string);
+#ifdef _WIN32
+
     // temporary GetJobServer for compatibility reasons with old code, instead of moving things into JobServer here, we're moving
     // them out
     static std::shared_ptr<JobServer> GetJobServer(const std::string& auth_string, int max_jobs);
+#endif
     // Creates an OMAKE compatible job server, allowing for the main class to move out when needed
     static std::shared_ptr<JobServer> GetJobServer(int max_jobs, bool ignored);
 };

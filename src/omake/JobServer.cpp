@@ -31,10 +31,12 @@ std::shared_ptr<JobServer> JobServer::GetJobServer(const std::string& auth_strin
     return std::make_shared<POSIXJobServer>(readfd, writefd);
 #endif
 }
+#ifdef _WIN32
 std::shared_ptr<JobServer> JobServer::GetJobServer(const std::string& auth_string, int max_jobs)
 {
     return std::make_shared<WINDOWSJobServer>(auth_string, max_jobs);
 }
+#endif
 std::shared_ptr<JobServer> JobServer::GetJobServer(int max_jobs, bool ignored)
 {
     (void)ignored;

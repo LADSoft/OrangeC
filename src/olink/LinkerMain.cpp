@@ -38,7 +38,6 @@
 #include "LinkPartition.h"
 #include "LinkOverlay.h"
 #include "LinkLibrary.h"
-#include "..\version.h"
 #include <fstream>
 #include <cstdio>
 #include <cstring>

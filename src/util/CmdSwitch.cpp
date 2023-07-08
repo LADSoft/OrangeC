@@ -38,7 +38,7 @@
 #ifdef __ORANGEC__
 #ifndef __LSCRTL_DLL
 #include <windows.h>
-#include <..\version.h>
+#include "../version.h"
 extern "C" void _RTL_FUNC __excepthook()
 {
     printf("version: " STRING_VERSION "\n");

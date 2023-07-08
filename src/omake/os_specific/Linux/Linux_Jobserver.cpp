@@ -14,7 +14,7 @@ bool POSIXJobServer::TryTakeNewJob()
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
     }
-//    if (current_jobs != 0)
+    //    if (current_jobs != 0)
     {
         int err = 0;
         char only_buffer;
@@ -40,8 +40,8 @@ bool POSIXJobServer::TryTakeNewJob()
             }
         }
     }
-//    current_jobs++;
-//    return true;
+    //    current_jobs++;
+    //    return true;
 }
 bool POSIXJobServer::TakeNewJob()
 {
@@ -49,7 +49,7 @@ bool POSIXJobServer::TakeNewJob()
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
     }
-//    if (current_jobs != 0)
+    //    if (current_jobs != 0)
     {
         int err = 0;
         char only_buffer;
@@ -76,8 +76,8 @@ bool POSIXJobServer::TakeNewJob()
             }
         }
     }
-//    current_jobs++;
-//    return true;
+    //    current_jobs++;
+    //    return true;
 }
 bool POSIXJobServer::ReleaseJob()
 {
@@ -89,7 +89,7 @@ bool POSIXJobServer::ReleaseJob()
     {
         throw std::runtime_error("Job server has returned more jobs than it has consumed");
     }
-    else //if (current_jobs != 1)
+    else  // if (current_jobs != 1)
     {
         int err = 0;
         char write_buffer = '1';
@@ -175,6 +175,7 @@ std::string POSIXJobServer::PassThroughCommandString()
     stream << readfd << ',' << writefd;
     return stream.str();
 }
+#ifdef _WIN32
 WINDOWSJobServer::WINDOWSJobServer(const string_type& server_name)
 {
     throw std::runtime_error("Windows job servers are unavailable on POSIX");
@@ -190,4 +191,5 @@ std::string WINDOWSJobServer::PassThroughCommandString()
 bool WINDOWSJobServer::TryTakeNewJob() { throw std::runtime_error("Windows job servers are unavailable on POSIX"); }
 bool WINDOWSJobServer::TakeNewJob() { throw std::runtime_error("Windows job servers are unavailable on POSIX"); }
 bool WINDOWSJobServer::ReleaseJob() { throw std::runtime_error("Windows job servers are unavailable on POSIX"); }
+#endif
 }  // namespace OMAKE

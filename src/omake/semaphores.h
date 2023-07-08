@@ -5,7 +5,7 @@
 #elif defined(__linux__)
 #    include <semaphore.h>
 #    include <errno.h>
-#    #include <fcntl.h>
+#    include <fcntl.h>
 #    pragma warning \
         "This platform is unsupported for named sempahores due to POSIX semaphores (named ones) being legitimately several times worse than Windows ones"
 #else
@@ -40,7 +40,7 @@ class Semaphore
     Semaphore(string_type name, int value) : named(true), semaphoreName(name)
     {
 #ifdef _WIN32
-        handle = CreateSemaphore(nullptr, value, value, name.c_str());
+        handle = CreateSemaphore(nullptr, value, value, semaphoreName.c_str());
         if (!handle)
         {
             throw std::runtime_error("CreateSemaphore failed, Error code: " + std::to_string(GetLastError()));
@@ -82,7 +82,7 @@ class Semaphore
             throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(GetLastError()));
         }
 #elif defined(__linux__)
-        auto ret = sem_open(name.c_str(), O_RDWR, O_RDWR, value);
+        auto ret = sem_open(name.c_str(), O_RDWR);
         if (ret == SEM_FAILED)
         {
             throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(errno));
@@ -106,7 +106,7 @@ class Semaphore
 #ifdef _WIN32
                 handle = OpenSemaphore(EVENT_ALL_ACCESS, false, semaphoreName.c_str());
 #elif defined(__linux__)
-                auto ret = sem_open(name.c_str(), O_RDWR, O_RDWR, value);
+                auto ret = sem_open(semaphoreName.c_str(), O_RDWR);
                 if (ret == SEM_FAILED)
                 {
                     throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(errno));
@@ -148,7 +148,7 @@ class Semaphore
 #ifdef _WIN32
                 handle = OpenSemaphore(EVENT_ALL_ACCESS, false, semaphoreName.c_str());
 #elif defined(__linux__)
-                auto ret = sem_open(name.c_str(), O_RDWR, O_RDWR, value);
+                auto ret = sem_open(semaphoreName.c_str(), O_RDWR);
                 if (ret == SEM_FAILED)
                 {
                     throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(errno));

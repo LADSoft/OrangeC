@@ -1,1 +1,0 @@
-py \orangec\lit\lit.py %1

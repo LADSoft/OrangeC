@@ -1,5 +1,8 @@
-B := py $(ORANGEC)\lit\lit.py --echo-all-commands --config-prefix=hi
-
+ifneq "$(GITHUB_WORKSPACE)" ""
+B := py $(ORANGEC)\lit\lit.py --echo-all-commands --config-prefix=github
+else
+B := py $(ORANGEC)\lit\lit.py --echo-all-commands
+endif
 
 all: copyfiles
 	$(B) std

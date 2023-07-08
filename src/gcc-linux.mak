@@ -101,7 +101,7 @@ LMAIN := $(addprefix $(_OUTPUTDIR)/,$(MAIN_DEPENDENCIES) $(RES_deps))
 LMAIN := $(subst \,/,$(LMAIN))
 
 $(NAME).exe: $(addprefix $(_OUTPUTDIR)/,$(MAIN_DEPENDENCIES)) $(LDEPS2) $(RES_deps)
-	$(CC) $(LFLAGS) -o $(NAME).exe $(LMAIN) $(LDEPS) $(COMPLIB) $(DEF_DEPENDENCIES)
+	$(CC) $(LFLAGS) -o $(NAME).exe $(LMAIN) -Wl,--start-group $(LDEPS) -Wl,--end-group $(COMPLIB) $(DEF_DEPENDENCIES)
 
 %.exe: %.c
 	$(CC) $(LFLAGS) -o $@ $^ $(COMPLIB)

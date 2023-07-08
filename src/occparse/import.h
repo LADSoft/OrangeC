@@ -23,7 +23,4 @@
  * 
  */
 
-namespace Parser
-{
 void Import(void);
-}  // namespace Parser

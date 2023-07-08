@@ -91,7 +91,8 @@ static void argset(void)
         if (*_cmdline) {
             int i = 0;
             while ((inquote || !isspace(*_cmdline)) && *_cmdline)  {
-            if (*_cmdline == '"' && (_cmdline == ocl+1 || *(_cmdline-1) != '\\')) {
+               if (*_cmdline == '\\' && (*(_cmdline + 1) == '"' || *(_cmdline + 1) == '\\' || *(_cmdline + 1) == ' '))
+               {
                     inquote = !inquote ;
                     _cmdline++ ;
                     continue ;

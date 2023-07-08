@@ -30,6 +30,10 @@
 #include "ildata.h"
 using namespace DotNetPELib;
 
+#ifdef HAVE_UNISTD_H
+#    define _strdup strdup
+#endif
+
 namespace occmsil
 {
 struct data

@@ -79,13 +79,17 @@ int OS::jobsLeft;
 std::string OS::jobName = "\t";
 std::string OS::jobFile;
 std::shared_ptr<OMAKE::JobServer> OS::localJobServer = nullptr;
+#ifdef _WIN32
 static std::set<HANDLE> processIds;
+#endif
 std::recursive_mutex OS::consoleMutex;
 void OS::TerminateAll()
 {
     std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
+#ifdef _WIN32
     for (auto a : processIds)
         TerminateProcess(a, 0);
+#endif
 }
 std::string OS::QuoteCommand(std::string exe, std::string command)
 {

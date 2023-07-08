@@ -27,8 +27,6 @@
 #include <string.h>
 #include <string>
 #include <algorithm>
-/* these here are the only 2 function using win32-specific APIs */
-#include <process.h>
 #include "Utils.h"
 #include "ToolChain.h"
 #include "CmdSwitch.h"

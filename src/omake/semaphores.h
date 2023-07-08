@@ -221,7 +221,7 @@ class Semaphore
         }
 #elif defined(__linux__)
         timespec ts = { waitTime/1000, (waitTime%1000) * 1000000 };
-        sem_timedwait(&handle, &ts);
+        return !sem_timedwait(&handle, &ts);
 #endif
 
     }

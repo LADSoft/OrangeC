@@ -57,15 +57,17 @@ extern bool doBackendInit;
 namespace Parser
 {
 
-#if defined HAVE_UNISTD_H
-#    define CONSOLE_DEVICE "/dev/tty"
-#else
-#    define CONSOLE_DEVICE "con:"
-#endif
 
 #include "../version.h"
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
 #    include <io.h>
+#endif
+
+#if defined HAVE_UNISTD_H
+#    define CONSOLE_DEVICE "/dev/tty"
+#    define _strdup strdup
+#else
+#    define CONSOLE_DEVICE "con:"
 #endif
 
 #if defined(WIN32) || defined(MICROSOFT)

@@ -8642,6 +8642,14 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                     tph = tpc;
                 else if (tpc->type == bt_void)
                     tpc = tph;
+                if (tpc->lref && tph->lref)
+                {
+                    if (!comparetypes(tpc, tph, 1) || !sameTemplate(tpc, tph))
+                    {
+                        tpc->lref = 0;
+                        tpc->rref = 0;
+                    }
+                }
                 if (Optimizer::cparams.prm_cplusplus && (isstructured(tpc) || isstructured(tph)) && (!tpc->lref || !tph->lref))
                 {
                     if ( ! isstructured(tpc) || !isstructured(tph) || (comparetypes(tph, tpc, false) && !sameTemplate(tph, tpc, false)) || epc->type == en_thisref || epc->type == en_func || eph->type == en_thisref || eph->type == en_func)
@@ -8814,8 +8822,6 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                 }
                 else if (tpc->lref && tph->lref)
                 {
-                    if (!comparetypes(tpc, tph, 1) || sameTemplate(tpc, tph))
-                        errortype(ERR_TWO_OPERANDS_SAME_TYPE, tpc, tph);
                     *tp = tpc;
                 }
                 else if (!isvoid(tpc))

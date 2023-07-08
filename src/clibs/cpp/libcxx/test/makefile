@@ -3,7 +3,7 @@ B := py $(ORANGEC)\lit\lit.py --echo-all-commands
 all: copyfiles lit.site.cfg
 	$(B) std
 
-current: 
+current: lit.site.cfg
 	$(B) std/algorithms
 	$(B) std/atomics
 	$(B) std/containers

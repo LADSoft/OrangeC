@@ -2,7 +2,9 @@
 #include <random>
 #include <array>
 #include <algorithm>
+#ifdef _WIN32
 #include <process.h>
+#endif
 namespace OMAKE
 {
 std::shared_ptr<JobServer> JobServer::GetJobServer(int max_jobs)

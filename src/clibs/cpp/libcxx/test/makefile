@@ -1,9 +1,10 @@
-B := py $(ORANGEC)\lit\lit.py --echo-all-commands
+B := py $(ORANGEC)\lit\lit.py --echo-all-commands --config-prefix=hi
 
-all: copyfiles lit.site.cfg
+
+all: copyfiles
 	$(B) std
 
-current: lit.site.cfg
+current:
 	$(B) std/algorithms
 	$(B) std/atomics
 	$(B) std/containers
@@ -12,55 +13,50 @@ current: lit.site.cfg
 	$(B) std/iterators
 	$(B) std/thread
 
-algorithms: copyfiles lit.site.cfg
+algorithms: copyfiles
 	$(B) std/algorithms
 
-atomics: copyfiles lit.site.cfg
+atomics: copyfiles
 	$(B) std/atomics
 
-containers: copyfiles lit.site.cfg
+containers: copyfiles
 	$(B) std/containers
 
-depr: copyfiles lit.site.cfg
+depr: copyfiles
 	$(B) std/depr
 
-diagnostics: copyfiles lit.site.cfg
+diagnostics: copyfiles
 	$(B) std/diagnostics
 
-experimental: copyfiles lit.site.cfg
+experimental: copyfiles
 	$(B) std/experimental
 
-input.output: copyfiles lit.site.cfg
+input.output: copyfiles
 	$(B) std/input.output
 
-iterators: copyfiles lit.site.cfg
+iterators: copyfiles
 	$(B) std/iterators
 
-language.support: copyfiles lit.site.cfg
+language.support: copyfiles
 	$(B) std/language.support
 
-localization: copyfiles lit.site.cfg
+localization: copyfiles
 	$(B) std/localization
 
-numerics: copyfiles lit.site.cfg
+numerics: copyfiles
 	$(B) std/numerics
 
 re:
 	$(B) std/re
 
-strings: copyfiles lit.site.cfg
+strings: copyfiles
 	$(B) std/strings
 
-thread: copyfiles lit.site.cfg
+thread: copyfiles
 	$(B) std/thread
 
-utilities: copyfiles lit.site.cfg
+utilities: copyfiles
 	$(B) std/utilities
 
-lit.site.cfg:
-	makelitcfg > lit.site.cfg
-
-copyfiles: $(ORANGEC)\src\clibs\cpp\libcxx\include
-
-$(ORANGEC)\src\clibs\cpp\libcxx\include: $(ORANGEC)\src\clibs\cpp\stdinc_libcxx\exception
+copyfiles:
 	copy $(ORANGEC)\src\clibs\cpp\stdinc_libcxx\exception $(ORANGEC)\src\clibs\cpp\libcxx\include

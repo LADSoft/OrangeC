@@ -6,7 +6,7 @@ endif
 
 all: test
 %.ilo: %.c
-	-copy $(ORANGEC)\lsmsilcrtl.dll *.* > $(NULLDEV)
+	-copy $(ORANGEC)\bin\lsmsilcrtl.dll *.* > $(NULLDEV)
 	occil /c /9 /E- /Di386 /Lkernel32 $^
 
 list = AN386.ilo \

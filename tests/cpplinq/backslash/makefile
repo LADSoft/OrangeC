@@ -5,5 +5,5 @@ test: cpplinqtest.exe
 	fc /b ..\cpplinqtest.cmpx cpplinqtest.out
 
 cpplinqtest.exe: ..\cpplinqtest.cpp
-	occ /! /I ..\ $^
+	occ /! /I ..\. $^
 

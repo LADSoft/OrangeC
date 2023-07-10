@@ -4591,7 +4591,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                 {
                     for (auto arg : *funcparams->arguments)
                     {
-                        if (arg->tp->type == bt_templateparam && arg->tp->templateParam->second->packed)
+                        if (arg->tp && arg->tp->type == bt_templateparam && arg->tp->templateParam->second->packed)
                             doit = !!arg->tp->templateParam->second->byPack.pack;
                     }
                 }

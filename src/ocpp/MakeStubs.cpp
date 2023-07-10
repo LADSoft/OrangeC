@@ -90,6 +90,7 @@ void MakeStubs::Run(std::ostream* out)
         for (auto t : preProcessor.GetUserIncludes())
             *out << t << ":\n";
     }
+    *out << "\n";
     if (toClose)
     {
         delete out;

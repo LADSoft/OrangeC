@@ -53,6 +53,7 @@ private:
     static CmdSwitchString prm_optimize;
     static CmdSwitchBool prm_assemble;
     static CmdSwitchCombineString prm_undefine;
+    static CmdSwitchCombineString prmLdCommand;
     static CmdSwitchCombineString prm_warning_and_flags;
     static CmdSwitchBool prm_nostdinc;
     static CmdSwitchBool prm_nostdincpp;
@@ -74,5 +75,21 @@ private:
     static CmdSwitchInt  prmMaxErrors;
     static CmdSwitchBool prmPedantic;
     static CmdSwitchBool prmPedantic_errors;
-
+    static CmdSwitchBool prmm32;
+    static CmdSwitchBool prmm64;
+    static CmdSwitchBool prmwindows;
+    static CmdSwitchBool prmconsole;
+    static CmdSwitchBool prmunicode;
+    static CmdSwitchBool prmPipe;
+    static CmdSwitchBool prmStrip;
+    static CmdSwitchBool prmPthread;
+    static CmdSwitchBool MakeStubsOption;
+    static CmdSwitchBool MakeStubsUser;
+    static CmdSwitchCombineString MakeStubsOutputFile;
+    static CmdSwitchBool MakeStubsMissingHeaders;
+    static CmdSwitchBool MakeStubsPhonyTargets;
+    static CmdSwitchCombineString MakeStubsTargets;
+    static CmdSwitchCombineString MakeStubsQuotedTargets;
+    static CmdSwitchBool MakeStubsContinue;
+    static CmdSwitchBool MakeStubsContinueUser;
 };

@@ -30,6 +30,7 @@
 #include "ToolChain.h"
 #include "CmdSwitch.h"
 #include "gccocc.h"
+#include "..\exefmt\PEHeader.h"
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
@@ -53,6 +54,7 @@ CmdSwitchCombineString gccocc::prm_cinclude(SwitchParser, 'I', ';');
 CmdSwitchString gccocc::prm_optimize(SwitchParser, 'O');
 CmdSwitchBool gccocc::prm_assemble(SwitchParser, 'S');
 CmdSwitchCombineString gccocc::prm_undefine(SwitchParser, 'U', ';');
+CmdSwitchCombineString gccocc::prmLdCommand(SwitchParser, 0, ';', {"Wl"});
 CmdSwitchCombineString gccocc::prm_warning_and_flags(SwitchParser, 'W', ';');
 CmdSwitchString gccocc::prm_std(SwitchParser,0, 0, {"std"});
 CmdSwitchBool gccocc::prm_nostdinc(SwitchParser, 0, false, {"nostdinc"});
@@ -62,22 +64,36 @@ CmdSwitchBool gccocc::prmCharIsUnsigned(SwitchParser, 0, false, {"funsigned-char
 CmdSwitchBool gccocc::prmExceptions(SwitchParser, 0, false, {"fexceptions"});
 CmdSwitchCombineString gccocc::prm_output_def_file(SwitchParser, 0, 0, {"output-def"});
 CmdSwitchBool gccocc::prm_export_all(SwitchParser, 0, false, {"export-all-symbols"});
-CmdSwitchBool gccocc::prmLink(SwitchParser, 0, 0, {"link"});
-CmdSwitchBool gccocc::prmDll(SwitchParser, 0, 0, {"dll"});
-CmdSwitchBool gccocc::prmStatic(SwitchParser, 0, 0, {"static"});
-CmdSwitchBool gccocc::prmShared(SwitchParser, 0, 0, {"shared"});
-CmdSwitchBool gccocc::prmDumpVersion(SwitchParser, 0, 0, {"dumpversion"});
-CmdSwitchBool gccocc::prmDumpMachine(SwitchParser, 0, 0, {"dumpmachine"});
-CmdSwitchString gccocc::prm_mtune(SwitchParser, 0, 0, {"mtune"});
-CmdSwitchString gccocc::prm_march(SwitchParser, 0, 0, {"march"});
+CmdSwitchBool gccocc::prmLink(SwitchParser, 0, false, {"link"});
+CmdSwitchBool gccocc::prmDll(SwitchParser, 0, false, {"dll", "mdll"});
+CmdSwitchBool gccocc::prmStatic(SwitchParser, 0, false, {"static"});
+CmdSwitchBool gccocc::prmShared(SwitchParser, 0, false, {"shared"});
+CmdSwitchBool gccocc::prmDumpVersion(SwitchParser, 0, false, {"dumpversion"});
+CmdSwitchBool gccocc::prmDumpMachine(SwitchParser, 0, false, {"dumpmachine"});
+CmdSwitchString gccocc::prm_mtune(SwitchParser, 0, false, {"mtune"});
+CmdSwitchString gccocc::prm_march(SwitchParser, 0, false, {"march"});
 CmdSwitchCombineString gccocc::prmPrintFileName(SwitchParser, 0, 0, {"print-file-name"});
 CmdSwitchCombineString gccocc::prmPrintProgName(SwitchParser, 0, 0, {"print-prog-name"});
-CmdSwitchBool gccocc::prmInhibitWarnings(SwitchParser, 'w'); 
+CmdSwitchBool gccocc::prmInhibitWarnings(SwitchParser, 'w');
 CmdSwitchInt  gccocc::prmMaxErrors(SwitchParser, 0, 24, 1,999, {"fmax-errors"});
-
-// the next two should be one switch, but the problem in github issue #856 prevents it
-// should be revisited later...
 CmdSwitchBool gccocc::prmPedantic(SwitchParser, 0, 0, {"pedantic", "pedantic-errors"});
+CmdSwitchBool gccocc::prmm32(SwitchParser, 0, false, {"m32"});
+CmdSwitchBool gccocc::prmm64(SwitchParser, 0, false, {"m64"});
+CmdSwitchBool gccocc::prmwindows(SwitchParser, 0, false, {"mwindows"});
+CmdSwitchBool gccocc::prmconsole(SwitchParser, 0, false, {"mconsole"});
+CmdSwitchBool gccocc::prmunicode(SwitchParser, 0, false, {"municode"});
+CmdSwitchBool gccocc::prmPipe(SwitchParser, 0, false, {"pipe"});
+CmdSwitchBool gccocc::prmStrip(SwitchParser, 's');
+CmdSwitchBool gccocc::prmPthread(SwitchParser, 0, false, {"pthread"});
+CmdSwitchBool gccocc::MakeStubsOption(SwitchParser, 0, 0, {"M"});
+CmdSwitchBool gccocc::MakeStubsUser(SwitchParser, 0, 0, {"MM"});
+CmdSwitchCombineString gccocc::MakeStubsOutputFile(SwitchParser, 0, ';', {"MF"});
+CmdSwitchBool gccocc::MakeStubsMissingHeaders(SwitchParser, 0, 0, {"MG"});
+CmdSwitchBool gccocc::MakeStubsPhonyTargets(SwitchParser, 0, 0, {"MP"});
+CmdSwitchCombineString gccocc::MakeStubsTargets(SwitchParser, 0, ';', {"MT"});
+CmdSwitchCombineString gccocc::MakeStubsQuotedTargets(SwitchParser, 0, ';', {"MQ"});
+CmdSwitchBool gccocc::MakeStubsContinue(SwitchParser, 0, 0, {"MD"});
+CmdSwitchBool gccocc::MakeStubsContinueUser(SwitchParser, 0, 0, {"MMD"});
 
 const char* gccocc::helpText =
     "[options] files...\n"
@@ -87,11 +103,21 @@ const char* gccocc::helpText =
     "   -i              reserved for compatibility\n"
     "   -lxxx           specify library\n"
     "   -o xxx          set output file\n"
-    "   -v              verbose\n"
+    "   -s              ignored\n"
+    "   -v              ignored\n"
     "   -D xxx          define something\n"
     "   -E              preprocess\n"
     "   -I xxx          specify include directory\n"
     "   -L xxx          specify library directory\n"
+    "   -M              basic dependency generation\n"
+    "   -MM             basic dependency generation, user files only\n"
+    "   -MF file        basic dependency generation, specify output file\n"
+    "   -MG             missing headers as dependencies\n"
+    "   -MP             dependency generation, add phony targets\n"
+    "   -MT target      dependency generation, add target\n"
+    "   -MQ target      dependency generation, add target, quote special characters\n"
+    "   -MD             basic dependency generation and continue\n"
+    "   -MMD            basic dependency generation and continue, user files only\n"
     "   -Ox             specify optimize level\n"
     "   -S              generate assembler code\n"
     "   -Uxxx           undefine something\n"
@@ -115,20 +141,34 @@ const char* gccocc::helpText =
     "   -fsyntax-only   compile, don't generate output\n"
     "   -funsigned-char treat char as unsigned\n"
     "   -link           reserved for compitiblity\n"
+    "   -m32            ignored\n"
+    "   -m64            ignored\n"
+    "   -mconsole       generate a console program\n"
+    "   -mdll           generate a DLL\n"
+    "   -mwindows       generate a gui program\n"
+    "   -municode       use the unicode version of the headers\n"
     "   -nostdinc       disable c language system include files\n"
     "   -nostdinc++     disable c++ language system include files\n"
     "   -output-def xxxx  create a .def file\n"  
     "   -pedantic       ignored\n"
     "   -pedantic-errors ignored\n"
+    "   -pipe           ignored\n"
     "   -print-file-name=xxx  print the full path of a library\n"
     "   -print-prog-name=xxx  print the full path of one of the executables\n"
+    "   -pthread        ignored\n"
     "   -shared         generate a DLL instead of an executable\n"
     "   -static         generate a static library instead of an executable\n"
     "   -march=xxx      ignored\n"
     "   -mtune=xxx      ignored\n"
+    "   --Wl,dll        make a dll\n"
+    "   --Wl,--out-implib=xxx generate an import library when creating a dll\n"
+    "   --Wl,--output-def=xxx generate a def file when creating a dll\n"
+    "   --Wl,substem=xxx set the windows subsystem\n"
+    "   other -Wl,xxx=yyy switches are ignored\n"
     "\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
 const char* gccocc::usageText = "[options] files...";
+
 
 int main(int argc, char** argv)
 {
@@ -181,6 +221,8 @@ void gccocc::PutWarnings(FILE* fil)
 }
 int gccocc::Run(int argc, char** argv) 
 {
+    #define XPE_SUBSYS_DLL -1
+    int subsystem = PE_SUBSYS_CONSOLE; 
     auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText, [this]() { return prm_cppmode.GetValue();});
     if (files.size() < 2 && !prmDumpVersion.GetExists() && !prmDumpMachine.GetExists() && !prmPrintFileName.GetExists() &&
         !prmPrintProgName.GetExists())
@@ -209,12 +251,6 @@ int gccocc::Run(int argc, char** argv)
         fputs(" -funsigned-char", fil);
     if (prmLink.GetValue())
         fputs(" -link", fil);
-    if (prmDll.GetValue())
-        fputs(" -dll", fil);
-    if (prmShared.GetValue())
-        fputs(" -shared", fil);
-    if (prmStatic.GetValue())
-        fputs(" -static", fil);
     if (prmDumpVersion.GetValue())
         fputs(" -dumpversion", fil);
     if (prmDumpMachine.GetValue())
@@ -250,6 +286,91 @@ int gccocc::Run(int argc, char** argv)
     {
          fputs(" -O-", fil);
     }
+    if (prmShared.GetValue())
+        subsystem = XPE_SUBSYS_DLL;
+    if (prmStatic.GetValue())
+        subsystem = PE_SUBSYS_CONSOLE;
+    if (prmconsole.GetValue())
+        subsystem = PE_SUBSYS_CONSOLE;
+    if (prmwindows.GetValue())
+        subsystem = PE_SUBSYS_WINDOWS;
+    if (prmDll.GetValue())
+        subsystem = XPE_SUBSYS_DLL;
+    auto ldstrings = prmLdCommand.GetValue();
+    for (auto&& ld : Utils::split(ldstrings))
+    {
+        auto eq = ld.find_first_of('=');
+        std::string key, val;
+        if (eq == std::string::npos)
+        {
+            key = ld;
+        }
+        else
+        {
+            key = ld.substr(0, eq);
+            val = ld.substr(eq + 1);
+        }
+        if (key == "--output-def")
+            prm_output_def_file.SetValue(val);
+        else if (key == "--out-implib")
+            fprintf(fil, " --out-implib %s", val.c_str());
+        else if (key == "--dll")
+            subsystem = XPE_SUBSYS_DLL;
+        else if (key == "--subsystem" && val.size())
+        {
+            if (isdigit(val[0]))
+                 subsystem = atoi(val.c_str());
+            else if (val == "windows")
+                 subsystem = PE_SUBSYS_WINDOWS;
+            else if (val == "console")
+                 subsystem = PE_SUBSYS_CONSOLE;
+            else if (val == "native")
+                 subsystem = PE_SUBSYS_NATIVE;
+        }
+        else
+        {
+            // ignore
+        }
+    }
+    switch (subsystem)
+    {
+         case XPE_SUBSYS_DLL:
+             fputs(" -Wd", fil);
+             break;
+         case PE_SUBSYS_WINDOWS:
+             fputs(" -Wg", fil);
+             break;
+         case PE_SUBSYS_CONSOLE:
+         default:
+             fputs(" -Wc", fil);
+             break;
+    }
+    if (MakeStubsOption.GetValue())
+        fputs(" -M", fil);
+    if (MakeStubsUser.GetValue())
+        fputs(" -MM", fil);
+    if (MakeStubsOutputFile.GetExists())
+        fprintf(fil, " -MF %s", MakeStubsOutputFile.GetValue().c_str());
+    if (MakeStubsMissingHeaders.GetValue())
+        fputs(" -MG", fil);
+    if (MakeStubsPhonyTargets.GetValue())
+        fputs(" -MP", fil);
+    if (MakeStubsTargets.GetExists())
+    {
+        auto strings = Utils::split(MakeStubsTargets.GetValue());
+        for (auto a : strings)
+            fprintf(fil, " -MT %s", a.c_str());
+    }
+    if (MakeStubsQuotedTargets.GetExists())
+    {
+        auto strings = Utils::split(MakeStubsQuotedTargets.GetValue());
+        for (auto a : strings)
+            fprintf(fil, " -MQ %s", a.c_str());
+    }
+    if (MakeStubsContinue.GetValue())
+        fputs(" -MD", fil);
+    if (MakeStubsContinueUser.GetValue())
+        fputs(" -MMD", fil);
     PutWarnings(fil);
     if (prm_output_def_file.GetExists())
         fprintf(fil, " -output-def %s", prm_output_def_file.GetValue().c_str());
@@ -261,6 +382,8 @@ int gccocc::Run(int argc, char** argv)
         PutMultiple(fil, "U", prm_undefine.GetValue());
     if (prm_define.GetExists())
         PutMultiple(fil, "D", prm_define.GetValue());
+    if (prmunicode.GetValue())
+        fputs(" -DUNICODE", fil);
     if (prm_cinclude.GetExists())
         PutMultiple(fil, "I", prm_cinclude.GetValue());
     if (prm_libpath.GetExists())

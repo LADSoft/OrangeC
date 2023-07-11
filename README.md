@@ -25,11 +25,11 @@ Current languages targeted by Orange C are C++14 and C11.
 
 The tools in this package that aren't specific to this toolchain are also available in standalone repositories.   This includes the [ORC resource compiler](https://www.github.com/LADSoft/ORC),[omake makefile utility](https://www.github.com/LADSoft/OMAKE), and a [C++ library to generate and parse .NET assemblies](https://www.github.com/LADSoft/DotNetPELib).
 
-This compiler comes in an install package with an IDE suitable for developing WIN32 programs.  Help files are included; the source format for the help files is HELPSCRIBBLE's HSC format.
+The compiler can be built with various C++14 compilers, however, by default it is configured to use the Visual Studio 2022 community edition.   A solution exists which will build all files in the project, or you can use the project's omake program to build it from the command line (you can also use MSBUILD if so inclined)
 
-The compiler can be built with various C++11 compilers, however, by default it is configured to use the Visual Studio 2017 community edition.   A solution exists which will build all files in the project, or you can use the project's omake program to build it from the command line (you can also use MSBUILD if so inclined)
+It is also possible to build with mingw32-make, recently we've also fixed that to work under the variants of MSYS2.
 
-The compiler uses a text-based output format, a variant of the IEEE-695 OMF.   I've preferred this since it is easier to debug…  at one point I did try turning it into a binary format but once I got far enough to prototype it there didn't seem to be enough gain to complete the work.  And I really like text files a lot lol!
+The compiler uses a binary output format, a variant of the IEEE-695 OMF.   There are utilities to convert to the text version of IEEE-695.  I've preferred this since it is easier to debug… 
 
 The make program is eerily similar to GNU make, however, with me never having the pleasure of actually using GNU make I don't know how close I got.  The code was developed independently of GNU make, and without ever looking at the sources for GNU make.
 

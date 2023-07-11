@@ -401,6 +401,10 @@ int main(int argc, char* argv[])
     for (int i = 0; i < argc; i++)
         if (argv[i][0] == '-' || argv[i][0] == '/')
         {
+            if (!strcmp(&argv[i][1], "v"))
+            {
+                showBanner = false;
+            }
             if (!strcmp(&argv[i][1], "M") || !strcmp(&argv[i][1], "MM"))
             {
                 showBanner = false;

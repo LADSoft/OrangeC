@@ -1141,8 +1141,12 @@ int ccinit(int argc, char* argv[])
     if (showVersion)
     {
         // have to handle version specially because of the return code...
-        ToolChain::ShowBanner();
-        printf("\nCompile date: " __DATE__ ", time: " __TIME__ "\n");
+        // exiting with no display becase -v should show info about the compiler if on the command line alone.
+        if (0)
+        {
+            ToolChain::ShowBanner();
+            printf("\nCompile date: " __DATE__ ", time: " __TIME__ "\n");
+        }
         exit(255);
     }
     if (!architecture.empty())

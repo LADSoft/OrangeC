@@ -583,7 +583,7 @@ int dlPeMain::Run(int argc, char** argv)
                 std::string implibName;
                 if (!OutputDefFile.GetValue().empty())
                 {
-                    implibName = Utils::QualifiedFile(outputName.c_str(), ".def");
+                    implibName = Utils::QualifiedFile(OutputDefFile.GetValue().c_str(), ".def");
                 }
                 else if (OutputImportLibrary.GetValue().empty())
                 {

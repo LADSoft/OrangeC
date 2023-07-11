@@ -1461,6 +1461,8 @@ std::string Eval::call(const std::string& arglist)
                 l.PushCallArg(args);
             }
             rv = l.Evaluate();
+            Eval l2(rv, false);
+            rv = l2.Evaluate();
             callArgs = oldArgs;
         }
     }

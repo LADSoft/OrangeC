@@ -103,7 +103,7 @@ static char help_text[] =
     "  x is executable type               y is library type\n"
     "    c - console                         empty = static lib   l = lscrtl.dll\n"
     "    d - dll                             c = crtdll.dll\n"
-    "    w - windowing                       m = msvcrtdll.dll\n"
+    "    g - windowing                       m = msvcrtdll.dll\n"
     "\n"
     "\nOptimization control:\n" OPTIMIZATION_DESCRIPTION "\nFlags:\n" OPTMODULES_DESCRIPTION
     "  -fsyntax-only                  compile only, don't produce an output file\n"

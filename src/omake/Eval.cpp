@@ -275,7 +275,7 @@ std::string Eval::ParseMacroLine(const std::string& in)
         }
     }
     if (n != std::string::npos)
-        rv += in.substr(n, in.size());
+        rv += in.substr(n);
     return rv;
 }
 Variable* Eval::LookupVariable(const std::string& name)

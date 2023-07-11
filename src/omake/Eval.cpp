@@ -1235,7 +1235,7 @@ std::string Eval::wildcardinternal(std::string& names)
     while (!names.empty())
     {
         std::string current = ExtractFirst(names, " ");
-        files.Add(current);
+        files.Add(current, false, true);
     }
     std::string rv;
     for (auto&& name : files)

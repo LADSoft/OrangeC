@@ -76,7 +76,7 @@ bool CmdFiles::RecurseDirs(const std::string& path, const std::string& name, boo
 #endif
     return rv;
 }
-bool CmdFiles::Add(const std::string& name, bool recurseDirs)
+bool CmdFiles::Add(const std::string& name, bool recurseDirs, bool subdirs)
 {
     bool rv = false;
 #ifndef HAVE_UNISTD_H
@@ -114,12 +114,15 @@ bool CmdFiles::Add(const std::string& name, bool recurseDirs)
     {
         do
         {
-            if (!(find.attrib & _A_SUBDIR) && /*!(find.attrib & _A_VOLID) && */
+            if ((!(find.attrib & _A_SUBDIR) || subdirs) && /*!(find.attrib & _A_VOLID) && */
                 !(find.attrib & _A_HIDDEN))
             {
-                std::string file(path + std::string(find.name));
-                names.push_back(file);
-                rv = true;
+                if (strcmp(find.name, ".") != 0 && strcmp(find.name, "..") != 0)
+                {
+                    std::string file(path + std::string(find.name));
+                    names.push_back(file);
+                    rv = true;
+                }
             }
         } while (_findnext(handle, &find) != -1);
         _findclose(handle);

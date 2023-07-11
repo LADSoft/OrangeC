@@ -39,7 +39,7 @@ class CmdFiles
     CmdFiles(const std::string& name, bool recurseSubdirs = false) { Add(name, recurseSubdirs); }
     ~CmdFiles();
 
-    bool Add(const std::string& name, bool recurseSubdirs = false);
+    bool Add(const std::string& name, bool recurseSubdirs = false, bool subdirs = false);
     bool AddFromPath(const std::string& name, const std::string& path);
     bool Add(char** fileList, bool recurseSubdirs = false);
     bool Add(CmdFiles& other)

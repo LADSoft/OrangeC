@@ -30,7 +30,7 @@
 #include "ToolChain.h"
 #include "CmdSwitch.h"
 #include "gccocc.h"
-#include "..\exefmt\PEHeader.h"
+#include "../exefmt/PEHeader.h"
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>

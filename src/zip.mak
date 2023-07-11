@@ -55,11 +55,10 @@ ifeq "$(GITHUB_WORKSPACE)" ""
 	$(ZIP) -r0 -xr@orangec/src/xclude.lst a $(DISTSRC) orangec/src/ocl/ocl.lic orangec/src/clibs/cpp/* orangec/src/clibs/platform/copyrght.asm orangec/src/help/*.* orangec/doc/*.*
 	$(ZIP) -r0 a $(DISTSRC) orangec/src/clibs/platform/dos32/extender/*.* orangec/src/clibs/platform/dos32/extender/*
 	$(ZIP) -r0 a $(DISTSRC) orangec/src/*.vcxproj orangec/src/*.vcxproj.filters orangec/src/*.sln
-	$(ZIP) a $(DISTSRC) orangec/src/ocide/fonts/ttf-bitstream-vera-1.10/*.* orangec/src/ocide/res/*.* orangec/src/ocide/rule/*.rul orangec/src/ocide/rule/*.props
-	$(ZIP) a $(DISTSRC) orangec/src/*.exe orangec/src/*.iss orangec/src/*.bmp orangec/src/config.bat orangec/src/ocidehld.bat
+	$(ZIP) a $(DISTSRC) orangec/src/*.exe orangec/src/*.iss orangec/src/*.bmp orangec/src/config.bat 
 	$(ZIP) a $(DISTSRC) orangec/src/LICENSE.TXT orangec/license/*.* orangec/src/readme.txt orangec/src/relnotes.txt
 	$(ZIP) a $(DISTSRC) orangec/src/clibs/repobj.bat orangec/src/copying orangec/src/ocl.lic orangec/src/addon.txt
-ifneq "$(MSYSTEM)" "MSYS"
+ifndef MSYSTEM
 	"/program files (x86)/inno setup 6/iscc" /Q /FWindowsInstaller$(VERNAME) /Oorangec/dist orangec/src/occ.iss
 endif
 endif

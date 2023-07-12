@@ -112,6 +112,9 @@ vpath %.l $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 ifneq "$(OCCPR)" ""
+
+%.c: %.l #override the builtin rule for mingw64
+
 %.o: %.cpp
 	$(CC) $(CXXFLAGS) -o$(_OUTPUTDIR)/temp.ods $^
 	echo "" > $(_OUTPUTDIR)/$@

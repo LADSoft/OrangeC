@@ -27,15 +27,19 @@ endif
 
 ZIP:="c:/program files/7-zip/7z" -tzip -bd
 
-OCC_VERSION := $(word 3, $(shell cmd /C type \orangec\src\version.h))
+ifeq "$(GITHUB_WORKSPACE)" ""
+OCC_VERSION := $(word 3, $(shell cmd /C type orangec\src\version.h))
 OCC_VERSION := $(subst ",,$(OCC_VERSION))
 export OCC_VERSION
 VERNAME := $(subst .,,$(OCC_VERSION))
+endif
 
-DISTEXE=/orangec/dist/ZippedBinaries$(VERNAME).zip
-DISTSRC=/orangec/dist/ZippedSources$(VERNAME).zip
+DISTEXE=orangec/dist/ZippedBinaries$(VERNAME).zip
+DISTSRC=orangec/dist/ZippedSources$(VERNAME).zip
 
 DISTRIBUTE:
+	$(MAKE) -C..\.. -forangec\src\zip.mak maindist
+maindist:
 ifneq "$(ORANGEC_ONLY)" "YES"
 	-del $(subst /,\,$(DISTEXE))
 	-del $(subst /,\,$(DISTSRC))
@@ -43,19 +47,20 @@ ifneq "$(ORANGEC_ONLY)" "YES"
 	$(ZIP) -r0 a $(DISTEXE) orangec/bin/*.exe orangec/bin/*.pdb orangec/bin/*.app orangec/bin/*.spc orangec/bin/*.dll orangec/bin/*.cfg  orangec/bin/general.props
 	$(ZIP) a $(DISTEXE) orangec/lib/*.* orangec/include/*.* orangec/examples/*.* orangec/doc/*.* orangec/license/*.* 
 	$(ZIP) a $(DISTEXE) orangec/lib/* orangec/include/* orangec/examples/* orangec/doc/* orangec/license/*
-	$(ZIP) d $(DISTEXE) doc/tools.htm
+	$(ZIP) d $(DISTEXE) orangec/doc/tools.htm
 	$(ZIP) a $(DISTEXE) orangec/rule/*.rul orangec/help/*.* orangec/addon/*.* orangec/appdata
 	$(ZIP) a $(DISTEXE) orangec/license.txt orangec/readme.txt orangec/relnotes.txt
+ifeq "$(GITHUB_WORKSPACE)" ""
 	$(ZIP) -r0 -xr@orangec/src/xclude.lst a $(DISTSRC) orangec/src/*.adl orangec/src/*.cpp orangec/src/*.c orangec/src/*.h orangec/src/*.nas orangec/src/*.ase orangec/src/*.asi orangec/src/*.inc orangec/src/*.p orangec/src/*.rc orangec/src/*.spc orangec/src/*.app orangec/src/*.cfg orangec/src/makefile* orangec/src/*.mak orangec/src/*.txt orangec/src/copying orangec/src/*.def orangec/src/*.lst 
 	$(ZIP) -r0 -xr@orangec/src/xclude.lst a $(DISTSRC) orangec/src/ocl/ocl.lic orangec/src/clibs/cpp/* orangec/src/clibs/platform/copyrght.asm orangec/src/help/*.* orangec/doc/*.*
 	$(ZIP) -r0 a $(DISTSRC) orangec/src/clibs/platform/dos32/extender/*.* orangec/src/clibs/platform/dos32/extender/*
 	$(ZIP) -r0 a $(DISTSRC) orangec/src/*.vcxproj orangec/src/*.vcxproj.filters orangec/src/*.sln
-	$(ZIP) a $(DISTSRC) orangec/src/ocide/fonts/ttf-bitstream-vera-1.10/*.* orangec/src/ocide/res/*.* orangec/src/ocide/rule/*.rul orangec/src/ocide/rule/*.props
-	$(ZIP) a $(DISTSRC) orangec/src/*.exe orangec/src/*.iss orangec/src/*.bmp orangec/src/config.bat orangec/src/ocidehld.bat
+	$(ZIP) a $(DISTSRC) orangec/src/*.exe orangec/src/*.iss orangec/src/*.bmp orangec/src/config.bat 
 	$(ZIP) a $(DISTSRC) orangec/src/LICENSE.TXT orangec/license/*.* orangec/src/readme.txt orangec/src/relnotes.txt
 	$(ZIP) a $(DISTSRC) orangec/src/clibs/repobj.bat orangec/src/copying orangec/src/ocl.lic orangec/src/addon.txt
-ifneq "$(MSYSTEM)" "MSYS"
-	"/program files (x86)/inno setup 6/iscc" /Q /FWindowsInstaller$(VERNAME) /O/orangec/dist orangec/src/occ.iss
+ifndef MSYSTEM
+	"/program files (x86)/inno setup 6/iscc" /Q /FWindowsInstaller$(VERNAME) /Oorangec/dist orangec/src/occ.iss
+endif
 endif
 	-rmdir $(DISTROOT)\appdata
 endif

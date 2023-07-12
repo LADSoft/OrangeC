@@ -141,6 +141,7 @@
     <ClCompile Include="NamedPipe.cpp" />
     <ClCompile Include="Random.cpp" />
     <ClCompile Include="SharedMemory.cpp" />
+    <ClCompile Include="ToolChain.cpp" />
     <ClCompile Include="UTF8.cpp" />
     <ClCompile Include="UTF8Table.cpp" />
     <ClCompile Include="UTF8Upper.cpp" />
@@ -153,6 +154,7 @@
     <ClInclude Include="CmdFiles.h" />
     <ClInclude Include="CmdSwitch.h" />
     <ClInclude Include="SharedMemory.h" />
+    <ClInclude Include="ToolChain.h" />
     <ClInclude Include="UTF8.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="xml.h" />

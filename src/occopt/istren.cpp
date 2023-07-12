@@ -252,7 +252,7 @@ void ReplaceOneUses(QUAD* head, IMODE** im)
         }
         else
         {
-            Utils::fatal("unexpected indirect node in ReplaceUses");
+            Utils::Fatal("unexpected indirect node in ReplaceUses");
             IMODELIST* iml = tempInfo[n]->enode->sp->imind;
             while (iml)
             {

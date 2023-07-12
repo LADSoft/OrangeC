@@ -57,7 +57,7 @@ static void argset(void)
                     _cmdline++;
                     continue;
                 }
-                if (*_cmdline == '\\' && (*(_cmdline + 1) == '"' || *(_cmdline + 1) == '\\'))
+                if (*_cmdline == '\\' && (*(_cmdline + 1) == '"' || *(_cmdline + 1) == '\\' || *(_cmdline + 1) == ' '))
                     _cmdline++;
                 buf[i++] = *_cmdline++;
             }

@@ -31,6 +31,7 @@
 #include "be.h"
 #include "beinterfdefs.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include "winmode.h"
 #include "CmdSwitch.h"
 #include "ildata.h"
@@ -389,12 +390,12 @@ int InvokeParser(int argc, char** argv, SharedMemory* parserMem)
         args += std::string("\"") + curArg + "\"";
     }
 
-    return Utils::ToolInvoke("occparse", occil_verbosity, "-! --architecture \"msil;%s\" %s", parserMem->Name().c_str(),
+    return ToolChain::ToolInvoke("occparse", occil_verbosity, "-! --architecture \"msil;%s\" %s", parserMem->Name().c_str(),
                              args.c_str());
 }
 int InvokeOptimizer(SharedMemory* parserMem, SharedMemory* optimizerMem)
 {
-    return Utils::ToolInvoke("occopt", occil_verbosity, "-! -S %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
+    return ToolChain::ToolInvoke("occopt", occil_verbosity, "-! -S %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
 }
 }  // namespace occmsil
 int main(int argc, char* argv[])
@@ -403,19 +404,33 @@ int main(int argc, char* argv[])
     bool showBanner = true;
     for (int i = 0; i < argc; i++)
         if (argv[i][0] == '-' || argv[i][0] == '/')
+        {
             if (!strcmp(&argv[i][1], "M") || !strcmp(&argv[i][1], "MM"))
             {
                 showBanner = false;
             }
+            else if (argv[i][1] == '!' || !strcmp(argv[i], "--nologo"))
+            {
+                showBanner = false;
+            }
+            else if (!strncmp(&argv[i][1], "print", 5) || !strncmp(&argv[i][1], "dump", 4))
+            {
+                showBanner = false;
+            }
+            else if (!strncmp(&argv[i][1], "-print", 6) || !strncmp(&argv[i][1], "-dump", 5))
+            {
+                showBanner = false;
+            }
+        }
     if (showBanner)
-        Utils::banner(argv[0]);
+        ToolChain::ShowBanner();
     fflush(stdout);
     Utils::SetEnvironmentToPathParent("ORANGEC");
     unsigned startTime, stopTime;
 
     if (!Utils::HasLocalExe("occopt") || !Utils::HasLocalExe("occparse"))
     {
-        Utils::fatal("cannot find 'occopt.exe' or 'occparse.exe'");
+        Utils::Fatal("cannot find 'occopt.exe' or 'occparse.exe'");
     }
 
     for (auto p = argv; *p; p++)
@@ -436,7 +451,7 @@ int main(int argc, char* argv[])
         }
         else
         {
-            Utils::fatal("cannot open input file");
+            Utils::Fatal("cannot open input file");
         }
     }
     else
@@ -453,7 +468,7 @@ int main(int argc, char* argv[])
         char fileName[260];
         if (!LoadFile(optimizerMem, ""))
         {
-            Utils::fatal("internal error: could not load intermediate file");
+            Utils::Fatal("internal error: could not load intermediate file");
         }
         if (Optimizer::cparams.prm_displaytiming)
         {
@@ -467,7 +482,7 @@ int main(int argc, char* argv[])
         if (files.size())
         {
             if (!ProcessData(files.front().c_str()) || !SaveFile(files.front().c_str()))
-                Utils::fatal("File I/O error");
+                Utils::Fatal("File I/O error");
             files.pop_front();
         }
         if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
@@ -475,11 +490,11 @@ int main(int argc, char* argv[])
             for (auto p : files)
             {
                 if (!LoadFile(optimizerMem, p))
-                    Utils::fatal("internal error: could not load intermediate file");
+                    Utils::Fatal("internal error: could not load intermediate file");
                 if (!ProcessData(p.c_str()))
-                    Utils::fatal("File I/O error");
+                    Utils::Fatal("File I/O error");
                 if (!SaveFile(p.c_str()))
-                    Utils::fatal("Cannot open '%s' for write", outFile);
+                    Utils::Fatal("Cannot open '%s' for write", outFile);
             }
         }
         if (Optimizer::cparams.prm_displaytiming)

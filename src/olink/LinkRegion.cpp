@@ -205,9 +205,9 @@ bool LinkRegion::Matches(const ObjString& name, const ObjString& spec)
 }
 void LinkRegion::AddSourceFile(CmdFiles& filelist, const ObjString& spec)
 {
-    for (auto it = filelist.FileNameBegin(); it != filelist.FileNameEnd(); ++it)
-        if (Matches(*it, spec))
-            sourceFiles.push_back(*it);
+    for (auto&& name : filelist)
+        if (Matches(name, spec))
+            sourceFiles.push_back(name);
 }
 void LinkRegion::AddData(SectionData& data, LookasideBuf& lookaside, ObjFile* file, ObjSection* section)
 {

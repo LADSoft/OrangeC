@@ -29,6 +29,7 @@
 #include "be.h"
 #include "winmode.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include "CmdSwitch.h"
 #include "ildata.h"
 #include "SharedMemory.h"
@@ -50,6 +51,9 @@
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#    define CONSOLE_DEVICE "/dev/tty"
+#else
+#    define CONSOLE_DEVICE "con:"
 #endif
 
 int usingEsp;
@@ -381,40 +385,65 @@ int InvokeParser(int argc, char** argv, SharedMemory* parserMem)
         args += std::string("\"") + curArg + "\"";
     }
 
-    return Utils::ToolInvoke("occparse", occ_verbosity, "-! --architecture \"x86;%s\" %s", parserMem->Name().c_str(), args.c_str());
+    return ToolChain::ToolInvoke("occparse", occ_verbosity, "-! --architecture \"x86;%s\" %s", parserMem->Name().c_str(), args.c_str());
 }
 int InvokeOptimizer(SharedMemory* parserMem, SharedMemory* optimizerMem)
 {
-    return Utils::ToolInvoke("occopt", occ_verbosity, "-! -S %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
+    return ToolChain::ToolInvoke("occopt", occ_verbosity, "-! -S %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
 }
 }  // namespace occx86
 int main(int argc, char* argv[])
 {
     using namespace occx86;
     bool showBanner = true;
+    bool hasi = false;
+    bool haso = false;
     for (int i = 0; i < argc; i++)
         if (argv[i][0] == '-' || argv[i][0] == '/')
+        {
+            if (!strcmp(&argv[i][1], "v"))
+            {
+                showBanner = false;
+            }
             if (!strcmp(&argv[i][1], "M") || !strcmp(&argv[i][1], "MM"))
             {
                 showBanner = false;
             }
-    if (showBanner)
-        Utils::banner(argv[0]);
+            else if (argv[i][1] == '!' || !strcmp(argv[i], "--nologo"))
+            {
+                showBanner = false;
+            }
+            else if (!strncmp(&argv[i][1], "print", 5) || !strncmp(&argv[i][1], "dump", 4))
+            {
+                showBanner = false;
+            }
+            else if (!strncmp(&argv[i][1], "-print", 6) || !strncmp(&argv[i][1], "-dump", 5))
+            {
+                showBanner = false;
+            }
+            else if (!strcmp(&argv[i][1], "i"))
+            {
+                hasi = true;
+            }
+            else if (!strcmp(&argv[i][1], "o" CONSOLE_DEVICE))
+            {
+                haso = true;
+            }
+        }
+    if (showBanner && !(haso && hasi))
+        ToolChain::ShowBanner();
     fflush(stdout);
     Utils::SetEnvironmentToPathParent("ORANGEC");
     unsigned startTime, stopTime;
-    bool syntaxOnly = false;
 
     if (!Utils::HasLocalExe("occopt") || !Utils::HasLocalExe("occparse"))
     {
-        Utils::fatal("cannot find 'occopt.exe' or 'occparse.exe'");
+        Utils::Fatal("cannot find 'occopt.exe' or 'occparse.exe'");
     }
     for (auto p = argv; *p; p++)
     {
         if (strstr(*p, "/y") || strstr(*p, "-y"))
             occ_verbosity = "";
-        if (strstr(*p, "/fsyntax-only") || strstr(*p, "-fsyntax-only"))
-            syntaxOnly = true;
     }
     auto optimizerMem = new SharedMemory(MAX_SHARED_REGION);
     optimizerMem->Create();
@@ -429,7 +458,7 @@ int main(int argc, char* argv[])
         }
         else
         {
-            Utils::fatal("cannot open input file");
+            Utils::Fatal("cannot open input file");
         }
     }
     else
@@ -441,46 +470,49 @@ int main(int argc, char* argv[])
             rv = InvokeOptimizer(parserMem, optimizerMem);
         delete parserMem;
     }
-    if (!rv && !syntaxOnly)
+    if (!rv)
     {
         if (!LoadFile(optimizerMem))
         {
-            Utils::fatal("internal error: could not load intermediate file");
+            Utils::Fatal("internal error: could not load intermediate file");
         }
-        if (Optimizer::cparams.prm_displaytiming)
+        if (!Optimizer::syntaxOnly)
         {
-            startTime = clock();
+            if (Optimizer::cparams.prm_displaytiming)
+            {
+                startTime = clock();
+            }
+            for (auto v : Optimizer::toolArgs)
+            {
+                InsertOption(v.c_str());
+            }
+            for (auto f : Optimizer::backendFiles)
+            {
+                InsertExternalFile(f.c_str(), false);
+            }
+            std::list<std::string> files = Optimizer::inputFiles;
+            if (files.size())
+            {
+                if (!ProcessData(files.front().c_str()) || !SaveFile(files.front().c_str()))
+                    Utils::Fatal("File I/O error");
+                files.pop_front();
+            }
+            for (auto p : files)
+            {
+                if (!LoadFile(optimizerMem))
+                    Utils::Fatal("internal error: could not load intermediate file");
+                if (!ProcessData(p.c_str()))
+                    Utils::Fatal("File I/O error");
+                if (!SaveFile(p.c_str()))
+                    Utils::Fatal("Cannot open '%s' for write", Parser::outFile);
+            }
+            if (Optimizer::cparams.prm_displaytiming)
+            {
+                stopTime = clock();
+                printf("occ timing: %d.%03d\n", (stopTime - startTime) / 1000, (stopTime - startTime) % 1000);
+            }
+            rv = RunExternalFiles();
         }
-        for (auto v : Optimizer::toolArgs)
-        {
-            InsertOption(v.c_str());
-        }
-        for (auto f : Optimizer::backendFiles)
-        {
-            InsertExternalFile(f.c_str(), false);
-        }
-        std::list<std::string> files = Optimizer::inputFiles;
-        if (files.size())
-        {
-            if (!ProcessData(files.front().c_str()) || !SaveFile(files.front().c_str()))
-                Utils::fatal("File I/O error");
-            files.pop_front();
-        }
-        for (auto p : files)
-        {
-            if (!LoadFile(optimizerMem))
-                Utils::fatal("internal error: could not load intermediate file");
-            if (!ProcessData(p.c_str()))
-                Utils::fatal("File I/O error");
-            if (!SaveFile(p.c_str()))
-                Utils::fatal("Cannot open '%s' for write", Parser::outFile);
-        }
-        if (Optimizer::cparams.prm_displaytiming)
-        {
-            stopTime = clock();
-            printf("occ timing: %d.%03d\n", (stopTime - startTime) / 1000, (stopTime - startTime) % 1000);
-        }
-        rv = RunExternalFiles();
     }
     delete optimizerMem;
     if (rv == 255)  // means don't run the optimizer or backend

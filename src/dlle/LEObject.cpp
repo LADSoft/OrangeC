@@ -48,13 +48,13 @@ void LEObject::Setup(unsigned& offs)
     ObjMemoryManager& m = sect->GetMemoryManager();
     int ofs = 0;
     unsigned char* pdata = data.get();
-    for (auto it = m.MemoryBegin(); it != m.MemoryEnd() && ofs < initSize; ++it)
+    for (auto&& mem : m)
     {
-        int msize = (*it)->GetSize();
-        ObjByte* mdata = (*it)->GetData();
+        int msize = mem->GetSize();
+        ObjByte* mdata = mem->GetData();
         if (msize)
         {
-            ObjExpression* fixup = (*it)->GetFixup();
+            ObjExpression* fixup = mem->GetFixup();
             if (fixup)
             {
                 int sbase = sect->GetOffset()->Eval(0);
@@ -97,8 +97,8 @@ void LEObject::Setup(unsigned& offs)
             }
             else
             {
-                if ((*it)->IsEnumerated())
-                    memset(pdata + ofs, (*it)->GetFill(), msize);
+                if (mem->IsEnumerated())
+                    memset(pdata + ofs, mem->GetFill(), msize);
                 else
                     memcpy(pdata + ofs, mdata, msize);
             }

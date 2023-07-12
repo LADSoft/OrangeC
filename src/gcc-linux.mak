@@ -39,10 +39,7 @@ endif
 
 LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP_deps) $(C_deps) $(ASM_deps) $(TASM_deps)))
 
-
-#CC=gcc
-#CXX=g++
-CCFLAGS = -c -D__MSVCRT__ -U__STRICT_ANSI__ -DHAVE_UNISTD_H=1 -DSQLITE_OS_UNIX -D_unlink=unlink -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -Wno-int-to-pointer-cast -D_strnicmp=strncasecmp
+CCFLAGS = -c -D__MSVCRT__ -DHAVE_UNISTD_H=1 -DSQLITE_OS_UNIX -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -Wno-int-to-pointer-cast -D_strnicmp=strncasecmp
 
 CPPFLAGS = -std=c++14
 LINK=ld
@@ -104,7 +101,7 @@ LMAIN := $(addprefix $(_OUTPUTDIR)/,$(MAIN_DEPENDENCIES) $(RES_deps))
 LMAIN := $(subst \,/,$(LMAIN))
 
 $(NAME).exe: $(addprefix $(_OUTPUTDIR)/,$(MAIN_DEPENDENCIES)) $(LDEPS2) $(RES_deps)
-	$(CC) $(LFLAGS) -o $(NAME).exe $(LMAIN) $(LDEPS) $(COMPLIB) $(DEF_DEPENDENCIES)
+	$(CC) $(LFLAGS) -o $(NAME).exe $(LMAIN) -Wl,--start-group $(LDEPS) -Wl,--end-group $(COMPLIB) $(DEF_DEPENDENCIES)
 
 %.exe: %.c
 	$(CC) $(LFLAGS) -o $@ $^ $(COMPLIB)

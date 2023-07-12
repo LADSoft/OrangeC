@@ -49,13 +49,13 @@ class ImpLibMain
     ~ImpLibMain();
     int Run(int argc, char** argv);
     void AddFile(LibManager& librarian, const char* arg);
-    const ObjString& GetOutputFile(int argc, char** argv);
-    std::string GetInputFile(int argc, char** argv, bool& def);
+    const ObjString& GetOutputFile(CmdFiles& files);
+    std::string GetInputFile(CmdFiles& files, bool& def);
     ObjFile* DefFileToObjFile(DefFile& def);
     ObjFile* DllFileToObjFile(DLLExportReader& dll);
-    int HandleObjFile(const std::string& outputFile, int argc, char** argv);
-    int HandleDefFile(const std::string& outputFile, int argc, char** argv);
-    int HandleLibrary(const std::string& outputFile, int argc, char** argv);
+    int HandleObjFile(const std::string& outputFile, CmdFiles& files);
+    int HandleDefFile(const std::string& outputFile, CmdFiles& files);
+    int HandleLibrary(const std::string& outputFile, CmdFiles &files);
     void CreateImportEntry(DefFile& def, ObjFile* obj, const char *externalName, DefFile::Export* exp);
     void CreateDLLImportEntry(ObjFile* obj, const char *dllName, const char *externalName, DLLExport* exp);
 
@@ -75,11 +75,9 @@ class ImpLibMain
     CmdFiles replaceFiles;
 
     static CmdSwitchParser SwitchParser;
-    static CmdSwitchBool ShowHelp;
     static CmdSwitchBool CDLLSwitch;
     static CmdSwitchBool caseSensitiveSwitch;
     static CmdSwitchOutput OutputFile;
-    static CmdSwitchFile File;
 
     static const char* usageText;
     static const char* helpText;

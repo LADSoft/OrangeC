@@ -12195,7 +12195,7 @@ std::list<TEMPLATEPARAMPAIR>* GetTypeAliasArgs(SYMBOL* sp, std::list<TEMPLATEPAR
                         if (itargs2 == args->end())
                         {
                             if (!test.second->packed)
-                                Utils::fatal("internal error");
+                                Utils::Fatal("internal error");
                         }
                         else if (args1->back().second->packed)
                         {

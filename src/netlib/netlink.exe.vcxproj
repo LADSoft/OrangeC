@@ -160,12 +160,14 @@
     <ClInclude Include="..\..\util\CmdSwitch.h" />
     <ClInclude Include="..\..\util\Utils.h" />
     <ClInclude Include="..\..\version.h" />
+    <ClInclude Include="..\util\ToolChain.h" />
     <ClInclude Include="NetLinkMain.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\util\CmdFiles.cpp" />
     <ClCompile Include="..\util\CmdSwitch.cpp" />
+    <ClCompile Include="..\util\ToolChain.cpp" />
     <ClCompile Include="..\util\Utils.cpp" />
     <ClCompile Include="NetLinkMain.cpp" />
   </ItemGroup>

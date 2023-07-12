@@ -50,11 +50,11 @@ class ObjFunction : public ObjType
     ObjType* GetReturnType() { return GetBaseType(); }
     void SetReturnType(ObjType* ReturnType) { SetBaseType(ReturnType); }
 
-    typedef ParameterContainer::iterator ParameterIterator;
-    typedef ParameterContainer::const_iterator const_ParameterIterator;
+    typedef ParameterContainer::iterator iterator;
+    typedef ParameterContainer::const_iterator const_iterator;
 
-    ParameterIterator ParameterBegin() { return parameters.begin(); }
-    ParameterIterator ParameterEnd() { return parameters.end(); }
+    iterator begin() { return parameters.begin(); }
+    iterator end() { return parameters.end(); }
 
   private:
     enum eLinkage linkage;

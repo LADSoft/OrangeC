@@ -1466,7 +1466,7 @@ bool AsmFile::Write(std::string& fileName, std::string& srcName)
         }
         else
         {
-            Utils::fatal(std::string(std::string("Could not open ") + fileName.c_str() + " for write.").c_str());
+            Utils::Fatal(std::string(std::string("Could not open ") + fileName.c_str() + " for write.").c_str());
         }
     }
     else

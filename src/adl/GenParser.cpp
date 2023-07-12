@@ -244,7 +244,7 @@ bool GenParser::GenerateAdlHeader()
     (*file) << "        {" << std::endl;
     (*file) << "            if (bigEndian)" << std::endl;
     (*file) << "            {" << std::endl;
-    (*file) << "                Utils::fatal(\"big endian not supported in BitStream::Add\");" << std::endl; 
+    (*file) << "                Utils::Fatal(\"big endian not supported in BitStream::Add\");" << std::endl; 
     (*file) << "            }" << std::endl;
     (*file) << "            bytes[bits >> 3] = (val & 0xff);" << std::endl;
     (*file) << "            val >>= 8;" << std::endl;

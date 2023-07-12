@@ -35,7 +35,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     if (resources.empty())
         return;
     if (!resources.LoadFiles())
-        Utils::fatal("Error loading resources");
+        Utils::Fatal("Error loading resources");
     if (virtual_addr == 0)
     {
         virtual_addr = endVa;
@@ -43,7 +43,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     else
     {
         if (virtual_addr != endVa)
-            Utils::fatal("Internal error");
+            Utils::Fatal("Internal error");
     }
     raw_addr = endPhys;
 

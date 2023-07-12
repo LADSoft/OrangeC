@@ -43,7 +43,6 @@ class nmMain
   protected:
   private:
     static CmdSwitchParser SwitchParser;
-    static CmdSwitchBool ShowHelp;
     static CmdSwitchBool filePerLine;
     static CmdSwitchBool filePerLine2;
     static CmdSwitchBool allSymbols;

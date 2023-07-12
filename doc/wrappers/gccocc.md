@@ -1,10 +1,10 @@
 # gccocc
 
- ** gccocc** is a wrapper around the gcc command line.   It reinterprets the command line arguments and issues them to occ
+ **gccocc** is a wrapper around the gcc command line.   It reinterprets the command line arguments and issues them to occ
 
 ## Command Line Options
 
- The general format of an **gcc** command line is:
+ The general format of an **gccocc** command line is:
  
 >     gccocc [options] [list of files]
  
@@ -50,9 +50,11 @@ compiles without optimizing, and generates debug information
 
 sets the optimization level:
 
-x = 0 means no optimization
-x = 1 means size optimization
-x = 2 means time optimization
+level (x) | result | translated to 
+----|--------------|--------
+0   | means no optimization   | `occ -O-` 
+s   | means size optimization | `occ -O1`
+1-3, no level specified | means time optimization | `occ -O2`
 
 
 ### Linker commands
@@ -69,6 +71,14 @@ compiles and links against mylib.l, searching for mylib.l in the current directo
 >     gccocc -shared r.c
 
 either will compile r.c into a dll
+
+>     gccocc -static file.c
+
+builds a static library file.l
+
+>     gccocc -output-def deffile.def file.c
+
+when building a dll, output a .def file instead of an import library
 
 >     gccocc -link r.c
 
@@ -98,13 +108,44 @@ don't search the system C++ language include directory
 
 ### Warning control
 
+>     gccocc -fsyntax-only file.c
+
+compiles file.c, but doesn't generate any files as output
+useful to see diagnostics without attempting to generate output files
+
 >     gccocc -W file.c
 
 shows additional warnings that wouldn't normally be shown
 
 >     gccocc -Wno file.c
+>     gccocc -w file.c
 
 doesn't show any warnings
+
+>     gccocc -Werror               warnings become errrors
+
+>     gccocc -fmax-errors=n file.c
+
+stops the compile after n errors are encountered
+
+>     gccocc -Wfatal-errors
+
+stops the compile after the first error.
+
+>     gccocc -Wall file.c
+>     gccocc -Wextra file.c
+
+shows more warnings.   gccocc doesn't distinguish between the two switches
+
+Anything else following '-W' is ignored
+
+for example:
+
+>     gccocc -Wno-int-to-pointer-cast file.c
+
+would ignore the flag.   Other warning specifies are also ignored.
+This also means things like -Wa,xxx and -Wl,xxxx will also be ignored.
+
 
 ### Miscellaneous commands
 
@@ -144,8 +185,10 @@ compiles and links file.c, treating the 'char' type as if it were unsigned.
 
 Several commands are parsed, but don't do anything.   These include
 
->     gcc -output-def deffile.def file.c
->     gcc -ixxx file.c
->     gcc -export-all-symbols file.c
->     gcc -static file.c
->     gcc -fsyntax-only file.c
+>     gccocc -ixxx file.c
+>     gccocc -export-all-symbols file.c
+>     gccocc -march=native -mtune=native file.c
+>     gccocc -Werror=xxxxxx file.c
+>     gccocc -pedantic file.c
+>     gccocc -pedantic-errors file.c
+

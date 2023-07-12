@@ -29,6 +29,8 @@
 using namespace DotNetPELib;
 
 CmdSwitchParser NetLinkMain::SwitchParser;
+CmdSwitchBool NetLinkMain::NoLogo(SwitchParser, '!', false, {"nologo"});
+CmdSwitchBool NetLinkMain::ShowVersion(SwitchParser, 'v', false, {"version"});
 CmdSwitchBool NetLinkMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchString NetLinkMain::StrongName(SwitchParser, 'k');
 CmdSwitchBool NetLinkMain::LibraryFile(SwitchParser, 'L');
@@ -76,10 +78,9 @@ const std::string& NetLinkMain::GetAssemblyName(CmdFiles& files)
     static std::string assemblyName;
     if (AssemblyName.GetValue().size() != 0)
         assemblyName = AssemblyName.GetValue();
-    else if (files.GetSize())
+    else if (files.size())
     {
-        CmdFiles::FileNameIterator it = files.FileNameBegin();
-        assemblyName = (*it).c_str();
+        assemblyName = files[1].c_str();
     }
     else
     {
@@ -107,10 +108,9 @@ const std::string& NetLinkMain::GetOutputFile(CmdFiles& files)
     static std::string outputFile;
     if (AssemblyName.GetValue().size() != 0)
         outputFile = AssemblyName.GetValue();
-    else if (files.GetSize())
+    else if (files.size())
     {
-        CmdFiles::FileNameIterator it = files.FileNameBegin();
-        outputFile = (*it).c_str();
+        outputFile = files[1].c_str();
     }
     else
     {
@@ -125,24 +125,23 @@ const std::string& NetLinkMain::GetOutputFile(CmdFiles& files)
 bool NetLinkMain::LoadImage(CmdFiles& files)
 {
     bool rv = true;
-    for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
+    for (auto name : files)
     {
-        std::string fileName = *it;
-        int n = fileName.find_last_of('.');
+        int n = name.find_last_of('.');
         if (n == std::string::npos)
         {
-            fileName += ".ilo";
+            name += ".ilo";
         }
         else if (n > 0)
         {
-            if (fileName[n - 1] == '.')
+            if (name[n - 1] == '.')
             {
-                fileName += ".ilo";
+                name += ".ilo";
             }
         }
-        if (!peLib->LoadObject(fileName))
+        if (!peLib->LoadObject(name))
         {
-            std::cout << "Error loading object file: " << fileName.c_str() << std::endl;
+            std::cout << "Error loading object file: " << name.c_str() << std::endl;
             rv = false;
         }
     }
@@ -688,7 +687,6 @@ bool NetLinkMain::CreateExecutable(CmdFiles& files)
 }
 int NetLinkMain::Run(int argc, char** argv)
 {
-    Utils::banner(argv[0]);
     char* modName = Utils::GetModuleName();
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
@@ -697,14 +695,18 @@ int NetLinkMain::Run(int argc, char** argv)
     {
         configTest.close();
         if (!internalConfig.Parse(configName.c_str()))
-            Utils::fatal("Corrupt configuration file");
+            Utils::Fatal("Corrupt configuration file");
     }
     if (!SwitchParser.Parse(&argc, argv) || (argc == 1 && File.GetCount() <= 1 && !ShowHelp.GetExists()))
     {
-        Utils::usage(argv[0], usageText);
+        if (!NoLogo.GetValue() || ShowVersion.GetValue())
+            ToolChain::ShowBanner();
+        ToolChain::Usage(usageText);
     }
+    if (!NoLogo.GetValue() || ShowVersion.GetValue())
+        ToolChain::ShowBanner();
     if (ShowHelp.GetExists())
-        Utils::usage(argv[0], helpText);
+        ToolChain::Usage(helpText);
     CmdFiles files(argv + 1);
     if (File.GetValue())
         files.Add(File.GetValue() + 1);

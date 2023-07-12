@@ -195,7 +195,7 @@ bool Listing::Write(std::string& listingName, std::string& inName, bool listMacr
     std::fstream out(listingName.c_str(), std::ios::out);
     if (!out.is_open())
     {
-        Utils::fatal(std::string(std::string("Could not open ") + listingName.c_str() + " for write.").c_str());
+        Utils::Fatal(std::string(std::string("Could not open ") + listingName.c_str() + " for write.").c_str());
         return false;
     }
     std::vector<std::string> lines;

@@ -171,6 +171,6 @@ void ResourceContainer::InsertResource(int typeId, std::wstring type, int nameId
     }
     if (d.sig == SIGNAT)
     {
-        Utils::fatal("Cannot resolve multiple resources with same ID");
+        Utils::Fatal("Cannot resolve multiple resources with same ID");
     }
 }

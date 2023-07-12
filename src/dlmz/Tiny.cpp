@@ -32,7 +32,7 @@ bool Tiny::ReadSections(ObjFile* file, ObjExpression* start)
 {
     startOffs = start->Eval(0);
     if (startOffs != 0x100)
-        Utils::fatal("Start address for tiny program must be 0100h");
+        Utils::Fatal("Start address for tiny program must be 0100h");
     int count = 0;
     ObjSection* sect;
     for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
@@ -47,17 +47,17 @@ bool Tiny::ReadSections(ObjFile* file, ObjExpression* start)
     unsigned char* pdata = data.get();
     ObjMemoryManager& m = sect->GetMemoryManager();
     int ofs = 0;
-    for (auto it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
+    for (auto&& mem : m)
     {
-        int msize = (*it)->GetSize();
-        ObjByte* mdata = (*it)->GetData();
+        int msize = mem->GetSize();
+        ObjByte* mdata = mem->GetData();
         if (msize)
         {
-            ObjExpression* fixup = (*it)->GetFixup();
+            ObjExpression* fixup = mem->GetFixup();
             if (fixup)
             {
                 if (fixup->GetOperator() == ObjExpression::eDiv)
-                    Utils::fatal("Tiny program cannot have fixups");
+                    Utils::Fatal("Tiny program cannot have fixups");
                 int sbase = sect->GetOffset()->Eval(0);
                 int n = fixup->Eval(sbase + ofs);
                 int bigEndian = file->GetBigEndian();
@@ -98,8 +98,8 @@ bool Tiny::ReadSections(ObjFile* file, ObjExpression* start)
             }
             else
             {
-                if ((*it)->IsEnumerated())
-                    memset(pdata + ofs, (*it)->GetFill(), msize);
+                if (mem->IsEnumerated())
+                    memset(pdata + ofs, mem->GetFill(), msize);
                 else
                     memcpy(pdata + ofs, mdata, msize);
             }

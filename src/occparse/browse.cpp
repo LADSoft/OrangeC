@@ -40,6 +40,7 @@
 #    include <direct.h>
 #else
 #    include <unistd.h>
+#    define _getcwd getcwd
 #endif
 
 namespace Parser

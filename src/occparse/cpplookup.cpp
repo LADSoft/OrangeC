@@ -2877,11 +2877,32 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                             else
                                 tpr = itr != itrend ? (*itr)->tp : nullptr;
                             if (tpl && tpr)
-                                arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, argit != argite ? (*argit)->tp : 0,
-                                    argit != argite ? (*argit)->exp : 0, funcList ? funcList[i][k + lk] : nullptr,
+                            {
+                                bool doit = true;
+                                if (isstructured(tpl) && basetype(tpl)->sp->sb->initializer_list)
+                                {
+                                    if (!isstructured(tpr) || !basetype(tpl)->sp->sb->initializer_list)
+                                    {
+                                        arr[k] = -1;
+                                        doit = false;
+                                    }
+                                }
+                                else if (isstructured(tpr) && basetype(tpr)->sp->sb->initializer_list)
+                                {
+                                    arr[k] = 1;
+                                    doit = false;
+                                }
+                                if (doit)
+                                {
+                                    arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, argit != argite ? (*argit)->tp : 0,
+                                        argit != argite ? (*argit)->exp : 0, funcList ? funcList[i][k + lk] : nullptr,
                                                             funcList ? funcList[j][k + rk] : nullptr, lenl, lenr, false);
+                                }
+                            }
                             else
+                            {
                                 arr[k] = 0;
+                            }
                             if (bothCast)
                             {
                                 tpl = basetype(spList[i]->tp)->btp;
@@ -5549,6 +5570,10 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 icsList.resize(n);
                 lenList.resize(n);
                 funcList.resize(n);
+//                if (!strcmp(sp->name, "ne"))
+//                    printf("hi");
+//                if (!strcmp(sp->name, ".bctr") && strstr(sp->sb->parentClass->name, "function"))
+//                    printf("hi");
                 n = insertFuncs(&spList[0], gather, args, atp, flags);
                 if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor && !spList[0]->sb->specialized2))
                 {

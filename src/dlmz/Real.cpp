@@ -58,20 +58,20 @@ bool Real::ReadSections(ObjFile* file, ObjExpression* start)
         {
             ObjSection* sect = *it;
             ObjMemoryManager& m = sect->GetMemoryManager();
-            for (auto it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
+            for (auto&& memory : m)
             {
-                int msize = (*it)->GetSize();
-                ObjByte* mdata = (*it)->GetData();
+                int msize = memory->GetSize();
+                ObjByte* mdata = memory->GetData();
                 if (msize)
                 {
-                    ObjExpression* fixup = (*it)->GetFixup();
+                    ObjExpression* fixup = memory->GetFixup();
                     if (fixup)
                     {
                         int sbase = sect->GetOffset()->Eval(0);
                         int n = GetFixupOffset(fixup, sbase, ofs);
                         int bigEndian = file->GetBigEndian();
                         if (n < 0)
-                            Utils::fatal("Fixup offset negative");
+                            Utils::Fatal("Fixup offset negative");
                         if (msize == 1)
                         {
                             pdata[ofs] = n & 0xff;
@@ -79,7 +79,7 @@ bool Real::ReadSections(ObjFile* file, ObjExpression* start)
                         else if (msize == 2)
                         {
                             if (n > 65535)
-                                Utils::fatal("16-bit offset outside of segment");
+                                Utils::Fatal("16-bit offset outside of segment");
                             if (bigEndian)
                             {
                                 pdata[ofs] = n >> 8;
@@ -111,8 +111,8 @@ bool Real::ReadSections(ObjFile* file, ObjExpression* start)
                     }
                     else
                     {
-                        if ((*it)->IsEnumerated())
-                            memset(pdata + ofs, (*it)->GetFill(), msize);
+                        if (memory->IsEnumerated())
+                            memset(pdata + ofs, memory->GetFill(), msize);
                         else
                             memcpy(pdata + ofs, mdata, msize);
                     }
@@ -258,7 +258,7 @@ int Real::GetFixupOffset(ObjExpression* fixup, int sbase, int pc)
     {
         if (Balanced(fixup, false))
             return fixup->Eval(pc);
-        Utils::fatal("Invalid fixup");
+        Utils::Fatal("Invalid fixup");
     }
     return 0;
 }
@@ -271,6 +271,6 @@ int Real::GetFirstSeg(ObjExpression* exp)
         find = find->GetLeft();
     }
     if (find->GetOperator() != ObjExpression::eSection)
-        Utils::fatal("Invalid fixup");
+        Utils::Fatal("Invalid fixup");
     return find->GetSection()->GetOffset()->Eval(0) & ~15;
 }

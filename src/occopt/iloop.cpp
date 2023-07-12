@@ -500,7 +500,7 @@ void BuildLoopTree(void)
         tail = tail->back;
     }
     if (loopCount >= blockCount * 4)
-        Utils::fatal("internal error");
+        Utils::Fatal("internal error");
 }
 bool isAncestor(LOOP* l1, LOOP* l2)
 {

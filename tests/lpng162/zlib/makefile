@@ -20,7 +20,7 @@ all: $(OUT)
 clean:
 	$(CLEAN)
 
-CCDIR = \orangec\bin
+CCDIR = $(ORANGEC)\bin
 
 CC = $(CCDIR)\occ
 AS = $(CCDIR)\nasm

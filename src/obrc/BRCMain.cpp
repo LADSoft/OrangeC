@@ -30,6 +30,7 @@
 #include "CmdSwitch.h"
 #include "CmdFiles.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include "BRCMain.h"
 #include "BRCDictionary.h"
 #include "BRCWriter.h"
@@ -48,8 +49,6 @@ int main(int argc, char** argv)
 }
 
 CmdSwitchParser BRCMain::SwitchParser;
-CmdSwitchBool BRCMain::ShowHelp(SwitchParser, '?', false, {"help"});
-CmdSwitchFile BRCMain::File(SwitchParser, '@');
 const char* BRCMain::helpText =
     "[options] outputfile filelist \n"
     "\n"
@@ -63,34 +62,13 @@ const char* BRCMain::usageText = "[options] outputfile filelist";
 
 int BRCMain::Run(int argc, char** argv)
 {
-    Utils::banner(argv[0]);
-    Utils::SetEnvironmentToPathParent("ORANGEC");
-    CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName, std::ios::in);
-    if (!configTest.fail())
-    {
-        configTest.close();
-        if (!internalConfig.Parse(configName.c_str()))
-            Utils::fatal("Corrupt configuration file");
-    }
-    if (!SwitchParser.Parse(&argc, argv))
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    if (ShowHelp.GetExists())
-        Utils::usage(argv[0], helpText);
-    if (argc < 2 || (argc == 2 && File.GetCount() < 2))
-    {
-        Utils::usage(argv[0], usageText);
-    }
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    if (files.size() < 2)
+        ToolChain::Usage(usageText);
 
     // setup
     ObjString outputFile = Utils::QualifiedFile(argv[1], ".obr");
 
-    CmdFiles files(argv + 2);
-    if (File.GetCount())
-        files.Add(File.GetValue() + 1);
     BRCLoader loader(files);
     bool ok = loader.load();
     if (ok)

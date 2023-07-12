@@ -28,6 +28,7 @@
 #include "CmdSwitch.h"
 #include "CmdFiles.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include "ObjFactory.h"
 #include "ObjFile.h"
 #include "ObjIeee.h"
@@ -38,7 +39,6 @@
 #include <fstream>
 
 CmdSwitchParser Coff2ieeeMain::SwitchParser;
-CmdSwitchBool Coff2ieeeMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchCombineString Coff2ieeeMain::outputFileSwitch(SwitchParser, 'o');
 
 const char* Coff2ieeeMain::helpText =
@@ -59,7 +59,7 @@ const char* Coff2ieeeMain::usageText = " [options] <coff file>";
     return translator.Run(argc, argv);
 }
 Coff2ieeeMain::~Coff2ieeeMain() {}
-std::string Coff2ieeeMain::GetOutputName(char* infile) const
+std::string Coff2ieeeMain::GetOutputName(const char* infile) const
 {
     std::string name;
     if (!outputFileSwitch.GetValue().empty())
@@ -79,7 +79,7 @@ std::string Coff2ieeeMain::GetOutputName(char* infile) const
         name = Utils::QualifiedFile(name.c_str(), ".o");
     return name;
 }
-bool Coff2ieeeMain::GetMode(char* infile)
+bool Coff2ieeeMain::GetMode(const char* infile)
 {
     std::fstream fil(infile, std::ios::in | std::ios::binary);
     char buf[256];
@@ -98,29 +98,12 @@ bool Coff2ieeeMain::GetMode(char* infile)
 }
 int Coff2ieeeMain::Run(int argc, char** argv)
 {
-    Utils::banner(argv[0]);
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    if (files.size() != 2)
+        ToolChain::Usage(usageText);
     char* modName = Utils::GetModuleName();
-    CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName, std::ios::in);
-    if (!configTest.fail())
-    {
-        configTest.close();
-        if (!internalConfig.Parse(configName.c_str()))
-            Utils::fatal("Corrupt configuration file");
-    }
-    if (!SwitchParser.Parse(&argc, argv) || (argc < 2 && !ShowHelp.GetExists()))
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    if (ShowHelp.GetExists())
-        Utils::usage(argv[0], helpText);
 
-    if (argc != 2)
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    if (!GetMode(argv[1]))
+    if (!GetMode(files[1].c_str()))
     {
         std::cout << "input file must be a COFF object or library file" << std::endl;
         exit(1);
@@ -128,8 +111,8 @@ int Coff2ieeeMain::Run(int argc, char** argv)
     if (mode == obj)
     {
         std::cout << "converting object file" << std::endl;
-        CoffFile object(argv[1]);
-        outputName = GetOutputName(argv[1]);
+        CoffFile object(files[1].c_str());
+        outputName = GetOutputName(files[1].c_str());
         if (object.Load())
         {
             ObjIeeeIndexManager im1;
@@ -142,7 +125,7 @@ int Coff2ieeeMain::Run(int argc, char** argv)
                 il.SetDebugInfoFlag(false);
                 FILE* c = fopen(outputName.c_str(), "w");
                 if (!c)
-                    Utils::fatal("Cannot open '%s' for write", outputName.c_str());
+                    Utils::Fatal("Cannot open '%s' for write", outputName.c_str());
                 il.Write(c, file, &factory);
                 fclose(c);
                 return 0;
@@ -152,8 +135,8 @@ int Coff2ieeeMain::Run(int argc, char** argv)
     else
     {
         std::cout << "converting library file" << std::endl;
-        CoffLibrary library(argv[1]);
-        outputName = GetOutputName(argv[1]);
+        CoffLibrary library(files[1].c_str());
+        outputName = GetOutputName(files[1].c_str());
         if (library.Load())
         {
             if (library.Convert())

@@ -26,6 +26,7 @@
 #include "CmdSwitch.h"
 #include "CmdFiles.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include "SymbolTable.h"
 #include "Sorter.h"
 #include "PrintFormatter.h"
@@ -33,7 +34,6 @@
 #include <cstring>
 
 CmdSwitchParser nmMain::SwitchParser;
-CmdSwitchBool nmMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool nmMain::filePerLine(SwitchParser, 'A');
 CmdSwitchBool nmMain::filePerLine2(SwitchParser, 'o');
 CmdSwitchBool nmMain::allSymbols(SwitchParser, 'a');
@@ -97,24 +97,9 @@ int main(int argc, char** argv)
 }
 int nmMain::Run(int argc, char** argv)
 {
-    Utils::banner(argv[0]);
-    Utils::SetEnvironmentToPathParent("ORANGEC");
-    CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName, std::ios::in);
-    if (!configTest.fail())
-    {
-        configTest.close();
-        if (!internalConfig.Parse(configName.c_str()))
-            Utils::fatal("Corrupt configuration file");
-    }
-    if (!SwitchParser.Parse(&argc, argv) || ((help.GetValue() || argc < 2) && !ShowHelp.GetExists()))
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    if (ShowHelp.GetExists())
-        Utils::usage(argv[0], helpText);
-    CmdFiles files(argv + 1);
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    if (files.size() < 2 )
+        ToolChain::Usage(usageText);
     SymbolTable s(allSymbols.GetValue(), externalSymbols.GetValue(), undefinedSymbols.GetValue());
     s.Load(files);
 

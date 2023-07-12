@@ -2826,7 +2826,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                             sz = ISZ_ULONGLONG;
                             break;
                         default:
-                            Utils::fatal("ao_load: invalid structure size");
+                            Utils::Fatal("ao_load: invalid structure size");
                             break;
                     }
                     left = Optimizer::indnode(av, sz);
@@ -2893,7 +2893,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                             sz = ISZ_ULONGLONG;
                             break;
                         default:
-                            Utils::fatal("ao_store: invalid structure size");
+                            Utils::Fatal("ao_store: invalid structure size");
                             break;
                     }
                     left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);

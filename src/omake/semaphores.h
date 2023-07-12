@@ -4,6 +4,8 @@
 #    include <windows.h>
 #elif defined(__linux__)
 #    include <semaphore.h>
+#    include <errno.h>
+#    include <fcntl.h>
 #    pragma warning \
         "This platform is unsupported for named sempahores due to POSIX semaphores (named ones) being legitimately several times worse than Windows ones"
 #else
@@ -17,13 +19,11 @@ class Semaphore
 {
 #ifdef _WIN32
     using semaphore_type = HANDLE;
-    using semaphore_pointer_type = HANDLE;
 #    ifdef UNICODE
 #        define USE_WIDE_STRING
 #    endif
 #elif defined(__linux__)
     using semaphore_type = sem_t;
-    using semaphore_pointer_type = sem_t*;
 #endif
 #ifdef USE_WIDE_STRING
     using string_type = std::wstring;
@@ -40,13 +40,18 @@ class Semaphore
     Semaphore(string_type name, int value) : named(true), semaphoreName(name)
     {
 #ifdef _WIN32
-        handle = CreateSemaphore(nullptr, value, value, name.c_str());
+        handle = CreateSemaphore(nullptr, value, value, semaphoreName.c_str());
         if (!handle)
         {
             throw std::runtime_error("CreateSemaphore failed, Error code: " + std::to_string(GetLastError()));
         }
 #elif defined(__linux__)
-        handle = sem_open(name.c_str(), O_CREAT, O_RDWR, value);
+        // 0 in this case means this is shared internally, not externally
+        int ret = sem_init(&handle, 0, value);
+        if (!ret)
+        {
+            throw std::runtime_error("Semaphore init failed, errno is: " + std::to_string(errno));
+        }
 #endif
     }
     Semaphore(int value)
@@ -76,6 +81,13 @@ class Semaphore
         {
             throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(GetLastError()));
         }
+#elif defined(__linux__)
+        auto ret = sem_open(name.c_str(), O_RDWR);
+        if (ret == SEM_FAILED)
+        {
+            throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(errno));
+        }
+        handle =*ret;
 #endif
     }
     Semaphore& operator=(const Semaphore& other)
@@ -91,7 +103,16 @@ class Semaphore
             this->null = other.null;
             if (!this->null)
             {
+#ifdef _WIN32
                 handle = OpenSemaphore(EVENT_ALL_ACCESS, false, semaphoreName.c_str());
+#elif defined(__linux__)
+                auto ret = sem_open(semaphoreName.c_str(), O_RDWR);
+                if (ret == SEM_FAILED)
+                {
+                    throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(errno));
+                }
+                handle =*ret;
+#endif
             }
         }
         return *this;
@@ -106,18 +127,49 @@ class Semaphore
         {
             if (!null)
             {
-                CloseHandle(handle);
+#ifdef _WIN32
+            CloseHandle(other.handle);
+#elif defined(__linux__)
+        if (named)
+        {
+            sem_close(&handle);
+        }
+        else
+        {
+            sem_destroy(&handle);
+        }
+#endif
             }
             named = other.named;
             semaphoreName = other.semaphoreName;
             this->null = other.null;
             if (!this->null)
             {
+#ifdef _WIN32
                 handle = OpenSemaphore(EVENT_ALL_ACCESS, false, semaphoreName.c_str());
+#elif defined(__linux__)
+                auto ret = sem_open(semaphoreName.c_str(), O_RDWR);
+                if (ret == SEM_FAILED)
+                {
+                    throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(errno));
+                }
+                handle =*ret;
+#endif
             }
             other.named = false;
             other.null = true;
+#ifdef _WIN32
             CloseHandle(other.handle);
+#elif defined(__linux__)
+        if (named)
+        {
+            sem_close(&handle);
+        }
+        else
+        {
+            sem_destroy(&handle);
+        }
+#endif
         }
         return *this;
     }
@@ -130,11 +182,11 @@ class Semaphore
 #elif defined(__linux__)
         if (named)
         {
-            sem_close(handle);
+            sem_close(&handle);
         }
         else
         {
-            sem_destroy(handle);
+            sem_destroy(&handle);
         }
 #endif
     }
@@ -149,11 +201,12 @@ class Semaphore
     bool WaitFor(std::chrono::duration<Rep, Period> time)
     {
         std::chrono::milliseconds milli = std::chrono::duration_cast(time);
-        if (milli.count() >= INFINITE)
+        int waitTime = milli.count();
+#ifdef WIN32
+        if (waitTime >= INFINITE)
         {
             throw std::invalid_argument("The time spent for waiting is too long to handle normally");
         }
-        int waitTime = milli.count();
         DWORD ret = WaitForSingleObject(handle, waitTime);
         switch (ret)
         {
@@ -166,9 +219,15 @@ class Semaphore
             default:
                 return false;
         }
+#elif defined(__linux__)
+        timespec ts = { waitTime/1000, (waitTime%1000) * 1000000 };
+        return !sem_timedwait(&handle, &ts);
+#endif
+
     }
     bool TryWait()
     {
+#ifdef _WIN32
         DWORD ret = WaitForSingleObject(handle, 0);
         switch (ret)
         {
@@ -181,6 +240,9 @@ class Semaphore
             default:
                 return false;
         }
+#elif defined(__linux__)
+        return !! sem_trywait(&handle);
+#endif
     }
     void Wait()
     {
@@ -191,7 +253,7 @@ class Semaphore
 #ifdef _WIN32
         WaitForSingleObject(handle, INFINITE);
 #elif defined(__linux__)
-        sem_wait(handle);
+        sem_wait(&handle);
 #endif
     }
     void Post()
@@ -203,7 +265,7 @@ class Semaphore
 #ifdef _WIN32
         ReleaseSemaphore(handle, 1, nullptr);
 #elif defined(__linux__)
-        sem_post(handle);
+        sem_post(&handle);
 #endif
     }
     void Post(int value)
@@ -217,7 +279,7 @@ class Semaphore
 #elif defined(__linux__)
         for (int i = 0; i < value; i++)
         {
-            sem_post(handle);
+            sem_post(&handle);
         }
 #endif
     }

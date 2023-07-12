@@ -82,7 +82,7 @@ ObjInt LinkRemapper::RenumberSection(LinkRegion* region, ObjSection* dest, LinkR
     manager->MapSectionToParent(source->section, dest);
     d.SetFile(source->file);
     // now copy all the data from the old section to the new one
-    if (!(dest->GetQuals() & ObjSection::common) || dest->GetMemoryManager().MemoryBegin() == dest->GetMemoryManager().MemoryEnd())
+    if (!(dest->GetQuals() & ObjSection::common) || dest->GetMemoryManager().begin() == dest->GetMemoryManager().end())
     {
         int n = sect->GetBase() - base;
         if (n > 0)
@@ -96,14 +96,14 @@ ObjInt LinkRemapper::RenumberSection(LinkRegion* region, ObjSection* dest, LinkR
             n = 0;
         }
         source->section->SetOffset(new ObjExpression(base + n));
-        for (auto it = memManager.MemoryBegin(); it != memManager.MemoryEnd(); ++it)
+        for (auto mem : memManager)
         {
-            n += (*it)->GetSize();
+            n += mem->GetSize();
             // redo source file indexes
-            dest->Add(*it);
-            if ((*it)->GetFixup())
+            dest->Add(mem);
+            if (mem->GetFixup())
             {
-                (*it)->SetFixup(ScanExpression((*it)->GetFixup(), &d));
+                mem->SetFixup(ScanExpression(mem->GetFixup(), &d));
             }
         }
         rv = n;
@@ -354,9 +354,9 @@ ObjInt LinkRemapper::MapType(ObjFile* file, ObjType* type)
             // structure name different ways in differnet files..
             unsigned crc = 0xffffffff;
             {
-                for (auto it = type->FieldBegin(); it != type->FieldEnd(); ++it)
+                for (auto field : *type)
                 {
-                    sprintf(name, "%s;%d;", (*it)->GetName().c_str(), (*it)->GetConstVal());
+                    sprintf(name, "%s;%d;", field->GetName().c_str(), field->GetConstVal());
                     crc = crc32((unsigned char*)name, strlen(name), crc);
                 }
             }
@@ -422,11 +422,11 @@ ObjFile* LinkRemapper::Remap()
     {
         if ((*it)->GetPartition())
         {
-            for (auto ito = (*it)->GetPartition()->OverlayBegin(); ito != (*it)->GetPartition()->OverlayEnd(); ++ito)
+            for (auto&& overlay : *(*it)->GetPartition())
             {
-                if ((*ito)->GetOverlay())
+                if (overlay->GetOverlay())
                 {
-                    ObjString name = (*ito)->GetOverlay()->GetName();
+                    ObjString name = overlay->GetOverlay()->GetName();
                     ObjSection* section = new ObjSection(name, group);
                     sections.push_back(section);
                     ++group;
@@ -505,41 +505,32 @@ ObjFile* LinkRemapper::Remap()
     {
         if ((*it)->GetPartition())
         {
-            for (auto ito = (*it)->GetPartition()->OverlayBegin(); ito != (*it)->GetPartition()->OverlayEnd(); ++ito)
+            for (auto&& overlay : *(*it)->GetPartition())
             {
-                if ((*ito)->GetOverlay())
+                if (overlay->GetOverlay())
                 {
                     ObjSection* section = sections[group];
                     ObjInt base = 0;
                     section->SetQuals(0);
-                    section->SetAlignment((*ito)->GetOverlay()->GetAttribs().GetAlign());
-                    if ((*ito)->GetOverlay()->GetAttribs().GetSize() > 0)
-                        section->SetSize(new ObjExpression((*ito)->GetOverlay()->GetAttribs().GetSize()));
-                    for (auto itr = (*ito)->GetOverlay()->RegionBegin(); itr != (*ito)->GetOverlay()->RegionEnd(); ++itr)
+                    section->SetAlignment(overlay->GetOverlay()->GetAttribs().GetAlign());
+                    if (overlay->GetOverlay()->GetAttribs().GetSize() > 0)
+                        section->SetSize(new ObjExpression(overlay->GetOverlay()->GetAttribs().GetSize()));
+                    for (auto&& region : *overlay->GetOverlay())
                     {
-                        if ((*itr)->GetRegion())
+                        if (region->GetRegion())
                         {
                             ObjInt bytes = 0;
-                            for (auto its = (*itr)->GetRegion()->NowDataBegin(); its != (*itr)->GetRegion()->NowDataEnd(); ++its)
+                            for (auto its = region->GetRegion()->NowDataBegin(); its != region->GetRegion()->NowDataEnd(); ++its)
                                 for (auto cursect : (*its)->sections)
-                                    bytes += RenumberSection((*itr)->GetRegion(), section, &cursect, group, bytes + base);
-                            for (auto its = (*itr)->GetRegion()->NormalDataBegin(); its != (*itr)->GetRegion()->NormalDataEnd();
+                                    bytes += RenumberSection(region->GetRegion(), section, &cursect, group, bytes + base);
+                            for (auto its = region->GetRegion()->NormalDataBegin(); its != region->GetRegion()->NormalDataEnd();
                                  ++its)
                                 for (auto cursect : (*its)->sections)
-                                    bytes += RenumberSection((*itr)->GetRegion(), section, &cursect, group, bytes + base);
-                            for (auto its = (*itr)->GetRegion()->PostponeDataBegin(); its != (*itr)->GetRegion()->PostponeDataEnd();
+                                    bytes += RenumberSection(region->GetRegion(), section, &cursect, group, bytes + base);
+                            for (auto its = region->GetRegion()->PostponeDataBegin(); its != region->GetRegion()->PostponeDataEnd();
                                  ++its)
                                 for (auto cursect : (*its)->sections)
-                                    bytes += RenumberSection((*itr)->GetRegion(), section, &cursect, group, bytes + base);
-                            /*
-                            int n= (*itr)->GetRegion()->GetAttribs().GetSize() - bytes;
-                            if (n > 0)
-                            {
-                                // padding between sections, e.g. for alignment and roundsize
-                                ObjMemory *newMem = new ObjMemory(n, (*itr)->GetRegion()->GetAttribs().GetFill());
-                                section->Add(newMem);
-                            }
-                            */
+                                    bytes += RenumberSection(region->GetRegion(), section, &cursect, group, bytes + base);
                             base += bytes;
                         }
                     }
@@ -549,16 +540,16 @@ ObjFile* LinkRemapper::Remap()
                         if (n > 0)
                         {
                             // padding between sections, e.g. for alignment and roundsize
-                            ObjMemory* newMem = new ObjMemory(n, (*ito)->GetOverlay()->GetAttribs().GetFill());
+                            ObjMemory* newMem = new ObjMemory(n, overlay->GetOverlay()->GetAttribs().GetFill());
                             section->Add(newMem);
                         }
                     }
                     if (completeLink)
                     {
                         section->SetQuals(section->GetQuals() | ObjSection::absolute);
-                        section->SetBase((*ito)->GetOverlay()->GetAttribs().GetAddress());
+                        section->SetBase(overlay->GetOverlay()->GetAttribs().GetAddress());
                     }
-                    section->SetOffset(new ObjExpression((*ito)->GetOverlay()->GetAttribs().GetAddress()));
+                    section->SetOffset(new ObjExpression(overlay->GetOverlay()->GetAttribs().GetAddress()));
                     file->Add(section);
                     ++group;
                 }

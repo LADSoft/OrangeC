@@ -30,6 +30,9 @@
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #    include <fcntl.h>
+#    define _open open
+#    define _close close
+#    define _read read
 #else
 #    include <io.h>
 extern "C" char* _getcwd(char*, int);

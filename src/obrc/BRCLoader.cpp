@@ -161,7 +161,7 @@ void BRCLoader::EndFunc(ObjBrowseInfo& p)
     int line = p.GetLine()->GetLineNumber();
     SymData* sym = syms[name].get();
     if (!sym)
-        Utils::fatal("EndFunc::Cannot find symbol");
+        Utils::Fatal("EndFunc::Cannot find symbol");
     //    (*sym->data.begin())->funcEndLine = line;
     sym->func->funcEndLine = line;
     EndBlock(line);
@@ -231,7 +231,7 @@ void BRCLoader::ParseData(ObjFile& f)
                 Usages(*p);
                 break;
             default:
-                Utils::fatal("Unknown browse info record");
+                Utils::Fatal("Unknown browse info record");
                 break;
         }
     }
@@ -260,9 +260,9 @@ void BRCLoader::LoadSourceFiles(ObjFile& fil)
 bool BRCLoader::load()
 {
     bool rv = true;
-    for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
+    for (int i = 2; i < files.size(); ++i)
     {
-        std::string name = *it;
+        std::string name = files[i];
         ObjIeeeIndexManager im1;
         ObjFactory fact1(&im1);
         FILE* b = fopen(name.c_str(), "rb");

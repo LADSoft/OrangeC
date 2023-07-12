@@ -39,7 +39,6 @@ class GrepMain
 
   private:
     static CmdSwitchParser SwitchParser;
-    static CmdSwitchBool ShowHelp;
     static CmdSwitchBool recurseDirs;
     static CmdSwitchBool caseInSensitive;
     static CmdSwitchBool completeWords;
@@ -61,7 +60,5 @@ class GrepMain
 
     static const char* usageText;
     static const char* helpText;
-
-    static void usage(const char* prog_name, const char* text, int retcode);
 };
 #endif

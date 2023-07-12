@@ -32,7 +32,6 @@ private:
     static const char* helpText;
 
     static CmdSwitchParser SwitchParser;
-    static CmdSwitchBool ShowHelp;
     static CmdSwitchBool Replace;
     static CmdSwitchBool Create;
     static CmdSwitchBool WriteIndex;

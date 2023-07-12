@@ -25,11 +25,9 @@ ifndef COMPILER
 COMPILER := MS
 endif
 
-include $(TREETOP)/bcc32.mak
 include $(TREETOP)/ms.mak
 include $(TREETOP)/mingw.mak
 include $(TREETOP)/mingw64.mak
 include $(TREETOP)/clang.mak
 include $(TREETOP)/occ.mak
 include $(TREETOP)/gcc-linux.mak
-include $(TREETOP)/radstudio.mak

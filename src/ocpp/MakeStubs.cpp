@@ -34,7 +34,7 @@ void MakeStubs::Run(std::ostream* out)
     {
         out = new std::fstream(outputFile, std::ios::out);
         if (!out->good())
-            Utils::fatal("Cannot open '%s' for write", outputFile.c_str());
+            Utils::Fatal("Cannot open '%s' for write", outputFile.c_str());
         toClose = true;
     }
     else if (!out)
@@ -90,6 +90,7 @@ void MakeStubs::Run(std::ostream* out)
         for (auto t : preProcessor.GetUserIncludes())
             *out << t << ":\n";
     }
+    *out << "\n";
     if (toClose)
     {
         delete out;

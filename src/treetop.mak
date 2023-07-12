@@ -305,14 +305,10 @@ zip:
 ifdef WITHMSDOS
 # this requires CC386 be installed since it relies on far pointer support
 # so I don't make it a part of the default install
-	@$(MAKE) -C$(DISTROOT)$(PATHEXT2)src$(PATHEXT2)..$(PATHEXT2) -f $(realpath .$(PATHEXT2)doszip.mak)
+	@$(MAKE) -C$(DISTROOT)$(PATHEXT2)src$(PATHEXT2).. -f $(realpath .$(PATHEXT2)doszip.mak)
 	@$(MAKE) -C$(DISTROOT)$(PATHEXT2)src$(PATHEXT2)dos$(PATHEXT2)install -fmakefile.le
 endif
-ifeq "$(COMPILER)" "gcc-linux"
-	@$(MAKE) -C/ -f $(realpath .$(PATHEXT2)zip.mak)
-else
-	@$(MAKE) -C\ -f $(realpath .$(PATHEXT2)zip.mak)
-endif
+	@$(MAKE) -f $(realpath .$(PATHEXT2)zip.mak)
 $(CDIRS): %.dirs :
 	-$(MKDIR) $*$(PATHEXT2)obj$(PATHEXT2)$(OBJ_IND_PATH) 2> $(NULLDEV)
 

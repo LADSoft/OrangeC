@@ -59,12 +59,12 @@ bool LibFiles::ReadNames(FILE* stream, int count)
 bool LibFiles::ReadOffsets(FILE* stream, int count)
 {
     assert(count == files.size());
-    for (auto it = FileBegin(); it != FileEnd(); ++it)
+    for (auto&& file : *this)
     {
         unsigned ofs;
         if (fread(&ofs, 4, 1, stream) != 1)
             return false;
-        (*it)->offset = ofs;
+        file->offset = ofs;
     }
     return true;
 }

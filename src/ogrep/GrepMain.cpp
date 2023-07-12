@@ -25,6 +25,7 @@
 #include "GrepMain.h"
 #include "CmdFiles.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include <cstdlib>
 #include <fstream>
 #include <iomanip>
@@ -36,7 +37,6 @@
 #    include <io.h>
 #endif
 CmdSwitchParser GrepMain::SwitchParser;
-CmdSwitchBool GrepMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchBool GrepMain::recurseDirs(SwitchParser, 'd');
 CmdSwitchBool GrepMain::caseInSensitive(SwitchParser, 'i', false);
 CmdSwitchBool GrepMain::completeWords(SwitchParser, 'w');
@@ -275,43 +275,21 @@ int GrepMain::OneFile(RegExpContext& regexp, const std::string fileName, std::is
     }
     return matchCount;
 }
-void GrepMain::usage(const char* prog_name, const char* text, int retcode)
-{
-    fprintf(stderr, "\nusage: %s %s", Utils::ShortName(prog_name), text);
-    exit(retcode);
-}
 int GrepMain::Run(int argc, char** argv)
 {
-    // handle /V switch
-    for (int i = 1; i < argc; i++)
-        if (argv[i] && (argv[i][0] == '/' || argv[i][0] == '-'))
-            if ((argv[i][1] == 'V' && argv[i][2] == 0) || !strcmp(argv[i], "--version"))
-            {
-                Utils::banner(argv[0]);
-                exit(0);
-            }
-    if (!SwitchParser.Parse(&argc, argv))
-    {
-        usage(argv[0], usageText, 2);
-    }
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText, [this]() {
+        return !verboseMode.GetValue();
+    });
+
     if (showBoth.GetExists())
     {
         showAfter.SetValue(showBoth.GetValue());
         showBefore.SetValue(showBoth.GetValue());
     }
-    if (ShowHelp.GetValue() || (argc >= 2 && !strcmp(argv[1], "?")))
+    if (files.size() < 3)
     {
-        Utils::banner(argv[0]);
-        usage(argv[0], helpText, 0);
-    }
-    if (argc < 3)
-    {
-        if (isatty(fileno(stdin)) || argc < 2)
-            usage(argv[0], usageText, 2);
-    }
-    if (verboseMode.GetValue())
-    {
-        Utils::banner(argv[0]);
+        if (isatty(fileno(stdin)) || files.size() < 2)
+            ToolChain::Usage(usageText, 2);
     }
     SetModes();
     RegExpContext regexp(argv[1], regularExpressions.GetValue(), !caseInSensitive.GetValue(), completeWords.GetValue());
@@ -322,8 +300,6 @@ int GrepMain::Run(int argc, char** argv)
         return 2;
     }
 
-    CmdFiles files(argv + 2, recurseDirs.GetValue());
-
     int openCount = 0;
     int matchCount = 0;
     if (!isatty(fileno(stdin)))
@@ -331,11 +307,12 @@ int GrepMain::Run(int argc, char** argv)
         matchCount += OneFile(regexp, "STDIN", std::cin, openCount);
     }
     else
-        for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
+        for (int i = 1; i < files.size(); i++)
         {
-            std::fstream fil((*it), std::ios::in | std::ios::binary);
+            std::string name = files[i];
+            std::fstream fil(name, std::ios::in | std::ios::binary);
             if (fil.is_open())
-                matchCount += OneFile(regexp, (*it), fil, openCount);
+                matchCount += OneFile(regexp, name, fil, openCount);
         }
     if (openCount == 0)
     {

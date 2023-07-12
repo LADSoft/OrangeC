@@ -189,7 +189,7 @@ int BRCWriter::CreateTables(void)
 int BRCWriter::DBOpen(char* name)
 {
     int rv = false;
-    _unlink(name);
+    unlink(name);
     if (sqlite3_open_v2(name, &dbPointer, SQLITE_OPEN_READWRITE, nullptr) == SQLITE_OK)
     {
 #ifdef TEST
@@ -199,7 +199,7 @@ int BRCWriter::DBOpen(char* name)
         if (!rv || !SQLiteExec(deletion))
         {
             sqlite3_close(dbPointer);
-            _unlink(name);
+            unlink(name);
             goto doCreate;
         }
     }
@@ -659,7 +659,7 @@ bool BRCWriter::write()
     }
     else
     {
-        Utils::fatal("Cannot open database '%s' for write", outputFile.c_str());
+        Utils::Fatal("Cannot open database '%s' for write", outputFile.c_str());
     }
     if (dbPointer)
         sqlite3_close(dbPointer);

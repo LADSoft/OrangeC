@@ -107,7 +107,7 @@ static void insertfunc(SYMBOL* in, SymbolTable<SYMBOL>* syms)
     }
     else
     {
-        Utils::fatal("insertfuncs: invalid overload tab");
+        Utils::Fatal("insertfuncs: invalid overload tab");
     }
 }
 static SYMBOL* CreateBackingVariable(SYMBOL* sym)

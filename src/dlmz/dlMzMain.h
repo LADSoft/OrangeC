@@ -50,9 +50,8 @@ class dlMzMain
     } mode;
     bool GetMode();
     bool ReadSections(const std::string& path);
-    std::string GetOutputName(char* infile) const;
+    std::string GetOutputName(const char* infile) const;
     static CmdSwitchParser SwitchParser;
-    static CmdSwitchBool ShowHelp;
     static CmdSwitchString outputFileSwitch;
     static CmdSwitchString modeSwitch;
     static CmdSwitchString DebugFile;

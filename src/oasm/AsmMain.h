@@ -42,10 +42,8 @@ class AsmMain
 
   private:
     static CmdSwitchParser SwitchParser;
-    static CmdSwitchBool ShowHelp;
     static CmdSwitchBool CaseInsensitive;
     static CmdSwitchCombo CreateListFile;
-    static CmdSwitchFile File;
     static CmdSwitchBool PreprocessOnly;
     static CmdSwitchOutput OutputFile;
     static CmdSwitchDefine Defines;

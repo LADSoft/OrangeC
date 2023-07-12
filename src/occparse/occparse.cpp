@@ -471,7 +471,7 @@ int main(int argc, char* argv[])
         strcpy(realOutFile, prm_output.GetValue().c_str());
         outputfile(realOutFile, buffer, ".ods");
         if (!CompletionCompiler::ccDBOpen(realOutFile))
-            Utils::fatal("Cannot open database file %s", realOutFile);
+            Utils::Fatal("Cannot open database file %s", realOutFile);
     }
     else
     {
@@ -480,7 +480,7 @@ int main(int argc, char* argv[])
         {
             parserMem = new SharedMemory(0, bePostFile.c_str());
             if (!parserMem->Open() || !parserMem->GetMapping())
-                Utils::fatal("internal error: invalid shared memory region");
+                Utils::Fatal("internal error: invalid shared memory region");
             if (!clist)
             {
                 Optimizer::OutputIntermediate(parserMem);
@@ -568,7 +568,7 @@ int main(int argc, char* argv[])
             }
             else
             {
-                Utils::fatal("value given for 'std' argument unknown: %s", prm_std.GetValue().c_str());
+                Utils::Fatal("value given for 'std' argument unknown: %s", prm_std.GetValue().c_str());
             }
         }
         else if (prm_language.GetExists())
@@ -580,7 +580,7 @@ int main(int argc, char* argv[])
             }
             else if (prm_language.GetValue() != "c")
             {
-                Utils::fatal("Unknown language specifier: %s\n", prm_language.GetValue().c_str());
+                Utils::Fatal("Unknown language specifier: %s\n", prm_language.GetValue().c_str());
             }
         }
         else
@@ -597,7 +597,7 @@ int main(int argc, char* argv[])
             }
         }
         if (Optimizer::cparams.prm_cplusplus && (Optimizer::architecture == ARCHITECTURE_MSIL))
-            Utils::fatal("MSIL compiler does not compile C++ files at this time");
+            Utils::Fatal("MSIL compiler does not compile C++ files at this time");
         preProcessor =
             new PreProcessor(buffer, prm_cinclude.GetValue(),
                              Optimizer::cparams.prm_cplusplus ? prm_CPPsysinclude.GetValue() : prm_Csysinclude.GetValue(), true,
@@ -632,7 +632,7 @@ int main(int argc, char* argv[])
                 if (!cppFile)
                 {
                     delete preProcessor;
-                    Utils::fatal("Cannot open preprocessor output file %s", buffer);
+                    Utils::Fatal("Cannot open preprocessor output file %s", buffer);
                 }
             }
             if (Optimizer::cparams.prm_errfile)
@@ -644,7 +644,7 @@ int main(int argc, char* argv[])
                 {
                     delete preProcessor;
                     fclose(cppFile);
-                    Utils::fatal("Cannot open error file %s", buffer);
+                    Utils::Fatal("Cannot open error file %s", buffer);
                 }
             }
             if (Optimizer::cparams.prm_icdfile)
@@ -657,7 +657,7 @@ int main(int argc, char* argv[])
                     fclose(errFile);
                     delete preProcessor;
                     fclose(cppFile);
-                    Utils::fatal("Cannot open icd file %s", buffer);
+                    Utils::Fatal("Cannot open icd file %s", buffer);
                 }
                 setvbuf(Optimizer::icdFile, 0, _IOFBF, 32768);
             }
@@ -781,7 +781,7 @@ int main(int argc, char* argv[])
         int size = Optimizer::GetOutputSize();
         FILE* fil = fopen(realOutFile, "wb");
         if (!fil)
-            Utils::fatal("Cannot open '%s' for write", realOutFile);
+            Utils::Fatal("Cannot open '%s' for write", realOutFile);
         Optimizer::WriteMappingFile(parserMem, fil);
         fclose(fil);
     }

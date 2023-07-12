@@ -27,6 +27,7 @@
 #include "ResFile.h"
 
 #include "Utils.h"
+#include "ToolChain.h"
 #include "CmdFiles.h"
 #include "PreProcessor.h"
 
@@ -35,8 +36,6 @@
 #endif
 
 CmdSwitchParser rcMain::SwitchParser;
-CmdSwitchBool rcMain::ShowHelp(SwitchParser, '?', false, {"help"});
-CmdSwitchFile rcMain::File(SwitchParser, '@');
 CmdSwitchBool rcMain::Boolr(SwitchParser, 'r');
 CmdSwitchBool rcMain::Boolt(SwitchParser, 't');
 CmdSwitchBool rcMain::Boolv(SwitchParser, 'v');
@@ -68,33 +67,16 @@ int main(int argc, char* argv[])
 int rcMain::Run(int argc, char* argv[])
 {
     int rv = 0;
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    if (files.size() < 2)
+        ToolChain::Usage(usageText);
 #ifndef HAVE_UNISTD_H
     int language = LANG_ENGLISH + (SUBLANG_ENGLISH_US << 10);
 #else
     int language = 0;
 #endif
-    Utils::banner(argv[0]);
-    Utils::SetEnvironmentToPathParent("ORANGEC");
-    CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(Utils::GetModuleName(), ".cfg");
-    std::fstream configTest(configName, std::ios::in);
-    if (!configTest.fail())
-    {
-        configTest.close();
-        if (!internalConfig.Parse(configName.c_str()))
-            Utils::fatal("Corrupt configuration file");
-    }
-    if (!SwitchParser.Parse(&argc, argv) || (argc == 1 && File.GetCount() <= 1 && !ShowHelp.GetExists()))
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    if (ShowHelp.GetExists())
-        Utils::usage(argv[0], helpText);
-    CmdFiles files(argv + 1);
-    if (File.GetValue())
-        files.Add(File.GetValue() + 1);
-    if (files.GetSize() > 1 && !OutputFile.GetValue().empty())
-        Utils::fatal("Cannot specify output file for multiple input files");
+    if (files.size() > 1 && !OutputFile.GetValue().empty())
+        Utils::Fatal("Cannot specify output file for multiple input files");
     std::string sysSrchPth;
     std::string srchPth;
     if (!includePath.GetValue().empty())
@@ -121,9 +103,9 @@ int rcMain::Run(int argc, char* argv[])
     {
         sscanf(Language.GetValue().c_str(), "%d", &language);
     }
-    for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
+    for (int i = 1; i < files.size(); i++)
     {
-        std::string inName = Utils::QualifiedFile((*it).c_str(), ".rc");
+        std::string inName = Utils::QualifiedFile(files[i].c_str(), ".rc");
         PreProcessor pp(inName, srchPth, sysSrchPth, false, false, '#', false, true, true, false, "");
 
         // for libcxx 10
@@ -144,7 +126,7 @@ int rcMain::Run(int argc, char* argv[])
         if (!OutputFile.GetValue().empty())
             outName = OutputFile.GetValue();
         else
-            outName = Utils::QualifiedFile((*it).c_str(), ".res");
+            outName = Utils::QualifiedFile(files[i].c_str(), ".res");
         ResFile resFile;
         RCFile rcFile(pp, resFile, srchPth, language);
         if (rcFile.Read())

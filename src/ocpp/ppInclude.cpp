@@ -325,7 +325,13 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
     {
         rv = SrchPath(true, name, sysSrchPath, skipFirst, include_files_skipped);
         if (!rv.empty())
+        {
             foundAsSystem = true;
+            dirs_skipped = std::count(srchPath.cbegin(), srchPath.cend(), ';') +
+                           1;  // This counts the number of search directories we have using the same logic we use to split it up,
+                               // semicolons, there are always n semicolon + 1 dirs
+            return rv;
+        }
     }
     dirs_skipped = include_files_skipped;
     return rv.empty() ? name : rv;

@@ -73,100 +73,6 @@ char* Utils::ShortName(const char* v)
         *extension = '\0';
     return short_name;
 }
-void Utils::banner(const char* progName)
-{
-    bool have_version = false;
-    // no banner if they specify -!, this is also caught in the cmd switch module
-    // so it is transparent to the proggy
-#ifndef HAVE_UNISTD_H
-    // handle /V switch
-    for (int i = 1; i < __argc && __argv[i]; i++)
-        if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
-            if ((__argv[i][1] == 'V' && __argv[i][2] == 0) || !strcmp(__argv[i], "--version"))
-            {
-                have_version = true;
-            }
-    if (!have_version)
-        for (int i = 1; i < __argc && __argv[i]; i++)
-            if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
-            {
-                if (__argv[i][1] == '!' || !strcmp(__argv[i], "--nologo"))
-                {
-                    return;
-                }
-                else if (!strncmp(&__argv[i][1], "print", 5) || !strncmp(&__argv[i][1], "dump", 4))
-                {
-                    return;
-                }
-                else if (!strncmp(&__argv[i][1], "-print", 6) || !strncmp(&__argv[i][1], "-dump", 5))
-                {
-                    return;
-                }
-            }
-#endif
-    printf("%s (OrangeC) Version " STRING_VERSION "\n" COPYRIGHT "\n", ShortName(progName));
-    if (have_version)
-    {
-        printf("\nCompile date: " __DATE__ " time: " __TIME__ "\n");
-        exit(0);
-    }
-}
-int Utils::ScreenHeight()
-{
-#ifdef _WIN32
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
-    return csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
-#else
-    struct winsize max;
-    ioctl(0, TIOCGWINSZ, &max);
-    return max.ws_row;
-#endif
-}
-bool Utils::GetLine(const char** text, std::string& buf)
-{
-    if (!**text)
-        return false;
-    char const* start = *text;
-    auto temp = (char*)strchr(*text, '\n');
-    if (!temp)
-    {
-        *text += strlen(*text);
-    }
-    else
-    {
-        *text = temp + 1;
-    }
-    buf = std::string(start, *text);
-    return true;
-}
-void Utils::usage(const char* prog_name, const char* text)
-{
-
-    int rows = 10000;
-#ifdef _WIN32
-    if (_isatty(fileno(stderr)))
-        rows = ScreenHeight();
-#else
-    if (_isatty(STDERR_FILENO))
-        rows = ScreenHeight();
-#endif
-    fprintf(stderr, "\nUsage: %s ", ShortName(prog_name));
-    int left = rows - 4;
-    std::string buf;
-    while (GetLine(&text, buf))
-    {
-        std::cerr << buf;
-        if (--left == 0)
-        {
-            std::cerr << "Press <ENTER> to continue...";
-            char temp[512];
-            fgets(temp, sizeof(temp), stdin);
-            left = rows - 1;
-        }
-    }
-    exit(1);
-}
 char* Utils::GetModuleName()
 {
     static char buf[256];
@@ -405,7 +311,7 @@ FILE* Utils::TempName(std::string& name)
         fil = fopen(tempFile, "w");
         if (!fil)
         {
-            Utils::fatal("TMP environment variable not set or invalid");
+            Utils::Fatal("TMP environment variable not set or invalid");
         }
     }
     name = tempFile;

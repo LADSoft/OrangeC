@@ -2,7 +2,9 @@
 #include <random>
 #include <array>
 #include <algorithm>
+#ifdef _WIN32
 #include <process.h>
+#endif
 namespace OMAKE
 {
 std::shared_ptr<JobServer> JobServer::GetJobServer(int max_jobs)
@@ -23,7 +25,7 @@ std::shared_ptr<JobServer> JobServer::GetJobServer(const std::string& auth_strin
 #ifdef _WIN32
     return std::make_shared<WINDOWSJobServer>(auth_string);
 #else
-    int readfd, int writefd;
+    int readfd, writefd;
     std::string read = auth_string.substr(0, auth_string.find(','));
     std::string write = auth_string.substr(auth_string.find(','));
     readfd = std::stoi(read);

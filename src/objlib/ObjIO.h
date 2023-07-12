@@ -101,11 +101,11 @@ class ObjIOContainer
     virtual void Add(ObjIOBase* ObjIO);
     virtual void Remove(ObjIOBase* ObjIO);
 
-    typedef IOBaseContainer::iterator IOBaseIterator;
-    typedef IOBaseContainer::const_iterator const_IOBaseIterator;
+    typedef IOBaseContainer::iterator iterator;
+    typedef IOBaseContainer::const_iterator const_iterator;
 
-    IOBaseIterator IOBaseBegin() { return ioModules.begin(); }
-    IOBaseIterator IOBaseEnd() { return ioModules.end(); }
+    iterator begin() { return ioModules.begin(); }
+    iterator end() { return ioModules.end(); }
 
   protected:
     ObjIOContainer() {}

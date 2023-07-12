@@ -24,7 +24,7 @@ RFLAGS = /r /!
 
 
 
-CCDIR = c:\orangec\bin
+CCDIR = $(ORANGEC)\bin
 
 CC = $(CCDIR)\occ
 AS = $(CCDIR)\nasm

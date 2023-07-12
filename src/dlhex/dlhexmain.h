@@ -49,11 +49,10 @@ class dlHexMain
     void GetInputSections(const std::vector<std::string>& names, ObjFile* file, ObjFactory* factory);
     bool ReadSections(const std::string& path);
     bool GetOutputMode();
-    std::string GetOutputName(char* infile) const;
+    std::string GetOutputName(const char* infile) const;
 
   private:
     static CmdSwitchParser SwitchParser;
-    static CmdSwitchBool ShowHelp;
     static CmdSwitchString modeSwitch;
     static CmdSwitchString sectionsSwitch;
     static CmdSwitchHex padSwitch;

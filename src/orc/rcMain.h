@@ -37,8 +37,6 @@ class rcMain
 
   private:
     static CmdSwitchParser SwitchParser;
-    static CmdSwitchBool ShowHelp;
-    static CmdSwitchFile File;
     static CmdSwitchBool Boolr;
     static CmdSwitchBool Boolt;
     static CmdSwitchBool Boolv;

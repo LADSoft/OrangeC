@@ -586,6 +586,7 @@ static void UnstreamXParams()
     delegateforfuncptr = !!UnstreamIndex();
     initializeScalars = !!UnstreamIndex();
     registersAssigned = UnstreamIndex();
+    syntaxOnly = UnstreamIndex();
     UnstreamString(prm_assemblerSpecifier);
     UnstreamString(prm_libPath);
     UnstreamString(prm_include);

@@ -229,9 +229,9 @@ void ObjIeeeBinary::RenderStructure(ObjType* Type)
 {
     const int MaxPerLine = 15;
     std::deque<ObjField*> fields;
-    for (ObjType::FieldIterator it = Type->FieldBegin(); it != Type->FieldEnd(); ++it)
+    for (auto field : *Type)
     {
-        fields.push_front(*it);
+        fields.push_front(field);
     }
     int lastIndex = -1;
     while (fields.size())
@@ -277,10 +277,10 @@ void ObjIeeeBinary::RenderFunction(ObjFunction* Function)
     ObjByte* buf = StartMessage(ecAT, embed('T'), EINDEX, GetTypeIndex(static_cast<ObjType*>(Function)), EINDEX, ObjType::eFunction,
                                 EINDEX, GetTypeIndex(Function->GetReturnType()), EDWORD, Function->GetLinkage(), nullptr);
     // assuming a reasonable number of parameters
-    // parameters are TYPES
-    for (ObjFunction::ParameterIterator it = Function->ParameterBegin(); it != Function->ParameterEnd(); ++it)
+    // parameters are 
+    for (auto param : *Function)
     {
-        ContinueMessage(buf, EINDEX, GetTypeIndex(*it), nullptr);
+        ContinueMessage(buf, EINDEX, GetTypeIndex(param), nullptr);
     }
     RenderMessage(buf);
 }
@@ -431,10 +431,8 @@ void ObjIeeeBinary::RenderMemory(ObjMemoryManager* Memory)
     // really slow down linker and librarian operations
     char scratch[256];
     int n = 0;
-    ObjMemoryManager::MemoryIterator itmem;
-    for (itmem = Memory->MemoryBegin(); itmem != Memory->MemoryEnd(); ++itmem)
+    for (auto memory : *Memory)
     {
-        ObjMemory* memory = (*itmem);
         if (memory->HasDebugTags() && GetDebugInfoFlag() || memory->GetFixup())
         {
             if (n)
@@ -442,10 +440,9 @@ void ObjIeeeBinary::RenderMemory(ObjMemoryManager* Memory)
             n = 0;
             if (GetDebugInfoFlag() && memory->HasDebugTags())
             {
-                ObjMemory::DebugTagIterator it;
-                for (it = memory->DebugTagBegin(); it != memory->DebugTagEnd(); ++it)
+                for (auto tag : *memory)
                 {
-                    RenderDebugTag(*it);
+                    RenderDebugTag(tag);
                 }
             }
             if (memory->GetFixup())
@@ -481,9 +478,8 @@ void ObjIeeeBinary::RenderMemory(ObjMemoryManager* Memory)
 void ObjIeeeBinary::RenderMemoryBinary(ObjMemoryManager* Memory)
 {
     ObjByte scratch[256];
-    for (auto itmem = Memory->MemoryBegin(); itmem != Memory->MemoryEnd(); ++itmem)
+    for (auto && memory : *Memory)
     {
-        ObjMemory* memory = (*itmem);
         if (memory->GetFixup())
         {
             *(unsigned*)scratch = memory->GetFixup()->Eval(0);

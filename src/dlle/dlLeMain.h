@@ -70,14 +70,13 @@ class dlLeMain
     bool GetMode();
     void ReadValues();
     bool ReadSections(const std::string& path, const std::string& exeName);
-    std::string GetOutputName(char* infile) const;
+    std::string GetOutputName(const char* infile) const;
     void InitHeader();
     bool LoadStub(const std::string& exeName);
     void WriteStub(std::fstream& out);
 
   private:
     static CmdSwitchParser SwitchParser;
-    static CmdSwitchBool ShowHelp;
     static CmdSwitchString modeSwitch;
     static CmdSwitchString stubSwitch;
     static CmdSwitchString outputFileSwitch;

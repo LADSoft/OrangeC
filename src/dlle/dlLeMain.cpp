@@ -26,6 +26,7 @@
 #include "CmdSwitch.h"
 #include "CmdFiles.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include "ObjSection.h"
 #include "ObjMemory.h"
 #include "ObjIeee.h"
@@ -40,7 +41,6 @@
 #include <cstring>
 
 CmdSwitchParser dlLeMain::SwitchParser;
-CmdSwitchBool dlLeMain::ShowHelp(SwitchParser, '?', false, {"help"});
 CmdSwitchString dlLeMain::stubSwitch(SwitchParser, 's');
 CmdSwitchString dlLeMain::modeSwitch(SwitchParser, 'm');
 CmdSwitchString dlLeMain::outputFileSwitch(SwitchParser, 'o');
@@ -111,16 +111,16 @@ bool dlLeMain::ReadSections(const std::string& path, const std::string& exeName)
     ObjIeee ieee("");
     FILE* in = fopen(path.c_str(), "rb");
     if (!in)
-        Utils::fatal("Cannot open input file");
+        Utils::Fatal("Cannot open input file");
     file = ieee.Read(in, ObjIeee::eAll, factory);
     fclose(in);
     if (!ieee.GetAbsolute())
     {
-        Utils::fatal("Input file is in relative format");
+        Utils::Fatal("Input file is in relative format");
     }
     if (ieee.GetStartAddress() == nullptr)
     {
-        Utils::fatal("No start address specified");
+        Utils::Fatal("No start address specified");
     }
     startAddress = ieee.GetStartAddress()->Eval(0);
     if (file != nullptr)
@@ -147,7 +147,7 @@ bool dlLeMain::ReadSections(const std::string& path, const std::string& exeName)
     }
     return false;
 }
-std::string dlLeMain::GetOutputName(char* infile) const
+std::string dlLeMain::GetOutputName(const char* infile) const
 {
     std::string name;
     if (!outputFileSwitch.GetValue().empty())
@@ -294,37 +294,16 @@ bool dlLeMain::LoadStub(const std::string& exeName)
 void dlLeMain::WriteStub(std::fstream& out) { out.write((char*)stubData.get(), stubSize); }
 int dlLeMain::Run(int argc, char** argv)
 {
-    Utils::banner(argv[0]);
-    Utils::SetEnvironmentToPathParent("ORANGEC");
-    CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName, std::ios::in);
-    if (!configTest.fail())
-    {
-        configTest.close();
-        if (!internalConfig.Parse(configName.c_str()))
-            Utils::fatal("Corrupt configuration file");
-    }
-    if (!SwitchParser.Parse(&argc, argv) || (argc < 2 && !ShowHelp.GetExists()))
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    if (ShowHelp.GetExists())
-        Utils::usage(argv[0], helpText);
-    if (argc != 2)
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    if (!GetMode())
-    {
-        Utils::usage(argv[0], usageText);
-    }
-    outputName = GetOutputName(argv[1]);
-    if (!LoadStub(argv[0]))
-        Utils::fatal("Missing or invalid stub file");
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    if (files.size() != 2 || !GetMode())
+        ToolChain::Usage(usageText);
 
-    if (!ReadSections(std::string(argv[1]), outputName))
-        Utils::fatal("Invalid .rel file failed to read sections");
+    outputName = GetOutputName(files[1].c_str());
+    if (!LoadStub(files[0].c_str()))
+        Utils::Fatal("Missing or invalid stub file");
+
+    if (!ReadSections(files[1], outputName))
+        Utils::Fatal("Invalid .rel file failed to read sections");
 
     unsigned ofs = 0;
     for (auto obj : objects)
@@ -360,7 +339,7 @@ int dlLeMain::Run(int argc, char** argv)
     }
     else
     {
-        Utils::fatal("Cannot open '%s' for write", outputName.c_str());
+        Utils::Fatal("Cannot open '%s' for write", outputName.c_str());
     }
     return 1;
 }

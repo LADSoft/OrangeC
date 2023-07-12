@@ -27,6 +27,7 @@
 #include "CmdFiles.h"
 #include "CmdSwitch.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include <string>
 #include "DotNetPELib.h"
 class NetLinkMain : public DotNetPELib::Callback
@@ -83,6 +84,8 @@ private:
     bool hasEntryPoint;
 
     static CmdSwitchParser SwitchParser;
+    static CmdSwitchBool NoLogo;
+    static CmdSwitchBool ShowVersion;
     static CmdSwitchBool ShowHelp;
     static CmdSwitchString StrongName;
     static CmdSwitchBool LibraryFile;

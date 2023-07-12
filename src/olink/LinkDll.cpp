@@ -26,9 +26,15 @@
 #include "PEHeader.h"
 #include "MZHeader.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include <algorithm>
 #include <fstream>
 #include <deque>
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#else
+#    include <io.h>
+#endif
 
 #include <cstdlib>
 struct TempFileDeleter
@@ -117,7 +123,7 @@ std::unique_ptr<LinkLibrary> LinkDll::LoadLibrary(bool isstdcall)
         deleter.Add(fileName);
         fclose(fil);
         std::string C = isstdcall ? "" : "-C";
-        if (!Utils::ToolInvoke("oimplib", nullptr, " -! %s \"%s\" \"%s\"", C.c_str(), fileName.c_str(), name.c_str()))
+        if (!ToolChain::ToolInvoke("oimplib", nullptr, " -! %s \"%s\" \"%s\"", C.c_str(), fileName.c_str(), name.c_str()))
         {
             rv = std::make_unique<LinkLibrary>(fileName, caseSensitive);
             if (rv)

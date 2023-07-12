@@ -97,9 +97,9 @@ void ObjIeeeAscii::RenderStructure(ObjType* Type)
 {
     const int MaxPerLine = 15;
     std::deque<ObjField*> fields;
-    for (auto it = Type->FieldBegin(); it != Type->FieldEnd(); ++it)
+    for (auto && field : *Type)
     {
-        fields.push_front(*it);
+        fields.push_front(field);
     }
     ObjString lastIndex;
     while (!fields.empty())
@@ -149,9 +149,9 @@ void ObjIeeeAscii::RenderFunction(ObjFunction* Function)
     RenderString(ObjUtil::ToHex(Function->GetLinkage()));
     // assuming a reasonable number of parameters
     // parameters are TYPES
-    for (auto it = Function->ParameterBegin(); it != Function->ParameterEnd(); ++it)
+    for (auto func : *Function)
     {
-        RenderString(",T" + GetTypeIndex(*it));
+        RenderString(",T" + GetTypeIndex(func));
     }
     RenderCstr(".");
     endl();
@@ -373,9 +373,8 @@ void ObjIeeeAscii::RenderMemory(ObjMemoryManager* Memory)
     scratch[0] = 'L';
     scratch[1] = 'D';
     n = 2;
-    for (auto itmem = Memory->MemoryBegin(); itmem != Memory->MemoryEnd(); ++itmem)
+    for (auto memory : *Memory)
     {
-        ObjMemory* memory = (*itmem);
         if ((memory->HasDebugTags() && GetDebugInfoFlag()) || memory->GetFixup())
         {
             if (n != 2)
@@ -388,9 +387,9 @@ void ObjIeeeAscii::RenderMemory(ObjMemoryManager* Memory)
             }
             if (GetDebugInfoFlag() && memory->HasDebugTags())
             {
-                for (auto it = memory->DebugTagBegin(); it != memory->DebugTagEnd(); ++it)
+                for (auto* tag : *memory)
                 {
-                    RenderDebugTag(*it);
+                    RenderDebugTag(tag);
                 }
             }
             if (memory->GetFixup())
@@ -453,9 +452,8 @@ void ObjIeeeAscii::RenderMemory(ObjMemoryManager* Memory)
 void ObjIeeeAscii::RenderMemoryBinary(ObjMemoryManager* Memory)
 {
     char scratch[256];
-    for (auto itmem = Memory->MemoryBegin(); itmem != Memory->MemoryEnd(); ++itmem)
+    for (auto memory : *Memory)
     {
-        ObjMemory* memory = (*itmem);
         if (memory->GetFixup())
         {
             *(unsigned*)scratch = memory->GetFixup()->Eval(0);

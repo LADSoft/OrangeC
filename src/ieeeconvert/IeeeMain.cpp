@@ -28,14 +28,17 @@
 #include "ObjFactory.h"
 #include "ObjIeee.h"
 #include "Utils.h"
+#include "ToolChain.h"
 
-const char* IeeeMain::usageText = "input file[s]\n";
+const char* IeeeMain::usageText = "input file[s]";
 const char* IeeeMain::helpText =
     "input file[s]"
     "\n"
     ".o extension means read binary convert to ascii"
     ".oa extension means read ascii convert to binary"
     "Time: " __TIME__ "  Date: " __DATE__;
+
+CmdSwitchParser IeeeMain::SwitchParser;
 
 int main(int argc, char** argv)
 {
@@ -49,30 +52,20 @@ int main(int argc, char** argv)
         std::cout << e.what() << std::endl;
     }
 }
-void IeeeMain::usage(const char* prog_name, const char* text, int retcode)
-{
-    fprintf(stderr, "\nusage: %s %s", Utils::ShortName(prog_name), text);
-    exit(retcode);
-}
 int IeeeMain::Run(int argc, char** argv)
 {
     int rv = 0;
-    Utils::banner(argv[0]);
-    if (argc < 2)
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
+    if (files.size() < 2)
+        ToolChain::Usage(usageText, 2);
+    for (int i = 1; i < files.size(); i++)
     {
-        usage(argv[0], usageText, 2);
-    }
-
-    CmdFiles files(argv + 1, false);
-
-    for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
-    {
-        if ((*it).find(".oa") != std::string::npos)
+        if (files[i].find(".oa") != std::string::npos)
         {
-            FILE* fil = fopen((*it).c_str(), "r");
+            FILE* fil = fopen(files[i].c_str(), "r");
             if (fil)
             {
-                std::string othername = (*it).substr(0, (*it).size() - 1);
+                std::string othername = files[i].substr(0, files[i].size() - 1);
                 ObjIeeeIndexManager index_manager;
                 ObjFactory factory(&index_manager);
                 FILE* outfile = fopen(othername.c_str(), "wb");
@@ -87,40 +80,40 @@ int IeeeMain::Run(int argc, char** argv)
                         output_obj.SetStartAddress(finput_obj, input_obj.GetStartAddress());
                         if (!output_obj.Write(outfile, finput_obj, &factory))
                         {
-                            Utils::fatal("Cannot write %s", othername.c_str());
+                            Utils::Fatal("Cannot write %s", othername.c_str());
                         }
                     }
                     else
                     {
-                        Utils::fatal("Cannot read %s", (*it).c_str());
+                        Utils::Fatal("Cannot read %s", files[i].c_str());
                     }
                     fclose(outfile);
                 }
                 else
                 {
-                    Utils::fatal("Cannot open '%s' for write", othername.c_str());
+                    Utils::Fatal("Cannot open '%s' for write", othername.c_str());
                 }
                 fclose(fil);
             }
             else
             {
-                std::cout << "Cannot open " << *it << std::endl;
+                std::cout << "Cannot open " << files[i] << std::endl;
                 rv = 1;
             }
         }
-        else if ((*it).find(".o") != std::string::npos)
+        else if (files[i].find(".o") != std::string::npos)
         {
-            FILE* fil = fopen((*it).c_str(), "rb");
+            FILE* fil = fopen(files[i].c_str(), "rb");
             if (fil)
             {
-                std::string othername = (*it) + "a";
+                std::string othername = files[i] + "a";
                 ObjIeeeIndexManager index_manager;
                 ObjFactory factory(&index_manager);
                 FILE* outfile = fopen(othername.c_str(), "w");
                 if (outfile)
                 {
-                    ObjIeeeBinary input_obj((*it).c_str());
-                    ObjIeeeAscii output_obj((*it).c_str());
+                    ObjIeeeBinary input_obj(files[i].c_str());
+                    ObjIeeeAscii output_obj(files[i].c_str());
                     ObjFile* finput_obj = input_obj.Read(fil, ObjIeee::eAll, &factory);
                     if (finput_obj)
                     {
@@ -128,30 +121,30 @@ int IeeeMain::Run(int argc, char** argv)
                         output_obj.SetStartAddress(finput_obj, input_obj.GetStartAddress());
                         if (!output_obj.Write(outfile, finput_obj, &factory))
                         {
-                            Utils::fatal("Cannot write %s", othername.c_str());
+                            Utils::Fatal("Cannot write %s", othername.c_str());
                         }
                     }
                     else
                     {
-                        Utils::fatal("Cannot read %s", (*it).c_str());
+                        Utils::Fatal("Cannot read %s", files[i].c_str());
                     }
                     fclose(outfile);
                 }
                 else
                 {
-                    Utils::fatal("Cannot open '%s' for write", othername.c_str());
+                    Utils::Fatal("Cannot open '%s' for write", othername.c_str());
                 }
                 fclose(fil);
             }
             else
             {
-                std::cout << "Cannot open " << *it << std::endl;
+                std::cout << "Cannot open " << files[i] << std::endl;
                 rv = 1;
             }
         }
         else
         {
-            std::cout << "Cannot process " << *it << std::endl;
+            std::cout << "Cannot process " << files[i] << std::endl;
             rv = 1;
         }
     }

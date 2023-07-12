@@ -38,7 +38,7 @@
 #ifdef __ORANGEC__
 #ifndef __LSCRTL_DLL
 #include <windows.h>
-#include <..\version.h>
+#include "../version.h"
 extern "C" void _RTL_FUNC __excepthook()
 {
     printf("version: " STRING_VERSION "\n");
@@ -297,9 +297,11 @@ CmdSwitchBase* CmdSwitchParser::Find(const char* name, bool useLongName, bool to
     {
         std::string bigmatch = "";
         int max = strlen(name);
-        const char* s = strchr(name, '=');
+        const char* s = strchr(name, ',');
         if (!s)
-            s = strchr(name, ',');
+            s = strchr(name, '=');
+        if (!s)
+            s = strchr(name, ':');
         if (s && s - name < max)
             max = s - name;
         for (auto s : switches)
@@ -371,9 +373,11 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
                 if (longName)
                 {
                     b = Find(data, true);
-                    const char* p = strchr(data, '=');
+                    const char* p = strchr(data, ',');
                     if (!p)
-                        p = strchr(data, ',');
+                        p = strchr(data, '=');
+                    if (!p)
+                        p = strchr(data, ':');
                     if (p)
                         data = p + 1;
                     else

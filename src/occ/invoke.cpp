@@ -28,6 +28,7 @@
 #include "be.h"
 #include "winmode.h"
 #include "Utils.h"
+#include "ToolChain.h"
 #include "CmdSwitch.h"
 #include "ioptimizer.h"
 #include "ildata.h"
@@ -38,6 +39,8 @@
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#else
+#    include <io.h>
 #endif
 namespace occx86
 {
@@ -194,11 +197,11 @@ int RunExternalFiles()
     while (asmlist && !Optimizer::cparams.prm_asmfile)
     {
         if (Optimizer::cparams.prm_compileonly && Optimizer::outputFileName[0] && !first)
-            rv = Utils::ToolInvoke("oasm.exe", Optimizer::cparams.verbosity ? "" : nullptr, "\"-o%s\" %s %s \"%s\"",
+            rv = ToolChain::ToolInvoke("oasm.exe", Optimizer::cparams.verbosity ? "" : nullptr, "\"-o%s\" %s %s \"%s\"",
                                    Optimizer::outputFileName.c_str(), asm_params ? asm_params : "",
                                    !Optimizer::showBanner ? "-!" : "", (char*)asmlist->data);
         else
-            rv = Utils::ToolInvoke("oasm.exe", Optimizer::cparams.verbosity ? "" : nullptr, "%s %s \"%s\"",
+            rv = ToolChain::ToolInvoke("oasm.exe", Optimizer::cparams.verbosity ? "" : nullptr, "%s %s \"%s\"",
                                    asm_params ? asm_params : "", !Optimizer::showBanner ? "-!" : "", (char*)asmlist->data);
         first = true;
         if (rv)
@@ -212,11 +215,11 @@ int RunExternalFiles()
     while (rclist)
     {
         if (Optimizer::cparams.prm_compileonly && Optimizer::outputFileName[0] && !first)
-            rv = Utils::ToolInvoke("orc.exe", Optimizer::cparams.verbosity ? "" : nullptr, "\"-o%s\" -r %s %s %s \"%s\"",
+            rv = ToolChain::ToolInvoke("orc.exe", Optimizer::cparams.verbosity ? "" : nullptr, "\"-o%s\" -r %s %s %s \"%s\"",
                                    Optimizer::outputFileName.c_str(), rc_params ? rc_params : "",
                                    !Optimizer::showBanner ? "-!" : "", args, (char*)rclist->data);
         else
-            rv = Utils::ToolInvoke("orc.exe", Optimizer::cparams.verbosity ? "" : nullptr, "-r %s %s %s \"%s\"",
+            rv = ToolChain::ToolInvoke("orc.exe", Optimizer::cparams.verbosity ? "" : nullptr, "-r %s %s %s \"%s\"",
                                    rc_params ? rc_params : "", !Optimizer::showBanner ? "-!" : "", args, (char*)rclist->data);
         first = true;
         if (rv)
@@ -251,7 +254,7 @@ int RunExternalFiles()
             }
             Utils::StripExt(outName);
             strcat(outName, ".l");
-            rv = Utils::ToolInvoke(
+            rv = ToolChain::ToolInvoke(
                 "olib.exe", Optimizer::cparams.verbosity ? with : nullptr, "%s %s +- @%s", 
                 !Optimizer::showBanner ? "-!" : "", 
                 outName,
@@ -322,7 +325,7 @@ int RunExternalFiles()
                     strcat(with, "\n");
                 }
             }
-            rv = Utils::ToolInvoke(
+            rv = ToolChain::ToolInvoke(
                 "olink.exe", Optimizer::cparams.verbosity ? with : nullptr, "%s %s %s /c+ \"/o%s\" %s %s %s %s @%s",
                 link_params ? link_params : "", Optimizer::cparams.prm_targettype == WHXDOS ? "-DOBJECTALIGN=65536" : "",
                 !Optimizer::showBanner ? "-!" : "", outName, args, verbosityString,
@@ -330,7 +333,7 @@ int RunExternalFiles()
                 !Optimizer::prm_OutputImportLibraryFile.empty() ? ("--out-implib \"" + Optimizer::prm_OutputImportLibraryFile + "\"").c_str() : "",
                 tempName.c_str());
         }
-        _unlink(tempName.c_str());
+        unlink(tempName.c_str());
         if (Optimizer::cparams.verbosity > 1)
             printf("Return code: %d\n", rv);
 
@@ -338,7 +341,7 @@ int RunExternalFiles()
             return rv;
         if (Optimizer::cparams.prm_targettype == WHXDOS && !Optimizer::cparams.prm_makelib)
         {
-            rv = Utils::ToolInvoke("patchpe.exe", Optimizer::cparams.verbosity ? "" : nullptr, "%s",
+            rv = ToolChain::ToolInvoke("patchpe.exe", Optimizer::cparams.verbosity ? "" : nullptr, "%s",
                                    Optimizer::outputFileName.c_str());
             if (rv)
             {

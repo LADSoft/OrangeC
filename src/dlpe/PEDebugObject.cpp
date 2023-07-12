@@ -40,7 +40,7 @@ void PEDebugObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     else
     {
         if (virtual_addr != endVa)
-            Utils::fatal("Internal error");
+            Utils::Fatal("Internal error");
     }
     raw_addr = endPhys;
     size = initSize = fileName.size() + 2 + 32;

@@ -39,9 +39,8 @@ void LibDictionary::CreateDictionary(LibFiles& files)
     int symbols = 0;
     Clear();
     int i = 0;
-    for (auto it = files.FileBegin(); it != files.FileEnd(); ++it)
+    for (auto&& fd : files)
     {
-        const LibFiles::FileDescriptor* fd = (*it).get();
         if (fd->data)
         {
             for (auto pi = fd->data->PublicBegin(); pi != fd->data->PublicEnd(); ++pi)

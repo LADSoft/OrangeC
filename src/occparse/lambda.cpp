@@ -647,12 +647,17 @@ static EXPRESSION* createLambda(bool noinline)
             cls->sb->dest = init;
         }
     }
-    parentThs = varNode(en_auto, (SYMBOL*)basetype(lambdas.front()->func->tp)->syms->front());  // this ptr
+    if (lambdas.front()->enclosingFunc)
+        parentThs = varNode(en_auto, (SYMBOL*)basetype(lambdas.front()->enclosingFunc->tp)->syms->front());  // this ptr
+    else
+        parentThs = nullptr;
     for (auto sp : *lambdas.front()->cls->tp->syms)
     {
         EXPRESSION *en = NULL, *en1 = NULL;
         if (!strcmp(sp->name, "$parent"))
         {
+            if (!parentThs)
+                continue;
             en1 = parentThs;  // get parent from function call
             deref(&stdpointer, &en1);
             en = exprNode(en_add, clsThs, intNode(en_c_i, sp->sb->offset));
@@ -661,6 +666,8 @@ static EXPRESSION* createLambda(bool noinline)
         }
         else if (!strcmp(sp->name, "$this"))
         {
+            if (!parentThs)
+                continue;
             if (lambdas.size() == 1 || !lambdas.front()->captureThis)
             {
                 en1 = parentThs;  // get parent from function call

@@ -69,7 +69,7 @@ ifeq "$(TARGET)" "GUI"
 LFLAGS := $(LFLAGS) -s -Wl,--subsystem,windows
 endif
 
-COMPLIB=-lstdc++ -lcomctl32 -lgdi32 -lcomdlg32 -lole32 -luxtheme -lkernel32 -lmsimg32 -luuid
+COMPLIB=-lcomctl32 -lgdi32 -lcomdlg32 -lole32 -luxtheme -lkernel32 -lmsimg32 -luuid
 
 
 vpath %.o $(_OUTPUTDIR)

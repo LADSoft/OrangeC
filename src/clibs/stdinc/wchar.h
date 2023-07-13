@@ -129,6 +129,7 @@ extern "C"
     wchar_t* _RTL_FUNC _wcslwr(wchar_t* __s);
 
     size_t _RTL_FUNC wcslen(const wchar_t* __s);
+    size_t _RTL_FUNC wcsnlen(const wchar_t* __s, size_t maxlen);
 
 #ifdef __cplusplus
     const wchar_t* _RTL_FUNC wmemchr(const wchar_t* __s, wchar_t __c, size_t __n);

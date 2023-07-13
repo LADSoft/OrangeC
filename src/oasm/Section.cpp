@@ -211,9 +211,15 @@ ObjExpression* Section::ConvertExpression(std::shared_ptr<AsmExprNode>& node, st
     ObjExpression* xleft = nullptr;
     ObjExpression* xright = nullptr;
     if (node->GetLeft())
-        xleft = ConvertExpression(node->GetLeft(), Lookup, SectLookup, factory);
+    {
+        auto expr = node->GetLeft();
+        xleft = ConvertExpression(expr, Lookup, SectLookup, factory);
+    }
     if (node->GetRight())
-        xright = ConvertExpression(node->GetRight(), Lookup, SectLookup, factory);
+    {
+        auto expr = node->GetRight();
+        xright = ConvertExpression(expr, Lookup, SectLookup, factory);
+    }
     switch (node->GetType())
     {
         case AsmExprNode::IVAL:
@@ -249,8 +255,9 @@ ObjExpression* Section::ConvertExpression(std::shared_ptr<AsmExprNode>& node, st
                     }
                     else
                     {
+                        auto offs = label->GetOffset();
                         ObjExpression* left = factory.MakeExpression(label->GetObjectSection());
-                        ObjExpression* right = ConvertExpression(label->GetOffset(), Lookup, SectLookup, factory);
+                        ObjExpression* right = ConvertExpression(offs, Lookup, SectLookup, factory);
                         t = factory.MakeExpression(ObjExpression::eAdd, left, right);
                     }
                     return t;
@@ -392,7 +399,8 @@ bool Section::MakeData(ObjFactory& factory, std::function<std::shared_ptr<Label>
                     ObjExpression* t;
                     try
                     {
-                        t = ConvertExpression(f.GetExpr(), Lookup, SectLookup, factory);
+                        auto expr = f.GetExpr();
+                        t = ConvertExpression(expr, Lookup, SectLookup, factory);
                         SwapSectionIntoPlace(t);
                     }
                     catch (std::runtime_error* e)

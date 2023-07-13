@@ -192,7 +192,8 @@ void AsmFile::DoLabel(std::string& name, int lineno)
             labels[realName] = std::make_shared<Label>(realName, labels.size(), 0);
             label = labels[realName];
             label->SetOffset(absoluteValue);
-            AsmExpr::SetEqu(realName, std::make_shared<AsmExprNode>(absoluteValue));
+            auto val = std::make_shared<AsmExprNode>(absoluteValue);
+            AsmExpr::SetEqu(realName, val);
             if (lineno >= 0)
                 listing.Add(label, lineno, preProcessor.InMacro());
         }
@@ -447,7 +448,8 @@ void AsmFile::ReserveDirective(int n)
         if (GetKeyword() == kw::comma)
         {
             NextToken();
-            std::shared_ptr<Fixup> f = std::make_shared<Fixup>(GetNumber(), n, false, 0);
+            auto num = GetNumber();
+            std::shared_ptr<Fixup> f = std::make_shared<Fixup>(num, n, false, 0);
             f->SetFileName(errFile);
             f->SetErrorLine(errLine);
             ins->Add(f);
@@ -785,7 +787,9 @@ void AsmFile::TimesDirective()
             std::shared_ptr<Instruction> ins = parser->Parse(lexer.GetRestOfLine(), currentSection->GetPC());
             for (auto& f : *ins->GetFixups())
             {
-                f->SetExpr(AsmExpr::Eval(f->GetExpr(), currentSection->GetPC()));
+                auto expr = f->GetExpr();
+                auto expr2 = AsmExpr::Eval(expr, currentSection->GetPC()); 
+                f->SetExpr(expr2);
             }
             currentSection->InsertInstruction(ins);
         }

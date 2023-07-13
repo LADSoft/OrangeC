@@ -81,9 +81,15 @@ std::shared_ptr<AsmExprNode> AsmExpr::ConvertToBased(std::shared_ptr<AsmExprNode
     if (section)
     {
         if (n->GetLeft())
-            n->SetLeft(ConvertToBased(n->GetLeft(), pc));
+        {
+            auto expr = n->GetLeft();
+            n->SetLeft(ConvertToBased(expr, pc));
+        }
         if (n->GetRight())
-            n->SetRight(ConvertToBased(n->GetRight(), pc));
+        {
+            auto expr = n->GetRight();
+            n->SetRight(ConvertToBased(expr, pc));
+        }
         if (n->GetType() == AsmExprNode::PC)
         {
             return std::make_shared<AsmExprNode>(section, pc);
@@ -145,7 +151,10 @@ std::shared_ptr<AsmExprNode> AsmExpr::Eval(std::shared_ptr<AsmExprNode> n, int p
             rv = std::make_shared<AsmExprNode>(0);
             break;
         case AsmExprNode::BASED:
-            rv = std::make_shared<AsmExprNode>(n->GetSection(), n->ival);
+        {
+            auto sect = n->GetSection();
+            rv = std::make_shared<AsmExprNode>(sect, n->ival);
+        }
             break;
         case AsmExprNode::ADD:
             switch ((xleft->GetType() << 8) + xright->GetType())

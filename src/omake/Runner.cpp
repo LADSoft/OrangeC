@@ -137,7 +137,8 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
     {
         Eval::SetRuleStack(ruleStack);
         Spawner sp(*env, ig, sil, oneShell, posix, displayOnly && !make, keepResponseFiles);
-        sp.Run(depend->GetRule()->GetCommands(), outputType, rl, nullptr);
+        auto commands = depend->GetRule()->GetCommands();
+        sp.Run(commands, outputType, rl, nullptr);
         Eval::ClearRuleStack();
         rv = sp.RetVal();
         if (rv)

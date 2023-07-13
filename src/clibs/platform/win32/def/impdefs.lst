@@ -30,6 +30,7 @@ rpcns4.def
 rpcrt4.def
 shell32.def
 shfolder.def
+shlwapi.def
 tapi32.def
 url.def
 urlmon.def

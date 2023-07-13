@@ -2,7 +2,7 @@
 #ifdef _WIN32
 #    define NOMINMAX 1
 #    include <windows.h>
-#elif defined(__linux__)
+#elif defined(HAVE_UNISTD_H)
 #    include <semaphore.h>
 #    include <errno.h>
 #    include <fcntl.h>
@@ -22,7 +22,7 @@ class Semaphore
 #    ifdef UNICODE
 #        define USE_WIDE_STRING
 #    endif
-#elif defined(__linux__)
+#elif defined(HAVE_UNISTD_H)
     using semaphore_type = sem_t;
 #endif
 #ifdef USE_WIDE_STRING
@@ -45,7 +45,7 @@ class Semaphore
         {
             throw std::runtime_error("CreateSemaphore failed, Error code: " + std::to_string(GetLastError()));
         }
-#elif defined(__linux__)
+#elif defined(HAVE_UNISTD_H)
         // 0 in this case means this is shared internally, not externally
         int ret = sem_init(&handle, 0, value);
         if (!ret)
@@ -64,7 +64,7 @@ class Semaphore
         {
             throw std::runtime_error("CreateSemaphore failed, Error code: " + std::to_string(GetLastError()));
         }
-#elif defined(__linux__)
+#elif defined(HAVE_UNISTD_H)
         // 0 in this case means this is shared internally, not externally
         int ret = sem_init(&handle, 0, value);
         if (!ret)
@@ -81,7 +81,7 @@ class Semaphore
         {
             throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(GetLastError()));
         }
-#elif defined(__linux__)
+#elif defined(HAVE_UNISTD_H)
         auto ret = sem_open(name.c_str(), O_RDWR);
         if (ret == SEM_FAILED)
         {
@@ -105,7 +105,7 @@ class Semaphore
             {
 #ifdef _WIN32
                 handle = OpenSemaphore(EVENT_ALL_ACCESS, false, semaphoreName.c_str());
-#elif defined(__linux__)
+#elif defined(HAVE_UNISTD_H)
                 auto ret = sem_open(semaphoreName.c_str(), O_RDWR);
                 if (ret == SEM_FAILED)
                 {
@@ -129,7 +129,7 @@ class Semaphore
             {
 #ifdef _WIN32
             CloseHandle(other.handle);
-#elif defined(__linux__)
+#elif defined(HAVE_UNISTD_H)
         if (named)
         {
             sem_close(&handle);
@@ -147,7 +147,7 @@ class Semaphore
             {
 #ifdef _WIN32
                 handle = OpenSemaphore(EVENT_ALL_ACCESS, false, semaphoreName.c_str());
-#elif defined(__linux__)
+#elif defined(HAVE_UNISTD_H)
                 auto ret = sem_open(semaphoreName.c_str(), O_RDWR);
                 if (ret == SEM_FAILED)
                 {
@@ -160,7 +160,7 @@ class Semaphore
             other.null = true;
 #ifdef _WIN32
             CloseHandle(other.handle);
-#elif defined(__linux__)
+#elif defined(HAVE_UNISTD_H)
         if (named)
         {
             sem_close(&handle);
@@ -179,7 +179,7 @@ class Semaphore
             return;
 #ifdef _WIN32
         CloseHandle(handle);
-#elif defined(__linux__)
+#elif defined(HAVE_UNISTD_H)
         if (named)
         {
             sem_close(&handle);
@@ -219,7 +219,7 @@ class Semaphore
             default:
                 return false;
         }
-#elif defined(__linux__)
+#elif defined(HAVE_UNISTD_H)
         timespec ts = { waitTime/1000, (waitTime%1000) * 1000000 };
         return !sem_timedwait(&handle, &ts);
 #endif
@@ -240,7 +240,7 @@ class Semaphore
             default:
                 return false;
         }
-#elif defined(__linux__)
+#elif defined(HAVE_UNISTD_H)
         return !! sem_trywait(&handle);
 #endif
     }
@@ -252,7 +252,7 @@ class Semaphore
         }
 #ifdef _WIN32
         WaitForSingleObject(handle, INFINITE);
-#elif defined(__linux__)
+#elif defined(HAVE_UNISTD_H)
         sem_wait(&handle);
 #endif
     }
@@ -264,7 +264,7 @@ class Semaphore
         }
 #ifdef _WIN32
         ReleaseSemaphore(handle, 1, nullptr);
-#elif defined(__linux__)
+#elif defined(HAVE_UNISTD_H)
         sem_post(&handle);
 #endif
     }
@@ -276,7 +276,7 @@ class Semaphore
         }
 #ifdef _WIN32
         ReleaseSemaphore(handle, value, nullptr);
-#elif defined(__linux__)
+#elif defined(HAVE_UNISTD_H)
         for (int i = 0; i < value; i++)
         {
             sem_post(&handle);

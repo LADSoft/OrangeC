@@ -33,6 +33,11 @@
 #include <cstdlib>
 #include <cstring>
 
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#    include <strings.h>
+#    define strnicmp strncasecmp
+#endif
 
 
 #ifdef __ORANGEC__

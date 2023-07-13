@@ -39,6 +39,8 @@
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#else
+#    include <io.h>
 #endif
 namespace occx86
 {
@@ -276,7 +278,7 @@ int RunExternalFiles()
                 else if (Optimizer::cparams.prm_targettype == DOS32A)
                     c0 = "c0watd.o";
                 if (!Optimizer::cparams.compile_under_dos)  // this because I don't want to vet sqlite3 under DOS at this time.
-                    strcat(args, " /v");
+                    strcat(args, " /g");
             }
             fprintf(fil, "  %s", c0);
             while (objlist)
@@ -331,7 +333,7 @@ int RunExternalFiles()
                 !Optimizer::prm_OutputImportLibraryFile.empty() ? ("--out-implib \"" + Optimizer::prm_OutputImportLibraryFile + "\"").c_str() : "",
                 tempName.c_str());
         }
-        _unlink(tempName.c_str());
+        unlink(tempName.c_str());
         if (Optimizer::cparams.verbosity > 1)
             printf("Return code: %d\n", rv);
 

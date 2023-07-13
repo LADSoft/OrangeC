@@ -103,7 +103,7 @@ static char help_text[] =
     "  x is executable type               y is library type\n"
     "    c - console                         empty = static lib   l = lscrtl.dll\n"
     "    d - dll                             c = crtdll.dll\n"
-    "    w - windowing                       m = msvcrtdll.dll\n"
+    "    g - windowing                       m = msvcrtdll.dll\n"
     "\n"
     "\nOptimization control:\n" OPTIMIZATION_DESCRIPTION "\nFlags:\n" OPTMODULES_DESCRIPTION
     "  -fsyntax-only                  compile only, don't produce an output file\n"
@@ -118,7 +118,7 @@ static char help_text[] =
     "       c++11 2011 version of C++\n"
     "       c++14 2014 version of C++\n"
     " -nostdinc, nostdinc++           disable system include file path\n"
-    " --output-def-file filename      output a .def file instead of a .lib file for DLLs\n"
+    " --output-def filename           output a .def file instead of a .lib file for DLLs\n"
     " --out-implib filename           specify the name of the import library for DLLs\n"
     " --export-all-symbols            reserved\n"
     " -link                           reserved\n"

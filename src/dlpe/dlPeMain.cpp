@@ -44,7 +44,7 @@ CmdSwitchParser dlPeMain::SwitchParser;
 CmdSwitchString dlPeMain::stubSwitch(SwitchParser, 's');
 CmdSwitchString dlPeMain::modeSwitch(SwitchParser, 'm');
 CmdSwitchString dlPeMain::outputFileSwitch(SwitchParser, 'o');
-CmdSwitchString dlPeMain::DebugFile(SwitchParser, 'v');
+CmdSwitchString dlPeMain::DebugFile(SwitchParser, 'g');
 CmdSwitchBool dlPeMain::FlatExports(SwitchParser, 'f');
 CmdSwitchBool dlPeMain::Verbose(SwitchParser, 'y');
 CmdSwitchCombineString dlPeMain::OutputDefFile(SwitchParser, 0, 0, {"output-def"});
@@ -581,7 +581,11 @@ int dlPeMain::Run(int argc, char** argv)
                 std::string sverbose = Verbose.GetExists() ? "" : "/!";
                 std::string usesC = exportObject && static_cast<PEExportObject*>(exportObject.get())->ImportsNeedUnderscore() ? "/C" : "";
                 std::string implibName;
-                if (OutputImportLibrary.GetValue().empty())
+                if (!OutputDefFile.GetValue().empty())
+                {
+                    implibName = Utils::QualifiedFile(OutputDefFile.GetValue().c_str(), ".def");
+                }
+                else if (OutputImportLibrary.GetValue().empty())
                 {
                     implibName = Utils::QualifiedFile(outputName.c_str(), ".l");
                 }

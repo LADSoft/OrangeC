@@ -300,7 +300,7 @@ void SetParams(SYMBOL* cons)
 {
     // c style only
     int base = Optimizer::chosenAssembler->arch->retblocksize;
-    if (isstructured(basetype(cons->tp)->btp) || basetype(basetype(cons->tp)->btp)->type == bt_memberptr)
+    if ((isstructured(basetype(cons->tp)->btp) && !basetype(basetype(cons->tp)->btp)->sp->sb->structuredAliasType) || basetype(basetype(cons->tp)->btp)->type == bt_memberptr)
     {
         // handle structured return values
         base += getSize(bt_pointer);
@@ -1758,7 +1758,7 @@ static void genConstructorCall(std::list<BLOCKDATA*>& b, SYMBOL* cls, std::list<
         if (member->sb->init->front()->exp)
         {
             exp = convertInitToExpression(member->tp, member, nullptr, nullptr, member->sb->init, thisptr, false);
-            if (mi->front() && mi->front()->valueInit)
+            if (mi && mi->size() && mi->front()->valueInit)
             {
                 auto ths = exprNode(en_add, thisptr, intNode(en_c_i, member->sb->offset));
                 auto clr = exprNode(en_blockclear, ths, 0);

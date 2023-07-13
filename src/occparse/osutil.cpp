@@ -57,9 +57,17 @@ extern bool doBackendInit;
 namespace Parser
 {
 
+
 #include "../version.h"
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
 #    include <io.h>
+#endif
+
+#if defined HAVE_UNISTD_H
+#    define CONSOLE_DEVICE "/dev/tty"
+#    define _strdup strdup
+#else
+#    define CONSOLE_DEVICE "con:"
 #endif
 
 #if defined(WIN32) || defined(MICROSOFT)
@@ -75,6 +83,8 @@ std::string bePostFile;
 int cplusplusversion = 14;
 
 std::deque<DefValue> defines;
+
+#define DEFINES_DELIMITER '\x1b'
 
 CmdSwitchParser SwitchParser;
 CmdSwitchBool prm_c89(SwitchParser, '8');
@@ -97,8 +107,8 @@ CmdSwitchBool displayTiming(SwitchParser, 't');
 CmdSwitchInt prm_stackalign(SwitchParser, 's', 16, 0, 2048);
 CmdSwitchString prm_error(SwitchParser, 'E');
 CmdSwitchString prm_Werror(SwitchParser, 0, 0, {"Werror"});  // doesn't do anything, just to help the libcxx tests...
-CmdSwitchString prm_define(SwitchParser, 'D', ';');
-CmdSwitchString prm_undefine(SwitchParser, 'U', ';');
+CmdSwitchCombineString prm_define(SwitchParser, 'D', DEFINES_DELIMITER);
+CmdSwitchCombineString prm_undefine(SwitchParser, 'U', ';');
 CmdSwitchString prm_codegen(SwitchParser, 'C', ';');
 CmdSwitchString prm_optimize(SwitchParser, 'O', ';');
 CmdSwitchString prm_verbose(SwitchParser, 'y');
@@ -493,6 +503,10 @@ static void ParamTransfer(const char* name)
     {
         Optimizer::cparams.prm_charisunsigned = true;
     }
+    if (prm_prmSyntaxOnly.GetValue())
+    {
+        Optimizer::syntaxOnly = true;
+    }
     if (displayTiming.GetExists())
         Optimizer::cparams.prm_displaytiming = true;
 
@@ -612,7 +626,7 @@ static void ParamTransfer(const char* name)
     {
         Optimizer::toolArgs.push_back(v);
     }
-    checks = Utils::split(prm_define.GetValue());
+    checks = Utils::split(prm_define.GetValue(), DEFINES_DELIMITER);
     for (auto&& v : checks)
     {
         defines.push_back(DefValue{v.c_str(), 0});
@@ -1127,8 +1141,12 @@ int ccinit(int argc, char* argv[])
     if (showVersion)
     {
         // have to handle version specially because of the return code...
-        ToolChain::ShowBanner();
-        printf("\nCompile date: " __DATE__ ", time: " __TIME__ "\n");
+        // exiting with no display becase -v should show info about the compiler if on the command line alone.
+        if (0)
+        {
+            ToolChain::ShowBanner();
+            printf("\nCompile date: " __DATE__ ", time: " __TIME__ "\n");
+        }
         exit(255);
     }
     if (!architecture.empty())
@@ -1180,8 +1198,9 @@ int ccinit(int argc, char* argv[])
     auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, getUsageText(), getHelpText(), []() {
         return prmDumpVersion.GetValue() || prmDumpMachine.GetValue() || prmPrintFileName.GetExists() ||
                prmPrintProgName.GetExists() || MakeStubsOption.GetValue() ||
-               MakeStubsUser.GetValue();
+               MakeStubsUser.GetValue() || (prm_cppfile.GetExists() && prm_output.GetValue() == CONSOLE_DEVICE);
         });
+
     argv[0] = old;
     Optimizer::showBanner = prm_verbose.GetExists(); 
 

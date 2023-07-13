@@ -22,6 +22,8 @@
  * 
  */
 
+#include <stdio.h>
+
 class gccocc
 {
 public:
@@ -29,6 +31,7 @@ public:
 
 protected:
     void PutMultiple(FILE* fil, const char* switchName, std::string lst);
+    void PutWarnings(FILE* fil);
 
 private:
     static const char* usageText;
@@ -38,8 +41,8 @@ private:
     static CmdSwitchBool prm_compileonly;
     static CmdSwitchString prm_directory_options;
     static CmdSwitchBool prm_debug;
-    static CmdSwitchBool prm_march;
-    static CmdSwitchBool prm_mtune;
+    static CmdSwitchString prm_march;
+    static CmdSwitchString prm_mtune;
     static CmdSwitchBool prm_verbose;
     static CmdSwitchString prm_libs;
     static CmdSwitchString prm_output;
@@ -50,7 +53,8 @@ private:
     static CmdSwitchString prm_optimize;
     static CmdSwitchBool prm_assemble;
     static CmdSwitchCombineString prm_undefine;
-    static CmdSwitchString prm_warning_and_flags;
+    static CmdSwitchCombineString prmLdCommand;
+    static CmdSwitchCombineString prm_warning_and_flags;
     static CmdSwitchBool prm_nostdinc;
     static CmdSwitchBool prm_nostdincpp;
     static CmdSwitchBool prmSyntaxOnly;
@@ -65,5 +69,27 @@ private:
     static CmdSwitchBool prmDumpMachine;
     static CmdSwitchCombineString prmPrintFileName;
     static CmdSwitchCombineString prmPrintProgName;
-
+    static CmdSwitchBool prmExceptions;
+    static CmdSwitchString prm_std;
+    static CmdSwitchBool prmInhibitWarnings;
+    static CmdSwitchInt  prmMaxErrors;
+    static CmdSwitchBool prmPedantic;
+    static CmdSwitchBool prmPedantic_errors;
+    static CmdSwitchBool prmm32;
+    static CmdSwitchBool prmm64;
+    static CmdSwitchBool prmwindows;
+    static CmdSwitchBool prmconsole;
+    static CmdSwitchBool prmunicode;
+    static CmdSwitchBool prmPipe;
+    static CmdSwitchBool prmStrip;
+    static CmdSwitchBool prmPthread;
+    static CmdSwitchBool MakeStubsOption;
+    static CmdSwitchBool MakeStubsUser;
+    static CmdSwitchCombineString MakeStubsOutputFile;
+    static CmdSwitchBool MakeStubsMissingHeaders;
+    static CmdSwitchBool MakeStubsPhonyTargets;
+    static CmdSwitchCombineString MakeStubsTargets;
+    static CmdSwitchCombineString MakeStubsQuotedTargets;
+    static CmdSwitchBool MakeStubsContinue;
+    static CmdSwitchBool MakeStubsContinueUser;
 };

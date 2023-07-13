@@ -38,7 +38,6 @@
 #include "LinkPartition.h"
 #include "LinkOverlay.h"
 #include "LinkLibrary.h"
-#include "..\version.h"
 #include <fstream>
 #include <cstdio>
 #include <cstring>
@@ -118,7 +117,7 @@ const ObjString& LinkerMain::GetOutputFile(CmdFiles& files)
     }
     else if (files.size())
     {
-        outputFile = Utils::QualifiedFile(files[0].c_str(), ".rel");
+        outputFile = Utils::QualifiedFile(files[1].c_str(), ".rel");
     }
     else if (!PrintFileName.GetExists())
     {
@@ -366,7 +365,7 @@ int LinkerMain::Run(int argc, char** argv)
             int rv = TargetConfig.RunApp(path, outputFile, Utils::AbsolutePath(debugFile), Verbosity.GetExists(),
                                          OutputDefFile.GetValue(), OutputImportLibrary.GetValue());
             if (!Verbosity.GetExists())
-                _unlink(outputFile.c_str());
+                unlink(outputFile.c_str());
             return rv;
         }
     }

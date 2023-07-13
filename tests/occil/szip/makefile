@@ -1,4 +1,6 @@
-all: comp.tst
+all: lsmsilcrtl.dll comp.tst
+lsmsilcrtl.dll:
+	-copy $(ORANGEC)\bin\lsmsilcrtl.dll *.*
 
 comp.tst: comp.exe
 	szip szip.ref encode.tst
@@ -7,7 +9,6 @@ comp.tst: comp.exe
 	fc /b decode.tst szip.ref
 
 comp.exe:
-	-copy $(ORANGEC)\bin\lsmsilcrtl.dll *.*
 	occil comp.c /DMY_UNSIGNED_TYPES /oszip.exe /C+f	
 
 clean:

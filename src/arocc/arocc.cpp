@@ -31,6 +31,12 @@
 #include "CmdSwitch.h"
 #include "arocc.h"
 
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#else
+#    include <io.h>
+#endif
+
 CmdSwitchParser arocc::SwitchParser;
 CmdSwitchBool arocc::Replace(arocc::SwitchParser, 'r');
 CmdSwitchBool arocc::Create(arocc::SwitchParser, 'c');

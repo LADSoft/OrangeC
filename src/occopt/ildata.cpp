@@ -103,6 +103,7 @@ int constAlign;
 int architecture;
 
 int registersAssigned;
+bool syntaxOnly;
 
 std::deque<BaseData*> baseData;
 static bool virtualMode;

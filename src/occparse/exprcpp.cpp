@@ -1372,6 +1372,7 @@ LEXLIST* expression_typeid(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION**
                         if (!sym->tp->syms)
                             error(ERR_NEED_TYPEINFO_H);
                         *tp = MakeType(bt_const, sym->tp);
+                        (*tp)->lref = true;
                     }
                 }
             }

@@ -39,7 +39,7 @@ endif
 LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP_deps) $(C_deps) $(ASM_deps) $(TASM_deps)))
 
 
-CC=x86_64-w64-mingw32-gcc
+CC=gcc
 CCFLAGS = -c -O2 -D__MSVCRT__ -D_MINGW -Wno-int-to-pointer-cast
 LINK=ld
 LFLAGS=-L$(_LIBDIR) -Xlinker -Map=output.map

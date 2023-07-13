@@ -104,7 +104,7 @@ void LibFiles::Extract(FILE* stream, const ObjString& Name)
 
                         std::cout << "Warning: Module '" << Name << "' not extracted, could not write output file" << std::endl;
                         fclose(ostr);
-                        _unlink(Name.c_str());
+                        unlink(Name.c_str());
                     }
                     else
                     {

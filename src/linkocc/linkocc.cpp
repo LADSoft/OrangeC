@@ -26,12 +26,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-/* these here are the only 2 function using win32-specific APIs */
-#include <process.h>
 #include "Utils.h"
 #include "ToolChain.h"
 #include "CmdSwitch.h"
 #include "linkocc.h"
+
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#else
+#    include <io.h>
+#endif
 
 CmdSwitchParser linkocc::SwitchParser;
 CmdSwitchBool linkocc::prm_verbose(SwitchParser, 'v');

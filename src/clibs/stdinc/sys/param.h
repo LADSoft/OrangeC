@@ -1,4 +1,3 @@
-#pragma once
 /* Software License Agreement
  * 
  *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
@@ -23,4 +22,21 @@
  * 
  */
 
-void Import(void);
+#ifndef _SYS_PARAM_H
+#define _SYS_PARAM_H
+
+#include <sys/types.h>
+#include <limits.h>
+
+/* These are useful for cross-compiling */
+#define BIG_ENDIAN      4321
+#define LITTLE_ENDIAN   1234
+#define BYTE_ORDER      LITTLE_ENDIAN
+
+#ifndef __linux__
+#define PATH_MAX 260
+#endif
+
+#define MAXPATHLEN PATH_MAX
+
+#endif

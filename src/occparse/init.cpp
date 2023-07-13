@@ -2284,7 +2284,7 @@ static void allocate_desc(TYPE* tp, int offset, AGGREGATE_DESCRIPTOR** descin, A
         if (basetype(tp)->sp->sb->baseClasses)
         {
             auto bc = basetype(tp)->sp->sb->baseClasses;
-            if (bc)
+            if (bc && bc->size())
             {
                 desc->currentBase =bc->begin();
                 desc->currentBaseEnd = bc->end();

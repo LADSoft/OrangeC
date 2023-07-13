@@ -647,7 +647,7 @@ static EXPRESSION* createLambda(bool noinline)
             cls->sb->dest = init;
         }
     }
-    parentThs = varNode(en_auto, (SYMBOL*)basetype(lambdas.front()->func->tp)->syms->front());  // this ptr
+    parentThs = varNode(en_auto, (SYMBOL*)basetype(lambdas.front()->enclosingFunc->tp)->syms->front());  // this ptr
     for (auto sp : *lambdas.front()->cls->tp->syms)
     {
         EXPRESSION *en = NULL, *en1 = NULL;

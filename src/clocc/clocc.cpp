@@ -27,13 +27,17 @@
 #include <string.h>
 #include <string>
 #include <algorithm>
-/* these here are the only 2 function using win32-specific APIs */
-#include <process.h>
 #include "Utils.h"
 #include "ToolChain.h"
 #include "CmdSwitch.h"
 #include "clocc.h"
 #include "../exefmt/PEHeader.h" 
+
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#else
+#    include <io.h>
+#endif
 
 #define DLL_STUB_SUBSYS 10
 
@@ -376,6 +380,7 @@ int clocc::Run(int argc, char** argv)
                     optimizeType = '2';
                     err = o.size() != 1;
                     break;
+
                 case 'y':
                     if (o.size() == 2)
                     {
@@ -612,7 +617,7 @@ int clocc::Run(int argc, char** argv)
                     {
                         args += " -w" + w;
                     }
-                    else if (w[0] == 'o' || isdigit(w[0]))
+                    else if (w[0] == 'o' || w[0] == 'l' || w[0] == 'L' || isdigit(w[0]))
                     {
                         // ignored;
                     }

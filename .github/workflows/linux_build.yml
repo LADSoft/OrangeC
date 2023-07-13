@@ -1,0 +1,22 @@
+name: linux C/C++ CI 
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes : 15
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Build
+      run: |
+         make -C "$GITHUB_WORKSPACE/src" ORANGEC="$GITHUB_WORKSPACE" COMPILER=gcc-linux -j 8

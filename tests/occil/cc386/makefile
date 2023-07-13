@@ -4,9 +4,10 @@ else
 NULLDEV := NUL
 endif
 
-all: test
+all: lsmsilcrtl.dll test
+lsmsilcrtl.dll:
+	-copy $(ORANGEC)\bin\lsmsilcrtl.dll *.* > $(NULLDEV)
 %.ilo: %.c
-	-copy $(ORANGEC)\lsmsilcrtl.dll *.* > $(NULLDEV)
 	occil /c /9 /E- /Di386 /Lkernel32 $^
 
 list = AN386.ilo \

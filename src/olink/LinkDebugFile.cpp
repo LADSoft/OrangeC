@@ -43,6 +43,8 @@
 #include <algorithm>
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#else
+#    include <io.h>
 #endif
 #define STRINGVERSION "120"
 #define DBVersion atoi(STRINGVERSION)

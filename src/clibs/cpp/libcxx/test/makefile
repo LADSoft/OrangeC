@@ -1,4 +1,8 @@
-B := py \orangec\lit\lit.py --echo-all-commands
+ifneq "$(GITHUB_WORKSPACE)" ""
+B := py $(ORANGEC)\lit\lit.py --echo-all-commands --config-prefix=github
+else
+B := py $(ORANGEC)\lit\lit.py --echo-all-commands
+endif
 
 all: copyfiles
 	$(B) std
@@ -58,4 +62,4 @@ utilities: copyfiles
 	$(B) std/utilities
 
 copyfiles:
-	copy $(ORANGEC)\src\clibs\cpp\stdinc_libcxx\exception \orangec\src\clibs\cpp\libcxx\include
+	copy $(ORANGEC)\src\clibs\cpp\stdinc_libcxx\exception $(ORANGEC)\src\clibs\cpp\libcxx\include

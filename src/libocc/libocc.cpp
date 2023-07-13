@@ -31,6 +31,12 @@
 #include "CmdSwitch.h"
 #include "libocc.h"
 
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#else
+#    include <io.h>
+#endif
+
 CmdSwitchParser libocc::SwitchParser;
 CmdSwitchBool libocc::Verbose(SwitchParser, 0, false, {"verbose"});
 CmdSwitchCombineString libocc::Extract(SwitchParser, 0, ';', {"extract"});
@@ -40,13 +46,14 @@ CmdSwitchString libocc::List(SwitchParser, 0, ';', {"list"});
 CmdSwitchString libocc::Machine(SwitchParser, 0, ';', {"machine"});
 CmdSwitchString libocc::DllName(SwitchParser, 0, ';', {"name"});
 CmdSwitchString libocc::NoDefaultLib(SwitchParser, 0, ';', {"nodefaultlib"});
+
 CmdSwitchString libocc::OutFile(SwitchParser, 0, ';', {"out"});
 CmdSwitchString libocc::Subsytem(SwitchParser, 0, ';', {"subsystem"});
 CmdSwitchString libocc::WarningsAsErrors(SwitchParser, 0, ';', {"wx"});
 ;
 
 
-const char* libocc::helpText =
+	const char* libocc::helpText =
     "[options] library files...\n"
     "\n"
     "/EXTRACT:name     add file to extract\n"
@@ -54,7 +61,7 @@ const char* libocc::helpText =
     "/LIST:xxx         reserved for compatibility\n"
     "/MACHINE:xxx      reserved for compatibility\n"
     "/NAME:xxx         create import library from dll\n" 
-    "/NODEFALTLIB:xxx  reserved for compatibility\n"
+    "/NODEFAULTLIB:xxx  reserved for compatibility\n"
     "/OUT:xxx          specify output file name\n"
     "/REMOVE:name      add file to remove\n"
     "/SUBSYSTEM:xxx    reserved for compatibility\n"

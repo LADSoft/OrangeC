@@ -30,6 +30,11 @@
 #include <algorithm>
 #include <fstream>
 #include <deque>
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#else
+#    include <io.h>
+#endif
 
 #include <cstdlib>
 struct TempFileDeleter

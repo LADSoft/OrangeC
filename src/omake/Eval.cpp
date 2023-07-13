@@ -275,7 +275,7 @@ std::string Eval::ParseMacroLine(const std::string& in)
         }
     }
     if (n != std::string::npos)
-        rv += in.substr(n, in.size());
+        rv += in.substr(n);
     return rv;
 }
 Variable* Eval::LookupVariable(const std::string& name)
@@ -1235,7 +1235,7 @@ std::string Eval::wildcardinternal(std::string& names)
     while (!names.empty())
     {
         std::string current = ExtractFirst(names, " ");
-        files.Add(current);
+        files.Add(current, false, true);
     }
     std::string rv;
     for (auto&& name : files)
@@ -1461,6 +1461,8 @@ std::string Eval::call(const std::string& arglist)
                 l.PushCallArg(args);
             }
             rv = l.Evaluate();
+            Eval l2(rv, false);
+            rv = l2.Evaluate();
             callArgs = oldArgs;
         }
     }

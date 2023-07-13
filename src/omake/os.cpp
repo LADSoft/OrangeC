@@ -79,13 +79,17 @@ int OS::jobsLeft;
 std::string OS::jobName = "\t";
 std::string OS::jobFile;
 std::shared_ptr<OMAKE::JobServer> OS::localJobServer = nullptr;
+#ifdef _WIN32
 static std::set<HANDLE> processIds;
+#endif
 std::recursive_mutex OS::consoleMutex;
 void OS::TerminateAll()
 {
     std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
+#ifdef _WIN32
     for (auto a : processIds)
         TerminateProcess(a, 0);
+#endif
 }
 std::string OS::QuoteCommand(std::string exe, std::string command)
 {
@@ -196,7 +200,7 @@ std::string OS::GetFullPath(const std::string& fullname)
 {
     std::lock_guard<decltype(DirectoryMutex)> lg(DirectoryMutex);
     std::string recievingbuffer;
-
+#ifdef _WIN32
     DWORD return_val = GetFullPathNameA(fullname.c_str(), 0, nullptr, nullptr);
     if (!return_val)
     {
@@ -208,6 +212,7 @@ std::string OS::GetFullPath(const std::string& fullname)
     {
         // Do error handling somewhere
     }
+#endif
     return recievingbuffer;
 }
 std::string OS::JobName() { return jobName; }

@@ -7,6 +7,8 @@ endif
 CURFILES = $(wildcard *.c)
 
 all: cc386x sqlite3x szipx local 
+lsmsilcrtl.dll:
+	-copy $(ORANGEC)\bin\lsmsilcrtl.dll *.* > $(NULLDEV)
 
 cc386x:
 	$(MAKE) -Ccc386
@@ -20,7 +22,7 @@ szipx:
 msil:
 	$(MAKE) -Cmsil
 
-local: $(CURFILES:.c=.exe)
+local: lsmsilcrtl.dll $(CURFILES:.c=.exe)
 
 vvtest.exe: vvtest.c dll.dll
 	occil vvtest /Ldll.dll
@@ -62,7 +64,6 @@ determinante.exe: determinante.c
 	fc /b determinante.txt determinante.cmpx
 
 %.exe: %.c
-	-copy $(ORANGEC)\lsmsilcrtl.dll *.* > $(NULLDEV)
 	occil /9 $< /LKernel32 /LUser32 /LGDI32
 	$* > $*.txt
 	fc /b $*.txt $*.cmpx

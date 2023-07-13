@@ -47,6 +47,7 @@
 #include "FNV_hash.h"
 #include <cstdio>
 #include "symtab.h"
+#include "osutil.h"
 
 namespace Parser
 {
@@ -369,6 +370,8 @@ bool IsNothrowError(int err)
 }
 bool printerrinternal(int err, const char* file, int line, va_list args)
 {
+    if (prm_cppfile.GetValue())
+        return false;
     if (inNothrowHandler && IsNothrowError(err))
     {
         noExcept = false;
@@ -531,12 +534,19 @@ void errorat(int err, const char* name, const char* file, int line) { printerr(e
 void errorcurrent(int err) { printerr(err, nullptr, 0); }
 void getns(char* buf, SYMBOL* nssym)
 {
-    if (nssym->sb->parentNameSpace)
+    if (!nssym)
     {
-        getns(buf, nssym->sb->parentNameSpace);
-        strcat(buf, "::");
+        strcpy(buf, "<globals>");
     }
-    strcat(buf, nssym->name);
+    else
+    {
+        if (nssym->sb->parentNameSpace)
+        {
+            getns(buf, nssym->sb->parentNameSpace);
+            strcat(buf, "::");
+        }
+        strcat(buf, nssym->name);
+    }
 }
 void getcls(char* buf, SYMBOL* clssym)
 {

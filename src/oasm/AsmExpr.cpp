@@ -391,8 +391,8 @@ std::shared_ptr<AsmExprNode> AsmExpr::Eval(std::shared_ptr<AsmExprNode> n, int p
             }
             else if (xleft->GetType() == AsmExprNode::FVAL)
             {
-                xleft->fval.Negate();
-                rv = xleft;
+                rv = std::make_shared<AsmExprNode>(xleft->fval);
+                rv->fval.Negate();
             }
             else
             {

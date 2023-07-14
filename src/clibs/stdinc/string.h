@@ -75,6 +75,8 @@ extern "C"
     errno_t _RTL_FUNC _IMPORT strerror_s(char* ZSTR buf, size_t size, errno_t __errnum);
     errno_t _RTL_FUNC _IMPORT _strerror_s(char* ZSTR buf, size_t size, const char* ZSTR msg);
     size_t _RTL_INTRINS _IMPORT strlen(const char* ZSTR __s);
+    size_t _RTL_INTRINS _IMPORT strnlen(const char* ZSTR __s, size_t numberOfElements);
+
     char* _RTL_INTRINS _IMPORT strncat(char* ZSTR restrict __dest, const char* ZSTR restrict __src, size_t __maxlen);
     int _RTL_INTRINS _IMPORT strncmp(const char* ZSTR __s1, const char* ZSTR __s2, size_t __maxlen);
     char* _RTL_INTRINS _IMPORT strncpy(char* ZSTR restrict __dest, const char* ZSTR restrict __src, size_t __maxlen);

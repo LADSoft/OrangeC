@@ -373,7 +373,7 @@ std::string Maker::GetFileTime(const std::string& goal, const std::string& prefe
     }
     return rv;
 }
-bool Maker::ExistsOrMentioned(const std::string& stem, std::shared_ptr<RuleList>& ruleList, const std::string& preferredPath, const std::string& dir,
+bool Maker::ExistsOrMentioned(const std::string& stem, std::shared_ptr<RuleList>& ruleList, const std::string& preferredPath,
                               bool implicit, bool outerMost)
 {
     bool found = true;
@@ -382,7 +382,7 @@ bool Maker::ExistsOrMentioned(const std::string& stem, std::shared_ptr<RuleList>
         std::string working = (*itr)->GetPrerequisites();
         while (!working.empty() && found)
         {
-            std::string thisOne = dir + Eval::ExtractFirst(working, " ");
+            std::string thisOne = Eval::ExtractFirst(working, " ");
             thisOne = Eval::ReplaceStem(stem, thisOne);
             Time theTime;
             if (RuleContainer::Instance()->find(thisOne) != RuleContainer::Instance()->end())
@@ -413,15 +413,15 @@ bool Maker::ExistsOrMentioned(const std::string& stem, std::shared_ptr<RuleList>
     if (found)
     {
         // ok this is a match...
-        EnterSpecificRule(ruleList, stem, preferredPath, dir, outerMost);
+        EnterSpecificRule(ruleList, stem, preferredPath, outerMost);
     }
     return found;
 }
-void Maker::EnterSpecificRule(std::shared_ptr<RuleList>& l, const std::string& stem, const std::string& preferredPath, const std::string& dir,
+void Maker::EnterSpecificRule(std::shared_ptr<RuleList>& l, const std::string& stem, const std::string& preferredPath,
                               bool outerMost)
 {
     Time theTime;
-    std::string target = dir + Eval::ReplaceStem(stem, l->GetTarget());
+    std::string target = Eval::ReplaceStem(stem, l->GetTarget());
     std::shared_ptr<RuleList> ruleList = RuleContainer::Instance()->Lookup(target);
     if (!ruleList)
     {
@@ -439,7 +439,7 @@ void Maker::EnterSpecificRule(std::shared_ptr<RuleList>& l, const std::string& s
         std::string working = rule->GetPrerequisites();
         while (!working.empty())
         {
-            std::string thisOne = dir + Eval::ExtractFirst(working, " ");
+            std::string thisOne = Eval::ExtractFirst(working, " ");
             thisOne = Eval::ReplaceStem(stem, thisOne);
             thisOne = GetFileTime(thisOne, preferredPath, theTime) + thisOne;
             if (!prereq.empty())
@@ -449,7 +449,7 @@ void Maker::EnterSpecificRule(std::shared_ptr<RuleList>& l, const std::string& s
         working = rule->GetOrderPrerequisites();
         while (!working.empty())
         {
-            std::string thisOne = dir + Eval::ExtractFirst(working, " ");
+            std::string thisOne = Eval::ExtractFirst(working, " ");
             thisOne = Eval::ReplaceStem(stem, thisOne);
             thisOne = GetFileTime(thisOne, preferredPath, theTime) + thisOne;
             if (!orderPrereq.empty())
@@ -562,8 +562,8 @@ bool Maker::SearchImplicitRules(const std::string& goal, const std::string& pref
     for (auto rule : matchedRules)
     {
 
-        std::string stem = Eval::FindStem(name, rule->GetTarget());
-        if (ExistsOrMentioned(stem, rule, preferredPath, dir, false, outerMost))
+        std::string stem = Eval::FindStem(goal, rule->GetTarget());
+        if (ExistsOrMentioned(stem, rule, preferredPath, false, outerMost))
             return true;
     }
     // no matches so far, dig into indirections...
@@ -575,8 +575,8 @@ bool Maker::SearchImplicitRules(const std::string& goal, const std::string& pref
             if (rule->GetTarget() != "%" || (n = name.find_last_of(".")) == std::string::npos || n == name.size() - 1 ||
                 name[n + 1] == '/' || name[n + 1] == '\\')
             {
-                std::string stem = Eval::FindStem(name, rule->GetTarget());
-                if (ExistsOrMentioned(stem, rule, preferredPath, dir, true, outerMost))
+                std::string stem = Eval::FindStem(goal, rule->GetTarget());
+                if (ExistsOrMentioned(stem, rule, preferredPath, true, outerMost))
                     return true;
             }
         }

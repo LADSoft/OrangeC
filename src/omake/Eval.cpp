@@ -630,14 +630,26 @@ size_t Eval::FindPercent(const std::string& name, size_t pos)
 }
 std::string Eval::FindStem(const std::string& name, const std::string& pattern)
 {
-    int n = FindPercent(pattern);
-    if (n != std::string::npos && !name.empty())
+    int m1 = pattern.find_first_not_of(' ');
+    int m2 = pattern.find_last_not_of(' ');
+    auto ipattern = pattern.substr(m1, m2 + 1 - m1);
+    m1 = name.find_first_not_of(' ');
+    m2 = name.find_last_not_of(' ');
+    auto iname = name.substr(m1, m2 + 1 - m1);
+
+    int n = FindPercent(ipattern);
+    if (n != std::string::npos && !iname.empty())
     {
-        int m1 = pattern.find_first_not_of(' ');
-        int m2 = pattern.find_last_not_of(' ');
-        int n1 = name.find_first_not_of(' ');
-        int n2 = name.find_last_not_of(' ');
-        return name.substr(n1 - m1 + n, n2 - m2 + 1 - (n1 - m1));
+        auto extension = ipattern.substr(n + 1, ipattern.size() - n - 1);
+        if (extension.size() < iname.size() && extension == iname.substr(iname.size() - extension.size(), extension.size()))
+        {
+            if (iname.size() >= ipattern.size() && ipattern.substr(0, n) == iname.substr(0, n))
+            {
+                int m = iname.size() - extension.size();
+                if (n < m)
+                    return iname.substr(n, m - n);
+            }
+        }
     }
     return "";
 }

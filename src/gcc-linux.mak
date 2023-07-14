@@ -60,6 +60,9 @@ ifneq "$(INCLUDES)" ""
 CINCLUDES:=$(addprefix -I,$(INCLUDES))
 endif
 
+CC=gcc
+CXX=g++
+
 DEFINES:=$(addprefix -D,$(DEFINES))
 DEFINES:=$(subst @, ,$(DEFINES))
 

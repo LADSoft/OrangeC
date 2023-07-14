@@ -60,6 +60,9 @@
 #include "constexpr.h"
 #include "symtab.h"
 #include "ListFactory.h"
+#ifdef __CYGWIN
+#include <alloca.h>
+#endif
 namespace Parser
 {
 

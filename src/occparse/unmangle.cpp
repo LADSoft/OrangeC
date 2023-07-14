@@ -26,7 +26,7 @@
 #include "Utils.h"
 #include "declcpp.h"
 #include "OptUtils.h"
-#ifdef __CYGWIN
+#ifdef __CYGWIN__
 #include <alloca.h>
 #endif
 namespace Parser

@@ -28,6 +28,9 @@
 #include <cstdio>
 #include <cstring>
 #include "Utils.h"
+#ifdef __CYGWIN
+#include <alloca.h>
+#endif
 #ifndef _CRT_SECURE_NO_WARNINGS
 #    define _CRT_SECURE_NO_WARNINGS
 #endif

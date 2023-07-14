@@ -53,7 +53,7 @@
 #include "ListFactory.h"
 #include "constopt.h"
 
-#ifdef __CYGWIN
+#ifdef __CYGWIN__
 #include <alloca.h>
 #endif
 

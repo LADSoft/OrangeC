@@ -2,7 +2,7 @@
 #ifdef _WIN32
 #    define NOMINMAX 1
 #    include <windows.h>
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__CYGWIN__)
 #    include <semaphore.h>
 #    include <errno.h>
 #    include <fcntl.h>
@@ -22,7 +22,7 @@ class Semaphore
 #    ifdef UNICODE
 #        define USE_WIDE_STRING
 #    endif
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__CYGWIN__)
     using semaphore_type = sem_t;
 #endif
 #ifdef USE_WIDE_STRING

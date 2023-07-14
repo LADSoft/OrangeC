@@ -53,6 +53,10 @@
 #include "ListFactory.h"
 #include "constopt.h"
 
+#ifdef __CYGWIN
+#include <alloca.h>
+#endif
+
 namespace Parser
 {
 int inGetUserConversion;

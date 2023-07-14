@@ -26,6 +26,9 @@
 #include "Utils.h"
 #include "declcpp.h"
 #include "OptUtils.h"
+#ifdef __CYGWIN
+#include <alloca.h>
+#endif
 namespace Parser
 {
 const char* tn_void = "void";

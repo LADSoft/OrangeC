@@ -8644,7 +8644,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                     tpc = tph;
                 if (tpc->lref && tph->lref)
                 {
-                    if (!comparetypes(tpc, tph, 1) || !sameTemplate(tpc, tph))
+                    if (!comparetypes(tpc, tph, 1) && !sameTemplate(tpc, tph))
                     {
                         tpc->lref = 0;
                         tpc->rref = 0;

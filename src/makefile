@@ -21,12 +21,6 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
-ifeq "$(COMPILER)" ""
-ifdef MSYSTEM
-export COMPILER:=gcc-linux
-endif
-endif
-
 ifneq "$(COMPILER)" "gcc-linux"
 SHELL=cmd.exe
 endif

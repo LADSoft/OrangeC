@@ -35,37 +35,37 @@
 class CommandContainer
 {
   public:
-    static std::shared_ptr<CommandContainer> Instance();
+    static CommandContainer* Instance();
     ~CommandContainer() {}
 
-    CommandContainer& operator+=(Command* p);
+    CommandContainer& operator+=(std::shared_ptr<Command>& p);
     void Clear();
 
   protected:
     CommandContainer() {}
 
   private:
-    std::list<std::unique_ptr<Command>> commands;
+    std::list<std::shared_ptr<Command>> commands;
 
-    static std::shared_ptr<CommandContainer> instance;
+    static CommandContainer* instance;
 };
 class Variable;
 class RuleList;
 class Rule
 {
   public:
-    Rule(const std::string& targets, const std::string& Prerequisites, const std::string& OrderPrerequisites, Command* Commands,
+    Rule(const std::string& targets, const std::string& Prerequisites, const std::string& OrderPrerequisites, std::shared_ptr<Command> Commands,
          const std::string& file, int lineno, bool dontCare = false, bool ignore = false, bool silent = false, bool make = false,
          bool precious = false, bool secondExpansion = false);
 
-    Command* GetCommands() { return commands; }
+    std::shared_ptr<Command> GetCommands() { return commands; }
     std::string& GetPrerequisites() { return prerequisites; }
     std::string& GetOrderPrerequisites() { return orderPrerequisites; }
     void SetBuiltin(bool flag) { builtin = flag; }
     bool GetBuiltin() const { return builtin; }
     bool IsUpToDate() const { return uptodate; }
     void SetUpToDate(bool flag) { uptodate = flag; }
-    void SecondaryEval(RuleList* ruleList);
+    void SecondaryEval(std::shared_ptr<RuleList> ruleList, std::shared_ptr<Rule>);
     bool HasCommands() { return commands && commands->size() != 0; }
     bool IsDontCare() const { return dontCare; }
     bool IsIgnore() const { return ignore; }
@@ -78,7 +78,7 @@ class Rule
     std::string target;
     std::string prerequisites;
     std::string orderPrerequisites;
-    Command* commands;
+    std::shared_ptr<Command> commands;
     const std::string file;
     int lineno;
     bool uptodate;
@@ -99,8 +99,8 @@ class RuleList
     std::string& GetTarget() { return target; }
     void SetTarget(const std::string& targ) { target = targ; }
     Variable* Lookup(const std::string& name);
-    bool Add(Rule*, bool Double = false);
-    void InsertFirst(Rule*);
+    bool Add(std::shared_ptr<Rule>&, bool Double = false);
+    void InsertFirst(std::shared_ptr<Rule>&);
     void operator+=(Variable*);
     void SetNewerPrerequisites(const std::string& val) { newerPrerequisites = val; }
     std::string GetNewerPrerequisites() { return newerPrerequisites; }
@@ -115,26 +115,26 @@ class RuleList
     bool IsImplicit() const { return target.find_first_of('%') != std::string::npos; }
     bool HasCommands();
     void SetRelated(const std::string& related) { relatedPatternRules = related; }
-    typedef std::list<std::unique_ptr<Rule>>::iterator iterator;
+    typedef std::list<std::shared_ptr<Rule>>::iterator iterator;
     iterator begin() { return rules.begin(); }
     iterator end() { return rules.end(); }
     typedef std::map<std::string, std::shared_ptr<Variable>>::iterator VariableIterator;
     const VariableIterator VariableBegin() { return specificVariables.begin(); }
     const VariableIterator VariableEnd() { return specificVariables.end(); }
-    void SecondaryEval();
+    void SecondaryEval(std::shared_ptr<RuleList>& ruleList);
     bool IsUpToDate();
     bool IsBuilt() { return isBuilt; }
     void SetBuilt();
     void Wait() { onHold.Wait(); }
     void Release() { onHold.Post(60000); }
-    void CopyExports(RuleList* source);
+    void CopyExports(std::shared_ptr<RuleList>& source);
 
   private:
     Semaphore onHold;
     std::string targetPatternStem;
     std::string target;
     std::string relatedPatternRules;
-    std::list<std::unique_ptr<Rule>> rules;
+    std::list<std::shared_ptr<Rule>> rules;
     std::map<std::string, std::shared_ptr<Variable>> specificVariables;
     std::string newerPrerequisites;
     bool doubleColon;
@@ -147,15 +147,15 @@ class RuleContainer
   public:
     static std::shared_ptr<RuleContainer> Instance();
     ~RuleContainer() {}
-    RuleList* Lookup(const std::string& name);
-    void operator+=(RuleList*);
-    void operator-=(RuleList*);
-    typedef std::map<std::string, std::unique_ptr<RuleList>>::iterator iterator;
+    std::shared_ptr<RuleList> Lookup(const std::string& name);
+    void operator+=(std::shared_ptr<RuleList>&);
+    void operator-=(std::shared_ptr<RuleList>&);
+    typedef std::map<std::string, std::shared_ptr<RuleList>>::iterator iterator;
     const iterator begin() { return namedRules.begin(); }
     const iterator end() { return namedRules.end(); }
 
     iterator find(const std::string& str) { return namedRules.find(str); }
-    typedef std::list<std::unique_ptr<RuleList>>::iterator ImplicitIterator;
+    typedef std::list<std::shared_ptr<RuleList>>::iterator ImplicitIterator;
     const ImplicitIterator ImplicitBegin() { return implicitRules.begin(); }
     const ImplicitIterator ImplicitEnd() { return implicitRules.end(); }
     void Clear();
@@ -167,8 +167,8 @@ class RuleContainer
     RuleContainer() {}
 
   private:
-    std::map<std::string, std::unique_ptr<RuleList>> namedRules;
-    std::list<std::unique_ptr<RuleList>> implicitRules;
+    std::map<std::string, std::shared_ptr<RuleList>> namedRules;
+    std::list<std::shared_ptr<RuleList>> implicitRules;
     static std::shared_ptr<RuleContainer> instance;
 };
 #endif

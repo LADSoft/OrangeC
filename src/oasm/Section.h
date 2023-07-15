@@ -30,7 +30,7 @@
 #include <unordered_map>
 #include <map>
 #include <functional>
-
+#include "ObjTypes.h"
 #include "Instruction.h"
 class Label;
 class ObjExpression;
@@ -49,17 +49,17 @@ class Section
     }
     virtual ~Section();
     ObjSection* CreateObject(ObjFactory& factory);
-    bool MakeData(ObjFactory& factory, std::function<Label*(std::string&)> Lookup,
+    bool MakeData(ObjFactory& factory, std::function<std::shared_ptr<Label>(std::string&)> Lookup,
                   std::function<ObjSection*(std::string&)> SectLookup,
-                  std::function<void(ObjFactory&, Section*, Instruction*)> HandleAlt);
+                  std::function<void(ObjFactory&, Section*, std::shared_ptr<Instruction>&)> HandleAlt);
     void Parse(AsmFile* fil);
-    void Resolve();
+    void Resolve(std::shared_ptr<Section>& name);
     void SetAlign(int aln) { align = aln; }
     int GetAlign() { return align; }
-    void InsertInstruction(Instruction* ins);
-    Instruction* InsertLabel(Label* label);
+    void InsertInstruction(std::shared_ptr<Instruction>& ins);
+    std::shared_ptr<Instruction> InsertLabel(std::shared_ptr<Label>& label);
     void pop_back();
-    std::vector<std::unique_ptr<Instruction>>& GetInstructions() { return instructions; }
+    std::vector<std::shared_ptr<Instruction>>& GetInstructions() { return instructions; }
     void ClearInstructions()
     {
         instructions.clear();
@@ -82,17 +82,18 @@ class Section
         subSection = sid;
         if (sid != 0)
         {
-            if (subsections[sid] == nullptr)
-                subsections[sid] = new Section(name, sect);
+            if (subSections[sid] == nullptr)
+                subSections[sid] = std::make_shared<Section>(name, sect);
         }
     }
-    void MergeSubsections();
+    void MergeSections();
+    static std::unordered_map<ObjString, std::shared_ptr<Section>> sections;
 
   protected:
-    ObjExpression* ConvertExpression(AsmExprNode* node, std::function<Label*(std::string&)> Lookup,
+    ObjExpression* ConvertExpression(std::shared_ptr<AsmExprNode>& node, std::function<std::shared_ptr<Label>(std::string&)> Lookup,
                                      std::function<ObjSection*(std::string&)> SectLookup, ObjFactory& factory);
     bool SwapSectionIntoPlace(ObjExpression* t);
-    void Optimize();
+    void Optimize(std::shared_ptr<Section>&);
 
   private:
     static bool dontShowError;
@@ -101,11 +102,11 @@ class Section
     int sect;
     int align;
     bool isVirtual;
-    std::vector<std::unique_ptr<Instruction>> instructions;
+    std::vector<std::shared_ptr<Instruction>> instructions;
     int instructionPos;
     ObjSection* objectSection;
     int pc;
     std::unordered_map<std::string, int> labels;
-    std::map<int, Section*> subsections;
+    std::map<int, std::shared_ptr<Section>> subSections;
 };
 #endif

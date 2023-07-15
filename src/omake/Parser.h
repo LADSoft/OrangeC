@@ -49,10 +49,10 @@ class Parser
     size_t UnfetteredChar(const std::string& line, char ch) const;
     std::string FirstWord(const std::string& line, size_t& n);
     std::string RemoveComment(const std::string& line);
-    bool ParseAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, RuleList* ruleList = nullptr);
-    bool ParseRecursiveAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, RuleList* ruleList = nullptr);
-    bool ParsePlusAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, RuleList* ruleList = nullptr);
-    bool ParseQuestionAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, RuleList* ruleList = nullptr);
+    bool ParseAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, std::shared_ptr<RuleList> ruleList = nullptr);
+    bool ParseRecursiveAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, std::shared_ptr<RuleList> ruleList = nullptr);
+    bool ParsePlusAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, std::shared_ptr<RuleList> ruleList = nullptr);
+    bool ParseQuestionAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, std::shared_ptr<RuleList> ruleList = nullptr);
     std::string ReplaceAllStems(const std::string& stem, const std::string value);
     bool ParseRule(const std::string& left, const std::string& line);
     bool ParseDefine(const std::string& line, bool dooverride);
@@ -71,7 +71,7 @@ class Parser
   private:
     int lineno;
     std::string remaining;
-    Command* lastCommand;
+    std::shared_ptr<Command> lastCommand;
     std::list<bool> skips;
     bool secondaryExpansionEnabled;
     std::string file;

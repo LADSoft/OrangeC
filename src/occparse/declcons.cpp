@@ -300,7 +300,7 @@ void SetParams(SYMBOL* cons)
 {
     // c style only
     int base = Optimizer::chosenAssembler->arch->retblocksize;
-    if (isstructured(basetype(cons->tp)->btp) || basetype(basetype(cons->tp)->btp)->type == bt_memberptr)
+    if ((isstructured(basetype(cons->tp)->btp) && !basetype(basetype(cons->tp)->btp)->sp->sb->structuredAliasType) || basetype(basetype(cons->tp)->btp)->type == bt_memberptr)
     {
         // handle structured return values
         base += getSize(bt_pointer);

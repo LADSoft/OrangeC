@@ -356,7 +356,7 @@ bool Parser::ParseLine(const std::string& line)
     }
     return rv;
 }
-bool Parser::ParseAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, RuleList* ruleList)
+bool Parser::ParseAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, std::shared_ptr<RuleList> ruleList)
 {
     if (left == ".VARIABLES")
         return true;
@@ -389,7 +389,7 @@ bool Parser::ParseAssign(const std::string& left, const std::string& right, bool
         v->SetExport(exportSpecific);
     return true;
 }
-bool Parser::ParseRecursiveAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, RuleList* ruleList)
+bool Parser::ParseRecursiveAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, std::shared_ptr<RuleList> ruleList)
 {
     if (left == ".VARIABLES")
         return true;
@@ -415,13 +415,13 @@ bool Parser::ParseRecursiveAssign(const std::string& left, const std::string& ri
         else
             *VariableContainer::Instance() += v;
     }
-    if (v && !ruleList && (left == "MAKEFILES" || autoExport))
+    if (v && !(bool)ruleList && (left == "MAKEFILES" || autoExport))
         v->SetExport(true);
-    else if (v && ruleList)
+    else if (v && (bool)ruleList)
         v->SetExport(exportSpecific);
     return true;
 }
-bool Parser::ParsePlusAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, RuleList* ruleList)
+bool Parser::ParsePlusAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, std::shared_ptr<RuleList> ruleList)
 {
     if (left == ".VARIABLES")
         return true;
@@ -458,7 +458,7 @@ bool Parser::ParsePlusAssign(const std::string& left, const std::string& right, 
         v->SetExport(exportSpecific);
     return true;
 }
-bool Parser::ParseQuestionAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, RuleList* ruleList)
+bool Parser::ParseQuestionAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, std::shared_ptr<RuleList> ruleList)
 {
     if (left == ".VARIABLES")
         return true;
@@ -582,10 +582,10 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
         while (!ls.empty() && rv)
         {
             std::string cur = Eval::ExtractFirst(ls, std::string(" "));
-            RuleList* ruleList = RuleContainer::Instance()->Lookup(cur);
+            std::shared_ptr<RuleList> ruleList = RuleContainer::Instance()->Lookup(cur);
             if (!ruleList)
             {
-                ruleList = new RuleList(cur);
+                ruleList = std::make_shared<RuleList>(cur);
                 *RuleContainer::Instance() += ruleList;
             }
             switch (mode)
@@ -597,10 +597,10 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
                     rv &= ParsePlusAssign(l, r, false, !private_, ruleList);
                     break;
                 case qasn:
-                    rv &= ParseQuestionAssign(l, r, false, ruleList);
+                    rv &= ParseQuestionAssign(l, r, false, !private_, ruleList);
                     break;
                 case asn:
-                    rv &= ParseAssign(l, r, false, ruleList);
+                    rv &= ParseAssign(l, r, false, !private_, ruleList);
                     break;
             }
         }
@@ -610,7 +610,7 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
         size_t m = ls.find_first_not_of(' ');
         if (m != std::string::npos && ls[m] == '.')
         {
-            RuleList* ruleList = RuleContainer::Instance()->Lookup(".SUFFIXES");
+            std::shared_ptr<RuleList> ruleList = RuleContainer::Instance()->Lookup(".SUFFIXES");
             bool found1 = false, found2 = false;
             n = ls.find_first_of('.', m + 1);
             std::string one;
@@ -739,7 +739,7 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
                 }
             }
         }
-        lastCommand = new Command(file, lineno + 1);
+        lastCommand = std::make_shared<Command>(file, lineno + 1);
         *CommandContainer::Instance() += lastCommand;
         if (hasCmd)
             *lastCommand += command;
@@ -760,7 +760,7 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
         {
             std::string cur = Eval::ExtractFirst(ls, std::string(" "));
             std::string stem;
-            Rule* rule = NULL;
+            std::shared_ptr<Rule> rule = NULL;
             std::string ps1;
             if ((cur == ".SECONDARY" || cur == ".IGNORE") && ps == "" && os == "")
                 ps1 = "%";
@@ -769,7 +769,7 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
             if (ps.empty() && cur == ".SUFFIXES")
             {
                 // clears all rules...
-                RuleList* ruleList = RuleContainer::Instance()->Lookup(cur);
+                std::shared_ptr<RuleList> ruleList = RuleContainer::Instance()->Lookup(cur);
                 if (ruleList)
                     *RuleContainer::Instance() -= ruleList;
             }
@@ -785,7 +785,7 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
                         ps2 = ReplaceAllStems(stem, ps2);
                         std::string os1 = os;
                         os1 = ReplaceAllStems(stem, os1);
-                        rule = new Rule(cur, ps2, os1, lastCommand, file, lineno, dontCare, ignore, silent, make, precious,
+                        rule = std::make_shared<Rule>(cur, ps2, os1, lastCommand, file, lineno, dontCare, ignore, silent, make, precious,
                                         secondaryExpansionEnabled);
                     }
                     else
@@ -795,13 +795,13 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
                 }
                 else
                 {
-                    rule = new Rule(cur, ps1, os, lastCommand, file, lineno, dontCare, ignore, silent, make, precious,
+                    rule = std::make_shared<Rule>(cur, ps1, os, lastCommand, file, lineno, dontCare, ignore, silent, make, precious,
                                     secondaryExpansionEnabled);
                 }
-                RuleList* ruleList = RuleContainer::Instance()->Lookup(cur);
+                std::shared_ptr<RuleList> ruleList = RuleContainer::Instance()->Lookup(cur);
                 if (!ruleList)
                 {
-                    ruleList = new RuleList(cur);
+                    ruleList = std::make_shared<RuleList>(cur);
                     ruleList->SetRelated(related);
                     *RuleContainer::Instance() += ruleList;
                 }

@@ -39,7 +39,7 @@ endif
 LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP_deps) $(C_deps) $(ASM_deps) $(TASM_deps)))
 
 
-CC=x86_64-w64-mingw32-gcc
+CC=g++
 CCFLAGS = -c -O2 -D__MSVCRT__ -D_MINGW -Wno-int-to-pointer-cast
 LINK=ld
 LFLAGS=-L$(_LIBDIR) -Xlinker -Map=output.map
@@ -62,14 +62,14 @@ endif
 DEFINES:=$(addprefix -D,$(DEFINES))
 DEFINES:=$(subst @, ,$(DEFINES))
 
-CFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) -DGNUC -DWIN32 -D_WIN32_IE=0x600 -D_WIN32_WINNT=0x500 -DWINVER=0x500 -D_WIN32 -Dx64_compiler
-CXXFLAGS = -std=c++14 -fpermissive $(CCFLAGS) $(CINCLUDES) $(DEFINES) -DGNUC -DWIN32 -D_WIN32_IE=0x600 -D_WIN32_WINNT=0x500 -DWINVER=0x500 -D_WIN32 -Dx64_compiler
+CFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) -x c -DGNUC -DWIN32 -D_WIN32_IE=0x600 -D_WIN32_WINNT=0x500 -DWINVER=0x500 -D_WIN32 -Dx64_compiler
+CXXFLAGS = -std=c++14 -fpermissive $(CCFLAGS) -x c++ $(CINCLUDES) $(DEFINES) -DGNUC -DWIN32 -D_WIN32_IE=0x600 -D_WIN32_WINNT=0x500 -DWINVER=0x500 -D_WIN32 -Dx64_compiler
 
 ifeq "$(TARGET)" "GUI"
 LFLAGS := $(LFLAGS) -s -Wl,--subsystem,windows
 endif
 
-COMPLIB=-lstdc++ -lcomctl32 -lgdi32 -lcomdlg32 -lole32 -luxtheme -lkernel32 -lmsimg32 -luuid
+COMPLIB=-lcomctl32 -lgdi32 -lcomdlg32 -lole32 -luxtheme -lkernel32 -lmsimg32 -luuid
 
 
 vpath %.o $(_OUTPUTDIR)

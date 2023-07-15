@@ -24,6 +24,16 @@
 SHELL=cmd.exe
 export SHELL
 
+ifeq "$(COMPILER)" "gcc-linux"
+MKDIR := mdkdir -p
+DEL := rm
+COPY := cp
+else
+MKDIR := mkdir
+DEL := del /Q
+COPY := copy
+endif
+
 all: mkapps
 
 BASEDIRS= ALLOC cmath COMPLIB IO locale MATH PROCONT stdlib STRING strings \
@@ -73,32 +83,32 @@ DOSOBJS = $(DOSOBJS1:.OBJ=.o)
 WINOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(WINOBJECT)\*.o))
 CILOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CILOBJECT)\*.ilo))
 
-mkdir:
-	-mkdir object 2> NUL
-	-mkdir object\dos 2> NUL
-	-mkdir object\windows 2> NUL
-	-mkdir object\startup 2> NUL
-	-mkdir object\cil 2> NUL
-	-mkdir object\clib 2> NUL
+$(MKDIR):
+	-$(MKDIR) object 2> NUL
+	-$(MKDIR) object\dos 2> NUL
+	-$(MKDIR) object\windows 2> NUL
+	-$(MKDIR) object\startup 2> NUL
+	-$(MKDIR) object\cil 2> NUL
+	-$(MKDIR) object\clib 2> NUL
 
-copyfiles: mkdir
-	-mkdir ..\..\include 2> NUL
-	-mkdir ..\..\include\c 2> NUL
-	-mkdir ..\..\include\c\sys 2> NUL
-	-mkdir ..\..\include\c\win32 2> NUL
-	-mkdir ..\..\include\c\win32\gl 2> NUL
-	-mkdir ..\..\include\support 2> NUL
-	-mkdir ..\..\include\support\win32 2> NUL
-	-mkdir ..\..\include\support\orangec 2> NUL
-	-copy  cpp\libcxx\include ..\..\include 2>NUL
-	-copy  cpp\libcxx\include\support\win32 ..\..\include\support\win32 2>NUL
-	-copy  cpp\libcxx\include\support\orangec ..\..\include\support\orangec 2>NUL
-	-copy  cpp\stdinc_libcxx ..\..\include 2>NUL
-	-copy  stdinc ..\..\include\c 2>NUL
-	-copy  stdinc\sys ..\..\include\c\sys 2>NUL
-	-copy  platform\win32\inc ..\..\include\c\win32 2>NUL
-	-copy  platform\win32\inc\gdiplus ..\..\include\c\win32 2>NUL
-	-copy  platform\win32\inc\gl ..\..\include\c\win32\gl 2>NUL
+copyfiles: $(MKDIR)
+	-$(MKDIR) ..\..\include 2> NUL
+	-$(MKDIR) ..\..\include\c 2> NUL
+	-$(MKDIR) ..\..\include\c\sys 2> NUL
+	-$(MKDIR) ..\..\include\c\win32 2> NUL
+	-$(MKDIR) ..\..\include\c\win32\gl 2> NUL
+	-$(MKDIR) ..\..\include\support 2> NUL
+	-$(MKDIR) ..\..\include\support\win32 2> NUL
+	-$(MKDIR) ..\..\include\support\orangec 2> NUL
+	-$(COPY)  cpp\libcxx\include ..\..\include 2>NUL
+	-$(COPY)  cpp\libcxx\include\support\win32 ..\..\include\support\win32 2>NUL
+	-$(COPY)  cpp\libcxx\include\support\orangec ..\..\include\support\orangec 2>NUL
+	-$(COPY)  cpp\stdinc_libcxx ..\..\include 2>NUL
+	-$(COPY)  stdinc ..\..\include\c 2>NUL
+	-$(COPY)  stdinc\sys ..\..\include\c\sys 2>NUL
+	-$(COPY)  platform\win32\inc ..\..\include\c\win32 2>NUL
+	-$(COPY)  platform\win32\inc\gdiplus ..\..\include\c\win32 2>NUL
+	-$(COPY)  platform\win32\inc\gl ..\..\include\c\win32\gl 2>NUL
 
 $(C_CLIBS) : %.clibs :
 	$(MAKE) -C$* --eval="OBJECT=$(CLIBOBJECT)" --eval="$(BUILDING_DLL)"
@@ -111,10 +121,10 @@ platform: $(C_CLIBS)
 
 mklibs: platform
 ifneq "$(ORANGEC_ONLY)" "YES"
-	-del $(SYSOBJECT)\cldos.l
+	-$(DEL) $(SYSOBJECT)\cldos.l
 	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\cldos.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $(foreach dir, $(DOSOBJS), $(DOSOBJECT)\$(dir))
 endif
-	-del $(SYSOBJECT)\clwin.l
+	-$(DEL) $(SYSOBJECT)\clwin.l
 	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\clwin.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $(foreach dir, $(WINOBJS), $(WINOBJECT)\$(dir))
 
 mkapps:
@@ -156,25 +166,25 @@ endif
 endif
 
 clean:
-	-del /Q $(DOSOBJECT) 2> NUL
-	-del /Q $(WINOBJECT) 2> NUL
-	-del /Q $(SYSOBJECT) 2> NUL
-	-del /Q $(CILOBJECT) 2> NUL
-	-del /Q $(CLIBOBJECT) 2> NUL
-	-del /Q platform\win32\crtdmain\*.o 2>NUL
-	-del /Q platform\win32\lscrtl\*.o 2>NUL
-	-del /Q platform\win32\lscrtl\*.dll 2>NUL
-	-del /Q platform\win32\lsdbghelper\*.o 2>NUL
-	-del /Q platform\win32\msvcrdm\*.o 2>NUL
-	-del /Q platform\win32\occil\*.o 2>NUL
-	-del /Q platform\win32\occil\*.dll 2>NUL
-	-del /Q platform\win32\pe\*.o 2>NUL
-	-del /Q platform\win32\pels\*.o 2>NUL
-	-del /Q platform\win32\rtl\*.o 2>NUL
-	-del /Q platform\dos32\debug\*.o 2>NUL
-	-del /Q platform\dos32\le\*.o 2>NUL
-	-del /Q platform\dos32\pm\*.o 2>NUL
-	-del /Q platform\dos32\rtl\*.o 2>NUL
+	-$(DEL) $(DOSOBJECT) 2> NUL
+	-$(DEL) $(WINOBJECT) 2> NUL
+	-$(DEL) $(SYSOBJECT) 2> NUL
+	-$(DEL) $(CILOBJECT) 2> NUL
+	-$(DEL) $(CLIBOBJECT) 2> NUL
+	-$(DEL) platform\win32\crtdmain\*.o 2>NUL
+	-$(DEL) platform\win32\lscrtl\*.o 2>NUL
+	-$(DEL) platform\win32\lscrtl\*.dll 2>NUL
+	-$(DEL) platform\win32\lsdbghelper\*.o 2>NUL
+	-$(DEL) platform\win32\msvcrdm\*.o 2>NUL
+	-$(DEL) platform\win32\occil\*.o 2>NUL
+	-$(DEL) platform\win32\occil\*.dll 2>NUL
+	-$(DEL) platform\win32\pe\*.o 2>NUL
+	-$(DEL) platform\win32\pels\*.o 2>NUL
+	-$(DEL) platform\win32\rtl\*.o 2>NUL
+	-$(DEL) platform\dos32\debug\*.o 2>NUL
+	-$(DEL) platform\dos32\le\*.o 2>NUL
+	-$(DEL) platform\dos32\pm\*.o 2>NUL
+	-$(DEL) platform\dos32\rtl\*.o 2>NUL
 	-rmdir $(DOSOBJECT) 2> NUL
 	-rmdir $(WINOBJECT) 2> NUL
 	-rmdir $(SYSOBJECT) 2> NUL

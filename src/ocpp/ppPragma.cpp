@@ -34,6 +34,12 @@
 #include <iostream>
 #include <cassert>
 #include <tuple>
+
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#    define _strnicmp strncasecmp
+#endif
+
 Packing* Packing::instance;
 FenvAccess* FenvAccess::instance;
 CXLimitedRange* CXLimitedRange::instance;

@@ -1706,7 +1706,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                         (*exp)->bits = tpb->bits;
                         (*exp)->startbit = tpb->startbit;
                     }
-                    if (sp2->sb->storage_class != sc_constant && sp2->sb->storage_class != sc_enumconstant && (!structuredAlias || ((*exp)->type != en_func && (*exp)->type != en_thisref ) ))
+                    if (sp2->sb->storage_class != sc_constant && sp2->sb->storage_class != sc_enumconstant)
                     {
                         deref(*tp, exp);
                     }

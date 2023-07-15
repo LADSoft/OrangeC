@@ -24,4 +24,4 @@
  */
 
 int resolveoffset(Optimizer::SimpleExpression* n, int* resolved);
-AsmExprNode* MakeFixup(Optimizer::SimpleExpression* offset);
+std::shared_ptr<AsmExprNode> MakeFixup(Optimizer::SimpleExpression* offset);

@@ -226,7 +226,7 @@ typedef struct _attribdata
     {
         Optimizer::LINEDATA* ld;
         struct Optimizer::SimpleSymbol* sp;
-        void* section;
+        std::shared_ptr<Section>* section;
     } v;
     bool start;
 } ATTRIBDATA;

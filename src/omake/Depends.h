@@ -60,10 +60,10 @@ class Depends
         return nullptr;
     }
     size_t size() const { return subgoals.size(); }
-    void SetRuleList(RuleList* r) { ruleList = r; }
-    RuleList* GetRuleList() const { return ruleList; }
-    void SetRule(Rule* r) { rule = r; }
-    Rule* GetRule() const { return rule; }
+    void SetRuleList(std::shared_ptr<RuleList>& r) { ruleList = r; }
+    std::shared_ptr<RuleList> GetRuleList() const { return ruleList; }
+    void SetRule(std::shared_ptr<Rule>& r) { rule = r; }
+    std::shared_ptr<Rule> GetRule() const { return rule; }
     void SetSilent(bool flag) { silent = flag; }
     void SetDisplayOnly(bool flag) { displayOnly = flag; }
     void SetIgnoreResults(bool flag) { ignoreResults = flag; }
@@ -81,8 +81,8 @@ class Depends
   private:
     std::string goal;
     std::string foundName;
-    RuleList* ruleList;
-    Rule* rule;
+    std::shared_ptr<RuleList> ruleList;
+    std::shared_ptr<Rule> rule;
     Time time;
     bool silent;
     bool displayOnly;

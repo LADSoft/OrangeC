@@ -38,7 +38,7 @@ class Variable;
 class Eval
 {
   public:
-    Eval(const std::string name, bool expandWildcards, RuleList* ruleList = nullptr, Rule* rule = nullptr);
+    Eval(const std::string name, bool expandWildcards, std::shared_ptr<RuleList> ruleList = nullptr, std::shared_ptr<Rule> rule = nullptr);
     ~Eval() {}
     std::string Evaluate();
     void PushCallArg(std::string arg) { callArgs.push_back(arg); }
@@ -47,7 +47,7 @@ class Eval
     static void AddVPath(const std::string& pattern, const std::string& dirs) { vpaths[pattern] = dirs; }
     static void RemoveVPath(const std::string& pattern);
     static void RemoveAllVPaths() { vpaths.clear(); }
-    static void SetRuleStack(std::list<RuleList*>& list)
+    static void SetRuleStack(std::list<std::shared_ptr<RuleList>>& list)
     {
         std::lock_guard<decltype(evalLock)> lk(evalLock);
         ruleStack = list;
@@ -57,7 +57,7 @@ class Eval
         std::lock_guard<decltype(evalLock)> lk(evalLock);
         ruleStack.clear();
     }
-    static void PushruleStack(RuleList* ruleList)
+    static void PushruleStack(std::shared_ptr<RuleList>& ruleList)
     {
         std::lock_guard<decltype(evalLock)> lk(evalLock);
         ruleStack.push_front(ruleList);
@@ -144,15 +144,15 @@ class Eval
     static bool internalWarnings;
     static int lineno;
     static std::string file;
-    static std::list<RuleList*> ruleStack;
+    static std::list<std::shared_ptr<RuleList>> ruleStack;
     static std::list<Variable*> foreachVars;
     static std::set<std::string> macroset;
     static std::string GPath;
     static std::vector<std::string> callArgs;
     static std::mutex evalLock;
     std::string str;
-    Rule* rule;
-    RuleList* ruleList;
+    std::shared_ptr<Rule> rule;
+    std::shared_ptr<RuleList> ruleList;
     bool expandWildcards;
     static int errcount;
 };

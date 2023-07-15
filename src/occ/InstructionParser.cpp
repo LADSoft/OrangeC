@@ -45,7 +45,7 @@ bool InstructionParser::ParseNumber(int relOfs, int sign, int bits, int needCons
 
     if (inputTokens[tokenPos]->type == InputToken::NUMBER)
     {
-        val = (AsmExprNode*)inputTokens[tokenPos]->val;
+        val = std::make_shared<AsmExprNode>(*(AsmExprNode*)inputTokens[tokenPos]->val);
         bool isConst = val->IsAbsolute();
         if (isConst || !needConstant)
         {
@@ -68,7 +68,7 @@ bool InstructionParser::ParseNumber(int relOfs, int sign, int bits, int needCons
                 }
             }
             numeric = new Numeric;
-            numeric->node = val;
+            numeric->node = new AsmExprNode(*val.get());
             numeric->pos = 0;
             numeric->relOfs = relOfs;
             numeric->size = bits;
@@ -83,7 +83,7 @@ bool InstructionParser::SetNumber(int tokenPos, int oldVal, int newVal)
     bool rv = false;
     if (tokenPos < inputTokens.size() && inputTokens[tokenPos]->type == InputToken::NUMBER)
     {
-        val = (AsmExprNode*)inputTokens[tokenPos]->val;
+        val = std::make_shared<AsmExprNode>(*(AsmExprNode*)inputTokens[tokenPos]->val);
         bool isConst = val->IsAbsolute();
         if (isConst)
         {
@@ -112,7 +112,7 @@ std::string InstructionParser::FormatInstruction(ocode* ins)
     rv += " ";
     for (auto t : inputTokens)
     {
-        AsmExprNode* val = (AsmExprNode*)t->val;
+        std::shared_ptr<AsmExprNode> val = std::make_shared<AsmExprNode>(*(AsmExprNode*)t->val);
         switch (t->type)
         {
             case InputToken::LABEL:
@@ -151,8 +151,7 @@ std::string InstructionParser::FormatInstruction(ocode* ins)
     }
     return rv;
 }
-
-asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std::list<Numeric*>& operands)
+asmError InstructionParser::GetInstruction(OCODE* ins, std::shared_ptr<Instruction>& newIns, std::list<Numeric*>& operands)
 {
     for (auto v : CleanupValues)
         delete v;
@@ -170,14 +169,14 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
         case op_repz:
         case op_repe:
         case op_rep:
-            newIns = new Instruction((unsigned char*)"\xf3", 1, true);
+            newIns = std::make_shared<Instruction>((unsigned char*)"\xf3", 1, true);
             break;
         case op_repnz:
         case op_repne:
-            newIns = new Instruction((unsigned char*)"\xf2", 1, true);
+            newIns = std::make_shared<Instruction>((unsigned char*)"\xf2", 1, true);
             break;
         case op_lock:
-            newIns = new Instruction((unsigned char*)"\xf0", 1, true);
+            newIns = std::make_shared<Instruction>((unsigned char*)"\xf0", 1, true);
             break;
         default: {
             switch (ins->opcode)
@@ -276,7 +275,7 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
             {
                 unsigned char buf[64];
                 bits.GetBytes(buf, (bits.GetBits() + 7) / 8);
-                newIns = new Instruction(buf, (bits.GetBits() + 7) / 8);
+                newIns = std::make_shared<Instruction>(buf, (bits.GetBits() + 7) / 8);
                 operands = this->operands;
             }
             return rv;
@@ -418,22 +417,22 @@ int resolveoffset(Optimizer::SimpleExpression* n, int* resolved)
     return rv;
 #endif
 }
-AsmExprNode* MakeFixup(Optimizer::SimpleExpression* offset)
+std::shared_ptr<AsmExprNode> MakeFixup(Optimizer::SimpleExpression* offset)
 {
     int resolved = 1;
     int n = resolveoffset(offset, &resolved);
     if (!resolved)
     {
-        AsmExprNode* rv;
+        std::shared_ptr<AsmExprNode> rv;
         if (offset->type == Optimizer::se_sub && offset->left->type == Optimizer::se_threadlocal)
         {
             Optimizer::SimpleExpression* node = GetSymRef(offset->left);
             Optimizer::SimpleExpression* node1 = GetSymRef(offset->right);
             std::string name = node->sp->outputName;
-            AsmExprNode* left = new AsmExprNode(name);
+            std::shared_ptr<AsmExprNode> left = std::make_shared<AsmExprNode>(name);
             name = node1->sp->outputName;
-            AsmExprNode* right = new AsmExprNode(name);
-            rv = new AsmExprNode(AsmExprNode::SUB, left, right);
+            std::shared_ptr<AsmExprNode> right = std::make_shared<AsmExprNode>(name);
+            rv = std::make_shared<AsmExprNode>(AsmExprNode::SUB, left, right);
         }
         else
         {
@@ -449,17 +448,18 @@ AsmExprNode* MakeFixup(Optimizer::SimpleExpression* offset)
             {
                 name = node->sp->outputName;
             }
-            rv = new AsmExprNode(name);
+            rv = std::make_shared<AsmExprNode>(name);            
         }
-        if (n)
+        if (n) 
         {
-            rv = new AsmExprNode(AsmExprNode::ADD, rv, new AsmExprNode(n));
+            rv = std::make_shared<AsmExprNode>(AsmExprNode::ADD, rv, std::make_shared<AsmExprNode>(n));            
         }
-        return rv;
+        return rv;        
     }
-    else
+    else 
     {
-        return new AsmExprNode(n);
+        return std::make_shared<AsmExprNode>(n);
+        
     }
 }
 
@@ -470,7 +470,7 @@ void InstructionParser::SetNumberToken(int val)
     next->val = new AsmExprNode(val);
     inputTokens.push_back(next);
 }
-AsmExprNode* MakeFixup(Optimizer::SimpleExpression* oper);
+std::shared_ptr<AsmExprNode> MakeFixup(Optimizer::SimpleExpression* oper);
 
 bool InstructionParser::SetNumberToken(Optimizer::SimpleExpression* offset, int& n)
 {
@@ -487,10 +487,10 @@ void InstructionParser::SetExpressionToken(Optimizer::SimpleExpression* offset)
     if (!SetNumberToken(offset, n))
     {
         Optimizer::SimpleExpression* exp = GetSymRef(offset);
-        AsmExprNode* expr = MakeFixup(offset);
+        std::shared_ptr<AsmExprNode> expr = MakeFixup(offset);
         InputToken* next = new InputToken;
         next->type = InputToken::NUMBER;
-        next->val = expr;
+        next->val = new AsmExprNode(*expr.get());
         inputTokens.push_back(next);
     }
 }
@@ -644,4 +644,4 @@ void InstructionParser::SetTokens(ocode* ins)
         SetOperandTokens(ins->oper3);
     }
 }
-Instruction* InstructionParser::Parse(const std::string& args, int PC) { return nullptr; }
+std::shared_ptr<Instruction> InstructionParser::Parse(const std::string& args, int PC) { return nullptr; }

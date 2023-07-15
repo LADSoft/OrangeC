@@ -169,8 +169,8 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
         }
         else
         {
-            Fixup* f = fixups[0].get();
-            AsmExprNode* expr = AsmExpr::Eval(f->GetExpr(), pc);
+            std::shared_ptr<Fixup> f = fixups[0];
+            std::shared_ptr<AsmExprNode> expr = AsmExpr::Eval(f->GetExpr(), pc);
             if (expr->IsAbsolute())
             {
                 memcpy(pdata, pdata + 1, size - 1);
@@ -192,19 +192,18 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
                 memcpy(pdata, pdata + 2, size - 2);
                 size -= 2;
                 f->SetInsOffs(f->GetInsOffs() - 2);
-                AsmExprNode* n = new AsmExprNode(AsmExprNode::DIV, f->GetExpr(), new AsmExprNode(16));
-                fixups.push_back(std::make_unique<Fixup>(n, 2, false));
-                f = fixups.back().get();
+                std::shared_ptr<AsmExprNode> n = std::make_shared<AsmExprNode>(AsmExprNode::DIV, f->GetExpr(), std::make_shared<AsmExprNode>(16));
+                fixups.push_back(std::make_shared<Fixup>(n, 2, false));
+                f = fixups.back();
                 f->SetInsOffs(size - 2);
             }
-            delete expr;
         }
     }
     if (type == CODE || type == DATA || type == RESERVE)
     {
         for (auto& fixup : fixups)
         {
-            AsmExprNode* expr = fixup->GetExpr();
+            std::shared_ptr<AsmExprNode> expr = fixup->GetExpr();
             expr = AsmExpr::Eval(expr, pc);
             if (fixup->GetExpr()->IsAbsolute() || (fixup->IsRel() && expr->GetType() == AsmExprNode::IVAL))
             {
@@ -322,7 +321,6 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
                     }
                 }
             }
-            delete expr;
         }
     }
 }

@@ -30,6 +30,9 @@ Building orange C happens in three steps.  First, the executables are built.  Th
 To build the executables the easiest thing to do is install Visual studio 2022.  Then you can either build the release version from the IDE, or from the command line.
 
 Before starting a build set the environment variable ORANGEC to the root of the repository (usually c:\orangec)
+Note that ORANGEC has to be set to the root of the sources you are trying to build; change it if you have a release version of
+orangec installed.    This will also be part of making sure the correct executables are being run.
+
 
 You can also add ORANGEC to the path.   Generally, you might not have to set the variable ORANGEC as the tools create it internally for basic operations, but, some of the make files still rely on it being set.
 
@@ -127,9 +130,13 @@ or with 7z:
 
 which build the zip files and put them in the /orangec/dist directory
 
+To compile with debug information set the WITHDEBUG environment variable:
+
+    omake WITHDEBUG=YES fullbuild
+
 note that mostly, mingw32-make will perform all these tasks.   So it is possible to replace 'omake' with mingw32-make.
 
-we have also tested the build steps on msys2 using the mingw compiler./
+we have also tested the build steps on msys2 using the mingw compiler.
 
 `omake` has an added function called 'tree' make.   Basically this mode is like a normal make mode, except it looks for a file called 'treetop.mak' in successively higher directories until it finds it.   Then it sets a couple of environment variables related to where it found `treetop.mak` and the current working directory, and invokes `treetop.mak`.
 

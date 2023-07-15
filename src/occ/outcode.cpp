@@ -61,7 +61,7 @@ extern void adjustUsesESP();
 namespace occx86
 {
 
-static Section* currentSection;
+static std::shared_ptr<Section> currentSection;
 
 static const char* segnames[] = {0,          "code",     "data",    "bss",     "string", "const", "tls",     "cstartup", "crundown",
                                  "tstartup", "trundown", "codefix", "datafix", "lines",  "types", "symbols", "browse"};
@@ -95,18 +95,18 @@ static int virtualSegmentNumber;
 static int lastIncludeNum;
 
 static int sectionMap[Optimizer::MAX_SEGS];
-static std::map<int, Label*> labelMap;
+static std::map<int, std::shared_ptr<Label>> labelMap;
 
 static std::vector<Optimizer::SimpleSymbol*> autotab;
-static std::vector<Label*> strlabs;
-static std::unordered_map<std::string, Label*> lblpubs;
-static std::unordered_map<std::string, Label*> lbllabs;
-static std::unordered_map<std::string, Label*> lblExterns;
-static std::unordered_map<std::string, Label*> lblvirt;
-static std::vector<Section*> virtuals;
-static std::map<Section*, Optimizer::SimpleSymbol*> virtualSyms;
+static std::vector<std::shared_ptr<Label>> strlabs;
+static std::unordered_map<std::string, std::shared_ptr<Label>> lblpubs;
+static std::unordered_map<std::string, std::shared_ptr<Label>> lbllabs;
+static std::unordered_map<std::string, std::shared_ptr<Label>> lblExterns;
+static std::unordered_map<std::string, std::shared_ptr<Label>> lblvirt;
+static std::vector<std::shared_ptr<Section>> virtuals;
+static std::map<std::shared_ptr<Section>, Optimizer::SimpleSymbol*> virtualSyms;
 
-static Section* sections[Optimizer::MAX_SEGS];
+static std::shared_ptr<Section> sections[Optimizer::MAX_SEGS];
 
 static int autoCount;
 
@@ -136,7 +136,7 @@ static std::map<int, ObjSourceFile*> sourceFiles;
 
 static int sectofs;
 
-static Section dummySection("dummy", -1);
+static std::shared_ptr<Section> dummySection = std::make_shared<Section>("dummy", -1);
 
 void omfInit(void)
 {
@@ -205,7 +205,7 @@ void omf_put_extern(Optimizer::SimpleSymbol* sym, int code)
 {
     externs.insert(sym);
     std::string name = sym->outputName;
-    Label* l = new Label(name, lblExterns.size(), 0);
+    std::shared_ptr<Label> l = std::make_shared<Label>(name, lblExterns.size(), 0);
     l->SetExtern(true);
     lblExterns[l->GetName()] = l;
 }
@@ -213,7 +213,7 @@ void omf_put_impfunc(Optimizer::SimpleSymbol* sym, const char* file) { impfuncs.
 void omf_put_expfunc(Optimizer::SimpleSymbol* sym) { expfuncs.push_back(sym); }
 void omf_put_includelib(const char* name) { includelibs.push_back(name); }
 
-Label* LookupLabel(const std::string& string)
+std::shared_ptr<Label> LookupLabel(const std::string& string)
 {
     auto z1 = lbllabs.find(string);
     if (z1 != lbllabs.end())
@@ -232,18 +232,12 @@ Label* LookupLabel(const std::string& string)
 }
 void Release()
 {
-    for (auto v : lblExterns)
-        delete v.second;
-    for (auto v : lblpubs)
-        delete v.second;
-    for (auto v : lbllabs)
-        delete v.second;
-    for (auto v : lblvirt)
-        delete v.second;
-    for (auto v : sections)
-        delete v;
-    for (auto v : virtuals)
-        delete v;
+    lblExterns.clear();
+    lblpubs.clear();
+    lbllabs.clear();
+    lblvirt.clear();
+    sections->reset();
+    sections->reset();
 }
 
 ObjSection* LookupSection(std::string& string)
@@ -253,7 +247,7 @@ ObjSection* LookupSection(std::string& string)
         return it->second;
     return nullptr;
 }
-inline int GETSECT(Label* l, int sectofs)
+inline int GETSECT(std::shared_ptr<Label> l, int sectofs)
 {
     int n = l->GetSect();
     if (n < Optimizer::MAX_SEGS)
@@ -270,7 +264,7 @@ static void DumpFileList(ObjFactory& f, ObjFile* fi)
         bf = bf->next;
     }
 }
-void HandleDebugInfo(ObjFactory& factory, Section* sect, Instruction* ins)
+void HandleDebugInfo(ObjFactory& factory, Section* sect, std::shared_ptr<Instruction>& ins)
 {
     int n = sect->GetSect();
     if (n < Optimizer::MAX_SEGS)
@@ -346,7 +340,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
             {
                 sections[i]->SetAlign(segAligns[i]);
 
-                sections[i]->Resolve();
+                sections[i]->Resolve(sections[i]);
 
                 ObjSection* s = sections[i]->CreateObject(factory);
                 if (s)
@@ -457,12 +451,12 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
             }
             for (auto e : labelMap)
             {
-                Label* l = e.second;
+                std::shared_ptr<Label> l = e.second;
                 l->SetObjectSection(objSectionsByNumber[GETSECT(l, sectofs)]);
             }
             for (auto e : lblvirt)
             {
-                Label* l = e.second;
+                std::shared_ptr<Label> l = e.second;
                 auto o = objSectionsByNumber[GETSECT(l, sectofs)];
                 l->SetObjectSection(o);
             }
@@ -583,32 +577,32 @@ void outcode_enterseg(int seg)
 {
     if (!sections[seg])
     {
-        sections[seg] = new Section(segnames[seg], seg);
-        Parser::instructionParser->Setup(sections[seg]);
+        sections[seg] = std::make_shared<Section>(segnames[seg], seg);
+        Parser::instructionParser->Setup(sections[seg].get());
     }
     currentSection = sections[seg];
     if (oa_currentSeg == Optimizer::codeseg)
-        AsmExpr::SetSection(&dummySection);
+        AsmExpr::SetSection(dummySection);
     else
         AsmExpr::SetSection(currentSection);
 }
 
-void InsertInstruction(Instruction* ins)
+void InsertInstruction(std::shared_ptr<Instruction> ins)
 {
     if (oa_currentSeg == Optimizer::codeseg)
-        dummySection.InsertInstruction(ins);
+        dummySection->InsertInstruction(ins);
     else
         currentSection->InsertInstruction(ins);
 }
-static Label* GetLabel(int lbl)
+static std::shared_ptr<Label> GetLabel(int lbl)
 {
-    Label* l = labelMap[lbl];
+    std::shared_ptr<Label> l = labelMap[lbl];
     if (!l)
     {
         char buf[256];
         sprintf(buf, "L_%d", lbl);
         std::string name = buf;
-        l = new Label(name, labelMap.size(), currentSection->GetSect());
+        l = std::make_shared<Label>(name, labelMap.size(), currentSection->GetSect());
         labelMap[lbl] = l;
         lbllabs[l->GetName()] = l;
     }
@@ -617,34 +611,34 @@ static Label* GetLabel(int lbl)
 void outcode_gen_strlab(Optimizer::SimpleSymbol* sym)
 {
     std::string name = sym->outputName;
-    Label* l = new Label(name, strlabs.size(), currentSection->GetSect());
+    std::shared_ptr<Label> l = std::make_shared<Label>(name, strlabs.size(), currentSection->GetSect());
     strlabs.push_back(l);
+    InsertInstruction(std::make_shared<Instruction>(l));
     lblpubs[name] = l;
-    InsertInstruction(new Instruction(l));
 }
 void InsertLabel(int lbl)
 {
-    Label* l = GetLabel(lbl);
+    std::shared_ptr<Label> l = GetLabel(lbl);
     l->SetSect(currentSection->GetSect());
-    Instruction* newIns = new Instruction(l);
+    std::shared_ptr<Instruction> newIns = std::make_shared<Instruction>(l);
     InsertInstruction(newIns);
 }
 
 void emit(void* data, int len)
 {
-    Instruction* newIns = new Instruction((unsigned char*)data, len, true);
+    std::shared_ptr<Instruction> newIns = std::make_shared<Instruction>((unsigned char*)data, len, true);
     InsertInstruction(newIns);
 }
-void emit(void* data, int len, Fixup* fixup, int fixofs)
+void emit(void* data, int len, std::shared_ptr<Fixup> fixup, int fixofs)
 {
-    Instruction* newIns = new Instruction((unsigned char*)data, len, true);
+    std::shared_ptr<Instruction> newIns = std::make_shared<Instruction>((unsigned char*)data, len, true);
     newIns->Add(fixup);
     fixup->SetInsOffs(fixofs);
     InsertInstruction(newIns);
 }
-void emit(Label* label)
+void emit(std::shared_ptr<Label> label)
 {
-    Instruction* newIns = new Instruction(label);
+    std::shared_ptr<Instruction> newIns = std::make_shared<Instruction>(label);
     InsertInstruction(newIns);
 }
 
@@ -653,7 +647,7 @@ void emit(int size)
     // size < 0 = align > 0 = reserve
     if (size > 0)
     {
-        Instruction* newIns = new Instruction(size, 1);
+        std::shared_ptr<Instruction> newIns = std::make_shared<Instruction>(size, 1);
         InsertInstruction(newIns);
     }
     else
@@ -661,57 +655,57 @@ void emit(int size)
         if (size < 0)
         {
             size = -size;
-            Instruction* newIns = new Instruction(size);
+            std::shared_ptr<Instruction> newIns = std::make_shared<Instruction>(size);
             InsertInstruction(newIns);
         }
     }
 }
 /*-------------------------------------------------------------------------*/
 
-Fixup* gen_symbol_fixup(Optimizer::SimpleSymbol* pub, int offset, bool PC)
+std::shared_ptr<Fixup> gen_symbol_fixup(Optimizer::SimpleSymbol* pub, int offset, bool PC)
 {
-    AsmExprNode* expr = new AsmExprNode(pub->outputName);
+    std::shared_ptr<AsmExprNode> expr = std::make_shared<AsmExprNode>(pub->outputName);
     if (offset)
     {
-        AsmExprNode* expr1 = new AsmExprNode(offset);
-        expr = new AsmExprNode(AsmExprNode::ADD, expr, expr1);
+        std::shared_ptr<AsmExprNode> expr1 = std::make_shared<AsmExprNode>(offset);
+        expr = std::make_shared<AsmExprNode>(AsmExprNode::ADD, expr, expr1);
     }
-    Fixup* f = new Fixup(expr, 4, !!PC, PC ? 4 : 0);
+    std::shared_ptr<Fixup> f = std::make_shared<Fixup>(expr, 4, !!PC, PC ? 4 : 0);
     return f;
 }
-Fixup* gen_label_fixup(int lab, int offset, bool PC)
+std::shared_ptr<Fixup> gen_label_fixup(int lab, int offset, bool PC)
 {
-    Label* l = GetLabel(lab);
-    AsmExprNode* expr = new AsmExprNode(l->GetName());
+    std::shared_ptr<Label> l = GetLabel(lab);
+    std::shared_ptr<AsmExprNode> expr = std::make_shared<AsmExprNode>(l->GetName());
     if (offset)
     {
-        AsmExprNode* expr1 = new AsmExprNode(offset);
-        expr = new AsmExprNode(AsmExprNode::ADD, expr, expr1);
+        std::shared_ptr<AsmExprNode> expr1 = std::make_shared<AsmExprNode>(offset);
+        expr = std::make_shared<AsmExprNode>(AsmExprNode::ADD, expr, expr1);
     }
-    Fixup* f = new Fixup(expr, 4, !!PC, PC ? 4 : 0);
+    std::shared_ptr<Fixup> f = std::make_shared<Fixup>(expr, 4, !!PC, PC ? 4 : 0);
     return f;
 }
-Fixup* gen_threadlocal_fixup(Optimizer::SimpleSymbol* tls, Optimizer::SimpleSymbol* base, int offset)
+std::shared_ptr<Fixup> gen_threadlocal_fixup(Optimizer::SimpleSymbol* tls, Optimizer::SimpleSymbol* base, int offset)
 {
-    AsmExprNode* expr = new AsmExprNode(base->outputName);
-    AsmExprNode* expr1 = new AsmExprNode(tls->outputName);
-    expr = new AsmExprNode(AsmExprNode::SUB, expr1, expr);
+    std::shared_ptr<AsmExprNode> expr = std::make_shared<AsmExprNode>(base->outputName);
+    std::shared_ptr<AsmExprNode> expr1 = std::make_shared<AsmExprNode>(tls->outputName);
+    expr = std::make_shared<AsmExprNode>(AsmExprNode::SUB, expr1, expr);
     if (offset)
     {
-        expr1 = new AsmExprNode(offset);
-        expr = new AsmExprNode(AsmExprNode::ADD, expr, expr1);
+        expr1 = std::make_shared<AsmExprNode>(offset);
+        expr = std::make_shared<AsmExprNode>(AsmExprNode::ADD, expr, expr1);
     }
-    Fixup* f = new Fixup(expr, 4, false);
+    std::shared_ptr<Fixup> f = std::make_shared<Fixup>(expr, 4, false);
     return f;
 }
-Fixup* gen_diff_fixup(int lab1, int lab2)
+std::shared_ptr<Fixup> gen_diff_fixup(int lab1, int lab2)
 {
-    Label* l = GetLabel(lab1);
-    AsmExprNode* expr = new AsmExprNode(l->GetName());
+    std::shared_ptr<Label> l = GetLabel(lab1);
+    std::shared_ptr<AsmExprNode> expr = std::make_shared<AsmExprNode>(l->GetName());
     l = GetLabel(lab2);
-    AsmExprNode* expr1 = new AsmExprNode(l->GetName());
-    expr = new AsmExprNode(AsmExprNode::SUB, expr, expr1);
-    Fixup* f = new Fixup(expr, 4, false);
+    std::shared_ptr<AsmExprNode> expr1 = std::make_shared<AsmExprNode>(l->GetName());
+    expr = std::make_shared<AsmExprNode>(AsmExprNode::SUB, expr, expr1);
+    std::shared_ptr<Fixup> f = std::make_shared<Fixup>(expr, 4, false);
     return f;
 }
 void outcode_dump_muldivval(void)
@@ -746,7 +740,7 @@ void outcode_dump_muldivval(void)
 
 void outcode_genref(Optimizer::SimpleSymbol* sym, int offset)
 {
-    Fixup* f = gen_symbol_fixup(sym, offset, false);
+    std::shared_ptr<Fixup> f = gen_symbol_fixup(sym, offset, false);
     int i = 0;
     emit(&i, 4, f, 0);
 }
@@ -755,7 +749,7 @@ void outcode_genref(Optimizer::SimpleSymbol* sym, int offset)
 
 void outcode_gen_labref(int n)
 {
-    Fixup* f = gen_label_fixup(n, 0, false);
+    std::shared_ptr<Fixup> f = gen_label_fixup(n, 0, false);
     int offset = 0;
     emit(&offset, 4, f, 0);
 }
@@ -763,7 +757,7 @@ void outcode_gen_labref(int n)
 /* the labels will already be resolved well enough by this point */
 void outcode_gen_labdifref(int n1, int n2)
 {
-    Fixup* f = gen_diff_fixup(n1, n2);
+    std::shared_ptr<Fixup> f = gen_diff_fixup(n1, n2);
     int offset = 0;
     emit(&offset, 4, f, 0);
 }
@@ -772,7 +766,7 @@ void outcode_gen_labdifref(int n1, int n2)
 
 void outcode_gensrref(Optimizer::SimpleSymbol* sym, int val)
 {
-    Fixup* f = gen_symbol_fixup(sym, 0, false);
+    std::shared_ptr<Fixup> f = gen_symbol_fixup(sym, 0, false);
     char buf[8] = {};
     buf[1] = val;
 
@@ -861,14 +855,14 @@ void outcode_start_virtual_seg(Optimizer::SimpleSymbol* sym, int data)
     else
         strcpy(buf, "vsc@");
     strcpy(buf + 3 + (sym->outputName[0] != '@'), sym->outputName);
-    Section* virtsect = new Section(buf, virtualSegmentNumber++);
+    std::shared_ptr<Section> virtsect = std::make_shared<Section>(buf, virtualSegmentNumber++);
     virtualSyms[virtsect] = sym;
     virtuals.push_back(virtsect);
     currentSection = virtsect;
-    Parser::instructionParser->Setup(virtsect);
+    Parser::instructionParser->Setup(virtsect.get());
     AsmExpr::SetSection(virtsect);
     std::string name = sym->outputName;
-    Label* l = new Label(name, lblvirt.size(), virtualSegmentNumber - 1);
+    std::shared_ptr<Label> l = std::make_shared<Label>(name, lblvirt.size(), virtualSegmentNumber - 1);
     l->SetOffset(0);
     lblvirt[name] = l;
 }
@@ -879,7 +873,7 @@ void outcode_end_virtual_seg(Optimizer::SimpleSymbol* sym) { outcode_enterseg(oa
 
 /*-------------------------------------------------------------------------*/
 
-void InsertAttrib(ATTRIBDATA* ad) { InsertInstruction(new Instruction(ad)); }
+void InsertAttrib(ATTRIBDATA* ad) { InsertInstruction(std::make_shared<Instruction>(ad)); }
 void InsertLine(Optimizer::LINEDATA* linedata)
 {
     ATTRIBDATA* attrib = Allocate<ATTRIBDATA>();
@@ -909,7 +903,7 @@ void InsertFunc(Optimizer::SimpleSymbol* sym, int start)
     {
         ATTRIBDATA* attrib = Allocate<ATTRIBDATA>();
         attrib->type = e_ad_vfuncdata;
-        attrib->v.section = currentSection;
+        attrib->v.section = &currentSection;
         attrib->start = !!start;
         InsertAttrib(attrib);
     }
@@ -930,7 +924,7 @@ void InsertBlock(int start)
     InsertAttrib(attrib);
 }
 
-void AddFixup(Instruction* newIns, OCODE* ins, const std::list<Numeric*>& operands)
+void AddFixup(std::shared_ptr<Instruction>& newIns, OCODE* ins, const std::list<Numeric*>& operands)
 {
     if ((e_op)ins->opcode == op_dd)
     {
@@ -939,8 +933,8 @@ void AddFixup(Instruction* newIns, OCODE* ins, const std::list<Numeric*>& operan
         if (!resolved)
         {
             memcpy(newIns->GetBytes(), &n, 4);
-            AsmExprNode* expr = MakeFixup(ins->oper1->offset);
-            Fixup* f = new Fixup(expr, 4, false);
+            std::shared_ptr<AsmExprNode> expr = MakeFixup(ins->oper1->offset);
+            std::shared_ptr<Fixup> f = std::make_shared<Fixup>(expr, 4, false);
             newIns->Add(f);
         }
     }
@@ -958,8 +952,8 @@ void AddFixup(Instruction* newIns, OCODE* ins, const std::list<Numeric*>& operan
                 int n = operand->relOfs;
                 if (n < 0)
                     n = -n;
-                Fixup* f =
-                    new Fixup((AsmExprNode*)operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
+                auto temp = std::make_shared<AsmExprNode>(*(AsmExprNode*)operand->node);
+                std::shared_ptr<Fixup> f = std::make_shared<Fixup>(temp, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
                 f->SetInsOffs((operand->pos + 7) / 8);
                 newIns->Add(f);
             }
@@ -979,7 +973,7 @@ void outcode_AssembleIns(OCODE* ins)
 {
     if (ins->opcode >= op_aaa)
     {
-        Instruction* newIns = nullptr;
+        std::shared_ptr<Instruction> newIns = nullptr;
         std::list<Numeric*> operands;
 
         asmError err = Parser::instructionParser->GetInstruction(ins, newIns, operands);
@@ -990,7 +984,7 @@ void outcode_AssembleIns(OCODE* ins)
             case AERR_NONE:
                 AddFixup(newIns, ins, operands);
                 InsertInstruction(newIns);
-                ins->ins = newIns;
+                ins->ins = newIns.get();
                 break;
             case AERR_SYNTAX:
                 outcode_diag(ins, "Syntax error while parsing instruction");
@@ -1051,13 +1045,13 @@ void outcode_AssembleIns(OCODE* ins)
                 outcode_genbyte(ins->oper1->offset->i);
                 break;
             case op_align: {
-                Instruction* newIns = new Instruction(ins->oper1->offset->i);
+                std::shared_ptr<Instruction> newIns = std::make_shared<Instruction>(ins->oper1->offset->i);
                 InsertInstruction(newIns);
                 break;
             }
             case op_dd: {
                 int i = 0;
-                Instruction* newIns = new Instruction(&i, 4, true);
+                std::shared_ptr<Instruction> newIns = std::make_shared<Instruction>(&i, 4, true);
                 const std::list<Numeric*> operands;
                 AddFixup(newIns, ins, operands);
                 InsertInstruction(newIns);
@@ -1087,16 +1081,16 @@ void outcode_gen(OCODE* peeplist)
         // all this dancing around so that when compiling things into the main code segment, we don't spend an inordinate amound of
         // time in Resolve()...
         //
-        dummySection.Resolve();
-        for (auto& d : dummySection.GetInstructions())
+        dummySection->Resolve(dummySection);
+        for (auto& d : dummySection->GetInstructions())
         {
-            currentSection->InsertInstruction(d.release());
+            currentSection->InsertInstruction(d);
         }
-        dummySection.ClearInstructions();
+        dummySection->ClearInstructions();
     }
     else
     {
-        currentSection->Resolve();
+        currentSection->Resolve(currentSection);
     }
 }
 }  // namespace occx86

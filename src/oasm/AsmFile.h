@@ -84,22 +84,22 @@ class AsmFile
     }
     virtual ~AsmFile();
 
-    Label* Lookup(std::string& name)
+    std::shared_ptr<Label> Lookup(std::string& name)
     {
-        Label* rv = labels[name].get();
+        std::shared_ptr<Label> rv = labels[name];
         return rv;
     }
     bool Read();
     bool Write(std::string& fileName, std::string& srcName);
     ObjFile* MakeFile(ObjFactory& factory, std::string& name);
-    ObjSection* MakeSection(ObjFactory& factory, Section* sect);
-    void MakeData(ObjFactory& factory, ObjSection* sect, Section* s);
+    ObjSection* MakeSection(ObjFactory& factory, std::shared_ptr<Section>& sect);
+    void MakeData(ObjFactory& factory, ObjSection* sect, std::shared_ptr<Section>& s);
     const Token* GetToken() { return lexer.GetToken(); }
     bool IsKeyword();
     kw GetKeyword();
     kw GetTokenId();
     bool IsNumber();
-    AsmExprNode* GetNumber();
+    std::shared_ptr<AsmExprNode> GetNumber();
     bool IsString();
     std::wstring GetString();
     bool IsIdentifier();
@@ -110,9 +110,9 @@ class AsmFile
     InstructionParser* GetParser() { return parser; }
     unsigned GetValue();
     ObjSection* GetSectionByName(std::string& name);
-    Section* GetCurrentSection() { return currentSection; }
+    std::shared_ptr<Section> GetCurrentSection() { return currentSection; }
 
-    static Section* GetLabelSection(const ObjString& label)
+    static std::shared_ptr<Section> GetLabelSection(const ObjString& label)
     {
         auto it = labelSections.find(label);
         if (it != labelSections.end())
@@ -167,7 +167,7 @@ class AsmFile
     void DataDirective();
     void UnknownDirective();
     void NoAbsolute();
-    void SetSubsection(Section* sect, int sid);
+    void SetSubsection(std::shared_ptr<Section>& sect, int sid);
     void PushSection(const std::string& name, int sid);
     void PopSection();
     void SwapSections();
@@ -175,28 +175,27 @@ class AsmFile
   private:
     struct SectionPair
     {
-        Section* section;
+        std::shared_ptr<Section> section;
         int subsection;
     };
     bool inAbsolute;
     int absoluteValue;
     bool caseInsensitive;
-    Section* currentSection;
-    Label* currentLabel;
-    Label* thisLabel;
-    Section* startupSection;
-    Label* startupLabel;
+    std::shared_ptr<Section> currentSection;
+    std::shared_ptr<Label> currentLabel;
+    std::shared_ptr<Label> thisLabel;
+    std::shared_ptr<Section> startupSection;
+    std::shared_ptr<Label> startupLabel;
     ObjSection* startSection;
     PreProcessor& preProcessor;
     Lexer lexer;
     AsmExpr asmexpr;
     InstructionParser* parser;
-    static std::unordered_map<ObjString, std::unique_ptr<Section>> sections;
-    static std::vector<Section*> numericSections;
-    std::unordered_map<ObjString, std::unique_ptr<Label>> labels;
+    static std::vector<std::shared_ptr<Section>> numericSections;
+    std::unordered_map<ObjString, std::shared_ptr<Label>> labels;
     std::unordered_map<ObjString, std::string> exports;
     std::unordered_map<ObjString, std::unique_ptr<Import>> imports;
-    std::vector<Label*> numericLabels;
+    std::vector<std::shared_ptr<Label>> numericLabels;
     std::vector<ObjSection*> objSections;
     std::set<std::string> globals;
     std::set<std::string> externs;
@@ -206,7 +205,7 @@ class AsmFile
     bool attSyntax;
     bool noGASdirectivewarning;
     std::stack<SectionPair> sectionStack;
-    static std::unordered_map<ObjString, Section*> labelSections;
+    static std::unordered_map<ObjString, std::shared_ptr<Section>> labelSections;
 };
 
 #endif

@@ -48,7 +48,7 @@ std::unordered_map<std::string, std::string> Eval::vpaths;
 bool Eval::internalWarnings;
 int Eval::lineno;
 std::string Eval::file;
-std::list<RuleList*> Eval::ruleStack;
+std::list<std::shared_ptr<RuleList>> Eval::ruleStack;
 std::list<Variable*> Eval::foreachVars;
 std::set<std::string> Eval::macroset;
 std::string Eval::GPath;
@@ -92,7 +92,7 @@ std::unordered_map<std::string, Eval::StringFunc> Eval::builtins = {{"subst", &E
                                                                     {"info", &Eval::info},
                                                                     {"exists", &Eval::exists}};
 
-Eval::Eval(const std::string name, bool ExpandWildcards, RuleList* RuleList, Rule* Rule) :
+Eval::Eval(const std::string name, bool ExpandWildcards, std::shared_ptr<RuleList> RuleList, std::shared_ptr<Rule> Rule) :
     str(name), expandWildcards(ExpandWildcards), ruleList(RuleList), rule(Rule)
 {
 }
@@ -327,7 +327,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
                 ++it;
             if (it != ruleList->end())
             {
-                if (!rule || (*it).get() != rule)
+                if (!rule || (*it) != rule)
                 {
                     extra = (*it)->GetPrerequisites();
                     rv = ExtractFirst(extra, " ");
@@ -340,7 +340,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
         {
             for (auto& item : *ruleList)
             {
-                if (item.get() == rule)
+                if (item == rule)
                     break;
                 extra = item->GetPrerequisites();
                 while (!extra.empty())
@@ -361,7 +361,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
         {
             for (auto& item : *ruleList)
             {
-                if (item.get() == rule)
+                if (item == rule)
                     break;
                 extra = item->GetPrerequisites();
                 while (!extra.empty())
@@ -383,7 +383,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
                 size_t n = rv.find_last_of('.');
                 if (n != std::string::npos)
                 {
-                    RuleList* rl = RuleContainer::Instance()->Lookup(".SUFFIXES");
+                    std::shared_ptr<RuleList> rl = RuleContainer::Instance()->Lookup(".SUFFIXES");
                     if (rl)
                     {
                         std::string sfx = rv.substr(n);
@@ -422,7 +422,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
             std::set<std::string> set;
             for (auto& item : *ruleList)
             {
-                if (item.get() == rule)
+                if (item == rule)
                     break;
                 extra = item->GetOrderPrerequisites();
                 while (!extra.empty())
@@ -630,14 +630,26 @@ size_t Eval::FindPercent(const std::string& name, size_t pos)
 }
 std::string Eval::FindStem(const std::string& name, const std::string& pattern)
 {
-    int n = FindPercent(pattern);
-    if (n != std::string::npos && !name.empty())
+    int m1 = pattern.find_first_not_of(' ');
+    int m2 = pattern.find_last_not_of(' ');
+    auto ipattern = pattern.substr(m1, m2 + 1 - m1);
+    m1 = name.find_first_not_of(' ');
+    m2 = name.find_last_not_of(' ');
+    auto iname = name.substr(m1, m2 + 1 - m1);
+
+    int n = FindPercent(ipattern);
+    if (n != std::string::npos && !iname.empty())
     {
-        int m1 = pattern.find_first_not_of(' ');
-        int m2 = pattern.find_last_not_of(' ');
-        int n1 = name.find_first_not_of(' ');
-        int n2 = name.find_last_not_of(' ');
-        return name.substr(n1 - m1 + n, n2 - m2 + 1 - (n1 - m1));
+        auto extension = ipattern.substr(n + 1, ipattern.size() - n - 1);
+        if (extension.size() < iname.size() && extension == iname.substr(iname.size() - extension.size(), extension.size()))
+        {
+            if (iname.size() >= ipattern.size() && ipattern.substr(0, n) == iname.substr(0, n))
+            {
+                int m = iname.size() - extension.size();
+                if (n < m)
+                    return iname.substr(n, m - n);
+            }
+        }
     }
     return "";
 }

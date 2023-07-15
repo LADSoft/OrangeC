@@ -6929,7 +6929,14 @@ void ScrubTemplateValues(SYMBOL* func)
             tp = basetype(tp)->btp;
         if (isstructured(tp) && basetype(tp)->sp->templateParams && !basetype(tp)->sp->sb->instantiated &&
             !basetype(tp)->sp->sb->declaring)
+        {
             ClearArgValues(basetype(tp)->sp->templateParams, basetype(tp)->sp->sb->specialized);
+            if (basetype(tp)->sp->sb->specialized)
+            {
+                ClearArgValues(basetype(tp)->sp->templateParams->front().second->bySpecialization.types, basetype(tp)->sp->sb->specialized);
+            }
+        }
+
     }
     TYPE* retval = basetype(basetype(func->tp)->btp);
     if (isstructured(retval) && retval->sp->templateParams && !retval->sp->sb->instantiated && !retval->sp->sb->declaring)

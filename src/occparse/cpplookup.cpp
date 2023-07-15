@@ -5389,6 +5389,7 @@ static bool IsMove(SYMBOL* sp)
     }
     return rv;
 }
+int count3;
 SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, int toErr,
                               bool maybeConversion, int flags)
 {
@@ -5570,15 +5571,10 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 icsList.resize(n);
                 lenList.resize(n);
                 funcList.resize(n);
-//                if (!strcmp(sp->name, "ne"))
-//                    printf("hi");
-//                if (!strcmp(sp->name, ".bctr") && strstr(sp->sb->parentClass->name, "function"))
-//                    printf("hi");
                 n = insertFuncs(&spList[0], gather, args, atp, flags);
                 if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor && !spList[0]->sb->specialized2))
                 {
                     bool hasDest = false;
-           
                     
                     std::unordered_map<int, SYMBOL*> storage;
                     if (atp || args->ascall)

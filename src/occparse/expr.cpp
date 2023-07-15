@@ -4397,8 +4397,6 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                 {
                     temp1.insert(temp1.begin(), itl, itle);
                     int n = temp1.size();
-//                    if (!strcmp(funcparams->sp->name, "ne"))
-//                        printf("hi");
                     AdjustParams(funcparams->sp, it, temp->end(), &temp2, operands, true);
                     auto itt = temp1.begin();
                     auto itte = temp1.end();

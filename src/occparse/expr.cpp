@@ -4247,7 +4247,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
     if (!isfunction(*tp))
     {
         // might be operator ()
-        if (Optimizer::cparams.prm_cplusplus)
+        if (Optimizer::cparams.prm_cplusplus && isstructured(*tp))
         {
             if (insertOperatorParams(funcsp, &tp_cpp, &exp_cpp, funcparams, flags))
             {
@@ -4255,6 +4255,16 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                 *tp = tp_cpp;
                 *exp = exp_cpp;
             }
+            else
+            {
+                if (!templateNestingCount && !(flags & _F_INDECLTYPE))
+                    errortype(ERR_UNABLE_TO_FIND_SUITABLE_OPERATOR_CALL, *tp, nullptr);
+            }
+        }
+        else
+        {
+            if (!templateNestingCount && !(flags & _F_INDECLTYPE))
+                error(ERR_CALL_OF_NONFUNCTION);
         }
     }
     {
@@ -4601,8 +4611,6 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         else
         {
             *tp = &stdint;
-            if (!templateNestingCount && !(flags & _F_INDECLTYPE))
-                error(ERR_CALL_OF_NONFUNCTION);
         }
     }
     return lex;

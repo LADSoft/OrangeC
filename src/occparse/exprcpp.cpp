@@ -1387,7 +1387,7 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
     SYMLIST **hrd, *hrs;
     const char* name = overloadNameTab[openpa - kw_new + CI_NEW];
     TYPE* tpx;
-    if (!isstructured(*tp) && basetype(*tp)->type != bt_enum)
+    if (!isstructured(*tp))
         return false;
     if (isstructured(*tp))
     {

@@ -7438,6 +7438,10 @@ LEXLIST* expression_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                                 if (!doStaticCast(tp, throwaway, exp, funcsp, false) &&
                                     !doReinterpretCast(tp, throwaway, exp, funcsp, false))
                                 {
+                                    if (isstructured(throwaway))
+                                    {
+                                        errortype(ERR_CANNOT_CAST_TYPE, throwaway, *tp);
+                                    }
                                     cast(*tp, exp);
                                 }
                             }

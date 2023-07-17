@@ -602,7 +602,7 @@ int MakeMain::Run(int argc, char** argv)
         done = !Include::Instance()->MakeMakefiles(silent.GetValue(), outputType, didSomething);
         if (!didSomething)
         {
-            MakeMessage("Nothing to be done for '%s'", goals.size() ? goals.c_str() : "all");
+            std::cout << "omake: *** No Targets" << std::endl;
         }
         if (!done)
             restarts++;

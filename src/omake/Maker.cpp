@@ -138,7 +138,7 @@ bool Maker::CreateDependencyTree()
         dependsNesting = 0;
         if (goal != ".MAKEFLAGS" && goal != ".MFLAGS")
         {
-            auto t = Dependencies(goal, "", tv1, true, "", -1);
+            auto t = Dependencies(goal, "", tv1, true, true, "", -1);
             if (t)
             {
                 depends.push_back(std::move(t));
@@ -153,7 +153,7 @@ bool Maker::CreateDependencyTree()
     return !missingTarget;
 }
 std::unique_ptr<Depends> Maker::Dependencies(const std::string& goal, const std::string& preferredPath, Time& timeval, bool err,
-                                             std::string file, int line)
+                                             bool top, std::string file, int line)
 {
     if (++dependsNesting > 200)
     {
@@ -192,15 +192,17 @@ std::unique_ptr<Depends> Maker::Dependencies(const std::string& goal, const std:
             rv = std::make_unique<Depends>(goal, xx, intermediate && !precious && !secondary);
             std::shared_ptr<Rule> executionRule = nullptr;
             std::string newerPrereqs;
+            bool hasPrerequisites = false;
             for (auto& rule : *ruleList)
             {
+                hasPrerequisites |= rule->HasPrereq();
                 std::string working = rule->GetPrerequisites();
                 bool remakeThis = false;
                 while (!working.empty())
                 {
                     Time current;
                     std::string thisOne = Eval::ExtractFirst(working, " ");
-                    auto dp = Dependencies(thisOne, foundPath, current, err && !rule->IsDontCare(), rule->File(), rule->Line());
+                    auto dp = Dependencies(thisOne, foundPath, current, err && !rule->IsDontCare(), false, rule->File(), rule->Line());
                     auto dependentRuleList = RuleContainer::Instance()->Lookup(thisOne);
                     ruleList->CopyExports(dependentRuleList);
                     if (current > dependsTime)
@@ -230,7 +232,7 @@ std::unique_ptr<Depends> Maker::Dependencies(const std::string& goal, const std:
                     if (!exists)
                     {
                         auto dp =
-                            Dependencies(thisOne, preferredPath, current, err && !rule->IsDontCare(), rule->File(), rule->Line());
+                            Dependencies(thisOne, preferredPath, current, err && !rule->IsDontCare(), false, rule->File(), rule->Line());
                         auto dependentRuleList = RuleContainer::Instance()->Lookup(thisOne);
                         ruleList->CopyExports(dependentRuleList);
                         if (dp)
@@ -257,6 +259,8 @@ std::unique_ptr<Depends> Maker::Dependencies(const std::string& goal, const std:
             }
             else
             {
+                if (!hasPrerequisites && top)
+                    std::cout << "omake: Nothing to be done for '" << goal << "'." << std::endl;
                 rv->SetRuleList(ruleList);
             }
         }
@@ -264,7 +268,7 @@ std::unique_ptr<Depends> Maker::Dependencies(const std::string& goal, const std:
         {
             if (SearchImplicitRules(goal, preferredPath, true, timeval))
             {
-                rv = Dependencies(goal, preferredPath, timeval, err, file, line);
+                rv = Dependencies(goal, preferredPath, timeval, err, false, file, line);
             }
             else if (err)
             {

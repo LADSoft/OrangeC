@@ -56,8 +56,9 @@ class Rule
   public:
     Rule(const std::string& targets, const std::string& Prerequisites, const std::string& OrderPrerequisites, std::shared_ptr<Command> Commands,
          const std::string& file, int lineno, bool dontCare = false, bool ignore = false, bool silent = false, bool make = false,
-         bool precious = false, bool secondExpansion = false);
+         bool precious = false, bool secondExpansion = false, bool hasPrereq = false);
 
+    bool HasPrereq() const { return hasPrereq; }
     std::shared_ptr<Command> GetCommands() { return commands; }
     std::string& GetPrerequisites() { return prerequisites; }
     std::string& GetOrderPrerequisites() { return orderPrerequisites; }
@@ -89,6 +90,7 @@ class Rule
     bool make;
     bool precious;
     bool builtin = false;
+    bool hasPrereq;
 };
 class RuleList
 {

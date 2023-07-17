@@ -796,7 +796,7 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
                 else
                 {
                     rule = std::make_shared<Rule>(cur, ps1, os, lastCommand, file, lineno, dontCare, ignore, silent, make, precious,
-                                    secondaryExpansionEnabled);
+                                    secondaryExpansionEnabled, !orderPrereqs.empty() || !prereqs.empty());
                 }
                 std::shared_ptr<RuleList> ruleList = RuleContainer::Instance()->Lookup(cur);
                 if (!ruleList)

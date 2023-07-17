@@ -742,7 +742,7 @@ int dumpMemberPtr(SYMBOL* sym, TYPE* membertp, bool make_label)
         else
         {
             if (sym->sb->storage_class != sc_member && sym->sb->storage_class != sc_mutable && sym->sb->storage_class != sc_virtual)
-                errortype(ERR_CANNOT_CONVERT_TYPE, sym->tp, membertp);
+                errorConversionOrCast(true, sym->tp, membertp);
             memset(&expx, 0, sizeof(expx));
             expx.type = en_c_i;
             exp = baseClassOffset(sym->sb->parentClass, basetype(membertp)->sp, &expx);
@@ -1674,7 +1674,7 @@ static LEXLIST* initialize_pointer_type(LEXLIST* lex, SYMBOL* funcsp, int offset
             }
             if (tp->type == bt_memberptr)
             {
-                errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
+                errorConversionOrCast(true, tp, itype);
             }
             if (Optimizer::cparams.prm_cplusplus && string && !isconst(basetype(itype)->btp))
                 error(ERR_INVALID_CHARACTER_STRING_CONVERSION);
@@ -1694,7 +1694,7 @@ static LEXLIST* initialize_pointer_type(LEXLIST* lex, SYMBOL* funcsp, int offset
                     {
                         if (!isvoidptr(itype) && !tp->nullptrType)
                             if (tp->type == bt_aggregate)
-                                errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
+                                errorConversionOrCast(true, tp, itype);
                     }
                     else if (!isvoidptr(tp) && !isvoidptr(itype))
                         error(ERR_SUSPICIOUS_POINTER_CONVERSION);
@@ -1710,7 +1710,7 @@ static LEXLIST* initialize_pointer_type(LEXLIST* lex, SYMBOL* funcsp, int offset
                             if (!ispointer(itype) || tp->type == bt_aggregate || !isstructured(basetype(tp)->btp) ||
                                 !isstructured(basetype(itype)->btp) ||
                                 classRefCount(basetype(basetype(itype)->btp)->sp, basetype(basetype(tp)->btp)->sp) != 1)
-                                errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
+                                errorConversionOrCast(true, tp, itype);
                     }
                     else if (!isvoidptr(tp) && !isvoidptr(itype))
                         if (!matchingCharTypes(tp, itype))
@@ -1723,7 +1723,7 @@ static LEXLIST* initialize_pointer_type(LEXLIST* lex, SYMBOL* funcsp, int offset
                 }
                 else if (Optimizer::cparams.prm_cplusplus)
                 {
-                    errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
+                    errorConversionOrCast(true, tp, itype);
                 }
             }
             /* might want other types of conversion checks */
@@ -1783,7 +1783,7 @@ static LEXLIST* initialize_memberptr(LEXLIST* lex, SYMBOL* funcsp, int offset, e
                 }
                 if (tp1 && !comparetypes(itype->btp, tp1, true))
                 {
-                    errortype(ERR_CANNOT_CONVERT_TYPE, tp1, itype);
+                    errorConversionOrCast(true, tp1, itype);
                 }
             }
             else if (exp->type == en_memberptr)
@@ -1793,7 +1793,7 @@ static LEXLIST* initialize_memberptr(LEXLIST* lex, SYMBOL* funcsp, int offset, e
                      !sameTemplate(itype, exp->v.sp->sb->parentClass->tp)) ||
                     !comparetypes(basetype(itype)->btp, basetype(exp->v.sp->tp), true))
 
-                    errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
+                    errorConversionOrCast(true, tp, itype);
             }
             else
             {
@@ -1815,7 +1815,7 @@ static LEXLIST* initialize_memberptr(LEXLIST* lex, SYMBOL* funcsp, int offset, e
                 }
                 if (!comparetypes(itype, tp, true))
                 {
-                    errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
+                    errorConversionOrCast(true, tp, itype);
                 }
             }
         }
@@ -2693,7 +2693,7 @@ static LEXLIST* initialize___string(LEXLIST* lex, SYMBOL* funcsp, int offset, TY
         if (expr && expr->type == en_labcon && expr->string)
             expr->type = en_c_string;
         else
-            errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
+            errorConversionOrCast(true, tp, itype);
     }
     initInsert(init, itype, expr, offset, false);
     return lex;
@@ -3148,7 +3148,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
         {
             TYPE* tp1 = nullptr;
             EXPRESSION* exp1 = nullptr;
-            if (Optimizer::cparams.prm_cplusplus && isstructured(itype) && MATCHKW(lex, openpa))
+            if (Optimizer::cparams.prm_cplusplus && !assn && isstructured(itype) && MATCHKW(lex, openpa))
             {
                 // conversion constructor params
                 FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
@@ -3246,7 +3246,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
                     }
                     if (toErr)
                     {
-                        errortype(ERR_CANNOT_CONVERT_TYPE, tp1, itype);                        
+                        errorConversionOrCast(true, tp1, itype);                        
                     }
                 }
                 if (exp1)

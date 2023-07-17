@@ -572,7 +572,14 @@ ERRLIST(ERR_CONSTEXPR_NO_STRUCT, 514, "'constexpr' specifier cannot be used with
 ERRLIST(ERR_CONSTEXPR_MUST_INITIALIZE, 515, "constexpr constructor does not initialize '%s'", CE_ERROR)
 ERRLIST(ERR_NO_ASSIGNMENT_OPERATOR, 516, "Cannot find a matching assignment operator for class '%s'", CE_ERROR)
 ERRLIST(ERR_CONSTEXPR_CLASS_NOT_LITERAL, 517, "'%s' is not a literal class", CE_ERROR)
-ERRLIST(ERR_UNABLE_TO_FIND_SUITABLE_OPERATOR_CALL, 518, "Unable to find suitable operator() for '%s'", CE_ERROR)
+ERRLIST(ERR_UNABLE_TO_FIND_SUITABLE_OPERATOR_CALL, 518, 
+        "Cannot call '%s' = A suitable operator() ws not found, or could not be called", CE_ERROR)
+ERRLIST(ERR_CANNOT_CALL_CONVERSION_FUNCTION_UD, 519,
+        "Cannot convert '%s' to '%s' - a suitable user-defined conversion function was not found, or could not be called",
+        CE_ERROR)
+ERRLIST(ERR_CANNOT_CALL_CONVERSION_FUNCTION_CONS, 520,
+        "Cannot convert '%s' to '%s' - a suitable constructor was not found, or overload resolution is ambiguous",
+        CE_ERROR)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

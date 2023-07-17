@@ -130,6 +130,7 @@ void errorsym2(int err, SYMBOL* sym1, SYMBOL* sym2);
 void errorstrsym(int err, const char* name, SYMBOL* sym2);
 void errorstringtype(int err, char* str, TYPE* tp1);
 void errortype(int err, TYPE* tp1, TYPE* tp2);
+void errorConversionOrCast(bool convert, TYPE* tp1, TYPE* tp2);
 void errorabstract(int error, SYMBOL* sp);
 void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp);
 void errskim(LEXLIST** lex, enum e_kw* skimlist, bool assumeTemplate = false);

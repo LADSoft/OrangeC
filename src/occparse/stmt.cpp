@@ -283,7 +283,7 @@ static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent
         if (!castToArithmeticInternal(false, &tp, exp, (enum e_kw) - 1, &stdbool, false))
             if (!castToArithmeticInternal(false, &tp, exp, (enum e_kw) - 1, &stdint, false))
                 if (!castToPointer(&tp, exp, (enum e_kw) - 1, &stdpointer))
-                    errortype(ERR_CANNOT_CONVERT_TYPE, tp, &stdint);
+                    errorConversionOrCast(true, tp, &stdint);
     }
     if (!tp)
         error(ERR_EXPRESSION_SYNTAX);
@@ -849,7 +849,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                             {
                                 if (!isstructured(matchtp))
                                 {
-                                    errortype(ERR_CANNOT_CONVERT_TYPE, ittp, matchtp);
+                                    errorConversionOrCast(true, ittp, matchtp);
                                 }
                                 else
                                 {
@@ -857,7 +857,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                     EXPRESSION* newExp = base;
                                     if (!callConstructorParam(&ctype, &newExp, ittp, lstitem->exp, true, false, true, false, true))
                                     {
-                                        errortype(ERR_CANNOT_CONVERT_TYPE, ittp, matchtp);
+                                        errorConversionOrCast(true, ittp, matchtp);
                                     }
                                     else
                                     {
@@ -883,7 +883,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                 }
                                 else if (!callConstructorParam(&ctype, &newExp, ittp, lstitem->exp, true, false, true, false, true))
                                 {
-                                    errortype(ERR_CANNOT_CONVERT_TYPE, ittp, matchtp);
+                                    errorConversionOrCast(true, ittp, matchtp);
                                 }
                                 else
                                 {
@@ -2300,7 +2300,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                     }
                     if (toErr)
                     {
-                        errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
+                        errorConversionOrCast(true, tp1, tp);
                     }
                 }
                 else
@@ -2380,7 +2380,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
             }
             else if (!comparetypes(tp1, tp, true) && ismsil(tp1))
             {
-                errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
+                errorConversionOrCast(true, tp1, tp);
             }
             if (needend)
             {
@@ -2401,7 +2401,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                 }
                 else
                 {
-                    errortype(ERR_CANNOT_CAST_TYPE, tp1, tp);
+                    errorConversionOrCast(false, tp1, tp);
                 }
             }
             if (tp->type == bt_auto)

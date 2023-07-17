@@ -5389,7 +5389,6 @@ static bool IsMove(SYMBOL* sp)
     }
     return rv;
 }
-int count3;
 SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, int toErr,
                               bool maybeConversion, int flags)
 {
@@ -5713,7 +5712,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     if (args && args->arguments && args->arguments->size() == 1  // one arg
                         && sp && sp->sb->isConstructor)                    // conversion constructor
                     {
-                        errortype(ERR_CANNOT_CONVERT_TYPE, args->arguments->front()->tp, sp->sb->parentClass->tp);
+                        errorConversionOrCast(true, args->arguments->front()->tp, sp->sb->parentClass->tp);
                     }
                     else if (!sp)
                     {

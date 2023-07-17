@@ -376,7 +376,7 @@ void castToArithmetic(bool integer, TYPE** tp, EXPRESSION** exp, enum e_kw kw, T
                 // otherwise RHS, do a can't convert message
                 if (!isarithmetic(other))
                     other = &stdint;
-                errortype(ERR_CANNOT_CONVERT_TYPE, *tp, other);
+                errorConversionOrCast(true, *tp, other);
             }
         }
         else

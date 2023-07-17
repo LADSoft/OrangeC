@@ -94,7 +94,7 @@ void OS::TerminateAll()
 std::string OS::QuoteCommand(std::string exe, std::string command)
 {
     std::string rv;
-    bool sh = exe.find("sh.exe") != std::string::npos;
+    bool sh = exe.find("sh.exe") != std::string::npos || exe.find("bash.exe") != std::string::npos;
     if (command.empty() == false && command.find_first_of(" \t\n\v\"") == command.npos)
     {
         rv = command;
@@ -344,9 +344,9 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         cmd = r.Evaluate();
     }
     bool asapp = true;
-    if (cmd == "/bin/sh")
+    if (cmd.find("bash.exe") != std::string::npos || cmd.find("sh.exe") != std::string::npos)
     {
-        cmd = "sh.exe -c ";
+        cmd = cmd.find("bash.exe") ? "bash.exe" : "sh.exe";
         // we couldn't simply set MAKE properly because they may change the shell in the script
         v = VariableContainer::Instance()->Lookup("MAKE");
         if (v->GetValue().find_first_of("\\") != std::string::npos)
@@ -358,12 +358,13 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
                 n = command1.find(v->GetValue());
             }
         }
+        cmd += " -c '" + command1 + "'";
+        asapp = false;
     }
     else
     {
-        cmd += " /c ";
+        cmd += " /c " + QuoteCommand(cmd, command1);
     }
-    cmd += QuoteCommand(cmd, command1);
     STARTUPINFO startup = {};
     PROCESS_INFORMATION pi;
     HANDLE pipeRead, pipeWrite, pipeWriteDuplicate;
@@ -686,7 +687,7 @@ std::string OS::NormalizeFileName(const std::string file)
         }
         else if (isSHEXE)
         {
-            if (name[i] == '\\')
+            if (name[i] == '\\' && (!i || name[i-1] != '='))
                 name[i] = '/';
         }
         else if (name[i] == '/' && i > 0 && !isspace(name[i - 1]))

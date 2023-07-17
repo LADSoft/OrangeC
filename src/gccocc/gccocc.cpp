@@ -15,7 +15,7 @@
  *     GNU General Public License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
- *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.G
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+#include <algorithm>
 #include "Utils.h"
 #include "ToolChain.h"
 #include "CmdSwitch.h"
@@ -40,6 +41,7 @@
 #    define CONSOLE_DEVICE "con:"
 #endif
 
+#define DEFINE_SPLIT_CHAR 0x1b
 CmdSwitchParser gccocc::SwitchParser;
 CmdSwitchBool gccocc::prm_compileonly(SwitchParser, 'c');
 CmdSwitchString gccocc::prm_directory_options(SwitchParser, 'i'); // ignored
@@ -48,7 +50,7 @@ CmdSwitchBool gccocc::prm_verbose(SwitchParser, 'v');
 CmdSwitchString gccocc::prm_libs(SwitchParser, 'l', ';');
 CmdSwitchString gccocc::prm_output(SwitchParser, 'o');
 CmdSwitchBool gccocc::prm_cppmode(SwitchParser, 'E');
-CmdSwitchCombineString gccocc::prm_define(SwitchParser, 'D', ';');
+CmdSwitchCombineString gccocc::prm_define(SwitchParser, 'D', DEFINE_SPLIT_CHAR);
 CmdSwitchCombineString gccocc::prm_libpath(SwitchParser, 'L', ';');
 CmdSwitchCombineString gccocc::prm_cinclude(SwitchParser, 'I', ';');
 CmdSwitchString gccocc::prm_optimize(SwitchParser, 'O');
@@ -180,7 +182,9 @@ void gccocc::PutMultiple(FILE* fil, const char* switchName, std::string lst)
 {
     auto splt = Utils::split(lst,';');
     for (int i=0; i < splt.size(); i++)
+    {
         fprintf(fil, " -%s%s\n", switchName, splt[i].c_str());
+    }
 }
 void gccocc::PutWarnings(FILE* fil)
 {
@@ -380,8 +384,23 @@ int gccocc::Run(int argc, char** argv)
         fprintf(fil, " -print-prog-name=%s", prmPrintProgName.GetValue().c_str());
     if (prm_undefine.GetExists())
         PutMultiple(fil, "U", prm_undefine.GetValue());
+    std::string defines;
     if (prm_define.GetExists())
-        PutMultiple(fil, "D", prm_define.GetValue());
+    {
+        auto splt = Utils::split(prm_define.GetValue(),DEFINE_SPLIT_CHAR);
+        for (int i=0; i < splt.size(); i++)
+        {
+            for (int j=0; j < splt[i].size(); j++)
+            {
+                if (splt[i][j] == '"' || splt[i][j] == '\\' || splt[i][j] == ' ')
+                {
+                    splt[i].insert(j,1,'\\');
+                    j++;
+                }
+            }
+            defines += " -D" + splt[i];
+        }
+    }
     if (prmunicode.GetValue())
         fputs(" -DUNICODE", fil);
     if (prm_cinclude.GetExists())
@@ -399,7 +418,20 @@ int gccocc::Run(int argc, char** argv)
      
     } 
     fclose(fil);
-    auto rv = ToolChain::ToolInvoke("occ.exe", nullptr, " -! @%s", tempName.c_str());
+    int rv;
+#ifndef HAVE_UNISTD_H
+    if (getenv("MSYSTEM") && getenv("SHELL"))
+    {
+        // MSYS2 has to be handled differently
+        std::replace( tempName.begin(), tempName.end(), '\\', '/');
+        std::string cmd = "bash.exe -c 'occ.exe -!" + defines + " @" + tempName + "'";
+        rv = system(cmd.c_str()); // uses winsystem...  ...ignores cmd.exe
+    }
+    else
+#endif
+    {
+        rv = ToolChain::ToolInvoke("occ.exe", nullptr, " -! %s @%s", defines.c_str(), tempName.c_str());
+    }
     unlink(tempName.c_str());
     return rv;
 }

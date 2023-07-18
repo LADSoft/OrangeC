@@ -19,6 +19,8 @@ When you install these programs install them to their default directories, or al
 
 The distribution directories are meant to go in a subdirectory.  I name mine OrangeC and put it in the root, then put the SRC and DOC directories in there.  Later, the build steps may create other directories such as a BIN directory and an INCLUDE directory.  
 
+You may have limited success using a deeply nested directory as the root.   Orange C has a path size limitation of 260 characters, and the path to some of the library files is nested very deeply.   Try using C:\orangec or c:\workingdir\orangec
+
 There is a master makefile, and then there are multiple *.mak files which perform various subtasks.  In particulare there is a platform-specific make file for each compiler, and a makefile called 'treetop.mak' which performs most common tasks.
 
 Note that treetop.mak does not automatically check dependencies for .h files.   That is something I will add at a later date.

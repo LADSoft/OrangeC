@@ -4263,7 +4263,19 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         }
         else
         {
-            if (!templateNestingCount && !(flags & _F_INDECLTYPE))
+            bool doit = true;
+
+            // if we are in an argument list and there is an empty packed argument
+            // don't generate an error on the theory there will be an ellipsis...
+            if ((flags & (_F_INARGS | _F_INCONSTRUCTOR)) && funcparams->arguments)
+            {
+                for (auto arg : *funcparams->arguments)
+                {
+                    if (arg->tp && arg->tp->type == bt_templateparam && arg->tp->templateParam->second->packed)
+                        doit = !!arg->tp->templateParam->second->byPack.pack;
+                }
+            }
+            if (doit && !templateNestingCount && !(flags & _F_INDECLTYPE))
                 error(ERR_CALL_OF_NONFUNCTION);
         }
     }
@@ -4591,20 +4603,8 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
             }
             else
             {
-                bool doit = true;
-
-                // if we are in an argument list and there is an empty packed argument
-                // don't generate an error on the theory there will be an ellipsis...
-                if ((flags & (_F_INARGS | _F_INCONSTRUCTOR)) && funcparams->arguments)
-                {
-                    for (auto arg : *funcparams->arguments)
-                    {
-                        if (arg->tp && arg->tp->type == bt_templateparam && arg->tp->templateParam->second->packed)
-                            doit = !!arg->tp->templateParam->second->byPack.pack;
-                    }
-                }
-                if (doit && !templateNestingCount && !(flags & _F_INDECLTYPE))
-                    error(ERR_CALL_OF_NONFUNCTION);
+                // we may get here for a packed argument with an ellipsis
+                // if that is the case this won't matter and if it isn't the error will ripple...
                 *tp = &stdany;
             }
         }

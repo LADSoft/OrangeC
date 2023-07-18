@@ -2878,26 +2878,9 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                                 tpr = itr != itrend ? (*itr)->tp : nullptr;
                             if (tpl && tpr)
                             {
-                                bool doit = true;
-                                if (isstructured(tpl) && basetype(tpl)->sp->sb->initializer_list)
-                                {
-                                    if (!isstructured(tpr) || !basetype(tpl)->sp->sb->initializer_list)
-                                    {
-                                        arr[k] = -1;
-                                        doit = false;
-                                    }
-                                }
-                                else if (isstructured(tpr) && basetype(tpr)->sp->sb->initializer_list)
-                                {
-                                    arr[k] = 1;
-                                    doit = false;
-                                }
-                                if (doit)
-                                {
-                                    arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, argit != argite ? (*argit)->tp : 0,
-                                        argit != argite ? (*argit)->exp : 0, funcList ? funcList[i][k + lk] : nullptr,
-                                                            funcList ? funcList[j][k + rk] : nullptr, lenl, lenr, false);
-                                }
+                                arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, argit != argite ? (*argit)->tp : 0,
+                                argit != argite ? (*argit)->exp : 0, funcList ? funcList[i][k + lk] : nullptr,
+                                                    funcList ? funcList[j][k + rk] : nullptr, lenl, lenr, false);
                             }
                             else
                             {

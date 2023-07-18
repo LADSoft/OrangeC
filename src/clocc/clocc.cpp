@@ -640,8 +640,8 @@ int clocc::Run(int argc, char** argv)
     FILE* fil = Utils::TempName(tempName);
     fputs(args.c_str(), fil);
     fclose(fil);
-#ifndef HAVE_UNISTD_H
     int rv;
+#ifndef HAVE_UNISTD_H
     if (getenv("MSYSTEM") && getenv("SHELL"))
     {
         // MSYS2 has to be handled differently

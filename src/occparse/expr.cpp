@@ -255,7 +255,7 @@ void ValidateMSILFuncPtr(TYPE* dest, TYPE* src, EXPRESSION** exp)
     else
     {
         // unknown
-        errortype(ERR_CANNOT_CONVERT_TYPE, src, dest);
+        errorConversionOrCast(true, src, dest);
     }
     if (isfunction(src))
     {
@@ -270,7 +270,7 @@ void ValidateMSILFuncPtr(TYPE* dest, TYPE* src, EXPRESSION** exp)
     else
     {
         // unknown
-        errortype(ERR_CANNOT_CONVERT_TYPE, src, dest);
+        errorConversionOrCast(true, src, dest);
     }
     if (managedDest != managedSrc)
     {
@@ -1319,7 +1319,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
             }
             else if (!comparetypes(*tp, tp1, true))
             {
-                errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
+                errorConversionOrCast(true, tp1, *tp);
             }
             if (!MATCHKW(lex, classsel))
             {
@@ -2118,7 +2118,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                                 SYMBOL* base = basetype(tpb)->sp;
                                 SYMBOL* derived = basetype(tpd)->sp;
                                 if (base != derived && classRefCount(base, derived) != 1)
-                                    errortype(ERR_CANNOT_CONVERT_TYPE, (*itp)->tp, decl->tp);
+                                    errorConversionOrCast(true, (*itp)->tp, decl->tp);
                                 if (base != derived && !isAccessible(derived, derived, base, funcsp, ac_public, false))
                                     errorsym(ERR_CANNOT_ACCESS, base);
                             }
@@ -2157,7 +2157,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                                     SYMBOL* base = basetype(decl->tp)->sp;
                                     SYMBOL* derived = basetype((*itp)->tp)->sp;
                                     if (base != derived && classRefCount(base, derived) != 1)
-                                        errortype(ERR_CANNOT_CONVERT_TYPE, (*itp)->tp, decl->tp);
+                                        errorConversionOrCast(true, (*itp)->tp, decl->tp);
                                     if (base != derived && !isAccessible(derived, derived, base, funcsp, ac_public, false))
                                         errorsym(ERR_CANNOT_ACCESS, base);
                                 }
@@ -2167,7 +2167,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                             else if (assignDiscardsConst(decl->tp, (*itp)->tp))
                             {
                                 if (Optimizer::cparams.prm_cplusplus)
-                                    errortype(ERR_CANNOT_CONVERT_TYPE, (*itp)->tp, decl->tp);
+                                    errorConversionOrCast(true, (*itp)->tp, decl->tp);
                                 else
                                     error(ERR_SUSPICIOUS_POINTER_CONVERSION);
                             }
@@ -2196,13 +2196,13 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                                                     SYMBOL* base = basetype(tpb)->sp;
                                                     SYMBOL* derived = basetype(tpd)->sp;
                                                     if (base != derived && classRefCount(base, derived) != 1)
-                                                        errortype(ERR_CANNOT_CONVERT_TYPE, (*itp)->tp, decl->tp);
+                                                        errorConversionOrCast(true, (*itp)->tp, decl->tp);
                                                     if (isAccessible(derived, derived, base, funcsp, ac_public, false))
                                                         errorsym(ERR_CANNOT_ACCESS, base);
                                                 }
                                                 else
                                                 {
-                                                    errortype(ERR_CANNOT_CONVERT_TYPE, (*itp)->tp, decl->tp);
+                                                    errorConversionOrCast(true, (*itp)->tp, decl->tp);
                                                 }
                                             }
                                             else
@@ -4247,7 +4247,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
     if (!isfunction(*tp))
     {
         // might be operator ()
-        if (Optimizer::cparams.prm_cplusplus)
+        if (Optimizer::cparams.prm_cplusplus && isstructured(*tp))
         {
             if (insertOperatorParams(funcsp, &tp_cpp, &exp_cpp, funcparams, flags))
             {
@@ -4255,6 +4255,16 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                 *tp = tp_cpp;
                 *exp = exp_cpp;
             }
+            else
+            {
+                if (!templateNestingCount && !(flags & _F_INDECLTYPE))
+                    errortype(ERR_UNABLE_TO_FIND_SUITABLE_OPERATOR_CALL, *tp, nullptr);
+            }
+        }
+        else
+        {
+            if (!templateNestingCount && !(flags & _F_INDECLTYPE))
+                error(ERR_CALL_OF_NONFUNCTION);
         }
     }
     {
@@ -4397,8 +4407,6 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                 {
                     temp1.insert(temp1.begin(), itl, itle);
                     int n = temp1.size();
-//                    if (!strcmp(funcparams->sp->name, "ne"))
-//                        printf("hi");
                     AdjustParams(funcparams->sp, it, temp->end(), &temp2, operands, true);
                     auto itt = temp1.begin();
                     auto itte = temp1.end();
@@ -4603,8 +4611,6 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         else
         {
             *tp = &stdint;
-            if (!templateNestingCount && !(flags & _F_INDECLTYPE))
-                error(ERR_CALL_OF_NONFUNCTION);
         }
     }
     return lex;
@@ -6776,7 +6782,7 @@ static LEXLIST* expression_postfix(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 lex = GetCastInfo(lex, funcsp, tp, &oldType, exp, (flags & _F_PACKABLE));
                 if (*tp && !doDynamicCast(tp, oldType, exp, funcsp))
                     if (!typeHasTemplateArg(*tp))
-                        errortype(ERR_CANNOT_CAST_TYPE, oldType, *tp);
+                        errorConversionOrCast(false, oldType, *tp);
                 if (isref(*tp))
                     *tp = basetype(*tp)->btp;
                 break;
@@ -6785,7 +6791,7 @@ static LEXLIST* expression_postfix(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 lex = GetCastInfo(lex, funcsp, tp, &oldType, exp, (flags & _F_PACKABLE));
                 if (*tp && !doStaticCast(tp, oldType, exp, funcsp, true))
                     if (!typeHasTemplateArg(*tp))
-                        errortype(ERR_CANNOT_CAST_TYPE, oldType, *tp);
+                        errorConversionOrCast(false, oldType, *tp);
                 if (isref(*tp))
                     *tp = basetype(*tp)->btp;
                 break;
@@ -6794,7 +6800,7 @@ static LEXLIST* expression_postfix(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 lex = GetCastInfo(lex, funcsp, tp, &oldType, exp, (flags & _F_PACKABLE));
                 if (*tp && !doConstCast(tp, oldType, exp, funcsp))
                     if (!typeHasTemplateArg(*tp))
-                        errortype(ERR_CANNOT_CAST_TYPE, oldType, *tp);
+                        errorConversionOrCast(false, oldType, *tp);
                 if (isref(*tp))
                     *tp = basetype(*tp)->btp;
                 break;
@@ -6803,7 +6809,7 @@ static LEXLIST* expression_postfix(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 lex = GetCastInfo(lex, funcsp, tp, &oldType, exp, (flags & _F_PACKABLE));
                 if (*tp && !doReinterpretCast(tp, oldType, exp, funcsp, true))
                     if (!typeHasTemplateArg(*tp))
-                        errortype(ERR_CANNOT_CAST_TYPE, oldType, *tp);
+                        errorConversionOrCast(false, oldType, *tp);
                 if (isref(*tp))
                     *tp = basetype(*tp)->btp;
                 break;
@@ -7440,12 +7446,20 @@ LEXLIST* expression_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                                 if (!doStaticCast(tp, throwaway, exp, funcsp, false) &&
                                     !doReinterpretCast(tp, throwaway, exp, funcsp, false))
                                 {
+                                    if (isstructured(throwaway) || isstructured(*tp))
+                                    {
+                                        errorConversionOrCast(false, throwaway, *tp);
+                                    }
                                     cast(*tp, exp);
                                 }
                             }
                             else if (!isstructured(*tp) && (!isarray(*tp) || !basetype(*tp)->msil))
                             {
                                 cast(*tp, exp);
+                            }
+                            else
+                            {
+                                error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
                             }
                         }
                         else
@@ -8469,7 +8483,7 @@ static LEXLIST* binop(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRES
                 if (!castToArithmeticInternal(false, tp, exp, (enum e_kw) - 1, &stdbool, false))
                     if (!castToArithmeticInternal(false, tp, exp, (enum e_kw) - 1, &stdint, false))
                         if (!castToPointer(tp, exp, (enum e_kw) - 1, &stdpointer))
-                            errortype(ERR_CANNOT_CONVERT_TYPE, *tp, &stdint);
+                            errorConversionOrCast(true, *tp, &stdint);
             }
         }
         lex = getsym();
@@ -8487,7 +8501,7 @@ static LEXLIST* binop(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRES
                 if (!castToArithmeticInternal(false, &tp1, &exp1, (enum e_kw) - 1, &stdbool, false))
                     if (!castToArithmeticInternal(false, &tp1, &exp1, (enum e_kw) - 1, &stdint, false))
                         if (!castToPointer(&tp1, &exp1, (enum e_kw) - 1, &stdpointer))
-                            errortype(ERR_CANNOT_CONVERT_TYPE, tp1, &stdint);
+                            errorConversionOrCast(true, tp1, &stdint);
             }
         }
         if (isstructuredmath(*tp, tp1))
@@ -8588,7 +8602,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
             if (!castToArithmeticInternal(false, tp, exp, (enum e_kw) - 1, &stdbool, false))
                 if (!castToArithmeticInternal(false, tp, exp, (enum e_kw) - 1, &stdint, false))
                     if (!castToPointer(tp, exp, (enum e_kw) - 1, &stdpointer))
-                        errortype(ERR_CANNOT_CONVERT_TYPE, *tp, &stdint);
+                        errorConversionOrCast(true, *tp, &stdint);
         }
         std::list<EXPRESSION*>* logicaldestructors = nullptr;
         GetLogicalDestructors(&logicaldestructors, *exp);
@@ -8644,7 +8658,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                     tpc = tph;
                 if (tpc->lref && tph->lref)
                 {
-                    if (!comparetypes(tpc, tph, 1) || !sameTemplate(tpc, tph))
+                    if (!comparetypes(tpc, tph, 1) && !sameTemplate(tpc, tph))
                     {
                         tpc->lref = 0;
                         tpc->rref = 0;
@@ -9186,7 +9200,7 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             if (basetype(*tp)->btp && !comparetypes(basetype(*tp)->btp, tp1, true))
             {
                 if (!isvoidptr(*tp))
-                    errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
+                    errorConversionOrCast(true, tp1, *tp);
             }
         }
         if (exp1->type == en_pc || (exp1->type == en_func && !exp1->v.func->ascall))
@@ -9369,7 +9383,7 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                             }
                             else if (Optimizer::cparams.prm_cplusplus)
                             {
-                                errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
+                                errorConversionOrCast(true, tp1, *tp);
                             }
                             else
                             {
@@ -9433,7 +9447,7 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                                         if ((!isvoidptr(*tp) || !ispointer(tp1)) && !tp1->nullptrType)
                                             if (!isTemplatedPointer(*tp))
                                             {
-                                                errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
+                                                errorConversionOrCast(true, tp1, *tp);
                                             }
                                     }
                                     else if (!isvoidptr(*tp) && !isvoidptr(tp1))
@@ -9459,7 +9473,7 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                         {
                             if (tp1->type == bt_memberptr)
                             {
-                                errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
+                                errorConversionOrCast(true, tp1, *tp);
                             }
                             else
                                 error(ERR_INVALID_POINTER_CONVERSION);
@@ -9509,16 +9523,16 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                         {
                             if (exp1->v.sp != basetype(*tp)->sp && exp1->v.sp != basetype(*tp)->sp->sb->mainsym &&
                                 !sameTemplate(exp1->v.sp->tp, basetype(*tp)->sp->tp))  // DAL FIXED
-                                errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
+                                errorConversionOrCast(true, tp1, *tp);
                         }
                         else if ((!isfunction(basetype(*tp)->btp) || !comparetypes(basetype(*tp)->btp, tp1, true)) &&
                                  !isconstzero(tp1, *exp) && !comparetypes(*tp, tp1, true))
                         {
-                            errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
+                            errorConversionOrCast(true, tp1, *tp);
                         }
                     }
                     else if (basetype(tp1)->type == bt_memberptr)
-                        errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
+                        errorConversionOrCast(true, tp1, *tp);
                     break;
                 default:
                     done = true;

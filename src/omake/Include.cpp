@@ -219,6 +219,7 @@ bool Include::MakeMakefiles(bool Silent, OutputType outputType, bool& didSomethi
     {
         maker.SetIgnoreFailed(file);
     }
-    didSomething = !maker.CreateDependencyTree();
+    maker.CreateDependencyTree();
+    didSomething = maker.GoalCount() > files.size();
     return maker.RunCommands();
 }

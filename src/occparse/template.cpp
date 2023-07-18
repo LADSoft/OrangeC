@@ -3096,6 +3096,8 @@ static TYPE* SynthesizeStructure(TYPE* tp_in, std::list<TEMPLATEPARAMPAIR>* encl
                 {
                     sp = GetClassTemplate(sp, sp->templateParams, false);
                 }
+                if (sp)
+                    sp->tp = PerformDeferredInitialization(sp->tp, nullptr);
             }
             else
             {
@@ -6929,7 +6931,14 @@ void ScrubTemplateValues(SYMBOL* func)
             tp = basetype(tp)->btp;
         if (isstructured(tp) && basetype(tp)->sp->templateParams && !basetype(tp)->sp->sb->instantiated &&
             !basetype(tp)->sp->sb->declaring)
+        {
             ClearArgValues(basetype(tp)->sp->templateParams, basetype(tp)->sp->sb->specialized);
+            if (basetype(tp)->sp->sb->specialized)
+            {
+                ClearArgValues(basetype(tp)->sp->templateParams->front().second->bySpecialization.types, basetype(tp)->sp->sb->specialized);
+            }
+        }
+
     }
     TYPE* retval = basetype(basetype(func->tp)->btp);
     if (isstructured(retval) && retval->sp->templateParams && !retval->sp->sb->instantiated && !retval->sp->sb->declaring)
@@ -7280,15 +7289,25 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                     if (special)
                     {
                         std::list<TEMPLATEPARAMPAIR>* tpx = sym->templateParams->front().second->bySpecialization.types
-                                                     ? sym->templateParams->front().second->bySpecialization.types
-                                                     : sym->templateParams;
+                                                                ? sym->templateParams->front().second->bySpecialization.types
+                                                                : sym->templateParams;
                         if (tpx)
                         {
-                            for (auto&& tplx : *tpx)
-                            {if (tplx.second->type != kw_new)
+                            if (special->front().second->type == kw_typename &&
+                                special->front().second->byClass.dflt &&
+                                isfunction(special->front().second->byClass.dflt))
+                            {
+                                TransferClassTemplates(special, special, tpx);
+                            }
+                            else
+                            {
+                                for (auto&& tplx : *tpx)
                                 {
-                                    std::list<TEMPLATEPARAMPAIR> a{tplx};
-                                    TransferClassTemplates(special, special, &a);
+                                    if (tplx.second->type != kw_new)
+                                    {
+                                        std::list<TEMPLATEPARAMPAIR> a{tplx};
+                                        TransferClassTemplates(special, special, &a);
+                                    }
                                 }
                             }
                         }

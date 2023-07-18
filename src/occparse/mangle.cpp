@@ -539,7 +539,11 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>
                 }
                 else if (bySpecial)
                 {
-                    if (it->second->byClass.dflt)
+                    if (it->second->byClass.val)
+                    {
+                        buf = mangleType(buf, it->second->byClass.val, true);
+                    }
+                    else if (it->second->byClass.dflt)
                     {
                         buf = mangleType(buf, it->second->byClass.dflt, true);
                     }

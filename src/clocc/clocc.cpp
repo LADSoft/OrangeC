@@ -40,11 +40,12 @@
 #endif
 
 #define DLL_STUB_SUBSYS 10
+#define DEFINE_SPLIT_CHAR 0x1b
 
 CmdSwitchParser clocc::SwitchParser;
 CmdSwitchBool clocc::prm_compileonly(SwitchParser, 'c');
 CmdSwitchBool clocc::prm_verbose(SwitchParser, 'v');
-CmdSwitchCombineString clocc::prm_define(SwitchParser, 'D', ';');
+CmdSwitchCombineString clocc::prm_define(SwitchParser, 'D', DEFINE_SPLIT_CHAR);
 CmdSwitchCombineString clocc::prm_cinclude(SwitchParser, 'I', ';');
 CmdSwitchCombineString clocc::prm_optimize(SwitchParser, 'O', ';');
 CmdSwitchCombineString clocc::prm_undefine(SwitchParser, 'U', ';');
@@ -420,12 +421,21 @@ int clocc::Run(int argc, char** argv)
             args += " /U" + u;
         }
     }
+    std::string defines;
     if (prm_define.GetExists())
     {
-        auto a = Utils::split(prm_define.GetValue(), ';');
-        for (auto&& u : a)
+        auto splt = Utils::split(prm_define.GetValue(),DEFINE_SPLIT_CHAR);
+        for (int i=0; i < splt.size(); i++)
         {
-            args += " /D" + u;
+            for (int j=0; j < splt[i].size(); j++)
+            {
+                if (splt[i][j] == '"' || splt[i][j] == '\\' || splt[i][j] == ' ')
+                {
+                    splt[i].insert(j,1,'\\');
+                    j++;
+                }
+            }
+            defines += " -D" + splt[i];
         }
     }
     if (prm_cinclude.GetExists())
@@ -630,7 +640,20 @@ int clocc::Run(int argc, char** argv)
     FILE* fil = Utils::TempName(tempName);
     fputs(args.c_str(), fil);
     fclose(fil);
-    auto rv = ToolChain::ToolInvoke("occ.exe", nullptr, " -! @%s", tempName.c_str());
+#ifndef HAVE_UNISTD_H
+    int rv;
+    if (getenv("MSYSTEM") && getenv("SHELL"))
+    {
+        // MSYS2 has to be handled differently
+        std::replace( tempName.begin(), tempName.end(), '\\', '/');
+        std::string cmd = "bash.exe -c 'occ.exe -!" + defines + " @" + tempName + "'";
+        rv = system(cmd.c_str()); // uses winsystem...  ...ignores cmd.exe
+    }
+    else
+#endif
+    {
+        rv = ToolChain::ToolInvoke("occ.exe", nullptr, " -! %s @%s", defines.c_str(), tempName.c_str());
+    }
     unlink(tempName.c_str());
     return rv;
 }

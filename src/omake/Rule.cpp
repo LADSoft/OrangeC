@@ -49,7 +49,7 @@ void CommandContainer::Clear() { commands.clear(); }
 
 Rule::Rule(const std::string& Target, const std::string& Prerequisites, const std::string& OrderPrerequisites, std::shared_ptr<Command> Commands,
            const std::string& File, int Lineno, bool DontCare, bool Ignore, bool Silent, bool Make, bool Precious,
-           bool SecondExpansion) :
+           bool SecondExpansion, bool prereq) :
     target(Target),
     prerequisites(Prerequisites),
     orderPrerequisites(OrderPrerequisites),
@@ -62,7 +62,8 @@ Rule::Rule(const std::string& Target, const std::string& Prerequisites, const st
     ignore(Ignore),
     silent(Silent),
     make(Make),
-    precious(Precious)
+    precious(Precious),
+    hasPrereq(prereq)
 {
 }
 void Rule::SecondaryEval(std::shared_ptr<RuleList> ruleList, std::shared_ptr<Rule> rule)

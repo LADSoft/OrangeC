@@ -376,7 +376,7 @@ void castToArithmetic(bool integer, TYPE** tp, EXPRESSION** exp, enum e_kw kw, T
                 // otherwise RHS, do a can't convert message
                 if (!isarithmetic(other))
                     other = &stdint;
-                errortype(ERR_CANNOT_CONVERT_TYPE, *tp, other);
+                errorConversionOrCast(true, *tp, other);
             }
         }
         else
@@ -1387,7 +1387,7 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
     SYMLIST **hrd, *hrs;
     const char* name = overloadNameTab[openpa - kw_new + CI_NEW];
     TYPE* tpx;
-    if (!isstructured(*tp) && basetype(*tp)->type != bt_enum)
+    if (!isstructured(*tp))
         return false;
     if (isstructured(*tp))
     {

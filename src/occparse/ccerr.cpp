@@ -677,6 +677,21 @@ void errortype(int err, TYPE* tp1, TYPE* tp2)
         typeToString(tpb2, tp2);
     printerr(err, nullptr, 0, tpb1, tpb2);
 }
+void errorConversionOrCast(bool convert, TYPE* tp1, TYPE* tp2)
+{
+    if (isstructured(tp1))
+    {
+        errortype(ERR_CANNOT_CALL_CONVERSION_FUNCTION_UD, tp1, tp2);
+    }
+    else if (isstructured(tp2))
+    {
+        errortype(ERR_CANNOT_CALL_CONVERSION_FUNCTION_CONS, tp1, tp2);
+    }
+    else
+    {
+        errortype(convert ? ERR_CANNOT_CONVERT_TYPE : ERR_CANNOT_CAST_TYPE, tp1, tp2);
+    }
+}
 void errorabstract(int error, SYMBOL* sp)
 {
     SYMBOL* sp1;

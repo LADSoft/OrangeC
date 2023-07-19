@@ -4921,6 +4921,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                 }
                 else if (ita != itae && ((*ita)->nested || (!(*ita)->tp && !(*ita)->exp)))
                 {
+
                     seq[m++] = CV_QUALS;  // have to make a distinction between an initializer list and the same func without one...
                     if (basetype(tp)->type == bt_lref)
                     {
@@ -4999,7 +5000,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                 ++ita;
             else
                 ++itt;
-            if ((!initializerListType || ita == itae || !(*ita)->initializer_list) && !tr)
+            if (it != ite && (!initializerListType || ita == itae || !(*ita)->initializer_list) && !tr)
                 ++it;
         }
         if (it != ite)

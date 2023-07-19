@@ -3327,7 +3327,15 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                     {
                         FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
                         params->ascall = true;
-                        params->arguments = p->nested;
+                        if (p->initializer_list)
+                        {
+                            params->arguments = p->nested;
+                        }
+                        else
+                        {
+                            params->arguments = initListListFactory.CreateList();
+                            params->arguments->push_back(p);
+                        }
                         TYPE* ctype = basetype(sym->tp);
                         EXPRESSION* consexp = anonymousVar(sc_auto, ctype);  // sc_parameter to push it...
                         SYMBOL* esp = consexp->v.sp;
@@ -3432,7 +3440,15 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             nested = true;
                             FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
                             params->ascall = true;
-                            params->arguments = p->nested;
+                            if (p->initializer_list)
+                            {
+                                params->arguments = p->nested;
+                            }
+                            else
+                            {
+                                params->arguments = initListListFactory.CreateList();
+                                params->arguments->push_back(p);
+                            }
                             TYPE* ctype = basetype(sym->tp)->btp;
                             EXPRESSION* consexp = anonymousVar(sc_auto, basetype(sym->tp)->btp);  // sc_parameter to push it...
                             SYMBOL* esp = consexp->v.sp;

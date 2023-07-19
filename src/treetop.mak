@@ -269,6 +269,15 @@ cleanlib:
 
 clean: cleanstart cleanlib $(CLEANS)
 
+dist-clean:
+	$(DEL) $(DISTBIN) 2> $(NULLDEV)
+	$(DEL) $(DISTLIB) 2> $(NULLDEV)
+	$(DEL) $(DISTLIB)$(PATHEXT2)startup 2> $(NULLDEV)
+	$(DEL) $(DISTINC) 2> $(NULLDEV)
+	$(DEL) $(DISTINC)$(PATHEXT2)c 2> $(NULLDEV)
+	$(DEL) $(DISTINC)$(PATHEXT2)c$(PATHEXT2)win32 2> $(NULLDEV)
+	$(DEL) $(DISTINC)$(PATHEXT2)c$(PATHEXT2)sys 2> $(NULLDEV)
+      
 distribute: $(DISTS1)
 	$(MAKE) DISTRIBUTE
 else

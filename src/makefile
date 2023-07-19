@@ -71,6 +71,17 @@ compare:
 clean:  
 	@$(MAKE) -f $(_TREEROOT) clean
 
+dist-clean:
+	@$(MAKE) -f $(_TREEROOT) dist-clean
+ifneq "COMPILER" "gcc-linux"
+	@$(MAKE) -f $(_TREEROOT) COMPILER=OCC clean
+	@$(MAKE) -f $(_TREEROOT) COMPILER=MINGW64 clean
+	@$(MAKE) -f $(_TREEROOT) COMPILER=CLANG clean
+	@$(MAKE) -f $(_TREEROOT) COMPILER=MS clean
+else
+	@$(MAKE) -f $(_TREEROOT) COMPILER=gcc-linux clean
+endif
+ 
 library:
 	@$(MAKE) -Cclibs
 

@@ -112,6 +112,10 @@ If you want to clean up object files type:
 
 which cleans up all the output files for the specific target (in this case msvc)
 
+to clean up all output directories in the distribution type
+
+    omake dist-clean
+
 If you want to make a distribution after seperately building the EXE and LIBRARY files:
 
     omake distribute

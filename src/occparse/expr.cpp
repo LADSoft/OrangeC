@@ -9434,7 +9434,7 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                                             {
                                                 if (isAccessible(tpn->sp, tpn->sp, tpo->sp, funcsp, ac_public, false))
                                                 {
-                                                    *exp = exprNode(en_add, *exp, v);
+                                                    exp1 = exprNode(en_sub, exp1, v);
                                                     found = true;
                                                 }
                                             }
@@ -9449,7 +9449,7 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                                             {
                                                 if (isAccessible(tpo->sp, tpo->sp, tpn->sp, funcsp, ac_public, false))
                                                 {
-                                                    *exp = exprNode(en_sub, *exp, v);
+                                                    exp1 = exprNode(en_add, exp1, v);
                                                     found = true;
                                                 }
                                             }

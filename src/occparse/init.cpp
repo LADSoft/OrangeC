@@ -2765,13 +2765,220 @@ EXPRESSION* getThisNode(SYMBOL* sym)
     }
     return exp;
 }
-static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* base, int offset, enum e_sc sc, TYPE* itype,
+
+auto InitializeSimpleAggregate(LEXLIST*& lex, TYPE* itype, bool needend, int offset, SYMBOL* funcsp, e_sc sc, SYMBOL* base,
+                               std::list<INITIALIZER*>** dest, int flags)
+{
+    std::list<INITIALIZER*>* data = nullptr;
+    AGGREGATE_DESCRIPTOR *desc = nullptr, *cache = nullptr;
+    bool toomany = false;
+    bool c99 = false;
+    allocate_desc(itype, offset, &desc, &cache);
+    desc->stopgap = true;
+    while (lex)
+    {
+        bool gotcomma = false;
+        TYPE* tp2;
+        c99 |= designator(&lex, funcsp, &desc, &cache);
+        tp2 = nexttp(desc);
+        bool hasSome = false;
+        while (tp2 && (tp2->type == bt_aggregate || isarray(tp2) ||
+                       (isstructured(tp2) && (!Optimizer::cparams.prm_cplusplus || !basetype(tp2)->sp->sb->hasUserCons))))
+        {
+            if (tp2->type == bt_aggregate)
+            {
+                increment_desc(&desc, &cache);
+            }
+            else
+            {
+                if (MATCHKW(lex, begin))
+                {
+                    lex = getsym();
+                    if (MATCHKW(lex, end))
+                    {
+                        lex = getsym();
+                        increment_desc(&desc, &cache);
+                    }
+                    else
+                    {
+                        hasSome = true;
+                        allocate_desc(tp2, desc->offset + desc->reloffset, &desc, &cache);
+                        desc->stopgap = true;
+                        c99 |= designator(&lex, funcsp, &desc, &cache);
+                    }
+                }
+                else
+                {
+                    if (isstructured(tp2))
+                    {
+                        auto placeholder = lex;
+                        EXPRESSION* exp = nullptr;
+                        TYPE* tp = nullptr;
+                        lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, 0);
+                        lex = prevsym(placeholder);
+                        if (tp && comparetypes(tp2, tp, true))
+                        {
+                            break;
+                        }
+                    }
+                    if (!atend(desc))
+                    {
+                        hasSome = true;
+                        allocate_desc(tp2, desc->offset + desc->reloffset, &desc, &cache);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+            tp2 = nexttp(desc);
+        }
+        if (atend(desc))
+        {
+            toomany = hasSome;
+            if (!toomany)
+            {
+                unwrap_desc(&desc, &cache, &data);
+                free_desc(&desc, &cache);
+                while (MATCHKW(lex, end))
+                {
+                    lex = getsym();
+                    unwrap_desc(&desc, &cache, &data);
+                    free_desc(&desc, &cache);
+                }
+            }
+            break;
+        }
+        /* when we get here, DESC has an aggregate with an element that isn't
+         * an aggregate
+         */
+        if (str_candidate(lex, desc->tp) != 0)
+        {
+            lex = read_strings(lex, &data, &desc);
+        }
+        else
+        {
+            SYMBOL* fieldsp;
+            int size = data ? data->size() : 0;
+            lex = initType(lex, funcsp, desc->offset + desc->reloffset, sc, &data, dest, nexttp(desc), base, isarray(itype),
+                           flags | _F_NESTEDINIT);
+            int size1 = data->size();
+            if (desc->it != desc->ite && size != size1)
+            {
+                fieldsp = *desc->it;
+                if (ismember(fieldsp))
+                {
+                    auto it = data->begin();
+                    for (int i = 0; i < size; i++, ++it)
+                        ;
+                    (*it)->fieldsp = fieldsp;
+                    if (isarray(itype) && Optimizer::architecture == ARCHITECTURE_MSIL)
+                    {
+                        TYPE* btp = itype;
+                        while (isarray(btp))
+                            btp = btp->btp;
+                        int n = desc->offset / btp->size;
+                        (*it)->fieldoffs = exprNode(en_umul, intNode(en_c_i, n), exprNode(en__sizeof, typeNode(btp), nullptr));
+                    }
+                    else
+                    {
+                        (*it)->fieldoffs = intNode(en_c_i, desc->offset);
+                    }
+                }
+            }
+        }
+        increment_desc(&desc, &cache);
+        if ((((sc != sc_auto && sc != sc_register) || needend) && MATCHKW(lex, comma)) || MATCHKW(lex, end))
+        {
+            gotcomma = MATCHKW(lex, comma);
+            if (gotcomma && needend)
+                lex = getsym();
+            while (MATCHKW(lex, end))
+            {
+                if (desc->it != desc->ite && Optimizer::cparams.prm_cplusplus && isstructured(itype) &&
+                    !basetype(itype)->sp->sb->trivialCons)
+                {
+                    while (desc->it != desc->ite)
+                    {
+                        if (isstructured((*desc->it)->tp) && !basetype((*desc->it)->tp)->sp->sb->trivialCons)
+                        {
+                            SYMBOL* fieldsp;
+                            int size = data->size();
+                            lex = initType(lex, funcsp, desc->offset + desc->reloffset, sc, &data, dest, nexttp(desc), base,
+                                           isarray(itype), flags);
+                            int size1 = data->size();
+                            if (desc->it != desc->ite && size != size1)
+                            {
+                                fieldsp = *desc->it;
+                                if (ismember(fieldsp))
+                                {
+                                    auto it = data->begin();
+                                    for (int i = 0; i < size; i++, ++it)
+                                        ;
+                                    (*it)->fieldsp = fieldsp;
+                                    (*it)->fieldoffs = intNode(en_c_i, desc->offset);
+                                }
+                            }
+                        }
+                        increment_desc(&desc, &cache);
+                    }
+                }
+                gotcomma = false;
+                lex = getsym();
+                unwrap_desc(&desc, &cache, &data);
+                free_desc(&desc, &cache);
+
+                if (!desc)
+                {
+                    if (!needend)
+                    {
+                        error(ERR_DECLARE_SYNTAX); /* extra end */
+                    }
+                    break;
+                }
+                increment_desc(&desc, &cache);
+                if (MATCHKW(lex, comma))
+                {
+                    gotcomma = true;
+                    lex = getsym();
+                }
+            }
+            if (!desc)
+                break;
+        }
+        if (!desc || !gotcomma || !needend)
+            break;
+    }
+    if (c99 && !Optimizer::cparams.prm_c99)
+        error(ERR_C99_STYLE_INITIALIZATION_USED);
+    if (toomany)
+        error(ERR_TOO_MANY_INITIALIZERS);
+    if (desc)
+    {
+        unwrap_desc(&desc, &cache, &data);
+        if (needend || desc->next)
+        {
+            error(ERR_DECLARE_SYNTAX);
+            errskim(&lex, skim_semi);
+        }
+    }
+    /* theoretically desc will be nullptr if there are no errors */
+    while (desc)
+    {
+        unwrap_desc(&desc, &cache, &data);
+        free_desc(&desc, &cache);
+    }
+    set_array_sizes(cache);
+    sort_aggregate_initializers(data);
+
+    return data;
+}
+static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL * base, int offset, enum e_sc sc, TYPE* itype,
                                           std::list<INITIALIZER*>** init, std::list<INITIALIZER*>** dest, bool arrayMember, int flags)
 {
     std::list<INITIALIZER*>* data = nullptr;
     AGGREGATE_DESCRIPTOR *desc = nullptr, *cache = nullptr;
-    bool c99 = false;
-    bool toomany = false;
     bool needend = false;
     bool assn = false;
     bool implicit = false;
@@ -3150,38 +3357,60 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
             EXPRESSION* exp1 = nullptr;
             if (Optimizer::cparams.prm_cplusplus && !assn && isstructured(itype) && MATCHKW(lex, openpa))
             {
-                // conversion constructor params
-                FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
+                bool doTrivial = false;
                 std::list<INITIALIZER*>* it = nullptr;
-                lex = getArgs(lex, funcsp, funcparams, closepa, true, 0);
-                if (funcparams->arguments && funcparams->arguments->size() > 1)
-                    error(ERR_EXPRESSION_SYNTAX);
-                else if (funcparams->arguments && funcparams->arguments->size() && !comparetypes(itype, funcparams->arguments->front()->tp, true))
-                    error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                if (basetype(itype)->sp->sb->trivialCons)
+                {
+                    lex = getsym();
+                    doTrivial = MATCHKW(lex, begin);
+                    if (!doTrivial)
+                        lex = backupsym();
+                    else
+                        lex = getsym();
+                }
+                if (doTrivial)
+                {
+                    // construction of trivial structure via initializer-list...
+                    needend = true;
+                    it = InitializeSimpleAggregate(lex, itype, needend, offset, funcsp, sc, base, dest, flags);
+                    if (!needkw(&lex, closepa))
+                        errskim(&lex, skim_closepa);
+                }
                 else
                 {
-                    TYPE* ttp = itype;
-                    if (isconst(itype))
+                    // conversion constructor params
+                    FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
+                    lex = getArgs(lex, funcsp, funcparams, closepa, true, 0);
+                    if (funcparams->arguments && funcparams->arguments->size() > 1)
+                        error(ERR_EXPRESSION_SYNTAX);
+                    else if (funcparams->arguments && funcparams->arguments->size() &&
+                             !comparetypes(itype, funcparams->arguments->front()->tp, true))
+                        error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                    else
                     {
-                        ttp = MakeType(bt_const, ttp);
+                        TYPE* ttp = itype;
+                        if (isconst(itype))
+                        {
+                            ttp = MakeType(bt_const, ttp);
+                        }
+                        if (isvolatile(itype))
+                        {
+                            ttp = MakeType(bt_volatile, ttp);
+                        }
+                        UpdateRootTypes(ttp);
+                        tp1 = itype;
+                        if (funcparams->arguments && funcparams->arguments->size() && !isref(funcparams->arguments->front()->tp))
+                        {
+                            funcparams->arguments->front()->tp = CopyType(funcparams->arguments->front()->tp);
+                            funcparams->arguments->front()->tp->lref = true;
+                            funcparams->arguments->front()->tp->rref = false;
+                        }
+                        funcparams->thistp = ttp;
+                        exp1 = baseexp;
+                        callConstructor(&tp1, &exp1, funcparams, false, nullptr, true, false, false, false, 0, false, true);
+                        PromoteConstructorArgs(funcparams->sp, funcparams);
+                        initInsert(&it, itype, exp1, offset, true);
                     }
-                    if (isvolatile(itype))
-                    {
-                        ttp = MakeType(bt_volatile, ttp);
-                    }
-                    UpdateRootTypes(ttp);
-                    tp1 = itype;
-                    if (funcparams->arguments &&  funcparams->arguments->size() && !isref(funcparams->arguments->front()->tp))
-                    {
-                        funcparams->arguments->front()->tp = CopyType(funcparams->arguments->front()->tp);
-                        funcparams->arguments->front()->tp->lref = true;
-                        funcparams->arguments->front()->tp->rref = false;
-                    }
-                    funcparams->thistp = ttp;
-                    exp1 = baseexp;
-                    callConstructor(&tp1, &exp1, funcparams, false, nullptr, true, false, false, false, 0, false, true);
-                    PromoteConstructorArgs(funcparams->sp, funcparams);
-                    initInsert(&it, itype, exp1, offset, true);
                 }
                 if (sc != sc_auto && sc != sc_localstatic && sc != sc_parameter && sc != sc_member && sc != sc_mutable &&
                     !arrayMember)
@@ -3284,205 +3513,8 @@ static LEXLIST* initialize_aggregate_type(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* 
     }
     else
     {
-        allocate_desc(itype, offset, &desc, &cache);
-        desc->stopgap = true;
-        while (lex)
-        {
-            bool gotcomma = false;
-            TYPE* tp2;
-            c99 |= designator(&lex, funcsp, &desc, &cache);
-            tp2 = nexttp(desc);
-            bool hasSome = false;
-            while (tp2 && (tp2->type == bt_aggregate || isarray(tp2) ||
-                           (isstructured(tp2) && (!Optimizer::cparams.prm_cplusplus || !basetype(tp2)->sp->sb->hasUserCons))))
-            {
-                if (tp2->type == bt_aggregate)
-                {
-                    increment_desc(&desc, &cache);
-                }
-                else
-                {
-                    if (MATCHKW(lex, begin))
-                    {
-                        lex = getsym();
-                        if (MATCHKW(lex, end))
-                        {
-                            lex = getsym();
-                            increment_desc(&desc, &cache);
-                        }
-                        else
-                        {
-                            hasSome = true;
-                            allocate_desc(tp2, desc->offset + desc->reloffset, &desc, &cache);
-                            desc->stopgap = true;
-                            c99 |= designator(&lex, funcsp, &desc, &cache);
-                        }
-                    }
-                    else
-                    {
-                        if (isstructured(tp2))
-                        {
-                            auto placeholder = lex;
-                            EXPRESSION* exp = nullptr;
-                            TYPE* tp = nullptr;
-                            lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, 0);
-                            lex = prevsym(placeholder);
-                            if (tp && comparetypes(tp2, tp, true))
-                            {
-                                break;
-                            }
-                        }
-                        if (!atend(desc))
-                        {
-                            hasSome = true;
-                            allocate_desc(tp2, desc->offset + desc->reloffset, &desc, &cache);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                }
-                tp2 = nexttp(desc);
-            }
-            if (atend(desc))
-            {
-                toomany = hasSome;
-                if (!toomany)
-                {
-                    unwrap_desc(&desc, &cache, &data);
-                    free_desc(&desc, &cache);
-                    while (MATCHKW(lex, end))
-                    {
-                        lex = getsym();
-                        unwrap_desc(&desc, &cache, &data);
-                        free_desc(&desc, &cache);
-                    }
-                }
-                break;
-            }
-            /* when we get here, DESC has an aggregate with an element that isn't
-             * an aggregate
-             */
-            if (str_candidate(lex, desc->tp) != 0)
-            {
-                lex = read_strings(lex, &data, &desc);
-            }
-            else
-            {
-                SYMBOL* fieldsp;
-                int size = data ? data->size() : 0;
-                lex = initType(lex, funcsp, desc->offset + desc->reloffset, sc, &data, dest, nexttp(desc), base, isarray(itype),
-                               flags | _F_NESTEDINIT);
-                int size1 = data->size();
-                if (desc->it != desc->ite && size != size1)
-                {
-                    fieldsp = *desc->it;
-                    if (ismember(fieldsp))
-                    {
-                        auto it = data->begin();
-                        for (int i = 0; i < size; i++, ++it);
-                        (*it)->fieldsp = fieldsp;
-                        if (isarray(itype) && Optimizer::architecture == ARCHITECTURE_MSIL)
-                        {
-                            TYPE* btp = itype;
-                            while (isarray(btp))
-                                btp = btp->btp;
-                            int n = desc->offset / btp->size;
-                            (*it)->fieldoffs =
-                                exprNode(en_umul, intNode(en_c_i, n), exprNode(en__sizeof, typeNode(btp), nullptr));
-                        }
-                        else
-                        {
-                            (*it)->fieldoffs = intNode(en_c_i, desc->offset);
-                        }
-                    }
-                }
-            }
-            increment_desc(&desc, &cache);
-            if ((((sc != sc_auto && sc != sc_register) || needend) && MATCHKW(lex, comma)) || MATCHKW(lex, end))
-            {
-                gotcomma = MATCHKW(lex, comma);
-                if (gotcomma && needend)
-                    lex = getsym();
-                while (MATCHKW(lex, end))
-                {
-                    if (desc->it != desc->ite && Optimizer::cparams.prm_cplusplus && isstructured(itype) &&
-                        !basetype(itype)->sp->sb->trivialCons)
-                    {
-                        while (desc->it != desc->ite)
-                        {
-                            if (isstructured((*desc->it)->tp) && !basetype((*desc->it)->tp)->sp->sb->trivialCons)
-                            {
-                                SYMBOL* fieldsp;
-                                int size = data->size();
-                                lex = initType(lex, funcsp, desc->offset + desc->reloffset, sc, &data, dest, nexttp(desc), base,
-                                               isarray(itype), flags);
-                                int size1 = data->size();
-                                if (desc->it != desc->ite && size != size1)
-                                {
-                                    fieldsp = *desc->it;
-                                    if (ismember(fieldsp))
-                                    {
-                                        auto it = data->begin();
-                                        for (int i = 0; i < size; i++, ++it);
-                                        (*it)->fieldsp = fieldsp;
-                                        (*it)->fieldoffs = intNode(en_c_i, desc->offset);
-                                    }
-                                }
-                            }
-                            increment_desc(&desc, &cache);
-                        }
-                    }
-                    gotcomma = false;
-                    lex = getsym();
-                    unwrap_desc(&desc, &cache, &data);
-                    free_desc(&desc, &cache);
-
-                    if (!desc)
-                    {
-                        if (!needend)
-                        {
-                            error(ERR_DECLARE_SYNTAX); /* extra end */
-                        }
-                        break;
-                    }
-                    increment_desc(&desc, &cache);
-                    if (MATCHKW(lex, comma))
-                    {
-                        gotcomma = true;
-                        lex = getsym();
-                    }
-                }
-                if (!desc)
-                    break;
-            }
-            if (!desc || !gotcomma || !needend)
-                break;
-        }
-        if (c99 && !Optimizer::cparams.prm_c99)
-            error(ERR_C99_STYLE_INITIALIZATION_USED);
-        if (toomany)
-            error(ERR_TOO_MANY_INITIALIZERS);
-        if (desc)
-        {
-            unwrap_desc(&desc, &cache, &data);
-            if (needend || desc->next)
-            {
-                error(ERR_DECLARE_SYNTAX);
-                errskim(&lex, skim_semi);
-            }
-        }
-        /* theoretically desc will be nullptr if there are no errors */
-        while (desc)
-        {
-            unwrap_desc(&desc, &cache, &data);
-            free_desc(&desc, &cache);
-        }
-        set_array_sizes(cache);
-        sort_aggregate_initializers(data);
-
-        *init = data;
+        // if we get here, initialize a simple aggregate...
+        *init = InitializeSimpleAggregate(lex, itype, needend, offset, funcsp, sc, base, dest, flags);
     }
     // have to fill in unused array elements with C++ constructors
     // this doesn't play well with the designator stuff but doesn't matter in C++

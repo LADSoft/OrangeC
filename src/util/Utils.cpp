@@ -29,7 +29,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <cstring>
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
 #    include <windows.h>
 #endif
 #ifdef HAVE_UNISTD_H
@@ -76,14 +76,10 @@ char* Utils::ShortName(const char* v)
 char* Utils::GetModuleName()
 {
     static char buf[256];
-#if defined(_WIN32)
+#ifdef TARGET_OS_WINDOWS
     GetModuleFileNameA(nullptr, buf, sizeof(buf));
 #else
-#    ifdef HAVE_UNISTD_H
     StrCpy(buf, "unknown");
-#    else
-    StrCpy(buf, __argv[0]);
-#    endif
 #endif
     return buf;
 }
@@ -138,7 +134,7 @@ std::string Utils::FullPath(const std::string& path, const std::string& name)
 std::string Utils::AbsolutePath(const std::string& name)
 {
     std::string rv = name;
-#if defined(WIN32)
+#ifdef TARGET_OS_WINDOWS
     if (name.size() >= 3 && (name[1] != ':' || name[2] != CmdFiles::DIR_SEP[0]))
     {
         char buf[MAX_PATH];
@@ -350,7 +346,7 @@ bool Utils::HasExt(const char* buffer, const char* ext)
 
 bool Utils::FileExists(const char* buffer)
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     return !(GetFileAttributesA(buffer) & FILE_ATTRIBUTE_DIRECTORY);
 #else
     return access(buffer, 4) == 0;

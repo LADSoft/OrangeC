@@ -26,7 +26,7 @@
 #include "RCFile.h"
 #include "ResourceData.h"
 #include "ResFile.h"
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
 #    include <windows.h>
 #endif
 #include <stdexcept>
@@ -54,7 +54,7 @@ void Bitmap::ReadRC(RCFile& rcFile)
     resInfo.ReadRC(rcFile, false);
     std::unique_ptr<ResourceData> rd = std::make_unique<ResourceData>();
     rd->ReadRC(rcFile);
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
     if (rd->GetLen() <= sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER))
     {
         throw std::runtime_error("invalid bitmap file");

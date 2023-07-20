@@ -64,13 +64,15 @@ namespace Parser
 #endif
 
 #if defined HAVE_UNISTD_H
-#    define CONSOLE_DEVICE "/dev/tty"
 #    define _strdup strdup
-#else
+#endif
+#ifdef TARGET_OS_WINDOWS
 #    define CONSOLE_DEVICE "con:"
+#else
+#    define CONSOLE_DEVICE "/dev/tty"
 #endif
 
-#if defined(WIN32) || defined(MICROSOFT)
+#ifdef TARGET_OS_WINDOWS
 extern "C"
 {
     char* __stdcall GetModuleFileNameA(void* handle, char* buf, int size);
@@ -1114,7 +1116,7 @@ int ccinit(int argc, char* argv[])
     char* p;
     int rv;
     int i;
-#if defined(WIN32) || defined(MICROSOFT)
+#ifdef TARGET_OS_WINDOWS
     GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
 #else
     strcpy(buffer, argv[0]);

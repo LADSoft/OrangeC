@@ -26,7 +26,7 @@
 #include "Utils.h"
 #include <map>
 #include "memory.h"
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
 #    include <Windows.h>
 #endif
 
@@ -72,7 +72,7 @@ static MEMBLK* galloc(MEMORY* arena, int size)
 {
     MEMBLK* selected;
     int allocsize = size <= MINALLOC ? MINALLOC : (size + (MINALLOC - 1)) & -MINALLOC;
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     selected = (MEMBLK*)VirtualAlloc(nullptr, allocsize + sizeof(MEMBLK) - 1, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 #else
     selected = (MEMBLK*)malloc(allocsize + sizeof(MEMBLK) - 1);
@@ -97,7 +97,7 @@ static void* memAlloc(MEMORY* arena, int size, bool clear = true)
         selected = galloc(arena, size);
     }
     rv = (void*)(selected->m + selected->size - selected->left);
-#ifndef _WIN32
+#ifndef TARGET_OS_WINDOWS
     if (clear)
     {
         memset(rv, 0, size);
@@ -114,7 +114,7 @@ static void memFree(MEMORY* arena, int* peak)
     while (freefind)
     {
         MEMBLK* next = freefind->next;
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
         VirtualFree(freefind, 0, MEM_RELEASE);
 #else
         free(freefind);

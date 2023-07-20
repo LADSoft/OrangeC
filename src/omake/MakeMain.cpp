@@ -289,10 +289,10 @@ bool MakeMain::LoadJobArgs()
 }
 void MakeMain::LoadEnvironment()
 {
-#ifdef HAVE_UNISTD_H
-    char** env = 0;
-#else
+#ifdef TARGET_OS_WINDOWS
     char** env = environ;
+#else
+    char** env = 0;
 #endif
     Variable::Origin origin;
     if (environOverride.GetValue())

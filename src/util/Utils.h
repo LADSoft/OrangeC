@@ -32,7 +32,7 @@
 #include <cstring>
 #include <vector>
 
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
 #    include "io.h"
 #endif
 

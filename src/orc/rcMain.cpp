@@ -31,7 +31,7 @@
 #include "CmdFiles.h"
 #include "PreProcessor.h"
 
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
 #    include <windows.h>
 #endif
 

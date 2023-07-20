@@ -30,7 +30,7 @@
 #include <algorithm>
 #include <functional>
 
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
 #    include <Windows.h>
 #endif
 
@@ -47,7 +47,7 @@ SharedMemory::SharedMemory(unsigned max, std::string name, unsigned window) :
 
 SharedMemory::~SharedMemory()
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     //    Flush();
     CloseMapping();
     CloseHandle(regionHandle);
@@ -57,7 +57,7 @@ SharedMemory::~SharedMemory()
 
 bool SharedMemory::Open()
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     regionHandle = OpenFileMapping(FILE_MAP_ALL_ACCESS, false, name_.c_str());
 #endif
     return !!regionHandle;
@@ -65,7 +65,7 @@ bool SharedMemory::Open()
 
 bool SharedMemory::Create()
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
 #    ifdef USE_PAGING_FILE
     fileHandle_ = INVALID_HANDLE_VALUE;
 #    else
@@ -78,7 +78,7 @@ bool SharedMemory::Create()
 }
 void SharedMemory::Flush()
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     if (current_)
     {
         FlushViewOfFile(regionStart, current_);
@@ -88,7 +88,7 @@ void SharedMemory::Flush()
 }
 unsigned char* SharedMemory::GetMapping(unsigned pos)
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     regionBase_ = pos & -4096;
     CloseMapping();
     regionStart = (unsigned char*)MapViewOfFile(regionHandle, FILE_MAP_ALL_ACCESS, 0, regionBase_, ViewWindowSize() * 2);
@@ -99,7 +99,7 @@ unsigned char* SharedMemory::GetMapping(unsigned pos)
 }
 void SharedMemory::CloseMapping()
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     if (regionStart)
     {
         UnmapViewOfFile(regionStart);
@@ -115,7 +115,7 @@ bool SharedMemory::EnsureCommitted(int size)
     // remove next two lines???
 //    current_ = end;
 //    return true;
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     if (end > current_)
     {
         unsigned char* temp = (unsigned char*)MapViewOfFile(regionHandle, FILE_MAP_ALL_ACCESS, 0, current_, end - current_);

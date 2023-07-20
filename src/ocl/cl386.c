@@ -1,5 +1,5 @@
 #include "afx.h"
-#ifdef MICROSOFT
+#ifdef TARGET_OS_WINDOWS
 #    include <windows.h>
 #endif
 
@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
 
     atexit(clear_all);
 
-#ifdef MICROSOFT
+#ifdef TARGET_OS_WINDOWS
     GetModuleFileNameA(NULL, buf, sizeof(buf));
 #else
     strcpy(buf, argv[0]);

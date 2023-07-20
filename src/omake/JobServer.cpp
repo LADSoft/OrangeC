@@ -2,14 +2,14 @@
 #include <random>
 #include <array>
 #include <algorithm>
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
 #include <process.h>
 #endif
 namespace OMAKE
 {
 std::shared_ptr<JobServer> JobServer::GetJobServer(int max_jobs)
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     // let's use a number that is gauranteed to be unique per-process so that no other process can *ACCIDENTALLY* generate this
     // value unless they're trying to be sneaky
     int pid = getpid();
@@ -22,7 +22,7 @@ std::shared_ptr<JobServer> JobServer::GetJobServer(int max_jobs)
 }
 std::shared_ptr<JobServer> JobServer::GetJobServer(const std::string& auth_string)
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     return std::make_shared<WINDOWSJobServer>(auth_string);
 #else
     int readfd, writefd;

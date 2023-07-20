@@ -6,7 +6,7 @@
 # 
 #     The Orange C Compiler package is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
-#     the Free Software Foundation, either version 3 of the License, or
+#     the Free Software Foundation, either version 3 of the License, orD
 #     (at your option) any later version.
 # 
 #     The Orange C Compiler package is distributed in the hope that it will be useful,
@@ -76,7 +76,7 @@ RCINCLUDE=$(DISTROOT)\include
 ifneq "$(INCLUDES)" ""
 CINCLUDES:=$(addprefix /I,$(INCLUDES))
 endif
-DEFINES := WIN32_LEAN_AND_MEAN $(DEFINES)
+DEFINES := WIN32_LEAN_AND_MEAN TARGET_OS_WINDOWS $(DEFINES)
 DEFINES := $(addprefix /D,$(DEFINES))
 DEFINES := $(subst @, ,$(DEFINES))
 LIB_DEPENDENCIES := $(foreach file, $(addsuffix .l,$(LIB_DEPENDENCIES)), $(file))
@@ -104,8 +104,8 @@ COMPLIB=lscrtl$(LIB_EXT) climp$(LIB_EXT)
 CCFLAGS:=$(CCFLAGS) /Wcl
 endif
 endif
-CFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DWIN32
-CXXFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DWIN32
+CFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES)
+CXXFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES)
 
 vpath %.o $(_OUTPUTDIR)
 vpath %.l $(_LIBDIR)

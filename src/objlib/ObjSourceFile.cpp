@@ -31,7 +31,7 @@
 #include <sys/stat.h>
 void ObjSourceFile::RetrieveFileTime(const ObjString& name)
 {
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
     //    struct stat xxstat;
     //    stat(const_cast<char *>(name.c_str()), &xxstat);
     //	struct tm *tmx = localtime(&xxstat.st_mtime);

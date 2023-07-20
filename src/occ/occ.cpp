@@ -51,9 +51,12 @@
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
-#    define CONSOLE_DEVICE "/dev/tty"
-#else
+#endif
+
+#ifdef TARGET_OS_WINDOWS
 #    define CONSOLE_DEVICE "con:"
+#else
+#    define CONSOLE_DEVICE "/dev/tty"
 #endif
 
 int usingEsp;

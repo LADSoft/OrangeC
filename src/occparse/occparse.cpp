@@ -196,7 +196,7 @@ void diag(const char* fmt, ...)
 
 namespace Parser
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
 extern "C"
 {
     char* __stdcall GetModuleFileNameA(int handle, char* buf, int size);

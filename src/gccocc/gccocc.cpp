@@ -419,7 +419,7 @@ int gccocc::Run(int argc, char** argv)
     } 
     fclose(fil);
     int rv;
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
     if (getenv("MSYSTEM") && getenv("SHELL"))
     {
         // MSYS2 has to be handled differently

@@ -641,7 +641,7 @@ int clocc::Run(int argc, char** argv)
     fputs(args.c_str(), fil);
     fclose(fil);
     int rv;
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
     if (getenv("MSYSTEM") && getenv("SHELL"))
     {
         // MSYS2 has to be handled differently

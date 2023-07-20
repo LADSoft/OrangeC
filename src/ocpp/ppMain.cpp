@@ -31,7 +31,7 @@
 #include <cstdlib>
 #include <algorithm>
 
-#if defined(WIN32) || defined(MICROSOFT)
+#ifdef TARGET_OS_WINDOWS
 extern "C"
 {
     char* __stdcall GetModuleFileNameA(void* handle, char* buf, int size);
@@ -148,7 +148,7 @@ static void TestCharInfo(std::ostream* outStream, PreProcessor& pp, std::string&
 int ppMain::Run(int argc, char* argv[])
 {
     char buffer[256];
-#if defined(WIN32) || defined(MICROSOFT)
+#ifdef TARGET_OS_WINDOWS
     GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
 #else
     strcpy(buffer, argv[0]);
@@ -197,7 +197,7 @@ int ppMain::Run(int argc, char* argv[])
         }
 
         // for libcxx 10
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
         pp.Define("_WIN32", "1");
 #endif
         pp.Define("__ORANGEC__", "1");

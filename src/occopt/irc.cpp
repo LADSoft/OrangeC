@@ -339,7 +339,7 @@ static void ScanForAnonymousVars(void)
         head = head->fwd;
     }
 }
-void AllocateStackSpace()
+void AllocateStackSpace(int begin)
 /*
  * This allocates space for local variables
  * we do this AFTER the register optimization so that we can
@@ -382,7 +382,8 @@ void AllocateStackSpace()
         }
     }
     bool show = false;
-    lc_maxauto = max = 0;
+    lc_maxauto = max = begin;
+
 
     for (auto&& dq : queue)
     {

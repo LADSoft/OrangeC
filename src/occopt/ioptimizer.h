@@ -217,6 +217,10 @@ struct SimpleSymbol
             unsigned addressTaken : 1;
             unsigned generated : 1;
             unsigned msilObjectArray : 1;
+            unsigned stackProtectBasic : 1;
+            unsigned stackProtectStrong : 1;
+            unsigned stackProtectExplicit : 1;
+            unsigned allocaUsed : 1;
         };
         unsigned long long flags;
     };

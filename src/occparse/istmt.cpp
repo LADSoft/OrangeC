@@ -1225,6 +1225,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     FreeLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
 
     /* Code gen from icode */
+    Optimizer::SymbolManager::Get(funcsp)->allocaUsed = funcsp->sb->allocaUsed;
     Optimizer::AddFunction();
 
     if (!currentFunction->isinternal && (funcsp->sb->attribs.inheritable.linkage4 == lk_virtual || tmpl))

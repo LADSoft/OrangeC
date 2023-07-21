@@ -1223,7 +1223,7 @@ static void PutComplex(const char* sz, FPF& r, FPF& i)
 }
 static void PutData(BaseData* data)
 {
-    std::vector<std::string> segs = {"exitseg", "codeseg",     "dataseg",     "bssxseg",  "stringseg", "constseg",
+    static std::vector<std::string> segs = {"exitseg", "codeseg",     "dataseg",     "bssxseg",  "stringseg", "constseg",
                                      "tlsseg",  "startupxseg", "rundownxseg", "tlssuseg", "tlsrdseg",  "typeseg",
                                      "symseg",  "browseseg",   "fixcseg",     "fixdseg",  "virtseg"
 

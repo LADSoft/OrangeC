@@ -14,8 +14,7 @@
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
  * 
- *     You should have received a copy of the GNU General Public License
- *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
+ *     You should have received a copy of the GNU General Public Licenses
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
@@ -466,6 +465,19 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     rv->usesEsp = cparams.prm_useesp;
 
     rv->outputName = beDecorateSymName(sym);
+    rv->stackProtectExplicit = sym->sb->attribs.uninheritable.stackProtect;
+    if (isarray(sym->tp))
+    {
+        // the backend will also check if the address of a variable is being taken...
+        // and before we pack up the function we will check theCurrentFunc->sb->usesAlloca
+        // we don't know any of that definitively right now.
+        rv->stackProtectStrong = true;
+        TYPE *tp1 = sym->tp;
+        while (isarray(tp1))
+            tp1 = basetype(tp1)->btp;
+        tp1 = basetype(tp1);
+        rv->stackProtectBasic = (tp1->type == bt_char || tp1->type == bt_unsigned_char) && sym->tp->size >= STACK_PROTECT_MINIMUM_CONSIDERED;
+    }
     return rv;
 }
 Optimizer::st_type Optimizer::SymbolManager::Get(enum Parser::e_bt type)

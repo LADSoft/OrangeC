@@ -168,6 +168,13 @@ CmdSwitchCombineString MakeStubsQuotedTargets(SwitchParser, 0, ';', {"MQ"});
 CmdSwitchBool MakeStubsContinue(SwitchParser, 0, 0, {"MD"});
 CmdSwitchBool MakeStubsContinueUser(SwitchParser, 0, 0, {"MMD"});
 
+CmdSwitchBool StackProtectorBasic(SwitchParser, 0, 0, {"fstack-protector"});
+CmdSwitchBool StackProtectorAll(SwitchParser, 0, 0, {"fstack-protector-all"});
+CmdSwitchBool StackProtectorStrong(SwitchParser, 0, 0, {"fstack-protector-strong"});
+CmdSwitchBool StackProtectorExplicit(SwitchParser, 0, 0, {"fstack-protector-explicit"});
+CmdSwitchBool RuntimeObjectOverflow(SwitchParser, 0, 0, {"fruntime-object-overflow"});
+CmdSwitchBool RuntimeUninitializedVariable(SwitchParser, 0, 0, {"fruntime-uninitialized-variable"});
+
 static std::string firstFile;
 
 enum e_lk getDefaultLinkage()
@@ -748,6 +755,18 @@ static void ParamTransfer(const char* name)
     {
         Optimizer::cparams.prm_useesp = false;
     }
+    if (StackProtectorBasic.GetValue())
+        Optimizer::cparams.prm_stackprotect |= STACK_PROTECT_BASIC;
+    if (StackProtectorAll.GetValue())
+        Optimizer::cparams.prm_stackprotect |= STACK_PROTECT_ALL;
+    if (StackProtectorStrong.GetValue())
+        Optimizer::cparams.prm_stackprotect |= STACK_PROTECT_STRONG;
+    if (StackProtectorExplicit.GetValue())
+        Optimizer::cparams.prm_stackprotect |= STACK_PROTECT_EXPLICIT;
+    if (RuntimeObjectOverflow.GetValue())
+        Optimizer::cparams.prm_stackprotect |= STACK_OBJECT_OVERFLOW;
+    if (RuntimeUninitializedVariable.GetValue())
+        Optimizer::cparams.prm_stackprotect |= STACK_UNINIT_VARIABLE;
 }
 
 /*-------------------------------------------------------------------------*/

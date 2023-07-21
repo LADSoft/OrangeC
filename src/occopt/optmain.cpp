@@ -57,6 +57,7 @@
 #include "optmodules.h"
 #include "ilazy.h"
 #include "iloop.h"
+#include "localprotect.h"
 
 int usingEsp;
 
@@ -293,14 +294,19 @@ void Optimize(SimpleSymbol* funcsp)
 
 void ProcessFunction(FunctionData* fd)
 {
+    bool hasCanary = HasCanary(fd);
+    currentFunction->usesEsp &= !hasCanary;
+
     SetUsesESP(currentFunction->usesEsp);
     Parser::anonymousNotAlloc = 0;
     CreateTempsAndBlocks(fd);
     Optimize(currentFunction);
 
     if (!(chosenAssembler->arch->denyopts & DO_NOREGALLOC))
-        AllocateStackSpace();
+        AllocateStackSpace(hasCanary? chosenAssembler->arch->type_sizes->a_addr : 0);
     FillInPrologue(intermed_head, currentFunction);
+    if (hasCanary)
+        CreateCanaryStubs(intermed_head, intermed_tail, currentFunction);
     // post_function_gen(currentFunction, intermed_head);
     tFree();
     oFree();

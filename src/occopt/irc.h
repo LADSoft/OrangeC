@@ -27,6 +27,7 @@ void regInit(void);
 namespace Optimizer
 {
 extern int maxAddr;
+
 typedef struct _spill_
 {
     struct _spill_* next;
@@ -36,7 +37,7 @@ typedef struct _spill_
 
 void LoadSaturationBounds(void);
 void alloc_init(void);
-void AllocateStackSpace(void);
+void AllocateStackSpace(int begin);
 void FillInPrologue(QUAD* head, SimpleSymbol* funcsp);
 int SqueezeChange(int temp, int t, int delta);
 void SqueezeInit(void);

@@ -130,6 +130,13 @@ static char help_text[] =
     " -print-prog-name=xxx            print(to stdout) the executable path for the xxx executable\n"
     "\n--architecture <architecture>\n"
     "    x86 - x86 code       msil - managed code\n"
+    "\nStack Protection:\n"
+    "  -stack-protect                  - abort if a function with a buffer >= 8 bytes loses its canary\n"
+    "  -stack-protect-all              - abort if any function in the compilation sequence loses its canary\n"
+    "  -stack-protect-strong           - abort if a function with an array or address taken loses its canary\n"
+    "  -stack-protect-explicit         - abort if a function marked 'stack protect' loses its canary\n"
+    "  -runtime-object-overflow        - abort if a buffer overflows\n"
+    "  -runtime-uninitialized-variable - abort if an uninitialized variable is used\n"
     "\nDependency generation:\n"
     "  /M             - basic generation\n"
     "  /MM            - basic generation, user files only\n"
@@ -360,6 +367,7 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     4,     /* minimum stack alignment */
     false, /* library functions should bes genned as import calls */
     4,     /* ret block param adjust for RTTI */
+    ECX    /* register that can be used as scratch at end of function */
 };
 static ARCH_DEBUG dbgStruct[1];
 #if 0

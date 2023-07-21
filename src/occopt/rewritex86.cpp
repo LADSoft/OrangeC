@@ -35,15 +35,17 @@
 #include "iconfl.h"
 #include "ilocal.h"
 #include "ioptutil.h"
-
 namespace Optimizer
 {
 int uses_substack;
+std::unordered_map<std::string, SimpleSymbol*> setSymbolMap;
 
-static IMODE* rwSetSymbol(const char* name, bool unused)
+IMODE* rwSetSymbol(const char* name, bool unused)
 {
     IMODE* result;
     SimpleSymbol* sym = SymbolManager::Get(name);
+    if (sym == 0)
+        sym = setSymbolMap[name];
     if (sym == 0)
     {
         LIST* l1;
@@ -52,7 +54,7 @@ static IMODE* rwSetSymbol(const char* name, bool unused)
         sym->name = sym->outputName = litlate(name);
         sym->tp = Allocate<SimpleType>();
         sym->tp->type = st_func;
-        //        SymbolManager::Add(name, sym);
+        setSymbolMap[name] = sym;
         externals.push_back(sym);
     }
     result = Allocate<IMODE>();

@@ -281,6 +281,7 @@ Optimizer::COMPILER_PARAMS cparams_default = {
     false,       /*char replacePInvoke;*/
     true,        /* char msilAllowExtensions;*/
     false,       /* char makelib; */
+    0,           /* int prm_stackprotect */
 };
 
 int usingEsp;

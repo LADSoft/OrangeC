@@ -3526,6 +3526,7 @@ static const std::unordered_map<std::string, int> gccStyleAttribNames = {
     {"exclude_from_explicit_instantiation", 29},
     {"constructor", 30 },
     {"destructor", 31 },
+    {"stack_protect", 32 },
 };
 #define DEFAULT_CONSTRUCTOR_PRIORITY 101
 #define DEFAULT_DESTRUCTOR_PRIORITY 101
@@ -3835,7 +3836,9 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                     basisAttribs.uninheritable.destructorPriority = DEFAULT_DESTRUCTOR_PRIORITY;
                                 }
                                 break;
-                             
+                            case 32: // stack-protect explicit  
+                                basisAttribs.uninheritable.stackProtect = true;
+                                break;
                         }
                     }
                 }

@@ -39,6 +39,17 @@ extern int architecture;
 #define MAX_REGISTERS 100
 
 #define REG_DOUBLE_FLAG 0x10000
+
+#define STACK_PROTECT_BASIC    1
+#define STACK_PROTECT_ALL      2
+#define STACK_PROTECT_STRONG   4
+#define STACK_PROTECT_EXPLICIT 8
+#define STACK_OBJECT_OVERFLOW  16
+#define STACK_UNINIT_VARIABLE  32
+#define STACK_PROTECT_WITH_CANARY (STACK_PROTECT_BASIC | STACK_PROTECT_ALL | STACK_PROTECT_STRONG | STACK_PROTECT_EXPLICIT)
+
+#define STACK_PROTECT_MINIMUM_CONSIDERED 4
+
 /* Common compiler parameters */
 typedef struct
 {
@@ -101,6 +112,7 @@ typedef struct
     bool msilAllowExtensions;    /* occil: allow extensions*/
     bool prm_displaytiming;      /* display timing info */
     bool prm_makelib;            /* make library */
+    int  prm_stackprotect;       /* stack protection mode */
 } COMPILER_PARAMS;
 
 /* Sizing and alignment info uses this structure */
@@ -270,7 +282,7 @@ typedef struct
     char stackalign;                  /* minimum stack alignment */
     char libsasimports;               /* library functions should be genned as import calls */
     char retblockparamadjust;         /* Adjustment for retblock parameters */
-
+    char eofScratchReg;                  /* register that can be used as scratch at end of function */
 } ARCH_CHARACTERISTICS;
 
 /* debugger characteristics */

@@ -69,6 +69,9 @@
     <ClCompile Include="symfuncs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="localprotect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="memory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -195,6 +198,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="istren.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="localprotect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="memory.h">

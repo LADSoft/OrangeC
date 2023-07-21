@@ -45,6 +45,7 @@
     <ClCompile Include="irewrite.cpp" />
     <ClCompile Include="issa.cpp" />
     <ClCompile Include="istren.cpp" />
+    <ClCompile Include="localprotect.cpp" />
     <ClCompile Include="memory.cpp" />
     <ClCompile Include="optmodulerun.cpp" />
     <ClCompile Include="optmodules.cpp" />
@@ -86,6 +87,7 @@
     <ClInclude Include="irewrite.h" />
     <ClInclude Include="issa.h" />
     <ClInclude Include="istren.h" />
+    <ClInclude Include="localprotect.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="optmodules.h" />
     <ClInclude Include="OptUtils.h" />

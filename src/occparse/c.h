@@ -646,6 +646,7 @@ struct attributes
         struct sym* copyFrom;         // symbol to copy attributes from
         int constructorPriority;      // is a file-scope constructor, set the priority
         int destructorPriority;       // is a file-scope destructor, set the priority
+        unsigned stackProtect : 1;    // explicit stackprotect
     } uninheritable;
 };
 /* symbols */

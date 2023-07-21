@@ -622,3 +622,7 @@ __declspec(dllexport) void CALLBACK StackTraceWithCode(char* text, char* prog, P
         MessageBoxA(0, buf, text, 0);
     }
 }
+__declspec(dllexport) void CALLBACK ConvertSymbolName(const char *name, char *buf)
+{
+        unmangle(buf, name);
+}

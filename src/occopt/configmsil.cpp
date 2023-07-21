@@ -257,6 +257,8 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     4,                 /* minimium width/ padding of passed parameters in maus */
     4,                 /* minimum stack alignment */
     false,             /* library functions should bes genned as import calls */
+    0,                 /* Adjustment for retblock parameters */
+    0                 /* register that can be used as scratch at end of function */
 };
 
 static ARCH_DEBUG dbgStruct[1];

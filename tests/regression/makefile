@@ -22,6 +22,13 @@ mpfr.exe: mpfrdll.dll mpfr.c
 fastcall1.exe: fastcall.c
 	occ /! /ofastcall1.exe /O- fastcall.c
 
+canary.exe: canary.c
+	occ -fstack-protector canary.c
+
+canary.tst: canary.exe
+	-$< 2> canary.out
+	fc /b canary.cmpx canary.out
+
 %.tst: %.exe
 	$< > $*.out
 	fc /b $*.cmpx $*.out

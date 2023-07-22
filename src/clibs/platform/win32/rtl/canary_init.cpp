@@ -66,5 +66,6 @@ extern "C" void __canary_abort(char *name)
         FreeLibrary(hmod);
     }
     fprintf(stderr, "'%s' has written past the top of its stack", ptr);
-    abort();
+    fflush(stderr);
+    _abort();
 }

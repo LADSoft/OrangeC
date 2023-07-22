@@ -346,7 +346,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     bool asapp = true;
     if (cmd.find("bash.exe") != std::string::npos || cmd.find("sh.exe") != std::string::npos)
     {
-        cmd = cmd.find("bash.exe") ? "bash.exe" : "sh.exe";
+        cmd = "sh.exe";
         // we couldn't simply set MAKE properly because they may change the shell in the script
         v = VariableContainer::Instance()->Lookup("MAKE");
         if (v->GetValue().find_first_of("\\") != std::string::npos)

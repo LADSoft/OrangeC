@@ -459,11 +459,7 @@ typedef struct _imode_
     SimpleExpression* offset2; /* a second temp reg */
     SimpleExpression* offset3; /* an address */
     SimpleExpression* vararg;
-    //    SimpleExpressionlist
-    //    {
-    //        SimpleExpressionlist* next;
-    //        SimpleExpression* offset;
-    //    } * vararg;
+    RUNTIMEDATA* runtimeData; // this is a temporary, will be moved to the quad when it gets generated
     int scale; /* scale factor on the second temp reg */
     char useindx;
     char size;           /* size */
@@ -543,6 +539,7 @@ typedef struct quad
     struct _block* block;
     SimpleSymbol* altsp;
     SimpleType* alttp;
+    RUNTIMEDATA* runtimeData;
     ArgList* altargs;
     BITINT* uses;
     BITINT* transparent;
@@ -595,6 +592,7 @@ typedef struct quad
             int atomic : 1;          /* atomic instruction */
             int atomicpostfetch : 1; /* fetch has result after operation... */
             int vararg : 1;          // msil
+            int runtimeIsStore : 1;
         };
         unsigned flags;
     };

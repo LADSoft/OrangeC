@@ -378,6 +378,7 @@ typedef struct expr
     int pragmas;
     struct typ* size; /* For block moves */
     void* altdata;
+    Optimizer::RUNTIMEDATA* runtimeData;
     struct
     {
         union
@@ -791,6 +792,7 @@ typedef struct sym
         short accessibleTemplateArgument;                /* something used as a template argument was validated for
                                                           * accessibility before instantiating the template */
         short retcount;                                  /* number of return statements in a function */
+        struct sym* runtimeSym;                                /* Simple symbol for runtime assignment tracking */
         /* Also name for CPP overload lists */
         /* also default for template parameters, is a TYP */
         char* importfile;    /* import name */

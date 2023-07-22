@@ -60,6 +60,7 @@
 #include "constexpr.h"
 #include "symtab.h"
 #include "ListFactory.h"
+
 namespace Parser
 {
 
@@ -7045,6 +7046,10 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                         }
                         else
                         {
+                            if ((sp->sb->storage_class == sc_auto || sp->sb->storage_class == sc_register) && (Optimizer::cparams.prm_stackprotect & STACK_UNINIT_VARIABLE) && !isstructured(sp->tp) && !isarray(sp->tp) && !isref(sp->tp)) 
+                            {
+                                 sp->sb->runtimeSym = anonymousVar(sc_auto, &stdpointer)->v.sp;
+                            }
                             LEXLIST* hold = lex;
                             bool structuredArray = false;
                             if (notype)
@@ -7161,7 +7166,11 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                         currentLineData(block, hold, 0);
                                         st = stmtNode(hold, block, st_expr);
                                         st->select =
-                                            convertInitToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);
+                                            convertInitToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);\
+                                        int offset = 0;
+                                        auto exp = relptr(st->select->left->left, offset, true);
+                                        if (exp)
+                                            SetRuntimeData(lex, exp, sp);
                                     }
                                     else if ((isarray(sp->tp) || isstructured(sp->tp)) &&
                                              Optimizer::architecture == ARCHITECTURE_MSIL)

@@ -27,6 +27,7 @@ void regInit(void);
 namespace Optimizer
 {
 extern int maxAddr;
+extern int lc_maxauto;
 
 typedef struct _spill_
 {

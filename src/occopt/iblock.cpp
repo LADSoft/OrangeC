@@ -109,6 +109,18 @@ void add_intermed(Optimizer::QUAD* newQuad)
             newQuad->ignoreMe = true;
             break;
         default:
+            if (newQuad->dc.left && newQuad->dc.left->runtimeData)
+            {
+                newQuad->runtimeData = newQuad->dc.left->runtimeData;
+                newQuad->dc.left->runtimeData = nullptr;
+                newQuad->runtimeData->asStore = newQuad->dc.left->mode == i_immed;
+            }
+            else if (newQuad->ans && newQuad->ans->runtimeData)
+            {
+                newQuad->runtimeData = newQuad->ans->runtimeData;
+                newQuad->runtimeData->asStore = true;
+                newQuad->ans->runtimeData = nullptr;
+            }
             break;
     };
     if (intermed_head == 0)
@@ -586,6 +598,18 @@ Optimizer::QUAD* gen_icode_with_conflict(enum i_ops op, Optimizer::IMODE* res, O
         newQuad->atomic = true;
     }
     newQuad = add_dag(newQuad);
+    if (left && left->runtimeData)
+    {
+        newQuad->runtimeData = left->runtimeData;
+        left->runtimeData = nullptr;
+        newQuad->runtimeData->asStore = left->mode == i_immed;
+    }
+    else if (res && res->runtimeData)
+    {
+        newQuad->runtimeData = res->runtimeData;
+        newQuad->runtimeData->asStore = true;
+        res->runtimeData = nullptr;
+    }
     switch (op)
     {
         case i_ret:

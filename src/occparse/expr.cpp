@@ -101,6 +101,25 @@ void expr_init(void)
     inNothrowHandler = 0;
     argFriend = nullptr;
 }
+void SetRuntimeData(LEXLIST* lex, EXPRESSION* exp, SYMBOL* sym)
+{
+    if ((Optimizer::cparams.prm_stackprotect & STACK_UNINIT_VARIABLE) && sym->sb->runtimeSym && lex->data->errfile)
+    {
+        auto runtimeData = Allocate<Optimizer::RUNTIMEDATA>();
+        const char* p = strrchr(lex->data->errfile, '/');
+        if (!p)
+            p = strrchr(lex->data->errfile, '\\');
+        if (!p)
+            p = lex->data->errfile;
+        else
+            p++;
+        runtimeData->fileName = p;
+        runtimeData->varName = sym->sb->decoratedName;
+        runtimeData->lineno = lex->data->errline;
+        runtimeData->runtimeSymOrig = sym->sb->runtimeSym;
+        exp->runtimeData = runtimeData;
+    }
+}
 void thunkForImportTable(EXPRESSION** exp)
 {
     SYMBOL* sym;
@@ -766,6 +785,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                                        */
                         *exp = varNode(en_auto, sym);
                         sym->sb->anyTry |= tryLevel != 0;
+                        SetRuntimeData(lex, *exp, sym);              
                         break;
                     case sc_parameter:
                         if (sym->packed)
@@ -6689,6 +6709,8 @@ static LEXLIST* expression_ampersand(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TY
             }
             else if (!isstructured(btp) && exp1->type != en_l_ref)
                 exp1 = (exp1)->left;
+            if (exp1->type == en_auto)
+                SetRuntimeData(lex, exp1, exp1->v.sp);
 
             switch ((exp1)->type)
             {

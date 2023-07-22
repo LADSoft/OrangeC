@@ -492,7 +492,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         return nullptr;
 
     // don't put unnecessary destructor calls into the final output file
-    if (Optimizer::cparams.prm_debug && (!f->sp->sb->isDestructor || !f->sp->sb->parentClass->sb->pureDest))
+    if ((Optimizer::cparams.prm_debug || (Optimizer::cparams.prm_stackprotect & STACK_UNINIT_VARIABLE)) && (!f->sp->sb->isDestructor || !f->sp->sb->parentClass->sb->pureDest))
     {
         return nullptr;
     }

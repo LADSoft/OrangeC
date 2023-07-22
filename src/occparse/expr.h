@@ -33,6 +33,7 @@ extern int inAssignRHS;
 extern std::list<SYMBOL*> importThunks;
 
 void expr_init(void);
+void SetRuntimeData(LEXLIST* lex, EXPRESSION* exp, SYMBOL* sym);
 void thunkForImportTable(EXPRESSION** exp);
 void ValidateMSILFuncPtr(TYPE* dest, TYPE* src, EXPRESSION** exp);
 EXPRESSION* exprNode(enum e_node type, EXPRESSION* left, EXPRESSION* right);

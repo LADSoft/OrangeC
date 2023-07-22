@@ -500,6 +500,16 @@ static Optimizer::QUAD* UnstreamInstruction(FunctionData& fd)
         if (n)
             rv->ans = fd.imodeList[n - 1];
         rv->altsp = (Optimizer::SimpleSymbol*)UnstreamIndex();
+        n = UnstreamIndex();
+        if (n)
+        {
+            rv->runtimeData = Allocate<RUNTIMEDATA>();
+            rv->runtimeData->runtimeSym = (void *)n;
+            rv->runtimeData->fileName = (const char*)UnstreamTextIndex();
+            rv->runtimeData->varName = (const char*)UnstreamTextIndex();
+            rv->runtimeData->lineno = UnstreamIndex();
+            rv->runtimeData->asStore = UnstreamIndex();
+        }
         rv->alttp = UnstreamType();
         i = UnstreamIndex();
         ArgList** p = (ArgList**)&rv->altargs;
@@ -1085,6 +1095,14 @@ static void ResolveInstruction(Optimizer::QUAD* q, std::map<int, std::string>& t
             ResolveSymbol(q->altsp, texts, globalCache);
         }
     }
+    if (q->runtimeData)
+    {
+        SimpleSymbol *s = reinterpret_cast<SimpleSymbol*>(q->runtimeData->runtimeSym);
+        ResolveSymbol(s, texts, current->variables);
+        q->runtimeData->fileName = texts[(int)(intptr_t)q->runtimeData->fileName].c_str();    
+        q->runtimeData->varName = texts[(int)(intptr_t)q->runtimeData->varName].c_str();
+        q->runtimeData->runtimeSym = s;
+    }
     if (q->alttp)
     {
         ResolveType(q->alttp, texts, typeSymbols);
@@ -1210,13 +1228,6 @@ static void ResolveNames(std::map<int, std::string>& texts)
         ResolveSymbol(v.getter, texts, globalCache);
         ResolveSymbol(v.setter, texts, globalCache);
     }
-    /*
-    for (auto&& t : temps)
-    {
-        if (t)
-            ResolveType(t->tp, texts, typeSymbols);
-    }
-    */
 }
 bool InputIntermediate(SharedMemory* inputMem)
 {

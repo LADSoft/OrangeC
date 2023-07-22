@@ -25,6 +25,9 @@
 
 namespace Optimizer
 {
+void localprotect_init();
 bool HasCanary(FunctionData* fd);
 void CreateCanaryStubs(QUAD* head, QUAD* tail, SimpleSymbol* func);
+void CreateUninitializedVariableStubs(QUAD* head, QUAD* tail);
+void CreateBufferOverflowStubs	(QUAD* head, QUAD* tail);
 }  // namespace Optimizer

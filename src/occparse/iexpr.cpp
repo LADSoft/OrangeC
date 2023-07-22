@@ -654,6 +654,11 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                 if (!sym->imaddress && catchLevel)
                 {
                     ap1 = make_ioffset(node);
+                    ap1->runtimeData = node->left->runtimeData;
+                    if (ap1->runtimeData)
+                    {
+                        ap1->runtimeData->runtimeSym = Optimizer::SymbolManager::Get(ap1->runtimeData->runtimeSymOrig);
+                    }
                     break;
                 }
                 // fall through
@@ -668,6 +673,18 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                 if (!sym->stackblock)
                 {
                     ap1 = make_ioffset(node);
+                    ap1->runtimeData = node->left->runtimeData;
+                    if (ap1->runtimeData)
+                    {
+                        if (!strcmp(theCurrentFunc->sb->decoratedName,
+                                    "@std@#unique_ptr.#__tree_node.#__value_type.#basic_string.c#char_traits.c~#allocator.c~~i~pv~#"
+                                    "__tree_node_"
+                                    "destructor.#allocator.#__tree_node.#__value_type.#basic_string.c#char_traits.c~#allocator.c~~"
+                                    "i~pv~~~~@."
+                                    "bdtr.qv"))
+                            printf("hi");
+                        ap1->runtimeData->runtimeSym = Optimizer::SymbolManager::Get(ap1->runtimeData->runtimeSymOrig);
+                    }
                     if (!store)
                     {
                         ap2 = Optimizer::LookupLoadTemp(nullptr, ap1);
@@ -3502,6 +3519,11 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 ap1 = ap2;
             }
             rv = ap1; /* return reg */
+            rv->runtimeData = node->runtimeData;
+            if (rv->runtimeData)
+            {
+                rv->runtimeData->runtimeSym = Optimizer::SymbolManager::Get(rv->runtimeData->runtimeSymOrig);
+            }
             sym->imaddress = ap1;
             sym->addressTaken = true;
             break;

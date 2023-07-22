@@ -96,6 +96,10 @@ CmdSwitchCombineString gccocc::MakeStubsTargets(SwitchParser, 0, ';', {"MT"});
 CmdSwitchCombineString gccocc::MakeStubsQuotedTargets(SwitchParser, 0, ';', {"MQ"});
 CmdSwitchBool gccocc::MakeStubsContinue(SwitchParser, 0, 0, {"MD"});
 CmdSwitchBool gccocc::MakeStubsContinueUser(SwitchParser, 0, 0, {"MMD"});
+CmdSwitchBool gccocc::StackProtectorBasic(SwitchParser, 0, 0, {"fstack-protector"});
+CmdSwitchBool gccocc::StackProtectorAll(SwitchParser, 0, 0, {"fstack-protector-all"});
+CmdSwitchBool gccocc::StackProtectorStrong(SwitchParser, 0, 0, {"fstack-protector-strong"});
+CmdSwitchBool gccocc::StackProtectorExplicit(SwitchParser, 0, 0, {"fstack-protector-explicit"});
 
 const char* gccocc::helpText =
     "[options] files...\n"
@@ -134,38 +138,42 @@ const char* gccocc::helpText =
     "   --nologo        no logo\n"	
     "   /?, --help      this text\n"
     "Other options\n"
-    "   -dll            generate a DLL\n"
-    "   -dumpmachine    dump machine string\n"
-    "   -dumpversion    dump compiler version\n"
-    "   -export-all-symbols force export of symbols\n"
-    "   -fexceptions    ignored\n"
-    "   -fmax-errors=n  show a maximum of 'n' errors\n"
-    "   -fsyntax-only   compile, don't generate output\n"
-    "   -funsigned-char treat char as unsigned\n"
-    "   -link           reserved for compitiblity\n"
-    "   -m32            ignored\n"
-    "   -m64            ignored\n"
-    "   -mconsole       generate a console program\n"
-    "   -mdll           generate a DLL\n"
-    "   -mwindows       generate a gui program\n"
-    "   -municode       use the unicode version of the headers\n"
-    "   -nostdinc       disable c language system include files\n"
-    "   -nostdinc++     disable c++ language system include files\n"
-    "   -output-def xxxx  create a .def file\n"  
-    "   -pedantic       ignored\n"
-    "   -pedantic-errors ignored\n"
-    "   -pipe           ignored\n"
-    "   -print-file-name=xxx  print the full path of a library\n"
-    "   -print-prog-name=xxx  print the full path of one of the executables\n"
-    "   -pthread        ignored\n"
-    "   -shared         generate a DLL instead of an executable\n"
-    "   -static         generate a static library instead of an executable\n"
-    "   -march=xxx      ignored\n"
-    "   -mtune=xxx      ignored\n"
-    "   --Wl,dll        make a dll\n"
-    "   --Wl,--out-implib=xxx generate an import library when creating a dll\n"
-    "   --Wl,--output-def=xxx generate a def file when creating a dll\n"
-    "   --Wl,substem=xxx set the windows subsystem\n"
+    "   -dll                      generate a DLL\n"
+    "   -dumpmachine              dump machine string\n"
+    "   -dumpversion              dump compiler version\n"
+    "   -export-all-symbols       force export of symbols\n"
+    "   -fexceptions              ignored\n"
+    "   -fmax-errors=n            show a maximum of 'n' errors\n"
+    "   -fstack-protect           abort if a function with a buffer >= 8 bytes overwrites the return address\n"
+    "   -fstack-protect-all       abort if any function in the compilation sequence overwrites the return address\n"
+    "   -fstack-protect-strong    abort if a function with an array or address taken overwrites the return address\n"
+    "   -fstack-protect-explicit  abort if a function attributed with 'stack_protect' overwrites the return address\n"
+    "   -fsyntax-only             compile, don't generate output\n"
+    "   -funsigned-char           treat char as unsigned\n"
+    "   -link                     reserved for compitiblity\n"
+    "   -m32                      ignored\n"
+    "   -m64                      ignored\n"
+    "   -mconsole                 generate a console program\n"
+    "   -mdll                     generate a DLL\n"
+    "   -mwindows                 generate a gui program\n"
+    "   -municode                 use the unicode version of the headers\n"
+    "   -nostdinc                 disable c language system include files\n"
+    "   -nostdinc++               disable c++ language system include files\n"
+    "   -output-def xxxx          create a .def file\n"  
+    "   -pedantic                 ignored\n"
+    "   -pedantic-errors          ignored\n"
+    "   -pipe                     ignored\n"
+    "   -print-file-name=xxx      print the full path of a library\n"
+    "   -print-prog-name=xxx      print the full path of one of the executables\n"
+    "   -pthread                  ignored\n"
+    "   -shared                   generate a DLL instead of an executable\n"
+    "   -static                   generate a static library instead of an executable\n"
+    "   -march=xxx                ignored\n"
+    "   -mtune=xxx                ignored\n"
+    "   --Wl,dll                  make a dll\n"
+    "   --Wl,--out-implib=xxx     generate an import library when creating a dll\n"
+    "   --Wl,--output-def=xxx     generate a def file when creating a dll\n"
+    "   --Wl,substem=xxx          set the windows subsystem\n"
     "   other -Wl,xxx=yyy switches are ignored\n"
     "\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
@@ -375,6 +383,14 @@ int gccocc::Run(int argc, char** argv)
         fputs(" -MD", fil);
     if (MakeStubsContinueUser.GetValue())
         fputs(" -MMD", fil);
+    if (StackProtectorBasic.GetValue())
+        fputs(" -fstack-protector", fil);
+    if (StackProtectorAll.GetValue())
+        fputs(" -fstack-protector-all", fil);
+    if (StackProtectorStrong.GetValue())
+        fputs(" -fstack-protector-strong", fil);
+    if (StackProtectorExplicit.GetValue())
+        fputs(" -fstack-protector-explicit", fil);
     PutWarnings(fil);
     if (prm_output_def_file.GetExists())
         fprintf(fil, " -output-def %s", prm_output_def_file.GetValue().c_str());

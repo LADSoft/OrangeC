@@ -640,20 +640,7 @@ int clocc::Run(int argc, char** argv)
     FILE* fil = Utils::TempName(tempName);
     fputs(args.c_str(), fil);
     fclose(fil);
-    int rv;
-#ifdef TARGET_OS_WINDOWS
-    if (getenv("MSYSTEM") && getenv("SHELL"))
-    {
-        // MSYS2 has to be handled differently
-        std::replace( tempName.begin(), tempName.end(), '\\', '/');
-        std::string cmd = "bash.exe -c 'occ.exe -!" + defines + " @" + tempName + "'";
-        rv = system(cmd.c_str()); // uses winsystem...  ...ignores cmd.exe
-    }
-    else
-#endif
-    {
-        rv = ToolChain::ToolInvoke("occ.exe", nullptr, " -! %s @%s", defines.c_str(), tempName.c_str());
-    }
+    int rv = ToolChain::ToolInvoke("occ.exe", nullptr, " -! %s @%s", defines.c_str(), tempName.c_str());
     unlink(tempName.c_str());
     return rv;
 }

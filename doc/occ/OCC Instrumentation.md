@@ -58,8 +58,17 @@ Stack protection is used to thwart threats; runtime checks are similar but they 
 
 Each array or structure on the stack is given its own canary.    The canaries are set to '0xcccccccc' when the function starts (by setting the entire stack frame to that value).   AT the end of the function all the canaries are checked, and if any of them differs from the expected value the program aborts with an error message.
 
+#### Uninitialized vary check
+
      -fruntime-uninitialized-variable
 
 Each arithmethmetic value is given its own canary, which as in the last option is set to '0xcccccccc' when the function starts.   Any time the variable is accessed or its address is taken, the canary is set to 0.   Each time the variable is accessed for use the canary is checked; if it is nonzero the program aborts with an error message.   In this way it can be validated that the variable is used correctly.
 
-Note there are some caveats...  first, just because a variables' address is taken doesn't mean that that variable will be asssigned to, however, the assumption of this option is that it does.   Second, this option works best when combined with the -g flag...   results may vary if the program isn't compiled for debug when this flag is used.
+Note there are some caveats...  first, just because a variables' address is taken doesn't mean that that variable will be asssigned to, however, the assumption of this option is that it does.   Second, this option works best when combined with the -g flag...   results may be inconsistent if the program isn't compiled for debug when this flag is used.   
+
+#### Heap corruption check
+
+      -fruntime-heap-check
+
+Heap allocations will be annotated with information that can be used to determine if writes are made before or after the allocated memory.   On free, if such a write is found then the program will abort with an error message.   This slows down
+the allocations and causes them to use more memory though.    

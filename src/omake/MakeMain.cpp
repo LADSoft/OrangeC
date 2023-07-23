@@ -359,9 +359,12 @@ void MakeMain::ShowRule(RuleList* ruleList)
         std::cout << "\t\t" << rule->GetOrderPrerequisites() << std::endl;
         std::cout << "\tCommands:" << std::endl;
         std::shared_ptr<Command> commands = rule->GetCommands();
-        for (auto&& command : *rule->GetCommands())
+        if (commands)
         {
-            std::cout << "\t\t" << command << std::endl;
+            for (auto&& command : *commands)
+            {
+                std::cout << "\t\t" << command << std::endl;
+            }
         }
     }
     std::cout << "\tTargetVariables:" << std::endl;

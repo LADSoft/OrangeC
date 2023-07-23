@@ -114,7 +114,7 @@ bool PEFixupObject::IsInternal(ObjExpression* e)
 {
     int pos = 0, neg = 0;
     CountSections(e, true, pos, neg);
-    return pos != 0 && pos == neg;
+    return pos == neg;
 }
 
 void PEFixupObject::CountSections(ObjExpression* e, bool positive, int& pos, int& neg)

@@ -106,4 +106,6 @@ c17 - ISO/IEC 9899:2018
     static CmdSwitchCombineString prmLinkOptions;
     static CmdSwitchString prmLinkWithMSVCRT;
     static CmdSwitchCombineString prmWarningSetup;
+    static CmdSwitchBool RuntimeObjectOverflow;
+    static CmdSwitchBool RuntimeUninitializedVariable;
 };

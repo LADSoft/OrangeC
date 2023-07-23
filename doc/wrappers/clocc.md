@@ -137,7 +137,13 @@ valid modes are:
      /Ox       optimize for speed
      /Oy[-]    enable[disable] stack frames
 
->    clocc    /link:xxx   file.c
+>    clocc    /RTCs file.c
+
+compile for stack object runtime checking
+
+>    clocc    /RTCu   file.c
+
+compile for uninitialized variable checking
 
 pass an option to the linker
 this switch will pass some basic options to the linker, but since it passes them to olink

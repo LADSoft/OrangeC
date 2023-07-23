@@ -1,0 +1,2 @@
+Runtime check: buffer overflow of variable 'buf' in function 'aa'
+Abnormal program termination

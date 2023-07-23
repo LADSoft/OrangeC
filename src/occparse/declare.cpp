@@ -7168,9 +7168,12 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                         st->select =
                                             convertInitToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);\
                                         int offset = 0;
-                                        auto exp = relptr(st->select->left->left, offset, true);
-                                        if (exp)
-                                            SetRuntimeData(lex, exp, sp);
+                                        if (sp->sb->runtimeSym)
+                                        {
+                                            auto exp = relptr(st->select->left->left, offset, true);
+                                            if (exp)
+                                                SetRuntimeData(lex, exp, sp);
+                                        }
                                     }
                                     else if ((isarray(sp->tp) || isstructured(sp->tp)) &&
                                              Optimizer::architecture == ARCHITECTURE_MSIL)

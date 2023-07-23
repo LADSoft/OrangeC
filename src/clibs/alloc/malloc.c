@@ -79,6 +79,14 @@ typedef struct rp_nothrow_t { int __dummy; } rp_nothrow_t;
 #define POINTERSIZE 4
 
 #if USE_IMPLEMENT
+// this next line is a linker trick to enable/disable heap checking at link time
+// basically, _HEAP_CHECK is not defined in any source files.   The linker accepts
+// a constant value on the command line (with the -Dxxxx=# switch) and uses that as
+// an absolute address.   If _HEAP_CHECK is not defined on the compiler command line,
+// the linker internally sets it to zero.
+//
+// The compiler sets _HEAP_CHECK to 1, if the -fruntime-heap-check flag is set.
+// 
 extern char _HEAP_CHECK[];
 inline void __memcorrupt()
 {

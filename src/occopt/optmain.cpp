@@ -294,6 +294,7 @@ void Optimize(SimpleSymbol* funcsp)
 void ProcessFunction(FunctionData* fd)
 {
     bool hasCanary = HasCanary(fd);
+    // part of the runtime relies on EBP of the caller being set properly...
     currentFunction->usesEsp &= !Optimizer::cparams.prm_stackprotect;
 
     SetUsesESP(currentFunction->usesEsp);

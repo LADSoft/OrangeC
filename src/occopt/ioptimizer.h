@@ -394,6 +394,7 @@ inline bool isconstaddress(SimpleExpression* exp)
         case se_add:
             return (isconstaddress(exp->left) || isintconst(exp->left)) && (isconstaddress(exp->right) || isintconst(exp->right));
         case se_global:
+            return exp->sp->storage_class != scc_external;
         case se_pc:
         case se_labcon:
             return true;

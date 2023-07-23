@@ -174,6 +174,7 @@ CmdSwitchBool StackProtectorStrong(SwitchParser, 0, 0, {"fstack-protector-strong
 CmdSwitchBool StackProtectorExplicit(SwitchParser, 0, 0, {"fstack-protector-explicit"});
 CmdSwitchBool RuntimeObjectOverflow(SwitchParser, 0, 0, {"fruntime-object-overflow"});
 CmdSwitchBool RuntimeUninitializedVariable(SwitchParser, 0, 0, {"fruntime-uninitialized-variable"});
+CmdSwitchBool RuntimeHeapCheck(SwitchParser, 0, 0, {"fruntime-heap-check"});
 
 static std::string firstFile;
 
@@ -767,6 +768,8 @@ static void ParamTransfer(const char* name)
         Optimizer::cparams.prm_stackprotect |= STACK_OBJECT_OVERFLOW;
     if (RuntimeUninitializedVariable.GetValue())
         Optimizer::cparams.prm_stackprotect |= STACK_UNINIT_VARIABLE;
+    if (RuntimeHeapCheck.GetValue())
+        Optimizer::cparams.prm_stackprotect |= HEAP_CHECK;
 }
 
 /*-------------------------------------------------------------------------*/

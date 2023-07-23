@@ -137,6 +137,7 @@ static char help_text[] =
     "  -fstack-protect-explicit         - abort if a function attributed with 'stack_protect' overwrites the return address\n"
     "  -fruntime-object-overflow        - abort if a buffer overflows\n"
     "  -fruntime-uninitialized-variable - abort if an uninitialized variable is used\n"
+    "  -fruntime-heap-check             - abort if there is a buffer overflow in a heap variable\n"
     "\nDependency generation:\n"
     "  /M             - basic generation\n"
     "  /MM            - basic generation, user files only\n"

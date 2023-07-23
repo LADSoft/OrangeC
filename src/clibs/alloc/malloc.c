@@ -1,4 +1,6 @@
 #include "thunk.c"
+#include <stdio.h>
+
 #define inline
 /* malloc.c  -  Memory allocator  -  Public Domain  -  2016 Mattias Jansson
  *
@@ -71,32 +73,55 @@ __attribute__ ((section("__DATA, __interpose"))) = MAC_INTERPOSE_PAIR(newf, oldf
 
 #if ENABLE_OVERRIDE
 
-#define PADVALUE 0x4c53444c
+#define PADVALUE 0xcdcdcdcd
 typedef struct rp_nothrow_t { int __dummy; } rp_nothrow_t;
 
+#define POINTERSIZE 4
+
 #if USE_IMPLEMENT
-extern inline void *PAD(void *p)
+extern char _HEAP_CHECK[];
+inline void memcorrupt()
+{
+    fputs("heap corrupt", stderr);
+    fflush(stderr);
+    _abort();
+}
+extern inline void *PAD(void *p, int size)
 {
      if (p)
      {
+         int offset = (int)_HEAP_CHECK;
          DWORD *q = (DWORD *)p;
-         q[0] = PADVALUE; 
-         q[1] = -8;
-         return (void *)(((unsigned char *)p) + 8);
+         q[0] = size;
+         q[offset] = -POINTERSIZE *(2+offset);
+         q[offset+1] = PADVALUE;
+         if (offset)
+         {
+             int *s = (int *)((char *)(q+3) + size);
+             *s = PADVALUE;
+         }
+         return (void *)(q + 2 + offset);
      }
      return NULL;
 }
-extern inline void* PAD2(void* p, int align)
+extern inline void* PAD2(void* p, int size, int align)
 {
      if (p)
      {
+          int offset = (int)_HEAP_CHECK;
           unsigned char *r = (unsigned char*)p;
           // assumes align is a power of two
-          r += 8 + align-1;
+          r += POINTERSIZE * (2 + offset) + align-1;
           r = (void *)(((DWORD) r) & -align);
           DWORD *q = (DWORD *)r;
-          q[-2] = PADVALUE;
-          q[-1] = ((unsigned char *)p) - ((unsigned char *)q);
+          if (offset)
+          {
+             q[-3] = size;
+             int *s = (int *)((char *)q + size);
+             *s = PADVALUE;
+          }
+          q[-2] = ((unsigned char *)p) - ((unsigned char *)q);
+          q[-1] = PADVALUE;
           return (void *)q;
      }
      return NULL;
@@ -106,29 +131,112 @@ extern inline void *CHECK(void *p)
      if (p)
      {
          DWORD*q = (DWORD*)p;
-         if (q[-2] == PADVALUE)
+         if (q[-1] == PADVALUE)
          {
-            q[-2] = 0;
-            return ((unsigned char *)p) + q[-1];
+            if (_HEAP_CHECK)
+            {
+                int *s = (int *)((char *)q + q[-3]);
+                if (*s != PADVALUE)
+                {
+                    memcorrupt();
+                }
+                *s = 0;
+            }
+            q[-1] = 0;
+            return ((unsigned char *)p) + q[-2];
+         }
+         else if (_HEAP_CHECK)
+         {
+             memcorrupt();
          }
      }
      return NULL;
 }
+extern inline int __size(int size) { return  size + POINTERSIZE * (2 + (int)_HEAP_CHECK * 2); }
 extern void __ll_enter_critical();
 extern void __ll_exit_critical();
-extern inline RPMALLOC_RESTRICT void* RPMALLOC_CDECL malloc(size_t size) { __ll_enter_critical(); void * rv = PAD(rpaligned_alloc(8, size+8));__ll_exit_critical(); return rv; }
-extern inline RPMALLOC_RESTRICT void* RPMALLOC_CDECL calloc(size_t count, size_t size) { __ll_enter_critical();void * rv = PAD(rpaligned_calloc(8, count, size+8));__ll_exit_critical(); return rv; }
-extern inline RPMALLOC_RESTRICT void* RPMALLOC_CDECL realloc(void* ptr, size_t size) { __ll_enter_critical();void * rv = PAD(rprealloc(CHECK(ptr), size+8));__ll_exit_critical(); return rv; }
-extern inline void* RPMALLOC_CDECL reallocf(void* ptr, size_t size) { __ll_enter_critical();void * rv = PAD(rprealloc(CHECK(ptr), size+8));__ll_exit_critical(); return rv; }
-extern inline void* RPMALLOC_CDECL aligned_alloc(size_t alignment, size_t size) { __ll_enter_critical();void * rv = PAD2(rpaligned_alloc(alignment, size+alignment+8), alignment);__ll_exit_critical(); return rv; }
-extern inline void* RPMALLOC_CDECL _mm_malloc(size_t size, size_t alignment) { __ll_enter_critical();void * rv = PAD2(rpaligned_alloc(alignment, size+alignment+8), alignment);__ll_exit_critical(); return rv; }
-extern inline void* RPMALLOC_CDECL _aligned_malloc(size_t alignment, size_t size) { __ll_enter_critical();void * rv = PAD2(rpaligned_alloc(alignment, size+alignment+8), alignment);__ll_exit_critical(); return rv; }
+extern inline RPMALLOC_RESTRICT void* RPMALLOC_CDECL malloc(size_t size) 
+{ 
+    __ll_enter_critical(); 
+    int len = __size(size);
+    void * rv = PAD(rpaligned_alloc(8, len), size);
+    __ll_exit_critical(); 
+    return rv; 
+}
+extern inline RPMALLOC_RESTRICT void* RPMALLOC_CDECL calloc(size_t count, size_t size) 
+{ 
+    __ll_enter_critical();
+    int len = __size(size);
+    void * rv = PAD(rpaligned_calloc(8, count, len), size * count);
+    __ll_exit_critical(); 
+    return rv; 
+}
+extern inline RPMALLOC_RESTRICT void* RPMALLOC_CDECL realloc(void* ptr, size_t size) 
+{ 
+    __ll_enter_critical();
+    int len = __size(size);
+    void * rv = PAD(rprealloc(CHECK(ptr), len), size);
+    __ll_exit_critical(); 
+    return rv; 
+}
+extern inline void* RPMALLOC_CDECL reallocf(void* ptr, size_t size) 
+{ 
+    __ll_enter_critical();
+    int len = __size(size);
+    void * rv = PAD(rprealloc(CHECK(ptr), len), size);
+    __ll_exit_critical(); 
+    return rv; 
+}
+extern inline void* RPMALLOC_CDECL aligned_alloc(size_t alignment, size_t size) 
+{
+    __ll_enter_critical();
+    int len = __size(size);
+    void * rv = PAD2(rpaligned_alloc(alignment, len), size, alignment);
+    __ll_exit_critical(); 
+    return rv; 
+}
+extern inline void* RPMALLOC_CDECL _mm_malloc(size_t size, size_t alignment) 
+{ 
+    __ll_enter_critical();
+    int len = __size(size + alignment);
+    void * rv = PAD2(rpaligned_alloc(alignment, len), size, alignment);
+    __ll_exit_critical(); 
+    return rv; 
+}
+extern inline void* RPMALLOC_CDECL _aligned_malloc(size_t alignment, size_t size) 
+{
+    __ll_enter_critical();
+    int len = __size(size + alignment);
+    void * rv = PAD2(rpaligned_alloc(alignment, len), size, alignment);
+    __ll_exit_critical(); 
+    return rv; 
+}
 //extern inline void* RPMALLOC_CDECL memalign(size_t alignment, size_t size) { return rpmemalign(alignment, size); }
 //extern inline int RPMALLOC_CDECL posix_memalign(void** memptr, size_t alignment, size_t size) { return rpposix_memalign(memptr, alignment, size); }
-extern inline void RPMALLOC_CDECL free(void* ptr) { __ll_enter_critical();rpfree(CHECK(ptr));__ll_exit_critical(); }
-extern inline void RPMALLOC_CDECL _aligned_free(void* ptr) { __ll_enter_critical();rpfree(CHECK(ptr));__ll_exit_critical(); }
-extern inline void RPMALLOC_CDECL _mm_free(void* ptr) { __ll_enter_critical();rpfree(CHECK(ptr));__ll_exit_critical(); }
-extern inline void RPMALLOC_CDECL cfree(void* ptr) { __ll_enter_critical();rpfree(CHECK(ptr));__ll_exit_critical(); }
+extern inline void RPMALLOC_CDECL free(void* ptr) 
+{ 
+    __ll_enter_critical();
+    rpfree(CHECK(ptr));
+    __ll_exit_critical(); 
+}
+extern inline void RPMALLOC_CDECL _aligned_free(void* ptr) 
+{ 
+    __ll_enter_critical();
+    rpfree(CHECK(ptr));
+    __ll_exit_critical(); 
+}
+extern inline void RPMALLOC_CDECL _mm_free(void* ptr) 
+{ 
+    __ll_enter_critical();
+    rpfree(CHECK(ptr));
+    __ll_exit_critical(); 
+}
+extern inline void RPMALLOC_CDECL cfree(void* ptr) 
+{ 
+    __ll_enter_critical();
+    rpfree(CHECK(ptr));
+    __ll_exit_critical(); 
+}
 //extern inline size_t RPMALLOC_CDECL malloc_usable_size(void* ptr) { return rpmalloc_usable_size(ptr); }
 //extern inline size_t RPMALLOC_CDECL malloc_size(void* ptr) { return rpmalloc_usable_size(ptr); }
 

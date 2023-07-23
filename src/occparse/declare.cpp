@@ -1517,7 +1517,6 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
         }
         else if (inTemplate && templateNestingCount)
         {
-
             // definition or declaration
             if (!sp->sb->templateLevel)
             {
@@ -6367,7 +6366,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_cl
                                 errorsym(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
                             if (strSym && storage_class_in != sc_member && storage_class_in != sc_mutable)
                             {
-                                errorNotMember(strSym, nsv->front(), sp->name);
+                                errorNotMember(strSym, nsv ? nsv->front() : nullptr, sp->name);
                             }
                         }
                         else

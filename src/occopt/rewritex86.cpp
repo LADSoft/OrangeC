@@ -40,6 +40,7 @@ namespace Optimizer
 int uses_substack;
 std::unordered_map<std::string, SimpleSymbol*> setSymbolMap;
 
+void rewrite_x86_init() { setSymbolMap.clear(); }
 IMODE* rwSetSymbol(const char* name, bool unused)
 {
     IMODE* result;

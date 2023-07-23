@@ -356,6 +356,7 @@ bool LoadFile(SharedMemory* parserMem)
     constoptinit();
     localprotect_init();
     SelectBackendData();
+    rewrite_x86_init();
     return rv;
 }
 void SaveFile(std::string& name, SharedMemory* optimizerMem)

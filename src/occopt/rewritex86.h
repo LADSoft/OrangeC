@@ -26,6 +26,7 @@
 namespace Optimizer
 {
 extern int uses_substack;
+void rewrite_x86_init();
 IMODE* rwSetSymbol(const char* name, bool unused);
 void insert_parm(QUAD* head, QUAD* q);
 void insert_nullparmadj(QUAD* head, int v);

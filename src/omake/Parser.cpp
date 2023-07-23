@@ -888,28 +888,21 @@ bool Parser::ParseCommand(const std::string& line)
     {
         size_t n = line.find("&&");
         *lastCommand += line;
-        if (n != std::string::npos && n != line.size() - 2)
+        if (n != std::string::npos && n == line.size() - 3)
         {
-            // disable the temporary command files for /bin/sh
-            Variable* v = VariableContainer::Instance()->Lookup("SHELL");
-            if (v)
+            // this handles && as a temporary command file marker
+            // note that we are not supporting it if you use a line continuation in conjunction with it and it must be the last thing on a line
+            char match = line[n + 2];
+            bool found = false;
+            while (!remaining.empty() && !found)
             {
-                std::string shell = v->GetValue();
-                if (shell != "/bin/sh")
-                {
-                    char match = line[n + 2];
-                    bool found = false;
-                    while (!remaining.empty() && !found)
-                    {
-                        std::string iline = GetLine(false);
-                        *lastCommand += iline;
-                        found = iline.find(match) != std::string::npos;
-                    }
-                    if (!found)
-                    {
-                        Eval::error("End of file detected while processing temporary command file");
-                    }
-                }
+                std::string iline = GetLine(false);
+                *lastCommand += iline;
+                found = iline.find(match) != std::string::npos;
+            }
+            if (!found)
+            {
+                Eval::error("End of file detected while processing temporary command file");
             }
         }
     }

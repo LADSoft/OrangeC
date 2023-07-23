@@ -346,7 +346,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     bool asapp = true;
     if (cmd.find("bash.exe") != std::string::npos || cmd.find("sh.exe") != std::string::npos)
     {
-        cmd = "sh.exe";
+        cmd = "sh.exe -c ";
         // we couldn't simply set MAKE properly because they may change the shell in the script
         v = VariableContainer::Instance()->Lookup("MAKE");
         if (v->GetValue().find_first_of("\\") != std::string::npos)
@@ -358,13 +358,12 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
                 n = command1.find(v->GetValue());
             }
         }
-        cmd += " -c '" + command1 + "'";
-        asapp = false;
     }
     else
     {
-        cmd += " /c " + QuoteCommand(cmd, command1);
+        cmd += " /c ";
     }
+    cmd += QuoteCommand(cmd, command1);
     STARTUPINFO startup = {};
     PROCESS_INFORMATION pi;
     HANDLE pipeRead, pipeWrite, pipeWriteDuplicate;

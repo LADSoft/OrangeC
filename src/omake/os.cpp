@@ -516,6 +516,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
 std::string OS::SpawnWithRedirect(const std::string command)
 {
 #ifdef TARGET_OS_WINDOWS
+    std::string command1 = command;
     std::string rv;
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
     if (!v)
@@ -526,8 +527,26 @@ std::string OS::SpawnWithRedirect(const std::string command)
         Eval r(cmd, false);
         cmd = r.Evaluate();
     }
-    cmd += " /c ";
-    cmd += command;
+    if (cmd.find("bash.exe") != std::string::npos || cmd.find("sh.exe") != std::string::npos)
+    {
+        cmd = "sh.exe -c ";
+        // we couldn't simply set MAKE properly because they may change the shell in the script
+        v = VariableContainer::Instance()->Lookup("MAKE");
+        if (v->GetValue().find_first_of("\\") != std::string::npos)
+        {
+            size_t n = command1.find(v->GetValue());
+            while (n != std::string::npos)
+            {
+                std::replace(command1.begin() + n, command1.begin() + n + v->GetValue().size(), '\\', '/');
+                n = command1.find(v->GetValue());
+            }
+        }
+    }
+    else
+    {
+        cmd += " /c ";
+    }
+    cmd += QuoteCommand(cmd, command1);
     STARTUPINFO startup;
     PROCESS_INFORMATION pi;
     memset(&startup, 0, sizeof(startup));

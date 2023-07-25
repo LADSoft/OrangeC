@@ -407,14 +407,10 @@ ObjInt LinkRegion::ArrangeOverlayed(LinkManager* manager, NamedSection* data, Ob
     }
     ObjSection* curSection = nullptr;
     ObjFile* curFile = nullptr;
-    for (auto&& item : data->sections)
+    if (data->sections.size())
     {
-        ObjSection* sect = item.section;
-        if (!curSection || sect->GetAbsSize() > curSection->GetAbsSize())
-        {
-            curSection = sect;
-            curFile = item.file;
-        }
+        curSection = data->sections.front().section;
+        curFile = data->sections.front().file;
     }
     if (!curSection)
         return 0;

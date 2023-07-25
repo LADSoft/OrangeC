@@ -93,18 +93,28 @@ __preheader* dictionary[HASHBLKSIZE];
 void* operator new(size_t aa)
 {
     if (!aa)
-        return nullptr;
-    int bb = (aa + 7) / 8 * 8;
-    if (bb/8 < HASHBLKSIZE)
+        aa++;
+    int bb = (aa + 7) / 8;
+    if (bb < HASHBLKSIZE)
     {
-        if (dictionary[bb / 8])
+        if (dictionary[bb])
         {
-            __preheader* rv = dictionary[bb / 8];
-            dictionary[bb / 8] = rv->link;
+            __preheader* rv = dictionary[bb];
+            dictionary[bb] = rv->link;
             return (void*)(rv + 1);
         }
     }
-    __preheader* rv = (__preheader*)malloc(aa + sizeof(__preheader));
+    __preheader* rv;
+    while ((rv = (__preheader*)::malloc(bb * 8 + sizeof(__preheader))) == 0)
+    {
+        // If malloc fails and there is a new_handler,
+        // call it to try free up memory.
+        std::new_handler nh = std::get_new_handler();
+        if (nh)
+            nh();
+        else
+            throw std::bad_alloc();
+    }
     rv->size = bb;
     rv->link = nullptr;
     return (void *)(rv + 1);
@@ -114,10 +124,10 @@ void operator delete(void* p)
     if (!p)
         return;
     __preheader* item = ((__preheader *)p)-1;
-    if (item->size/8 < HASHBLKSIZE)
+    if (item->size < HASHBLKSIZE)
     {
-        item->link = dictionary[item->size / 8];
-        dictionary[item->size/8] = item;
+        item->link = dictionary[item->size];
+        dictionary[item->size] = item;
     }
     else
     {

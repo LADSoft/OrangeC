@@ -83,6 +83,8 @@ CmdSwitchBool LinkerMain::Verbosity(SwitchParser, 'y');
 CmdSwitchCombineString LinkerMain::OutputDefFile(SwitchParser, 0, 0, {"output-def"});
 CmdSwitchCombineString LinkerMain::OutputImportLibrary(SwitchParser, 0, 0, {"out-implib"});
 CmdSwitchCombineString LinkerMain::PrintFileName(SwitchParser, 0, 0, {"print-file-name"});
+CmdSwitchCombineString LinkerMain::DelayLoadDll(SwitchParser, 0, ';', {"delayload"});
+CmdSwitchCombineString LinkerMain::DelayLoadFlags(SwitchParser, 0, ';', {"delay"});
 
 SwitchConfig LinkerMain::TargetConfig(SwitchParser, 'T');
 const char* LinkerMain::helpText =
@@ -100,6 +102,9 @@ const char* LinkerMain::helpText =
     " --output-def filename    create a .def file for DLLs\n"
     " --out-implib filename    specify name for import library when generating DLLs\n"
     " --shared                 create a dll\n"
+    " -delayload dllname       specify a dll to add to the delay load table\n"
+    " -delay[nobind|unload]    specify a delay load flag\n"
+
     "@xxx      Read commands from file\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
 const char* LinkerMain::usageText = "[options] inputfiles";
@@ -262,6 +267,22 @@ void LinkerMain::ParseSpecifiedLibFiles(CmdFiles& files, LinkManager& manager)
         }
     }
 }
+void LinkerMain::ParseDelayLoadFlags()
+{
+    if (DelayLoadFlags.GetExists())
+    {
+        for (auto&& s : Utils::split(DelayLoadFlags.GetValue()))
+        {
+             if (s == "nobind" || s == "NOBIND")
+                  bindtable = false;
+             else if (s == "unload" || s == "UNLOAD")
+                  unloadtable = true;
+             else
+                 Utils::Fatal(std::string("unknown delayload flag: ") + s);
+        }        
+    }
+}
+
 int LinkerMain::Run(int argc, char** argv)
 {
     RewriteArgs(argc, argv);
@@ -333,6 +354,7 @@ int LinkerMain::Run(int argc, char** argv)
                        !RelFile.GetValue() && !TargetConfig.GetRelFile(), TargetConfig.GetDebugPassThrough(), debugFile);
     linker.SetLibPath(LibPath.GetValue());
     ParseSpecifiedLibFiles(files, linker);
+    ParseDelayLoadFlags();
     if (DoPrintFileName(linker))
         exit(0);
     linker.SetIndexManager(&im1);
@@ -369,7 +391,7 @@ int LinkerMain::Run(int argc, char** argv)
             else
                 path.erase(n + 1);
             int rv = TargetConfig.RunApp(path, outputFile, Utils::AbsolutePath(debugFile), Verbosity.GetExists(),
-                                         OutputDefFile.GetValue(), OutputImportLibrary.GetValue());
+                                         OutputDefFile.GetValue(), OutputImportLibrary.GetValue(), bindtable, unloadtable, DelayLoadDll.GetValue());
             if (!Verbosity.GetExists())
                 unlink(outputFile.c_str());
             return rv;

@@ -49,6 +49,9 @@ CmdSwitchBool dlPeMain::FlatExports(SwitchParser, 'f');
 CmdSwitchBool dlPeMain::Verbose(SwitchParser, 'y');
 CmdSwitchCombineString dlPeMain::OutputDefFile(SwitchParser, 0, 0, {"output-def"});
 CmdSwitchCombineString dlPeMain::OutputImportLibrary(SwitchParser, 0, 0, {"out-implib"});
+CmdSwitchCombineString dlPeMain::DelayLoadDll(SwitchParser, 0, ';', {"dln"});
+CmdSwitchBool dlPeMain::DelayLoadBind(SwitchParser, 0, 0, {"dlb"});
+CmdSwitchBool dlPeMain::DelayLoadUnload(SwitchParser, 0, 0, {"dlu"});
 
 time_t dlPeMain::timeStamp;
 
@@ -93,6 +96,9 @@ const char* dlPeMain::helpText =
     "\n"
     "--output-def filename    for DLL, output a .def file instead of a .lib\n"
     "--out-implib filename    for DLL, set the name of the import library\n"
+    " -dln dllname            add a DLL to the delay load table\n"
+    " -dlb                    create a delay load binding table\n"
+    " -dlu                    create a delay load unload table\n"
     "\n"
     "Available output file types:\n"
     "   CON - Windows console (default)\n"

@@ -72,6 +72,21 @@ name.  For example:
 
  The **/!** or **--nologo** switch is 'nologo'
 
+### Delay loading of DLLs
+
+There are three switches to support WIN32 delay loading of DLLs.
+
+>     dlpe /dln:USER32.dll test.rel
+
+adds user32.dll to the delay load table.   It does not create a binding table.
+
+To have it create a binding table use -dlb:
+
+>     dlpe /dln:USER32.dll /dlb test.rel
+
+To add a table for manually unloading the dll use -dlu
+
+>     dlpe /dln:USER32.dll /dlu test.rel
 
 ### Environment Variables consumed by DLPE
 

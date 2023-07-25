@@ -101,6 +101,9 @@ class dlPeMain
     static CmdSwitchBool Verbose;
     static CmdSwitchCombineString OutputDefFile;
     static CmdSwitchCombineString OutputImportLibrary;
+    static CmdSwitchCombineString DelayLoadDll;
+    static CmdSwitchBool DelayLoadBind;
+    static CmdSwitchBool DelayLoadUnload;
     static const char* usageText;
     static const char* helpText;
     ObjInt fileAlign;

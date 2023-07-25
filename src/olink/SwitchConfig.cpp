@@ -284,7 +284,7 @@ bool SwitchConfig::InterceptFile(const std::string& file)
     return false;
 }
 int SwitchConfig::RunApp(const std::string& path, const std::string& file, const std::string& debugFile, bool verbose,
-                         std::string outDefFile, std::string outImportLibrary)
+                         std::string outDefFile, std::string outImportLibrary, bool bindtable, bool unloadtable, std::string delayload)
 {
     std::string flags;
     std::string name;
@@ -304,7 +304,7 @@ int SwitchConfig::RunApp(const std::string& path, const std::string& file, const
     for (auto name : files)
         sfiles = sfiles + " \"" + name + "\"";
     std::string outdef;
-        std::string outimp;
+    std::string outimp;
     if (!outDefFile.empty())
         outdef = " --output-def \"" + outDefFile + "\"";
     else
@@ -312,8 +312,17 @@ int SwitchConfig::RunApp(const std::string& path, const std::string& file, const
         if (!outImportLibrary.empty())
             outimp = " --out-implib \"" + outImportLibrary + "\"";
     }
-    return ToolChain::ToolInvoke(name, verbose ? "" : nullptr, "%s %s %s %s %s \"%s\"%s", flags.c_str(), outdef.c_str(), outimp.c_str(),  sverbose.c_str(),
-                             sdebug.c_str(), file.c_str(), sfiles.c_str());
+    std::string delay;
+    if (!delayload.empty())
+    {
+        if (bindtable) delay += " -dlb";
+        if (unloadtable) delay += " -dlu";
+        for (auto&& s : Utils::split(delayload))
+             delay += " -dln=" + s;
+    }
+    return ToolChain::ToolInvoke(name, verbose ? "" : nullptr, "%s %s %s %s %s %s \"%s\"%s", 
+                             flags.c_str(), outdef.c_str(), outimp.c_str(),  sverbose.c_str(),
+                             sdebug.c_str(), delay.c_str(), file.c_str(), sfiles.c_str());
 }
 bool SwitchConfig::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData) { return false; }
 bool SwitchConfig::VisitNode(xmlNode& node, xmlNode* child, void* userData)

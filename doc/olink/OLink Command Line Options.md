@@ -84,6 +84,22 @@ when creating dlls.
 
 generates a DLL from test.o, and outputs a file test.def with the exports
 
+### Delay loading of DLLs
+
+There are three switches to support WIN32 delay loading of DLLs.
+
+>     OLink /T:DLL32 /c /DELAYLOAD:USER32.DLL  --output-def test.def /o test.exe c0dpe.o test.o clwin.l climp.l
+
+adds USER32.DLL to the delay load table, and creates a binding table for the DLL.
+
+To have it not create a binding table use /DELAY:NOBIND:
+
+>     OLink /T:DLL32 /c /DELAYLOAD:USER32.DLL /DELAY:NOBIND  --output-def test.def /o test.exe c0dpe.o test.o clwin.l climp.l
+
+To add a table for manually unloading the dll use /DELAY:UNLOAD
+
+>     OLink /T:DLL32 /c /DELAYLOAD:USER32.DLL /DELAY:UNLOAD  --output-def test.def /o test.exe c0dpe.o test.o clwin.l climp.l
+
 ### Map File
 
  To generate a map file, use the **/m **switch.  The map file name will be the same as the name of the **.rel** file, with the extension replaced by **.map**.  The standard map file summarizes the partitions the program is contained in, and then lists publics in both alphabetic and numeric order.  

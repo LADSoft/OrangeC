@@ -44,8 +44,12 @@ class LinkerMain
     void RewriteArgs(int argc, char** argv);
     bool DoPrintFileName(LinkManager& linker);
     void ParseSpecifiedLibFiles(CmdFiles& files, LinkManager& manager);
+    void ParseDelayLoadFlags();
 
   private:
+    bool bindtable = true;
+    bool unloadtable = false;
+
     static CmdSwitchParser SwitchParser;
 
     static CmdSwitchBool CaseSensitive;
@@ -61,6 +65,8 @@ class LinkerMain
     static CmdSwitchCombineString OutputDefFile;
     static CmdSwitchCombineString OutputImportLibrary;
     static CmdSwitchCombineString PrintFileName;
+    static CmdSwitchCombineString DelayLoadDll;
+    static CmdSwitchCombineString DelayLoadFlags;
     static SwitchConfig TargetConfig;
     static const char* usageText;
     static const char* helpText;

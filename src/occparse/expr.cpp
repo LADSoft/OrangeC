@@ -6434,7 +6434,7 @@ static LEXLIST* expression_sizeof(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
             paren = true;
             lex = getsym();
         }
-        if (!paren || !startOfType(lex, nullptr, false))
+        if (!startOfType(lex, nullptr, false))
         {
             if (paren)
             {

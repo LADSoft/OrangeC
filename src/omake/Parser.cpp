@@ -1051,9 +1051,30 @@ bool Parser::ParseElse(const std::string& line)
         bool b = skips.front();
         skips.pop_front();
         if (!skips.empty() && skips.front())
-            skips.push_front(true);
-        else
-            skips.push_front(!b);
+            b = false;
+        if (b)
+        {
+            size_t n;
+            std::string line1 = line;
+            std::string firstWord = FirstWord(line1, n);
+            if (firstWord == "ifeq")
+            {
+                return ParseCond(line1.substr(n), true);
+            }
+            else if (firstWord == "ifneq")
+            {
+                return ParseCond(line1.substr(n), false);
+            }
+            else if (firstWord == "ifdef")
+            {
+                return ParseDef(line1.substr(n), true);
+            }
+            else if (firstWord == "ifndef")
+            {
+                return ParseDef(line1.substr(n), false);
+            }
+        }
+        skips.push_front(!b);
     }
     return rv;
 }

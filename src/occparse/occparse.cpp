@@ -74,7 +74,7 @@
 #include <cstdlib>
 #include <cstdio>
 
-#define x64_compiler
+//#define x64_compiler
 #ifndef x64_compiler
 // this overloading of operator new/delete is a speed optimization
 // it basically caches small allocations for reuse
@@ -97,10 +97,11 @@ void* operator new(size_t aa)
     int bb = (aa + 7) / 8;
     if (bb < HASHBLKSIZE)
     {
-        if (dictionary[bb])
+        __preheader** x = dictionary + bb;
+        if (*x)
         {
-            __preheader* rv = dictionary[bb];
-            dictionary[bb] = rv->link;
+            __preheader* rv = *x;
+            *x = rv->link;
             return (void*)(rv + 1);
         }
     }
@@ -126,8 +127,9 @@ void operator delete(void* p)
     __preheader* item = ((__preheader *)p)-1;
     if (item->size < HASHBLKSIZE)
     {
-        item->link = dictionary[item->size];
-        dictionary[item->size] = item;
+        __preheader** x = dictionary + item->size;
+        item->link = *x;
+        *x = item;
     }
     else
     {

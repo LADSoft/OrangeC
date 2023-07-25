@@ -407,7 +407,7 @@ ObjInt LinkRegion::ArrangeOverlayed(LinkManager* manager, NamedSection* data, Ob
     }
     ObjSection* curSection = nullptr;
     ObjFile* curFile = nullptr;
-    for (auto item : data->sections)
+    for (auto&& item : data->sections)
     {
         ObjSection* sect = item.section;
         if (!curSection || sect->GetAbsSize() > curSection->GetAbsSize())
@@ -418,7 +418,7 @@ ObjInt LinkRegion::ArrangeOverlayed(LinkManager* manager, NamedSection* data, Ob
     }
     if (!curSection)
         return 0;
-    for (auto item : data->sections)
+    for (auto&& item : data->sections)
     {
         ObjSection* sect = item.section;
         sect->SetAliasFor(curSection);

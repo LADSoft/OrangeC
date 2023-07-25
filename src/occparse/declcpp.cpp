@@ -3493,7 +3493,7 @@ TYPE* AttributeFinish(SYMBOL* sym, TYPE* tp)
     }
     return tp;
 }
-static const std::unordered_map<std::string, int> gccStyleAttribNames = {
+static const std::unordered_map<std::string, int, StringHash> gccStyleAttribNames = {
     {"alias", 1},    // 1 arg, alias name
     {"aligned", 2},  // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
     {"warn_if_not_aligned", 3},  // arg is the desired minimum alignment
@@ -3854,14 +3854,14 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
         }
     }
 }
-static const std::unordered_map<std::string, int> occCPPStyleAttribNames = {
+static const std::unordered_map<std::string, int, StringHash> occCPPStyleAttribNames = {
     {"zstring", 23},  // non-gcc, added to support nonstring
 };
-static const std::unordered_map<std::string, int> clangCPPStyleAttribNames = {
+static const std::unordered_map<std::string, int, StringHash> clangCPPStyleAttribNames = {
     {"internal_linkage", 28},
     {"exclude_from_explicit_instantiation", 29},
 };
-static const std::unordered_map<std::string, int> gccCPPStyleAttribNames = {
+static const std::unordered_map<std::string, int, StringHash> gccCPPStyleAttribNames = {
     {"alloc_size", 4},  // implement by ignoring one or two args
                         //                    { "common", 6 }, // no args, decide whether to support
                         //                    { "nocommon", 7 }, // no args, decide whether to support

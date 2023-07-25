@@ -75,7 +75,7 @@ int count1;
 int inTemplateArgs;
 
 static int templateNameTag;
-static std::unordered_map<SYMBOL*, std::unordered_map<std::string, SYMBOL*>> classTemplateMap;
+static std::unordered_map<SYMBOL*, std::unordered_map<std::string, SYMBOL*, StringHash>> classTemplateMap;
 std::unordered_map<std::string, SYMBOL*, StringHash> classTemplateMap2;
 std::unordered_map<std::string, SYMBOL*, StringHash> classInstantiationMap;
 

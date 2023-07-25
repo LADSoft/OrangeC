@@ -64,7 +64,7 @@ static std::list<std::pair<SYMBOL*, EXPRESSION *>> inlineLocalUninitializers;
 
 static int inlinesp_count;
 static SymbolTable<SYMBOL>* vc1Thunks;
-static std::unordered_set<std::string> didInlines;
+static std::unordered_set<std::string, StringHash> didInlines;
 
 static FUNCTIONCALL* function_list[MAX_INLINE_NESTING];
 static int function_list_count;

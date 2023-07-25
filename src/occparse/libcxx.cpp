@@ -101,7 +101,7 @@ static struct _ihash
 };
 static SymbolTable<_ihash> intrinsicHash;
 
-static std::unordered_map<std::string, std::unordered_map<unsigned, SYMBOL*>> integerSequences;
+static std::unordered_map<std::string, std::unordered_map<unsigned, SYMBOL*>, StringHash> integerSequences;
 
 void libcxx_init(void)
 {

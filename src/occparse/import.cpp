@@ -106,7 +106,7 @@ class Importer : public Callback
   private:
     std::deque<SYMBOL*> nameSpaces_;
     std::deque<SYMBOL*> structures_;
-    std::unordered_map<std::string, SYMBOL*> cachedClasses_;
+    std::unordered_map<std::string, SYMBOL*, StringHash> cachedClasses_;
     int level_;
     int pass_;
     bool inlsmsilcrtl_;

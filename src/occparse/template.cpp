@@ -77,6 +77,7 @@ int inTemplateArgs;
 static int templateNameTag;
 static std::unordered_map<SYMBOL*, std::unordered_map<std::string, SYMBOL*>> classTemplateMap;
 std::unordered_map<std::string, SYMBOL*, StringHash> classTemplateMap2;
+std::unordered_map<std::string, SYMBOL*, StringHash> classInstantiationMap;
 
 struct templateListData* currents;
 
@@ -109,6 +110,7 @@ void templateInit(void)
     inDeduceArgs = 0;
     classTemplateMap.clear();
     classTemplateMap2.clear();
+    classInstantiationMap.clear();
     templateNameTag = 1;
 }
 EXPRESSION* GetSymRef(EXPRESSION* n)
@@ -8323,6 +8325,12 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
 
     if (!isExtern)
     {
+        if (sym->sb->decoratedName)
+        {
+            auto itx = classInstantiationMap.find(sym->sb->decoratedName);
+            if (itx != classInstantiationMap.end())
+                return itx->second;
+        }
         if (sym->sb->maintemplate && (!sym->sb->specialized || sym->sb->maintemplate->sb->specialized))
         {
             lex = sym->sb->maintemplate->sb->deferredCompile;
@@ -8335,6 +8343,8 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
             lex = sym->sb->parentTemplate->sb->deferredCompile;
         if (lex)
         {
+            if (sym->sb->decoratedName)
+                classInstantiationMap[sym->sb->decoratedName] = cls;
             EnterInstantiation(lex, sym);
             int oldHeaderCount = templateHeaderCount;
             Optimizer::LIST* oldDeferred = deferred;

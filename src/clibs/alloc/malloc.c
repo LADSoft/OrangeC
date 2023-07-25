@@ -94,6 +94,12 @@ inline void __memcorrupt()
     fflush(stderr);
     _abort();
 }
+// so most of the project works without the padding
+// the one exception I know about i BZIP2-1.0.5
+// which throws an exception deep in the allocator
+// when encrypting...
+// I'm leaving the padding in to support it.
+//
 extern inline void *__PAD(void *p, int size)
 {
      if (p)

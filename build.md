@@ -60,6 +60,18 @@ you can do:
 
 and it won't compile the DOS libraries or package the results.
 
+you can also do:
+
+    omake fullbuild WITHOUT_OCCIL=YES
+
+to build without the OCCIL runtime...   this is useful for example in the MSYS2 shell since .net is not available
+
+you can also do:
+
+    omake fullbuild WITHOUT_ZIP=yes
+
+to skip the step where it packages things into zip files and makes an install package
+
 to compile with MINGW64:
 
     omake fullbuild COMPILER=MINGW64

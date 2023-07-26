@@ -253,6 +253,7 @@ KEYWORD keywords[] = {
     {"__finally", 9, kw___finally, KW_MSIL, TT_CONTROL},
     {"__func__", 8, kw___func__, KW_C99 | KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
     {"__import", 8, kw__import, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    {"__has_c_attribute", 17, kw__has_c_attribute, KW_C2X, TT_VAR},
     {"__initblk", 9, kw__initblk, KW_MSIL, TT_OPERATOR | TT_UNARY},
     {"__inline", 8, kw_inline, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__int16", 7, kw_short, KW_NONANSI | KW_386 | KW_MSIL, TT_BASETYPE | TT_INT},

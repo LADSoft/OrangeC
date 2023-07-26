@@ -3527,6 +3527,9 @@ static const std::unordered_map<std::string, int, StringHash> gccStyleAttribName
     {"constructor", 30 },
     {"destructor", 31 },
     {"stack_protect", 32 },
+    {"fallthrough", 33 },
+    {"maybe_unused", 34},
+    {"nodiscard", 35},
 };
 #define DEFAULT_CONSTRUCTOR_PRIORITY 101
 #define DEFAULT_DESTRUCTOR_PRIORITY 101
@@ -3838,6 +3841,12 @@ void ParseOut__attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                 break;
                             case 32: // stack-protect explicit  
                                 basisAttribs.uninheritable.stackProtect = true;
+                                break;
+                            case 33: // fallthrough
+                                break;
+                            case 34: // maybe_unused
+                                break;
+                            case 35: // nodiscard
                                 break;
                         }
                     }

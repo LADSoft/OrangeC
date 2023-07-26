@@ -107,7 +107,7 @@ class ppDefine
     };
 
   public:
-    ppDefine(bool UseExtensions, ppInclude* Include, bool C89, bool Asmpp);
+    ppDefine(bool UseExtensions, ppInclude* Include, bool C89, bool C2x, bool Asmpp);
     ~ppDefine() {}
 
     void SetParams(ppCtx* Ctx, ppMacro* Macro)
@@ -172,6 +172,7 @@ class ppDefine
     std::deque<TokenPos> tokenPositions;
     static KeywordHash defTokens;
     bool c89;
+    bool c2x;
     ppExpr expr;
     ppCtx* ctx;
     ppMacro* macro;

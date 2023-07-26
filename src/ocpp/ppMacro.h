@@ -51,7 +51,7 @@ struct MacroData
 class ppMacro
 {
   public:
-    ppMacro(ppInclude& Include, ppDefine& Define);
+    ppMacro(ppInclude& Include, ppDefine& Define, bool C2x);
     ~ppMacro();
     bool Check(kw token, std::string& line);
     bool GetLine(std::string& line, int& lineno);

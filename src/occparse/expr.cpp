@@ -92,6 +92,14 @@ static LEXLIST* expression_pm(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
 LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
 static LEXLIST* expression_msilfunc(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags);
 
+std::unordered_map<std::string, unsigned, StringHash> cattributes = { 
+ {"deprecated" , 202311},
+ {"fallthrough" , 202311},
+ {"nodiscard" , 202311},
+ {"noreturn" , 202311},
+ {"maybe_unused" , 202311}
+};
+
 void expr_init(void)
 {
     packIndex = -1;
@@ -6106,6 +6114,24 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 case kw___typeid:
                     lex = expression___typeid(lex, funcsp, tp, exp);
                     break;
+                case kw__has_c_attribute:
+                     lex = getsym();
+                     *tp = &stdint;
+                     *exp = intNode(en_c_i, 0);
+                     if (needkw(&lex, openpa))
+                     {
+                         if (ISID(lex))
+                         {
+                             (*exp)->v.i = cattributes[lex->data->value.s.a];
+                             lex = getsym();
+                         }
+                         else
+                         {
+                             error(ERR_IDENTIFIER_EXPECTED);
+                         }
+                         needkw(&lex, closepa);
+                     }
+                     break;
                 case kw_D0:
                 case kw_D1:
                 case kw_D2:

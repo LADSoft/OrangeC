@@ -38,13 +38,13 @@ class PreProcessor
 {
   public:
     PreProcessor(const std::string& FileName, const std::string& SrchPth, const std::string& SysSrchPth, bool fullName,
-                 bool Trigraph, char PPStart, bool isunsignedchar, bool C89, bool extensions, bool NoErr,
+                 bool Trigraph, char PPStart, bool isunsignedchar, bool C89, bool C2x, bool extensions, bool NoErr,
                  const std::string& pipeName) :
         ppStart(PPStart),
         lineno(0),
-        include(fullName, Trigraph, extensions, isunsignedchar, C89, SrchPth, SysSrchPth, PPStart == '%', NoErr, pipeName),
-        define(extensions, &include, C89, PPStart == '%'),
-        macro(include, define),
+        include(fullName, Trigraph, extensions, isunsignedchar, C89, C2x, SrchPth, SysSrchPth, PPStart == '%', NoErr, pipeName),
+        define(extensions, &include, C89, C2x, PPStart == '%'),
+        macro(include, define, C2x),
         ctx(define),
         trigraphs(Trigraph),
         pragma(&include, &define)

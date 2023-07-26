@@ -39,7 +39,7 @@ class ppExpr
   public:
     typedef long long CompilerExpression(std::string& line);
 
-    ppExpr(bool isunsignedchar) : define(nullptr), unsignedchar(isunsignedchar), token(nullptr), floatWarned(false) {}
+    ppExpr(bool isunsignedchar, bool c2xMode) : define(nullptr), unsignedchar(isunsignedchar), token(nullptr), floatWarned(false), c2x(c2xMode) {}
     ~ppExpr() {}
 
     void SetParams(ppDefine* Define) { define = Define; }
@@ -70,11 +70,13 @@ class ppExpr
   private:
     bool floatWarned;
     bool unsignedchar;
+    bool c2x;
     ppDefine* define;
     std::unique_ptr<Tokenizer> tokenizer;
     const Token* token;
     static KeywordHash hash;
     static ppInclude* include;
     static CompilerExpression* expressionHandler;
+    static std::unordered_map<std::string, unsigned> cattributes;
 };
 #endif

@@ -150,6 +150,7 @@ private:
         kw_char32_t, kw_mutable, kw_nullptr, kw_noexcept, kw_thread_local, kw_constexpr,
         kw_rangefor,
         /* Extended */
+        kw__has_c_attribute,
         kw_atomic_flag_test_set, kw_atomic_flag_clear, kw_atomic_kill_dependency,
         /* Clang compatibility for atomics */
         kw_c11_atomic_init, kw_c11_atomic_thread_fence, kw_c11_atomic_signal_fence,

@@ -38,10 +38,11 @@ class ppCtx;
 class ppInclude
 {
   public:
-    ppInclude(bool Fullname, bool Trigraph, bool extended, bool isunsignedchar, bool C89, const std::string& SrchPth,
+    ppInclude(bool Fullname, bool Trigraph, bool extended, bool isunsignedchar, bool C89, bool C2x, const std::string& SrchPth,
               const std::string& SysSrchPth, bool Asmpp, bool NoErr, const std::string& pipeName) :
         unsignedchar(isunsignedchar),
         c89(C89),
+        c2x(C2x),
         trigraphs(Trigraph),
         asmpp(Asmpp),
         define(nullptr),
@@ -49,7 +50,7 @@ class ppInclude
         extendedComment(extended || !C89),
         fullname(Fullname),
         current(nullptr),
-        expr(unsignedchar),
+        expr(unsignedchar, C2x),
         forcedEOF(false),
         nextIndex(0),
         piper(pipeName),
@@ -152,6 +153,7 @@ class ppInclude
     ppDefine* define;
     bool unsignedchar;
     bool c89;
+    bool c2x;
     bool trigraphs;
     bool extendedComment;
     bool fullname;

@@ -552,11 +552,19 @@ int main(int argc, char* argv[])
             {
                 Optimizer::cparams.prm_c99 = true;
                 Optimizer::cparams.prm_c1x = false;
+                Optimizer::cparams.prm_c2x = false;
             }
             else if (prm_std.GetValue() == "c11")
             {
                 Optimizer::cparams.prm_c99 = true;
                 Optimizer::cparams.prm_c1x = true;
+                Optimizer::cparams.prm_c2x = false;
+            }
+            else if (prm_std.GetValue() == "c2x")
+            {
+                Optimizer::cparams.prm_c99 = true;
+                Optimizer::cparams.prm_c1x = true;
+                Optimizer::cparams.prm_c2x = true;
             }
             else if (prm_std.GetValue() == "c++11")
             {
@@ -615,7 +623,7 @@ int main(int argc, char* argv[])
             new PreProcessor(buffer, prm_cinclude.GetValue(),
                              Optimizer::cparams.prm_cplusplus ? prm_CPPsysinclude.GetValue() : prm_Csysinclude.GetValue(), true,
                              Optimizer::cparams.prm_trigraph, '#', Optimizer::cparams.prm_charisunsigned,
-                             !Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_c1x && !Optimizer::cparams.prm_cplusplus,
+                             !Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_c1x && !Optimizer::cparams.prm_c2x &&!Optimizer::cparams.prm_cplusplus, Optimizer::cparams.prm_c2x,
                              !Optimizer::cparams.prm_ansi,
                              (MakeStubsOption.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(),
                              prm_pipe.GetValue() != "+" ? prm_pipe.GetValue() : "");

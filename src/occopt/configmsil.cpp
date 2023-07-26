@@ -42,8 +42,9 @@ namespace Optimizer
 static char help_text[] =
     "[options] [@response file] files\n"
     "\n"
-    "/1        - C1x mode                  /8        - c89 mode\n"
-    "/9        - C99 mode                  /c        - compile only\n"
+    "/1        - C1x mode                  /2        - C2x mode\n"
+    "/8        - c89 mode                  /9        - C99 mode\n"
+    "/c        - compile only\n"
     "-d        - don't allow extensions    +e        - dump errors to file\n"
     "+i        - dump preprocessed file    +l        - dump listing file\n"
     "/oxxx     - specify output file name\n"

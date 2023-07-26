@@ -36,8 +36,8 @@ class ppCtx;
 class ppCond
 {
   public:
-    ppCond(bool isunsignedchar, bool C89, bool Extensions, bool AsmPP) :
-        define(nullptr), c89(C89), expr(isunsignedchar), extensions(Extensions), ctx(nullptr), asmpp(AsmPP){};
+    ppCond(bool isunsignedchar, bool C89, bool c2x, bool Extensions, bool AsmPP) :
+        define(nullptr), c89(C89), expr(isunsignedchar, c2x), extensions(Extensions), ctx(nullptr), asmpp(AsmPP){};
     ~ppCond();
     void SetParams(ppDefine* Define, ppCtx* Ctx)
     {

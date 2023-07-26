@@ -38,11 +38,11 @@ class ppFile : public InputFile
 
   public:
     ppFile(bool fullname, bool Trigraph, bool extended, const std::string& Name, ppDefine* define, ppCtx& Ctx, bool isunsignedchar,
-           bool c89, bool asmpp, PipeArbitrator& piper, int directories_travelled = 0) :
+           bool c89, bool c2x, bool asmpp, PipeArbitrator& piper, int directories_travelled = 0) :
         InputFile(fullname, Name, piper),
         trigraphs(Trigraph),
         extendedComment(extended),
-        cond(isunsignedchar, c89, extended, asmpp),
+        cond(isunsignedchar, c89, c2x, extended, asmpp),
         ctx(Ctx),
         directoriesTraversed(directories_travelled)
     {

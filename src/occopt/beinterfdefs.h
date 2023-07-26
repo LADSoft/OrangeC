@@ -150,6 +150,7 @@ typedef struct
     char a_rcomplexpad;
     char a_lrcomplexpad;
     char a_alignedstruct;  // __attribute((__aligned__))
+    char a_maxalign; // maximum alignment native to the implementation
 } ARCH_SIZING;
 
 /* floating point characteristics */

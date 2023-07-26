@@ -123,13 +123,14 @@ typedef long long __time_t_64;
     struct tm* _RTL_FUNC _IMPORT _localtime32(const __time_t_32* __timer);
     __time_t_32 _RTL_FUNC _IMPORT _time32(__time_t_32* __timer);
     __time_t_32 _RTL_FUNC _IMPORT _mktime32(struct tm* __timeptr);
-
+    __time_t_32 _RTL_FUNC _IMPORT _timegm32(struct tm *timeptr);
     char* _RTL_FUNC _IMPORT _ctime64(const __time_t_64* __time);
     int _RTL_FUNC _IMPORT _stime64(__time_t_64* __tp);
     struct tm* _RTL_FUNC _IMPORT _gmtime64(const __time_t_64* __timer);
     struct tm* _RTL_FUNC _IMPORT _localtime64(const __time_t_64* __timer);
     __time_t_64 _RTL_FUNC _IMPORT _time64(__time_t_64* __timer);
     __time_t_64 _RTL_FUNC _IMPORT _mktime64(struct tm* __timeptr);
+    __time_t_64 _RTL_FUNC _IMPORT _timegm64(struct tm *timeptr);
 
     int _RTL_FUNC clock_getres(clockid_t clk_id, struct timespec *res);
     int _RTL_FUNC clock_gettime(clockid_t clk_id, struct timespec *tp);
@@ -169,6 +170,10 @@ typedef long long __time_t_64;
     {
         return _mktime32(__timeptr);
     }
+    inline time_t timegm(struct tm* __timeptr)
+    {
+        return _timegm32(__timeptr);
+    }
 #else
     inline char* ctime(const time_t* __time)
     {
@@ -193,6 +198,10 @@ typedef long long __time_t_64;
     inline time_t mktime(struct tm* __timeptr)
     {
         return _mktime64(__timeptr);
+    }
+    inline time_t timegm(struct tm* __timeptr)
+    {
+        return _timegm64(__timeptr);
     }
 #endif
     inline double difftime(time_t __time2, time_t __time1)

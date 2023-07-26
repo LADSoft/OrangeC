@@ -49,6 +49,7 @@
 #include "configmsil.h"
 #include "initbackend.h"
 #include "optmodules.h"
+#include "beinterf.h"
 
 namespace Optimizer
 {
@@ -840,11 +841,19 @@ void setglbdefs(void)
         preProcessor->Define("__ATOMIC_SEQ_CST", std::to_string(Optimizer::e_mo::mo_seq_cst));
     }
     preProcessor->Define("__STDC__", "1");
+    preProcessor->Define("__STDC_VERSION_STDBIT_H__", "202311");
+    preProcessor->Define("__STDC_ENDIAN_LITTLE__", "1");
+    preProcessor->Define("__STDC_ENDIAN_BIG__", "2");
+    preProcessor->Define("__STDC_ENDIAN_NATIVE__", "__STDC_ENDIAN_LITTLE__");
 
+   
     if (prm_prmCharIsUnsigned.GetValue())
         preProcessor->Define("__CHAR_UNSIGNED__", "1");
     else
         preProcessor->Define("__CHAR_SIGNED__", "1");
+
+    sprintf(buf, "%d", getMaxAlign());
+    preProcessor->Define("__MAX_ALIGN__", buf);
 
     if (Optimizer::cparams.prm_c99 || Optimizer::cparams.prm_c1x || Optimizer::cparams.prm_cplusplus)
     {

@@ -1,4 +1,3 @@
-#pragma once
 /* Software License Agreement
  * 
  *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
@@ -23,17 +22,24 @@
  * 
  */
 
-namespace Parser
+#include <stddef.h>
+#include <limits.h>
+
+template <class T>
+static inline T bit_ceil(T arg)
 {
-int needsAtomicLockFromType(TYPE* tp);
-int getSize(enum e_bt type);
-int getBaseAlign(enum e_bt type);
-int getMaxAlign();
-long getautoval(long val);
-int funcvaluesize(int val);
-int alignment(int sc, TYPE* tp);
-int getAlign(int sc, TYPE* tp);
-const char* getUsageText(void);
-const char* getHelpText(void);
-KEYWORD* GetProcKeywords(void);
-}  // namespace Parser
+    T val;
+    for (val = ((T)1) << sizeof(arg) * CHAR_BIT - 1; val && !(val & arg); val >>= 1);
+    return val << 1;
+}
+
+extern "C"
+{
+
+unsigned char _RTL_FUNC stdc_bit_ceil_uc(unsigned char value) { return bit_ceil(value); }
+unsigned short _RTL_FUNC stdc_bit_ceil_us(unsigned short value) { return bit_ceil(value); }
+unsigned int _RTL_FUNC stdc_bit_ceil_ui(unsigned int value) { return bit_ceil(value); }
+unsigned long _RTL_FUNC stdc_bit_ceil_ul(unsigned long value) { return bit_ceil(value); }
+unsigned long long _RTL_FUNC stdc_bit_ceil_ull(unsigned long long value) { return bit_ceil(value); }
+
+}

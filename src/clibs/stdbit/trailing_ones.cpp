@@ -1,4 +1,3 @@
-#pragma once
 /* Software License Agreement
  * 
  *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
@@ -23,17 +22,24 @@
  * 
  */
 
-namespace Parser
+#include <stddef.h>
+#include <limits.h>
+
+template <class T>
+static inline unsigned int trailing_ones(T arg)
 {
-int needsAtomicLockFromType(TYPE* tp);
-int getSize(enum e_bt type);
-int getBaseAlign(enum e_bt type);
-int getMaxAlign();
-long getautoval(long val);
-int funcvaluesize(int val);
-int alignment(int sc, TYPE* tp);
-int getAlign(int sc, TYPE* tp);
-const char* getUsageText(void);
-const char* getHelpText(void);
-KEYWORD* GetProcKeywords(void);
-}  // namespace Parser
+    int rv = 0;
+    for (T val = 1; val && (val & arg); rv++, val <<= 1);
+    return rv;
+}
+
+extern "C"
+{
+
+unsigned int _RTL_FUNC stdc_trailing_ones_uc(unsigned char value) { return trailing_ones(value); }
+unsigned int _RTL_FUNC stdc_trailing_ones_us(unsigned short value) { return trailing_ones(value); }
+unsigned int _RTL_FUNC stdc_trailing_ones_ui(unsigned int value) { return trailing_ones(value); }
+unsigned int _RTL_FUNC stdc_trailing_ones_ul(unsigned long value) { return trailing_ones(value); }
+unsigned int _RTL_FUNC stdc_trailing_ones_ull(unsigned long long value) { return trailing_ones(value); }
+
+}

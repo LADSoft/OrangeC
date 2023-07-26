@@ -269,6 +269,7 @@ static ARCH_SIZING sizes = {
     0,                    /*char a_rcomplexpad;*/
     0,                    /*char a_lrcomplexpad;*/
     0,                    // char a_alignedstruct; // __attribute((__aligned__))
+    0,                    /* char a_maxalign; */
 };
 static ARCH_SIZING alignments = {
     1, /*char a_bool;*/
@@ -294,6 +295,7 @@ static ARCH_SIZING alignments = {
     0,                    /*char a_rcomplexpad;*/
     0,                    /*char a_lrcomplexpad;*/
     8,  // char a_alignedstruct; // __attribute((__aligned__))
+    8,                    /* char a_maxalign; */
 };
 static ARCH_SIZING locks = {
     0, /*char a_bool; */
@@ -319,6 +321,7 @@ static ARCH_SIZING locks = {
     1,  /*char a_rcomplexpad; */
     1,  /*char a_lrcomplexpad; */
     0,  // char a_alignedstruct; // __attribute((__aligned__))
+    0,                    /* char a_maxalign; */
 };
 static ARCH_FLOAT aflt = {-126, 126, 128, 24};
 static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};

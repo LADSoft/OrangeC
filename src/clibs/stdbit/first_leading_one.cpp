@@ -1,4 +1,3 @@
-#pragma once
 /* Software License Agreement
  * 
  *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
@@ -23,17 +22,25 @@
  * 
  */
 
-namespace Parser
+#include <stddef.h>
+#include <limits.h>
+
+template <class T>
+static inline unsigned int first_leading_one(T arg)
 {
-int needsAtomicLockFromType(TYPE* tp);
-int getSize(enum e_bt type);
-int getBaseAlign(enum e_bt type);
-int getMaxAlign();
-long getautoval(long val);
-int funcvaluesize(int val);
-int alignment(int sc, TYPE* tp);
-int getAlign(int sc, TYPE* tp);
-const char* getUsageText(void);
-const char* getHelpText(void);
-KEYWORD* GetProcKeywords(void);
-}  // namespace Parser
+    unsigned rv = sizeof(arg) * CHAR_BIT;
+    T val;
+    for (val = ((T)1) << sizeof(arg) * CHAR_BIT - 1; val && !(val & arg); rv--, val >>= 1);
+    return val ? rv : 0;
+}
+
+extern "C"
+{
+
+unsigned int _RTL_FUNC stdc_first_leading_one_uc(unsigned char value) { return first_leading_one(value); }
+unsigned int _RTL_FUNC stdc_first_leading_one_us(unsigned short value) { return first_leading_one(value); }
+unsigned int _RTL_FUNC stdc_first_leading_one_ui(unsigned int value) { return first_leading_one(value); }
+unsigned int _RTL_FUNC stdc_first_leading_one_ul(unsigned long value) { return first_leading_one(value); }
+unsigned int _RTL_FUNC stdc_first_leading_one_ull(unsigned long long value) { return first_leading_one(value); }
+
+}

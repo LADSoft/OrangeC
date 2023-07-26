@@ -1,4 +1,3 @@
-#pragma once
 /* Software License Agreement
  * 
  *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
@@ -23,17 +22,10 @@
  * 
  */
 
-namespace Parser
+#define _DEFINING_TIME_T
+#include <time.h>
+
+time_t _RTL_FUNC timegm(struct tm* timeptr)
 {
-int needsAtomicLockFromType(TYPE* tp);
-int getSize(enum e_bt type);
-int getBaseAlign(enum e_bt type);
-int getMaxAlign();
-long getautoval(long val);
-int funcvaluesize(int val);
-int alignment(int sc, TYPE* tp);
-int getAlign(int sc, TYPE* tp);
-const char* getUsageText(void);
-const char* getHelpText(void);
-KEYWORD* GetProcKeywords(void);
-}  // namespace Parser
+    return _timegm32(timeptr);
+}

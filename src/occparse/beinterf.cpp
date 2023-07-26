@@ -206,6 +206,10 @@ int getBaseAlign(enum e_bt type)
     tp.rootType = &tp;
     return basesize(Optimizer::chosenAssembler->arch->type_align, &tp);
 }
+int getMaxAlign()
+{
+    return Optimizer::chosenAssembler->arch->type_align->a_maxalign;
+}
 long getautoval(long val)
 {
     if (Optimizer::chosenAssembler->arch->spgrowsup)

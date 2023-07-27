@@ -177,8 +177,17 @@ int ppMain::Run(int argc, char* argv[])
                 break;
             }
         }
+        Dialect dialect;
+        if (c2xMode.GetValue())
+            dialect = Dialect::c2x;
+        else if (c11Mode.GetValue())
+            dialect = Dialect::c11;
+        else if (c99Mode.GetValue())
+            dialect = Dialect::c99;
+        else
+            dialect = Dialect::c89;
         PreProcessor pp(files[i], includePath.GetValue(), cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(), false,
-                        trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false, !c99Mode.GetValue() && !c11Mode.GetValue() && !c2xMode.GetValue(), c2xMode.GetValue(),
+                        trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false, dialect,
                         !disableExtensions.GetValue(),
                         (MakeStubs.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(), "");
         if (c2xMode.GetValue())
@@ -342,7 +351,7 @@ int ppMain::Run(int argc, char* argv[])
                                     }
                                     else
                                     {
-                                        ppExpr e(false, c2xMode.GetValue());
+                                        ppExpr e(false, dialect);
                                         std::string temp = working.substr(npos);
                                         value = e.Eval(temp);
                                         if (value < INT_MIN || value >= UINT_MAX)

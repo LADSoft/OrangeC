@@ -37,6 +37,7 @@
 #include "ppExpr.h"
 #include "ppCtx.h"
 #include "ppMacro.h"
+#include "ppCommon.h"
 
 typedef std::vector<std::string> DefinitionArgList;
 
@@ -107,7 +108,7 @@ class ppDefine
     };
 
   public:
-    ppDefine(bool UseExtensions, ppInclude* Include, bool C89, bool C2x, bool Asmpp);
+    ppDefine(bool UseExtensions, ppInclude* Include, Dialect dialect, bool Asmpp);
     ~ppDefine() {}
 
     void SetParams(ppCtx* Ctx, ppMacro* Macro)
@@ -171,8 +172,7 @@ class ppDefine
     std::unordered_map<std::string, std::stack<Definition*>> macroStacks;
     std::deque<TokenPos> tokenPositions;
     static KeywordHash defTokens;
-    bool c89;
-    bool c2x;
+    Dialect dialect;
     ppExpr expr;
     ppCtx* ctx;
     ppMacro* macro;

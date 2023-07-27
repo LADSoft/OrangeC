@@ -77,8 +77,8 @@ ppDefine::Definition::Definition(const Definition& old) : Symbol(old.GetName())
     }
 }
 
-ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, bool C89, bool C2x, bool Asmpp) :
-    expr(false, C2x), include(Include), c89(C89), c2x(C2x), asmpp(Asmpp), ctx(nullptr), macro(nullptr), source_date_epoch((time_t)-1), counter_val(0)
+ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, Dialect dialect_, bool Asmpp) :
+    expr(false, dialect_), include(Include), dialect(dialect_), asmpp(Asmpp), ctx(nullptr), macro(nullptr), source_date_epoch((time_t)-1), counter_val(0)
 {
     char* sde = getenv("SOURCE_DATE_EPOCH");
     if (sde)
@@ -342,7 +342,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
                 {
                     if (next->GetKeyword() == kw::ellipses)
                     {
-                        if (c89)
+                        if (dialect == Dialect::c89)
                             Errors::Error("Macro variable argument specifier only allowed in C99");
                         hasEllipses = true;
                         next = tk.Next();
@@ -679,7 +679,7 @@ bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs,
             bool doit = true;
             int q = p;
             name = defid(macro, q, p);
-            if (!c89 && name == "__VA_ARGS__")
+            if (dialect != Dialect::c89 && name == "__VA_ARGS__")
             {
                 if (varargs.empty())
                 {
@@ -703,7 +703,7 @@ bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs,
                 }
                 doit = false;
             }
-            else if (c2x && name == "__VA_OPT__" && macro[p] == '(')
+            else if (dialect == Dialect::c2x && name == "__VA_OPT__" && macro[p] == '(')
             {
                 auto start = p+1;
                 auto end = start;
@@ -932,7 +932,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                     }
                     if (line[p - 1] != ')' || count != d->GetArgCount())
                     {
-                        if (count == d->GetArgCount() && !c89 && d->HasVarArgs())
+                        if (count == d->GetArgCount() && dialect != Dialect::c89 && d->HasVarArgs())
                         {
                             q1 = p;
                             int nestedparen = 0, nestedstring = 0;

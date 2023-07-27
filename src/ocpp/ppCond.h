@@ -28,6 +28,7 @@
 #include <string>
 #include <deque>
 #include <memory>
+#include "ppCommon.h"
 
 #include "ppExpr.h"
 class ppDefine;
@@ -36,8 +37,8 @@ class ppCtx;
 class ppCond
 {
   public:
-    ppCond(bool isunsignedchar, bool C89, bool c2x, bool Extensions, bool AsmPP) :
-        define(nullptr), c89(C89), expr(isunsignedchar, c2x), extensions(Extensions), ctx(nullptr), asmpp(AsmPP){};
+    ppCond(bool isunsignedchar, Dialect dialect_, bool Extensions, bool AsmPP) :
+        define(nullptr), dialect(dialect_), expr(isunsignedchar, dialect_), extensions(Extensions), ctx(nullptr), asmpp(AsmPP){};
     ~ppCond();
     void SetParams(ppDefine* Define, ppCtx* Ctx)
     {
@@ -99,7 +100,7 @@ class ppCond
 
     ppDefine* define;
     ppExpr expr;
-    bool c89;
+    Dialect dialect;
     bool extensions;
     ppCtx* ctx;
     bool asmpp;

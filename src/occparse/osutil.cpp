@@ -491,6 +491,15 @@ static void ParamTransfer(const char* name)
         Optimizer::cparams.prm_c1x = prm_c2x.GetValue();
         Optimizer::cparams.prm_c2x = prm_c2x.GetValue();
     }
+    if (prm_c2x.GetValue())
+        Optimizer::cparams.c_dialect = Dialect::c2x;
+    else if (prm_c11.GetValue())
+        Optimizer::cparams.c_dialect = Dialect::c11;
+    else if (prm_c99.GetValue())
+        Optimizer::cparams.c_dialect = Dialect::c99;
+    else if (prm_c89.GetValue())
+        Optimizer::cparams.c_dialect = Dialect::c89;
+
     if (MakeStubsOption.GetValue() || MakeStubsUser.GetValue() || MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue())
         Optimizer::cparams.prm_makestubs = true;
     if (prm_ansi.GetExists())

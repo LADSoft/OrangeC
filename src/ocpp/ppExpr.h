@@ -28,6 +28,7 @@
 #include <string>
 
 #include "Token.h"
+#include "ppCommon.h"
 class ppDefine;
 class ppInclude;
 
@@ -39,7 +40,7 @@ class ppExpr
   public:
     typedef long long CompilerExpression(std::string& line);
 
-    ppExpr(bool isunsignedchar, bool c2xMode) : define(nullptr), unsignedchar(isunsignedchar), token(nullptr), floatWarned(false), c2x(c2xMode) {}
+    ppExpr(bool isunsignedchar, Dialect dialect_) : define(nullptr), unsignedchar(isunsignedchar), token(nullptr), floatWarned(false), dialect(dialect_) {}
     ~ppExpr() {}
 
     void SetParams(ppDefine* Define) { define = Define; }
@@ -70,7 +71,7 @@ class ppExpr
   private:
     bool floatWarned;
     bool unsignedchar;
-    bool c2x;
+    Dialect dialect;
     ppDefine* define;
     std::unique_ptr<Tokenizer> tokenizer;
     const Token* token;

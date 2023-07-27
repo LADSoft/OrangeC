@@ -186,7 +186,7 @@ PPINT ppExpr::primary(std::string& line, bool& isunsigned)
                 }
             }
         }
-        else if (c2x && token->GetId() == "__has_c_attribute")
+        else if (dialect == Dialect::c2x && token->GetId() == "__has_c_attribute")
         {
             token = tokenizer->Next();
             if (token->GetKeyword() == kw::openpa)

@@ -30,6 +30,7 @@
 #include "ppExpr.h"
 #include "ppFile.h"
 #include "PipeArbitrator.h"
+#include "ppCommon.h"
 
 class ppFile;
 class ppDefine;
@@ -38,19 +39,18 @@ class ppCtx;
 class ppInclude
 {
   public:
-    ppInclude(bool Fullname, bool Trigraph, bool extended, bool isunsignedchar, bool C89, bool C2x, const std::string& SrchPth,
+    ppInclude(bool Fullname, bool Trigraph, bool extended, bool isunsignedchar, Dialect dialect_, const std::string& SrchPth,
               const std::string& SysSrchPth, bool Asmpp, bool NoErr, const std::string& pipeName) :
         unsignedchar(isunsignedchar),
-        c89(C89),
-        c2x(C2x),
+        dialect(dialect_),
         trigraphs(Trigraph),
         asmpp(Asmpp),
         define(nullptr),
         ctx(nullptr),
-        extendedComment(extended || !C89),
+        extendedComment(extended || dialect_ != Dialect::c89),
         fullname(Fullname),
         current(nullptr),
-        expr(unsignedchar, C2x),
+        expr(unsignedchar, dialect_),
         forcedEOF(false),
         nextIndex(0),
         piper(pipeName),
@@ -152,8 +152,7 @@ class ppInclude
     std::unordered_map<std::string, int> fileMap;
     ppDefine* define;
     bool unsignedchar;
-    bool c89;
-    bool c2x;
+    Dialect dialect;
     bool trigraphs;
     bool extendedComment;
     bool fullname;

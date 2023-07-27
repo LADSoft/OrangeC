@@ -24,6 +24,7 @@
  */
 
 #include "browsedefs.h"
+#include "ppCommon.h"
 
 enum asmTypes : int;
 
@@ -59,6 +60,8 @@ typedef struct
     int optimizer_modules;  // optimizer module selection
     int icd_flags;
     int verbosity;  // verbosity level
+    Dialect c_dialect;           /* language dialect for C */
+    Dialect cpp_dialect;         /* lanaguage dialect for c++ */
     bool prm_optimize_for_speed;
     bool prm_optimize_for_size;
     bool prm_optimize_float_access;

@@ -841,7 +841,6 @@ void setglbdefs(void)
         preProcessor->Define("__ATOMIC_SEQ_CST", std::to_string(Optimizer::e_mo::mo_seq_cst));
     }
     preProcessor->Define("__STDC__", "1");
-    preProcessor->Define("__STDC_VERSION_STDBIT_H__", "202311");
     preProcessor->Define("__STDC_ENDIAN_LITTLE__", "1");
     preProcessor->Define("__STDC_ENDIAN_BIG__", "2");
     preProcessor->Define("__STDC_ENDIAN_NATIVE__", "__STDC_ENDIAN_LITTLE__");
@@ -861,7 +860,16 @@ void setglbdefs(void)
     }
     if (Optimizer::cparams.prm_c1x || Optimizer::cparams.prm_c2x)
     {
-        preProcessor->Define("__STDC_VERSION__", "201112L");
+        if (Optimizer::cparams.prm_c2x)
+        {
+            preProcessor->Define("__STDC_VERSION__", "202311L");
+            preProcessor->Define("__STDC_VERSION_STDBIT_H__", "202311");
+            preProcessor->Define("__STDC_VERSION_STDCKDINT_H__", "202311");
+        }
+        else
+        {
+            preProcessor->Define("__STDC_VERSION__", "201112L");
+        }
         Optimizer::ARCH_SIZING* local_store_of_locks = Optimizer::chosenAssembler->arch->type_needsLock;
 
         preProcessor->Define("ATOMIC_BOOL_LOCK_FREE",

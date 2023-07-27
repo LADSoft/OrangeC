@@ -1,4 +1,3 @@
-#pragma once
 /* Software License Agreement
  * 
  *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
@@ -23,30 +22,17 @@
  * 
  */
 
-#define MAX_LOOKBACK 1024
-namespace Parser
-{
-extern Optimizer::LINEDATA nullLineData;
-extern int eofLine;
-extern const char* eofFile;
-extern bool parsingPreprocessorConstant;
-extern LEXCONTEXT* context;
-extern int charIndex;
-extern SymbolTable<KEYWORD>* kwSymbols;
-extern LEXLIST* currentLex;
+#ifndef __STDNORETURN_H
+#define __STDNORETURN_H
 
-void lexini(void);
-KEYWORD* searchkw(const unsigned char** p);
-LEXLIST* SkipToNextLine(void);
-LEXLIST* getGTSym(LEXLIST* in);
-void SkipToEol();
-bool AtEol();
-void CompilePragma(const unsigned char** linePointer);
-LEXLIST* getsym(void);
-LEXLIST* prevsym(LEXLIST* lex);
-LEXLIST* backupsym(void);
-LEXLIST* SetAlternateLex(LEXLIST* lexList);
-bool CompareLex(LEXLIST* left, LEXLIST* right);
-void SetAlternateParse(bool set, const std::string& val);
-long long ParseExpression(std::string& line);
-}  // namespace Parser
+#ifndef __STDDEF_H
+#    include <stddef.h>
+#endif
+
+#if __STDC_VERSION__ >= 202311L
+#define ckd_add(result, a, b) __ckdadd(result, a, b)
+#define ckd_sub(result, a, b) __ckdsub(result, a, b)
+#define ckd_mul(result, a, b) __ckdmul(result, a, b)
+#endif
+
+#endif /* __STDNORETURN_H */

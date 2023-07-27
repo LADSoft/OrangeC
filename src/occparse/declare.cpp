@@ -3446,7 +3446,7 @@ static LEXLIST* getArrayType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc 
     }
     if (MATCHKW(lex, closebr))
     {
-        TYPE* tpp;
+        TYPE* tpp, *tpb = *tp;
         lex = getsym();
         ParseAttributeSpecifiers(&lex, funcsp, true);
         if (MATCHKW(lex, openbr))
@@ -5439,6 +5439,8 @@ static LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym,
     *blocked = false;
     *constexpression = false;
 
+    if (MATCHKW(lex, kw_auto))
+        printf("hi");
     while (KWTYPE(lex, TT_STORAGE_CLASS | TT_POINTERQUAL | TT_LINKAGE | TT_DECLARE) ||
            (!foundType && startOfType(lex, nullptr, assumeType)) || MATCHKW(lex, complx) ||
            (*storage_class == sc_typedef && !foundType))

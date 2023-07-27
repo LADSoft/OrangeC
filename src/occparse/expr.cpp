@@ -5717,6 +5717,208 @@ static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, 
     }
     return lex;
 }
+static bool validate_checked_args(std::list<INITLIST*>* args)
+{
+
+    if (!args || args->size() < 3)
+    {
+        errorstr(ERR_PARAMETER_LIST_TOO_SHORT, "<checked math>");
+        return false;
+    }
+    else if (args->size() > 3)
+    {
+        errorstr(ERR_PARAMETER_LIST_TOO_LONG, "<checked math>");
+        return false;
+    }
+    else for (auto&& arg : *args)
+    {
+        TYPE* tp = basetype(arg->tp);        
+        if (&arg == &args->front())
+        {
+             if (!ispointer(tp) || isconst(basetype(tp)->btp))
+             {
+                 error(ERR_EXPECTED_POINTER_FOR_CHECKED_MATH_RESULT);
+                 return false;
+             }
+             else
+             {
+                 tp = basetype(tp->btp);
+             }
+        }
+        if (!isint(tp) || tp->type == bt_char || tp->type == bt__bitint || tp->type == bt_bool)
+        {
+             error(ERR_EXPECTED_VALID_CHECKED_MATH_TYPE);
+             return false;
+        }
+    }
+    return true;
+}
+static int ___typeid_val(TYPE *tp);
+static std::list<INITLIST*>* checked_arguments(std::list<INITLIST*>* args)
+{
+    INITLIST* arr[3];
+    int i = 0;
+    // already been validated at three arguments
+    for (auto entry : *args)
+        arr[i++] = entry;
+    for (int i=1; i < 3; i++)
+    {
+        arr[i]->tp = MakeType(bt_pointer, arr[i]->tp);
+        auto exp = arr[i]->exp;
+        while (castvalue(exp)) exp = exp->left;
+        if (lvalue(exp)) // should always be true
+            exp = exp->left;
+        arr[i]->exp = exp;
+    }
+    args->clear();
+    for (int i=0; i < 3; i++)
+    {
+        args->push_back(arr[i]);
+        INITLIST* typeval = Allocate<INITLIST>();
+        typeval->tp = &stdint;
+        typeval->exp = intNode(en_c_i, ___typeid_val(basetype(basetype(arr[i]->tp)->btp)));
+        args->push_back(typeval);
+    }    
+    return args;
+}
+static LEXLIST* expression_checked_int(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
+{
+    enum e_kw kw = KW(lex);
+    lex = getsym();
+    if (MATCHKW(lex, openpa))
+    {
+        FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
+        lex = getArgs(lex, funcsp, funcparams, closepa, true, flags);
+        if (validate_checked_args(funcparams->arguments))
+        {
+             const char *name = nullptr;
+             switch(kw)
+             {
+                 case kw__ckdadd:
+                     name = "___ckdadd";
+                     break;
+                 case kw__ckdmul:
+                     name = "___ckdmul";
+                     break;
+                 case kw__ckdsub:
+                     name = "___ckdsub";
+                     break;
+                 default:
+                     break;
+             }
+             if (name)
+             {
+                 auto sym = gsearch(name);
+                 if (!sym)
+                 {
+                     diag("expression_checked_int unknown func");
+                     *exp = intNode(en_c_i, 0);
+                 }
+                 else
+                 {
+                     sym = sym->tp->syms->front();
+                     funcparams->sp = sym;
+                     funcparams->functp = sym->tp;
+                     funcparams->fcall = varNode(en_pc, sym);                     
+                     funcparams->ascall = true;
+                     funcparams->arguments = checked_arguments(funcparams->arguments);
+                     *exp = exprNode(en_func, nullptr, nullptr);
+                     (*exp)->v.func = funcparams;
+                 }
+             }
+             else
+             {
+                 diag("expression_checked_int unknown func2");
+                 *exp = intNode(en_c_i, 0);
+             }
+        }
+        else
+        {
+            *exp = intNode(en_c_i, 0);
+        }
+
+        *tp = &stdbool;
+    }
+    else
+    {
+        needkw(&lex, openpa);
+        *tp = &stdint;
+        *exp = intNode(en_c_i, 0);
+        errskim(&lex, skim_closepa);
+    }
+    return lex;
+}
+static int ___typeid_val(TYPE *tp)
+{
+    int id;
+    switch (tp->type)
+    {
+        case bt_bool:
+        case bt_char:
+        case bt_signed_char:
+            id = -1;
+            break;
+        case bt_short:
+            id = -2;
+            break;
+        case bt_int:
+            id = -3;
+            break;
+        case bt_long:
+            id = -4;
+            break;
+        case bt_long_long:
+            id = -5;
+            break;
+        case bt_unsigned_char:
+            id = 1;
+            break;
+        case bt_unsigned_short:
+        case bt_wchar_t:
+            id = 2;
+            break;
+        case bt_unsigned:
+            id = 3;
+            break;
+        case bt_unsigned_long:
+            id = 4;
+            break;
+        case bt_unsigned_long_long:
+            id = 5;
+            break;
+        case bt_float:
+            id = 7;
+            break;
+        case bt_double:
+            id = 8;
+            break;
+        case bt_long_double:
+            id = 10;
+            break;
+        case bt_float_imaginary:
+            id = 15;
+            break;
+        case bt_double_imaginary:
+            id = 16;
+            break;
+        case bt_long_double_imaginary:
+            id = 17;
+            break;
+        case bt_float_complex:
+            id = 20;
+            break;
+        case bt_double_complex:
+            id = 21;
+            break;
+        case bt_long_double_complex:
+            id = 22;
+            break;
+        default:
+            id = 100000;
+            break;
+    }
+    return id;
+}
 static LEXLIST* expression___typeid(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp)
 {
     lex = getsym();
@@ -5730,77 +5932,10 @@ static LEXLIST* expression___typeid(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXP
         }
         else
         {
-            int id;
             TYPE* tp1 = *tp;
             if (isref(tp1))
                 *tp = basetype(tp1)->btp;  // DAL fixed
-            switch (tp1->type)
-            {
-
-                case bt_bool:
-                case bt_char:
-                    id = -1;
-                    break;
-                case bt_short:
-                    id = -2;
-                    break;
-                case bt_int:
-                    id = -3;
-                    break;
-                case bt_long:
-                    id = -4;
-                    break;
-                case bt_long_long:
-                    id = -5;
-                    break;
-                case bt_unsigned_char:
-                    id = 1;
-                    break;
-                case bt_unsigned_short:
-                case bt_wchar_t:
-                    id = 2;
-                    break;
-                case bt_unsigned:
-                    id = 3;
-                    break;
-                case bt_unsigned_long:
-                    id = 4;
-                    break;
-                case bt_unsigned_long_long:
-                    id = 5;
-                    break;
-                case bt_float:
-                    id = 7;
-                    break;
-                case bt_double:
-                    id = 8;
-                    break;
-                case bt_long_double:
-                    id = 10;
-                    break;
-                case bt_float_imaginary:
-                    id = 15;
-                    break;
-                case bt_double_imaginary:
-                    id = 16;
-                    break;
-                case bt_long_double_imaginary:
-                    id = 17;
-                    break;
-                case bt_float_complex:
-                    id = 20;
-                    break;
-                case bt_double_complex:
-                    id = 21;
-                    break;
-                case bt_long_double_complex:
-                    id = 22;
-                    break;
-                default:
-                    id = 100000;
-                    break;
-            }
-            *exp = intNode(en_c_i, id);
+            *exp = intNode(en_c_i, ___typeid_val(tp1));
         }
         *tp = &stdint;
         needkw(&lex, closepa);
@@ -6195,6 +6330,11 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 case kw_c11_atomic_signal_fence:
                 case kw_c11_atomic_thread_fence:
                     lex = expression_atomic_func(lex, funcsp, tp, exp, flags);
+                    break;
+                case kw__ckdadd:
+                case kw__ckdsub:
+                case kw__ckdmul:
+                    lex = expression_checked_int(lex, funcsp, tp, exp, flags);
                     break;
                 case kw_typename:
                     *tp = nullptr;

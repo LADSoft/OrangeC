@@ -580,6 +580,10 @@ ERRLIST(ERR_CANNOT_CALL_CONVERSION_FUNCTION_UD, 519,
 ERRLIST(ERR_CANNOT_CALL_CONVERSION_FUNCTION_CONS, 520,
         "Cannot convert '%s' to '%s' - a suitable constructor was not found, or overload resolution is ambiguous",
         CE_ERROR)
+ERRLIST(ERR_EXPECTED_POINTER_FOR_CHECKED_MATH_RESULT, 521, "Expected modifiable pointer to int for checked math result",
+        CE_ERROR)
+ERRLIST(ERR_EXPECTED_VALID_CHECKED_MATH_TYPE, 522, "Type for checked math must be an integer but not char, bool, or _BitInt",
+        CE_ERROR)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

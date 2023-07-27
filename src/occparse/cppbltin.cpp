@@ -85,6 +85,11 @@ static std::string cppbuiltin =
     "constexpr double __rtllinkage __builtin_nans(const char *x);"
     "constexpr long double __rtllinkage __builtin_nansl(const char *x);"
     "}";
+static std::string cbuiltin =
+    "bool __stdcall ___ckdadd(void*, int, void*, int, void*, int);"
+    "bool __stdcall ___ckdmul(void*, int, void*, int, void*, int);"
+    "bool __stdcall ___ckdsub(void*, int, void*, int, void*, int);";
+
 TYPE stdXC = {bt_struct, XCTAB_SIZE, 0, &stdXC};
 void ParseBuiltins(void)
 {
@@ -94,6 +99,17 @@ void ParseBuiltins(void)
     {
         libcxx_builtins();
         SetAlternateParse(true, cppbuiltin);
+        lex = getsym();
+        if (lex)
+        {
+            while ((lex = declare(lex, nullptr, nullptr, sc_global, lk_none, emptyBlockdata, true, false, false, ac_public)) != nullptr)
+                ;
+        }
+        SetAlternateParse(false, "");
+    }
+    else if (Optimizer::cparams.prm_c2x)
+    {
+        SetAlternateParse(true, cbuiltin);
         lex = getsym();
         if (lex)
         {

@@ -139,7 +139,7 @@ private:
         kw_case, kw_default, kw_enum, kw_volatile, kw_const,
         kw__trap, kw__interrupt, kw__fault, kw__absolute, kw__genword,
         kw__Complex, kw_restrict, kw__Imaginary, kw___I, kw__INF, kw__NAN,
-        kw_typeof, kw__Pragma, kw_atomic, kw_noreturn, kw_generic,
+        kw_typeof, kw__Pragma, kw_atomic, kw_noreturn, kw_generic, kw__bitint,
         /* C++ */
         kw_public, kw_private, kw_protected, kw_class, kw_friend, kw_namespace,
         kw_using, kw_this, kw_operator, kw_inline, kw_virtual, kw_try, kw_throw,
@@ -150,7 +150,7 @@ private:
         kw_char32_t, kw_mutable, kw_nullptr, kw_noexcept, kw_thread_local, kw_constexpr,
         kw_rangefor,
         /* Extended */
-        kw__has_c_attribute,
+        kw__has_c_attribute, kw__ckdadd, kw__ckdsub, kw__ckdmul,
         kw_atomic_flag_test_set, kw_atomic_flag_clear, kw_atomic_kill_dependency,
         /* Clang compatibility for atomics */
         kw_c11_atomic_init, kw_c11_atomic_thread_fence, kw_c11_atomic_signal_fence,
@@ -275,7 +275,7 @@ typedef struct
         bt_wchar_t, bt_enum, bt_int, bt_inative, bt_char32_t, bt_unsigned, bt_unative, bt_long, bt_unsigned_long, bt_long_long,
         bt_unsigned_long_long, bt_float, bt_double, bt_long_double, bt_float_imaginary,
         bt_double_imaginary, bt_long_double_imaginary, bt_float_complex,
-        bt_double_complex, bt_long_double_complex,
+        bt_double_complex, bt_long_double_complex, bt__bitint,
         /* end of basic types */
         bt_void, bt___object, bt___string,
         /* end of debug needs */
@@ -1110,15 +1110,6 @@ typedef struct kwblk
     /*    ASMNAME *data; */
 } KEYWORD;
 
-#define MATCHTYPE(lex, tp) (lex && (lex)->data->type == (tp))
-#define ISID(lex) (lex && (lex)->data->type == l_id)
-#define ISKW(lex) (lex && (lex)->data->type == l_kw)
-#define MATCHKW(lex, keyWord) (ISKW(lex) && ((lex)->data->kw->key == keyWord))
-#define KWTYPE(lex, types)                                                                                                \
-    (ISKW(lex) && (((lex)->data->kw->key == kw_auto ? (Optimizer::cparams.prm_cplusplus ? TT_BASETYPE : TT_STORAGE_CLASS) \
-                                                    : (lex)->data->kw->tokenTypes) &                                      \
-                   (types)))
-#define KW(lex) (ISKW(lex) ? (lex)->data->kw->key : kw_none)
 
 enum e_lexType
 {
@@ -1190,6 +1181,13 @@ typedef struct lexContext
     LEXLIST* cur;
     LEXLIST* last;
 } LEXCONTEXT;
+
+#define MATCHTYPE(lex, tp) (lex && (lex)->data->type == (tp))
+#define ISID(lex) (lex && (lex)->data->type == l_id)
+#define ISKW(lex) (lex && (lex)->data->type == l_kw)
+#define MATCHKW(lex, keyWord) (ISKW(lex) && ((lex)->data->kw->key == keyWord))
+bool KWTYPE(LEXLIST* lex, unsigned types);
+#define KW(lex) (ISKW(lex) ? (lex)->data->kw->key : kw_none)
 
 struct templateListData
 {

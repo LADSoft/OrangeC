@@ -1,4 +1,3 @@
-#pragma once
 /* Software License Agreement
  * 
  *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
@@ -22,31 +21,32 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
+#include <ctype.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
+#include <locale.h>
+#include <wchar.h>
+#include <float.h>
+#include "_locale.h"
+#include "libp.h"
 
-#define MAX_LOOKBACK 1024
-namespace Parser
+_Bool __stdcall ___ckdmul(void* result, int result_type, void* left, int left_type, void* right, int right_type)
 {
-extern Optimizer::LINEDATA nullLineData;
-extern int eofLine;
-extern const char* eofFile;
-extern bool parsingPreprocessorConstant;
-extern LEXCONTEXT* context;
-extern int charIndex;
-extern SymbolTable<KEYWORD>* kwSymbols;
-extern LEXLIST* currentLex;
-
-void lexini(void);
-KEYWORD* searchkw(const unsigned char** p);
-LEXLIST* SkipToNextLine(void);
-LEXLIST* getGTSym(LEXLIST* in);
-void SkipToEol();
-bool AtEol();
-void CompilePragma(const unsigned char** linePointer);
-LEXLIST* getsym(void);
-LEXLIST* prevsym(LEXLIST* lex);
-LEXLIST* backupsym(void);
-LEXLIST* SetAlternateLex(LEXLIST* lexList);
-bool CompareLex(LEXLIST* left, LEXLIST* right);
-void SetAlternateParse(bool set, const std::string& val);
-long long ParseExpression(std::string& line);
-}  // namespace Parser
+    unsigned int bleft[CKD_BUF_SIZE/sizeof(int)], bright[CKD_BUF_SIZE/sizeof(int)];
+    unsigned int bans[CKD_BUF_SIZE/sizeof(int)];
+    ___ckd_set_value(bleft, left, left_type);
+    ___ckd_set_value(bright, right, right_type);
+    memset(bans, 0, sizeof(bans));
+    for (int i=0; i < CKD_BUF_SIZE/sizeof(int); i++)
+    {
+        int toadd = 0;
+        for (int j=0; j < CKD_BUF_SIZE/sizeof(int); j++)
+        {
+            unsigned long long val = (long long)bleft[i] * bright[j] + toadd;
+            bans[i] += val;
+            toadd = val >> 32;
+        }
+    }
+    return ___ckd_get_value(bans, result, result_type);
+}

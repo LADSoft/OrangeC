@@ -137,6 +137,7 @@ KEYWORD keywords[] = {
     {"_Alignas", 8, kw_alignas, KW_C1X, TT_CONTROL},
     {"_Alignof", 8, kw_alignof, KW_C1X, TT_UNARY | TT_OPERATOR},
     {"_Atomic", 7, kw_atomic, KW_C1X | KW_CPLUSPLUS | KW_C2X, TT_POINTERQUAL | TT_TYPEQUAL | TT_BASETYPE},
+    {"_BitInt", 7, kw__bitint, KW_C2X, TT_BASETYPE | TT_INT},
     {"_Bool", 5, kw_bool, KW_C99 | KW_C1X, TT_BASETYPE | TT_BOOL},
     {"_CR0", 4, kw_cr0, KW_NONANSI | KW_386, TT_VAR},
     {"_CR1", 4, kw_cr1, KW_NONANSI | KW_386, TT_VAR},
@@ -243,6 +244,9 @@ KEYWORD keywords[] = {
     {"__cdecl", 7, kw__cdecl, 0, TT_LINKAGE},
     {"__char16_t", 10, kw_char16_t, KW_CPLUSPLUS | KW_C1X, TT_BASETYPE | TT_INT},
     {"__char32_t", 10, kw_char32_t, KW_CPLUSPLUS | KW_C1X, TT_BASETYPE | TT_INT},
+    {"__ckdadd", 8, kw__ckdadd, KW_C2X, TT_VAR },
+    {"__ckdmul", 8, kw__ckdmul, KW_C2X, TT_VAR },
+    {"__ckdsub", 8, kw__ckdsub, KW_C2X, TT_VAR },
     {"__cpblk", 7, kw__cpblk, KW_MSIL, TT_OPERATOR | TT_UNARY},
     {"__declspec", 10, kw__declspec, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__entrypoint", 12, kw__entrypoint, KW_MSIL, TT_LINKAGE},
@@ -396,10 +400,8 @@ KEYWORD keywords[] = {
 };
 
 #define TABSIZE (sizeof(keywords) / sizeof(keywords[0]))
-#ifdef KW_HASH
 SymbolTableFactory<KEYWORD> lexFactory;
 SymbolTable<KEYWORD>* kwSymbols;
-#endif
 
 static bool kwmatches(KEYWORD* kw);
 void lexini(void)
@@ -409,7 +411,6 @@ void lexini(void)
 {
     bool old = Optimizer::cparams.prm_extwarning;
     Optimizer::cparams.prm_extwarning = false;
-#ifdef KW_HASH
     int i;
     lexFactory.Reset();
     kwSymbols = lexFactory.CreateSymbolTable();
@@ -418,7 +419,6 @@ void lexini(void)
         if (kwmatches(&keywords[i]))
             kwSymbols->Add(&keywords[i]);
     }
-#endif
     llminus1 = 0;
     llminus1--;
     context = Allocate<LEXCONTEXT>();
@@ -432,37 +432,41 @@ void lexini(void)
 }
 
 /*-------------------------------------------------------------------------*/
-
-#ifndef KW_HASH
-static KEYWORD* binarySearch(char* name)
+bool KWTYPE(LEXLIST* lex, unsigned types)
 {
-    int top = TABSIZE;
-    int bottom = -1;
-    int v;
-    KEYWORD* kw;
-    while (top - bottom > 1)
+    int rv = 0;
+    if (ISKW(lex))
     {
-        int mid = (top + bottom) / 2;
-        kw = &keywords[mid];
-        v = strncmp(name, kw->name, kw->len);
-        if (v < 0)
+        if ((lex)->data->kw->key == kw_auto)
         {
-            top = mid;
+            if (Optimizer::cparams.prm_cplusplus)
+            {
+                // in C++ auto is a type
+                rv = TT_BASETYPE;
+            }
+            else if (!Optimizer::cparams.prm_c2x)
+            {
+                // in versions of C before C2x it is a storage class
+                rv = TT_STORAGE_CLASS;
+            }
+            else
+            {
+                // in C2x it is a storage class if another type is present
+                // or a type if one isn't
+                lex = getsym();
+                bool s;
+                rv = startOfType(lex, &s, false) ? TT_STORAGE_CLASS : TT_BASETYPE;
+                lex = backupsym();
+            }
         }
         else
         {
-            bottom = mid;
+            rv = (lex)->data->kw->tokenTypes;
         }
     }
-    if (bottom == -1)
-        return 0;
-    kw = &keywords[bottom];
-    v = strncmp(name, kw->name, kw->len);
-    if (v)
-        return 0;
-    return &keywords[bottom];
+    return rv & types;
 }
-#endif
+
 static bool kwmatches(KEYWORD* kw)
 {
     if (Optimizer::cparams.prm_assemble)
@@ -500,13 +504,8 @@ KEYWORD* searchkw(const unsigned char** p)
             *q++ = *q1++;
         }
         *q = 0;
-#ifdef KW_HASH
         kw = search(kwSymbols, (char*) buf);
         if (kw)
-#else
-        kw = (KEYWORD*)binarySearch(buf);
-        if (kw && kwmatches(kw))
-#endif
         {
             if (len == kw->len)
             {
@@ -535,7 +534,6 @@ KEYWORD* searchkw(const unsigned char** p)
     else
     {
         KEYWORD* found = nullptr;
-#ifdef KW_HASH
         int len = 0;
         while (ispunct((unsigned char)*q1))
             *q++ = *q1++, len++;
@@ -547,24 +545,6 @@ KEYWORD* searchkw(const unsigned char** p)
                 buf[--len] = 0;
             }
             if (found)
-#else
-        *q++ = *q1++;
-        *q = 0;
-        kw = (KEYWORD*)binarySearch(buf);
-        if (kw)
-        {
-            KEYWORD* list = kw;
-            found = kw;
-            while (list < &keywords[0] + sizeof(keywords) / sizeof(keywords[0]) && buf[0] == list->name[0])
-            {
-                if (!strncmp(list->name, *p, list->len))
-                {
-                    found = list;
-                }
-                list++;
-            }
-            if (kwmatches(found))
-#endif
             {
                 *p = *p + found->len;
                 return found;

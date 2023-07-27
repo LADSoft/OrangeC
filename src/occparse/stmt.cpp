@@ -240,7 +240,7 @@ static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent
         if (declaration)
             *declaration = true;
         if ((Optimizer::cparams.prm_cplusplus && kw != kw_do && kw != kw_else) ||
-            (Optimizer::cparams.prm_c99 && (kw == kw_for || kw == kw_rangefor)))
+            (Optimizer::cparams.c_dialect >= Dialect::c99 && (kw == kw_for || kw == kw_rangefor)))
         {
             // empty
         }
@@ -676,7 +676,7 @@ static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
     st = stmtNode(lex, parent, st_label);
     st->label = loopLabel;
     inLoopOrConditional++;
-    if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
+    if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
     {
         addedBlock++;
         AllocateLocalContext(parent, funcsp, codeLabel++);
@@ -686,7 +686,7 @@ static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
         lastLabelStmt = dostmt->statements->back();
         lex = nononconststatement(lex, funcsp, parent, true);
     } while (lex && dostmt->statements->back() != lastLabelStmt && dostmt->statements->back()->purelabel);
-    if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
+    if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
     {
         addedBlock--;
         FreeLocalContext(parent, funcsp, codeLabel++);
@@ -695,7 +695,7 @@ static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
     if (MATCHKW(lex, kw_while))
     {
         lex = getsym();
-        if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
+        if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
         {
             addedBlock++;
             AllocateLocalContext(parent, funcsp, codeLabel++);
@@ -771,7 +771,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
         if (!MATCHKW(lex, semicolon))
         {
             bool hasColon = false;
-            if ((Optimizer::cparams.prm_cplusplus && !Optimizer::cparams.prm_oldfor) || Optimizer::cparams.prm_c99)
+            if ((Optimizer::cparams.prm_cplusplus && !Optimizer::cparams.prm_oldfor) || Optimizer::cparams.c_dialect >= Dialect::c99)
             {
                 addedBlock++;
                 std::list<BLOCKDATA*> dummy(beforeit, parent.end());
@@ -1578,7 +1578,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                     }
                     st = stmtNode(lex, parent, st_label);
                     st->label = loopLabel;
-                    if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
+                    if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
                     {
                         addedBlock++;
                         AllocateLocalContext(parent, funcsp, codeLabel++);
@@ -1588,7 +1588,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                         lastLabelStmt = parent.front()->statements->back();
                         lex = nononconststatement(lex, funcsp, parent, true);
                     } while (lex && parent.front()->statements->back() != lastLabelStmt && parent.front()->statements->back()->purelabel);
-                    if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
+                    if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
                     {
                         addedBlock--;
                         FreeLocalContext(parent, funcsp, codeLabel++);
@@ -1652,7 +1652,7 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
     if (MATCHKW(lex, openpa))
     {
         lex = getsym();
-        if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
+        if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
         {
             addedBlock++;
             AllocateLocalContext(parent, funcsp, codeLabel++);
@@ -1670,7 +1670,7 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
             sti = parent.front()->statements->end();
             --sti;
             parent.front()->needlabel = false;
-            if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
+            if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
             {
                 addedBlock++;
                 AllocateLocalContext(parent, funcsp, codeLabel++);
@@ -1684,13 +1684,13 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
             if (MATCHKW(lex, kw_else))
             {
                 int elsebr = codeLabel++;
-                if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
+                if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
                 {
                     FreeLocalContext(parent, funcsp, codeLabel++);
                 }
                 st = stmtNode(lex, parent, st_goto);
                 st->label = elsebr;
-                if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
+                if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
                 {
                     AllocateLocalContext(parent, funcsp, codeLabel++);
                 }
@@ -1743,7 +1743,7 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
                     }
                 }
                 needlabelelse = parent.front()->needlabel;
-                if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
+                if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
                 {
                     FreeLocalContext(parent, funcsp, codeLabel++);
                     addedBlock--;
@@ -1770,7 +1770,7 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
                         (*sti)->label = (*st1)->label;
                     }
                 }
-                if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
+                if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
                 {
                     FreeLocalContext(parent, funcsp, codeLabel++);
                     addedBlock--;
@@ -2582,7 +2582,7 @@ static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
     if (MATCHKW(lex, openpa))
     {
         lex = getsym();
-        if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
+        if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
         {
             addedBlock++;
             AllocateLocalContext(parent, funcsp, codeLabel++);
@@ -2655,7 +2655,7 @@ static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDAT
     if (MATCHKW(lex, openpa))
     {
         lex = getsym();
-        if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
+        if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
         {
             addedBlock++;
             AllocateLocalContext(parent, funcsp, codeLabel++);
@@ -2687,7 +2687,7 @@ static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDAT
 
             st = stmtNode(lex, parent, st_label);
             st->label = loopLabel;
-            if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
+            if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
             {
                 addedBlock++;
                 AllocateLocalContext(parent, funcsp, codeLabel++);
@@ -2697,7 +2697,7 @@ static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDAT
                 lastLabelStmt = whilestmt->statements->back();
                 lex = nononconststatement(lex, funcsp, parent, true);
             } while (lex && whilestmt->statements->back() != lastLabelStmt && whilestmt->statements->back()->purelabel);
-            if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
+            if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
             {
                 addedBlock--;
                 FreeLocalContext(parent, funcsp, codeLabel++);
@@ -3340,7 +3340,7 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
                 MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_constexpr) || MATCHKW(lex, kw_decltype) ||
                 MATCHKW(lex, kw_static_assert))
             {
-                if (!Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_cplusplus)
+                if (Optimizer::cparams.c_dialect < Dialect::c99 && !Optimizer::cparams.prm_cplusplus)
                 {
                     error(ERR_NO_DECLARATION_HERE);
                 }
@@ -3667,7 +3667,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
             // Keeping this here prevents nonsensical errors such as "FUNCTION SHOULD RETURN VALUE!!!!" when a function is marked
             // noreturn. Noreturn functions can have non-void return types in order for things to work such as in ObjIeee.h's ThrowSyntax functions
         }
-        else if (Optimizer::cparams.prm_c99 || Optimizer::cparams.prm_c1x || Optimizer::cparams.prm_c2x || Optimizer::cparams.prm_cplusplus)
+        else if (Optimizer::cparams.c_dialect >= Dialect::c99 || Optimizer::cparams.c_dialect >= Dialect::c11 || Optimizer::cparams.c_dialect >= Dialect::c2x || Optimizer::cparams.prm_cplusplus)
         {
             if (!thunkmainret(funcsp, parent, false))
             {
@@ -3966,7 +3966,7 @@ static void handleInlines(SYMBOL* funcsp)
     /* so it will get instantiated as a virtual function */
     if (!funcsp->sb->attribs.inheritable.isInline)
         return;
-    if (Optimizer::cparams.prm_c99)
+    if (Optimizer::cparams.c_dialect >= Dialect::c99)
         funcsp->sb->attribs.inheritable.used = true;
     /* this unqualified the current function if it has structured
      * args or return value, or if it has nested declarations

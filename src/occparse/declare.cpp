@@ -655,7 +655,7 @@ void calculateStructOffsets(SYMBOL* sp)
             p->sb->parent = sp;
             if (tp->size == 0)
             {
-                if (Optimizer::cparams.prm_c99 && tp->type == bt_pointer && p->tp->array)
+                if (Optimizer::cparams.c_dialect >= Dialect::c99 && tp->type == bt_pointer && p->tp->array)
                 {
                     auto it1 = it;
                     if (++it1 == sp->tp->syms->end() || p->sb->init)
@@ -851,12 +851,12 @@ void resolveAnonymousUnions(SYMBOL* sp)
             itmember = it;
             if (basetype(spm->tp)->type == bt_union)
             {
-                if (!Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_cplusplus)
+                if (Optimizer::cparams.c_dialect < Dialect::c99 && !Optimizer::cparams.prm_cplusplus)
                 {
                     error(ERR_ANONYMOUS_UNION_WARNING);
                 }
             }
-            else if (!Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_cplusplus)
+            else if (Optimizer::cparams.c_dialect < Dialect::c99 && !Optimizer::cparams.prm_cplusplus)
             {
                 error(ERR_ANONYMOUS_STRUCT_WARNING);
             }
@@ -1756,7 +1756,7 @@ static LEXLIST* enumbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* spi, enum e_sc st
                     lex = getsym();
                     if (KW(lex) == end)
                     {
-                        if (Optimizer::cparams.prm_ansi && !Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_cplusplus)
+                        if (Optimizer::cparams.prm_ansi && Optimizer::cparams.c_dialect < Dialect::c99 && !Optimizer::cparams.prm_cplusplus)
                         {
                             error(ERR_ANSI_ENUM_NO_COMMA);
                         }
@@ -3299,7 +3299,7 @@ founddecltype:
                 }
             }
         }
-        if (!foundsomething && (Optimizer::cparams.prm_c99 || Optimizer::cparams.prm_cplusplus))
+        if (!foundsomething && (Optimizer::cparams.c_dialect >= Dialect::c99 || Optimizer::cparams.prm_cplusplus))
         {
             if (notype)
                 *notype = true;
@@ -3321,7 +3321,7 @@ exit:
             type = tn->type;
         }
     }
-    if (!Optimizer::cparams.prm_c99)
+    if (Optimizer::cparams.c_dialect < Dialect::c99)
         switch (type)
         {
             case bt_bool:
@@ -3407,7 +3407,7 @@ static LEXLIST* getArrayType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc 
     lex = getPointerQualifiers(lex, quals, true);
     if (MATCHKW(lex, star))
     {
-        if (!Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_cplusplus)
+        if (Optimizer::cparams.c_dialect < Dialect::c99 && !Optimizer::cparams.prm_cplusplus)
             error(ERR_VLA_c99);
         if (storage_class != sc_parameter)
             error(ERR_UNSIZED_VLA_PARAMETER);
@@ -3431,7 +3431,7 @@ static LEXLIST* getArrayType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc 
             tpc = &stdint;
             error(ERR_EXPRESSION_SYNTAX);
         }
-        if (*quals && !Optimizer::cparams.prm_c99)
+        if (*quals && Optimizer::cparams.c_dialect < Dialect::c99)
         {
             error(ERR_ARRAY_QUALIFIERS_C99);
         }
@@ -3484,7 +3484,7 @@ static LEXLIST* getArrayType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc 
                 }
                 else
                 {
-                    if (!Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_cplusplus && !templateNestingCount && !msil)
+                    if (Optimizer::cparams.c_dialect < Dialect::c99 && !Optimizer::cparams.prm_cplusplus && !templateNestingCount && !msil)
                         error(ERR_VLA_c99);
                     tpp->esize = constant;
                     tpp->etype = tpc;
@@ -4211,7 +4211,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
             {
                 if (spi->tp == nullptr)
                 {
-                    if (Optimizer::cparams.prm_c99)
+                    if (Optimizer::cparams.c_dialect >= Dialect::c99)
                         errorsym(ERR_MISSING_TYPE_FOR_PARAMETER, spi);
                     spi->tp = MakeType(bt_int);
                 }
@@ -5439,8 +5439,6 @@ static LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym,
     *blocked = false;
     *constexpression = false;
 
-    if (MATCHKW(lex, kw_auto))
-        printf("hi");
     while (KWTYPE(lex, TT_STORAGE_CLASS | TT_POINTERQUAL | TT_LINKAGE | TT_DECLARE) ||
            (!foundType && startOfType(lex, nullptr, assumeType)) || MATCHKW(lex, complx) ||
            (*storage_class == sc_typedef && !foundType))

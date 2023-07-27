@@ -1529,7 +1529,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     if (found)
                     {
                         /* some members are non-constant expressions */
-                        if (!Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_cplusplus)
+                        if (Optimizer::cparams.c_dialect < Dialect::c99 && !Optimizer::cparams.prm_cplusplus)
                             error(ERR_C99_NON_CONSTANT_INITIALIZATION);
                         if (!sym)
                         {

@@ -444,7 +444,7 @@ bool KWTYPE(LEXLIST* lex, unsigned types)
                 // in C++ auto is a type
                 rv = TT_BASETYPE;
             }
-            else if (!Optimizer::cparams.prm_c2x)
+            else if (Optimizer::cparams.c_dialect < Dialect::c2x)
             {
                 // in versions of C before C2x it is a storage class
                 rv = TT_STORAGE_CLASS;
@@ -512,11 +512,11 @@ KEYWORD* searchkw(const unsigned char** p)
                 int count = 0;
                 if (kw->matchFlags & (KW_C99 | KW_C1X | KW_C2X))
                 {
-                    if (Optimizer::cparams.prm_c99 && (kw->matchFlags & KW_C99))
+                    if (Optimizer::cparams.c_dialect >= Dialect::c99 && (kw->matchFlags & KW_C99))
                         count++;
-                    if (Optimizer::cparams.prm_c1x && (kw->matchFlags & KW_C1X))
+                    if (Optimizer::cparams.c_dialect >= Dialect::c11 && (kw->matchFlags & KW_C1X))
                         count++;
-                    if (Optimizer::cparams.prm_c2x && (kw->matchFlags & KW_C2X))
+                    if (Optimizer::cparams.c_dialect >= Dialect::c2x && (kw->matchFlags & KW_C2X))
                         count++;
                     if (Optimizer::cparams.prm_cplusplus && (kw->matchFlags & KW_CPLUSPLUS))
                         count++;
@@ -653,7 +653,7 @@ int getChar(const unsigned char** source, enum e_lexType* tp)
         v = l_wchr;
         p++;
     }
-    else if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c1x)
+    else if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c11)
     {
         if (*p == 'u')
         {
@@ -779,7 +779,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, enum e_lexType* tp)
             p++;
         while (*p == ppDefine::MACRO_PLACEHOLDER);
     }
-    else if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c1x)
+    else if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c11)
     {
         if (*p == 'u')
         {
@@ -1168,7 +1168,7 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
         radix = 16;
         (*ptr)++;
     }
-    while (((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c2x) && **ptr == '\'') || radix36(**ptr) < radix ||
+    while (((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x) && **ptr == '\'') || radix36(**ptr) < radix ||
            (Optimizer::cparams.prm_assemble && radix36(**ptr) < 16))
     {
         if (**ptr != '\'')
@@ -1288,13 +1288,13 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
             lastst = l_ul;
             suffix[0] = 0;
         }
-        else if (((Optimizer::cparams.prm_c99 || Optimizer::cparams.prm_cplusplus) && Utils::iequal((char*)suffix, "LL")) ||
+        else if (((Optimizer::cparams.c_dialect >= Dialect::c99 || Optimizer::cparams.prm_cplusplus) && Utils::iequal((char*)suffix, "LL")) ||
                  (!Optimizer::cparams.prm_ansi && Utils::iequal((char*)suffix, "i64")))
         {
             lastst = l_ll;
             suffix[0] = 0;
         }
-        else if (((Optimizer::cparams.prm_c99 || Optimizer::cparams.prm_cplusplus) &&
+        else if (((Optimizer::cparams.c_dialect >= Dialect::c99 || Optimizer::cparams.prm_cplusplus) &&
                   (Utils::iequal((char*)suffix, "ULL") || Utils::iequal((char*)suffix, "LLU"))) ||
                  (!Optimizer::cparams.prm_ansi && Utils::iequal((char*)suffix, "ui64")))
         {

@@ -107,7 +107,7 @@ void ParseBuiltins(void)
         }
         SetAlternateParse(false, "");
     }
-    else if (Optimizer::cparams.prm_c2x)
+    else if (Optimizer::cparams.c_dialect >= Dialect::c2x)
     {
         SetAlternateParse(true, cbuiltin);
         lex = getsym();

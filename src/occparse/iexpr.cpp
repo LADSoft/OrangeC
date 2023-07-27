@@ -676,13 +676,6 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                     ap1->runtimeData = node->left->runtimeData;
                     if (ap1->runtimeData)
                     {
-                        if (!strcmp(theCurrentFunc->sb->decoratedName,
-                                    "@std@#unique_ptr.#__tree_node.#__value_type.#basic_string.c#char_traits.c~#allocator.c~~i~pv~#"
-                                    "__tree_node_"
-                                    "destructor.#allocator.#__tree_node.#__value_type.#basic_string.c#char_traits.c~#allocator.c~~"
-                                    "i~pv~~~~@."
-                                    "bdtr.qv"))
-                            printf("hi");
                         ap1->runtimeData->runtimeSym = Optimizer::SymbolManager::Get(ap1->runtimeData->runtimeSymOrig);
                     }
                     if (!store)

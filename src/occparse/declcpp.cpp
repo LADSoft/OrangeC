@@ -3896,10 +3896,10 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
 {
     (void)always;
     bool rv = false;
-    if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c1x)
+    if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c11)
     {
         while (MATCHKW(*lex, kw_alignas) || MATCHKW(*lex, kw__attribute) ||
-               ((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c2x) && MATCHKW(*lex, openbr)))
+               ((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x) && MATCHKW(*lex, openbr)))
         {
             if (MATCHKW(*lex, kw__attribute))
             {

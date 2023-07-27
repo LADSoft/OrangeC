@@ -236,7 +236,7 @@ Optimizer::COMPILER_PARAMS cparams_default = {
     ~0,    /* optimizer modules */
     0,     /* icd flags */
     0,     /* verbosity */
-    Dialect::c2x,
+    Dialect::c11,
     Dialect::cpp14,
     true,  /* optimize_for_speed */
     false, /* optimize_for_size */
@@ -247,9 +247,6 @@ Optimizer::COMPILER_PARAMS cparams_default = {
     false, /* char prm_diag;*/
     false, /* char prm_ansi;*/
     true,  /* char prm_cmangle;*/
-    true,  /* char prm_c99;*/
-    true,  /* char prm_c1x;*/
-    false, /* char prm_c2x; */
     false, /* char prm_cplusplus;*/
     true,  /* char prm_xcept;*/
     false, /* char prm_icdfile;*/
@@ -549,52 +546,36 @@ int main(int argc, char* argv[])
             if (prm_std.GetValue() == "c89")
             {
                 Optimizer::cparams.c_dialect = Dialect::c89;
-                Optimizer::cparams.prm_c99 = Optimizer::cparams.prm_c1x = false;
             }
             else if (prm_std.GetValue() == "c99")
             {
                 Optimizer::cparams.c_dialect = Dialect::c99;
-                Optimizer::cparams.prm_c99 = true;
-                Optimizer::cparams.prm_c1x = false;
-                Optimizer::cparams.prm_c2x = false;
             }
             else if (prm_std.GetValue() == "c11")
             {
                 Optimizer::cparams.c_dialect = Dialect::c11;
-                Optimizer::cparams.prm_c99 = true;
-                Optimizer::cparams.prm_c1x = true;
-                Optimizer::cparams.prm_c2x = false;
             }
             else if (prm_std.GetValue() == "c2x")
             {
                 Optimizer::cparams.c_dialect = Dialect::c2x;
-                Optimizer::cparams.prm_c99 = true;
-                Optimizer::cparams.prm_c1x = true;
-                Optimizer::cparams.prm_c2x = true;
             }
             else if (prm_std.GetValue() == "c++11")
             {
                 Optimizer::cparams.cpp_dialect = Dialect::cpp11;
-                cplusplusversion = 11;
-                Optimizer::cparams.prm_c99 = false;
-                Optimizer::cparams.prm_c1x = false;
                 Optimizer::cparams.prm_cplusplus = true;
+                Optimizer::cparams.c_dialect = Dialect::c89;
             }
             else if (prm_std.GetValue() == "c++14")
             {
                 Optimizer::cparams.cpp_dialect = Dialect::cpp14;
-                cplusplusversion = 14;
-                Optimizer::cparams.prm_c99 = false;
-                Optimizer::cparams.prm_c1x = false;
                 Optimizer::cparams.prm_cplusplus = true;
+                Optimizer::cparams.c_dialect = Dialect::c89;
             }
             else if (prm_std.GetValue() == "c++17")
             {
                 Optimizer::cparams.cpp_dialect = Dialect::cpp17;
-                cplusplusversion = 17;
-                Optimizer::cparams.prm_c99 = false;
-                Optimizer::cparams.prm_c1x = false;
                 Optimizer::cparams.prm_cplusplus = true;
+                Optimizer::cparams.c_dialect = Dialect::c89;
             }
             else
             {
@@ -606,7 +587,7 @@ int main(int argc, char* argv[])
             if (prm_language.GetValue() == "c++")
             {
                 Optimizer::cparams.prm_cplusplus = true;
-                Optimizer::cparams.prm_c99 = Optimizer::cparams.prm_c1x = false;
+                Optimizer::cparams.c_dialect = Dialect::c89;
             }
             else if (prm_language.GetValue() != "c")
             {
@@ -621,7 +602,7 @@ int main(int argc, char* argv[])
                 if (Utils::HasExt(buffer, str.c_str()))
                 {
                     Optimizer::cparams.prm_cplusplus = true;
-                    Optimizer::cparams.prm_c99 = Optimizer::cparams.prm_c1x = false;
+                    Optimizer::cparams.c_dialect = Dialect::c89;
                     break;
                 }
             }
@@ -632,7 +613,7 @@ int main(int argc, char* argv[])
             new PreProcessor(buffer, prm_cinclude.GetValue(),
                              Optimizer::cparams.prm_cplusplus ? prm_CPPsysinclude.GetValue() : prm_Csysinclude.GetValue(), true,
                              Optimizer::cparams.prm_trigraph, '#', Optimizer::cparams.prm_charisunsigned,
-                             Optimizer::cparams.c_dialect,
+                             Optimizer::cparams.prm_cplusplus ? Dialect::c2x : Optimizer::cparams.c_dialect, 
                              !Optimizer::cparams.prm_ansi,
                              (MakeStubsOption.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(),
                              prm_pipe.GetValue() != "+" ? prm_pipe.GetValue() : "");

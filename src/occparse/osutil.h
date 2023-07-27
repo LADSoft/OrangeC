@@ -73,7 +73,6 @@ enum e_lk getDefaultLinkage();
 extern Optimizer::LIST* clist;
 extern int showVersion;
 extern std::string bePostFile;
-extern int cplusplusversion;
 
 extern std::deque<DefValue> defines;
 

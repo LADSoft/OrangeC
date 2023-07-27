@@ -7521,7 +7521,7 @@ LEXLIST* expression_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                         std::list<INITIALIZER*>* temp = nullptr;
                         INITIALIZER* init = nullptr;
                         SYMBOL* sym = nullptr;
-                        if (!Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_cplusplus)
+                        if (Optimizer::cparams.c_dialect < Dialect::c99 && !Optimizer::cparams.prm_cplusplus)
                             error(ERR_C99_STYLE_INITIALIZATION_USED);
                         if (Optimizer::cparams.prm_cplusplus)
                         {

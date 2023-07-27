@@ -2950,7 +2950,7 @@ auto InitializeSimpleAggregate(LEXLIST*& lex, TYPE* itype, bool needend, int off
         if (!desc || !gotcomma || !needend)
             break;
     }
-    if (c99 && !Optimizer::cparams.prm_c99)
+    if (c99 && Optimizer::cparams.c_dialect < Dialect::c99)
         error(ERR_C99_STYLE_INITIALIZATION_USED);
     if (toomany)
         error(ERR_TOO_MANY_INITIALIZERS);

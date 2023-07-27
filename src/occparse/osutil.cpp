@@ -83,7 +83,6 @@ extern "C"
 Optimizer::LIST* clist = 0;
 int showVersion = false;
 std::string bePostFile;
-int cplusplusversion = 14;
 
 std::deque<DefValue> defines;
 
@@ -473,24 +472,6 @@ static void ParamTransfer(const char* name)
     if (Optimizer::ParseOptimizerParams(prm_flags.GetValue()) != "")
         ToolChain::Usage(getUsageText());
     // booleans
-    if (prm_c89.GetExists())
-        Optimizer::cparams.prm_c99 = Optimizer::cparams.prm_c1x = !prm_c89.GetValue();
-    if (prm_c99.GetExists())
-    {
-        Optimizer::cparams.prm_c99 = prm_c99.GetValue();
-        Optimizer::cparams.prm_c1x = !prm_c99.GetValue();
-    }
-    if (prm_c11.GetExists())
-    {
-        Optimizer::cparams.prm_c99 = prm_c11.GetValue();
-        Optimizer::cparams.prm_c1x = prm_c11.GetValue();
-    }
-    if (prm_c2x.GetExists())
-    {
-        Optimizer::cparams.prm_c99 = prm_c2x.GetValue();
-        Optimizer::cparams.prm_c1x = prm_c2x.GetValue();
-        Optimizer::cparams.prm_c2x = prm_c2x.GetValue();
-    }
     if (prm_c2x.GetValue())
         Optimizer::cparams.c_dialect = Dialect::c2x;
     else if (prm_c11.GetValue())
@@ -808,15 +789,15 @@ void setglbdefs(void)
     preProcessor->Define("__CHAR_BIT__", "8");
     if (Optimizer::cparams.prm_cplusplus)
     {
-        switch (cplusplusversion)
+        switch (Optimizer::cparams.cpp_dialect)
         {
-            case 11:
+            case Dialect::cpp11:
                 preProcessor->Define("__cplusplus", "201103");
                 break;
-            case 14:
+            case Dialect::cpp14:
                 preProcessor->Define("__cplusplus", "201402");
                 break;
-            case 17:
+            case Dialect::cpp17:
                 preProcessor->Define("__cplusplus", "201703");
                 break;
         }
@@ -863,13 +844,13 @@ void setglbdefs(void)
     sprintf(buf, "%d", getMaxAlign());
     preProcessor->Define("__MAX_ALIGN__", buf);
 
-    if (Optimizer::cparams.prm_c99 || Optimizer::cparams.prm_c1x || Optimizer::cparams.prm_cplusplus)
+    if (Optimizer::cparams.c_dialect >= Dialect::c99 || Optimizer::cparams.c_dialect >= Dialect::c11 || Optimizer::cparams.prm_cplusplus)
     {
         preProcessor->Define("__STDC_HOSTED__", Optimizer::chosenAssembler->hosted);  // hosted compiler, not embedded
     }
-    if (Optimizer::cparams.prm_c1x || Optimizer::cparams.prm_c2x)
+    if (Optimizer::cparams.c_dialect >= Dialect::c11 || Optimizer::cparams.c_dialect >= Dialect::c2x)
     {
-        if (Optimizer::cparams.prm_c2x)
+        if (Optimizer::cparams.c_dialect >= Dialect::c2x)
         {
             preProcessor->Define("__STDC_VERSION__", "202311L");
             preProcessor->Define("__STDC_VERSION_STDBIT_H__", "202311");
@@ -907,7 +888,7 @@ void setglbdefs(void)
         preProcessor->Define("__ATOMIC_ACQ_REL", std::to_string(Optimizer::e_mo::mo_acq_rel));
         preProcessor->Define("__ATOMIC_SEQ_CST", std::to_string(Optimizer::e_mo::mo_seq_cst));
     }
-    else if (Optimizer::cparams.prm_c99)
+    else if (Optimizer::cparams.c_dialect >= Dialect::c99)
     {
         preProcessor->Define("__STDC_VERSION__", "199901L");
     }

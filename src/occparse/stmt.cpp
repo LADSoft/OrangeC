@@ -3659,7 +3659,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
         HandleEndOfSwitchBlock(parent);
     FreeLocalContext(parent, funcsp, codeLabel++);
     if (first && !blockstmt->needlabel && !isvoidreturntype(basetype(funcsp->tp)->btp, funcsp) &&
-        basetype(funcsp->tp)->btp->type != bt_auto && !funcsp->sb->isConstructor)
+        basetype(funcsp->tp)->btp->type != bt_auto && !funcsp->sb->isConstructor && basetype(funcsp->tp)->btp->type != bt_void)
     {
         if (funcsp->sb->attribs.inheritable.linkage3 == lk_noreturn)
         {
@@ -3667,7 +3667,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
             // Keeping this here prevents nonsensical errors such as "FUNCTION SHOULD RETURN VALUE!!!!" when a function is marked
             // noreturn. Noreturn functions can have non-void return types in order for things to work such as in ObjIeee.h's ThrowSyntax functions
         }
-        else if (Optimizer::cparams.prm_c99 || Optimizer::cparams.prm_cplusplus)
+        else if (Optimizer::cparams.prm_c99 || Optimizer::cparams.prm_c1x || Optimizer::cparams.prm_c2x || Optimizer::cparams.prm_cplusplus)
         {
             if (!thunkmainret(funcsp, parent, false))
             {

@@ -207,8 +207,8 @@ extern "C"
     long double __fpow(int exp);
 
     // checked arithmetic support
-    void __stdcall ___ckd_set_value(unsigned int buf[CKD_BUF_SIZE/sizeof(int)], const void *val, int typeid);
-    _Bool __stdcall ___ckd_get_value(const unsigned int buf[CKD_BUF_SIZE/sizeof(int)], void *result, int typeid);
+    void __stdcall ___ckd_set_value(unsigned int buf[CKD_BUF_SIZE/sizeof(int)], const void *val, int typeid_val);
+    int __stdcall ___ckd_get_value(const unsigned int buf[CKD_BUF_SIZE/sizeof(int)], void *result, int typeid_val);
 
 #ifdef __cplusplus
 };

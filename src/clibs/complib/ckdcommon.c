@@ -31,10 +31,10 @@
 #include "_locale.h"
 #include "libp.h"
 
-void __stdcall ___ckd_set_value(unsigned int buf[CKD_BUF_SIZE/sizeof(int)], const void *val, int typeid)
+void __stdcall ___ckd_set_value(unsigned int buf[CKD_BUF_SIZE/sizeof(int)], const void *val, int typeid_val)
 {
     int sz;
-    switch(typeid)
+    switch(typeid_val)
     {
         case -1:
         case 1:
@@ -64,17 +64,17 @@ void __stdcall ___ckd_set_value(unsigned int buf[CKD_BUF_SIZE/sizeof(int)], cons
     // assume unsigned
     int ch = 0;
     // this next line is little endian biased...
-    if (typeid < 0 && ((char *)buf)[sz-1] & 0x80)
+    if (typeid_val < 0 && ((char *)buf)[sz-1] & 0x80)
     {
         // signed with a sign bit
         ch = 0xff;
     }
     memset((void *)((char *)buf+sz), ch, CKD_BUF_SIZE-sz); 
 }
-_Bool __stdcall ___ckd_get_value(const unsigned int buf[CKD_BUF_SIZE/sizeof(int)], void *result, int typeid)
+int __stdcall ___ckd_get_value(const unsigned int buf[CKD_BUF_SIZE/sizeof(int)], void *result, int typeid_val)
 {
     int sz;
-    switch(typeid)
+    switch(typeid_val)
     {
         case -1:
         case 1:
@@ -104,7 +104,7 @@ _Bool __stdcall ___ckd_get_value(const unsigned int buf[CKD_BUF_SIZE/sizeof(int)
      // assume unsigned
     int ch = 0;
     // this next line is little endian biased...
-    if (typeid < 0 && (((char *)buf)[sz-1] & 0x80))
+    if (typeid_val < 0 && (((char *)buf)[sz-1] & 0x80))
     {
         // signed with a sign bit
         ch = 0xff;

@@ -33,4 +33,3 @@ H_FILES=$(wildcard *.h)
 include ../redirect.mak
 
 DISTRIBUTE: copyexe
-	copy target.mak $(DISTBIN)$(PATHEXT2)builtins.mak

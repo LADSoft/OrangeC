@@ -36,7 +36,7 @@ rtl_objs: lscrtl_objs
 alldirs: rtl_objs
 ifdef FINAL
 	$(MAKE) -Clsdbghelper
-ifndef MSYSTEM
+ifeq "$(WITHOUT_OCCIL)" ""
 	$(MAKE) -Coccil
 endif
 else

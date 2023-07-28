@@ -96,9 +96,25 @@ const char* MakeMain::helpText =
     "\nTime: " __TIME__ "  Date: " __DATE__;
 const char* MakeMain::usageText = "[options] goals\n";
 
-const char* MakeMain::builtinVars = "CC=${ORANGEC}/bin/occ\n"
+const char* MakeMain::builtinVars = 
+"CC=${ORANGEC}/bin/occ\n"
 "CXX=${ORANGEC}/bin/occ\n"
 "AS=${ORANGEC}/bin/oasm\n";
+
+const char* MakeMain::builtinRules =
+"%.o: %.c .__BUILTIN\n"
+"\t${CC} ${CPPFLAGS} ${CFLAGS} -o $@ -c $<\n"
+"%.o: %.cc .__BUILTIN\n"
+"\t${CXX} ${CPPFLAGS} ${CXXFLAGS} -o $@ -c $<\n"
+"%.o: %.cpp .__BUILTIN\n"
+"\t${CXX} ${CPPFLAGS} ${CXXFLAGS} -o $@ -c $<\n"
+"%.o: %.s .__BUILTIN\n"
+"\t${AS} ${ASFLAGS} -o $@ $<\n"
+"%.exe: %.o .__BUILTIN\n"
+"\t${CC} -o $@ ${LDFLAGS} $^ ${LOADLIBES} ${LDLIBS}\n"
+"%.c: %.y .__BUILTIN\n"
+"\tACC} ${YFLAGS} $<\n";
+
 
 int MakeMain::makeLevel;
 
@@ -333,19 +349,8 @@ void MakeMain::SetupImplicit()
 {
     if (!noBuiltinVars.GetValue() && !noBuiltinRules.GetValue())
     {
-        char *occ = getenv("ORANGEC");
-        if (occ)
-        {
-            std::string name = occ;
-            if (name.size() && name[name.size()-1] != CmdFiles::DIR_SEP[0])
-                name += CmdFiles::DIR_SEP[0];
-            name += "bin/builtins.mak";
-            std::ifstream t(name);
-            std::stringstream buffer;
-            buffer << t.rdbuf();
-            Parser p(buffer.str(), "<builtins>", 1, false, Variable::o_default);
-            p.Parse();
-        }
+        Parser p(builtinRules, "<builtins>", 1, false, Variable::o_default);
+        p.Parse();
     }
 }
 void MakeMain::ShowRule(RuleList* ruleList)

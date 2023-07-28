@@ -40,7 +40,7 @@ DISTSRC=orangec/dist/ZippedSources$(VERNAME).zip
 DISTRIBUTE:
 	$(MAKE) -C..\.. -forangec\src\zip.mak maindist
 maindist:
-ifneq "$(ORANGEC_ONLY)" "YES"
+ifeq "$(WITHOUT_ZIP)" ""
 	-del $(subst /,\,$(DISTEXE))
 	-del $(subst /,\,$(DISTSRC))
 	-mkdir $(DISTROOT)\appdata

@@ -1,28 +1,29 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "PreProcessor.h"
+#include "ppMain.h"
 #include "ppkw.h"
 #include "Errors.h"
 #include "UTF8.h"
@@ -47,6 +48,10 @@ void PreProcessor::InitHash()
     hash["endif"] = kw::ENDIF;
     hash["elifdef"] = kw::ELIFDEF;
     hash["elifndef"] = kw::ELIFNDEF;
+    if (ppStart == '#')
+    {
+        hash["embed"] = kw::EMBED;
+    }
     if (ppStart == '%')
     {
         hash["idefine"] = kw::IDEFINE;
@@ -106,6 +111,10 @@ bool PreProcessor::GetPreLine(std::string& line)
         return true;
     }
     if (ppStart == '%' && macro.GetLine(line, lineno))
+    {
+        return true;
+    }
+    if (ppEmbed.GetLine(line, lineno))
     {
         return true;
     }
@@ -233,8 +242,11 @@ bool PreProcessor::GetLine(std::string& line)
                                         {
                                             if (!pragma.Check(token, line))
                                             {
-                                                if (ppStart != '%' || (!macro.Check(token, line) && !ctx.Check(token, line)))
-                                                    Errors::Error("Unknown preprocessor directive");
+                                                if (!ppEmbed.Check(token, line))
+                                                {
+                                                    if (ppStart != '%' || (!macro.Check(token, line) && !ctx.Check(token, line)))
+                                                        Errors::Error("Unknown preprocessor directive");
+                                                }
                                             }
                                         }
                                     }

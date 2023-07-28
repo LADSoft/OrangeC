@@ -32,6 +32,7 @@ class ppMain
 {
   public:
     int Run(int argc, char* argv[]);
+    static CmdSwitchBool c23Mode;
 
   private:
     static CmdSwitchParser SwitchParser;

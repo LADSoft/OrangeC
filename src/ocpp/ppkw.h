@@ -104,5 +104,6 @@ enum class kw
     IASSIGN,
     IMACRO,
     WARNING,
+    EMBED,
     UNKNOWN = 10000
 };

@@ -178,14 +178,14 @@ CmdSwitchBool RuntimeHeapCheck(SwitchParser, 0, 0, {"fruntime-heap-check"});
 
 static std::string firstFile;
 
-enum e_lk getDefaultLinkage()
+enum Linkage getDefaultLinkage()
 {
     switch (Optimizer::architecture)
     {
         case ARCHITECTURE_X86:
-            return Optimizer::cparams.prm_lscrtdll ? lk_import : lk_none;
+            return Optimizer::cparams.prm_lscrtdll ? Linkage::import_ : Linkage::none_;
         default:
-            return lk_none;
+            return Linkage::none_;
     }
 }
 
@@ -1206,7 +1206,7 @@ int ccinit(int argc, char* argv[])
         Optimizer::architecture = ARCHITECTURE_X86;
     }
     if (!init_backend())
-        Utils::Fatal("Could not initialize back end");
+        Utils::Fatal("Could not initialize back Keyword::_end");
 
     static char temp[260];
     strcpy(temp, argv[0]);
@@ -1240,7 +1240,7 @@ int ccinit(int argc, char* argv[])
     /* parse the environment and command line */
     int ecnt = 0;
     char* eargs[200];
-    /* initialize back end */
+    /* initialize back Keyword::_end */
     if (prm_assemble.GetExists())
     {
         Optimizer::cparams.prm_asmfile = true;

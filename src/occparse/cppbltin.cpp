@@ -86,11 +86,11 @@ static std::string cppbuiltin =
     "constexpr long double __rtllinkage __builtin_nansl(const char *x);"
     "}";
 static std::string cbuiltin =
-    "bool __stdcall ___ckdadd(void*, int, void*, int, void*, int);"
-    "bool __stdcall ___ckdmul(void*, int, void*, int, void*, int);"
-    "bool __stdcall ___ckdsub(void*, int, void*, int, void*, int);";
+    "bool __stdcall __rtllinkage ___ckdadd(void*, int, void*, int, void*, int);"
+    "bool __stdcall __rtllinkage ___ckdmul(void*, int, void*, int, void*, int);"
+    "bool __stdcall __rtllinkage ___ckdsub(void*, int, void*, int, void*, int);";
 
-TYPE stdXC = {bt_struct, XCTAB_SIZE, 0, &stdXC};
+TYPE stdXC = {BasicType::struct_, XCTAB_SIZE, 0, &stdXC};
 void ParseBuiltins(void)
 {
     LEXLIST* lex;
@@ -102,7 +102,7 @@ void ParseBuiltins(void)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, nullptr, nullptr, sc_global, lk_none, emptyBlockdata, true, false, false, ac_public)) != nullptr)
+            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global, Linkage::none_, emptyBlockdata, true, false, false, AccessLevel::public_)) != nullptr)
                 ;
         }
         SetAlternateParse(false, "");
@@ -113,7 +113,7 @@ void ParseBuiltins(void)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, nullptr, nullptr, sc_global, lk_none, emptyBlockdata, true, false, false, ac_public)) != nullptr)
+            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global, Linkage::none_, emptyBlockdata, true, false, false, AccessLevel::public_)) != nullptr)
                 ;
         }
         SetAlternateParse(false, "");
@@ -125,7 +125,7 @@ void ParseBuiltins(void)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, nullptr, nullptr, sc_global, lk_none, emptyBlockdata, true, false, false, ac_public)) != nullptr)
+            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global, Linkage::none_, emptyBlockdata, true, false, false, AccessLevel::public_)) != nullptr)
                 ;
         }
         SetAlternateParse(false, "");
@@ -133,7 +133,7 @@ void ParseBuiltins(void)
     if (Optimizer::cparams.prm_cplusplus)
     {
         stdXC.syms = symbols.CreateSymbolTable();
-        stdXC.sp = makeID(sc_type, &stdXC, nullptr, "$$XCTYPE");
+        stdXC.sp = makeID(StorageClass::type, &stdXC, nullptr, "$$XCTYPE");
         stdXC.sp->sb->decoratedName = stdXC.sp->name;
     }
 }

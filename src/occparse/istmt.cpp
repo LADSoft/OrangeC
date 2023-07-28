@@ -119,7 +119,7 @@ Optimizer::IMODE* make_direct(int i)
  *      make a direct reference to an immediate value.
  */
 {
-    return make_ioffset(intNode(en_c_i, i));
+    return make_ioffset(intNode(ExpressionNode::c_i, i));
 }
 
 /*-------------------------------------------------------------------------*/
@@ -147,9 +147,9 @@ Optimizer::IMODE* set_symbol(const char* name, int isproc)
     {
         Optimizer::LIST* l1;
         sym = SymAlloc();
-        sym->sb->storage_class = sc_external;
+        sym->sb->storage_class = StorageClass::external;
         sym->name = sym->sb->decoratedName = litlate(name);
-        sym->tp = MakeType(isproc ? bt_func : bt_int);
+        sym->tp = MakeType(isproc ? BasicType::func : BasicType::int_);
         sym->sb->safefunc = true;
         globalNameSpace->front()->syms->Add(sym);
         auto osym = Optimizer::SymbolManager::Get(sym);
@@ -158,7 +158,7 @@ Optimizer::IMODE* set_symbol(const char* name, int isproc)
     }
     else
     {
-        if (sym->sb->storage_class == sc_overloads)
+        if (sym->sb->storage_class == StorageClass::overloads)
             sym = sym->tp->syms->front();
     }
     result = Allocate<Optimizer::IMODE>();
@@ -214,7 +214,7 @@ static void AddProfilerData(SYMBOL* funcsp)
         stringlit(string);
         plabel = string->label;
         Optimizer::gen_icode(Optimizer::i_parm, 0, imake_label(plabel), 0);
-        call_library("__profile_in", getSize(bt_pointer));
+        call_library("__profile_in", getSize(BasicType::pointer));
     }
 }
 
@@ -225,7 +225,7 @@ void SubProfilerData(void)
     if (Optimizer::cparams.prm_profiler)
     {
         Optimizer::gen_icode(Optimizer::i_parm, 0, imake_label(plabel), 0);
-        call_library("__profile_out", getSize(bt_pointer));
+        call_library("__profile_out", getSize(BasicType::pointer));
     }
 }
 
@@ -234,7 +234,7 @@ EXPRESSION* tempVar(TYPE* tp, bool global)
 {
     if (global)
         anonymousNotAlloc++;
-    auto val = anonymousVar(global ? sc_global : sc_auto, tp);
+    auto val = anonymousVar(global ? StorageClass::global : StorageClass::auto_, tp);
     if (global)
     {
         insertInitSym(val->v.sp);
@@ -249,7 +249,7 @@ EXPRESSION* tempVar(TYPE* tp, bool global)
 }
 EXPRESSION *makeParamSubs(EXPRESSION* left, Optimizer::IMODE* im)
 {
-    auto val = exprNode(en_paramsubstitute, left, 0);
+    auto val = exprNode(ExpressionNode::paramsubstitute, left, 0);
     val->v.imode = im;
     return val;
 }
@@ -335,7 +335,7 @@ void genxswitch(STATEMENT* stmt, SYMBOL* funcsp)
     }
     if (Optimizer::chosenAssembler->arch->preferopts & OPT_EXPANDSWITCH)
     {
-        EXPRESSION* en = anonymousVar(sc_auto, &stdint);
+        EXPRESSION* en = anonymousVar(StorageClass::auto_, &stdint);
         en->v.sp->sb->anonymous = false;
         Optimizer::cacheTempSymbol(Optimizer::SymbolManager::Get(en->v.sp));
         if (ap->size != -ISZ_UINT)
@@ -422,10 +422,10 @@ static void gen___try(SYMBOL* funcsp, std::list<STATEMENT*> stmts)
         Optimizer::IMODE* left = nullptr;
         switch (stmt->type)
         {
-        case st___try:
+        case StatementNode::seh_try_:
             mode = 1;
             break;
-        case st___catch:
+        case StatementNode::seh_catch_:
             mode = 2;
             if (stmt->sp)
             {
@@ -437,10 +437,10 @@ static void gen___try(SYMBOL* funcsp, std::list<STATEMENT*> stmts)
                 left->offset->sp = Optimizer::SymbolManager::Get(stmt->sp);
             }
             break;
-        case st___fault:
+        case StatementNode::seh_fault_:
             mode = 3;
             break;
-        case st___finally:
+        case StatementNode::seh_finally_:
             mode = 4;
             break;
         default:
@@ -455,7 +455,7 @@ static void gen___try(SYMBOL* funcsp, std::list<STATEMENT*> stmts)
         Optimizer::gen_icode(Optimizer::i_seh, nullptr, left, nullptr);
         Optimizer::intermed_tail->sehMode = mode;
         Optimizer::intermed_tail->dc.v.label = label;
-        //        if (stmt && stmt->type == st___try)
+        //        if (stmt && stmt->type == StatementNode::seh_try_)
         //            break;
     }
     Optimizer::gen_label(label);
@@ -465,13 +465,13 @@ void gen_except(bool begin, xcept* xc)
     auto tab = Allocate<Optimizer::IMODE>();
     tab->mode = Optimizer::i_immed;
     tab->size = ISZ_ADDR;
-    tab->offset = Optimizer::SymbolManager::Get(varNode(en_auto, xc->xctab));
+    tab->offset = Optimizer::SymbolManager::Get(varNode(ExpressionNode::auto_, xc->xctab));
     if (begin)
     {
         auto lab = Allocate<Optimizer::IMODE>();
         lab->mode = Optimizer::i_immed;
         lab->size = ISZ_ADDR;
-        lab->offset = Optimizer::SymbolManager::Get(varNode(en_pc, xc->xclab));
+        lab->offset = Optimizer::SymbolManager::Get(varNode(ExpressionNode::pc, xc->xclab));
         gen_icode(Optimizer::i_beginexcept, nullptr, tab, lab);
     }
     else
@@ -494,7 +494,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
         // the return type should NOT be an array at this point unless it is a managed one...
         if (basetype(funcsp->tp)->btp && (isstructured(basetype(funcsp->tp)->btp) ||
                                           (isarray(basetype(funcsp->tp)->btp) && (Optimizer::architecture == ARCHITECTURE_MSIL)) ||
-                                          basetype(basetype(funcsp->tp)->btp)->type == bt_memberptr))
+                                          basetype(basetype(funcsp->tp)->btp)->type == BasicType::memberptr))
         {
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
             {
@@ -516,7 +516,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                     size = natural_size(exp);
 
                     if (!(flags & F_RETURNSTRUCTBYVALUE) && inlineSymStructPtr.size() &&
-                        basetype(basetype(funcsp->tp)->btp)->type != bt_memberptr)
+                        basetype(basetype(funcsp->tp)->btp)->type != BasicType::memberptr)
                     {
                         if (lvalue(exp))
                         {
@@ -524,9 +524,9 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                             auto exp1 = exp;
                             while (castvalue(exp1))
                                 exp1 = exp1->left;
-                            if (exp1->type == en_thisref)
+                            if (exp1->type == ExpressionNode::thisref)
                                 exp1 = exp1->left;
-                            if (exp1->type == en_func)
+                            if (exp1->type == ExpressionNode::func)
                             {
                                 auto tpx = basetype(basetype(exp1->v.sp->tp)->btp);
                                 if (!isstructured(tpx) || !tpx->sp->sb->structuredAliasType)
@@ -558,7 +558,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                 }
                 else
                 {
-                    EXPRESSION* en = anonymousVar(sc_parameter, &stdpointer);
+                    EXPRESSION* en = anonymousVar(StorageClass::parameter, &stdpointer);
                     SYMBOL* sym = en->v.sp;
                     ap = gen_expr(funcsp, stmt->select, 0, ISZ_ADDR);
                     DumpIncDec(funcsp);
@@ -567,8 +567,8 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                     sym->sb->retblk = true;
                     sym->sb->allocate = false;
                     // instead of 'front()' the next line did table[0] without the ->p
-                    if ((funcsp->sb->attribs.inheritable.linkage == lk_pascal) && basetype(funcsp->tp)->syms->size() &&
-                        ((SYMBOL*)basetype(funcsp->tp)->syms->front())->tp->type != bt_void)
+                    if ((funcsp->sb->attribs.inheritable.linkage == Linkage::pascal_) && basetype(funcsp->tp)->syms->size() &&
+                        ((SYMBOL*)basetype(funcsp->tp)->syms->front())->tp->type != BasicType::void_)
                     {
                         sym->sb->offset = funcsp->sb->paramsize;
                     }
@@ -627,7 +627,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                 {
                     if ((flags & F_RETURNSTRUCTBYVALUE) && inlineSymThisPtr.size() && funcsp->sb->isConstructor && funcsp->sb->parentClass->sb->structuredAliasType)
                     {
-                        exp = exprNode(en_structadd, exp, intNode(en_c_i, 0));
+                        exp = exprNode(ExpressionNode::structadd, exp, intNode(ExpressionNode::c_i, 0));
                         deref(funcsp->sb->parentClass->sb->structuredAliasType, &exp);
                     }
                     ap3 = gen_expr(funcsp, exp, flags & F_RETURNSTRUCTBYVALUE, size);
@@ -677,12 +677,12 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
         Optimizer::intermed_tail->needsOCP = needsOCP;
     }
     /* create the return or a branch to the return
-     * return is put at end of function...
+     * return is put at Keyword::_end of function...
      */
     if (flags & F_NEEDEPILOG)
     {
         int retsize = 0;
-        if (funcsp->sb->attribs.inheritable.linkage == lk_pascal || funcsp->sb->attribs.inheritable.linkage == lk_stdcall)
+        if (funcsp->sb->attribs.inheritable.linkage == Linkage::pascal_ || funcsp->sb->attribs.inheritable.linkage == Linkage::stdcall_)
         {
             retsize = funcsp->sb->paramsize;
         }
@@ -706,7 +706,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
             }
             else
             {
-                // might fall off the end without a return statement...
+                // might fall off the Keyword::_end without a return statement...
                 Optimizer::gen_label(retlab);
             }
         }
@@ -731,11 +731,11 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                 Optimizer::gen_icode(Optimizer::i_assn, ap1, returnSym, nullptr);
             }
             Optimizer::gen_icode(Optimizer::i_epilogue, 0, 0, 0);
-            if (funcsp->sb->attribs.inheritable.linkage == lk_interrupt || funcsp->sb->attribs.inheritable.linkage == lk_fault)
+            if (funcsp->sb->attribs.inheritable.linkage == Linkage::interrupt_ || funcsp->sb->attribs.inheritable.linkage == Linkage::fault_)
             {
                 Optimizer::gen_icode(Optimizer::i_popcontext, 0, 0, 0);
                 Optimizer::gen_icode(Optimizer::i_rett, 0,
-                                     Optimizer::make_immed(ISZ_UINT, funcsp->sb->attribs.inheritable.linkage == lk_interrupt),
+                                     Optimizer::make_immed(ISZ_UINT, funcsp->sb->attribs.inheritable.linkage == Linkage::interrupt_),
                                      0);
             }
             else
@@ -793,9 +793,9 @@ void gen_asm(STATEMENT* stmt)
     newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = Optimizer::i_passthrough;
     newQuad->dc.left = (Optimizer::IMODE*)stmt->select; /* actually is defined by the INASM module*/
-    // if (Optimizer::chosenAssembler->gen->adjust_codelab)
-    //    Optimizer::chosenAssembler->gen->adjust_codelab(newQuad->dc.left, codeLabelOffset);
-    adjust_codelab(newQuad->dc.left, codeLabelOffset);
+    // if (Optimizer::chosenAssembler->gen->adjustcodelab)
+    //    Optimizer::chosenAssembler->gen->adjustcodelab(newQuad->dc.left, codeLabelOffset);
+    adjustcodelab(newQuad->dc.left, codeLabelOffset);
     Optimizer::flush_dag();
     add_intermed(newQuad);
 }
@@ -828,25 +828,25 @@ Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp, int flag
             auto stmt = *il;
             switch (stmt->type)
             {
-                case st_nop:
+                case StatementNode::nop:
                     break;
-                case st_varstart:
+                case StatementNode::varstart:
                     gen_varstart(stmt->select);
                     break;
-                case st_dbgblock:
+                case StatementNode::dbgblock:
                     gen_dbgblock(stmt->label);
                     break;
                     break;
-                case st_block:
+                case StatementNode::block:
                     rv = genstmt(stmt->lower, funcsp, flags);
                     genstmt(stmt->blockTail, funcsp, flags);
                     break;
-                case st_label:
+                case StatementNode::label:
                     Optimizer::gen_label((int)stmt->label + codeLabelOffset);
                     if (stmt->purelabel)
                        Optimizer::intermed_tail->alwayslive = true;
                     break;
-                case st_goto:
+                case StatementNode::goto_:
                     if (stmt->destexp)
                         gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
                     if (stmt->indirectGoto)
@@ -859,20 +859,20 @@ Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp, int flag
                         Optimizer::gen_igoto(Optimizer::i_goto, (int)stmt->label + codeLabelOffset);
                     }
                     break;
-                case st_asmgoto:
+                case StatementNode::asmgoto:
                     Optimizer::gen_igoto(Optimizer::i_asmgoto, (int)stmt->label + codeLabelOffset);
                     break;
-                case st_asmcond:
+                case StatementNode::asmcond:
                     Optimizer::gen_igoto(Optimizer::i_asmcond, (int)stmt->label + codeLabelOffset);
                     break;
-                case st_try:
+                case StatementNode::try_:
                     gen_try(funcsp, stmt, stmt->label + codeLabelOffset, stmt->endlabel + codeLabelOffset,
                             stmt->breaklabel + codeLabelOffset, stmt->lower);
                     break;
-                case st_catch:
+                case StatementNode::catch_:
                 {
                     int breaklab = 0;
-                    while (stmt->type == st_catch)
+                    while (stmt->type == StatementNode::catch_)
                     {
                         // the following adjustment to altlabel is required to get the XT info proper
                         gen_catch(funcsp, stmt, stmt->altlabel += codeLabelOffset, stmt->breaklabel + codeLabelOffset, stmt->lower);
@@ -885,12 +885,12 @@ Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp, int flag
                     Optimizer::gen_label(breaklab);
                     continue;
                 }
-                case st___try:
-                case st___catch:
-                case st___finally:
-                case st___fault: {
+                case StatementNode::seh_try_:
+                case StatementNode::seh_catch_:
+                case StatementNode::seh_finally_:
+                case StatementNode::seh_fault_: {
                     auto ilx = il;
-                    while (ilx != ile && (*ilx)->type != st___try)
+                    while (ilx != ile && (*ilx)->type != StatementNode::seh_try_)
                         ilx++;
                     std::list<STATEMENT*> stmts(il, ilx);
                     gen___try(funcsp, stmts);
@@ -901,40 +901,40 @@ Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp, int flag
                     il = ilx;
                     continue;
                 }
-                case st_expr:
-                case st_declare:
+                case StatementNode::expr:
+                case StatementNode::declare:
                     if (stmt->select)
                         rv = gen_expr(funcsp, stmt->select, F_NOVALUE | F_RETURNSTRUCTBYVALUE, natural_size(stmt->select));
                     break;
-                case st_return:
+                case StatementNode::return_:
                     genreturn(stmt, funcsp, flags, nullptr);
                     break;
-                case st_line:
+                case StatementNode::line:
                     Optimizer::gen_line(stmt->lineData);
                     break;
-                case st_select:
+                case StatementNode::select:
                     genselect(stmt, funcsp, true);
                     break;
-                case st_notselect:
+                case StatementNode::notselect:
                     genselect(stmt, funcsp, false);
                     break;
-                case st_switch:
+                case StatementNode::switch_:
                     genxswitch(stmt, funcsp);
                     break;
-                case st__genword:
+                case StatementNode::genword:
                     gen_genword(stmt, funcsp);
                     break;
-                case st_passthrough:
+                case StatementNode::passthrough:
                     gen_asm(stmt);
                     break;
-                case st_datapassthrough:
+                case StatementNode::datapassthrough:
                     gen_asmdata(stmt);
                     break;
                 default:
                     diag("unknown statement.");
                     break;
             }
-            if ((*il)->type != st_return && (*il)->type != st_goto && (*il)->destexp)
+            if ((*il)->type != StatementNode::return_ && (*il)->type != StatementNode::goto_ && (*il)->destexp)
             {
                 gen_expr(funcsp, (*il)->destexp, F_NOVALUE, ISZ_ADDR);
             }
@@ -1010,7 +1010,7 @@ static void InsertParameterThunks(SYMBOL* funcsp, Optimizer::BLOCK* b)
     for (auto sym : *basetype(funcsp->tp)->syms)
     {
         Optimizer::SimpleSymbol* simpleSym = Optimizer::SymbolManager::Get(sym);
-        if (sym->tp->type == bt_void || sym->tp->type == bt_ellipse || isstructured(sym->tp))
+        if (sym->tp->type == BasicType::void_ || sym->tp->type == BasicType::ellipse || isstructured(sym->tp))
         {
             continue;
         }
@@ -1018,7 +1018,7 @@ static void InsertParameterThunks(SYMBOL* funcsp, Optimizer::BLOCK* b)
         {
             continue;
         }
-        if (funcsp->sb->oldstyle && sym->tp->type == bt_float)
+        if (funcsp->sb->oldstyle && sym->tp->type == BasicType::float_)
         {
             Optimizer::IMODE* right = Allocate<Optimizer::IMODE>();
             *right = *simpleSym->imvalue;
@@ -1050,7 +1050,7 @@ void CopyVariables(SYMBOL* funcsp)
     {
         for (auto sym1 : *syms)
         {
-            if (sym1->sb->storage_class == sc_auto || sym1->sb->storage_class == sc_parameter)
+            if (sym1->sb->storage_class == StorageClass::auto_ || sym1->sb->storage_class == StorageClass::parameter)
             {
                 Optimizer::SimpleSymbol* sym = Optimizer::SymbolManager::Get(sym1);
                 sym->i = syms->Block();
@@ -1063,7 +1063,7 @@ static void SetReturnSym(SYMBOL* funcsp)
 {
     if (Optimizer::architecture == ARCHITECTURE_MSIL && !isvoid(basetype(funcsp->tp)->btp))
     {
-        auto exp = anonymousVar(sc_auto, basetype(funcsp->tp)->btp);
+        auto exp = anonymousVar(StorageClass::auto_, basetype(funcsp->tp)->btp);
         auto sym = exp->v.sp;
         sym->sb->anonymous = false;
         Optimizer::IMODE* ap = Allocate<Optimizer::IMODE>();
@@ -1092,7 +1092,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     Optimizer::IMODE* allocaAP = nullptr;
     SYMBOL* oldCurrentFunc;
     Optimizer::SimpleSymbol* oldCurrentFunction;
-    EXPRESSION* funcexp = varNode(en_global, funcsp);
+    EXPRESSION* funcexp = varNode(ExpressionNode::global, funcsp);
     SYMBOL* tmpl = funcsp;
     if (TotalErrors())
         return;
@@ -1146,8 +1146,8 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     {
         EXPRESSION* exp;
         Optimizer::temporarySymbols.push_back(Optimizer::SymbolManager::Get(funcsp->sb->xc->xctab));
-        xcexp = varNode(en_auto, funcsp->sb->xc->xctab);
-        xcexp = exprNode(en_add, xcexp, intNode(en_c_i, XCTAB_INDEX_OFS));
+        xcexp = varNode(ExpressionNode::auto_, funcsp->sb->xc->xctab);
+        xcexp = exprNode(ExpressionNode::add, xcexp, intNode(ExpressionNode::c_i, XCTAB_INDEX_OFS));
     }
     else
     {
@@ -1159,9 +1159,9 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
 
     /* in C99 inlines can clash if declared 'extern' in multiple modules */
     /* in C++ we introduce virtual functions that get coalesced at link time */
-    if (!currentFunction->isinternal && (funcsp->sb->attribs.inheritable.linkage4 == lk_virtual || tmpl))
+    if (!currentFunction->isinternal && (funcsp->sb->attribs.inheritable.linkage4 == Linkage::virtual_ || tmpl))
     {
-        funcsp->sb->attribs.inheritable.linkage4 = lk_virtual;
+        funcsp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
         Optimizer::gen_virtual(Optimizer::SymbolManager::Get(funcsp), false);
     }
     else
@@ -1170,7 +1170,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
         Optimizer::gen_strlab(Optimizer::SymbolManager::Get(funcsp)); /* name of function */
     }
     Optimizer::addblock(-1);
-    if (funcsp->sb->attribs.inheritable.linkage == lk_interrupt || funcsp->sb->attribs.inheritable.linkage == lk_fault)
+    if (funcsp->sb->attribs.inheritable.linkage == Linkage::interrupt_ || funcsp->sb->attribs.inheritable.linkage == Linkage::fault_)
     {
         Optimizer::gen_icode(Optimizer::i_pushcontext, 0, 0, 0);
         /*		if (funcsp->sb->loadds) */
@@ -1181,7 +1181,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     {
         if (basetype(funcsp->tp)->syms->size() && ((SYMBOL*)basetype(funcsp->tp)->syms->front())->sb->thisPtr)
         {
-            EXPRESSION* exp = varNode(en_auto, ((SYMBOL*)basetype(funcsp->tp)->syms->front()));
+            EXPRESSION* exp = varNode(ExpressionNode::auto_, ((SYMBOL*)basetype(funcsp->tp)->syms->front()));
             exp->v.sp->tp->used = true;
             gen_varstart(exp);
         }
@@ -1204,7 +1204,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     AllocateLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
     if (funcsp->sb->allocaUsed && (Optimizer::architecture != ARCHITECTURE_MSIL))
     {
-        EXPRESSION* allocaExp = anonymousVar(sc_auto, &stdpointer);
+        EXPRESSION* allocaExp = anonymousVar(StorageClass::auto_, &stdpointer);
         allocaAP = gen_expr(funcsp, allocaExp, 0, ISZ_ADDR);
         Optimizer::gen_icode(Optimizer::i_savestack, 0, allocaAP, 0);
     }
@@ -1228,7 +1228,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     Optimizer::SymbolManager::Get(funcsp)->allocaUsed = funcsp->sb->allocaUsed;
     Optimizer::AddFunction();
 
-    if (!currentFunction->isinternal && (funcsp->sb->attribs.inheritable.linkage4 == lk_virtual || tmpl))
+    if (!currentFunction->isinternal && (funcsp->sb->attribs.inheritable.linkage4 == Linkage::virtual_ || tmpl))
         Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(funcsp));
 
     AllocateLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel);
@@ -1247,7 +1247,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     // this is explicitly to clean up the this pointer
     for (auto sym : *basetype(funcsp->tp)->syms)
     {
-        if (sym->sb->storage_class == sc_parameter)
+        if (sym->sb->storage_class == StorageClass::parameter)
         {
             Optimizer::SimpleSymbol* simpleSym = Optimizer::SymbolManager::Get(sym);
             simpleSym->imind = nullptr;

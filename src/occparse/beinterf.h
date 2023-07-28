@@ -26,13 +26,13 @@
 namespace Parser
 {
 int needsAtomicLockFromType(TYPE* tp);
-int getSize(enum e_bt type);
-int getBaseAlign(enum e_bt type);
+int getSize(enum BasicType type);
+int getBaseAlign(enum BasicType type);
 int getMaxAlign();
 long getautoval(long val);
 int funcvaluesize(int val);
-int alignment(int sc, TYPE* tp);
-int getAlign(int sc, TYPE* tp);
+int alignment(StorageClass sc, TYPE* tp);
+int getAlign(StorageClass sc, TYPE* tp);
 const char* getUsageText(void);
 const char* getHelpText(void);
 KEYWORD* GetProcKeywords(void);

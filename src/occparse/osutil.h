@@ -55,9 +55,9 @@ typedef struct
     void (*routine)(char, char*);
 } CMDLIST;
 
-typedef struct _symlist_
+typedef struct _symlist
 {
-    _symlist_* next;
+    _symlist* next;
     struct sym* p;
 } SYMLIST;
 
@@ -66,9 +66,9 @@ struct DefValue
     std::string name;
     bool undef;
 };
-enum e_lk : int;
+enum class Linkage : int;
 
-enum e_lk getDefaultLinkage();
+enum Linkage getDefaultLinkage();
 
 extern Optimizer::LIST* clist;
 extern int showVersion;

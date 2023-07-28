@@ -310,11 +310,11 @@ static void debug_dumptypedefs(std::list<NAMESPACEVALUEDATA*>* nameSpace)
 {
     for (auto sym : *nameSpace->front()->syms)
     {
-        if (sym->sb->storage_class == sc_namespace)
+        if (sym->sb->storage_class == StorageClass::namespace_)
         {
             debug_dumptypedefs(sym->sb->nameSpaceValues);
         }
-        else if (sym->sb->storage_class == sc_typedef)
+        else if (sym->sb->storage_class == StorageClass::typedef_)
         {
             TYPE* tp = sym->tp;
             while (ispointer(tp) || isref(tp))
@@ -383,7 +383,7 @@ void compile(bool global)
         {
             BLOCKDATA bd;
             memset(&bd, 0, sizeof(bd));
-            bd.type = begin;
+            bd.type = Keyword::_begin;
             std::list<BLOCKDATA*> block{ &bd };
             while ((lex = statement_asm(lex, nullptr, block)) != nullptr)
                 ;
@@ -398,10 +398,10 @@ void compile(bool global)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, nullptr, nullptr, sc_global, lk_none, emptyBlockdata, true, false, false, ac_public)) !=
+            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global, Linkage::none_, emptyBlockdata, true, false, false, AccessLevel::public_)) !=
                    nullptr)
             {
-                if (MATCHKW(lex, end))
+                if (MATCHKW(lex, Keyword::_end))
                 {
                     lex = getsym();
                     if (!lex)

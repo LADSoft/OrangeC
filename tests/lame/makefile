@@ -35,9 +35,10 @@ FILES =\
     version.o \
     vorbis_interface.o
 
-%.o: %.c
-	occ /c /! -o$@ $^
+CFLAGS= /! /Wcl
+LDFLAGS = /Wcl /pl-DELAYLOAD:LSCRTL.DLL /pl-DELAY:NOBIND /pl-mx
 
+LDLIBS = delayimp.l
 test: lame.exe
 	lame -h air_raid.wav q.mp3
 	fc /b test.cmp q.mp3
@@ -46,4 +47,3 @@ clean:
 	$(CLEAN)
 
 lame.exe: $(FILES)
-	olink /c /! /T:CON32 /o$@ c0xpe.o $(FILES) clwin.l climp.l

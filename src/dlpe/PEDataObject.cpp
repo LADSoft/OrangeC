@@ -30,7 +30,11 @@
 #include "Utils.h"
 #include "ObjSymbol.h"
 #include <cstring>
-
+#include <algorithm>
+PEDataObject::PEDataObject(ObjFile* File, ObjSection* Sect) : file(File), PEObject(Sect->GetName()), sect(Sect)
+{
+    InitFlags();
+}
 void PEDataObject::Setup(ObjInt& endVa, ObjInt& endPhys)
 {
     if (virtual_addr == 0)
@@ -42,11 +46,26 @@ void PEDataObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         if (virtual_addr != endVa)
             Utils::Fatal("Internal error");
     }
+
+    int delayLoadSize = PEImportObject::ThunkSize(name);
+    if (name == ".text")
+    {
+        delayLoadThunkRVA = RVA(size- delayLoadSize);
+        codeRVA = virtual_addr;
+    }
+    else if (name == ".data")
+    {
+        delayLoadHandleRVA = RVA(size- delayLoadSize);
+    }
     raw_addr = endPhys;
     endVa = ObjectAlign(objectAlign, endVa + size);
     endPhys = ObjectAlign(fileAlign, endPhys + initSize);
-    data = std::make_unique<unsigned char[]>(initSize + importCount * 6);
-    memset(data.get(), 0, initSize + importCount * 6);
+    data = std::shared_ptr<unsigned char>(new unsigned char[initSize + importCount * PEImportObject::ImportThunkSize + delayLoadSize]);
+    std::fill(data.get(), data.get() + initSize + importCount * PEImportObject::ImportThunkSize, 0);
+    if (name == ".text")
+    {
+        codeData = data;
+    }
 }
 bool PEDataObject::hasPC(ObjExpression* exp)
 {
@@ -107,7 +126,7 @@ ObjInt PEDataObject::EvalFixup(ObjExpression* fixup, ObjInt base)
                     ObjInt val1 = fixup->Eval(base);
                     ObjInt val;
                     int en = sym->GetIndex();
-                    if ((val = SetThunk(en, sym->GetOffset()->Eval(0))) != -1)
+                    if ((val = SetImportThunk(en, sym->GetOffset()->Eval(0))) != -1)
                     {
                         val1 = val1 - sym->GetOffset()->Eval(0) + val;
                         return val1;
@@ -118,8 +137,9 @@ ObjInt PEDataObject::EvalFixup(ObjExpression* fixup, ObjInt base)
     }
     return fixup->Eval(base);
 }
-void PEDataObject::Fill()
+void PEDataObject::Patch()
 {
+    int imageBaseOfs = name == ".text" ? imageBaseVA - virtual_addr - imageBase : -1;
     unsigned char* pdata = data.get();
     ObjMemoryManager& m = sect->GetMemoryManager();
     int ofs = 0;
@@ -186,6 +206,14 @@ void PEDataObject::Fill()
             ofs += msize;
         }
     }
+    if (imageBaseOfs > 0)
+    {
+        pdata[imageBaseOfs] = imageBase & 0xff;
+        pdata[imageBaseOfs + 1] = imageBase >> 8;
+        pdata[imageBaseOfs + 2] = imageBase >> 16;
+        pdata[imageBaseOfs + 3] = imageBase >> 24;
+        thunkFixups.push_back(imageBaseVA);
+    }
 }
 void PEDataObject::InitFlags()
 {
@@ -205,15 +233,19 @@ void PEDataObject::InitFlags()
         SetFlags(WINF_INITDATA | WINF_READABLE | WINF_WRITEABLE | WINF_NEG_FLAGS);
     }
 }
-ObjInt PEDataObject::SetThunk(int index, unsigned va)
+
+ObjInt PEDataObject::SetImportThunk(int index, unsigned va)
 {
     if (name == ".text")
     {
         unsigned char* pdata = data.get();
-        unsigned offs = importThunkVA - virtual_addr - imageBase + index * 6;
-        pdata[offs] = 0xff;
-        pdata[offs + 1] = 0x25;
-        *(unsigned*)(pdata + offs + 2) = va;
+        unsigned offs = importThunkVA - virtual_addr - imageBase + index * PEImportObject::ImportThunkSize;
+        if (!*(short *)(pdata + offs))
+        {
+            memcpy(pdata + offs, importThunk, PEImportObject::ImportThunkSize);
+            *(unsigned*)(pdata + offs + 2) = va;
+            thunkFixups.push_back(RVA(offs + 2) + imageBase);
+        }
         return offs + virtual_addr + imageBase;
     }
     return -1;

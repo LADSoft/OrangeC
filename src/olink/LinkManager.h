@@ -97,6 +97,12 @@ struct linkltcompare
 };
 class LinkManager
 {
+    enum
+    {
+        ImportThunkSize = 6,
+        DelayLoadThunkSize = 10,
+        DelayLoadModuleThunkSize = 0x11,
+    };
     typedef std::vector<std::unique_ptr<LinkPartitionSpecifier>> PartitionData;
     typedef std::set<LinkSymbolData*, linkltcompare> SymbolData;
     typedef std::vector<ObjFile*> FileData;
@@ -116,6 +122,7 @@ class LinkManager
     void SetLibPath(const ObjString& path) { libPath = path; }
     void SetOutputFile(const ObjString& name) { outputFile = name; }
     ObjString GetOutputFile() const { return outputFile; }
+    void SetDelayLoad(const ObjString& list);
     void Link();
 
     typedef PartitionData::iterator PartitionIterator;
@@ -191,6 +198,8 @@ class LinkManager
     bool ExternalErrors();
     void AddGlobalsForVirtuals(ObjFile* file);
     void CreateOutputFile();
+    void SetDelayParams();
+
     ObjString outputFile;
     LinkTokenizer specification;
     PartitionData partitions;
@@ -212,9 +221,11 @@ class LinkManager
     ObjString libPath;
     ObjString specName;
     ObjString debugFile;
+    std::set<std::string> delayLoadNames;
     bool completeLink;
     bool caseSensitive;
     bool debugPassThrough;
+    bool delayLoadLoaded = false;
     static int errors;
     static int warnings;
 };

@@ -353,6 +353,7 @@ int LinkerMain::Run(int argc, char** argv)
     LinkManager linker(SpecFileContents(specificationFile), CaseSensitive.GetValue(), outputFile,
                        !RelFile.GetValue() && !TargetConfig.GetRelFile(), TargetConfig.GetDebugPassThrough(), debugFile);
     linker.SetLibPath(LibPath.GetValue());
+    linker.SetDelayLoad(DelayLoadDll.GetValue());
     ParseSpecifiedLibFiles(files, linker);
     ParseDelayLoadFlags();
     if (DoPrintFileName(linker))

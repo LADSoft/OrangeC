@@ -126,9 +126,9 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     }
     size = (size + 3) & ~3;
     initSize = (size += 4 * count);
-    data = std::make_unique<unsigned char[]>(initSize);
+    data = std::shared_ptr<unsigned char>(new unsigned char[initSize]);
     unsigned char* pdata = data.get();
-    memset(pdata, 0, initSize);
+    std::fill(pdata, pdata + initSize, 0);
     Header* header = (Header*)pdata;
 
     header->time = dlPeMain::TimeStamp();
@@ -140,9 +140,9 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     unsigned short* ordinalTable = (unsigned short*)(((unsigned char*)nameTable) + 4 * names.size());
     unsigned char* stringTable = (unsigned char*)(((unsigned char*)ordinalTable) + 2 * names.size());
 
-    header->address_rva = virtual_addr + ((unsigned char*)rvaTable) - pdata;
-    header->name_rva = virtual_addr + ((unsigned char*)nameTable) - pdata;
-    header->ordinal_rva = virtual_addr + ((unsigned char*)ordinalTable) - pdata;
+    header->address_rva = RVA(((unsigned char*)rvaTable) - pdata);
+    header->name_rva = RVA(((unsigned char*)nameTable) - pdata);
+    header->ordinal_rva = RVA(((unsigned char*)ordinalTable) - pdata);
 
     /* process numbered exports */
     for (auto it = file->ExportBegin(); it != file->ExportEnd(); ++it)
@@ -179,7 +179,7 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     // process named exports
     for (auto name : names)
     {
-        *nameTable++ = (unsigned)((unsigned char*)stringTable - pdata + virtual_addr);
+        *nameTable++ = (unsigned)RVA((unsigned char*)stringTable - pdata);
         *ordinalTable++ = name->GetOrdinal() - minOrd;
         if (flat && name->GetName()[0] == '_')
         {
@@ -197,7 +197,7 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     // throw in the DLL name
     if (!name.empty())
     {
-        header->exe_name_rva = (unsigned)((unsigned char*)stringTable - pdata + virtual_addr);
+        header->exe_name_rva = RVA((unsigned)((unsigned char*)stringTable - pdata));
         for (int i = 0; i < name.size(); i++)
             *stringTable++ = toupper(name[i]);
         *stringTable++ = 0;

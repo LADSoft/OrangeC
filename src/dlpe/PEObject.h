@@ -7,7 +7,7 @@
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
+ *     (at your option) any later version.h
  * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,6 +25,7 @@
 #ifndef PEObject_H
 #define PEObject_H
 
+#include <windows.h>
 #include "ObjTypes.h"
 #define PEHEADER_ONLY
 #include "PEHeader.h"
@@ -35,12 +36,108 @@
 #include <deque>
 #include "ObjSection.h"
 #include <memory>
+#include <map>
+#define RVA(offset) (offset + virtual_addr)
 
 class ObjFile;
 
 class ResourceContainer;
 class ObjExpression;
 inline ObjInt ObjectAlign(ObjInt alignment, ObjInt value) { return (value + alignment - 1) & ~(alignment - 1); }
+
+struct DelayLoadDirectory
+{
+    DWORD attributes;
+    DWORD dllname;
+    DWORD moduleHandleRVA;
+    DWORD addressThunk;
+    DWORD nameThunk;
+    DWORD boundTable;
+    DWORD unloadTable;
+    DWORD time;
+};
+
+struct ImportDirectory
+{
+    DWORD addressThunk;
+    DWORD time;
+    DWORD version;
+    DWORD dllName;
+    DWORD nameThunk;
+};
+
+struct Module
+{
+    std::string name;
+    DWORD moduleHandleRVA = 0;
+    DWORD time = 0;
+    std::vector<std::tuple<std::string, ObjSymbol*, DWORD, DWORD>> externalNames;
+    std::vector<std::string> publicNames;
+};
+
+template <class Directory>
+struct DllImports
+{
+  public:
+    DllImports(std::map<std::string, Module*>& Modules, const std::vector<std::string>& delayLoadModules, ObjInt Offset,
+               bool bind = false, bool unload = false) :
+        modules(Modules), offset(Offset), bindTable(bind), unloadTable(unload)
+    {
+        TrimModules(delayLoadModules);
+    }
+    void WriteDirectory(DWORD virtual_addr, DWORD imageBase, unsigned char* data);
+    void WriteTables(std::vector<DWORD>& thunkFixups, DWORD virtual_addr, DWORD imageBase, DWORD& thunkTableRVA,
+                     unsigned char* data);
+    size_t ModuleSize(std::map<ObjString, ObjSymbol*> externs);
+
+    typedef unsigned short HintType;
+    auto& Modules() { return modules; }
+    size_t CountOfIAT();
+    size_t CountOfModules();
+    DWORD IATOffset() const { return iatAddr; }
+    DWORD DirectoryOffset() const { return directory; }
+
+  protected:
+    void TrimModules(const std::vector<std::string>&);
+    bool IsDelayLoad(const std::vector<std::string>& delayLoadNames, std::string& name);
+    size_t ModuleNameSize();
+    size_t ModuleDirectoryNameSize();
+    size_t sizeOfTables()
+    {
+        int n = CountOfIAT();
+        n *= 2 + bindTable + unloadTable;  // import name table, import address table, hint table
+        return n * sizeof(Entry);
+    }
+    size_t sizeOfDirectory() { return CountOfModules() * sizeof Directory; }
+
+    enum
+    {
+        DELAYLOAD_BY_RVA = 1
+    };
+
+    enum
+    {
+        IMPORT_BY_ORDINAL = 0x80000000
+    };
+    struct Entry
+    {
+        int ord_or_rva;
+    };
+
+  private:
+    std::map<std::string, Module*> modules;
+    ObjInt offset;
+    ObjInt directory;
+    ObjInt directoryNames;
+    ObjInt iatAddr;
+    ObjInt names;
+    ObjInt nameAddr;
+    ObjInt bindAddr;
+    ObjInt unloadAddr;
+    bool bindTable;
+    bool unloadTable;
+};
+
 
 class PEObject
 {
@@ -52,15 +149,10 @@ class PEObject
     PEObject(std::string Name) : name(Name), size(0), initSize(0), virtual_addr(0), raw_addr(0), flags(0) {}
     virtual ~PEObject() {}
     virtual void Setup(ObjInt& endVa, ObjInt& endPhys) = 0;
-    virtual void Fill() {}
+    virtual void Patch() {}
     const std::string& GetName() const { return name; }
     unsigned GetAddr() { return virtual_addr; }
     unsigned GetSize() { return size; }
-    unsigned GetRawSize() { return initSize; }
-    void SetSize(unsigned Size) { initSize = size = Size; }
-    void SetInitSize(unsigned Size) { initSize = size; }
-    void SetAddr(unsigned addr) { virtual_addr = addr; }
-    void SetRawAddr(unsigned addr) { raw_addr = addr; }
     unsigned GetFlags() { return flags; }
     void SetFlags(unsigned Flags) { flags = Flags; }
     void WriteHeader(std::fstream& stream);
@@ -68,8 +160,14 @@ class PEObject
     unsigned GetNextVirtual() { return (virtual_addr + size + objectAlign - 1) & ~(objectAlign - 1); }
     unsigned GetNextRaw() { return (virtual_addr + initSize + fileAlign - 1) & ~(fileAlign - 1); }
     static void SetFile(ObjFile* File);
-    virtual ObjInt SetThunk(int index, unsigned val) { return -1; }
+    static void SetDelayLoadNames(std::string names);
 
+    auto Regions()
+    { 
+         if (regions.size())
+             return regions;
+         return std::vector<std::pair<ObjInt, ObjInt>>{{virtual_addr, initSize}};
+    }
   protected:
     std::string name;
     unsigned size;
@@ -77,14 +175,26 @@ class PEObject
     unsigned virtual_addr;
     unsigned raw_addr;
     unsigned flags;
-    std::unique_ptr<unsigned char[]> data;
+    std::vector<std::pair<ObjInt, ObjInt>> regions;
+    std::shared_ptr<unsigned char> data;
+    static std::vector<std::string> delayLoadNames;
     static unsigned objectAlign;
     static unsigned fileAlign;
     static unsigned imageBase;
     static unsigned dataInitSize;
-    static unsigned importThunkVA;
+    static DWORD importThunkVA;
     static unsigned importCount;
+    static DWORD PEObject::imageBaseVA;
+    static std::shared_ptr<unsigned char> codeData;
+    static DWORD codeRVA;
+    static DWORD delayLoadHandleRVA;
+    static DWORD delayLoadThunkRVA;
     static ObjFile* file;
+    
+    static const char* importThunk;
+    static const char* delayLoadThunk;
+    static const char* delayLoadModuleThunk;
+    static std::vector<DWORD> thunkFixups;
 
   private:
 };
@@ -92,11 +202,12 @@ class PEObject
 class PEDataObject : public PEObject
 {
   public:
-    PEDataObject(ObjFile* File, ObjSection* Sect) : file(File), PEObject(Sect->GetName()), sect(Sect) { InitFlags(); }
+    PEDataObject(ObjFile* File, ObjSection* Sect);
     virtual void Setup(ObjInt& endVa, ObjInt& endPhys);
-    virtual void Fill();
+    virtual void Patch();
     void InitFlags();
-    virtual ObjInt SetThunk(int index, unsigned va);
+    ObjInt SetImportThunk(int index, unsigned va);
+
     bool hasPC(ObjExpression* exp);
     ObjExpression* getExtern(ObjExpression* exp);
     ObjInt EvalFixup(ObjExpression* fixup, ObjInt base);
@@ -107,41 +218,31 @@ class PEDataObject : public PEObject
     ObjSection* sect;
     std::set<std::string> importNames;
 };
+
 class PEImportObject : public PEObject
 {
-  public:
-    PEImportObject(std::deque<std::shared_ptr<PEObject>>& Objects) : PEObject(".idata"), objects(Objects)
-    {
-        SetFlags(WINF_INITDATA | WINF_READABLE | WINF_WRITEABLE | WINF_NEG_FLAGS);
-    }
-    virtual void Setup(ObjInt& endVa, ObjInt& endPhys);
-
-  private:
-    struct Dir
-    {
-        int thunkPos2;  // address thunk
-        int time;
-        int version;
-        int dllName;
-        int thunkPos;  // name thunk
-    };
-
+public:
     enum
     {
-        IMPORT_BY_ORDINAL = 0x80000000
+        ImportThunkSize = 6,
+        DelayLoadThunkSize = 10,
+        DelayLoadModuleThunkSize = 0x11,
     };
-    struct Entry
-    {
-        int ord_or_rva;
-    };
-    struct Module
-    {
-        std::string module;
-        std::deque<std::string> externalNames;
-        std::deque<std::string> publicNames;
-        std::deque<int> ordinals;
-    };
+    PEImportObject(std::deque<std::shared_ptr<PEObject>>& Objects, bool BindTable, bool UnloadTable);
+    virtual void Setup(ObjInt& endVa, ObjInt& endPhys);
+    static size_t ThunkSize(std::string name);
+
+  protected:
+    void LoadHandles(DllImports<DelayLoadDirectory>& delay);
+    void LoadBindingInfo(DllImports<DelayLoadDirectory>& delay, std::map<std::string, Module*> modules);
+    void SymbolNotFoundError();
+    void WriteThunks(DllImports<DelayLoadDirectory>& delay, std::map<std::string, Module*> modules,
+                     std::map<ObjString, ObjSymbol*> publics);
+
+  private:
     std::deque<std::shared_ptr<PEObject>>& objects;
+    bool bindTable;
+    bool unloadTable;
 };
 class PEExportObject : public PEObject
 {
@@ -184,11 +285,6 @@ class PEFixupObject : public PEObject
         LoadFixups();
     }
     virtual void Setup(ObjInt& endVa, ObjInt& endPhys);
-    virtual ObjInt SetThunk(int index, unsigned va)
-    {
-        fixups.insert(importThunkVA + 6 * index + 2);
-        return -1;
-    }
 
   private:
     // load fixups is called right off the bat because once the setup for the data objects

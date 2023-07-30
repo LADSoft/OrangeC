@@ -42,6 +42,7 @@
 #include <fstream>
 #include <cstdio>
 #include <climits>
+#include <algorithm>
 
 int LinkManager::errors;
 int LinkManager::warnings;
@@ -73,6 +74,15 @@ LinkManager::~LinkManager()
         delete s;
     for (auto s : exports)
         delete s;
+}
+void LinkManager::SetDelayLoad(const ObjString& list)
+{
+    auto names = Utils::split(list);
+    for (auto&& n : names)
+    {
+        std::transform(n.begin(), n.end(), n.begin(), ::toupper);
+        delayLoadNames.insert(n);
+    }
 }
 void LinkManager::AddObject(const ObjString& name)
 {
@@ -191,6 +201,10 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
         }
         else
         {
+            if ((*it)->GetName() == "___delayLoadHelper2")
+            {
+                delayLoadLoaded = true;
+            }
             LinkSymbolData* newSymbol = new LinkSymbolData(file, *it);
             publics.insert(newSymbol);
             auto it = exports.find(newSymbol);
@@ -569,6 +583,18 @@ void LinkManager::ScanLibraries()
                         }
                     }
                 }
+                if (!changed1 && !delayLoadLoaded && delayLoadNames.size())
+                {
+                    bool found = LoadLibrarySymbol(d.get(), "___delayLoadHelper2");
+                    // not resolved?
+                    if (found)
+                    {
+                        delayLoadLoaded = true;
+                        changed = true;
+                        changed1 = true;
+                        break;
+                    }
+                }
             }
         }
     }
@@ -785,11 +811,17 @@ bool LinkManager::ExternalErrors()
     }
     for (auto pub : publics)
     {
+        delayLoadLoaded |= pub->GetSymbol()->GetName() == "___delayLoadHelper2";
         bool found = importNames.find(pub->GetSymbol()->GetName()) != importNames.end();
         if (found)
         {
             LinkWarning("Public '" + pub->GetSymbol()->GetDisplayName() + "' was also declared as an imported function");
         }
+    }
+    if (delayLoadNames.size() && !delayLoadLoaded)
+    {
+        LinkError("Undefined External '____delayLoadHelper2'");
+        rv = true;
     }
     return rv;
 }
@@ -865,8 +897,37 @@ void LinkManager::CreateOutputFile()
         delete file;
     }
 }
-void LinkManager::Link()
+void LinkManager::SetDelayParams() 
 {
+    LinkExpression* value = new LinkExpression(4 * delayLoadNames.size() );
+    LinkExpressionSymbol* esym = new LinkExpressionSymbol("DELAYLOADHANDLESIZE", value);
+    (void)LinkExpression::EnterSymbol(esym);
+    int rv = 0;
+    if (delayLoadNames.size())
+    {
+        std::set<std::string> externalList;
+        for (auto&& e : externals)
+            externalList.insert(e->GetSymbol()->GetName());
+        rv += delayLoadNames.size() * DelayLoadModuleThunkSize;
+        for (auto&& i : imports)
+        {
+            ObjImportSymbol* s = reinterpret_cast<ObjImportSymbol*>(i->GetSymbol());
+            // uppercase the module name for NT... 98 doesn't need it but can accept it
+            std::string name = s->GetDllName();
+            std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+            if (delayLoadNames.find(name) != delayLoadNames.end() && externalList.find(s->GetName()) != externalList.end())
+            {
+                rv += DelayLoadThunkSize;
+            }
+        }
+    }
+
+    value = new LinkExpression(rv);
+    esym = new LinkExpressionSymbol("DELAYLOADTHUNKSIZE", value);
+    (void)LinkExpression::EnterSymbol(esym);
+}
+void LinkManager::Link()
+    {
     if (!objectFiles.size())
     {
         LinkError("No input files specified");
@@ -886,6 +947,7 @@ void LinkManager::Link()
             } while (ScanVirtuals());
         }
     }
+    SetDelayParams();
     if (specName.empty())
     {
         CreatePartitions();

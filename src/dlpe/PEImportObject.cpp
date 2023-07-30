@@ -27,11 +27,416 @@
 #include "ObjSymbol.h"
 #include "ObjFile.h"
 #include "ObjExpression.h"
-
+#include <tuple>
+#include <algorithm>
 #include <cctype>
 #include <map>
 #include <cstring>
 
+template <class Directory>
+bool DllImports<Directory>::IsDelayLoad(const std::vector<std::string>& delayLoadNames, std::string& name)
+{
+    for (auto&& d : delayLoadNames)
+    {
+        size_t n = d.find_last_of('/');
+        size_t m = d.find_last_of('\\');
+        if (n > m)
+            n = m;
+        ;
+        if (n == std::string::npos)
+            n = 0;
+        if (d.substr(n) == name)
+            return true;
+    }
+    return false;
+}
+
+template <class Directory>
+size_t DllImports<Directory>::ModuleSize(std::map<ObjString, ObjSymbol*> externs)
+{
+    directory = offset;
+    directoryNames = offset + sizeOfDirectory();
+    nameAddr = directoryNames + ModuleDirectoryNameSize();
+    names = nameAddr + CountOfIAT() * sizeof(DWORD);
+    iatAddr = names + ModuleNameSize();
+    if (bindTable)
+        bindAddr = iatAddr + (names - nameAddr);
+    else
+        bindAddr = 0;
+    if (unloadTable)
+        unloadAddr = (bindTable ? bindAddr : iatAddr) + (names - nameAddr);
+    else
+        unloadAddr = 0;
+    return (unloadAddr ? unloadAddr : bindAddr ? bindAddr : iatAddr) + (names - nameAddr) - offset;
+}
+
+template <class Directory>
+size_t DllImports<Directory>::ModuleDirectoryNameSize()
+{
+    auto rv = 0;
+    for (auto&& m : modules)
+    {
+        rv += 1 + m.first.size();
+        rv += (rv & 1);
+    }
+    rv = (rv + 3) & ~3;
+    return rv;
+}
+
+template <class Directory>
+size_t DllImports<Directory>::ModuleNameSize()
+{
+    auto rv = 0;
+    for (auto&& m : modules)
+    {
+        for (auto&& e : m.second->externalNames)
+        {
+            rv += sizeof(HintType) + 1 + std::get<0>(e).size();
+            rv += (rv & 1);
+        }
+    }
+    rv = (rv + 3) & ~3;
+    return rv;
+}
+
+template <class Directory>
+size_t DllImports<Directory>::CountOfIAT()
+{
+    int count = 0;
+    for (auto&& pair : modules)
+    {
+        count += pair.second->externalNames.size() + 1;
+    }
+    return count;
+}
+template <class Directory>
+size_t DllImports<Directory>::CountOfModules()
+{
+    int count = 1 + modules.size();
+    return count > 1 ? count : 0;
+}
+
+template <>
+void DllImports<ImportDirectory>::TrimModules(const std::vector<std::string>& delayLoadNames)
+{
+    for (auto it = modules.begin(); it != modules.end();)
+    {
+        if (IsDelayLoad(delayLoadNames, it->second->name))
+        {
+            it = modules.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
+
+template <>
+void DllImports<ImportDirectory>::WriteDirectory(DWORD virtual_addr, DWORD imageBase, unsigned char* data)
+{
+    DWORD directoryPos = directory;
+    DWORD iatPos = iatAddr;
+    DWORD namePos = nameAddr;
+    DWORD stringPos = directoryNames;
+    for (auto&& pair : modules)
+    {
+        auto m = pair.second;
+        ImportDirectory dir = {
+            RVA(namePos), m->time, 0, RVA(stringPos), RVA(iatPos),
+        };
+        std::copy((char*)&dir, (char*)(&dir + 1), data + directoryPos);
+        std::copy(m->name.begin(), m->name.end(), data + stringPos);
+
+        directoryPos += sizeof ImportDirectory;
+        iatPos += (m->externalNames.size() + 1) * sizeof DWORD;
+        namePos += (m->externalNames.size() + 1) * sizeof DWORD;
+        int sz = m->name.size() + 1;
+        sz += (sz & 1);
+        stringPos += sz;
+    }
+}
+template <>
+void DllImports<ImportDirectory>::WriteTables(std::vector<DWORD>& thunkFixups, DWORD virtual_addr, DWORD imageBase,
+                                              DWORD& thunkTableRVA, unsigned char* data)
+{
+    DWORD iatPos = iatAddr;
+    DWORD namePos = nameAddr;
+    DWORD stringPos = names;
+    DWORD *iatPointer = (DWORD*)(data + iatPos), *iatBase = iatPointer;
+    DWORD* namePointer = (DWORD*)(data + namePos);
+    for (auto&& pair : modules)
+    {
+        auto m = pair.second;
+        for (auto&& e : m->externalNames)
+        {
+            auto name = std::get<0>(e);
+            auto sym = std::get<1>(e);
+            if (name.empty())
+            {
+                // byordinal
+                *iatPointer = *namePointer = std::get<2>(e) | IMPORT_BY_ORDINAL;
+            }
+            else
+            {
+                // by name
+                *iatPointer = *namePointer = RVA(stringPos);
+            }
+            std::copy(name.begin(), name.end(), data + stringPos + sizeof(HintType));
+            sym->SetOffset(new ObjExpression(RVA((iatPointer - iatBase) * sizeof DWORD + iatPos) + imageBase));
+            iatPointer++;
+            namePointer++;
+            int sz = 1 + sizeof(HintType) + name.size();
+            sz += (sz & 1);
+            stringPos += sz;
+        }
+        iatPointer++;
+        namePointer++;
+    }
+}
+
+template <>
+void DllImports<DelayLoadDirectory>::TrimModules(const std::vector<std::string>& delayLoadNames)
+{
+    for (auto it = modules.begin(); it != modules.end();)
+    {
+        if (!IsDelayLoad(delayLoadNames, it->second->name))
+        {
+            it = modules.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
+template <>
+void DllImports<DelayLoadDirectory>::WriteDirectory(DWORD virtual_addr, DWORD imageBase, unsigned char* data)
+{
+    DWORD directoryPos = directory;
+    DWORD iatPos = iatAddr;
+    DWORD namePos = nameAddr;
+    DWORD stringPos = directoryNames;
+    DWORD bindPos = bindAddr ? bindAddr : 0;
+    DWORD unloadPos = unloadAddr ? unloadAddr : 0;
+    for (auto&& pair : modules)
+    {
+        auto m = pair.second;
+        DelayLoadDirectory dir = {DllImports::DELAYLOAD_BY_RVA,
+                                  RVA(stringPos),
+                                  m->moduleHandleRVA,
+                                  RVA(iatPos),
+                                  RVA(namePos),
+                                  bindPos ? RVA(bindPos) : 0,
+                                  unloadPos ? RVA(unloadPos) : 0,
+                                  m->time};
+        std::copy((char*)&dir, (char*)(&dir + 1), data + directoryPos);
+        std::copy(m->name.begin(), m->name.end(), data + stringPos);
+        directoryPos += sizeof DelayLoadDirectory;
+        iatPos += (m->externalNames.size() + 1) * sizeof DWORD;
+        namePos += (m->externalNames.size() + 1) * sizeof DWORD;
+        int sz = m->name.size() + 1;
+        sz += (sz & 1);
+        stringPos += sz;
+        if (bindPos)
+            bindPos += (m->externalNames.size() + 1) * sizeof DWORD;
+        if (unloadPos)
+            unloadPos += (m->externalNames.size() + 1) * sizeof DWORD;
+    }
+}
+template <>
+void DllImports<DelayLoadDirectory>::WriteTables(std::vector<DWORD>& thunkFixups, DWORD virtual_addr, DWORD imageBase, DWORD& thunkTableRVA, unsigned char* data)
+{
+    DWORD iatPos = iatAddr;
+    DWORD namePos = nameAddr;
+    DWORD stringPos = names;
+    DWORD bindPos = bindAddr ? bindAddr : 0;
+    DWORD unloadPos = unloadAddr ? unloadAddr : 0;
+    DWORD *iatPointer = (DWORD*)(data + iatPos), *iatBase = iatPointer;
+    DWORD* namePointer = (DWORD*)(data + namePos);
+    DWORD* bindPointer = (DWORD*)(data + bindPos);
+    DWORD* unloadPointer = (DWORD*)(data + unloadPos);
+    for (auto&& pair : modules)
+    {
+        auto m = pair.second;
+        for (auto&& e : m->externalNames)
+        {
+            auto name = std::get<0>(e);
+            auto sym = std::get<1>(e);
+            if (name.empty())
+            {
+                // byordinal
+                *namePointer = std::get<2>(e) | IMPORT_BY_ORDINAL;
+            }
+            else
+            {
+                // by name
+                *namePointer = RVA(stringPos);
+            }
+            *iatPointer = thunkTableRVA + imageBase;
+            thunkFixups.push_back(RVA((BYTE *)iatPointer - data) + imageBase );
+            if (unloadPos)
+            {
+                *unloadPointer = thunkTableRVA + imageBase;
+                thunkFixups.push_back(RVA((BYTE*)unloadPointer - data) + imageBase);
+            }
+            if (bindPos)
+            {
+                *bindPointer = std::get<3>(e);
+            }
+            thunkTableRVA += PEImportObject::DelayLoadThunkSize;
+            std::copy(name.begin(), name.end(), data + stringPos + sizeof(HintType));
+            sym->SetOffset(new ObjExpression(RVA((iatPointer - iatBase) * sizeof DWORD + iatPos) + imageBase));
+            iatPointer++;
+            namePointer++;
+            bindPointer++;
+            unloadPointer++;
+            int sz = 1 + sizeof(HintType) + name.size();
+            sz += (sz & 1);
+            stringPos += sz;
+        }
+        iatPointer++;
+        namePointer++;
+        bindPointer++;
+        unloadPointer++;
+    }
+}
+
+PEImportObject::PEImportObject(std::deque<std::shared_ptr<PEObject>>& Objects, 
+        bool BindTable, bool UnloadTable) : PEObject(".rdata"), objects(Objects), bindTable(BindTable), unloadTable(UnloadTable)
+{
+    SetFlags(WINF_INITDATA | WINF_READABLE | WINF_WRITEABLE | WINF_NEG_FLAGS);
+}
+void PEImportObject::LoadHandles(DllImports<DelayLoadDirectory>& delay)
+{
+    for (auto&& m : delay.Modules())
+    {
+        m.second->moduleHandleRVA = delayLoadHandleRVA;
+        delayLoadHandleRVA += sizeof(DWORD);
+    }
+}
+void PEImportObject::LoadBindingInfo(DllImports<DelayLoadDirectory>& delay, std::map<std::string, Module*> modules)
+{
+    if (bindTable)
+    {
+        for (auto&& m : modules)
+        {
+            HMODULE handle = LoadLibrary(m.second->name.c_str());
+            if (handle != nullptr)
+            {
+                bool complete = true;
+                for (auto&& e : m.second->externalNames)
+                {
+                    FARPROC entry = GetProcAddress(handle, std::get<0>(e).c_str());
+                    if (entry)
+                    {
+                        std::get<3>(e) = (DWORD)entry;
+                    }
+                    else
+                    {
+                        complete = false;
+                    }
+                }
+                if (complete)
+                {
+                    PEHeader* hdr = reinterpret_cast<PEHeader*>(*(DWORD*)((char *)handle + 0x3c) + (char *)handle);
+                    m.second->time = hdr->time;
+                }
+                FreeLibrary(handle);
+            }
+        }
+    }
+}
+size_t PEImportObject::ThunkSize(std::string name)
+{
+    size_t rv = 0;
+    if (delayLoadNames.size())
+    {
+        std::set<std::string> dllNames;
+        for (auto&& d : delayLoadNames)
+        {
+            size_t n = d.find_last_of('/');
+            size_t m = d.find_last_of('\\');
+            if (n > m)
+                n = m;
+            ;
+            if (n == std::string::npos)
+                n = 0;
+
+            dllNames.insert(d.substr(n));
+        }
+        if (name == ".text")
+        {
+            std::map<std::string, ObjSymbol*> externs;
+            for (auto it = file->ExternalBegin(); it != file->ExternalEnd(); ++it)
+            {
+                externs[(*it)->GetName()] = (*it);
+            }
+            rv = delayLoadNames.size() * PEImportObject::DelayLoadModuleThunkSize;
+            for (auto it = file->ImportBegin(); it != file->ImportEnd(); ++it)
+            {
+                ObjImportSymbol* s = (ObjImportSymbol*)(*it);
+                // uppercase the module name for NT... 98 doesn't need it but can accept it
+                std::string name = s->GetDllName();
+                std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+                if (dllNames.find(name) != dllNames.end() && externs.find(s->GetName()) != externs.end())
+                {
+                    rv += PEImportObject::DelayLoadThunkSize;
+                }
+            }
+        }
+        else if (name == ".data")
+        {
+            rv = delayLoadNames.size() * sizeof(DWORD);
+        }
+    }
+    return rv;
+}
+
+void PEImportObject::SymbolNotFoundError()
+{
+    Utils::Fatal("Could not find delay load symbols, try adding delayimp.l to the command line");
+}
+void PEImportObject::WriteThunks(DllImports<DelayLoadDirectory>& delay, std::map<std::string, Module*> modules,
+                                 std::map<ObjString, ObjSymbol*> publics)
+{
+    auto it = publics.find("___delayLoadHelper2");
+    if (it == publics.end())
+        SymbolNotFoundError();
+    auto helperAddr = it->second->GetOffset()->Eval(0);
+
+    auto entryThunkRVA = delayLoadThunkRVA;
+    auto moduleThunkRVA = delayLoadThunkRVA + (delay.CountOfIAT() - delay.Modules().size()) * DelayLoadThunkSize;
+    DWORD iatPos = delay.IATOffset();
+    for (auto&& m : delay.Modules())
+    {
+        for (auto&& e : m.second->externalNames)
+        {
+            unsigned char* thunkPtr = codeData.get() + entryThunkRVA - codeRVA;
+            memcpy(thunkPtr, delayLoadThunk, PEImportObject::DelayLoadThunkSize);
+            *(DWORD*)(thunkPtr + 1) = RVA(iatPos) + imageBase;
+            thunkFixups.push_back(entryThunkRVA + 1 + imageBase);
+            *(DWORD*)(thunkPtr + 6) = moduleThunkRVA - (entryThunkRVA + 6 + 4);
+            // make one fixup to the iat
+            entryThunkRVA += PEImportObject::DelayLoadThunkSize;
+            iatPos += sizeof(DWORD);
+        }
+        moduleThunkRVA += PEImportObject::DelayLoadModuleThunkSize;
+        iatPos += sizeof(DWORD);
+    }
+    DWORD descriptPos = delay.DirectoryOffset();
+    moduleThunkRVA = delayLoadThunkRVA + (delay.CountOfIAT() - delay.Modules().size()) * DelayLoadThunkSize;
+    for (auto&& m : delay.Modules())
+    {
+        unsigned char* thunkPtr = codeData.get() + moduleThunkRVA - codeRVA;
+        memcpy(thunkPtr, delayLoadModuleThunk, PEImportObject::DelayLoadModuleThunkSize);
+        *(DWORD*)(thunkPtr + 4) = RVA(descriptPos) + imageBase;
+        thunkFixups.push_back(moduleThunkRVA + 4 + imageBase);
+        *(DWORD*)(thunkPtr + 4 + 5) = (helperAddr - imageBase) - (moduleThunkRVA + 4 + 5 + 4);
+        moduleThunkRVA += PEImportObject::DelayLoadModuleThunkSize;
+        descriptPos += sizeof DelayLoadDirectory;
+    }
+}
 void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
 {
     if (virtual_addr == 0)
@@ -51,110 +456,72 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         externs[(*it)->GetName()] = (*it);
     }
     std::map<std::string, Module*> modules;
-    int nameSize = 0;
-    int impNameSize = 0;
-    int importCount = 0;
-    int dllCount = 0;
-    std::string name;  // moved out of loop because of annoying OPENWATCOM bug
     for (auto it = file->ImportBegin(); it != file->ImportEnd(); ++it)
     {
         ObjImportSymbol* s = (ObjImportSymbol*)(*it);
         // uppercase the module name for NT... 98 doesn't need it but can accept it
-        name = s->GetDllName();
-        for (int i = 0; i < name.size(); i++)
-            name[i] = toupper(name[i]);
+        std::string name = s->GetDllName();
+        std::transform(name.begin(), name.end(), name.begin(), ::toupper);
         s->SetDllName(name);
-        if (externs.find((*it)->GetName()) != externs.end())
+        auto it1 = externs.find((*it)->GetName());
+        if (it1 != externs.end())
         {
+            int sz;
             Module* m = modules[s->GetDllName()];
-            int sz = s->GetDllName().size() + 1;
-            if (sz & 1)
-                sz++;
-            nameSize += sz;
             if (m == nullptr)
             {
                 modules[s->GetDllName()] = m = new Module;
-                m->module = s->GetDllName();
-                dllCount++;
+                m->name = name;
             }
             if (s->GetExternalName().size() == 0)
             {
-                m->externalNames.push_back(s->GetName());
-                sz = s->GetName().size() + 1;
+                m->externalNames.push_back(std::tuple<std::string, ObjSymbol*, DWORD, DWORD>(s->GetName(), it1->second,
+                                                                              s->GetByOrdinal() ? s->GetOrdinal() : 0xffffffff, 0));
             }
             else
             {
-                m->externalNames.push_back(s->GetExternalName());
-                sz = s->GetExternalName().size() + 1;
+                m->externalNames.push_back(std::tuple<std::string, ObjSymbol*, DWORD, DWORD>(
+                    s->GetExternalName(), it1->second, s->GetByOrdinal() ? s->GetOrdinal() : 0xffffffff, 0));
             }
-            sz += 2;
-            if (sz & 1)
-                sz++;
-            impNameSize += sz;
             m->publicNames.push_back(s->GetName());
-            m->ordinals.push_back(s->GetByOrdinal() ? s->GetOrdinal() : 0xffffffff);
-            importCount++;
         }
     }
-    data = std::make_unique<unsigned char[]>((modules.size() + 1) * sizeof(Dir) + ((nameSize + 3) & ~3) +
-                                             (importCount + dllCount) * sizeof(Entry) * 2 + ((impNameSize + 3) & ~3));
-    unsigned char* pdata = data.get();
-    Dir* dirPos = (Dir*)pdata;
-    char* namePos = (char*)pdata + sizeof(Dir) * (modules.size() + 1);
-    Entry* lookupPos = (Entry*)((char*)namePos + ((nameSize + 3) & ~3));
-    char* hintPos = ((char*)lookupPos) + (importCount + dllCount) * sizeof(Entry);
-    Entry* addressPos = (Entry*)(hintPos + ((impNameSize + 3) & ~3));
-    size = initSize = (unsigned)(((unsigned char*)addressPos) - pdata + (importCount + dllCount) * sizeof(Entry));
-    memset(pdata, 0, size);  // note this does clean out some areas we deliberately are not initializing
 
-    for (auto module : modules)
+    DllImports<ImportDirectory> imports(modules, delayLoadNames, 0);
+    int importSize = imports.ModuleSize(externs);
+    DllImports<DelayLoadDirectory> delayLoad(modules, delayLoadNames, importSize, bindTable, unloadTable);
+    if (delayLoad.Modules().size())
     {
-        dirPos->time = 0;
-        dirPos->version = 0;
-        dirPos->dllName = (unsigned char*)namePos - pdata + virtual_addr;
-        dirPos->thunkPos = ((unsigned char*)lookupPos) - pdata + virtual_addr;
-        dirPos->thunkPos2 = ((unsigned char*)addressPos) - pdata + virtual_addr;
-        dirPos++;
-        strcpy(namePos, module.first.c_str());
-        int n = module.first.size() + 1;
-        if (n & 1)
-            n++;
-        namePos += n;
-        for (int i = 0; i < module.second->externalNames.size(); i++)
+        LoadHandles(delayLoad);
+        LoadBindingInfo(delayLoad, delayLoad.Modules());
+    }
+    int delayLoadImportSize = delayLoad.ModuleSize(externs);
+    initSize = size = importSize + delayLoadImportSize;
+    data = std::shared_ptr<unsigned char>(new unsigned char[size]);
+    std::fill(data.get(), data.get() + size, 0);
+    imports.WriteDirectory(virtual_addr, imageBase, data.get());
+    DWORD thunk = delayLoadThunkRVA;
+    imports.WriteTables(thunkFixups, virtual_addr, imageBase, thunk, data.get());
+    delayLoad.WriteDirectory(virtual_addr, imageBase, data.get());
+    thunk = delayLoadThunkRVA;
+    delayLoad.WriteTables(thunkFixups, virtual_addr, imageBase, thunk, data.get());
+
+
+    if (delayLoad.Modules().size())
+    {
+        std::map<ObjString, ObjSymbol*> publics;
+        for (auto it = file->PublicBegin(); it != file->PublicEnd(); ++it)
         {
-            const std::string& str = module.second->externalNames[i];
-            if (!str.empty())
-            {
-                lookupPos->ord_or_rva = (unsigned char*)hintPos - pdata + virtual_addr;
-                addressPos->ord_or_rva = (unsigned char*)hintPos - pdata + virtual_addr;
-                *(short*)hintPos = 0;
-                hintPos += 2;
-                strcpy(hintPos, str.c_str());
-                int n = str.size() + 1;
-                if (n & 1)
-                    n++;
-                hintPos += n;
-            }
-            else
-            {
-                lookupPos->ord_or_rva = addressPos->ord_or_rva = module.second->ordinals[i] | IMPORT_BY_ORDINAL;
-            }
-            ObjSymbol* sym = externs[module.second->publicNames[i]];
-            sym->SetOffset(new ObjExpression(((unsigned char*)lookupPos) - pdata + virtual_addr + imageBase));
-
-            lookupPos++;
-            addressPos++;
+            publics[(*it)->GetName()] = (*it);
         }
-        // skip the null entry at the end of a module
-        lookupPos++;
-        addressPos++;
-    }
-    for (auto module : modules)
-    {
-        Module* p = module.second;
-        delete p;
-    }
 
+        WriteThunks(delayLoad, modules, publics);
+    }
+    regions.push_back(std::pair<ObjInt, ObjInt>(virtual_addr, importSize));
+    if (delayLoadImportSize)
+        regions.push_back(std::pair<ObjInt, ObjInt>(virtual_addr + importSize, delayLoadImportSize));
+    else
+        regions.push_back(std::pair<ObjInt, ObjInt>(0, 0));
     endVa = ObjectAlign(objectAlign, endVa + size);
     endPhys = ObjectAlign(fileAlign, endPhys + initSize);
 }

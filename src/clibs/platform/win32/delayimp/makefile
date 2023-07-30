@@ -21,50 +21,26 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
-BUILDING_DLL := BUILDING_DLL=-D__BUILDING_LSCRTL_DLL
-
 SHELL=cmd.exe
-export SHELL
 
-all: alldirs
+H_FILES = $(wildcard *.h)
+C_DEPENDENCIES = $(wildcard *.c)
 
+all: delayimp.l
+$(eval $(FORMATTER))
 
-lscrtl_objs:
-	$(MAKE) -Crtl --eval="$(BUILDING_DLL)"
-rtl_objs: lscrtl_objs
+delayimp.o: delayimp.c
+	$(CC) -c $^
 
-alldirs: rtl_objs
-ifdef FINAL
-	$(MAKE) -Clsdbghelper
-ifeq "$(WITHOUT_OCCIL)" ""
-	$(MAKE) -Coccil
-endif
-else
-	$(MAKE) -Cpe
-	$(MAKE) -Cdef
-	$(MAKE) -Cmsvcrdm
-	$(MAKE) -Ccrtdmain
-	$(MAKE) -Cdelayimp
-	$(MAKE) -Clscrtl
-	$(MAKE) -Cpels
-endif
+dlinotifyhook.o: dlinotifyhook.c
+	$(CC) -c $^
 
-format:
-	$(MAKE) -Clsdbghelper format
-	$(MAKE) -Coccil format
-	$(MAKE) -Cpe format
-	$(MAKE) -Cmsvcrdm format
-	$(MAKE) -Ccrtdmain format
-	$(MAKE) -Clscrtl format
-	$(MAKE) -Cpels format
-	$(MAKE) -Cwininc format
-	$(MAKE) -Crtl format
-	$(MAKE) -Cdelayimp format
+dlifailurehook.o: dlifailurehook.c
+	$(CC) -c $^
+
+delayimp.l: $(DEPENDENCIES)
+	-$(DEL) $(SYSOBJECT)\delayimp.l
+	olib $(SYSOBJECT)\delayimp.l $(DEPENDENCIES)
 
 DISTRIBUTE:
-	$(MAKE) -Cpe DISTRIBUTE
-	$(MAKE) -Cpels DISTRIBUTE
-	$(MAKE) -Cmsvcrdm DISTRIBUTE
-	$(MAKE) -Ccrtdmain DISTRIBUTE
-	$(COPYDIR) inc\%.h $(DISTINC)\c\win32
-#	$(MAKE) -Clscrtl DISTRIBUTE
+

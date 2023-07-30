@@ -96,12 +96,12 @@ Copyright 1984, 1995, 2000 by Stephen L. Moshier
 
 extern double MAXNUM, NEGZERO;
 #ifdef ANSIPROT
-double floor ( double );
+double _RTL_FUNC floor ( double );
 int isnan ( double );
 int isfinite ( double );
 double ldexp ( double, int );
 #else
-double floor();
+double _RTL_FUNC floor();
 int isnan(), isfinite();
 double ldexp();
 #endif

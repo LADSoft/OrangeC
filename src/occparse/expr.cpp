@@ -9044,7 +9044,14 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                 }
                 else if (!isvoid(tpc))
                 {
-                    *tp = destSize(tpc, tph, &epc, &eph, false, nullptr);
+                    if (tpc->scoped)
+                    {
+                        *tp = tpc;
+                    }
+                    else
+                    {
+                        *tp = destSize(tpc, tph, &epc, &eph, false, nullptr);
+                    }
                 }
                 else
                 {

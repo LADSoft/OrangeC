@@ -88,4 +88,8 @@ typedef unsigned int wint_t;
 #endif
 #endif
 
+#if __STDC_VERSION__ >= 202311L
+typedef typeof(nullptr) nullptr_t;
+#endif
+
 #endif /* __STDDEF_H */

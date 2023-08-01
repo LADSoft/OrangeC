@@ -100,7 +100,7 @@ std::list<TEMPLATEPARAMPAIR>* copyParams(std::list<TEMPLATEPARAMPAIR>* t, bool a
 bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* args, std::list<TEMPLATEPARAMPAIR>* dest, std::list<TEMPLATEPARAMPAIR>* src,
                               std::list<TEMPLATEPARAMPAIR>* enclosing);
 SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, bool isExtern);
-SYMBOL* TemplateClassInstantiate(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, bool isExtern, enum e_sc storage_class);
+SYMBOL* TemplateClassInstantiate(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, bool isExtern, StorageClass storage_class);
 void TemplateDataInstantiate(SYMBOL* sym, bool warning, bool isExtern);
 SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning);
 bool allTemplateArgsSpecified(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, bool checkDeduced = false, bool checkDeclaring = false);
@@ -117,5 +117,5 @@ bool TemplateFullySpecialized(SYMBOL* sp);
 void propagateTemplateDefinition(SYMBOL* sym);
 bool inCurrentTemplate(const char* name);
 bool definedInTemplate(const char* name);
-LEXLIST* TemplateDeclaration(LEXLIST* lex, SYMBOL* funcsp, enum e_ac access, enum e_sc storage_class, bool isExtern);
+LEXLIST* TemplateDeclaration(LEXLIST* lex, SYMBOL* funcsp, AccessLevel access, StorageClass storage_class, bool isExtern);
 }  // namespace Parser

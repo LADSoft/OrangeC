@@ -24,6 +24,7 @@
  */
 
 #include "browsedefs.h"
+#include "ppCommon.h"
 
 enum asmTypes : int;
 
@@ -59,6 +60,8 @@ typedef struct
     int optimizer_modules;  // optimizer module selection
     int icd_flags;
     int verbosity;  // verbosity level
+    Dialect c_dialect;           /* language dialect for C */
+    Dialect cpp_dialect;         /* lanaguage dialect for c++ */
     bool prm_optimize_for_speed;
     bool prm_optimize_for_size;
     bool prm_optimize_float_access;
@@ -68,9 +71,6 @@ typedef struct
     bool prm_diag;               /* display diagnostics/ memory usage */
     bool prm_ansi;               /* use ansi restrictions */
     bool prm_cmangle;            /* add underscore to names */
-    bool prm_c99;                /* C99 mode */
-    bool prm_c1x;                /* C1x mode */
-    bool prm_c2x;                /* C2x mode */
     bool prm_cplusplus;          /* C++ mode */
     bool prm_xcept;              /* generate RTTI in C++ mode */
     bool prm_icdfile;            /* dump intermediate code peep list to file */
@@ -150,6 +150,7 @@ typedef struct
     char a_rcomplexpad;
     char a_lrcomplexpad;
     char a_alignedstruct;  // __attribute((__aligned__))
+    char a_maxalign; // maximum alignment native to the implementation
 } ARCH_SIZING;
 
 /* floating point characteristics */

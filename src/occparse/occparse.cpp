@@ -236,6 +236,8 @@ Optimizer::COMPILER_PARAMS cparams_default = {
     ~0,    /* optimizer modules */
     0,     /* icd flags */
     0,     /* verbosity */
+    Dialect::c11,
+    Dialect::cpp14,
     true,  /* optimize_for_speed */
     false, /* optimize_for_size */
     false, /* optimize_for_float_access */
@@ -245,9 +247,6 @@ Optimizer::COMPILER_PARAMS cparams_default = {
     false, /* char prm_diag;*/
     false, /* char prm_ansi;*/
     true,  /* char prm_cmangle;*/
-    true,  /* char prm_c99;*/
-    true,  /* char prm_c1x;*/
-    false, /* char prm_c2x; */
     false, /* char prm_cplusplus;*/
     true,  /* char prm_xcept;*/
     false, /* char prm_icdfile;*/
@@ -311,11 +310,11 @@ static void debug_dumptypedefs(std::list<NAMESPACEVALUEDATA*>* nameSpace)
 {
     for (auto sym : *nameSpace->front()->syms)
     {
-        if (sym->sb->storage_class == sc_namespace)
+        if (sym->sb->storage_class == StorageClass::namespace_)
         {
             debug_dumptypedefs(sym->sb->nameSpaceValues);
         }
-        else if (sym->sb->storage_class == sc_typedef)
+        else if (sym->sb->storage_class == StorageClass::typedef_)
         {
             TYPE* tp = sym->tp;
             while (ispointer(tp) || isref(tp))
@@ -384,7 +383,7 @@ void compile(bool global)
         {
             BLOCKDATA bd;
             memset(&bd, 0, sizeof(bd));
-            bd.type = begin;
+            bd.type = Keyword::_begin;
             std::list<BLOCKDATA*> block{ &bd };
             while ((lex = statement_asm(lex, nullptr, block)) != nullptr)
                 ;
@@ -399,10 +398,10 @@ void compile(bool global)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, nullptr, nullptr, sc_global, lk_none, emptyBlockdata, true, false, false, ac_public)) !=
+            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global, Linkage::none_, emptyBlockdata, true, false, false, AccessLevel::public_)) !=
                    nullptr)
             {
-                if (MATCHKW(lex, end))
+                if (MATCHKW(lex, Keyword::_end))
                 {
                     lex = getsym();
                     if (!lex)
@@ -546,38 +545,37 @@ int main(int argc, char* argv[])
         {
             if (prm_std.GetValue() == "c89")
             {
-                Optimizer::cparams.prm_c99 = Optimizer::cparams.prm_c1x = false;
+                Optimizer::cparams.c_dialect = Dialect::c89;
             }
             else if (prm_std.GetValue() == "c99")
             {
-                Optimizer::cparams.prm_c99 = true;
-                Optimizer::cparams.prm_c1x = false;
+                Optimizer::cparams.c_dialect = Dialect::c99;
             }
             else if (prm_std.GetValue() == "c11")
             {
-                Optimizer::cparams.prm_c99 = true;
-                Optimizer::cparams.prm_c1x = true;
+                Optimizer::cparams.c_dialect = Dialect::c11;
+            }
+            else if (prm_std.GetValue() == "c2x")
+            {
+                Optimizer::cparams.c_dialect = Dialect::c2x;
             }
             else if (prm_std.GetValue() == "c++11")
             {
-                cplusplusversion = 11;
-                Optimizer::cparams.prm_c99 = false;
-                Optimizer::cparams.prm_c1x = false;
+                Optimizer::cparams.cpp_dialect = Dialect::cpp11;
                 Optimizer::cparams.prm_cplusplus = true;
+                Optimizer::cparams.c_dialect = Dialect::c89;
             }
             else if (prm_std.GetValue() == "c++14")
             {
-                cplusplusversion = 14;
-                Optimizer::cparams.prm_c99 = false;
-                Optimizer::cparams.prm_c1x = false;
+                Optimizer::cparams.cpp_dialect = Dialect::cpp14;
                 Optimizer::cparams.prm_cplusplus = true;
+                Optimizer::cparams.c_dialect = Dialect::c89;
             }
             else if (prm_std.GetValue() == "c++17")
             {
-                cplusplusversion = 17;
-                Optimizer::cparams.prm_c99 = false;
-                Optimizer::cparams.prm_c1x = false;
+                Optimizer::cparams.cpp_dialect = Dialect::cpp17;
                 Optimizer::cparams.prm_cplusplus = true;
+                Optimizer::cparams.c_dialect = Dialect::c89;
             }
             else
             {
@@ -589,7 +587,7 @@ int main(int argc, char* argv[])
             if (prm_language.GetValue() == "c++")
             {
                 Optimizer::cparams.prm_cplusplus = true;
-                Optimizer::cparams.prm_c99 = Optimizer::cparams.prm_c1x = false;
+                Optimizer::cparams.c_dialect = Dialect::c89;
             }
             else if (prm_language.GetValue() != "c")
             {
@@ -604,7 +602,7 @@ int main(int argc, char* argv[])
                 if (Utils::HasExt(buffer, str.c_str()))
                 {
                     Optimizer::cparams.prm_cplusplus = true;
-                    Optimizer::cparams.prm_c99 = Optimizer::cparams.prm_c1x = false;
+                    Optimizer::cparams.c_dialect = Dialect::c89;
                     break;
                 }
             }
@@ -615,7 +613,7 @@ int main(int argc, char* argv[])
             new PreProcessor(buffer, prm_cinclude.GetValue(),
                              Optimizer::cparams.prm_cplusplus ? prm_CPPsysinclude.GetValue() : prm_Csysinclude.GetValue(), true,
                              Optimizer::cparams.prm_trigraph, '#', Optimizer::cparams.prm_charisunsigned,
-                             !Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_c1x && !Optimizer::cparams.prm_cplusplus,
+                             Optimizer::cparams.prm_cplusplus ? Dialect::c2x : Optimizer::cparams.c_dialect, 
                              !Optimizer::cparams.prm_ansi,
                              (MakeStubsOption.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(),
                              prm_pipe.GetValue() != "+" ? prm_pipe.GetValue() : "");

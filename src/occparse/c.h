@@ -150,7 +150,7 @@ private:
         _char32_t, _mutable, _nullptr, _noexcept, _thread_local, _constexpr,
         _rangefor,
         /* Extended */
-        __has_c_attribute, __ckdadd, __ckdsub, __ckdmul,
+        __has_c_attribute_, __ckdadd, __ckdsub, __ckdmul,
         _atomic_flag_test_set, _atomic_flag_clear, _atomic_kill_dependency,
         /* Clang compatibility for atomics */
         _c11_atomic_init, _c11_atomic_thread_fence, _c11_atomic_signal_fence,

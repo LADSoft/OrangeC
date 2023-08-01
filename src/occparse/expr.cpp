@@ -6249,7 +6249,7 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 case Keyword::___typeid:
                     lex = expression___typeid(lex, funcsp, tp, exp);
                     break;
-                case Keyword::__has_c_attribute:
+                case Keyword::__has_c_attribute_:
                      lex = getsym();
                      *tp = &stdint;
                      *exp = intNode(ExpressionNode::c_i, 0);

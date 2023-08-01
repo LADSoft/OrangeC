@@ -157,7 +157,7 @@ void dumpInlines(void)
                             if (sym->sb->dontinstantiate || sym->sb->vtabsp->sb->dontinstantiate)
                             {
                                 Optimizer::SymbolManager::Get(sym->sb->vtabsp)->dontinstantiate = true;
-                                sym->sb->vtabsp->sb->storage_class = StorageClass::external;
+                                sym->sb->vtabsp->sb->storage_class = StorageClass::external_;
                                 sym->sb->vtabsp->sb->attribs.inheritable.linkage = Linkage::c_;
                             }
                             else
@@ -210,7 +210,7 @@ void dumpInlines(void)
                         }
                         origsym = search(parentTemplate->tp->syms, sym->name);
 
-                        if (!origsym || origsym->sb->storage_class != StorageClass::global)
+                        if (!origsym || origsym->sb->storage_class != StorageClass::global_)
                         {
                             parentTemplate = sym->sb->parentClass->sb->parentTemplate;
                             origsym = search(parentTemplate->tp->syms, sym->name);
@@ -220,11 +220,11 @@ void dumpInlines(void)
                         {
                             sym->sb->dontinstantiate = true;
                         }
-                        if (origsym && origsym->sb->storage_class == StorageClass::global && !sym->sb->didinline && !sym->sb->dontinstantiate)
+                        if (origsym && origsym->sb->storage_class == StorageClass::global_ && !sym->sb->didinline && !sym->sb->dontinstantiate)
                         {
                             Optimizer::SymbolManager::Get(sym)->generated = true;
                             sym->sb->didinline = true;
-                            sym->sb->storage_class = StorageClass::global;
+                            sym->sb->storage_class = StorageClass::global_;
                             sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                             if (origsym->sb->deferredCompile)
                             {
@@ -240,7 +240,7 @@ void dumpInlines(void)
                                 int n = PushTemplateNamespace(pc);
                                 lex = SetAlternateLex(origsym->sb->deferredCompile);
                                 sym->sb->init = nullptr;
-                                lex = initialize(lex, nullptr, sym, StorageClass::global, true, false, 0);
+                                lex = initialize(lex, nullptr, sym, StorageClass::global_, true, false, 0);
                                 SetAlternateLex(nullptr);
                                 PopTemplateNamespace(n);
                                 dropStructureDeclaration();
@@ -377,7 +377,7 @@ static void DumpInlineLocalUninitializer(std::pair<SYMBOL*, EXPRESSION *>& unini
     Optimizer::cseg();
 
     iexpr_func_init();
-    gen_func(varNode(ExpressionNode::global, newFunc), 1);
+    gen_func(varNode(ExpressionNode::global_, newFunc), 1);
     Optimizer::gen_virtual(currentFunction, false);
     Optimizer::addblock(-1);
     Optimizer::gen_icode(Optimizer::i_prologue, 0, 0, 0);
@@ -576,38 +576,38 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
     memcpy(temp, node, sizeof(EXPRESSION));
     switch (temp->type)
     {
-        case ExpressionNode::thisshim:
+        case ExpressionNode::thisshim_:
             break;
-        case ExpressionNode::c_ll:
-        case ExpressionNode::c_ull:
-        case ExpressionNode::c_d:
-        case ExpressionNode::c_ld:
-        case ExpressionNode::c_f:
-        case ExpressionNode::c_dc:
-        case ExpressionNode::c_ldc:
-        case ExpressionNode::c_fc:
-        case ExpressionNode::c_di:
-        case ExpressionNode::c_ldi:
-        case ExpressionNode::c_fi:
-        case ExpressionNode::c_i:
-        case ExpressionNode::c_l:
-        case ExpressionNode::c_ui:
-        case ExpressionNode::c_ul:
-        case ExpressionNode::c_c:
-        case ExpressionNode::c_bool:
-        case ExpressionNode::c_uc:
-        case ExpressionNode::c_wc:
-        case ExpressionNode::c_u16:
-        case ExpressionNode::c_u32:
-        case ExpressionNode::c_string:
+        case ExpressionNode::c_ll_:
+        case ExpressionNode::c_ull_:
+        case ExpressionNode::c_d_:
+        case ExpressionNode::c_ld_:
+        case ExpressionNode::c_f_:
+        case ExpressionNode::c_dc_:
+        case ExpressionNode::c_ldc_:
+        case ExpressionNode::c_fc_:
+        case ExpressionNode::c_di_:
+        case ExpressionNode::c_ldi_:
+        case ExpressionNode::c_fi_:
+        case ExpressionNode::c_i_:
+        case ExpressionNode::c_l_:
+        case ExpressionNode::c_ui_:
+        case ExpressionNode::c_ul_:
+        case ExpressionNode::c_c_:
+        case ExpressionNode::c_bool_:
+        case ExpressionNode::c_uc_:
+        case ExpressionNode::c_wc_:
+        case ExpressionNode::c_u16_:
+        case ExpressionNode::c_u32_:
+        case ExpressionNode::c_string_:
         case ExpressionNode::nullptr_:
-        case ExpressionNode::structelem:
+        case ExpressionNode::structelem_:
             break;
-        case ExpressionNode::global:
-        case ExpressionNode::pc:
-        case ExpressionNode::labcon:
+        case ExpressionNode::global_:
+        case ExpressionNode::pc_:
+        case ExpressionNode::labcon_:
         case ExpressionNode::const_:
-        case ExpressionNode::threadlocal:
+        case ExpressionNode::threadlocal_:
             break;
         case ExpressionNode::auto_:
             if (temp->v.sp->sb->inlineFunc.stmt)
@@ -637,39 +637,39 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
                 }
             }
             break;
-        case ExpressionNode::l_sp:
-        case ExpressionNode::l_fp:
-        case ExpressionNode::bits:
-        case ExpressionNode::l_f:
-        case ExpressionNode::l_d:
-        case ExpressionNode::l_ld:
-        case ExpressionNode::l_fi:
-        case ExpressionNode::l_di:
-        case ExpressionNode::l_ldi:
-        case ExpressionNode::l_fc:
-        case ExpressionNode::l_dc:
-        case ExpressionNode::l_ldc:
-        case ExpressionNode::l_wc:
-        case ExpressionNode::l_c:
-        case ExpressionNode::l_s:
-        case ExpressionNode::l_u16:
-        case ExpressionNode::l_u32:
-        case ExpressionNode::l_ul:
-        case ExpressionNode::l_l:
-        case ExpressionNode::l_p:
-        case ExpressionNode::l_ref:
-        case ExpressionNode::l_i:
-        case ExpressionNode::l_ui:
-        case ExpressionNode::l_inative:
-        case ExpressionNode::l_unative:
-        case ExpressionNode::l_uc:
-        case ExpressionNode::l_us:
-        case ExpressionNode::l_bool:
-        case ExpressionNode::l_bit:
-        case ExpressionNode::l_ll:
-        case ExpressionNode::l_ull:
-        case ExpressionNode::l_string:
-        case ExpressionNode::l_object:
+        case ExpressionNode::l_sp_:
+        case ExpressionNode::l_fp_:
+        case ExpressionNode::bits_:
+        case ExpressionNode::l_f_:
+        case ExpressionNode::l_d_:
+        case ExpressionNode::l_ld_:
+        case ExpressionNode::l_fi_:
+        case ExpressionNode::l_di_:
+        case ExpressionNode::l_ldi_:
+        case ExpressionNode::l_fc_:
+        case ExpressionNode::l_dc_:
+        case ExpressionNode::l_ldc_:
+        case ExpressionNode::l_wc_:
+        case ExpressionNode::l_c_:
+        case ExpressionNode::l_s_:
+        case ExpressionNode::l_u16_:
+        case ExpressionNode::l_u32_:
+        case ExpressionNode::l_ul_:
+        case ExpressionNode::l_l_:
+        case ExpressionNode::l_p_:
+        case ExpressionNode::l_ref_:
+        case ExpressionNode::l_i_:
+        case ExpressionNode::l_ui_:
+        case ExpressionNode::l_inative_:
+        case ExpressionNode::l_unative_:
+        case ExpressionNode::l_uc_:
+        case ExpressionNode::l_us_:
+        case ExpressionNode::l_bool_:
+        case ExpressionNode::l_bit_:
+        case ExpressionNode::l_ll_:
+        case ExpressionNode::l_ull_:
+        case ExpressionNode::l_string_:
+        case ExpressionNode::l_object_:
             /*
             if (node->left->type == ExpressionNode::auto_)
             {
@@ -685,114 +685,114 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
                     temp = temp->left;
             }
             break;
-        case ExpressionNode::uminus:
+        case ExpressionNode::uminus_:
         case ExpressionNode::compl_:
         case ExpressionNode::not_:
-        case ExpressionNode::x_f:
-        case ExpressionNode::x_d:
-        case ExpressionNode::x_ld:
-        case ExpressionNode::x_fi:
-        case ExpressionNode::x_di:
-        case ExpressionNode::x_ldi:
-        case ExpressionNode::x_fc:
-        case ExpressionNode::x_dc:
-        case ExpressionNode::x_ldc:
-        case ExpressionNode::x_ll:
-        case ExpressionNode::x_ull:
-        case ExpressionNode::x_i:
-        case ExpressionNode::x_ui:
-        case ExpressionNode::x_inative:
-        case ExpressionNode::x_unative:
-        case ExpressionNode::x_c:
-        case ExpressionNode::x_uc:
-        case ExpressionNode::x_u16:
-        case ExpressionNode::x_u32:
-        case ExpressionNode::x_wc:
-        case ExpressionNode::x_bool:
-        case ExpressionNode::x_bit:
-        case ExpressionNode::x_s:
-        case ExpressionNode::x_us:
-        case ExpressionNode::x_l:
-        case ExpressionNode::x_ul:
-        case ExpressionNode::x_p:
-        case ExpressionNode::x_fp:
-        case ExpressionNode::x_sp:
-        case ExpressionNode::trapcall:
-        case ExpressionNode::shiftby:
-            /*        case ExpressionNode::movebyref: */
-        case ExpressionNode::substack:
+        case ExpressionNode::x_f_:
+        case ExpressionNode::x_d_:
+        case ExpressionNode::x_ld_:
+        case ExpressionNode::x_fi_:
+        case ExpressionNode::x_di_:
+        case ExpressionNode::x_ldi_:
+        case ExpressionNode::x_fc_:
+        case ExpressionNode::x_dc_:
+        case ExpressionNode::x_ldc_:
+        case ExpressionNode::x_ll_:
+        case ExpressionNode::x_ull_:
+        case ExpressionNode::x_i_:
+        case ExpressionNode::x_ui_:
+        case ExpressionNode::x_inative_:
+        case ExpressionNode::x_unative_:
+        case ExpressionNode::x_c_:
+        case ExpressionNode::x_uc_:
+        case ExpressionNode::x_u16_:
+        case ExpressionNode::x_u32_:
+        case ExpressionNode::x_wc_:
+        case ExpressionNode::x_bool_:
+        case ExpressionNode::x_bit_:
+        case ExpressionNode::x_s_:
+        case ExpressionNode::x_us_:
+        case ExpressionNode::x_l_:
+        case ExpressionNode::x_ul_:
+        case ExpressionNode::x_p_:
+        case ExpressionNode::x_fp_:
+        case ExpressionNode::x_sp_:
+        case ExpressionNode::trapcall_:
+        case ExpressionNode::shiftby_:
+            /*        case ExpressionNode::movebyref_: */
+        case ExpressionNode::substack_:
         case ExpressionNode::alloca_:
-        case ExpressionNode::loadstack:
-        case ExpressionNode::savestack:
-        case ExpressionNode::not__lvalue:
-        case ExpressionNode::lvalue:
-        case ExpressionNode::literalclass:
-        case ExpressionNode::x_string:
-        case ExpressionNode::x_object:
+        case ExpressionNode::loadstack_:
+        case ExpressionNode::savestack_:
+        case ExpressionNode::not__lvalue_:
+        case ExpressionNode::lvalue_:
+        case ExpressionNode::literalclass_:
+        case ExpressionNode::x_string_:
+        case ExpressionNode::x_object_:
             temp->left = inlineexpr(node->left, nullptr);
             break;
-        case ExpressionNode::auto_inc:
-        case ExpressionNode::auto_dec:
-        case ExpressionNode::add:
-        case ExpressionNode::structadd:
-        case ExpressionNode::sub:
-            /*        case ExpressionNode::addcast: */
-        case ExpressionNode::lsh:
-        case ExpressionNode::arraylsh:
-        case ExpressionNode::rsh:
-        case ExpressionNode::assign:
+        case ExpressionNode::auto_inc_:
+        case ExpressionNode::auto_dec_:
+        case ExpressionNode::add_:
+        case ExpressionNode::structadd_:
+        case ExpressionNode::sub_:
+            /*        case ExpressionNode::addcast_: */
+        case ExpressionNode::lsh_:
+        case ExpressionNode::arraylsh_:
+        case ExpressionNode::rsh_:
+        case ExpressionNode::assign_:
         case ExpressionNode::void_:
-        case ExpressionNode::void_nz:
-            /*        case ExpressionNode::dvoid: */
-        case ExpressionNode::arraymul:
-        case ExpressionNode::arrayadd:
-        case ExpressionNode::arraydiv:
-        case ExpressionNode::mul:
-        case ExpressionNode::div:
-        case ExpressionNode::umul:
-        case ExpressionNode::udiv:
-        case ExpressionNode::umod:
-        case ExpressionNode::ursh:
-        case ExpressionNode::mod:
+        case ExpressionNode::void_nz_:
+            /*        case ExpressionNode::dvoid_: */
+        case ExpressionNode::arraymul_:
+        case ExpressionNode::arrayadd_:
+        case ExpressionNode::arraydiv_:
+        case ExpressionNode::mul_:
+        case ExpressionNode::div_:
+        case ExpressionNode::umul_:
+        case ExpressionNode::udiv_:
+        case ExpressionNode::umod_:
+        case ExpressionNode::ursh_:
+        case ExpressionNode::mod_:
         case ExpressionNode::and_:
         case ExpressionNode::or_:
         case ExpressionNode::xor_:
-        case ExpressionNode::lor:
-        case ExpressionNode::land:
-        case ExpressionNode::eq:
-        case ExpressionNode::ne:
-        case ExpressionNode::gt:
-        case ExpressionNode::ge:
-        case ExpressionNode::lt:
-        case ExpressionNode::le:
-        case ExpressionNode::ugt:
-        case ExpressionNode::uge:
-        case ExpressionNode::ult:
-        case ExpressionNode::ule:
-        case ExpressionNode::cond:
-        case ExpressionNode::intcall:
-        case ExpressionNode::stackblock:
-        case ExpressionNode::blockassign:
-        case ExpressionNode::mp_compare:
-        case ExpressionNode::_initblk:
-        case ExpressionNode::_cpblk:
-        case ExpressionNode::dot:
-        case ExpressionNode::pointsto:
-        case ExpressionNode::const_ruct:
+        case ExpressionNode::lor_:
+        case ExpressionNode::land_:
+        case ExpressionNode::eq_:
+        case ExpressionNode::ne_:
+        case ExpressionNode::gt_:
+        case ExpressionNode::ge_:
+        case ExpressionNode::lt_:
+        case ExpressionNode::le_:
+        case ExpressionNode::ugt_:
+        case ExpressionNode::uge_:
+        case ExpressionNode::ult_:
+        case ExpressionNode::ule_:
+        case ExpressionNode::cond_:
+        case ExpressionNode::intcall_:
+        case ExpressionNode::stackblock_:
+        case ExpressionNode::blockassign_:
+        case ExpressionNode::mp_compare_:
+        case ExpressionNode::initblk_:
+        case ExpressionNode::cpblk_:
+        case ExpressionNode::dot_:
+        case ExpressionNode::pointsto_:
+        case ExpressionNode::const_ruct_:
             break;
-            /*		case ExpressionNode::array: */
+            /*		case ExpressionNode::array_: */
             temp->right = inlineexpr(node->right, nullptr);
-        case ExpressionNode::mp_as_bool:
-        case ExpressionNode::blockclear:
-        case ExpressionNode::argnopush:
-        case ExpressionNode::thisref:
-        case ExpressionNode::funcret:
-        case ExpressionNode::_initobj:
-        case ExpressionNode::_sizeof:
-        case ExpressionNode::select:
+        case ExpressionNode::mp_as_bool_:
+        case ExpressionNode::blockclear_:
+        case ExpressionNode::argnopush_:
+        case ExpressionNode::thisref_:
+        case ExpressionNode::funcret_:
+        case ExpressionNode::initobj_:
+        case ExpressionNode::sizeof_:
+        case ExpressionNode::select_:
             temp->left = inlineexpr(node->left, nullptr);
             break;
-        case ExpressionNode::atomic:
+        case ExpressionNode::atomic_:
             temp->v.ad->flg = inlineexpr(node->v.ad->flg, nullptr);
             temp->v.ad->memoryOrder1 = inlineexpr(node->v.ad->memoryOrder1, nullptr);
             temp->v.ad->memoryOrder2 = inlineexpr(node->v.ad->memoryOrder2, nullptr);
@@ -800,7 +800,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
             temp->v.ad->value = inlineexpr(node->v.ad->value, nullptr);
             temp->v.ad->third = inlineexpr(node->v.ad->third, nullptr);
             break;
-        case ExpressionNode::func:
+        case ExpressionNode::func_:
             temp->v.func = nullptr;
             fp = node->v.func;
             if (fp->sp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
@@ -850,7 +850,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
                     temp->v.func->thisptr = inlineexpr(temp->v.func->thisptr, nullptr);
             }
             break;
-        case ExpressionNode::stmt:
+        case ExpressionNode::stmt_:
             temp->v.stmt = inlinestmt(temp->v.stmt);
             temp->left = inlineexpr(temp->left, nullptr);
             break;
@@ -876,7 +876,7 @@ std::list<STATEMENT*>* inlinestmt(std::list<STATEMENT*>* blocks)
             block = stmt;
             switch (block->type)
             {
-            case StatementNode::genword:
+            case StatementNode::genword_:
                 break;
             case StatementNode::try_:
             case StatementNode::catch_:
@@ -888,36 +888,36 @@ std::list<STATEMENT*>* inlinestmt(std::list<STATEMENT*>* blocks)
                 block->blockTail = inlinestmt(block->blockTail);
                 break;
             case StatementNode::return_:
-            case StatementNode::expr:
-            case StatementNode::declare:
+            case StatementNode::expr_:
+            case StatementNode::declare_:
                 block->select = inlineexpr(block->select, nullptr);
                 break;
             case StatementNode::goto_:
-            case StatementNode::label:
+            case StatementNode::label_:
                 break;
-            case StatementNode::select:
-            case StatementNode::notselect:
+            case StatementNode::select_:
+            case StatementNode::notselect_:
                 block->select = inlineexpr(block->select, nullptr);
                 break;
             case StatementNode::switch_:
                 block->select = inlineexpr(block->select, nullptr);
                 block->lower = inlinestmt(block->lower);
                 break;
-            case StatementNode::block:
+            case StatementNode::block_:
                 block->lower = inlinestmt(block->lower);
                 block->blockTail = inlinestmt(block->blockTail);
                 break;
-            case StatementNode::passthrough:
+            case StatementNode::passthrough_:
                 if (block->lower)
                     inlineAsmStmt(block->lower);
                 break;
-            case StatementNode::nop:
+            case StatementNode::nop_:
                 break;
-            case StatementNode::datapassthrough:
+            case StatementNode::datapassthrough_:
                 break;
-            case StatementNode::line:
-            case StatementNode::varstart:
-            case StatementNode::dbgblock:
+            case StatementNode::line_:
+            case StatementNode::varstart_:
+            case StatementNode::dbgblock_:
                 break;
             default:
                 diag("Invalid block type in inlinestmt");
@@ -934,15 +934,15 @@ static void inlineResetReturn(STATEMENT* block, TYPE* rettp, EXPRESSION* retnode
     if (isstructured(rettp))
     {
         diag("structure in inlineResetReturn");
-        exp = intNode(ExpressionNode::c_i, 0);
+        exp = intNode(ExpressionNode::c_i_, 0);
     }
     else
     {
         exp = block->select;
         cast(rettp, &exp);
-        exp = exprNode(ExpressionNode::assign, retnode, exp);
+        exp = exprNode(ExpressionNode::assign_, retnode, exp);
     }
-    block->type = StatementNode::expr;
+    block->type = StatementNode::expr_;
     block->select = exp;
 }
 static EXPRESSION* newReturn(TYPE* tp)
@@ -954,7 +954,7 @@ static EXPRESSION* newReturn(TYPE* tp)
         deref(tp, &exp);
     }
     else
-        exp = intNode(ExpressionNode::c_i, 0);
+        exp = intNode(ExpressionNode::c_i_, 0);
     return exp;
 }
 static void reduceReturns(std::list<STATEMENT*>* blocks, TYPE* rettp, EXPRESSION* retnode)
@@ -965,7 +965,7 @@ static void reduceReturns(std::list<STATEMENT*>* blocks, TYPE* rettp, EXPRESSION
         {
             switch (block->type)
             {
-            case StatementNode::genword:
+            case StatementNode::genword_:
                 break;
             case StatementNode::try_:
             case StatementNode::catch_:
@@ -979,29 +979,29 @@ static void reduceReturns(std::list<STATEMENT*>* blocks, TYPE* rettp, EXPRESSION
                 inlineResetReturn(block, rettp, retnode);
                 break;
             case StatementNode::goto_:
-            case StatementNode::label:
+            case StatementNode::label_:
                 break;
-            case StatementNode::expr:
-                /*			case StatementNode::functailexpr: */
-            case StatementNode::declare:
-            case StatementNode::select:
-            case StatementNode::notselect:
+            case StatementNode::expr_:
+                /*			case StatementNode::functailexpr_: */
+            case StatementNode::declare_:
+            case StatementNode::select_:
+            case StatementNode::notselect_:
                 break;
             case StatementNode::switch_:
                 reduceReturns(block->lower, rettp, retnode);
                 break;
-            case StatementNode::block:
+            case StatementNode::block_:
                 reduceReturns(block->lower, rettp, retnode);
                 /* skipping block tail as it will have no returns  */
                 break;
-            case StatementNode::passthrough:
-            case StatementNode::datapassthrough:
+            case StatementNode::passthrough_:
+            case StatementNode::datapassthrough_:
                 break;
-            case StatementNode::nop:
+            case StatementNode::nop_:
                 break;
-            case StatementNode::line:
-            case StatementNode::varstart:
-            case StatementNode::dbgblock:
+            case StatementNode::line_:
+            case StatementNode::varstart_:
+            case StatementNode::dbgblock_:
                 break;
             default:
                 diag("Invalid block type in reduceReturns");
@@ -1018,7 +1018,7 @@ static EXPRESSION* scanReturn(std::list<STATEMENT*>* blocks, TYPE* rettp)
         {
             switch (block->type)
             {
-            case StatementNode::genword:
+            case StatementNode::genword_:
                 break;
             case StatementNode::try_:
             case StatementNode::catch_:
@@ -1037,33 +1037,33 @@ static EXPRESSION* scanReturn(std::list<STATEMENT*>* blocks, TYPE* rettp)
                     else
                         cast(rettp, &rv);
                 }
-                block->type = StatementNode::expr;
+                block->type = StatementNode::expr_;
                 block->select = rv;
                 return rv;
             case StatementNode::goto_:
-            case StatementNode::label:
+            case StatementNode::label_:
                 break;
-            case StatementNode::expr:
-                /*			case StatementNode::functailexpr: */
-            case StatementNode::declare:
-            case StatementNode::select:
-            case StatementNode::notselect:
+            case StatementNode::expr_:
+                /*			case StatementNode::functailexpr_: */
+            case StatementNode::declare_:
+            case StatementNode::select_:
+            case StatementNode::notselect_:
                 break;
             case StatementNode::switch_:
                 rv = scanReturn(block->lower, rettp);
                 break;
-            case StatementNode::block:
+            case StatementNode::block_:
                 rv = scanReturn(block->lower, rettp);
                 /* skipping block tail as it will have no returns  */
                 break;
-            case StatementNode::passthrough:
-            case StatementNode::datapassthrough:
+            case StatementNode::passthrough_:
+            case StatementNode::datapassthrough_:
                 break;
-            case StatementNode::nop:
+            case StatementNode::nop_:
                 break;
-            case StatementNode::line:
-            case StatementNode::varstart:
-            case StatementNode::dbgblock:
+            case StatementNode::line_:
+            case StatementNode::varstart_:
+            case StatementNode::dbgblock_:
                 break;
             default:
                 diag("Invalid block type in scanReturn");
@@ -1081,185 +1081,185 @@ static bool sideEffects(EXPRESSION* node)
         return rv;
     switch (node->type)
     {
-        case ExpressionNode::c_ll:
-        case ExpressionNode::c_ull:
-        case ExpressionNode::c_d:
-        case ExpressionNode::c_ld:
-        case ExpressionNode::c_f:
-        case ExpressionNode::c_dc:
-        case ExpressionNode::c_ldc:
-        case ExpressionNode::c_fc:
-        case ExpressionNode::c_di:
-        case ExpressionNode::c_ldi:
-        case ExpressionNode::c_fi:
-        case ExpressionNode::c_i:
-        case ExpressionNode::c_l:
-        case ExpressionNode::c_ui:
-        case ExpressionNode::c_ul:
-        case ExpressionNode::c_c:
-        case ExpressionNode::c_bool:
-        case ExpressionNode::c_uc:
-        case ExpressionNode::c_wc:
-        case ExpressionNode::c_u16:
-        case ExpressionNode::c_u32:
-        case ExpressionNode::c_string:
+        case ExpressionNode::c_ll_:
+        case ExpressionNode::c_ull_:
+        case ExpressionNode::c_d_:
+        case ExpressionNode::c_ld_:
+        case ExpressionNode::c_f_:
+        case ExpressionNode::c_dc_:
+        case ExpressionNode::c_ldc_:
+        case ExpressionNode::c_fc_:
+        case ExpressionNode::c_di_:
+        case ExpressionNode::c_ldi_:
+        case ExpressionNode::c_fi_:
+        case ExpressionNode::c_i_:
+        case ExpressionNode::c_l_:
+        case ExpressionNode::c_ui_:
+        case ExpressionNode::c_ul_:
+        case ExpressionNode::c_c_:
+        case ExpressionNode::c_bool_:
+        case ExpressionNode::c_uc_:
+        case ExpressionNode::c_wc_:
+        case ExpressionNode::c_u16_:
+        case ExpressionNode::c_u32_:
+        case ExpressionNode::c_string_:
         case ExpressionNode::nullptr_:
-        case ExpressionNode::structelem:
+        case ExpressionNode::structelem_:
             rv = false;
             break;
-        case ExpressionNode::global:
-        case ExpressionNode::pc:
-        case ExpressionNode::threadlocal:
-        case ExpressionNode::labcon:
+        case ExpressionNode::global_:
+        case ExpressionNode::pc_:
+        case ExpressionNode::threadlocal_:
+        case ExpressionNode::labcon_:
         case ExpressionNode::const_:
         case ExpressionNode::auto_:
-        case ExpressionNode::_sizeof:
-        case ExpressionNode::const_ruct:
+        case ExpressionNode::sizeof_:
+        case ExpressionNode::const_ruct_:
             rv = false;
             break;
-        case ExpressionNode::l_sp:
-        case ExpressionNode::l_fp:
-        case ExpressionNode::bits:
-        case ExpressionNode::l_f:
-        case ExpressionNode::l_d:
-        case ExpressionNode::l_ld:
-        case ExpressionNode::l_fi:
-        case ExpressionNode::l_di:
-        case ExpressionNode::l_ldi:
-        case ExpressionNode::l_fc:
-        case ExpressionNode::l_dc:
-        case ExpressionNode::l_ldc:
-        case ExpressionNode::l_wc:
-        case ExpressionNode::l_c:
-        case ExpressionNode::l_s:
-        case ExpressionNode::l_u16:
-        case ExpressionNode::l_u32:
-        case ExpressionNode::l_ul:
-        case ExpressionNode::l_l:
-        case ExpressionNode::l_p:
-        case ExpressionNode::l_ref:
-        case ExpressionNode::l_i:
-        case ExpressionNode::l_ui:
-        case ExpressionNode::l_inative:
-        case ExpressionNode::l_unative:
-        case ExpressionNode::l_uc:
-        case ExpressionNode::l_us:
-        case ExpressionNode::l_bool:
-        case ExpressionNode::l_bit:
-        case ExpressionNode::l_ll:
-        case ExpressionNode::l_ull:
-        case ExpressionNode::l_string:
-        case ExpressionNode::l_object:
-        case ExpressionNode::literalclass:
+        case ExpressionNode::l_sp_:
+        case ExpressionNode::l_fp_:
+        case ExpressionNode::bits_:
+        case ExpressionNode::l_f_:
+        case ExpressionNode::l_d_:
+        case ExpressionNode::l_ld_:
+        case ExpressionNode::l_fi_:
+        case ExpressionNode::l_di_:
+        case ExpressionNode::l_ldi_:
+        case ExpressionNode::l_fc_:
+        case ExpressionNode::l_dc_:
+        case ExpressionNode::l_ldc_:
+        case ExpressionNode::l_wc_:
+        case ExpressionNode::l_c_:
+        case ExpressionNode::l_s_:
+        case ExpressionNode::l_u16_:
+        case ExpressionNode::l_u32_:
+        case ExpressionNode::l_ul_:
+        case ExpressionNode::l_l_:
+        case ExpressionNode::l_p_:
+        case ExpressionNode::l_ref_:
+        case ExpressionNode::l_i_:
+        case ExpressionNode::l_ui_:
+        case ExpressionNode::l_inative_:
+        case ExpressionNode::l_unative_:
+        case ExpressionNode::l_uc_:
+        case ExpressionNode::l_us_:
+        case ExpressionNode::l_bool_:
+        case ExpressionNode::l_bit_:
+        case ExpressionNode::l_ll_:
+        case ExpressionNode::l_ull_:
+        case ExpressionNode::l_string_:
+        case ExpressionNode::l_object_:
+        case ExpressionNode::literalclass_:
             rv = sideEffects(node->left);
             break;
-        case ExpressionNode::uminus:
+        case ExpressionNode::uminus_:
         case ExpressionNode::compl_:
         case ExpressionNode::not_:
-        case ExpressionNode::x_f:
-        case ExpressionNode::x_d:
-        case ExpressionNode::x_ld:
-        case ExpressionNode::x_fi:
-        case ExpressionNode::x_di:
-        case ExpressionNode::x_ldi:
-        case ExpressionNode::x_fc:
-        case ExpressionNode::x_dc:
-        case ExpressionNode::x_ldc:
-        case ExpressionNode::x_ll:
-        case ExpressionNode::x_ull:
-        case ExpressionNode::x_i:
-        case ExpressionNode::x_ui:
-        case ExpressionNode::x_inative:
-        case ExpressionNode::x_unative:
-        case ExpressionNode::x_c:
-        case ExpressionNode::x_uc:
-        case ExpressionNode::x_u16:
-        case ExpressionNode::x_u32:
-        case ExpressionNode::x_wc:
-        case ExpressionNode::x_bool:
-        case ExpressionNode::x_bit:
-        case ExpressionNode::x_s:
-        case ExpressionNode::x_us:
-        case ExpressionNode::x_l:
-        case ExpressionNode::x_ul:
-        case ExpressionNode::x_p:
-        case ExpressionNode::x_fp:
-        case ExpressionNode::x_sp:
-        case ExpressionNode::shiftby:
-        case ExpressionNode::x_string:
-        case ExpressionNode::x_object:
-            /*        case ExpressionNode::movebyref: */
-        case ExpressionNode::not__lvalue:
-        case ExpressionNode::lvalue:
+        case ExpressionNode::x_f_:
+        case ExpressionNode::x_d_:
+        case ExpressionNode::x_ld_:
+        case ExpressionNode::x_fi_:
+        case ExpressionNode::x_di_:
+        case ExpressionNode::x_ldi_:
+        case ExpressionNode::x_fc_:
+        case ExpressionNode::x_dc_:
+        case ExpressionNode::x_ldc_:
+        case ExpressionNode::x_ll_:
+        case ExpressionNode::x_ull_:
+        case ExpressionNode::x_i_:
+        case ExpressionNode::x_ui_:
+        case ExpressionNode::x_inative_:
+        case ExpressionNode::x_unative_:
+        case ExpressionNode::x_c_:
+        case ExpressionNode::x_uc_:
+        case ExpressionNode::x_u16_:
+        case ExpressionNode::x_u32_:
+        case ExpressionNode::x_wc_:
+        case ExpressionNode::x_bool_:
+        case ExpressionNode::x_bit_:
+        case ExpressionNode::x_s_:
+        case ExpressionNode::x_us_:
+        case ExpressionNode::x_l_:
+        case ExpressionNode::x_ul_:
+        case ExpressionNode::x_p_:
+        case ExpressionNode::x_fp_:
+        case ExpressionNode::x_sp_:
+        case ExpressionNode::shiftby_:
+        case ExpressionNode::x_string_:
+        case ExpressionNode::x_object_:
+            /*        case ExpressionNode::movebyref_: */
+        case ExpressionNode::not__lvalue_:
+        case ExpressionNode::lvalue_:
             rv = sideEffects(node->left);
             break;
-        case ExpressionNode::substack:
+        case ExpressionNode::substack_:
         case ExpressionNode::alloca_:
-        case ExpressionNode::loadstack:
-        case ExpressionNode::savestack:
-        case ExpressionNode::assign:
-        case ExpressionNode::auto_inc:
-        case ExpressionNode::auto_dec:
-        case ExpressionNode::trapcall:
-        case ExpressionNode::_initblk:
-        case ExpressionNode::_cpblk:
-        case ExpressionNode::_initobj:
+        case ExpressionNode::loadstack_:
+        case ExpressionNode::savestack_:
+        case ExpressionNode::assign_:
+        case ExpressionNode::auto_inc_:
+        case ExpressionNode::auto_dec_:
+        case ExpressionNode::trapcall_:
+        case ExpressionNode::initblk_:
+        case ExpressionNode::cpblk_:
+        case ExpressionNode::initobj_:
             rv = true;
             break;
-        case ExpressionNode::add:
-        case ExpressionNode::sub:
-            /*        case ExpressionNode::addcast: */
-        case ExpressionNode::lsh:
-        case ExpressionNode::arraylsh:
-        case ExpressionNode::rsh:
+        case ExpressionNode::add_:
+        case ExpressionNode::sub_:
+            /*        case ExpressionNode::addcast_: */
+        case ExpressionNode::lsh_:
+        case ExpressionNode::arraylsh_:
+        case ExpressionNode::rsh_:
         case ExpressionNode::void_:
-        case ExpressionNode::void_nz:
-            /*        case ExpressionNode::dvoid: */
-        case ExpressionNode::arraymul:
-        case ExpressionNode::arrayadd:
-        case ExpressionNode::arraydiv:
-        case ExpressionNode::structadd:
-        case ExpressionNode::mul:
-        case ExpressionNode::div:
-        case ExpressionNode::umul:
-        case ExpressionNode::udiv:
-        case ExpressionNode::umod:
-        case ExpressionNode::ursh:
-        case ExpressionNode::mod:
+        case ExpressionNode::void_nz_:
+            /*        case ExpressionNode::dvoid_: */
+        case ExpressionNode::arraymul_:
+        case ExpressionNode::arrayadd_:
+        case ExpressionNode::arraydiv_:
+        case ExpressionNode::structadd_:
+        case ExpressionNode::mul_:
+        case ExpressionNode::div_:
+        case ExpressionNode::umul_:
+        case ExpressionNode::udiv_:
+        case ExpressionNode::umod_:
+        case ExpressionNode::ursh_:
+        case ExpressionNode::mod_:
         case ExpressionNode::and_:
         case ExpressionNode::or_:
         case ExpressionNode::xor_:
-        case ExpressionNode::lor:
-        case ExpressionNode::land:
-        case ExpressionNode::eq:
-        case ExpressionNode::ne:
-        case ExpressionNode::gt:
-        case ExpressionNode::ge:
-        case ExpressionNode::lt:
-        case ExpressionNode::le:
-        case ExpressionNode::ugt:
-        case ExpressionNode::uge:
-        case ExpressionNode::ult:
-        case ExpressionNode::ule:
-        case ExpressionNode::cond:
-        case ExpressionNode::intcall:
-        case ExpressionNode::stackblock:
-        case ExpressionNode::blockassign:
-        case ExpressionNode::mp_compare:
-        case ExpressionNode::dot:
-        case ExpressionNode::pointsto:
+        case ExpressionNode::lor_:
+        case ExpressionNode::land_:
+        case ExpressionNode::eq_:
+        case ExpressionNode::ne_:
+        case ExpressionNode::gt_:
+        case ExpressionNode::ge_:
+        case ExpressionNode::lt_:
+        case ExpressionNode::le_:
+        case ExpressionNode::ugt_:
+        case ExpressionNode::uge_:
+        case ExpressionNode::ult_:
+        case ExpressionNode::ule_:
+        case ExpressionNode::cond_:
+        case ExpressionNode::intcall_:
+        case ExpressionNode::stackblock_:
+        case ExpressionNode::blockassign_:
+        case ExpressionNode::mp_compare_:
+        case ExpressionNode::dot_:
+        case ExpressionNode::pointsto_:
             break;
-            /*		case ExpressionNode::array: */
+            /*		case ExpressionNode::array_: */
             rv = sideEffects(node->right);
-        case ExpressionNode::mp_as_bool:
-        case ExpressionNode::blockclear:
-        case ExpressionNode::argnopush:
-        case ExpressionNode::thisref:
-        case ExpressionNode::funcret:
-        case ExpressionNode::select:
+        case ExpressionNode::mp_as_bool_:
+        case ExpressionNode::blockclear_:
+        case ExpressionNode::argnopush_:
+        case ExpressionNode::thisref_:
+        case ExpressionNode::funcret_:
+        case ExpressionNode::select_:
             rv |= sideEffects(node->left);
             break;
-        case ExpressionNode::atomic:
+        case ExpressionNode::atomic_:
             rv = sideEffects(node->v.ad->flg);
             rv |= sideEffects(node->v.ad->memoryOrder1);
             rv |= sideEffects(node->v.ad->memoryOrder2);
@@ -1267,13 +1267,13 @@ static bool sideEffects(EXPRESSION* node)
             rv |= sideEffects(node->v.ad->value);
             rv |= sideEffects(node->v.ad->third);
             break;
-        case ExpressionNode::func:
+        case ExpressionNode::func_:
             rv = true;
             break;
-        case ExpressionNode::stmt:
+        case ExpressionNode::stmt_:
             rv = true;
             break;
-        case ExpressionNode::thisshim:
+        case ExpressionNode::thisshim_:
             break;
         default:
             diag("sideEffects");
@@ -1294,9 +1294,9 @@ static void setExp(SYMBOL* sx, EXPRESSION* exp, std::list<STATEMENT*> **stp)
         EXPRESSION* tnode = anonymousVar(StorageClass::auto_, sx->tp);
         deref(sx->tp, &tnode);
         sx->sb->inlineFunc.stmt = (std::list<STATEMENT*>*)tnode;
-        tnode = exprNode(ExpressionNode::assign, tnode, exp);
+        tnode = exprNode(ExpressionNode::assign_, tnode, exp);
         auto stmt = Allocate<STATEMENT>();
-        stmt->type = StatementNode::expr;
+        stmt->type = StatementNode::expr_;
         stmt->select = tnode;
         if (!*stp)
             *stp = stmtListFactory.CreateList();
@@ -1401,12 +1401,12 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
         // this will kill the ret val but we don't care since we've modified params
 
         auto stmt2 = Allocate<STATEMENT>();
-        stmt2->type = StatementNode::block;
+        stmt2->type = StatementNode::block_;
         stmt2->lower = stmt1;
         stmt->push_front(stmt2);
     }
 
-    newExpression = exprNode(ExpressionNode::stmt, nullptr, nullptr);
+    newExpression = exprNode(ExpressionNode::stmt_, nullptr, nullptr);
     newExpression->v.stmt = stmt;
 
     if (params->sp->sb->retcount == 1)
@@ -1427,13 +1427,13 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
         FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
     }
     function_listcount--;
-    if (newExpression->type == ExpressionNode::stmt)
-        if (newExpression->v.stmt->front()->type == StatementNode::block)
+    if (newExpression->type == ExpressionNode::stmt_)
+        if (newExpression->v.stmt->front()->type == StatementNode::block_)
             if (!newExpression->v.stmt->front()->lower)
-                newExpression = intNode(ExpressionNode::c_i, 0);  // noop if there is no body
-    if (newExpression->type == ExpressionNode::stmt)
+                newExpression = intNode(ExpressionNode::c_i_, 0);  // noop if there is no body
+    if (newExpression->type == ExpressionNode::stmt_)
     {
-        newExpression->left = intNode(ExpressionNode::c_i, 0);
+        newExpression->left = intNode(ExpressionNode::c_i_, 0);
         if (isstructured(basetype(params->sp->tp)->btp))
             cast(&stdpointer, &newExpression->left);
         else
@@ -1449,11 +1449,11 @@ static bool IsEmptyBlocks(std::list<STATEMENT*>* blocks)
         {
             switch (block->type)
             {
-                case StatementNode::line:
-                case StatementNode::varstart:
-                case StatementNode::dbgblock:
+                case StatementNode::line_:
+                case StatementNode::varstart_:
+                case StatementNode::dbgblock_:
                     break;
-                case StatementNode::genword:
+                case StatementNode::genword_:
                 case StatementNode::try_:
                 case StatementNode::catch_:
                 case StatementNode::seh_try_:
@@ -1462,20 +1462,20 @@ static bool IsEmptyBlocks(std::list<STATEMENT*>* blocks)
                 case StatementNode::seh_fault_:
                 case StatementNode::return_:
                 case StatementNode::goto_:
-                case StatementNode::expr:
-                case StatementNode::declare:
-                case StatementNode::select:
-                case StatementNode::notselect:
+                case StatementNode::expr_:
+                case StatementNode::declare_:
+                case StatementNode::select_:
+                case StatementNode::notselect_:
                 case StatementNode::switch_:
-                case StatementNode::passthrough:
-                case StatementNode::datapassthrough:
+                case StatementNode::passthrough_:
+                case StatementNode::datapassthrough_:
                     rv = false;
                     break;
-                case StatementNode::nop:
+                case StatementNode::nop_:
                     break;
-                case StatementNode::label:
+                case StatementNode::label_:
                     break;
-                case StatementNode::block:
+                case StatementNode::block_:
                     rv = IsEmptyBlocks(block->lower) && block->blockTail == nullptr;
                     break;
                 default:

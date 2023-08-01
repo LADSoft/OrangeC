@@ -102,7 +102,7 @@ void ParseBuiltins(void)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global, Linkage::none_, emptyBlockdata, true, false, false, AccessLevel::public_)) != nullptr)
+            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false, AccessLevel::public_)) != nullptr)
                 ;
         }
         SetAlternateParse(false, "");
@@ -113,7 +113,7 @@ void ParseBuiltins(void)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global, Linkage::none_, emptyBlockdata, true, false, false, AccessLevel::public_)) != nullptr)
+            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false, AccessLevel::public_)) != nullptr)
                 ;
         }
         SetAlternateParse(false, "");
@@ -125,7 +125,7 @@ void ParseBuiltins(void)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global, Linkage::none_, emptyBlockdata, true, false, false, AccessLevel::public_)) != nullptr)
+            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false, AccessLevel::public_)) != nullptr)
                 ;
         }
         SetAlternateParse(false, "");
@@ -133,7 +133,7 @@ void ParseBuiltins(void)
     if (Optimizer::cparams.prm_cplusplus)
     {
         stdXC.syms = symbols.CreateSymbolTable();
-        stdXC.sp = makeID(StorageClass::type, &stdXC, nullptr, "$$XCTYPE");
+        stdXC.sp = makeID(StorageClass::type_, &stdXC, nullptr, "$$XCTYPE");
         stdXC.sp->sb->decoratedName = stdXC.sp->name;
     }
 }

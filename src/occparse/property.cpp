@@ -58,10 +58,10 @@ static SYMBOL* CreateSetterPrototype(SYMBOL* sym)
     char name[512];
     sprintf(name, "set_%s", sym->name);
     rv = makeID(sym->sb->storage_class, nullptr, nullptr, litlate(name));
-    value = makeID(StorageClass::parameter, sym->tp, nullptr, "value");
+    value = makeID(StorageClass::parameter_, sym->tp, nullptr, "value");
     value->sb->attribs.inheritable.used = true;  // to avoid unused variable errors
     rv->sb->access = AccessLevel::public_;
-    rv->tp = MakeType(BasicType::func, &stdvoid);
+    rv->tp = MakeType(BasicType::func_, &stdvoid);
     rv->tp->sp = rv;
     rv->tp->syms = symbols.CreateSymbolTable();
     SetLinkerNames(value, Linkage::cdecl_);
@@ -75,9 +75,9 @@ static SYMBOL* CreateGetterPrototype(SYMBOL* sym)
     char name[512];
     sprintf(name, "get_%s", sym->name);
     rv = makeID(sym->sb->storage_class, nullptr, nullptr, litlate(name));
-    nullparam = makeID(StorageClass::parameter, &stdvoid, nullptr, "__void");
+    nullparam = makeID(StorageClass::parameter_, &stdvoid, nullptr, "__void");
     rv->sb->access = AccessLevel::public_;
-    rv->tp = MakeType(BasicType::func, sym->tp);
+    rv->tp = MakeType(BasicType::func_, sym->tp);
     rv->tp->sp = rv;
     rv->tp->syms = symbols.CreateSymbolTable();
     SetLinkerNames(nullparam, Linkage::cdecl_);
@@ -91,8 +91,8 @@ static void insertfunc(SYMBOL* in, SymbolTable<SYMBOL>* syms)
     SYMBOL* funcs = syms->Lookup(in->name);
     if (!funcs)
     {
-        auto tp = MakeType(BasicType::aggregate);
-        funcs = makeID(StorageClass::overloads, tp, 0, litlate(in->name));
+        auto tp = MakeType(BasicType::aggregate_);
+        funcs = makeID(StorageClass::overloads_, tp, 0, litlate(in->name));
         tp->sp = funcs;
         SetLinkerNames(funcs, Linkage::cdecl_);
         syms->Add(funcs);
@@ -100,7 +100,7 @@ static void insertfunc(SYMBOL* in, SymbolTable<SYMBOL>* syms)
         funcs->tp->syms->Add(in);
         in->sb->overloadName = funcs;
     }
-    else if (funcs->sb->storage_class == StorageClass::overloads)
+    else if (funcs->sb->storage_class == StorageClass::overloads_)
     {
         funcs->tp->syms->insertOverload(in);
         in->sb->overloadName = funcs;
@@ -126,16 +126,16 @@ static SYMBOL* CreateBackingSetter(SYMBOL* sym, SYMBOL* backing)
     STATEMENT* st;
     BLOCKDATA bd = { };
     std::list<BLOCKDATA*> b = { &bd };
-    EXPRESSION* left = varNode(ExpressionNode::global, backing);
-    EXPRESSION* right = varNode(ExpressionNode::global, (SYMBOL*)p->tp->syms->front());
-    p->tp->type = BasicType::ifunc;
+    EXPRESSION* left = varNode(ExpressionNode::global_, backing);
+    EXPRESSION* right = varNode(ExpressionNode::global_, (SYMBOL*)p->tp->syms->front());
+    p->tp->type = BasicType::ifunc_;
     memset(&b, 0, sizeof(b));
     deref(sym->tp, &left);
     deref(sym->tp, &right);
-    st = stmtNode(nullptr, b, StatementNode::expr);
-    st->select = exprNode(ExpressionNode::assign, left, right);
+    st = stmtNode(nullptr, b, StatementNode::expr_);
+    st->select = exprNode(ExpressionNode::assign_, left, right);
     p->sb->inlineFunc.stmt = stmtListFactory.CreateList();
-    p->sb->inlineFunc.stmt->push_back(stmtNode(nullptr, emptyBlockdata, StatementNode::block));
+    p->sb->inlineFunc.stmt->push_back(stmtNode(nullptr, emptyBlockdata, StatementNode::block_));
     p->sb->inlineFunc.stmt->front()->lower = bd.statements;
     p->sb->inlineFunc.syms = p->tp->syms;
     return p;
@@ -146,13 +146,13 @@ static SYMBOL* CreateBackingGetter(SYMBOL* sym, SYMBOL* backing)
     STATEMENT* st;
     BLOCKDATA bd = {};
     std::list<BLOCKDATA*> b { &bd };
-    p->tp->type = BasicType::ifunc;
+    p->tp->type = BasicType::ifunc_;
     memset(&b, 0, sizeof(b));
     st = stmtNode(nullptr, b, StatementNode::return_);
-    st->select = varNode(ExpressionNode::global, backing);
+    st->select = varNode(ExpressionNode::global_, backing);
     deref(sym->tp, &st->select);
     p->sb->inlineFunc.stmt = stmtListFactory.CreateList();
-    p->sb->inlineFunc.stmt->push_back(stmtNode(nullptr, emptyBlockdata, StatementNode::block));
+    p->sb->inlineFunc.stmt->push_back(stmtNode(nullptr, emptyBlockdata, StatementNode::block_));
     p->sb->inlineFunc.stmt->front()->lower = bd.statements;
     p->sb->inlineFunc.syms = p->tp->syms;
     return p;
@@ -161,11 +161,11 @@ LEXLIST* initialize_property(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageC
 {
     if (isstructured(sym->tp))
         error(ERR_ONLY_SIMPLE_PROPERTIES_SUPPORTED);
-    if (funcsp || sym->sb->storage_class == StorageClass::parameter)
+    if (funcsp || sym->sb->storage_class == StorageClass::parameter_)
         error(ERR_NO_PROPERTY_IN_FUNCTION);
-    if (sym->sb->storage_class != StorageClass::external)
+    if (sym->sb->storage_class != StorageClass::external_)
     {
-        if (MATCHKW(lex, Keyword::_begin))
+        if (MATCHKW(lex, Keyword::begin_))
         {
             SYMBOL *get = nullptr, *set = nullptr;
             SYMBOL* prototype = nullptr;
@@ -205,9 +205,9 @@ LEXLIST* initialize_property(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageC
                 lex = getsym();
                 if (err)
                 {
-                    needkw(&lex, Keyword::_begin);
+                    needkw(&lex, Keyword::begin_);
                     errskim(&lex, skim_end);
-                    needkw(&lex, Keyword::_end);
+                    needkw(&lex, Keyword::end_);
                 }
                 else
                 {
@@ -221,7 +221,7 @@ LEXLIST* initialize_property(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageC
             if (set)
                 sym->sb->has_property_setter = true;
             msilCreateProperty(sym, get, set);
-            needkw(&lex, Keyword::_end);
+            needkw(&lex, Keyword::end_);
         }
         else  // create default getter and setter
         {

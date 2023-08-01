@@ -129,11 +129,11 @@ template <>
 inline void SymbolTable<SYMBOL>::baseInsert(SYMBOL* in)
 {
     if (Optimizer::cparams.prm_extwarning)
-        if (in->sb->storage_class == StorageClass::parameter || in->sb->storage_class == StorageClass::auto_ || in->sb->storage_class == StorageClass::register_)
+        if (in->sb->storage_class == StorageClass::parameter_ || in->sb->storage_class == StorageClass::auto_ || in->sb->storage_class == StorageClass::register_)
         {
             SYMBOL* sym;
             if ((sym = gsearch(in->name)) != nullptr &&
-                (sym->sb->storage_class == StorageClass::parameter || sym->sb->storage_class == StorageClass::auto_))
+                (sym->sb->storage_class == StorageClass::parameter_ || sym->sb->storage_class == StorageClass::auto_))
                 preverror(ERR_VARIABLE_OBSCURES_VARIABLE_AT_HIGHER_SCOPE, in->name, sym->sb->declfile, sym->sb->declline);
         }
     if (Lookup(in->name))
@@ -177,7 +177,7 @@ inline void SymbolTable<T>::insertOverload(T* in)
 {
 
     if (Optimizer::cparams.prm_extwarning)
-        if (in->sb->storage_class == StorageClass::parameter || in->sb->storage_class == StorageClass::auto_ || in->sb->storage_class == StorageClass::register_)
+        if (in->sb->storage_class == StorageClass::parameter_ || in->sb->storage_class == StorageClass::auto_ || in->sb->storage_class == StorageClass::register_)
         {
             SYMBOL* sym;
             if ((sym = gsearch(in->name)) != nullptr)

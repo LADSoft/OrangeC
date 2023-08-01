@@ -46,57 +46,57 @@ int needsAtomicLockFromType(TYPE* tp)
             return 0;
         case BasicType::char32_t_:
             return 0;
-        case BasicType::bit:
+        case BasicType::bit_:
         case BasicType::void_:
             return 0;
         case BasicType::char_:
-        case BasicType::signed_char:
-        case BasicType::unsigned_char:
+        case BasicType::signed_char_:
+        case BasicType::unsigned_char_:
             return p->a_char;
         case BasicType::bool_:
             return p->a_bool;
         case BasicType::short_:
-        case BasicType::unsigned_short:
+        case BasicType::unsigned_short_:
             return p->a_short;
         case BasicType::wchar_t_:
             return p->a_wchar_t;
         case BasicType::long_:
-        case BasicType::unsigned_long:
+        case BasicType::unsigned_long_:
             return p->a_long;
-        case BasicType::long_long:
-        case BasicType::unsigned_long_long:
+        case BasicType::long_long_:
+        case BasicType::unsigned_long_long_:
             return p->a_longlong;
         case BasicType::int_:
         case BasicType::unsigned_:
-        case BasicType::inative:
-        case BasicType::unative:
+        case BasicType::inative_:
+        case BasicType::unative_:
             return p->a_int;
         case BasicType::enum_:
             return p->a_enum;
-        case BasicType::pointer:
+        case BasicType::pointer_:
             return p->a_addr;
-        case BasicType::any:
+        case BasicType::any_:
             return p->a_addr;
-        case BasicType::seg:
+        case BasicType::seg_:
             return p->a_farseg;
-        case BasicType::far:
+        case BasicType::far_:
             return p->a_farptr;
-        case BasicType::memberptr:
+        case BasicType::memberptr_:
              return p->a_memberptr;
         case BasicType::float_:
-        case BasicType::float__imaginary:
+        case BasicType::float__imaginary_:
             return p->a_float;
         case BasicType::double_:
-        case BasicType::double__imaginary:
+        case BasicType::double__imaginary_:
             return p->a_double;
-        case BasicType::long_double:
-        case BasicType::long_double_imaginary:
+        case BasicType::long_double_:
+        case BasicType::long_double_imaginary_:
             return p->a_longdouble;
-        case BasicType::float__complex:
+        case BasicType::float__complex_:
             return 1;
-        case BasicType::double__complex:
+        case BasicType::double__complex_:
             return 1;
-        case BasicType::long_double_complex:
+        case BasicType::long_double_complex_:
             return 1;
         case BasicType::class_:
         case BasicType::struct_:
@@ -117,64 +117,64 @@ static int basesize(Optimizer::ARCH_SIZING* p, TYPE* tp)
             return 2;
         case BasicType::char32_t_:
             return 4;
-        case BasicType::bit:
+        case BasicType::bit_:
         case BasicType::void_:
             return 0;
         case BasicType::char_:
-        case BasicType::unsigned_char:
-        case BasicType::signed_char:
+        case BasicType::unsigned_char_:
+        case BasicType::signed_char_:
             return p->a_char;
         case BasicType::bool_:
             return p->a_bool;
         case BasicType::short_:
-        case BasicType::unsigned_short:
+        case BasicType::unsigned_short_:
             return p->a_short;
         case BasicType::wchar_t_:
             return p->a_wchar_t;
         case BasicType::long_:
-        case BasicType::unsigned_long:
+        case BasicType::unsigned_long_:
             return p->a_long;
-        case BasicType::long_long:
-        case BasicType::unsigned_long_long:
+        case BasicType::long_long_:
+        case BasicType::unsigned_long_long_:
             return p->a_longlong;
         case BasicType::int_:
         case BasicType::unsigned_:
-        case BasicType::inative:
-        case BasicType::unative:
+        case BasicType::inative_:
+        case BasicType::unative_:
             return p->a_int;
         case BasicType::enum_:
             return p->a_enum;
-        case BasicType::pointer:
+        case BasicType::pointer_:
             if (tp->array && !tp->vla)
                 return basesize(p, tp->btp);
             else
                 return p->a_addr;
-        case BasicType::any:
+        case BasicType::any_:
             return p->a_addr;
-        case BasicType::seg:
+        case BasicType::seg_:
             return p->a_farseg;
-        case BasicType::far:
+        case BasicType::far_:
             return p->a_farptr;
-        case BasicType::memberptr:
+        case BasicType::memberptr_:
             return p->a_memberptr;
         case BasicType::float_:
-        case BasicType::float__imaginary:
+        case BasicType::float__imaginary_:
             return p->a_float;
         case BasicType::double_:
-        case BasicType::double__imaginary:
+        case BasicType::double__imaginary_:
             return p->a_double;
-        case BasicType::long_double:
-        case BasicType::long_double_imaginary:
+        case BasicType::long_double_:
+        case BasicType::long_double_imaginary_:
             return p->a_longdouble;
-        case BasicType::float__complex:
+        case BasicType::float__complex_:
             return (p->a_float + p->a_fcomplexpad) * 2;
-        case BasicType::double__complex:
+        case BasicType::double__complex_:
             return (p->a_double + p->a_rcomplexpad) * 2;
-        case BasicType::long_double_complex:
+        case BasicType::long_double_complex_:
             return (p->a_longdouble + p->a_lrcomplexpad) * 2;
-        case BasicType::__string:
+        case BasicType::string_:
             return p->a_addr;
-        case BasicType::__object:
+        case BasicType::object_:
             return p->a_addr;
         case BasicType::class_:
         case BasicType::struct_:

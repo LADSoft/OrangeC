@@ -69,7 +69,7 @@ typedef struct _rtti
     char name[1];  // enumerated name, followed by a nullptr.
     // if describing an array, following this will be an RTTIARRAY
     // if describing a struct, following this will be list of RTTISTRUCT structures
-    //  Keyword::_end of structure is a nullptr DWORD;
+    //  Keyword::end_ of structure is a nullptr DWORD;
 } RTTI;
 
 // xcept block header

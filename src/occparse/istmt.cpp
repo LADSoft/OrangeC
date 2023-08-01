@@ -119,7 +119,7 @@ Optimizer::IMODE* make_direct(int i)
  *      make a direct reference to an immediate value.
  */
 {
-    return make_ioffset(intNode(ExpressionNode::c_i, i));
+    return make_ioffset(intNode(ExpressionNode::c_i_, i));
 }
 
 /*-------------------------------------------------------------------------*/
@@ -147,9 +147,9 @@ Optimizer::IMODE* set_symbol(const char* name, int isproc)
     {
         Optimizer::LIST* l1;
         sym = SymAlloc();
-        sym->sb->storage_class = StorageClass::external;
+        sym->sb->storage_class = StorageClass::external_;
         sym->name = sym->sb->decoratedName = litlate(name);
-        sym->tp = MakeType(isproc ? BasicType::func : BasicType::int_);
+        sym->tp = MakeType(isproc ? BasicType::func_ : BasicType::int_);
         sym->sb->safefunc = true;
         globalNameSpace->front()->syms->Add(sym);
         auto osym = Optimizer::SymbolManager::Get(sym);
@@ -158,7 +158,7 @@ Optimizer::IMODE* set_symbol(const char* name, int isproc)
     }
     else
     {
-        if (sym->sb->storage_class == StorageClass::overloads)
+        if (sym->sb->storage_class == StorageClass::overloads_)
             sym = sym->tp->syms->front();
     }
     result = Allocate<Optimizer::IMODE>();
@@ -214,7 +214,7 @@ static void AddProfilerData(SYMBOL* funcsp)
         stringlit(string);
         plabel = string->label;
         Optimizer::gen_icode(Optimizer::i_parm, 0, imake_label(plabel), 0);
-        call_library("__profile_in", getSize(BasicType::pointer));
+        call_library("__profile_in", getSize(BasicType::pointer_));
     }
 }
 
@@ -225,7 +225,7 @@ void SubProfilerData(void)
     if (Optimizer::cparams.prm_profiler)
     {
         Optimizer::gen_icode(Optimizer::i_parm, 0, imake_label(plabel), 0);
-        call_library("__profile_out", getSize(BasicType::pointer));
+        call_library("__profile_out", getSize(BasicType::pointer_));
     }
 }
 
@@ -234,7 +234,7 @@ EXPRESSION* tempVar(TYPE* tp, bool global)
 {
     if (global)
         anonymousNotAlloc++;
-    auto val = anonymousVar(global ? StorageClass::global : StorageClass::auto_, tp);
+    auto val = anonymousVar(global ? StorageClass::global_ : StorageClass::auto_, tp);
     if (global)
     {
         insertInitSym(val->v.sp);
@@ -249,7 +249,7 @@ EXPRESSION* tempVar(TYPE* tp, bool global)
 }
 EXPRESSION *makeParamSubs(EXPRESSION* left, Optimizer::IMODE* im)
 {
-    auto val = exprNode(ExpressionNode::paramsubstitute, left, 0);
+    auto val = exprNode(ExpressionNode::paramsubstitute_, left, 0);
     val->v.imode = im;
     return val;
 }
@@ -471,7 +471,7 @@ void gen_except(bool begin, xcept* xc)
         auto lab = Allocate<Optimizer::IMODE>();
         lab->mode = Optimizer::i_immed;
         lab->size = ISZ_ADDR;
-        lab->offset = Optimizer::SymbolManager::Get(varNode(ExpressionNode::pc, xc->xclab));
+        lab->offset = Optimizer::SymbolManager::Get(varNode(ExpressionNode::pc_, xc->xclab));
         gen_icode(Optimizer::i_beginexcept, nullptr, tab, lab);
     }
     else
@@ -494,7 +494,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
         // the return type should NOT be an array at this point unless it is a managed one...
         if (basetype(funcsp->tp)->btp && (isstructured(basetype(funcsp->tp)->btp) ||
                                           (isarray(basetype(funcsp->tp)->btp) && (Optimizer::architecture == ARCHITECTURE_MSIL)) ||
-                                          basetype(basetype(funcsp->tp)->btp)->type == BasicType::memberptr))
+                                          basetype(basetype(funcsp->tp)->btp)->type == BasicType::memberptr_))
         {
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
             {
@@ -516,7 +516,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                     size = natural_size(exp);
 
                     if (!(flags & F_RETURNSTRUCTBYVALUE) && inlineSymStructPtr.size() &&
-                        basetype(basetype(funcsp->tp)->btp)->type != BasicType::memberptr)
+                        basetype(basetype(funcsp->tp)->btp)->type != BasicType::memberptr_)
                     {
                         if (lvalue(exp))
                         {
@@ -524,9 +524,9 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                             auto exp1 = exp;
                             while (castvalue(exp1))
                                 exp1 = exp1->left;
-                            if (exp1->type == ExpressionNode::thisref)
+                            if (exp1->type == ExpressionNode::thisref_)
                                 exp1 = exp1->left;
-                            if (exp1->type == ExpressionNode::func)
+                            if (exp1->type == ExpressionNode::func_)
                             {
                                 auto tpx = basetype(basetype(exp1->v.sp->tp)->btp);
                                 if (!isstructured(tpx) || !tpx->sp->sb->structuredAliasType)
@@ -558,7 +558,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                 }
                 else
                 {
-                    EXPRESSION* en = anonymousVar(StorageClass::parameter, &stdpointer);
+                    EXPRESSION* en = anonymousVar(StorageClass::parameter_, &stdpointer);
                     SYMBOL* sym = en->v.sp;
                     ap = gen_expr(funcsp, stmt->select, 0, ISZ_ADDR);
                     DumpIncDec(funcsp);
@@ -627,7 +627,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                 {
                     if ((flags & F_RETURNSTRUCTBYVALUE) && inlineSymThisPtr.size() && funcsp->sb->isConstructor && funcsp->sb->parentClass->sb->structuredAliasType)
                     {
-                        exp = exprNode(ExpressionNode::structadd, exp, intNode(ExpressionNode::c_i, 0));
+                        exp = exprNode(ExpressionNode::structadd_, exp, intNode(ExpressionNode::c_i_, 0));
                         deref(funcsp->sb->parentClass->sb->structuredAliasType, &exp);
                     }
                     ap3 = gen_expr(funcsp, exp, flags & F_RETURNSTRUCTBYVALUE, size);
@@ -677,7 +677,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
         Optimizer::intermed_tail->needsOCP = needsOCP;
     }
     /* create the return or a branch to the return
-     * return is put at Keyword::_end of function...
+     * return is put at Keyword::end_ of function...
      */
     if (flags & F_NEEDEPILOG)
     {
@@ -706,7 +706,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
             }
             else
             {
-                // might fall off the Keyword::_end without a return statement...
+                // might fall off the Keyword::end_ without a return statement...
                 Optimizer::gen_label(retlab);
             }
         }
@@ -828,20 +828,20 @@ Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp, int flag
             auto stmt = *il;
             switch (stmt->type)
             {
-                case StatementNode::nop:
+                case StatementNode::nop_:
                     break;
-                case StatementNode::varstart:
+                case StatementNode::varstart_:
                     gen_varstart(stmt->select);
                     break;
-                case StatementNode::dbgblock:
+                case StatementNode::dbgblock_:
                     gen_dbgblock(stmt->label);
                     break;
                     break;
-                case StatementNode::block:
+                case StatementNode::block_:
                     rv = genstmt(stmt->lower, funcsp, flags);
                     genstmt(stmt->blockTail, funcsp, flags);
                     break;
-                case StatementNode::label:
+                case StatementNode::label_:
                     Optimizer::gen_label((int)stmt->label + codeLabelOffset);
                     if (stmt->purelabel)
                        Optimizer::intermed_tail->alwayslive = true;
@@ -859,10 +859,10 @@ Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp, int flag
                         Optimizer::gen_igoto(Optimizer::i_goto, (int)stmt->label + codeLabelOffset);
                     }
                     break;
-                case StatementNode::asmgoto:
+                case StatementNode::asmgoto_:
                     Optimizer::gen_igoto(Optimizer::i_asmgoto, (int)stmt->label + codeLabelOffset);
                     break;
-                case StatementNode::asmcond:
+                case StatementNode::asmcond_:
                     Optimizer::gen_igoto(Optimizer::i_asmcond, (int)stmt->label + codeLabelOffset);
                     break;
                 case StatementNode::try_:
@@ -901,33 +901,33 @@ Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp, int flag
                     il = ilx;
                     continue;
                 }
-                case StatementNode::expr:
-                case StatementNode::declare:
+                case StatementNode::expr_:
+                case StatementNode::declare_:
                     if (stmt->select)
                         rv = gen_expr(funcsp, stmt->select, F_NOVALUE | F_RETURNSTRUCTBYVALUE, natural_size(stmt->select));
                     break;
                 case StatementNode::return_:
                     genreturn(stmt, funcsp, flags, nullptr);
                     break;
-                case StatementNode::line:
+                case StatementNode::line_:
                     Optimizer::gen_line(stmt->lineData);
                     break;
-                case StatementNode::select:
+                case StatementNode::select_:
                     genselect(stmt, funcsp, true);
                     break;
-                case StatementNode::notselect:
+                case StatementNode::notselect_:
                     genselect(stmt, funcsp, false);
                     break;
                 case StatementNode::switch_:
                     genxswitch(stmt, funcsp);
                     break;
-                case StatementNode::genword:
+                case StatementNode::genword_:
                     gen_genword(stmt, funcsp);
                     break;
-                case StatementNode::passthrough:
+                case StatementNode::passthrough_:
                     gen_asm(stmt);
                     break;
-                case StatementNode::datapassthrough:
+                case StatementNode::datapassthrough_:
                     gen_asmdata(stmt);
                     break;
                 default:
@@ -1010,7 +1010,7 @@ static void InsertParameterThunks(SYMBOL* funcsp, Optimizer::BLOCK* b)
     for (auto sym : *basetype(funcsp->tp)->syms)
     {
         Optimizer::SimpleSymbol* simpleSym = Optimizer::SymbolManager::Get(sym);
-        if (sym->tp->type == BasicType::void_ || sym->tp->type == BasicType::ellipse || isstructured(sym->tp))
+        if (sym->tp->type == BasicType::void_ || sym->tp->type == BasicType::ellipse_ || isstructured(sym->tp))
         {
             continue;
         }
@@ -1050,7 +1050,7 @@ void CopyVariables(SYMBOL* funcsp)
     {
         for (auto sym1 : *syms)
         {
-            if (sym1->sb->storage_class == StorageClass::auto_ || sym1->sb->storage_class == StorageClass::parameter)
+            if (sym1->sb->storage_class == StorageClass::auto_ || sym1->sb->storage_class == StorageClass::parameter_)
             {
                 Optimizer::SimpleSymbol* sym = Optimizer::SymbolManager::Get(sym1);
                 sym->i = syms->Block();
@@ -1092,7 +1092,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     Optimizer::IMODE* allocaAP = nullptr;
     SYMBOL* oldCurrentFunc;
     Optimizer::SimpleSymbol* oldCurrentFunction;
-    EXPRESSION* funcexp = varNode(ExpressionNode::global, funcsp);
+    EXPRESSION* funcexp = varNode(ExpressionNode::global_, funcsp);
     SYMBOL* tmpl = funcsp;
     if (TotalErrors())
         return;
@@ -1147,7 +1147,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
         EXPRESSION* exp;
         Optimizer::temporarySymbols.push_back(Optimizer::SymbolManager::Get(funcsp->sb->xc->xctab));
         xcexp = varNode(ExpressionNode::auto_, funcsp->sb->xc->xctab);
-        xcexp = exprNode(ExpressionNode::add, xcexp, intNode(ExpressionNode::c_i, XCTAB_INDEX_OFS));
+        xcexp = exprNode(ExpressionNode::add_, xcexp, intNode(ExpressionNode::c_i_, XCTAB_INDEX_OFS));
     }
     else
     {
@@ -1247,7 +1247,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     // this is explicitly to clean up the this pointer
     for (auto sym : *basetype(funcsp->tp)->syms)
     {
-        if (sym->sb->storage_class == StorageClass::parameter)
+        if (sym->sb->storage_class == StorageClass::parameter_)
         {
             Optimizer::SimpleSymbol* simpleSym = Optimizer::SymbolManager::Get(sym);
             simpleSym->imind = nullptr;

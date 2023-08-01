@@ -383,7 +383,7 @@ void compile(bool global)
         {
             BLOCKDATA bd;
             memset(&bd, 0, sizeof(bd));
-            bd.type = Keyword::_begin;
+            bd.type = Keyword::begin_;
             std::list<BLOCKDATA*> block{ &bd };
             while ((lex = statement_asm(lex, nullptr, block)) != nullptr)
                 ;
@@ -398,10 +398,10 @@ void compile(bool global)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global, Linkage::none_, emptyBlockdata, true, false, false, AccessLevel::public_)) !=
+            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false, AccessLevel::public_)) !=
                    nullptr)
             {
-                if (MATCHKW(lex, Keyword::_end))
+                if (MATCHKW(lex, Keyword::end_))
                 {
                     lex = getsym();
                     if (!lex)

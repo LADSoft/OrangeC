@@ -191,11 +191,11 @@ void browse_variable(SYMBOL* var)
         return;
     switch (var->sb->storage_class)
     {
-        case StorageClass::global:
-        case StorageClass::external:
-        case StorageClass::localstatic:
+        case StorageClass::global_:
+        case StorageClass::external_:
+        case StorageClass::localstatic_:
         case StorageClass::static_:
-        case StorageClass::type:
+        case StorageClass::type_:
             break;
         default:
             if (!isfunction(var->tp))
@@ -208,8 +208,8 @@ void browse_variable(SYMBOL* var)
     bri->name = litlate(name);
     bri->lineno = var->sb->declline;
     bri->charpos = var->sb->declcharpos >= 0 ? var->sb->declcharpos : 0;
-    bri->flags = (var->sb->storage_class == StorageClass::external || isfunction(var->tp) ? BRF_EXTERNAL : 0) |
-                 (var->sb->storage_class == StorageClass::static_ ? BRF_STATIC : 0) | (var->sb->storage_class == StorageClass::type ? BRF_TYPE : 0);
+    bri->flags = (var->sb->storage_class == StorageClass::external_ || isfunction(var->tp) ? BRF_EXTERNAL : 0) |
+                 (var->sb->storage_class == StorageClass::static_ ? BRF_STATIC : 0) | (var->sb->storage_class == StorageClass::type_ ? BRF_TYPE : 0);
     bri->filenum = var->sb->declfilenum;
     addBrowseRecord(bri);
 }

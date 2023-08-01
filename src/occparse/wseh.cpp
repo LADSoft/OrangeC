@@ -91,23 +91,23 @@ static LEXLIST* SEH_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& p
     ParseAttributeSpecifiers(&lex, funcsp, true);
     catchstmt->breaklabel = -1;
     catchstmt->defaultlabel = -1; /* no default */
-    catchstmt->type = Keyword::_catch;
+    catchstmt->type = Keyword::catch_;
     catchstmt->table = localNameSpace->front()->syms;
     parent.push_front(catchstmt);
     inLoopOrConditional++;
     AllocateLocalContext(parent, funcsp, codeLabel++);
-    if (MATCHKW(lex, Keyword::_openpa))
+    if (MATCHKW(lex, Keyword::openpa_))
     {
-        needkw(&lex, Keyword::_openpa);
+        needkw(&lex, Keyword::openpa_);
         lex = declare(lex, funcsp, &tp, StorageClass::auto_, Linkage::none_, parent, false, true, false, AccessLevel::public_);
-        needkw(&lex, Keyword::_closepa);
+        needkw(&lex, Keyword::closepa_);
         sym = localNameSpace->front()->syms->front();
     }
     else
     {
         tp = nullptr;
     }
-    if (MATCHKW(lex, Keyword::_begin))
+    if (MATCHKW(lex, Keyword::begin_))
     {
         lex = compound(lex, funcsp, parent, false);
         before->nosemi = true;
@@ -140,12 +140,12 @@ static LEXLIST* SEH_finally(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>&
     ParseAttributeSpecifiers(&lex, funcsp, true);
     finallystmt->breaklabel = -1;
     finallystmt->defaultlabel = -1; /* no default */
-    finallystmt->type = Keyword::_catch;
+    finallystmt->type = Keyword::catch_;
     finallystmt->table = localNameSpace->front()->syms;
     parent.push_front(finallystmt);
     AllocateLocalContext(parent, funcsp, codeLabel++);
     inLoopOrConditional++;
-    if (MATCHKW(lex, Keyword::_begin))
+    if (MATCHKW(lex, Keyword::begin_))
     {
         lex = compound(lex, funcsp, parent, false);
         before->nosemi = true;
@@ -176,12 +176,12 @@ static LEXLIST* SEH_fault(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& p
     ParseAttributeSpecifiers(&lex, funcsp, true);
     faultstmt->breaklabel = -1;
     faultstmt->defaultlabel = -1; /* no default */
-    faultstmt->type = Keyword::_catch;
+    faultstmt->type = Keyword::catch_;
     faultstmt->table = localNameSpace->front()->syms;
     parent.push_front(faultstmt);
     AllocateLocalContext(parent, funcsp, codeLabel++);
     inLoopOrConditional++;
-    if (MATCHKW(lex, Keyword::_begin))
+    if (MATCHKW(lex, Keyword::begin_))
     {
         lex = compound(lex, funcsp, parent, false);
         before->nosemi = true;
@@ -210,12 +210,12 @@ static LEXLIST* SEH_try(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& par
     BLOCKDATA* trystmt = Allocate<BLOCKDATA>();
     trystmt->breaklabel = -1;
     trystmt->defaultlabel = -1; /* no default */
-    trystmt->type = Keyword::_seh_try;
+    trystmt->type = Keyword::seh_try_;
     trystmt->table = localNameSpace->front()->syms;
     parent.push_front(trystmt);
     lex = getsym();
     inLoopOrConditional++;
-    if (!MATCHKW(lex, Keyword::_begin))
+    if (!MATCHKW(lex, Keyword::begin_))
     {
         error(ERR_EXPECTED_TRY_BLOCK);
     }
@@ -234,20 +234,20 @@ static LEXLIST* SEH_try(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& par
         before->nosemi = true;
         if (next != parent.end())
             (*next)->nosemi = true;
-        if (!MATCHKW(lex, Keyword::_seh_catch) && !MATCHKW(lex, Keyword::_seh_finally) && !MATCHKW(lex, Keyword::_seh_fault))
+        if (!MATCHKW(lex, Keyword::seh_catch_) && !MATCHKW(lex, Keyword::seh_finally_) && !MATCHKW(lex, Keyword::seh_fault_))
         {
             error(ERR_EXPECTED_SEH_HANDLER);
         }
-        while (MATCHKW(lex, Keyword::_seh_catch) || MATCHKW(lex, Keyword::_seh_finally) || MATCHKW(lex, Keyword::_seh_fault))
+        while (MATCHKW(lex, Keyword::seh_catch_) || MATCHKW(lex, Keyword::seh_finally_) || MATCHKW(lex, Keyword::seh_fault_))
         {
-            if (MATCHKW(lex, Keyword::_seh_finally))
+            if (MATCHKW(lex, Keyword::seh_finally_))
             {
                 if (foundFinally)
                     error(ERR_FINALLY_FAULT_APPEAR_ONLY_ONCE);
                 else
                     foundFinally = true;
             }
-            else if (MATCHKW(lex, Keyword::_seh_fault))
+            else if (MATCHKW(lex, Keyword::seh_fault_))
             {
                 if (foundFault)
                     error(ERR_FINALLY_FAULT_APPEAR_ONLY_ONCE);
@@ -268,13 +268,13 @@ LEXLIST* statement_SEH(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pare
 {
     switch (KW(lex))
     {
-        case Keyword::_seh_try:
+        case Keyword::seh_try_:
             return SEH_try(lex, funcsp, parent);
-        case Keyword::_seh_catch:
+        case Keyword::seh_catch_:
             return SEH_catch(lex, funcsp, parent);
-        case Keyword::_seh_finally:
+        case Keyword::seh_finally_:
             return SEH_finally(lex, funcsp, parent);
-        case Keyword::_seh_fault:
+        case Keyword::seh_fault_:
             return SEH_fault(lex, funcsp, parent);
         default:
             break;

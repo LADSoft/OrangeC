@@ -40,65 +40,65 @@ FPF refloat(EXPRESSION* node)
     FPF temp;
     switch (node->type)
     {
-        case en_c_i:
+        case ExpressionNode::c_i:
             rv = Optimizer::CastToFloat(ISZ_LDOUBLE, Optimizer::IntToFloat(&temp, -ISZ_UINT, node->v.i));
             break;
-        case en_c_l:
+        case ExpressionNode::c_l:
             rv = Optimizer::CastToFloat(ISZ_LDOUBLE, Optimizer::IntToFloat(&temp, -ISZ_ULONG, node->v.i));
             break;
-        case en_c_ui:
+        case ExpressionNode::c_ui:
             rv = Optimizer::CastToFloat(ISZ_LDOUBLE, Optimizer::IntToFloat(&temp, ISZ_UINT, node->v.i));
             break;
-        case en_c_ul:
+        case ExpressionNode::c_ul:
             rv = Optimizer::CastToFloat(ISZ_LDOUBLE, Optimizer::IntToFloat(&temp, ISZ_ULONG, node->v.i));
             break;
-        case en_c_c:
+        case ExpressionNode::c_c:
             rv = Optimizer::CastToFloat(ISZ_LDOUBLE, Optimizer::IntToFloat(&temp, -ISZ_UCHAR, node->v.i));
             break;
-        case en_c_uc:
+        case ExpressionNode::c_uc:
             rv = Optimizer::CastToFloat(ISZ_LDOUBLE, Optimizer::IntToFloat(&temp, ISZ_UCHAR, node->v.i));
             break;
-        case en_c_u16:
+        case ExpressionNode::c_u16:
             rv = Optimizer::CastToFloat(ISZ_LDOUBLE, Optimizer::IntToFloat(&temp, ISZ_U16, node->v.i));
             break;
-        case en_c_u32:
+        case ExpressionNode::c_u32:
             rv = Optimizer::CastToFloat(ISZ_LDOUBLE, Optimizer::IntToFloat(&temp, ISZ_U32, node->v.i));
             break;
-        case en_c_wc:
+        case ExpressionNode::c_wc:
             rv = Optimizer::CastToFloat(ISZ_LDOUBLE, Optimizer::IntToFloat(&temp, ISZ_WCHAR, node->v.i));
             break;
-        case en_c_bool:
+        case ExpressionNode::c_bool:
             rv = Optimizer::CastToFloat(ISZ_LDOUBLE, Optimizer::IntToFloat(&temp, ISZ_BOOLEAN, node->v.i));
             break;
-        case en_c_ull:
+        case ExpressionNode::c_ull:
             rv = Optimizer::CastToFloat(ISZ_LDOUBLE, Optimizer::IntToFloat(&temp, ISZ_ULONGLONG, node->v.i));
             break;
-        case en_c_ll:
+        case ExpressionNode::c_ll:
             rv = Optimizer::CastToFloat(ISZ_LDOUBLE, Optimizer::IntToFloat(&temp, -ISZ_ULONGLONG, node->v.i));
             break;
-        case en_c_f:
-        case en_c_fi:
+        case ExpressionNode::c_f:
+        case ExpressionNode::c_fi:
             rv = Optimizer::CastToFloat(ISZ_FLOAT, node->v.f);
             break;
-        case en_c_d:
-        case en_c_di:
+        case ExpressionNode::c_d:
+        case ExpressionNode::c_di:
             rv = Optimizer::CastToFloat(ISZ_DOUBLE, node->v.f);
             break;
 
-        case en_c_ld:
-        case en_c_ldi:
+        case ExpressionNode::c_ld:
+        case ExpressionNode::c_ldi:
             rv = Optimizer::CastToFloat(ISZ_LDOUBLE, node->v.f);
             break;
-        case en_c_fc:
+        case ExpressionNode::c_fc:
             rv = Optimizer::CastToFloat(ISZ_FLOAT, &node->v.c->i);
             rv = Optimizer::CastToFloat(ISZ_FLOAT, &node->v.c->r);
             break;
 
-        case en_c_dc:
+        case ExpressionNode::c_dc:
             rv = Optimizer::CastToFloat(ISZ_DOUBLE, &node->v.c->i);
             rv = Optimizer::CastToFloat(ISZ_DOUBLE, &node->v.c->r);
             break;
-        case en_c_ldc:
+        case ExpressionNode::c_ldc:
             rv = Optimizer::CastToFloat(ISZ_LDOUBLE, &node->v.c->i);
             rv = Optimizer::CastToFloat(ISZ_LDOUBLE, &node->v.c->r);
             break;
@@ -121,65 +121,65 @@ unsigned long long reint(EXPRESSION* node)
         node->unionoffset = node->left->unionoffset;
     switch (node->type)
     {
-        case en_c_l:
+        case ExpressionNode::c_l:
             rv = Optimizer::CastToInt(-ISZ_ULONG, node->v.i);
             break;
-        case en_c_i:
+        case ExpressionNode::c_i:
             rv = Optimizer::CastToInt(-ISZ_UINT, node->v.i);
             break;
-        case en_c_ul:
+        case ExpressionNode::c_ul:
             rv = Optimizer::CastToInt(ISZ_ULONG, node->v.i);
             break;
-        case en_c_ui:
+        case ExpressionNode::c_ui:
             rv = Optimizer::CastToInt(ISZ_UINT, node->v.i);
             break;
-        case en_c_c:
+        case ExpressionNode::c_c:
             rv = Optimizer::CastToInt(-ISZ_UCHAR, node->v.i);
             break;
-        case en_c_uc:
+        case ExpressionNode::c_uc:
             rv = Optimizer::CastToInt(ISZ_UCHAR, node->v.i);
             break;
-        case en_c_wc:
+        case ExpressionNode::c_wc:
             rv = Optimizer::CastToInt(ISZ_WCHAR, node->v.i);
             break;
-        case en_c_u16:
+        case ExpressionNode::c_u16:
             rv = Optimizer::CastToInt(ISZ_U16, node->v.i);
             break;
-        case en_c_u32:
+        case ExpressionNode::c_u32:
             rv = Optimizer::CastToInt(ISZ_U32, node->v.i);
             break;
-        case en_c_bool:
+        case ExpressionNode::c_bool:
             rv = Optimizer::CastToInt(ISZ_BOOLEAN, node->v.i);
             break;
-        case en_c_ull:
+        case ExpressionNode::c_ull:
             rv = Optimizer::CastToInt(ISZ_ULONGLONG, node->v.i);
             break;
-        case en_c_ll:
+        case ExpressionNode::c_ll:
             rv = Optimizer::CastToInt(-ISZ_ULONGLONG, node->v.i);
             break;
-        case en_c_f:
+        case ExpressionNode::c_f:
             rv = Optimizer::CastToInt(-ISZ_ULONGLONG, (long long)*node->v.f);
             break;
-        case en_c_d:
+        case ExpressionNode::c_d:
             rv = Optimizer::CastToInt(-ISZ_ULONGLONG, (long long)*node->v.f);
             break;
 
-        case en_c_ld:
+        case ExpressionNode::c_ld:
             rv = Optimizer::CastToInt(-ISZ_ULONGLONG, (long long)*node->v.f);
             break;
-        case en_c_fc:
+        case ExpressionNode::c_fc:
             rv = Optimizer::CastToInt(-ISZ_ULONGLONG, (long long)node->v.c->r);
             break;
-        case en_c_dc:
+        case ExpressionNode::c_dc:
             rv = Optimizer::CastToInt(-ISZ_ULONGLONG, (long long)node->v.c->r);
             break;
 
-        case en_c_ldc:
+        case ExpressionNode::c_ldc:
             rv = Optimizer::CastToInt(-ISZ_ULONGLONG, (long long)node->v.c->r);
             break;
-        case en_c_fi:
-        case en_c_di:
-        case en_c_ldi:
+        case ExpressionNode::c_fi:
+        case ExpressionNode::c_di:
+        case ExpressionNode::c_ldi:
             rv = (long long)0;
             break;
         default:
@@ -200,29 +200,29 @@ FPF dorefloat(SimpleExpression* node)
     case Optimizer::se_i:
         rv = Optimizer::CastToFloat(ISZ_LDOUBLE, Optimizer::IntToFloat(&temp, -ISZ_ULONGLONG, node->i));
         break;
-    case en_c_f:
-    case en_c_fi:
+    case ExpressionNode::c_f:
+    case ExpressionNode::c_fi:
         rv = Optimizer::CastToFloat(ISZ_FLOAT, &node->f);
         break;
-    case en_c_d:
-    case en_c_di:
+    case ExpressionNode::c_d:
+    case ExpressionNode::c_di:
         rv = Optimizer::CastToFloat(ISZ_DOUBLE, &node->f);
         break;
 
-    case en_c_ld:
-    case en_c_ldi:
+    case ExpressionNode::c_ld:
+    case ExpressionNode::c_ldi:
         rv = Optimizer::CastToFloat(ISZ_LDOUBLE, &node->f);
         break;
-    case en_c_fc:
+    case ExpressionNode::c_fc:
         rv = Optimizer::CastToFloat(ISZ_FLOAT, &node->c.i);
         rv = Optimizer::CastToFloat(ISZ_FLOAT, &node->c.r);
         break;
 
-    case en_c_dc:
+    case ExpressionNode::c_dc:
         rv = Optimizer::CastToFloat(ISZ_DOUBLE, &node->c.i);
         rv = Optimizer::CastToFloat(ISZ_DOUBLE, &node->c.r);
         break;
-    case en_c_ldc:
+    case ExpressionNode::c_ldc:
         rv = Optimizer::CastToFloat(ISZ_LDOUBLE, &node->c.i);
         rv = Optimizer::CastToFloat(ISZ_LDOUBLE, &node->c.r);
         break;

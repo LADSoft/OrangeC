@@ -36,7 +36,7 @@ DEST=/orangec/dist/ZippedBinaries$(VERNAME).7z
 SRC=/orangec/dist/ZippedBinaries$(VERNAME).zip
 
 DISTRIBUTE:
-ifneq "$(ORANGEC_ONLY)" "YES"
+ifeq "$(WITHOUT_ZIP)" ""
 
 	7z x $(SRC) *
 	7z -r -mx=9 a $(DEST) orangec\* 

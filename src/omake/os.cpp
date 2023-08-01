@@ -79,14 +79,14 @@ int OS::jobsLeft;
 std::string OS::jobName = "\t";
 std::string OS::jobFile;
 std::shared_ptr<OMAKE::JobServer> OS::localJobServer = nullptr;
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
 static std::set<HANDLE> processIds;
 #endif
 std::recursive_mutex OS::consoleMutex;
 void OS::TerminateAll()
 {
     std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     for (auto a : processIds)
         TerminateProcess(a, 0);
 #endif
@@ -154,7 +154,7 @@ void OS::Init() {}
 void OS::WriteToConsole(std::string string)
 {
     std::lock_guard<decltype(consoleMutex)> lg(consoleMutex);
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
 
     DWORD written;
     WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), string.c_str(), string.size(), &written, nullptr);
@@ -200,7 +200,7 @@ std::string OS::GetFullPath(const std::string& fullname)
 {
     std::lock_guard<decltype(DirectoryMutex)> lg(DirectoryMutex);
     std::string recievingbuffer;
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     DWORD return_val = GetFullPathNameA(fullname.c_str(), 0, nullptr, nullptr);
     if (!return_val)
     {
@@ -281,10 +281,10 @@ void OS::JobInit()
                 tempfile[0] = 0;
         }
         if (tempfile[0] == 0)
-#ifdef HAVE_UNISTD_H
-            Utils::StrCpy(tempfile, "./");
-#else
+#ifdef TARGET_OS_WINDOWS
             Utils::StrCpy(tempfile, ".\\");
+#else
+            Utils::StrCpy(tempfile, "./");
 #endif
         Utils::StrCpy(tempfile, (name + ".flg").c_str());
         OS::WriteToConsole("Flag file name: " + name + ".flg");
@@ -331,7 +331,7 @@ void OS::JobRundown()
 }
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     std::string command1 = command;
 
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
@@ -346,7 +346,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     bool asapp = true;
     if (cmd.find("bash.exe") != std::string::npos || cmd.find("sh.exe") != std::string::npos)
     {
-        cmd = cmd.find("bash.exe") ? "bash.exe" : "sh.exe";
+        cmd = "sh.exe -c ";
         // we couldn't simply set MAKE properly because they may change the shell in the script
         v = VariableContainer::Instance()->Lookup("MAKE");
         if (v->GetValue().find_first_of("\\") != std::string::npos)
@@ -358,13 +358,12 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
                 n = command1.find(v->GetValue());
             }
         }
-        cmd += " -c '" + command1 + "'";
-        asapp = false;
     }
     else
     {
-        cmd += " /c " + QuoteCommand(cmd, command1);
+        cmd += " /c ";
     }
+    cmd += QuoteCommand(cmd, command1);
     STARTUPINFO startup = {};
     PROCESS_INFORMATION pi;
     HANDLE pipeRead, pipeWrite, pipeWriteDuplicate;
@@ -516,7 +515,8 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
 }
 std::string OS::SpawnWithRedirect(const std::string command)
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
+    std::string command1 = command;
     std::string rv;
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
     if (!v)
@@ -527,8 +527,26 @@ std::string OS::SpawnWithRedirect(const std::string command)
         Eval r(cmd, false);
         cmd = r.Evaluate();
     }
-    cmd += " /c ";
-    cmd += command;
+    if (cmd.find("bash.exe") != std::string::npos || cmd.find("sh.exe") != std::string::npos)
+    {
+        cmd = "sh.exe -c ";
+        // we couldn't simply set MAKE properly because they may change the shell in the script
+        v = VariableContainer::Instance()->Lookup("MAKE");
+        if (v->GetValue().find_first_of("\\") != std::string::npos)
+        {
+            size_t n = command1.find(v->GetValue());
+            while (n != std::string::npos)
+            {
+                std::replace(command1.begin() + n, command1.begin() + n + v->GetValue().size(), '\\', '/');
+                n = command1.find(v->GetValue());
+            }
+        }
+    }
+    else
+    {
+        cmd += " /c ";
+    }
+    cmd += QuoteCommand(cmd, command1);
     STARTUPINFO startup;
     PROCESS_INFORMATION pi;
     memset(&startup, 0, sizeof(startup));
@@ -570,7 +588,7 @@ std::string OS::SpawnWithRedirect(const std::string command)
 }
 Time OS::GetCurrentTime()
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
 
     SYSTEMTIME systemTime;
     ::GetLocalTime(&systemTime);
@@ -592,7 +610,7 @@ Time OS::GetCurrentTime()
 }
 Time OS::GetFileTime(const std::string fileName)
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     WIN32_FILE_ATTRIBUTE_DATA data;
     if (GetFileAttributesEx(fileName.c_str(), GetFileExInfoStandard, &data))
     {
@@ -619,7 +637,7 @@ Time OS::GetFileTime(const std::string fileName)
 }
 void OS::SetFileTime(const std::string fileName, Time time)
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     HANDLE h =
         CreateFile(fileName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
@@ -652,7 +670,7 @@ std::string OS::GetWorkingDir()
 }
 void OS::CreateThread(void* func, void* data)
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
 #    ifdef BCC32c
     DWORD tid;
     CloseHandle(::CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)func, data, 0, &tid));

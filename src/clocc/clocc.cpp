@@ -61,6 +61,8 @@ CmdSwitchString clocc::prmCompileAs(SwitchParser, 'T', ';');
 CmdSwitchCombineString clocc::prmLinkOptions(SwitchParser, 0, ';', {"link"});
 CmdSwitchString clocc::prmLinkWithMSVCRT(SwitchParser, 'M', false);
 CmdSwitchCombineString clocc::prmWarningSetup(SwitchParser, 'W', ';', {"w"});
+CmdSwitchBool clocc::RuntimeObjectOverflow(SwitchParser, 0, 0, {"RTCs"});
+CmdSwitchBool clocc::RuntimeUninitializedVariable(SwitchParser, 0, 0, {"RTCu"});
 
 const char* clocc::helpText =
     "[options] files...\n"
@@ -87,6 +89,8 @@ const char* clocc::helpText =
     "/MPx                 reserved for compatibility\n"
     "/Ox                  set optimizer option\n"
     "/P                   preprocess to file\n"
+    "/RTCs                runtime check for object overflow on stack\n"
+    "/RTCu                runtime check for uninitialized variables\n"
     "/std:xxx             set C or C++ standard version\n"
     "/Tcfile              reserved for compatibility\n"
     "/Tpfile              reserved for compatibility\n"
@@ -539,6 +543,10 @@ int clocc::Run(int argc, char** argv)
             Utils::Fatal("internal error");
             break;
     }
+    if (RuntimeObjectOverflow.GetValue())
+        args += " -fruntime-object-overflow";
+    if (RuntimeUninitializedVariable.GetValue())
+        args += " -fruntime-uninitialized-variable";
     if (prmLinkWithMSVCRT.GetExists())
     {
         auto val = prmLinkWithMSVCRT.GetValue();
@@ -640,20 +648,7 @@ int clocc::Run(int argc, char** argv)
     FILE* fil = Utils::TempName(tempName);
     fputs(args.c_str(), fil);
     fclose(fil);
-#ifndef HAVE_UNISTD_H
-    int rv;
-    if (getenv("MSYSTEM") && getenv("SHELL"))
-    {
-        // MSYS2 has to be handled differently
-        std::replace( tempName.begin(), tempName.end(), '\\', '/');
-        std::string cmd = "bash.exe -c 'occ.exe -!" + defines + " @" + tempName + "'";
-        rv = system(cmd.c_str()); // uses winsystem...  ...ignores cmd.exe
-    }
-    else
-#endif
-    {
-        rv = ToolChain::ToolInvoke("occ.exe", nullptr, " -! %s @%s", defines.c_str(), tempName.c_str());
-    }
+    int rv = ToolChain::ToolInvoke("occ.exe", nullptr, " -! %s @%s", defines.c_str(), tempName.c_str());
     unlink(tempName.c_str());
     return rv;
 }

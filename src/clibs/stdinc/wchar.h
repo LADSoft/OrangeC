@@ -131,7 +131,7 @@ extern "C"
     size_t _RTL_FUNC wcslen(const wchar_t* __s);
     size_t _RTL_FUNC wcsnlen(const wchar_t* __s, size_t maxlen);
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311
     const wchar_t* _RTL_FUNC wmemchr(const wchar_t* __s, wchar_t __c, size_t __n);
 #else
     wchar_t* _RTL_FUNC wmemchr(const wchar_t* __s, wchar_t __c, size_t __n);

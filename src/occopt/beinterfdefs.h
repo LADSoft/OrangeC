@@ -24,6 +24,7 @@
  */
 
 #include "browsedefs.h"
+#include "ppCommon.h"
 
 enum asmTypes : int;
 
@@ -39,6 +40,18 @@ extern int architecture;
 #define MAX_REGISTERS 100
 
 #define REG_DOUBLE_FLAG 0x10000
+
+#define STACK_PROTECT_BASIC    1
+#define STACK_PROTECT_ALL      2
+#define STACK_PROTECT_STRONG   4
+#define STACK_PROTECT_EXPLICIT 8
+#define STACK_OBJECT_OVERFLOW  16
+#define STACK_UNINIT_VARIABLE  32
+#define HEAP_CHECK             64
+#define STACK_PROTECT_WITH_CANARY (STACK_PROTECT_BASIC | STACK_PROTECT_ALL | STACK_PROTECT_STRONG | STACK_PROTECT_EXPLICIT)
+
+#define STACK_PROTECT_MINIMUM_CONSIDERED 4
+
 /* Common compiler parameters */
 typedef struct
 {
@@ -47,6 +60,8 @@ typedef struct
     int optimizer_modules;  // optimizer module selection
     int icd_flags;
     int verbosity;  // verbosity level
+    Dialect c_dialect;           /* language dialect for C */
+    Dialect cpp_dialect;         /* lanaguage dialect for c++ */
     bool prm_optimize_for_speed;
     bool prm_optimize_for_size;
     bool prm_optimize_float_access;
@@ -56,9 +71,6 @@ typedef struct
     bool prm_diag;               /* display diagnostics/ memory usage */
     bool prm_ansi;               /* use ansi restrictions */
     bool prm_cmangle;            /* add underscore to names */
-    bool prm_c99;                /* C99 mode */
-    bool prm_c1x;                /* C1x mode */
-    bool prm_c2x;                /* C2x mode */
     bool prm_cplusplus;          /* C++ mode */
     bool prm_xcept;              /* generate RTTI in C++ mode */
     bool prm_icdfile;            /* dump intermediate code peep list to file */
@@ -101,6 +113,7 @@ typedef struct
     bool msilAllowExtensions;    /* occil: allow extensions*/
     bool prm_displaytiming;      /* display timing info */
     bool prm_makelib;            /* make library */
+    int  prm_stackprotect;       /* stack protection mode */
 } COMPILER_PARAMS;
 
 /* Sizing and alignment info uses this structure */
@@ -137,6 +150,7 @@ typedef struct
     char a_rcomplexpad;
     char a_lrcomplexpad;
     char a_alignedstruct;  // __attribute((__aligned__))
+    char a_maxalign; // maximum alignment native to the implementation
 } ARCH_SIZING;
 
 /* floating point characteristics */
@@ -270,7 +284,7 @@ typedef struct
     char stackalign;                  /* minimum stack alignment */
     char libsasimports;               /* library functions should be genned as import calls */
     char retblockparamadjust;         /* Adjustment for retblock parameters */
-
+    char eofScratchReg;                  /* register that can be used as scratch at end of function */
 } ARCH_CHARACTERISTICS;
 
 /* debugger characteristics */

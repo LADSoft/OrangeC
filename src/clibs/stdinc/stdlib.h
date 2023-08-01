@@ -105,8 +105,13 @@ extern "C"
     long long _RTL_FUNC _IMPORT atoll(const char* ZSTR __s);
 #endif
 
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311
+    const void* _RTL_FUNC _IMPORT bsearch(const void* __key, const void* __base, size_t __nelem, size_t __width,
+                                    int (*fcmp)(const void*, const void*));
+#else
     void* _RTL_FUNC _IMPORT bsearch(const void* __key, const void* __base, size_t __nelem, size_t __width,
                                     int (*fcmp)(const void*, const void*));
+#endif
     void* _RTL_FUNC _IMPORT _MSIL_RTL calloc(size_t __nitems, size_t __size);
     div_t _RTL_INTRINS _IMPORT div(int __numer, int __denom);
     ldiv_t _RTL_INTRINS _IMPORT ldiv(long __numer, long __denom);
@@ -166,6 +171,8 @@ extern "C"
     size_t _RTL_FUNC _IMPORT wcstombs(char* ZSTR restrict __s, const wchar_t* restrict __pwcs, size_t __n);
     int _RTL_FUNC _IMPORT wctomb(char* ZSTR restrict __s, wchar_t __wc);
     int _RTL_FUNC _IMPORT wctombflush(char* ZSTR __s);
+
+    size_t _RTL_FUNC memalignment(const void *);
 
 #ifndef STDC
 #    define environ _environ

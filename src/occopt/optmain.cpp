@@ -57,6 +57,7 @@
 #include "optmodules.h"
 #include "ilazy.h"
 #include "iloop.h"
+#include "localprotect.h"
 
 int usingEsp;
 
@@ -236,7 +237,6 @@ void Optimize(SimpleSymbol* funcsp)
     gatherLocalInfo(functionVariables);
 
     RunOptimizerModules();
-
     if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly)
     {
         if (cparams.icd_flags & ICD_QUITEARLY)
@@ -293,15 +293,24 @@ void Optimize(SimpleSymbol* funcsp)
 
 void ProcessFunction(FunctionData* fd)
 {
+    bool hasCanary = HasCanary(fd);
+    // part of the runtime relies on EBP of the caller being set properly...
+    currentFunction->usesEsp &= !Optimizer::cparams.prm_stackprotect;
+
     SetUsesESP(currentFunction->usesEsp);
     Parser::anonymousNotAlloc = 0;
     CreateTempsAndBlocks(fd);
     Optimize(currentFunction);
 
     if (!(chosenAssembler->arch->denyopts & DO_NOREGALLOC))
-        AllocateStackSpace();
+        AllocateStackSpace(hasCanary? chosenAssembler->arch->type_sizes->a_addr : 0);
     FillInPrologue(intermed_head, currentFunction);
-    // post_function_gen(currentFunction, intermed_head);
+    // canary has priority over runtime checks so it must be first...
+    if (hasCanary)
+        CreateCanaryStubs(intermed_head, intermed_tail, currentFunction);
+    // order is important on these next two, to get the stack initialized properly
+    CreateBufferOverflowStubs(intermed_head, intermed_tail);
+    CreateUninitializedVariableStubs(intermed_head, intermed_tail);
     tFree();
     oFree();
 }
@@ -345,7 +354,9 @@ bool LoadFile(SharedMemory* parserMem)
     SSAInit();
     oinit();
     constoptinit();
+    localprotect_init();
     SelectBackendData();
+    rewrite_x86_init();
     return rv;
 }
 void SaveFile(std::string& name, SharedMemory* optimizerMem)

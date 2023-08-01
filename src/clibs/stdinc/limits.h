@@ -35,13 +35,16 @@
 #    include <stddef.h>
 #endif
 
+
 #define CHAR_BIT 8    /* number of bits in a char */
 #define MB_LEN_MAX 18 /* max. # bytes in multibyte char */
 
 #define SCHAR_MIN (-128) /* minimum signed   char value */
 #define SCHAR_MAX 127    /* maximum signed   char value */
+
 #define UCHAR_MAX 255    /* maximum unsigned char value */
 
+#define CHAR_WIDTH CHAR_BITS
 #define CHAR_MIN SCHAR_MIN /* minimum char value */
 #define CHAR_MAX SCHAR_MAX /* maximum char value */
 
@@ -66,5 +69,19 @@
 #define _I64_MIN (-9223372036854775807i64 - 1) /* minimum signed   __int64 value */
 #define _I64_MAX 9223372036854775807i64        /* maximum signed   __int64 value */
 #define _UI64_MAX 18446744073709551615ui64     /* maximum unsigned __int64 value */
+
+#define BITINT_MAXWIDTH 16384
+
+
+#define BOOL_WIDTH 1
+
+#if __STDC_VERSION >= 202311L
+#    define SCHAR_WIDTH CHAR_BITS
+#    define UCHAR_WIDTH CHAR_BITS
+#    define USHRT_WIDTH (CHAR_BITS * sizeof(unsigned short))
+#    define UINT_WIDTH (CHAR_BITS * sizeof(unsigned int))
+#    define ULONG_WIDTH (CHAR_BITS * sizeof(unsigned long))
+#    define ULLONG_WIDTH (CHAR_BITS * sizeof(unsigned long long))
+#endif
 
 #endif /* __LIMITS_H */

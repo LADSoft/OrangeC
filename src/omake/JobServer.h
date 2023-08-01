@@ -73,7 +73,7 @@ class POSIXJobServer : public JobServer
 class WINDOWSJobServer : public JobServer
 {
     friend class JobServer;
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
 #    ifdef UNICODE
     // Use a consistent strategy so that windows doesn't yell at us, I know we don't work in wide strings except in obrc often
     // so this is here for posterity *AND* ease of use

@@ -48,7 +48,7 @@ extern "C"
     void* _RTL_FUNC _IMPORT memmove(void* __dest, const void* __src, size_t __n);
     void* _RTL_FUNC _IMPORT memset(void* __s, int __c, size_t __n);
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311
     const void* _RTL_INTRINS _IMPORT memchr(const void* __s, int __c, size_t __n);
 #else
     void* _RTL_INTRINS _IMPORT memchr(const void* __s, int __c, size_t __n);

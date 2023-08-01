@@ -25,7 +25,7 @@
 #include "VersionInfo.h"
 #include "ResFile.h"
 #include "RCFile.h"
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
 #    include <windows.h>
 #endif
 #include <stdexcept>
@@ -165,7 +165,7 @@ void VersionInfo::WriteRes(ResFile& resFile)
     resFile.Align();
     if (fixed)
     {
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
         resFile.WriteDWord(VS_FFI_SIGNATURE);
         resFile.WriteDWord(VS_FFI_STRUCVERSION);
 #else

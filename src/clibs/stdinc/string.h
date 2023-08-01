@@ -84,7 +84,7 @@ extern "C"
     char* _RTL_FUNC _IMPORT strtok(char* ZSTR restrict __s1, const char* ZSTR restrict __s2);
     char* _RTL_FUNC _IMPORT _strerror(const char* ZSTR __s);
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311
     const void* _RTL_INTRINS _IMPORT memchr(const void* __s, int __c, size_t __n);
     const char* _RTL_INTRINS _IMPORT strchr(const char* ZSTR __s, int __c);
     const char* _RTL_INTRINS _IMPORT strrchr(const char* ZSTR __s, int __c);
@@ -104,6 +104,7 @@ extern "C"
 
     int _RTL_FUNC _IMPORT memicmp(const void*, const void*, size_t);
     void* _RTL_FUNC _IMPORT memccpy(void*, const void*, int, size_t);
+    void* _RTL_FUNC memset_explicit(void*, int, size_t);
     char* _RTL_FUNC _IMPORT strset(char* ZSTR, int);
     char* _RTL_FUNC _IMPORT strnset(char* ZSTR, int, size_t);
     char* _RTL_FUNC _IMPORT strrev(char* ZSTR);

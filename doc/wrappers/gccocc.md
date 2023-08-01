@@ -181,6 +181,23 @@ searches for the program name within the occ distributions, and displays the ful
 
 compiles and links file.c, treating the 'char' type as if it were unsigned.
 
+>     gcc -fstack-protector file.c
+
+compiles and links file.c, adding buffer overflow security checks to basic functions that need them
+
+>     gcc -fstack-protector-strong file.c
+
+compiles and links file.c, adding buffer overflow security checks to more functions that need them
+
+>     gcc -fstack-protector-all file.c
+
+compiles and links file.c, adding buffer overflow security checks to all functions being compiled
+
+>     gcc -fstack-protector-explicit file.c
+
+compiles and links file.c, adding buffer overflow security checks to functions that have been explicitly marked as needing them
+
+
 ### Compatibility commands
 
 Several commands are parsed, but don't do anything.   These include

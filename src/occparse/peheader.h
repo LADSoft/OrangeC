@@ -157,8 +157,8 @@ struct PEHeader
     int fixup_size;
     int debug_rva;
     int debug_size;
-    int desc_rva;
-    int desc_size;
+    int deStorageClass::rva;
+    int deStorageClass::size;
     int mspec_rva;
     int mspec_size;
     int tls_rva;

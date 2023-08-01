@@ -57,8 +57,8 @@ namespace Parser
 struct sym;
 struct typ;
 struct expr;
-enum e_bt : int;
-enum e_sc : int;
+enum class BasicType : int;
+enum class StorageClass : int;
 }  // namespace Parser
 
 namespace Optimizer
@@ -217,6 +217,10 @@ struct SimpleSymbol
             unsigned addressTaken : 1;
             unsigned generated : 1;
             unsigned msilObjectArray : 1;
+            unsigned stackProtectBasic : 1;
+            unsigned stackProtectStrong : 1;
+            unsigned stackProtectExplicit : 1;
+            unsigned allocaUsed : 1;
         };
         unsigned long long flags;
     };
@@ -326,9 +330,9 @@ struct SymbolManager
     static SimpleSymbol* Get(struct Parser::sym* sym);
     static SimpleSymbol* Test(struct Parser::sym* sym);
     static SimpleExpression* Get(struct Parser::expr* e);
-    static e_scc_type Get(enum Parser::e_sc storage_class);
+    static e_scc_type Get(Parser::StorageClass storage_class);
     static SimpleType* Get(struct Parser::typ* tp);
-    static st_type Get(enum Parser::e_bt type);
+    static st_type Get(Parser::BasicType type);
     static void clear();
     static SimpleSymbol* Get(const char* name);
     static void Put(SimpleSymbol* sym);
@@ -390,6 +394,7 @@ inline bool isconstaddress(SimpleExpression* exp)
         case se_add:
             return (isconstaddress(exp->left) || isintconst(exp->left)) && (isconstaddress(exp->right) || isintconst(exp->right));
         case se_global:
+            return exp->sp->storage_class != scc_external;
         case se_pc:
         case se_labcon:
             return true;
@@ -455,11 +460,7 @@ typedef struct _imode_
     SimpleExpression* offset2; /* a second temp reg */
     SimpleExpression* offset3; /* an address */
     SimpleExpression* vararg;
-    //    SimpleExpressionlist
-    //    {
-    //        SimpleExpressionlist* next;
-    //        SimpleExpression* offset;
-    //    } * vararg;
+    RUNTIMEDATA* runtimeData; // this is a temporary, will be moved to the quad when it gets generated
     int scale; /* scale factor on the second temp reg */
     char useindx;
     char size;           /* size */
@@ -539,6 +540,7 @@ typedef struct quad
     struct _block* block;
     SimpleSymbol* altsp;
     SimpleType* alttp;
+    RUNTIMEDATA* runtimeData;
     ArgList* altargs;
     BITINT* uses;
     BITINT* transparent;
@@ -591,6 +593,7 @@ typedef struct quad
             int atomic : 1;          /* atomic instruction */
             int atomicpostfetch : 1; /* fetch has result after operation... */
             int vararg : 1;          // msil
+            int runtimeIsStore : 1;
         };
         unsigned flags;
     };

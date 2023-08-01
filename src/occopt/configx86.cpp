@@ -49,8 +49,9 @@ static char BackendIntrinsicPrototypes[] =
 static char help_text[] =
     "[options] [@response file] files\n"
     "\n"
-    "/1        - C1x mode                  /8        - c89 mode\n"
-    "/9        - C99 mode                  /#        - compile then assemble then link\n"
+    "/1        - C1x mode                  /2        - c2x mode\n"
+    "/8        - c89 mode                  /9        - C99 mode\n"
+    "/#        - compile then assemble then link\n"
     "/axxx     - set assembler extension   /c        - compile only\n"
     "+e        - dump errors to file       /f{flags} - set flags\n"
     "/g        - enable debug symbols      +i        - dump preprocessed file\n"
@@ -115,6 +116,7 @@ static char help_text[] =
     "       c89   1989 version of ansi c\n"
     "       c99   1999 version of ansi c\n"
     "       c11   2011 version of ansi c\n"
+    "       c24   2024 version of ansi c\n"
     "       c++11 2011 version of C++\n"
     "       c++14 2014 version of C++\n"
     " -nostdinc, nostdinc++           disable system include file path\n"
@@ -130,6 +132,14 @@ static char help_text[] =
     " -print-prog-name=xxx            print(to stdout) the executable path for the xxx executable\n"
     "\n--architecture <architecture>\n"
     "    x86 - x86 code       msil - managed code\n"
+    "\nStack Protection:\n"
+    "  -fstack-protect                  - abort if a function with a buffer >= 8 bytes overwrites the return address\n"
+    "  -fstack-protect-all              - abort if any function in the compilation sequence overwrites the return address\n"
+    "  -fstack-protect-strong           - abort if a function with an array or address taken overwrites the return address\n"
+    "  -fstack-protect-explicit         - abort if a function attributed with 'stack_protect' overwrites the return address\n"
+    "  -fruntime-object-overflow        - abort if a buffer overflows\n"
+    "  -fruntime-uninitialized-variable - abort if an uninitialized variable is used\n"
+    "  -fruntime-heap-check             - abort if there is a buffer overflow in a heap variable\n"
     "\nDependency generation:\n"
     "  /M             - basic generation\n"
     "  /MM            - basic generation, user files only\n"
@@ -261,6 +271,7 @@ static ARCH_SIZING sizes = {
     0,                    /*char a_rcomplexpad;*/
     0,                    /*char a_lrcomplexpad;*/
     0,                    // char a_alignedstruct; // __attribute((__aligned__))
+    0,                    /* char a_maxalign; */
 };
 static ARCH_SIZING alignments = {
     1, /*char a_bool;*/
@@ -286,6 +297,7 @@ static ARCH_SIZING alignments = {
     0,                    /*char a_rcomplexpad;*/
     0,                    /*char a_lrcomplexpad;*/
     8,  // char a_alignedstruct; // __attribute((__aligned__))
+    8,                    /* char a_maxalign; */
 };
 static ARCH_SIZING locks = {
     0, /*char a_bool; */
@@ -311,6 +323,7 @@ static ARCH_SIZING locks = {
     1,  /*char a_rcomplexpad; */
     1,  /*char a_lrcomplexpad; */
     0,  // char a_alignedstruct; // __attribute((__aligned__))
+    0,                    /* char a_maxalign; */
 };
 static ARCH_FLOAT aflt = {-126, 126, 128, 24};
 static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};
@@ -360,6 +373,7 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     4,     /* minimum stack alignment */
     false, /* library functions should bes genned as import calls */
     4,     /* ret block param adjust for RTTI */
+    ECX    /* register that can be used as scratch at end of function */
 };
 static ARCH_DEBUG dbgStruct[1];
 #if 0

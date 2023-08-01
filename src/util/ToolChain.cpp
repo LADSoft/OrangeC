@@ -29,7 +29,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <cstring>
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
 #    include <windows.h>
 #endif
 #ifdef HAVE_UNISTD_H
@@ -71,7 +71,7 @@ void ToolChain::Usage(const char* text, int exitVal)
 {
 
     int rows = 10000;
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     if (_isatty(fileno(stderr)))
         rows = ScreenHeight();
 #else
@@ -138,7 +138,7 @@ CmdFiles ToolChain::StandardToolStartup(CmdSwitchParser& SwitchParser, int argc,
 
 int ToolChain::ScreenHeight()
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
     return csbi.srWindow.Bottom - csbi.srWindow.Top + 1;

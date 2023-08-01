@@ -77,8 +77,8 @@ ppDefine::Definition::Definition(const Definition& old) : Symbol(old.GetName())
     }
 }
 
-ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, bool C89, bool Asmpp) :
-    expr(false), include(Include), c89(C89), asmpp(Asmpp), ctx(nullptr), macro(nullptr), source_date_epoch((time_t)-1), counter_val(0)
+ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, Dialect dialect_, bool Asmpp) :
+    expr(false, dialect_), include(Include), dialect(dialect_), asmpp(Asmpp), ctx(nullptr), macro(nullptr), source_date_epoch((time_t)-1), counter_val(0)
 {
     char* sde = getenv("SOURCE_DATE_EPOCH");
     if (sde)
@@ -342,7 +342,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
                 {
                     if (next->GetKeyword() == kw::ellipses)
                     {
-                        if (c89)
+                        if (dialect == Dialect::c89)
                             Errors::Error("Macro variable argument specifier only allowed in C99");
                         hasEllipses = true;
                         next = tk.Next();
@@ -676,9 +676,10 @@ bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs,
         }
         else if (Tokenizer::IsSymbolChar(macro.c_str() + p, false))
         {
+            bool doit = true;
             int q = p;
             name = defid(macro, q, p);
-            if (!c89 && name == "__VA_ARGS__")
+            if (dialect != Dialect::c89 && name == "__VA_ARGS__")
             {
                 if (varargs.empty())
                 {
@@ -700,8 +701,45 @@ bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs,
                     else
                         p = q + rv - 1;
                 }
+                doit = false;
             }
-            else
+            else if (dialect == Dialect::c2x && name == "__VA_OPT__" && macro[p] == '(')
+            {
+                auto start = p+1;
+                auto end = start;
+                int count = 1;
+                while (end < macro.size())
+                {
+                    if (macro[end] == '(') count ++;
+                    if (macro[end++] == ')')
+                        if (--count ==0)
+                            break;
+                }
+                if (!count)
+                {
+                    if (varargs.empty())
+                    {
+                        int rv;
+                        if ((rv = InsertReplacementString(macro, end, q, "", "")) < -MACRO_REPLACE_SIZE)
+                            return (false);
+                        else
+                            p = q + rv - 1;
+                    
+                    }
+                    else
+                    {
+                        std::string temp = macro.substr(p+1, end-p-2);
+                        int rv;
+                        if ((rv = InsertReplacementString(macro, end, q, temp, temp)) < -MACRO_REPLACE_SIZE)
+                            return (false);
+                        else
+                            p = q;
+                    }
+                    doit = false;
+                }
+            }
+            if (doit)
+            {
                 for (int i = 0; i < oldargs.size(); i++)
                 {
                     if (name == oldargs[i])
@@ -716,6 +754,7 @@ bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs,
                         }
                     }
                 }
+            }
         }
     }
     return (true);
@@ -893,7 +932,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                     }
                     if (line[p - 1] != ')' || count != d->GetArgCount())
                     {
-                        if (count == d->GetArgCount() && !c89 && d->HasVarArgs())
+                        if (count == d->GetArgCount() && dialect != Dialect::c89 && d->HasVarArgs())
                         {
                             q1 = p;
                             int nestedparen = 0, nestedstring = 0;

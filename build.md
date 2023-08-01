@@ -19,6 +19,8 @@ When you install these programs install them to their default directories, or al
 
 The distribution directories are meant to go in a subdirectory.  I name mine OrangeC and put it in the root, then put the SRC and DOC directories in there.  Later, the build steps may create other directories such as a BIN directory and an INCLUDE directory.  
 
+You may have limited success using a deeply nested directory as the root.   Orange C has a path size limitation of 260 characters, and the path to some of the library files is nested very deeply.   Try using C:\orangec or c:\workingdir\orangec
+
 There is a master makefile, and then there are multiple *.mak files which perform various subtasks.  In particulare there is a platform-specific make file for each compiler, and a makefile called 'treetop.mak' which performs most common tasks.
 
 Note that treetop.mak does not automatically check dependencies for .h files.   That is something I will add at a later date.
@@ -57,6 +59,18 @@ you can do:
     omake fullbuild ORANGEC_ONLY=YES
 
 and it won't compile the DOS libraries or package the results.
+
+you can also do:
+
+    omake fullbuild WITHOUT_OCCIL=YES
+
+to build without the OCCIL runtime...   this is useful for example in the MSYS2 shell since .net is not available
+
+you can also do:
+
+    omake fullbuild WITHOUT_ZIP=yes
+
+to skip the step where it packages things into zip files and makes an install package
 
 to compile with MINGW64:
 
@@ -109,6 +123,10 @@ If you want to clean up object files type:
     omake clean
 
 which cleans up all the output files for the specific target (in this case msvc)
+
+to clean up all output directories in the distribution type
+
+    omake dist-clean
 
 If you want to make a distribution after seperately building the EXE and LIBRARY files:
 

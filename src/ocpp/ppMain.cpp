@@ -31,7 +31,7 @@
 #include <cstdlib>
 #include <algorithm>
 
-#if defined(WIN32) || defined(MICROSOFT)
+#ifdef TARGET_OS_WINDOWS
 extern "C"
 {
     char* __stdcall GetModuleFileNameA(void* handle, char* buf, int size);
@@ -48,8 +48,7 @@ CmdSwitchBool ppMain::assembly(SwitchParser, 'a', false);
 CmdSwitchBool ppMain::disableExtensions(SwitchParser, 'A', false);
 CmdSwitchBool ppMain::c99Mode(SwitchParser, '9', true);
 CmdSwitchBool ppMain::c11Mode(SwitchParser, '1', false);
-CmdSwitchBool ppMain::c23Mode(SwitchParser, '2', false);
-
+CmdSwitchBool ppMain::c2xMode(SwitchParser, '2', false);
 CmdSwitchBool ppMain::trigraphs(SwitchParser, 'T', false);
 CmdSwitchDefine ppMain::defines(SwitchParser, 'D');
 CmdSwitchDefine ppMain::undefines(SwitchParser, 'U');
@@ -72,8 +71,8 @@ CmdSwitchBool ppMain::MakeStubsContinueUser(SwitchParser, 0, 0, {"MMD"});
 const char* ppMain::helpText =
     "[options] files\n"
     "\n"
-    "/1             - C11 mode                  /9          - C99 mode\n"
-    "/2             - C23 mode                  /a          - Assembler mode\n"
+    "/1             - C11 mode                  /2          - C2x mode\n"
+    "/9             - C99 mode                  /a          - Assembler mode\n"
     "/A             - Disable extensions        /Dxxx       - Define something\n"
     "/E[+]nn        - Max number of errors      /Ipath      - Specify include path\n"
     "/T             - translate trigraphs       /Uxxx       - Undefine something\n"
@@ -150,7 +149,7 @@ static void TestCharInfo(std::ostream* outStream, PreProcessor& pp, std::string&
 int ppMain::Run(int argc, char* argv[])
 {
     char buffer[256];
-#if defined(WIN32) || defined(MICROSOFT)
+#ifdef TARGET_OS_WINDOWS
     GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
 #else
     strcpy(buffer, argv[0]);
@@ -165,7 +164,7 @@ int ppMain::Run(int argc, char* argv[])
         ToolChain::Usage(usageText);
 
     Tokenizer::SetAnsi(disableExtensions.GetValue());
-    Tokenizer::SetC99(c99Mode.GetValue() || c11Mode.GetValue());
+    Tokenizer::SetC99(c99Mode.GetValue() || c11Mode.GetValue() || c2xMode.GetValue());
     for (int i = 1; i < files.size(); i++)
     {
         bool cplusplus = false;
@@ -178,11 +177,25 @@ int ppMain::Run(int argc, char* argv[])
                 break;
             }
         }
+        Dialect dialect;
+        if (c2xMode.GetValue())
+            dialect = Dialect::c2x;
+        else if (c11Mode.GetValue())
+            dialect = Dialect::c11;
+        else if (c99Mode.GetValue())
+            dialect = Dialect::c99;
+        else
+            dialect = Dialect::c89;
         PreProcessor pp(files[i], includePath.GetValue(), cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(), false,
-                        trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false, !c99Mode.GetValue() && !c11Mode.GetValue(),
+                        trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false, dialect,
                         !disableExtensions.GetValue(),
                         (MakeStubs.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(), "");
-        if (c11Mode.GetValue())
+        if (c2xMode.GetValue())
+        {
+            std::string ver = "202311L";
+            pp.Define("__STDC_VERSION__", ver, true);
+        }
+        else if (c11Mode.GetValue())
         {
             std::string ver = "201112L";
             pp.Define("__STDC_VERSION__", ver, true);
@@ -199,7 +212,7 @@ int ppMain::Run(int argc, char* argv[])
         }
 
         // for libcxx 10
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
         pp.Define("_WIN32", "1");
 #endif
         pp.Define("__ORANGEC__", "1");
@@ -338,7 +351,7 @@ int ppMain::Run(int argc, char* argv[])
                                     }
                                     else
                                     {
-                                        ppExpr e(false);
+                                        ppExpr e(false, dialect);
                                         std::string temp = working.substr(npos);
                                         value = e.Eval(temp);
                                         if (value < INT_MIN || value >= UINT_MAX)

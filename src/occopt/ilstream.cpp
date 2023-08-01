@@ -40,6 +40,7 @@
 #include "ildata.h"
 namespace Optimizer
 {
+FunctionData* myfd;
 static std::list<std::string> textRegion;
 static std::unordered_map<std::string, int> cachedText;
 static size_t textOffset;
@@ -501,6 +502,23 @@ static void StreamInstruction(QUAD* q)
         {
             StreamIndex(0);
         }
+        if (!q->runtimeData)
+        {
+            StreamIndex(0);
+        }
+        else
+        {
+            if (!strcmp(myfd->name->outputName,
+                        "@std@#unique_ptr.#__tree_node.#__value_type.#basic_string.c#char_traits.c~#allocator.c~~i~pv~#__tree_node_"
+                        "destructor.#allocator.#__tree_node.#__value_type.#basic_string.c#char_traits.c~#allocator.c~~i~pv~~~~@."
+                        "bdtr.qv"))
+                printf("hi");
+            StreamIndex(reinterpret_cast<SimpleSymbol*>(q->runtimeData->runtimeSym)->fileIndex);
+            StreamTextIndex(q->runtimeData->fileName);
+            StreamTextIndex(q->runtimeData->varName);
+            StreamIndex(q->runtimeData->lineno);
+            StreamIndex(q->runtimeData->asStore);
+        }
         StreamType(q->alttp);
         i = 0;
         for (auto v = (ArgList*)q->altargs; v; v = v->next, i++)
@@ -751,6 +769,7 @@ static void StreamLoadCache(std::map<IMODE*, IMODE*> hash)
 }
 static void StreamFunc(FunctionData* fd)
 {
+    myfd = fd;
     cachedAutos.clear();
     cachedTemps.clear();
     for (auto v : fd->variables)

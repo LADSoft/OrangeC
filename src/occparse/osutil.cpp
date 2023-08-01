@@ -49,6 +49,7 @@
 #include "configmsil.h"
 #include "initbackend.h"
 #include "optmodules.h"
+#include "beinterf.h"
 
 namespace Optimizer
 {
@@ -64,13 +65,15 @@ namespace Parser
 #endif
 
 #if defined HAVE_UNISTD_H
-#    define CONSOLE_DEVICE "/dev/tty"
 #    define _strdup strdup
-#else
+#endif
+#ifdef TARGET_OS_WINDOWS
 #    define CONSOLE_DEVICE "con:"
+#else
+#    define CONSOLE_DEVICE "/dev/tty"
 #endif
 
-#if defined(WIN32) || defined(MICROSOFT)
+#ifdef TARGET_OS_WINDOWS
 extern "C"
 {
     char* __stdcall GetModuleFileNameA(void* handle, char* buf, int size);
@@ -80,7 +83,6 @@ extern "C"
 Optimizer::LIST* clist = 0;
 int showVersion = false;
 std::string bePostFile;
-int cplusplusversion = 14;
 
 std::deque<DefValue> defines;
 
@@ -166,16 +168,24 @@ CmdSwitchCombineString MakeStubsQuotedTargets(SwitchParser, 0, ';', {"MQ"});
 CmdSwitchBool MakeStubsContinue(SwitchParser, 0, 0, {"MD"});
 CmdSwitchBool MakeStubsContinueUser(SwitchParser, 0, 0, {"MMD"});
 
+CmdSwitchBool StackProtectorBasic(SwitchParser, 0, 0, {"fstack-protector"});
+CmdSwitchBool StackProtectorAll(SwitchParser, 0, 0, {"fstack-protector-all"});
+CmdSwitchBool StackProtectorStrong(SwitchParser, 0, 0, {"fstack-protector-strong"});
+CmdSwitchBool StackProtectorExplicit(SwitchParser, 0, 0, {"fstack-protector-explicit"});
+CmdSwitchBool RuntimeObjectOverflow(SwitchParser, 0, 0, {"fruntime-object-overflow"});
+CmdSwitchBool RuntimeUninitializedVariable(SwitchParser, 0, 0, {"fruntime-uninitialized-variable"});
+CmdSwitchBool RuntimeHeapCheck(SwitchParser, 0, 0, {"fruntime-heap-check"});
+
 static std::string firstFile;
 
-enum e_lk getDefaultLinkage()
+enum Linkage getDefaultLinkage()
 {
     switch (Optimizer::architecture)
     {
         case ARCHITECTURE_X86:
-            return Optimizer::cparams.prm_lscrtdll ? lk_import : lk_none;
+            return Optimizer::cparams.prm_lscrtdll ? Linkage::import_ : Linkage::none_;
         default:
-            return lk_none;
+            return Linkage::none_;
     }
 }
 
@@ -462,24 +472,15 @@ static void ParamTransfer(const char* name)
     if (Optimizer::ParseOptimizerParams(prm_flags.GetValue()) != "")
         ToolChain::Usage(getUsageText());
     // booleans
-    if (prm_c89.GetExists())
-        Optimizer::cparams.prm_c99 = Optimizer::cparams.prm_c1x = !prm_c89.GetValue();
-    if (prm_c99.GetExists())
-    {
-        Optimizer::cparams.prm_c99 = prm_c99.GetValue();
-        Optimizer::cparams.prm_c1x = !prm_c99.GetValue();
-    }
-    if (prm_c11.GetExists())
-    {
-        Optimizer::cparams.prm_c99 = prm_c11.GetValue();
-        Optimizer::cparams.prm_c1x = prm_c11.GetValue();
-    }
-    if (prm_c2x.GetExists())
-    {
-        Optimizer::cparams.prm_c99 = prm_c2x.GetValue();
-        Optimizer::cparams.prm_c1x = prm_c2x.GetValue();
-        Optimizer::cparams.prm_c2x = prm_c2x.GetValue();
-    }
+    if (prm_c2x.GetValue())
+        Optimizer::cparams.c_dialect = Dialect::c2x;
+    else if (prm_c11.GetValue())
+        Optimizer::cparams.c_dialect = Dialect::c11;
+    else if (prm_c99.GetValue())
+        Optimizer::cparams.c_dialect = Dialect::c99;
+    else if (prm_c89.GetValue())
+        Optimizer::cparams.c_dialect = Dialect::c89;
+
     if (MakeStubsOption.GetValue() || MakeStubsUser.GetValue() || MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue())
         Optimizer::cparams.prm_makestubs = true;
     if (prm_ansi.GetExists())
@@ -746,6 +747,20 @@ static void ParamTransfer(const char* name)
     {
         Optimizer::cparams.prm_useesp = false;
     }
+    if (StackProtectorBasic.GetValue())
+        Optimizer::cparams.prm_stackprotect |= STACK_PROTECT_BASIC;
+    if (StackProtectorAll.GetValue())
+        Optimizer::cparams.prm_stackprotect |= STACK_PROTECT_ALL;
+    if (StackProtectorStrong.GetValue())
+        Optimizer::cparams.prm_stackprotect |= STACK_PROTECT_STRONG;
+    if (StackProtectorExplicit.GetValue())
+        Optimizer::cparams.prm_stackprotect |= STACK_PROTECT_EXPLICIT;
+    if (RuntimeObjectOverflow.GetValue())
+        Optimizer::cparams.prm_stackprotect |= STACK_OBJECT_OVERFLOW;
+    if (RuntimeUninitializedVariable.GetValue())
+        Optimizer::cparams.prm_stackprotect |= STACK_UNINIT_VARIABLE;
+    if (RuntimeHeapCheck.GetValue())
+        Optimizer::cparams.prm_stackprotect |= HEAP_CHECK;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -774,15 +789,15 @@ void setglbdefs(void)
     preProcessor->Define("__CHAR_BIT__", "8");
     if (Optimizer::cparams.prm_cplusplus)
     {
-        switch (cplusplusversion)
+        switch (Optimizer::cparams.cpp_dialect)
         {
-            case 11:
+            case Dialect::cpp11:
                 preProcessor->Define("__cplusplus", "201103");
                 break;
-            case 14:
+            case Dialect::cpp14:
                 preProcessor->Define("__cplusplus", "201402");
                 break;
-            case 17:
+            case Dialect::cpp17:
                 preProcessor->Define("__cplusplus", "201703");
                 break;
         }
@@ -816,19 +831,35 @@ void setglbdefs(void)
         preProcessor->Define("__ATOMIC_SEQ_CST", std::to_string(Optimizer::e_mo::mo_seq_cst));
     }
     preProcessor->Define("__STDC__", "1");
+    preProcessor->Define("__STDC_ENDIAN_LITTLE__", "1");
+    preProcessor->Define("__STDC_ENDIAN_BIG__", "2");
+    preProcessor->Define("__STDC_ENDIAN_NATIVE__", "__STDC_ENDIAN_LITTLE__");
 
+   
     if (prm_prmCharIsUnsigned.GetValue())
         preProcessor->Define("__CHAR_UNSIGNED__", "1");
     else
         preProcessor->Define("__CHAR_SIGNED__", "1");
 
-    if (Optimizer::cparams.prm_c99 || Optimizer::cparams.prm_c1x || Optimizer::cparams.prm_cplusplus)
+    sprintf(buf, "%d", getMaxAlign());
+    preProcessor->Define("__MAX_ALIGN__", buf);
+
+    if (Optimizer::cparams.c_dialect >= Dialect::c99 || Optimizer::cparams.c_dialect >= Dialect::c11 || Optimizer::cparams.prm_cplusplus)
     {
         preProcessor->Define("__STDC_HOSTED__", Optimizer::chosenAssembler->hosted);  // hosted compiler, not embedded
     }
-    if (Optimizer::cparams.prm_c1x || Optimizer::cparams.prm_c2x)
+    if (Optimizer::cparams.c_dialect >= Dialect::c11 || Optimizer::cparams.c_dialect >= Dialect::c2x)
     {
-        preProcessor->Define("__STDC_VERSION__", "201112L");
+        if (Optimizer::cparams.c_dialect >= Dialect::c2x)
+        {
+            preProcessor->Define("__STDC_VERSION__", "202311L");
+            preProcessor->Define("__STDC_VERSION_STDBIT_H__", "202311");
+            preProcessor->Define("__STDC_VERSION_STDCKDINT_H__", "202311");
+        }
+        else
+        {
+            preProcessor->Define("__STDC_VERSION__", "201112L");
+        }
         Optimizer::ARCH_SIZING* local_store_of_locks = Optimizer::chosenAssembler->arch->type_needsLock;
 
         preProcessor->Define("ATOMIC_BOOL_LOCK_FREE",
@@ -857,7 +888,7 @@ void setglbdefs(void)
         preProcessor->Define("__ATOMIC_ACQ_REL", std::to_string(Optimizer::e_mo::mo_acq_rel));
         preProcessor->Define("__ATOMIC_SEQ_CST", std::to_string(Optimizer::e_mo::mo_seq_cst));
     }
-    else if (Optimizer::cparams.prm_c99)
+    else if (Optimizer::cparams.c_dialect >= Dialect::c99)
     {
         preProcessor->Define("__STDC_VERSION__", "199901L");
     }
@@ -1114,7 +1145,7 @@ int ccinit(int argc, char* argv[])
     char* p;
     int rv;
     int i;
-#if defined(WIN32) || defined(MICROSOFT)
+#ifdef TARGET_OS_WINDOWS
     GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
 #else
     strcpy(buffer, argv[0]);
@@ -1175,7 +1206,7 @@ int ccinit(int argc, char* argv[])
         Optimizer::architecture = ARCHITECTURE_X86;
     }
     if (!init_backend())
-        Utils::Fatal("Could not initialize back end");
+        Utils::Fatal("Could not initialize back Keyword::_end");
 
     static char temp[260];
     strcpy(temp, argv[0]);
@@ -1209,7 +1240,7 @@ int ccinit(int argc, char* argv[])
     /* parse the environment and command line */
     int ecnt = 0;
     char* eargs[200];
-    /* initialize back end */
+    /* initialize back Keyword::_end */
     if (prm_assemble.GetExists())
     {
         Optimizer::cparams.prm_asmfile = true;

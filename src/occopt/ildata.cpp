@@ -560,7 +560,7 @@ void gen_funcref(Optimizer::SimpleSymbol* sym)
         v->symbol.i |= BaseData::DF_EXPORT;
 }
 
-void putstring(char* string, int len)
+void putstring(const char* string, int len)
 {
     auto v = AddData(DT_STRING);
     v->astring.str = (char*)Alloc(len + 1);

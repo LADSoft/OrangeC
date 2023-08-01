@@ -23,8 +23,6 @@
  * 
  */
 
-#define KWHASHSIZE 253
-#define KW_HASH
 #define MAX_LOOKBACK 1024
 namespace Parser
 {

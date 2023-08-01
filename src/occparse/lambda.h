@@ -28,6 +28,6 @@ namespace Parser
 extern std::list<LAMBDA*> lambdas;
 
 void lambda_init(void);
-SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit);
+SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit);
 LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, int flags);
 }  // namespace Parser

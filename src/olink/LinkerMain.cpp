@@ -12,7 +12,7 @@
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
+ *     GNU General Pu_HEAPblic License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
@@ -170,11 +170,17 @@ void LinkerMain::AddFiles(LinkManager& linker, CmdFiles& files)
 }
 void LinkerMain::SetDefines(LinkManager& linker)
 {
+    bool hasHeapCheck = false;
     TargetConfig.SetDefines(linker);
     for (int i = 0; i < Defines.GetCount(); i++)
     {
         const CmdSwitchDefine::define* d = Defines.GetValue(i);
         TargetConfig.AddDefine(linker, d->name, d->value);
+        hasHeapCheck |= d->name == "__HEAP_CHECK";
+    }
+    if (!hasHeapCheck)
+    {
+        TargetConfig.AddDefine(linker, "__HEAP_CHECK", "0");
     }
 }
 std::string LinkerMain::SpecFileContents(const std::string& specFile)

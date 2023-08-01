@@ -81,6 +81,8 @@ class MakeMain
     static const char* helpText;
     static const char* usageText;
     static const char* builtinVars;
+    static const char* builtinRules;
+
 
   protected:
     void Dispatch(const char* data);

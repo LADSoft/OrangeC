@@ -39,6 +39,14 @@ KeywordHash ppExpr::hash = {
 
 ppExpr::CompilerExpression* ppExpr::expressionHandler;
 
+std::unordered_map<std::string, unsigned> ppExpr::cattributes = { 
+ {"deprecated" , 202311},
+ {"fallthrough" , 202311},
+ {"nodiscard" , 202311},
+ {"noreturn" , 202311},
+ {"maybe_unused" , 202311}
+};
+
 ppInclude* ppExpr::include;
 
 PPINT ppExpr::Eval(std::string& line, bool fromConditional)
@@ -176,6 +184,34 @@ PPINT ppExpr::primary(std::string& line, bool& isunsigned)
                 {
                     Errors::Error("Expected '('");
                 }
+            }
+        }
+        else if (dialect == Dialect::c2x && token->GetId() == "__has_c_attribute")
+        {
+            token = tokenizer->Next();
+            if (token->GetKeyword() == kw::openpa)
+            {
+                token = tokenizer->Next();
+                if (token->IsIdentifier())
+                {
+                    std::string name = token->GetId();
+                    if (name.size() >= 5 && name.substr(0,2) == "__" && name.substr(name.size()-2, 2) == "")
+                        name = name.substr(2, name.size()-4);
+                    rv = cattributes[name];
+                    token = tokenizer->Next();
+                    if (token->GetKeyword() != kw::closepa)
+                    {
+                        Errors::Error("Expected ')'");
+                    }
+                }
+                else
+                {
+                    Errors::Error("Expected identifier in defined statement");
+                }
+            }
+            else
+            {
+                Errors::Error("Expected '('");
             }
         }
         else

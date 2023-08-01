@@ -35,7 +35,7 @@
 #include "CmdFiles.h"
 #include <functional>
 
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
 #    define mysystem(x) winsystem(x)
 extern "C" int winsystem(const char*);
 #else

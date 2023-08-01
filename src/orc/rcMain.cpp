@@ -31,7 +31,7 @@
 #include "CmdFiles.h"
 #include "PreProcessor.h"
 
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
 #    include <windows.h>
 #endif
 
@@ -106,7 +106,7 @@ int rcMain::Run(int argc, char* argv[])
     for (int i = 1; i < files.size(); i++)
     {
         std::string inName = Utils::QualifiedFile(files[i].c_str(), ".rc");
-        PreProcessor pp(inName, srchPth, sysSrchPth, false, false, '#', false, true, true, false, "");
+        PreProcessor pp(inName, srchPth, sysSrchPth, false, false, '#', false, Dialect::orc, true, false, "");
 
         // for libcxx 10
         pp.Define("__need_size_t", "1");

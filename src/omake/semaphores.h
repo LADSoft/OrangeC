@@ -1,15 +1,13 @@
 #pragma once
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
 #    define NOMINMAX 1
 #    include <windows.h>
-#elif defined(HAVE_UNISTD_H)
+#else
 #    include <semaphore.h>
 #    include <errno.h>
 #    include <fcntl.h>
 #    pragma warning \
         "This platform is unsupported for named sempahores due to POSIX semaphores (named ones) being legitimately several times worse than Windows ones"
-#else
-#    pragma error "Your platform is currently not supported, contact author with semaphore implementation to get it in"
 #endif
 #include <cassert>
 #include <string>
@@ -17,12 +15,12 @@
 #include <chrono>
 class Semaphore
 {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     using semaphore_type = HANDLE;
 #    ifdef UNICODE
 #        define USE_WIDE_STRING
 #    endif
-#elif defined(HAVE_UNISTD_H)
+#else
     using semaphore_type = sem_t;
 #endif
 #ifdef USE_WIDE_STRING
@@ -39,13 +37,13 @@ class Semaphore
     Semaphore() : null(true), semaphoreName() {}
     Semaphore(string_type name, int value) : named(true), semaphoreName(name)
     {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
         handle = CreateSemaphore(nullptr, value, value, semaphoreName.c_str());
         if (!handle)
         {
             throw std::runtime_error("CreateSemaphore failed, Error code: " + std::to_string(GetLastError()));
         }
-#elif defined(HAVE_UNISTD_H)
+#else
         // 0 in this case means this is shared internally, not externally
         int ret = sem_init(&handle, 0, value);
         if (!ret)
@@ -58,13 +56,13 @@ class Semaphore
     {
         // TODO: in C++20 move to std::counting_semaphore and banish this away back to pure atomics instead of syscalls
 // note this works slightly differently from the other constructor...
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
         handle = CreateSemaphore(nullptr, 0, value, nullptr);
         if (!handle)
         {
             throw std::runtime_error("CreateSemaphore failed, Error code: " + std::to_string(GetLastError()));
         }
-#elif defined(HAVE_UNISTD_H)
+#else
         // 0 in this case means this is shared internally, not externally
         int ret = sem_init(&handle, 0, value);
         if (!ret)
@@ -75,13 +73,13 @@ class Semaphore
     }
     Semaphore(const string_type& name) : named(true), semaphoreName(name)
     {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
         handle = OpenSemaphore(EVENT_ALL_ACCESS, FALSE, name.c_str());
         if (!handle)
         {
             throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(GetLastError()));
         }
-#elif defined(HAVE_UNISTD_H)
+#else
         auto ret = sem_open(name.c_str(), O_RDWR);
         if (ret == SEM_FAILED)
         {
@@ -103,9 +101,9 @@ class Semaphore
             this->null = other.null;
             if (!this->null)
             {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
                 handle = OpenSemaphore(EVENT_ALL_ACCESS, false, semaphoreName.c_str());
-#elif defined(HAVE_UNISTD_H)
+#else
                 auto ret = sem_open(semaphoreName.c_str(), O_RDWR);
                 if (ret == SEM_FAILED)
                 {
@@ -127,9 +125,9 @@ class Semaphore
         {
             if (!null)
             {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
             CloseHandle(other.handle);
-#elif defined(HAVE_UNISTD_H)
+#else
         if (named)
         {
             sem_close(&handle);
@@ -145,9 +143,9 @@ class Semaphore
             this->null = other.null;
             if (!this->null)
             {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
                 handle = OpenSemaphore(EVENT_ALL_ACCESS, false, semaphoreName.c_str());
-#elif defined(HAVE_UNISTD_H)
+#else
                 auto ret = sem_open(semaphoreName.c_str(), O_RDWR);
                 if (ret == SEM_FAILED)
                 {
@@ -158,9 +156,9 @@ class Semaphore
             }
             other.named = false;
             other.null = true;
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
             CloseHandle(other.handle);
-#elif defined(HAVE_UNISTD_H)
+#else
         if (named)
         {
             sem_close(&handle);
@@ -177,9 +175,9 @@ class Semaphore
     {
         if (null)
             return;
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
         CloseHandle(handle);
-#elif defined(HAVE_UNISTD_H)
+#else
         if (named)
         {
             sem_close(&handle);
@@ -219,7 +217,7 @@ class Semaphore
             default:
                 return false;
         }
-#elif defined(HAVE_UNISTD_H)
+#else
         timespec ts = { waitTime/1000, (waitTime%1000) * 1000000 };
         return !sem_timedwait(&handle, &ts);
 #endif
@@ -227,7 +225,7 @@ class Semaphore
     }
     bool TryWait()
     {
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
         DWORD ret = WaitForSingleObject(handle, 0);
         switch (ret)
         {
@@ -240,7 +238,7 @@ class Semaphore
             default:
                 return false;
         }
-#elif defined(HAVE_UNISTD_H)
+#else
         return !! sem_trywait(&handle);
 #endif
     }
@@ -250,9 +248,9 @@ class Semaphore
         {
             throw std::runtime_error("Did not initialize this semaphore with a non-default constructor");
         }
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
         WaitForSingleObject(handle, INFINITE);
-#elif defined(HAVE_UNISTD_H)
+#else
         sem_wait(&handle);
 #endif
     }
@@ -262,9 +260,9 @@ class Semaphore
         {
             throw std::runtime_error("Did not initialize this semaphore with a non-default constructor");
         }
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
         ReleaseSemaphore(handle, 1, nullptr);
-#elif defined(HAVE_UNISTD_H)
+#else
         sem_post(&handle);
 #endif
     }
@@ -274,9 +272,9 @@ class Semaphore
         {
             throw std::runtime_error("Did not initialize this semaphore with a non-default constructor");
         }
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
         ReleaseSemaphore(handle, value, nullptr);
-#elif defined(HAVE_UNISTD_H)
+#else
         for (int i = 0; i < value; i++)
         {
             sem_post(&handle);

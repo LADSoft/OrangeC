@@ -72,10 +72,10 @@
 namespace Optimizer
 {
 int maxAddr;
+int lc_maxauto;
 
 static int* tempStack;
 static int tempStackcount;
-static int lc_maxauto;
 static unsigned long long regmask;
 static int localspill, spillcount;
 static unsigned short* simplifyWorklist;
@@ -339,7 +339,7 @@ static void ScanForAnonymousVars(void)
         head = head->fwd;
     }
 }
-void AllocateStackSpace()
+void AllocateStackSpace(int begin)
 /*
  * This allocates space for local variables
  * we do this AFTER the register optimization so that we can
@@ -382,12 +382,15 @@ void AllocateStackSpace()
         }
     }
     bool show = false;
-    lc_maxauto = max = 0;
+    lc_maxauto = max = begin;
+
 
     for (auto&& dq : queue)
     {
         int oldauto = lc_maxauto;
-        lc_maxauto = max;
+        // we dont do stack compression if we are doing runtime checks
+        if (!Optimizer::cparams.prm_stackprotect & (STACK_OBJECT_OVERFLOW | STACK_UNINIT_VARIABLE))
+            lc_maxauto = max;
         for (auto&& sym : dq)
         {
             if (modes[sym] & 1)  // overlay?
@@ -408,6 +411,11 @@ void AllocateStackSpace()
             {
                 int val;
                 lc_maxauto += sym->tp->size;
+                if ((sym->tp->isarray || sym->tp->type == st_struct || sym->tp->type == st_union || sym->tp->type == st_class) && (Optimizer::cparams.prm_stackprotect & STACK_OBJECT_OVERFLOW))
+                {
+                    // make a canary on each such variables, that will be checked for buffer overflow...
+                    lc_maxauto += chosenAssembler->arch->type_sizes->a_addr;
+                }
                 if (sym->tp->isatomic && needsAtomicLockFromISZ(sym->tp->sizeFromType))
                 {
                     lc_maxauto += ATOMIC_FLAG_SPACE;

@@ -11,7 +11,7 @@ syntax_node.o \
 syntax_node_base.o \
 
 %.o: %.cpp
-	occ /c /DWIN32_LEAN_AND_MEAN /! -o$@ $^
+	occ /c -fstack-protector-all /DWIN32_LEAN_AND_MEAN /! -o$@ $^
 
 test: cs.exe
 	cs -G test.pas > q1.out

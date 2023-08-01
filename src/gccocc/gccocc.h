@@ -92,4 +92,8 @@ private:
     static CmdSwitchCombineString MakeStubsQuotedTargets;
     static CmdSwitchBool MakeStubsContinue;
     static CmdSwitchBool MakeStubsContinueUser;
+    static CmdSwitchBool StackProtectorBasic;
+    static CmdSwitchBool StackProtectorAll;
+    static CmdSwitchBool StackProtectorStrong;
+    static CmdSwitchBool StackProtectorExplicit;
 };

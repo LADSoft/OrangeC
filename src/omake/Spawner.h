@@ -32,7 +32,7 @@
 #include "JobServerAwareThread.h"
 #include <vector>
 #include "os.h"
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
 #    define WINFUNC __stdcall
 #else
 #    define WINFUNC

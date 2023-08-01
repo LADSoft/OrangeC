@@ -22,7 +22,7 @@
  * 
  */
 
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
 #    include "Windows.h"
 #endif
 #include "DotNetPELib.h"
@@ -171,7 +171,7 @@ std::string PEReader::FindGACPath(const std::string& path, const std::string& as
                                   int revision)
 {
     std::string rv;
-#ifdef _WIN32
+#ifdef TARGET_OS_WINDOWS
     std::string root = path + DIR_SEP + assemblyName + DIR_SEP + "*.*";
     WIN32_FIND_DATA data;
     HANDLE h = FindFirstFile(root.c_str(), &data);

@@ -28,6 +28,7 @@
 #include <string>
 
 #include "Token.h"
+#include "ppCommon.h"
 class ppDefine;
 class ppInclude;
 
@@ -39,7 +40,7 @@ class ppExpr
   public:
     typedef long long CompilerExpression(std::string& line);
 
-    ppExpr(bool isunsignedchar) : define(nullptr), unsignedchar(isunsignedchar), token(nullptr), floatWarned(false) {}
+    ppExpr(bool isunsignedchar, Dialect dialect_) : define(nullptr), unsignedchar(isunsignedchar), token(nullptr), floatWarned(false), dialect(dialect_) {}
     ~ppExpr() {}
 
     void SetParams(ppDefine* Define) { define = Define; }
@@ -70,11 +71,13 @@ class ppExpr
   private:
     bool floatWarned;
     bool unsignedchar;
+    Dialect dialect;
     ppDefine* define;
     std::unique_ptr<Tokenizer> tokenizer;
     const Token* token;
     static KeywordHash hash;
     static ppInclude* include;
     static CompilerExpression* expressionHandler;
+    static std::unordered_map<std::string, unsigned> cattributes;
 };
 #endif

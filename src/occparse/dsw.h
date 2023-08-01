@@ -41,7 +41,7 @@ T* TreeToVine(T* nd, F* consider)
     root.right = nd;
     T* tail = &root;
     T* rest = tail->right;
-    int type = nd->type;
+    decltype(nd->type) type = nd->type;
     while (rest)
     {
         if (!rest->left)

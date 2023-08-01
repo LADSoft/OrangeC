@@ -200,9 +200,9 @@ static void inasm_getsym(void)
     lex = getsym();
     inasm_txsym();
 }
-static void inasm_needkw(LEXLIST** lex, int Keyword)
+static void inasm_needkw(LEXLIST** lex, Keyword Kw)
 {
-    needkw(lex, (e_kw)Keyword);
+    needkw(lex, Kw);
     inasm_txsym();
 }
 static AMODE* inasm_const(void)
@@ -246,17 +246,17 @@ static EXPRESSION* inasm_ident(void)
         if ((sym = search(labelSyms, nm)) == 0 && (sym = gsearch(nm)) == 0)
         {
             sym = SymAlloc();
-            sym->sb->storage_class = sc_ulabel;
+            sym->sb->storage_class = StorageClass::ulabel;
             sym->name = litlate(nm);
             sym->sb->declfile = sym->sb->origdeclfile = lex->data->errfile;
             sym->sb->declline = sym->sb->origdeclline = lex->data->errline;
             sym->sb->realdeclline = lex->data->linedata->lineno;
             sym->sb->declfilenum = lex->data->linedata->fileindex;
             sym->sb->attribs.inheritable.used = true;
-            sym->tp = MakeType(bt_unsigned);
+            sym->tp = MakeType(BasicType::unsigned_);
             sym->sb->offset = codeLabel++;
             labelSyms->Add(sym);
-            node = intNode(en_labcon, sym->sb->offset);
+            node = intNode(ExpressionNode::labcon, sym->sb->offset);
         }
         else
         {
@@ -265,39 +265,39 @@ static EXPRESSION* inasm_ident(void)
             sym->sb->attribs.inheritable.used = true;
             switch (sym->sb->storage_class)
             {
-                case sc_absolute:
+                case StorageClass::absolute:
                     Optimizer::SymbolManager::Get(sym);
-                    node = varNode(en_absolute, sym);
+                    node = varNode(ExpressionNode::absolute, sym);
                     break;
-                case sc_overloads:
-                    node = varNode(en_pc, (SYMBOL*)sym->tp->syms->front());
+                case StorageClass::overloads:
+                    node = varNode(ExpressionNode::pc, (SYMBOL*)sym->tp->syms->front());
                     InsertInline(sym->tp->syms->front());
                     break;
-                case sc_localstatic:
-                case sc_global:
-                case sc_external:
-                case sc_static: {
+                case StorageClass::localstatic:
+                case StorageClass::global:
+                case StorageClass::external:
+                case StorageClass::static_: {
                     Optimizer::SimpleSymbol* sym1 = Optimizer::SymbolManager::Get(sym);
-                    node = varNode(en_global, sym);
+                    node = varNode(ExpressionNode::global, sym);
                     InsertGlobal(sym);
                     if (isfunction(sym->tp))
                         InsertInline(sym);
                     Optimizer::EnterExternal(sym1);
                     break;
                 }
-                case sc_const:
+                case StorageClass::const_:
                     /* constants and enums */
-                    node = intNode(en_c_i, sym->sb->value.i);
+                    node = intNode(ExpressionNode::c_i, sym->sb->value.i);
                     break;
-                case sc_label:
-                case sc_ulabel:
-                    node = intNode(en_labcon, sym->sb->offset);
+                case StorageClass::label:
+                case StorageClass::ulabel:
+                    node = intNode(ExpressionNode::labcon, sym->sb->offset);
                     break;
-                case sc_auto:
-                case sc_register:
+                case StorageClass::auto_:
+                case StorageClass::register_:
                     sym->sb->allocate = true;
-                case sc_parameter:
-                    node = varNode(en_auto, sym);
+                case StorageClass::parameter:
+                    node = varNode(ExpressionNode::auto_, sym);
                     sym->sb->inasm = true;
                     break;
                 default:
@@ -326,38 +326,38 @@ static EXPRESSION* inasm_label(void)
     if ((sym = search(labelSyms, lex->data->value.s.a)) == 0)
     {
         sym = SymAlloc();
-        sym->sb->storage_class = sc_label;
+        sym->sb->storage_class = StorageClass::label;
         sym->name = litlate(lex->data->value.s.a);
         sym->sb->declfile = sym->sb->origdeclfile = lex->data->errfile;
         sym->sb->declline = sym->sb->origdeclline = lex->data->errline;
         sym->sb->realdeclline = lex->data->linedata->lineno;
         sym->sb->declfilenum = lex->data->linedata->fileindex;
-        sym->tp = MakeType(bt_unsigned);
+        sym->tp = MakeType(BasicType::unsigned_);
         sym->sb->offset = codeLabel++;
-        SetLinkerNames(sym, lk_none);
+        SetLinkerNames(sym, Linkage::none_);
         labelSyms->Add(sym);
     }
     else
     {
-        if (sym->sb->storage_class == sc_label)
+        if (sym->sb->storage_class == StorageClass::label)
         {
             errorsym(ERR_DUPLICATE_LABEL, sym);
             inasm_getsym();
             return 0;
         }
-        if (sym->sb->storage_class != sc_ulabel)
+        if (sym->sb->storage_class != StorageClass::ulabel)
         {
             inasm_err(ERR_LABEL_EXPECTED);
             return 0;
         }
-        sym->sb->storage_class = sc_label;
+        sym->sb->storage_class = StorageClass::label;
     }
     inasm_getsym();
     if (lex->data->type == l_asminst)
     {
         if (insdata->atype == op_reserved)
         {
-            node = intNode(en_labcon, sym->sb->offset);
+            node = intNode(ExpressionNode::labcon, sym->sb->offset);
             return node;
         }
         else if (insdata->atype != op_label)
@@ -366,13 +366,13 @@ static EXPRESSION* inasm_label(void)
             return 0;
         }
     }
-    else if (!MATCHKW(lex, colon))
+    else if (!MATCHKW(lex, Keyword::_colon))
     {
         inasm_err(ERR_LABEL_EXPECTED);
         return 0;
     }
     inasm_getsym();
-    node = intNode(en_labcon, sym->sb->offset);
+    node = intNode(ExpressionNode::labcon, sym->sb->offset);
     return node;
 }
 
@@ -418,7 +418,7 @@ static int inasm_getsize(void)
             inasm_getsym();
         }
     }
-    if (!lex || (lex->data->type != l_asmreg && !ISID(lex) && !MATCHKW(lex, openbr)))
+    if (!lex || (lex->data->type != l_asmreg && !ISID(lex) && !MATCHKW(lex, Keyword::_openbr)))
     {
         inasm_err(ERR_ADDRESS_MODE_EXPECTED);
         return 0;
@@ -430,7 +430,7 @@ static int inasm_getsize(void)
 
 static int getscale(int* scale)
 {
-    if (MATCHKW(lex, star))
+    if (MATCHKW(lex, Keyword::_star))
     {
         inasm_getsym();
         if (lex)
@@ -468,7 +468,7 @@ static int getscale(int* scale)
 
 int inasm_enterauto(EXPRESSION* node, int* reg1, int* reg2)
 {
-    if (node && node->type == en_auto)
+    if (node && node->type == ExpressionNode::auto_)
     {
         int* vreg;
         if (*reg1 >= 0 && *reg2 >= 0)
@@ -487,7 +487,7 @@ int inasm_enterauto(EXPRESSION* node, int* reg1, int* reg2)
 
 static int inasm_structsize(void)
 {
-    if (basetype(lastsym->tp)->type == bt_struct)
+    if (basetype(lastsym->tp)->type == BasicType::struct_)
     {
         if (lastsym->tp->size == 6)
             return ISZ_FARPTR;
@@ -503,37 +503,37 @@ static int inasm_structsize(void)
     {
         switch (basetype(lastsym->tp)->type)
         {
-            case bt_char:
-            case bt_unsigned_char:
-            case bt_signed_char:
+            case BasicType::char_:
+            case BasicType::unsigned_char:
+            case BasicType::signed_char:
                 return ISZ_UCHAR;
-            case bt_bool:
+            case BasicType::bool_:
                 return ISZ_BOOLEAN;
-            case bt_short:
-            case bt_unsigned_short:
-            case bt_char16_t:
+            case BasicType::short_:
+            case BasicType::unsigned_short:
+            case BasicType::char16_t_:
                 return ISZ_USHORT;
-            case bt_wchar_t:
+            case BasicType::wchar_t_:
                 return ISZ_USHORT;
-            case bt_long:
-            case bt_unsigned_long:
+            case BasicType::long_:
+            case BasicType::unsigned_long:
                 return ISZ_UINT;
-            case bt_long_long:
-            case bt_unsigned_long_long:
+            case BasicType::long_long:
+            case BasicType::unsigned_long_long:
                 return ISZ_ULONGLONG;
-            case bt_int:
-            case bt_unsigned:
-            case bt_char32_t:
+            case BasicType::int_:
+            case BasicType::unsigned_:
+            case BasicType::char32_t_:
                 return ISZ_UINT;
-            case bt_enum:
+            case BasicType::enum_:
                 return ISZ_UINT;
-            case bt_pointer:
+            case BasicType::pointer:
                 return ISZ_UINT;
-            case bt_seg:
+            case BasicType::seg:
                 return ISZ_USHORT;
-            case bt_far:
+            case BasicType::far:
                 return ISZ_FARPTR;
-                //        case bt_memberptr:
+                //        case BasicType::memberptr:
                 //            return ISZ_UINT;
             default:
                 return 1000;
@@ -575,7 +575,7 @@ static AMODE* inasm_mem(void)
                         }
                         seg = rg;
                         inasm_getsym();
-                        if (!MATCHKW(lex, colon))
+                        if (!MATCHKW(lex, Keyword::_colon))
                         {
                             inasm_err(ERR_INVALID_INDEX_MODE);
                             return 0;
@@ -627,20 +627,20 @@ static AMODE* inasm_mem(void)
                 case l_l:
                 case l_ul:
                     if (node)
-                        node = exprNode(subtract ? en_sub : en_add, node, intNode(en_c_i, lex->data->value.i));
+                        node = exprNode(subtract ? ExpressionNode::sub : ExpressionNode::add, node, intNode(ExpressionNode::c_i, lex->data->value.i));
                     else if (subtract)
-                        node = intNode(en_c_i, -lex->data->value.i);
+                        node = intNode(ExpressionNode::c_i, -lex->data->value.i);
                     else
-                        node = intNode(en_c_i, lex->data->value.i);
+                        node = intNode(ExpressionNode::c_i, lex->data->value.i);
                     inasm_getsym();
                     break;
                 case l_kw:
-                    if (MATCHKW(lex, plus) || MATCHKW(lex, minus))
+                    if (MATCHKW(lex, Keyword::_plus) || MATCHKW(lex, Keyword::_minus))
                     {
                         if (node)
-                            node = exprNode(en_add, node, intNode(en_c_i, 0));
+                            node = exprNode(ExpressionNode::add, node, intNode(ExpressionNode::c_i, 0));
                         else
-                            node = intNode(en_c_i, 0);
+                            node = intNode(ExpressionNode::c_i, 0);
                         break;
                     }
                     /* fallthrough */
@@ -670,17 +670,17 @@ static AMODE* inasm_mem(void)
                     break;
             }
         }
-        if (MATCHKW(lex, closebr))
+        if (MATCHKW(lex, Keyword::_closebr))
         {
             inasm_getsym();
             break;
         }
-        if (!MATCHKW(lex, plus) && !MATCHKW(lex, minus))
+        if (!MATCHKW(lex, Keyword::_plus) && !MATCHKW(lex, Keyword::_minus))
         {
             inasm_err(ERR_INVALID_INDEX_MODE);
             return 0;
         }
-        if (MATCHKW(lex, minus))
+        if (MATCHKW(lex, Keyword::_minus))
             subtract = true;
         else
             subtract = false;
@@ -748,9 +748,9 @@ static AMODE* inasm_amode(int nosegreg)
             case l_kw:
                 switch (KW(lex))
                 {
-                    case openbr:
-                    case minus:
-                    case plus:
+                    case Keyword::_openbr:
+                    case Keyword::_minus:
+                    case Keyword::_plus:
                         break;
                     default:
                         inasm_err(ERR_ADDRESS_MODE_EXPECTED);
@@ -785,7 +785,7 @@ static AMODE* inasm_amode(int nosegreg)
                     if (regimage->regtype == am_freg)
                     {
                         inasm_getsym();
-                        if (MATCHKW(lex, openpa))
+                        if (MATCHKW(lex, Keyword::_openpa))
                         {
                             inasm_getsym();
                             if (!lex || (lex->data->type != l_i && lex->data->type != l_ui) || lex->data->value.i < 0 ||
@@ -795,7 +795,7 @@ static AMODE* inasm_amode(int nosegreg)
                                 return 0;
                             }
                             inasm_getsym();
-                            inasm_needkw(&lex, closepa);
+                            inasm_needkw(&lex, Keyword::_closepa);
                         }
                         else
                             lex->data->value.i = 0;
@@ -812,7 +812,7 @@ static AMODE* inasm_amode(int nosegreg)
                         }
                         rv->seg = seg = regimage->regnum;
                         inasm_getsym();
-                        if (MATCHKW(lex, colon))
+                        if (MATCHKW(lex, Keyword::_colon))
                         {
                             inasm_getsym();
                             done = false;
@@ -842,13 +842,13 @@ static AMODE* inasm_amode(int nosegreg)
                 case l_kw:
                     switch (KW(lex))
                     {
-                        case openbr:
+                        case Keyword::_openbr:
                             rv = inasm_mem();
                             if (rv && rv->seg)
                                 seg = rv->seg;
                             break;
-                        case minus:
-                        case plus:
+                        case Keyword::_minus:
+                        case Keyword::_plus:
                             rv = inasm_const();
                             break;
                         default:
@@ -899,7 +899,7 @@ static AMODE* aimmed(long long i)
 {
     AMODE* rv = Allocate<AMODE>();
     rv->mode = am_immed;
-    rv->offset = (Optimizer::SimpleExpression*)intNode(en_c_i, i);
+    rv->offset = (Optimizer::SimpleExpression*)intNode(ExpressionNode::c_i, i);
     return rv;
 }
 static AMODE* inasm_immed(void)
@@ -1010,42 +1010,42 @@ static int getData(STATEMENT* snp)
             {
                 case ISZ_UCHAR:
                     expr->v.i = reint(expr);
-                    expr->type = en_c_uc;
+                    expr->type = ExpressionNode::c_uc;
                     break;
                 case ISZ_USHORT:
                     expr->v.i = reint(expr);
-                    expr->type = en_c_us;
+                    expr->type = ExpressionNode::c_us;
                     break;
                 case ISZ_ULONG:
                     if (isintconst(expr))
                     {
                         expr->v.i = reint(expr);
-                        expr->type = en_c_ul;
+                        expr->type = ExpressionNode::c_ul;
                     }
                     else
                     {
                         expr->v.f = Allocate<FPF>();
                         *expr->v.f = refloat(expr);
-                        expr->type = en_c_f;
+                        expr->type = ExpressionNode::c_f;
                     }
                     break;
                 case ISZ_ULONGLONG:
                     if (isintconst(expr))
                     {
                         expr->v.i = reint(expr);
-                        expr->type = en_c_ull;
+                        expr->type = ExpressionNode::c_ull;
                     }
                     else
                     {
                         expr->v.f = Allocate<FPF>();
                         *expr->v.f = refloat(expr);
-                        expr->type = en_c_d;
+                        expr->type = ExpressionNode::c_d;
                     }
                     break;
                 case ISZ_LDOUBLE:
                     expr->v.f = Allocate<FPF>();
                     *expr->v.f = refloat(expr);
-                    expr->type = en_c_ld;
+                    expr->type = ExpressionNode::c_ld;
                     break;
             }
             *newExpr = expr;
@@ -1057,7 +1057,7 @@ static int getData(STATEMENT* snp)
             lex = SkipToNextLine();
             break;
         }
-    } while (lex && MATCHKW(lex, comma));
+    } while (lex && MATCHKW(lex, Keyword::_comma));
     return 1;
 }
 static void AssembleInstruction(OCODE* ins)
@@ -1110,7 +1110,7 @@ LEXLIST* inlineAsm(LEXLIST* inlex, std::list<BLOCKDATA*>& parent)
     inasm_txsym();
     do
     {
-        snp = stmtNode(lex, parent, st_passthrough);
+        snp = stmtNode(lex, parent, StatementNode::passthrough);
         if (!lex)
         {
             return lex;
@@ -1118,7 +1118,7 @@ LEXLIST* inlineAsm(LEXLIST* inlex, std::list<BLOCKDATA*>& parent)
         bool atend;
         if (lex->data->type != l_asminst)
         {
-            if (MATCHKW(lex, kw_int))
+            if (MATCHKW(lex, Keyword::_int))
             {
                 inasm_getsym();
                 op = op_int;
@@ -1129,10 +1129,10 @@ LEXLIST* inlineAsm(LEXLIST* inlex, std::list<BLOCKDATA*>& parent)
             node = inasm_label();
             if (!node)
                 return lex;
-            if (MATCHKW(lex, semicolon))
+            if (MATCHKW(lex, Keyword::_semicolon))
                 inasm_getsym();
 
-            snp->type = st_label;
+            snp->type = StatementNode::label;
             snp->label = node->v.i;
             return lex;
         }
@@ -1143,7 +1143,7 @@ LEXLIST* inlineAsm(LEXLIST* inlex, std::list<BLOCKDATA*>& parent)
         }
         atend = AtEol();
         op = inasm_op();
-        if (op == (enum e_opcode) - 1)
+        if (op == (e_opcode) - 1)
         {
 
             return lex;
@@ -1152,14 +1152,14 @@ LEXLIST* inlineAsm(LEXLIST* inlex, std::list<BLOCKDATA*>& parent)
             rv = beLocalAllocate<OCODE>();
             if (!(op == op_rep || op == op_repnz || op == op_repz || op == op_repe || op == op_repne || op == op_lock))
             {
-                if (!atend && !MATCHKW(lex, semicolon))
+                if (!atend && !MATCHKW(lex, Keyword::_semicolon))
                 {
                     rv->oper1 = inasm_amode(false);
-                    if (MATCHKW(lex, comma))
+                    if (MATCHKW(lex, Keyword::_comma))
                     {
                         inasm_getsym();
                         rv->oper2 = inasm_amode(false);
-                        if (MATCHKW(lex, comma))
+                        if (MATCHKW(lex, Keyword::_comma))
                         {
                             inasm_getsym();
                             rv->oper3 = inasm_amode(false);
@@ -1198,7 +1198,7 @@ LEXLIST* inlineAsm(LEXLIST* inlex, std::list<BLOCKDATA*>& parent)
     } while (op == op_rep || op == op_repnz || op == op_repz || op == op_repe || op == op_repne || op == op_lock);
     return lex;
 }
-void adjust_codelab(void* select, int offset)
+void adjustcodelab(void* select, int offset)
 {
     OCODE* peep = (OCODE*)select;
     if (peep->oper1 && peep->oper1->offset && peep->oper1->offset->type == Optimizer::se_labcon)

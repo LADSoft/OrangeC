@@ -37,8 +37,7 @@
 #include <future>
 #include <memory>
 #include <mutex>
-#ifdef HAVE_UNISTD_H
-#else
+#ifdef TARGET_OS_WINDOWS
 #    include <windows.h>
 #    undef Yield
 #endif

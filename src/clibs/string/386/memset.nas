@@ -23,11 +23,14 @@
 
 %ifdef __BUILDING_LSCRTL_DLL
 [export _memset]
+[export _memset_explicit]
 %endif
 [global _memset]
+[global _memset_explicit]
 
 SECTION code CLASS=CODE USE32
 _memset:
+_memset_explicit:
     push ebp
 	mov ebp, esp
     mov	ecx,[ebp+16]

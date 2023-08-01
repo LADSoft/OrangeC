@@ -1,0 +1,2 @@
+Runtime check: Use of uninitialized variable 'a' at 'uninitvar.c(7)'
+Abnormal program termination

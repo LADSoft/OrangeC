@@ -25,7 +25,7 @@
 #include "Utils.h"
 #include <cstdio>
 #include <cstdlib>
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
 #    include <windows.h>
 #    include "io.h"
 #    include "fcntl.h"
@@ -33,7 +33,7 @@
 
 bool Utils::NamedPipe(int* fds, const std::string& pipeName)
 {
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
     char pipe[MAX_PATH];
     sprintf(pipe, "\\\\.\\pipe\\%s", pipeName.c_str());
     HANDLE handle;
@@ -49,7 +49,7 @@ bool Utils::NamedPipe(int* fds, const std::string& pipeName)
 }
 bool Utils::PipeWrite(int fileno, const std::string& data)
 {
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
     DWORD n = data.size();
     DWORD read;
     return WriteFile((HANDLE)_get_osfhandle(fileno), &n, sizeof(DWORD), &read, NULL) &&
@@ -59,7 +59,7 @@ bool Utils::PipeWrite(int fileno, const std::string& data)
 #endif
 }
 
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
 static void WaitForPipeData(HANDLE hPipe, int size)
 {
     int xx = GetTickCount();
@@ -81,7 +81,7 @@ static void WaitForPipeData(HANDLE hPipe, int size)
 
 std::string Utils::PipeRead(int fileno)
 {
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
     HANDLE hPipe = (HANDLE)_get_osfhandle(fileno);
     WaitForPipeData(hPipe, sizeof(DWORD));
     int n = sizeof(DWORD);

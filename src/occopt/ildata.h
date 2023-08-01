@@ -284,7 +284,7 @@ void gen_virtual(Optimizer::SimpleSymbol* sym, int data);
 void gen_endvirtual(Optimizer::SimpleSymbol* sym);
 void align(int size);
 void gen_funcref(Optimizer::SimpleSymbol* sym);
-void putstring(char* string, int len);
+void putstring(const char* string, int len);
 void nl(void);
 void EnterExternal(Optimizer::SimpleSymbol* sym);
 void EnterType(Optimizer::SimpleSymbol* sym);

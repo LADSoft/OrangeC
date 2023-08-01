@@ -65,14 +65,14 @@ void dumpInitGroup(SYMBOL* sym, TYPE* tp);
 void dumpInitializers(void);
 void insertInitSym(SYMBOL* sym);
 INITIALIZER* initInsert(std::list<INITIALIZER*>** pos, TYPE* tp, EXPRESSION* exp, int offset, bool noassign);
-enum e_node referenceTypeError(TYPE* tp, EXPRESSION* exp);
+enum ExpressionNode referenceTypeError(TYPE* tp, EXPRESSION* exp);
 EXPRESSION* createTemporary(TYPE* tp, EXPRESSION* val);
 EXPRESSION* msilCreateTemporary(TYPE* tp, EXPRESSION* val);
 EXPRESSION* getThisNode(SYMBOL* sym);
-LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, enum e_sc sc, std::list<INITIALIZER*>** init, std::list<INITIALIZER*>** dest, TYPE* itype,
+LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, std::list<INITIALIZER*>** init, std::list<INITIALIZER*>** dest, TYPE* itype,
                   SYMBOL* sym, bool arrayMember, int flags);
 bool InitVariableMatches(SYMBOL* left, SYMBOL* right);
 void RecalculateVariableTemplateInitializers(std::list<INITIALIZER*>::iterator& ilbegin, std::list<INITIALIZER*>::iterator& ilend, std::list<INITIALIZER*>** out, TYPE* tp, int offset);
-LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, bool inTemplate,
+LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, bool inTemplate,
                     int flags);
 }  // namespace Parser

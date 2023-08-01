@@ -26,7 +26,7 @@
 #include "RCFile.h"
 #include "ResFile.h"
 #include "ResourceData.h"
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
 #    include <windows.h>
 #endif
 #include <stdexcept>
@@ -107,7 +107,7 @@ bool Control::ValidType(RCFile& rcFile)
 }
 void Control::ReadStandard(RCFile& rcFile, int clss, int addStyle, int extended, int hasText)
 {
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
     addStyle |= WS_CHILD | WS_VISIBLE;
 #endif
     cls.SetId(clss);
@@ -143,7 +143,7 @@ void Control::ReadStandard(RCFile& rcFile, int clss, int addStyle, int extended,
         helpIndex = rcFile.GetNumber();
         rcFile.SkipComma();
     }
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
     if (cls == Scrollbar)
     {
         if (style & SBS_VERT)
@@ -220,7 +220,7 @@ void Control::ReadGeneric(RCFile& rcFile, bool extended)
     rcFile.SkipComma();
     GetClass(rcFile);
     rcFile.SkipComma();
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
     style = rcFile.GetNumber() | WS_CHILD | WS_VISIBLE;
 #else
     style = rcFile.GetNumber();
@@ -247,7 +247,7 @@ void Control::ReadGeneric(RCFile& rcFile, bool extended)
 
 void Control::ReadRC(RCFile& rcFile, bool extended)
 {
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
     switch (rcFile.GetTokenId())
     {
         case kw::AUTO3STATE:
@@ -346,7 +346,7 @@ void Dialog::WriteRes(ResFile& resFile)
 
     resFile.WriteString(caption);
 
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
     if (style & DS_SETFONT)
     {
         resFile.WriteWord(pointSize);
@@ -466,7 +466,7 @@ void Dialog::ReadSettings(RCFile& rcFile)
             rcFile.NeedEol();
         }
     }
-#ifndef HAVE_UNISTD_H
+#ifdef TARGET_OS_WINDOWS
     if (hascaption)
         style |= WS_CAPTION;
     if (!hasstyle)

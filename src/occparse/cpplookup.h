@@ -43,7 +43,7 @@ extern SYMBOL* argFriend;
 SYMBOL* tablesearchone(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly);
 std::list<SYMBOL*> tablesearchinline(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly, bool allowUsing = false);
 SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bool qualified, bool tagsOnly);
-LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly, enum e_sc storage_class,
+LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly, StorageClass storage_class,
                     bool isType);
 SYMBOL* classdata(const char* name, SYMBOL* cls, SYMBOL* last, bool isvirtual, bool tagsOnly);
 SYMBOL* templatesearch(const char* name, std::list<TEMPLATEPARAMPAIR>* arg);
@@ -52,12 +52,12 @@ SYMBOL* classsearch(const char* name, bool tagsOnly, bool needTypeOrNamespace, b
 SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALUEDATA*>* ns, bool tagsOnly, bool throughClass,
                      bool namespaceOnly);
 LEXLIST* nestedSearch(LEXLIST* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* destructor, bool* isTemplate,
-                      bool tagsOnly, enum e_sc storage_class, bool errIfNotFound, bool isType);
+                      bool tagsOnly, StorageClass storage_class, bool errIfNotFound, bool isType);
 LEXLIST* getIdName(LEXLIST* lex, SYMBOL* funcsp, char* buf, int* ov, TYPE** castType);
 LEXLIST* id_expression(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* isTemplate,
                        bool tagsOnly, bool membersOnly, char* idname);
 SYMBOL* LookupSym(char* name);
-bool isAccessible(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, enum e_ac minAccess, bool asAddress);
+bool isAccessible(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, AccessLevel minAccess, bool asAddress);
 bool isExpressionAccessible(SYMBOL* derived, SYMBOL* sym, SYMBOL* funcsp, EXPRESSION* exp, bool asAddress);
 bool checkDeclarationAccessible(SYMBOL* sp, SYMBOL* derived, SYMBOL* funcsp);
 SYMBOL* lookupGenericConversion(SYMBOL* sym, TYPE* tp);
@@ -66,10 +66,10 @@ SYMBOL* lookupNonspecificCast(SYMBOL* sym, TYPE* tp);
 SYMBOL* lookupIntCast(SYMBOL* sym, TYPE* tp, bool implicit);
 SYMBOL* lookupArithmeticCast(SYMBOL* sym, TYPE* tp, bool implicit);
 SYMBOL* lookupPointerCast(SYMBOL* sym, TYPE* tp);
-SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate_in,
+SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, e_cvsrn* seq, SYMBOL* candidate_in,
     SYMBOL** userFunc, bool honorExplicit);
 void GetRefs(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref);
-void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
+void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
                          bool allowUser, bool ref = false);
 bool sameTemplateSelector(TYPE* tnew, TYPE* told);
 bool sameTemplatePointedTo(TYPE* tnew, TYPE* told, bool quals = false);

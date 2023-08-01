@@ -1,6 +1,6 @@
 #include "afx.h"
 
-#ifdef MICROSOFT
+#ifdef TARGET_OS_WINDOWS
 #    define system(x) winsystem(x)
 extern int winsystem(const char*);
 #endif

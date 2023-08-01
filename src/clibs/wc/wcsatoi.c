@@ -84,6 +84,16 @@ LLONG_TYPE __xwcstoimax(FILE* fil, int count, int* ch, int* chars, int radix, un
                     return 0;
                 }
             }
+            else if (*(ch) == 'b' || *(ch) == 'B')
+            {
+                radix = 2;
+                nextchar;
+                if (*ch != '0' && *ch != '1')
+                {
+                    fil->curp = bpos;
+                    return 0;
+                }
+            }
         }
         else if (radix == 16)
         {
@@ -92,6 +102,19 @@ LLONG_TYPE __xwcstoimax(FILE* fil, int count, int* ch, int* chars, int radix, un
             {
                 nextchar;
                 if (!iswxdigit(*ch))
+                {
+                    fil->curp = bpos;
+                    return 0;
+                }
+            }
+        }
+        else if (radix == 2)
+        {
+            nextchar;
+            if (*(ch) == 'b' || *(ch) == 'B')
+            {
+                nextchar;
+                if (*ch != '0' && *ch != '1')
                 {
                     fil->curp = bpos;
                     return 0;

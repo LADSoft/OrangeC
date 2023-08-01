@@ -134,5 +134,8 @@
     <ClInclude Include="ppEmbed.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ppCommon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

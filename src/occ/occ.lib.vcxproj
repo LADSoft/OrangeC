@@ -116,7 +116,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;USE_LONGLONG;BORLAND;TARGET_OS_WINDOWS;MICROSOFT;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\netlib;..\occopt;..\occparse</AdditionalIncludeDirectories>
@@ -132,7 +132,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;USE_LONGLONG;x64;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;USE_LONGLONG;x64;TARGET_OS_WINDOWS;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\netlib;..\occopt;..\occparse</AdditionalIncludeDirectories>
@@ -150,7 +150,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)WIN32;NDEBUG;_CONSOLE;USE_LONGLONG;x64;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;TARGET_OS_WINDOWS;%(PreprocessorDefinitions)WIN32;NDEBUG;_CONSOLE;USE_LONGLONG;x64;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\netlib;..\occopt;..\occparse</AdditionalIncludeDirectories>
@@ -168,7 +168,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;USE_LONGLONG;BORLAND;TARGET_OS_WINDOWS;MICROSOFT;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\netlib;..\occopt;..\occparse</AdditionalIncludeDirectories>

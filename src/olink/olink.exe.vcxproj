@@ -85,7 +85,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;TARGET_OS_WINDOWS;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3;..\olib;..\exefmt</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -102,7 +102,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;TARGET_OS_WINDOWS;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3;..\olib;..\exefmt</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -121,7 +121,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;TARGET_OS_WINDOWS;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3;..\olib;..\exefmt</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -142,7 +142,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;TARGET_OS_WINDOWS;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3;..\olib;..\exefmt</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>

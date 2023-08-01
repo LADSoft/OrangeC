@@ -26,6 +26,10 @@
 
 typedef unsigned LCHAR;
 
+namespace Parser
+{
+	struct sym;
+};
 namespace Optimizer
 {
 typedef unsigned BITINT;
@@ -56,6 +60,16 @@ typedef struct _linedata
     int lineno;
     int fileindex;
 } LINEDATA;
+
+typedef struct _runtimeData
+{
+    struct Parser::sym *runtimeSymOrig;
+    void *runtimeSym;
+    const char *fileName;
+    const char *varName;
+    int lineno : 24;
+    int asStore : 1;
+} RUNTIMEDATA;
 
 typedef struct
 {

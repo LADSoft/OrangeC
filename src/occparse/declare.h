@@ -49,40 +49,40 @@ void WeedExterns(void);
 const char* AnonymousName(void);
 const char* AnonymousTypeName(void);
 SYMBOL* SymAlloc(void);
-SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name);
-SYMBOL* makeUniqueID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name);
-TYPE* MakeType(TYPE& tp, enum e_bt type, TYPE* base = nullptr);
-TYPE* MakeType(enum e_bt type, TYPE* base = nullptr);
+SYMBOL* makeID(StorageClass storage_class, TYPE* tp, SYMBOL* spi, const char* name);
+SYMBOL* makeUniqueID(StorageClass storage_class, TYPE* tp, SYMBOL* spi, const char* name);
+TYPE* MakeType(TYPE& tp, BasicType type, TYPE* base = nullptr);
+TYPE* MakeType(BasicType type, TYPE* base = nullptr);
 TYPE* CopyType(TYPE* tp, bool deep = false, std::function<void(TYPE*&, TYPE*&)> callback = nullptr);
 void addStructureDeclaration(STRUCTSYM* decl);
 void addTemplateDeclaration(STRUCTSYM* decl);
 void dropStructureDeclaration(void);
 SYMBOL* getStructureDeclaration(void);
-void InsertSymbol(SYMBOL* sp, enum e_sc storage_class, enum e_lk linkage, bool allowDups);
+void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool allowDups);
 LEXLIST* tagsearch(LEXLIST* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out, std::list<NAMESPACEVALUEDATA*>** nsv_out,
-                   enum e_sc storage_class);
-LEXLIST* get_type_id(LEXLIST* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_class, bool beforeOnly, bool toErr, bool inUsing);
+                   enum StorageClass storage_class);
+LEXLIST* get_type_id(LEXLIST* lex, TYPE** tp, SYMBOL* funcsp, StorageClass storage_class, bool beforeOnly, bool toErr, bool inUsing);
 SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp);
 void calculateStructOffsets(SYMBOL* sp);
 void resolveAnonymousUnions(SYMBOL* sp);
-LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, enum e_ac defaultAccess, bool isfinal,
+LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
                          bool* defd, SymbolTable<SYMBOL>* anonymousTable);
 void sizeQualifiers(TYPE* tp);
-LEXLIST* parse_declspec(LEXLIST* lex, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3);
-LEXLIST* getQualifiers(LEXLIST* lex, TYPE** tp, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3, bool* asFriend);
+LEXLIST* parse_declspec(LEXLIST* lex, Linkage* linkage, Linkage* linkage2, Linkage* linkage3);
+LEXLIST* getQualifiers(LEXLIST* lex, TYPE** tp, Linkage* linkage, Linkage* linkage2, Linkage* linkage3, bool* asFriend);
 LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
-                       bool inTemplate, enum e_sc storage_class, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3,
+                       bool inTemplate, StorageClass storage_class, Linkage* linkage, Linkage* linkage2, Linkage* linkage3,
                        bool* notype, bool asFriend, int consdest, bool beforeOnly, bool funcptr);
-LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out, bool inTemplate, enum e_sc storage_class,
-                      enum e_lk* linkage_in, enum e_lk* linkage2_in, enum e_lk* linkage3_in, enum e_ac access, bool* notype,
+LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out, bool inTemplate, StorageClass storage_class,
+                      enum Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in, AccessLevel access, bool* notype,
                       bool* defd, int* consdest, bool* templateArg, bool isTypedef, bool templateErr, bool inUsing, bool asfriend,
                       bool constexpression);
 void injectThisPtr(SYMBOL* sp, SymbolTable<SYMBOL>* syms);
 bool intcmp(TYPE* t1, TYPE* t2);
-LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp, bool inTemplate, enum e_sc storage_class,
+LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp, bool inTemplate, StorageClass storage_class,
                            bool funcptr);
 LEXLIST* getDeferredData(LEXLIST* lex, LEXLIST** savePos, bool braces);
 
-LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_class, enum e_lk defaultLinkage, std::list<BLOCKDATA*>& block,
-                 bool needsemi, int asExpression, bool inTemplate, enum e_ac access);
+LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage_class, Linkage defaultLinkage, std::list<BLOCKDATA*>& block,
+                 bool needsemi, int asExpression, bool inTemplate, AccessLevel access);
 }  // namespace Parser

@@ -82,33 +82,33 @@ static int isoptconst(EXPRESSION* en)
 
 /*-------------------------------------------------------------------------*/
 
-static e_node maxinttype(EXPRESSION* ep1, EXPRESSION* ep2)
+static ExpressionNode maxinttype(EXPRESSION* ep1, EXPRESSION* ep2)
 {
-    e_node type1 = ep1->type;
-    e_node type2 = ep2->type;
-    if (type1 == en_c_ull || type2 == en_c_ull)
-        return en_c_ull;
-    if (type1 == en_c_ll || type2 == en_c_ll)
-        return en_c_ll;
-    if (type1 == en_c_ul || type2 == en_c_ul)
-        return en_c_ul;
-    if (type1 == en_c_l || type2 == en_c_l)
-        return en_c_l;
-    if (type1 == en_c_u32 || type2 == en_c_u32)
-        return en_c_u32;
-    if (type1 == en_c_ui || type2 == en_c_ui)
-        return en_c_ui;
-    if (type1 == en_c_i || type2 == en_c_i)
-        return en_c_i;
-    if (type1 == en_c_u16 || type2 == en_c_u16)
-        return en_c_u16;
-    if (type1 == en_c_wc || type2 == en_c_wc)
-        return en_c_wc;
-    if (type1 == en_c_uc || type2 == en_c_uc)
-        return en_c_uc;
-    if (type1 == en_c_c || type2 == en_c_c)
-        return en_c_c;
-    return en_c_bool;
+    ExpressionNode type1 = ep1->type;
+    ExpressionNode type2 = ep2->type;
+    if (type1 == ExpressionNode::c_ull || type2 == ExpressionNode::c_ull)
+        return ExpressionNode::c_ull;
+    if (type1 == ExpressionNode::c_ll || type2 == ExpressionNode::c_ll)
+        return ExpressionNode::c_ll;
+    if (type1 == ExpressionNode::c_ul || type2 == ExpressionNode::c_ul)
+        return ExpressionNode::c_ul;
+    if (type1 == ExpressionNode::c_l || type2 == ExpressionNode::c_l)
+        return ExpressionNode::c_l;
+    if (type1 == ExpressionNode::c_u32 || type2 == ExpressionNode::c_u32)
+        return ExpressionNode::c_u32;
+    if (type1 == ExpressionNode::c_ui || type2 == ExpressionNode::c_ui)
+        return ExpressionNode::c_ui;
+    if (type1 == ExpressionNode::c_i || type2 == ExpressionNode::c_i)
+        return ExpressionNode::c_i;
+    if (type1 == ExpressionNode::c_u16 || type2 == ExpressionNode::c_u16)
+        return ExpressionNode::c_u16;
+    if (type1 == ExpressionNode::c_wc || type2 == ExpressionNode::c_wc)
+        return ExpressionNode::c_wc;
+    if (type1 == ExpressionNode::c_uc || type2 == ExpressionNode::c_uc)
+        return ExpressionNode::c_uc;
+    if (type1 == ExpressionNode::c_c || type2 == ExpressionNode::c_c)
+        return ExpressionNode::c_c;
+    return ExpressionNode::c_bool;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -117,9 +117,9 @@ static int isunsignedexpr(EXPRESSION* ep1)
 {
     switch (ep1->type)
     {
-        case en_c_ul:
-        case en_c_ui:
-        case en_c_ull:
+        case ExpressionNode::c_ul:
+        case ExpressionNode::c_ui:
+        case ExpressionNode::c_ull:
             return true;
         default:
             return false;
@@ -128,41 +128,41 @@ static int isunsignedexpr(EXPRESSION* ep1)
 
 /*-------------------------------------------------------------------------*/
 
-static e_node maxfloattype(EXPRESSION* ep1, EXPRESSION* ep2)
+static ExpressionNode maxfloattype(EXPRESSION* ep1, EXPRESSION* ep2)
 {
-    e_node type1 = ep1->type;
-    e_node type2 = ep2->type;
-    if (type1 == en_c_ld || type2 == en_c_ld || type1 == en_c_ldi || type2 == en_c_ldi)
-        return en_c_ld;
-    if (type1 == en_c_d || type2 == en_c_d || type1 == en_c_di || type2 == en_c_di)
-        return en_c_d;
-    return en_c_f;
+    ExpressionNode type1 = ep1->type;
+    ExpressionNode type2 = ep2->type;
+    if (type1 == ExpressionNode::c_ld || type2 == ExpressionNode::c_ld || type1 == ExpressionNode::c_ldi || type2 == ExpressionNode::c_ldi)
+        return ExpressionNode::c_ld;
+    if (type1 == ExpressionNode::c_d || type2 == ExpressionNode::c_d || type1 == ExpressionNode::c_di || type2 == ExpressionNode::c_di)
+        return ExpressionNode::c_d;
+    return ExpressionNode::c_f;
 }
 
 /*-------------------------------------------------------------------------*/
 
-static e_node maximaginarytype(EXPRESSION* ep1, EXPRESSION* ep2)
+static ExpressionNode maximaginarytype(EXPRESSION* ep1, EXPRESSION* ep2)
 {
-    e_node type1 = ep1->type;
-    e_node type2 = ep2->type;
-    if (type1 == en_c_ld || type2 == en_c_ld || type1 == en_c_ldi || type2 == en_c_ldi)
-        return en_c_ldi;
-    if (type1 == en_c_d || type2 == en_c_d || type1 == en_c_di || type2 == en_c_di)
-        return en_c_di;
-    return en_c_fi;
+    ExpressionNode type1 = ep1->type;
+    ExpressionNode type2 = ep2->type;
+    if (type1 == ExpressionNode::c_ld || type2 == ExpressionNode::c_ld || type1 == ExpressionNode::c_ldi || type2 == ExpressionNode::c_ldi)
+        return ExpressionNode::c_ldi;
+    if (type1 == ExpressionNode::c_d || type2 == ExpressionNode::c_d || type1 == ExpressionNode::c_di || type2 == ExpressionNode::c_di)
+        return ExpressionNode::c_di;
+    return ExpressionNode::c_fi;
 }
 
 /*-------------------------------------------------------------------------*/
 
-static e_node maxcomplextype(EXPRESSION* ep1, EXPRESSION* ep2)
+static ExpressionNode maxcomplextype(EXPRESSION* ep1, EXPRESSION* ep2)
 {
-    e_node type1 = ep1->type;
-    e_node type2 = ep2->type;
-    if (type1 == en_c_ld || type2 == en_c_ld || type1 == en_c_ldi || type2 == en_c_ldi || type1 == en_c_ldc || type2 == en_c_ldc)
-        return en_c_ldc;
-    if (type1 == en_c_d || type2 == en_c_d || type1 == en_c_di || type2 == en_c_di || type1 == en_c_dc || type2 == en_c_dc)
-        return en_c_dc;
-    return en_c_fc;
+    ExpressionNode type1 = ep1->type;
+    ExpressionNode type2 = ep2->type;
+    if (type1 == ExpressionNode::c_ld || type2 == ExpressionNode::c_ld || type1 == ExpressionNode::c_ldi || type2 == ExpressionNode::c_ldi || type1 == ExpressionNode::c_ldc || type2 == ExpressionNode::c_ldc)
+        return ExpressionNode::c_ldc;
+    if (type1 == ExpressionNode::c_d || type2 == ExpressionNode::c_d || type1 == ExpressionNode::c_di || type2 == ExpressionNode::c_di || type1 == ExpressionNode::c_dc || type2 == ExpressionNode::c_dc)
+        return ExpressionNode::c_dc;
+    return ExpressionNode::c_fc;
 }
 static bool hasFloats(EXPRESSION* node)
 /*
@@ -173,71 +173,71 @@ static bool hasFloats(EXPRESSION* node)
         return 0;
     switch (node->type)
     {
-        case en_x_f:
-        case en_x_d:
-        case en_x_ld:
-        case en_x_fc:
-        case en_x_dc:
-        case en_x_ldc:
-        case en_x_fi:
-        case en_x_di:
-        case en_x_ldi:
-        case en_l_f:
-        case en_l_d:
-        case en_l_ld:
-        case en_l_fc:
-        case en_l_dc:
-        case en_l_ldc:
-        case en_l_fi:
-        case en_l_di:
-        case en_l_ldi:
-        case en_c_f:
-        case en_c_d:
-        case en_c_ld:
-        case en_c_fc:
-        case en_c_dc:
-        case en_c_ldc:
-        case en_c_fi:
-        case en_c_di:
-        case en_c_ldi:
+        case ExpressionNode::x_f:
+        case ExpressionNode::x_d:
+        case ExpressionNode::x_ld:
+        case ExpressionNode::x_fc:
+        case ExpressionNode::x_dc:
+        case ExpressionNode::x_ldc:
+        case ExpressionNode::x_fi:
+        case ExpressionNode::x_di:
+        case ExpressionNode::x_ldi:
+        case ExpressionNode::l_f:
+        case ExpressionNode::l_d:
+        case ExpressionNode::l_ld:
+        case ExpressionNode::l_fc:
+        case ExpressionNode::l_dc:
+        case ExpressionNode::l_ldc:
+        case ExpressionNode::l_fi:
+        case ExpressionNode::l_di:
+        case ExpressionNode::l_ldi:
+        case ExpressionNode::c_f:
+        case ExpressionNode::c_d:
+        case ExpressionNode::c_ld:
+        case ExpressionNode::c_fc:
+        case ExpressionNode::c_dc:
+        case ExpressionNode::c_ldc:
+        case ExpressionNode::c_fi:
+        case ExpressionNode::c_di:
+        case ExpressionNode::c_ldi:
             return 1;
-        case en_assign:
-        case en_autoinc:
-        case en_autodec:
-        case en_add:
-        case en_sub:
-        case en_arrayadd:
-        case en_arraymul:
-        case en_arraydiv:
-        case en_structadd:
-        case en_umul:
-        case en_udiv:
-        case en_umod:
-        case en_mul:
-        case en_div:
-        case en_mod:
-        case en_and:
-        case en_or:
-        case en_xor:
-        case en_ursh:
-        case en_lsh:
-        case en_arraylsh:
-        case en_rsh:
-        case en_land:
-        case en_lor:
-        case en_void:
-        case en_voidnz:
-        case en_dot:
-        case en_pointsto:
+        case ExpressionNode::assign:
+        case ExpressionNode::auto_inc:
+        case ExpressionNode::auto_dec:
+        case ExpressionNode::add:
+        case ExpressionNode::sub:
+        case ExpressionNode::arrayadd:
+        case ExpressionNode::arraymul:
+        case ExpressionNode::arraydiv:
+        case ExpressionNode::structadd:
+        case ExpressionNode::umul:
+        case ExpressionNode::udiv:
+        case ExpressionNode::umod:
+        case ExpressionNode::mul:
+        case ExpressionNode::div:
+        case ExpressionNode::mod:
+        case ExpressionNode::and_:
+        case ExpressionNode::or_:
+        case ExpressionNode::xor_:
+        case ExpressionNode::ursh:
+        case ExpressionNode::lsh:
+        case ExpressionNode::arraylsh:
+        case ExpressionNode::rsh:
+        case ExpressionNode::land:
+        case ExpressionNode::lor:
+        case ExpressionNode::void_:
+        case ExpressionNode::void_nz:
+        case ExpressionNode::dot:
+        case ExpressionNode::pointsto:
             return (hasFloats(node->left) || hasFloats(node->right));
-        case en_cond:
+        case ExpressionNode::cond:
             return hasFloats(node->right);
-        case en_argnopush:
-        case en_not_lvalue:
-        case en_thisref:
-        case en_literalclass:
-        case en_lvalue:
-        case en_select:
+        case ExpressionNode::argnopush:
+        case ExpressionNode::not__lvalue:
+        case ExpressionNode::thisref:
+        case ExpressionNode::literalclass:
+        case ExpressionNode::lvalue:
+        case ExpressionNode::select:
             return hasFloats(node->left);
         default:
             return 0;
@@ -352,39 +352,39 @@ static int getmode(EXPRESSION* ep1, EXPRESSION* ep2)
     {
         if (isintconst(ep2))
             mode = 7;
-        else if (ep2->type == en_c_d || ep2->type == en_c_ld || ep2->type == en_c_f)
+        else if (ep2->type == ExpressionNode::c_d || ep2->type == ExpressionNode::c_ld || ep2->type == ExpressionNode::c_f)
             mode = 8;
-        else if (ep2->type == en_c_di || ep2->type == en_c_fi || ep2->type == en_c_ldi)
+        else if (ep2->type == ExpressionNode::c_di || ep2->type == ExpressionNode::c_fi || ep2->type == ExpressionNode::c_ldi)
             mode = 13;
-        else if (ep2->type == en_c_dc || ep2->type == en_c_fc || ep2->type == en_c_ldc)
+        else if (ep2->type == ExpressionNode::c_dc || ep2->type == ExpressionNode::c_fc || ep2->type == ExpressionNode::c_ldc)
             mode = 22;
     }
     return (mode);
 }
-long long MaxOut(enum e_bt size, long long value)
+long long MaxOut(BasicType size, long long value)
 {
     int bits;
     int plus, minus;
     switch (size)
     {
-        case bt_char:
+        case BasicType::char_:
             if (Optimizer::cparams.prm_charisunsigned)
                 bits = 8;
             else
                 bits = 7;
             break;
-        case bt_signed_char:
+        case BasicType::signed_char:
             bits = 7;
             break;
-        case bt_unsigned_char:
+        case BasicType::unsigned_char:
             bits = 8;
             break;
-        case bt_short:
-            bits = getSize(bt_short) * 8 - 1;
+        case BasicType::short_:
+            bits = getSize(BasicType::short_) * 8 - 1;
             break;
-        case bt_unsigned_short:
-        case bt_wchar_t:
-            bits = getSize(bt_short) * 8;
+        case BasicType::unsigned_short:
+        case BasicType::wchar_t_:
+            bits = getSize(BasicType::short_) * 8;
             break;
         default:
             return value;
@@ -420,7 +420,7 @@ void dooper(EXPRESSION** node, int mode)
                 (*ep1->v.f) = (unsigned long long)ep1->v.i;
             else
                 (*ep1->v.f) = (long long)ep1->v.i;
-            ep1->type = en_c_d;
+            ep1->type = ExpressionNode::c_d;
             refloat(ep1);
         }
         return;
@@ -434,7 +434,7 @@ void dooper(EXPRESSION** node, int mode)
                 *f = (unsigned long long)ep2->v.i;
             else
                 *f = (long long)ep2->v.i;
-            ep2->type = en_c_d;
+            ep2->type = ExpressionNode::c_d;
             ep2->v.f = f;
             refloat(ep2);
         }
@@ -445,13 +445,13 @@ void dooper(EXPRESSION** node, int mode)
     else
         switch (ep->type)
         {
-            case en_structadd:
-                if (ep->right->type == en_structelem)
+            case ExpressionNode::structadd:
+                if (ep->right->type == ExpressionNode::structelem)
                     break;
                 if (ep->right->keepZero)
                     break;
-            case en_add:
-            case en_arrayadd:
+            case ExpressionNode::add:
+            case ExpressionNode::arrayadd:
                 switch (mode)
                 {
                     case 1:
@@ -629,7 +629,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                 }
                 break;
-            case en_sub:
+            case ExpressionNode::sub:
                 switch (mode)
                 {
                     case 1:
@@ -823,9 +823,9 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                 }
                 break;
-            case en_arraymul:
-            case en_umul:
-            case en_mul:
+            case ExpressionNode::arraymul:
+            case ExpressionNode::umul:
+            case ExpressionNode::mul:
                 switch (mode)
                 {
                     case 1:
@@ -1021,9 +1021,9 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                 }
                 break;
-            case en_arraydiv:
-            case en_div:
-            case en_udiv:
+            case ExpressionNode::arraydiv:
+            case ExpressionNode::div:
+            case ExpressionNode::udiv:
                 switch (mode)
                 {
                     case 1:
@@ -1075,7 +1075,7 @@ void dooper(EXPRESSION** node, int mode)
                         temp1 = (unsigned long long)1;
                         temp1 = temp1 / (*ep2->v.f);
                         (*ep2->v.f) = temp1;
-                        ep->type = en_mul;
+                        ep->type = ExpressionNode::mul;
                         ep->left = ep->right = nullptr;
                         */
                     }
@@ -1193,8 +1193,8 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                 }
                 break;
-            case en_mod:
-            case en_umod:
+            case ExpressionNode::mod:
+            case ExpressionNode::umod:
                 if (ep2->v.i)
                 {
                     ep->type = maxinttype(ep1, ep2);
@@ -1207,39 +1207,39 @@ void dooper(EXPRESSION** node, int mode)
                     ep->v.i = reint(ep);
                 }
                 break;
-            case en_arraylsh:
-            case en_lsh:
+            case ExpressionNode::arraylsh:
+            case ExpressionNode::lsh:
                 ep->type = ep1->type; /* maxinttype(ep1, ep2);*/
                 ep->left = ep->right = nullptr;
                 ep->v.i = ep1->v.i << ep2->v.i;
                 ep->v.i = reint(ep);
                 break;
-            case en_ursh:
+            case ExpressionNode::ursh:
                 ep->type = ep1->type; /* maxinttype(ep1, ep2);*/
                 ep->left = ep->right = nullptr;
                 ep1->v.i = reint(ep1);
                 ep->v.i = ((unsigned long long)ep1->v.i) >> ep2->v.i;
                 ep->v.i = reint(ep);
                 break;
-            case en_rsh:
+            case ExpressionNode::rsh:
                 ep->type = ep1->type; /* maxinttype(ep1, ep2);*/
                 ep->left = ep->right = nullptr;
                 ep->v.i = ep1->v.i >> ep2->v.i;
                 ep->v.i = reint(ep);
                 break;
-            case en_and:
+            case ExpressionNode::and_:
                 ep->type = maxinttype(ep1, ep2);
                 ep->left = ep->right = nullptr;
                 ep->v.i = ep1->v.i & ep2->v.i;
                 ep->v.i = reint(ep);
                 break;
-            case en_or:
+            case ExpressionNode::or_:
                 ep->type = maxinttype(ep1, ep2);
                 ep->left = ep->right = nullptr;
                 ep->v.i = ep1->v.i | ep2->v.i;
                 ep->v.i = reint(ep);
                 break;
-            case en_xor:
+            case ExpressionNode::xor_:
                 ep->type = maxinttype(ep1, ep2);
                 ep->left = ep->right = nullptr;
                 ep->v.i = ep1->v.i ^ ep2->v.i;
@@ -1254,7 +1254,7 @@ void dooper(EXPRESSION** node, int mode)
 
 void addaside(EXPRESSION* node)
 {
-    *asidetail = exprNode(en_void, node, 0);
+    *asidetail = exprNode(ExpressionNode::void_, node, 0);
     asidetail = &(*asidetail)->right;
 }
 
@@ -1264,11 +1264,11 @@ EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add)
     EXPRESSION* rv;
     switch (node->type)
     {
-        case en_global:
-        case en_auto:
-        case en_threadlocal:
+        case ExpressionNode::global:
+        case ExpressionNode::auto_:
+        case ExpressionNode::threadlocal:
             return node;
-        case en_add: {
+        case ExpressionNode::add: {
             auto rv1 = relptr(node->left, offset, true);
             auto rv2 = relptr(node->right, offset, true);
             if (rv1)
@@ -1277,7 +1277,7 @@ EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add)
                 return rv2;
             break;
         }
-        case en_sub: {
+        case ExpressionNode::sub: {
             auto rv1 = rv = relptr(node->left, offset, false);
             auto rv2 = relptr(node->right, offset, false);
             if (rv1)
@@ -1312,12 +1312,12 @@ bool expressionHasSideEffects(EXPRESSION *exp)
         stk.pop();
         switch (p->type)
         {
-            case en_atomic:
-            case en_func:
-            case en_thisref:
-            case en_assign:
-            case en_autoinc:
-            case en_autodec:
+            case ExpressionNode::atomic:
+            case ExpressionNode::func:
+            case ExpressionNode::thisref:
+            case ExpressionNode::assign:
+            case ExpressionNode::auto_inc:
+            case ExpressionNode::auto_dec:
                return true;
         }
         if (p->right)
@@ -1332,15 +1332,15 @@ int opt0(EXPRESSION** node)
  *      opt0 - delete useless expressions and combine constants.
  *
  *      opt0 will delete expressions such as x + 0, x - 0, x * 0,
- *      x * 1, 0 / x, x / 1, x mod 0, etc from the tree pointed to
+ *      x * 1, 0 / x, x / 1, x Keyword::_mod 0, etc from the tree pointed to
  *      by node and combine obvious constant operations. It cannot
  *      combine name and label constants but will combine icon type
  *      nodes.
  *
- * en_arrayadd is not optimized to keep from optimizing struct members
- * into regs later...  just en: en_arrayadd is now equiv to en_add
+ * ExpressionNode::arrayadd is not optimized to keep from optimizing struct members
+ * into regs later...  just en: ExpressionNode::arrayadd is now equiv to ExpressionNode::add
  * again.  I have fixed the optimize struct thing another way...
- * leaving en_arrayadd in in case we need it later.
+ * leaving ExpressionNode::arrayadd in in case we need it later.
  */
 {
     EXPRESSION* ep;
@@ -1348,7 +1348,7 @@ int opt0(EXPRESSION** node)
     int rv = false;
     int mode;
     FPF dval;
-    e_node negtype = en_uminus;
+    ExpressionNode negtype = ExpressionNode::uminus;
 
     ep = *node;
 
@@ -1356,42 +1356,42 @@ int opt0(EXPRESSION** node)
         return false;
     switch (ep->type)
     {
-        case en_construct:
+        case ExpressionNode::const_ruct:
             break;
-        case en_l_sp:
-        case en_l_fp:
-        case en_l_bool:
-        case en_l_bit:
-        case en_l_wc:
-        case en_l_u16:
-        case en_l_u32:
-        case en_l_c:
-        case en_l_s:
+        case ExpressionNode::l_sp:
+        case ExpressionNode::l_fp:
+        case ExpressionNode::l_bool:
+        case ExpressionNode::l_bit:
+        case ExpressionNode::l_wc:
+        case ExpressionNode::l_u16:
+        case ExpressionNode::l_u32:
+        case ExpressionNode::l_c:
+        case ExpressionNode::l_s:
             /* optimize unary node */
-        case en_l_uc:
-        case en_l_us:
+        case ExpressionNode::l_uc:
+        case ExpressionNode::l_us:
             /* optimize unary node */
-        case en_l_p:
-        case en_l_ref:
-        case en_l_i:
-        case en_l_ui:
-        case en_l_inative:
-        case en_l_unative:
-        case en_l_l:
-        case en_l_ul:
-        case en_l_ll:
-        case en_l_ull:
-        case en_l_f:
-        case en_l_d:
-        case en_l_ld:
-        case en_l_fi:
-        case en_l_di:
-        case en_l_ldi:
-        case en_l_fc:
-        case en_l_dc:
-        case en_l_ldc:
-        case en_l_string:
-        case en_l_object: {
+        case ExpressionNode::l_p:
+        case ExpressionNode::l_ref:
+        case ExpressionNode::l_i:
+        case ExpressionNode::l_ui:
+        case ExpressionNode::l_inative:
+        case ExpressionNode::l_unative:
+        case ExpressionNode::l_l:
+        case ExpressionNode::l_ul:
+        case ExpressionNode::l_ll:
+        case ExpressionNode::l_ull:
+        case ExpressionNode::l_f:
+        case ExpressionNode::l_d:
+        case ExpressionNode::l_ld:
+        case ExpressionNode::l_fi:
+        case ExpressionNode::l_di:
+        case ExpressionNode::l_ldi:
+        case ExpressionNode::l_fc:
+        case ExpressionNode::l_dc:
+        case ExpressionNode::l_ldc:
+        case ExpressionNode::l_string:
+        case ExpressionNode::l_object: {
             rv |= opt0(&((*node)->left));
             ConstExprStructElemEval(node);
             if (lvalue(*node) && !(*node)->left->init && inConstantExpression)
@@ -1427,43 +1427,43 @@ int opt0(EXPRESSION** node)
             }
         }
         break;
-        case en_x_bool:
-        case en_x_bit:
-        case en_x_wc:
-        case en_x_c:
-        case en_x_uc:
-        case en_x_u16:
-        case en_x_u32:
-        case en_x_s:
-        case en_x_us:
-        case en_x_l:
-        case en_x_ul:
-        case en_x_i:
-        case en_x_ui:
-        case en_x_inative:
-        case en_x_unative:
-        case en_x_ll:
-        case en_x_ull:
-        case en_x_f:
-        case en_x_d:
-        case en_x_p:
-        case en_x_ld:
-        case en_x_fp:
-        case en_x_sp:
-        case en_x_dc:
-        case en_x_fc:
-        case en_x_ldc:
-        case en_x_di:
-        case en_x_fi:
-        case en_x_ldi:
-        case en_x_string:
-        case en_x_object:
-        case en_shiftby:
-        case en_bits:
-        case en_literalclass:
+        case ExpressionNode::x_bool:
+        case ExpressionNode::x_bit:
+        case ExpressionNode::x_wc:
+        case ExpressionNode::x_c:
+        case ExpressionNode::x_uc:
+        case ExpressionNode::x_u16:
+        case ExpressionNode::x_u32:
+        case ExpressionNode::x_s:
+        case ExpressionNode::x_us:
+        case ExpressionNode::x_l:
+        case ExpressionNode::x_ul:
+        case ExpressionNode::x_i:
+        case ExpressionNode::x_ui:
+        case ExpressionNode::x_inative:
+        case ExpressionNode::x_unative:
+        case ExpressionNode::x_ll:
+        case ExpressionNode::x_ull:
+        case ExpressionNode::x_f:
+        case ExpressionNode::x_d:
+        case ExpressionNode::x_p:
+        case ExpressionNode::x_ld:
+        case ExpressionNode::x_fp:
+        case ExpressionNode::x_sp:
+        case ExpressionNode::x_dc:
+        case ExpressionNode::x_fc:
+        case ExpressionNode::x_ldc:
+        case ExpressionNode::x_di:
+        case ExpressionNode::x_fi:
+        case ExpressionNode::x_ldi:
+        case ExpressionNode::x_string:
+        case ExpressionNode::x_object:
+        case ExpressionNode::shiftby:
+        case ExpressionNode::bits:
+        case ExpressionNode::literalclass:
             rv |= opt0(&((*node)->left));
             return rv;
-        case en_compl:
+        case ExpressionNode::compl_:
             rv |= opt0(&(ep->left));
             if (isintconst(ep->left))
             {
@@ -1476,7 +1476,7 @@ int opt0(EXPRESSION** node)
             }
             return rv;
 
-        case en_uminus:
+        case ExpressionNode::uminus:
             rv |= opt0(&(ep->left));
             if (isintconst(ep->left))
             {
@@ -1490,8 +1490,8 @@ int opt0(EXPRESSION** node)
                 (*node)->v.f->Negate();
                 rv = true;
             }
-            else if (ep->left->type == en_c_d || ep->left->type == en_c_f || ep->left->type == en_c_ld ||
-                     ep->left->type == en_c_di || ep->left->type == en_c_fi || ep->left->type == en_c_ldi)
+            else if (ep->left->type == ExpressionNode::c_d || ep->left->type == ExpressionNode::c_f || ep->left->type == ExpressionNode::c_ld ||
+                     ep->left->type == ExpressionNode::c_di || ep->left->type == ExpressionNode::c_fi || ep->left->type == ExpressionNode::c_ldi)
             {
                 rv = true;
                 ep->type = ep->left->type;
@@ -1501,7 +1501,7 @@ int opt0(EXPRESSION** node)
                 *node = ep;
                 ep->left = ep->right = nullptr;
             }
-            else if (ep->left->type == en_c_dc || ep->left->type == en_c_fc || ep->left->type == en_c_ldc)
+            else if (ep->left->type == ExpressionNode::c_dc || ep->left->type == ExpressionNode::c_fc || ep->left->type == ExpressionNode::c_ldc)
             {
                 rv = true;
                 ep->type = ep->left->type;
@@ -1514,13 +1514,13 @@ int opt0(EXPRESSION** node)
                 ep->left = ep->right = nullptr;
             }
             return rv;
-        case en_structadd:
-        case en_add:
-        case en_arrayadd:
-        case en_sub:
+        case ExpressionNode::structadd:
+        case ExpressionNode::add:
+        case ExpressionNode::arrayadd:
+        case ExpressionNode::sub:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
-            if (ep->right->type == en_structelem || ep->left->type == en_structadd)
+            if (ep->right->type == ExpressionNode::structelem || ep->left->type == ExpressionNode::structadd)
                 break;
             {
                 // this next will normalize expressions of the form:
@@ -1530,7 +1530,7 @@ int opt0(EXPRESSION** node)
                 auto exp = ep->left;
                 while (castvalue(exp))
                     exp = exp->left;
-                if (exp->type == en_add)
+                if (exp->type == ExpressionNode::add)
                 {
                     if (!expressionHasSideEffects(ep))
                     {
@@ -1560,10 +1560,10 @@ int opt0(EXPRESSION** node)
                 case 5:
                     if (ep->left->v.i == 0)
                     {
-                        if (ep->left->type != en_auto && ep->type != en_structadd)
+                        if (ep->left->type != ExpressionNode::auto_ && ep->type != ExpressionNode::structadd)
                         {
-                            if (ep->type == en_sub)
-                                *node = exprNode(en_uminus, ep->right, 0);
+                            if (ep->type == ExpressionNode::sub)
+                                *node = exprNode(ExpressionNode::uminus, ep->right, 0);
                             else
                                 *node = ep->right;
                             rv = true;
@@ -1573,9 +1573,9 @@ int opt0(EXPRESSION** node)
                 case 6:
                     if (ep->left->v.f->ValueIsZero())
                     {
-                        if (ep->type == en_sub)
+                        if (ep->type == ExpressionNode::sub)
                         {
-                            *node = exprNode(en_uminus, ep->right, 0);
+                            *node = exprNode(ExpressionNode::uminus, ep->right, 0);
                         }
                         *node = ep->right;
                     }
@@ -1586,7 +1586,7 @@ int opt0(EXPRESSION** node)
                 case 7:
                     if (ep->right->v.i == 0)
                     {
-                        if (ep->left->type != en_auto && ep->type != en_structadd)
+                        if (ep->left->type != ExpressionNode::auto_ && ep->type != ExpressionNode::structadd)
                         {
                             *node = ep->left;
                             rv = true;
@@ -1618,9 +1618,9 @@ int opt0(EXPRESSION** node)
                     break;
             }
             return rv;
-        case en_mul:
-        case en_umul:
-        case en_arraymul:
+        case ExpressionNode::mul:
+        case ExpressionNode::umul:
+        case ExpressionNode::arraymul:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
             mode = getmode(ep->left, ep->right);
@@ -1651,7 +1651,7 @@ int opt0(EXPRESSION** node)
                         val = ep->left->v.i;
                         if (val == 0)
                         {
-                            if (ep->right->type != en__sizeof)
+                            if (ep->right->type != ExpressionNode::_sizeof)
                             {
                                 addaside(ep->right);
                                 *node = ep->left;
@@ -1671,19 +1671,19 @@ int opt0(EXPRESSION** node)
                                 ep->left = ep->right;
                                 ep->right = x;
                                 ep->right->v.i = i;
-                                ep->right->type = en_c_i;
+                                ep->right->type = ExpressionNode::c_i;
                                 ep->right->left = ep->right->right = nullptr;
                                 rv = true;
                                 switch (ep->type)
                                 {
-                                    case en_mul:
-                                        ep->type = en_lsh;
+                                    case ExpressionNode::mul:
+                                        ep->type = ExpressionNode::lsh;
                                         break;
-                                    case en_umul:
-                                        ep->type = en_lsh;
+                                    case ExpressionNode::umul:
+                                        ep->type = ExpressionNode::lsh;
                                         break;
-                                    case en_arraymul:
-                                        ep->type = en_arraylsh;
+                                    case ExpressionNode::arraymul:
+                                        ep->type = ExpressionNode::arraylsh;
                                         break;
                                     default:
                                         break;
@@ -1734,19 +1734,19 @@ int opt0(EXPRESSION** node)
                             if (i != -1)
                             {
                                 ep->right->v.i = i;
-                                ep->right->type = en_c_i;
+                                ep->right->type = ExpressionNode::c_i;
                                 ep->right->left = ep->right->right = nullptr;
                                 rv = true;
                                 switch (ep->type)
                                 {
-                                    case en_mul:
-                                        ep->type = en_lsh;
+                                    case ExpressionNode::mul:
+                                        ep->type = ExpressionNode::lsh;
                                         break;
-                                    case en_umul:
-                                        ep->type = en_lsh;
+                                    case ExpressionNode::umul:
+                                        ep->type = ExpressionNode::lsh;
                                         break;
-                                    case en_arraymul:
-                                        ep->type = en_arraylsh;
+                                    case ExpressionNode::arraymul:
+                                        ep->type = ExpressionNode::arraylsh;
                                         break;
                                     default:
                                         break;
@@ -1787,9 +1787,9 @@ int opt0(EXPRESSION** node)
                     }
             }
             break;
-        case en_arraydiv:
-        case en_div:
-        case en_udiv:
+        case ExpressionNode::arraydiv:
+        case ExpressionNode::div:
+        case ExpressionNode::udiv:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
             mode = getmode(ep->left, ep->right);
@@ -1856,8 +1856,8 @@ int opt0(EXPRESSION** node)
                     break;
             }
             break;
-        case en_mod:
-        case en_umod:
+        case ExpressionNode::mod:
+        case ExpressionNode::umod:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
             mode = getmode(ep->left, ep->right);
@@ -1869,7 +1869,7 @@ int opt0(EXPRESSION** node)
                     if (ep->right->v.i == 1)
                     {
                         ep->v.i = 0;
-                        ep->type = en_c_i;
+                        ep->type = ExpressionNode::c_i;
                         ep->left = ep->right = nullptr;
                     }
                     break;
@@ -1885,7 +1885,7 @@ int opt0(EXPRESSION** node)
                     break;
             }
             break;
-        case en_and:
+        case ExpressionNode::and_:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
             mode = getmode(ep->left, ep->right);
@@ -1919,8 +1919,8 @@ int opt0(EXPRESSION** node)
                     break;
             }
             break;
-        case en_or:
-        case en_xor:
+        case ExpressionNode::or_:
+        case ExpressionNode::xor_:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
             mode = getmode(ep->left, ep->right);
@@ -1952,12 +1952,12 @@ int opt0(EXPRESSION** node)
                     break;
             }
             break;
-        case en_rsh:
-        case en_lsh:
-        case en_arraylsh:
-        case en_ursh:
+        case ExpressionNode::rsh:
+        case ExpressionNode::lsh:
+        case ExpressionNode::arraylsh:
+        case ExpressionNode::ursh:
             rv |= opt0(&(ep->left));
-            if (isintconst(ep->left) && ep->right->type == en_shiftby)
+            if (isintconst(ep->left) && ep->right->type == ExpressionNode::shiftby)
                 if (isintconst(ep->right->left))
                 {
                     ep->right = ep->right->left;
@@ -1994,14 +1994,14 @@ int opt0(EXPRESSION** node)
                     break;
             }
             break;
-        case en_land:
+        case ExpressionNode::land:
             rv |= opt0(&(ep->left));
             if (isintconst(ep->left))
             {
                 if (!ep->left->v.i)
                 {
                     rv = true;
-                    *node = intNode(en_c_i, 0);
+                    *node = intNode(ExpressionNode::c_i, 0);
                     break;
                 }
                 else
@@ -2012,28 +2012,28 @@ int opt0(EXPRESSION** node)
             else
                 switch (ep->left->type)
                 {
-                    case en_pc:
-                    case en_threadlocal:
-                    case en_global:
-                    case en_labcon:
-                    case en_auto: {
+                    case ExpressionNode::pc:
+                    case ExpressionNode::threadlocal:
+                    case ExpressionNode::global:
+                    case ExpressionNode::labcon:
+                    case ExpressionNode::auto_: {
                     join_land:
                         rv |= opt0(&(ep->right));
                         if (isintconst(ep->right))
                         {
                             rv = true;
-                            *node = intNode(en_c_i, !!ep->right->v.i);
+                            *node = intNode(ExpressionNode::c_i, !!ep->right->v.i);
                         }
                         else
                             switch (ep->right->type)
                             {
-                                case en_pc:
-                                case en_threadlocal:
-                                case en_global:
-                                case en_labcon:
-                                case en_auto:
+                                case ExpressionNode::pc:
+                                case ExpressionNode::threadlocal:
+                                case ExpressionNode::global:
+                                case ExpressionNode::labcon:
+                                case ExpressionNode::auto_:
                                     /* assumes nothing can be relocated to address 0 */
-                                    *node = intNode(en_c_i, 1);
+                                    *node = intNode(ExpressionNode::c_i, 1);
                                     rv = true;
                                     break;
                                 default:
@@ -2045,14 +2045,14 @@ int opt0(EXPRESSION** node)
                         break;
                 }
             break;
-        case en_lor:
+        case ExpressionNode::lor:
             rv |= opt0(&(ep->left));
             if (isintconst(ep->left))
             {
                 if (ep->left->v.i)
                 {
                     rv = true;
-                    *node = intNode(en_c_i, 1);
+                    *node = intNode(ExpressionNode::c_i, 1);
                     break;
                 }
                 else
@@ -2063,13 +2063,13 @@ int opt0(EXPRESSION** node)
             else
                 switch (ep->left->type)
                 {
-                    case en_pc:
-                    case en_threadlocal:
-                    case en_global:
-                    case en_labcon:
-                    case en_auto:
+                    case ExpressionNode::pc:
+                    case ExpressionNode::threadlocal:
+                    case ExpressionNode::global:
+                    case ExpressionNode::labcon:
+                    case ExpressionNode::auto_:
                         /* assumes nothing can be relocated to address 0 */
-                        *node = intNode(en_c_i, 1);
+                        *node = intNode(ExpressionNode::c_i, 1);
                         rv = true;
                         break;
                     default: {
@@ -2080,24 +2080,24 @@ int opt0(EXPRESSION** node)
                             if (ep->right->v.i)
                             {
                                 rv = true;
-                                *node = intNode(en_c_i, 1);
+                                *node = intNode(ExpressionNode::c_i, 1);
                             }
                             else if (isintconst(ep->left) && !ep->left->v.i)
                             {
                                 rv = true;
-                                *node = intNode(en_c_i, 0);
+                                *node = intNode(ExpressionNode::c_i, 0);
                             }
                         }
                         else
                             switch (ep->right->type)
                             {
-                                case en_pc:
-                                case en_threadlocal:
-                                case en_global:
-                                case en_labcon:
-                                case en_auto:
+                                case ExpressionNode::pc:
+                                case ExpressionNode::threadlocal:
+                                case ExpressionNode::global:
+                                case ExpressionNode::labcon:
+                                case ExpressionNode::auto_:
                                     /* assumes nothing can be relocated to address 0 */
-                                    *node = intNode(en_c_i, 1);
+                                    *node = intNode(ExpressionNode::c_i, 1);
                                     rv = true;
                                     break;
                                 default:
@@ -2106,32 +2106,32 @@ int opt0(EXPRESSION** node)
                     }
                 }
             break;
-        case en_not:
+        case ExpressionNode::not_:
             rv |= opt0(&(ep->left));
             if (isintconst(ep->left))
             {
-                *node = intNode(en_c_i, (!ep->left->v.i));
+                *node = intNode(ExpressionNode::c_i, (!ep->left->v.i));
                 rv = true;
             }
             else if (isfloatconst(ep->left))
             {
-                *node = intNode(en_c_i, ep->left->v.f->ValueIsZero());
+                *node = intNode(ExpressionNode::c_i, ep->left->v.f->ValueIsZero());
                 rv = true;
             }
             break;
-        case en_eq:
+        case ExpressionNode::eq:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
                 case 1:
-                    *node = intNode(en_c_i, (ep->left->v.i == ep->right->v.i));
+                    *node = intNode(ExpressionNode::c_i, (ep->left->v.i == ep->right->v.i));
                     rv = true;
 
                     break;
                 case 4:
-                    *node = intNode(en_c_i, (*ep->left->v.f == *ep->right->v.f));
+                    *node = intNode(ExpressionNode::c_i, (*ep->left->v.f == *ep->right->v.f));
                     rv = true;
                     break;
                 default: {
@@ -2142,29 +2142,29 @@ int opt0(EXPRESSION** node)
                     {
                         if (rv1->v.sp != rv2->v.sp || offset1 != offset2)
                         {
-                            *node = intNode(en_c_i, 0);
+                            *node = intNode(ExpressionNode::c_i, 0);
                         }
                         else
                         {
-                            *node = intNode(en_c_i, 1);
+                            *node = intNode(ExpressionNode::c_i, 1);
                         }
                     }
                 }
                 break;
             }
             break;
-        case en_ne:
+        case ExpressionNode::ne:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
                 case 1:
-                    *node = intNode(en_c_i, (ep->left->v.i != ep->right->v.i));
+                    *node = intNode(ExpressionNode::c_i, (ep->left->v.i != ep->right->v.i));
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(en_c_i, (*ep->left->v.f != *ep->right->v.f));
+                    *node = intNode(ExpressionNode::c_i, (*ep->left->v.f != *ep->right->v.f));
                     rv = true;
                     break;
                 default: {
@@ -2175,11 +2175,11 @@ int opt0(EXPRESSION** node)
                     {
                         if (rv1->v.sp != rv2->v.sp || offset1 != offset2)
                         {
-                            *node = intNode(en_c_i, 1);
+                            *node = intNode(ExpressionNode::c_i, 1);
                         }
                         else
                         {
-                            *node = intNode(en_c_i, 0);
+                            *node = intNode(ExpressionNode::c_i, 0);
                         }
                         rv = true;
                     }
@@ -2187,18 +2187,18 @@ int opt0(EXPRESSION** node)
                 break;
             }
             break;
-        case en_lt:
+        case ExpressionNode::lt:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
                 case 1:
-                    *node = intNode(en_c_i, (ep->left->v.i < ep->right->v.i));
+                    *node = intNode(ExpressionNode::c_i, (ep->left->v.i < ep->right->v.i));
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(en_c_i, (*ep->left->v.f < *ep->right->v.f));
+                    *node = intNode(ExpressionNode::c_i, (*ep->left->v.f < *ep->right->v.f));
                     rv = true;
                     break;
                 default: {
@@ -2207,25 +2207,25 @@ int opt0(EXPRESSION** node)
                     auto rv2 = relptr(ep->right, offset2, true);
                     if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
                     {
-                        *node = intNode(en_c_i, offset1 < offset2);
+                        *node = intNode(ExpressionNode::c_i, offset1 < offset2);
                         rv = true;
                     }
                 }
                 break;
             }
             break;
-        case en_le:
+        case ExpressionNode::le:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
                 case 1:
-                    *node = intNode(en_c_i, (ep->left->v.i <= ep->right->v.i));
+                    *node = intNode(ExpressionNode::c_i, (ep->left->v.i <= ep->right->v.i));
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(en_c_i, (*ep->left->v.f <= *ep->right->v.f));
+                    *node = intNode(ExpressionNode::c_i, (*ep->left->v.f <= *ep->right->v.f));
                     rv = true;
                     break;
                 default: {
@@ -2234,21 +2234,21 @@ int opt0(EXPRESSION** node)
                     auto rv2 = relptr(ep->right, offset2, true);
                     if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
                     {
-                        *node = intNode(en_c_i, offset1 <= offset2);
+                        *node = intNode(ExpressionNode::c_i, offset1 <= offset2);
                         rv = true;
                     }
                 }
                 break;
             }
             break;
-        case en_ugt:
+        case ExpressionNode::ugt:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
                 case 1:
-                    *node = intNode(en_c_i, ((unsigned long long)ep->left->v.i > (unsigned long long)ep->right->v.i));
+                    *node = intNode(ExpressionNode::c_i, ((unsigned long long)ep->left->v.i > (unsigned long long)ep->right->v.i));
                     rv = true;
                     break;
                 default: {
@@ -2257,21 +2257,21 @@ int opt0(EXPRESSION** node)
                     auto rv2 = relptr(ep->right, offset2, true);
                     if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
                     {
-                        *node = intNode(en_c_i, offset1 > offset2);
+                        *node = intNode(ExpressionNode::c_i, offset1 > offset2);
                         rv = true;
                     }
                 }
                 break;
             }
             break;
-        case en_uge:
+        case ExpressionNode::uge:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
                 case 1:
-                    *node = intNode(en_c_i, ((unsigned long long)ep->left->v.i >= (unsigned long long)ep->right->v.i));
+                    *node = intNode(ExpressionNode::c_i, ((unsigned long long)ep->left->v.i >= (unsigned long long)ep->right->v.i));
                     rv = true;
                     break;
                 default: {
@@ -2280,21 +2280,21 @@ int opt0(EXPRESSION** node)
                     auto rv2 = relptr(ep->right, offset2, true);
                     if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
                     {
-                        *node = intNode(en_c_i, offset1 >= offset2);
+                        *node = intNode(ExpressionNode::c_i, offset1 >= offset2);
                         rv = true;
                     }
                 }
                 break;
             }
             break;
-        case en_ult:
+        case ExpressionNode::ult:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
                 case 1:
-                    *node = intNode(en_c_i, ((unsigned long long)ep->left->v.i < (unsigned long long)ep->right->v.i));
+                    *node = intNode(ExpressionNode::c_i, ((unsigned long long)ep->left->v.i < (unsigned long long)ep->right->v.i));
                     rv = true;
                     break;
                 default: {
@@ -2303,21 +2303,21 @@ int opt0(EXPRESSION** node)
                     auto rv2 = relptr(ep->right, offset2, true);
                     if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
                     {
-                        *node = intNode(en_c_i, offset1 < offset2);
+                        *node = intNode(ExpressionNode::c_i, offset1 < offset2);
                         rv = true;
                     }
                 }
                 break;
             }
             break;
-        case en_ule:
+        case ExpressionNode::ule:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
                 case 1:
-                    *node = intNode(en_c_i, ((unsigned long long)ep->left->v.i <= (unsigned long long)ep->right->v.i));
+                    *node = intNode(ExpressionNode::c_i, ((unsigned long long)ep->left->v.i <= (unsigned long long)ep->right->v.i));
                     rv = true;
                     break;
                 default: {
@@ -2326,25 +2326,25 @@ int opt0(EXPRESSION** node)
                     auto rv2 = relptr(ep->right, offset2, true);
                     if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
                     {
-                        *node = intNode(en_c_i, offset1 <= offset2);
+                        *node = intNode(ExpressionNode::c_i, offset1 <= offset2);
                         rv = true;
                     }
                 }
                 break;
             }
             break;
-        case en_gt:
+        case ExpressionNode::gt:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
                 case 1:
-                    *node = intNode(en_c_i, (ep->left->v.i > ep->right->v.i));
+                    *node = intNode(ExpressionNode::c_i, (ep->left->v.i > ep->right->v.i));
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(en_c_i, (*ep->left->v.f > *ep->right->v.f));
+                    *node = intNode(ExpressionNode::c_i, (*ep->left->v.f > *ep->right->v.f));
                     rv = true;
                     break;
                 default: {
@@ -2353,25 +2353,25 @@ int opt0(EXPRESSION** node)
                     auto rv2 = relptr(ep->right, offset2, true);
                     if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
                     {
-                        *node = intNode(en_c_i, offset1 > offset2);
+                        *node = intNode(ExpressionNode::c_i, offset1 > offset2);
                         rv = true;
                     }
                 }
                 break;
             }
             break;
-        case en_ge:
+        case ExpressionNode::ge:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
                 case 1:
-                    *node = intNode(en_c_i, (ep->left->v.i >= ep->right->v.i));
+                    *node = intNode(ExpressionNode::c_i, (ep->left->v.i >= ep->right->v.i));
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(en_c_i, (*ep->left->v.f > *ep->right->v.f));
+                    *node = intNode(ExpressionNode::c_i, (*ep->left->v.f > *ep->right->v.f));
                     rv = true;
                     break;
                 default: {
@@ -2380,7 +2380,7 @@ int opt0(EXPRESSION** node)
                     auto rv2 = relptr(ep->right, offset2, true);
                     if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
                     {
-                        *node = intNode(en_c_i, offset1 >= offset2);
+                        *node = intNode(ExpressionNode::c_i, offset1 >= offset2);
                         rv = true;
                     }
                 }
@@ -2388,7 +2388,7 @@ int opt0(EXPRESSION** node)
             }
             break;
 
-        case en_cond:
+        case ExpressionNode::cond:
             rv |= opt0(&(ep->right));
             rv |= opt0(&(ep->left));
             if (isoptconst(ep->left) && (parsingPreprocessorConstant || isoptconst(ep->right->left) && isoptconst(ep->right->right)))
@@ -2411,45 +2411,45 @@ int opt0(EXPRESSION** node)
                 }
             }
             break;
-        case en_void:
-        case en_intcall:
-        case en_voidnz:
-        case en_assign:
-        case en_blockassign:
-        case en_stackblock:
-        case en_autoinc:
-        case en_autodec:
-        case en__initblk:
-        case en__cpblk:
+        case ExpressionNode::void_:
+        case ExpressionNode::intcall:
+        case ExpressionNode::void_nz:
+        case ExpressionNode::assign:
+        case ExpressionNode::blockassign:
+        case ExpressionNode::stackblock:
+        case ExpressionNode::auto_inc:
+        case ExpressionNode::auto_dec:
+        case ExpressionNode::_initblk:
+        case ExpressionNode::_cpblk:
             rv |= opt0(&(ep->right));
-        case en_trapcall:
-        case en_substack:
-        case en_alloca:
-        case en_loadstack:
-        case en_savestack:
-        case en_blockclear:
-        case en_argnopush:
-        case en_not_lvalue:
-        case en_lvalue:
-        case en_thisref:
-        case en_funcret:
-        case en__initobj:
-        case en__sizeof:
-        case en_select:
+        case ExpressionNode::trapcall:
+        case ExpressionNode::substack:
+        case ExpressionNode::alloca_:
+        case ExpressionNode::loadstack:
+        case ExpressionNode::savestack:
+        case ExpressionNode::blockclear:
+        case ExpressionNode::argnopush:
+        case ExpressionNode::not__lvalue:
+        case ExpressionNode::lvalue:
+        case ExpressionNode::thisref:
+        case ExpressionNode::funcret:
+        case ExpressionNode::_initobj:
+        case ExpressionNode::_sizeof:
+        case ExpressionNode::select:
             rv |= opt0(&(ep->left));
             break;
-        case en_dot:
-        case en_pointsto:
+        case ExpressionNode::dot:
+        case ExpressionNode::pointsto:
             if (!templateNestingCount || instantiatingTemplate)
             {
                 EXPRESSION* newExpr = ep->left;
                 EXPRESSION* next = ep->right;
                 TYPE* tp = LookupTypeFromExpression(ep->left, nullptr, false);
-                while (ep->type == en_dot || ep->type == en_pointsto)
+                while (ep->type == ExpressionNode::dot || ep->type == ExpressionNode::pointsto)
                 {
                     rv |= opt0(&(ep->right));
                     rv |= opt0(&(ep->left));
-                    if (ep->type == en_pointsto)
+                    if (ep->type == ExpressionNode::pointsto)
                     {
                         if (!ispointer(tp))
                             break;
@@ -2458,14 +2458,14 @@ int opt0(EXPRESSION** node)
                     }
                     if (!isstructured(tp))
                         break;
-                    if (next->type == en_dot || next->type == en_pointsto)
+                    if (next->type == ExpressionNode::dot || next->type == ExpressionNode::pointsto)
                     {
                         next = next->left;
                     }
                     STRUCTSYM s;
                     s.str = basetype(tp)->sp;
                     addStructureDeclaration(&s);
-                    if (next->type == en_func)
+                    if (next->type == ExpressionNode::func)
                     {
                         TYPE* ctype = tp;
                         SYMBOL* sym = classsearch(next->v.func->sp->name, false, false, false);
@@ -2477,7 +2477,7 @@ int opt0(EXPRESSION** node)
                         FUNCTIONCALL* func = Allocate<FUNCTIONCALL>();
                         *func = *next->v.func;
                         func->sp = sym;
-                        func->thistp = MakeType(bt_pointer, tp);
+                        func->thistp = MakeType(BasicType::pointer, tp);
                         func->thisptr = newExpr;
                         sym = GetOverloadedFunction(&ctype, &func->fcall, sym, func, nullptr, true, false, 0);
                         if (!sym)
@@ -2485,9 +2485,9 @@ int opt0(EXPRESSION** node)
                             dropStructureDeclaration();
                             break;
                         }
-                        EXPRESSION* temp = varNode(en_func, sym);
+                        EXPRESSION* temp = varNode(ExpressionNode::func, sym);
                         temp->v.func = next->v.func;
-                        temp = exprNode(en_thisref, temp, nullptr);
+                        temp = exprNode(ExpressionNode::thisref, temp, nullptr);
                         temp->v.t.thisptr = newExpr;
                         temp->v.t.tp = tp;
                         newExpr = temp;
@@ -2501,12 +2501,12 @@ int opt0(EXPRESSION** node)
                             dropStructureDeclaration();
                             break;
                         }
-                        EXPRESSION* temp = intNode(en_c_i, 0);
+                        EXPRESSION* temp = intNode(ExpressionNode::c_i, 0);
                         if (sym->sb->parentClass != basetype(tp)->sp)
                         {
                             temp = baseClassOffset(basetype(tp)->sp, sym->sb->parentClass, temp);
                         }
-                        newExpr = exprNode(en_structadd, newExpr, temp);
+                        newExpr = exprNode(ExpressionNode::structadd, newExpr, temp);
                         if (!isstructured(sym->tp))
                             deref(sym->tp, &newExpr);
                         tp = sym->tp;
@@ -2514,18 +2514,18 @@ int opt0(EXPRESSION** node)
                     dropStructureDeclaration();
                     ep = ep->right;
                 }
-                if (ep->type == en_dot || ep->type == en_pointsto)
+                if (ep->type == ExpressionNode::dot || ep->type == ExpressionNode::pointsto)
                     rv = false;
                 else
                     *node = newExpr;
             }
             break;
-        case en_func:
+        case ExpressionNode::func:
             // rv |= opt0(&((*node)->v.func->fcall));
             if ((*node)->v.func->thisptr)
                 rv |= opt0(&((*node)->v.func->thisptr));
             return rv;
-        case en_atomic:
+        case ExpressionNode::atomic:
             rv |= opt0(&((*node)->v.ad->flg));
             rv |= opt0(&((*node)->v.ad->memoryOrder1));
             rv |= opt0(&((*node)->v.ad->memoryOrder2));
@@ -2533,7 +2533,7 @@ int opt0(EXPRESSION** node)
             rv |= opt0(&((*node)->v.ad->address));
             rv |= opt0(&((*node)->v.ad->value));
             return rv;
-        case en_sizeofellipse:
+        case ExpressionNode::sizeofellipse:
             if (!templateNestingCount || instantiatingTemplate)
             {
                 int n = 0;
@@ -2549,10 +2549,10 @@ int opt0(EXPRESSION** node)
                 {
                     n = (*node)->v.templateParam->second->byPack.pack->size();
                 }
-                *node = intNode(en_c_i, n);
+                *node = intNode(ExpressionNode::c_i, n);
             }
             break;
-        case en_templateselector:
+        case ExpressionNode::templateselector:
             if (!templateNestingCount || instantiatingTemplate)
             {
                 auto tsl = (*node)->v.templateSelector;
@@ -2568,9 +2568,9 @@ int opt0(EXPRESSION** node)
                 }
                 else
                 {
-                    if (ts->tp->type == bt_templateparam)
+                    if (ts->tp->type == BasicType::templateparam)
                     {
-                        if (ts->tp->templateParam->second->type != kw_template)
+                        if (ts->tp->templateParam->second->type != Keyword::_template)
                             break;
                         ts = ts->tp->templateParam->second->byTemplate.val;
                         if (!ts)
@@ -2579,7 +2579,7 @@ int opt0(EXPRESSION** node)
                     if ((*tsl)[1].isTemplate && (*tsl)[1].templateParams)
                     {
                         std::list<TEMPLATEPARAMPAIR>* current = SolidifyTemplateParams((*tsl)[1].templateParams);
-                        if (ts->sb->storage_class == sc_typedef)
+                        if (ts->sb->storage_class == StorageClass::typedef_)
                         {
                             sym = GetTypeAliasSpecialization(sym, current);
                         }
@@ -2588,7 +2588,7 @@ int opt0(EXPRESSION** node)
                             sym = GetClassTemplate(ts, current, true);
                         }
                     }
-                    if (sym && sym->tp->type == bt_templateselector)
+                    if (sym && sym->tp->type == BasicType::templateselector)
                     {
                         TYPE* tp = sym->tp;
                         tp = SynthesizeType(tp, nullptr, false);
@@ -2625,7 +2625,7 @@ int opt0(EXPRESSION** node)
                                         i->tp = SynthesizeType(i->tp, nullptr, false);
                                     }
                                 TYPE* ctype = sym->tp;
-                                EXPRESSION* exp = intNode(en_c_i, 0);
+                                EXPRESSION* exp = intNode(ExpressionNode::c_i, 0);
                                 FUNCTIONCALL funcparams = { };
                                 funcparams.arguments = (*find).arguments;
                                 auto sp1 = GetOverloadedFunction(&ctype, &exp, sym, &funcparams, nullptr, false, false, 0);
@@ -2638,7 +2638,7 @@ int opt0(EXPRESSION** node)
                         }
                         if (find == (*tsl).end() && sym)
                         {
-                            if (sym->sb->storage_class == sc_constant)
+                            if (sym->sb->storage_class == StorageClass::const_ant)
                             {
                                 optimize_for_constants(&sym->sb->init->front()->exp);
                                 *node = sym->sb->init->front()->exp;
@@ -2650,8 +2650,8 @@ int opt0(EXPRESSION** node)
                 return false;
             }
             break;
-        case en_templateparam:
-            if ((!templateNestingCount || instantiatingTemplate) && (*node)->v.sp->tp->templateParam->second->type == kw_int)
+        case ExpressionNode::templateparam:
+            if ((!templateNestingCount || instantiatingTemplate) && (*node)->v.sp->tp->templateParam->second->type == Keyword::_int)
             {
                 SYMBOL* sym = (*node)->v.sp;
                 TEMPLATEPARAMPAIR* found = (*node)->v.sp->tp->templateParam;
@@ -2674,7 +2674,7 @@ int opt0(EXPRESSION** node)
                         }
                     }
                 }
-                if (found && found->second->type == kw_int)
+                if (found && found->second->type == Keyword::_int)
                 {
                     if (found->second->byNonType.val && !found->second->packed)
                         *node = found->second->byNonType.val;
@@ -2709,68 +2709,68 @@ int fold_const(EXPRESSION* node)
         return 0;
     switch (node->type)
     {
-        case en_add:
-        case en_arrayadd:
-        case en_structadd:
+        case ExpressionNode::add:
+        case ExpressionNode::arrayadd:
+        case ExpressionNode::structadd:
             rv |= fold_const(node->left);
             rv |= fold_const(node->right);
-            if (!inConstantExpression && (node->right->type == en_structelem || node->left->type == en_structadd))
+            if (!inConstantExpression && (node->right->type == ExpressionNode::structelem || node->left->type == ExpressionNode::structadd))
                 break;
             if (isoptconst(node->right))
             {
                 switch (node->left->type)
                 {
-                    case en_add:
-                    case en_arrayadd:
-                    case en_structadd:
+                    case ExpressionNode::add:
+                    case ExpressionNode::arrayadd:
+                    case ExpressionNode::structadd:
                         if (isoptconst(node->left->left))
                         {
-                            e_node type = en_add;
-                            if (node->type == en_arrayadd || node->left->type == en_arrayadd)
-                                type = en_arrayadd;
-                            if (node->type == en_structadd || node->left->type == en_structadd)
-                                type = en_structadd;
+                            ExpressionNode type = ExpressionNode::add;
+                            if (node->type == ExpressionNode::arrayadd || node->left->type == ExpressionNode::arrayadd)
+                                type = ExpressionNode::arrayadd;
+                            if (node->type == ExpressionNode::structadd || node->left->type == ExpressionNode::structadd)
+                                type = ExpressionNode::structadd;
                             node->type = type;
-                            node->left->type = en_add;
+                            node->left->type = ExpressionNode::add;
                             enswap(&node->left->right, &node->right);
                             rv = true;
                         }
                         else if (isoptconst(node->left->right))
                         {
-                            e_node type = en_add;
+                            ExpressionNode type = ExpressionNode::add;
 
-                            if (node->type == en_arrayadd || node->left->type == en_arrayadd)
-                                type = en_arrayadd;
-                            if (node->type == en_structadd || node->left->type == en_structadd)
-                                type = en_structadd;
+                            if (node->type == ExpressionNode::arrayadd || node->left->type == ExpressionNode::arrayadd)
+                                type = ExpressionNode::arrayadd;
+                            if (node->type == ExpressionNode::structadd || node->left->type == ExpressionNode::structadd)
+                                type = ExpressionNode::structadd;
                             node->type = type;
-                            node->left->type = en_add;
+                            node->left->type = ExpressionNode::add;
                             enswap(&node->left->left, &node->right);
                             rv = true;
                         }
                         break;
-                    case en_sub:
+                    case ExpressionNode::sub:
                         if (isoptconst(node->left->left))
                         {
-                            e_node type = en_add;
-                            if (node->type == en_arrayadd)
-                                type = en_arrayadd;
-                            if (node->type == en_structadd)
-                                type = en_structadd;
-                            node->type = en_sub;
+                            ExpressionNode type = ExpressionNode::add;
+                            if (node->type == ExpressionNode::arrayadd)
+                                type = ExpressionNode::arrayadd;
+                            if (node->type == ExpressionNode::structadd)
+                                type = ExpressionNode::structadd;
+                            node->type = ExpressionNode::sub;
                             node->left->type = type;
                             enswap(&node->left->right, &node->right);
                             rv = true;
                         }
                         else if (isoptconst(node->left->right))
                         {
-                            e_node type = en_add;
-                            if (node->type == en_arrayadd)
-                                type = en_arrayadd;
-                            if (node->type == en_structadd)
-                                type = en_structadd;
+                            ExpressionNode type = ExpressionNode::add;
+                            if (node->type == ExpressionNode::arrayadd)
+                                type = ExpressionNode::arrayadd;
+                            if (node->type == ExpressionNode::structadd)
+                                type = ExpressionNode::structadd;
                             node->type = type;
-                            node->left->type = en_sub;
+                            node->left->type = ExpressionNode::sub;
                             enswap(&node->left->left, &node->right);
                             rv = true;
                         }
@@ -2783,52 +2783,52 @@ int fold_const(EXPRESSION* node)
             {
                 switch (node->right->type)
                 {
-                    case en_add:
-                    case en_arrayadd:
-                    case en_structadd:
+                    case ExpressionNode::add:
+                    case ExpressionNode::arrayadd:
+                    case ExpressionNode::structadd:
                         if (isoptconst(node->right->left))
                         {
-                            e_node type = en_add;
-                            if (node->type == en_arrayadd || node->right->type == en_arrayadd)
-                                type = en_arrayadd;
-                            if (node->type == en_structadd || node->right->type == en_structadd)
-                                type = en_structadd;
+                            ExpressionNode type = ExpressionNode::add;
+                            if (node->type == ExpressionNode::arrayadd || node->right->type == ExpressionNode::arrayadd)
+                                type = ExpressionNode::arrayadd;
+                            if (node->type == ExpressionNode::structadd || node->right->type == ExpressionNode::structadd)
+                                type = ExpressionNode::structadd;
                             node->type = type;
-                            node->right->type = en_add;
+                            node->right->type = ExpressionNode::add;
                             enswap(&node->right->right, &node->left);
                             rv = true;
                         }
                         else if (isoptconst(node->right->right))
                         {
-                            e_node type = en_add;
-                            if (node->type == en_arrayadd || node->right->type == en_arrayadd)
-                                type = en_arrayadd;
-                            if (node->type == en_structadd || node->right->type == en_structadd)
-                                type = en_structadd;
+                            ExpressionNode type = ExpressionNode::add;
+                            if (node->type == ExpressionNode::arrayadd || node->right->type == ExpressionNode::arrayadd)
+                                type = ExpressionNode::arrayadd;
+                            if (node->type == ExpressionNode::structadd || node->right->type == ExpressionNode::structadd)
+                                type = ExpressionNode::structadd;
                             node->type = type;
-                            node->right->type = en_add;
+                            node->right->type = ExpressionNode::add;
                             enswap(&node->right->left, &node->left);
                             rv = true;
                         }
                         break;
-                    case en_sub:
+                    case ExpressionNode::sub:
                         if (isoptconst(node->right->left))
                         {
-                            node->type = en_sub;
-                            node->right->type = en_add;
+                            node->type = ExpressionNode::sub;
+                            node->right->type = ExpressionNode::add;
                             enswap(&node->left, &node->right);
                             enswap(&node->left->right, &node->right);
                             rv = true;
                         }
                         else if (isoptconst(node->right->right))
                         {
-                            e_node type = en_add;
-                            if (node->type == en_arrayadd)
-                                type = en_arrayadd;
-                            if (node->type == en_structadd)
-                                type = en_structadd;
+                            ExpressionNode type = ExpressionNode::add;
+                            if (node->type == ExpressionNode::arrayadd)
+                                type = ExpressionNode::arrayadd;
+                            if (node->type == ExpressionNode::structadd)
+                                type = ExpressionNode::structadd;
                             node->type = type;
-                            node->right->type = en_sub;
+                            node->right->type = ExpressionNode::sub;
                             enswap(&node->right->left, &node->left);
                             rv = true;
                         }
@@ -2838,33 +2838,33 @@ int fold_const(EXPRESSION* node)
                 }
             }
             break;
-        case en_sub:
+        case ExpressionNode::sub:
             rv |= fold_const(node->left);
             rv |= fold_const(node->right);
             if (isoptconst(node->right))
             {
                 switch (node->left->type)
                 {
-                    case en_add:
-                    case en_arrayadd:
-                    case en_structadd:
+                    case ExpressionNode::add:
+                    case ExpressionNode::arrayadd:
+                    case ExpressionNode::structadd:
                         if (isoptconst(node->left->left))
                         {
-                            node->type = en_add;
-                            node->left->type = en_sub;
+                            node->type = ExpressionNode::add;
+                            node->left->type = ExpressionNode::sub;
                             enswap(&node->left->right, &node->right);
                             rv = true;
                         }
                         else if (isoptconst(node->left->right))
                         {
-                            node->type = en_add;
-                            node->left->type = en_sub;
+                            node->type = ExpressionNode::add;
+                            node->left->type = ExpressionNode::sub;
                             enswap(&node->left->left, &node->left->right);
                             enswap(&node->left->right, &node->right);
                             rv = true;
                         }
                         break;
-                    case en_sub:
+                    case ExpressionNode::sub:
                         if (isoptconst(node->left->left))
                         {
                             enswap(&node->left->right, &node->right);
@@ -2874,8 +2874,8 @@ int fold_const(EXPRESSION* node)
                         {
                             enswap(&node->left, &node->right);
                             enswap(&node->right->left, &node->left);
-                            node->type = en_add;
-                            node->right->left = exprNode(en_uminus, node->right->left, 0);
+                            node->type = ExpressionNode::add;
+                            node->right->left = exprNode(ExpressionNode::uminus, node->right->left, 0);
                             rv = true;
                         }
                         break;
@@ -2887,13 +2887,13 @@ int fold_const(EXPRESSION* node)
             {
                 switch (node->right->type)
                 {
-                    case en_add:
-                    case en_arrayadd:
-                    case en_structadd:
+                    case ExpressionNode::add:
+                    case ExpressionNode::arrayadd:
+                    case ExpressionNode::structadd:
                         if (isoptconst(node->right->left))
                         {
-                            node->type = en_sub;
-                            node->right->type = en_sub;
+                            node->type = ExpressionNode::sub;
+                            node->right->type = ExpressionNode::sub;
                             enswap(&node->left, &node->right);
                             enswap(&node->left->right, &node->right);
                             enswap(&node->left->left, &node->left->right);
@@ -2901,14 +2901,14 @@ int fold_const(EXPRESSION* node)
                         }
                         else if (isoptconst(node->right->right))
                         {
-                            node->type = en_sub;
-                            node->right->type = en_sub;
+                            node->type = ExpressionNode::sub;
+                            node->right->type = ExpressionNode::sub;
                             enswap(&node->left, &node->right);
                             enswap(&node->left->left, &node->right);
                             rv = true;
                         }
                         break;
-                    case en_sub:
+                    case ExpressionNode::sub:
                         if (isoptconst(node->right->left))
                         {
                             enswap(&node->right->right, &node->left);
@@ -2919,7 +2919,7 @@ int fold_const(EXPRESSION* node)
 
                             enswap(&node->left, &node->right);
                             enswap(&node->left->left, &node->right);
-                            node->left->right = exprNode(en_uminus, node->left->right, 0);
+                            node->left->right = exprNode(ExpressionNode::uminus, node->left->right, 0);
                             rv = true;
                         }
                         break;
@@ -2928,27 +2928,27 @@ int fold_const(EXPRESSION* node)
                 }
             }
             break;
-        case en_mul:
-        case en_umul:
+        case ExpressionNode::mul:
+        case ExpressionNode::umul:
             rv |= fold_const(node->left);
             rv |= fold_const(node->right);
             if (isoptconst(node->right))
             {
                 switch (node->left->type)
                 {
-                    case en_mul:
-                    case en_umul:
+                    case ExpressionNode::mul:
+                    case ExpressionNode::umul:
                         if (isoptconst(node->left->left))
                         {
-                            node->type = en_mul;
-                            node->left->type = en_mul;
+                            node->type = ExpressionNode::mul;
+                            node->left->type = ExpressionNode::mul;
                             enswap(&node->left->right, &node->right);
                             rv = true;
                         }
                         else if (isoptconst(node->left->right))
                         {
-                            node->type = en_mul;
-                            node->left->type = en_mul;
+                            node->type = ExpressionNode::mul;
+                            node->left->type = ExpressionNode::mul;
                             enswap(&node->left->left, &node->right);
                             rv = true;
                         }
@@ -2961,19 +2961,19 @@ int fold_const(EXPRESSION* node)
             {
                 switch (node->right->type)
                 {
-                    case en_mul:
-                    case en_umul:
+                    case ExpressionNode::mul:
+                    case ExpressionNode::umul:
                         if (isoptconst(node->right->left))
                         {
-                            node->type = en_mul;
-                            node->right->type = en_mul;
+                            node->type = ExpressionNode::mul;
+                            node->right->type = ExpressionNode::mul;
                             enswap(&node->right->right, &node->left);
                             rv = true;
                         }
                         else if (isoptconst(node->right->right))
                         {
-                            node->type = en_mul;
-                            node->right->type = en_mul;
+                            node->type = ExpressionNode::mul;
+                            node->right->type = ExpressionNode::mul;
                             enswap(&node->right->left, &node->left);
                             rv = true;
                         }
@@ -2983,9 +2983,9 @@ int fold_const(EXPRESSION* node)
                 }
             }
             break;
-        case en_and:
-        case en_or:
-        case en_xor:
+        case ExpressionNode::and_:
+        case ExpressionNode::or_:
+        case ExpressionNode::xor_:
             rv |= fold_const(node->left);
             rv |= fold_const(node->right);
             if (node->left->type == node->type && isoptconst(node->right))
@@ -3015,88 +3015,88 @@ int fold_const(EXPRESSION* node)
                 }
             }
             break;
-        case en_l_sp:
-        case en_l_fp:
-        case en_l_fi:
-        case en_l_di:
-        case en_l_ldi:
-        case en_l_fc:
-        case en_l_dc:
-        case en_l_ldc:
-        case en_x_fi:
-        case en_x_di:
-        case en_x_ldi:
-        case en_x_fc:
-        case en_x_dc:
-        case en_x_ldc:
-        case en_x_bit:
-        case en_l_f:
-        case en_l_d:
-        case en_l_ld:
-        case en_l_ll:
-        case en_l_ull:
-        case en_l_wc:
-        case en_l_u16:
-        case en_l_u32:
-        case en_l_c:
-        case en_l_s:
-        case en_l_p:
-        case en_l_ref:
-        case en_l_i:
-        case en_l_ui:
-        case en_l_inative:
-        case en_l_unative:
-        case en_l_ul:
-        case en_l_l:
-        case en_l_uc:
-        case en_l_us:
-        case en_l_bool:
-        case en_l_bit:
-        case en_l_string:
-        case en_l_object:
-        case en_uminus:
-        case en_compl:
-        case en_not:
-        case en_x_f:
-        case en_x_d:
-        case en_x_ld:
-        case en_x_wc:
-        case en_x_c:
-        case en_x_uc:
-        case en_x_u16:
-        case en_x_u32:
-        case en_x_bool:
-        case en_x_s:
-        case en_x_us:
-        case en_x_ll:
-        case en_x_ull:
-        case en_x_l:
-        case en_x_ul:
-        case en_x_i:
-        case en_x_ui:
-        case en_x_inative:
-        case en_x_unative:
-        case en_x_p:
-        case en_x_fp:
-        case en_x_sp:
-        case en_x_string:
-        case en_x_object:
-        case en_trapcall:
-        case en_shiftby:
-        case en_substack:
-        case en_alloca:
-        case en_loadstack:
-        case en_savestack:
-        case en_bits:
-        case en_literalclass:
+        case ExpressionNode::l_sp:
+        case ExpressionNode::l_fp:
+        case ExpressionNode::l_fi:
+        case ExpressionNode::l_di:
+        case ExpressionNode::l_ldi:
+        case ExpressionNode::l_fc:
+        case ExpressionNode::l_dc:
+        case ExpressionNode::l_ldc:
+        case ExpressionNode::x_fi:
+        case ExpressionNode::x_di:
+        case ExpressionNode::x_ldi:
+        case ExpressionNode::x_fc:
+        case ExpressionNode::x_dc:
+        case ExpressionNode::x_ldc:
+        case ExpressionNode::x_bit:
+        case ExpressionNode::l_f:
+        case ExpressionNode::l_d:
+        case ExpressionNode::l_ld:
+        case ExpressionNode::l_ll:
+        case ExpressionNode::l_ull:
+        case ExpressionNode::l_wc:
+        case ExpressionNode::l_u16:
+        case ExpressionNode::l_u32:
+        case ExpressionNode::l_c:
+        case ExpressionNode::l_s:
+        case ExpressionNode::l_p:
+        case ExpressionNode::l_ref:
+        case ExpressionNode::l_i:
+        case ExpressionNode::l_ui:
+        case ExpressionNode::l_inative:
+        case ExpressionNode::l_unative:
+        case ExpressionNode::l_ul:
+        case ExpressionNode::l_l:
+        case ExpressionNode::l_uc:
+        case ExpressionNode::l_us:
+        case ExpressionNode::l_bool:
+        case ExpressionNode::l_bit:
+        case ExpressionNode::l_string:
+        case ExpressionNode::l_object:
+        case ExpressionNode::uminus:
+        case ExpressionNode::compl_:
+        case ExpressionNode::not_:
+        case ExpressionNode::x_f:
+        case ExpressionNode::x_d:
+        case ExpressionNode::x_ld:
+        case ExpressionNode::x_wc:
+        case ExpressionNode::x_c:
+        case ExpressionNode::x_uc:
+        case ExpressionNode::x_u16:
+        case ExpressionNode::x_u32:
+        case ExpressionNode::x_bool:
+        case ExpressionNode::x_s:
+        case ExpressionNode::x_us:
+        case ExpressionNode::x_ll:
+        case ExpressionNode::x_ull:
+        case ExpressionNode::x_l:
+        case ExpressionNode::x_ul:
+        case ExpressionNode::x_i:
+        case ExpressionNode::x_ui:
+        case ExpressionNode::x_inative:
+        case ExpressionNode::x_unative:
+        case ExpressionNode::x_p:
+        case ExpressionNode::x_fp:
+        case ExpressionNode::x_sp:
+        case ExpressionNode::x_string:
+        case ExpressionNode::x_object:
+        case ExpressionNode::trapcall:
+        case ExpressionNode::shiftby:
+        case ExpressionNode::substack:
+        case ExpressionNode::alloca_:
+        case ExpressionNode::loadstack:
+        case ExpressionNode::savestack:
+        case ExpressionNode::bits:
+        case ExpressionNode::literalclass:
             rv |= fold_const(node->left);
             break;
-        case en_cond:
+        case ExpressionNode::cond:
             rv |= fold_const(node->left);
             rv |= fold_const(node->right->left);
             rv |= fold_const(node->right->right);
             break;
-        case en_atomic:
+        case ExpressionNode::atomic:
             rv |= fold_const(node->v.ad->flg);
             rv |= fold_const(node->v.ad->memoryOrder1);
             rv |= fold_const(node->v.ad->memoryOrder2);
@@ -3104,82 +3104,82 @@ int fold_const(EXPRESSION* node)
             rv |= fold_const(node->v.ad->value);
             rv |= fold_const(node->v.ad->third);
             break;
-        case en_ursh:
-        case en_assign:
-        case en_void:
-        case en_voidnz:
-        case en_arraymul:
-        case en_arraydiv:
-        case en_div:
-        case en_udiv:
-        case en_umod:
-        case en_lsh:
-        case en_arraylsh:
-        case en_rsh:
-        case en_mod:
-        case en_lor:
-        case en_land:
-        case en_eq:
-        case en_ne:
-        case en_gt:
-        case en_ge:
-        case en_lt:
-        case en_le:
-        case en_ugt:
-        case en_uge:
-        case en_ult:
-        case en_ule:
-        case en_intcall:
-        case en_blockassign:
-        case en_stackblock:
-        case en_autoinc:
-        case en_autodec:
-        case en_mp_compare:
-        case en__initblk:
-        case en__cpblk:
-        case en_dot:
-        case en_pointsto:
+        case ExpressionNode::ursh:
+        case ExpressionNode::assign:
+        case ExpressionNode::void_:
+        case ExpressionNode::void_nz:
+        case ExpressionNode::arraymul:
+        case ExpressionNode::arraydiv:
+        case ExpressionNode::div:
+        case ExpressionNode::udiv:
+        case ExpressionNode::umod:
+        case ExpressionNode::lsh:
+        case ExpressionNode::arraylsh:
+        case ExpressionNode::rsh:
+        case ExpressionNode::mod:
+        case ExpressionNode::lor:
+        case ExpressionNode::land:
+        case ExpressionNode::eq:
+        case ExpressionNode::ne:
+        case ExpressionNode::gt:
+        case ExpressionNode::ge:
+        case ExpressionNode::lt:
+        case ExpressionNode::le:
+        case ExpressionNode::ugt:
+        case ExpressionNode::uge:
+        case ExpressionNode::ult:
+        case ExpressionNode::ule:
+        case ExpressionNode::intcall:
+        case ExpressionNode::blockassign:
+        case ExpressionNode::stackblock:
+        case ExpressionNode::auto_inc:
+        case ExpressionNode::auto_dec:
+        case ExpressionNode::mp_compare:
+        case ExpressionNode::_initblk:
+        case ExpressionNode::_cpblk:
+        case ExpressionNode::dot:
+        case ExpressionNode::pointsto:
             rv |= fold_const(node->right);
-        case en_blockclear:
-        case en_argnopush:
-        case en_not_lvalue:
-        case en_lvalue:
-        case en__initobj:
-        case en__sizeof:
-        case en_select:
+        case ExpressionNode::blockclear:
+        case ExpressionNode::argnopush:
+        case ExpressionNode::not__lvalue:
+        case ExpressionNode::lvalue:
+        case ExpressionNode::_initobj:
+        case ExpressionNode::_sizeof:
+        case ExpressionNode::select:
             rv |= fold_const(node->left);
             break;
-        case en_funcret:
+        case ExpressionNode::funcret:
             rv |= fold_const(node->left);
-            if (node->left->type != en_func && node->left->type != en_funcret)
+            if (node->left->type != ExpressionNode::func && node->left->type != ExpressionNode::funcret)
                 *node = *node->left;
             break;
-        case en_thisref:
+        case ExpressionNode::thisref:
             rv |= fold_const(node->left);
-            if (node->left->type != en_func && node->left->type != en_funcret)
+            if (node->left->type != ExpressionNode::func && node->left->type != ExpressionNode::funcret)
                 *node = *node->left;
             break;
-        case en_construct: {
+        case ExpressionNode::const_ruct: {
             node->v.construct.tp = SynthesizeType(node->v.construct.tp, nullptr, false);
             LEXLIST* lex = SetAlternateLex(node->v.construct.deferred);
             if (isarithmetic(node->v.construct.tp))
             {
 
                 std::list<INITIALIZER*> *init = nullptr, *dest = nullptr;
-                lex = initType(lex, nullptr, 0, sc_auto, &init, &dest, node->v.construct.tp, nullptr, false, 0);
+                lex = initType(lex, nullptr, 0, StorageClass::auto_, &init, &dest, node->v.construct.tp, nullptr, false, 0);
                 if (init)
                     *node = *init->front()->exp;
             }
             else
             {
-                EXPRESSION* exp = anonymousVar(sc_auto, node->v.construct.tp);
-                lex = initType(lex, nullptr, 0, sc_auto, &exp->v.sp->sb->init, &exp->v.sp->sb->dest, node->v.construct.tp,
+                EXPRESSION* exp = anonymousVar(StorageClass::auto_, node->v.construct.tp);
+                lex = initType(lex, nullptr, 0, StorageClass::auto_, &exp->v.sp->sb->init, &exp->v.sp->sb->dest, node->v.construct.tp,
                                exp->v.sp, false, 0);
             }
             SetAlternateLex(nullptr);
         }
         break;
-        case en_func:
+        case ExpressionNode::func:
             if (node->v.func->sp && node->v.func->sp->sb->constexpression)
             {
                 inConstantExpression++;
@@ -3189,35 +3189,35 @@ int fold_const(EXPRESSION* node)
             if (!rv)
                 rv |= fold_const(node->v.func->fcall);
             break;
-        case en_mp_as_bool:
-            if (node->left->type == en_memberptr)
+        case ExpressionNode::mp_as_bool:
+            if (node->left->type == ExpressionNode::memberptr)
             {
-                node->type = en_c_i;
+                node->type = ExpressionNode::c_i;
                 node->left = nullptr;
                 node->v.i = 1;
                 rv = true;
             }
             break;
-        case en_stmt:
+        case ExpressionNode::stmt:
         {   // constructor thunks
             auto its = node->v.stmt->begin();
             auto itse = node->v.stmt->end();
-            while (its != itse && (*its)->type == st_expr)
+            while (its != itse && (*its)->type == StatementNode::expr)
                 ++its;
             // thi originally modified the node statement...
-            if (its != itse && (*its)->type == st_block)
+            if (its != itse && (*its)->type == StatementNode::block)
             {
                 its = (*its)->lower->begin();
-                while ((*its)->type == st_varstart)
+                while ((*its)->type == StatementNode::varstart)
                     ++its;
                 auto its1 = its;
                 ++its1;
-                if ((*its)->type == st_block && its1 == itse)
+                if ((*its)->type == StatementNode::block && its1 == itse)
                 {
                     its = (*its)->lower->begin();
-                    while ((*its)->type == st_line || (*its)->type == st_dbgblock)
+                    while ((*its)->type == StatementNode::line || (*its)->type == StatementNode::dbgblock)
                         ++its;
-                    if ((*its)->type == st_expr || (*its)->type == st_return)
+                    if ((*its)->type == StatementNode::expr || (*its)->type == StatementNode::return_)
                     {
                         EXPRESSION* exp = (*its)->select;
                         optimize_for_constants(&(*its)->select);
@@ -3249,31 +3249,31 @@ int typedconsts(EXPRESSION* node1)
         return rv;
     switch (node1->type)
     {
-        case en_nullptr:
-            node1->type = en_c_ui;  // change the nullptr to an int
+        case ExpressionNode::nullptr_:
+            node1->type = ExpressionNode::c_ui;  // change the nullptr to an int
             rv = true;
             break;
-        case en_const:
+        case ExpressionNode::const_:
             optimize_for_constants(&node1->v.sp->sb->init->front()->exp);
             *node1 = *node1->v.sp->sb->init->front()->exp;
             rv = true;
             break;
         default:
             break;
-        case en_compl:
-        case en_not:
-        case en_uminus:
-        case en_argnopush:
-        case en_not_lvalue:
-        case en_lvalue:
+        case ExpressionNode::compl_:
+        case ExpressionNode::not_:
+        case ExpressionNode::uminus:
+        case ExpressionNode::argnopush:
+        case ExpressionNode::not__lvalue:
+        case ExpressionNode::lvalue:
             rv |= typedconsts(node1->left);
             break;
-        case en_cond:
+        case ExpressionNode::cond:
             rv |= typedconsts(node1->left);
             rv |= typedconsts(node1->right->left);
             rv |= typedconsts(node1->right->right);
             break;
-        case en_atomic:
+        case ExpressionNode::atomic:
             rv |= typedconsts(node1->v.ad->flg);
             rv |= typedconsts(node1->v.ad->memoryOrder1);
             rv |= typedconsts(node1->v.ad->memoryOrder2);
@@ -3281,125 +3281,125 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->v.ad->value);
             rv |= typedconsts(node1->v.ad->third);
             break;
-        case en_add:
-        case en_arrayadd:
-        case en_structadd:
-        case en_sub:
-        case en_or:
-        case en_xor:
-        case en_mul:
-        case en_arraymul:
-        case en_umul:
-        case en_lsh:
-        case en_arraylsh:
-        case en_ursh:
-        case en_rsh:
-        case en_div:
-        case en_arraydiv:
-        case en_mod:
-        case en_land:
-        case en_lor:
-        case en_and:
-        case en_void:
-        case en_voidnz:
-        case en_assign:
-        case en_blockassign:
-        case en_stackblock:
-        case en_intcall:
-        case en_udiv:
-        case en_umod:
-        case en_eq:
-        case en_ne:
-        case en_lt:
-        case en_le:
-        case en_ugt:
-        case en_uge:
-        case en_ult:
-        case en_ule:
-        case en_gt:
-        case en_ge:
-        case en_autoinc:
-        case en_autodec:
-        case en_mp_compare:
-        case en__initblk:
-        case en__cpblk:
-        case en_dot:
-        case en_pointsto:
+        case ExpressionNode::add:
+        case ExpressionNode::arrayadd:
+        case ExpressionNode::structadd:
+        case ExpressionNode::sub:
+        case ExpressionNode::or_:
+        case ExpressionNode::xor_:
+        case ExpressionNode::mul:
+        case ExpressionNode::arraymul:
+        case ExpressionNode::umul:
+        case ExpressionNode::lsh:
+        case ExpressionNode::arraylsh:
+        case ExpressionNode::ursh:
+        case ExpressionNode::rsh:
+        case ExpressionNode::div:
+        case ExpressionNode::arraydiv:
+        case ExpressionNode::mod:
+        case ExpressionNode::land:
+        case ExpressionNode::lor:
+        case ExpressionNode::and_:
+        case ExpressionNode::void_:
+        case ExpressionNode::void_nz:
+        case ExpressionNode::assign:
+        case ExpressionNode::blockassign:
+        case ExpressionNode::stackblock:
+        case ExpressionNode::intcall:
+        case ExpressionNode::udiv:
+        case ExpressionNode::umod:
+        case ExpressionNode::eq:
+        case ExpressionNode::ne:
+        case ExpressionNode::lt:
+        case ExpressionNode::le:
+        case ExpressionNode::ugt:
+        case ExpressionNode::uge:
+        case ExpressionNode::ult:
+        case ExpressionNode::ule:
+        case ExpressionNode::gt:
+        case ExpressionNode::ge:
+        case ExpressionNode::auto_inc:
+        case ExpressionNode::auto_dec:
+        case ExpressionNode::mp_compare:
+        case ExpressionNode::_initblk:
+        case ExpressionNode::_cpblk:
+        case ExpressionNode::dot:
+        case ExpressionNode::pointsto:
             rv |= typedconsts(node1->right);
-        case en_trapcall:
-        case en_shiftby:
-        case en_substack:
-        case en_alloca:
-        case en_loadstack:
-        case en_savestack:
-        case en_blockclear:
-        case en_mp_as_bool:
-        case en_thisref:
-        case en_literalclass:
-        case en_funcret:
-        case en__initobj:
-        case en__sizeof:
-        case en_select:
+        case ExpressionNode::trapcall:
+        case ExpressionNode::shiftby:
+        case ExpressionNode::substack:
+        case ExpressionNode::alloca_:
+        case ExpressionNode::loadstack:
+        case ExpressionNode::savestack:
+        case ExpressionNode::blockclear:
+        case ExpressionNode::mp_as_bool:
+        case ExpressionNode::thisref:
+        case ExpressionNode::literalclass:
+        case ExpressionNode::funcret:
+        case ExpressionNode::_initobj:
+        case ExpressionNode::_sizeof:
+        case ExpressionNode::select:
             rv |= typedconsts(node1->left);
             break;
-        case en_func:
+        case ExpressionNode::func:
             rv |= typedconsts(node1->v.func->fcall);
             break;
-        case en_l_bool:
-        case en_l_bit:
-        case en_l_wc:
-        case en_l_u16:
-        case en_l_u32:
-        case en_l_c:
-        case en_l_s:
-        case en_l_sp:
-        case en_l_fp:
-        case en_l_uc:
-        case en_l_us:
-        case en_l_p:
-        case en_l_ref:
-        case en_l_i:
-        case en_l_ui:
-        case en_l_inative:
-        case en_l_unative:
-        case en_l_l:
-        case en_l_ul:
-        case en_l_f:
-        case en_l_d:
-        case en_l_ld:
-        case en_l_fi:
-        case en_l_di:
-        case en_l_ldi:
-        case en_l_fc:
-        case en_l_dc:
-        case en_l_ldc:
-        case en_l_ull:
-        case en_l_ll:
-        case en_l_string:
-        case en_l_object:
-        case en_bits:
-            if (node1->left->type == en_cshimref)
+        case ExpressionNode::l_bool:
+        case ExpressionNode::l_bit:
+        case ExpressionNode::l_wc:
+        case ExpressionNode::l_u16:
+        case ExpressionNode::l_u32:
+        case ExpressionNode::l_c:
+        case ExpressionNode::l_s:
+        case ExpressionNode::l_sp:
+        case ExpressionNode::l_fp:
+        case ExpressionNode::l_uc:
+        case ExpressionNode::l_us:
+        case ExpressionNode::l_p:
+        case ExpressionNode::l_ref:
+        case ExpressionNode::l_i:
+        case ExpressionNode::l_ui:
+        case ExpressionNode::l_inative:
+        case ExpressionNode::l_unative:
+        case ExpressionNode::l_l:
+        case ExpressionNode::l_ul:
+        case ExpressionNode::l_f:
+        case ExpressionNode::l_d:
+        case ExpressionNode::l_ld:
+        case ExpressionNode::l_fi:
+        case ExpressionNode::l_di:
+        case ExpressionNode::l_ldi:
+        case ExpressionNode::l_fc:
+        case ExpressionNode::l_dc:
+        case ExpressionNode::l_ldc:
+        case ExpressionNode::l_ull:
+        case ExpressionNode::l_ll:
+        case ExpressionNode::l_string:
+        case ExpressionNode::l_object:
+        case ExpressionNode::bits:
+            if (node1->left->type == ExpressionNode::cshimref)
             {
                 *node1 = *node1->left->v.exp;
             }
-            else if (node1->left->type == en_structadd)
+            else if (node1->left->type == ExpressionNode::structadd)
             {
-                if (node1->left->left->type == en_cshimref)
+                if (node1->left->left->type == ExpressionNode::cshimref)
                 {
                     node1->left->left = node1->left->left->v.exp;
                     optimize_for_constants(&node1->left);
                     *node1 = *node1->left;
                 }
-                else if (node1->left->right->type == en_cshimref)
+                else if (node1->left->right->type == ExpressionNode::cshimref)
                 {
                     node1->left->right = node1->left->right->v.exp;
                     optimize_for_constants(&node1->left);
                     *node1 = *node1->left;
                 }
             }
-            else if (node1->left->type == en_global)
+            else if (node1->left->type == ExpressionNode::global)
             {
-                if (node1->left->v.sp->sb->storage_class == sc_constant && isintconst(node1->left->v.sp->sb->init->front()->exp))
+                if (node1->left->v.sp->sb->storage_class == StorageClass::const_ant && isintconst(node1->left->v.sp->sb->init->front()->exp))
                 {
                     optimize_for_constants(&node1->v.sp->sb->init->front()->exp);
                     *node1 = *node1->left->v.sp->sb->init->front()->exp;
@@ -3411,7 +3411,7 @@ int typedconsts(EXPRESSION* node1)
                 rv |= typedconsts(node1->left);
             }
             break;
-        case en_x_p:
+        case ExpressionNode::x_p:
             rv |= typedconsts(node1->left);
             if (isconstaddress(node1->left) || isintconst(node1->left))
             {
@@ -3419,30 +3419,30 @@ int typedconsts(EXPRESSION* node1)
                 rv = true;
             }
             break;
-        case en_x_ull:
+        case ExpressionNode::x_ull:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
                 rv = true;
                 node1->v.i = Optimizer::CastToInt(ISZ_ULONGLONG, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
-                node1->type = en_c_ull;
+                node1->type = ExpressionNode::c_ull;
                 node1->left = nullptr;
             }
             break;
-        case en_x_ll:
+        case ExpressionNode::x_ll:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
                 rv = true;
                 node1->v.i = Optimizer::CastToInt(-ISZ_ULONGLONG, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
-                node1->type = en_c_ll;
+                node1->type = ExpressionNode::c_ll;
                 node1->left = nullptr;
             }
             break;
-        case en_x_bit:
-        case en_x_bool:
+        case ExpressionNode::x_bit:
+        case ExpressionNode::x_bool:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
@@ -3456,135 +3456,135 @@ int typedconsts(EXPRESSION* node1)
                     node1->v.i = Optimizer::CastToInt(ISZ_BOOLEAN, !!reint(node1->left));
                     node1->unionoffset = node1->left->unionoffset;
                 }
-                node1->type = en_c_bool;
+                node1->type = ExpressionNode::c_bool;
                 node1->left = nullptr;
             }
             break;
-        case en_x_c:
+        case ExpressionNode::x_c:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
                 rv = true;
                 node1->v.i = Optimizer::CastToInt(-ISZ_UCHAR, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
-                node1->type = en_c_c;
+                node1->type = ExpressionNode::c_c;
                 node1->left = nullptr;
             }
             break;
-        case en_x_u16:
+        case ExpressionNode::x_u16:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
                 rv = true;
                 node1->v.i = Optimizer::CastToInt(ISZ_U16, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
-                node1->type = en_c_u16;
+                node1->type = ExpressionNode::c_u16;
                 node1->left = nullptr;
             }
             break;
-        case en_x_u32:
+        case ExpressionNode::x_u32:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
                 rv = true;
                 node1->v.i = Optimizer::CastToInt(ISZ_U32, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
-                node1->type = en_c_u32;
+                node1->type = ExpressionNode::c_u32;
                 node1->left = nullptr;
             }
             break;
-        case en_x_wc:
+        case ExpressionNode::x_wc:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
                 rv = true;
                 node1->v.i = Optimizer::CastToInt(-ISZ_WCHAR, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
-                node1->type = en_c_wc;
+                node1->type = ExpressionNode::c_wc;
                 node1->left = nullptr;
             }
             break;
-        case en_x_uc:
+        case ExpressionNode::x_uc:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
                 rv = true;
                 node1->v.i = Optimizer::CastToInt(ISZ_UCHAR, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
-                node1->type = en_c_uc;
+                node1->type = ExpressionNode::c_uc;
                 node1->left = nullptr;
             }
             break;
-        case en_x_s:
+        case ExpressionNode::x_s:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
                 rv = true;
                 node1->v.i = Optimizer::CastToInt(-ISZ_USHORT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
-                node1->type = en_c_i;
+                node1->type = ExpressionNode::c_i;
                 node1->left = nullptr;
             }
             break;
-        case en_x_us:
+        case ExpressionNode::x_us:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
                 rv = true;
                 node1->v.i = Optimizer::CastToInt(ISZ_USHORT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
-                node1->type = en_c_ui;
+                node1->type = ExpressionNode::c_ui;
                 node1->left = nullptr;
             }
             break;
-        case en_x_i:
-        case en_x_inative:
+        case ExpressionNode::x_i:
+        case ExpressionNode::x_inative:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
                 rv = true;
                 node1->v.i = Optimizer::CastToInt(-ISZ_UINT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
-                node1->type = en_c_i;
+                node1->type = ExpressionNode::c_i;
                 node1->left = nullptr;
             }
             break;
-        case en_x_ui:
-        case en_x_unative:
+        case ExpressionNode::x_ui:
+        case ExpressionNode::x_unative:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
                 rv = true;
                 node1->v.i = Optimizer::CastToInt(ISZ_UINT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
-                node1->type = en_c_ul;
+                node1->type = ExpressionNode::c_ul;
                 node1->left = nullptr;
             }
             break;
-        case en_x_l:
+        case ExpressionNode::x_l:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
                 rv = true;
                 node1->v.i = Optimizer::CastToInt(-ISZ_ULONG, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
-                node1->type = en_c_i;
+                node1->type = ExpressionNode::c_i;
                 node1->left = nullptr;
             }
             break;
-        case en_x_ul:
+        case ExpressionNode::x_ul:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
                 rv = true;
                 node1->v.i = Optimizer::CastToInt(ISZ_ULONG, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
-                node1->type = en_c_ul;
+                node1->type = ExpressionNode::c_ul;
                 node1->left = nullptr;
             }
             break;
             /*#ifdef XXXXX */
-        case en_x_f:
+        case ExpressionNode::x_f:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
@@ -3592,11 +3592,11 @@ int typedconsts(EXPRESSION* node1)
                 rv = true;
                 node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_FLOAT, &temp);
-                node1->type = en_c_f;
+                node1->type = ExpressionNode::c_f;
                 node1->left = nullptr;
             }
             break;
-        case en_x_fi:
+        case ExpressionNode::x_fi:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
@@ -3604,11 +3604,11 @@ int typedconsts(EXPRESSION* node1)
                 rv = true;
                 node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_IFLOAT, &temp);
-                node1->type = en_c_fi;
+                node1->type = ExpressionNode::c_fi;
                 node1->left = nullptr;
             }
             break;
-        case en_x_d:
+        case ExpressionNode::x_d:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
@@ -3616,11 +3616,11 @@ int typedconsts(EXPRESSION* node1)
                 rv = true;
                 node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_DOUBLE, &temp);
-                node1->type = en_c_d;
+                node1->type = ExpressionNode::c_d;
                 node1->left = nullptr;
             }
             break;
-        case en_x_di:
+        case ExpressionNode::x_di:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
@@ -3628,11 +3628,11 @@ int typedconsts(EXPRESSION* node1)
                 rv = true;
                 node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_IDOUBLE, &temp);
-                node1->type = en_c_di;
+                node1->type = ExpressionNode::c_di;
                 node1->left = nullptr;
             }
             break;
-        case en_x_ld:
+        case ExpressionNode::x_ld:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
@@ -3640,11 +3640,11 @@ int typedconsts(EXPRESSION* node1)
                 rv = true;
                 node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_LDOUBLE, &temp);
-                node1->type = en_c_ld;
+                node1->type = ExpressionNode::c_ld;
                 node1->left = nullptr;
             }
             break;
-        case en_x_ldi:
+        case ExpressionNode::x_ldi:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
@@ -3652,11 +3652,11 @@ int typedconsts(EXPRESSION* node1)
                 rv = true;
                 node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
-                node1->type = en_c_ldi;
+                node1->type = ExpressionNode::c_ldi;
                 node1->left = nullptr;
             }
             break;
-        case en_x_fc:
+        case ExpressionNode::x_fc:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
@@ -3671,7 +3671,7 @@ int typedconsts(EXPRESSION* node1)
                 else if (isimaginaryconst(node1->left))
                 {
                     FPF temp;
-                    node1->left->type = en_c_ld;
+                    node1->left->type = ExpressionNode::c_ld;
                     temp = refloat(node1->left);
                     node1->v.c = Allocate<_COMPLEX_S>();
                     node1->v.c->i = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
@@ -3681,11 +3681,11 @@ int typedconsts(EXPRESSION* node1)
                 {
                     node1->v.c = node1->left->v.c;
                 }
-                node1->type = en_c_fc;
+                node1->type = ExpressionNode::c_fc;
                 node1->left = nullptr;
             }
             break;
-        case en_x_dc:
+        case ExpressionNode::x_dc:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
@@ -3700,7 +3700,7 @@ int typedconsts(EXPRESSION* node1)
                 else if (isimaginaryconst(node1->left))
                 {
                     FPF temp;
-                    node1->left->type = en_c_ld;
+                    node1->left->type = ExpressionNode::c_ld;
                     temp = refloat(node1->left);
                     node1->v.c = Allocate<_COMPLEX_S>();
                     node1->v.c->i = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
@@ -3710,11 +3710,11 @@ int typedconsts(EXPRESSION* node1)
                 {
                     node1->v.c = node1->left->v.c;
                 }
-                node1->type = en_c_dc;
+                node1->type = ExpressionNode::c_dc;
                 node1->left = nullptr;
             }
             break;
-        case en_x_ldc:
+        case ExpressionNode::x_ldc:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
@@ -3729,7 +3729,7 @@ int typedconsts(EXPRESSION* node1)
                 else if (isimaginaryconst(node1->left))
                 {
                     FPF temp;
-                    node1->left->type = en_c_ld;
+                    node1->left->type = ExpressionNode::c_ld;
                     temp = refloat(node1->left);
                     node1->v.c = Allocate<_COMPLEX_S>();
                     node1->v.c->i = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
@@ -3739,7 +3739,7 @@ int typedconsts(EXPRESSION* node1)
                 {
                     node1->v.c = node1->left->v.c;
                 }
-                node1->type = en_c_ldc;
+                node1->type = ExpressionNode::c_ldc;
                 node1->left = nullptr;
             }
             break;
@@ -3751,21 +3751,21 @@ bool toConsider(EXPRESSION* exp1, EXPRESSION* exp2)
 {
     switch (exp2->type)
     {
-        case en_add:
+        case ExpressionNode::add:
             // fixme : without the (architecture == ARCHITECTURE_MSIL) some complex expressions inside loops
             // get optimized wrong see x264::analyse.c around line 849
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
                 if (!isarithmeticconst(exp2->left) || !isarithmeticconst(exp2->right))
                     return false;
             return true;
-        case en_mul:
-        case en_umul:
-        case en_arraymul:
-        case en_and:
-        case en_or:
-        case en_xor:
-        case en_eq:
-        case en_ne:
+        case ExpressionNode::mul:
+        case ExpressionNode::umul:
+        case ExpressionNode::arraymul:
+        case ExpressionNode::and_:
+        case ExpressionNode::or_:
+        case ExpressionNode::xor_:
+        case ExpressionNode::eq:
+        case ExpressionNode::ne:
             return true;
         default:
             return false;
@@ -3773,7 +3773,7 @@ bool toConsider(EXPRESSION* exp1, EXPRESSION* exp2)
 }
 void rebalance(EXPRESSION** exp)
 {
-    if ((*exp)->type == en_void)
+    if ((*exp)->type == ExpressionNode::void_)
     {
         rebalance(&(*exp)->left);
         if ((*exp)->right)
@@ -3802,9 +3802,9 @@ bool msilConstant(EXPRESSION* exp)
     {
         while (castvalue(exp))
             exp = exp->left;
-        if (exp->type == en__sizeof)
+        if (exp->type == ExpressionNode::_sizeof)
             return true;
-        if (exp->type == en_func)
+        if (exp->type == ExpressionNode::func)
         {
             if (exp->v.func->arguments && exp->v.func->arguments->size() == 1 && !strcmp(exp->v.func->sp->name, "ToPointer"))
                 return true;
@@ -3815,12 +3815,12 @@ bool msilConstant(EXPRESSION* exp)
             return false;
         switch (exp->type)
         {
-            case en_add:
-            case en_mul:
-            case en_umul:
-            case en_div:
-            case en_udiv:
-            case en_global:
+            case ExpressionNode::add:
+            case ExpressionNode::mul:
+            case ExpressionNode::umul:
+            case ExpressionNode::div:
+            case ExpressionNode::udiv:
+            case ExpressionNode::global:
                 return true;
             default:
                 return isarithmeticconst(exp);
@@ -3834,10 +3834,10 @@ void RemoveSizeofOperators(EXPRESSION* constant)
         RemoveSizeofOperators(constant->left);
     if (constant->right)
         RemoveSizeofOperators(constant->right);
-    if (constant->type == en__sizeof)
+    if (constant->type == ExpressionNode::_sizeof)
     {
         TYPE* tp = constant->left->v.tp;
-        constant->type = en_c_ui;
+        constant->type = ExpressionNode::c_ui;
         constant->left = nullptr;
         constant->v.i = tp->size;
     }
@@ -3845,7 +3845,7 @@ void RemoveSizeofOperators(EXPRESSION* constant)
 
 void optimize_for_constants(EXPRESSION** expr)
 {
-    if ((*expr)->type == en_select)
+    if ((*expr)->type == ExpressionNode::select)
         expr = &(*expr)->left;
     int rv = true, count = 8;
     EXPRESSION* oldasidehead = asidehead;

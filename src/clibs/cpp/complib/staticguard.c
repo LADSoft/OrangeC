@@ -29,11 +29,11 @@
 
 bool _RTL_FUNC __static_guard(DWORD* mem)
 {
-    DWORD thread;
-    asm mov eax,[gs: 0]
-    asm mov [thread], eax;
+    DWORD tib;
+    asm mov eax,[fs: 0x18]
+    asm mov [tib], eax;
     DWORD compare = 0;
-    if (!atomic_compare_exchange_strong(mem, &compare, thread))
+    if (!atomic_compare_exchange_strong(mem, &compare, tib))
     {
         while (atomic_load(mem) != -1)
         {

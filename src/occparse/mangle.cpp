@@ -177,99 +177,99 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 *buf++ = 'n';
                 *buf = 0;
                 break;
-            case ExpressionNode::arrayadd:
-            case ExpressionNode::structadd:
-            case ExpressionNode::add:
+            case ExpressionNode::arrayadd_:
+            case ExpressionNode::structadd_:
+            case ExpressionNode::add_:
                 *buf++ = 'p';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::sub:
+            case ExpressionNode::sub_:
                 *buf++ = 's';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::mul:
-            case ExpressionNode::umul:
-            case ExpressionNode::arraymul:
+            case ExpressionNode::mul_:
+            case ExpressionNode::umul_:
+            case ExpressionNode::arraymul_:
                 *buf++ = 'm';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::umod:
-            case ExpressionNode::mod:
+            case ExpressionNode::umod_:
+            case ExpressionNode::mod_:
                 *buf++ = 'o';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::dot:
+            case ExpressionNode::dot_:
                 *buf++ = 'D';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::pointsto:
+            case ExpressionNode::pointsto_:
                 *buf++ = 'P';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::div:
-            case ExpressionNode::udiv:
-            case ExpressionNode::arraydiv:
+            case ExpressionNode::div_:
+            case ExpressionNode::udiv_:
+            case ExpressionNode::arraydiv_:
                 *buf++ = 'd';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::lsh:
-            case ExpressionNode::arraylsh:
+            case ExpressionNode::lsh_:
+            case ExpressionNode::arraylsh_:
                 *buf++ = 'h';
                 *buf++ = 'l';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::rsh:
-            case ExpressionNode::ursh:
+            case ExpressionNode::rsh_:
+            case ExpressionNode::ursh_:
                 *buf++ = 'h';
                 *buf++ = 'r';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::cond:
+            case ExpressionNode::cond_:
                 *buf++ = 'C';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right->left);
                 buf = mangleExpressionInternal(buf, exp->right->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::assign:
+            case ExpressionNode::assign_:
                 *buf++ = 'a';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::eq:
+            case ExpressionNode::eq_:
                 *buf++ = 'c';
                 *buf++ = 'e';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::ne:
+            case ExpressionNode::ne_:
                 *buf++ = 'c';
                 *buf++ = 'n';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::uminus:
+            case ExpressionNode::uminus_:
                 *buf++ = 'u';
                 buf = mangleExpressionInternal(buf, exp->left);
                 break;
@@ -284,8 +284,8 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 buf = mangleExpressionInternal(buf, exp->left);
                 *buf = 0;
                 break;
-            case ExpressionNode::ult:
-            case ExpressionNode::lt:
+            case ExpressionNode::ult_:
+            case ExpressionNode::lt_:
                 *buf++ = 'c';
                 *buf++ = 'l';
                 *buf++ = 't';
@@ -293,8 +293,8 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::ule:
-            case ExpressionNode::le:
+            case ExpressionNode::ule_:
+            case ExpressionNode::le_:
                 *buf++ = 'c';
                 *buf++ = 'l';
                 *buf++ = 'e';
@@ -302,8 +302,8 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::ugt:
-            case ExpressionNode::gt:
+            case ExpressionNode::ugt_:
+            case ExpressionNode::gt_:
                 *buf++ = 'c';
                 *buf++ = 'g';
                 *buf++ = 't';
@@ -311,8 +311,8 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::uge:
-            case ExpressionNode::ge:
+            case ExpressionNode::uge_:
+            case ExpressionNode::ge_:
                 *buf++ = 'c';
                 *buf++ = 'g';
                 *buf++ = 'e';
@@ -327,7 +327,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::land:
+            case ExpressionNode::land_:
                 *buf++ = 'l';
                 *buf++ = 'a';
                 buf = mangleExpressionInternal(buf, exp->left);
@@ -341,7 +341,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::lor:
+            case ExpressionNode::lor_:
                 *buf++ = 'l';
                 *buf++ = 'o';
                 buf = mangleExpressionInternal(buf, exp->left);
@@ -355,24 +355,24 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::auto_inc:
+            case ExpressionNode::auto_inc_:
                 *buf++ = 'i';
                 *buf++ = 'p';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::auto_dec:
+            case ExpressionNode::auto_dec_:
                 *buf++ = 'i';
                 *buf++ = 's';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::select:
+            case ExpressionNode::select_:
                 buf = mangleExpressionInternal(buf, exp->left);
                 break;
-            case ExpressionNode::templateselector: {
+            case ExpressionNode::templateselector_: {
                 auto tsl = exp->v.templateSelector;
                 SYMBOL* ts = (*tsl)[1].sp;
                 *buf++ = 't';
@@ -393,7 +393,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 *buf = 0;
                 break;
             }
-            case ExpressionNode::templateparam:
+            case ExpressionNode::templateparam_:
             case ExpressionNode::auto_:
                 *buf++ = 't';
                 *buf++ = 'p';
@@ -401,12 +401,12 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 buf += strlen(buf);
                 *buf = 0;
                 break;
-            case ExpressionNode::thisref:
-            case ExpressionNode::funcret:
+            case ExpressionNode::thisref_:
+            case ExpressionNode::funcret_:
                 buf = mangleExpressionInternal(buf, exp->left);
                 *buf = 0;
                 break;
-            case ExpressionNode::func: {
+            case ExpressionNode::func_: {
                 if (exp->v.func->ascall)
                 {
                     *buf++ = 'f';
@@ -432,8 +432,8 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 }
                 break;
             }
-            case ExpressionNode::pc:
-            case ExpressionNode::global:
+            case ExpressionNode::pc_:
+            case ExpressionNode::global_:
             case ExpressionNode::const_:
                 if (isfunction(exp->v.sp->tp))
                 {
@@ -454,7 +454,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                     *buf = 0;
                 }
                 break;
-            case ExpressionNode::sizeofellipse:
+            case ExpressionNode::sizeofellipse_:
                 *buf++ = 'z';
                 buf = getName(buf, exp->v.templateParam->first);
                 buf += strlen(buf);
@@ -484,13 +484,13 @@ static char* mangleExpression(char* buf, EXPRESSION* exp)
 static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
 {
     bool bySpecial = false;
-    if (params &&  params->size() && params->front().second->type == Keyword::_new &&
+    if (params &&  params->size() && params->front().second->type == Keyword::new_ &&
         ((sym->sb->instantiated && !sym->sb->templateLevel) || (params && params->front().second->bySpecialization.types)))
     {
         params = params->front().second->bySpecialization.types;
         bySpecial = true;
     }
-    if (sym->tp->type == BasicType::templateparam && sym->tp->templateParam->second->type == Keyword::_template)
+    if (sym->tp->type == BasicType::templateparam_ && sym->tp->templateParam->second->type == Keyword::template_)
     {
         auto sp = sym->tp->templateParam->second->byTemplate.val;
         if (sp)
@@ -523,7 +523,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>
         {
             switch (it->second->type)
             {
-            case Keyword::_typename:
+            case Keyword::typename_:
                 if (it->second->packed)
                 {
                     if (it->second->byPack.pack)
@@ -568,7 +568,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>
                     }
                 }
                 break;
-            case Keyword::_template:
+            case Keyword::template_:
                 if (it->second->packed)
                     *buf++ = 'e';
                 /*
@@ -591,7 +591,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>
                     buf = getName(buf, it->second->byTemplate.dflt);
                 }
                 break;
-            case Keyword::_int:
+            case Keyword::int_:
                 if (it->second->packed)
                 {
                     *buf++ = 'e';
@@ -731,8 +731,8 @@ char* mangleType(char* in, TYPE* tp, bool first)
                 tp = tp->btp;
             switch (tp->type)
             {
-                case BasicType::func:
-                case BasicType::ifunc:
+                case BasicType::func_:
+                case BasicType::ifunc_:
                     if (basetype(tp)->sp && ismember(basetype(tp)->sp) && !first)
                     {
                         *in++ = 'M';
@@ -749,7 +749,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     *in++ = '.';
                     // return value comes next
                     break;
-                case BasicType::memberptr:
+                case BasicType::memberptr_:
                     *in++ = 'M';
                     in = getName(in, tp->sp);
                     if (isfunction(tp->btp))
@@ -779,17 +779,17 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     while (*in)
                         in++;
                     break;
-                case BasicType::__string:
+                case BasicType::string_:
                     in = lookupName(in, "__string");
                     while (*in)
                         in++;
                     break;
-                case BasicType::__object:
+                case BasicType::object_:
                     in = lookupName(in, "__object");
                     while (*in)
                         in++;
                     break;
-                case BasicType::unsigned_short:
+                case BasicType::unsigned_short_:
                     *in++ = 'u';
                 case BasicType::short_:
                     *in++ = 's';
@@ -799,9 +799,9 @@ char* mangleType(char* in, TYPE* tp, bool first)
                 case BasicType::int_:
                     *in++ = 'i';
                     break;
-                case BasicType::unative:
+                case BasicType::unative_:
                     *in++ = 'u';
-                case BasicType::inative:
+                case BasicType::inative_:
                     *in++ = 'N';
                     break;
                 case BasicType::char16_t_:
@@ -810,35 +810,35 @@ char* mangleType(char* in, TYPE* tp, bool first)
                 case BasicType::char32_t_:
                     *in++ = 'H';
                     break;
-                case BasicType::unsigned_long:
+                case BasicType::unsigned_long_:
                     *in++ = 'u';
                 case BasicType::long_:
                     *in++ = 'l';
                     break;
-                case BasicType::unsigned_long_long:
+                case BasicType::unsigned_long_long_:
                     *in++ = 'u';
-                case BasicType::long_long:
+                case BasicType::long_long_:
                     *in++ = 'L';
                     break;
-                case BasicType::unsigned_char:
+                case BasicType::unsigned_char_:
                     *in++ = 'u';
                 case BasicType::char_:
                     *in++ = 'c';
                     break;
-                case BasicType::signed_char:
+                case BasicType::signed_char_:
                     *in++ = 'S';
                     *in++ = 'c';
                     break;
                 case BasicType::wchar_t_:
                     *in++ = 'C';
                     break;
-                case BasicType::float__complex:
+                case BasicType::float__complex_:
                     *in++ = 'F';
                     break;
-                case BasicType::double__complex:
+                case BasicType::double__complex_:
                     *in++ = 'D';
                     break;
-                case BasicType::long_double_complex:
+                case BasicType::long_double_complex_:
                     *in++ = 'G';
                     break;
                 case BasicType::float_:
@@ -847,10 +847,10 @@ char* mangleType(char* in, TYPE* tp, bool first)
                 case BasicType::double_:
                     *in++ = 'd';
                     break;
-                case BasicType::long_double:
+                case BasicType::long_double_:
                     *in++ = 'g';
                     break;
-                case BasicType::pointer:
+                case BasicType::pointer_:
                     if (tp->nullptrType)
                     {
                         in = lookupName(in, "nullptr_t");
@@ -870,30 +870,30 @@ char* mangleType(char* in, TYPE* tp, bool first)
                         }
                     }
                     break;
-                case BasicType::far:
+                case BasicType::far_:
                     *in++ = 'P';
                     break;
-                case BasicType::lref:
+                case BasicType::lref_:
                     *in++ = 'r';
                     break;
-                case BasicType::rref:
+                case BasicType::rref_:
                     *in++ = 'R';
                     break;
-                case BasicType::ellipse:
+                case BasicType::ellipse_:
                     *in++ = 'e';
                     break;
                 case BasicType::void_:
-                case BasicType::any:
+                case BasicType::any_:
                     *in++ = 'v';
                     break;
-                case BasicType::templateparam:
-                    if (tp->templateParam->second->type == Keyword::_typename && tp->templateParam->second->byClass.val &&
-                        basetype(tp->templateParam->second->byClass.val)->type != BasicType::templateparam)
+                case BasicType::templateparam_:
+                    if (tp->templateParam->second->type == Keyword::typename_ && tp->templateParam->second->byClass.val &&
+                        basetype(tp->templateParam->second->byClass.val)->type != BasicType::templateparam_)
                         in = mangleType(in, tp->templateParam->second->byClass.val, false);
                     else
                         in = getName(in, tp->templateParam->first);
                     break;
-                case BasicType::templateselector: {
+                case BasicType::templateselector_: {
                     auto s = (*tp->sp->sb->templateSelector).begin();
                     auto se = (*tp->sp->sb->templateSelector).end();
                     char* p;
@@ -919,11 +919,11 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     return in;
                 }
                 break;
-                case BasicType::templatedecltype:
+                case BasicType::templatedecltype_:
                     *in++ = 'E';
                     in = mangleExpression(in, tp->templateDeclType);
                     break;
-                case BasicType::aggregate:
+                case BasicType::aggregate_:
                     in = getName(in, tp->sp);
                     break;
                 case BasicType::auto_:
@@ -944,13 +944,13 @@ static bool validType(TYPE* tp, bool byVal)
     tp = basetype(tp);
     switch (tp->type)
     {
-    case BasicType::templateselector:
+    case BasicType::templateselector_:
         return byVal;
-    case BasicType::templateparam:
-    case BasicType::any:
-    case BasicType::aggregate:
+    case BasicType::templateparam_:
+    case BasicType::any_:
+    case BasicType::aggregate_:
         return false;
-    case BasicType::pointer:
+    case BasicType::pointer_:
         if (tp->array)
         {
             if (tp->size == 0)
@@ -959,12 +959,12 @@ static bool validType(TYPE* tp, bool byVal)
         }
         if (tp->vla)
             return false;
-    case BasicType::lref:
-    case BasicType::rref:
-    case BasicType::memberptr:
+    case BasicType::lref_:
+    case BasicType::rref_:
+    case BasicType::memberptr_:
         return validType(tp->btp, byVal);
-    case BasicType::func:
-    case BasicType::ifunc:
+    case BasicType::func_:
+    case BasicType::ifunc_:
         if (!validType(tp->btp, byVal))
             return false;
         for (auto sp : *tp->syms)
@@ -978,7 +978,7 @@ static bool validType(TYPE* tp, bool byVal)
         {
             for (auto tpl : *tp->sp->templateParams)
             {
-                if (tpl.second->type == Keyword::_typename)
+                if (tpl.second->type == Keyword::typename_)
                 {
                     if (tpl.second->packed)
                     {
@@ -1015,7 +1015,7 @@ bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& 
 {
 
     mangledNamesCount = 0;
-    if (!params || !params->size() || (params->size() == 1 && params->front().second->type == Keyword::_new))
+    if (!params || !params->size() || (params->size() == 1 && params->front().second->type == Keyword::new_))
         result = "v";
     else
         result = "";
@@ -1023,7 +1023,7 @@ bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& 
     {
         for (auto&& param : *params)
         {
-            if (param.second->type != Keyword::_new)
+            if (param.second->type != Keyword::new_)
             {
                 char buf[8000];
                 void* dflt;
@@ -1052,17 +1052,17 @@ bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& 
                             return false;
                         switch (param.second->type)
                         {
-                            case Keyword::_typename:
+                            case Keyword::typename_:
                                 if (!validType((TYPE*)dflt, byVal))
                                     return false;
                                 result += 'c';
                                 *(mangleType(buf, (TYPE*)dflt, true)) = 0;
                                 break;
-                            case Keyword::_int:
+                            case Keyword::int_:
                                 result += 'i';
                                 *mangleExpression(buf, (EXPRESSION*)dflt) = 0;
                                 break;
-                            case Keyword::_template:
+                            case Keyword::template_:
                                 result += 't';
                                 *mangleTemplate(buf, (SYMBOL*)dflt, tpl.second->byTemplate.args) = 0;
                                 break;
@@ -1090,19 +1090,19 @@ bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& 
                     buf[0] = 0;
                     switch (param.second->type)
                     {
-                        case Keyword::_typename:
+                        case Keyword::typename_:
                             if (!validType((TYPE*)dflt, byVal))
                                 return false;
                             result += 'c';
                             *(mangleType(buf, (TYPE*)dflt, true)) = 0;
                             break;
-                        case Keyword::_int:
-                            if (((EXPRESSION*)dflt)->type == ExpressionNode::templateparam)
+                        case Keyword::int_:
+                            if (((EXPRESSION*)dflt)->type == ExpressionNode::templateparam_)
                                 return false;
                             result += 'i';
                             *mangleExpression(buf, (EXPRESSION*)dflt) = 0;
                             break;
-                        case Keyword::_template:
+                        case Keyword::template_:
                             result += 't';
                             *mangleTemplate(buf, (SYMBOL*)dflt, param.second->byTemplate.args) = 0;
                             break;
@@ -1141,9 +1141,9 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
     {
         if (Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL))
         {
-            if (sym->sb->storage_class != StorageClass::label && sym->sb->storage_class != StorageClass::parameter &&
-                sym->sb->storage_class != StorageClass::namespace_ && sym->sb->storage_class != StorageClass::namespace_alias &&
-                sym->sb->storage_class != StorageClass::ulabel &&
+            if (sym->sb->storage_class != StorageClass::label_ && sym->sb->storage_class != StorageClass::parameter_ &&
+                sym->sb->storage_class != StorageClass::namespace_ && sym->sb->storage_class != StorageClass::namespace_alias_ &&
+                sym->sb->storage_class != StorageClass::ulabel_ &&
                 (isfunction(sym->tp) || istype(sym) || sym->sb->parentNameSpace || sym->sb->parentClass || sym->sb->templateLevel))
                 linkage = Linkage::cpp_;
             else
@@ -1208,7 +1208,7 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
             if (sym->sb->parent)
                 if (sym->sb->uniqueID == 0)
                     sym->sb->uniqueID = uniqueID++;
-            if (sym->sb->storage_class == StorageClass::localstatic && sym->sb->parent)
+            if (sym->sb->storage_class == StorageClass::localstatic_ && sym->sb->parent)
             {
                 strcpy(errbuf, sym->sb->parent->sb->decoratedName);
                 strcat(errbuf, "_");
@@ -1267,7 +1267,7 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
                                 tmplCount++;
                             else if (*p == '#')
                                 tmplCount--;
-                        if (basetype(sym->tp)->btp->type == BasicType::memberptr)
+                        if (basetype(sym->tp)->btp->type == BasicType::memberptr_)
                         {
                             while (p > errbuf && (*--p != '.' || tmplCount))
                                 if (*p == '~')

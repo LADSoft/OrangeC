@@ -71,7 +71,7 @@ bool ismember(SYMBOL* sym)
 {
     switch (sym->sb->storage_class)
     {
-        case StorageClass::member:
+        case StorageClass::member_:
         case StorageClass::mutable_:
         case StorageClass::virtual_:
             return true;
@@ -81,11 +81,11 @@ bool ismember(SYMBOL* sym)
 }
 bool istype(SYMBOL* sym)
 {
-    if (!sym->sb || sym->sb->storage_class == StorageClass::templateparam)
+    if (!sym->sb || sym->sb->storage_class == StorageClass::templateparam_)
     {
-        return sym->tp->templateParam->second->type == Keyword::_typename || sym->tp->templateParam->second->type == Keyword::_template;
+        return sym->tp->templateParam->second->type == Keyword::typename_ || sym->tp->templateParam->second->type == Keyword::template_;
     }
-    return (sym->tp->type != BasicType::templateselector && sym->sb->storage_class == StorageClass::type) || sym->sb->storage_class == StorageClass::typedef_;
+    return (sym->tp->type != BasicType::templateselector_ && sym->sb->storage_class == StorageClass::type_) || sym->sb->storage_class == StorageClass::typedef_;
 }
 bool ismemberdata(SYMBOL* sym) { return !isfunction(sym->tp) && ismember(sym); }
 bool startOfType(LEXLIST* lex, bool* structured, bool assumeType)
@@ -104,37 +104,37 @@ bool startOfType(LEXLIST* lex, bool* structured, bool assumeType)
             LEXLIST* placeHolder = lex;
             bool member;
             lex = getsym();
-            member = MATCHKW(lex, Keyword::_classsel);
+            member = MATCHKW(lex, Keyword::classsel_);
             if (member)
             {
                 lex = getsym();
-                member = MATCHKW(lex, Keyword::_star);
+                member = MATCHKW(lex, Keyword::star_);
             }
             lex = prevsym(placeHolder);
             if (!member)
             {
                 lines = old;
-                return tparam->second->type == Keyword::_typename || tparam->second->type == Keyword::_template;
+                return tparam->second->type == Keyword::typename_ || tparam->second->type == Keyword::template_;
             }
         }
     }
-    if (lex->data->type == l_id || MATCHKW(lex, Keyword::_classsel) || MATCHKW(lex, Keyword::_decltype))
+    if (lex->data->type == l_id || MATCHKW(lex, Keyword::classsel_) || MATCHKW(lex, Keyword::decltype_))
     {
-        bool isdecltype = MATCHKW(lex, Keyword::_decltype);
+        bool isdecltype = MATCHKW(lex, Keyword::decltype_);
         SYMBOL *sym, *strSym = nullptr;
         LEXLIST* placeholder = lex;
         bool dest = false;
-        nestedSearch(lex, &sym, &strSym, nullptr, &dest, nullptr, false, StorageClass::global, false, false);
+        nestedSearch(lex, &sym, &strSym, nullptr, &dest, nullptr, false, StorageClass::global_, false, false);
         if (Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL))
             prevsym(placeholder);
         lines = old;
         if (structured && sym && istype(sym))
         {
-            if (sym->tp->type == BasicType::templateparam)
+            if (sym->tp->type == BasicType::templateparam_)
             {
-                if (sym->tp->templateParam->second->type == Keyword::_typename && sym->tp->templateParam->second->byClass.val)
+                if (sym->tp->templateParam->second->type == Keyword::typename_ && sym->tp->templateParam->second->byClass.val)
                     *structured = isstructured(sym->tp->templateParam->second->byClass.val);
-                else if (sym->tp->templateParam->second->type == Keyword::_template)
+                else if (sym->tp->templateParam->second->type == Keyword::template_)
                     *structured = true;
             }
             else
@@ -143,7 +143,7 @@ bool startOfType(LEXLIST* lex, bool* structured, bool assumeType)
             }
         }
         return (!sym && isdecltype) || (sym && sym->tp && istype(sym)) ||
-               (assumeType && strSym && (strSym->tp->type == BasicType::templateselector || strSym->tp->type == BasicType::templatedecltype));
+               (assumeType && strSym && (strSym->tp->type == BasicType::templateselector_ || strSym->tp->type == BasicType::templatedecltype_));
     }
     else
     {
@@ -157,19 +157,19 @@ static TYPE* rootType(TYPE* tp)
     {
         switch (tp->type)
         {
-            case BasicType::far:
-            case BasicType::near:
+            case BasicType::far_:
+            case BasicType::near_:
             case BasicType::const_:
-            case BasicType::va_list:
-            case BasicType::objectArray:
+            case BasicType::va_list_:
+            case BasicType::objectArray_:
             case BasicType::volatile_:
             case BasicType::restrict_:
             case BasicType::static_:
-            case BasicType::atomic:
+            case BasicType::atomic_:
             case BasicType::typedef_:
-            case BasicType::lrqual:
-            case BasicType::rrqual:
-            case BasicType::derivedfromtemplate:
+            case BasicType::lrqual_:
+            case BasicType::rrqual_:
+            case BasicType::derivedfromtemplate_:
                 tp = tp->btp;
                 break;
             default:
@@ -201,11 +201,11 @@ bool isDerivedFromTemplate(TYPE* tp)
     {
         switch (tp->type)
         {
-            case BasicType::pointer:
-            case BasicType::func:
-            case BasicType::ifunc:
+            case BasicType::pointer_:
+            case BasicType::func_:
+            case BasicType::ifunc_:
                 return false;
-            case BasicType::derivedfromtemplate:
+            case BasicType::derivedfromtemplate_:
                 return true;
             default:
                 break;
@@ -231,10 +231,10 @@ bool isunsigned(TYPE* tp)
         {
             case BasicType::bool_:
             case BasicType::unsigned_:
-            case BasicType::unsigned_short:
-            case BasicType::unsigned_char:
-            case BasicType::unsigned_long:
-            case BasicType::unsigned_long_long:
+            case BasicType::unsigned_short_:
+            case BasicType::unsigned_char_:
+            case BasicType::unsigned_long_:
+            case BasicType::unsigned_long_long_:
             case BasicType::wchar_t_:
                 return true;
             default:
@@ -256,20 +256,20 @@ bool isint(TYPE* tp)
             case BasicType::char32_t_:
             case BasicType::unsigned_:
             case BasicType::short_:
-            case BasicType::unsigned_short:
+            case BasicType::unsigned_short_:
             case BasicType::char_:
-            case BasicType::unsigned_char:
-            case BasicType::signed_char:
+            case BasicType::unsigned_char_:
+            case BasicType::signed_char_:
             case BasicType::long_:
-            case BasicType::unsigned_long:
-            case BasicType::long_long:
-            case BasicType::unsigned_long_long:
+            case BasicType::unsigned_long_:
+            case BasicType::long_long_:
+            case BasicType::unsigned_long_long_:
             case BasicType::wchar_t_:
-            case BasicType::inative:
-            case BasicType::unative:
+            case BasicType::inative_:
+            case BasicType::unative_:
                 return true;
-            case BasicType::templateparam:
-                if (tp->templateParam->second->type == Keyword::_int)
+            case BasicType::templateparam_:
+                if (tp->templateParam->second->type == Keyword::int_)
                     return isint(tp->templateParam->second->byNonType.tp);
                 return false;
             default:
@@ -290,7 +290,7 @@ bool isfloat(TYPE* tp)
         {
             case BasicType::float_:
             case BasicType::double_:
-            case BasicType::long_double:
+            case BasicType::long_double_:
                 return true;
             default:
                 return false;
@@ -305,9 +305,9 @@ bool iscomplex(TYPE* tp)
     {
         switch (tp->type)
         {
-            case BasicType::float__complex:
-            case BasicType::double__complex:
-            case BasicType::long_double_complex:
+            case BasicType::float__complex_:
+            case BasicType::double__complex_:
+            case BasicType::long_double_complex_:
                 return true;
             default:
                 return false;
@@ -322,9 +322,9 @@ bool isimaginary(TYPE* tp)
     {
         switch (tp->type)
         {
-            case BasicType::float__imaginary:
-            case BasicType::double__imaginary:
-            case BasicType::long_double_imaginary:
+            case BasicType::float__imaginary_:
+            case BasicType::double__imaginary_:
+            case BasicType::long_double_imaginary_:
                 return true;
             default:
                 return false;
@@ -340,7 +340,7 @@ bool isarithmetic(TYPE* tp)
 bool ismsil(TYPE* tp)
 {
     tp = basetype(tp);
-    return tp->type == BasicType::__string || tp->type == BasicType::__object;
+    return tp->type == BasicType::string_ || tp->type == BasicType::object_;
 }
 bool isconstraw(const TYPE* tp)
 {
@@ -353,15 +353,15 @@ bool isconstraw(const TYPE* tp)
             case BasicType::restrict_:
             case BasicType::volatile_:
             case BasicType::static_:
-            case BasicType::atomic:
+            case BasicType::atomic_:
             case BasicType::typedef_:
-            case BasicType::far:
-            case BasicType::near:
-            case BasicType::lrqual:
-            case BasicType::rrqual:
-            case BasicType::derivedfromtemplate:
-            case BasicType::va_list:
-            case BasicType::objectArray:
+            case BasicType::far_:
+            case BasicType::near_:
+            case BasicType::lrqual_:
+            case BasicType::rrqual_:
+            case BasicType::derivedfromtemplate_:
+            case BasicType::va_list_:
+            case BasicType::objectArray_:
                 tp = tp->btp;
                 break;
             case BasicType::const_:
@@ -383,11 +383,11 @@ bool isconstexpr(const EXPRESSION* expa)
     {
         switch (expa->type)
         {
-            case ExpressionNode::global:
+            case ExpressionNode::global_:
             case ExpressionNode::auto_:
-            case ExpressionNode::absolute:
-            case ExpressionNode::pc:
-            case ExpressionNode::threadlocal:
+            case ExpressionNode::absolute_:
+            case ExpressionNode::pc_:
+            case ExpressionNode::threadlocal_:
                 return expa->v.sp->sb->constexpression;
         }
     }
@@ -401,16 +401,16 @@ bool isvolatile(const TYPE* tp)
         {
             case BasicType::restrict_:
             case BasicType::const_:
-            case BasicType::va_list:
-            case BasicType::objectArray:
+            case BasicType::va_list_:
+            case BasicType::objectArray_:
             case BasicType::static_:
-            case BasicType::atomic:
+            case BasicType::atomic_:
             case BasicType::typedef_:
-            case BasicType::far:
-            case BasicType::near:
-            case BasicType::lrqual:
-            case BasicType::rrqual:
-            case BasicType::derivedfromtemplate:
+            case BasicType::far_:
+            case BasicType::near_:
+            case BasicType::lrqual_:
+            case BasicType::rrqual_:
+            case BasicType::derivedfromtemplate_:
                 tp = tp->btp;
                 break;
             case BasicType::volatile_:
@@ -429,19 +429,19 @@ bool islrqual(TYPE* tp)
         {
             case BasicType::volatile_:
             case BasicType::const_:
-            case BasicType::va_list:
-            case BasicType::objectArray:
+            case BasicType::va_list_:
+            case BasicType::objectArray_:
             case BasicType::static_:
-            case BasicType::atomic:
+            case BasicType::atomic_:
             case BasicType::typedef_:
-            case BasicType::far:
-            case BasicType::near:
-            case BasicType::rrqual:
+            case BasicType::far_:
+            case BasicType::near_:
+            case BasicType::rrqual_:
             case BasicType::restrict_:
-            case BasicType::derivedfromtemplate:
+            case BasicType::derivedfromtemplate_:
                 tp = tp->btp;
                 break;
-            case BasicType::lrqual:
+            case BasicType::lrqual_:
                 return true;
             default:
                 return false;
@@ -457,19 +457,19 @@ bool isrrqual(TYPE* tp)
         {
             case BasicType::volatile_:
             case BasicType::const_:
-            case BasicType::va_list:
-            case BasicType::objectArray:
+            case BasicType::va_list_:
+            case BasicType::objectArray_:
             case BasicType::static_:
-            case BasicType::atomic:
+            case BasicType::atomic_:
             case BasicType::typedef_:
-            case BasicType::far:
-            case BasicType::near:
-            case BasicType::lrqual:
+            case BasicType::far_:
+            case BasicType::near_:
+            case BasicType::lrqual_:
             case BasicType::restrict_:
-            case BasicType::derivedfromtemplate:
+            case BasicType::derivedfromtemplate_:
                 tp = tp->btp;
                 break;
-            case BasicType::rrqual:
+            case BasicType::rrqual_:
                 return true;
             default:
                 return false;
@@ -485,16 +485,16 @@ bool isrestrict(TYPE* tp)
         {
             case BasicType::volatile_:
             case BasicType::const_:
-            case BasicType::va_list:
-            case BasicType::objectArray:
+            case BasicType::va_list_:
+            case BasicType::objectArray_:
             case BasicType::static_:
-            case BasicType::atomic:
+            case BasicType::atomic_:
             case BasicType::typedef_:
-            case BasicType::far:
-            case BasicType::near:
-            case BasicType::lrqual:
-            case BasicType::rrqual:
-            case BasicType::derivedfromtemplate:
+            case BasicType::far_:
+            case BasicType::near_:
+            case BasicType::lrqual_:
+            case BasicType::rrqual_:
+            case BasicType::derivedfromtemplate_:
                 tp = tp->btp;
                 break;
             case BasicType::restrict_:
@@ -513,19 +513,19 @@ bool isatomic(TYPE* tp)
         {
             case BasicType::volatile_:
             case BasicType::const_:
-            case BasicType::va_list:
-            case BasicType::objectArray:
+            case BasicType::va_list_:
+            case BasicType::objectArray_:
             case BasicType::static_:
             case BasicType::restrict_:
             case BasicType::typedef_:
-            case BasicType::far:
-            case BasicType::near:
-            case BasicType::lrqual:
-            case BasicType::rrqual:
-            case BasicType::derivedfromtemplate:
+            case BasicType::far_:
+            case BasicType::near_:
+            case BasicType::lrqual_:
+            case BasicType::rrqual_:
+            case BasicType::derivedfromtemplate_:
                 tp = tp->btp;
                 break;
-            case BasicType::atomic:
+            case BasicType::atomic_:
                 return true;
             default:
                 return false;
@@ -569,26 +569,26 @@ void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
         bool err = false;
         if (isref(*pat))
         {
-            if ((*pat)->type == BasicType::rref && !isconst((*pat)->btp) && !isvolatile((*pat)->btp))
+            if ((*pat)->type == BasicType::rref_ && !isconst((*pat)->btp) && !isvolatile((*pat)->btp))
             {
                 // forwarding?  unadorned rref!
-                if (!nt->rref && basetype(nt)->type != BasicType::rref && !isarithmeticconst(exp))
+                if (!nt->rref && basetype(nt)->type != BasicType::rref_ && !isarithmeticconst(exp))
                 {
                     // lref
                     TYPE* t = basetype(nt);
-                    *pat = MakeType(BasicType::lref, isref(t) ? t->btp : t);
+                    *pat = MakeType(BasicType::lref_, isref(t) ? t->btp : t);
                     return;
                 }
                 else
                 {
                     // rref, get rid of qualifiers and return an rref
                     TYPE* tp1;
-                    if (nt->type == BasicType::rref)
+                    if (nt->type == BasicType::rref_)
                         tp1 = basetype(nt->btp);
                     else
                         tp1 = basetype(nt);
                     // rref
-                    *pat = MakeType(BasicType::lref, isref(tp1) ? tp1->btp : tp1);
+                    *pat = MakeType(BasicType::lref_, isref(tp1) ? tp1->btp : tp1);
                     return;
                 }
             }
@@ -617,7 +617,7 @@ void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
             if ((*pat)->decltypeauto)
                 if ((*pat)->decltypeautoextended)
                 {
-                    *pat = MakeType(BasicType::lref, nt);
+                    *pat = MakeType(BasicType::lref_, nt);
                 }
                 else
                 {
@@ -657,7 +657,7 @@ SYMBOL* getFunctionSP(TYPE** tp)
         *tp = btp;
         return basetype(btp)->sp;
     }
-    else if (btp->type == BasicType::aggregate)
+    else if (btp->type == BasicType::aggregate_)
     {
         return btp->sp;
     }
@@ -728,21 +728,21 @@ bool isintconst(EXPRESSION* exp)
 {
     switch (exp->type)
     {
-        case ExpressionNode::c_u16:
-        case ExpressionNode::c_u32:
-        case ExpressionNode::c_c:
-        case ExpressionNode::c_wc:
-        case ExpressionNode::c_uc:
-        case ExpressionNode::c_s:
-        case ExpressionNode::c_us:
-        case ExpressionNode::c_i:
-        case ExpressionNode::c_ui:
-        case ExpressionNode::c_l:
-        case ExpressionNode::c_ul:
-        case ExpressionNode::c_ll:
-        case ExpressionNode::c_ull:
-        case ExpressionNode::c_bit:
-        case ExpressionNode::c_bool:
+        case ExpressionNode::c_u16_:
+        case ExpressionNode::c_u32_:
+        case ExpressionNode::c_c_:
+        case ExpressionNode::c_wc_:
+        case ExpressionNode::c_uc_:
+        case ExpressionNode::c_s_:
+        case ExpressionNode::c_us_:
+        case ExpressionNode::c_i_:
+        case ExpressionNode::c_ui_:
+        case ExpressionNode::c_l_:
+        case ExpressionNode::c_ul_:
+        case ExpressionNode::c_ll_:
+        case ExpressionNode::c_ull_:
+        case ExpressionNode::c_bit_:
+        case ExpressionNode::c_bool_:
         case ExpressionNode::const_:
             return true;
         default:
@@ -753,9 +753,9 @@ bool isfloatconst(EXPRESSION* exp)
 {
     switch (exp->type)
     {
-        case ExpressionNode::c_f:
-        case ExpressionNode::c_d:
-        case ExpressionNode::c_ld:
+        case ExpressionNode::c_f_:
+        case ExpressionNode::c_d_:
+        case ExpressionNode::c_ld_:
             return true;
         default:
             return false;
@@ -765,9 +765,9 @@ bool isimaginaryconst(EXPRESSION* exp)
 {
     switch (exp->type)
     {
-        case ExpressionNode::c_fi:
-        case ExpressionNode::c_di:
-        case ExpressionNode::c_ldi:
+        case ExpressionNode::c_fi_:
+        case ExpressionNode::c_di_:
+        case ExpressionNode::c_ldi_:
             return true;
         default:
             return false;
@@ -777,9 +777,9 @@ bool iscomplexconst(EXPRESSION* exp)
 {
     switch (exp->type)
     {
-        case ExpressionNode::c_fc:
-        case ExpressionNode::c_dc:
-        case ExpressionNode::c_ldc:
+        case ExpressionNode::c_fc_:
+        case ExpressionNode::c_dc_:
+        case ExpressionNode::c_ldc_:
             return true;
         default:
             return false;
@@ -807,133 +807,133 @@ EXPRESSION* anonymousVar(StorageClass storage_class, TYPE* tp)
     if (theCurrentFunc && localNameSpace->front()->syms && !inDefaultParam && !anonymousNotAlloc)
         InsertSymbol(rv, storage_class, Linkage::none_, false);
     SetLinkerNames(rv, Linkage::none_);
-    return varNode(storage_class == StorageClass::auto_ || storage_class == StorageClass::parameter ? ExpressionNode::auto_ : ExpressionNode::global, rv);
+    return varNode(storage_class == StorageClass::auto_ || storage_class == StorageClass::parameter_ ? ExpressionNode::auto_ : ExpressionNode::global_, rv);
 }
 void deref(TYPE* tp, EXPRESSION** exp)
 {
-    enum ExpressionNode en = ExpressionNode::l_i;
+    enum ExpressionNode en = ExpressionNode::l_i_;
     tp = basetype(tp);
     switch ((tp->type == BasicType::enum_ && tp->btp) ? tp->btp->type : tp->type)
     {
-        case BasicType::lref: /* only used during initialization */
-            en = ExpressionNode::l_ref;
+        case BasicType::lref_: /* only used during initialization */
+            en = ExpressionNode::l_ref_;
             break;
-        case BasicType::rref: /* only used during initialization */
-            en = ExpressionNode::l_ref;
+        case BasicType::rref_: /* only used during initialization */
+            en = ExpressionNode::l_ref_;
             break;
-        case BasicType::bit:
-            en = ExpressionNode::l_bit;
+        case BasicType::bit_:
+            en = ExpressionNode::l_bit_;
             break;
         case BasicType::bool_:
-            en = ExpressionNode::l_bool;
+            en = ExpressionNode::l_bool_;
             break;
         case BasicType::char_:
             if (Optimizer::cparams.prm_charisunsigned)
-                en = ExpressionNode::l_uc;
+                en = ExpressionNode::l_uc_;
             else
-                en = ExpressionNode::l_c;
+                en = ExpressionNode::l_c_;
             break;
-        case BasicType::signed_char:
-            en = ExpressionNode::l_c;
+        case BasicType::signed_char_:
+            en = ExpressionNode::l_c_;
             break;
         case BasicType::char16_t_:
-            en = ExpressionNode::l_u16;
+            en = ExpressionNode::l_u16_;
             break;
         case BasicType::char32_t_:
-            en = ExpressionNode::l_u32;
+            en = ExpressionNode::l_u32_;
             break;
-        case BasicType::unsigned_char:
-            en = ExpressionNode::l_uc;
+        case BasicType::unsigned_char_:
+            en = ExpressionNode::l_uc_;
             break;
         case BasicType::short_:
-            en = ExpressionNode::l_s;
+            en = ExpressionNode::l_s_;
             break;
-        case BasicType::unsigned_short:
-            en = ExpressionNode::l_us;
+        case BasicType::unsigned_short_:
+            en = ExpressionNode::l_us_;
             break;
         case BasicType::wchar_t_:
-            en = ExpressionNode::l_wc;
+            en = ExpressionNode::l_wc_;
             break;
         case BasicType::int_:
-            en = ExpressionNode::l_i;
+            en = ExpressionNode::l_i_;
             break;
         case BasicType::unsigned_:
-            en = ExpressionNode::l_ui;
+            en = ExpressionNode::l_ui_;
             break;
         case BasicType::long_:
-            en = ExpressionNode::l_l;
+            en = ExpressionNode::l_l_;
             break;
-        case BasicType::unsigned_long:
-            en = ExpressionNode::l_ul;
+        case BasicType::unsigned_long_:
+            en = ExpressionNode::l_ul_;
             break;
-        case BasicType::long_long:
-            en = ExpressionNode::l_ll;
+        case BasicType::long_long_:
+            en = ExpressionNode::l_ll_;
             break;
-        case BasicType::unsigned_long_long:
-            en = ExpressionNode::l_ull;
+        case BasicType::unsigned_long_long_:
+            en = ExpressionNode::l_ull_;
             break;
         case BasicType::float_:
-            en = ExpressionNode::l_f;
+            en = ExpressionNode::l_f_;
             break;
         case BasicType::double_:
-            en = ExpressionNode::l_d;
+            en = ExpressionNode::l_d_;
             break;
-        case BasicType::long_double:
-            en = ExpressionNode::l_ld;
+        case BasicType::long_double_:
+            en = ExpressionNode::l_ld_;
             break;
-        case BasicType::float__complex:
-            en = ExpressionNode::l_fc;
+        case BasicType::float__complex_:
+            en = ExpressionNode::l_fc_;
             break;
-        case BasicType::double__complex:
-            en = ExpressionNode::l_dc;
+        case BasicType::double__complex_:
+            en = ExpressionNode::l_dc_;
             break;
-        case BasicType::long_double_complex:
-            en = ExpressionNode::l_ldc;
+        case BasicType::long_double_complex_:
+            en = ExpressionNode::l_ldc_;
             break;
-        case BasicType::float__imaginary:
-            en = ExpressionNode::l_fi;
+        case BasicType::float__imaginary_:
+            en = ExpressionNode::l_fi_;
             break;
-        case BasicType::double__imaginary:
-            en = ExpressionNode::l_di;
+        case BasicType::double__imaginary_:
+            en = ExpressionNode::l_di_;
             break;
-        case BasicType::long_double_imaginary:
-            en = ExpressionNode::l_ldi;
+        case BasicType::long_double_imaginary_:
+            en = ExpressionNode::l_ldi_;
             break;
-        case BasicType::__string:
-            en = ExpressionNode::l_string;
+        case BasicType::string_:
+            en = ExpressionNode::l_string_;
             break;
-        case BasicType::__object:
-            en = ExpressionNode::l_object;
+        case BasicType::object_:
+            en = ExpressionNode::l_object_;
             break;
-        case BasicType::pointer:
+        case BasicType::pointer_:
             if (tp->array || tp->vla)
                 return;
-            en = ExpressionNode::l_p;
+            en = ExpressionNode::l_p_;
             break;
-        case BasicType::inative:
-            en = ExpressionNode::l_inative;
+        case BasicType::inative_:
+            en = ExpressionNode::l_inative_;
             break;
-        case BasicType::unative:
-            en = ExpressionNode::l_unative;
+        case BasicType::unative_:
+            en = ExpressionNode::l_unative_;
             break;
         case BasicType::struct_:
         case BasicType::class_:
         case BasicType::union_:
-        case BasicType::func:
-        case BasicType::ifunc:
-        case BasicType::any:
-        case BasicType::templateparam:
-        case BasicType::templateselector:
-        case BasicType::templatedecltype:
-        case BasicType::memberptr:
-        case BasicType::aggregate:
+        case BasicType::func_:
+        case BasicType::ifunc_:
+        case BasicType::any_:
+        case BasicType::templateparam_:
+        case BasicType::templateselector_:
+        case BasicType::templatedecltype_:
+        case BasicType::memberptr_:
+        case BasicType::aggregate_:
             return;
         default:
             diag("deref error");
             break;
     }
     *exp = exprNode(en, *exp, nullptr);
-    if (en == ExpressionNode::l_object)
+    if (en == ExpressionNode::l_object_)
         (*exp)->v.tp = tp;
 }
 int sizeFromType(TYPE* tp)
@@ -943,9 +943,9 @@ int sizeFromType(TYPE* tp)
     switch (tp->type == BasicType::enum_ ? tp->btp->type : tp->type)
     {
         case BasicType::void_:
-        case BasicType::templateparam:
-        case BasicType::templateselector:
-        case BasicType::templatedecltype:
+        case BasicType::templateparam_:
+        case BasicType::templateselector_:
+        case BasicType::templatedecltype_:
             rv = ISZ_UINT;
             break;
         case BasicType::bool_:
@@ -957,7 +957,7 @@ int sizeFromType(TYPE* tp)
             else
                 rv = -ISZ_UCHAR;
             break;
-        case BasicType::signed_char:
+        case BasicType::signed_char_:
             rv = -ISZ_UCHAR;
             break;
         case BasicType::char16_t_:
@@ -966,13 +966,13 @@ int sizeFromType(TYPE* tp)
         case BasicType::char32_t_:
             rv = ISZ_U32;
             break;
-        case BasicType::unsigned_char:
+        case BasicType::unsigned_char_:
             rv = ISZ_UCHAR;
             break;
         case BasicType::short_:
             rv = -ISZ_USHORT;
             break;
-        case BasicType::unsigned_short:
+        case BasicType::unsigned_short_:
             rv = ISZ_USHORT;
             break;
         case BasicType::wchar_t_:
@@ -981,25 +981,25 @@ int sizeFromType(TYPE* tp)
         case BasicType::int_:
             rv = -ISZ_UINT;
             break;
-        case BasicType::inative:
+        case BasicType::inative_:
             rv = -ISZ_UNATIVE;
             break;
         case BasicType::unsigned_:
             rv = ISZ_UINT;
             break;
-        case BasicType::unative:
+        case BasicType::unative_:
             rv = ISZ_UNATIVE;
             break;
         case BasicType::long_:
             rv = -ISZ_ULONG;
             break;
-        case BasicType::unsigned_long:
+        case BasicType::unsigned_long_:
             rv = ISZ_ULONG;
             break;
-        case BasicType::long_long:
+        case BasicType::long_long_:
             rv = -ISZ_ULONGLONG;
             break;
-        case BasicType::unsigned_long_long:
+        case BasicType::unsigned_long_long_:
             rv = ISZ_ULONGLONG;
             break;
         case BasicType::float_:
@@ -1008,45 +1008,45 @@ int sizeFromType(TYPE* tp)
         case BasicType::double_:
             rv = ISZ_DOUBLE;
             break;
-        case BasicType::long_double:
+        case BasicType::long_double_:
             rv = ISZ_LDOUBLE;
             break;
-        case BasicType::float__complex:
+        case BasicType::float__complex_:
             rv = ISZ_CFLOAT;
             break;
-        case BasicType::double__complex:
+        case BasicType::double__complex_:
             rv = ISZ_CDOUBLE;
             break;
-        case BasicType::long_double_complex:
+        case BasicType::long_double_complex_:
             rv = ISZ_CLDOUBLE;
             break;
-        case BasicType::float__imaginary:
+        case BasicType::float__imaginary_:
             rv = ISZ_IFLOAT;
             break;
-        case BasicType::double__imaginary:
+        case BasicType::double__imaginary_:
             rv = ISZ_IDOUBLE;
             break;
-        case BasicType::long_double_imaginary:
+        case BasicType::long_double_imaginary_:
             rv = ISZ_ILDOUBLE;
             break;
-        case BasicType::pointer:
+        case BasicType::pointer_:
             if (isarray(tp) && basetype(tp)->msil)
             {
                 rv = ISZ_OBJECT;
                 break;
             }
-        case BasicType::func:
-        case BasicType::ifunc:
-        case BasicType::lref:
-        case BasicType::rref:
-        case BasicType::memberptr:
-        case BasicType::aggregate:
+        case BasicType::func_:
+        case BasicType::ifunc_:
+        case BasicType::lref_:
+        case BasicType::rref_:
+        case BasicType::memberptr_:
+        case BasicType::aggregate_:
             rv = ISZ_ADDR;
             break;
-        case BasicType::__string:
+        case BasicType::string_:
             rv = ISZ_STRING;
             break;
-        case BasicType::__object:
+        case BasicType::object_:
             rv = ISZ_OBJECT;
             break;
         default:
@@ -1057,117 +1057,117 @@ int sizeFromType(TYPE* tp)
 }
 void cast(TYPE* tp, EXPRESSION** exp)
 {
-    enum ExpressionNode en = ExpressionNode::x_i;
+    enum ExpressionNode en = ExpressionNode::x_i_;
     tp = basetype(tp);
     switch (tp->type == BasicType::enum_ ? tp->btp->type : tp->type)
     {
-        case BasicType::lref:
-        case BasicType::rref:
-            en = ExpressionNode::x_p;
+        case BasicType::lref_:
+        case BasicType::rref_:
+            en = ExpressionNode::x_p_;
             break;
-        case BasicType::func:
-        case BasicType::ifunc:
-            en = ExpressionNode::x_p;
+        case BasicType::func_:
+        case BasicType::ifunc_:
+            en = ExpressionNode::x_p_;
             break;
-        case BasicType::bit:
-            en = ExpressionNode::x_bit;
+        case BasicType::bit_:
+            en = ExpressionNode::x_bit_;
             break;
         case BasicType::bool_:
-            en = ExpressionNode::x_bool;
+            en = ExpressionNode::x_bool_;
             break;
         case BasicType::char_:
             if (Optimizer::cparams.prm_charisunsigned)
-                en = ExpressionNode::x_uc;
+                en = ExpressionNode::x_uc_;
             else
-                en = ExpressionNode::x_c;
+                en = ExpressionNode::x_c_;
             break;
-        case BasicType::signed_char:
-            en = ExpressionNode::x_c;
+        case BasicType::signed_char_:
+            en = ExpressionNode::x_c_;
             break;
-        case BasicType::unsigned_char:
-            en = ExpressionNode::x_uc;
+        case BasicType::unsigned_char_:
+            en = ExpressionNode::x_uc_;
             break;
         case BasicType::char16_t_:
-            en = ExpressionNode::x_u16;
+            en = ExpressionNode::x_u16_;
             break;
         case BasicType::char32_t_:
-            en = ExpressionNode::x_u32;
+            en = ExpressionNode::x_u32_;
             break;
         case BasicType::short_:
-            en = ExpressionNode::x_s;
+            en = ExpressionNode::x_s_;
             break;
-        case BasicType::unsigned_short:
-            en = ExpressionNode::x_us;
+        case BasicType::unsigned_short_:
+            en = ExpressionNode::x_us_;
             break;
         case BasicType::wchar_t_:
-            en = ExpressionNode::x_wc;
+            en = ExpressionNode::x_wc_;
             break;
         case BasicType::int_:
-            en = ExpressionNode::x_i;
+            en = ExpressionNode::x_i_;
             break;
-        case BasicType::inative:
-            en = ExpressionNode::x_inative;
+        case BasicType::inative_:
+            en = ExpressionNode::x_inative_;
             break;
         case BasicType::unsigned_:
-            en = ExpressionNode::x_ui;
+            en = ExpressionNode::x_ui_;
             break;
-        case BasicType::unative:
-            en = ExpressionNode::x_unative;
+        case BasicType::unative_:
+            en = ExpressionNode::x_unative_;
             break;
         case BasicType::long_:
-            en = ExpressionNode::x_l;
+            en = ExpressionNode::x_l_;
             break;
-        case BasicType::unsigned_long:
-            en = ExpressionNode::x_ul;
+        case BasicType::unsigned_long_:
+            en = ExpressionNode::x_ul_;
             break;
-        case BasicType::long_long:
-            en = ExpressionNode::x_ll;
+        case BasicType::long_long_:
+            en = ExpressionNode::x_ll_;
             break;
-        case BasicType::unsigned_long_long:
-            en = ExpressionNode::x_ull;
+        case BasicType::unsigned_long_long_:
+            en = ExpressionNode::x_ull_;
             break;
         case BasicType::float_:
-            en = ExpressionNode::x_f;
+            en = ExpressionNode::x_f_;
             break;
         case BasicType::double_:
-            en = ExpressionNode::x_d;
+            en = ExpressionNode::x_d_;
             break;
-        case BasicType::long_double:
-            en = ExpressionNode::x_ld;
+        case BasicType::long_double_:
+            en = ExpressionNode::x_ld_;
             break;
-        case BasicType::float__complex:
-            en = ExpressionNode::x_fc;
+        case BasicType::float__complex_:
+            en = ExpressionNode::x_fc_;
             break;
-        case BasicType::double__complex:
-            en = ExpressionNode::x_dc;
+        case BasicType::double__complex_:
+            en = ExpressionNode::x_dc_;
             break;
-        case BasicType::long_double_complex:
-            en = ExpressionNode::x_ldc;
+        case BasicType::long_double_complex_:
+            en = ExpressionNode::x_ldc_;
             break;
-        case BasicType::float__imaginary:
-            en = ExpressionNode::x_fi;
+        case BasicType::float__imaginary_:
+            en = ExpressionNode::x_fi_;
             break;
-        case BasicType::double__imaginary:
-            en = ExpressionNode::x_di;
+        case BasicType::double__imaginary_:
+            en = ExpressionNode::x_di_;
             break;
-        case BasicType::long_double_imaginary:
-            en = ExpressionNode::x_ldi;
+        case BasicType::long_double_imaginary_:
+            en = ExpressionNode::x_ldi_;
             break;
-        case BasicType::__string:
-            en = ExpressionNode::x_string;
+        case BasicType::string_:
+            en = ExpressionNode::x_string_;
             break;
-        case BasicType::__object:
-            en = ExpressionNode::x_object;
+        case BasicType::object_:
+            en = ExpressionNode::x_object_;
             break;
-        case BasicType::pointer:
-        case BasicType::aggregate:
-            en = ExpressionNode::x_p;
+        case BasicType::pointer_:
+        case BasicType::aggregate_:
+            en = ExpressionNode::x_p_;
             break;
         case BasicType::void_:
             return;
-        case BasicType::templateparam:
-        case BasicType::templateselector:
-        case BasicType::templatedecltype:
+        case BasicType::templateparam_:
+        case BasicType::templateselector_:
+        case BasicType::templatedecltype_:
             return;
         default:
             diag("cast error");
@@ -1179,35 +1179,35 @@ bool castvalue(EXPRESSION* exp)
 {
     switch (exp->type)
     {
-        case ExpressionNode::x_bit:
-        case ExpressionNode::x_bool:
-        case ExpressionNode::x_wc:
-        case ExpressionNode::x_c:
-        case ExpressionNode::x_uc:
-        case ExpressionNode::x_u16:
-        case ExpressionNode::x_u32:
-        case ExpressionNode::x_s:
-        case ExpressionNode::x_us:
-        case ExpressionNode::x_i:
-        case ExpressionNode::x_ui:
-        case ExpressionNode::x_inative:
-        case ExpressionNode::x_unative:
-        case ExpressionNode::x_l:
-        case ExpressionNode::x_ul:
-        case ExpressionNode::x_ll:
-        case ExpressionNode::x_ull:
-        case ExpressionNode::x_f:
-        case ExpressionNode::x_d:
-        case ExpressionNode::x_ld:
-        case ExpressionNode::x_fc:
-        case ExpressionNode::x_dc:
-        case ExpressionNode::x_ldc:
-        case ExpressionNode::x_fi:
-        case ExpressionNode::x_di:
-        case ExpressionNode::x_ldi:
-        case ExpressionNode::x_p:
-        case ExpressionNode::x_string:
-        case ExpressionNode::x_object:
+        case ExpressionNode::x_bit_:
+        case ExpressionNode::x_bool_:
+        case ExpressionNode::x_wc_:
+        case ExpressionNode::x_c_:
+        case ExpressionNode::x_uc_:
+        case ExpressionNode::x_u16_:
+        case ExpressionNode::x_u32_:
+        case ExpressionNode::x_s_:
+        case ExpressionNode::x_us_:
+        case ExpressionNode::x_i_:
+        case ExpressionNode::x_ui_:
+        case ExpressionNode::x_inative_:
+        case ExpressionNode::x_unative_:
+        case ExpressionNode::x_l_:
+        case ExpressionNode::x_ul_:
+        case ExpressionNode::x_ll_:
+        case ExpressionNode::x_ull_:
+        case ExpressionNode::x_f_:
+        case ExpressionNode::x_d_:
+        case ExpressionNode::x_ld_:
+        case ExpressionNode::x_fc_:
+        case ExpressionNode::x_dc_:
+        case ExpressionNode::x_ldc_:
+        case ExpressionNode::x_fi_:
+        case ExpressionNode::x_di_:
+        case ExpressionNode::x_ldi_:
+        case ExpressionNode::x_p_:
+        case ExpressionNode::x_string_:
+        case ExpressionNode::x_object_:
             return true;
         default:
             return false;
@@ -1225,39 +1225,39 @@ bool lvalue(EXPRESSION* exp)
             exp = exp->left;
     switch (exp->type)
     {
-        case ExpressionNode::lvalue:
-        case ExpressionNode::l_bit:
-        case ExpressionNode::l_bool:
-        case ExpressionNode::l_wc:
-        case ExpressionNode::l_u16:
-        case ExpressionNode::l_u32:
-        case ExpressionNode::l_c:
-        case ExpressionNode::l_uc:
-        case ExpressionNode::l_s:
-        case ExpressionNode::l_us:
-        case ExpressionNode::l_i:
-        case ExpressionNode::l_ui:
-        case ExpressionNode::l_inative:
-        case ExpressionNode::l_unative:
-        case ExpressionNode::l_l:
-        case ExpressionNode::l_ul:
-        case ExpressionNode::l_ll:
-        case ExpressionNode::l_ull:
-        case ExpressionNode::l_f:
-        case ExpressionNode::l_d:
-        case ExpressionNode::l_ld:
-        case ExpressionNode::l_fc:
-        case ExpressionNode::l_dc:
-        case ExpressionNode::l_ldc:
-        case ExpressionNode::l_fi:
+        case ExpressionNode::lvalue_:
+        case ExpressionNode::l_bit_:
+        case ExpressionNode::l_bool_:
+        case ExpressionNode::l_wc_:
+        case ExpressionNode::l_u16_:
+        case ExpressionNode::l_u32_:
+        case ExpressionNode::l_c_:
+        case ExpressionNode::l_uc_:
+        case ExpressionNode::l_s_:
+        case ExpressionNode::l_us_:
+        case ExpressionNode::l_i_:
+        case ExpressionNode::l_ui_:
+        case ExpressionNode::l_inative_:
+        case ExpressionNode::l_unative_:
+        case ExpressionNode::l_l_:
+        case ExpressionNode::l_ul_:
+        case ExpressionNode::l_ll_:
+        case ExpressionNode::l_ull_:
+        case ExpressionNode::l_f_:
+        case ExpressionNode::l_d_:
+        case ExpressionNode::l_ld_:
+        case ExpressionNode::l_fc_:
+        case ExpressionNode::l_dc_:
+        case ExpressionNode::l_ldc_:
+        case ExpressionNode::l_fi_:
 
-        case ExpressionNode::l_di:
-        case ExpressionNode::l_ldi:
-        case ExpressionNode::l_p:
-        case ExpressionNode::l_string:
-        case ExpressionNode::l_object:
+        case ExpressionNode::l_di_:
+        case ExpressionNode::l_ldi_:
+        case ExpressionNode::l_p_:
+        case ExpressionNode::l_string_:
+        case ExpressionNode::l_object_:
             return true;
-        case ExpressionNode::l_ref:
+        case ExpressionNode::l_ref_:
             return true;
         default:
             return false;
@@ -1286,7 +1286,7 @@ static EXPRESSION* msilThunkSubStructs(EXPRESSION* exps, EXPRESSION* expsym, SYM
                             if (isstructured(sp->tp))
                             {
                                 offset -= sp->sb->offset;
-                                exps = exprNode(ExpressionNode::structadd, exps, varNode(ExpressionNode::structelem, sp));
+                                exps = exprNode(ExpressionNode::structadd_, exps, varNode(ExpressionNode::structelem_, sp));
                                 tp = sp->tp;
                             }
                             else
@@ -1343,7 +1343,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 SYMBOL* sym = makeID(StorageClass::static_, tp, nullptr, sanon);
                 SetLinkerNames(sym, Linkage::cdecl_);
                 insertDynamicInitializer(sym, init);
-                expsym = varNode(ExpressionNode::global, sym);
+                expsym = varNode(ExpressionNode::global_, sym);
                 insertInitSym(sym);
             }
         }
@@ -1353,11 +1353,11 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             {
             case StorageClass::auto_:
             case StorageClass::register_:
-            case StorageClass::parameter:
+            case StorageClass::parameter_:
                 local = true;
                 expsym = varNode(ExpressionNode::auto_, sym);
                 break;
-            case StorageClass::localstatic:
+            case StorageClass::localstatic_:
                 if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
                 {
                     expsym = thisptr;
@@ -1365,11 +1365,11 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 else
                 {
                     local = true;
-                    expsym = varNode(ExpressionNode::global, sym);
+                    expsym = varNode(ExpressionNode::global_, sym);
                 }
                 break;
             case StorageClass::static_:
-            case StorageClass::global:
+            case StorageClass::global_:
                 if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
                 {
                     expsym = thisptr;
@@ -1377,10 +1377,10 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 else
                 {
                     local = true;
-                    expsym = varNode(ExpressionNode::global, sym);
+                    expsym = varNode(ExpressionNode::global_, sym);
                 }
                 break;
-            case StorageClass::member:
+            case StorageClass::member_:
             case StorageClass::mutable_:
                 if (thisptr)
                     expsym = thisptr;
@@ -1388,24 +1388,24 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     expsym = varNode(ExpressionNode::auto_, (SYMBOL*)basetype(funcsp->tp)->syms->front());  // this ptr
                 else
                 {
-                    expsym = intNode(ExpressionNode::c_i, 0);
+                    expsym = intNode(ExpressionNode::c_i_, 0);
                     diag("convertInitToExpression: no this ptr");
                 }
                 if (Optimizer::architecture == ARCHITECTURE_MSIL)
-                    expsym = exprNode(ExpressionNode::structadd, expsym, varNode(ExpressionNode::structelem, sym));
+                    expsym = exprNode(ExpressionNode::structadd_, expsym, varNode(ExpressionNode::structelem_, sym));
                 else
-                    expsym = exprNode(ExpressionNode::structadd, expsym, intNode(ExpressionNode::c_i, sym->sb->offset));
+                    expsym = exprNode(ExpressionNode::structadd_, expsym, intNode(ExpressionNode::c_i_, sym->sb->offset));
                 break;
-            case StorageClass::external:
-                /*			expsym = varNode(ExpressionNode::global, sym);
+            case StorageClass::external_:
+                /*			expsym = varNode(ExpressionNode::global_, sym);
                             local = true;
                             break;
                 */
-            case StorageClass::const_ant:
+            case StorageClass::const_ant_:
                 return nullptr;
             default:
                 diag("convertInitToExpression: unknown sym type");
-                expsym = intNode(ExpressionNode::c_i, 0);
+                expsym = intNode(ExpressionNode::c_i_, 0);
                 break;
             }
         }
@@ -1413,10 +1413,10 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
     base = copy_expression(expsym);
     if (sym && isarray(sym->tp) && sym->tp->msil && !init->front()->noassign)
     {
-        exp = intNode(ExpressionNode::msil_array_init, 0);
+        exp = intNode(ExpressionNode::msil_array_init_, 0);
         exp->v.tp = sym->tp;
         // plop in a newarr call
-        *pos = exprNode(ExpressionNode::assign, expsym, exp);
+        *pos = exprNode(ExpressionNode::assign_, expsym, exp);
         noClear = true;
     }
     if (sym && isstructured(sym->tp) && basetype(sym->tp)->sp->sb->structuredAliasType)
@@ -1431,12 +1431,12 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             if (initItem->noassign && initItem->exp)
             {
                 exp = initItem->exp;
-                if (exp->type == ExpressionNode::thisref)
+                if (exp->type == ExpressionNode::thisref_)
                     exp = exp->left;
-                if (thisptr && exp->type == ExpressionNode::func)
+                if (thisptr && exp->type == ExpressionNode::func_)
                 {
                     EXPRESSION* exp1 = initItem->offset || (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)
-                        ? exprNode(ExpressionNode::add, copy_expression(expsym), intNode(ExpressionNode::c_i, initItem->offset))
+                        ? exprNode(ExpressionNode::add_, copy_expression(expsym), intNode(ExpressionNode::c_i_, initItem->offset))
                         : copy_expression(expsym);
                     if (isarray(tp))
                     {
@@ -1456,7 +1456,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             else if (!initItem->exp)
             {
                 // usually empty braces, coudl be an error though
-                exp = exprNode(ExpressionNode::blockclear, copy_expression(expsym), nullptr);
+                exp = exprNode(ExpressionNode::blockclear_, copy_expression(expsym), nullptr);
                 exp->size = MakeType(BasicType::struct_);
                 exp->size->size = initItem->offset;                
             }
@@ -1468,24 +1468,24 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     {
                         exp = copy_expression(expsym);
                         if (initItem->offset)
-                            exp = exprNode(ExpressionNode::add, exp, intNode(ExpressionNode::c_i, initItem->offset));
+                            exp = exprNode(ExpressionNode::add_, exp, intNode(ExpressionNode::c_i_, initItem->offset));
                         deref(basetype(initItem->basetp)->sp->sb->structuredAliasType, &exp);
-                        exp = exprNode(ExpressionNode::assign, exp, initItem->exp);
+                        exp = exprNode(ExpressionNode::assign_, exp, initItem->exp);
                         noClear = true;
                     }
                     else
                     {
                         EXPRESSION* exp2 = initItem->exp;
-                        while (exp2->type == ExpressionNode::not__lvalue)
+                        while (exp2->type == ExpressionNode::not__lvalue_)
                             exp2 = exp2->left;
-                        if (exp2->type == ExpressionNode::func && exp2->v.func->returnSP)
+                        if (exp2->type == ExpressionNode::func_ && exp2->v.func->returnSP)
                         {
                             exp2->v.func->returnSP->sb->allocate = false;
                             exp2->v.func->returnEXP = copy_expression(expsym);
                             exp = exp2;
                             noClear = true;
                         }
-                        else if (exp2->type == ExpressionNode::thisref && exp2->left->v.func->returnSP)
+                        else if (exp2->type == ExpressionNode::thisref_ && exp2->left->v.func->returnSP)
                         {
                             exp2->left->v.func->returnSP->sb->allocate = false;
                             exp2->left->v.func->returnEXP = copy_expression(expsym);
@@ -1502,8 +1502,8 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         {
                             exp = copy_expression(expsym);
                             if (initItem->offset)
-                                exp = exprNode(ExpressionNode::add, exp, intNode(ExpressionNode::c_i, initItem->offset));
-                            exp = exprNode(ExpressionNode::blockassign, exp, exp2);
+                                exp = exprNode(ExpressionNode::add_, exp, intNode(ExpressionNode::c_i_, initItem->offset));
+                            exp = exprNode(ExpressionNode::blockassign_, exp, exp2);
                             exp->size = initItem->basetp;
                             exp->altdata = (void*)(initItem->basetp);
                             noClear = comparetypes(initItem->basetp, tp, true);
@@ -1538,7 +1538,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         }
                         if (!isstructured(btp) || btp->sp->sb->trivialCons)
                         {
-                            exp = exprNode(ExpressionNode::blockclear, copy_expression(expsym), nullptr);
+                            exp = exprNode(ExpressionNode::blockclear_, copy_expression(expsym), nullptr);
                             exp->size = initItem->basetp;
                             exp = exprNode(ExpressionNode::void_, exp, nullptr);
                             expp = &exp->right;
@@ -1555,17 +1555,17 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                                 if (Optimizer::architecture == ARCHITECTURE_MSIL)
                                 {
                                     int n = initItem->offset / btp->size;
-                                    asn = exprNode(ExpressionNode::_sizeof, typeNode(btp), nullptr);
-                                    EXPRESSION* exp4 = intNode(ExpressionNode::c_i, n);
-                                    asn = exprNode(ExpressionNode::umul, exp4, asn);
+                                    asn = exprNode(ExpressionNode::sizeof_, typeNode(btp), nullptr);
+                                    EXPRESSION* exp4 = intNode(ExpressionNode::c_i_, n);
+                                    asn = exprNode(ExpressionNode::umul_, exp4, asn);
                                 }
                                 else
                                 {
-                                    asn = exprNode(ExpressionNode::add, copy_expression(expsym), intNode(ExpressionNode::c_i, initItem->offset));
+                                    asn = exprNode(ExpressionNode::add_, copy_expression(expsym), intNode(ExpressionNode::c_i_, initItem->offset));
                                 }
                                 deref(initItem->basetp, &asn);
                                 cast(initItem->basetp, &right);
-                                right = exprNode(ExpressionNode::assign, asn, right);
+                                right = exprNode(ExpressionNode::assign_, asn, right);
                             }
                             if (*expp)
                                 *expp = exprNode(ExpressionNode::void_, *expp, right);
@@ -1578,7 +1578,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     {
                         /* constant expression */
                         SYMBOL* spc;
-                        exp = anonymousVar(StorageClass::localstatic, initItem->basetp);
+                        exp = anonymousVar(StorageClass::localstatic_, initItem->basetp);
                         spc = exp->v.sp;
                         if (!spc->sb->init)
                             spc->sb->init = initListFactory.CreateList();
@@ -1599,7 +1599,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                             }
                             else
                             {
-                                exp = exprNode(ExpressionNode::blockassign, copy_expression(expsym), exp);
+                                exp = exprNode(ExpressionNode::blockassign_, copy_expression(expsym), exp);
                                 exp->size = initItem->basetp;
                                 exp->altdata = (void*)(initItem->basetp);
                             }
@@ -1607,13 +1607,13 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     }
                 }
             }
-            else if (basetype(initItem->basetp)->type == BasicType::memberptr)
+            else if (basetype(initItem->basetp)->type == BasicType::memberptr_)
             {
                 EXPRESSION* exp2 = initItem->exp;
                 ;
-                while (exp2->type == ExpressionNode::not__lvalue)
+                while (exp2->type == ExpressionNode::not__lvalue_)
                     exp2 = exp2->left;
-                if (exp2->type == ExpressionNode::func && exp2->v.func->returnSP)
+                if (exp2->type == ExpressionNode::func_ && exp2->v.func->returnSP)
                 {
                     exp2->v.func->returnSP->sb->allocate = false;
                     exp2->v.func->returnEXP = copy_expression(expsym);
@@ -1621,12 +1621,12 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 }
                 else
                 {
-                    if (exp2->type == ExpressionNode::memberptr)
+                    if (exp2->type == ExpressionNode::memberptr_)
                     {
                         int lab = dumpMemberPtr(exp2->v.sp, initItem->basetp, true);
-                        exp2 = intNode(ExpressionNode::labcon, lab);
+                        exp2 = intNode(ExpressionNode::labcon_, lab);
                     }
-                    exp = exprNode(ExpressionNode::blockassign, copy_expression(expsym), exp2);
+                    exp = exprNode(ExpressionNode::blockassign_, copy_expression(expsym), exp2);
                     exp->size = initItem->basetp;
                     exp->altdata = (void*)(initItem->basetp);
                 }
@@ -1638,7 +1638,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 if (isarray(tp) && tp->msil)
                 {
                     TYPE* btp = tp;
-                    exps = exprNode(ExpressionNode::msil_array_access, nullptr, nullptr);
+                    exps = exprNode(ExpressionNode::msil_array_access_, nullptr, nullptr);
                     int count = 0, i;
                     int q = initItem->offset;
                     while (isarray(btp) && btp->msil)
@@ -1655,7 +1655,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     for (i = 0; i < count; i++)
                     {
                         int n = q / btp->size;
-                        exps->v.msilArray->indices[i] = intNode(ExpressionNode::c_i, n);
+                        exps->v.msilArray->indices[i] = intNode(ExpressionNode::c_i_, n);
                         q = q - n * btp->size;
 
                         btp = btp->btp;
@@ -1665,10 +1665,10 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 {
                     if (initItem->fieldoffs)
                     {
-                        exps = exprNode(ExpressionNode::add, exps, initItem->fieldoffs);
+                        exps = exprNode(ExpressionNode::add_, exps, initItem->fieldoffs);
                     }
                     exps = msilThunkSubStructs(exps, expsym, initItem->fieldsp, initItem->offset);
-                    exps = exprNode(ExpressionNode::structadd, exps, varNode(ExpressionNode::structelem, initItem->fieldsp));
+                    exps = exprNode(ExpressionNode::structadd_, exps, varNode(ExpressionNode::structelem_, initItem->fieldsp));
                 }
                 else
                 {
@@ -1685,12 +1685,12 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         if (initItem->offset ||
                             (last != init->end() && (*last)->basetp && (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)))
                         {
-                            exps = exprNode(ExpressionNode::add, exps, intNode(ExpressionNode::c_i, initItem->offset));
+                            exps = exprNode(ExpressionNode::add_, exps, intNode(ExpressionNode::c_i_, initItem->offset));
                             exps->init = true;
                         }
                     }
                 }
-                if (exps->type != ExpressionNode::msil_array_access)
+                if (exps->type != ExpressionNode::msil_array_access_)
                     deref(initItem->basetp, &exps);
                 optimize_for_constants(&exps);
                 exp = initItem->exp;
@@ -1698,21 +1698,21 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 {
                     cast(initItem->basetp, &exp->right);
                     if (expsym)
-                        exp->right = exprNode(ExpressionNode::assign, exps, exp->right);
+                        exp->right = exprNode(ExpressionNode::assign_, exps, exp->right);
                 }
                 else
                 {
                     if (isarithmetic(initItem->basetp) || ispointer(initItem->basetp))
                         cast(initItem->basetp, &exp);
                     if (exps)
-                        exp = exprNode(ExpressionNode::assign, exps, exp);
+                        exp = exprNode(ExpressionNode::assign_, exps, exp);
                 }
             }
             if (sym && sym->sb->init && isatomic(initItem->basetp) && needsAtomicLockFromType(initItem->basetp))
             {
-                EXPRESSION* p1 = exprNode(ExpressionNode::add, expsym->left, intNode(ExpressionNode::c_i, initItem->basetp->size - ATOMIC_FLAG_SPACE));
+                EXPRESSION* p1 = exprNode(ExpressionNode::add_, expsym->left, intNode(ExpressionNode::c_i_, initItem->basetp->size - ATOMIC_FLAG_SPACE));
                 deref(&stdint, &p1);
-                p1 = exprNode(ExpressionNode::assign, p1, intNode(ExpressionNode::c_i, 0));
+                p1 = exprNode(ExpressionNode::assign_, p1, intNode(ExpressionNode::c_i_, 0));
                 exp = exprNode(ExpressionNode::void_, exp, p1);
             }
         }
@@ -1739,41 +1739,41 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
         EXPRESSION* fexp = base;
         EXPRESSION* exp;
         optimize_for_constants(&fexp);
-        if (fexp->type == ExpressionNode::thisref)
+        if (fexp->type == ExpressionNode::thisref_)
             fexp = fexp->left->v.func->thisptr;
-        exp = exprNode(ExpressionNode::blockclear, fexp, nullptr);
+        exp = exprNode(ExpressionNode::blockclear_, fexp, nullptr);
         exp->size = tp;
         rv = exprNode(ExpressionNode::void_, exp, rv);
     }
-    if (sym && sym->sb->storage_class == StorageClass::localstatic && !(Optimizer::architecture == ARCHITECTURE_MSIL))
+    if (sym && sym->sb->storage_class == StorageClass::localstatic_ && !(Optimizer::architecture == ARCHITECTURE_MSIL))
     {
         SYMBOL* guardfunc = namespacesearch("__static_guard", globalNameSpace, false, false);
         if (guardfunc)
         {
             guardfunc = guardfunc->tp->syms->front();
-            EXPRESSION* guard = anonymousVar(StorageClass::localstatic, &stdint);
+            EXPRESSION* guard = anonymousVar(StorageClass::localstatic_, &stdint);
             insertInitSym(guard->v.sp);
             deref(&stdpointer, &guard);
             optimize_for_constants(&rv);
             rv = destructLocal(rv);
             rv = addLocalDestructor(rv, sym);
-            EXPRESSION* guardexp = exprNode(ExpressionNode::func, nullptr, nullptr);
+            EXPRESSION* guardexp = exprNode(ExpressionNode::func_, nullptr, nullptr);
             guardexp->v.func = Allocate<FUNCTIONCALL>();
             guardexp->v.func->sp = guardfunc;
             guardexp->v.func->functp = guardfunc->tp;
-            guardexp->v.func->fcall = varNode(ExpressionNode::pc, guardfunc);
+            guardexp->v.func->fcall = varNode(ExpressionNode::pc_, guardfunc);
             guardexp->v.func->ascall = true;
             guardexp->v.func->arguments = initListListFactory.CreateList();
             auto arg = Allocate<INITLIST>();
             arg->tp = &stdpointer;
             arg->exp = guard->left;
             guardexp->v.func->arguments->push_back(arg);
-            rv = exprNode(ExpressionNode::void_nz,
+            rv = exprNode(ExpressionNode::void_nz_,
                           exprNode(ExpressionNode::void_,
-                                   exprNode(ExpressionNode::land, exprNode(ExpressionNode::ne, guard, intNode(ExpressionNode::c_i, -1)),
-                                            exprNode(ExpressionNode::ne, guardexp, intNode(ExpressionNode::c_i, 0))),
-                                   exprNode(ExpressionNode::void_, rv, exprNode(ExpressionNode::assign, guard, intNode(ExpressionNode::c_i, -1)))),
-                          intNode(ExpressionNode::c_i, 0));
+                                   exprNode(ExpressionNode::land_, exprNode(ExpressionNode::ne_, guard, intNode(ExpressionNode::c_i_, -1)),
+                                            exprNode(ExpressionNode::ne_, guardexp, intNode(ExpressionNode::c_i_, 0))),
+                                   exprNode(ExpressionNode::void_, rv, exprNode(ExpressionNode::assign_, guard, intNode(ExpressionNode::c_i_, -1)))),
+                          intNode(ExpressionNode::c_i_, 0));
         }
     }
     if (isstructured(tp))
@@ -1789,7 +1789,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
         }
     }
     if (!rv)
-        rv = intNode(ExpressionNode::c_i, 0);
+        rv = intNode(ExpressionNode::c_i_, 0);
 
     return rv;
 }
@@ -1810,15 +1810,15 @@ bool assignDiscardsConst(TYPE* dest, TYPE* source)
             {
                 case BasicType::const_:
                     destc = true;
-                case BasicType::va_list:
-                case BasicType::objectArray:
+                case BasicType::va_list_:
+                case BasicType::objectArray_:
                 case BasicType::restrict_:
                 case BasicType::volatile_:
                 case BasicType::static_:
                 case BasicType::typedef_:
-                case BasicType::lrqual:
-                case BasicType::rrqual:
-                case BasicType::derivedfromtemplate:
+                case BasicType::lrqual_:
+                case BasicType::rrqual_:
+                case BasicType::derivedfromtemplate_:
                     dest = dest->btp;
                     break;
                 default:
@@ -1833,14 +1833,14 @@ bool assignDiscardsConst(TYPE* dest, TYPE* source)
             {
                 case BasicType::const_:
                     sourcc = true;
-                case BasicType::va_list:
-                case BasicType::objectArray:
+                case BasicType::va_list_:
+                case BasicType::objectArray_:
                 case BasicType::restrict_:
                 case BasicType::volatile_:
                 case BasicType::static_:
                 case BasicType::typedef_:
-                case BasicType::lrqual:
-                case BasicType::rrqual:
+                case BasicType::lrqual_:
+                case BasicType::rrqual_:
                     source = source->btp;
                     break;
                 default:
@@ -1850,7 +1850,7 @@ bool assignDiscardsConst(TYPE* dest, TYPE* source)
         }
         if (sourcc && !destc)
             return true;
-        if (source->type != BasicType::pointer || dest->type != BasicType::pointer)
+        if (source->type != BasicType::pointer_ || dest->type != BasicType::pointer_)
             return false;
         dest = dest->btp;
         source = source->btp;
@@ -1906,17 +1906,17 @@ bool isconstaddress(EXPRESSION* exp)
 {
     switch (exp->type)
     {
-        case ExpressionNode::add:
-        case ExpressionNode::arrayadd:
-        case ExpressionNode::structadd:
+        case ExpressionNode::add_:
+        case ExpressionNode::arrayadd_:
+        case ExpressionNode::structadd_:
             return (isconstaddress(exp->left) || isintconst(exp->left)) && (isconstaddress(exp->right) || isintconst(exp->right));
-        case ExpressionNode::global:
-        case ExpressionNode::pc:
-        case ExpressionNode::labcon:
+        case ExpressionNode::global_:
+        case ExpressionNode::pc_:
+        case ExpressionNode::labcon_:
             return true;
-        case ExpressionNode::func:
+        case ExpressionNode::func_:
             return !exp->v.func->ascall;
-        case ExpressionNode::threadlocal:
+        case ExpressionNode::threadlocal_:
         default:
             return false;
     }
@@ -1942,34 +1942,34 @@ static TYPE* inttype(BasicType t1)
     {
         case BasicType::char_:
             return &stdchar;
-        case BasicType::unsigned_char:
+        case BasicType::unsigned_char_:
             return &stdunsignedchar;
-        case BasicType::signed_char:
+        case BasicType::signed_char_:
             return &stdsignedchar;
         case BasicType::short_:
             return &stdshort;
-        case BasicType::unsigned_short:
+        case BasicType::unsigned_short_:
             return &stdunsignedshort;
         case BasicType::wchar_t_:
             return &stdwidechar;
         default:
         case BasicType::int_:
-        case BasicType::inative:
+        case BasicType::inative_:
             return &stdint;
         case BasicType::char16_t_:
             return &stdchar16t;
         case BasicType::char32_t_:
             return &stdchar32t;
         case BasicType::unsigned_:
-        case BasicType::unative:
+        case BasicType::unative_:
             return &stdunsigned;
         case BasicType::long_:
             return &stdlong;
-        case BasicType::unsigned_long:
+        case BasicType::unsigned_long_:
             return &stdunsignedlong;
-        case BasicType::long_long:
+        case BasicType::long_long_:
             return &stdlonglong;
-        case BasicType::unsigned_long_long:
+        case BasicType::unsigned_long_long_:
             return &stdunsignedlonglong;
     }
 }
@@ -1982,9 +1982,9 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
  */
 {
     int isctp1, isctp2;
-    if (tp1->type == BasicType::any)
+    if (tp1->type == BasicType::any_)
         return tp1;
-    if (tp2->type == BasicType::any)
+    if (tp2->type == BasicType::any_)
         return tp2;
     if (isvoid(tp1) || isvoid(tp2) || ismsil(tp1) || ismsil(tp2))
     {
@@ -2007,10 +2007,10 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
     if (tp1->type >= BasicType::float_ || tp2->type >= BasicType::float_)
     {
         TYPE* tp = nullptr;
-        int isim1 = tp1->type >= BasicType::float__imaginary && tp1->type <= BasicType::long_double_imaginary;
-        int isim2 = tp2->type >= BasicType::float__imaginary && tp2->type <= BasicType::long_double_imaginary;
-        int iscx1 = tp1->type >= BasicType::float__complex && tp1->type <= BasicType::long_double_complex;
-        int iscx2 = tp2->type >= BasicType::float__complex && tp2->type <= BasicType::long_double_complex;
+        int isim1 = tp1->type >= BasicType::float__imaginary_ && tp1->type <= BasicType::long_double_imaginary_;
+        int isim2 = tp2->type >= BasicType::float__imaginary_ && tp2->type <= BasicType::long_double_imaginary_;
+        int iscx1 = tp1->type >= BasicType::float__complex_ && tp1->type <= BasicType::long_double_complex_;
+        int iscx2 = tp2->type >= BasicType::float__complex_ && tp2->type <= BasicType::long_double_complex_;
         if (iscx1)
         {
             if (iscx2)
@@ -2022,14 +2022,14 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
             }
             else if (isim2)
             {
-                if ((int)tp1->type - (int)BasicType::float__complex >= (int)tp2->type - (int)BasicType::float__imaginary)
+                if ((int)tp1->type - (int)BasicType::float__complex_ >= (int)tp2->type - (int)BasicType::float__imaginary_)
                     tp = tp1;
                 else
                     tp = &stddoublecomplex;
             }
             else if (tp2->type >= BasicType::float_)
             {
-                if ((int)tp1->type - (int)BasicType::float__complex >= (int)tp2->type - (int)BasicType::float_)
+                if ((int)tp1->type - (int)BasicType::float__complex_ >= (int)tp2->type - (int)BasicType::float_)
                     tp = tp1;
                 else
                     tp = &stddoublecomplex;
@@ -2050,14 +2050,14 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
             }
             else if (isim1)
             {
-                if ((int)tp1->type - (int)BasicType::float__imaginary <= (int)tp2->type - (int)BasicType::float__complex)
+                if ((int)tp1->type - (int)BasicType::float__imaginary_ <= (int)tp2->type - (int)BasicType::float__complex_)
                     tp = tp2;
                 else
                     tp = &stddoublecomplex;
             }
             else if (tp2->type >= BasicType::float_)
             {
-                if ((int)tp1->type - (int)BasicType::float_ <= (int)tp2->type - (int)BasicType::float__complex)
+                if ((int)tp1->type - (int)BasicType::float_ <= (int)tp2->type - (int)BasicType::float__complex_)
                     tp = tp2;
                 else
                     tp = &stddoublecomplex;
@@ -2078,7 +2078,7 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
             }
             else if (tp2->type >= BasicType::float_)
             {
-                if ((int)tp1->type - (int)BasicType::float__imaginary >= (int)tp2->type - (int)BasicType::float_)
+                if ((int)tp1->type - (int)BasicType::float__imaginary_ >= (int)tp2->type - (int)BasicType::float_)
                     tp = tp1;
                 else
                     tp = &stddoubleimaginary;
@@ -2099,7 +2099,7 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
             }
             else if (tp1->type >= BasicType::float_)
             {
-                if ((int)tp1->type - (int)BasicType::float_ <= (int)tp2->type - (int)BasicType::float__imaginary)
+                if ((int)tp1->type - (int)BasicType::float_ <= (int)tp2->type - (int)BasicType::float__imaginary_)
                     tp = tp2;
                 else
                     tp = &stddoubleimaginary;
@@ -2120,9 +2120,9 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
             tp = tp1;
         else
             tp = tp2;
-        if (exp1 && tp->type != tp1->type && exp1 && tp2->type != BasicType::pointer)
+        if (exp1 && tp->type != tp1->type && exp1 && tp2->type != BasicType::pointer_)
             cast(tp, exp1);
-        if (exp2 && tp->type != tp2->type && exp1 && tp1->type != BasicType::pointer)
+        if (exp2 && tp->type != tp2->type && exp1 && tp1->type != BasicType::pointer_)
             cast(tp, exp2);
         return tp;
     }
@@ -2171,13 +2171,13 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
     { /* have a pointer or other exceptional case*/
         if (tp1->type == BasicType::void_ && tp2->type == BasicType::void_)
             return tp1;
-        if (tp1->type <= BasicType::unsigned_long_long && ispointer(tp2))
+        if (tp1->type <= BasicType::unsigned_long_long_ && ispointer(tp2))
         {
             if (!ispointer(tp1))
                 cast(tp2, exp1);
             return tp2;
         }
-        if (tp2->type <= BasicType::unsigned_long_long && ispointer(tp1))
+        if (tp2->type <= BasicType::unsigned_long_long_ && ispointer(tp1))
         {
             if (!ispointer(tp2))
                 cast(tp1, exp2);
@@ -2209,7 +2209,7 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
 EXPRESSION* RemoveAutoIncDec(EXPRESSION* exp)
 {
     EXPRESSION* newExp;
-    if (exp->preincdec || exp->type == ExpressionNode::auto_inc || exp->type == ExpressionNode::auto_dec)
+    if (exp->preincdec || exp->type == ExpressionNode::auto_inc_ || exp->type == ExpressionNode::auto_dec_)
         return RemoveAutoIncDec(exp->left);
     newExp = Allocate<EXPRESSION>();
     *newExp = *exp;
@@ -2231,7 +2231,7 @@ EXPRESSION* EvaluateDest(EXPRESSION*exp, TYPE* tp)
         {
             EXPRESSION* c = stk.top();
             stk.pop();
-            if (c->type == ExpressionNode::func)
+            if (c->type == ExpressionNode::func_)
             {
                 doit = true;
                 break;
@@ -2246,7 +2246,7 @@ EXPRESSION* EvaluateDest(EXPRESSION*exp, TYPE* tp)
             auto exp2 = exp->left;
             result = anonymousVar(StorageClass::auto_, &stdpointer);
             deref(&stdpointer, &result);
-            exp2 = exprNode(ExpressionNode::assign, result, exp2);
+            exp2 = exprNode(ExpressionNode::assign_, result, exp2);
             exp2 = exprNode(exp->type, exp2, nullptr);
             result = exprNode(exp->type, result, nullptr);
             result = exprNode(ExpressionNode::void_, exp2, result);

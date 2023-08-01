@@ -133,7 +133,7 @@ CmdSwitchString prm_pipe(SwitchParser, 'P', ';');
 CmdSwitchCombineString prm_output_def_file(SwitchParser, 0, 0, {"output-def"});
 CmdSwitchCombineString prm_output_import_library_file(SwitchParser, 0, 0, {"out-implib"});
 CmdSwitchCombineString prm_flags(SwitchParser, 'f', ';');
-CmdSwitchBool prm_export_all(SwitchParser, 0, false, {"export-all-symbols"});
+CmdSwitchBool prm_dllexportall(SwitchParser, 0, false, {"export-all-symbols"});
 
 CmdSwitchBool prm_msil_noextensions(SwitchParser, 'd');
 CmdSwitchString prm_msil_strongnamekeyfile(SwitchParser, 'K');
@@ -1206,7 +1206,7 @@ int ccinit(int argc, char* argv[])
         Optimizer::architecture = ARCHITECTURE_X86;
     }
     if (!init_backend())
-        Utils::Fatal("Could not initialize back Keyword::_end");
+        Utils::Fatal("Could not initialize back Keyword::end_");
 
     static char temp[260];
     strcpy(temp, argv[0]);
@@ -1240,7 +1240,7 @@ int ccinit(int argc, char* argv[])
     /* parse the environment and command line */
     int ecnt = 0;
     char* eargs[200];
-    /* initialize back Keyword::_end */
+    /* initialize back Keyword::end_ */
     if (prm_assemble.GetExists())
     {
         Optimizer::cparams.prm_asmfile = true;

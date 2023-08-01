@@ -115,7 +115,7 @@ extern CmdSwitchCombineString prm_CPPsysinclude;
 extern CmdSwitchCombineString prm_libpath;
 extern CmdSwitchString prm_pipe;
 extern CmdSwitchCombineString prm_output_def_file;
-extern CmdSwitchBool prm_export_all;
+extern CmdSwitchBool prm_dllexportall;
 
 extern CmdSwitchBool prm_msil_noextensions;
 extern CmdSwitchString prm_msil_strongnamekeyfile;

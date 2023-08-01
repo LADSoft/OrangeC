@@ -149,8 +149,8 @@ BasicType Importer::translatedTypes[] = {
     ///** type is an mvar
     BasicType::void_,
     /* below this is various CIL types*/
-    BasicType::void_, BasicType::bool_, BasicType::wchar_t_, BasicType::char_, BasicType::unsigned_char, BasicType::short_, BasicType::unsigned_short, BasicType::int_, BasicType::unsigned_, BasicType::long_long,
-    BasicType::unsigned_long_long, BasicType::inative, BasicType::unative, BasicType::float_, BasicType::double_, BasicType::__object, BasicType::__string
+    BasicType::void_, BasicType::bool_, BasicType::wchar_t_, BasicType::char_, BasicType::unsigned_char_, BasicType::short_, BasicType::unsigned_short_, BasicType::int_, BasicType::unsigned_, BasicType::long_long_,
+    BasicType::unsigned_long_long_, BasicType::inative_, BasicType::unative_, BasicType::float_, BasicType::double_, BasicType::object_, BasicType::string_
 
 };
 
@@ -164,7 +164,7 @@ TYPE* Importer::TranslateType(Type* in)
         {
             if (in->ArrayLevel() > 1)  // this is because with the current version of dotnetpelib we don't know the index ranges
                 return NULL;
-            *last = MakeType(BasicType::pointer);
+            *last = MakeType(BasicType::pointer_);
             (*last)->array = true;
             (*last)->msil = true;  // arrays are always MSIL when imported from an assembly
 
@@ -192,18 +192,18 @@ TYPE* Importer::TranslateType(Type* in)
                 return nullptr;
             (*last) = MakeType(tp);
             (*last)->size = 1;
-            if (in->ArrayLevel() || tp == BasicType::__string || tp == BasicType::__object)
+            if (in->ArrayLevel() || tp == BasicType::string_ || tp == BasicType::object_)
             {
                 (*last)->msil = true;
             }
         }
         for (int i = 0; i < in->PointerLevel(); i++)
         {
-            rv = MakeType(BasicType::pointer, rv);
+            rv = MakeType(BasicType::pointer_, rv);
         }
         if (in->ByRef())
         {
-            rv = MakeType(BasicType::lref, rv);
+            rv = MakeType(BasicType::lref_, rv);
         }
     }
     UpdateRootTypes(rv);
@@ -303,7 +303,7 @@ bool Importer::EnterClass(const Class* cls)
         {
             sp = SymAlloc();
             sp->name = litlate((char*)cls->Name().c_str());
-            sp->sb->storage_class = StorageClass::type;
+            sp->sb->storage_class = StorageClass::type_;
             if (typeid(*cls) == typeid(Enum))
             {
                 sp->tp = MakeType(BasicType::enum_, &stdint);
@@ -419,7 +419,7 @@ void Importer::InsertFuncs(SYMBOL* sp, SYMBOL* base)
     for (auto sym : * base->tp->syms)
     {
         // inserts an overload list, if there is not already an overload list for this func
-        if (sym->sb->storage_class == StorageClass::overloads)
+        if (sym->sb->storage_class == StorageClass::overloads_)
         {
             bool found = false;
             for (auto sp1 : *sp->tp->syms)
@@ -452,7 +452,7 @@ bool Importer::EnterMethod(const Method* method)
             structures_.back()->sb->trivialCons = false;
             structures_.back()->sb->hasUserCons = true;
         }
-        TYPE* tp = MakeType(BasicType::func, TranslateType(method->Signature()->ReturnType()));
+        TYPE* tp = MakeType(BasicType::func_, TranslateType(method->Signature()->ReturnType()));
         std::vector<TYPE*> args;
         std::vector<std::string> names;
         if (tp->btp)
@@ -498,7 +498,7 @@ bool Importer::EnterMethod(const Method* method)
             else if (!(method->Signature()->Flags() & MethodSignature::InstanceFlag))
                 sp->sb->storage_class = StorageClass::static_;
             else
-                sp->sb->storage_class = StorageClass::member;
+                sp->sb->storage_class = StorageClass::member_;
             sp->tp = tp;
             sp->tp->sp = sp;
             sp->sb->msil = GetName(method->GetContainer(), method->Signature()->Name());
@@ -512,13 +512,13 @@ bool Importer::EnterMethod(const Method* method)
                 args.push_back(MakeType(BasicType::void_));
                 names.push_back("$$void");
             }
-            if (sp->sb->storage_class == StorageClass::member || sp->sb->storage_class == StorageClass::virtual_)
+            if (sp->sb->storage_class == StorageClass::member_ || sp->sb->storage_class == StorageClass::virtual_)
             {
                 SYMBOL* sp1 = SymAlloc();
                 sp1->name = litlate("$$this");
-                sp1->sb->storage_class = StorageClass::parameter;
+                sp1->sb->storage_class = StorageClass::parameter_;
                 sp1->sb->thisPtr = true;
-                sp1->tp = MakeType(BasicType::pointer, structures_.back()->tp);
+                sp1->tp = MakeType(BasicType::pointer_, structures_.back()->tp);
                 sp1->sb->declfile = sp1->sb->origdeclfile = "[import]";
                 sp1->sb->access = AccessLevel::public_;
                 sp1->sb->parent = sp;
@@ -529,7 +529,7 @@ bool Importer::EnterMethod(const Method* method)
             {
                 SYMBOL* sp1 = SymAlloc();
                 sp1->name = litlate((char*)names[i].c_str());
-                sp1->sb->storage_class = StorageClass::parameter;
+                sp1->sb->storage_class = StorageClass::parameter_;
                 sp1->tp = args[i];
                 sp1->sb->declfile = sp1->sb->origdeclfile = "[import]";
                 sp1->sb->access = AccessLevel::public_;
@@ -541,8 +541,8 @@ bool Importer::EnterMethod(const Method* method)
             {
                 SYMBOL* sp1 = SymAlloc();
                 sp1->name = litlate((char*)"$$vararg");
-                sp1->sb->storage_class = StorageClass::parameter;
-                sp1->tp = MakeType(BasicType::ellipse);
+                sp1->sb->storage_class = StorageClass::parameter_;
+                sp1->tp = MakeType(BasicType::ellipse_);
                 sp1->sb->declfile = sp1->sb->origdeclfile = "[import]";
                 sp1->sb->access = AccessLevel::public_;
                 sp1->sb->parent = sp;
@@ -554,8 +554,8 @@ bool Importer::EnterMethod(const Method* method)
             SYMBOL* funcs = structures_.back()->tp->syms->Lookup((char*)method->Signature()->Name().c_str());
             if (!funcs)
             {
-                TYPE* tp = MakeType(BasicType::aggregate);
-                funcs = makeID(StorageClass::overloads, tp, 0, litlate((char*)method->Signature()->Name().c_str()));
+                TYPE* tp = MakeType(BasicType::aggregate_);
+                funcs = makeID(StorageClass::overloads_, tp, 0, litlate((char*)method->Signature()->Name().c_str()));
                 funcs->sb->parentClass = structures_.back();
                 tp->sp = funcs;
                 SetLinkerNames(funcs, Linkage::cdecl_);
@@ -568,7 +568,7 @@ bool Importer::EnterMethod(const Method* method)
                 funcs->tp->syms->Add(sp);
                 sp->sb->overloadName = funcs;
             }
-            else if (funcs->sb->storage_class == StorageClass::overloads)
+            else if (funcs->sb->storage_class == StorageClass::overloads_)
             {
                 funcs->tp->syms->insertOverload(sp);
                 sp->sb->overloadName = funcs;
@@ -593,7 +593,7 @@ bool Importer::EnterField(const Field* field)
             sp->name = litlate((char*)field->Name().c_str());
             if (structures_.back()->tp->type == BasicType::enum_)
             {
-                sp->sb->storage_class = StorageClass::enumconstant;
+                sp->sb->storage_class = StorageClass::enumconstant_;
                 tp->scoped = tp->enumConst = true;
                 sp->sb->value.i = field->EnumValue();
             }
@@ -602,7 +602,7 @@ bool Importer::EnterField(const Field* field)
                 if (field->Flags().Flags() & Qualifiers::Static)
                     sp->sb->storage_class = StorageClass::static_;
                 else
-                    sp->sb->storage_class = StorageClass::member;
+                    sp->sb->storage_class = StorageClass::member_;
                 sp->sb->msil = GetName(field->GetContainer(), field->Name());
             }
             sp->tp = tp;
@@ -631,7 +631,7 @@ bool Importer::EnterProperty(const Property* property)
             if (!property->Instance())
                 sp->sb->storage_class = StorageClass::static_;
             else
-                sp->sb->storage_class = StorageClass::member;
+                sp->sb->storage_class = StorageClass::member_;
             sp->tp = tp;
             sp->sb->parentClass = structures_.back();
             sp->sb->declfile = sp->sb->origdeclfile = "[import]";

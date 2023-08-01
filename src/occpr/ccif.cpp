@@ -88,7 +88,7 @@ const char* GetSymName(SYMBOL* sp, SYMBOL* parent)
     {
         mangleNameSpaces(buf, sp);
     }
-    else if (sp->sb->storage_class == StorageClass::localstatic || sp->sb->storage_class == StorageClass::auto_ || sp->sb->storage_class == StorageClass::parameter)
+    else if (sp->sb->storage_class == StorageClass::localstatic_ || sp->sb->storage_class == StorageClass::auto_ || sp->sb->storage_class == StorageClass::parameter_)
     {
         sprintf(buf, "_%s", sp->name);
     }
@@ -130,7 +130,7 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
         }
         for (auto st : *basetype(sym->tp)->syms)
         {
-            if (st->sb->storage_class == StorageClass::overloads)
+            if (st->sb->storage_class == StorageClass::overloads_)
             {
                 order = WriteStructMembers(st, parent, struct_id, file_id, order, base, access);
             }
@@ -143,7 +143,7 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
                 TYPE* tp = st->tp;
                 sqlite3_int64 id;
                 int flags = (int)imin(st->sb->access, access) & 15;
-                if (st->sb->storage_class == StorageClass::static_ || st->sb->storage_class == StorageClass::external)
+                if (st->sb->storage_class == StorageClass::static_ || st->sb->storage_class == StorageClass::external_)
                     flags |= 16;
                 if (ismemberdata(st))
                     flags |= 32;
@@ -208,7 +208,7 @@ static void DumpStructs(void)
     while (item)
     {
         SYMBOL* sym = (SYMBOL*)item->data;
-        if (sym->sb->storage_class != StorageClass::label && sym->tp && istype(sym) && isstructured(sym->tp) &&
+        if (sym->sb->storage_class != StorageClass::label_ && sym->tp && istype(sym) && isstructured(sym->tp) &&
             (!sym->tp->btp || sym->tp->btp->type != BasicType::typedef_))  // DAL fix
         {
             sqlite3_int64 struct_id;
@@ -221,7 +221,7 @@ static void DumpStructs(void)
     while (item)
     {
         SYMBOL* sym = (SYMBOL*)item->data;
-        if (sym->sb->storage_class != StorageClass::label && sym->tp && istype(sym) && isstructured(sym->tp) &&
+        if (sym->sb->storage_class != StorageClass::label_ && sym->tp && istype(sym) && isstructured(sym->tp) &&
             sym->sb->storage_class != StorageClass::typedef_ && sym->tp->syms)
         {
             sqlite3_int64 struct_id = basetype(sym->tp)->sp->sb->ccStructId, file_id;
@@ -245,35 +245,35 @@ static void DumpSymbolType(SYMBOL* sym)
     else
         switch (sym->sb->storage_class)
         {
-            case StorageClass::overloads:
+            case StorageClass::overloads_:
                 return;
             case StorageClass::typedef_:
                 type = ST_TYPEDEF;
                 break;
             case StorageClass::namespace_:
-            case StorageClass::type:
+            case StorageClass::type_:
                 type = ST_TAG;
                 break;
             case StorageClass::auto_:
             case StorageClass::register_:
                 type = ST_AUTO;
                 break;
-            case StorageClass::parameter:
+            case StorageClass::parameter_:
                 type = ST_PARAMETER;
                 break;
-            case StorageClass::localstatic:
+            case StorageClass::localstatic_:
                 type = ST_LOCALSTATIC;
                 break;
             case StorageClass::static_:
                 type = ST_STATIC;
                 break;
-            case StorageClass::global:
+            case StorageClass::global_:
                 type = ST_GLOBAL;
                 break;
-            case StorageClass::external:
+            case StorageClass::external_:
                 type = ST_EXTERN;
                 break;
-            case StorageClass::label:
+            case StorageClass::label_:
                 type = ST_LABEL;
                 break;
             default:
@@ -305,8 +305,8 @@ static void DumpNamespace(SYMBOL* sym)
 static void DumpSymbol(SYMBOL* sym)
 {
     DumpSymbolType(sym);
-    if (sym->sb->storage_class != StorageClass::label && sym->tp && (!istype(sym) || sym->sb->storage_class == StorageClass::typedef_) &&
-        sym->sb->storage_class != StorageClass::overloads && sym->tp->type != BasicType::any)
+    if (sym->sb->storage_class != StorageClass::label_ && sym->tp && (!istype(sym) || sym->sb->storage_class == StorageClass::typedef_) &&
+        sym->sb->storage_class != StorageClass::overloads_ && sym->tp->type != BasicType::any_)
     {
         SYMBOL* declsym;
         char type_name[100000];
@@ -372,7 +372,7 @@ static void DumpSymbol(SYMBOL* sym)
                 int order = 1;
                 auto it = sym->tp->syms->begin();
                 auto ite = sym->tp->syms->end();
-                for ( ; it != ite && ((*it)->sb->storage_class == StorageClass::parameter) ; ++it)
+                for ( ; it != ite && ((*it)->sb->storage_class == StorageClass::parameter_) ; ++it)
                 {
                     SYMBOL* st = *it;
                     const char* argName = GetSymName(st, st);

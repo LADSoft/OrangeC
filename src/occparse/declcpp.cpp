@@ -117,7 +117,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                             {
                                 FUNCTIONCALL fcall = {};
                                 TYPE* tp = nullptr;
-                                EXPRESSION* exp = intNode(ExpressionNode::c_i, 0);
+                                EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
                                 SYMBOL* sp = func->sb->overloadName;
                                 fcall.arguments = initListListFactory.CreateList();
                                 for (auto sym : *basetype(func->tp)->syms)
@@ -159,7 +159,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                                 thunks[count].entry = entry;
                                 if (func->sb->attribs.inheritable.linkage2 == Linkage::import_)
                                 {
-                                    EXPRESSION* exp = varNode(ExpressionNode::pc, func);
+                                    EXPRESSION* exp = varNode(ExpressionNode::pc_, func);
                                     thunkForImportTable(&exp);
                                     thunks[count].func = exp->v.sp;
                                 }
@@ -177,7 +177,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                             {
                                 if (func->sb->attribs.inheritable.linkage2 == Linkage::import_)
                                 {
-                                    EXPRESSION* exp = varNode(ExpressionNode::pc, func);
+                                    EXPRESSION* exp = varNode(ExpressionNode::pc_, func);
                                     thunkForImportTable(&exp);
                                     Optimizer::genref(Optimizer::SymbolManager::Get(exp->v.sp), 0);
                                 }
@@ -400,9 +400,9 @@ static int allocVTabSpace(std::list<VTABENTRY*>* vtab, int offset)
                 if (vt->virtuals)
                     for (auto vf : *vt->virtuals)
                     {
-                        offset += getSize(BasicType::pointer);
+                        offset += getSize(BasicType::pointer_);
                     }
-                offset += 2 * getSize(BasicType::pointer);
+                offset += 2 * getSize(BasicType::pointer_);
             }
             offset = allocVTabSpace(vt->children, offset);
         }
@@ -526,7 +526,7 @@ static void checkExceptionSpecification(SYMBOL* sp)
 {
     for (auto sym : *basetype(sp->tp)->syms)
     {
-        if (sym->sb->storage_class == StorageClass::overloads)
+        if (sym->sb->storage_class == StorageClass::overloads_)
         {
             for (auto sym1 : *basetype(sym->tp)->syms)
             {
@@ -600,7 +600,7 @@ void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos
         for (auto cur : *sym->tp->syms)
         {
             std::list<VTABENTRY*> temp;
-            if (cur->sb->storage_class == StorageClass::overloads)
+            if (cur->sb->storage_class == StorageClass::overloads_)
             {
                 for (auto cur1 : *cur->tp->syms)
                 {
@@ -655,7 +655,7 @@ void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos
             {
                 func->sb->vtaboffset = ofs;
             }
-            ofs += getSize(BasicType::pointer);
+            ofs += getSize(BasicType::pointer_);
         }
     }
 }
@@ -744,7 +744,7 @@ void calculateVirtualBaseOffsets(SYMBOL* sym)
             {
                 int align;
                 BASECLASS* base;
-                align = getBaseAlign(BasicType::pointer);
+                align = getBaseAlign(BasicType::pointer_);
                 sym->sb->attribs.inheritable.structAlign = imax(sym->sb->attribs.inheritable.structAlign, align);
                 if (align != 1)
                 {
@@ -763,7 +763,7 @@ void calculateVirtualBaseOffsets(SYMBOL* sym)
                             break;
                         }
                 vbase->pointerOffset = sym->tp->size;
-                sym->tp->size += getSize(BasicType::pointer);
+                sym->tp->size += getSize(BasicType::pointer_);
             }
         }
     }
@@ -837,15 +837,15 @@ void deferredCompileOne(SYMBOL* cur)
         }
         dontRegisterTemplate++;
         lex = SetAlternateLex(cur->sb->deferredCompile);
-        if (MATCHKW(lex, Keyword::___try) || MATCHKW(lex, Keyword::_colon))
+        if (MATCHKW(lex, Keyword::try_) || MATCHKW(lex, Keyword::colon_))
         {
-            bool viaTry = MATCHKW(lex, Keyword::___try);
+            bool viaTry = MATCHKW(lex, Keyword::try_);
             if (viaTry)
             {
                 cur->sb->hasTry = true;
                 lex = getsym();
             }
-            if (MATCHKW(lex, Keyword::_colon))
+            if (MATCHKW(lex, Keyword::colon_))
             {
                 lex = getsym();
                 cur->sb->memberInitializers = GetMemberInitializers(&lex, nullptr, cur);
@@ -927,16 +927,16 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
                 sym2->sb->stackblock = !isref(arg->tp);
                 lex = initialize(lex, theCurrentFunc, sym2, StorageClass::auto_, false, false, 0); /* also reserves space */
                 arg->sb->init = sym2->sb->init;
-                if (arg->sb->init->front()->exp->type == ExpressionNode::thisref)
+                if (arg->sb->init->front()->exp->type == ExpressionNode::thisref_)
                 {
                     EXPRESSION** expr = &arg->sb->init->front()->exp->left->v.func->thisptr;
-                    if ((*expr)->type == ExpressionNode::add && isconstzero(&stdint, (*expr)->right))
+                    if ((*expr)->type == ExpressionNode::add_ && isconstzero(&stdint, (*expr)->right))
                         arg->sb->init->front()->exp->v.t.thisptr = (*expr) = (*expr)->left;
                 }
             }
             else
             {
-                lex = initialize(lex, theCurrentFunc, arg, StorageClass::member, false, false, 0);
+                lex = initialize(lex, theCurrentFunc, arg, StorageClass::member_, false, false, 0);
             }
             SetAlternateLex(nullptr);
             arg->sb->deferredCompile = nullptr;
@@ -972,7 +972,7 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
     //    dontRegisterTemplate++;
     for (auto sp : *cur->tp->syms)
     {
-        if (sp->sb->storage_class == StorageClass::overloads)
+        if (sp->sb->storage_class == StorageClass::overloads_)
         {
             if (templateNestingCount != 1 || instantiatingTemplate)
             {
@@ -994,7 +994,7 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
                                         tp2 = basetype(tp2)->btp;
                                     if (!isstructured(tp2))
                                     {
-                                        lex = initialize(lex, theCurrentFunc, sp2, StorageClass::member, false, false, 0);
+                                        lex = initialize(lex, theCurrentFunc, sp2, StorageClass::member_, false, false, 0);
                                         sp2->sb->deferredCompile = nullptr;
                                     }
                                     SetAlternateLex(nullptr);
@@ -1037,14 +1037,14 @@ void deferredInitializeStructMembers(SYMBOL* cur)
         {
             RecalcArraySize(sp->tp);
         }
-        if (sp->sb->storage_class == StorageClass::overloads)
+        if (sp->sb->storage_class == StorageClass::overloads_)
         {
         }
         else if (sp->sb->deferredCompile && !sp->sb->init)
         {
             lex = SetAlternateLex(sp->sb->deferredCompile);
             sp->sb->deferredCompile = nullptr;
-            lex = initialize(lex, theCurrentFunc, sp, StorageClass::member, false, false, 0);
+            lex = initialize(lex, theCurrentFunc, sp, StorageClass::member_, false, false, 0);
             SetAlternateLex(nullptr);
         }
     }
@@ -1127,14 +1127,14 @@ void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
             errorstr(ERR_INVALID_STORAGE_CLASS, "static");
         if (sym != cur && !strcmp(sym->name, cur->name))
         {
-            if (sym->sb->hasUserCons || cur->sb->storage_class == StorageClass::static_ || cur->sb->storage_class == StorageClass::overloads ||
-                cur->sb->storage_class == StorageClass::const_ || cur->sb->storage_class == StorageClass::type)
+            if (sym->sb->hasUserCons || cur->sb->storage_class == StorageClass::static_ || cur->sb->storage_class == StorageClass::overloads_ ||
+                cur->sb->storage_class == StorageClass::const_ || cur->sb->storage_class == StorageClass::type_)
             {
                 errorsym(ERR_MEMBER_SAME_NAME_AS_CLASS, sym);
                 break;
             }
         }
-        if (cur->sb->storage_class == StorageClass::overloads)
+        if (cur->sb->storage_class == StorageClass::overloads_)
         {
             for (auto cur1 : *cur->tp->syms)
             {
@@ -1156,7 +1156,7 @@ bool usesVTab(SYMBOL* sym)
     BASECLASS* base;
     for (auto cur : *sym->tp->syms)
     {
-        if (cur->sb->storage_class == StorageClass::overloads)
+        if (cur->sb->storage_class == StorageClass::overloads_)
         {
             for (auto sp : *cur->tp->syms)
             {
@@ -1220,10 +1220,10 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
     do
     {
         ParseAttributeSpecifiers(&lex, funcsp, true);
-        if (MATCHKW(lex, Keyword::_decltype))
+        if (MATCHKW(lex, Keyword::decltype_))
         {
             TYPE* tp = nullptr;
-            lex = get_type_id(lex, &tp, funcsp, StorageClass::type, true, true, false);
+            lex = get_type_id(lex, &tp, funcsp, StorageClass::type_, true, true, false);
             if (!tp)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -1238,18 +1238,18 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                 if (bc)
                     baseClasses->push_back(bc);
             }
-            done = !MATCHKW(lex, Keyword::_comma);
+            done = !MATCHKW(lex, Keyword::comma_);
             if (!done)
                 lex = getsym();
         }
-        else if (MATCHKW(lex, Keyword::_classsel) || ISID(lex))
+        else if (MATCHKW(lex, Keyword::classsel_) || ISID(lex))
         {
             char name[512];
             name[0] = 0;
             if (ISID(lex))
                 strcpy(name, lex->data->value.s.a);
             bcsym = nullptr;
-            lex = nestedSearch(lex, &bcsym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global, false, false);
+            lex = nestedSearch(lex, &bcsym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, false, false);
             if (bcsym && bcsym->sb && bcsym->sb->storage_class == StorageClass::typedef_)
             {
                 if (!bcsym->sb->templateLevel)
@@ -1260,7 +1260,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                     {
                         bcsym = tp->sp;
                     }
-                    else if (tp->type != BasicType::templateselector)
+                    else if (tp->type != BasicType::templateselector_)
                     {
                         bcsym = nullptr;
                     }
@@ -1268,11 +1268,11 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
             }
             lex = getsym();
         restart:
-            if (bcsym && bcsym->tp->type == BasicType::templateselector)
+            if (bcsym && bcsym->tp->type == BasicType::templateselector_)
             {
                 if (!templateNestingCount)
                     error(ERR_STRUCTURED_TYPE_EXPECTED_IN_TEMPLATE_PARAMETER);
-                if (MATCHKW(lex, Keyword::_lt))
+                if (MATCHKW(lex, Keyword::lt_))
                 {
                     inTemplateSpecialization++;
                     std::list<TEMPLATEPARAMPAIR>* nullLst;
@@ -1282,9 +1282,9 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                 bcsym = nullptr;
             }
             else if (bcsym && (bcsym->sb && bcsym->sb->templateLevel ||
-                               bcsym->tp->type == BasicType::templateparam && bcsym->tp->templateParam->second->type == Keyword::_template))
+                               bcsym->tp->type == BasicType::templateparam_ && bcsym->tp->templateParam->second->type == Keyword::template_))
             {
-                if (bcsym->tp->type == BasicType::templateparam)
+                if (bcsym->tp->type == BasicType::templateparam_)
                 {
                     auto v = bcsym->tp->templateParam->second->byTemplate.val;
                     if (v)
@@ -1300,7 +1300,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                         inTemplateSpecialization--;
                         currentAccess = defaultAccess;
                         isvirtual = false;
-                        done = !MATCHKW(lex, Keyword::_comma);
+                        done = !MATCHKW(lex, Keyword::comma_);
                         if (!done)
                             lex = getsym();
                         goto endloop;
@@ -1308,7 +1308,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                 }
                 if (bcsym->sb->storage_class == StorageClass::typedef_)
                 {
-                    if (MATCHKW(lex, Keyword::_lt))
+                    if (MATCHKW(lex, Keyword::lt_))
                     {
                         std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
                         SYMBOL* sp1;
@@ -1323,11 +1323,11 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                                 bcsym->tp = PerformDeferredInitialization(bcsym->tp, funcsp);
                             else
                                 bcsym->tp = SynthesizeType(bcsym->tp, nullptr, false);
-                            if (templateNestingCount && bcsym->tp->type == BasicType::any)
+                            if (templateNestingCount && bcsym->tp->type == BasicType::any_)
                             {
                                 currentAccess = defaultAccess;
                                 isvirtual = false;
-                                done = !MATCHKW(lex, Keyword::_comma);
+                                done = !MATCHKW(lex, Keyword::comma_);
                                 if (!done)
                                     lex = getsym();
                                 continue;
@@ -1342,13 +1342,13 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                 else
                 {
                     std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-                    if (MATCHKW(lex, Keyword::_lt))
+                    if (MATCHKW(lex, Keyword::lt_))
                     {
                         int i;
                         inTemplateSpecialization++;
                         lex = GetTemplateArguments(lex, funcsp, bcsym, &lst);
                         inTemplateSpecialization--;
-                        if (MATCHKW(lex, Keyword::_ellipse))
+                        if (MATCHKW(lex, Keyword::ellipse_))
                         {
                             if (templateNestingCount)
                             {
@@ -1444,7 +1444,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                             lex = getsym();
                             currentAccess = defaultAccess;
                             isvirtual = false;
-                            done = !MATCHKW(lex, Keyword::_comma);
+                            done = !MATCHKW(lex, Keyword::comma_);
                             if (!done)
                                 lex = getsym();
                             continue;
@@ -1462,13 +1462,13 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                     }
                 }
             }
-            else if (MATCHKW(lex, Keyword::_lt))
+            else if (MATCHKW(lex, Keyword::lt_))
             {
                 errorstr(ERR_NOT_A_TEMPLATE, bcsym ? bcsym->name : name[0] ? name : "unknown");
             }
             if (bcsym && bcsym->tp->templateParam && bcsym->tp->templateParam->second->packed)
             {
-                if (bcsym->tp->templateParam->second->type != Keyword::_typename)
+                if (bcsym->tp->templateParam->second->type != Keyword::typename_)
                     error(ERR_NEED_PACKED_TEMPLATE_OF_TYPE_CLASS);
                 else if (bcsym->tp->templateParam->second->byPack.pack)
                 {
@@ -1486,19 +1486,19 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                         }
                     }
                 }
-                if (!MATCHKW(lex, Keyword::_ellipse))
+                if (!MATCHKW(lex, Keyword::ellipse_))
                     error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
                 else
                     lex = getsym();
                 currentAccess = defaultAccess;
                 isvirtual = false;
-                done = !MATCHKW(lex, Keyword::_comma);
+                done = !MATCHKW(lex, Keyword::comma_);
                 if (!done)
                     lex = getsym();
             }
             else if (bcsym && bcsym->tp->templateParam && !bcsym->tp->templateParam->second->packed)
             {
-                if (bcsym->tp->templateParam->second->type != Keyword::_typename)
+                if (bcsym->tp->templateParam->second->type != Keyword::typename_)
                     error(ERR_CLASS_TEMPLATE_PARAMETER_EXPECTED);
                 else
                 {
@@ -1506,7 +1506,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                     if (tp)
                     {
                         tp = basetype(tp);
-                        if (tp->type == BasicType::templateselector)
+                        if (tp->type == BasicType::templateselector_)
                         {
                             SYMBOL* sym = (*tp->sp->sb->templateSelector)[1].sp;
                             for (int i = 2; i < (*tp->sp->sb->templateSelector).size() && sym; ++i)
@@ -1536,7 +1536,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                         isvirtual = false;
                     }
                 }
-                done = !MATCHKW(lex, Keyword::_comma);
+                done = !MATCHKW(lex, Keyword::comma_);
                 if (!done)
                     lex = getsym();
             }
@@ -1547,7 +1547,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                     baseClasses->push_back(bc);
                 currentAccess = defaultAccess;
                 isvirtual = false;
-                done = !MATCHKW(lex, Keyword::_comma);
+                done = !MATCHKW(lex, Keyword::comma_);
                 if (!done)
                     lex = getsym();
             }
@@ -1561,19 +1561,19 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
         else
             switch (KW(lex))
             {
-                case Keyword::_virtual:
+                case Keyword::virtual_:
                     isvirtual = true;
                     lex = getsym();
                     break;
-                case Keyword::_private:
+                case Keyword::private_:
                     currentAccess = AccessLevel::private_;
                     lex = getsym();
                     break;
-                case Keyword::_protected:
+                case Keyword::protected_:
                     currentAccess = AccessLevel::protected_;
                     lex = getsym();
                     break;
-                case Keyword::_public:
+                case Keyword::public_:
                     currentAccess = AccessLevel::public_;
                     lex = getsym();
                     break;
@@ -1622,11 +1622,11 @@ static bool hasPackedTemplate(TYPE* tp)
     {
         case BasicType::typedef_:
             break;
-        case BasicType::aggregate:
+        case BasicType::aggregate_:
             tp = tp->syms->front()->tp;
             /* fall through */
-        case BasicType::func:
-        case BasicType::ifunc:
+        case BasicType::func_:
+        case BasicType::ifunc_:
             if (hasPackedTemplate(tp->btp))
                 return true;
             if (tp->syms)
@@ -1638,23 +1638,23 @@ static bool hasPackedTemplate(TYPE* tp)
                 }
             }
             break;
-        case BasicType::float__complex:
+        case BasicType::float__complex_:
             break;
-        case BasicType::double__complex:
+        case BasicType::double__complex_:
             break;
-        case BasicType::long_double_complex:
+        case BasicType::long_double_complex_:
             break;
-        case BasicType::float__imaginary:
+        case BasicType::float__imaginary_:
             break;
-        case BasicType::double__imaginary:
+        case BasicType::double__imaginary_:
             break;
-        case BasicType::long_double_imaginary:
+        case BasicType::long_double_imaginary_:
             break;
         case BasicType::float_:
             break;
         case BasicType::double_:
             break;
-        case BasicType::long_double:
+        case BasicType::long_double_:
             break;
         case BasicType::unsigned_:
         case BasicType::int_:
@@ -1663,49 +1663,49 @@ static bool hasPackedTemplate(TYPE* tp)
             break;
         case BasicType::char32_t_:
             break;
-        case BasicType::unsigned_long_long:
-        case BasicType::long_long:
+        case BasicType::unsigned_long_long_:
+        case BasicType::long_long_:
             break;
-        case BasicType::unsigned_long:
+        case BasicType::unsigned_long_:
         case BasicType::long_:
             break;
         case BasicType::wchar_t_:
             break;
-        case BasicType::unsigned_short:
+        case BasicType::unsigned_short_:
         case BasicType::short_:
             break;
-        case BasicType::unsigned_char:
-        case BasicType::signed_char:
+        case BasicType::unsigned_char_:
+        case BasicType::signed_char_:
         case BasicType::char_:
             break;
-        case BasicType::inative:
-        case BasicType::unative:
+        case BasicType::inative_:
+        case BasicType::unative_:
             break;
         case BasicType::bool_:
             break;
-        case BasicType::bit:
+        case BasicType::bit_:
             break;
         case BasicType::void_:
             break;
-        case BasicType::pointer:
-        case BasicType::memberptr:
+        case BasicType::pointer_:
+        case BasicType::memberptr_:
         case BasicType::const_:
         case BasicType::volatile_:
-        case BasicType::lref:
-        case BasicType::rref:
-        case BasicType::lrqual:
-        case BasicType::rrqual:
-        case BasicType::derivedfromtemplate:
+        case BasicType::lref_:
+        case BasicType::rref_:
+        case BasicType::lrqual_:
+        case BasicType::rrqual_:
+        case BasicType::derivedfromtemplate_:
             return hasPackedTemplate(tp->btp);
-        case BasicType::seg:
+        case BasicType::seg_:
             break;
-        case BasicType::ellipse:
+        case BasicType::ellipse_:
             break;
-        case BasicType::any:
+        case BasicType::any_:
             break;
-        case BasicType::__string:
+        case BasicType::string_:
             break;
-        case BasicType::__object:
+        case BasicType::object_:
             break;
         case BasicType::class_:
             break;
@@ -1715,7 +1715,7 @@ static bool hasPackedTemplate(TYPE* tp)
             break;
         case BasicType::enum_:
             break;
-        case BasicType::templateparam:
+        case BasicType::templateparam_:
             return tp->templateParam->second->packed;
         default:
             diag("hasPackedTemplateParam: unknown type");
@@ -1725,7 +1725,7 @@ static bool hasPackedTemplate(TYPE* tp)
 }
 void checkPackedType(SYMBOL* sym)
 {
-    if (sym->sb->storage_class != StorageClass::parameter)
+    if (sym->sb->storage_class != StorageClass::parameter_)
     {
         error(ERR_PACK_SPECIFIER_MUST_BE_USED_IN_PARAMETER);
     }
@@ -1771,7 +1771,7 @@ bool hasPackedExpression(EXPRESSION* exp, bool useAuto)
                 continue;
             }
         }
-        if (exp1->type == ExpressionNode::func)
+        if (exp1->type == ExpressionNode::func_)
         {
             if (useAuto)
             {
@@ -1787,7 +1787,7 @@ bool hasPackedExpression(EXPRESSION* exp, bool useAuto)
             if (exp1->v.func->thisptr && hasPackedExpression(exp1->v.func->thisptr, useAuto))
                 return true;
         }
-        if (exp1->type == ExpressionNode::templateparam)
+        if (exp1->type == ExpressionNode::templateparam_)
         {
             if (exp1->v.sp->tp->templateParam->second->packed)
                 return true;
@@ -1813,12 +1813,12 @@ void GatherTemplateParams(int* count, SYMBOL** arg, std::list<TEMPLATEPARAMPAIR>
     {
         for (auto&& tpl : *tplx)
         {
-            if (tpl.second->packed && tpl.first && tpl.second->type == Keyword::_typename)
+            if (tpl.second->packed && tpl.first && tpl.second->type == Keyword::typename_)
             {
                 arg[(*count)++] = /*sym*/ tpl.first;
                 NormalizePacked(tpl.first->tp);
             }
-            else if (tpl.second->type == Keyword::_int)
+            else if (tpl.second->type == Keyword::int_)
             {
                 if (tpl.second->byNonType.dflt)
                 {
@@ -1836,7 +1836,7 @@ void GatherTemplateParams(int* count, SYMBOL** arg, std::list<TEMPLATEPARAMPAIR>
                     }
                 }
             }
-            else if (tpl.second->type == Keyword::_typename)
+            else if (tpl.second->type == Keyword::typename_)
             {
                 if (tpl.second->byClass.dflt)
                 {
@@ -1863,7 +1863,7 @@ void GatherPackedTypes(int* count, SYMBOL** arg, TYPE* tp)
         {
             GatherTemplateParams(count, arg, tp->sp->templateParams);
         }
-        else if (basetype(tp)->type == BasicType::templateselector)
+        else if (basetype(tp)->type == BasicType::templateselector_)
         {
             for (auto&& tsl : *basetype(tp)->sp->sb->templateSelector)
             {
@@ -1893,7 +1893,7 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
         arg[(*count)++] = packedExp->v.sp;
         NormalizePacked(packedExp->v.sp->tp);
     }
-    else if (packedExp->type == ExpressionNode::global && packedExp->v.sp->sb->parentClass)
+    else if (packedExp->type == ExpressionNode::global_ && packedExp->v.sp->sb->parentClass)
     {
         // undefined
         SYMBOL* spx = packedExp->v.sp->sb->parentClass;
@@ -1904,7 +1904,7 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
             spx = spx->sb->parentClass;
         }
     }
-    else if (packedExp->type == ExpressionNode::func)
+    else if (packedExp->type == ExpressionNode::func_)
     {
         GatherTemplateParams(count, arg, packedExp->v.func->templateParams);
         INITLIST* lst;
@@ -1912,7 +1912,7 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
             for (auto lst : *packedExp->v.func->arguments)
                 GatherPackedVars(count, arg, lst->exp);
     }
-    else if (packedExp->type == ExpressionNode::templateselector)
+    else if (packedExp->type == ExpressionNode::templateselector_)
     {
         for (auto&& tsl : *packedExp->v.templateSelector)
         {
@@ -1922,12 +1922,12 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
             }
         }
     }
-    else if (packedExp->type == ExpressionNode::templateparam)
+    else if (packedExp->type == ExpressionNode::templateparam_)
     {
         arg[(*count)++] = packedExp->v.sp;
         NormalizePacked(packedExp->v.sp->tp);
     }
-    else if (packedExp->type == ExpressionNode::const_ruct)
+    else if (packedExp->type == ExpressionNode::const_ruct_)
     {
         GatherPackedTypes(count, arg, packedExp->v.construct.tp);
     }
@@ -1957,7 +1957,7 @@ std::list<TEMPLATEPARAMPAIR>* ReplicateTemplateParams(int count, SYMBOL** arg, s
                         break;
                     }
             }
-            else if (tpl.second->type == Keyword::_int)
+            else if (tpl.second->type == Keyword::int_)
             {
                 if (tpl.second->byNonType.dflt)
                 {
@@ -1968,7 +1968,7 @@ std::list<TEMPLATEPARAMPAIR>* ReplicateTemplateParams(int count, SYMBOL** arg, s
                     tparam->byNonType.val = ReplicatePackedVars(count, arg, tpl.second->byNonType.dflt, index);
                 }
             }
-            else if (tpl.second->type == Keyword::_typename)
+            else if (tpl.second->type == Keyword::typename_)
             {
                 if (tpl.second->byClass.dflt)
                 {
@@ -1988,7 +1988,7 @@ TYPE* ReplicatePackedTypes(int count, SYMBOL** arg, TYPE* tp, int index)
 {
     if (tp)
     {
-        if (tp->type == BasicType::templateselector)
+        if (tp->type == BasicType::templateselector_)
         {
             tp = CopyType(tp);
             auto old = tp->sp->sb->templateSelector;
@@ -2039,7 +2039,7 @@ EXPRESSION* ReplicatePackedVars(int count, SYMBOL** arg, EXPRESSION* packedExp, 
         EXPRESSION* rv = Allocate<EXPRESSION>();
         *rv = *packedExp;
         packedExp = rv;
-        if (packedExp->type == ExpressionNode::global && packedExp->v.sp->sb->parentClass)
+        if (packedExp->type == ExpressionNode::global_ && packedExp->v.sp->sb->parentClass)
         {
             // undefined
             SYMBOL** spx = &packedExp->v.sp;
@@ -2058,7 +2058,7 @@ EXPRESSION* ReplicatePackedVars(int count, SYMBOL** arg, EXPRESSION* packedExp, 
                 spx = &(*spx)->sb->parentClass;
             }
         }
-        else if (packedExp->type == ExpressionNode::func)
+        else if (packedExp->type == ExpressionNode::func_)
         {
             packedExp->v.func->templateParams = ReplicateTemplateParams(count, arg, packedExp->v.func->templateParams, index);
             if (packedExp->v.func->arguments)
@@ -2074,7 +2074,7 @@ EXPRESSION* ReplicatePackedVars(int count, SYMBOL** arg, EXPRESSION* packedExp, 
                 *packedExp->v.func->arguments = temp;
             }
         }
-        else if (packedExp->type == ExpressionNode::templateselector)
+        else if (packedExp->type == ExpressionNode::templateselector_)
         {
             auto old = packedExp->v.templateSelector;
             auto tsl = packedExp->v.templateSelector = templateSelectorListFactory.CreateVector();
@@ -2087,7 +2087,7 @@ EXPRESSION* ReplicatePackedVars(int count, SYMBOL** arg, EXPRESSION* packedExp, 
                 }
             }
         }
-        else if (packedExp->type == ExpressionNode::const_ruct)
+        else if (packedExp->type == ExpressionNode::const_ruct_)
         {
             packedExp->v.construct.tp = ReplicatePackedTypes(count, arg, packedExp->v.construct.tp, index);
         }
@@ -2101,7 +2101,7 @@ void ReplicatePackedExpression(EXPRESSION* pattern, int count, SYMBOL** arg, std
     for (int i = 0; i < n; i++)
     {
         dest->push_back(TEMPLATEPARAMPAIR{ nullptr, Allocate<TEMPLATEPARAM>() });
-        dest->front().second->type = Keyword::_int;
+        dest->front().second->type = Keyword::int_;
         dest->front().second->byNonType.dflt = ReplicatePackedVars(count, arg, pattern, i);
     }
 }
@@ -2140,7 +2140,7 @@ int CountPacks(std::list<TEMPLATEPARAMPAIR>* packs)
 }
 void expandPackedInitList(std::list<INITLIST*>** lptr, SYMBOL* funcsp, LEXLIST* start, EXPRESSION* packedExp)
 {
-    if (packedExp->type == ExpressionNode::templateparam)
+    if (packedExp->type == ExpressionNode::templateparam_)
     {
         if (packedExp->v.sp->tp->templateParam->second->packed)
         {
@@ -2184,7 +2184,7 @@ void expandPackedInitList(std::list<INITLIST*>** lptr, SYMBOL* funcsp, LEXLIST* 
                         p->exp = varNode(ExpressionNode::auto_, sym);
                         if (isref(p->tp))
                         {
-                            p->exp = exprNode(ExpressionNode::l_ref, p->exp, nullptr);
+                            p->exp = exprNode(ExpressionNode::l_ref_, p->exp, nullptr);
                             p->tp = basetype(p->tp)->btp;
                         }
                         if (!isstructured(p->tp))
@@ -2327,7 +2327,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
     {
         LEXLIST* lex = SetAlternateLex(linit->initData);
         init = mi->erase(init);
-        if (MATCHKW(lex, Keyword::_lt))
+        if (MATCHKW(lex, Keyword::lt_))
         {
             // at this point we've already created the independent base classes
             // but the initdata has the argument list, so get it out of the way
@@ -2348,7 +2348,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                             for (auto i : *l.second->byPack.pack)
                                 stk.push(i.second);
                     }
-                    else if (l.second->type != Keyword::_new)
+                    else if (l.second->type != Keyword::new_)
                         stk.push(l.second);
                 }
                 while (!stk.empty())
@@ -2405,10 +2405,10 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                     init = mi->insert(init, added);
                     ++init;
                     added->sp = baseSP;
-                    if (MATCHKW(lex, Keyword::_openpa) && added->sp->tp->sp->sb->trivialCons)
+                    if (MATCHKW(lex, Keyword::openpa_) && added->sp->tp->sp->sb->trivialCons)
                     {
                         lex = getsym();
-                        if (MATCHKW(lex, Keyword::_closepa))
+                        if (MATCHKW(lex, Keyword::closepa_))
                         {
                             lex = getsym();
                             added->init = nullptr;
@@ -2422,11 +2422,11 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                     }
                     if (!done)
                     {
-                        SYMBOL* sym = makeID(StorageClass::member, added->sp->tp, nullptr, added->sp->name);
+                        SYMBOL* sym = makeID(StorageClass::member_, added->sp->tp, nullptr, added->sp->name);
                         FUNCTIONCALL shim;
                         added->sp = sym;
                         shim.arguments = nullptr;
-                        getMemberInitializers(lex, funcsp, &shim, MATCHKW(lex, Keyword::_openpa) ? Keyword::_closepa : Keyword::_end, false);
+                        getMemberInitializers(lex, funcsp, &shim, MATCHKW(lex, Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, false);
                         if (shim.arguments)
                         {
                             added->init = initListFactory.CreateList();
@@ -2521,10 +2521,10 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPL
             {
                 bool done = false;
                 mi->sp->sb->offset = offset;
-                if (MATCHKW(lex, Keyword::_openpa) && mi->sp->tp->sp->sb->trivialCons)
+                if (MATCHKW(lex, Keyword::openpa_) && mi->sp->tp->sp->sb->trivialCons)
                 {
                     lex = getsym();
-                    if (MATCHKW(lex, Keyword::_closepa))
+                    if (MATCHKW(lex, Keyword::closepa_))
                     {
                         lex = getsym();
                         mi->init = nullptr;
@@ -2538,12 +2538,12 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPL
                 }
                 if (!done)
                 {
-                    SYMBOL* sym = makeID(StorageClass::member, mi->sp->tp, nullptr, mi->sp->name);
+                    SYMBOL* sym = makeID(StorageClass::member_, mi->sp->tp, nullptr, mi->sp->name);
                     FUNCTIONCALL shim;
                     mi->sp = sym;
                     lex = SetAlternateLex(mi->initData);
                     shim.arguments = nullptr;
-                    getMemberInitializers(lex, funcsp, &shim, MATCHKW(lex, Keyword::_openpa) ? Keyword::_closepa : Keyword::_end, false);
+                    getMemberInitializers(lex, funcsp, &shim, MATCHKW(lex, Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, false);
                     SetAlternateLex(nullptr);
                     if (shim.arguments)
                     {
@@ -2582,8 +2582,8 @@ static bool classOrEnumParam(SYMBOL* param)
     if (isref(tp))
         tp = basetype(tp)->btp;
     tp = basetype(tp);
-    return isstructured(tp) || tp->type == BasicType::enum_ || tp->type == BasicType::templateparam || tp->type == BasicType::templateselector ||
-           tp->type == BasicType::templatedecltype;
+    return isstructured(tp) || tp->type == BasicType::enum_ || tp->type == BasicType::templateparam_ || tp->type == BasicType::templateselector_ ||
+           tp->type == BasicType::templatedecltype_;
 }
 void checkOperatorArgs(SYMBOL* sp, bool asFriend)
 {
@@ -2624,10 +2624,10 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                 switch ((Keyword)(sp->sb->operatorId - CI_NEW))
                 {
                     SYMBOL* sym;
-                    case Keyword::_plus:
-                    case Keyword::_minus:
-                    case Keyword::_star:
-                    case Keyword::_and:
+                    case Keyword::plus_:
+                    case Keyword::minus_:
+                    case Keyword::star_:
+                    case Keyword::and_:
                         // needs zero or one argument
                         if (basetype(sp->tp)->syms->size() > 1)
                         {
@@ -2637,25 +2637,25 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         {
                             switch ((Keyword)(sp->sb->operatorId - CI_NEW))
                             {
-                                case Keyword::_plus:
-                                    sp->sb->operatorId = (int)Keyword::_unary_plus;
+                                case Keyword::plus_:
+                                    sp->sb->operatorId = (int)Keyword::unary_plus_;
                                     break;
-                                case Keyword::_minus:
-                                    sp->sb->operatorId = (int)Keyword::_unary_minus;
+                                case Keyword::minus_:
+                                    sp->sb->operatorId = (int)Keyword::unary_minus_;
                                     break;
-                                case Keyword::_star:
-                                    sp->sb->operatorId = (int)Keyword::_unary_star;
+                                case Keyword::star_:
+                                    sp->sb->operatorId = (int)Keyword::unary_star_;
                                     break;
-                                case Keyword::_and:
-                                    sp->sb->operatorId = (int)Keyword::_unary_and;
+                                case Keyword::and_:
+                                    sp->sb->operatorId = (int)Keyword::unary_and_;
                                     break;
                                 default:
                                     break;
                             }
                         }
                         break;
-                    case Keyword::_not:
-                    case Keyword::_complx:
+                    case Keyword::not_:
+                    case Keyword::complx_:
                         // needs no argument
                         sym = *it;
                         if (sym->tp->type != BasicType::void_)
@@ -2663,22 +2663,22 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                             errorstr(ERR_OPERATOR_NEEDS_NO_PARAMETERS, overloadXlateTab[sp->sb->operatorId]);
                         }
                         break;
-                    case Keyword::_divide:
-                    case Keyword::_leftshift:
-                    case Keyword::_rightshift:
-                    case Keyword::_mod:
-                    case Keyword::_eq:
-                    case Keyword::_neq:
-                    case Keyword::_lt:
-                    case Keyword::_leq:
-                    case Keyword::_gt:
-                    case Keyword::_geq:
-                    case Keyword::_land:
-                    case Keyword::_lor:
-                    case Keyword::_or:
-                    case Keyword::_uparrow:
-                    case Keyword::_comma:
-                    case Keyword::_pointstar:
+                    case Keyword::divide_:
+                    case Keyword::leftshift_:
+                    case Keyword::rightshift_:
+                    case Keyword::mod_:
+                    case Keyword::eq_:
+                    case Keyword::neq_:
+                    case Keyword::lt_:
+                    case Keyword::leq_:
+                    case Keyword::gt_:
+                    case Keyword::geq_:
+                    case Keyword::land_:
+                    case Keyword::lor_:
+                    case Keyword::or_:
+                    case Keyword::uparrow_:
+                    case Keyword::comma_:
+                    case Keyword::pointstar_:
                         // needs one argument
                         sym = *it;
                         if (sym->tp->type == BasicType::void_ || basetype(sp->tp)->syms->size() > 1)
@@ -2686,8 +2686,8 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                             errorstr(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                         break;
-                    case Keyword::_autoinc:
-                    case Keyword::_autodec:
+                    case Keyword::autoinc_:
+                    case Keyword::autodec_:
                         if (basetype(sp->tp)->syms->size() > 1)
                         {
                             errorstr(ERR_OPERATOR_NEEDS_ZERO_OR_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
@@ -2698,22 +2698,22 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                             errorstr(ERR_OPERATOR_NEEDS_PARAMETER_OF_TYPE_INT, overloadXlateTab[sp->sb->operatorId]);
                         }
                         break;
-                    case Keyword::_new:
-                    case Keyword::_delete:
-                    case Keyword::_newa:  // new[]
-                    case Keyword::_dela:  // delete[]
+                    case Keyword::new_:
+                    case Keyword::delete_:
+                    case Keyword::newa_:  // new[]
+                    case Keyword::dela_:  // delete[]
                         break;
-                    case Keyword::_assign:
-                    case Keyword::_asplus:
-                    case Keyword::_asminus:
-                    case Keyword::_astimes:
-                    case Keyword::_asdivide:
-                    case Keyword::_asmod:
-                    case Keyword::_asleftshift:
-                    case Keyword::_asrightshift:
-                    case Keyword::_asand:
-                    case Keyword::_asor:
-                    case Keyword::_asxor:
+                    case Keyword::assign_:
+                    case Keyword::asplus_:
+                    case Keyword::asminus_:
+                    case Keyword::astimes_:
+                    case Keyword::asdivide_:
+                    case Keyword::asmod_:
+                    case Keyword::asleftshift_:
+                    case Keyword::asrightshift_:
+                    case Keyword::asand_:
+                    case Keyword::asor_:
+                    case Keyword::asxor_:
                         // needs one argument
                         sym = *it;
                         if (sym->tp->type == BasicType::void_ || basetype(sp->tp)->syms->size() > 1)
@@ -2722,7 +2722,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         }
                         break;
 
-                    case Keyword::_openbr:
+                    case Keyword::openbr_:
                         // needs one argument:
                         sym = *it;
                         if (sym->tp->type == BasicType::void_ || basetype(sp->tp)->syms->size() > 1)
@@ -2730,10 +2730,10 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                             errorstr(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                         break;
-                    case Keyword::_openpa:
+                    case Keyword::openpa_:
                         // anything goes
                         break;
-                    case Keyword::_pointsto:
+                    case Keyword::pointsto_:
                         // needs no arguments
                         sym = *it;
                         if (sym->tp->type != BasicType::void_)
@@ -2741,7 +2741,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                             errorstr(ERR_OPERATOR_NEEDS_NO_PARAMETERS, overloadXlateTab[sp->sb->operatorId]);
                         }
                         break;
-                    case Keyword::_quot:
+                    case Keyword::quot_:
                         errorsym(ERR_OPERATOR_LITERAL_NAMESPACE_SCOPE, sp);
                         break;
                     default:
@@ -2754,10 +2754,10 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                 {
                     errortype(ERR_OPERATOR_NONSTATIC, basetype(sp->tp)->btp, nullptr);
                 }
-                else if ((Keyword)(sp->sb->operatorId - CI_NEW) != Keyword::_new &&
-                         (Keyword)(sp->sb->operatorId - CI_NEW) != Keyword::_delete &&
-                         (Keyword)(sp->sb->operatorId - CI_NEW) != Keyword::_newa &&
-                         (Keyword)(sp->sb->operatorId - CI_NEW) != Keyword::_dela)
+                else if ((Keyword)(sp->sb->operatorId - CI_NEW) != Keyword::new_ &&
+                         (Keyword)(sp->sb->operatorId - CI_NEW) != Keyword::delete_ &&
+                         (Keyword)(sp->sb->operatorId - CI_NEW) != Keyword::newa_ &&
+                         (Keyword)(sp->sb->operatorId - CI_NEW) != Keyword::dela_)
                     {
                     errorstr(ERR_OPERATOR_NONSTATIC, overloadXlateTab[sp->sb->operatorId]);
                 }
@@ -2768,20 +2768,20 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
             switch ((Keyword)(sp->sb->operatorId - CI_NEW))
             {
                 SYMBOL* sym;
-                case Keyword::_plus:
-                case Keyword::_minus:
-                case Keyword::_star:
-                case Keyword::_and:
-                case Keyword::_asplus:
-                case Keyword::_asminus:
-                case Keyword::_astimes:
-                case Keyword::_asdivide:
-                case Keyword::_asmod:
-                case Keyword::_asleftshift:
-                case Keyword::_asrightshift:
-                case Keyword::_asand:
-                case Keyword::_asor:
-                case Keyword::_asxor:
+                case Keyword::plus_:
+                case Keyword::minus_:
+                case Keyword::star_:
+                case Keyword::and_:
+                case Keyword::asplus_:
+                case Keyword::asminus_:
+                case Keyword::astimes_:
+                case Keyword::asdivide_:
+                case Keyword::asmod_:
+                case Keyword::asleftshift_:
+                case Keyword::asrightshift_:
+                case Keyword::asand_:
+                case Keyword::asor_:
+                case Keyword::asxor_:
                     // needs one or two arguments, one being class type
                     sym = (*it);
                     ++it;
@@ -2795,8 +2795,8 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                             errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                     }
                     break;
-                case Keyword::_not:
-                case Keyword::_complx:
+                case Keyword::not_:
+                case Keyword::complx_:
                     // needs one arg of class or enum type
                     sym = *it;
                     if (sym->tp->type == BasicType::void_ || basetype(sp->tp)->syms->size() != 1)
@@ -2810,21 +2810,21 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     }
                     break;
 
-                case Keyword::_divide:
-                case Keyword::_leftshift:
-                case Keyword::_rightshift:
-                case Keyword::_mod:
-                case Keyword::_eq:
-                case Keyword::_neq:
-                case Keyword::_lt:
-                case Keyword::_leq:
-                case Keyword::_gt:
-                case Keyword::_geq:
-                case Keyword::_land:
-                case Keyword::_lor:
-                case Keyword::_or:
-                case Keyword::_uparrow:
-                case Keyword::_comma:
+                case Keyword::divide_:
+                case Keyword::leftshift_:
+                case Keyword::rightshift_:
+                case Keyword::mod_:
+                case Keyword::eq_:
+                case Keyword::neq_:
+                case Keyword::lt_:
+                case Keyword::leq_:
+                case Keyword::gt_:
+                case Keyword::geq_:
+                case Keyword::land_:
+                case Keyword::lor_:
+                case Keyword::or_:
+                case Keyword::uparrow_:
+                case Keyword::comma_:
                     // needs two args, one of class or enum type
                     if (basetype(sp->tp)->syms->size() != 2)
                     {
@@ -2836,8 +2836,8 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                             errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                     }
                     break;
-                case Keyword::_autoinc:
-                case Keyword::_autodec:
+                case Keyword::autoinc_:
+                case Keyword::autodec_:
                     // needs one or two args, first of class or enum type
                     // if second is present int type
                     sym = (*it);
@@ -2859,7 +2859,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         }
                     }
                     break;
-                case Keyword::_quot:
+                case Keyword::quot_:
                     if (basetype(sp->tp)->syms->size() > 2)
                     {
                         errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
@@ -2889,15 +2889,15 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         // one arg
                         TYPE* tp = (*it)->tp;
                         if ((!ispointer(tp) || !isconst(basetype(tp)->btp) || basetype(basetype(tp)->btp)->type != BasicType::char_) &&
-                            tp->type != BasicType::unsigned_long_long && tp->type != BasicType::long_double && tp->type != BasicType::char_ &&
+                            tp->type != BasicType::unsigned_long_long_ && tp->type != BasicType::long_double_ && tp->type != BasicType::char_ &&
                             tp->type != BasicType::wchar_t_ && tp->type != BasicType::char16_t_ && tp->type != BasicType::char32_t_)
                         {
                             errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                         }
                     }
                     break;
-                case Keyword::_new:
-                case Keyword::_newa:
+                case Keyword::new_:
+                case Keyword::newa_:
                     if (basetype(sp->tp)->syms->size() > 0)
                     {
                         // any number of args, but first must be a size
@@ -2910,8 +2910,8 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                     }
                     break;
-                case Keyword::_delete:
-                case Keyword::_dela:
+                case Keyword::delete_:
+                case Keyword::dela_:
                     if (basetype(sp->tp)->syms->size() > 0)
                     {
                         // one or more args, first must be a pointer
@@ -2940,10 +2940,10 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
 }
 LEXLIST* handleStaticAssert(LEXLIST* lex)
 {
-    if (!needkw(&lex, Keyword::_openpa))
+    if (!needkw(&lex, Keyword::openpa_))
     {
         errskim(&lex, skim_closepa);
-        skip(&lex, Keyword::_closepa);
+        skip(&lex, Keyword::closepa_);
     }
     else
     {
@@ -2954,15 +2954,15 @@ LEXLIST* handleStaticAssert(LEXLIST* lex)
         inConstantExpression++;
         lex = expression_no_comma(lex, nullptr, nullptr, &tp, &expr, nullptr, 0);
         expr2 = Allocate<EXPRESSION>();
-        expr2->type = ExpressionNode::x_bool;
-        expr2->left = expr->type == ExpressionNode::select ? expr->left : expr;
+        expr2->type = ExpressionNode::x_bool_;
+        expr2->left = expr->type == ExpressionNode::select_ ? expr->left : expr;
         optimize_for_constants(&expr2);
         inConstantExpression--;
         if (!isarithmeticconst(expr2) && !templateNestingCount)
             error(ERR_CONSTANT_VALUE_EXPECTED);
         v = expr2->v.i;
 
-        if (MATCHKW(lex, Keyword::_comma))
+        if (MATCHKW(lex, Keyword::comma_))
         {
             lex = getsym();
             if (lex->data->type != l_astr)
@@ -2987,10 +2987,10 @@ LEXLIST* handleStaticAssert(LEXLIST* lex)
         {
             strcpy(buf, "(unspecified)");
         }
-        if (!needkw(&lex, Keyword::_closepa))
+        if (!needkw(&lex, Keyword::closepa_))
         {
             errskim(&lex, skim_closepa);
-            skip(&lex, Keyword::_closepa);
+            skip(&lex, Keyword::closepa_);
         }
         else if (!v && (!templateNestingCount))  // || instantiatingTemplate))
         {
@@ -3010,14 +3010,14 @@ LEXLIST* insertNamespace(LEXLIST* lex, Linkage linkage, StorageClass storage_cla
     {
         strcpy(buf, lex->data->value.s.a);
         lex = getsym();
-        if (MATCHKW(lex, Keyword::_assign))
+        if (MATCHKW(lex, Keyword::assign_))
         {
             lex = getsym();
             if (ISID(lex))
             {
                 char buf1[512];
                 strcpy(buf1, lex->data->value.s.a);
-                lex = nestedSearch(lex, &sym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global, true, false);
+                lex = nestedSearch(lex, &sym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, true, false);
                 if (sym)
                 {
                     if (sym->sb->storage_class != StorageClass::namespace_)
@@ -3037,7 +3037,7 @@ LEXLIST* insertNamespace(LEXLIST* lex, Linkage linkage, StorageClass storage_cla
                         if (sym)
                         {
                             // already exists, bug check it
-                            if (sym->sb->storage_class == StorageClass::namespace_alias && sym->sb->nameSpaceValues->front()->origname == src)
+                            if (sym->sb->storage_class == StorageClass::namespace_alias_ && sym->sb->nameSpaceValues->front()->origname == src)
                             {
                                 if (linkage == Linkage::inline_)
                                 {
@@ -3048,7 +3048,7 @@ LEXLIST* insertNamespace(LEXLIST* lex, Linkage linkage, StorageClass storage_cla
                             }
                         }
                         tp = MakeType(BasicType::void_);
-                        sym = makeID(StorageClass::namespace_alias, tp, nullptr, litlate(buf));
+                        sym = makeID(StorageClass::namespace_alias_, tp, nullptr, litlate(buf));
                         if (nameSpaceList.size())
                         {
                             sym->sb->parentNameSpace = nameSpaceList.front();
@@ -3107,7 +3107,7 @@ LEXLIST* insertNamespace(LEXLIST* lex, Linkage linkage, StorageClass storage_cla
         }
         strcpy(buf, anonymousNameSpaceName);
     }
-    if (storage_class != StorageClass::global)
+    if (storage_class != StorageClass::global_)
     {
         error(ERR_NO_NAMESPACE_IN_FUNCTION);
     }
@@ -3193,12 +3193,12 @@ static void InsertTag(SYMBOL* sym, StorageClass storage_class, bool allowDups)
     SymbolTable<SYMBOL>* table;
     SYMBOL* ssp = getStructureDeclaration();
     SYMBOL* sp1 = nullptr;
-    if (ssp && (storage_class == StorageClass::member || storage_class == StorageClass::mutable_ || storage_class == StorageClass::type))
+    if (ssp && (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_ || storage_class == StorageClass::type_))
     {
         table = ssp->tp->tags;
     }
-    else if (storage_class == StorageClass::auto_ || storage_class == StorageClass::register_ || storage_class == StorageClass::parameter ||
-             storage_class == StorageClass::localstatic)
+    else if (storage_class == StorageClass::auto_ || storage_class == StorageClass::register_ || storage_class == StorageClass::parameter_ ||
+             storage_class == StorageClass::localstatic_)
         table = localNameSpace->front()->tags;
     else
         table = globalNameSpace->front()->tags;
@@ -3210,7 +3210,7 @@ static void InsertTag(SYMBOL* sym, StorageClass storage_class, bool allowDups)
 LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageClass storage_class, bool inTemplate, bool hasAttributes)
 {
     SYMBOL* sp;
-    if (MATCHKW(lex, Keyword::_namespace))
+    if (MATCHKW(lex, Keyword::namespace_))
     {
         lex = getsym();
         if (ISID(lex))
@@ -3218,10 +3218,10 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
             // by spec using directives match the current state of
             // the namespace at all times... so we cache pointers to
             // related namespaces
-            lex = nestedSearch(lex, &sp, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global, true, false);
+            lex = nestedSearch(lex, &sp, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, true, false);
             if (sp)
             {
-                if (sp->sb->storage_class != StorageClass::namespace_ && sp->sb->storage_class != StorageClass::namespace_alias)
+                if (sp->sb->storage_class != StorageClass::namespace_ && sp->sb->storage_class != StorageClass::namespace_alias_)
                 {
                     errorsym(ERR_NOT_A_NAMESPACE, sp);
                 }
@@ -3256,7 +3256,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
     else
     {
         bool isTypename = false;
-        if (MATCHKW(lex, Keyword::_typename))
+        if (MATCHKW(lex, Keyword::typename_))
         {
             isTypename = true;
             lex = getsym();
@@ -3271,19 +3271,19 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
             attributes oldAttribs = basisAttribs;
             basisAttribs = {0};
             ParseAttributeSpecifiers(&lex, nullptr, true);
-            if (MATCHKW(lex, Keyword::_assign))
+            if (MATCHKW(lex, Keyword::assign_))
             {
                 TYPE* tp = nullptr;
                 SYMBOL* sp;
                 lex = getsym();
                 std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
                 bool pulledtypename = false;
-                if (MATCHKW(lex, Keyword::_typename))
+                if (MATCHKW(lex, Keyword::typename_))
                 {
                     pulledtypename = true;
                     lex = getsym();
                 }
-                if (inTemplate && (ISID(lex) || MATCHKW(lex, Keyword::_classsel) || MATCHKW(lex, Keyword::_typename)))
+                if (inTemplate && (ISID(lex) || MATCHKW(lex, Keyword::classsel_) || MATCHKW(lex, Keyword::typename_)))
                 {
                     SYMBOL *sym = nullptr, *strsym = nullptr;
                     std::list<NAMESPACEVALUEDATA*>* ns = nullptr;
@@ -3294,16 +3294,16 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                     {
                         tp = sym->tp;
                         lex = getsym();
-                        if (MATCHKW(lex, Keyword::_lt))
+                        if (MATCHKW(lex, Keyword::lt_))
                         {
                             lex = GetTemplateArguments(lex, nullptr, sym, &lst);
                         }
                     }
-                    else if (strsym && strsym->tp->type == BasicType::templateselector)
+                    else if (strsym && strsym->tp->type == BasicType::templateselector_)
                     {
                         tp = strsym->tp;
                         lex = getsym();
-                        if (MATCHKW(lex, Keyword::_lt))
+                        if (MATCHKW(lex, Keyword::lt_))
                         {
                             lex = GetTemplateArguments(lex, (*strsym->tp->sp->sb->templateSelector)[1].sp, sym, &lst);
                         }
@@ -3323,7 +3323,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                     if (pulledtypename)
                         lex = backupsym();
                     parsingUsing++;
-                    lex = get_type_id(lex, &tp, nullptr, StorageClass::cast, false, true, true);
+                    lex = get_type_id(lex, &tp, nullptr, StorageClass::cast_, false, true, true);
                     parsingUsing--;
                 }
                 if (!tp)
@@ -3340,14 +3340,14 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                 {
                     sp->sb->templateLevel = templateNestingCount;
                     sp->templateParams = TemplateGetParams(sp);
-                    if (isstructured(tp) || basetype(tp)->type == BasicType::templateselector)
+                    if (isstructured(tp) || basetype(tp)->type == BasicType::templateselector_)
                         sp->sb->typeAlias = lst;
                 }
                 else if (!templateNestingCount)
                 {
                     sp->tp = PerformDeferredInitialization(sp->tp, nullptr);
                 }
-                if (storage_class == StorageClass::member)
+                if (storage_class == StorageClass::member_)
                     sp->sb->parentClass = getStructureDeclaration();
                 SetLinkerNames(sp, Linkage::cdecl_);
                 InsertSymbol(sp, storage_class, Linkage::cdecl_, false);
@@ -3363,7 +3363,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
             basisAttribs = oldAttribs;
         }
         SYMBOL* strsym = nullptr;
-        lex = nestedSearch(lex, &sp, &strsym, nullptr, nullptr, nullptr, false, StorageClass::global, true, false);
+        lex = nestedSearch(lex, &sp, &strsym, nullptr, nullptr, nullptr, false, StorageClass::global_, true, false);
         if (sp)
         {
             if (sp->sb->mainsym && sp->sb->mainsym == strsym)
@@ -3372,7 +3372,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
             {
                 if (!templateNestingCount)
                 {
-                    if (sp->sb->storage_class == StorageClass::overloads)
+                    if (sp->sb->storage_class == StorageClass::overloads_)
                     {
                         for (auto sp2 : * sp->tp->syms)
                         {
@@ -3422,14 +3422,14 @@ static void balancedAttributeParameter(LEXLIST** lex)
     *lex = getsym();
     switch (start)
     {
-        case Keyword::_openpa:
-            endp = Keyword::_closepa;
+        case Keyword::openpa_:
+            endp = Keyword::closepa_;
             break;
-        case Keyword::_begin:
-            endp = Keyword::_end;
+        case Keyword::begin_:
+            endp = Keyword::end_;
             break;
-        case Keyword::_openbr:
-            endp = Keyword::_closebr;
+        case Keyword::openbr_:
+            endp = Keyword::closebr_;
             break;
         default:
             break;
@@ -3466,7 +3466,7 @@ TYPE* AttributeFinish(SYMBOL* sym, TYPE* tp)
             int m = sym->sb->attribs.inheritable.vectorSize / tp->size;
             if (n || m > 0x10000 || (m & (m - 1)) != 0)
                 error(ERR_INVALID_VECTOR_SIZE);
-            tp = MakeType(BasicType::pointer, tp);
+            tp = MakeType(BasicType::pointer_, tp);
             tp->size = sym->sb->attribs.inheritable.vectorSize;
             tp->array = true;
         }
@@ -3485,9 +3485,9 @@ TYPE* AttributeFinish(SYMBOL* sym, TYPE* tp)
         fc->arguments->push_back(arg);
         fc->ascall = true;
         fc->functp = sym->sb->attribs.inheritable.cleanup->tp;
-        fc->fcall = varNode(ExpressionNode::pc, sym->sb->attribs.inheritable.cleanup);
+        fc->fcall = varNode(ExpressionNode::pc_, sym->sb->attribs.inheritable.cleanup);
         fc->sp = sym->sb->attribs.inheritable.cleanup;
-        EXPRESSION* expl = exprNode(ExpressionNode::func, nullptr, nullptr);
+        EXPRESSION* expl = exprNode(ExpressionNode::func_, nullptr, nullptr);
         expl->v.func = fc;
         initInsert(&sym->sb->dest, sym->tp, expl, 0, true);
     }
@@ -3536,12 +3536,12 @@ static const std::unordered_map<std::string, int, StringHash> gccStyleAttribName
 
 void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
 {
-    if (MATCHKW(*lex, Keyword::___attribute))
+    if (MATCHKW(*lex, Keyword::attribute_))
     {
         *lex = getsym();
-        if (needkw(lex, Keyword::_openpa))
+        if (needkw(lex, Keyword::openpa_))
         {
-            if (needkw(lex, Keyword::_openpa))
+            if (needkw(lex, Keyword::openpa_))
             {
                 if (ISID(*lex) || ISKW(*lex))
                 {
@@ -3564,7 +3564,7 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                         switch (attrib->second)
                         {
                             case 1:  // alias
-                                if (MATCHKW(*lex, Keyword::_openpa))
+                                if (MATCHKW(*lex, Keyword::openpa_))
                                 {
                                     *lex = getsym();
                                     if ((*lex)->data->type == l_astr)
@@ -3578,11 +3578,11 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                         basisAttribs.uninheritable.alias = litlate(buf);
                                         *lex = getsym();
                                     }
-                                    needkw(lex, Keyword::_closepa);
+                                    needkw(lex, Keyword::closepa_);
                                 }
                                 break;
                             case 2:  // aligned
-                                if (MATCHKW(*lex, Keyword::_openpa))
+                                if (MATCHKW(*lex, Keyword::openpa_))
                                 {
                                     *lex = getsym();
                                     TYPE* tp = nullptr;
@@ -3595,7 +3595,7 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                         error(ERR_CONSTANT_VALUE_EXPECTED);
                                     basisAttribs.inheritable.structAlign = exp->v.i;
                                     basisAttribs.inheritable.alignedAttribute = true;
-                                    needkw(lex, Keyword::_closepa);
+                                    needkw(lex, Keyword::closepa_);
 
                                     if (basisAttribs.inheritable.structAlign > 0x10000 ||
                                         (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
@@ -3610,7 +3610,7 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                 }
                                 break;
                             case 3:  // warn_if_not_aligned
-                                if (needkw(lex, Keyword::_openpa))
+                                if (needkw(lex, Keyword::openpa_))
                                 {
                                     TYPE* tp = nullptr;
                                     EXPRESSION* exp = nullptr;
@@ -3621,7 +3621,7 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                     else if (!isintconst(exp))
                                         error(ERR_CONSTANT_VALUE_EXPECTED);
                                     basisAttribs.inheritable.warnAlign = exp->v.i;
-                                    needkw(lex, Keyword::_closepa);
+                                    needkw(lex, Keyword::closepa_);
 
                                     if (basisAttribs.inheritable.warnAlign > 0x10000 ||
                                         (basisAttribs.inheritable.warnAlign & (basisAttribs.inheritable.warnAlign - 1)) != 0)
@@ -3629,19 +3629,19 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                 }
                                 break;
                             case 4:  // alloc_size // doesn't restrict to numbers but maybe should?
-                                if (needkw(lex, Keyword::_openpa))
+                                if (needkw(lex, Keyword::openpa_))
                                 {
                                     errskim(lex, skim_comma);
-                                    if (MATCHKW(*lex, Keyword::_comma))
+                                    if (MATCHKW(*lex, Keyword::comma_))
                                     {
                                         *lex = getsym();
                                         errskim(lex, skim_closepa);
                                     }
-                                    needkw(lex, Keyword::_closepa);
+                                    needkw(lex, Keyword::closepa_);
                                 }
                                 break;
                             case 5:  // cleanup - needs work, should be in the C++ exception table for the function...
-                                if (MATCHKW(*lex, Keyword::_openpa))
+                                if (MATCHKW(*lex, Keyword::openpa_))
                                 {
                                     *lex = getsym();
                                     if (ISID(*lex))
@@ -3649,7 +3649,7 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                         SYMBOL* sym = gsearch((*lex)->data->value.s.a);
                                         if (sym)
                                         {
-                                            if (sym->tp->type == BasicType::aggregate)
+                                            if (sym->tp->type == BasicType::aggregate_)
                                                 if (basetype(sym->tp)->syms->size() == 1)
                                                     sym = basetype(sym->tp)->syms->front();
                                             if (isfunction(sym->tp) && isvoid(basetype(sym->tp)->btp))
@@ -3686,11 +3686,11 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                     {
                                         error(ERR_IDENTIFIER_EXPECTED);
                                     }
-                                    needkw(lex, Keyword::_closepa);
+                                    needkw(lex, Keyword::closepa_);
                                 }
                                 break;
                             case 8:  // copy
-                                if (MATCHKW(*lex, Keyword::_openpa))
+                                if (MATCHKW(*lex, Keyword::openpa_))
                                 {
                                     *lex = getsym();
                                     if (ISID(*lex))
@@ -3710,12 +3710,12 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                     {
                                         error(ERR_IDENTIFIER_EXPECTED);
                                     }
-                                    needkw(lex, Keyword::_closepa);
+                                    needkw(lex, Keyword::closepa_);
                                 }
                                 break;
                             case 9:  // deprecated
                                 basisAttribs.uninheritable.deprecationText = (const char*)-1;
-                                if (MATCHKW(*lex, Keyword::_openpa))
+                                if (MATCHKW(*lex, Keyword::openpa_))
                                 {
                                     *lex = getsym();
                                     if ((*lex)->data->type == l_astr)
@@ -3729,7 +3729,7 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                         basisAttribs.uninheritable.deprecationText = litlate(buf);
                                         *lex = getsym();
                                     }
-                                    needkw(lex, Keyword::_closepa);
+                                    needkw(lex, Keyword::closepa_);
                                 }
                                 break;
                             case 10:  // nonstring
@@ -3744,7 +3744,7 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                             case 15:  // used - this forces emission of static variables.  Since we always emit it is a noop
                                 break;
                             case 16:  // vector_size
-                                if (needkw(lex, Keyword::_openpa))
+                                if (needkw(lex, Keyword::openpa_))
                                 {
                                     TYPE* tp = nullptr;
                                     EXPRESSION* exp = nullptr;
@@ -3755,7 +3755,7 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                     else if (!isintconst(exp))
                                         error(ERR_CONSTANT_VALUE_EXPECTED);
                                     basisAttribs.inheritable.vectorSize = exp->v.i;
-                                    needkw(lex, Keyword::_closepa);
+                                    needkw(lex, Keyword::closepa_);
                                 }
                                 break;
                             case 19:  // dllimport
@@ -3785,8 +3785,8 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                 basisAttribs.inheritable.isInline = true;
                                 break;
                             case 27:  // format
-                                needkw(lex, Keyword::_openpa);
-                                while (*lex && !MATCHKW(*lex, Keyword::_closepa))
+                                needkw(lex, Keyword::openpa_);
+                                while (*lex && !MATCHKW(*lex, Keyword::closepa_))
                                     *lex = getsym();
                                 if (lex)
                                     *lex = getsym();
@@ -3798,7 +3798,7 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                 basisAttribs.inheritable.excludeFromExplicitInstantiation = true;
                                 break;
                             case 30: // constructor
-                                if (MATCHKW(*lex, Keyword::_openpa))
+                                if (MATCHKW(*lex, Keyword::openpa_))
                                 {
                                     *lex = getsym();
                                     TYPE* tp = nullptr;
@@ -3811,7 +3811,7 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                         error(ERR_CONSTANT_VALUE_EXPECTED);
                                     basisAttribs.uninheritable.constructorPriority = exp->v.i;
                                     basisAttribs.inheritable.warnAlign = exp->v.i;
-                                    needkw(lex, Keyword::_closepa);
+                                    needkw(lex, Keyword::closepa_);
                                 }
                                 else
                                 {
@@ -3819,7 +3819,7 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                 }
                                 break;
                             case 31: // destructor
-                                if (MATCHKW(*lex, Keyword::_openpa))
+                                if (MATCHKW(*lex, Keyword::openpa_))
                                 {
                                     *lex = getsym();
                                     TYPE* tp = nullptr;
@@ -3832,7 +3832,7 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                         error(ERR_CONSTANT_VALUE_EXPECTED);
                                     basisAttribs.uninheritable.destructorPriority = exp->v.i;
                                     basisAttribs.inheritable.warnAlign = exp->v.i;
-                                    needkw(lex, Keyword::_closepa);
+                                    needkw(lex, Keyword::closepa_);
                                 }
                                 else
                                 {
@@ -3851,13 +3851,13 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                         }
                     }
                 }
-                needkw(lex, Keyword::_closepa);
-                needkw(lex, Keyword::_closepa);
+                needkw(lex, Keyword::closepa_);
+                needkw(lex, Keyword::closepa_);
             }
             else
             {
                 errskim(lex, skim_closepa);
-                skip(lex, Keyword::_closepa);
+                skip(lex, Keyword::closepa_);
                 error(ERR_IGNORING__ATTRIBUTE);
             }
         }
@@ -3898,37 +3898,37 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
     bool rv = false;
     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c11)
     {
-        while (MATCHKW(*lex, Keyword::_alignas) || MATCHKW(*lex, Keyword::___attribute) ||
-               ((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x) && MATCHKW(*lex, Keyword::_openbr)))
+        while (MATCHKW(*lex, Keyword::alignas_) || MATCHKW(*lex, Keyword::attribute_) ||
+               ((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x) && MATCHKW(*lex, Keyword::openbr_)))
         {
-            if (MATCHKW(*lex, Keyword::___attribute))
+            if (MATCHKW(*lex, Keyword::attribute_))
             {
                 ParseOut___attribute__(lex, funcsp);
             }
-            else if (MATCHKW(*lex, Keyword::_alignas))
+            else if (MATCHKW(*lex, Keyword::alignas_))
             {
                 rv = true;
                 *lex = getsym();
-                if (needkw(lex, Keyword::_openpa))
+                if (needkw(lex, Keyword::openpa_))
                 {
                     int align = 1;
                     if (startOfType(*lex, nullptr, false))
                     {
                         TYPE* tp = nullptr;
-                        *lex = get_type_id(*lex, &tp, funcsp, StorageClass::cast, false, true, false);
+                        *lex = get_type_id(*lex, &tp, funcsp, StorageClass::cast_, false, true, false);
 
                         if (!tp)
                         {
                             error(ERR_TYPE_NAME_EXPECTED);
                         }
-                        else if (tp->type == BasicType::templateparam)
+                        else if (tp->type == BasicType::templateparam_)
                         {
-                            if (tp->templateParam->second->type == Keyword::_typename)
+                            if (tp->templateParam->second->type == Keyword::typename_)
                             {
                                 if (tp->templateParam->second->packed)
                                 {
                                     std::list<TEMPLATEPARAMPAIR>* packs = tp->templateParam->second->byPack.pack;
-                                    if (!MATCHKW(*lex, Keyword::_ellipse))
+                                    if (!MATCHKW(*lex, Keyword::ellipse_))
                                     {
                                         error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
                                     }
@@ -3940,7 +3940,7 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                                     {
                                         for (auto&& pack : *packs)
                                         {
-                                            int v = getAlign(StorageClass::global, pack.second->byClass.val);
+                                            int v = getAlign(StorageClass::global_, pack.second->byClass.val);
                                             if (v > align)
                                                 align = v;
                                         }
@@ -3952,13 +3952,13 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                                     // when generating the instance the class member will already be
                                     // filled in so it will get to the below...
                                     if (tp->templateParam->second->byClass.val)
-                                        align = getAlign(StorageClass::global, tp->templateParam->second->byClass.val);
+                                        align = getAlign(StorageClass::global_, tp->templateParam->second->byClass.val);
                                 }
                             }
                         }
                         else
                         {
-                            align = getAlign(StorageClass::global, tp);
+                            align = getAlign(StorageClass::global_, tp);
                         }
                     }
                     else
@@ -3974,7 +3974,7 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                             if (!isintconst(exp))
                             {
                                 align = 1;
-                                if (exp->type != ExpressionNode::templateparam)
+                                if (exp->type != ExpressionNode::templateparam_)
                                 {
                                     error(ERR_CONSTANT_VALUE_EXPECTED);
                                 }
@@ -3992,24 +3992,24 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                             }
                         }
                     }
-                    needkw(lex, Keyword::_closepa);
+                    needkw(lex, Keyword::closepa_);
                     basisAttribs.inheritable.structAlign = align;
                     if (basisAttribs.inheritable.structAlign > 0x10000 ||
                         (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
                         error(ERR_INVALID_ALIGNMENT);
                 }
             }
-            else if (MATCHKW(*lex, Keyword::_openbr))
+            else if (MATCHKW(*lex, Keyword::openbr_))
             {
                 *lex = getsym();
-                if (MATCHKW(*lex, Keyword::_openbr))
+                if (MATCHKW(*lex, Keyword::openbr_))
                 {
                     const std::string occNamespace = "occ";
                     const std::string gccNamespace = "gnu";
                     const std::string clangNamespace = "clang";
                     rv = true;
                     *lex = getsym();
-                    if (!MATCHKW(*lex, Keyword::_closebr))
+                    if (!MATCHKW(*lex, Keyword::closebr_))
                     {
                         while (*lex)
                         {
@@ -4026,7 +4026,7 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                                 if (stripped_ver == occNamespace)
                                 {
                                     *lex = getsym();
-                                    if (MATCHKW(*lex, Keyword::_classsel))
+                                    if (MATCHKW(*lex, Keyword::classsel_))
                                     {
                                         *lex = getsym();
                                         if (!ISID(*lex))
@@ -4064,7 +4064,7 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                                 else if (stripped_ver == clangNamespace)
                                 {
                                     *lex = getsym();
-                                    if (MATCHKW(*lex, Keyword::_classsel))
+                                    if (MATCHKW(*lex, Keyword::classsel_))
                                     {
                                         *lex = getsym();
                                         if (!ISID(*lex))
@@ -4105,7 +4105,7 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                                 else if (stripped_ver == gccNamespace)
                                 {
                                     *lex = getsym();
-                                    if (MATCHKW(*lex, Keyword::_classsel))
+                                    if (MATCHKW(*lex, Keyword::classsel_))
                                     {
                                         *lex = getsym();
                                         if (!ISID(*lex))
@@ -4175,7 +4175,7 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                                         if (stripped_ver == "deprecated"s)
                                             basisAttribs.uninheritable.deprecationText = (char*)-1;
                                         *lex = getsym();
-                                        if (MATCHKW(*lex, Keyword::_classsel))
+                                        if (MATCHKW(*lex, Keyword::classsel_))
                                         {
                                             *lex = getsym();
                                             if (!ISID(*lex))
@@ -4185,7 +4185,7 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                                     }
                                 }
                             }
-                            if (MATCHKW(*lex, Keyword::_openpa))
+                            if (MATCHKW(*lex, Keyword::openpa_))
                             {
                                 if (special)
                                     error(ERR_NO_ATTRIBUTE_ARGUMENT_CLAUSE_HERE);
@@ -4206,26 +4206,26 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                                 }
 
                                 else
-                                    while (*lex && !MATCHKW(*lex, Keyword::_closepa))
+                                    while (*lex && !MATCHKW(*lex, Keyword::closepa_))
                                     {
                                         balancedAttributeParameter(lex);
                                     }
-                                needkw(lex, Keyword::_closepa);
+                                needkw(lex, Keyword::closepa_);
                             }
-                            if (MATCHKW(*lex, Keyword::_ellipse))
+                            if (MATCHKW(*lex, Keyword::ellipse_))
                                 *lex = getsym();
-                            if (!MATCHKW(*lex, Keyword::_comma))
+                            if (!MATCHKW(*lex, Keyword::comma_))
                                 break;
                             *lex = getsym();
                         }
-                        if (needkw(lex, Keyword::_closebr))
-                            needkw(lex, Keyword::_closebr);
+                        if (needkw(lex, Keyword::closebr_))
+                            needkw(lex, Keyword::closebr_);
                     }
                     else
                     {
                         // empty
                         *lex = getsym();
-                        needkw(lex, Keyword::_closebr);
+                        needkw(lex, Keyword::closebr_);
                     }
                 }
                 else
@@ -4250,10 +4250,10 @@ static bool hasNoBody(std::list<STATEMENT*>* stmts)
     {
         for (auto stmt : *stmts)
         {
-            if (stmt->type != StatementNode::line && stmt->type != StatementNode::varstart && stmt->type != StatementNode::dbgblock)
+            if (stmt->type != StatementNode::line_ && stmt->type != StatementNode::varstart_ && stmt->type != StatementNode::dbgblock_)
                 return false;
             // modified this next line to use 'lower'
-            if (stmt->type == StatementNode::block && !hasNoBody(stmt->lower))
+            if (stmt->type == StatementNode::block_ && !hasNoBody(stmt->lower))
                 return false;
         }
     }
@@ -4291,7 +4291,7 @@ static bool constArgValid(TYPE* tp)
         return false;
     if (isfunction(tp))
         return false;
-    if (tp->type == BasicType::templateparam || tp->type == BasicType::templateselector)
+    if (tp->type == BasicType::templateparam_ || tp->type == BasicType::templateselector_)
         return true;
     if (isstructured(tp))
     {
@@ -4326,7 +4326,7 @@ static bool constArgValid(TYPE* tp)
         {
             for (auto sp : *tp->syms)
             {
-                if (sp->sb->storage_class == StorageClass::member && !isfunction(sp->tp))
+                if (sp->sb->storage_class == StorageClass::member_ && !isfunction(sp->tp))
                     if (!constArgValid(sp->tp))
                         return false;
             }
@@ -4358,31 +4358,31 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
     bool hasAuto = false;
     EXPRESSION *exp, *exp2;
     lex = getsym();
-    needkw(&lex, Keyword::_openpa);
-    bool extended = MATCHKW(lex, Keyword::_openpa);
-    hasAmpersand = MATCHKW(lex, Keyword::_and);
+    needkw(&lex, Keyword::openpa_);
+    bool extended = MATCHKW(lex, Keyword::openpa_);
+    hasAmpersand = MATCHKW(lex, Keyword::and_);
     if (extended || hasAmpersand)
     {
         lex = getsym();
-        hasAuto = MATCHKW(lex, Keyword::_auto);
+        hasAuto = MATCHKW(lex, Keyword::auto_);
         lex = backupsym();
     }
     else
     {
-        hasAuto = MATCHKW(lex, Keyword::_auto);
+        hasAuto = MATCHKW(lex, Keyword::auto_);
     }
     if (hasAuto)
     {
         if (extended || hasAmpersand)
             lex = getsym();
         lex = getsym();
-        if (MATCHKW(lex, Keyword::_and) || MATCHKW(lex, Keyword::_land))
+        if (MATCHKW(lex, Keyword::and_) || MATCHKW(lex, Keyword::land_))
         {
             lex = getsym();
             error(ERR_DECLTYPE_AUTO_NO_REFERENCE);
         }
         if (extended)
-            needkw(&lex, Keyword::_closepa);
+            needkw(&lex, Keyword::closepa_);
         (*tn) = MakeType(BasicType::auto_);
         (*tn)->size = 0;
         (*tn)->decltypeauto = true;
@@ -4393,12 +4393,12 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
         auto oldnoExcept = noExcept;
         lex = expression_no_check(lex, nullptr, nullptr, &(*tn), &exp, _F_SIZEOF | _F_INDECLTYPE);
         noExcept = oldnoExcept;
-        if (exp->type == ExpressionNode::func && exp->v.func->sp->sb->deleted)
+        if (exp->type == ExpressionNode::func_ && exp->v.func->sp->sb->deleted)
         {
             *tn = &stdany;
             return lex;
         }
-        if ((*tn) && (*tn)->type == BasicType::aggregate && exp->type == ExpressionNode::func)
+        if ((*tn) && (*tn)->type == BasicType::aggregate_ && exp->type == ExpressionNode::func_)
         {
             if ((*tn)->syms->size() > 1)
             {
@@ -4412,13 +4412,13 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
             {
                 if (ismember(exp->v.func->sp))
                 {
-                    (*tn) = MakeType(BasicType::memberptr, exp->v.func->sp->tp);
+                    (*tn) = MakeType(BasicType::memberptr_, exp->v.func->sp->tp);
                     (*tn)->sp = exp->v.func->sp->sb->parentClass;
                 }
                 else
                 {
-                    (*tn) = MakeType(BasicType::pointer, exp->v.func->sp->tp);
-                    (*tn)->size = getSize(BasicType::pointer);
+                    (*tn) = MakeType(BasicType::pointer_, exp->v.func->sp->tp);
+                    (*tn)->size = getSize(BasicType::pointer_);
                 }
                 exp->v.func->functp = (*tn)->btp;
             }
@@ -4427,7 +4427,7 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
                 (*tn) = exp->v.func->functp = exp->v.func->sp->tp;
             }
         }
-        if ((*tn) && isfunction(*tn) && exp->type == ExpressionNode::func)
+        if ((*tn) && isfunction(*tn) && exp->type == ExpressionNode::func_)
         {
             if (exp->v.func->ascall)
             {
@@ -4439,7 +4439,7 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
             optimize_for_constants(&exp);
             if (templateNestingCount && !instantiatingTemplate)
             {
-                (*tn) = MakeType(BasicType::templatedecltype);
+                (*tn) = MakeType(BasicType::templatedecltype_);
                 (*tn)->templateDeclType = exp;
             }
         }
@@ -4452,11 +4452,11 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
         }
         if ((*tn)->lref)
         {
-            (*tn) = MakeType(BasicType::lref, *tn);
+            (*tn) = MakeType(BasicType::lref_, *tn);
         }
         else if ((*tn)->rref)
         {
-            (*tn) = MakeType(BasicType::rref, *tn);
+            (*tn) = MakeType(BasicType::rref_, *tn);
         }
         if (extended && lvalue(exp) && exp->left->type == ExpressionNode::auto_)
         {
@@ -4464,13 +4464,13 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
             {
                 if (isref((*tn)))
                     (*tn) = basetype((*tn))->btp;
-                (*tn) = MakeType(BasicType::rref, *tn);
+                (*tn) = MakeType(BasicType::rref_, *tn);
             }
             else if (lvalue(exp))
             {
                 if (isref((*tn)))
                     (*tn) = basetype((*tn))->btp;
-                (*tn) = MakeType(BasicType::lref, *tn);
+                (*tn) = MakeType(BasicType::lref_, *tn);
                 if (lambdas.size() && !lambdas.front()->isMutable)
                 {
                     (*tn)->btp = MakeType(BasicType::const_, (*tn)->btp);
@@ -4478,7 +4478,7 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
             }
         }
     }
-    needkw(&lex, Keyword::_closepa);
+    needkw(&lex, Keyword::closepa_);
     return lex;
 }
 
@@ -4489,7 +4489,7 @@ void CollapseReferences(TYPE* tp_in)
     bool lref = false;
     while (tp1 && isref(tp1))
     {
-        if (basetype(tp1)->type == BasicType::lref)
+        if (basetype(tp1)->type == BasicType::lref_)
             lref = true;
         count++;
         tp1 = basetype(tp1)->btp;
@@ -4497,7 +4497,7 @@ void CollapseReferences(TYPE* tp_in)
     if (count > 1)
     {
         tp1 = tp_in;
-        basetype(tp1)->type = lref ? BasicType::lref : BasicType::rref;
+        basetype(tp1)->type = lref ? BasicType::lref_ : BasicType::rref_;
         tp1 = basetype(tp1);
         while (basetype(tp1->btp) && isref(tp1->btp))
         {
@@ -4529,23 +4529,23 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
                 *last = exprNode(ExpressionNode::void_, *last, nullptr);
                 last = &(*last)->right;
             }
-            auto newFunc = makeID(StorageClass::global, &stdfunc, nullptr, litlate((std::string(decl->sb->decoratedName) + "_dest").c_str()));
+            auto newFunc = makeID(StorageClass::global_, &stdfunc, nullptr, litlate((std::string(decl->sb->decoratedName) + "_dest").c_str()));
             SetLinkerNames(newFunc, Linkage::c_);
             optimize_for_constants(&decl->sb->dest->front()->exp);
             auto body = decl->sb->dest->front()->exp;
             InsertLocalStaticUnInitializer(newFunc, body);
 
-            EXPRESSION* callexp = exprNode(ExpressionNode::func, nullptr, nullptr);
+            EXPRESSION* callexp = exprNode(ExpressionNode::func_, nullptr, nullptr);
             callexp->v.func = Allocate<FUNCTIONCALL>();
             callexp->v.func->sp = atexitfunc;
             callexp->v.func->functp = atexitfunc->tp;
-            callexp->v.func->fcall = varNode(ExpressionNode::pc, atexitfunc);
+            callexp->v.func->fcall = varNode(ExpressionNode::pc_, atexitfunc);
             callexp->v.func->ascall = true;
             callexp->v.func->arguments = initListListFactory.CreateList();
             auto arg = Allocate<INITLIST>();
             callexp->v.func->arguments->push_back(arg);
             arg->tp = &stdpointer;
-            arg->exp = varNode(ExpressionNode::pc, newFunc);
+            arg->exp = varNode(ExpressionNode::pc_, newFunc);
             *last = callexp;
         }
     }
@@ -4566,7 +4566,7 @@ void CheckIsLiteralClass(TYPE* tp)
             else if (basetype(tp)->sp->templateParams)
             {
                 for (auto&& tpl : *basetype(tp)->sp->templateParams)
-                    if (tpl.second->type == Keyword::_typename && tpl.second->byClass.val)
+                    if (tpl.second->type == Keyword::typename_ && tpl.second->byClass.val)
                         CheckIsLiteralClass(tpl.second->byClass.val);               
             }
         }

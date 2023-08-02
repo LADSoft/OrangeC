@@ -35,6 +35,27 @@
 
 extern char _RTL_DATA** _environ;
 
+void __WaitForInputIdle(HANDLE hProcess)
+{
+    typedef void WINAPI Func(HANDLE, UINT);
+    HMODULE aa = LoadLibrary("User32.dll");
+    if (aa)
+    {
+        Func* ptr = (Func*)GetProcAddress(aa, "WaitForInputIdle");
+        if (ptr)
+        {
+            ptr(hProcess, INFINITE);
+            FreeLibrary(aa);
+        }
+        else
+            _abort();
+    }
+    else
+    {
+        _abort();
+    }
+}
+
 static char* createenviron(char** env)
 {
     int len = 0;
@@ -84,7 +105,7 @@ int __ll_spawn(char* file, char* parms, char** env, int mode)
         rv = (DWORD)pi.hProcess;
         if (mode == P_WAIT || mode == P_OVERLAY)
         {
-            WaitForInputIdle(pi.hProcess, INFINITE);
+            __WaitForInputIdle(pi.hProcess);
             WaitForSingleObject(pi.hProcess, INFINITE);
             GetExitCodeProcess(pi.hProcess, &rv);
         }

@@ -44,6 +44,27 @@ extern bool ___rtl_initted;
 
 typedef void CALLBACK trace_func(char* text, char* filename, PCONTEXT p, void* hInstance, void* stacktop, void *codestart, void *codeend);
 
+void __ShowMessageBox(const char *text, const char *title)
+{
+    typedef void WINAPI Func(HWND, LPCSTR, LPCSTR, UINT);
+    HMODULE aa = LoadLibrary("User32.dll");
+    if (aa)
+    {
+        Func* ptr = (Func*)GetProcAddress(aa, "MessageBoxA");
+        if (ptr)
+        {
+            ptr(0, text, title, MB_TASKMODAL);
+            FreeLibrary(aa);
+        }
+        else
+            _abort();
+    }
+    else
+    {
+        _abort();
+    }
+}
+
 static int* _xceptblkptr;
 /*static*/ PCONTEXT xxctxt;
 /*static*/ void regdump(char* text, PCONTEXT p)
@@ -80,7 +101,7 @@ static int* _xceptblkptr;
     }
     else
     {
-        MessageBox(0, buf, text, 0);
+        __ShowMessageBox(buf, text);
     }
 }
 void __ll_sigsegv(int aa)

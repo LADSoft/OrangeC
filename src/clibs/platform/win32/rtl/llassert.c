@@ -33,6 +33,7 @@
 
 extern unsigned _win32;
 
+extern void __ShowMessageBox(const char *text, const char *title);
 void __ll_assertfail(const char* __who, const char* __file, int __line, const char* __func, const char* __msg)
 {
     char buf[10000];
@@ -42,7 +43,7 @@ void __ll_assertfail(const char* __who, const char* __file, int __line, const ch
         sprintf(buf, "%s %s(%d) : %s\n", __who, __file, __line, __msg);
     if (_win32)
     {
-        MessageBox(0, buf, "Assertion Failed", MB_TASKMODAL);
+        __ShowMessageBox(buf, "Assertion Failed");
     }
     else
     {

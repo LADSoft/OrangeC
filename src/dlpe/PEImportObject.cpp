@@ -116,7 +116,7 @@ size_t DllImports<Directory>::CountOfModules()
     return count > 1 ? count : 0;
 }
 
-template <>
+//template <>
 void DllImports<ImportDirectory>::TrimModules(const std::vector<std::string>& delayLoadNames)
 {
     for (auto it = modules.begin(); it != modules.end();)
@@ -132,7 +132,7 @@ void DllImports<ImportDirectory>::TrimModules(const std::vector<std::string>& de
     }
 }
 
-template <>
+//template <>
 void DllImports<ImportDirectory>::WriteDirectory(DWORD virtual_addr, DWORD imageBase, unsigned char* data)
 {
     DWORD directoryPos = directory;
@@ -156,7 +156,7 @@ void DllImports<ImportDirectory>::WriteDirectory(DWORD virtual_addr, DWORD image
         stringPos += sz;
     }
 }
-template <>
+//template <>
 void DllImports<ImportDirectory>::WriteTables(std::vector<DWORD>& thunkFixups, DWORD virtual_addr, DWORD imageBase,
                                               DWORD& thunkTableRVA, unsigned char* data)
 {
@@ -195,7 +195,7 @@ void DllImports<ImportDirectory>::WriteTables(std::vector<DWORD>& thunkFixups, D
     }
 }
 
-template <>
+//template <>
 void DllImports<DelayLoadDirectory>::TrimModules(const std::vector<std::string>& delayLoadNames)
 {
     for (auto it = modules.begin(); it != modules.end();)
@@ -210,7 +210,7 @@ void DllImports<DelayLoadDirectory>::TrimModules(const std::vector<std::string>&
         }
     }
 }
-template <>
+//template <>
 void DllImports<DelayLoadDirectory>::WriteDirectory(DWORD virtual_addr, DWORD imageBase, unsigned char* data)
 {
     DWORD directoryPos = directory;
@@ -244,7 +244,7 @@ void DllImports<DelayLoadDirectory>::WriteDirectory(DWORD virtual_addr, DWORD im
             unloadPos += (m->externalNames.size() + 1) * sizeof DWORD;
     }
 }
-template <>
+//template <>
 void DllImports<DelayLoadDirectory>::WriteTables(std::vector<DWORD>& thunkFixups, DWORD virtual_addr, DWORD imageBase, DWORD& thunkTableRVA, unsigned char* data)
 {
     DWORD iatPos = iatAddr;

@@ -37,6 +37,7 @@
 #include "ObjSection.h"
 #include <memory>
 #include <map>
+#include <vector>
 #define RVA(offset) (offset + virtual_addr)
 
 class ObjFile;
@@ -184,7 +185,7 @@ class PEObject
     static unsigned dataInitSize;
     static DWORD importThunkVA;
     static unsigned importCount;
-    static DWORD PEObject::imageBaseVA;
+    static DWORD imageBaseVA;
     static std::shared_ptr<unsigned char> codeData;
     static DWORD codeRVA;
     static DWORD delayLoadHandleRVA;

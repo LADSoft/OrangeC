@@ -88,6 +88,9 @@ To add a table for manually unloading the dll use -dlu
 
 >     dlpe /dln:USER32.dll /dlu test.rel
 
+note that delay loading assumes space has been reserved in the code and data segments for thunks and handles.   These
+switches should not be used on images that haven't been linked with corresponding delay-load switches.
+
 ### Environment Variables consumed by DLPE
 
 The environment variable SOURCE_DATE_EPOCH will be checked when DLPE runs.   If it exists, it is expected to hold a 32-bit time_t value.

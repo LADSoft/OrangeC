@@ -100,6 +100,8 @@ To add a table for manually unloading the dll use /DELAY:UNLOAD
 
 >     OLink /T:DLL32 /c /DELAYLOAD:USER32.DLL /DELAY:UNLOAD  --output-def test.def /o test.exe c0dpe.o test.o clwin.l climp.l
 
+Note that delay loading LSCRTL.DLL isn't supported.   At worst, it will cause subtle bugs or crashes.
+
 ### Map File
 
  To generate a map file, use the **/m **switch.  The map file name will be the same as the name of the **.rel** file, with the extension replaced by **.map**.  The standard map file summarizes the partitions the program is contained in, and then lists publics in both alphabetic and numeric order.  

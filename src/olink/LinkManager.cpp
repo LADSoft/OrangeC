@@ -307,6 +307,18 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
                     {
                         (*it1)->SetAuxData(*it);
                     }
+                    else
+                    {
+                        ObjSection* last = (ObjSection*)(*it1)->GetAuxData();
+                        if (last->GetAbsSize() < (*it)->GetAbsSize())
+                        {
+                            if ((*it1)->GetUsed())
+                            {
+                                (*it1)->SetRemapped(true);
+                            }
+                            (*it1)->SetAuxData(*it);
+                        }
+                    }
                 }
             }
         }

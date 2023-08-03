@@ -407,10 +407,25 @@ ObjInt LinkRegion::ArrangeOverlayed(LinkManager* manager, NamedSection* data, Ob
     }
     ObjSection* curSection = nullptr;
     ObjFile* curFile = nullptr;
-    if (data->sections.size())
+    if (data->sections.size() == 1)
     {
         curSection = data->sections.front().section;
         curFile = data->sections.front().file;
+    }
+    else if (data->sections.size() > 1)
+    {
+        // this is needed so that debug code won't select a function from the RTL
+        // that has been optimized for release
+        int sz = 0;
+        for (auto&& t : data->sections)
+        {
+            if (t.section->GetAbsSize() > sz) 
+            {
+                sz = t.section->GetAbsSize();
+                curSection = t.section;
+                curFile = t.file;
+            }
+        }
     }
     if (!curSection)
         return 0;

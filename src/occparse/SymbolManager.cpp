@@ -58,7 +58,7 @@ const char* beDecorateSymName(SYMBOL* sym)
         q = preProcessor->LookupAlias(sym->name);
         if (q)
             return litlate(q);
-        else if (sym->sb->compilerDeclared || sym->tp->type == bt_templateparam || sym->tp->type == bt_templateselector)
+        else if (sym->sb->compilerDeclared || sym->tp->type == BasicType::templateparam_ || sym->tp->type == BasicType::templateselector_)
         {
             return litlate(sym->name);
         }
@@ -104,7 +104,7 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Test(struct Parser::sym* sym)
 
 Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* e)
 {
-    while (e && (e->type == en_lvalue || e->type == en_not_lvalue || e->type == en_x_string || e->type == en_x_object))
+    while (e && (e->type == ExpressionNode::lvalue_ || e->type == ExpressionNode::not__lvalue_ || e->type == ExpressionNode::x_string_ || e->type == ExpressionNode::x_object_))
         e = e->left;
     Optimizer::SimpleExpression* rv = Allocate<Optimizer::SimpleExpression>();
     rv->sizeFromType = natural_size(e);
@@ -112,111 +112,111 @@ Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* 
         rv->altData = Get((EXPRESSION*)e->altdata);
     switch (e->type)
     {
-        case en_global:
+        case ExpressionNode::global_:
             rv->type = Optimizer::se_global;
             rv->sp = Get(e->v.sp);
             break;
-        case en_auto:
+        case ExpressionNode::auto_:
             rv->type = Optimizer::se_auto;
             rv->sp = Get(e->v.sp);
             break;
-        case en_labcon:
+        case ExpressionNode::labcon_:
             rv->type = Optimizer::se_labcon;
             rv->i = e->v.i;
             break;
-        case en_absolute:
+        case ExpressionNode::absolute_:
             rv->type = Optimizer::se_absolute;
             rv->sp = Get(e->v.sp);
             break;
-        case en_pc:
+        case ExpressionNode::pc_:
             rv->type = Optimizer::se_pc;
             rv->sp = Get(e->v.sp);
             break;
-        case en_const:
+        case ExpressionNode::const_:
             rv->type = Optimizer::se_const;
             rv->sp = Get(e->v.sp);
             break;
-        case en_threadlocal:
+        case ExpressionNode::threadlocal_:
             rv->type = Optimizer::se_threadlocal;
             rv->sp = Get(e->v.sp);
             break;
-        case en_structelem:
+        case ExpressionNode::structelem_:
             rv->type = Optimizer::se_structelem;
             rv->sp = Get(e->v.sp);
             break;
 
-        case en_msil_array_init:
+        case ExpressionNode::msil_array_init_:
             rv->type = Optimizer::se_msil_array_init;
             rv->tp = Get(e->v.tp);
             break;
-        case en_msil_array_access:
+        case ExpressionNode::msil_array_access_:
             rv->type = Optimizer::se_msil_array_access;
             rv->msilArrayTP = Get(e->v.msilArray->tp);
             break;
 
-        case en_func:
+        case ExpressionNode::func_:
             rv->type = Optimizer::se_func;
             rv->ascall = e->v.func->ascall;
             break;
-        case en_add:
-        case en_arrayadd:
-        case en_structadd:
+        case ExpressionNode::add_:
+        case ExpressionNode::arrayadd_:
+        case ExpressionNode::structadd_:
             rv->type = Optimizer::se_add;
             rv->left = Get(e->left);
             rv->right = Get(e->right);
             break;
 
-        case en_sub:
+        case ExpressionNode::sub_:
             rv->type = Optimizer::se_sub;
             rv->left = Get(e->left);
             rv->right = Get(e->right);
             break;
-        case en_uminus:
+        case ExpressionNode::uminus_:
             rv->type = Optimizer::se_uminus;
             rv->left = Get(e->left);
             break;
-        case en_c_bit:
-        case en_c_bool:
-        case en_c_c:
-        case en_c_s:
-        case en_c_i:
-        case en_c_l:
-        case en_c_ll:
+        case ExpressionNode::c_bit_:
+        case ExpressionNode::c_bool_:
+        case ExpressionNode::c_c_:
+        case ExpressionNode::c_s_:
+        case ExpressionNode::c_i_:
+        case ExpressionNode::c_l_:
+        case ExpressionNode::c_ll_:
             rv->type = Optimizer::se_i;
             rv->i = reint(e);
             break;
-        case en_c_uc:
-        case en_c_wc:
-        case en_c_u16:
-        case en_c_us:
-        case en_c_ui:
-        case en_c_u32:
-        case en_c_ul:
-        case en_c_ull:
+        case ExpressionNode::c_uc_:
+        case ExpressionNode::c_wc_:
+        case ExpressionNode::c_u16_:
+        case ExpressionNode::c_us_:
+        case ExpressionNode::c_ui_:
+        case ExpressionNode::c_u32_:
+        case ExpressionNode::c_ul_:
+        case ExpressionNode::c_ull_:
             rv->type = Optimizer::se_ui;
             rv->i = reint(e);
             break;
 
-        case en_c_f:
-        case en_c_d:
-        case en_c_ld:
+        case ExpressionNode::c_f_:
+        case ExpressionNode::c_d_:
+        case ExpressionNode::c_ld_:
             rv->type = Optimizer::se_f;
             rv->f = refloat(e);
             break;
-        case en_c_fi:
-        case en_c_di:
-        case en_c_ldi:
+        case ExpressionNode::c_fi_:
+        case ExpressionNode::c_di_:
+        case ExpressionNode::c_ldi_:
             rv->type = Optimizer::se_fi;
             rv->f = refloat(e);
             break;
-        case en_c_fc:
-        case en_c_dc:
-        case en_c_ldc:
+        case ExpressionNode::c_fc_:
+        case ExpressionNode::c_dc_:
+        case ExpressionNode::c_ldc_:
             rv->type = Optimizer::se_fc;
             rv->c.r = e->v.c->r;
             rv->c.i = e->v.c->i;
             break;
-        case en_c_string:
+        case ExpressionNode::c_string_:
             rv->type = Optimizer::se_string;
             {
                 char buf[50000], *dest = buf;
@@ -244,7 +244,7 @@ Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* 
                 rv->astring.len = dest - buf;
             }
             break;
-        case en_type:
+        case ExpressionNode::type_:
             rv->type = Optimizer::se_typeref;
             rv->tp = Get(e->v.tp);
             break;
@@ -266,9 +266,9 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
     bool istypedef = false;
     while (tp != basetype(tp))
     {
-        if (tp->type == bt_va_list)
+        if (tp->type == BasicType::va_list_)
             isvalist = true;
-        if (tp->type == bt_typedef)
+        if (tp->type == BasicType::typedef_)
             istypedef = true;
         tp = tp->btp;
     }
@@ -277,15 +277,15 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
         auto tp1 = basetype(tp)->sp->sb->structuredAliasType;
         if (ispointer(tp1))
             tp1 = &stdpointer;
-        if (basetype(tp1)->type == bt_enum)
+        if (basetype(tp1)->type == BasicType::enum_)
             tp1 = tp1->btp;
         rv->structuredAlias = Get(tp1);
     }
     if ((isstructured(tp) && basetype(tp)->sp->sb->templateLevel && !basetype(tp)->sp->sb->instantiated) ||
-        basetype(tp)->type == bt_auto)
+        basetype(tp)->type == BasicType::auto_)
     {
         rv->type = st_i;
-        rv->size = getSize(bt_int);
+        rv->size = getSize(BasicType::int_);
         rv->sizeFromType = -ISZ_UINT;
     }
     else
@@ -297,7 +297,7 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
             rv->sp = Get(basetype(tp)->sp);
         }
         rv->size = tp->size;
-        if (!isstructured(tp) && !isfunction(tp) && tp->type != bt_ellipse && basetype(tp)->type != bt_any)
+        if (!isstructured(tp) && !isfunction(tp) && tp->type != BasicType::ellipse_ && basetype(tp)->type != BasicType::any_)
             rv->sizeFromType = sizeFromType(tp);
         else
             rv->sizeFromType = ISZ_ADDR;
@@ -305,7 +305,7 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
         rv->startbit = tp->startbit;
         rv->isarray = tp->array;
         rv->isvla = tp->vla;
-        rv->va_list = tp->type == bt_va_list;
+        rv->va_list = tp->type == BasicType::va_list_;
         if (rv->sp)
         {
             // have to put functions in the type table if unreferenced int the global tables
@@ -321,7 +321,7 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
             else if (rv->sp->storage_class == scc_typedef)
                 typedefs.push_back(rv->sp);
         }
-        if (tp->type != bt_aggregate && tp->syms && tp->syms->size() && rv->sp && !rv->sp->syms)
+        if (tp->type != BasicType::aggregate_ && tp->syms && tp->syms->size() && rv->sp && !rv->sp->syms)
         {
             Optimizer::LIST** p = &rv->sp->syms;
             for (auto sp : *tp->syms)
@@ -332,7 +332,7 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
                 (*p)->data = Get(sp);
                 if (rv->sp->storage_class == scc_type || rv->sp->storage_class == scc_cast)
                 {
-                    if (sp->sb->storage_class == sc_static || isfunction(sp->tp))
+                    if (sp->sb->storage_class == StorageClass::static_ || isfunction(sp->tp))
                     {
                         Optimizer::SimpleSymbol* ns = Allocate<Optimizer::SimpleSymbol>();
                         *ns = *(Optimizer::SimpleSymbol*)(*p)->data;
@@ -394,7 +394,7 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     Optimizer::SimpleSymbol* rv = Allocate<Optimizer::SimpleSymbol>();
     rv->name = sym->name;
     rv->align =
-        sym->sb->attribs.inheritable.structAlign ? sym->sb->attribs.inheritable.structAlign : getAlign(sc_auto, basetype(sym->tp));
+        sym->sb->attribs.inheritable.structAlign ? sym->sb->attribs.inheritable.structAlign : getAlign(StorageClass::auto_, basetype(sym->tp));
     rv->size = basetype(sym->tp)->size;
     rv->importfile = sym->sb->importfile;
     if (sym->sb->parentNameSpace)
@@ -402,7 +402,7 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     rv->i = sym->sb->value.i;
     Add(sym, rv);
     rv->storage_class = Get(sym->sb->storage_class);
-    if (!isstructured(sym->tp) && !isfunction(sym->tp) && sym->tp->type != bt_ellipse && basetype(sym->tp)->type != bt_any)
+    if (!isstructured(sym->tp) && !isfunction(sym->tp) && sym->tp->type != BasicType::ellipse_ && basetype(sym->tp)->type != BasicType::any_)
         rv->sizeFromType = sizeFromType(sym->tp);
     else
         rv->sizeFromType = ISZ_ADDR;
@@ -422,10 +422,10 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     }
     rv->label = sym->sb->label;
     rv->tp = Get(sym->tp);
-    // normalize for middle and backend.   Not modifying the front end data structures because there would be too much ripple...
+    // normalize for middle and backend.   Not modifying the front Keyword::end_ data structures because there would be too much ripple...
     if (rv->storage_class == scc_parameter && rv->tp->isarray)
     {
-        rv->tp->size = getSize(bt_pointer);
+        rv->tp->size = getSize(BasicType::pointer_);
         rv->tp->sizeFromType = ISZ_ADDR;
     }
     rv->parentClass = Get(sym->sb->parentClass);
@@ -438,18 +438,18 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     rv->thisPtr = sym->sb->thisPtr;
     rv->stackblock = sym->sb->stackblock;
     rv->inasm = sym->sb->inasm;
-    rv->isimport = sym->sb->attribs.inheritable.linkage2 == lk_import;
-    rv->isexport = sym->sb->attribs.inheritable.linkage2 == lk_export;
-    rv->isvirtual = sym->sb->attribs.inheritable.linkage4 == lk_virtual;
-    rv->isinternal = sym->sb->attribs.inheritable.linkage2 == lk_internal;
-    rv->msil_rtl = sym->sb->attribs.inheritable.linkage2 == lk_msil_rtl;
-    rv->isproperty = sym->sb->attribs.inheritable.linkage2 == lk_property;
-    rv->unmanaged = sym->sb->attribs.inheritable.linkage2 == lk_unmanaged;
-    rv->isstdcall = sym->sb->attribs.inheritable.linkage == lk_stdcall;
-    rv->iscdecl = sym->sb->attribs.inheritable.linkage == lk_cdecl;
-    rv->ispascal = sym->sb->attribs.inheritable.linkage == lk_pascal;
-    rv->isfastcall = sym->sb->attribs.inheritable.linkage == lk_fastcall;
-    rv->entrypoint = sym->sb->attribs.inheritable.linkage3 == lk_entrypoint;
+    rv->isimport = sym->sb->attribs.inheritable.linkage2 == Linkage::import_;
+    rv->isexport = sym->sb->attribs.inheritable.linkage2 == Linkage::export_;
+    rv->isvirtual = sym->sb->attribs.inheritable.linkage4 == Linkage::virtual_;
+    rv->isinternal = sym->sb->attribs.inheritable.linkage2 == Linkage::internal_;
+    rv->msil_rtl = sym->sb->attribs.inheritable.linkage2 == Linkage::msil_rtl_;
+    rv->isproperty = sym->sb->attribs.inheritable.linkage2 == Linkage::property_;
+    rv->unmanaged = sym->sb->attribs.inheritable.linkage2 == Linkage::unmanaged_;
+    rv->isstdcall = sym->sb->attribs.inheritable.linkage == Linkage::stdcall_;
+    rv->iscdecl = sym->sb->attribs.inheritable.linkage == Linkage::cdecl_;
+    rv->ispascal = sym->sb->attribs.inheritable.linkage == Linkage::pascal_;
+    rv->isfastcall = sym->sb->attribs.inheritable.linkage == Linkage::fastcall_;
+    rv->entrypoint = sym->sb->attribs.inheritable.linkage3 == Linkage::entrypoint_;
     rv->ispure = sym->sb->ispure;
     rv->dontinstantiate = sym->sb->dontinstantiate;
     rv->initialized = !!sym->sb->init;
@@ -476,148 +476,148 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
         while (isarray(tp1))
             tp1 = basetype(tp1)->btp;
         tp1 = basetype(tp1);
-        rv->stackProtectBasic = (tp1->type == bt_char || tp1->type == bt_unsigned_char) && sym->tp->size >= STACK_PROTECT_MINIMUM_CONSIDERED;
+        rv->stackProtectBasic = (tp1->type == BasicType::char_ || tp1->type == BasicType::unsigned_char_) && sym->tp->size >= STACK_PROTECT_MINIMUM_CONSIDERED;
     }
     return rv;
 }
-Optimizer::st_type Optimizer::SymbolManager::Get(enum Parser::e_bt type)
+Optimizer::st_type Optimizer::SymbolManager::Get(Parser::BasicType type)
 {
 
     switch (type)
     {
-        case bt_char:
-        case bt_signed_char:
-        case bt_bool:
-        case bt_short:
-        case bt_int:
-        case bt_long:
-        case bt_long_long:
-        case bt_inative:
+        case BasicType::char_:
+        case BasicType::signed_char_:
+        case BasicType::bool_:
+        case BasicType::short_:
+        case BasicType::int_:
+        case BasicType::long_:
+        case BasicType::long_long_:
+        case BasicType::inative_:
             return st_i;
-        case bt_unsigned_char:
-        case bt_unsigned_short:
-        case bt_char16_t:
-        case bt_wchar_t:
-        case bt_unsigned:
-        case bt_unsigned_long:
-        case bt_unsigned_long_long:
-        case bt_char32_t:
-        case bt_unative:
+        case BasicType::unsigned_char_:
+        case BasicType::unsigned_short_:
+        case BasicType::char16_t_:
+        case BasicType::wchar_t_:
+        case BasicType::unsigned_:
+        case BasicType::unsigned_long_:
+        case BasicType::unsigned_long_long_:
+        case BasicType::char32_t_:
+        case BasicType::unative_:
             return st_ui;
-        case bt_float:
-        case bt_double:
-        case bt_long_double:
+        case BasicType::float_:
+        case BasicType::double_:
+        case BasicType::long_double_:
             return st_f;
-        case bt_float_imaginary:
-        case bt_double_imaginary:
-        case bt_long_double_imaginary:
+        case BasicType::float__imaginary_:
+        case BasicType::double__imaginary_:
+        case BasicType::long_double_imaginary_:
             return st_fi;
-        case bt_float_complex:
-        case bt_double_complex:
-        case bt_long_double_complex:
+        case BasicType::float__complex_:
+        case BasicType::double__complex_:
+        case BasicType::long_double_complex_:
             return st_fc;
-        case bt_pointer:
+        case BasicType::pointer_:
             return st_pointer;
-        case bt_void:
+        case BasicType::void_:
             return st_void;
-        case bt___string:
+        case BasicType::string_:
             return st___string;
-        case bt___object:
+        case BasicType::object_:
             return st___object;
-        case bt_func:
-        case bt_ifunc:
+        case BasicType::func_:
+        case BasicType::ifunc_:
             return st_func;
-        case bt_lref:
+        case BasicType::lref_:
             return st_lref;
-        case bt_rref:
+        case BasicType::rref_:
             return st_rref;
-        case bt_struct:
-        case bt_class:
+        case BasicType::struct_:
+        case BasicType::class_:
             return st_struct;
-        case bt_union:
+        case BasicType::union_:
             return st_union;
-        case bt_enum:
+        case BasicType::enum_:
             return st_enum;
-        case bt_memberptr:
+        case BasicType::memberptr_:
             return st_memberptr;
-        case bt_aggregate:
+        case BasicType::aggregate_:
             return st_aggregate;
-        case bt_ellipse:
+        case BasicType::ellipse_:
             return st_ellipse;
-        case bt_any:
+        case BasicType::any_:
         default:
             return st_any;
     }
 }
 
-Optimizer::e_scc_type Optimizer::SymbolManager::Get(enum Parser::e_sc storageClass)
+Optimizer::e_scc_type Optimizer::SymbolManager::Get(Parser::StorageClass storageClass)
 {
     switch (storageClass)
     {
         default:
-        case sc_none:
+        case StorageClass::none_:
             return scc_none;
-        case sc_static:
+        case StorageClass::static_:
             return scc_static;
-        case sc_localstatic:
+        case StorageClass::localstatic_:
             return scc_localstatic;
-        case sc_auto:
+        case StorageClass::auto_:
             return scc_auto;
-        case sc_register:
+        case StorageClass::register_:
             return scc_register;
-        case sc_global:
+        case StorageClass::global_:
             return scc_global;
-        case sc_external:
+        case StorageClass::external_:
             return scc_external;
-        case sc_templateparam:
+        case StorageClass::templateparam_:
             return scc_templateparam;
-        case sc_parameter:
+        case StorageClass::parameter_:
             return scc_parameter;
-        case sc_catchvar:
+        case StorageClass::catchvar_:
             return scc_catchvar;
-        case sc_type:
+        case StorageClass::type_:
             return scc_type;
-        case sc_typedef:
+        case StorageClass::typedef_:
             return scc_typedef;
-        case sc_member:
+        case StorageClass::member_:
             return scc_member;
-        case sc_mutable:
+        case StorageClass::mutable_:
             return scc_mutable;
-        case sc_cast:
+        case StorageClass::cast_:
             return scc_cast;
-        case sc_defunc:
+        case StorageClass::defunc_:
             return scc_defunc;
-        case sc_label:
+        case StorageClass::label_:
             return scc_label;
-        case sc_ulabel:
+        case StorageClass::ulabel_:
             return scc_ulabel;
-        case sc_overloads:
+        case StorageClass::overloads_:
             return scc_overloads;
-        case sc_constant:
+        case StorageClass::const_ant_:
             return scc_constant;
-        case sc_enumconstant:
+        case StorageClass::enumconstant_:
             return scc_enumconstant;
-        case sc_absolute:
+        case StorageClass::absolute_:
             return scc_absolute;
-        case sc_friendlist:
+        case StorageClass::friendlist_:
             return scc_friendlist;
-        case sc_const:
+        case StorageClass::const_:
             return scc_const;
-        case sc_tconst:
+        case StorageClass::tconst_:
             return scc_tconst;
-        case sc_classmember:
+        case StorageClass::classmember_:
             return scc_classmember;
-        case sc_constexpr:
+        case StorageClass::constexpr_:
             return scc_constexpr;
-        case sc_memberreg:
+        case StorageClass::memberreg_:
             return scc_memberreg;
-        case sc_namespace:
+        case StorageClass::namespace_:
             return scc_namespace;
-        case sc_namespacealias:
+        case StorageClass::namespace_alias_:
             return scc_namespacealias;
-        case sc_temp:
+        case StorageClass::temp_:
             return scc_temp;
-        case sc_virtual:
+        case StorageClass::virtual_:
             return scc_virtual;
     }
 }
@@ -631,13 +631,13 @@ unsigned long long Optimizer::SymbolManager::Key(struct Parser::sym* old)
         my_sprintf(buf + strlen(buf), "%d", old->sb->uniqueID);
     }
     strcat(buf, old->sb->decoratedName ? old->sb->decoratedName : old->name);
-    if (old->sb->storage_class == sc_static && !old->sb->parent)
+    if (old->sb->storage_class == StorageClass::static_ && !old->sb->parent)
     {
         my_sprintf(buf + strlen(buf), "%d", old->sb->uniqueID);
     }
-    if (old->sb->storage_class == sc_type)
+    if (old->sb->storage_class == StorageClass::type_)
         strcat(buf, "#");
-    if (old->sb->attribs.inheritable.linkage == lk_stdcall)
+    if (old->sb->attribs.inheritable.linkage == Linkage::stdcall_)
         strcat(buf, ".");
     std::hash<std::string> hasher;
     std::string aa(buf);

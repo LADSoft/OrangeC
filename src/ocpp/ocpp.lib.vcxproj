@@ -164,6 +164,7 @@
     <ClInclude Include="InputFile.h" />
     <ClInclude Include="MakeStubs.h" />
     <ClInclude Include="PipeArbitrator.h" />
+    <ClInclude Include="ppCommon.h" />
     <ClInclude Include="ppCond.h" />
     <ClInclude Include="ppCtx.h" />
     <ClInclude Include="ppDefine.h" />

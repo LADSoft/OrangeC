@@ -42,8 +42,9 @@ namespace Optimizer
 static char help_text[] =
     "[options] [@response file] files\n"
     "\n"
-    "/1        - C1x mode                  /8        - c89 mode\n"
-    "/9        - C99 mode                  /c        - compile only\n"
+    "/1        - C1x mode                  /2        - C2x mode\n"
+    "/8        - c89 mode                  /9        - C99 mode\n"
+    "/c        - compile only\n"
     "-d        - don't allow extensions    +e        - dump errors to file\n"
     "+i        - dump preprocessed file    +l        - dump listing file\n"
     "/oxxx     - specify output file name\n"
@@ -160,6 +161,7 @@ static ARCH_SIZING sizes = {
     0,                    /*char a_rcomplexpad;*/
     2,                    /*char a_lrcomplexpad;*/
     0,                    // char a_alignedstruct; // __attribute((__aligned__))
+    0,                    /* char a_maxalign; */
 };
 static ARCH_SIZING alignments = {
     1, /*char a_bool;*/
@@ -182,6 +184,7 @@ static ARCH_SIZING alignments = {
     8,  /*char a_double;*/
     8,  /*char a_longdouble;*/
     8,  // char a_alignedstruct; // __attribute((__aligned__))
+    8,                    /* char a_maxalign; */
 };
 static ARCH_SIZING locks = {
     0, /*char a_bool; */
@@ -207,6 +210,7 @@ static ARCH_SIZING locks = {
     1,                  /*char a_rcomplexpad; */
     1,                  /*char a_lrcomplexpad; */
     0,                  // char a_alignedstruct; // __attribute((__aligned__))
+    0,                    /* char a_maxalign; */
 };
 static ARCH_FLOAT aflt = {-126, 126, 128, 24};
 static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};

@@ -42,65 +42,65 @@ int needsAtomicLockFromType(TYPE* tp)
     Optimizer::ARCH_SIZING* p = Optimizer::chosenAssembler->arch->type_needsLock;
     switch (basetype(tp)->type)
     {
-        case bt_char16_t:
+        case BasicType::char16_t_:
             return 0;
-        case bt_char32_t:
+        case BasicType::char32_t_:
             return 0;
-        case bt_bit:
-        case bt_void:
+        case BasicType::bit_:
+        case BasicType::void_:
             return 0;
-        case bt_char:
-        case bt_signed_char:
-        case bt_unsigned_char:
+        case BasicType::char_:
+        case BasicType::signed_char_:
+        case BasicType::unsigned_char_:
             return p->a_char;
-        case bt_bool:
+        case BasicType::bool_:
             return p->a_bool;
-        case bt_short:
-        case bt_unsigned_short:
+        case BasicType::short_:
+        case BasicType::unsigned_short_:
             return p->a_short;
-        case bt_wchar_t:
+        case BasicType::wchar_t_:
             return p->a_wchar_t;
-        case bt_long:
-        case bt_unsigned_long:
+        case BasicType::long_:
+        case BasicType::unsigned_long_:
             return p->a_long;
-        case bt_long_long:
-        case bt_unsigned_long_long:
+        case BasicType::long_long_:
+        case BasicType::unsigned_long_long_:
             return p->a_longlong;
-        case bt_int:
-        case bt_unsigned:
-        case bt_inative:
-        case bt_unative:
+        case BasicType::int_:
+        case BasicType::unsigned_:
+        case BasicType::inative_:
+        case BasicType::unative_:
             return p->a_int;
-        case bt_enum:
+        case BasicType::enum_:
             return p->a_enum;
-        case bt_pointer:
+        case BasicType::pointer_:
             return p->a_addr;
-        case bt_any:
+        case BasicType::any_:
             return p->a_addr;
-        case bt_seg:
+        case BasicType::seg_:
             return p->a_farseg;
-        case bt_far:
+        case BasicType::far_:
             return p->a_farptr;
-        case bt_memberptr:
-            return p->a_memberptr;
-        case bt_float:
-        case bt_float_imaginary:
+        case BasicType::memberptr_:
+             return p->a_memberptr;
+        case BasicType::float_:
+        case BasicType::float__imaginary_:
             return p->a_float;
-        case bt_double:
-        case bt_double_imaginary:
+        case BasicType::double_:
+        case BasicType::double__imaginary_:
             return p->a_double;
-        case bt_long_double:
-        case bt_long_double_imaginary:
+        case BasicType::long_double_:
+        case BasicType::long_double_imaginary_:
             return p->a_longdouble;
-        case bt_float_complex:
+        case BasicType::float__complex_:
             return 1;
-        case bt_double_complex:
+        case BasicType::double__complex_:
             return 1;
-        case bt_long_double_complex:
+        case BasicType::long_double_complex_:
             return 1;
-        case bt_class:
-        case bt_struct:
-        case bt_union:
+        case BasicType::class_:
+        case BasicType::struct_:
+        case BasicType::union_:
         default:
             if ((Optimizer::chosenAssembler->arch->isLockFreeSize >= basetype(tp)->size &&
                  (basetype(tp)->size & (basetype(tp)->size - 1)) == 0))
@@ -113,72 +113,72 @@ static int basesize(Optimizer::ARCH_SIZING* p, TYPE* tp)
     tp = basetype(tp);
     switch (tp->type)
     {
-        case bt_char16_t:
+        case BasicType::char16_t_:
             return 2;
-        case bt_char32_t:
+        case BasicType::char32_t_:
             return 4;
-        case bt_bit:
-        case bt_void:
+        case BasicType::bit_:
+        case BasicType::void_:
             return 0;
-        case bt_char:
-        case bt_unsigned_char:
-        case bt_signed_char:
+        case BasicType::char_:
+        case BasicType::unsigned_char_:
+        case BasicType::signed_char_:
             return p->a_char;
-        case bt_bool:
+        case BasicType::bool_:
             return p->a_bool;
-        case bt_short:
-        case bt_unsigned_short:
+        case BasicType::short_:
+        case BasicType::unsigned_short_:
             return p->a_short;
-        case bt_wchar_t:
+        case BasicType::wchar_t_:
             return p->a_wchar_t;
-        case bt_long:
-        case bt_unsigned_long:
+        case BasicType::long_:
+        case BasicType::unsigned_long_:
             return p->a_long;
-        case bt_long_long:
-        case bt_unsigned_long_long:
+        case BasicType::long_long_:
+        case BasicType::unsigned_long_long_:
             return p->a_longlong;
-        case bt_int:
-        case bt_unsigned:
-        case bt_inative:
-        case bt_unative:
+        case BasicType::int_:
+        case BasicType::unsigned_:
+        case BasicType::inative_:
+        case BasicType::unative_:
             return p->a_int;
-        case bt_enum:
+        case BasicType::enum_:
             return p->a_enum;
-        case bt_pointer:
+        case BasicType::pointer_:
             if (tp->array && !tp->vla)
                 return basesize(p, tp->btp);
             else
                 return p->a_addr;
-        case bt_any:
+        case BasicType::any_:
             return p->a_addr;
-        case bt_seg:
+        case BasicType::seg_:
             return p->a_farseg;
-        case bt_far:
+        case BasicType::far_:
             return p->a_farptr;
-        case bt_memberptr:
+        case BasicType::memberptr_:
             return p->a_memberptr;
-        case bt_float:
-        case bt_float_imaginary:
+        case BasicType::float_:
+        case BasicType::float__imaginary_:
             return p->a_float;
-        case bt_double:
-        case bt_double_imaginary:
+        case BasicType::double_:
+        case BasicType::double__imaginary_:
             return p->a_double;
-        case bt_long_double:
-        case bt_long_double_imaginary:
+        case BasicType::long_double_:
+        case BasicType::long_double_imaginary_:
             return p->a_longdouble;
-        case bt_float_complex:
+        case BasicType::float__complex_:
             return (p->a_float + p->a_fcomplexpad) * 2;
-        case bt_double_complex:
+        case BasicType::double__complex_:
             return (p->a_double + p->a_rcomplexpad) * 2;
-        case bt_long_double_complex:
+        case BasicType::long_double_complex_:
             return (p->a_longdouble + p->a_lrcomplexpad) * 2;
-        case bt___string:
+        case BasicType::string_:
             return p->a_addr;
-        case bt___object:
+        case BasicType::object_:
             return p->a_addr;
-        case bt_class:
-        case bt_struct:
-        case bt_union:
+        case BasicType::class_:
+        case BasicType::struct_:
+        case BasicType::union_:
             if (p->a_struct)
                 return p->a_struct;
             else
@@ -188,7 +188,7 @@ static int basesize(Optimizer::ARCH_SIZING* p, TYPE* tp)
             return 1;
     }
 }
-int getSize(enum e_bt type)
+int getSize(BasicType type)
 {
     TYPE tp;
     memset(&tp, 0, sizeof(tp));
@@ -196,15 +196,19 @@ int getSize(enum e_bt type)
     tp.rootType = &tp;
     return basesize(Optimizer::chosenAssembler->arch->type_sizes, &tp);
 }
-int getBaseAlign(enum e_bt type)
+int getBaseAlign(BasicType type)
 {
     TYPE tp;
-    if (type == bt_auto)
-        type = bt_struct;
+    if (type == BasicType::auto_)
+        type = BasicType::struct_;
     tp.type = type; /* other fields don't matter, we never call this for structured types*/
     tp.array = tp.vla = false;
     tp.rootType = &tp;
     return basesize(Optimizer::chosenAssembler->arch->type_align, &tp);
+}
+int getMaxAlign()
+{
+    return Optimizer::chosenAssembler->arch->type_align->a_maxalign;
 }
 long getautoval(long val)
 {
@@ -219,19 +223,19 @@ int funcvaluesize(int val)
         return (Optimizer::chosenAssembler->arch->param_offs(val));
     return 0;
 }
-int alignment(int sc, TYPE* tp)
+int alignment(StorageClass sc, TYPE* tp)
 {
     (void)sc;
     return basesize(Optimizer::chosenAssembler->arch->type_align, tp);
 }
-int getAlign(int sc, TYPE* tp)
+int getAlign(StorageClass sc, TYPE* tp)
 {
     if (tp->alignment)
         return tp->alignment;
     while (tp->array)
         tp = basetype(tp)->btp;
     int align = basesize(Optimizer::chosenAssembler->arch->type_align, tp);
-    if (sc != sc_auto)
+    if (sc != StorageClass::auto_)
     {
         int pack = preProcessor->GetPack();
         if (pack < align)

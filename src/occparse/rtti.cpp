@@ -51,7 +51,7 @@ static std::set<SYMBOL*> defaultRecursionMap;
 
 std::map<int, std::map<int, __xcentry*>> rttiStatements;
 
-// in enum e_bt order
+// in enum BasicType order
 static const char* typeNames[] = {"bit",
                                   "bool",
                                   "signed char",
@@ -102,43 +102,43 @@ bool equalnode(EXPRESSION* node1, EXPRESSION* node2)
         return 0;
     switch (node1->type)
     {
-        case en_const:
-        case en_pc:
-        case en_global:
-        case en_auto:
-        case en_absolute:
-        case en_threadlocal:
-        case en_structelem:
+        case ExpressionNode::const_:
+        case ExpressionNode::pc_:
+        case ExpressionNode::global_:
+        case ExpressionNode::auto_:
+        case ExpressionNode::absolute_:
+        case ExpressionNode::threadlocal_:
+        case ExpressionNode::structelem_:
             return node1->v.sp == node2->v.sp;
-        case en_labcon:
+        case ExpressionNode::labcon_:
             return node1->v.i == node2->v.i;
         default:
             return (!node1->left || equalnode(node1->left, node2->left)) &&
                    (!node1->right || equalnode(node1->right, node2->right));
-        case en_c_i:
-        case en_c_l:
-        case en_c_ul:
-        case en_c_ui:
-        case en_c_c:
-        case en_c_u16:
-        case en_c_u32:
-        case en_c_bool:
-        case en_c_uc:
-        case en_c_ll:
-        case en_c_ull:
-        case en_c_wc:
-        case en_nullptr:
+        case ExpressionNode::c_i_:
+        case ExpressionNode::c_l_:
+        case ExpressionNode::c_ul_:
+        case ExpressionNode::c_ui_:
+        case ExpressionNode::c_c_:
+        case ExpressionNode::c_u16_:
+        case ExpressionNode::c_u32_:
+        case ExpressionNode::c_bool_:
+        case ExpressionNode::c_uc_:
+        case ExpressionNode::c_ll_:
+        case ExpressionNode::c_ull_:
+        case ExpressionNode::c_wc_:
+        case ExpressionNode::nullptr_:
             return node1->v.i == node2->v.i;
-        case en_c_d:
-        case en_c_f:
-        case en_c_ld:
-        case en_c_di:
-        case en_c_fi:
-        case en_c_ldi:
+        case ExpressionNode::c_d_:
+        case ExpressionNode::c_f_:
+        case ExpressionNode::c_ld_:
+        case ExpressionNode::c_di_:
+        case ExpressionNode::c_fi_:
+        case ExpressionNode::c_ldi_:
             return (*node1->v.f == *node2->v.f);
-        case en_c_dc:
-        case en_c_fc:
-        case en_c_ldc:
+        case ExpressionNode::c_dc_:
+        case ExpressionNode::c_fc_:
+        case ExpressionNode::c_ldc_:
             return (node1->v.c->r == node2->v.c->r) && (node1->v.c->i == node2->v.c->i);
     }
 }
@@ -164,9 +164,9 @@ static char* addParent(char* buf, SYMBOL* sym)
 }
 static char* RTTIGetDisplayName(char* buf, TYPE* tp)
 {
-    if (tp->type == bt_templateparam)
+    if (tp->type == BasicType::templateparam_)
     {
-        if (tp->templateParam && tp->templateParam->second->type == kw_typename && tp->templateParam->second->byClass.val)
+        if (tp->templateParam && tp->templateParam->second->type == Keyword::typename_ && tp->templateParam->second->byClass.val)
             tp = tp->templateParam->second->byClass.val;
     }
     if (isconst(tp))
@@ -180,7 +180,7 @@ static char* RTTIGetDisplayName(char* buf, TYPE* tp)
         buf += strlen(buf);
     }
     tp = basetype(tp);
-    if (isstructured(tp) || tp->type == bt_enum)
+    if (isstructured(tp) || tp->type == BasicType::enum_)
     {
         buf = addParent(buf, tp->sp);
     }
@@ -197,12 +197,12 @@ static char* RTTIGetDisplayName(char* buf, TYPE* tp)
         *buf++ = '&';
         *buf = 0;
     }
-    else if (tp->type == bt_templateparam)
+    else if (tp->type == BasicType::templateparam_)
     {
         strcpy(buf, "*templateParam");
         buf += strlen(buf);
     }
-    else if (tp->type == bt_any)
+    else if (tp->type == BasicType::any_)
     {
         strcpy(buf, "any");
         buf += strlen(buf);
@@ -227,16 +227,16 @@ static char* RTTIGetDisplayName(char* buf, TYPE* tp)
     }
     else
     {
-        strcpy(buf, typeNames[tp->type]);
+        strcpy(buf, typeNames[(int)tp->type]);
         buf += strlen(buf);
     }
     return buf;
 }
 static char* RTTIGetName(char* buf, TYPE* tp)
 {
-    if (tp->type == bt_templateparam)
+    if (tp->type == BasicType::templateparam_)
     {
-        if (tp->templateParam && tp->templateParam->second->type == kw_typename && tp->templateParam->second->byClass.val)
+        if (tp->templateParam && tp->templateParam->second->type == Keyword::typename_ && tp->templateParam->second->byClass.val)
             tp = tp->templateParam->second->byClass.val;
     }
     mangledNamesCount = 0;
@@ -276,7 +276,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
                 }
                 else
                 {
-                    EXPRESSION* exp = intNode(en_c_i, 0);
+                    EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
                     callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, true, true);
                     if (exp && exp->left)
                     {
@@ -290,9 +290,9 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
                 sym = (SYMBOL*)basetype(sym->tp)->syms->front();
             }
             Optimizer::SymbolManager::Get(sym);
-            if (sym && sym->sb->attribs.inheritable.linkage2 == lk_import)
+            if (sym && sym->sb->attribs.inheritable.linkage2 == Linkage::import_)
             {
-                EXPRESSION* exp = varNode(en_pc, sym);
+                EXPRESSION* exp = varNode(ExpressionNode::pc_, sym);
                 thunkForImportTable(&exp);
                 sym = exp->v.sp;
             }
@@ -376,7 +376,7 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
     {
         for (auto member : *sym->tp->syms)
         {
-            if (member->sb->storage_class == sc_member || member->sb->storage_class == sc_mutable)
+            if (member->sb->storage_class == StorageClass::member_ || member->sb->storage_class == StorageClass::mutable_)
             {
                 TYPE* tp = member->tp;
                 int flags = XD_CL_ENCLOSED;
@@ -411,7 +411,7 @@ static void RTTIDumpStruct(SYMBOL* xtSym, TYPE* tp)
 }
 static void RTTIDumpArray(SYMBOL* xtSym, TYPE* tp)
 {
-    RTTIDumpHeader(xtSym, tp, XD_ARRAY | getSize(bt_int));
+    RTTIDumpHeader(xtSym, tp, XD_ARRAY | getSize(BasicType::int_));
     Optimizer::genint(tp->size / (tp->btp->size));
     Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
 }
@@ -444,8 +444,8 @@ SYMBOL* RTTIDumpType(TYPE*tp, bool symOnly)
             {
                 if (!xtSym)
                 {
-                    xtSym = makeID(sc_global, tp, nullptr, litlate(name));
-                    xtSym->sb->attribs.inheritable.linkage4 = lk_virtual;
+                    xtSym = makeID(StorageClass::global_, tp, nullptr, litlate(name));
+                    xtSym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                     if (isstructured(tp))
                         xtSym->sb->attribs.inheritable.linkage2 = basetype(tp)->sp->sb->attribs.inheritable.linkage2;
                     xtSym->sb->decoratedName = xtSym->name;
@@ -457,18 +457,18 @@ SYMBOL* RTTIDumpType(TYPE*tp, bool symOnly)
                     Optimizer::SymbolManager::Get(xtSym)->generated = true;
                     switch (basetype(tp)->type)
                     {
-                        case bt_lref:
-                        case bt_rref:
+                        case BasicType::lref_:
+                        case BasicType::rref_:
                             RTTIDumpRef(xtSym, tp);
                             break;
-                        case bt_pointer:
+                        case BasicType::pointer_:
                             if (isarray(tp))
                                 RTTIDumpArray(xtSym, tp);
                             else
                                 RTTIDumpPointer(xtSym, tp);
                             break;
-                        case bt_struct:
-                        case bt_class:
+                        case BasicType::struct_:
+                        case BasicType::class_:
                             RTTIDumpStruct(xtSym, tp);
                             break;
                         default:
@@ -506,193 +506,193 @@ static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
         return;
     switch (node->type)
     {
-        case en_auto:
+        case ExpressionNode::auto_:
             break;
-        case en_const:
+        case ExpressionNode::const_:
             break;
-        case en_c_ll:
-        case en_c_ull:
-        case en_c_d:
-        case en_c_ld:
-        case en_c_f:
-        case en_c_dc:
-        case en_c_ldc:
-        case en_c_fc:
-        case en_c_di:
-        case en_c_ldi:
-        case en_c_fi:
-        case en_c_i:
-        case en_c_l:
-        case en_c_ui:
-        case en_c_ul:
-        case en_c_c:
-        case en_c_bool:
-        case en_c_uc:
-        case en_c_wc:
-        case en_c_u16:
-        case en_c_u32:
-        case en_c_string:
-        case en_nullptr:
-        case en_memberptr:
-        case en_structelem:
+        case ExpressionNode::c_ll_:
+        case ExpressionNode::c_ull_:
+        case ExpressionNode::c_d_:
+        case ExpressionNode::c_ld_:
+        case ExpressionNode::c_f_:
+        case ExpressionNode::c_dc_:
+        case ExpressionNode::c_ldc_:
+        case ExpressionNode::c_fc_:
+        case ExpressionNode::c_di_:
+        case ExpressionNode::c_ldi_:
+        case ExpressionNode::c_fi_:
+        case ExpressionNode::c_i_:
+        case ExpressionNode::c_l_:
+        case ExpressionNode::c_ui_:
+        case ExpressionNode::c_ul_:
+        case ExpressionNode::c_c_:
+        case ExpressionNode::c_bool_:
+        case ExpressionNode::c_uc_:
+        case ExpressionNode::c_wc_:
+        case ExpressionNode::c_u16_:
+        case ExpressionNode::c_u32_:
+        case ExpressionNode::c_string_:
+        case ExpressionNode::nullptr_:
+        case ExpressionNode::memberptr_:
+        case ExpressionNode::structelem_:
             break;
-        case en_global:
-        case en_pc:
-        case en_labcon:
-        case en_absolute:
-        case en_threadlocal:
+        case ExpressionNode::global_:
+        case ExpressionNode::pc_:
+        case ExpressionNode::labcon_:
+        case ExpressionNode::absolute_:
+        case ExpressionNode::threadlocal_:
             break;
-        case en_l_sp:
-        case en_l_fp:
-        case en_bits:
-        case en_l_f:
-        case en_l_d:
-        case en_l_ld:
-        case en_l_fi:
-        case en_l_di:
-        case en_l_ldi:
-        case en_l_fc:
-        case en_l_dc:
-        case en_l_ldc:
-        case en_l_c:
-        case en_l_u16:
-        case en_l_u32:
-        case en_l_s:
-        case en_l_ul:
-        case en_l_l:
-        case en_l_p:
-        case en_l_ref:
-        case en_l_i:
-        case en_l_ui:
-        case en_l_inative:
-        case en_l_unative:
-        case en_l_uc:
-        case en_l_us:
-        case en_l_bool:
-        case en_l_bit:
-        case en_l_ll:
-        case en_l_ull:
-        case en_l_string:
-        case en_l_object:
-        case en_literalclass:
-        case en_l_wc:
+        case ExpressionNode::l_sp_:
+        case ExpressionNode::l_fp_:
+        case ExpressionNode::bits_:
+        case ExpressionNode::l_f_:
+        case ExpressionNode::l_d_:
+        case ExpressionNode::l_ld_:
+        case ExpressionNode::l_fi_:
+        case ExpressionNode::l_di_:
+        case ExpressionNode::l_ldi_:
+        case ExpressionNode::l_fc_:
+        case ExpressionNode::l_dc_:
+        case ExpressionNode::l_ldc_:
+        case ExpressionNode::l_c_:
+        case ExpressionNode::l_u16_:
+        case ExpressionNode::l_u32_:
+        case ExpressionNode::l_s_:
+        case ExpressionNode::l_ul_:
+        case ExpressionNode::l_l_:
+        case ExpressionNode::l_p_:
+        case ExpressionNode::l_ref_:
+        case ExpressionNode::l_i_:
+        case ExpressionNode::l_ui_:
+        case ExpressionNode::l_inative_:
+        case ExpressionNode::l_unative_:
+        case ExpressionNode::l_uc_:
+        case ExpressionNode::l_us_:
+        case ExpressionNode::l_bool_:
+        case ExpressionNode::l_bit_:
+        case ExpressionNode::l_ll_:
+        case ExpressionNode::l_ull_:
+        case ExpressionNode::l_string_:
+        case ExpressionNode::l_object_:
+        case ExpressionNode::literalclass_:
+        case ExpressionNode::l_wc_:
             XCExpression(node->left, lst);
             break;
-        case en_uminus:
-        case en_compl:
-        case en_not:
-        case en_x_f:
-        case en_x_d:
-        case en_x_ld:
-        case en_x_fi:
-        case en_x_di:
-        case en_x_ldi:
-        case en_x_fc:
-        case en_x_dc:
-        case en_x_ldc:
-        case en_x_ll:
-        case en_x_ull:
-        case en_x_i:
-        case en_x_ui:
-        case en_x_inative:
-        case en_x_unative:
-        case en_x_c:
-        case en_x_u16:
-        case en_x_u32:
-        case en_x_wc:
-        case en_x_uc:
-        case en_x_bool:
-        case en_x_bit:
-        case en_x_s:
-        case en_x_us:
-        case en_x_l:
-        case en_x_ul:
-        case en_x_p:
-        case en_x_fp:
-        case en_x_sp:
-        case en_x_string:
-        case en_x_object:
-        case en_trapcall:
-        case en_shiftby:
-            /*        case en_movebyref: */
-        case en_substack:
-        case en_alloca:
-        case en_loadstack:
-        case en_savestack:
-        case en__initobj:
-        case en__sizeof:
+        case ExpressionNode::uminus_:
+        case ExpressionNode::compl_:
+        case ExpressionNode::not_:
+        case ExpressionNode::x_f_:
+        case ExpressionNode::x_d_:
+        case ExpressionNode::x_ld_:
+        case ExpressionNode::x_fi_:
+        case ExpressionNode::x_di_:
+        case ExpressionNode::x_ldi_:
+        case ExpressionNode::x_fc_:
+        case ExpressionNode::x_dc_:
+        case ExpressionNode::x_ldc_:
+        case ExpressionNode::x_ll_:
+        case ExpressionNode::x_ull_:
+        case ExpressionNode::x_i_:
+        case ExpressionNode::x_ui_:
+        case ExpressionNode::x_inative_:
+        case ExpressionNode::x_unative_:
+        case ExpressionNode::x_c_:
+        case ExpressionNode::x_u16_:
+        case ExpressionNode::x_u32_:
+        case ExpressionNode::x_wc_:
+        case ExpressionNode::x_uc_:
+        case ExpressionNode::x_bool_:
+        case ExpressionNode::x_bit_:
+        case ExpressionNode::x_s_:
+        case ExpressionNode::x_us_:
+        case ExpressionNode::x_l_:
+        case ExpressionNode::x_ul_:
+        case ExpressionNode::x_p_:
+        case ExpressionNode::x_fp_:
+        case ExpressionNode::x_sp_:
+        case ExpressionNode::x_string_:
+        case ExpressionNode::x_object_:
+        case ExpressionNode::trapcall_:
+        case ExpressionNode::shiftby_:
+            /*        case ExpressionNode::movebyref_: */
+        case ExpressionNode::substack_:
+        case ExpressionNode::alloca_:
+        case ExpressionNode::loadstack_:
+        case ExpressionNode::savestack_:
+        case ExpressionNode::initobj_:
+        case ExpressionNode::sizeof_:
             XCExpression(node->left, lst);
             break;
-        case en_assign:
-        case en__initblk:
-        case en__cpblk:
+        case ExpressionNode::assign_:
+        case ExpressionNode::initblk_:
+        case ExpressionNode::cpblk_:
             XCExpression(node->right, lst);
             XCExpression(node->left, lst);
             break;
-        case en_autoinc:
-        case en_autodec:
+        case ExpressionNode::auto_inc_:
+        case ExpressionNode::auto_dec_:
             XCExpression(node->left, lst);
             break;
-        case en_add:
-        case en_sub:
-            /*        case en_addcast: */
-        case en_lsh:
-        case en_arraylsh:
-        case en_rsh:
-            /*        case en_dvoid: */
-        case en_arraymul:
-        case en_arrayadd:
-        case en_arraydiv:
-        case en_structadd:
-        case en_mul:
-        case en_div:
-        case en_umul:
-        case en_udiv:
-        case en_umod:
-        case en_ursh:
-        case en_mod:
-        case en_and:
-        case en_or:
-        case en_xor:
-        case en_lor:
-        case en_land:
-        case en_eq:
-        case en_ne:
-        case en_gt:
-        case en_ge:
-        case en_lt:
-        case en_le:
-        case en_ugt:
-        case en_uge:
-        case en_ult:
-        case en_ule:
-        case en_cond:
-        case en_intcall:
-        case en_stackblock:
-        case en_blockassign:
-        case en_mp_compare:
-        case en_dot:
-        case en_pointsto:
+        case ExpressionNode::add_:
+        case ExpressionNode::sub_:
+            /*        case ExpressionNode::addcast_: */
+        case ExpressionNode::lsh_:
+        case ExpressionNode::arraylsh_:
+        case ExpressionNode::rsh_:
+            /*        case ExpressionNode::dvoid_: */
+        case ExpressionNode::arraymul_:
+        case ExpressionNode::arrayadd_:
+        case ExpressionNode::arraydiv_:
+        case ExpressionNode::structadd_:
+        case ExpressionNode::mul_:
+        case ExpressionNode::div_:
+        case ExpressionNode::umul_:
+        case ExpressionNode::udiv_:
+        case ExpressionNode::umod_:
+        case ExpressionNode::ursh_:
+        case ExpressionNode::mod_:
+        case ExpressionNode::and_:
+        case ExpressionNode::or_:
+        case ExpressionNode::xor_:
+        case ExpressionNode::lor_:
+        case ExpressionNode::land_:
+        case ExpressionNode::eq_:
+        case ExpressionNode::ne_:
+        case ExpressionNode::gt_:
+        case ExpressionNode::ge_:
+        case ExpressionNode::lt_:
+        case ExpressionNode::le_:
+        case ExpressionNode::ugt_:
+        case ExpressionNode::uge_:
+        case ExpressionNode::ult_:
+        case ExpressionNode::ule_:
+        case ExpressionNode::cond_:
+        case ExpressionNode::intcall_:
+        case ExpressionNode::stackblock_:
+        case ExpressionNode::blockassign_:
+        case ExpressionNode::mp_compare_:
+        case ExpressionNode::dot_:
+        case ExpressionNode::pointsto_:
             break;
-        case en_void:
-        case en_voidnz:
-            /*		case en_array: */
+        case ExpressionNode::void_:
+        case ExpressionNode::void_nz_:
+            /*		case ExpressionNode::array_: */
             XCExpression(node->right, lst);
-        case en_mp_as_bool:
-        case en_blockclear:
-        case en_argnopush:
-        case en_not_lvalue:
-        case en_lvalue:
-        case en_funcret:
-        case en_select:
+        case ExpressionNode::mp_as_bool_:
+        case ExpressionNode::blockclear_:
+        case ExpressionNode::argnopush_:
+        case ExpressionNode::not__lvalue_:
+        case ExpressionNode::lvalue_:
+        case ExpressionNode::funcret_:
+        case ExpressionNode::select_:
             XCExpression(node->left, lst);
             break;
-        case en_thisref:
+        case ExpressionNode::thisref_:
             XCExpression(node->left, lst);
             break;
-        case en_atomic:
+        case ExpressionNode::atomic_:
             break;
-        case en_func:
+        case ExpressionNode::func_:
             fp = node->v.func;
             {
                 if (fp->arguments)
@@ -704,7 +704,7 @@ static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
                     XCExpression(fp->returnEXP, lst);
             }
             break;
-        case en_stmt:
+        case ExpressionNode::stmt_:
             XCStmt(node->v.stmt, lst);
             break;
         default:
@@ -720,12 +720,12 @@ static void XCStmt(std::list<STATEMENT*>* block, std::list<XCENTRY*>& lst)
         {
             switch (stmt->type)
             {
-                case st__genword:
+                case StatementNode::genword_:
                     break;
-                case st_catch:
-                case st___catch:
-                case st___finally:
-                case st___fault: {
+                case StatementNode::catch_:
+                case StatementNode::seh_catch_:
+                case StatementNode::seh_finally_:
+                case StatementNode::seh_fault_: {
                     __xcentry* temp = Allocate<__xcentry>();
                     temp->stmt = stmt;
                     temp->byStmt = true;
@@ -733,38 +733,38 @@ static void XCStmt(std::list<STATEMENT*>* block, std::list<XCENTRY*>& lst)
                     XCStmt(stmt->lower, lst);
                     break;
                 }
-                case st_try:
-                case st___try:
+                case StatementNode::try_:
+                case StatementNode::seh_try_:
                     XCStmt(stmt->lower, lst);
                     break;
-                case st_return:
-                case st_expr:
-                case st_declare:
+                case StatementNode::return_:
+                case StatementNode::expr_:
+                case StatementNode::declare_:
                     XCExpression(stmt->select, lst);
                     break;
-                case st_goto:
-                case st_label:
+                case StatementNode::goto_:
+                case StatementNode::label_:
                     break;
-                case st_select:
-                case st_notselect:
+                case StatementNode::select_:
+                case StatementNode::notselect_:
                     XCExpression(stmt->select, lst);
                     break;
-                case st_switch:
+                case StatementNode::switch_:
                     XCExpression(stmt->select, lst);
                     XCStmt(stmt->lower, lst);
                     break;
-                case st_block:
+                case StatementNode::block_:
                     XCStmt(stmt->lower, lst);
                     XCStmt(stmt->blockTail, lst);
                     break;
-                case st_passthrough:
-                case st_nop:
+                case StatementNode::passthrough_:
+                case StatementNode::nop_:
                     break;
-                case st_datapassthrough:
+                case StatementNode::datapassthrough_:
                     break;
-                case st_line:
-                case st_varstart:
-                case st_dbgblock:
+                case StatementNode::line_:
+                case StatementNode::varstart_:
+                case StatementNode::dbgblock_:
                     break;
                 default:
                     diag("Invalid block type in XCStmt");
@@ -787,9 +787,9 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
             while (p)
             {
                 TYPE* tp = (TYPE*)p->data;
-                if (tp->type == bt_templateparam && tp->templateParam->second->packed)
+                if (tp->type == BasicType::templateparam_ && tp->templateParam->second->packed)
                 {
-                    if (tp->templateParam->second->type == kw_typename)
+                    if (tp->templateParam->second->type == Keyword::typename_)
                     {
                         if (tp->templateParam->second->byPack.pack)
                         {
@@ -809,8 +809,8 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
             }
         }
         Optimizer::my_sprintf(name, "@.xct%s", funcsp->sb->decoratedName);
-        xcSym = makeID(sc_global, &stdpointer, nullptr, litlate(name));
-        xcSym->sb->attribs.inheritable.linkage4 = lk_virtual;
+        xcSym = makeID(StorageClass::global_, &stdpointer, nullptr, litlate(name));
+        xcSym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
         xcSym->sb->decoratedName = xcSym->name;
         Optimizer::cseg();
         Optimizer::SymbolManager::Get(xcSym)->generated = true;
@@ -844,9 +844,9 @@ static bool allocatedXC(EXPRESSION* exp)
 {
     switch (exp->type)
     {
-        case en_add:
+        case ExpressionNode::add_:
             return allocatedXC(exp->left) || allocatedXC(exp->right);
-        case en_auto:
+        case ExpressionNode::auto_:
             return exp->v.sp->sb->allocate;
         default:
             return false;
@@ -857,14 +857,14 @@ Optimizer::SimpleSymbol* evalsp(EXPRESSION* exp)
     switch (exp->type)
     {
         Optimizer::SimpleSymbol* rv;
-        case en_l_p:
+        case ExpressionNode::l_p_:
             return evalsp(exp->left);
-        case en_add:
+        case ExpressionNode::add_:
             rv = evalsp(exp->left);
             if (rv)
                 return rv;
             return evalsp(exp->right);
-        case en_auto:
+        case ExpressionNode::auto_:
             rv = Optimizer::SymbolManager::Get(exp->v.sp);
             return rv;
         default:
@@ -875,18 +875,18 @@ static int evalofs(EXPRESSION* exp, SYMBOL* funcsp)
 {
     switch (exp->type)
     {
-        case en_l_p:
+        case ExpressionNode::l_p_:
             return evalofs(exp->left, funcsp);
-        case en_add:
+        case ExpressionNode::add_:
             return evalofs(exp->left, funcsp) + evalofs(exp->right, funcsp);
-        case en_c_i:
-        case en_c_ui:
-        case en_c_l:
-        case en_c_ul:
+        case ExpressionNode::c_i_:
+        case ExpressionNode::c_ui_:
+        case ExpressionNode::c_l_:
+        case ExpressionNode::c_ul_:
             return exp->v.i;
-        case en_auto:
+        case ExpressionNode::auto_:
             return exp->v.sp->sb->offset > 0 ? Optimizer::chosenAssembler->arch->retblockparamadjust : 0;
-        case en_structelem:
+        case ExpressionNode::structelem_:
             return exp->v.sp->sb->offset;
         default:
             return 0;
@@ -896,10 +896,10 @@ static bool throughThis(EXPRESSION* exp)
 {
     switch (exp->type)
     {
-        case en_add:
+        case ExpressionNode::add_:
             return throughThis(exp->left) | throughThis(exp->right);
-        case en_l_p:
-            return (exp->left->type == en_auto && exp->left->v.sp->sb->thisPtr);
+        case ExpressionNode::l_p_:
+            return (exp->left->type == ExpressionNode::auto_ && exp->left->v.sp->sb->thisPtr);
         default:
             return false;
     }
@@ -926,7 +926,7 @@ void XTDumpTab(SYMBOL* funcsp)
             }
             else
             {
-                // en_thisref
+                // ExpressionNode::thisref_
                 if (basetype(p->exp->v.t.tp)->sp->sb->hasDest)
                     p->xtSym = RTTIDumpType(basetype(p->exp->v.t.tp));
             }
@@ -958,7 +958,7 @@ void XTDumpTab(SYMBOL* funcsp)
                 {
                     Optimizer::genaddress(0);
                 }
-                // this was normalized in the back end...  depends on the RTTI information
+                // this was normalized in the back Keyword::end_...  depends on the RTTI information
                 // being generated AFTER the function is generated, however...
                 Optimizer::gen_labref(p->stmt->altlabel);
                 Optimizer::genint(p->stmt->tryStart);

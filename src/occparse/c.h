@@ -6,7 +6,7 @@
  * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
+ *     the Free Software Foundation, either version 3 of the License, 
  *     (at your option) any later version.
  * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
@@ -32,12 +32,12 @@ namespace Parser
 #define CI_CAST 2
 #define CI_NEW 3
 #define CI_DELETE 4
-#define CI_ASSIGN (assign + 3)
-#define CI_FUNC (openpa + 3)
-#define CI_POINTSTO (pointsto + 3)
-#define CI_NEWA (complx + 1 + 3)
-#define CI_DELETEA (complx + 2 + 3)
-#define CI_LIT (complx + 3 + 3)
+#define CI_ASSIGN ((int)Keyword::assign_ + 3)
+#define CI_FUNC ((int)Keyword::openpa_ + 3)
+#define CI_POINTSTO ((int)Keyword::pointsto_ + 3)
+#define CI_NEWA ((int)Keyword::complx_ + 1 + 3)
+#define CI_DELETEA ((int)Keyword::complx_ + 2 + 3)
+#define CI_LIT ((int)Keyword::complx_ + 3 + 3)
 
 #ifndef imax
 #    define imax(x, y) ((x) > (y) ? (x) : (y))
@@ -117,68 +117,69 @@ private:
 
 /* keywords and symbols */
 // clang-format off
-    enum e_kw
+    enum class Keyword
     {
         /* first comes all the C++ overloadable operators */
         /* be sure to change expectlist if you insert things */
-        kw_new, kw_delete, plus, minus, star, divide, leftshift, rightshift, mod, eq,
-        neq, lt, leq, gt, geq, assign, asplus, asminus, astimes, asdivide,
-        asmod, asleftshift, asrightshift, asand, asor, asxor, autoinc, autodec,
-        openbr, openpa, pointstar, pointsto, comma, lor, land, notx, orx, andx, uparrow,
-        complx, kw_newa, kw_dela, quot,
-        plus_unary, minus_unary, star_unary, and_unary,
+        new_, delete_, plus_, minus_, star_, divide_, leftshift_, rightshift_, mod_, eq_,
+        neq_, lt_, leq_, gt_, geq_, assign_, asplus_, asminus_, astimes_, asdivide_,
+        asmod_, asleftshift_, asrightshift_, asand_, asor_, asxor_, autoinc_, autodec_,
+        openbr_, openpa_, pointstar_, pointsto_, comma_, lor_, land_, not_, or_, and_, uparrow_,
+        complx_, newa_, dela_, quot_,
+        unary_plus_, unary_minus_, unary_star_, unary_and_,
         /* then generic stuff that isn't overloadable or is internal */
-        id, hook, colon, begin, end, dot,
-        closebr, closepa, ellipse, semicolon, hash, classsel,
-        dotstar, lassign,
+        id_, hook_, colon_, begin_, end_, dot_,
+        closebr_, closepa_, ellipse_, semicolon_, hash_, classsel_,
+        dotstar_, lassign,
         /* Finally tokens for keywords */
-        kw_int, kw_void, kw_char, kw_float, kw_double, kw_struct, kw_union, kw_long,
-        kw_short, kw_unsigned, kw_signed, kw_auto, kw_extern, kw_register,
-        kw_typedef, kw_static, kw_goto, kw_return, kw_sizeof, kw_break,
-        kw_continue, kw_if, kw_else, kw_for, kw_do, kw_while, kw_switch,
-        kw_case, kw_default, kw_enum, kw_volatile, kw_const,
-        kw__trap, kw__interrupt, kw__fault, kw__absolute, kw__genword,
-        kw__Complex, kw_restrict, kw__Imaginary, kw___I, kw__INF, kw__NAN,
-        kw_typeof, kw__Pragma, kw_atomic, kw_noreturn, kw_generic,
+        int_, void_, char_, float_, double_, struct_, union_, long_,
+        short_, unsigned_, signed_, auto_, extern_, register_,
+        typedef_, static_, goto_, return_, sizeof_, break_,
+        continue_, if_, else_, for_, do_, while_, switch_,
+        case_, default_, enum_, volatile_, const_,
+        trap_, interrupt_, fault_, absolute_, genword_,
+        Complex_, restrict_, Imaginary_, I_, INF_, NAN_,
+        typeof_, Pragma_, atomic_, noreturn_, generic_, bitint_,
         /* C++ */
-        kw_public, kw_private, kw_protected, kw_class, kw_friend, kw_namespace,
-        kw_using, kw_this, kw_operator, kw_inline, kw_virtual, kw_try, kw_throw,
-        kw_catch, kw_template, kw_bool, kw_true, kw_false, kw_wchar_t,
-        kw_static_cast, kw_dynamic_cast, kw_reinterpret_cast, kw_const_cast,
-        kw_typeid, kw_typename, kw_explicit, kw_decltype,
-        kw_export, kw_static_assert, kw_alignas, kw_alignof, kw_char16_t,
-        kw_char32_t, kw_mutable, kw_nullptr, kw_noexcept, kw_thread_local, kw_constexpr,
-        kw_rangefor,
+        public_, private_, protected_, class_, friend_, namespace_,
+        using_, this_, operator_, inline_, virtual_, try_, throw_,
+        catch_, template_, bool_, true_, false_, wchar_t_,
+        static_cast_, dynamic_cast_, reinterpret_cast_, const_cast_,
+        typeid_, typename_, explicit_, decltype_,
+        export_, static_assert_, alignas_, alignof_, char16_t_,
+        char32_t_, mutable_, nullptr_, noexcept_, thread_local_, constexpr_,
+        rangefor_,
         /* Extended */
-        kw_atomic_flag_test_set, kw_atomic_flag_clear, kw_atomic_kill_dependency,
+        has_c_attribute_, ckdadd_, ckdsub_, ckdmul_,
+        atomic_flag_test_set_, atomic_flag_clear_, atomic_kill_dependency_,
         /* Clang compatibility for atomics */
-        kw_c11_atomic_init, kw_c11_atomic_thread_fence, kw_c11_atomic_signal_fence,
-        kw_c11_atomic_is_lock_free, kw_c11_atomic_store, kw_c11_atomic_load, // NOTE: clang's atomic_is_lock_free runs on the atomic's size, not the address
-        kw_c11_atomic_xchg, kw_c11_atomic_cmpxchg_strong, kw_c11_atomic_cmpxchg_weak,
-        kw_c11_atomic_ftchadd, kw_c11_atomic_ftchsub, kw_c11_atomic_ftchand,
-        kw_c11_atomic_ftchor, kw_c11_atomic_ftchxor,
+        c11_atomic_init_, c11_atomic_thread_fence_, c11_atomic_signal_fence_,
+        c11_atomic_is_lock_free_, c11_atomic_store_, c11_atomic_load_, // NOTE: clang's atomic_is_lock_free runs on the atomic's size, not the address
+        c11_atomic_xchg_, c11_atomic_cmpxchg_strong_, c11_atomic_cmpxchg_weak_,
+        c11_atomic_ftchadd_, c11_atomic_ftchsub_, c11_atomic_ftchand_,
+        c11_atomic_ftchor_, c11_atomic_ftchxor_,
         /* GNU atomic support, incomplete but works */
-        /* NOTE: __atomic_*_n are able to be mapped to our existing structure without issue except compare_exchange*/
-        /* NOTE: __atomic_fetch_* are supported by the same mapping structure __atomic_*_n has */
-        kw_atomic_addftch, kw_atomic_subftch, kw_atomic_andftch, kw_atomic_xorftch,
-        kw_atomic_orftch, kw_atomic_cmpxchg_n,
-        /* Extended */
-        kw__pascal, kw__stdcall, kw__fastcall, kw__cdecl, kw__intrinsic, kw_asm, kw__loadds,
-        kw__far, kw_asmreg, kw_asminst, kw__indirect, kw__export, kw__import, kw___func__,
-        kw__near, kw__seg, kw___typeid, kw___int64, kw_alloca, kw__msil_rtl,
-        kw___va_list__, kw___va_typeof__, kw__unmanaged, kw__uuid, kw__uuidof,
-        kw___string, kw___object, kw_native, kw__cpblk, kw__initblk, kw__property, kw__entrypoint,
-        kw___try, kw___catch, kw___finally, kw___fault, kw__declspec, kw__rtllinkage, kw__attribute,
-        kw___offsetof, kw___underlying_type, kw__volatile,
+        /* NOTE: atomic_*_n are able to be mapped to our existing structure without issue except compare_exchange*/
+        /* NOTE: atomic_fetch_* are supported by the same mapping structure atomic_*_n has */
+        atomic_addftch_, atomic_subftch_, atomic_andftch_, atomic_xorftch_,
+        atomic_orftch_, atomic_cmpxchg_n_,
+        /* Extended */              
+        pascal_, stdcall_, fastcall_, cdecl_, intrinsic_, asm_, loadds_,
+        far_, asmreg_, asminst_, indirect_, dllexport_, dllimport_, func_,
+        near_, seg_, typeid__, int64_, alloca_, msil_rtl_,
+        va_list_, va_typeof_, unmanaged_, uuid_, uuidof_,
+        string_, object_, native_, cpblk_, initblk_, property_, entrypoint_,
+        seh_try_, seh_catch_, seh_finally_, seh_fault_, declspec_, rtllinkage_, attribute_,
+        offsetof_, underlying_type_, volatile__,
         /* These next are generic register names */
-        kw_D0, kw_D1, kw_D2, kw_D3, kw_D4, kw_D5, kw_D6, kw_D7, kw_D8, kw_D9, kw_DA,
-        kw_DB, kw_DC, kw_DD, kw_DE, kw_DF, kw_A0, kw_A1, kw_A2, kw_A3, kw_A4,
-        kw_A5, kw_A6, kw_A7, kw_A8, kw_A9, kw_AA, kw_AB, kw_AC, kw_AD, kw_AE,
-        kw_AF, kw_F0, kw_F1, kw_F2, kw_F3, kw_F4, kw_F5, kw_F6, kw_F7, kw_F8,
-        kw_F9, kw_FA, kw_FB, kw_FC, kw_FD, kw_FE, kw_FF, kw_cr0, kw_cr1, kw_cr2,
-        kw_cr3, kw_cr4, kw_cr5, kw_cr6, kw_cr7, kw_dr0, kw_dr1, kw_dr2, kw_dr3,
-        kw_dr4, kw_dr5, kw_dr6, kw_dr7, kw_tr0, kw_tr1, kw_tr2, kw_tr3, kw_tr4,
-        kw_tr5, kw_tr6, kw_tr7, eol, kw_none
+        D0_, D1_, D2_, D3_, D4_, D5_, D6_, D7_, D8_, D9_, DA_,
+        DB_, DC_, DD_, DE_, DF_, A0_, A1_, A2_, A3_, A4_,
+        A5_, A6_, A7_, A8_, A9_, AA_, AB_, AC_, AD_, AE_,
+        AF_, F0_, F1_, F2_, F3_, F4_, F5_, F6_, F7_, F8_,
+        F9_, FA_, FB_, FC_, FD_, FE_, FF_, CR0_, CR1_, CR2_,
+        CR3_, CR4_, CR5_, CR6_, CR7_, DR0_, DR1_, DR2_, DR3_,
+        DR4_, DR5_, DR6_, DR7_, TR0_, TR1_, TR2_, TR3_, TR4_,
+        TR5_, TR6_, TR7_, eol, none_
     };
 // clang-format on
 
@@ -201,111 +202,109 @@ typedef struct
 } _COMPLEX_S;
 
 // clang-format off
-    enum e_node
+    enum class ExpressionNode
     {
-
-        en_void, en_not_lvalue, en_lvalue, en_argnopush, en_voidnz, en_shiftby,
-        en_global, en_auto, en_labcon, en_absolute, en_pc, en_const, en_threadlocal,
-        en_c_bit, en_c_bool, en_c_c, en_c_uc, en_c_wc, en_c_s, en_c_u16, en_c_us, en_c_i, en_c_ui,
-        en_c_u32, en_c_l, en_c_ul, en_c_ll, en_c_ull, en_c_f, en_c_d, en_c_ld,
-        en_c_p, en_c_sp, en_c_fp, en_c_fc, en_c_dc, en_c_ldc,
-        en_c_fi, en_c_di, en_c_ldi, en_x_bool, en_x_bit,
-        en_c_string,
-        en_x_i, en_x_ui, en_x_l, en_x_ul, en_x_inative, en_x_unative,
-        en_x_ll, en_x_ull, en_x_f, en_x_d, en_x_ld, en_x_fi, en_x_di, en_x_ldi, en_x_fp, en_x_sp,
-        en_x_fc, en_x_dc, en_x_ldc, en_x_c, en_x_uc, en_x_wc, en_x_u16, en_x_u32, en_x_s, en_x_us, en_x_label,
-        en_x_string, en_x_object,
-        en_l_bool, en_l_c, en_l_uc, en_l_u16, en_l_u32, en_l_wc, en_l_s, en_l_us, en_l_i, en_l_ui,
-        en_l_inative, en_l_unative,
-        en_l_l, en_l_ul, en_l_ll, en_l_ull, en_l_f, en_l_d, en_l_ld, en_l_p, en_l_ref,
-        en_l_fi, en_l_di, en_l_ldi, en_l_fc, en_l_dc, en_l_ldc, en_l_fp, en_l_sp, en_l_bit,
-        en_l_string, en_l_object, en_msil_array_access, en_msil_array_init,
-        en_nullptr, en_memberptr, en_mp_as_bool, en_mp_compare,
-        en_trapcall, en_func, en_funcret, en_intcall,
-        en_arraymul, en_arraylsh, en_arraydiv, en_arrayadd, en_structadd, en_structelem,
-        en_add, en_sub, en_mul, en_mod, en_div, en_lsh, en_rsh, en_ursh,
-        en_cond, en_assign, en_eq, en_ne,
-        en_uminus, en_not, en_compl, en_lt, en_le, en_gt, en_ge,
-        en_and, en_or, en_land, en_lor, en_xor, en_umul, en_autoinc, en_autodec,
-        en_udiv, en_umod, en_ugt, en_uge, en_ule, en_ult, en_blockclear, en_stackblock,
-        en_blockassign, en_bits,
-        en_imode, en_x_p, en_substack, en_alloca, en__cpblk, en__initblk, en__initobj,  en__sizeof,
-        en_loadstack, en_savestack, en_stmt, en_atomic, en_placeholder, en_thisshim, en_thisref,
-        en_construct, en_literalclass, en_templateparam, en_templateselector, en_packedempty, en_sizeofellipse,
-        en_type, en_pointsto, en_dot, en_select,
+        void_, not__lvalue_, lvalue_, argnopush_, void_nz_, shiftby_,
+        global_, auto_, labcon_, absolute_, pc_, const_, threadlocal_,
+        c_bit_, c_bool_, c_c_, c_uc_, c_wc_, c_s_, c_u16_, c_us_, c_i_, c_ui_,
+        c_u32_, c_l_, c_ul_, c_ll_, c_ull_, c_f_, c_d_, c_ld_,
+        c_p_, c_sp_, c_fp_, c_fc_, c_dc_, c_ldc_,
+        c_fi_, c_di_, c_ldi_, x_bool_, x_bit_,
+        c_string_,
+        x_i_, x_ui_, x_l_, x_ul_, x_inative_, x_unative_,
+        x_ll_, x_ull_, x_f_, x_d_, x_ld_, x_fi_, x_di_, x_ldi_, x_fp_, x_sp_,
+        x_fc_, x_dc_, x_ldc_, x_c_, x_uc_, x_wc_, x_u16_, x_u32_, x_s_, x_us_, x_label_,
+        x_string_, x_object_,
+        l_bool_, l_c_, l_uc_, l_u16_, l_u32_, l_wc_, l_s_, l_us_, l_i_, l_ui_,
+        l_inative_, l_unative_,
+        l_l_, l_ul_, l_ll_, l_ull_, l_f_, l_d_, l_ld_, l_p_, l_ref_,
+        l_fi_, l_di_, l_ldi_, l_fc_, l_dc_, l_ldc_, l_fp_, l_sp_, l_bit_,
+        l_string_, l_object_, msil_array_access_, msil_array_init_,
+        nullptr_, memberptr_, mp_as_bool_, mp_compare_,
+        trapcall_, func_, funcret_, intcall_,
+        arraymul_, arraylsh_, arraydiv_, arrayadd_, structadd_, structelem_,
+        add_, sub_, mul_, mod_, div_, lsh_, rsh_, ursh_,
+        cond_, assign_, eq_, ne_,
+        uminus_, not_, compl_, lt_, le_, gt_, ge_,
+        and_, or_, land_, lor_, xor_, umul_, auto_inc_, auto_dec_,
+        udiv_, umod_, ugt_, uge_, ule_, ult_, blockclear_, stackblock_,
+        blockassign_, bits_,
+        imode_, x_p_, substack_, alloca_, cpblk_, initblk_, initobj_, sizeof_,
+        loadstack_, savestack_, stmt_, atomic_, placeholder_, thisshim_, thisref_,
+        const_ruct_, literalclass_, templateparam_, templateselector_, packedempty_, sizeofellipse_,
+        type_, pointsto_, dot_, select_,
         // stuff that can only appear temporarily in constexpr expressions
-        en_cshimref, en_cshimthis, en_paramsubstitute
+        cshimref_, cshimthis_, paramsubstitute_
     };
 // clang-format on
 
 /*      statement node descriptions     */
 // clang-format off
-    enum e_stmt
+    enum class StatementNode : int
     {
-        st_line, st_nop, st_expr, st_declare, st_goto, st_indgoto, st_asmgoto, st_asmcond,
-        st_loopgoto, st_select, st_notselect, st_varstart, st_dbgblock,
-        st_switch, st_return, st_block, st_throw, st_try, st_catch,
-        st__genword, st_passthrough, st_datapassthrough, st_abs, st_label,
-        st___try, st___catch, st___finally, st___fault,
+        line_, nop_, expr_, declare_, goto_, indgoto_, asmgoto_, asmcond_,
+        loopgoto_, select_, notselect_, varstart_, dbgblock_,
+        switch_, return_, block_, throw_, try_, catch_,
+        genword_, passthrough_, datapassthrough_, abs_, label_,
+        seh_try_, seh_catch_, seh_finally_, seh_fault_,
     };
 // clang-format on
-
+                
 /* storage classes */
 // clang-format off
-    enum e_sc : int
+    enum class StorageClass : int
     {
-        sc_none, sc_static, sc_localstatic, sc_auto, sc_register, sc_global, sc_external, sc_templateparam,
-        sc_parameter, sc_catchvar, sc_type, sc_typedef, sc_member, sc_mutable, sc_cast, sc_defunc, sc_label, sc_ulabel,
-        sc_overloads, sc_constant, sc_enumconstant, sc_absolute,
-        sc_friendlist, sc_const, sc_tconst, sc_classmember, sc_constexpr,
-        sc_memberreg, sc_namespace, sc_namespacealias, sc_temp, sc_virtual
+        none_, static_, localstatic_, auto_, register_, global_, external_, templateparam_,
+        parameter_, catchvar_, type_, typedef_, member_, mutable_, cast_, defunc_, label_, ulabel_,
+        overloads_, const_ant_, enumconstant_, absolute_,
+        friendlist_, const_, tconst_, classmember_, constexpr_,
+        memberreg_, namespace_, namespace_alias_, temp_, virtual_
     };
 // clang-format on
 
 /* basic types */
 // clang-format off
-    enum e_bt : int
+    enum class BasicType : int
     {
         /* keep this ordering and dont insert anything before the end of the
          * basic types, type comparisons (LOSTCONV) depends on the ordering,
          * and the debug info has a table indexed by type
          */
-        bt_bit, bt_bool, bt_signed_char, bt_char, bt_unsigned_char, bt_short, bt_char16_t, bt_unsigned_short,
-        bt_wchar_t, bt_enum, bt_int, bt_inative, bt_char32_t, bt_unsigned, bt_unative, bt_long, bt_unsigned_long, bt_long_long,
-        bt_unsigned_long_long, bt_float, bt_double, bt_long_double, bt_float_imaginary,
-        bt_double_imaginary, bt_long_double_imaginary, bt_float_complex,
-        bt_double_complex, bt_long_double_complex,
+        bit_, bool_, signed_char_, char_, unsigned_char_, short_, char16_t_, unsigned_short_,
+        wchar_t_, enum_, int_, inative_, char32_t_, unsigned_, unative_, long_, unsigned_long_, long_long_,
+        unsigned_long_long_, float_, double_, long_double_, float__imaginary_,
+        double__imaginary_, long_double_imaginary_, float__complex_,
+        double__complex_, long_double_complex_, bitint_,
         /* end of basic types */
-        bt_void, bt___object, bt___string,
+        void_, object_, string_,
         /* end of debug needs */
-        bt_signed, bt_static, bt_atomic, bt_const, bt_volatile, bt_restrict, bt_far, bt_near, bt_seg,
-        bt_aggregate, bt_untyped, bt_typedef, bt_pointer, bt_lref, bt_rref, bt_lrqual, bt_rrqual, bt_struct,
-        bt_union, bt_func, bt_class, bt_ifunc, bt_any, bt_auto,
-        bt_match_none, bt_ellipse, bt_memberptr, bt_cond, bt_va_list, bt_objectArray,
-        bt_consplaceholder, bt_templateparam, bt_templateselector, bt_templatedecltype, bt_derivedfromtemplate, bt_string,
-        bt_templateholder,
+        signed_, static_, atomic_, const_, volatile_, restrict_, far_, near_, seg_,
+        aggregate_, untyped_, typedef_, pointer_, lref_, rref_, lrqual_, rrqual_, struct_,
+        union_, func_, class_, ifunc_, any_, auto_,
+        match_none_, ellipse_, memberptr_, cond_, va_list_, objectArray_,
+        consplaceholder_, templateparam_, templateselector_, templatedecltype_, derivedfromtemplate_,
+        templateholder_,
         /* last */
-        bt_none
+        none_
     };
 // clang-format on
 
 // clang-format off
-    enum e_lk : int {
-        lk_none, lk_cdecl, lk_pascal, lk_stdcall, lk_fastcall, lk_c, lk_cpp,
-        lk_interrupt, lk_fault, lk_inline, lk_virtual, lk_noreturn, lk_threadlocal,
-        lk_import, lk_export, lk_internal, lk_auto, lk_msil_rtl, lk_unmanaged, lk_property, lk_entrypoint
+    enum class Linkage : int {
+        none_, cdecl_, pascal_, stdcall_, fastcall_, c_, cpp_,
+        interrupt_, fault_, inline_, virtual_, noreturn_, threadlocal_,
+        import_, export_, internal_, auto_, msil_rtl_, unmanaged_, property_, entrypoint_
     };
-// clang-format on
+    // clang-format on
 
-// clang-format off
-    enum e_ac
+    // clang-format off
+    enum class AccessLevel : int
     {
-        ac_private,
-        ac_protected,
-        ac_public,
-        ac_none
+        private_,
+        protected_,
+        public_,
+        none_
     };
-// clang-format on
 
 // clang-format off
     enum e_cvsrn
@@ -374,7 +373,7 @@ struct ConstExprArgArray
 typedef struct expr
 {
     struct expr *left, *right;
-    enum e_node type;
+    enum ExpressionNode type;
     int pragmas;
     struct typ* size; /* For block moves */
     void* altdata;
@@ -483,7 +482,7 @@ struct u_val
 };
 typedef struct typ
 {
-    enum e_bt type;        /* the type */
+    enum BasicType type;        /* the type */
     long size;             /* total size of type */
     struct typ* btp;       /* pointer to next type (pointers & arrays */
     struct typ* rootType;  /* pointer to base type of sequence */
@@ -516,7 +515,7 @@ typedef struct typ
     EXPRESSION* esize;            /* enode version of size */
     struct typ* etype;            /* type of size field  when size isn't constant */
     int vlaindex;                 /* index into the vararray */
-    EXPRESSION* templateDeclType; /* for bt_templatedecltype, used in templates */
+    EXPRESSION* templateDeclType; /* for BasicType::templatedecltype_, used in templates */
     struct typ* typedefType;      /* The typedef which describes this type */
 } TYPE;
 
@@ -524,7 +523,7 @@ typedef struct stmt
 {
     std::list<struct stmt*>* lower;
     std::list<struct stmt*>* blockTail;
-    enum e_stmt type;
+    enum StatementNode type;
     EXPRESSION* select;
     EXPRESSION* destexp;
     Optimizer::LINEDATA* lineData;
@@ -555,7 +554,7 @@ typedef struct blockdata
 {
     struct blockdata* orig;
     struct blockdata* caseDestruct;
-    enum e_kw type;
+    Keyword type;
     std::list<CASEDATA*>* cases;
     std::list<STATEMENT*>* statements;
     std::list<STATEMENT*>* blockTail;
@@ -627,10 +626,10 @@ struct attributes
         int structAlign;                                /* alignment of structures/ unions */
         int warnAlign;                                  /* if nz, warn if not aligned */
         unsigned vectorSize;                            /* total size of a vectored attribute */
-        enum e_lk linkage;                              /* stdcall */
-        enum e_lk linkage2;                             /* export, import, msil */
-        enum e_lk linkage3;                             /* used here for noreturn */
-        enum e_lk linkage4;                             /* lk_virtual */
+        enum Linkage linkage;                              /* stdcall */
+        enum Linkage linkage2;                             /* export, import, msil */
+        enum Linkage linkage3;                             /* used here for noreturn */
+        enum Linkage linkage4;                             /* lvirtual */
         struct sym* cleanup;                            /* cleanup function */
         bool packed;                                    /* True if to reset alignment to 1 */
         bool alignedAttribute;                          /* True if alignment came from gcc aligned attribute */
@@ -675,8 +674,8 @@ typedef struct sym
         std::list<NAMESPACEVALUEDATA*>* nameSpaceValues; /* for a namespace SP */
         struct sym* vtabsp;
         Optimizer::LINEDATA* linedata;
-        enum e_sc storage_class; /* storage class */
-        enum e_ac access;        /* c++ access rights for members */
+        enum StorageClass storage_class; /* storage class */
+        enum AccessLevel access;        /* c++ access rights for members */
         int operatorId;          /* operator id, CI + kw for an operator function */
         enum e_cm lambdaMode;
         INLINEFUNC inlineFunc;
@@ -876,7 +875,7 @@ typedef struct _memberInitializers
 typedef struct _baseClass
 {
     SYMBOL* cls;
-    enum e_ac accessLevel;
+    enum AccessLevel accessLevel;
     unsigned offset;
     int isvirtual : 1;
     int top : 1;
@@ -901,12 +900,12 @@ typedef struct _vbaseEntry
 
 typedef struct _templateParam
 {
-    // kw_class = class or namespace
-    // kw_int = nontype
-    // kw_template = template parameter
-    // kw_new = specialization
+    // class = class or namespace
+    // int = nontype
+    // template = template parameter
+    // new = specialization
     // first in the list is always the specialization specifier
-    enum e_kw type;
+    Keyword type;
     int index : 8;
     int packed : 1;
     int usedAsUnpacked : 1;
@@ -1052,7 +1051,7 @@ struct balance
 };
 
 // clang-format off
-    enum _matchFlags
+    enum _matchFlags : int
     {
         KW_NONE = 0, KW_CPLUSPLUS = 1, KW_INLINEASM = 2, KW_NONANSI = 4, KW_C99 = 8,
         KW_C1X = 16, KW_ASSEMBLER = 32, KW_MSIL = 64,
@@ -1103,21 +1102,11 @@ typedef struct kwblk
 {
     const char* name;
     int len;
-    enum e_kw key;
+    Keyword key;
     unsigned matchFlags;
     unsigned tokenTypes;
-    /*    ASMNAME *data; */
 } KEYWORD;
 
-#define MATCHTYPE(lex, tp) (lex && (lex)->data->type == (tp))
-#define ISID(lex) (lex && (lex)->data->type == l_id)
-#define ISKW(lex) (lex && (lex)->data->type == l_kw)
-#define MATCHKW(lex, keyWord) (ISKW(lex) && ((lex)->data->kw->key == keyWord))
-#define KWTYPE(lex, types)                                                                                                \
-    (ISKW(lex) && (((lex)->data->kw->key == kw_auto ? (Optimizer::cparams.prm_cplusplus ? TT_BASETYPE : TT_STORAGE_CLASS) \
-                                                    : (lex)->data->kw->tokenTypes) &                                      \
-                   (types)))
-#define KW(lex) (ISKW(lex) ? (lex)->data->kw->key : kw_none)
 
 enum e_lexType
 {
@@ -1190,6 +1179,13 @@ typedef struct lexContext
     LEXLIST* last;
 } LEXCONTEXT;
 
+#define MATCHTYPE(lex, tp) (lex && (lex)->data->type == (tp))
+#define ISID(lex) (lex && (lex)->data->type == l_id)
+#define ISKW(lex) (lex && (lex)->data->type == l_kw)
+#define MATCHKW(lex, keyWord) (ISKW(lex) && ((lex)->data->kw->key == keyWord))
+bool KWTYPE(LEXLIST* lex, unsigned types);
+#define KW(lex) (ISKW(lex) ? (lex)->data->kw->key : Keyword::none_)
+
 struct templateListData
 {
     std::list<TEMPLATEPARAMPAIR>* args;  // list of templateparam lists
@@ -1223,24 +1219,24 @@ constexpr inline TYPE* basetype(TYPE* a)
     return a;
 }
 
-constexpr inline bool __isref(TYPE* x) { return (x)->type == bt_lref || (x)->type == bt_rref; }
+constexpr inline bool __isref(TYPE* x) { return (x)->type == BasicType::lref_ || (x)->type == BasicType::rref_; }
 constexpr inline bool isref(TYPE* x)
 {
     return (__isref(basetype(x)) ||
-            (x)->type == bt_templateparam && (x)->templateParam->second->type == kw_int && __isref((x)->templateParam->second->byNonType.tp));
+            (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == Keyword::int_ && __isref((x)->templateParam->second->byNonType.tp));
 }
-constexpr inline bool __ispointer(TYPE* x) { return ((x)->type == bt_pointer || (x)->type == bt_seg); }
+constexpr inline bool __ispointer(TYPE* x) { return ((x)->type == BasicType::pointer_ || (x)->type == BasicType::seg_); }
 constexpr inline bool ispointer(TYPE* x)
 {
-    return (__ispointer(basetype(x)) || (x)->type == bt_templateparam && (x)->templateParam->second->type == kw_int &&
+    return (__ispointer(basetype(x)) || (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == Keyword::int_ &&
                                             __ispointer((x)->templateParam->second->byNonType.tp));
 }
 
-constexpr inline bool __isfunction(TYPE* x) { return ((x)->type == bt_func || (x)->type == bt_ifunc); }
+constexpr inline bool __isfunction(TYPE* x) { return ((x)->type == BasicType::func_ || (x)->type == BasicType::ifunc_); }
 constexpr inline bool isfunction(TYPE* x) { return (__isfunction(basetype(x))); }
 
 constexpr inline bool isfuncptr(TYPE* x) { return (ispointer(x) && basetype(x)->btp && isfunction(basetype(x)->btp)); }
-constexpr inline bool __isstructured(TYPE* x) { return ((x)->type == bt_class || (x)->type == bt_struct || (x)->type == bt_union); }
+constexpr inline bool __isstructured(TYPE* x) { return ((x)->type == BasicType::class_ || (x)->type == BasicType::struct_ || (x)->type == BasicType::union_); }
 
 constexpr inline bool isstructured(TYPE* x) { return (__isstructured(basetype(x))); }
 

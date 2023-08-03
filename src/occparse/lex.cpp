@@ -80,335 +80,312 @@ struct ParseHold
 static std::stack<ParseHold> parseStack;
 
 KEYWORD keywords[] = {
-    {"!", 1, notx, KW_ASSEMBLER, TT_UNARY | TT_OPERATOR},
-    {"!=", 2, neq, 0, TT_RELATION | TT_EQUALITY},
-    {"#", 1, hash, 0, TT_UNKNOWN},
-    {"%", 1, mod, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
-    {"%=", 2, asmod, 0, TT_ASSIGN | TT_OPERATOR},
-    {"&", 1, andx, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
-    {"&&", 2, land, 0, TT_BINARY | TT_OPERATOR},
-    {"&=", 2, asand, 0, TT_ASSIGN | TT_OPERATOR},
-    {"(", 1, openpa, KW_ASSEMBLER, TT_PRIMARY},
-    {")", 1, closepa, KW_ASSEMBLER, TT_PRIMARY},
-    {"*", 1, star, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
-    {"*=", 2, astimes, 0, TT_ASSIGN | TT_OPERATOR},
-    {"+", 1, plus, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
-    {"++", 2, autoinc, 0, TT_UNARY | TT_INCREMENT},
-    {"+=", 2, asplus, 0, TT_ASSIGN | TT_OPERATOR},
-    {",", 1, comma, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
-    {"-", 1, minus, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
-    {"--", 2, autodec, 0, TT_UNARY | TT_INCREMENT},
-    {"-=", 2, asminus, 0, TT_ASSIGN | TT_OPERATOR},
-    {"->", 2, pointsto, 0, TT_BINARY | TT_POINTER},
-    {"->*", 3, pointstar, 0, TT_BINARY | TT_POINTER},
-    {".", 1, dot, 0, TT_BINARY | TT_POINTER},
-    {".*", 2, dotstar, 0, TT_BINARY | TT_POINTER},
-    {"...", 3, ellipse},
-    {"/", 1, divide, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
-    {"/=", 2, asdivide, 0, TT_ASSIGN | TT_OPERATOR},
-    {":", 1, colon, KW_ASSEMBLER},
-    {"::", 2, classsel, KW_CPLUSPLUS | KW_MSIL, TT_BINARY | TT_SELECTOR},
-    {";", 1, semicolon, KW_ASSEMBLER, TT_CONTROL},
-    {"<", 1, lt, 0, TT_RELATION | TT_INEQUALITY},
-    {"<<", 2, leftshift, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
-    {"<<=", 3, asleftshift, 0, TT_ASSIGN | TT_OPERATOR},
-    {"<=", 2, leq, 0, TT_RELATION | TT_INEQUALITY},
-    {"=", 1, assign, 0, TT_ASSIGN | TT_OPERATOR | TT_BASE},
-    {"==", 2, eq, 0, TT_RELATION | TT_EQUALITY},
-    {">", 1, gt, 0, TT_RELATION | TT_INEQUALITY},
-    {">=", 2, geq, 0, TT_RELATION | TT_INEQUALITY},
-    {">>", 2, rightshift, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
-    {">>=", 3, asrightshift, 0, TT_ASSIGN | TT_OPERATOR},
-    {"?", 1, hook, 0, TT_BINARY | TT_OPERATOR},
-    {"[", 1, openbr, 0, TT_BINARY | TT_POINTER},
-    {"]", 1, closebr, 0, TT_BINARY | TT_POINTER},
-    {"^", 1, uparrow, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
-    {"^=", 2, asxor, 0, TT_ASSIGN | TT_OPERATOR},
-    /*
-    { "_A0", 3,  kw_A0, KW_NONANSI | KW_68K, TT_VAR },
-    { "_A1", 3,  kw_A1, KW_NONANSI | KW_68K, TT_VAR  },
-    { "_A2", 3,  kw_A2, KW_NONANSI | KW_68K, TT_VAR  },
-    { "_A3", 3,  kw_A3, KW_NONANSI | KW_68K, TT_VAR  },
-    { "_A4", 3,  kw_A4, KW_NONANSI | KW_68K, TT_VAR  },
-    { "_A5", 3,  kw_A5, KW_NONANSI | KW_68K, TT_VAR  },
-    { "_A6", 3,  kw_A6, KW_NONANSI | KW_68K, TT_VAR  },
-    { "_A7", 3,  kw_A7, KW_NONANSI | KW_68K, TT_VAR  },
-    */
-    {"_Alignas", 8, kw_alignas, KW_C1X, TT_CONTROL},
-    {"_Alignof", 8, kw_alignof, KW_C1X, TT_UNARY | TT_OPERATOR},
-    {"_Atomic", 7, kw_atomic, KW_C1X | KW_CPLUSPLUS | KW_C2X, TT_POINTERQUAL | TT_TYPEQUAL | TT_BASETYPE},
-    {"_Bool", 5, kw_bool, KW_C99 | KW_C1X, TT_BASETYPE | TT_BOOL},
-    {"_CR0", 4, kw_cr0, KW_NONANSI | KW_386, TT_VAR},
-    {"_CR1", 4, kw_cr1, KW_NONANSI | KW_386, TT_VAR},
-    {"_CR2", 4, kw_cr2, KW_NONANSI | KW_386, TT_VAR},
-    {"_CR3", 4, kw_cr3, KW_NONANSI | KW_386, TT_VAR},
-    {"_CR4", 4, kw_cr4, KW_NONANSI | KW_386, TT_VAR},
-    {"_CR5", 4, kw_cr5, KW_NONANSI | KW_386, TT_VAR},
-    {"_CR6", 4, kw_cr6, KW_NONANSI | KW_386, TT_VAR},
-    {"_CR7", 4, kw_cr7, KW_NONANSI | KW_386, TT_VAR},
-    {"_Complex", 8, kw__Complex, 0, TT_BASETYPE | TT_COMPLEX},
-    /*
-    { "_D0", 3,  kw_D0, KW_NONANSI | KW_68K, TT_VAR  },
-    { "_D1", 3,  kw_D1, KW_NONANSI | KW_68K, TT_VAR  },
-    { "_D2", 3,  kw_D2, KW_NONANSI | KW_68K, TT_VAR  },
-    { "_D3", 3,  kw_D3, KW_NONANSI | KW_68K, TT_VAR  },
-    { "_D4", 3,  kw_D4, KW_NONANSI | KW_68K, TT_VAR  },
-    { "_D5", 3,  kw_D5, KW_NONANSI | KW_68K, TT_VAR  },
-    { "_D6", 3,  kw_D6, KW_NONANSI | KW_68K, TT_VAR  },
-    { "_D7", 3,  kw_D7, KW_NONANSI | KW_68K, TT_VAR  },
-    */
-    {"_DR0", 4, kw_dr0, KW_NONANSI | KW_386, TT_VAR},
-    {"_DR1", 4, kw_dr1, KW_NONANSI | KW_386, TT_VAR},
-    {"_DR2", 4, kw_dr2, KW_NONANSI | KW_386, TT_VAR},
-    {"_DR3", 4, kw_dr3, KW_NONANSI | KW_386, TT_VAR},
-    {"_DR4", 4, kw_dr4, KW_NONANSI | KW_386, TT_VAR},
-    {"_DR5", 4, kw_dr5, KW_NONANSI | KW_386, TT_VAR},
-    {"_DR6", 4, kw_dr6, KW_NONANSI | KW_386, TT_VAR},
-    {"_DR7", 4, kw_dr7, KW_NONANSI | KW_386, TT_VAR},
-    {"_EAX", 4, kw_D0, KW_NONANSI | KW_386, TT_VAR},
-    {"_EBP", 4, kw_D5, KW_NONANSI | KW_386, TT_VAR},
-    {"_EBX", 4, kw_D3, KW_NONANSI | KW_386, TT_VAR},
-    {"_ECX", 4, kw_D1, KW_NONANSI | KW_386, TT_VAR},
-    {"_EDI", 4, kw_D7, KW_NONANSI | KW_386, TT_VAR},
-    {"_EDX", 4, kw_D2, KW_NONANSI | KW_386, TT_VAR},
-    {"_ESI", 4, kw_D6, KW_NONANSI | KW_386, TT_VAR},
-    {"_ESP", 4, kw_D4, KW_NONANSI | KW_386, TT_VAR},
-    {"_FP0", 4, kw_F0, KW_NONANSI | KW_68K | KW_386, TT_VAR},
-    {"_FP1", 4, kw_F1, KW_NONANSI | KW_68K | KW_386, TT_VAR},
-    {"_FP2", 4, kw_F2, KW_NONANSI | KW_68K | KW_386, TT_VAR},
-    {"_FP3", 4, kw_F3, KW_NONANSI | KW_68K | KW_386, TT_VAR},
-    {"_FP4", 4, kw_F4, KW_NONANSI | KW_68K | KW_386, TT_VAR},
-    {"_FP5", 4, kw_F5, KW_NONANSI | KW_68K | KW_386, TT_VAR},
-    {"_FP6", 4, kw_F6, KW_NONANSI | KW_68K | KW_386, TT_VAR},
-    {"_FP7", 4, kw_F7, KW_NONANSI | KW_68K | KW_386, TT_VAR},
-    {"_Generic", 8, kw_generic, KW_C1X, TT_VAR},
-    {"_INF", 4, kw__INF, 0, TT_VAR},
-    {"_Imaginary", 10, kw__Imaginary, 0, TT_BASETYPE | TT_COMPLEX},
-    {"_NAN", 4, kw__NAN, 0, TT_VAR},
-    {"_Noreturn", 9, kw_noreturn, KW_C1X, TT_LINKAGE},
-    {"_Pragma", 7, kw__Pragma, KW_C99 | KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
-    {"_SS", 3, kw_AD, KW_NONANSI | KW_386, TT_VAR},
-    {"_Static_assert", 14, kw_static_assert, KW_C1X, 0},
-    {"_Thread_local", 13, kw_thread_local, KW_C1X, TT_LINKAGE},
-    {"_TR0", 4, kw_tr0, KW_NONANSI | KW_386, TT_VAR},
-    {"_TR1", 4, kw_tr1, KW_NONANSI | KW_386, TT_VAR},
-    {"_TR2", 4, kw_tr2, KW_NONANSI | KW_386, TT_VAR},
-    {"_TR3", 4, kw_tr3, KW_NONANSI | KW_386, TT_VAR},
-    {"_TR4", 4, kw_tr4, KW_NONANSI | KW_386, TT_VAR},
-    {"_TR5", 4, kw_tr5, KW_NONANSI | KW_386, TT_VAR},
-    {"_TR6", 4, kw_tr6, KW_NONANSI | KW_386, TT_VAR},
-    {"_TR7", 4, kw_tr7, KW_NONANSI | KW_386, TT_VAR},
-    {"__CS", 4, kw_A8, KW_NONANSI | KW_386, TT_VAR},
-    {"__DS", 4, kw_A9, KW_NONANSI | KW_386, TT_VAR},
-    {"__ES", 4, kw_AA, KW_NONANSI | KW_386, TT_VAR},
-    {"__FS", 4, kw_AB, KW_NONANSI | KW_386, TT_VAR},
-    {"__GS", 4, kw_AC, KW_NONANSI | KW_386, TT_VAR},
-    {"__I", 3, kw___I, 0, TT_VAR},
-    {"__alignof", 9, kw_alignof, 0, TT_UNARY | TT_OPERATOR},
-    {"__alignof__", 11, kw_alignof, 0, TT_UNARY | TT_OPERATOR},
-    {"__alloca", 8, kw_alloca, KW_NONANSI | KW_ALL, TT_OPERATOR | TT_UNARY},
-    {"__asm", 5, kw_asm, KW_NONANSI | KW_ALL, TT_CONTROL},
-    {"__atomic_flag_test_set", 22, kw_atomic_flag_test_set, 0, TT_VAR},
-    {"__atomic_flag_clear", 19, kw_atomic_flag_clear, 0, TT_VAR},
-    {"__c11_atomic_init", 17, kw_c11_atomic_init, 0, TT_VAR},
-    {"__c11_atomic_thread_fence", 25, kw_c11_atomic_thread_fence, 0, TT_VAR},
-    {"__c11_atomic_signal_fence", 25, kw_c11_atomic_signal_fence, 0, TT_VAR},
-    {"__c11_atomic_is_lock_free", 25, kw_c11_atomic_is_lock_free, 0, TT_VAR},
-    {"__c11_atomic_store", 18, kw_c11_atomic_store, 0, TT_VAR},
-    {"__c11_atomic_load", 17, kw_c11_atomic_load, 0, TT_VAR},
-    {"__c11_atomic_exchange", 21, kw_c11_atomic_xchg, 0, TT_VAR},
-    {"__c11_atomic_compare_exchange_strong", 36, kw_c11_atomic_cmpxchg_strong, 0, TT_VAR},
-    {"__c11_atomic_compare_exchange_weak", 34, kw_c11_atomic_cmpxchg_weak, 0, TT_VAR},
-    {"__c11_atomic_fetch_add", 22, kw_c11_atomic_ftchadd, 0, TT_VAR},
-    {"__c11_atomic_fetch_sub", 22, kw_c11_atomic_ftchsub, 0, TT_VAR},
-    {"__c11_atomic_fetch_and", 22, kw_c11_atomic_ftchand, 0, TT_VAR},
-    {"__c11_atomic_fetch_xor", 22, kw_c11_atomic_ftchxor, 0, TT_VAR},
-    {"__c11_atomic_fetch_or", 21, kw_c11_atomic_ftchor, 0, TT_VAR},
-    {"__atomic_load_n", 15, kw_c11_atomic_load, 0, TT_VAR},
-    {"__atomic_store_n", 16, kw_c11_atomic_store, 0, TT_VAR},
-    {"__atomic_exchange_n", 19, kw_c11_atomic_xchg, 0, TT_VAR},
-    {"__atomic_compare_exchange_n", 27, kw_atomic_cmpxchg_n, 0, TT_VAR},
-    {"__atomic_add_fetch", 18, kw_atomic_addftch, 0, TT_VAR},
-    {"__atomic_sub_fetch", 18, kw_atomic_subftch, 0, TT_VAR},
-    {"__atomic_and_fetch", 18, kw_atomic_andftch, 0, TT_VAR},
-    {"__atomic_xor_fetch", 18, kw_atomic_xorftch, 0, TT_VAR},
-    {"__atomic_or_fetch", 17, kw_atomic_orftch, 0, TT_VAR},
-    {"__atomic_fetch_add", 22, kw_c11_atomic_ftchadd, 0, TT_VAR},  // c11 keywords were added first so we use em'
-    {"__atomic_fetch_sub", 22, kw_c11_atomic_ftchsub, 0, TT_VAR},
-    {"__atomic_fetch_and", 22, kw_c11_atomic_ftchand, 0, TT_VAR},
-    {"__atomic_fetch_xor", 22, kw_c11_atomic_ftchxor, 0, TT_VAR},
-    {"__atomic_fetch_or", 21, kw_c11_atomic_ftchor, 0, TT_VAR},
-    {"__attribute__", 13, kw__attribute, 0, TT_VAR},
-    {"__catch", 7, kw___catch, KW_MSIL, TT_CONTROL},
-    {"__cdecl", 7, kw__cdecl, 0, TT_LINKAGE},
-    {"__char16_t", 10, kw_char16_t, KW_CPLUSPLUS | KW_C1X, TT_BASETYPE | TT_INT},
-    {"__char32_t", 10, kw_char32_t, KW_CPLUSPLUS | KW_C1X, TT_BASETYPE | TT_INT},
-    {"__cpblk", 7, kw__cpblk, KW_MSIL, TT_OPERATOR | TT_UNARY},
-    {"__declspec", 10, kw__declspec, KW_NONANSI | KW_ALL, TT_LINKAGE},
-    {"__entrypoint", 12, kw__entrypoint, KW_MSIL, TT_LINKAGE},
-    {"__export", 8, kw__export, KW_NONANSI | KW_ALL, TT_LINKAGE},
-    {"__fastcall", 10, kw__fastcall, KW_NONANSI | KW_ALL, TT_LINKAGE},
-    {"__fastcall__", 12, kw__fastcall, 0, TT_LINKAGE},
-    {"__fault", 7, kw___fault, KW_MSIL, TT_CONTROL},
-    {"__finally", 9, kw___finally, KW_MSIL, TT_CONTROL},
-    {"__func__", 8, kw___func__, KW_C99 | KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
-    {"__import", 8, kw__import, KW_NONANSI | KW_ALL, TT_LINKAGE},
-    {"__initblk", 9, kw__initblk, KW_MSIL, TT_OPERATOR | TT_UNARY},
-    {"__inline", 8, kw_inline, KW_NONANSI | KW_ALL, TT_LINKAGE},
-    {"__int16", 7, kw_short, KW_NONANSI | KW_386 | KW_MSIL, TT_BASETYPE | TT_INT},
-    {"__int32", 7, kw_int, KW_NONANSI | KW_386 | KW_MSIL, TT_BASETYPE | TT_INT | TT_BASE},
-    {"__int64", 7, kw___int64, KW_NONANSI | KW_386 | KW_MSIL, TT_BASETYPE | TT_INT},
-    {"__int64__", 9, kw___int64, 0, TT_BASETYPE | TT_INT},
-    {"__int8", 6, kw_char, KW_NONANSI | KW_386, TT_BASETYPE | TT_INT},
-    {"__kill_dependency", 17, kw_atomic_kill_dependency, 0, TT_VAR},
-    {"__msil_rtl", 10, kw__msil_rtl, KW_NONANSI | KW_ALL, TT_LINKAGE},
-    {"__object", 8, kw___object, KW_MSIL, TT_BASETYPE},
-    {"__offsetof", 10, kw___offsetof, 0, TT_VAR},
-    {"__pascal", 8, kw__pascal, KW_NONANSI | KW_ALL, TT_LINKAGE},
-    {"__property", 10, kw__property, KW_MSIL, TT_LINKAGE},
-    {"__rtllinkage", 12, kw__rtllinkage, KW_NONANSI | KW_ALL, TT_LINKAGE},
-    {"__stdcall", 9, kw__stdcall, KW_NONANSI | KW_ALL, TT_LINKAGE},
-    {"__string", 8, kw___string, KW_MSIL, TT_BASETYPE},
-    {"__try", 5, kw___try, KW_MSIL, TT_CONTROL},
-    {"__typeid", 8, kw___typeid, KW_NONANSI | KW_ALL, TT_VAR},
-    {"__underlying_type", 17, kw___underlying_type, KW_CPLUSPLUS, TT_BASETYPE},
-    {"__unmanaged", 11, kw__unmanaged, KW_NONANSI | KW_ALL, TT_LINKAGE},
-    {"__uuid", 6, kw__uuid, 0, TT_LINKAGE},
-    {"__uuidof", 8, kw__uuidof, 0, TT_VAR},
-    {"__va_list__", 11, kw___va_list__, KW_NONANSI | KW_ALL, TT_TYPEQUAL | TT_POINTERQUAL},
-    {"__va_typeof__", 13, kw___va_typeof__, KW_NONANSI | KW_ALL, TT_VAR},
-    {"__volatile", 10, kw__volatile, KW_NONANSI | KW_ALL, TT_VAR},
-    {"_absolute", 9, kw__absolute, KW_NONANSI | KW_ALL, TT_STORAGE_CLASS},
-    {"_asm", 4, kw_asm, KW_NONANSI | KW_ALL, TT_CONTROL},
-    {"_cdecl", 6, kw__cdecl, KW_NONANSI, TT_LINKAGE},
-    {"_export", 7, kw__export, KW_NONANSI, TT_LINKAGE},
-    //	{ "_far", 4,  kw__far, KW_NONANSI, TT_TYPEQUAL | TT_POINTERQUAL },
-    {"_fault", 6, kw__fault, KW_NONANSI, TT_LINKAGE},
-    {"_genbyte", 8, kw__genword, KW_NONANSI | KW_386, TT_UNARY | TT_OPERATOR},
-    {"_genword", 8, kw__genword, KW_NONANSI | KW_68K, TT_UNARY | TT_OPERATOR},
-    {"_import", 7, kw__import, KW_NONANSI, TT_LINKAGE},
-    {"_indirect", 9, kw__indirect, KW_NONANSI | KW_ALL},
-    {"_interrupt", 10, kw__interrupt, KW_NONANSI, TT_LINKAGE},
-    {"_intrinsic", 10, kw__intrinsic, KW_NONANSI | KW_ALL, TT_TYPEQUAL},
-    {"_loadds", 7, kw__loadds, KW_NONANSI | KW_386, TT_TYPEQUAL},
-    //	{ "_near", 5,  kw__near, KW_NONANSI | KW_ALL, TT_TYPEQUAL | TT_POINTERQUAL},
-    {"_pascal", 7, kw__pascal, KW_NONANSI | KW_ALL, TT_LINKAGE},
-    {"_seg", 4, kw__seg, KW_NONANSI | KW_ALL, TT_TYPEQUAL | TT_POINTERQUAL},
-    {"_stdcall", 8, kw__stdcall, KW_NONANSI | KW_ALL, TT_LINKAGE},
-    {"_trap", 5, kw__trap, KW_NONANSI | KW_ALL, TT_OPERATOR | TT_UNARY},
-    {"alignas", 7, kw_alignas, KW_CPLUSPLUS | KW_C2X, TT_CONTROL},
-    {"alignof", 7, kw_alignof, KW_CPLUSPLUS | KW_C2X, TT_UNARY | TT_OPERATOR},
-    {"and", 3, land, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
-    {"and_eq", 6, asand, KW_CPLUSPLUS, TT_ASSIGN | TT_OPERATOR},
-    {"asm", 3, kw_asm, KW_NONANSI | KW_ALL, TT_CONTROL},
-    {"auto", 4, kw_auto, 0, TT_STORAGE_CLASS},
-    {"bitand", 6, andx, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
-    {"bitor", 5, orx, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
-    {"bool", 4, kw_bool, KW_CPLUSPLUS | KW_C2X, TT_BASETYPE | TT_BOOL},
-    {"break", 5, kw_break, 0, TT_CONTROL},
-    {"case", 4, kw_case, 0, TT_CONTROL | TT_SWITCH},
-    {"catch", 5, kw_catch, KW_CPLUSPLUS, TT_CONTROL},
-    {"cdecl", 5, kw__cdecl, 0, TT_LINKAGE},
-    {"char", 4, kw_char, 0, TT_BASETYPE | TT_INT},
-    {"char16_t", 8, kw_char16_t, KW_CPLUSPLUS, TT_BASETYPE | TT_INT},
-    {"char32_t", 8, kw_char32_t, KW_CPLUSPLUS, TT_BASETYPE | TT_INT},
-    {"class", 5, kw_class, KW_CPLUSPLUS, TT_BASETYPE | TT_STRUCT},
-    {"compl", 5, complx, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
-    {"const", 5, kw_const, KW_ASSEMBLER, TT_POINTERQUAL | TT_TYPEQUAL},
-    {"const_cast", 10, kw_const_cast, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
-    {"constexpr", 9, kw_constexpr, KW_CPLUSPLUS, (unsigned long)TT_DECLARE},
-    {"continue", 8, kw_continue, 0, TT_CONTROL},
-    {"decltype", 8, kw_decltype, KW_CPLUSPLUS, TT_OPERATOR},
-    {"default", 7, kw_default, 0, TT_CONTROL},
-    {"delete", 6, kw_delete, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
-    {"do", 2, kw_do, 0, TT_CONTROL},
-    {"double", 6, kw_double, 0, TT_BASETYPE | TT_FLOAT},
-    {"dynamic_cast", 12, kw_dynamic_cast, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
-    {"else", 4, kw_else, 0, TT_CONTROL},
-    {"enum", 4, kw_enum, 0, TT_BASETYPE | TT_ENUM},
-    {"explicit", 8, kw_explicit, KW_CPLUSPLUS, TT_STORAGE_CLASS},
-    {"export", 6, kw_export, KW_CPLUSPLUS, TT_UNKNOWN},
-    {"extern", 6, kw_extern, KW_ASSEMBLER, TT_STORAGE_CLASS},
-    {"false", 5, kw_false, KW_CPLUSPLUS | KW_C2X, TT_VAR},
-    //	{ "far", 3,  kw__far, KW_NONANSI | KW_ALL, TT_POINTERQUAL | TT_TYPEQUAL},
-    {"float", 5, kw_float, 0, TT_BASETYPE | TT_FLOAT},
-    {"for", 3, kw_for, 0, TT_CONTROL},
-    {"friend", 6, kw_friend, KW_CPLUSPLUS, TT_LINKAGE},
-    {"goto", 4, kw_goto, 0, TT_CONTROL},
-    {"if", 2, kw_if, 0, TT_CONTROL},
-    {"inline", 6, kw_inline, KW_C99 | KW_CPLUSPLUS, TT_LINKAGE},
-    {"int", 3, kw_int, 0, TT_BASETYPE | TT_INT | TT_BASE},
-    {"long", 4, kw_long, 0, TT_BASETYPE | TT_INT},
-    {"mutable", 7, kw_mutable, KW_CPLUSPLUS, TT_STORAGE_CLASS},
-    {"namespace", 9, kw_namespace, KW_CPLUSPLUS | KW_MSIL, 0},
-    {"native", 6, kw_native, KW_MSIL, TT_BASETYPE | TT_INT | TT_BASE},
-    //	{ "near", 4,  kw__near, KW_NONANSI | KW_ALL, TT_POINTERQUAL | TT_TYPEQUAL},
-    {"new", 3, kw_new, KW_CPLUSPLUS, TT_OPERATOR | TT_UNARY},
-    {"noexcept", 8, kw_noexcept, KW_CPLUSPLUS, TT_CONTROL},
-    {"not", 3, notx, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
-    {"not_eq", 6, neq, KW_CPLUSPLUS, TT_RELATION | TT_EQUALITY},
-    {"nullptr", 7, kw_nullptr, KW_CPLUSPLUS | KW_C2X, TT_VAR},
-    {"operator", 8, kw_operator, KW_CPLUSPLUS, TT_OPERATOR},
-    {"or", 2, lor, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
-    {"or_eq", 5, asor, KW_CPLUSPLUS, TT_ASSIGN | TT_OPERATOR},
-    {"private", 7, kw_private, KW_CPLUSPLUS, TT_CLASS},
-    {"protected", 9, kw_protected, KW_CPLUSPLUS, TT_CLASS},
-    {"public", 6, kw_public, KW_CPLUSPLUS | KW_ASSEMBLER, TT_CLASS},
-    {"register", 8, kw_register, 0, TT_STORAGE_CLASS},
-    {"reinterpret_cast", 16, kw_reinterpret_cast, KW_CPLUSPLUS, TT_OPERATOR | TT_UNARY},
-    {"restrict", 8, kw_restrict, KW_C99, TT_POINTERQUAL | TT_TYPEQUAL},
-    {"return", 6, kw_return, 0, TT_CONTROL},
-    {"short", 5, kw_short, 0, TT_BASETYPE | TT_INT},
-    {"signed", 6, kw_signed, 0, TT_BASETYPE | TT_INT},
-    {"sizeof", 6, kw_sizeof, 0, TT_UNARY | TT_OPERATOR},
-    {"static", 6, kw_static, 0, TT_STORAGE_CLASS},
-    {"static_assert", 13, kw_static_assert, KW_CPLUSPLUS, 0},
-    {"static_cast", 11, kw_static_cast, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
-    {"struct", 6, kw_struct, 0, TT_BASETYPE | TT_STRUCT},
-    {"switch", 6, kw_switch, 0, TT_CONTROL},
-    {"template", 8, kw_template, KW_CPLUSPLUS, TT_CONTROL},
-    {"this", 4, kw_this, KW_CPLUSPLUS, TT_VAR},
-    {"thread_local", 12, kw_thread_local, KW_CPLUSPLUS, TT_LINKAGE},
-    {"throw", 5, kw_throw, KW_CPLUSPLUS, TT_OPERATOR | TT_UNARY},
-    {"true", 4, kw_true, KW_CPLUSPLUS | KW_C2X, TT_VAR},
-    {"try", 3, kw_try, KW_CPLUSPLUS, TT_CONTROL},
-    {"typedef", 7, kw_typedef, 0, TT_BASETYPE | TT_TYPEDEF | TT_STORAGE_CLASS},
-    {"typeid", 6, kw_typeid, KW_CPLUSPLUS, TT_UNKNOWN},
-    {"typename", 8, kw_typename, KW_CPLUSPLUS, TT_TYPENAME},
-    {"typeof", 6, kw_typeof, 0, TT_BASETYPE | TT_OPERATOR},
-    {"union", 5, kw_union, 0, TT_BASETYPE | TT_STRUCT},
-    {"unsigned", 8, kw_unsigned, 0, TT_BASETYPE | TT_INT | TT_BASE},
-    {"using", 5, kw_using, KW_CPLUSPLUS | KW_MSIL, TT_CONTROL},
-    {"virtual", 7, kw_virtual, KW_CPLUSPLUS, TT_STORAGE_CLASS},
-    {"void", 4, kw_void, 0, TT_BASETYPE | TT_VOID},
-    {"volatile", 8, kw_volatile, 0, TT_TYPEQUAL | TT_POINTERQUAL},
-    {"wchar_t", 7, kw_wchar_t, KW_CPLUSPLUS, TT_BASETYPE | TT_INT},
-    {"while", 5, kw_while, 0, TT_CONTROL},
-    {"xor", 3, uparrow, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
-    {"xor_eq", 6, asxor, KW_CPLUSPLUS, TT_ASSIGN | TT_OPERATOR},
-    {"{", 1, begin, 0, TT_CONTROL | TT_BLOCK},
-    {"|", 1, orx, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
-    {"|=", 2, asor, 0, TT_ASSIGN | TT_OPERATOR},
-    {"||", 2, lor, 0, TT_BINARY | TT_OPERATOR},
-    {"}", 1, end, 0, TT_CONTROL | TT_BLOCK},
-    {"~", 1, complx, KW_ASSEMBLER, TT_UNARY | TT_OPERATOR},
+    {"!", 1, Keyword::not_, KW_ASSEMBLER, TT_UNARY | TT_OPERATOR},
+    {"!=", 2, Keyword::neq_, 0, TT_RELATION | TT_EQUALITY},
+    {"#", 1, Keyword::hash_, 0, TT_UNKNOWN},
+    {"%", 1, Keyword::mod_, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
+    {"%=", 2, Keyword::asmod_, 0, TT_ASSIGN | TT_OPERATOR},
+    {"&", 1, Keyword::and_, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
+    {"&&", 2, Keyword::land_, 0, TT_BINARY | TT_OPERATOR},
+    {"&=", 2, Keyword::asand_, 0, TT_ASSIGN | TT_OPERATOR},
+    {"(", 1, Keyword::openpa_, KW_ASSEMBLER, TT_PRIMARY},
+    {")", 1, Keyword::closepa_, KW_ASSEMBLER, TT_PRIMARY},
+    {"*", 1, Keyword::star_, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
+    {"*=", 2, Keyword::astimes_, 0, TT_ASSIGN | TT_OPERATOR},
+    {"+", 1, Keyword::plus_, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
+    {"++", 2, Keyword::autoinc_, 0, TT_UNARY | TT_INCREMENT},
+    {"+=", 2, Keyword::asplus_, 0, TT_ASSIGN | TT_OPERATOR},
+    {",", 1, Keyword::comma_, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
+    {"-", 1, Keyword::minus_, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
+    {"--", 2, Keyword::autodec_, 0, TT_UNARY | TT_INCREMENT},
+    {"-=", 2, Keyword::asminus_, 0, TT_ASSIGN | TT_OPERATOR},
+    {"->", 2, Keyword::pointsto_, 0, TT_BINARY | TT_POINTER},
+    {"->*", 3, Keyword::pointstar_, 0, TT_BINARY | TT_POINTER},
+    {".", 1, Keyword::dot_, 0, TT_BINARY | TT_POINTER},
+    {".*", 2, Keyword::dotstar_, 0, TT_BINARY | TT_POINTER},
+    {"...", 3, Keyword::ellipse_},
+    {"/", 1, Keyword::divide_, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
+    {"/=", 2, Keyword::asdivide_, 0, TT_ASSIGN | TT_OPERATOR},
+    {":", 1, Keyword::colon_, KW_ASSEMBLER},
+    {"::", 2, Keyword::classsel_, KW_CPLUSPLUS | KW_MSIL, TT_BINARY | TT_SELECTOR},
+    {";", 1, Keyword::semicolon_, KW_ASSEMBLER, TT_CONTROL},
+    {"<", 1, Keyword::lt_, 0, TT_RELATION | TT_INEQUALITY},
+    {"<<", 2, Keyword::leftshift_, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
+    {"<<=", 3, Keyword::asleftshift_, 0, TT_ASSIGN | TT_OPERATOR},
+    {"<=", 2, Keyword::leq_, 0, TT_RELATION | TT_INEQUALITY},
+    {"=", 1, Keyword::assign_, 0, TT_ASSIGN | TT_OPERATOR | TT_BASE},
+    {"==", 2, Keyword::eq_, 0, TT_RELATION | TT_EQUALITY},
+    {">", 1, Keyword::gt_, 0, TT_RELATION | TT_INEQUALITY},
+    {">=", 2, Keyword::geq_, 0, TT_RELATION | TT_INEQUALITY},
+    {">>", 2, Keyword::rightshift_, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
+    {">>=", 3, Keyword::asrightshift_, 0, TT_ASSIGN | TT_OPERATOR},
+    {"?", 1, Keyword::hook_, 0, TT_BINARY | TT_OPERATOR},
+    {"[", 1, Keyword::openbr_, 0, TT_BINARY | TT_POINTER},
+    {"]", 1, Keyword::closebr_, 0, TT_BINARY | TT_POINTER},
+    {"^", 1, Keyword::uparrow_, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
+    {"^=", 2, Keyword::asxor_, 0, TT_ASSIGN | TT_OPERATOR},
+    {"_Alignas", 8, Keyword::alignas_, KW_C1X, TT_CONTROL},
+    {"_Alignof", 8, Keyword::alignof_, KW_C1X, TT_UNARY | TT_OPERATOR},
+    {"_Atomic", 7, Keyword::atomic_, KW_C1X | KW_CPLUSPLUS | KW_C2X, TT_POINTERQUAL | TT_TYPEQUAL | TT_BASETYPE},
+    {"_Bool", 5, Keyword::bool_, KW_C99 | KW_C1X, TT_BASETYPE | TT_BOOL},
+    {"_CR0", 4, Keyword::CR0_, KW_NONANSI | KW_386, TT_VAR},
+    {"_CR1", 4, Keyword::CR1_, KW_NONANSI | KW_386, TT_VAR},
+    {"_CR2", 4, Keyword::CR2_, KW_NONANSI | KW_386, TT_VAR},
+    {"_CR3", 4, Keyword::CR3_, KW_NONANSI | KW_386, TT_VAR},
+    {"_CR4", 4, Keyword::CR4_, KW_NONANSI | KW_386, TT_VAR},
+    {"_CR5", 4, Keyword::CR5_, KW_NONANSI | KW_386, TT_VAR},
+    {"_CR6", 4, Keyword::CR6_, KW_NONANSI | KW_386, TT_VAR},
+    {"_CR7", 4, Keyword::CR7_, KW_NONANSI | KW_386, TT_VAR},
+    {"_Complex", 8, Keyword::Complex_, 0, TT_BASETYPE | TT_COMPLEX},
+    {"_DR0", 4, Keyword::DR0_, KW_NONANSI | KW_386, TT_VAR},
+    {"_DR1", 4, Keyword::DR1_, KW_NONANSI | KW_386, TT_VAR},
+    {"_DR2", 4, Keyword::DR2_, KW_NONANSI | KW_386, TT_VAR},
+    {"_DR3", 4, Keyword::DR3_, KW_NONANSI | KW_386, TT_VAR},
+    {"_DR4", 4, Keyword::DR4_, KW_NONANSI | KW_386, TT_VAR},
+    {"_DR5", 4, Keyword::DR5_, KW_NONANSI | KW_386, TT_VAR},
+    {"_DR6", 4, Keyword::DR6_, KW_NONANSI | KW_386, TT_VAR},
+    {"_DR7", 4, Keyword::DR7_, KW_NONANSI | KW_386, TT_VAR},
+    {"_EAX", 4, Keyword::D0_, KW_NONANSI | KW_386, TT_VAR},
+    {"_EBP", 4, Keyword::D5_, KW_NONANSI | KW_386, TT_VAR},
+    {"_EBX", 4, Keyword::D3_, KW_NONANSI | KW_386, TT_VAR},
+    {"_ECX", 4, Keyword::D1_, KW_NONANSI | KW_386, TT_VAR},
+    {"_EDI", 4, Keyword::D7_, KW_NONANSI | KW_386, TT_VAR},
+    {"_EDX", 4, Keyword::D2_, KW_NONANSI | KW_386, TT_VAR},
+    {"_ESI", 4, Keyword::D6_, KW_NONANSI | KW_386, TT_VAR},
+    {"_ESP", 4, Keyword::D4_, KW_NONANSI | KW_386, TT_VAR},
+    {"_FP0", 4, Keyword::F0_, KW_NONANSI | KW_68K | KW_386, TT_VAR},
+    {"_FP1", 4, Keyword::F1_, KW_NONANSI | KW_68K | KW_386, TT_VAR},
+    {"_FP2", 4, Keyword::F2_, KW_NONANSI | KW_68K | KW_386, TT_VAR},
+    {"_FP3", 4, Keyword::F3_, KW_NONANSI | KW_68K | KW_386, TT_VAR},
+    {"_FP4", 4, Keyword::F4_, KW_NONANSI | KW_68K | KW_386, TT_VAR},
+    {"_FP5", 4, Keyword::F5_, KW_NONANSI | KW_68K | KW_386, TT_VAR},
+    {"_FP6", 4, Keyword::F6_, KW_NONANSI | KW_68K | KW_386, TT_VAR},
+    {"_FP7", 4, Keyword::F7_, KW_NONANSI | KW_68K | KW_386, TT_VAR},
+    {"_Generic", 8, Keyword::generic_, KW_C1X, TT_VAR},
+    {"_INF", 4, Keyword::INF_, 0, TT_VAR},
+    {"_Imaginary", 10, Keyword::Imaginary_, 0, TT_BASETYPE | TT_COMPLEX},
+    {"_NAN", 4, Keyword::NAN_, 0, TT_VAR},
+    {"_Noreturn", 9, Keyword::noreturn_, KW_C1X, TT_LINKAGE},
+    {"_Pragma", 7, Keyword::Pragma_, KW_C99 | KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
+    {"_SS", 3, Keyword::AD_, KW_NONANSI | KW_386, TT_VAR},
+    {"_Static_assert", 14, Keyword::static_assert_, KW_C1X, 0},
+    {"_Thread_local", 13, Keyword::thread_local_, KW_C1X, TT_LINKAGE},
+    {"_TR0", 4, Keyword::TR0_, KW_NONANSI | KW_386, TT_VAR},
+    {"_TR1", 4, Keyword::TR1_, KW_NONANSI | KW_386, TT_VAR},
+    {"_TR2", 4, Keyword::TR2_, KW_NONANSI | KW_386, TT_VAR},
+    {"_TR3", 4, Keyword::TR3_, KW_NONANSI | KW_386, TT_VAR},
+    {"_TR4", 4, Keyword::TR4_, KW_NONANSI | KW_386, TT_VAR},
+    {"_TR5", 4, Keyword::TR5_, KW_NONANSI | KW_386, TT_VAR},
+    {"_TR6", 4, Keyword::TR6_, KW_NONANSI | KW_386, TT_VAR},
+    {"_TR7", 4, Keyword::TR7_, KW_NONANSI | KW_386, TT_VAR},
+    {"__CS", 4, Keyword::A8_, KW_NONANSI | KW_386, TT_VAR},
+    {"__DS", 4, Keyword::A9_, KW_NONANSI | KW_386, TT_VAR},
+    {"__ES", 4, Keyword::AA_, KW_NONANSI | KW_386, TT_VAR},
+    {"__FS", 4, Keyword::AB_, KW_NONANSI | KW_386, TT_VAR},
+    {"__GS", 4, Keyword::AC_, KW_NONANSI | KW_386, TT_VAR},
+    {"__I", 3, Keyword::I_, 0, TT_VAR},
+    {"__alignof", 9, Keyword::alignof_, 0, TT_UNARY | TT_OPERATOR},
+    {"__alignof__", 11, Keyword::alignof_, 0, TT_UNARY | TT_OPERATOR},
+    {"__alloca", 8, Keyword::alloca_, KW_NONANSI | KW_ALL, TT_OPERATOR | TT_UNARY},
+    {"__asm", 5, Keyword::asm_, KW_NONANSI | KW_ALL, TT_CONTROL},
+    {"__atomic_flag_test_set", 22, Keyword::atomic_flag_test_set_, 0, TT_VAR},
+    {"__atomic_flag_clear", 19, Keyword::atomic_flag_clear_, 0, TT_VAR},
+    {"__c11_atomic_init", 17, Keyword::c11_atomic_init_, 0, TT_VAR},
+    {"__c11_atomic_thread_fence", 25, Keyword::c11_atomic_thread_fence_, 0, TT_VAR},
+    {"__c11_atomic_signal_fence", 25, Keyword::c11_atomic_signal_fence_, 0, TT_VAR},
+    {"__c11_atomic_is_lock_free", 25, Keyword::c11_atomic_is_lock_free_, 0, TT_VAR},
+    {"__c11_atomic_store", 18, Keyword::c11_atomic_store_, 0, TT_VAR},
+    {"__c11_atomic_load", 17, Keyword::c11_atomic_load_, 0, TT_VAR},
+    {"__c11_atomic_exchange", 21, Keyword::c11_atomic_xchg_, 0, TT_VAR},
+    {"__c11_atomic_compare_exchange_strong", 36, Keyword::c11_atomic_cmpxchg_strong_, 0, TT_VAR},
+    {"__c11_atomic_compare_exchange_weak", 34, Keyword::c11_atomic_cmpxchg_weak_, 0, TT_VAR},
+    {"__c11_atomic_fetch_add", 22, Keyword::c11_atomic_ftchadd_, 0, TT_VAR},
+    {"__c11_atomic_fetch_sub", 22, Keyword::c11_atomic_ftchsub_, 0, TT_VAR},
+    {"__c11_atomic_fetch_and", 22, Keyword::c11_atomic_ftchand_, 0, TT_VAR},
+    {"__c11_atomic_fetch_xor", 22, Keyword::c11_atomic_ftchxor_, 0, TT_VAR},
+    {"__c11_atomic_fetch_or", 21, Keyword::c11_atomic_ftchor_, 0, TT_VAR},
+    {"__atomic_load_n", 15, Keyword::c11_atomic_load_, 0, TT_VAR},
+    {"__atomic_store_n", 16, Keyword::c11_atomic_store_, 0, TT_VAR},
+    {"__atomic_exchange_n", 19, Keyword::c11_atomic_xchg_, 0, TT_VAR},
+    {"__atomic_compare_exchange_n", 27, Keyword::atomic_cmpxchg_n_, 0, TT_VAR},
+    {"__atomic_add_fetch", 18, Keyword::atomic_addftch_, 0, TT_VAR},
+    {"__atomic_sub_fetch", 18, Keyword::atomic_subftch_, 0, TT_VAR},
+    {"__atomic_and_fetch", 18, Keyword::atomic_andftch_, 0, TT_VAR},
+    {"__atomic_xor_fetch", 18, Keyword::atomic_xorftch_, 0, TT_VAR},
+    {"__atomic_or_fetch", 17, Keyword::atomic_orftch_, 0, TT_VAR},
+    {"__atomic_fetch_add", 22, Keyword::c11_atomic_ftchadd_, 0, TT_VAR},  // c11 keywords were added first so we use em'
+    {"__atomic_fetch_sub", 22, Keyword::c11_atomic_ftchsub_, 0, TT_VAR},
+    {"__atomic_fetch_and", 22, Keyword::c11_atomic_ftchand_, 0, TT_VAR},
+    {"__atomic_fetch_xor", 22, Keyword::c11_atomic_ftchxor_, 0, TT_VAR},
+    {"__atomic_fetch_or", 21, Keyword::c11_atomic_ftchor_, 0, TT_VAR},
+    {"__attribute__", 13, Keyword::attribute_, 0, TT_VAR},
+    {"__catch", 7, Keyword::seh_catch_, KW_MSIL, TT_CONTROL},
+    {"__cdecl", 7, Keyword::cdecl_, 0, TT_LINKAGE},
+    {"__char16_t", 10, Keyword::char16_t_, KW_CPLUSPLUS | KW_C1X, TT_BASETYPE | TT_INT},
+    {"__char32_t", 10, Keyword::char32_t_, KW_CPLUSPLUS | KW_C1X, TT_BASETYPE | TT_INT},
+    {"__cpblk", 7, Keyword::cpblk_, KW_MSIL, TT_OPERATOR | TT_UNARY},
+    {"__declspec", 10, Keyword::declspec_, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    {"__entrypoint", 12, Keyword::entrypoint_, KW_MSIL, TT_LINKAGE},
+    {"__export", 8, Keyword::dllexport_, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    {"__fastcall", 10, Keyword::fastcall_, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    {"__fastcall__", 12, Keyword::fastcall_, 0, TT_LINKAGE},
+    {"seh_fault_", 7, Keyword::seh_fault_, KW_MSIL, TT_CONTROL},
+    {"__finally", 9, Keyword::seh_finally_, KW_MSIL, TT_CONTROL},
+    {"__func__", 8, Keyword::func_, KW_C99 | KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
+    {"__import", 8, Keyword::dllimport_, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    {"__initblk", 9, Keyword::initblk_, KW_MSIL, TT_OPERATOR | TT_UNARY},
+    {"__inline", 8, Keyword::inline_, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    {"__int16", 7, Keyword::short_, KW_NONANSI | KW_386 | KW_MSIL, TT_BASETYPE | TT_INT},
+    {"__int32", 7, Keyword::int_, KW_NONANSI | KW_386 | KW_MSIL, TT_BASETYPE | TT_INT | TT_BASE},
+    {"__int64", 7, Keyword::int64_, KW_NONANSI | KW_386 | KW_MSIL, TT_BASETYPE | TT_INT},
+    {"__int64__", 9, Keyword::int64_, 0, TT_BASETYPE | TT_INT},
+    {"__int8", 6, Keyword::char_, KW_NONANSI | KW_386, TT_BASETYPE | TT_INT},
+    {"__kill_dependency", 17, Keyword::atomic_kill_dependency_, 0, TT_VAR},
+    {"__msil_rtl", 10, Keyword::msil_rtl_, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    {"__object", 8, Keyword::object_, KW_MSIL, TT_BASETYPE},
+    {"__offsetof", 10, Keyword::offsetof_, 0, TT_VAR},
+    {"__pascal", 8, Keyword::pascal_, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    {"__property", 10, Keyword::property_, KW_MSIL, TT_LINKAGE},
+    {"__rtllinkage", 12, Keyword::rtllinkage_, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    {"__stdcall", 9, Keyword::stdcall_, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    {"__string", 8, Keyword::string_, KW_MSIL, TT_BASETYPE},
+    {"__try", 5, Keyword::seh_try_, KW_MSIL, TT_CONTROL},
+    {"__typeid", 8, Keyword::typeid_, KW_NONANSI | KW_ALL, TT_VAR},
+    {"__underlying_type", 17, Keyword::underlying_type_, KW_CPLUSPLUS, TT_BASETYPE},
+    {"__unmanaged", 11, Keyword::unmanaged_, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    {"__uuid", 6, Keyword::uuid_, 0, TT_LINKAGE},
+    {"__uuidof", 8, Keyword::uuidof_, 0, TT_VAR},
+    {"__va_list__", 11, Keyword::va_list_, KW_NONANSI | KW_ALL, TT_TYPEQUAL | TT_POINTERQUAL},
+    {"__va_typeof__", 13, Keyword::va_typeof_, KW_NONANSI | KW_ALL, TT_VAR},
+    {"__volatile", 10, Keyword::volatile_, KW_NONANSI | KW_ALL, TT_VAR},
+    {"_absolute", 9, Keyword::absolute_, KW_NONANSI | KW_ALL, TT_STORAGE_CLASS},
+    {"_asm", 4, Keyword::asm_, KW_NONANSI | KW_ALL, TT_CONTROL},
+    {"_cdecl", 6, Keyword::cdecl_, KW_NONANSI, TT_LINKAGE},
+    {"_export", 7, Keyword::dllexport_, KW_NONANSI, TT_LINKAGE},
+    //	{ "_far", 4,  Keyword::far_, KW_NONANSI, TT_TYPEQUAL | TT_POINTERQUAL },
+    {"_fault", 6, Keyword::seh_fault_, KW_NONANSI, TT_LINKAGE},
+    {"_genbyte", 8, Keyword::genword_, KW_NONANSI | KW_386, TT_UNARY | TT_OPERATOR},
+    {"_genword", 8, Keyword::genword_, KW_NONANSI | KW_68K, TT_UNARY | TT_OPERATOR},
+    {"_import", 7, Keyword::dllimport_, KW_NONANSI, TT_LINKAGE},
+    {"_indirect", 9, Keyword::indirect_, KW_NONANSI | KW_ALL},
+    {"_interrupt", 10, Keyword::interrupt_, KW_NONANSI, TT_LINKAGE},
+    {"_intrinsic", 10, Keyword::intrinsic_, KW_NONANSI | KW_ALL, TT_TYPEQUAL},
+    {"_loadds", 7, Keyword::loadds_, KW_NONANSI | KW_386, TT_TYPEQUAL},
+    //	{ "_near", 5,  Keyword::near_, KW_NONANSI | KW_ALL, TT_TYPEQUAL | TT_POINTERQUAL},
+    {"_pascal", 7, Keyword::pascal_, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    {"_seg", 4, Keyword::seg_, KW_NONANSI | KW_ALL, TT_TYPEQUAL | TT_POINTERQUAL},
+    {"_stdcall", 8, Keyword::stdcall_, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    {"_trap", 5, Keyword::trap_, KW_NONANSI | KW_ALL, TT_OPERATOR | TT_UNARY},
+    {"alignas", 7, Keyword::alignas_, KW_CPLUSPLUS | KW_C2X, TT_CONTROL},
+    {"alignof", 7, Keyword::alignof_, KW_CPLUSPLUS | KW_C2X, TT_UNARY | TT_OPERATOR},
+    {"and", 3, Keyword::land_, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
+    {"and_eq", 6, Keyword::asand_, KW_CPLUSPLUS, TT_ASSIGN | TT_OPERATOR},
+    {"asm", 3, Keyword::asm_, KW_NONANSI | KW_ALL, TT_CONTROL},
+    {"auto", 4, Keyword::auto_, 0, TT_STORAGE_CLASS},
+    {"bitand", 6, Keyword::and_, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
+    {"bitor", 5, Keyword::or_, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
+    {"bool", 4, Keyword::bool_, KW_CPLUSPLUS | KW_C2X, TT_BASETYPE | TT_BOOL},
+    {"break", 5, Keyword::break_, 0, TT_CONTROL},
+    {"case", 4, Keyword::case_, 0, TT_CONTROL | TT_SWITCH},
+    {"catch", 5, Keyword::catch_, KW_CPLUSPLUS, TT_CONTROL},
+    {"cdecl", 5, Keyword::cdecl_, 0, TT_LINKAGE},
+    {"char", 4, Keyword::char_, 0, TT_BASETYPE | TT_INT},
+    {"char16_t", 8, Keyword::char16_t_, KW_CPLUSPLUS, TT_BASETYPE | TT_INT},
+    {"char32_t", 8, Keyword::char32_t_, KW_CPLUSPLUS, TT_BASETYPE | TT_INT},
+    {"class", 5, Keyword::class_, KW_CPLUSPLUS, TT_BASETYPE | TT_STRUCT},
+    {"compl", 5, Keyword::complx_, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
+    {"const", 5, Keyword::const_, KW_ASSEMBLER, TT_POINTERQUAL | TT_TYPEQUAL},
+    {"const_cast", 10, Keyword::const_cast_, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
+    {"constexpr", 9, Keyword::constexpr_, KW_CPLUSPLUS, (unsigned long)TT_DECLARE},
+    {"continue", 8, Keyword::continue_, 0, TT_CONTROL},
+    {"decltype", 8, Keyword::decltype_, KW_CPLUSPLUS, TT_OPERATOR},
+    {"default", 7, Keyword::default_, 0, TT_CONTROL},
+    {"delete", 6, Keyword::delete_, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
+    {"do", 2, Keyword::do_, 0, TT_CONTROL},
+    {"double", 6, Keyword::double_, 0, TT_BASETYPE | TT_FLOAT},
+    {"dynamic_cast", 12, Keyword::dynamic_cast_, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
+    {"else", 4, Keyword::else_, 0, TT_CONTROL},
+    {"enum", 4, Keyword::enum_, 0, TT_BASETYPE | TT_ENUM},
+    {"explicit", 8, Keyword::explicit_, KW_CPLUSPLUS, TT_STORAGE_CLASS},
+    {"export", 6, Keyword::export_, KW_CPLUSPLUS, TT_UNKNOWN},
+    {"extern", 6, Keyword::extern_, KW_ASSEMBLER, TT_STORAGE_CLASS},
+    {"false", 5, Keyword::false_, KW_CPLUSPLUS | KW_C2X, TT_VAR},
+    //	{ "far", 3,  Keyword::far_, KW_NONANSI | KW_ALL, TT_POINTERQUAL | TT_TYPEQUAL},
+    {"float", 5, Keyword::float_, 0, TT_BASETYPE | TT_FLOAT},
+    {"for", 3, Keyword::for_, 0, TT_CONTROL},
+    {"friend", 6, Keyword::friend_, KW_CPLUSPLUS, TT_LINKAGE},
+    {"goto", 4, Keyword::goto_, 0, TT_CONTROL},
+    {"if", 2, Keyword::if_, 0, TT_CONTROL},
+    {"inline", 6, Keyword::inline_, KW_C99 | KW_CPLUSPLUS, TT_LINKAGE},
+    {"int", 3, Keyword::int_, 0, TT_BASETYPE | TT_INT | TT_BASE},
+    {"long", 4, Keyword::long_, 0, TT_BASETYPE | TT_INT},
+    {"mutable", 7, Keyword::mutable_, KW_CPLUSPLUS, TT_STORAGE_CLASS},
+    {"namespace", 9, Keyword::namespace_, KW_CPLUSPLUS | KW_MSIL, 0},
+    {"native", 6, Keyword::native_, KW_MSIL, TT_BASETYPE | TT_INT | TT_BASE},
+    //	{ "near", 4,  Keyword::near_, KW_NONANSI | KW_ALL, TT_POINTERQUAL | TT_TYPEQUAL},
+    {"new", 3, Keyword::new_, KW_CPLUSPLUS, TT_OPERATOR | TT_UNARY},
+    {"noexcept", 8, Keyword::noexcept_, KW_CPLUSPLUS, TT_CONTROL},
+    {"not", 3, Keyword::not_, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
+    {"not_eq", 6, Keyword::neq_, KW_CPLUSPLUS, TT_RELATION | TT_EQUALITY},
+    {"nullptr", 7, Keyword::nullptr_, KW_CPLUSPLUS | KW_C2X, TT_VAR},
+    {"operator", 8, Keyword::operator_, KW_CPLUSPLUS, TT_OPERATOR},
+    {"or", 2, Keyword::lor_, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
+    {"or_eq", 5, Keyword::asor_, KW_CPLUSPLUS, TT_ASSIGN | TT_OPERATOR},
+    {"private", 7, Keyword::private_, KW_CPLUSPLUS, TT_CLASS},
+    {"protected", 9, Keyword::protected_, KW_CPLUSPLUS, TT_CLASS},
+    {"public", 6, Keyword::public_, KW_CPLUSPLUS | KW_ASSEMBLER, TT_CLASS},
+    {"register", 8, Keyword::register_, 0, TT_STORAGE_CLASS},
+    {"reinterpret_cast", 16, Keyword::reinterpret_cast_, KW_CPLUSPLUS, TT_OPERATOR | TT_UNARY},
+    {"restrict", 8, Keyword::restrict_, KW_C99, TT_POINTERQUAL | TT_TYPEQUAL},
+    {"return", 6, Keyword::return_, 0, TT_CONTROL},
+    {"short", 5, Keyword::short_, 0, TT_BASETYPE | TT_INT},
+    {"signed", 6, Keyword::signed_, 0, TT_BASETYPE | TT_INT},
+    {"sizeof", 6, Keyword::sizeof_, 0, TT_UNARY | TT_OPERATOR},
+    {"static", 6, Keyword::static_, 0, TT_STORAGE_CLASS},
+    {"static_assert", 13, Keyword::static_assert_, KW_CPLUSPLUS, 0},
+    {"static_cast", 11, Keyword::static_cast_, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
+    {"struct", 6, Keyword::struct_, 0, TT_BASETYPE | TT_STRUCT},
+    {"switch", 6, Keyword::switch_, 0, TT_CONTROL},
+    {"template", 8, Keyword::template_, KW_CPLUSPLUS, TT_CONTROL},
+    {"this", 4, Keyword::this_, KW_CPLUSPLUS, TT_VAR},
+    {"thread_local", 12, Keyword::thread_local_, KW_CPLUSPLUS, TT_LINKAGE},
+    {"throw", 5, Keyword::throw_, KW_CPLUSPLUS, TT_OPERATOR | TT_UNARY},
+    {"true", 4, Keyword::true_, KW_CPLUSPLUS | KW_C2X, TT_VAR},
+    {"try", 3, Keyword::try_, KW_CPLUSPLUS, TT_CONTROL},
+    {"typedef", 7, Keyword::typedef_, 0, TT_BASETYPE | TT_TYPEDEF | TT_STORAGE_CLASS},
+    {"typeid", 6, Keyword::typeid_, KW_CPLUSPLUS, TT_UNKNOWN},
+    {"typename", 8, Keyword::typename_, KW_CPLUSPLUS, TT_TYPENAME},
+    {"typeof", 6, Keyword::typeof_, 0, TT_BASETYPE | TT_OPERATOR},
+    {"union", 5, Keyword::union_, 0, TT_BASETYPE | TT_STRUCT},
+    {"unsigned", 8, Keyword::unsigned_, 0, TT_BASETYPE | TT_INT | TT_BASE},
+    {"using", 5, Keyword::using_, KW_CPLUSPLUS | KW_MSIL, TT_CONTROL},
+    {"virtual", 7, Keyword::virtual_, KW_CPLUSPLUS, TT_STORAGE_CLASS},
+    {"void", 4, Keyword::void_, 0, TT_BASETYPE | TT_VOID},
+    {"volatile", 8, Keyword::volatile_, 0, TT_TYPEQUAL | TT_POINTERQUAL},
+    {"wchar_t", 7, Keyword::wchar_t_, KW_CPLUSPLUS, TT_BASETYPE | TT_INT},
+    {"while", 5, Keyword::while_, 0, TT_CONTROL},
+    {"xor", 3, Keyword::uparrow_, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
+    {"xor_eq", 6, Keyword::asxor_, KW_CPLUSPLUS, TT_ASSIGN | TT_OPERATOR},
+    {"{", 1, Keyword::begin_, 0, TT_CONTROL | TT_BLOCK},
+    {"|", 1, Keyword::or_, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
+    {"|=", 2, Keyword::asor_, 0, TT_ASSIGN | TT_OPERATOR},
+    {"||", 2, Keyword::lor_, 0, TT_BINARY | TT_OPERATOR},
+    {"}", 1, Keyword::end_, 0, TT_CONTROL | TT_BLOCK},
+    {"~", 1, Keyword::complx_, KW_ASSEMBLER, TT_UNARY | TT_OPERATOR},
 };
 
 #define TABSIZE (sizeof(keywords) / sizeof(keywords[0]))
-#ifdef KW_HASH
 SymbolTableFactory<KEYWORD> lexFactory;
 SymbolTable<KEYWORD>* kwSymbols;
-#endif
 
 static bool kwmatches(KEYWORD* kw);
 void lexini(void)
 /*
- * create a keyword hash table
+ * create a keyword Keyword::hash_ table
  */
 {
     bool old = Optimizer::cparams.prm_extwarning;
     Optimizer::cparams.prm_extwarning = false;
-#ifdef KW_HASH
     int i;
     lexFactory.Reset();
     kwSymbols = lexFactory.CreateSymbolTable();
@@ -417,7 +394,6 @@ void lexini(void)
         if (kwmatches(&keywords[i]))
             kwSymbols->Add(&keywords[i]);
     }
-#endif
     llminus1 = 0;
     llminus1--;
     context = Allocate<LEXCONTEXT>();
@@ -431,37 +407,41 @@ void lexini(void)
 }
 
 /*-------------------------------------------------------------------------*/
-
-#ifndef KW_HASH
-static KEYWORD* binarySearch(char* name)
+bool KWTYPE(LEXLIST* lex, unsigned types)
 {
-    int top = TABSIZE;
-    int bottom = -1;
-    int v;
-    KEYWORD* kw;
-    while (top - bottom > 1)
+    int rv = 0;
+    if (ISKW(lex))
     {
-        int mid = (top + bottom) / 2;
-        kw = &keywords[mid];
-        v = strncmp(name, kw->name, kw->len);
-        if (v < 0)
+        if ((lex)->data->kw->key == Keyword::auto_)
         {
-            top = mid;
+            if (Optimizer::cparams.prm_cplusplus)
+            {
+                // in C++ auto is a type
+                rv = TT_BASETYPE;
+            }
+            else if (Optimizer::cparams.c_dialect < Dialect::c2x)
+            {
+                // in versions of C before C2x it is a storage class
+                rv = TT_STORAGE_CLASS;
+            }
+            else
+            {
+                // in C2x it is a storage class if another type is present
+                // or a type if one isn't
+                lex = getsym();
+                bool s;
+                rv = startOfType(lex, &s, false) ? TT_STORAGE_CLASS : TT_BASETYPE;
+                lex = backupsym();
+            }
         }
         else
         {
-            bottom = mid;
+            rv = (lex)->data->kw->tokenTypes;
         }
     }
-    if (bottom == -1)
-        return 0;
-    kw = &keywords[bottom];
-    v = strncmp(name, kw->name, kw->len);
-    if (v)
-        return 0;
-    return &keywords[bottom];
+    return rv & types;
 }
-#endif
+
 static bool kwmatches(KEYWORD* kw)
 {
     if (Optimizer::cparams.prm_assemble)
@@ -499,24 +479,19 @@ KEYWORD* searchkw(const unsigned char** p)
             *q++ = *q1++;
         }
         *q = 0;
-#ifdef KW_HASH
         kw = search(kwSymbols, (char*) buf);
         if (kw)
-#else
-        kw = (KEYWORD*)binarySearch(buf);
-        if (kw && kwmatches(kw))
-#endif
         {
             if (len == kw->len)
             {
                 int count = 0;
                 if (kw->matchFlags & (KW_C99 | KW_C1X | KW_C2X))
                 {
-                    if (Optimizer::cparams.prm_c99 && (kw->matchFlags & KW_C99))
+                    if (Optimizer::cparams.c_dialect >= Dialect::c99 && (kw->matchFlags & KW_C99))
                         count++;
-                    if (Optimizer::cparams.prm_c1x && (kw->matchFlags & KW_C1X))
+                    if (Optimizer::cparams.c_dialect >= Dialect::c11 && (kw->matchFlags & KW_C1X))
                         count++;
-                    if (Optimizer::cparams.prm_c2x && (kw->matchFlags & KW_C2X))
+                    if (Optimizer::cparams.c_dialect >= Dialect::c2x && (kw->matchFlags & KW_C2X))
                         count++;
                     if (Optimizer::cparams.prm_cplusplus && (kw->matchFlags & KW_CPLUSPLUS))
                         count++;
@@ -534,7 +509,6 @@ KEYWORD* searchkw(const unsigned char** p)
     else
     {
         KEYWORD* found = nullptr;
-#ifdef KW_HASH
         int len = 0;
         while (ispunct((unsigned char)*q1))
             *q++ = *q1++, len++;
@@ -546,24 +520,6 @@ KEYWORD* searchkw(const unsigned char** p)
                 buf[--len] = 0;
             }
             if (found)
-#else
-        *q++ = *q1++;
-        *q = 0;
-        kw = (KEYWORD*)binarySearch(buf);
-        if (kw)
-        {
-            KEYWORD* list = kw;
-            found = kw;
-            while (list < &keywords[0] + sizeof(keywords) / sizeof(keywords[0]) && buf[0] == list->name[0])
-            {
-                if (!strncmp(list->name, *p, list->len))
-                {
-                    found = list;
-                }
-                list++;
-            }
-            if (kwmatches(found))
-#endif
             {
                 *p = *p + found->len;
                 return found;
@@ -663,7 +619,7 @@ int getsch(int bytes, const unsigned char** source) /* return an in-quote charac
     }
 }
 
-int getChar(const unsigned char** source, enum e_lexType* tp)
+int getChar(const unsigned char** source, e_lexType* tp)
 {
     enum e_lexType v = l_achr;
     const unsigned char* p = *source;
@@ -672,7 +628,7 @@ int getChar(const unsigned char** source, enum e_lexType* tp)
         v = l_wchr;
         p++;
     }
-    else if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c1x)
+    else if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c11)
     {
         if (*p == 'u')
         {
@@ -771,7 +727,7 @@ int nextch()
     }
     return *linePointer++;
 }
-Optimizer::SLCHAR* getString(const unsigned char** source, enum e_lexType* tp)
+Optimizer::SLCHAR* getString(const unsigned char** source, e_lexType* tp)
 {
     // the static declaration speeds it up by about 5% on windows platforms.
     static LCHAR data[32768];
@@ -798,7 +754,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, enum e_lexType* tp)
             p++;
         while (*p == ppDefine::MACRO_PLACEHOLDER);
     }
-    else if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c1x)
+    else if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c11)
     {
         if (*p == 'u')
         {
@@ -1187,7 +1143,7 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
         radix = 16;
         (*ptr)++;
     }
-    while (((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c2x) && **ptr == '\'') || radix36(**ptr) < radix ||
+    while (((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x) && **ptr == '\'') || radix36(**ptr) < radix ||
            (Optimizer::cparams.prm_assemble && radix36(**ptr) < 16))
     {
         if (**ptr != '\'')
@@ -1307,13 +1263,13 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
             lastst = l_ul;
             suffix[0] = 0;
         }
-        else if (((Optimizer::cparams.prm_c99 || Optimizer::cparams.prm_cplusplus) && Utils::iequal((char*)suffix, "LL")) ||
+        else if (((Optimizer::cparams.c_dialect >= Dialect::c99 || Optimizer::cparams.prm_cplusplus) && Utils::iequal((char*)suffix, "LL")) ||
                  (!Optimizer::cparams.prm_ansi && Utils::iequal((char*)suffix, "i64")))
         {
             lastst = l_ll;
             suffix[0] = 0;
         }
-        else if (((Optimizer::cparams.prm_c99 || Optimizer::cparams.prm_cplusplus) &&
+        else if (((Optimizer::cparams.c_dialect >= Dialect::c99 || Optimizer::cparams.prm_cplusplus) &&
                   (Utils::iequal((char*)suffix, "ULL") || Utils::iequal((char*)suffix, "LLU"))) ||
                  (!Optimizer::cparams.prm_ansi && Utils::iequal((char*)suffix, "ui64")))
         {
@@ -1500,7 +1456,7 @@ static void ReplaceStringInString(std::string& string, const std::string& val, c
 }
 void CompilePragma(const unsigned char** linePointer)
 {
-    int err;
+    Keyword err;
     while (isspace(*(*linePointer)))
         (*linePointer)++;
     if (**linePointer == '(')
@@ -1508,7 +1464,7 @@ void CompilePragma(const unsigned char** linePointer)
         (*linePointer)++;
         while (isspace(*(*linePointer)))
             (*linePointer)++;
-        err = -1;
+        err = Keyword::none_;
         if (**linePointer == '"')
         {
             (*linePointer)++;
@@ -1535,14 +1491,14 @@ void CompilePragma(const unsigned char** linePointer)
             (*linePointer)++;
             return;
         }
-        err = closepa;
+        err = Keyword::closepa_;
     }
     else
     {
-        err = openpa;
+        err = Keyword::openpa_;
     }
-    if (err > 0)
-        needkw(nullptr, (e_kw)err);
+    if (err != Keyword::none_)
+        needkw(nullptr, (Keyword)err);
     else
         error(ERR_NEEDSTRING);
 }
@@ -1802,7 +1758,7 @@ LEXLIST* getsym(void)
             }
             else if ((kw = searchkw(&linePointer)) != nullptr)
             {
-                if (kw->key == kw__Pragma)
+                if (kw->key == Keyword::Pragma_)
                 {
 
                     CompilePragma(&linePointer);

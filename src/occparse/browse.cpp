@@ -119,7 +119,7 @@ void browse_startfunc(SYMBOL* func, int lineno)
     bri->name = litlate(name);
     bri->lineno = lineno;
     bri->charpos = 0;
-    bri->flags = func->sb->storage_class == sc_static ? BRF_STATIC : 0;
+    bri->flags = func->sb->storage_class == StorageClass::static_ ? BRF_STATIC : 0;
     bri->filenum = currentFile;
     addBrowseRecord(bri);
 }
@@ -191,11 +191,11 @@ void browse_variable(SYMBOL* var)
         return;
     switch (var->sb->storage_class)
     {
-        case sc_global:
-        case sc_external:
-        case sc_localstatic:
-        case sc_static:
-        case sc_type:
+        case StorageClass::global_:
+        case StorageClass::external_:
+        case StorageClass::localstatic_:
+        case StorageClass::static_:
+        case StorageClass::type_:
             break;
         default:
             if (!isfunction(var->tp))
@@ -208,8 +208,8 @@ void browse_variable(SYMBOL* var)
     bri->name = litlate(name);
     bri->lineno = var->sb->declline;
     bri->charpos = var->sb->declcharpos >= 0 ? var->sb->declcharpos : 0;
-    bri->flags = (var->sb->storage_class == sc_external || isfunction(var->tp) ? BRF_EXTERNAL : 0) |
-                 (var->sb->storage_class == sc_static ? BRF_STATIC : 0) | (var->sb->storage_class == sc_type ? BRF_TYPE : 0);
+    bri->flags = (var->sb->storage_class == StorageClass::external_ || isfunction(var->tp) ? BRF_EXTERNAL : 0) |
+                 (var->sb->storage_class == StorageClass::static_ ? BRF_STATIC : 0) | (var->sb->storage_class == StorageClass::type_ ? BRF_TYPE : 0);
     bri->filenum = var->sb->declfilenum;
     addBrowseRecord(bri);
 }

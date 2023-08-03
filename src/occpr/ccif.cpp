@@ -84,11 +84,11 @@ const char* GetSymName(SYMBOL* sp, SYMBOL* parent)
     {
         return "_this";
     }
-    else if (sp->sb->storage_class == sc_namespace)
+    else if (sp->sb->storage_class == StorageClass::namespace_)
     {
         mangleNameSpaces(buf, sp);
     }
-    else if (sp->sb->storage_class == sc_localstatic || sp->sb->storage_class == sc_auto || sp->sb->storage_class == sc_parameter)
+    else if (sp->sb->storage_class == StorageClass::localstatic_ || sp->sb->storage_class == StorageClass::auto_ || sp->sb->storage_class == StorageClass::parameter_)
     {
         sprintf(buf, "_%s", sp->name);
     }
@@ -113,7 +113,7 @@ const char* GetSymName(SYMBOL* sp, SYMBOL* parent)
     return buf;
 }
 static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_id, sqlite3_int64 file_id, int order, bool base,
-                              enum e_ac access)
+                              enum AccessLevel access)
 {
     if (basetype(sym->tp)->syms)
     {
@@ -124,13 +124,13 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
                 for (auto bases : *sym->sb->baseClasses)
                 {
                     order = WriteStructMembers(bases->cls, parent, struct_id, file_id, order, true,
-                        (e_ac)imin(bases->cls->sb->access, access));
+                        (AccessLevel)imin(bases->cls->sb->access, access));
                 }
             }
         }
         for (auto st : *basetype(sym->tp)->syms)
         {
-            if (st->sb->storage_class == sc_overloads)
+            if (st->sb->storage_class == StorageClass::overloads_)
             {
                 order = WriteStructMembers(st, parent, struct_id, file_id, order, base, access);
             }
@@ -142,12 +142,12 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
                 int rel_id = 0;
                 TYPE* tp = st->tp;
                 sqlite3_int64 id;
-                int flags = imin(st->sb->access, access) & 15;
-                if (st->sb->storage_class == sc_static || st->sb->storage_class == sc_external)
+                int flags = (int)imin(st->sb->access, access) & 15;
+                if (st->sb->storage_class == StorageClass::static_ || st->sb->storage_class == StorageClass::external_)
                     flags |= 16;
                 if (ismemberdata(st))
                     flags |= 32;
-                if (st->sb->storage_class == sc_virtual)
+                if (st->sb->storage_class == StorageClass::virtual_)
                     flags |= 64;
                 if (isfunction(st->tp))
                 {
@@ -176,20 +176,20 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
                 {
                     switch (basetype(tp)->type)
                     {
-                        case bt_struct:
+                        case BasicType::struct_:
                             strcat(type_name, "struct ");
                             break;
-                        case bt_class:
+                        case BasicType::class_:
                             strcat(type_name, "class ");
                             break;
-                        case bt_union:
+                        case BasicType::union_:
                             strcat(type_name, "union ");
                             break;
                         default:
                             break;
                     }
                 }
-                else if (basetype(tp)->type == bt_enum)
+                else if (basetype(tp)->type == BasicType::enum_)
                 {
                     strcat(type_name, "enum ");
                 }
@@ -208,8 +208,8 @@ static void DumpStructs(void)
     while (item)
     {
         SYMBOL* sym = (SYMBOL*)item->data;
-        if (sym->sb->storage_class != sc_label && sym->tp && istype(sym) && isstructured(sym->tp) &&
-            (!sym->tp->btp || sym->tp->btp->type != bt_typedef))  // DAL fix
+        if (sym->sb->storage_class != StorageClass::label_ && sym->tp && istype(sym) && isstructured(sym->tp) &&
+            (!sym->tp->btp || sym->tp->btp->type != BasicType::typedef_))  // DAL fix
         {
             sqlite3_int64 struct_id;
             if (ccWriteStructName(sym->sb->decoratedName, &struct_id))
@@ -221,8 +221,8 @@ static void DumpStructs(void)
     while (item)
     {
         SYMBOL* sym = (SYMBOL*)item->data;
-        if (sym->sb->storage_class != sc_label && sym->tp && istype(sym) && isstructured(sym->tp) &&
-            sym->sb->storage_class != sc_typedef && sym->tp->syms)
+        if (sym->sb->storage_class != StorageClass::label_ && sym->tp && istype(sym) && isstructured(sym->tp) &&
+            sym->sb->storage_class != StorageClass::typedef_ && sym->tp->syms)
         {
             sqlite3_int64 struct_id = basetype(sym->tp)->sp->sb->ccStructId, file_id;
             if (ccWriteFileName(sym->sb->origdeclfile, &file_id))
@@ -245,35 +245,35 @@ static void DumpSymbolType(SYMBOL* sym)
     else
         switch (sym->sb->storage_class)
         {
-            case sc_overloads:
+            case StorageClass::overloads_:
                 return;
-            case sc_typedef:
+            case StorageClass::typedef_:
                 type = ST_TYPEDEF;
                 break;
-            case sc_namespace:
-            case sc_type:
+            case StorageClass::namespace_:
+            case StorageClass::type_:
                 type = ST_TAG;
                 break;
-            case sc_auto:
-            case sc_register:
+            case StorageClass::auto_:
+            case StorageClass::register_:
                 type = ST_AUTO;
                 break;
-            case sc_parameter:
+            case StorageClass::parameter_:
                 type = ST_PARAMETER;
                 break;
-            case sc_localstatic:
+            case StorageClass::localstatic_:
                 type = ST_LOCALSTATIC;
                 break;
-            case sc_static:
+            case StorageClass::static_:
                 type = ST_STATIC;
                 break;
-            case sc_global:
+            case StorageClass::global_:
                 type = ST_GLOBAL;
                 break;
-            case sc_external:
+            case StorageClass::external_:
                 type = ST_EXTERN;
                 break;
-            case sc_label:
+            case StorageClass::label_:
                 type = ST_LABEL;
                 break;
             default:
@@ -305,8 +305,8 @@ static void DumpNamespace(SYMBOL* sym)
 static void DumpSymbol(SYMBOL* sym)
 {
     DumpSymbolType(sym);
-    if (sym->sb->storage_class != sc_label && sym->tp && (!istype(sym) || sym->sb->storage_class == sc_typedef) &&
-        sym->sb->storage_class != sc_overloads && sym->tp->type != bt_any)
+    if (sym->sb->storage_class != StorageClass::label_ && sym->tp && (!istype(sym) || sym->sb->storage_class == StorageClass::typedef_) &&
+        sym->sb->storage_class != StorageClass::overloads_ && sym->tp->type != BasicType::any_)
     {
         SYMBOL* declsym;
         char type_name[100000];
@@ -319,7 +319,7 @@ static void DumpSymbol(SYMBOL* sym)
         if (isfunction(tp))
             tp = basetype(tp)->btp;  // get rv
         type_name[0] = 0;
-        if (sym->sb->storage_class == sc_typedef)
+        if (sym->sb->storage_class == StorageClass::typedef_)
         {
             strcpy(type_name, "typedef ");
         }
@@ -327,24 +327,24 @@ static void DumpSymbol(SYMBOL* sym)
         {
             switch (basetype(tp)->type)
             {
-                case bt_struct:
+                case BasicType::struct_:
                     strcat(type_name, "struct ");
                     break;
-                case bt_class:
+                case BasicType::class_:
                     strcat(type_name, "class ");
                     break;
-                case bt_union:
+                case BasicType::union_:
                     strcat(type_name, "union ");
                     break;
                 default:
                     break;
             }
         }
-        else if (basetype(tp)->type == bt_enum)
+        else if (basetype(tp)->type == BasicType::enum_)
         {
             strcat(type_name, "enum ");
         }
-        typenum(type_name + strlen(type_name), tp->type == bt_typedef ? tp->btp : tp);
+        typenum(type_name + strlen(type_name), tp->type == BasicType::typedef_ ? tp->btp : tp);
         type_name[40] = 0;
         while (isref(tp))
             tp = basetype(tp)->btp;
@@ -360,7 +360,7 @@ static void DumpSymbol(SYMBOL* sym)
             // member vars are considered declared at the top of their class...
             declsym = sym->sb->parentClass;
         }
-        if (sym->sb->storage_class == sc_namespace)
+        if (sym->sb->storage_class == StorageClass::namespace_)
             DumpNamespace(sym);
         // use sym->sb->declline here to get real function addresses
         else if (ccWriteLineNumbers(name, litlate(type_name), sym->sb->declfile ? sym->sb->declfile : (char*)"$$$", indirectCount,
@@ -372,7 +372,7 @@ static void DumpSymbol(SYMBOL* sym)
                 int order = 1;
                 auto it = sym->tp->syms->begin();
                 auto ite = sym->tp->syms->end();
-                for ( ; it != ite && ((*it)->sb->storage_class == sc_parameter) ; ++it)
+                for ( ; it != ite && ((*it)->sb->storage_class == StorageClass::parameter_) ; ++it)
                 {
                     SYMBOL* st = *it;
                     const char* argName = GetSymName(st, st);

@@ -122,7 +122,7 @@ static const char* AnonymousLambdaName(void)
 }
 static void lambda_insert(SYMBOL* sym, LAMBDA* current)
 {
-    int align = getAlign(sc_member, sym->tp);
+    int align = getAlign(StorageClass::member_, sym->tp);
     if (align && current->cls->tp->size % align)
         current->cls->tp->size += align - current->cls->tp->size % align;
     if (align > current->cls->sb->attribs.inheritable.structAlign)
@@ -132,12 +132,12 @@ static void lambda_insert(SYMBOL* sym, LAMBDA* current)
     current->cls->tp->syms->Add(sym);
     current->cls->tp->size += sym->tp->size;
 }
-static TYPE* lambda_type(TYPE* tp, enum e_cm mode)
+static TYPE* lambda_type(TYPE* tp, e_cm mode)
 {
     if (mode == cmRef)
     {
         tp = basetype(tp);
-        tp = MakeType(bt_lref, isref(tp) ? tp->btp : tp);
+        tp = MakeType(BasicType::lref_, isref(tp) ? tp->btp : tp);
     }
     else  // cmValue
     {
@@ -149,12 +149,12 @@ static TYPE* lambda_type(TYPE* tp, enum e_cm mode)
         tp = basetype(tp);
         if (!lambdas.front()->isMutable)
         {
-            tp = MakeType(bt_const, tp);
+            tp = MakeType(BasicType::const_, tp);
         }
     }
     return tp;
 }
-SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
+SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
 {
     if (lambdas.size())
     {
@@ -218,7 +218,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
         {
             if (sym->sb->parent != lambdas.front()->func)
             {
-                if (sym->sb->storage_class != sc_auto && sym->sb->storage_class != sc_parameter)
+                if (sym->sb->storage_class != StorageClass::auto_ && sym->sb->storage_class != StorageClass::parameter_)
                 {
                     error(ERR_MUST_CAPTURE_AUTO_VARIABLE);
                 }
@@ -289,9 +289,9 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
                         sym = CopySymbol(sym);
                         sym->sb->lambdaMode = mode == cmNone ? (*current)->captureMode : mode;
                         sym->tp = lambda_type(sym->tp, sym->sb->lambdaMode);
-                        sym->sb->storage_class = sc_member;
+                        sym->sb->storage_class = StorageClass::member_;
                         sym->sb->parent = (*current)->func;
-                        sym->sb->access = ac_private;
+                        sym->sb->access = AccessLevel::private_;
                         if (mode != cmExplicitValue)
                             sym->sb->init = NULL;
                         lambda_insert(sym, (*current));
@@ -331,7 +331,7 @@ static void cloneTemplateParams(SYMBOL* func)
     func->templateParams = templateParamPairListFactory.CreateList();
     int index = 0;
     auto second = Allocate<TEMPLATEPARAM>();
-    second->type = kw_new;
+    second->type = Keyword::new_;
     func->templateParams->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
     for (auto arg : *basetype(func->tp)->syms)
     {
@@ -343,7 +343,7 @@ static void cloneTemplateParams(SYMBOL* func)
             auto first = Allocate<SYMBOL>();
             *first = *arg;
             first->sb = nullptr;
-            second->type = kw_typename;
+            second->type = Keyword::typename_;
             func->templateParams->push_back(TEMPLATEPARAMPAIR{ first, second });
             arg->tp->templateParam = &func->templateParams->back();
             arg->templateParams = templateParamPairListFactory.CreateList();
@@ -355,7 +355,7 @@ static void convertCallToTemplate(SYMBOL* func)
 {
     func->templateParams = templateParamPairListFactory.CreateList();
     auto second = Allocate<TEMPLATEPARAM>();
-    second->type = kw_new;
+    second->type = Keyword::new_;
     func->templateParams->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
 
     if (isautotype(lambdas.front()->functp))
@@ -369,10 +369,10 @@ static void convertCallToTemplate(SYMBOL* func)
             auto first = Allocate<SYMBOL>();
             *first = *arg;
             first->sb = nullptr;
-            second->type = kw_typename;
+            second->type = Keyword::typename_;
             second->index = index++;
             func->templateParams->push_back(TEMPLATEPARAMPAIR{ first, second });
-            arg->tp = MakeType(bt_templateparam);
+            arg->tp = MakeType(BasicType::templateparam_);
             arg->tp->templateParam = &func->templateParams->back();
         }
     }
@@ -384,59 +384,59 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
     INITLIST** argptr;
     FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
     TYPE* args = cloneFuncType(lambdas.front()->func);
-    SYMBOL* func = makeID(sc_static, args, NULL, "___ptrcall");
+    SYMBOL* func = makeID(StorageClass::static_, args, NULL, "___ptrcall");
     BLOCKDATA bd1 = {}, bd2 = {};
     std::list<BLOCKDATA*> block1{ &bd1 }, block2{ &bd2 };
     STATEMENT* st;
     basetype(args)->sp = func;
     basetype(args)->btp = basetype(lambdas.front()->func->tp)->btp;
     func->sb->parentClass = lambdas.front()->cls;
-    func->sb->attribs.inheritable.linkage = lk_cdecl;
+    func->sb->attribs.inheritable.linkage = Linkage::cdecl_;
     func->sb->attribs.inheritable.isInline = true;
-    func->sb->storage_class = sc_static;
-    func->sb->access = ac_private;
+    func->sb->storage_class = StorageClass::static_;
+    func->sb->access = AccessLevel::private_;
 
     insertFunc(lambdas.front()->cls, func);
     func->tp->syms->remove(func->tp->syms->begin()); // elide this pointer
-    st = stmtNode(NULL, block2, isstructured(basetype(lambdas.front()->func->tp)->btp) ? st_expr : st_return);
-    st->select = varNode(en_func, NULL);
+    st = stmtNode(NULL, block2, isstructured(basetype(lambdas.front()->func->tp)->btp) ? StatementNode::expr_ : StatementNode::return_);
+    st->select = varNode(ExpressionNode::func_, NULL);
     st->select->v.func = params;
-    st->select = exprNode(en_thisref, st->select, NULL);
+    st->select = exprNode(ExpressionNode::thisref_, st->select, NULL);
 
     if (!params->arguments)
         params->arguments = initListListFactory.CreateList();
     for (auto sym : *args->syms)
     {
-        if (sym->tp->type == bt_void)
+        if (sym->tp->type == BasicType::void_)
             break;
         sym = CopySymbol(sym);
-        sym->sb->offset -= getSize(bt_pointer);
+        sym->sb->offset -= getSize(BasicType::pointer_);
         auto arg = Allocate<INITLIST>();
         if (isstructured(sym->tp) && !isref(sym->tp))
         {
-            SYMBOL* sym2 = anonymousVar(sc_auto, sym->tp)->v.sp;
+            SYMBOL* sym2 = anonymousVar(StorageClass::auto_, sym->tp)->v.sp;
             sym2->sb->stackblock = true;
-            arg->exp = varNode(en_auto, sym2);  // DAL MODIFIED
+            arg->exp = varNode(ExpressionNode::auto_, sym2);  // DAL MODIFIED
         }
         else
         {
-            arg->exp = varNode(en_auto, sym);
+            arg->exp = varNode(ExpressionNode::auto_, sym);
             deref(sym->tp, &arg->exp);
         }
         arg->tp = sym->tp;
     }
     params->ascall = true;
     params->sp = lambdas.front()->func;
-    params->fcall = varNode(en_pc, lambdas.front()->func);
+    params->fcall = varNode(ExpressionNode::pc_, lambdas.front()->func);
     params->functp = func->tp;
-    params->thisptr = varNode(en_global, self);
+    params->thisptr = varNode(ExpressionNode::global_, self);
     deref(&stdpointer, &params->thisptr);
     params->thistp = self->tp;
-    st = stmtNode(NULL, block1, st_block);
+    st = stmtNode(NULL, block1, StatementNode::block_);
     st->lower = block2.front()->statements;
     st->blockTail = block2.front()->blockTail;
     func->sb->inlineFunc.stmt = stmtListFactory.CreateList();
-    func->sb->inlineFunc.stmt->push_back(stmtNode(NULL, emptyBlockdata, st_block));
+    func->sb->inlineFunc.stmt->push_back(stmtNode(NULL, emptyBlockdata, StatementNode::block_));
     func->sb->inlineFunc.stmt->front()->lower = block1.front()->statements;
     func->sb->inlineFunc.stmt->front()->blockTail = block1.front()->blockTail;
     func->sb->inlineFunc.syms = basetype(args)->syms;
@@ -475,37 +475,37 @@ static void createConverter(SYMBOL* self)
 {
     SYMBOL* caller = createPtrToCaller(self);
     TYPE* args = cloneFuncType(lambdas.front()->func);
-    SYMBOL* func = makeID(sc_member, MakeType(bt_func, MakeType(bt_pointer, args)), NULL, overloadNameTab[CI_CAST]);
+    SYMBOL* func = makeID(StorageClass::member_, MakeType(BasicType::func_, MakeType(BasicType::pointer_, args)), NULL, overloadNameTab[CI_CAST]);
     BLOCKDATA bd1 = {}, bd2 = {};
     std::list<BLOCKDATA*> block1{ &bd1 }, block2{ &bd2 };
     STATEMENT* st;
     EXPRESSION* exp;
-    SYMBOL* sym = makeID(sc_parameter, &stdvoid, NULL, AnonymousName());
+    SYMBOL* sym = makeID(StorageClass::parameter_, &stdvoid, NULL, AnonymousName());
     func->tp->syms = symbols.CreateSymbolTable();
     func->sb->parentClass = lambdas.front()->cls;
-    func->sb->attribs.inheritable.linkage4 = lk_virtual;
+    func->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
     func->sb->attribs.inheritable.isInline = true;
-    func->sb->storage_class = sc_member;
+    func->sb->storage_class = StorageClass::member_;
     func->sb->castoperator = true;
     func->tp->syms = symbols.CreateSymbolTable();
     func->tp->syms->Add(sym);
     injectThisPtr(func, func->tp->syms);
     func->sb->parentClass = lambdas.front()->cls;
     insertFunc(lambdas.front()->cls, func);
-    // assign ___self = this
-    st = stmtNode(NULL, block2, st_expr);
-    st->select = varNode(en_auto, (SYMBOL*)basetype(func->tp)->syms->front());
+    // Keyword::assign_ ___self = this
+    st = stmtNode(NULL, block2, StatementNode::expr_);
+    st->select = varNode(ExpressionNode::auto_, (SYMBOL*)basetype(func->tp)->syms->front());
     deref(&stdpointer, &st->select);
-    st->select = exprNode(en_assign, varNode(en_global, self), st->select);
+    st->select = exprNode(ExpressionNode::assign_, varNode(ExpressionNode::global_, self), st->select);
     deref(&stdpointer, &st->select->left);
     // return pointer to ptrtocaller
-    st = stmtNode(NULL, block2, st_return);
-    st->select = varNode(en_pc, caller);
-    st = stmtNode(NULL, block1, st_block);
+    st = stmtNode(NULL, block2, StatementNode::return_);
+    st->select = varNode(ExpressionNode::pc_, caller);
+    st = stmtNode(NULL, block1, StatementNode::block_);
     st->lower = block2.front()->statements;
     st->blockTail = block2.front()->blockTail;
     func->sb->inlineFunc.stmt = stmtListFactory.CreateList();
-    func->sb->inlineFunc.stmt->push_back(stmtNode(NULL, emptyBlockdata, st_block));
+    func->sb->inlineFunc.stmt->push_back(stmtNode(NULL, emptyBlockdata, StatementNode::block_));
     func->sb->inlineFunc.stmt->front()->lower = block1.front()->statements;
     func->sb->inlineFunc.stmt->front()->blockTail = block1.front()->blockTail;
     func->sb->inlineFunc.syms = symbols.CreateSymbolTable();
@@ -518,32 +518,32 @@ static void createConverter(SYMBOL* self)
         func->templateParams = caller->templateParams;
         func->sb->templateLevel = templateNestingCount;
         func->sb->parentTemplate = func;
-        basetype(func->tp)->btp = MakeType(bt_templatedecltype);
-        basetype(func->tp)->btp->templateDeclType = exprNode(en_func, NULL, NULL);
+        basetype(func->tp)->btp = MakeType(BasicType::templatedecltype_);
+        basetype(func->tp)->btp->templateDeclType = exprNode(ExpressionNode::func_, NULL, NULL);
         basetype(func->tp)->btp->templateDeclType->v.func = f;
         for (auto sym : *basetype(caller->tp)->syms)
         {
             if (sym->sb->thisPtr)
             {
                 f->thistp = sym->tp;
-                f->thisptr = intNode(en_c_i, 0);
+                f->thisptr = intNode(ExpressionNode::c_i_, 0);
             }
             else
             {
                 auto arg = Allocate<INITLIST>();
                 arg->tp = sym->tp;
-                arg->exp = intNode(en_c_i, 0);
+                arg->exp = intNode(ExpressionNode::c_i_, 0);
                 f->arguments->push_back(arg);
             }
         }
         f->ascall = false;
         f->asaddress = true;
         f->sp = caller;
-        f->fcall = varNode(en_pc, f->sp);
+        f->fcall = varNode(ExpressionNode::pc_, f->sp);
         f->functp = f->sp->tp;
         if (isstructured(basetype(caller->tp)->btp))
         {
-            f->returnEXP = intNode(en_c_i, 0);
+            f->returnEXP = intNode(ExpressionNode::c_i_, 0);
             f->returnSP = basetype(basetype(caller->tp)->btp)->sp;
         }
         std::string val = "{ ___self=this;return &___ptrcall;} ;";
@@ -572,19 +572,19 @@ static bool lambda_get_template_state(SYMBOL* func)
 }
 static void finishClass(void)
 {
-    TYPE* tps = MakeType(bt_pointer, lambdas.front()->cls->tp);
-    SYMBOL* self = makeID(sc_static, tps, NULL, "___self");
+    TYPE* tps = MakeType(BasicType::pointer_, lambdas.front()->cls->tp);
+    SYMBOL* self = makeID(StorageClass::static_, tps, NULL, "___self");
     SYMLIST* lst;
-    self->sb->access = ac_private;
+    self->sb->access = AccessLevel::private_;
 
     if (lambdas.front()->captureThis && lambdas.size() > 1)
     {
-        SYMBOL* parent = makeID(sc_member, &stdpointer, NULL, "$parent");
+        SYMBOL* parent = makeID(StorageClass::member_, &stdpointer, NULL, "$parent");
         lambda_insert(parent, lambdas.front());
     }
     self->sb->label = Optimizer::nextLabel++;
     self->sb->parentClass = lambdas.front()->cls;
-    SetLinkerNames(self, lk_cdecl);
+    SetLinkerNames(self, Linkage::cdecl_);
     lambdas.front()->cls->tp->syms->Add(self);
     insertInitSym(self);
     createConstructorsForLambda(lambdas.front()->cls);
@@ -594,7 +594,7 @@ static void finishClass(void)
         dontRegisterTemplate++;
         convertCallToTemplate(lambdas.front()->func);
     }
-    SetLinkerNames(lambdas.front()->func, lk_cdecl);
+    SetLinkerNames(lambdas.front()->func, Linkage::cdecl_);
     insertFunc(lambdas.front()->cls, lambdas.front()->func);
     createConverter(self);
     if (lambdas.front()->templateFunctions)
@@ -605,8 +605,8 @@ static void finishClass(void)
     if (!lambdas.front()->isMutable)
     {
         SYMBOL* ths = (SYMBOL*)lambdas.front()->func->tp->syms->front();
-        lambdas.front()->func->tp = MakeType(bt_const, lambdas.front()->func->tp);
-        basetype(ths->tp)->btp = MakeType(bt_const, basetype(ths->tp->btp));
+        lambdas.front()->func->tp = MakeType(BasicType::const_, lambdas.front()->func->tp);
+        basetype(ths->tp)->btp = MakeType(BasicType::const_, basetype(ths->tp->btp));
         UpdateRootTypes(ths->tp);
     }
 }
@@ -614,20 +614,20 @@ static EXPRESSION* createLambda(bool noinline)
 {
     EXPRESSION *rv = NULL, **cur = &rv;
     EXPRESSION *clsThs, *parentThs;
-    SYMBOL* cls = makeID(lambdas.front()->enclosingFunc ? sc_auto : sc_localstatic, lambdas.front()->cls->tp, NULL,
+    SYMBOL* cls = makeID(lambdas.front()->enclosingFunc ? StorageClass::auto_ : StorageClass::localstatic_, lambdas.front()->cls->tp, NULL,
                          lambdas.front()->enclosingFunc ? AnonymousName() : AnonymousLambdaName());
-    SetLinkerNames(cls, lk_cdecl);
+    SetLinkerNames(cls, Linkage::cdecl_);
     cls->sb->allocate = true;
     if (lambdas.front()->enclosingFunc)
     {
         localNameSpace->front()->syms->Add(cls);
-        clsThs = varNode(en_auto, cls);  // this ptr
+        clsThs = varNode(ExpressionNode::auto_, cls);  // this ptr
     }
     else
     {
         globalNameSpace->front()->syms->Add(cls);  // well if we could put this as an auto in the init func that would be good
                                                         // but there is no way to do that here...
-        clsThs = varNode(en_global, cls);               // this ptr
+        clsThs = varNode(ExpressionNode::global_, cls);               // this ptr
         cls->sb->label = Optimizer::nextLabel++;
         insertInitSym(cls);
     }
@@ -638,7 +638,7 @@ static EXPRESSION* createLambda(bool noinline)
         EXPRESSION* exp = clsThs;
         callDestructor(basetype(cls->tp)->sp, NULL, &exp, NULL, true, false, false, true);
         initInsert(&init, cls->tp, exp, 0, true);
-        if (cls->sb->storage_class != sc_auto)
+        if (cls->sb->storage_class != StorageClass::auto_)
         {
             insertDynamicDestructor(cls, init);
         }
@@ -648,7 +648,7 @@ static EXPRESSION* createLambda(bool noinline)
         }
     }
     if (lambdas.front()->enclosingFunc)
-        parentThs = varNode(en_auto, (SYMBOL*)basetype(lambdas.front()->enclosingFunc->tp)->syms->front());  // this ptr
+        parentThs = varNode(ExpressionNode::auto_, (SYMBOL*)basetype(lambdas.front()->enclosingFunc->tp)->syms->front());  // this ptr
     else
         parentThs = nullptr;
     for (auto sp : *lambdas.front()->cls->tp->syms)
@@ -660,9 +660,9 @@ static EXPRESSION* createLambda(bool noinline)
                 continue;
             en1 = parentThs;  // get parent from function call
             deref(&stdpointer, &en1);
-            en = exprNode(en_add, clsThs, intNode(en_c_i, sp->sb->offset));
+            en = exprNode(ExpressionNode::add_, clsThs, intNode(ExpressionNode::c_i_, sp->sb->offset));
             deref(&stdpointer, &en);
-            en = exprNode(en_assign, en, en1);
+            en = exprNode(ExpressionNode::assign_, en, en1);
         }
         else if (!strcmp(sp->name, "$this"))
         {
@@ -675,21 +675,21 @@ static EXPRESSION* createLambda(bool noinline)
             else
             {
                 SYMBOL* parent = search(lambdas.front()->cls->tp->syms, "$parent");
-                en1 = varNode(en_auto, cls);
+                en1 = varNode(ExpressionNode::auto_, cls);
                 deref(&stdpointer, &en1);
-                en1 = exprNode(en_add, en1, intNode(en_c_i, parent->sb->offset));
+                en1 = exprNode(ExpressionNode::add_, en1, intNode(ExpressionNode::c_i_, parent->sb->offset));
             }
             deref(&stdpointer, &en1);
-            en = exprNode(en_add, clsThs, intNode(en_c_i, sp->sb->offset));
+            en = exprNode(ExpressionNode::add_, clsThs, intNode(ExpressionNode::c_i_, sp->sb->offset));
             deref(&stdpointer, &en);
-            en = exprNode(en_assign, en, en1);
+            en = exprNode(ExpressionNode::assign_, en, en1);
         }
         else if (sp->sb->lambdaMode)
         {
             LAMBDASP* lsp = search(lambdas.front()->captured, sp->name);
             if (lsp)
             {
-                en1 = exprNode(en_add, clsThs, intNode(en_c_i, sp->sb->offset));
+                en1 = exprNode(ExpressionNode::add_, clsThs, intNode(ExpressionNode::c_i_, sp->sb->offset));
                 if (sp->sb->lambdaMode == cmExplicitValue)
                 {
                     SYMBOL* capture = lsp->parent;
@@ -703,7 +703,7 @@ static EXPRESSION* createLambda(bool noinline)
                     else
                     {
                         deref(ctp, &en1);
-                        en = exprNode(en_assign, en1, sp->sb->init->front()->exp);
+                        en = exprNode(ExpressionNode::assign_, en1, sp->sb->init->front()->exp);
                     }
                 }
                 else if (sp->sb->lambdaMode == cmRef)
@@ -714,17 +714,17 @@ static EXPRESSION* createLambda(bool noinline)
                     {
                         en = parentThs;
                         deref(&stdpointer, &en);
-                        en = exprNode(en_add, en, intNode(en_c_i, capture->sb->offset));
+                        en = exprNode(ExpressionNode::add_, en, intNode(ExpressionNode::c_i_, capture->sb->offset));
                     }
-                    else  // must be an sc_auto
+                    else  // must be an StorageClass::auto_
                     {
-                        en = varNode(en_auto, capture);
+                        en = varNode(ExpressionNode::auto_, capture);
                     }
                     if (isref(capture->tp))
                     {
                         deref(&stdpointer, &en);
                     }
-                    en = exprNode(en_assign, en1, en);
+                    en = exprNode(ExpressionNode::assign_, en1, en);
                 }
                 else  // cmValue
                 {
@@ -734,11 +734,11 @@ static EXPRESSION* createLambda(bool noinline)
                     {
                         en = parentThs;
                         deref(&stdpointer, &en);
-                        en = exprNode(en_add, en, intNode(en_c_i, capture->sb->offset));
+                        en = exprNode(ExpressionNode::add_, en, intNode(ExpressionNode::c_i_, capture->sb->offset));
                     }
-                    else  // must be an sc_auto
+                    else  // must be an StorageClass::auto_
                     {
-                        en = varNode(en_auto, capture);
+                        en = varNode(ExpressionNode::auto_, capture);
                     }
                     if (isref(ctp))
                     {
@@ -755,7 +755,7 @@ static EXPRESSION* createLambda(bool noinline)
                     {
                         deref(ctp, &en1);
                         deref(ctp, &en);
-                        en = exprNode(en_assign, en1, en);
+                        en = exprNode(ExpressionNode::assign_, en1, en);
                     }
                 }
             }
@@ -766,7 +766,7 @@ static EXPRESSION* createLambda(bool noinline)
         }
         if (en)
         {
-            *cur = exprNode(en_void, en, NULL);
+            *cur = exprNode(ExpressionNode::void_, en, NULL);
             cur = &(*cur)->right;
         }
     }
@@ -783,7 +783,7 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     if (funcsp)
         funcsp->sb->noinline = true;
     self = Allocate<LAMBDA>();
-    ltp = MakeType(bt_struct);
+    ltp = MakeType(BasicType::struct_);
     ltp->syms = symbols.CreateSymbolTable();
     ltp->tags = symbols.CreateSymbolTable();
     ltp->size = 0;
@@ -794,12 +794,12 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     self->captureMode = cmNone;
     self->isMutable = false;
     self->captureThis = false;
-    self->cls = makeID(sc_type, ltp, NULL, LambdaName());
+    self->cls = makeID(StorageClass::type_, ltp, NULL, LambdaName());
     ltp->sp = self->cls;
-    SetLinkerNames(self->cls, lk_cdecl);
+    SetLinkerNames(self->cls, Linkage::cdecl_);
     self->cls->sb->islambda = true;
-    self->cls->sb->attribs.inheritable.structAlign = getAlign(sc_global, &stdpointer);
-    self->func = makeID(sc_member, ltp, NULL, overloadNameTab[CI_FUNC]);
+    self->cls->sb->attribs.inheritable.structAlign = getAlign(StorageClass::global_, &stdpointer);
+    self->func = makeID(StorageClass::member_, ltp, NULL, overloadNameTab[CI_FUNC]);
     self->func->sb->parentClass = self->cls;
     self->functp = &stdauto;
     self->enclosingFunc = theCurrentFunc;
@@ -821,40 +821,40 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     if (funcsp)
     {
         // can have a capture list;
-        if (MATCHKW(lex, assign))
+        if (MATCHKW(lex, Keyword::assign_))
         {
             lex = getsym();
-            if (MATCHKW(lex, comma) || MATCHKW(lex, closebr))
+            if (MATCHKW(lex, Keyword::comma_) || MATCHKW(lex, Keyword::closebr_))
             {
                 self->captureMode = cmValue;
-                skip(&lex, comma);
+                skip(&lex, Keyword::comma_);
             }
             else
             {
                 lex = backupsym();
             }
         }
-        else if (MATCHKW(lex, andx))
+        else if (MATCHKW(lex, Keyword::and_))
         {
             lex = getsym();
-            if (MATCHKW(lex, comma) || MATCHKW(lex, closebr))
+            if (MATCHKW(lex, Keyword::comma_) || MATCHKW(lex, Keyword::closebr_))
             {
                 self->captureMode = cmRef;
-                skip(&lex, comma);
+                skip(&lex, Keyword::comma_);
             }
             else
             {
                 lex = backupsym();
             }
         }
-        if (!MATCHKW(lex, comma) && !MATCHKW(lex, closebr))
+        if (!MATCHKW(lex, Keyword::comma_) && !MATCHKW(lex, Keyword::closebr_))
         {
             do
             {
                 enum e_cm localMode = self->captureMode;
-                if (MATCHKW(lex, comma))
-                    skip(&lex, comma);
-                if (MATCHKW(lex, kw_this))
+                if (MATCHKW(lex, Keyword::comma_))
+                    skip(&lex, Keyword::comma_);
+                if (MATCHKW(lex, Keyword::this_))
                 {
                     lex = getsym();
                     if (localMode == cmValue || !self->lthis)
@@ -872,7 +872,7 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     }
                     continue;
                 }
-                else if (MATCHKW(lex, andx))
+                else if (MATCHKW(lex, Keyword::and_))
                 {
                     if (localMode == cmRef)
                     {
@@ -895,7 +895,7 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     SYMBOL* sp;
                     LAMBDA* current;
                     lex = getsym();
-                    if (MATCHKW(lex, assign))
+                    if (MATCHKW(lex, Keyword::assign_))
                     {
                         TYPE* tp = NULL;
                         EXPRESSION* exp;
@@ -907,7 +907,7 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                         }
                         else
                         {
-                            SYMBOL* sp = makeID(sc_auto, tp, NULL, idlex->data->value.s.a);
+                            SYMBOL* sp = makeID(StorageClass::auto_, tp, NULL, idlex->data->value.s.a);
                             initInsert(&sp->sb->init, tp, exp, 0, true);
                             lambda_capture(sp, cmExplicitValue, true);
                             if (localMode == cmRef)
@@ -929,7 +929,7 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                         {
                             if (sp->packed)
                             {
-                                if (!MATCHKW(idlex, ellipse))
+                                if (!MATCHKW(idlex, Keyword::ellipse_))
                                     error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
                                 else
                                     idlex = getsym();
@@ -957,13 +957,13 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 {
                     error(ERR_INVALID_LAMBDA_CAPTURE_MODE);
                 }
-            } while (MATCHKW(lex, comma));
+            } while (MATCHKW(lex, Keyword::comma_));
         }
-        needkw(&lex, closebr);
+        needkw(&lex, Keyword::closebr_);
     }
     else
     {
-        if (!MATCHKW(lex, closebr))
+        if (!MATCHKW(lex, Keyword::closebr_))
         {
             error(ERR_LAMBDA_CANNOT_CAPTURE);
         }
@@ -972,15 +972,15 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             lex = getsym();
         }
     }
-    if (MATCHKW(lex, openpa))
+    if (MATCHKW(lex, Keyword::openpa_))
     {
         TYPE* tpx = &stdvoid;
-        lex = getFunctionParams(lex, NULL, &self->func, &tpx, false, sc_auto, false);
+        lex = getFunctionParams(lex, NULL, &self->func, &tpx, false, StorageClass::auto_, false);
         if (!self->func->tp->syms)
         {
             errorstr(ERR_MISSING_TYPE_FOR_PARAMETER, "undefined");
             *tp = &stdint;
-            *exp = intNode(en_c_i, 0);
+            *exp = intNode(ExpressionNode::c_i_, 0);
             return lex;
         }
         for (auto sym : *self->func->tp->syms)
@@ -990,7 +990,7 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 error(ERR_CANNOT_DEFAULT_PARAMETERS_WITH_LAMBDA);
             }
         }
-        if (MATCHKW(lex, kw_mutable))
+        if (MATCHKW(lex, Keyword::mutable_))
         {
             for (auto lsp : *self->captured)
             {
@@ -1004,10 +1004,10 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             lex = getsym();
         }
         ParseAttributeSpecifiers(&lex, funcsp, true);
-        if (MATCHKW(lex, pointsto))
+        if (MATCHKW(lex, Keyword::pointsto_))
         {
             lex = getsym();
-            lex = get_type_id(lex, &self->functp, funcsp, sc_cast, false, true, false);
+            lex = get_type_id(lex, &self->functp, funcsp, StorageClass::cast_, false, true, false);
             if (!self->functp)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -1017,37 +1017,37 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     }
     else
     {
-        self->func->tp = MakeType(bt_func, &stdvoid);
+        self->func->tp = MakeType(BasicType::func_, &stdvoid);
         self->func->tp->sp = self->func;
         SYMBOL* spi;
-        spi = makeID(sc_parameter, self->func->tp, NULL, AnonymousName());
+        spi = makeID(StorageClass::parameter_, self->func->tp, NULL, AnonymousName());
         spi->sb->anonymous = true;
-        spi->tp = MakeType(bt_void);
+        spi->tp = MakeType(BasicType::void_);
         localNameSpace->front()->syms->Add(spi);
-        SetLinkerNames(spi, lk_cpp);
+        SetLinkerNames(spi, Linkage::cpp_);
         self->func->tp->syms = localNameSpace->front()->syms;
-        self->func->tp->syms->Add(makeID(sc_parameter, &stdvoid, NULL, AnonymousName()));
+        self->func->tp->syms->Add(makeID(StorageClass::parameter_, &stdvoid, NULL, AnonymousName()));
     }
     basetype(self->func->tp)->btp = self->functp;
     injectThisPtr(lambdas.front()->func, basetype(lambdas.front()->func->tp)->syms);
     lambdas.front()->func->tp->btp = self->functp;
     lambdas.front()->func->tp->rootType = lambdas.front()->func->tp;
-    lambdas.front()->func->sb->attribs.inheritable.linkage4 = lk_virtual;
+    lambdas.front()->func->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
     lambdas.front()->func->sb->attribs.inheritable.isInline = true;
     lambdas.front()->templateFunctions = lambda_get_template_state(lambdas.front()->func);
     ssl.str = self->cls;
     ssl.tmpl = NULL;
     addStructureDeclaration(&ssl);
-    ths = makeID(sc_member, &stdpointer, NULL, "$this");
-    SetLinkerNames(ths, lk_cdecl);
+    ths = makeID(StorageClass::member_, &stdpointer, NULL, "$this");
+    SetLinkerNames(ths, Linkage::cdecl_);
     lambda_insert(ths, lambdas.front());
-    if (MATCHKW(lex, begin))
+    if (MATCHKW(lex, Keyword::begin_))
     {
         lex = getDeferredData(lex, &self->func->sb->deferredCompile, true);
         if (!lambdas.front()->templateFunctions)
         {
             LEXLIST* lex1 = SetAlternateLex(self->func->sb->deferredCompile);
-            SetLinkerNames(self->func, lk_cdecl);
+            SetLinkerNames(self->func, Linkage::cdecl_);
             body(lex1, self->func);
             bodygen(self->func);
             lex1 = self->func->sb->deferredCompile;

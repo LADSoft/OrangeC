@@ -152,7 +152,7 @@ void AsmMain::CheckAssign(std::string& line, PreProcessor& pp)
                         }
                         else
                         {
-                            ppExpr e(false);
+                            ppExpr e(false, Dialect::oasm);
                             std::string temp = line.substr(npos);
                             value = e.Eval(temp);
                             pp.Assign(name, value, caseInsensitive);
@@ -207,7 +207,7 @@ int AsmMain::Run(int argc, char* argv[])
         {
             inName = Utils::QualifiedFile(files[i].c_str(), ".asm");
         }
-        PreProcessor pp(inName, srchPth, sysSrchPth, false, false, '%', false, false, true, false, "");
+        PreProcessor pp(inName, srchPth, sysSrchPth, false, false, '%', false, Dialect::oasm, true, false, "");
         int n = Defines.GetCount();
         for (int i = 0; i < n; i++)
         {

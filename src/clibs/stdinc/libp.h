@@ -50,6 +50,7 @@ extern "C"
 #define OUR_C_EXC_CODE 0xEEFABCE
 
 #define _DTA_BUF_DEFAULT 8192 /* must be a power of two <= 64K */
+#define CKD_BUF_SIZE (sizeof(long long) + 4)
 
 #if __STDC_VERSION__ >= 199901L
 #    define LLONG_TYPE long long
@@ -204,6 +205,10 @@ extern "C"
     int __fextract(long double* val, int* exp, int* sign, unsigned char* BCD);
     int __fnd(unsigned char* BCD, int index);
     long double __fpow(int exp);
+
+    // checked arithmetic support
+    void __stdcall ___ckd_set_value(unsigned int buf[CKD_BUF_SIZE/sizeof(int)], const void *val, int typeid_val);
+    int __stdcall ___ckd_get_value(const unsigned int buf[CKD_BUF_SIZE/sizeof(int)], void *result, int typeid_val);
 
 #ifdef __cplusplus
 };

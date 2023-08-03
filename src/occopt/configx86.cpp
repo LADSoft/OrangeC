@@ -49,8 +49,9 @@ static char BackendIntrinsicPrototypes[] =
 static char help_text[] =
     "[options] [@response file] files\n"
     "\n"
-    "/1        - C1x mode                  /8        - c89 mode\n"
-    "/9        - C99 mode                  /#        - compile then assemble then link\n"
+    "/1        - C1x mode                  /2        - c2x mode\n"
+    "/8        - c89 mode                  /9        - C99 mode\n"
+    "/#        - compile then assemble then link\n"
     "/axxx     - set assembler extension   /c        - compile only\n"
     "+e        - dump errors to file       /f{flags} - set flags\n"
     "/g        - enable debug symbols      +i        - dump preprocessed file\n"
@@ -115,6 +116,7 @@ static char help_text[] =
     "       c89   1989 version of ansi c\n"
     "       c99   1999 version of ansi c\n"
     "       c11   2011 version of ansi c\n"
+    "       c24   2024 version of ansi c\n"
     "       c++11 2011 version of C++\n"
     "       c++14 2014 version of C++\n"
     " -nostdinc, nostdinc++           disable system include file path\n"
@@ -269,6 +271,7 @@ static ARCH_SIZING sizes = {
     0,                    /*char a_rcomplexpad;*/
     0,                    /*char a_lrcomplexpad;*/
     0,                    // char a_alignedstruct; // __attribute((__aligned__))
+    0,                    /* char a_maxalign; */
 };
 static ARCH_SIZING alignments = {
     1, /*char a_bool;*/
@@ -294,6 +297,7 @@ static ARCH_SIZING alignments = {
     0,                    /*char a_rcomplexpad;*/
     0,                    /*char a_lrcomplexpad;*/
     8,  // char a_alignedstruct; // __attribute((__aligned__))
+    8,                    /* char a_maxalign; */
 };
 static ARCH_SIZING locks = {
     0, /*char a_bool; */
@@ -319,6 +323,7 @@ static ARCH_SIZING locks = {
     1,  /*char a_rcomplexpad; */
     1,  /*char a_lrcomplexpad; */
     0,  // char a_alignedstruct; // __attribute((__aligned__))
+    0,                    /* char a_maxalign; */
 };
 static ARCH_FLOAT aflt = {-126, 126, 128, 24};
 static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};

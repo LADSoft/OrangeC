@@ -40,7 +40,7 @@ TYPE* typenum(char* buf, TYPE* tp);
 
 static TYPE* replaceTemplateSelector(TYPE* tp)
 {
-    if (!templateNestingCount && tp->type == bt_templateselector && (*tp->sp->sb->templateSelector)[1].isTemplate)
+    if (!templateNestingCount && tp->type == BasicType::templateselector_ && (*tp->sp->sb->templateSelector)[1].isTemplate)
     {
         SYMBOL* sp2 = (*tp->sp->sb->templateSelector)[1].sp;
         if ((*tp->sp->sb->templateSelector)[1].isDeclType)
@@ -71,27 +71,27 @@ static TYPE* replaceTemplateSelector(TYPE* tp)
 }
 bool comparetypes(TYPE* typ1, TYPE* typ2, int exact)
 {
-    if (typ1->type == bt_any || typ2->type == bt_any)
+    if (typ1->type == BasicType::any_ || typ2->type == BasicType::any_)
         return true;
-    while (typ1->type == bt_typedef)
+    while (typ1->type == BasicType::typedef_)
         typ1 = basetype(typ1);
-    while (typ2->type == bt_typedef)
+    while (typ2->type == BasicType::typedef_)
         typ2 = basetype(typ2);
-    if (typ1->type == bt_derivedfromtemplate)
+    if (typ1->type == BasicType::derivedfromtemplate_)
         typ1 = typ1->btp;
-    if (typ2->type == bt_derivedfromtemplate)
+    if (typ2->type == BasicType::derivedfromtemplate_)
         typ2 = typ2->btp;
     while (isref(typ1))
         typ1 = basetype(typ1)->btp;
     while (isref(typ2))
         typ2 = basetype(typ2)->btp;
-    while (typ1->type == bt_typedef)
+    while (typ1->type == BasicType::typedef_)
         typ1 = basetype(typ1);
-    while (typ2->type == bt_typedef)
+    while (typ2->type == BasicType::typedef_)
         typ2 = basetype(typ2);
-    if (typ1->type == bt_templateselector && typ2->type == bt_templateselector)
+    if (typ1->type == BasicType::templateselector_ && typ2->type == BasicType::templateselector_)
         return templateselectorcompare(typ1->sp->sb->templateSelector, typ2->sp->sb->templateSelector);
-    if (typ1->type == bt_templatedecltype && typ2->type == bt_templatedecltype)
+    if (typ1->type == BasicType::templatedecltype_ && typ2->type == BasicType::templatedecltype_)
         return templatecompareexpressions(typ1->templateDeclType, typ2->templateDeclType);
     if (ispointer(typ1) && ispointer(typ2))
     {
@@ -147,18 +147,18 @@ bool comparetypes(TYPE* typ1, TYPE* typ2, int exact)
     {
         if (typ1->scoped != typ2->scoped)
             return false;
-        if (typ1->type == bt_enum)
+        if (typ1->type == BasicType::enum_)
         {
-            if (typ2->type == bt_enum)
+            if (typ2->type == BasicType::enum_)
                 return typ1->sp == typ2->sp;
             else
                 return isint(typ2);
         }
-        else if (typ2->type == bt_enum)
+        else if (typ2->type == BasicType::enum_)
         {
             return isint(typ1);
         }
-        if (typ1->type == typ2->type && typ1->type == bt_memberptr)
+        if (typ1->type == typ2->type && typ1->type == BasicType::memberptr_)
         {
             if (typ1->sp != typ2->sp)
             {
@@ -168,11 +168,11 @@ bool comparetypes(TYPE* typ1, TYPE* typ2, int exact)
             return comparetypes(typ1->btp, typ2->btp, exact);
         }
     }
-    if (typ1->type == typ2->type && typ1->type == bt___string)
+    if (typ1->type == typ2->type && typ1->type == BasicType::string_)
         return true;
-    if (typ1->type == bt___object)  // object matches anything
+    if (typ1->type == BasicType::object_)  // object matches anything
         return true;
-    if (typ1->type == typ2->type && (isstructured(typ1) || (exact && typ1->type == bt_enum)))
+    if (typ1->type == typ2->type && (isstructured(typ1) || (exact && typ1->type == BasicType::enum_)))
     {
         SYMBOL* s1 = typ1->sp;
         SYMBOL* s2 = typ2->sp;
@@ -190,11 +190,11 @@ bool comparetypes(TYPE* typ1, TYPE* typ2, int exact)
     else if (!exact && ((ispointer(typ1) && (isfuncptr(typ2) || isfunction(typ2) || isint(typ2))) ||
                         (ispointer(typ2) && (isfuncptr(typ1) || isfunction(typ1) || isint(typ1)))))
         return (true);
-    else if (typ1->type == bt_enum && isint(typ2))
+    else if (typ1->type == BasicType::enum_ && isint(typ2))
     {
         return true;
     }
-    else if (typ2->type == bt_enum && isint(typ1))
+    else if (typ2->type == BasicType::enum_ && isint(typ1))
     {
         return true;
     }
@@ -214,44 +214,44 @@ bool matchingCharTypes(TYPE* typ1, TYPE* typ2)
     }
     typ1 = basetype(typ1);
     typ2 = basetype(typ2);
-    if (typ1->type == bt_char)
+    if (typ1->type == BasicType::char_)
     {
         if (Optimizer::cparams.prm_charisunsigned)
         {
-            if (typ2->type == bt_unsigned_char)
+            if (typ2->type == BasicType::unsigned_char_)
                 return true;
         }
         else
         {
-            if (typ2->type == bt_signed_char)
+            if (typ2->type == BasicType::signed_char_)
                 return true;
         }
     }
-    else if (typ2->type == bt_char)
+    else if (typ2->type == BasicType::char_)
     {
         if (Optimizer::cparams.prm_charisunsigned)
         {
-            if (typ1->type == bt_unsigned_char)
+            if (typ1->type == BasicType::unsigned_char_)
                 return true;
         }
         else
         {
-            if (typ1->type == bt_signed_char)
+            if (typ1->type == BasicType::signed_char_)
                 return true;
         }
     }
-    else if (typ1->type == bt_unsigned_short || typ1->type == bt_wchar_t)
-        return typ2->type == bt_unsigned_short || typ2->type == bt_wchar_t;
+    else if (typ1->type == BasicType::unsigned_short_ || typ1->type == BasicType::wchar_t_)
+        return typ2->type == BasicType::unsigned_short_ || typ2->type == BasicType::wchar_t_;
     return false;
 }
 static char* putpointer(char* p, TYPE* tp)
 {
     *p = 0;
-    if (tp->type == bt_far)
+    if (tp->type == BasicType::far_)
         Optimizer::my_sprintf(p, "far ");
     p = p + strlen(p);
     if (tp->array)
-        if (tp->btp->size && (!tp->esize || tp->esize->type == en_c_i))
+        if (tp->btp->size && (!tp->esize || tp->esize->type == ExpressionNode::c_i_))
         {
             Optimizer::my_sprintf(p, "[%d]", tp->size / tp->btp->size);
         }
@@ -268,24 +268,24 @@ static char* putpointer(char* p, TYPE* tp)
 
 static TYPE* enumConst(char* buf, TYPE* tp)
 {
-    while (tp && (isconst(tp) || isvolatile(tp) || isrestrict(tp) || tp->type == bt_derivedfromtemplate))
+    while (tp && (isconst(tp) || isvolatile(tp) || isrestrict(tp) || tp->type == BasicType::derivedfromtemplate_))
     {
         switch (tp->type)
         {
-            case bt_lrqual:
+            case BasicType::lrqual_:
                 strcat(buf, "& ");
                 break;
-            case bt_rrqual:
+            case BasicType::rrqual_:
                 strcat(buf, "&& ");
                 break;
-            case bt_const:
+            case BasicType::const_:
                 strcat(buf, tn_const);
                 break;
-            case bt_volatile:
+            case BasicType::volatile_:
                 strcat(buf, tn_volatile);
                 break;
-            case bt_restrict:
-            case bt_derivedfromtemplate:
+            case BasicType::restrict_:
+            case BasicType::derivedfromtemplate_:
                 /*				strcat(buf, tn_restrict); */
                 break;
             default:
@@ -325,7 +325,7 @@ TYPE* typenum(char* buf, TYPE* tp)
         diag("typenum - nullptr type");
         return &stdvoid;
     }
-    if (tp->type == bt_derivedfromtemplate)
+    if (tp->type == BasicType::derivedfromtemplate_)
         tp = tp->btp;
     tp = enumConst(buf, tp);
     if (!tp)
@@ -333,10 +333,10 @@ TYPE* typenum(char* buf, TYPE* tp)
     buf += strlen(buf);
     switch (tp->type)
     {
-        case bt_typedef:
+        case BasicType::typedef_:
             return typenum(buf, tp->btp);
             break;
-        case bt_aggregate:
+        case BasicType::aggregate_:
             if (!tp->syms)
                 break;
             sym = tp->syms->front();
@@ -347,8 +347,8 @@ TYPE* typenum(char* buf, TYPE* tp)
             }
             tp = sym->tp;
             /* fall through */
-        case bt_func:
-        case bt_ifunc:
+        case BasicType::func_:
+        case BasicType::ifunc_:
             typenum(buf, tp->btp);
             buf = buf + strlen(buf);
             if (tp->syms)
@@ -397,99 +397,99 @@ TYPE* typenum(char* buf, TYPE* tp)
             *buf++ = ')';
             *buf = 0;
             break;
-        case bt_float_complex:
+        case BasicType::float__complex_:
             strcpy(buf, tn_floatcomplex);
             break;
-        case bt_double_complex:
+        case BasicType::double__complex_:
             strcpy(buf, tn_doublecomplex);
             break;
-        case bt_long_double_complex:
+        case BasicType::long_double_complex_:
             strcpy(buf, tn_longdoublecomplex);
             break;
-        case bt_float_imaginary:
+        case BasicType::float__imaginary_:
             strcpy(buf, tn_floatimaginary);
             break;
-        case bt_double_imaginary:
+        case BasicType::double__imaginary_:
             strcpy(buf, tn_doubleimaginary);
             break;
-        case bt_long_double_imaginary:
+        case BasicType::long_double_imaginary_:
             strcpy(buf, tn_longdoubleimaginary);
             break;
-        case bt_float:
+        case BasicType::float_:
             strcpy(buf, tn_float);
             break;
-        case bt_double:
+        case BasicType::double_:
             strcpy(buf, tn_double);
             break;
-        case bt_long_double:
+        case BasicType::long_double_:
             strcpy(buf, tn_longdouble);
             break;
-        case bt_unsigned:
+        case BasicType::unsigned_:
             strcpy(buf, tn_unsigned);
             buf = buf + strlen(buf);
-        case bt_int:
+        case BasicType::int_:
             strcpy(buf, tn_int);
             break;
-        case bt_char16_t:
+        case BasicType::char16_t_:
             strcpy(buf, tn_char16_t);
             break;
-        case bt_char32_t:
+        case BasicType::char32_t_:
             strcpy(buf, tn_char32_t);
             break;
-        case bt_unsigned_long_long:
+        case BasicType::unsigned_long_long_:
             strcpy(buf, tn_unsigned);
             buf = buf + strlen(buf);
-        case bt_long_long:
+        case BasicType::long_long_:
             strcpy(buf, tn_longlong);
             break;
-        case bt_unsigned_long:
+        case BasicType::unsigned_long_:
             strcpy(buf, tn_unsigned);
             buf = buf + strlen(buf);
-        case bt_long:
+        case BasicType::long_:
             strcpy(buf, tn_long);
             break;
-        case bt_wchar_t:
+        case BasicType::wchar_t_:
             strcpy(buf, tn_wchar_t);
             break;
-        case bt_unsigned_short:
+        case BasicType::unsigned_short_:
             strcpy(buf, tn_unsigned);
             buf = buf + strlen(buf);
-        case bt_short:
+        case BasicType::short_:
             strcpy(buf, tn_short);
             break;
-        case bt_signed_char:
+        case BasicType::signed_char_:
             strcpy(buf, tn_signed);
             buf = buf + strlen(buf);
             strcpy(buf, tn_char);
             break;
-        case bt_unsigned_char:
+        case BasicType::unsigned_char_:
             strcpy(buf, tn_unsigned);
             buf = buf + strlen(buf);
-        case bt_char:
+        case BasicType::char_:
             strcpy(buf, tn_char);
             break;
-        case bt_bool:
+        case BasicType::bool_:
             strcpy(buf, tn_bool);
             break;
-        case bt_bit:
+        case BasicType::bit_:
             strcpy(buf, "bit");
             break;
-        case bt_inative:
+        case BasicType::inative_:
             strcpy(buf, "native int");
             break;
-        case bt_unative:
+        case BasicType::unative_:
             strcpy(buf, "native unsigned int");
             break;
-        case bt_void:
+        case BasicType::void_:
             strcpy(buf, tn_void);
             break;
-        case bt___string:
+        case BasicType::string_:
             strcpy(buf, "__string");
             break;
-        case bt___object:
+        case BasicType::object_:
             strcpy(buf, "__object");
             break;
-        case bt_pointer:
+        case BasicType::pointer_:
             if (tp->nullptrType)
             {
                 strcpy(buf, "nullptr_t");
@@ -499,7 +499,7 @@ TYPE* typenum(char* buf, TYPE* tp)
                 typenumptr(buf, tp);
             }
             break;
-        case bt_memberptr:
+        case BasicType::memberptr_:
             if (isfunction(basetype(tp)->btp))
             {
                 TYPE* func = basetype(tp)->btp;
@@ -534,19 +534,19 @@ TYPE* typenum(char* buf, TYPE* tp)
                 strcpy(buf, "::*");
             }
             break;
-        case bt_seg:
+        case BasicType::seg_:
             typenum(buf, tp->btp);
             buf += strlen(buf);
             strcpy(buf, " _seg *");
             break;
-        case bt_lref:
+        case BasicType::lref_:
             typenum(buf, tp->btp);
             buf += strlen(buf);
             *buf++ = ' ';
             *buf++ = '&';
             *buf = 0;
             break;
-        case bt_rref:
+        case BasicType::rref_:
             typenum(buf, tp->btp);
             buf += strlen(buf);
             *buf++ = ' ';
@@ -554,33 +554,33 @@ TYPE* typenum(char* buf, TYPE* tp)
             *buf++ = '&';
             *buf = 0;
             break;
-        case bt_ellipse:
+        case BasicType::ellipse_:
             strcpy(buf, tn_ellipse);
             break;
-        case bt_any:
+        case BasicType::any_:
             strcpy(buf, "???");
             break;
-        case bt_class:
+        case BasicType::class_:
             /*                strcpy(buf, tn_class); */
             unmangle(name, tp->sp->sb->decoratedName ? tp->sp->sb->decoratedName : tp->sp->name);
             strcpy(buf, name);
             break;
-        case bt_struct:
+        case BasicType::struct_:
             /*                strcpy(buf, tn_struct); */
             unmangle(name, tp->sp->sb->decoratedName ? tp->sp->sb->decoratedName : tp->sp->name);
             strcpy(buf, name);
             break;
-        case bt_union:
+        case BasicType::union_:
             /*                strcpy(buf, tn_union); */
             unmangle(name, tp->sp->sb->decoratedName ? tp->sp->sb->decoratedName : tp->sp->name);
             strcpy(buf, name);
             break;
-        case bt_enum:
+        case BasicType::enum_:
             /*                strcpy(buf, tn_enum);  */
             unmangle(name, tp->sp->sb->decoratedName ? tp->sp->sb->decoratedName : tp->sp->name);
             strcpy(buf, name);
             break;
-        case bt_templateselector: {
+        case BasicType::templateselector_: {
             auto itts = tp->sp->sb->templateSelector->begin();
             ++itts;
             if (itts->sp)
@@ -594,10 +594,10 @@ TYPE* typenum(char* buf, TYPE* tp)
             }
             break;
         }
-        case bt_templatedecltype:
+        case BasicType::templatedecltype_:
             RenderExpr(buf, tp->templateDeclType);
             break;
-        case bt_auto:
+        case BasicType::auto_:
             strcpy(buf, "auto ");
             break;
         default:

@@ -6933,7 +6933,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                         sp->sb->attribs.inheritable.linkage4 != Linkage::virtual_ && sp->sb->attribs.inheritable.linkage != Linkage::c_)
                                     {
                                         if (!sp->sb->parentNameSpace &&
-                                            (!sp->sb->parentClass || !sp->sb->parentClass->templateParams || !templateNestingCount) &&
+                                            (!sp->sb->parentClass || !sp->sb->parentClass->templateParams || !templateNestingCount || (sp->templateParams && sp->templateParams->size() == 1)) &&
                                             strcmp(sp->name, "main") != 0 && strcmp(sp->name, "WinMain") != 0)
                                         {
                                             sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;

@@ -36,7 +36,7 @@ FILES =\
     vorbis_interface.o
 
 CFLAGS= /! /Wcl
-LDFLAGS = /Wcl /pl-DELAYLOAD:LSCRTL.DLL /pl-DELAY:NOBIND /pl-mx
+LDFLAGS = /Wcl /pl-mx
 
 LDLIBS = delayimp.l
 test: lame.exe

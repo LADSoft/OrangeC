@@ -90,7 +90,7 @@
 <Switch Application="dlpe.exe" Flags="/mDLL /f" Name="DLL32" SpecFile="pe.spc" Rel="0" MapMode="0">
 	<Extension Value=".res" />
 	<Extension Value=".def" />
-	<Define Name="IMAGEBASE" Value="0x400000" />
+	<Define Name="IMAGEBASE" Value="0x10000000" />
 	<Define Name="FILEALIGN" Value="0x200" />
 	<Define Name="OBJECTALIGN" Value="0x1000" />
 	<Define Name="STACKSIZE" Value="0x100000" />

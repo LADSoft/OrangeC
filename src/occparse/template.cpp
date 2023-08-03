@@ -73,6 +73,7 @@ int instantiatingClass;
 int parsingDefaultTemplateArgs;
 int count1;
 int inTemplateArgs;
+bool fullySpecialized;
 
 static int templateNameTag;
 static std::unordered_map<SYMBOL*, std::unordered_map<std::string, SYMBOL*, StringHash>> classTemplateMap;
@@ -112,6 +113,7 @@ void templateInit(void)
     classTemplateMap2.clear();
     classInstantiationMap.clear();
     templateNameTag = 1;
+    fullySpecialized = false;
 }
 EXPRESSION* GetSymRef(EXPRESSION* n)
 {
@@ -12693,7 +12695,7 @@ static void dontInstantiateInstanceMembers(SYMBOL* cls, bool excludeFromExplicit
     }
 }
 
-static bool fullySpecialized(TEMPLATEPARAMPAIR* tpx)
+static bool IsFullySpecialized(TEMPLATEPARAMPAIR* tpx)
 {
     switch (tpx->second->type)
     {
@@ -12703,7 +12705,7 @@ static bool fullySpecialized(TEMPLATEPARAMPAIR* tpx)
             if (tpx->second->byTemplate.args)
             {
                 for (auto&& tpxl : *tpx->second->byTemplate.args)
-                    if (!fullySpecialized(tpx))
+                    if (!IsFullySpecialized(tpx))
                         return false;
             }
             return true;
@@ -12746,7 +12748,7 @@ bool TemplateFullySpecialized(SYMBOL* sp)
         if (sp->templateParams && sp->templateParams->front().second->bySpecialization.types)
         {
             for (auto&& tpx : *sp->templateParams->front().second->bySpecialization.types)
-                if (!fullySpecialized(&tpx))
+                if (!IsFullySpecialized(&tpx))
                     return false;
             return true;
         }
@@ -13102,7 +13104,9 @@ LEXLIST* TemplateDeclaration(LEXLIST* lex, SYMBOL* funcsp, AccessLevel access, S
         {
             templateNestingCount++;
             inTemplateType = count != 0;  // checks for full specialization...
+            fullySpecialized = count == 0;
             lex = declare(lex, funcsp, &tp, storage_class, Linkage::none_, emptyBlockdata, true, false, true, access);
+            fullySpecialized = false;
             inTemplateType = false;
             templateNestingCount--;
             instantiatingTemplate = oldInstantiatingTemplate;

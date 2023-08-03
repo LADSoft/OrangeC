@@ -148,9 +148,9 @@ void DllImports<ImportDirectory>::WriteDirectory(DWORD virtual_addr, DWORD image
         std::copy((char*)&dir, (char*)(&dir + 1), data + directoryPos);
         std::copy(m->name.begin(), m->name.end(), data + stringPos);
 
-        directoryPos += sizeof ImportDirectory;
-        iatPos += (m->externalNames.size() + 1) * sizeof DWORD;
-        namePos += (m->externalNames.size() + 1) * sizeof DWORD;
+        directoryPos += sizeof(ImportDirectory);
+        iatPos += (m->externalNames.size() + 1) * sizeof(DWORD);
+        namePos += (m->externalNames.size() + 1) * sizeof(DWORD);
         int sz = m->name.size() + 1;
         sz += (sz & 1);
         stringPos += sz;
@@ -183,7 +183,7 @@ void DllImports<ImportDirectory>::WriteTables(std::vector<DWORD>& thunkFixups, D
                 *iatPointer = *namePointer = RVA(stringPos);
             }
             std::copy(name.begin(), name.end(), data + stringPos + sizeof(HintType));
-            sym->SetOffset(new ObjExpression(RVA((iatPointer - iatBase) * sizeof DWORD + iatPos) + imageBase));
+            sym->SetOffset(new ObjExpression(RVA((iatPointer - iatBase) * sizeof(DWORD) + iatPos) + imageBase));
             iatPointer++;
             namePointer++;
             int sz = 1 + sizeof(HintType) + name.size();
@@ -232,16 +232,16 @@ void DllImports<DelayLoadDirectory>::WriteDirectory(DWORD virtual_addr, DWORD im
                                   m->time};
         std::copy((char*)&dir, (char*)(&dir + 1), data + directoryPos);
         std::copy(m->name.begin(), m->name.end(), data + stringPos);
-        directoryPos += sizeof DelayLoadDirectory;
-        iatPos += (m->externalNames.size() + 1) * sizeof DWORD;
-        namePos += (m->externalNames.size() + 1) * sizeof DWORD;
+        directoryPos += sizeof(DelayLoadDirectory);
+        iatPos += (m->externalNames.size() + 1) * sizeof(DWORD);
+        namePos += (m->externalNames.size() + 1) * sizeof(DWORD);
         int sz = m->name.size() + 1;
         sz += (sz & 1);
         stringPos += sz;
         if (bindPos)
-            bindPos += (m->externalNames.size() + 1) * sizeof DWORD;
+            bindPos += (m->externalNames.size() + 1) * sizeof(DWORD);
         if (unloadPos)
-            unloadPos += (m->externalNames.size() + 1) * sizeof DWORD;
+            unloadPos += (m->externalNames.size() + 1) * sizeof(DWORD);
     }
 }
 //template <>
@@ -282,11 +282,11 @@ void DllImports<DelayLoadDirectory>::WriteTables(std::vector<DWORD>& thunkFixups
             }
             if (bindPos)
             {
-                *bindPointer = std::get<3>(e);
+                *bindPointer = (DWORD)std::get<3>(e);
             }
             thunkTableRVA += PEImportObject::DelayLoadThunkSize;
             std::copy(name.begin(), name.end(), data + stringPos + sizeof(HintType));
-            sym->SetOffset(new ObjExpression(RVA((iatPointer - iatBase) * sizeof DWORD + iatPos) + imageBase));
+            sym->SetOffset(new ObjExpression(RVA((iatPointer - iatBase) * sizeof(DWORD) + iatPos) + imageBase));
             iatPointer++;
             namePointer++;
             bindPointer++;
@@ -330,7 +330,7 @@ void PEImportObject::LoadBindingInfo(DllImports<DelayLoadDirectory>& delay, std:
                     FARPROC entry = GetProcAddress(handle, std::get<0>(e).c_str());
                     if (entry)
                     {
-                        std::get<3>(e) = (DWORD)entry;
+                        std::get<3>(e) = entry;
                     }
                     else
                     {
@@ -434,7 +434,7 @@ void PEImportObject::WriteThunks(DllImports<DelayLoadDirectory>& delay, std::map
         thunkFixups.push_back(moduleThunkRVA + 4 + imageBase);
         *(DWORD*)(thunkPtr + 4 + 5) = (helperAddr - imageBase) - (moduleThunkRVA + 4 + 5 + 4);
         moduleThunkRVA += PEImportObject::DelayLoadModuleThunkSize;
-        descriptPos += sizeof DelayLoadDirectory;
+        descriptPos += sizeof(DelayLoadDirectory);
     }
 }
 void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
@@ -475,13 +475,13 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
             }
             if (s->GetExternalName().size() == 0)
             {
-                m->externalNames.push_back(std::tuple<std::string, ObjSymbol*, DWORD, DWORD>(s->GetName(), it1->second,
-                                                                              s->GetByOrdinal() ? s->GetOrdinal() : 0xffffffff, 0));
+                m->externalNames.push_back(std::tuple<std::string, ObjSymbol*, DWORD, FARPROC>(s->GetName(), it1->second,
+                                                                              s->GetByOrdinal() ? s->GetOrdinal() : 0xffffffff, nullptr));
             }
             else
             {
-                m->externalNames.push_back(std::tuple<std::string, ObjSymbol*, DWORD, DWORD>(
-                    s->GetExternalName(), it1->second, s->GetByOrdinal() ? s->GetOrdinal() : 0xffffffff, 0));
+                m->externalNames.push_back(std::tuple<std::string, ObjSymbol*, DWORD, FARPROC>(
+                    s->GetExternalName(), it1->second, s->GetByOrdinal() ? s->GetOrdinal() : 0xffffffff, nullptr));
             }
             m->publicNames.push_back(s->GetName());
         }

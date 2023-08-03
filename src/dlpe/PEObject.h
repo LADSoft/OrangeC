@@ -72,7 +72,7 @@ struct Module
     std::string name;
     DWORD moduleHandleRVA = 0;
     DWORD time = 0;
-    std::vector<std::tuple<std::string, ObjSymbol*, DWORD, DWORD>> externalNames;
+    std::vector<std::tuple<std::string, ObjSymbol*, DWORD, FARPROC>> externalNames;
     std::vector<std::string> publicNames;
 };
 
@@ -109,7 +109,7 @@ struct DllImports
         n *= 2 + bindTable + unloadTable;  // import name table, import address table, hint table
         return n * sizeof(Entry);
     }
-    size_t sizeOfDirectory() { return CountOfModules() * sizeof Directory; }
+    size_t sizeOfDirectory() { return CountOfModules() * sizeof(Directory); }
 
     enum
     {

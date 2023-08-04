@@ -317,6 +317,7 @@ void PEImportObject::LoadHandles(DllImports<DelayLoadDirectory>& delay)
 }
 void PEImportObject::LoadBindingInfo(DllImports<DelayLoadDirectory>& delay, std::map<std::string, Module*> modules)
 {
+#ifdef TARGET_OS_WINDOWS
     if (bindTable)
     {
         for (auto&& m : modules)
@@ -346,6 +347,7 @@ void PEImportObject::LoadBindingInfo(DllImports<DelayLoadDirectory>& delay, std:
             }
         }
     }
+#endif
 }
 size_t PEImportObject::ThunkSize(std::string name)
 {

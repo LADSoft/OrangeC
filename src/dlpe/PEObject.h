@@ -25,7 +25,15 @@
 #ifndef PEObject_H
 #define PEObject_H
 
+#ifdef TARGET_OS_WINDOWS
 #include <windows.h>
+#else
+#include <stdint.h>
+typedef uint32_t DWORD;
+typedef void * FARPROC;
+#endif
+
+
 #include "ObjTypes.h"
 #define PEHEADER_ONLY
 #include "PEHeader.h"

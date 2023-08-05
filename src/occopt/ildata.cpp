@@ -78,10 +78,10 @@ std::map<std::string, std::string> bePragma;
 std::list<MsilProperty> msilProperties;
 std::string prm_OutputDefFile;
 std::string prm_OutputImportLibraryFile;
-
 std::string prm_assemblerSpecifier;
 std::string outputFileName;
 std::string assemblerFileExtension;
+std::string specifiedLibs;
 
 Optimizer::SimpleExpression* fltexp;
 

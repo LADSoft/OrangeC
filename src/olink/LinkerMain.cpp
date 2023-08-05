@@ -254,6 +254,20 @@ void LinkerMain::ParseSpecifiedLibFiles(CmdFiles& files, LinkManager& manager)
                 y = "lib" + y;
                 file = manager.GetLibraryPath(y, y);
             }
+            if (!file)
+            {
+                y = s;
+                if (s.find(".") == std::string::npos)
+                {
+                    y += ".lib";
+                    file = manager.GetLibraryPath(y, y);
+                    if (!file)
+                    {
+                        y = "lib" + y;
+                        file = manager.GetLibraryPath(y, y);
+                    }
+                }
+            }
             if (file)
             {
                 files.Add(y);
@@ -262,7 +276,7 @@ void LinkerMain::ParseSpecifiedLibFiles(CmdFiles& files, LinkManager& manager)
             else
             {
                 // should generate an error later on...
-                files.Add(s);
+                files.Add(s + ".l");
             }
         }
     }

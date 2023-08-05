@@ -293,6 +293,10 @@ int RunExternalFiles()
                 fprintf(fil, " \"%s\"", (char*)liblist->data);
                 liblist = liblist->next;
             }
+            for (auto&&s : Utils::split(Optimizer::specifiedLibs))
+            {
+                fprintf(fil, " \"-l%s\"", s.c_str());
+            }
             if (Optimizer::cparams.prm_msvcrt)
                 fprintf(fil, " climp.l msvcrt.l ");
             else if (Optimizer::cparams.prm_lscrtdll)

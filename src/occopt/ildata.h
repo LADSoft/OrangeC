@@ -197,6 +197,7 @@ extern std::list<std::string> inputFiles;
 extern std::list<std::string> backendFiles;
 extern std::string prm_libPath;
 extern std::string prm_include;
+extern std::string specifiedLibs;
 extern std::list<std::string> libIncludes;
 extern std::list<std::string> toolArgs;
 extern const char* pinvoke_dll;

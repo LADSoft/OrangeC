@@ -607,6 +607,7 @@ static void StreamXParams()
     StreamString(prm_snkKeyFile);
     StreamString(prm_assemblyVersion);
     StreamString(prm_namespace_and_class);
+    StreamString(specifiedLibs);
     StreamStringList(inputFiles);
     StreamStringList(backendFiles);
     StreamStringList(libIncludes);

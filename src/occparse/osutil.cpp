@@ -637,15 +637,7 @@ static void ParamTransfer(const char* name)
     {
         defines.push_back(DefValue{v.c_str(), 1});
     }
-    checks = Utils::split(prm_library.GetValue());
-    for (auto&& v : checks)
-    {
-        char buf[260];
-        strcpy(buf, v.c_str());
-        if (strlen(buf) < 2 || (strcmp(buf + strlen(buf) - 2, ".l") != 0 && strcmp(buf + strlen(buf) - 2, ".L") != 0))
-           strcat(buf, ".l");
-        InsertAnyFile(buf, 0, -1);
-    }
+    Optimizer::specifiedLibs = prm_library.GetValue();
     if (prm_libpath.GetExists())
     {
         switch (Optimizer::architecture)

@@ -54,7 +54,7 @@ int _RTL_FUNC _wputenv(const wchar_t* name)
         }
         q++;
     }
-    p = (wchar_t**)realloc(_environ, (count + 2) * sizeof(wchar_t**));
+    p = (wchar_t**)realloc(__wenviron, (count + 2) * sizeof(wchar_t**));
     if (!p)
     {
         __ll_exit_critical();

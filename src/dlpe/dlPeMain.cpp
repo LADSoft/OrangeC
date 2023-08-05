@@ -607,7 +607,7 @@ int dlPeMain::Run(int argc, char** argv)
                 std::string implibName;
                 if (!OutputDefFile.GetValue().empty())
                 {
-                    implibName = Utils::QualifiedFile(OutputDefFile.GetValue().c_str(), ".def");
+                    implibName = OutputDefFile.GetValue();
                 }
                 else if (OutputImportLibrary.GetValue().empty())
                 {
@@ -615,7 +615,7 @@ int dlPeMain::Run(int argc, char** argv)
                 }
                 else
                 {
-                    implibName = Utils::QualifiedFile(OutputImportLibrary.GetValue().c_str(), ".l");
+                    implibName = OutputImportLibrary.GetValue();
                 }
                 return ToolChain::ToolInvoke("oimplib", Verbose.GetExists() ? "" : nullptr, "%s %s \"%s\" \"%s\"", usesC.c_str(),
                                          sverbose.c_str(), implibName.c_str(), outputName.c_str());

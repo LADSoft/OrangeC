@@ -31,7 +31,7 @@
 #include <stdint.h>
 typedef uint32_t DWORD;
 typedef DWORD FARPROC;
-typedef unsigned char * BYTE;
+typedef unsigned char BYTE;
 #endif
 
 

@@ -227,9 +227,19 @@ void DllImports<DelayLoadDirectory>::WriteDirectory(DWORD virtual_addr, DWORD im
                                   m->moduleHandleRVA,
                                   RVA(iatPos),
                                   RVA(namePos),
+#ifdef TARGET_OS_WINDOWS
                                   bindPos ? RVA(bindPos) : 0,
+#else
+                                  0,
+#endif
                                   unloadPos ? RVA(unloadPos) : 0,
-                                  m->time};
+#ifdef TARGET_OS_WINDOWS
+                                  m->time
+#else
+                                  0
+#endif
+};
+
         std::copy((char*)&dir, (char*)(&dir + 1), data + directoryPos);
         std::copy(m->name.begin(), m->name.end(), data + stringPos);
         directoryPos += sizeof(DelayLoadDirectory);
@@ -280,10 +290,12 @@ void DllImports<DelayLoadDirectory>::WriteTables(std::vector<DWORD>& thunkFixups
                 *unloadPointer = thunkTableRVA + imageBase;
                 thunkFixups.push_back(RVA((BYTE*)unloadPointer - data) + imageBase);
             }
+#ifdef TARGET_OS_WINDOWS
             if (bindPos)
             {
                 *bindPointer = (DWORD)std::get<3>(e);
             }
+#endif
             thunkTableRVA += PEImportObject::DelayLoadThunkSize;
             std::copy(name.begin(), name.end(), data + stringPos + sizeof(HintType));
             sym->SetOffset(new ObjExpression(RVA((iatPointer - iatBase) * sizeof(DWORD) + iatPos) + imageBase));

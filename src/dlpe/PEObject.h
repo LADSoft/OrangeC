@@ -30,7 +30,8 @@
 #else
 #include <stdint.h>
 typedef uint32_t DWORD;
-typedef void * FARPROC;
+typedef DWORD FARPROC;
+typedef unsigned char * BYTE;
 #endif
 
 

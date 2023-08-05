@@ -41,11 +41,18 @@ static int spawnbase(const char* path, const char* args[], const char* env[], in
     FILE* fil;
     int rv;
     char name[260], *vv;
-    char parms[1024];
-    parms[0] = ' ';
-    parms[1] = 0;
+    char *parms= NULL;
     if (*args)
     {
+        int len = 2;
+        const char **p = args;
+        while (*p) 
+        {
+            len += strlen(*p) + 1;
+            p++;
+        }
+        parms = malloc(len);
+        parms[0] = 0;
         while (*++args)
         {
             strcat(parms, " ");
@@ -65,6 +72,7 @@ static int spawnbase(const char* path, const char* args[], const char* env[], in
                 if (!(vv = searchpath(name)))
                 {
                     errno = ENOENT;
+                    free(parms);
                     return -1;
                 }
             }
@@ -82,7 +90,8 @@ static int spawnbase(const char* path, const char* args[], const char* env[], in
         vv = name;
     }
     fflush(0);
-    rv = __ll_spawn(vv, parms, env, toexit);
+    rv = __ll_spawn(vv, parms ? parms : " ", env, toexit);
+    free(parms);
     if (toexit == P_OVERLAY)
         exit(rv);
     return rv;

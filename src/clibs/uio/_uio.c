@@ -38,6 +38,7 @@ int _fmode = O_BINARY;
 int __uihandles[HANDLE_MAX], __uimodes[HANDLE_MAX], __uiflags[HANDLE_MAX];
 char __uinames[HANDLE_MAX][256], __uidrives[HANDLE_MAX];
 struct flock* __uilocks[HANDLE_MAX];
+int __unix_linefeeds = 0;
 
 #pragma startup uio_init 29
 #pragma rundown __uio_rundown 9 /* 11 */

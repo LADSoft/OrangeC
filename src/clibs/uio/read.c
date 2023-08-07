@@ -34,6 +34,7 @@
 #include "libp.h"
 
 extern int __uiflags[HANDLE_MAX], __uimodes[HANDLE_MAX];
+extern int __unix_linefeeds;
 
 int _RTL_FUNC read(int __handle, void* __buf, unsigned __len)
 {
@@ -115,7 +116,10 @@ int _RTL_FUNC read(int __handle, void* __buf, unsigned __len)
                         __ll_exit_critical();
                         return dest - __buf;
                     case '\r':
-                        pos++;
+                        if (__unix_linefeeds)
+                            *dest++ = *pos++;
+                        else
+                            pos++;
                         break;
                     default:
                         *dest++ = *pos++;

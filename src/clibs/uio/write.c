@@ -33,6 +33,7 @@
 
 #define FILTER_BUF_LEN _DTA_BUF_DEFAULT
 extern int __uiflags[HANDLE_MAX], __uimodes[HANDLE_MAX];
+extern int __unix_linefeeds;
 
 // write is thread-safe so...
 // this needs to not be a local variable, because,
@@ -122,7 +123,7 @@ int _RTL_FUNC write(int __handle, void* __buf, unsigned __len)
     }
     for (i = 0; i < __len; i++)
     {
-        if (*pos == '\n')
+        if (*pos == '\n' && !__unix_linefeeds)
         {
             obuf[olen++] = '\r';
             totalwritten--;

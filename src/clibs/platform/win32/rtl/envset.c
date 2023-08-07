@@ -31,14 +31,9 @@
 #include "libp.h"
 
 char _RTL_DATA** _environ;
-extern int __unix_linefeeds;
-#pragma startup envset 28
 
-static void set_unix_lf(char *p)
-{
-    if (!strncmp(p, "MSYSTEM=", 8))
-        __unix_linefeeds = 1;
-}
+#pragma startup envset 31
+
 static void envset(void)
 {
     int count = __ll_getenv(0, 0), i, j;
@@ -48,7 +43,6 @@ static void envset(void)
         int n = __ll_getenvsize(i - 1);
         char* p = (char*)malloc(n + 1);
         __ll_getenv(p, i - 1);
-        set_unix_lf(p);
         if (p[0] != '=')
             _environ[j++] = p;
         else

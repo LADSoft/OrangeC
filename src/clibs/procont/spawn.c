@@ -48,6 +48,7 @@ static int spawnbase(const char* path, const char* args[], const char* env[], in
         const char **p = args;
         while (*p) 
         {
+
             len += strlen(*p) + 1;
             p++;
         }

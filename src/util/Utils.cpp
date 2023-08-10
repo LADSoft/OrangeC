@@ -352,7 +352,7 @@ bool Utils::FileExists(const char* buffer)
     return access(buffer, 4) == 0;
 #endif
 }
-std::vector<std::string> Utils::split(std::string strToSplit, char delimeter)
+std::vector<std::string> Utils::split(const std::string& strToSplit, char delimeter)
 {
     std::stringstream ss(strToSplit);
     std::string item;

@@ -1,4 +1,3 @@
-Warning(132)  errchk.c(11):  Suspicious pointer conversion
 Warning(191)  errchk.c(29):  Expression has no effect
 Warning(191)  errchk.c(30):  Expression has no effect
 Warning errchk.c(40): umacro macro redefinition changes value

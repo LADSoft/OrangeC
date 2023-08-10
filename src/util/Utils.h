@@ -84,7 +84,7 @@ class Utils
     static bool HasExt(const char* buffer, const char* ext);
     static bool FileExists(const char* buffer);
     static std::string FindOnPath(const std::string& name, const std::string& path);
-    static std::vector<std::string> split(std::string strToSplit, char delimeter = ';');
+    static std::vector<std::string> split(const std::string& strToSplit, char delimeter = ';');
     static void ReplaceAll(std::string& str, const std::string& from, const std::string& to);
     static std::string ConvertWStringToString(std::wstring str)
     {

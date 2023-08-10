@@ -195,6 +195,17 @@ static void gather_flowgraph(void)
                         /*                    printf("g %d", tail->dc.v.label); */
                     }
                     break;
+                case i_computedgoto: 
+                    for (auto v : computedLabels)
+                    {
+                        temp = findlab(v);
+                        if (temp)
+                        {
+                            flowinsert(&temp->pred, b);
+                            flowinsert(&b->succ, temp);
+                        }
+                    }
+                    break;
                 case i_swbranch:
                     while (tail->dc.opcode == i_swbranch)
                     {
@@ -1042,7 +1053,7 @@ void RemoveCriticalThunks(void)
         if (b && i != exitBlock && !b->critical && !b->dead)
         {
             QUAD* bjmp = beforeJmp(b->tail, false);
-            if (bjmp->dc.opcode == i_coswitch)
+            if (bjmp->dc.opcode == i_coswitch || bjmp->dc.opcode == i_computedgoto)
             {
 
                 QUAD* i = bjmp;

@@ -362,7 +362,7 @@ static void InsertFinalThunk(IMODE* managed, QUAD* end)
     // in case of a return statement...
     while (end->back->dc.opcode == i_dbgblock || end->back->dc.opcode == i_line)
         end = end->back;
-    if (end->back->dc.opcode == i_goto)
+    if (end->back->dc.opcode == i_goto || end->back->dc.opcode == i_computedgoto)
         end = end->back;
     QUAD* load = Allocate<QUAD>();
     load->ans = InitTempOpt(ISZ_ADDR, ISZ_ADDR);

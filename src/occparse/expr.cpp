@@ -6076,7 +6076,7 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                     else
                     {
                         *exp = intNode(ExpressionNode::labcon_, GetLabelValue(lex, nullptr, nullptr));
-                        (*exp)->adjustLabel = true;
+                        (*exp)->computedLabel = true;
                         lex = getsym();
                     }
                     *tp = &stdpointer;

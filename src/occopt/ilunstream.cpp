@@ -772,6 +772,10 @@ static FunctionData* UnstreamFunc()
     fd->instructionList = UnstreamInstructions(*fd);
     UnstreamTemps();
     UnstreamLoadCache(fd, fd->loadHash);
+    int n = UnstreamIndex();
+    for (int i = 0; i < n; i++)
+        fd->computedLabels.insert(UnstreamIndex());
+
     return fd;
 }
 static void UnstreamData()

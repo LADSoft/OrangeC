@@ -91,6 +91,7 @@ struct FunctionData
     std::vector<Optimizer::SimpleSymbol*> variables;
     std::vector<IMODE*> imodeList;
     std::map<IMODE*, IMODE*> loadHash;
+    std::set<unsigned> computedLabels;
     TEMP_INFO** tempInfo;
     int fastcallAlias;
     int tempCount;
@@ -238,6 +239,8 @@ extern int registersAssigned;
 extern std::deque<BaseData*> baseData;
 
 extern bool syntaxOnly;
+
+extern std::set<unsigned> computedLabels;
 
 void InitIntermediate(void);
 void AddFunction(void);

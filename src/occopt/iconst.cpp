@@ -1777,6 +1777,7 @@ static void removeForward(BLOCK* start)
                 }
                 break;
             case i_goto:
+            case i_computedgoto:
                 return;
             case i_coswitch:
                 // not doing this optimization, because GOTO statements  in the cases cause a crash

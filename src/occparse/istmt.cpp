@@ -852,7 +852,7 @@ Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp, int flag
                     if (stmt->indirectGoto)
                     {
                         auto ap1 = gen_expr(funcsp, stmt->select, F_NOVALUE, natural_size(stmt->select));
-                        Optimizer::gen_icode(Optimizer::i_directbranch, nullptr, ap1, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_computedgoto, nullptr, ap1, nullptr);
                     }
                     else
                     {

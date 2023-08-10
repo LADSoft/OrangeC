@@ -436,7 +436,7 @@ typedef struct expr
     int preincdec : 1;  //  an assignment which is the 'pre' form of autoinc
     int keepZero : 1;
     int paramArray : 1;
-    int adjustLabel : 1;
+    int computedLabel : 1;
     int structByAddress : 1;
     int isStructAddress : 1;
 } EXPRESSION;

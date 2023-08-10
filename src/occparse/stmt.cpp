@@ -1041,6 +1041,16 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                     fc->sp = endFunc;
                                     fc->functp = endFunc->tp;
                                     fc->ascall = true;
+                                    if (fc->thisptr)
+                                    {
+                                        auto expx = fc->thisptr;
+                                        while(lvalue(expx) || castvalue(expx)) expx = expx->left;
+                                        if (expx->type == ExpressionNode::thisref_)
+                                            expx = expx->left;
+                                        if (expx->type == ExpressionNode::func_)
+                                            if (expx->v.func->returnEXP)
+                                                fc->thisptr = expx->v.func->returnEXP;
+                                    }
                                     iend = exprNode(ExpressionNode::func_, nullptr, nullptr);
                                     iend->v.func = fc;
                                     iteratorType = basetype(beginFunc->tp)->btp;

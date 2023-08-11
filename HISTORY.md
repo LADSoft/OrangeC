@@ -1,5 +1,111 @@
 # OrangeC Compiler And Tool Chain Release Notes
 
+
+## Version 6.0.71
+
+* add support for github actions with both linux and windows builds
+* remove support for travis-ci builds
+* remove support for broken BCC32 and RADSTUDIO builds
+* rewrite visual studio solution to be cleaner
+* improve gcc wrappers
+* add wrappers for common MSVC tools
+* toolchain: rewrites to improve clarity in startup code for all the tools
+* toolchain: rewrites to use c++ style c language headers
+* toolchain: add --out-implib and --output-def
+* toolchain: rewrite to not use custom iterator names when that is possible
+* toolchain: rewrite to use std::shared_ptr when that is more reasonable than std::unique_ptr
+* toolchain: rewrite for more standard usage of 'HAVE_UNISTD_H'
+* toolchain: rewrite to use StringHash more liberally as a string hashing function on maps
+* toolchain: rewrite to use scoped enumerations for the major enumerations
+* build: copy orc.cfg to \orangec\src
+* update various documentation
+* prefer ',' to '=' as a separator while parsing command line arguemnts
+* fix various problems required for building on linux
+* occ: don't allow WinMain to be mangled with C++ mangling
+* occ: fix some bugs with anonymous structure names changing from one compilation unit to the next
+* occ: 'auto' type can be used with multiple declarations
+* occ: for-range index variable shouldn't be visible to to for-range expression
+* occ: don't strip extension before adding '.l' for libraries
+* occ: fix some problems with bailing with an error about end of file
+* occ: using operator new[] with and index which is type long long generated bad code
+* occ: fix some bugs generating names for static const ints that have their address taken
+* occ: fix rare crash when generating debug symbols
+* occ: fix rare bug at end of file
+* occ: add __attribute__((constructor)) and __attribute((destructor))
+* occ: add #pragma exit
+* occ: prefer a type to a variable when '::' is used
+* occ: cleanup various vagaries with response files and command line arguments
+* occ: add __CHAR_SIGNED__ and __CHAR__UNSIGNED__ preprocessor macros
+* occ: the constructor 'sizeof(int(*)()) crashed when compiling for C++
+* occ: std::less<void>()(...) didn't resolve when argument was a shared_ptr
+* occ: -D and -U switches can have a space between the switch and its argument
+* occ: -D switch was broken when the argument had a semicolon in it
+* occ: fix some problems with initializer lists
+* occ: fix problem where including stdio.h with quotes instead of <> didn't work
+* occ: fix various problems with using structured return types on lambda functions
+* occ: allow comparison between std::function<>() and nullptr
+* occ: generate errors more liberally when trying to cast struct to int and no conversions apply (also in C mode)
+* occ: make CallOfNonFunction error clearer for C++ code	
+* occ: on rare occasions, conversion from a base type to derived type would be handled incorrectly
+* occ: add pseudo-constructor for trivial structures
+* occ: add gcc-style stack canaries
+* occ: add basic runtime/heap checks
+* occ: beginning work for C23
+* occ: scoped enumerations can later be referenced without specifying it as scoped
+* occ: hook operator could never result in a return type which is a scoped enumeration
+* occ: fully specialized function declarations should be allowed to have a template<> header
+* occ: support for better linker detection of library files
+* occ: downgrade 'suspicious pointer conversion' message to be a trivial warning
+* occ: fix problem where RHS of a for-range declaration would be evalutated twice
+* occ: fix optimization for computed gotos to work properly
+* oimplib: generate a variety of import declarations to handle the various linkage use cases
+* omake: handle include paths properly
+* omake: handle 'private' and 'export' on target-specific variables
+* omake: add builtin rules and variables
+* omake: $(wildcard $(...)) didn't include directory names
+* omake: the results of a ($call...) should be macro-substituted
+* omake: fix some problems on msys2
+* omake: various fixes to process complex makefiles properly
+* omake: -p option crashed
+* omake: fix clash between the temporary file marker && and shell usage of &&
+* omake: fix $(shell ...) to work with shells other than cmd.exe
+* omake: putting a conditional on the same line as an else should be treated specially
+* omake: fix crash on windows 8
+* olink: support delay load
+* olink: prepend lib when searching for library files, check for both '.l' and '.lib' as extensions
+* ocpp: fix configuration file with correct default include paths
+* dlpe: don't generate fixup for constants specified on the linker command line
+* dlpe: generate delay-load structures in PE image
+* dlpe: allow extensions other than '.l' when creating import libraries
+* preprocessor: use += instead of '=' while parsing source lines
+* preprocessor: allow warnings to be elided or turned into errors
+* preprocessor: clean up how make stubs are generated
+* tests: various cleanup
+* rtl: add gdiplus headers
+* rtl: adujust startup/rundown priorities to match unix
+* rtl: add posix clock functions
+* rtl: add alarm and SIGALRM
+* rtl: add readlink
+* rtl: add dlopen and friends
+* rtl: add nanosleep
+* rtl: fix mismatch on declarations for memchr
+* rtl: add sys/param.h
+* rtl: add support for shlwapi.dll
+* rtl: add strnlen and wcsnlen
+* rtl: add support for stack canaries
+* rtl: unmangle names correctly in exception dumpo
+* rtl: add support for basic runtime/heap checks
+* rtl: unclutter the user namespace in the malloc() code
+* rtl: add support for delay-load
+* rtl: fix static thread protection for local static C++ initializations to work properly
+* rtl: add 'floor()' to lscrtl.dll
+* rtl: fix putenv to not have a buffer overflow
+* rtl: wputenv should use the correct environment
+* rtl: fix spawnxxx, execxxx to not have buffer overruns
+* rtl: bug fix to how calloc() is done
+* rtl: fix padding problem when '%#04x' was used with a small number
+* rtl: handle padding for '%#04b' properly
+
 ## Version 6.0.70:
 
 * fix various problems with the builds

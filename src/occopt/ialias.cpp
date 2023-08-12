@@ -659,6 +659,18 @@ static void HandleAssn(QUAD* head)
             }
         }
     }
+    else if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct && head->dc.left->mode == i_direct && head->dc.left->offset->type == se_global)
+    {
+        // mem, temp
+        ALIASLIST* al;
+        ALIASNAME* an = LookupMem(head->dc.left);
+        ALIASADDRESS* aa;
+        an = LookupAliasName(an, 0);
+        aa = LookupAddress(an, 0);
+        al = Allocate<ALIASLIST>();
+        al->address = aa;
+        AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, al);        
+    }
 }
 static int InferOffset(IMODE* im)
 {

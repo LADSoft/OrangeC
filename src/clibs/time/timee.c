@@ -34,7 +34,8 @@ __time_t_64 _RTL_FUNC _time64(__time_t_64* tptr)
     struct tm t2;
     __ll_gettime(&t2);
     val = _mktime64(&t2);
-
+    // correct for mktime
+    val -= _daylight * 60 * 60;
     if (tptr)
         *tptr = val;
     return val;

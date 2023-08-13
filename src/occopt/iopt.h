@@ -372,7 +372,7 @@ typedef struct _exceedPressure
 
 struct _block
 {
-    short blocknum;
+    int blocknum;
     /*        short dfstnum; */
     int critical : 1;
     int dead : 1;

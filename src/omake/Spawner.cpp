@@ -114,42 +114,45 @@ int Spawner::InternalRun()
             cmd = cmd.substr(i);
             size_t n = cmd.find("&&");
             std::string makeName;
-            if (shell != "/bin/sh" && n != std::string::npos && n == cmd.size() - 3)
+            if (shell != "/bin/sh")
             {
-                char match = cmd[n + 2];
-                cmd.erase(n);
-                makeName = "maketemp.";
-                if (tempNum < 10)
-                    makeName = makeName + "00" + Utils::NumberToString(tempNum);
-                else if (tempNum < 100)
-                    makeName = makeName + "0" + Utils::NumberToString(tempNum);
-                else
-                    makeName = makeName + Utils::NumberToString(tempNum);
-                tempNum++;
-                if (!keepResponseFiles && !makeName.empty())
-                    tempFiles.push_back(makeName);
-                std::fstream fil(makeName, std::ios::out);
-                bool done = false;
-                std::string tail;
-                do
+                if (n != std::string::npos && n == cmd.size() - 3)
                 {
-                    ++it;
-                    std::string current = *it;
-                    size_t n = current.find(match);
-                    if (n != std::string::npos)
+                    char match = cmd[n + 2];
+                    cmd.erase(n);
+                    makeName = "maketemp.";
+                    if (tempNum < 10)
+                        makeName = makeName + "00" + Utils::NumberToString(tempNum);
+                    else if (tempNum < 100)
+                        makeName = makeName + "0" + Utils::NumberToString(tempNum);
+                    else
+                        makeName = makeName + Utils::NumberToString(tempNum);
+                    tempNum++;
+                    if (!keepResponseFiles && !makeName.empty())
+                        tempFiles.push_back(makeName);
+                    std::fstream fil(makeName, std::ios::out);
+                    bool done = false;
+                    std::string tail;
+                    do
                     {
-                        done = true;
-                        if (n + 1 < current.size())
-                            tail = current.substr(n + 1);
-                        current.erase(n);
-                    }
-                    Eval ce(current, false, ruleList, rule);
-                    fil << ce.Evaluate() << std::endl;
-                } while (!done);
-                fil.close();
-                cmd += makeName + tail;
+                        ++it;
+                        std::string current = *it;
+                        size_t n = current.find(match);
+                        if (n != std::string::npos)
+                        {
+                            done = true;
+                            if (n + 1 < current.size())
+                                tail = current.substr(n + 1);
+                            current.erase(n);
+                        }
+                        Eval ce(current, false, ruleList, rule);
+                        fil << ce.Evaluate() << std::endl;
+                    } while (!done);
+                    fil.close();
+                    cmd += makeName + tail;
+                }
+                cmd = QualifyFiles(cmd);
             }
-            cmd = QualifyFiles(cmd);
         }
         if (oneShell)
         {

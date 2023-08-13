@@ -42,8 +42,14 @@ lp:
     inc		ebx
     sub		al,[edx]
     loopz	lp
+    jc          x2
     jnz		x1
     sub		eax,eax
+    pop		ebx
+	pop     ebp
+    ret
+x2:
+    mov         eax,-1
     pop		ebx
 	pop     ebp
     ret

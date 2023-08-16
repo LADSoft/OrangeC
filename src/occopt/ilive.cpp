@@ -43,11 +43,11 @@
 namespace Optimizer
 {
 int* dfst;
-BRIGGS_SET* globalVars;
+BriggsSet* globalVars;
 
-static BRIGGS_SET* visited;
-static BRIGGS_SET* worklist;
-static BRIGGS_SET* livelist;
+static BriggsSet* visited;
+static BriggsSet* worklist;
+static BriggsSet* livelist;
 static bool hasPhi;
 QUAD* beforeJmp(QUAD* I, bool before)
 {
@@ -91,7 +91,7 @@ QUAD* beforeJmp(QUAD* I, bool before)
 }
 static void liveSetup(void)
 {
-    BRIGGS_SET* exposed = briggsAllocs(tempCount);
+    BriggsSet* exposed = briggsAllocs(tempCount);
     int i;
     for (i = 0; i < blockCount; i++)
     {
@@ -189,7 +189,8 @@ static void liveSetup(void)
 }
 static void liveOut()
 {
-    BITINT inWorkList[8192];
+    BITINT temp[8192], *inWorkList = temp;
+    *inWorkList++ = 65536;
     unsigned short* workList = sAllocate<unsigned short>(blockCount + 1);
     int i;
     int head = 0, tail = 0;
@@ -390,7 +391,7 @@ static void killPhiPaths2(void)
         }
     }
 }
-static void markLiveInstruction(BRIGGS_SET* live, QUAD* ins)
+static void markLiveInstruction(BriggsSet* live, QUAD* ins)
 {
     switch (ins->dc.opcode)
     {
@@ -513,7 +514,7 @@ static void markLiveInstruction(BRIGGS_SET* live, QUAD* ins)
 }
 void removeDead(BLOCK* b)
 {
-    static BRIGGS_SET* live;
+    static BriggsSet* live;
     BITINT* p;
     int j, k;
     QUAD* tail;
@@ -614,11 +615,16 @@ void liveVariables(void)
 {
     int i;
     sFree();
+    briggsFrees();
     hasPhi = false;
     globalVars = briggsAllocs(tempCount);
     worklist = briggsAllocs(blockCount);
     livelist = briggsAllocs(blockCount);
     visited = briggsAllocs(blockCount);
+    int ccount = 0;
+    for (i = 0; i < tempCount; i++)
+        if (tempInfo[i]->inUse)
+            ccount++;
     for (i = 0; i < blockCount; i++)
     {
         if (blockArray[i])

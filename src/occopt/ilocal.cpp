@@ -45,7 +45,7 @@ namespace Optimizer
 {
 int tempSize;
 
-BRIGGS_SET* killed;
+BriggsSet* killed;
 int tempBottom, nextTemp;
 
 static void CalculateFastcall(SimpleSymbol* funcsp, std::vector<SimpleSymbol*>& functionVariables)
@@ -161,7 +161,10 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
             sym->imvalue = im;
         }
         else
-            sym->imvalue = tempreg(sym->tp->sizeFromType, false);
+        {
+            // if we get here the symbol wasn't used, so just bail
+            return;
+        }
     }
     tp = sym->tp;
 

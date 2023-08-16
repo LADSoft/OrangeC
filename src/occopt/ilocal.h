@@ -29,7 +29,7 @@ namespace Optimizer
 {
 extern int tempSize;
 
-extern BRIGGS_SET* killed;
+extern BriggsSet* killed;
 extern int tempBottom, nextTemp;
 
 SimpleExpression* anonymousVar(enum e_scc_type storage_class, SimpleType* tp);

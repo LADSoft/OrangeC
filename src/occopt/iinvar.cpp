@@ -222,7 +222,7 @@ void ScanForInvariants(BLOCK* b)
 
                     parent->invariantPhiList = allocbit(tempCount);
                     if (last)
-                        memcpy(bits(parent->invariantPhiList), bits(last->invariantPhiList),
+                        memcpy(parent->invariantPhiList, last->invariantPhiList,
                                ((tempCount) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT));
                 }
                 pb = head->dc.v.phi->temps;

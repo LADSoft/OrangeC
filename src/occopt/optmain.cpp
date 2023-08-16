@@ -146,7 +146,7 @@ void examine_icode(QUAD* head)
             break;
     }
 }
-int PreRegAlloc(QUAD* tail, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int pass)
+int PreRegAlloc(QUAD* tail, BriggsSet* globalVars, BriggsSet* eobGlobals, int pass)
 {
     switch (architecture)
     {

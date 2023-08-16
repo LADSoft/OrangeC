@@ -96,10 +96,10 @@ bool isConflicting(int T0, int T1)
         return false;
     return !!isset(tempInfo[T0]->conflicts, T1);
 }
-void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
+void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
 {
     int i, j;
-    BRIGGS_SET* live = briggsAllocc(tempCount);
+    BriggsSet* live = briggsAllocc(tempCount);
     resetConflict();
     for (i = 0; i < blockCount; i++)
     {

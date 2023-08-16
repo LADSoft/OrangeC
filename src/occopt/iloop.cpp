@@ -47,7 +47,7 @@ namespace Optimizer
 int loopCount;
 LOOP** loopArray;
 
-static BRIGGS_SET* loopItems;
+static BriggsSet* loopItems;
 
 static const char* lptype(LOOP* lp)
 {
@@ -592,7 +592,7 @@ static void CalculateLoopInvariants(BLOCK* b)
         children = children->next;
     }
 }
-static BRIGGS_SET* candidates;
+static BriggsSet* candidates;
 static unsigned short* inductionCandidateStack;
 static int inductionCandidateStackTop;
 

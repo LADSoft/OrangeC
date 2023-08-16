@@ -34,6 +34,7 @@
 #include "memory.h"
 #include "ilocal.h"
 #include "ilive.h"
+#include "ioptutil.h"
 #include "FNV_hash.h"
 /* reshaping and loop induction strength reduction */
 
@@ -885,5 +886,6 @@ void Reshape(void)
     DumpInvariants();
 #endif
     tFree();
+    briggsFreet();
 }
 }  // namespace Optimizer

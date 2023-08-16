@@ -65,56 +65,18 @@
 #define ISZ_TOVOIDSTAR 100
 #define ISZ_TOINT 101
 
-//#define TESTBITS
 #define BITINTBITS (8 * sizeof(BITINT))
 
 namespace Optimizer
 {
-#ifdef TESTBITS
-typedef struct _bitarray
-{
-    int count;
-    BITINT data[1];
-} BITARRAY;
-BITARRAY* allocbit(int size);
-BITARRAY* tallocbit(int size);
-BITARRAY* sallocbit(int size);
-BITARRAY* aallocbit(int size);
-BITARRAY* callocbit(int size);
-bool isset(BITARRAY* arr, int bit);
-void setbit(BITARRAY* arr, int bit);
-void clearbit(BITARRAY* arr, int bit);
-void bitarrayClear(BITARRAY* arr, int count);
 
-#    define bits(x) ((x)->data)
-#else
-typedef BITINT BITARRAY;
-
-#    define lallocbit(size) ((BITINT*)Alloc(((size) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT)))
-#    define allocbit(size) ((BITINT*)oAlloc(((size) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT)))
-#    define tallocbit(size) ((BITINT*)tAlloc(((size) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT)))
-#    define sallocbit(size) ((BITINT*)sAlloc(((size) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT)))
-#    define aallocbit(size) ((BITINT*)aAlloc(((size) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT)))
-#    define callocbit(size) ((BITINT*)cAlloc(((size) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT)))
-#    define isset(array, bit) ((array)[((unsigned)(bit)) / BITINTBITS] & bittab[((unsigned)(bit)) & (BITINTBITS - 1)])
-#    define setbit(array, bit) (array)[((unsigned)(bit)) / BITINTBITS] |= bittab[((unsigned)(bit)) & (BITINTBITS - 1)]
-#    define clearbit(array, bit) (array)[((unsigned)(bit)) / BITINTBITS] &= ~bittab[((unsigned)(bit)) & (BITINTBITS - 1)]
-#    define bitarrayClear(array, size) memset(array, 0, ((size) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT))
-#    define bits(x) (x)
-#endif
-#define briggsClear(data) ((data)->top = 0)
 /*
  * basic blocks are kept in this type of structure
  * and marked with an i_block inn the icode
  */
 #define BLOCKLIST_VISITED 1
-typedef struct
-{
-    unsigned short* indexes;
-    unsigned short* data;
-    int size;
-    int top;
-} BRIGGS_SET;
+
+struct BriggsSet;
 
 enum vop
 {
@@ -182,12 +144,12 @@ typedef struct _loop
     struct _block* entry; /* will be the block for blocks */
     struct _loop* parent;
     LIST* contains;
-    BITARRAY* invariantPhiList;
+    BITINT* invariantPhiList;
     struct _blocklist* successors;
     PRESSURE pressure;
     LIST* occurs;
-    BRIGGS_SET* through;
-    BRIGGS_SET* blocks;
+    BriggsSet* through;
+    BriggsSet* blocks;
     INDUCTION_LIST* inductionSets;
 } LOOP;
 
@@ -306,7 +268,7 @@ typedef struct
     LIST* loadsOut;
     LIST* storesIn;
     LIST* storesOut;
-    BITARRAY* workingMoves;
+    BITINT* workingMoves;
     USES_STRENGTH* sl;
     ALIASLIST* pointsto;
     BITINT* modifiedBy;

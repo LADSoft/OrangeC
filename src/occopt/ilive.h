@@ -26,7 +26,7 @@
 namespace Optimizer
 {
 extern int* dfst;
-extern BRIGGS_SET* globalVars;
+extern BriggsSet* globalVars;
 
 QUAD* beforeJmp(QUAD* I, bool before);
 void removeDead(BLOCK* b);

@@ -63,7 +63,7 @@ void SSAInit(void) { savedDag = nullptr; }
 /*
  * this is an internal calculation needed to locate where to put PHI nodes
  */
-static void DominancePrime(BLOCK* workList[], BRIGGS_SET* dest, BLOCKLIST* src)
+static void DominancePrime(BLOCK* workList[], BriggsSet* dest, BLOCKLIST* src)
 {
     int top = 0;
     while (src)
@@ -136,7 +136,7 @@ static void insertPhiOp(BLOCK* b, int tnum)
 static void insertPhiNodes(void)
 {
     BLOCK** workList = oAllocate<BLOCK*>(blockCount);
-    BRIGGS_SET* bset = briggsAlloc(blockCount);
+    BriggsSet* bset = briggsAlloc(blockCount);
     BLOCKLIST* entry = oAllocate<BLOCKLIST>();
     int i, max = tempCount;
 
@@ -502,9 +502,10 @@ void TranslateToSSA(void)
     renameToPhi(blockArray[0]);
     AliasRundown();
     tFree();
+    briggsFreet();
 }
 
-static void findCopies(BRIGGS_SET* copies, bool all)
+static void findCopies(BriggsSet* copies, bool all)
 {
     QUAD* head = intermed_head;
     while (head)
@@ -691,7 +692,7 @@ static void CoalesceTemps(LOOP* l, bool all)
 static void partition(bool all)
 {
     int i;
-    BRIGGS_SET* copied = briggsAlloc(tempCount * 2);
+    BriggsSet* copied = briggsAlloc(tempCount * 2);
     findCopies(copied, all);
     // each temp was partitioned to itself when we allocated the temp
     // now handle critical edges
@@ -825,7 +826,7 @@ static void copyInstruction(BLOCK* blk, int dest, int src, bool all)
     if (q->ans != q->dc.left)
         InsertInstruction(tail, q);
 }
-static void BuildAuxGraph(BLOCK* b, int which, BRIGGS_SET* nodes)
+static void BuildAuxGraph(BLOCK* b, int which, BriggsSet* nodes)
 {
     QUAD* head = b->head;
     bool done = false;
@@ -876,7 +877,7 @@ static void BuildAuxGraph(BLOCK* b, int which, BRIGGS_SET* nodes)
             head = head->fwd;
     }
 }
-static void ElimForward(BRIGGS_SET* visited, ILIST** stack, int T)
+static void ElimForward(BriggsSet* visited, ILIST** stack, int T)
 {
     ILIST* l = tempInfo[T]->elimSuccessors;
     briggsSet(visited, T);
@@ -894,7 +895,7 @@ static void ElimForward(BRIGGS_SET* visited, ILIST** stack, int T)
     l->next = *stack;
     *stack = l;
 }
-static bool unvisitedPredecessor(BRIGGS_SET* visited, int T)
+static bool unvisitedPredecessor(BriggsSet* visited, int T)
 {
     ILIST* l = tempInfo[T]->elimPredecessors;
     while (l)
@@ -905,7 +906,7 @@ static bool unvisitedPredecessor(BRIGGS_SET* visited, int T)
     }
     return false;
 }
-static void ElimBackward(BRIGGS_SET* visited, BLOCK* pred, int T, bool all)
+static void ElimBackward(BriggsSet* visited, BLOCK* pred, int T, bool all)
 {
     ILIST* l;
     briggsSet(visited, T);
@@ -921,7 +922,7 @@ static void ElimBackward(BRIGGS_SET* visited, BLOCK* pred, int T, bool all)
         l = l->next;
     }
 }
-static void CreateCopy(BRIGGS_SET* visited, BLOCK* pred, int T, bool all)
+static void CreateCopy(BriggsSet* visited, BLOCK* pred, int T, bool all)
 {
     /* we are going to ignore copy instructions involving T
      * if T is not live at the end of the block
@@ -959,12 +960,12 @@ static void CreateCopy(BRIGGS_SET* visited, BLOCK* pred, int T, bool all)
         }
     }
 }
-static void EliminatePredecessors(BRIGGS_SET* nodes, BLOCK* pred, BLOCK* b, int which, bool all)
+static void EliminatePredecessors(BriggsSet* nodes, BLOCK* pred, BLOCK* b, int which, bool all)
 {
     BuildAuxGraph(b, which, nodes);
     if (nodes->top)
     {
-        BRIGGS_SET* visited = briggsAlloc(tempCount * 2);
+        BriggsSet* visited = briggsAlloc(tempCount * 2);
         ILIST* stack = nullptr;
         int i;
         for (i = 0; i < nodes->top; i++)
@@ -1001,7 +1002,7 @@ void TranslateFromSSA(bool all)
         return;
     int i;
     QUAD* head;
-    BRIGGS_SET* nodes;
+    BriggsSet* nodes;
     for (i = 0; i < tempCount; i++)
     {
         tempInfo[i]->temp = false;
@@ -1106,5 +1107,6 @@ void TranslateFromSSA(bool all)
             tempInfo[i]->postSSATemp = tempInfo[findPartition(i)]->postSSATemp;
     }
     cFree();
+    briggsFreec();
 }
 }  // namespace Optimizer

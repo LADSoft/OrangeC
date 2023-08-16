@@ -37,106 +37,119 @@ namespace Optimizer
 
 BITINT bittab[BITINTBITS];
 
+static std::list<BriggsSet*> tab, tabc, tabt, tabs;
+inline static void freex(std::list<BriggsSet*>& set)
+{
+    for (auto s : set)
+    {
+        delete[] s->indexes;
+        delete[] s->data;
+        delete s;
+    }
+    set.clear();
+}
+inline static BriggsSet* allocx(unsigned size)
+{
+    BriggsSet* p = new BriggsSet;
+    p->indexes = size ? new unsigned[size] :nullptr;
+    p->data = size ? new unsigned[size] : nullptr;
+    p->size = size;
+    p->top = 0;
+    std::fill(p->indexes, p->indexes + size, -1);
+    return p;
+}
 void BitInit(void)
 {
     int i;
     for (i = 0; i < BITINTBITS; i++)
         bittab[i] = 1 << i;
+    freex(tab);
+    freex(tabc);
+    freex(tabt);
+    freex(tabs);   
 }
-BRIGGS_SET* briggsAlloc(int size)
+void briggsClear(BriggsSet* data)
 {
-    BRIGGS_SET* p = oAllocate<BRIGGS_SET>();
-    p->indexes = oAllocate<unsigned short>(size);
-    p->data = oAllocate<unsigned short>(size);
-    p->size = size;
+    std::fill(data->indexes, data->indexes + data->size, -1);
+    data->top = 0;
+}
+BriggsSet* briggsAlloc(unsigned size)
+{
+    BriggsSet* p = allocx(size);
+    tab.push_back(p);
     return p;
 }
-BRIGGS_SET* briggsAlloct(int size)
+BriggsSet* briggsAlloct(unsigned size)
 {
-    BRIGGS_SET* p = tAllocate<BRIGGS_SET>();
-    p->indexes = tAllocate<unsigned short>(size);
-    p->data = tAllocate<unsigned short>(size);
-    p->size = size;
+    BriggsSet* p = allocx(size);
+    tabt.push_back(p);
     return p;
 }
-BRIGGS_SET* briggsAllocc(int size)
+BriggsSet* briggsAllocc(unsigned size)
 {
-    BRIGGS_SET* p = cAllocate<BRIGGS_SET>();
-    p->indexes = cAllocate<unsigned short>(size);
-    p->data = cAllocate<unsigned short>(size);
-    p->size = size;
+    BriggsSet* p = allocx(size);
+    tabc.push_back(p);
     return p;
 }
-BRIGGS_SET* briggsAllocs(int size)
+BriggsSet* briggsAllocs(unsigned size)
 {
-    BRIGGS_SET* p = sAllocate<BRIGGS_SET>();
-    p->indexes = sAllocate<unsigned short>(size);
-    p->data = sAllocate<unsigned short>(size);
-    p->size = size;
+    BriggsSet* p = allocx(size);
+    tabs.push_back(p);
     return p;
 }
-BRIGGS_SET* briggsReAlloc(BRIGGS_SET* set, int size)
+void briggsFree()
 {
-    if (!set || set->size < size)
+	freex(tab);
+}
+void briggsFreet()
+{
+	freex(tabt);
+}
+void briggsFreec()
+{
+	freex(tabc);
+}
+void briggsFrees()
+{
+	freex(tabs);
+}
+int briggsSet(BriggsSet* p, unsigned index)
+{
+    if (index < p->size)
     {
-        BRIGGS_SET* set2 = briggsAlloc(size);
-#ifdef XXXXX
-        if (set)
+        if (p->indexes[index] == -1)
         {
-            memcpy(set2->data, set->data, set->top * sizeof(*set->data));
-            memcpy(set2->indexes, set->indexes, set->size * sizeof(*set->indexes));
-            set2->top = set->top;
+            p->indexes[index] = p->top;
+            p->data[p->top++] = index;
         }
-#endif
-        set = set2;
-    }
-    else
-        briggsClear(set);
-    return set;
-}
-int briggsSet(BRIGGS_SET* p, int index)
-{
-    if (index >= p->size || index < 0)
-        diag("briggsSet: out of bounds");
-    if (p->indexes[index] >= p->top || index != p->data[p->indexes[index]])
-    {
-        p->indexes[index] = p->top;
-        p->data[p->top++] = index;
     }
     return 0;
 }
-int briggsReset(BRIGGS_SET* p, int index)
+int briggsReset(BriggsSet* p, unsigned index)
 {
-    int i;
-    if (index >= p->size || index < 0)
-        diag("briggsReset: out of bounds");
-    i = p->indexes[index];
-    if (i >= 0 && i < p->top)
+    if (index < p->size)
     {
-        int j = p->data[i];
-        if (j == index)
+        int slot = p->indexes[index];
+        if (slot != -1)
         {
-            p->top--;
-            p->indexes[index] = -1;
-            if (i != p->top)
+            if (slot != p->top -1)
             {
-                j = p->data[i] = p->data[p->top];
-                p->indexes[j] = i;
+                int q = p->data[p->top - 1];
+                p->indexes[q] = slot;
+                p->data[slot] = q;
             }
+            p->indexes[index] = -1;
+            p->top--;
         }
     }
     return 0;
 }
-int briggsTest(BRIGGS_SET* p, int index)
+int briggsTest(BriggsSet* p, unsigned index)
 {
-    int i = p->indexes[index];
-    if (index >= p->size || index < 0)
-        diag("briggsTest: out of bounds");
-    if (i >= p->top)
-        return 0;
-    return p->data[i] == index;
+
+    return index < p->size && p->indexes[index] != -1;
 }
-int briggsUnion(BRIGGS_SET* s1, BRIGGS_SET* s2)
+int briggsUnion(BriggsSet* s1, BriggsSet* s2)
 {
     int i;
     for (i = 0; i < s2->top; i++)
@@ -145,72 +158,37 @@ int briggsUnion(BRIGGS_SET* s1, BRIGGS_SET* s2)
     }
     return 0;
 }
-int briggsIntersect(BRIGGS_SET* s1, BRIGGS_SET* s2)
+ int isset(BITINT* array, unsigned bit)
 {
-    int i;
-    for (i = s1->top - 1; i >= 0; i--)
-    {
-        if (!briggsTest(s2, s1->data[i]))
-        {
-            briggsReset(s1, s1->data[i]);
-        }
-    }
-    return 0;
-}
 #ifdef TESTBITS
-BITARRAY* allocbit(int size)
-{
-    BITARRAY* rv = oAlloc(sizeof(BITARRAY) - 1 + (size + (BITINTBITS - 1)) / BITINTBITS);
-    rv->count = size;
-    return rv;
-}
-BITARRAY* tallocbit(int size)
-{
-    BITARRAY* rv = tAlloc(sizeof(BITARRAY) - 1 + (size + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT));
-    rv->count = size;
-    return rv;
-}
-BITARRAY* sallocbit(int size)
-{
-    BITARRAY* rv = sAlloc(sizeof(BITARRAY) - 1 + (size + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT));
-    rv->count = size;
-    return rv;
-}
-BITARRAY* aallocbit(int size)
-{
-    BITARRAY* rv = aAlloc(sizeof(BITARRAY) - 1 + (size + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT));
-    rv->count = size;
-    return rv;
-}
-BITARRAY* callocbit(int size)
-{
-    BITARRAY* rv = cAlloc(sizeof(BITARRAY) - 1 + (size + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT));
-    rv->count = size;
-    return rv;
-}
-bool isset(BITARRAY* arr, int bit)
-{
-    if (bit >= arr->count)
-        diag("isset: overflow");
-    return arr->data[bit / BITINTBITS] & bittab[bit & (BITINTBITS - 1)];
-}
-void setbit(BITARRAY* arr, int bit)
-{
-    if (bit >= arr->count)
-        diag("setbit: overflow");
-    arr->data[bit / BITINTBITS] |= bittab[bit & (BITINTBITS - 1)];
-}
-void clearbit(BITARRAY* arr, int bit)
-{
-    if (bit >= arr->count)
-        diag("clearbit: overflow");
-    arr->data[bit / BITINTBITS] &= ~bittab[bit & (BITINTBITS - 1)];
-}
-void bitarrayClear(BITARRAY* arr, int count)
-{
-    if (count > arr->count)
-        diag("bitarrayclear: overflow");
-    memset(arr->data, 0, (arr->count + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT));
-}
+    if (bit >= array[-1])
+        printf("diag::isset:%d,%d\n", bit, array[-1]);
 #endif
+    return array[bit / BITINTBITS] & bittab[bit & (BITINTBITS - 1)];
+}
+ void setbit(BITINT* array, unsigned bit)
+{
+#ifdef TESTBITS
+    if (bit >= array[-1])
+        printf("diag::setbit:%d,%d\n", bit, array[-1]);
+#endif
+    array[bit / BITINTBITS] |= bittab[bit & (BITINTBITS - 1)];
+}
+ void clearbit(BITINT* array, unsigned bit)
+{
+#ifdef TESTBITS
+    if (bit >= array[-1])
+        printf("diag::clearbit:%d,%d\n", bit, array[-1]);
+#endif
+    array[bit / BITINTBITS] &= ~bittab[bit & (BITINTBITS - 1)];
+}
+ void bitarrayClear(BITINT* array, unsigned size)
+{
+#ifdef TESTBITS
+    if (size > array[-1])
+        printf("diag::arrayclear:%d,%d\n", size, array[-1]);
+#endif
+    memset(array, 0, (size + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT));
+}
+
 }  // namespace Optimizer

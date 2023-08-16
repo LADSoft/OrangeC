@@ -608,7 +608,7 @@ static bool twomem(IMODE* left, IMODE* right)
             return true;
     return false;
 }
-static void HandleAssn(QUAD* ins, BRIGGS_SET* globalVars)
+static void HandleAssn(QUAD* ins, BriggsSet* globalVars)
 {
     if ((ins->temps & (TEMP_LEFT | TEMP_RIGHT)) && ins->ans->size < ISZ_ULONGLONG && ins->ans->size > -ISZ_ULONGLONG)
     {
@@ -748,7 +748,7 @@ static void HandleAssn(QUAD* ins, BRIGGS_SET* globalVars)
     }
     */
 }
-int x86PreRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int pass)
+int x86PreRegAlloc(QUAD* ins, BriggsSet* globalVars, BriggsSet* eobGlobals, int pass)
 {
     IMODE* ind = nullptr;
     if (pass == 1)

@@ -35,6 +35,7 @@
 #include "ilocal.h"
 #include "ireshape.h"
 #include "Utils.h"
+#include "ioptutil.h"
 #include <unordered_map>
 #include <deque>
 #include "FNV_hash.h"
@@ -773,5 +774,6 @@ void ReduceLoopStrength(void)
     }
     ReduceStrength(blockArray[0]);
     tFree();
+    briggsFreet();
 }
 }  // namespace Optimizer

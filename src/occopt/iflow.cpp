@@ -377,7 +377,7 @@ static void removeBlock(BLOCK* block)
             head = head->fwd;
     }
 }
-static void removeDeadBlocks(BRIGGS_SET* brs, BLOCK* back, BLOCK* b)
+static void removeDeadBlocks(BriggsSet* brs, BLOCK* back, BLOCK* b)
 {
     if (b->temp)
         return;
@@ -464,7 +464,7 @@ static void removeDeadBlocks(BRIGGS_SET* brs, BLOCK* back, BLOCK* b)
         }
     }
 }
-static void removeMark(BRIGGS_SET* bls, BLOCK* b)
+static void removeMark(BriggsSet* bls, BLOCK* b)
 {
     BLOCKLIST* bl;
     if (b->blocknum == exitBlock || b->temp)
@@ -482,7 +482,7 @@ void reflowConditional(BLOCK* src, BLOCK* dst)
 {
     BLOCKLIST *bl, *bl1 = src->succ;
     BLOCKLIST temp;
-    BRIGGS_SET* bls = briggsAlloc(blockCount);
+    BriggsSet* bls = briggsAlloc(blockCount);
     int i;
     temp.block = dst;
     temp.next = nullptr;
@@ -615,7 +615,7 @@ static struct _tarjan
     int idom;
     int ancestor;
     int best;
-    BRIGGS_SET* bucket;
+    BriggsSet* bucket;
 } * *vectorData;
 static int domNumber(enum e_fgtype t, BLOCK* parent, BLOCK* b)
 {
@@ -730,6 +730,7 @@ static void PostDominators(void)
         blockArray[vectorData[w]->blocknum]->pdom = vectorData[vectorData[w]->idom]->blocknum;
     }
     tFree();
+    briggsFreet();
 }
 static void Dominators(void)
 {
@@ -797,6 +798,7 @@ static void Dominators(void)
         }
     }
     tFree();
+    briggsFreet();
 }
 bool dominatedby(BLOCK* src, BLOCK* ancestor)
 {

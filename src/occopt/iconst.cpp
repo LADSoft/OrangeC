@@ -44,7 +44,7 @@
 #include "iflow.h"
 namespace Optimizer
 {
-static BRIGGS_SET* visited;
+static BriggsSet* visited;
 static INSTRUCTIONLIST *insWorkHead, *insWorkTail, *listHolder;
 static BLOCKLIST *blockWorkHead, *blockWorkTail;
 
@@ -1947,5 +1947,6 @@ void ConstantFlow(void)
         if (blockArray[i])
             removeForward(blockArray[i]);
     tFree();
+    briggsFreet();
 }
 }  // namespace Optimizer

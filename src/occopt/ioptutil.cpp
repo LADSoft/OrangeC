@@ -37,8 +37,10 @@ namespace Optimizer
 
 BITINT bittab[BITINTBITS];
 
-static std::list<BriggsSet*> tab, tabc, tabt, tabs;
-inline static void freex(std::list<BriggsSet*>& set)
+static std::list<BriggsSet*> tab, tabc, tabt, tabs, taba;
+std::list<BITINT*> btab, cbtab, tbtab, sbtab, abtab;
+
+inline static void freex(std::list<BriggsSet*>& set, std::list<BITINT*>* bits)
 {
     for (auto s : set)
     {
@@ -47,6 +49,18 @@ inline static void freex(std::list<BriggsSet*>& set)
         delete s;
     }
     set.clear();
+    if (bits)
+    {
+        for (auto b : *bits)
+        {
+#ifdef TESTBITS
+            delete ((BITINT*)b - 1);
+#else
+            delete b;
+#endif
+        }
+        bits->clear();
+    }
 }
 inline static BriggsSet* allocx(unsigned size)
 {
@@ -63,10 +77,11 @@ void BitInit(void)
     int i;
     for (i = 0; i < BITINTBITS; i++)
         bittab[i] = 1 << i;
-    freex(tab);
-    freex(tabc);
-    freex(tabt);
-    freex(tabs);   
+    freex(tab, &btab);
+    freex(tabc, &cbtab);
+    freex(tabt, &tbtab);
+    freex(tabs, &sbtab);   
+    freex(taba, &abtab);
 }
 void briggsClear(BriggsSet* data)
 {
@@ -99,19 +114,23 @@ BriggsSet* briggsAllocs(unsigned size)
 }
 void briggsFree()
 {
-	freex(tab);
+	freex(tab, &btab);
 }
 void briggsFreet()
 {
-	freex(tabt);
+	freex(tabt, &tbtab);
 }
 void briggsFreec()
 {
-	freex(tabc);
+	freex(tabc, &cbtab);
 }
 void briggsFrees()
 {
-	freex(tabs);
+	freex(tabs, &sbtab);
+}
+void briggsFreea() 
+{ 
+    freex(taba, &abtab); 
 }
 int briggsSet(BriggsSet* p, unsigned index)
 {
@@ -158,7 +177,25 @@ int briggsUnion(BriggsSet* s1, BriggsSet* s2)
     }
     return 0;
 }
- int isset(BITINT* array, unsigned bit)
+BITINT* AllocBit(void* Allocator(int), std::list<BITINT*>* tab, unsigned size)
+{
+    if (size == 0)
+        size++;
+#ifdef TESTBITS
+    int sz = ((size + BITINTBITS) + (BITINTBITS - 1)) / BITINTBITS;
+    auto rv = new BITINT[sz];
+    std::fill(rv, rv + sz, 0);
+    *rv++ = ((size + 31) / 32) * 32;
+#else
+    int sz = (size + (BITINTBITS - 1)) / BITINTBITS;
+    auto rv = new BITINT[sz];
+    std::fill(rv, rv + sz, 0);
+#endif
+    if (tab)
+        tab->push_back(rv);
+    return rv;
+}
+int isset(BITINT* array, unsigned bit)
 {
 #ifdef TESTBITS
     if (bit >= array[-1])

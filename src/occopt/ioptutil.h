@@ -38,24 +38,17 @@ struct BriggsSet
 };
 
 extern BITINT bittab[BITINTBITS];
-//#define TESTBITS
-inline BITINT* AllocBit(void*Allocator(int), unsigned size)
-{
-#ifdef TESTBITS
-    auto rv = (BITINT*)Allocator(((size + BITINTBITS) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT));
-    *rv++ = ((size + 31) / 32) * 32;
-#else
-    auto rv = (BITINT*)Allocator(((size) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT));
-#endif
-    return rv;
-}
-#    define allocbit(size) AllocBit(oAlloc, size)
-#    define lallocbit(size) AllocBit(Alloc, size)
-#    define tallocbit(size) AllocBit(tAlloc, size)
-#    define sallocbit(size) AllocBit(sAlloc, size)
-#    define aallocbit(size) AllocBit(aAlloc, size)
-#    define callocbit(size) AllocBit(cAlloc, size)
+extern std::list<BITINT*> btab, cbtab, tbtab, sbtab, abtab;
 
+//#define TESTBITS
+#    define allocbit(size) AllocBit(oAlloc, nullptr, size)
+#    define lallocbit(size) AllocBit(Alloc, &btab, size)
+#    define tallocbit(size) AllocBit(tAlloc, &tbtab, size)
+#    define sallocbit(size) AllocBit(sAlloc, &sbtab, size)
+#    define aallocbit(size) AllocBit(aAlloc, &abtab, size)
+#    define callocbit(size) AllocBit(cAlloc, &cbtab, size)
+
+BITINT* AllocBit(void* Allocator(int), std::list<BITINT*>* tab, unsigned size);
 int isset(BITINT* array, unsigned bit);
 void setbit(BITINT* array, unsigned bit);
 void clearbit(BITINT* array, unsigned bit);
@@ -70,6 +63,8 @@ void briggsFree();
 void briggsFreet();
 void briggsFreec();
 void briggsFrees();
+void briggsFreea();
+
 void briggsClear(BriggsSet* p);
 int briggsSet(BriggsSet* p, unsigned index);
 int briggsReset(BriggsSet* p, unsigned index);

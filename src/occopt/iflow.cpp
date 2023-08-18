@@ -615,7 +615,7 @@ static struct _tarjan
     int idom;
     int ancestor;
     int best;
-    BriggsSet* bucket;
+    BITINT* bucket;
 } * *vectorData;
 static int domNumber(enum e_fgtype t, BLOCK* parent, BLOCK* b)
 {
@@ -690,14 +690,13 @@ static void PostDominators(void)
     for (i = 0; i <= domCount; i++)
     {
         vectorData[i] = tAllocate<_tarjan>();
-        vectorData[i]->bucket = briggsAlloct(domCount + 1);
+        vectorData[i]->bucket = tallocbit(domCount + 1);
     }
     WalkFlowgraph(blockArray[exitBlock], domInit, false);
 
     for (w = domCount; w >= 2; w--)
     {
         int p = vectorData[w]->parent;
-        int j;
         struct _tarjan* v = vectorData[w];
         BLOCKLIST* bl = v->succs;
         while (bl)
@@ -707,18 +706,27 @@ static void PostDominators(void)
                 vectorData[w]->semi = vectorData[u]->semi;
             bl = bl->next;
         }
-        briggsSet(vectorData[vectorData[w]->semi]->bucket, w);
+        setbit(vectorData[vectorData[w]->semi]->bucket, w);
         domLink(p, w);
-        for (j = vectorData[p]->bucket->top - 1; j >= 0; j--)
+        BITINT j = 1;
+        BITINT* x = vectorData[p]->bucket;
+        for (auto v = 0; v <= domCount; v++, j <<= 1)
         {
-            int v = vectorData[p]->bucket->data[j];
-            int u = domEval(v);
-            if (vectorData[u]->semi >= p)
-                vectorData[v]->idom = p;
-            else
-                vectorData[v]->idom = u;
+            if (j == 0)
+            {
+                j = 1;
+                x++;
+            }
+            if (*x & j)
+            {
+                int u = domEval(v);
+                if (vectorData[u]->semi >= p)
+                    vectorData[v]->idom = p;
+                else
+                    vectorData[v]->idom = u;
+            }
         }
-        briggsClear(vectorData[p]->bucket);
+        bitarrayClear(vectorData[p]->bucket, domCount+1);
     }
     for (w = 2; w <= domCount; w++)
     {
@@ -744,14 +752,13 @@ static void Dominators(void)
     for (i = 0; i <= domCount; i++)
     {
         vectorData[i] = tAllocate<_tarjan>();
-        vectorData[i]->bucket = briggsAlloct(domCount + 1);
+        vectorData[i]->bucket = tallocbit(domCount + 1);
     }
     WalkFlowgraph(blockArray[0], domInit, true);
 
     for (w = domCount; w >= 2; w--)
     {
         int p = vectorData[w]->parent;
-        int j;
         struct _tarjan* v = vectorData[w];
         BLOCKLIST* bl = v->preds;
         while (bl)
@@ -761,18 +768,27 @@ static void Dominators(void)
                 vectorData[w]->semi = vectorData[u]->semi;
             bl = bl->next;
         }
-        briggsSet(vectorData[vectorData[w]->semi]->bucket, w);
+        setbit(vectorData[vectorData[w]->semi]->bucket, w);
         domLink(p, w);
-        for (j = vectorData[p]->bucket->top - 1; j >= 0; j--)
+        BITINT j = 1;
+        BITINT* x = vectorData[p]->bucket;
+        for (auto v = 0; v <= domCount; v++, j <<= 1)
         {
-            int v = vectorData[p]->bucket->data[j];
-            int u = domEval(v);
-            if (vectorData[u]->semi >= p)
-                vectorData[v]->idom = p;
-            else
-                vectorData[v]->idom = u;
+            if (j == 0)
+            {
+                j = 1;
+                x++;
+            }
+            if (*x & j)
+            {
+                int u = domEval(v);
+                if (vectorData[u]->semi >= p)
+                    vectorData[v]->idom = p;
+                else
+                    vectorData[v]->idom = u;
+            }
         }
-        briggsClear(vectorData[p]->bucket);
+        bitarrayClear(vectorData[p]->bucket, domCount + 1);
     }
     for (w = 2; w <= domCount; w++)
     {

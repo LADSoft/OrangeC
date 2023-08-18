@@ -703,6 +703,8 @@ static void partition(bool all)
         changed = false;
         CalculateConflictGraph(copied, false);
         CoalesceTemps(loopArray[loopCount - 1], all);
+        cFree();
+        briggsFreec();
     }
 }
 static void returnToNormal(IMODE** adr, bool all)

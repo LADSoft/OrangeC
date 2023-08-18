@@ -106,7 +106,11 @@ void AliasInit(void)
     processCount = 0;
     changed = false;
 }
-void AliasRundown(void) { aFree(); }
+void AliasRundown(void)
+{
+    aFree();
+    briggsFreea();
+}
 static void PrintOffs(struct UIVOffset* offs)
 {
     if (offs)
@@ -1556,6 +1560,8 @@ static void ScanMem(void)
 }
 void AliasPass1(void)
 {
+    sFree();
+    briggsFrees();
     AliasInit();
     // when we get here it is expected we are in SSA mode
     Createaddresses();

@@ -765,9 +765,9 @@ void setglbdefs(void)
  */
 {
     char buf[256];
-    int major, temp, minor, build;
+    int major, minor, build;
     Optimizer::ARCH_DEFINES* a = Optimizer::chosenAssembler->defines;
-    sscanf(STRING_VERSION, "%d.%d.%d.%d", &major, &temp, &minor, &build);
+    sscanf(STRING_VERSION, "%d.%d.%d", &major, &minor, &build);
     Optimizer::my_sprintf(buf, "%d", major * 100 + minor);
     preProcessor->Define("__ORANGEC__", buf);
     Optimizer::my_sprintf(buf, "%d", major);

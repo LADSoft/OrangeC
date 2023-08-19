@@ -24,4 +24,4 @@
 
 #include "..\..\version.h"
 
-static char* RTLVersion = "LADSoft C Runtime Library Version " CLIB_STRING_VERSION " Copyright (C) LADSoft 1997-2011";
+static char* RTLVersion = "LADSoft C Runtime Library Version " CLIB_STRING_VERSION " " LIBRARY_COPYRIGHT;

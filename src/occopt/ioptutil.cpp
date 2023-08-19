@@ -37,10 +37,10 @@ namespace Optimizer
 
 BITINT bittab[BITINTBITS];
 
-static std::list<BriggsSet*> tab, tabc, tabt, tabs, taba;
-std::list<BITINT*> btab, cbtab, tbtab, sbtab, abtab;
+static std::list<BriggsSet*> tab, tabc, tabt, tabs, taba, tabz;
+std::unordered_set<BITINT*> btab, cbtab, tbtab, sbtab, abtab, zbtab;
 
-inline static void freex(std::list<BriggsSet*>& set, std::list<BITINT*>* bits)
+inline static void freex(std::list<BriggsSet*>& set, std::unordered_set<BITINT*>* bits)
 {
     for (auto s : set)
     {
@@ -82,6 +82,7 @@ void BitInit(void)
     freex(tabt, &tbtab);
     freex(tabs, &sbtab);   
     freex(taba, &abtab);
+    freex(tabz, &zbtab);
 }
 void briggsClear(BriggsSet* data)
 {
@@ -132,6 +133,10 @@ void briggsFreea()
 { 
     freex(taba, &abtab); 
 }
+void briggsFreez() 
+{ 
+    freex(tabz, &zbtab); 
+}
 int briggsSet(BriggsSet* p, unsigned index)
 {
     if (index < p->size)
@@ -177,7 +182,7 @@ int briggsUnion(BriggsSet* s1, BriggsSet* s2)
     }
     return 0;
 }
-BITINT* AllocBit(void* Allocator(int), std::list<BITINT*>* tab, unsigned size)
+BITINT* AllocBit(void* Allocator(int), std::unordered_set<BITINT*>* tab, unsigned size)
 {
     if (size == 0)
         size++;
@@ -185,14 +190,14 @@ BITINT* AllocBit(void* Allocator(int), std::list<BITINT*>* tab, unsigned size)
     int sz = ((size + BITINTBITS) + (BITINTBITS - 1)) / BITINTBITS;
     auto rv = new BITINT[sz];
     std::fill(rv, rv + sz, 0);
-    *rv++ = ((size + 31) / 32) * 32;
+    *rv++ = (sz-1) * BITINTBITS;
 #else
     int sz = (size + (BITINTBITS - 1)) / BITINTBITS;
     auto rv = new BITINT[sz];
     std::fill(rv, rv + sz, 0);
 #endif
     if (tab)
-        tab->push_back(rv);
+        tab->insert(rv);
     return rv;
 }
 int isset(BITINT* array, unsigned bit)
@@ -226,6 +231,16 @@ int isset(BITINT* array, unsigned bit)
         printf("diag::arrayclear:%d,%d\n", size, array[-1]);
 #endif
     memset(array, 0, (size + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT));
+}
+ void zfreebit(BITINT* array)
+{
+    if (array == nullptr)
+        return;
+    zbtab.erase(array);
+#ifdef TESTBITS
+    array--;
+#endif
+    delete[] array;
 }
 
 }  // namespace Optimizer

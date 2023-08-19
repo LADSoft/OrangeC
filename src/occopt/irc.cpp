@@ -2256,10 +2256,9 @@ void Precolor(bool optimized)
 }
 void retemp(void)
 {
-    unsigned short map[65536];
+    unsigned* map = tAllocate<unsigned>(tempCount);
     int i, cur = 0;
     QUAD* head;
-    memset(map, 0, sizeof(map));
     for (i = 0; i < tempCount; i++)
     {
         tempInfo[i]->inUse = false;
@@ -2466,6 +2465,7 @@ void AllocateRegisters(QUAD* head)
     tFree();
     briggsFreet();
     aFree();
+    briggsFreea();
     cFree();
     briggsFreec();
     registersAssigned = true;

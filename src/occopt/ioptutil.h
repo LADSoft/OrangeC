@@ -22,12 +22,11 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
-#include <set>
+#include <unordered_set>
 
 namespace Optimizer
 {
 
-typedef std::set<unsigned> IntSet;
 
 struct BriggsSet
 {
@@ -38,7 +37,7 @@ struct BriggsSet
 };
 
 extern BITINT bittab[BITINTBITS];
-extern std::list<BITINT*> btab, cbtab, tbtab, sbtab, abtab;
+extern std::unordered_set<BITINT*> btab, cbtab, tbtab, sbtab, abtab, zbtab;
 
 //#define TESTBITS
 #    define allocbit(size) AllocBit(oAlloc, nullptr, size)
@@ -47,13 +46,14 @@ extern std::list<BITINT*> btab, cbtab, tbtab, sbtab, abtab;
 #    define sallocbit(size) AllocBit(sAlloc, &sbtab, size)
 #    define aallocbit(size) AllocBit(aAlloc, &abtab, size)
 #    define callocbit(size) AllocBit(cAlloc, &cbtab, size)
+#    define zallocbit(size) AllocBit(cAlloc, &zbtab, size)
 
-BITINT* AllocBit(void* Allocator(int), std::list<BITINT*>* tab, unsigned size);
+BITINT* AllocBit(void* Allocator(int), std::unordered_set<BITINT*>* tab, unsigned size);
 int isset(BITINT* array, unsigned bit);
 void setbit(BITINT* array, unsigned bit);
 void clearbit(BITINT* array, unsigned bit);
 void bitarrayClear(BITINT* array, unsigned size);
-
+void zfreebit(BITINT* array);
 void BitInit(void);
 BriggsSet* briggsAlloc(unsigned size);
 BriggsSet* briggsAlloct(unsigned size);
@@ -64,6 +64,7 @@ void briggsFreet();
 void briggsFreec();
 void briggsFrees();
 void briggsFreea();
+void briggsFreez();
 
 void briggsClear(BriggsSet* p);
 int briggsSet(BriggsSet* p, unsigned index);

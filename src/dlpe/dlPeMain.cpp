@@ -380,6 +380,11 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
         // if the exe with exports or dll gets relocated we need these flags to force fixups to be applied
         header.dll_flags = dllFlags;
     }
+    else
+    {
+        // flag that entry point should always be called
+        header.dll_flags = 0;
+    }
     header.image_base = imageBase;
     header.file_align = fileAlign;
     header.object_align = objectAlign;
@@ -401,11 +406,6 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
     {
         header.stack_size = stackSize;
         header.stack_commit = stackCommit;
-    }
-    else
-    {
-        /* flag that entry point should always be called */
-        header.dll_flags = 0;
     }
     header.num_objects = objects.size();
     header.entry_point = startAddress - imageBase;

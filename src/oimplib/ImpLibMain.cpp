@@ -138,7 +138,7 @@ void ImpLibMain::AddFile(LibManager& librarian, const char* arg)
                             defFile.SetFileName(inputFile);
                             librarian.ReplaceFile(*DefFileToObjFile(defFile));
                         }
-                        else if (ext == ".dll")
+                        else if (ext == ".dll" || ext == ".exe")
                         {
                             DLLExportReader dllFile(inputFile);
                             switch (dllFile.Read())
@@ -201,7 +201,7 @@ std::string ImpLibMain::GetInputFile(CmdFiles& files, bool& def)
         transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
         if (ext == ".def")
             def = true;
-        else if (ext != ".dll")
+        else if (ext != ".dll" && ext != ".exe")
             name = "";
     }
     if (name == "")

@@ -127,6 +127,7 @@ class dlPeMain
     std::unique_ptr<char[]> stubData;
     PEHeader header;
     ObjInt startAddress;
+    bool hasExports = false;
     std::unique_ptr<ObjFactory> factory;
     std::shared_ptr<PEObject> exportObject;
     static unsigned char defaultStubData[];

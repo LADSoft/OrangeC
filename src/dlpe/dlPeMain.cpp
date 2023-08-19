@@ -64,7 +64,7 @@ int dlPeMain::subsysMinor = 0;
 
 int dlPeMain::subsysOverride = 0;
 
-int dlPeMain::dllFlags = 0;  // 0x8140;
+int dlPeMain::dllFlags = 0x8140;
 
 unsigned char dlPeMain::defaultStubData[] = {
     0x4D, 0x5A, 0x6C, 0x00, 0x01, 0x00, 0x00, 0x00, 0x04, 0x00, 0x11, 0x00, 0xFF, 0xFF, 0x03, 0x00,
@@ -298,6 +298,7 @@ bool dlPeMain::LoadSections(const std::string& path, ObjInt& endVa, ObjInt& endP
                 objects.push_back(std::make_unique<PEImportObject>(objects, DelayLoadBind.GetValue(), DelayLoadUnload.GetValue()));
             if (file->ExportBegin() != file->ExportEnd())
             {
+                hasExports = true;
                 objects.push_back(std::make_unique<PEExportObject>(outputName, FlatExports.GetValue()));
                 exportObject = objects.back();
             }
@@ -369,12 +370,21 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
 
     header.flags = PE_FILE_EXECUTABLE | PE_FILE_32BIT | PE_FILE_LOCAL_SYMBOLS_STRIPPED | PE_FILE_LINE_NUMBERS_STRIPPED |
                    PE_FILE_REVERSE_BITS_HIGH | PE_FILE_REVERSE_BITS_LOW;
+
     if (mode == DLL)
     {
         header.flags |= PE_FILE_LIBRARY;
     }
-    header.dll_flags = dllFlags;
-
+    if (hasExports)
+    {
+        // if the exe with exports or dll gets relocated we need these flags to force fixups to be applied
+        header.dll_flags = dllFlags;
+    }
+    else
+    {
+        // flag that entry point should always be called
+        header.dll_flags = 0;
+    }
     header.image_base = imageBase;
     header.file_align = fileAlign;
     header.object_align = objectAlign;
@@ -396,11 +406,6 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
     {
         header.stack_size = stackSize;
         header.stack_commit = stackCommit;
-    }
-    else
-    {
-        /* flag that entry point should always be called */
-        header.dll_flags = 0;
     }
     header.num_objects = objects.size();
     header.entry_point = startAddress - imageBase;
@@ -600,7 +605,7 @@ int dlPeMain::Run(int argc, char** argv)
         out.close();
         if (!out.fail())
         {
-            if (mode == DLL)
+            if (hasExports)
             {
                 std::string sverbose = Verbose.GetExists() ? "" : "/!";
                 std::string usesC = exportObject && static_cast<PEExportObject*>(exportObject.get())->ImportsNeedUnderscore() ? "/C" : "";

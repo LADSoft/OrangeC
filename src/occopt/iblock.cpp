@@ -57,7 +57,6 @@ int blockCount;
 std::unordered_map<QUAD*, QUAD*, OrangeC::Utils::fnv1a32_binary<DAGCOMPARE>, OrangeC::Utils::bin_eql<DAGCOMPARE>> ins_hash;
 std::unordered_map<IMODE**, QUAD*, OrangeC::Utils::fnv1a32_binary<sizeof(IMODE*)>, OrangeC::Utils::bin_eql<sizeof(IMODE*)>>
     name_hash;
-bool wasgoto = false;
 
 BLOCK* currentBlock;
 
@@ -227,7 +226,6 @@ int ToQuadConst(Optimizer::IMODE** im)
             rv->ans = tempreg(ISZ_UINT, 0);
             add_intermed(rv);
             ins_hash[rv] = rv;
-            wasgoto = false;
         }
         *im = (Optimizer::IMODE*)rv;
         return 1; /* it is now not a livein node any more*/
@@ -549,9 +547,8 @@ void gen_label(int labno)
     if (labno < 0)
         diag("gen_label: uncompensatedlabel");
     flush_dag();
-    if (!wasgoto)
+    if (intermed_tail->dc.opcode != i_block)
         addblock(i_label);
-    wasgoto = false;
     newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = i_label;
     newQuad->dc.v.label = labno;
@@ -613,9 +610,6 @@ Optimizer::QUAD* gen_icode_with_conflict(enum i_ops op, Optimizer::IMODE* res, O
     switch (op)
     {
         case i_computedgoto:
-            flush_dag();
-            addblock(i_goto);
-            break;
         case i_ret:
         case i_rett:
             flush_dag();
@@ -623,7 +617,6 @@ Optimizer::QUAD* gen_icode_with_conflict(enum i_ops op, Optimizer::IMODE* res, O
         default:
             break;
     }
-    wasgoto = op == i_computedgoto;
     return newQuad;
 }
 Optimizer::QUAD* gen_icode(enum i_ops op, Optimizer::IMODE* res, Optimizer::IMODE* left, Optimizer::IMODE* right)
@@ -649,7 +642,6 @@ void gen_iiconst(Optimizer::IMODE* res, long long val)
     newQuad->ans = res;
     newQuad->dc.left = left;
     add_dag(newQuad);
-    wasgoto = false;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -665,7 +657,6 @@ void gen_ifconst(Optimizer::IMODE* res, FPF val)
     newQuad->dc.v.f = val;
     newQuad->ans = res;
     add_dag(newQuad);
-    wasgoto = false;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -682,8 +673,6 @@ void gen_igoto(enum i_ops op, long label)
     newQuad->dc.left = newQuad->dc.right = newQuad->ans = 0;
     newQuad->dc.v.label = label;
     add_intermed(newQuad);
-    addblock(i_goto);
-    wasgoto = true;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -697,7 +686,6 @@ void gen_data(int val)
     newQuad->dc.left = newQuad->dc.right = newQuad->ans = 0;
     newQuad->dc.v.label = val;
     add_intermed(newQuad);
-    wasgoto = false;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -720,7 +708,6 @@ void gen_icgoto(enum i_ops op, long label, Optimizer::IMODE* left, Optimizer::IM
     add_dag(newQuad);
     flush_dag();
     addblock(op);
-    wasgoto = true;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -740,8 +727,6 @@ Optimizer::QUAD* gen_igosub(enum i_ops op, Optimizer::IMODE* left)
     newQuad->dc.v.label = 0;
     add_dag(newQuad);
     flush_dag();
-    /*     addblock(op); */
-    wasgoto = true;
     return intermed_tail;
 }
 
@@ -761,7 +746,6 @@ void gen_icode2(enum i_ops op, Optimizer::IMODE* res, Optimizer::IMODE* left, Op
     newQuad->ans = res;
     newQuad->dc.v.label = label;
     add_intermed(newQuad);
-    wasgoto = false;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -796,7 +780,6 @@ void gen_nodag(enum i_ops op, Optimizer::IMODE* res, Optimizer::IMODE* left, Opt
     newQuad->dc.right = right;
     newQuad->ans = res;
     add_intermed(newQuad);
-    wasgoto = false;
 }
 void RemoveFromUses(Optimizer::QUAD* ins, int tnum)
 {

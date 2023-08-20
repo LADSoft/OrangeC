@@ -35,7 +35,7 @@ extern int blockCount;
 extern std::unordered_map<QUAD*, QUAD*, OrangeC::Utils::fnv1a32_binary<DAGCOMPARE>, OrangeC::Utils::bin_eql<DAGCOMPARE>> ins_hash;
 extern std::unordered_map<IMODE**, QUAD*, OrangeC::Utils::fnv1a32_binary<sizeof(IMODE*)>, OrangeC::Utils::bin_eql<sizeof(IMODE*)>>
     name_hash;
-extern short wasgoto;
+extern bool wasgoto;
 
 extern BLOCK* currentBlock;
 

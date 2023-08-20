@@ -112,17 +112,17 @@ ObjInt PEDataObject::EvalFixup(ObjExpression* fixup, ObjInt base)
     // note I'm not reviewing how the thunk table space gets allocated, but, I
     // think it is allocated in the linker and is likely to be sparse with the
     // current implementation that minimizes its use.
-    if (hasPC(fixup))
+    ObjExpression* ext = getExtern(fixup);
+    if (ext)
     {
-        ObjExpression* ext = getExtern(fixup);
-        if (ext)
+        ObjSymbol* sym = ext->GetSymbol();
+        if (sym->GetType() == ObjSymbol::eExternal)
         {
-            ObjSymbol* sym = ext->GetSymbol();
-            if (sym->GetType() == ObjSymbol::eExternal)
+            GetImportNames();
+            if (importNames.find(sym->GetName()) != importNames.end())
             {
-                GetImportNames();
-                if (importNames.find(sym->GetName()) != importNames.end())
-                {
+                if (hasPC(fixup))
+                {                     
                     ObjInt val1 = fixup->Eval(base);
                     ObjInt val;
                     int en = sym->GetIndex();
@@ -131,6 +131,10 @@ ObjInt PEDataObject::EvalFixup(ObjExpression* fixup, ObjInt base)
                         val1 = val1 - sym->GetOffset()->Eval(0) + val;
                         return val1;
                     }
+                }
+                else
+                {
+                    thunkFixups.push_back(base);
                 }
             }
         }

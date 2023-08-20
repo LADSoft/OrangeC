@@ -33,6 +33,7 @@
 #include <cstdio>
 #include <malloc.h>
 #include <cstring>
+#include <unordered_map>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include "iflow.h"
@@ -51,7 +52,7 @@ int firstLabel;
 QUAD *criticalThunks, **criticalThunkPtr;
 int walkPreorder, walkPostorder;
 
-static EDGE* edgeHash[EDGE_HASH_SIZE];
+static std::unordered_map<long long, e_fgtype> edgeHash;
 
 static BLOCK** labels;
 
@@ -870,36 +871,28 @@ static void DominanceFrontier(BLOCK* b, int* count)
         c = c->next;
     }
 }
-static int hashfunc(int i, int j) { return (j * (j - 1) / 2 + i) % EDGE_HASH_SIZE; }
+static long long hashfunc(unsigned i, unsigned j) { return (((long long) i) << 24) | j; }
 static int gatherEdges(enum e_fgtype type, BLOCK* parent, BLOCK* in)
 {
     if (parent)
     {
-        EDGE* edge = oAllocate<EDGE>();
-        int bucket = hashfunc(parent->blocknum, in->blocknum);
-        edge->first = parent->blocknum;
-        edge->second = in->blocknum;
-        edge->edgetype = type;
-        edge->next = edgeHash[bucket];
-        edgeHash[bucket] = edge;
+        unsigned bucket = hashfunc(parent->blocknum, in->blocknum);
+        edgeHash[bucket] = type;
     }
     return true;
 }
 static void CalculateEdges(BLOCK* b)
 {
-    memset(edgeHash, 0, EDGE_HASH_SIZE * sizeof(EDGE*));
+    edgeHash.clear();
     WalkFlowgraph(b, gatherEdges, true);
+    edgeHash.clear();
 }
 enum e_fgtype getEdgeType(int first, int second)
 {
-    int bucket = hashfunc(first, second);
-    EDGE* p = edgeHash[bucket];
-    while (p)
-    {
-        if (p->first == first && p->second == second)
-            return p->edgetype;
-        p = p->next;
-    }
+    long long bucket = hashfunc(first, second);
+    auto it = edgeHash.find(bucket);
+    if (it != edgeHash.end())
+        return it->second;
     return F_NONE;
 }
 /* SSA doesn't work well when there are dead paths */

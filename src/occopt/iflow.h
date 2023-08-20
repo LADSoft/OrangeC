@@ -29,16 +29,6 @@ extern int firstLabel;
 extern QUAD *criticalThunks, **criticalThunkPtr;
 extern int walkPreorder, walkPostorder;
 
-typedef struct _edge
-{
-    struct _edge* next;
-    int first;
-    int second;
-    enum e_fgtype edgetype;
-} EDGE;
-
-#define EDGE_HASH_SIZE 256
-
 void flow_init(void);
 void dump_flowgraph(void);
 void WalkFlowgraph(BLOCK* b, int (*func)(enum e_fgtype type, BLOCK* parent, BLOCK* b), int fwd);

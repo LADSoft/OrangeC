@@ -6,7 +6,7 @@ void _ftime(struct _timeb* buf)
 {
     SYSTEMTIME timex;
     struct tm tms;
-
+    __ll_tzset();
     GetLocalTime(&timex);
     tms.tm_sec = timex.wSecond;
     tms.tm_min = timex.wMinute;

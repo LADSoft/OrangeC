@@ -151,6 +151,8 @@ static void basicFlowInfo(void)
         }
         if (head->dc.opcode == i_label)
         {
+            if (computedLabels.find(head->dc.v.label) != computedLabels.end())
+                block->moveBarrier = true;
             labels[head->dc.v.label - firstLabel] = block->block; /* the block num*/
         }
         head = head->fwd;
@@ -537,12 +539,12 @@ static int RemoveCriticalEdges(enum e_fgtype type, BLOCK* parent, BLOCK* in)
     if (type == F_TREE)
     {
         BLOCKLIST* f = in->succ;
-        if (f && f->next)
+        if (f && f->next && !f->block->head->moveBarrier)
         {
             while (f)
             {
                 BLOCKLIST* b = f->block->pred;
-                if (b && b->next)
+                if (b && b->next && !b->block->head->moveBarrier)
                 {
                     /* critical edge, we need to insert something... */
                     /* we won't need to revist this so we don't care what

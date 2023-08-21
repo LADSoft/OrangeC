@@ -120,6 +120,24 @@ static bool IsAncestor(BLOCK* b1, BLOCK* b2)
     }
     return rv;
 }
+static bool Blocked(BLOCK* one, BLOCK* two)
+{
+    int i = one->blocknum;
+    while (i)
+    {
+        if (blockArray[i]->head->moveBarrier)
+            return true;
+        int j = two->blocknum;
+        while (j)
+        {
+            if (blockArray[j]->head->moveBarrier)
+                return true;
+            j = blockArray[j]->idom;
+        }
+        i = blockArray[i]->idom;
+    }
+    return false;
+}
 static void MoveTo(BLOCK* dest, BLOCK* src, QUAD* head)
 {
     QUAD* insert = beforeJmp(dest->tail, true);
@@ -145,7 +163,7 @@ static void MoveTo(BLOCK* dest, BLOCK* src, QUAD* head)
 }
 static void MoveExpression(BLOCK* b, QUAD* head, BLOCK* pbl, BLOCK* pbr)
 {
-    if (IsAncestor(pbl, b))
+    if (IsAncestor(pbl, b) && !Blocked(pbl, b))
     {
         if (pbr)
         {
@@ -261,35 +279,6 @@ void ScanForInvariants(BLOCK* b)
                             (!pbr || (pbr->preWalk != b->preWalk && pbr->nesting == b->nesting)))
                             MoveExpression(b, head, pbl, pbr);
                 }
-                /*
-                else if (head->dc.opcode == i_assn && head->dc.left->mode == i_immed)
-                {
-                    if (!isarithmeticconst(head->dc.left->offset))
-                    {
-                        LOOP *lp = b->loopParent;
-                        if (lp)
-                        {
-                            BLOCK *b1 = lp->entry;
-                            if (b1)
-                            {
-                                b1 = blockArray[b1->idom];
-                                if (b1 && b1 != b)
-                                {
-//									MoveTo(b1, b, head);
-                                }
-                            }
-                        }
-
-
-
-
-
-
-
-
-                    }
-                }
-                */
             }
         }
         head = next;

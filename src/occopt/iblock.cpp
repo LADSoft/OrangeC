@@ -610,6 +610,9 @@ Optimizer::QUAD* gen_icode_with_conflict(enum i_ops op, Optimizer::IMODE* res, O
     switch (op)
     {
         case i_computedgoto:
+            currentBlock->head->moveBarrier = true;
+            flush_dag();
+            break;
         case i_ret:
         case i_rett:
             flush_dag();

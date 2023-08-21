@@ -594,6 +594,7 @@ typedef struct quad
             int atomicpostfetch : 1; /* fetch has result after operation... */
             int vararg : 1;          // msil
             int runtimeIsStore : 1;
+            int moveBarrier : 1;     /* can't move instructions past this point, e.g. for computed goto/label */
         };
         unsigned flags;
     };

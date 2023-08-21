@@ -353,7 +353,7 @@ static void CalculateTransparent(void)
         tail = tail->back;
     while (tail)
     {
-        setmap(tail->transparent, true);
+        setmap(tail->transparent, !tail->moveBarrier);
         if (tail->dc.opcode == i_cmpxchgstrong || tail->dc.opcode == i_cmpxchgweak)
         {
             QUAD* next = tail->fwd;

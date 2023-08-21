@@ -26,6 +26,7 @@
 #include <malloc.h>
 #include <cstring>
 #include <climits>
+#include <stack>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include "Utils.h"
@@ -593,8 +594,7 @@ static void CalculateLoopInvariants(BLOCK* b)
     }
 }
 static BriggsSet* candidates;
-static unsigned short* inductionCandidateStack;
-static int inductionCandidateStackTop;
+static std::stack<unsigned> inductionCandidateStack;
 
 static void PruneInductionCandidate(int tnum, LOOP* l)
 {
@@ -661,7 +661,7 @@ static void CalculateInductionCandidates(LOOP* l)
     LIST *blocks, *p;
     int i;
     briggsClear(candidates);
-    inductionCandidateStackTop = 0;
+    while (!inductionCandidateStack.empty()) inductionCandidateStack.pop();
 
     /* done here just in case for some reason an induction set drills down
      * into a lower loop
@@ -692,7 +692,7 @@ static void CalculateInductionCandidates(LOOP* l)
                                     {
                                         int tnum = head->ans->offset->sp->i;
                                         briggsSet(candidates, tnum);
-                                        inductionCandidateStack[inductionCandidateStackTop++] = tnum;
+                                        inductionCandidateStack.push(tnum);
                                         tempInfo[tnum]->onstack = true;
                                     }
                                 }
@@ -708,7 +708,7 @@ static void CalculateInductionCandidates(LOOP* l)
                                 {
                                     int tnum = head->ans->offset->sp->i;
                                     briggsSet(candidates, tnum);
-                                    inductionCandidateStack[inductionCandidateStackTop++] = tnum;
+                                    inductionCandidateStack.push(tnum);
                                     tempInfo[tnum]->onstack = true;
                                 }
                             }
@@ -720,7 +720,7 @@ static void CalculateInductionCandidates(LOOP* l)
                         if (tempInfo[tnum]->size < ISZ_FLOAT)
                         {
                             briggsSet(candidates, tnum);
-                            inductionCandidateStack[inductionCandidateStackTop++] = tnum;
+                            inductionCandidateStack.push(tnum);
                             tempInfo[tnum]->onstack = true;
                         }
                     }
@@ -784,9 +784,10 @@ static void CalculateInductionCandidates(LOOP* l)
             }
         }
     }
-    while (inductionCandidateStackTop)
+    while (!inductionCandidateStack.empty())
     {
-        int tnum = inductionCandidateStack[--inductionCandidateStackTop];
+        int tnum = inductionCandidateStack.top();
+        inductionCandidateStack.pop();
         tempInfo[tnum]->onstack = false;
         PruneInductionCandidate(tnum, l);
         if (!briggsTest(candidates, tnum))
@@ -802,7 +803,7 @@ static void CalculateInductionCandidates(LOOP* l)
                         if (briggsTest(candidates, tnum))
                         {
                             if (!tempInfo[tnum]->onstack)
-                                inductionCandidateStack[inductionCandidateStackTop++] = tnum;
+                                inductionCandidateStack.push(tnum);
                         }
                     }
                 }
@@ -812,15 +813,14 @@ static void CalculateInductionCandidates(LOOP* l)
     }
 }
 static int max_dfs = 0;
-static unsigned short* strongStack;
-static int strongStackTop;
+static std::stack<unsigned> strongStack;
 LIST* strongRegiondfs(int tnum)
 {
     TEMP_INFO* t = tempInfo[tnum];
     INSTRUCTIONLIST* u = t->instructionUses;
     LIST* rv = nullptr;
     t->temp = t->dfstOrder = max_dfs++;
-    strongStack[strongStackTop++] = tnum;
+    strongStack.push(tnum);
     t->visiteddfst = true;
     t->onstack = true;
     while (u)
@@ -878,7 +878,8 @@ LIST* strongRegiondfs(int tnum)
         ILIST* temp1;
         do
         {
-            vp = strongStack[--strongStackTop];
+            vp = strongStack.top();
+            strongStack.pop();
             tempInfo[vp]->onstack = false;
             temp1 = oAllocate<ILIST>();
             temp1->data = vp;
@@ -903,9 +904,7 @@ static LIST* strongRegions(LOOP* lp, ILIST** anchors)
     QUAD* head;
     LIST* rv = nullptr;
     *anchors = nullptr;
-    strongStack = oAllocate<unsigned short>(tempCount);
     max_dfs = 0;
-    strongStackTop = 0;
     for (i = 0; i < tempCount; i++)
     {
         tempInfo[i]->dfstOrder = 0;
@@ -938,7 +937,6 @@ static LIST* strongRegions(LOOP* lp, ILIST** anchors)
 void CalculateInduction(void)
 {
     int i;
-    inductionCandidateStack = oAllocate<unsigned short>(tempCount);
 
     candidates = briggsAlloc(tempCount);
     CalculateLoopInvariants(blockArray[0]);
@@ -997,5 +995,7 @@ void CalculateInduction(void)
             }
         }
     }
+    while (!strongStack.empty()) strongStack.pop();
+    while (!inductionCandidateStack.empty()) inductionCandidateStack.pop();
 }
 }  // namespace Optimizer

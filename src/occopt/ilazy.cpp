@@ -64,8 +64,8 @@
 
 namespace Optimizer
 {
-unsigned short* termMap;
-unsigned short* termMapUp;
+unsigned* termMap;
+unsigned* termMapUp;
 unsigned termCount;
 
 static BLOCK **reverseOrder, **forwardOrder;
@@ -1532,8 +1532,8 @@ void SetGlobalTerms(void)
             if (tempInfo[i]->inUse)
                 termCount++;
     }
-    termMap = Allocate<unsigned short>(tempCount);
-    termMapUp = Allocate<unsigned short>(termCount);
+    termMap = oAllocate<unsigned>(tempCount);
+    termMapUp = oAllocate<unsigned>(termCount);
     for (i = 0, j = 0; i < tempCount; i++)
         if (tempInfo[i]->inUse || (cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY))
         {

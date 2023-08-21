@@ -78,7 +78,7 @@ static int* tempStack;
 static int tempStackcount;
 static unsigned long long regmask;
 static int localspill, spillcount;
-static unsigned short* simplifyWorklist;
+static unsigned* simplifyWorklist;
 static int simplifyBottom, simplifyTop;
 static BriggsSet* freezeWorklist;
 static BriggsSet* spillWorklist;
@@ -2391,7 +2391,7 @@ void AllocateRegisters(QUAD* head)
         CountInstructions(first);
         simplifyBottom = simplifyTop = 0;
         tempCount += 3000;
-        simplifyWorklist = tAllocate<unsigned short>(tempCount);
+        simplifyWorklist = tAllocate<unsigned>(tempCount);
         freezeWorklist = briggsAlloct(tempCount);
         spillWorklist = briggsAlloct(tempCount);
         spilledNodes = briggsAlloct(tempCount);

@@ -31,13 +31,13 @@ extern int walkPreorder, walkPostorder;
 
 void flow_init(void);
 void dump_flowgraph(void);
-void WalkFlowgraph(BLOCK* b, int (*func)(enum e_fgtype type, BLOCK* parent, BLOCK* b), int fwd);
-void reflowConditional(BLOCK* src, BLOCK* dst);
-bool dominatedby(BLOCK* src, BLOCK* ancestor);
+void WalkFlowgraph(Block* b, int (*func)(enum e_fgtype type, Block* parent, Block* b), int fwd);
+void reflowConditional(Block* src, Block* dst);
+bool dominatedby(Block* src, Block* ancestor);
 enum e_fgtype getEdgeType(int first, int second);
-void UnlinkCritical(BLOCK* s);
+void UnlinkCritical(Block* s);
 void RemoveCriticalThunks(void);
-void unlinkBlock(BLOCK* succ, BLOCK* pred);
+void unlinkBlock(Block* succ, Block* pred);
 void doms_only(bool always);
 void flows_and_doms(void);
 }  // namespace Optimizer

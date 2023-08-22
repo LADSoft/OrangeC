@@ -160,12 +160,8 @@ int PreRegAlloc(QUAD* tail, BriggsSet* globalVars, BriggsSet* eobGlobals, int pa
 
 void CreateTempsAndBlocks(FunctionData* fd)
 {
-    if (!blockArray || blockCount > blockMax)
-    {
-        free(blockArray);
-        blockMax = (blockCount + 999) /1000 * 1000;
-        blockArray = (BLOCK**)calloc(sizeof(BLOCK *), blockMax);
-    }
+    blockArray.clear();
+    blockArray.resize(blockCount);
     for (auto im : fd->imodeList)
     {
         if (im->offset)

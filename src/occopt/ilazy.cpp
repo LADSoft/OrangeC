@@ -64,11 +64,11 @@
 
 namespace Optimizer
 {
-unsigned* termMap;
-unsigned* termMapUp;
+std::vector<unsigned> termMap;
+std::vector<unsigned> termMapUp;
 unsigned termCount;
 
-static BLOCK **reverseOrder, **forwardOrder;
+static Block **reverseOrder, **forwardOrder;
 static BITINT *tempBytes, *tempBytes2, *tempBytes3;
 static int fwdBlocks, reverseBlocks;
 static BITINT* unMoveableTerms;
@@ -204,7 +204,7 @@ void SetunMoveableTerms(void)
     setmap(unMoveableTerms, true);
     for (i = 0; i < blockCount; i++)
     {
-        BLOCK* b = blockArray[i];
+        Block* b = blockArray[i];
         if (b)
         {
             QUAD* head;
@@ -292,7 +292,7 @@ void SetunMoveableTerms(void)
 static void CalculateUses(void)
 {
     int i, j;
-    BLOCK* b;
+    Block* b;
     QUAD *head, *tail;
     setmap(tempBytes, true);
     tail = intermed_tail;
@@ -478,7 +478,7 @@ static void CalculateTransparent(void)
 }
 static QUAD* previous(QUAD* tail)
 {
-    BLOCK* b = tail->block;
+    Block* b = tail->block;
     do
     {
         tail = tail->back;
@@ -489,7 +489,7 @@ static QUAD* previous(QUAD* tail)
 }
 static QUAD* successor(QUAD* head)
 {
-    BLOCK* b = head->block;
+    Block* b = head->block;
     do
     {
         head = head->fwd;
@@ -514,7 +514,7 @@ static void CalculateDSafe(void)
 {
     for (int i = 0; i < blockCount; i++)
     {
-        BLOCK* b = blockArray[i];
+        Block* b = blockArray[i];
         if (b)
         {
             for (auto head = b->head; head != b->tail->fwd; head = head->fwd)
@@ -529,7 +529,7 @@ static void CalculateDSafe(void)
         changed = false;
         for (i = 0; i < reverseBlocks; i++)
         {
-            BLOCK* b = reverseOrder[i];
+            Block* b = reverseOrder[i];
             if (b)
             {
                 QUAD* tail = Last(b->tail);
@@ -580,7 +580,7 @@ static void CalculateEarliest(void)
 {
     for (int i = 0; i < blockCount; i++)
     {
-        BLOCK* b = blockArray[i];
+        Block* b = blockArray[i];
         if (b)
         {
             for (auto head = b->head; head != b->tail->fwd; head = head->fwd)
@@ -596,7 +596,7 @@ static void CalculateEarliest(void)
         changed = false;
         for (i = 0; i < fwdBlocks; i++)
         {
-            BLOCK* b = forwardOrder[i];
+            Block* b = forwardOrder[i];
             if (b)
             {
                 QUAD* head = First(b->head);
@@ -654,7 +654,7 @@ static void CalculateEarliest(void)
     if (!(cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY))
         for (int i = 0; i < blockCount; i++)
         {
-            BLOCK* b = blockArray[i];
+            Block* b = blockArray[i];
             if (b)
             {
                 for (auto head = b->head; head != b->tail->fwd; head = head->fwd)
@@ -667,7 +667,7 @@ static void CalculateDelay(void)
 {
     for (int i = 0; i < blockCount; i++)
     {
-        BLOCK* b = blockArray[i];
+        Block* b = blockArray[i];
         if (b)
         {
             for (auto head = b->head; head != b->tail->fwd; head = head->fwd)
@@ -682,7 +682,7 @@ static void CalculateDelay(void)
         changed = false;
         for (i = 0; i < fwdBlocks; i++)
         {
-            BLOCK* b = forwardOrder[i];
+            Block* b = forwardOrder[i];
             if (b)
             {
                 QUAD* head = First(b->head);
@@ -739,7 +739,7 @@ static void CalculateDelay(void)
     if (!(cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY))
         for (int i = 0; i < blockCount; i++)
         {
-            BLOCK* b = blockArray[i];
+            Block* b = blockArray[i];
             if (b)
             {
                 for (auto head = b->head; head != b->tail->fwd; head = head->fwd)
@@ -756,7 +756,7 @@ static void CalculateLatest(void)
 {
     for (int i = 0; i < blockCount; i++)
     {
-        BLOCK* b = blockArray[i];
+        Block* b = blockArray[i];
         if (b)
         {
             for (auto head = b->head; head != b->tail->fwd; head = head->fwd)
@@ -767,7 +767,7 @@ static void CalculateLatest(void)
     int i;
     for (i = 0; i < reverseBlocks; i++)
     {
-        BLOCK* b = reverseOrder[i];
+        Block* b = reverseOrder[i];
         if (b)
         {
             QUAD* tail = Last(b->tail);
@@ -818,7 +818,7 @@ static void CalculateLatest(void)
     if (!(cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY))
         for (int i = 0; i < reverseBlocks; i++)
         {
-            BLOCK* b = reverseOrder[i];
+            Block* b = reverseOrder[i];
             if (b)
             {
                 for (auto head = b->head; head != b->tail->fwd; head = head->fwd)
@@ -833,7 +833,7 @@ static void CalculateIsolated(void)
 {
     for (int i = 0; i < reverseBlocks; i++)
     {
-        BLOCK* b = reverseOrder[i];
+        Block* b = reverseOrder[i];
         if (b)
         {
             for (auto head = b->head; head != b->tail->fwd; head = head->fwd)
@@ -851,7 +851,7 @@ static void CalculateIsolated(void)
         changed = false;
         for (i = 0; i < reverseBlocks; i++)
         {
-            BLOCK* b = reverseOrder[i];
+            Block* b = reverseOrder[i];
             if (b && b->blocknum != exitBlock)
             {
                 QUAD* tail = Last(b->tail);
@@ -1379,8 +1379,11 @@ static void MoveExpressions(void)
         if (isset(ocpTerms, i))
         {
             int j;
-            int size = tempInfo[termMapUp[i]]->enode->sp->imvalue->size;
-            tempInfo[termMapUp[i]]->copy = InitTempOpt(size, size);
+            int size = tempInfo[termMapUp[i]]->enode->sp->imvalue->size;;
+            // this is split into two lines as the fact that InitTempOpt could move 
+            // the underlying store for tempInfo confused the VC++ optimizer...
+            auto temp = InitTempOpt(size, size);
+            tempInfo[termMapUp[i]]->copy = temp;
             for (j = 0; j < fwdBlocks; j++)
             {
 
@@ -1508,7 +1511,7 @@ static void PadBlocks(void)
     int i;
     for (i = 0; i < blockCount; i++)
     {
-        BLOCK* b = blockArray[i];
+        Block* b = blockArray[i];
         if (b && b->head == b->tail)
         {
             QUAD* ins = Allocate<QUAD>();
@@ -1517,7 +1520,7 @@ static void PadBlocks(void)
         }
     }
 }
-static int fgc(enum e_fgtype type, BLOCK* parent, BLOCK* b) { return true; }
+static int fgc(enum e_fgtype type, Block* parent, Block* b) { return true; }
 void SetGlobalTerms(void)
 {
     int i, j;
@@ -1532,8 +1535,10 @@ void SetGlobalTerms(void)
             if (tempInfo[i]->inUse)
                 termCount++;
     }
-    termMap = oAllocate<unsigned>(tempCount);
-    termMapUp = oAllocate<unsigned>(termCount);
+    termMap.clear();
+    termMap.resize(tempCount);
+    termMapUp.clear();
+    termMapUp.resize(termCount);
     for (i = 0, j = 0; i < tempCount; i++)
         if (tempInfo[i]->inUse || (cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY))
         {
@@ -1547,7 +1552,7 @@ void GlobalOptimization(void)
     QUAD* head = intermed_head;
     int i;
     PadBlocks();
-    forwardOrder = oAllocate<BLOCK*>(blockCount);
+    forwardOrder = oAllocate<Block*>(blockCount);
     fwdBlocks = 0;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
@@ -1555,7 +1560,7 @@ void GlobalOptimization(void)
     forwardOrder[fwdBlocks++] = blockArray[0];
     for (i = 0; i < fwdBlocks; i++)
     {
-        BLOCK* b = forwardOrder[i];
+        Block* b = forwardOrder[i];
         BLOCKLIST* bl = b->succ;
         while (bl)
         {
@@ -1567,7 +1572,7 @@ void GlobalOptimization(void)
             bl = bl->next;
         }
     }
-    reverseOrder = oAllocate<BLOCK*>(blockCount);
+    reverseOrder = oAllocate<Block*>(blockCount);
     reverseBlocks = 0;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
@@ -1575,7 +1580,7 @@ void GlobalOptimization(void)
     reverseOrder[reverseBlocks++] = blockArray[exitBlock];
     for (i = 0; i < reverseBlocks; i++)
     {
-        BLOCK* b = reverseOrder[i];
+        Block* b = reverseOrder[i];
         BLOCKLIST* bl = b->pred;
         while (bl)
         {

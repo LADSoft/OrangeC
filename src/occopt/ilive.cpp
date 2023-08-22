@@ -95,7 +95,7 @@ static void liveSetup(void)
     int i;
     for (i = 0; i < blockCount; i++)
     {
-        struct _block* blk = blockArray[i];
+        struct Block* blk = blockArray[i];
         if (blk && blk->head)
         {
             QUAD* tail = blk->tail;
@@ -222,7 +222,7 @@ static void liveOut()
     {
         bool changed = false;
         unsigned n = workList[tail];
-        BLOCK* b = blockArray[n];
+        Block* b = blockArray[n];
         BLOCKLIST* bl = b->succ;
         int j;
         BITINT *gen, *kills, *live, *outb;
@@ -317,7 +317,7 @@ static void killPhiPaths1(void)
     int i;
     for (i = 0; i < blockCount; i++)
     {
-        struct _block* blk = blockArray[i];
+        struct Block* blk = blockArray[i];
         if (blk)
         {
             QUAD* head = blk->head->fwd;
@@ -358,7 +358,7 @@ static void killPhiPaths2(void)
     int i;
     for (i = 0; i < blockCount; i++)
     {
-        struct _block* blk = blockArray[i];
+        struct Block* blk = blockArray[i];
         if (blk)
         {
             QUAD* head = blk->head->fwd;
@@ -512,7 +512,7 @@ static void markLiveInstruction(BriggsSet* live, QUAD* ins)
         }
     }
 }
-void removeDead(BLOCK* b)
+void removeDead(Block* b)
 {
     static BriggsSet* live;
     BITINT* p;
@@ -575,7 +575,7 @@ void removeDead(BLOCK* b)
         */
         for (i = 0; i < blockCount; i++)
         {
-            BLOCK* b1 = blockArray[i];
+            Block* b1 = blockArray[i];
             if (b1)
             {
                 QUAD* head = b1->head;

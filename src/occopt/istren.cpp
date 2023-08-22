@@ -201,7 +201,7 @@ static void ScanStrength(void)
     int i;
     for (i = 0; i < loopCount; i++)
     {
-        LOOP* lt = loopArray[i];
+        Loop* lt = loopArray[i];
         if (lt->type != LT_BLOCK)
         {
             INDUCTION_LIST* sets = lt->inductionSets;
@@ -606,7 +606,7 @@ static void ReduceStrengthPhi(QUAD* head)
         }
     }
 }
-static void Sort(BLOCK* b, QUAD* head, QUAD* tail)
+static void Sort(Block* b, QUAD* head, QUAD* tail)
 {
     // the algorithm interleaves the addition sequences,
     // rather than rewrite it we are just going to sort them
@@ -661,7 +661,7 @@ static void Sort(BLOCK* b, QUAD* head, QUAD* tail)
     if (b->tail == tail)
         b->tail = next->back;
 }
-static void ReduceStrength(BLOCK* b)
+static void ReduceStrength(Block* b)
 {
     BLOCKLIST* bl = b->dominates;
     QUAD* head;
@@ -725,7 +725,7 @@ void ReduceLoopStrength(void)
     ScanStrength();
     for (i = 0; i < blockCount; i++)
     {
-        BLOCK* b = blockArray[i];
+        Block* b = blockArray[i];
         if (b)
         {
             QUAD* head = b->head;
@@ -759,7 +759,7 @@ void ReduceLoopStrength(void)
     }
     for (i = 0; i < blockCount; i++)
     {
-        BLOCK* b = blockArray[i];
+        Block* b = blockArray[i];
         if (b)
         {
             QUAD* head = b->head;

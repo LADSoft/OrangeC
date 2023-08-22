@@ -493,7 +493,7 @@ struct _phiblock
 {
     struct _phiblock* next;
     int Tn;
-    struct _block* block;
+    struct Block* block;
 };
 
 typedef struct _phidata
@@ -537,7 +537,7 @@ typedef struct quad
     IMODE* ans;
     unsigned long long liveRegs;
     struct quad *fwd, *back;
-    struct _block* block;
+    struct Block* block;
     SimpleSymbol* altsp;
     SimpleType* alttp;
     RUNTIMEDATA* runtimeData;

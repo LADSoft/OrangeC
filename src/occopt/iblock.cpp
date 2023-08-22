@@ -49,8 +49,8 @@
 
 namespace Optimizer
 {
-TEMP_INFO** tempInfo;
-BLOCK** blockArray;
+std::vector<TempInfo*> tempInfo;
+std::vector<Block*> blockArray;
 
 Optimizer::QUAD *intermed_head, *intermed_tail;
 int blockCount;
@@ -58,9 +58,7 @@ std::unordered_map<QUAD*, QUAD*, OrangeC::Utils::fnv1a32_binary<DAGCOMPARE>, Ora
 std::unordered_map<IMODE**, QUAD*, OrangeC::Utils::fnv1a32_binary<sizeof(IMODE*)>, OrangeC::Utils::bin_eql<sizeof(IMODE*)>>
     name_hash;
 
-BLOCK* currentBlock;
-
-int blockMax;
+Block* currentBlock;
 
 void gen_nodag(enum i_ops op, Optimizer::IMODE* res, Optimizer::IMODE* left, Optimizer::IMODE* right);
 
@@ -484,22 +482,18 @@ BLOCKLIST* newBlock(void)
 {
     if (blockCount == 0)
     {
-        memset(blockArray, 0, sizeof(BLOCK*) * blockMax);
+        blockArray.clear();
     }
-    BLOCK* block = Allocate<BLOCK>();
+    if (blockCount >= blockArray.size())
+    {
+        blockArray.resize(blockCount + 1000);
+    }
+    Block* block = Allocate<Block>();
     BLOCKLIST* list = Allocate<BLOCKLIST>();
     list->next = 0;
     list->block = block;
     block->blocknum = blockCount++;
-    if (blockCount >= blockMax)
-    {
-        BLOCK** newBlocks = (BLOCK**)calloc(sizeof(BLOCK*), blockMax + 1000);
-        memcpy(newBlocks, blockArray, sizeof(BLOCK*) * blockMax);
-        free(blockArray);
-        blockMax += 1000;
-        blockArray = newBlocks;
-    }
-    blockArray[block->blocknum] = block;
+    blockArray[blockCount-1] = block;
     currentBlock = block;
     return list;
 }

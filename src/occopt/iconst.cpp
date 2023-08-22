@@ -1409,7 +1409,7 @@ static bool eval(QUAD* q)
     }
     return rv;
 }
-static void pushBlock(BLOCK* block, BLOCK* source)
+static void pushBlock(Block* block, Block* source)
 {
     BLOCKLIST* l1;
     BLOCKLIST **edgereached = &block->edgereached, *bl;
@@ -1450,7 +1450,7 @@ static void pushBlock(BLOCK* block, BLOCK* source)
             blockWorkHead = blockWorkTail = l1;
     }
 }
-static bool evalBranch(QUAD* I, BLOCK* b)
+static bool evalBranch(QUAD* I, Block* b)
 {
     bool found = false;
     if (I->dc.left && I->dc.right)
@@ -1569,7 +1569,7 @@ static bool evalBranch(QUAD* I, BLOCK* b)
     }
     return found;
 }
-static bool emulInstruction(QUAD* head, BLOCK* b)
+static bool emulInstruction(QUAD* head, Block* b)
 {
     if (((head->temps & TEMP_ANS) || head->dc.opcode == i_phi) && head->dc.opcode != i_coswitch)
     {
@@ -1617,7 +1617,7 @@ static bool emulInstruction(QUAD* head, BLOCK* b)
     else
         return evalBranch(head, b);
 }
-static void emulBlock(BLOCK* b)
+static void emulBlock(Block* b)
 {
     QUAD* head = b->head->fwd;
     bool br = false;
@@ -1709,7 +1709,7 @@ static void iterateConstants(void)
         }
     }
 }
-static void removePhiEntry(BLOCK* b, int n)
+static void removePhiEntry(Block* b, int n)
 {
     QUAD* q = b->head;
     while ((q->dc.opcode == i_block || q->ignoreMe || q->dc.opcode == i_label) && q->back != b->tail)
@@ -1731,7 +1731,7 @@ static void removePhiEntry(BLOCK* b, int n)
         q = q->fwd;
     }
 }
-static void removeForward(BLOCK* start)
+static void removeForward(Block* start)
 {
     QUAD* tail = start->tail;
 
@@ -1800,7 +1800,7 @@ static void removeForward(BLOCK* start)
                 else
                     break;
                 {
-                    BLOCK* b = nullptr;
+                    Block* b = nullptr;
                     BLOCKLIST** succ = &tail->block->succ->next;
                     if (*succ)
                     {

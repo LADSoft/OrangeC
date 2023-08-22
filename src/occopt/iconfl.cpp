@@ -56,7 +56,7 @@ int findPartition(int T0)
 }
 void insertConflict(int i, int j)
 {
-    TEMP_INFO *ti, *tj;
+    TempInfo *ti, *tj;
     int bucket;
     i = findPartition(i);
     j = findPartition(j);

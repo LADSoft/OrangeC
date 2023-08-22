@@ -136,13 +136,13 @@ enum e_lptype
     LT_ROOT,
     LT_BLOCK
 };
-typedef struct _loop
+struct Loop
 {
-    struct _loop* next;
+    struct Loop* next;
     enum e_lptype type;
     int loopnum;
-    struct _block* entry; /* will be the block for blocks */
-    struct _loop* parent;
+    struct Block* entry; /* will be the block for blocks */
+    struct Loop* parent;
     LIST* contains;
     BITINT* invariantPhiList;
     struct _blocklist* successors;
@@ -151,7 +151,7 @@ typedef struct _loop
     BriggsSet* through;
     BriggsSet* blocks;
     INDUCTION_LIST* inductionSets;
-} LOOP;
+};
 
 typedef struct copieshash
 {
@@ -238,7 +238,7 @@ typedef struct _normlist
     IMODE* value;
     int level;
 } NORMLIST;
-typedef struct
+struct TempInfo
 {
     ILIST* renameStack;
     LIST* bdefines;
@@ -246,7 +246,7 @@ typedef struct
     LIST* iuses;
     struct quad* instructionDefines;
     struct quad* storesUses;
-    struct _block* blockDefines;
+    struct Block* blockDefines;
     INSTRUCTIONLIST* instructionUses;
     BITINT* conflicts;
     IMODE* spillVar;
@@ -260,7 +260,7 @@ typedef struct
     //	int limitUseCount;
     LIMIT_USES* limitUses;
     LIST* quietRegions;
-    LOOP* variantLoop;
+    Loop* variantLoop;
     VALUEOF value;
     RESHAPE_EXPRESSION expression;
     IMODE* inductionReplacement;
@@ -323,16 +323,16 @@ typedef struct
     unsigned ircinitial : 1;
     unsigned spilling : 1;
     char size;
-} TEMP_INFO;
+};
 
 typedef struct _exceedPressure
 {
     struct _exceedPressure* next;
-    LOOP* l;
+    Loop* l;
     int prio;
 } EXCEED_PRESSURE;
 
-struct _block
+struct Block
 {
     int blocknum;
     /*        short dfstnum; */
@@ -358,9 +358,9 @@ struct _block
     struct _blocklist* dominanceFrontier;
     struct _blocklist *pred, *succ;
     struct _blocklist* loopGenerators;
-    LOOP* loopParent;
-    LOOP* inclusiveLoopParent;
-    LOOP* loopName;
+    Loop* loopParent;
+    Loop* inclusiveLoopParent;
+    Loop* loopName;
 
     /*		struct _blocklist *defines; */
     BITINT* liveGen;
@@ -375,7 +375,7 @@ struct _block
 typedef struct _blocklist
 {
     struct _blocklist* next;
-    struct _block* block;
+    struct Block* block;
 } BLOCKLIST;
 
 enum e_fgtype
@@ -388,8 +388,6 @@ enum e_fgtype
     F_CROSSEDGE
 };
 /*------------------------------------------------------------------------- */
-
-typedef struct _block BLOCK;
 /*
  * common code elimination uses this to track
  * all the gotos branching to a given label

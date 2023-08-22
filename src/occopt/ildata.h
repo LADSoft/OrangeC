@@ -92,7 +92,7 @@ struct FunctionData
     std::vector<IMODE*> imodeList;
     std::map<IMODE*, IMODE*> loadHash;
     std::set<unsigned> computedLabels;
-    TEMP_INFO** tempInfo;
+//    TempInfo** tempInfo;
     int fastcallAlias;
     int tempCount;
     int blockCount;

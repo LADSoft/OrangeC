@@ -452,7 +452,7 @@ static Optimizer::QUAD* UnstreamInstruction(FunctionData& fd)
             }
             break;
             case i_block:
-                currentBlock = Allocate<BLOCK>();
+                currentBlock = Allocate<Block>();
                 rv->dc.v.label = currentBlock->blocknum = UnstreamIndex();
                 currentBlock->head = currentBlock->tail = rv;
                 rv->block = currentBlock;

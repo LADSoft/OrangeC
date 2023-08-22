@@ -1042,7 +1042,7 @@ static void HandleParm(QUAD* head)
         }
     }
 }
-static void AliasesOneBlock(BLOCK* b)
+static void AliasesOneBlock(Block* b)
 {
     QUAD* head = b->head;
     while (head != b->tail->fwd)
@@ -1074,13 +1074,13 @@ static void AliasesOneBlock(BLOCK* b)
         head = head->fwd;
     }
 }
-static void GatherAliases(BLOCK *b)
+static void GatherAliases(Block *b)
 {
     AliasesOneBlock(b);
     for (auto d = b->dominates; d; d = d->next)
         AliasesOneBlock(d->block);
 }
-static void GatherAliases(LOOP* lp)
+static void GatherAliases(Loop* lp)
 {
     bool xchanged = changed;
     do
@@ -1089,7 +1089,7 @@ static void GatherAliases(LOOP* lp)
         changed = false;
         while (lt)
         {
-            lp = (LOOP*)lt->data;
+            lp = (Loop*)lt->data;
             if (lp->type == LT_BLOCK)
                 AliasesOneBlock(lp->entry);
             else
@@ -1569,7 +1569,7 @@ void AliasPass1(void)
     do
     {
         changed = false;
-        GatherAliases(loopArray[loopCount - 1]);
+        GatherAliases(loopArray[loopCount-1]);
     } while (changed);
 }
 void AliasPass2(void)

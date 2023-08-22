@@ -45,12 +45,12 @@
  */
 namespace Optimizer
 {
+std::vector<Loop*> loopArray;
 int loopCount;
-LOOP** loopArray;
 
 static BriggsSet* loopItems;
 
-static const char* lptype(LOOP* lp)
+static const char* lptype(Loop* lp)
 {
     if (lp->type == LT_ROOT)
         return "root";
@@ -66,14 +66,14 @@ static void dump_loops(void)
     int i;
     for (i = 0; i < loopCount; i++)
     {
-        LOOP* lp = loopArray[i];
+        Loop* lp = loopArray[i];
         if (lp && lp->type != LT_BLOCK)
         {
             LIST* lt = lp->contains;
             fprintf(icdFile, "; %d/%s/B(%d)/", i + 1, lptype(lp), lp->entry->blocknum + 1);
             while (lt)
             {
-                lp = (LOOP*)lt->data;
+                lp = (Loop*)lt->data;
                 if (lp->type == LT_BLOCK)
                     fprintf(icdFile, "B(%d) ", lp->entry->blocknum + 1);
                 else
@@ -84,7 +84,7 @@ static void dump_loops(void)
         }
     }
 }
-static void findInfinite(BLOCK* b)
+static void findInfinite(Block* b)
 {
     if (!b->visiteddfst)
     {
@@ -98,7 +98,7 @@ static void findInfinite(BLOCK* b)
     }
 }
 /* add a thunk block to get us out of an infinite loop */
-static void makeNonInfinite(BLOCK* b)
+static void makeNonInfinite(Block* b)
 {
     BLOCKLIST *bi = newBlock(), *bi2, **bt;
     QUAD *quad, *quad2;
@@ -173,7 +173,7 @@ void RemoveInfiniteThunks(void)
     int i;
     for (i = 0; i < blockCount; i++)
     {
-        BLOCK* b = blockArray[i];
+        Block* b = blockArray[i];
         if (b && b->unuseThunk)
         {
             BLOCKLIST** l;
@@ -208,26 +208,26 @@ void RemoveInfiniteThunks(void)
     }
 }
 /* may return either a block or loop */
-static LOOP* LoopAncestor(BLOCK* b)
+static Loop* LoopAncestor(Block* b)
 {
-    LOOP* head = b->loopParent;
+    Loop* head = b->loopParent;
     if (!head)
         return b->loopName;
     while (head->parent != nullptr)
         head = head->parent;
     return head;
 }
-static void FindBody(BLOCKLIST* gen, BLOCK* head, enum e_lptype type)
+static void FindBody(BLOCKLIST* gen, Block* head, enum e_lptype type)
 {
     LIST *queue = nullptr, **qx;
-    LOOP *lp, **lpp;
+    Loop *lp, **lpp;
     int i;
     if (!gen)
         return;
     briggsClear(loopItems);
     while (gen)
     {
-        LOOP* l = LoopAncestor(gen->block);
+        Loop* l = LoopAncestor(gen->block);
         if (l && !briggsTest(loopItems, l->loopnum))
         {
             LIST* bl = oAllocate<LIST>();
@@ -240,15 +240,15 @@ static void FindBody(BLOCKLIST* gen, BLOCK* head, enum e_lptype type)
     }
     while (queue)
     {
-        if (((LOOP*)queue->data)->entry)
+        if (((Loop*)queue->data)->entry)
         {
-            BLOCKLIST* p = ((LOOP*)queue->data)->entry->pred;
+            BLOCKLIST* p = ((Loop*)queue->data)->entry->pred;
             queue = queue->next;
             while (p)
             {
                 if (p->block != head)
                 {
-                    LOOP* l = LoopAncestor(p->block);
+                    Loop* l = LoopAncestor(p->block);
                     if (l && !briggsTest(loopItems, l->loopnum))
                     {
                         LIST* bl = oAllocate<LIST>();
@@ -264,10 +264,12 @@ static void FindBody(BLOCKLIST* gen, BLOCK* head, enum e_lptype type)
         else
             queue = queue->next;
     }
-    lp = oAllocate<LOOP>();
-    loopArray[loopCount] = lp;
+    if (loopCount >= loopArray.size())
+        loopArray.resize(loopCount + 1000);
+    lp = oAllocate<Loop>();
+    lp->loopnum = loopCount;
+    loopArray[loopCount++] = lp;
     lp->type = type;
-    lp->loopnum = loopCount++;
     lp->entry = head;
     lp->parent = nullptr;
     head->loopParent = lp;
@@ -288,7 +290,7 @@ static void FindBody(BLOCKLIST* gen, BLOCK* head, enum e_lptype type)
             loopArray[n]->parent = lp;
     }
 }
-static BLOCK* findCommonDominator(BLOCK* one, BLOCK* two)
+static Block* findCommonDominator(Block* one, Block* two)
 {
     int i = one->blocknum;
     while (i)
@@ -304,11 +306,11 @@ static BLOCK* findCommonDominator(BLOCK* one, BLOCK* two)
     }
     return blockArray[0];
 }
-static void FindLoop(BLOCK* b)
+static void FindLoop(Block* b)
 {
     BLOCKLIST* loop = nullptr;
     BLOCKLIST* bl;
-    BLOCK* Z = b;
+    Block* Z = b;
     bl = b->pred;
     while (bl)
     {
@@ -338,7 +340,7 @@ static void FindLoop(BLOCK* b)
         FindBody(loop, b, LT_SINGLE);
     }
 }
-static void Loop(BLOCK* b)
+static void FindLoopOuter(Block* b)
 {
     BLOCKLIST* bl;
     if (b->visiteddfst)
@@ -347,7 +349,7 @@ static void Loop(BLOCK* b)
     b->visiteddfst = true;
     while (bl)
     {
-        Loop(bl->block);
+        FindLoopOuter(bl->block);
         bl = bl->next;
     }
     if (b->loopGenerators)
@@ -356,21 +358,21 @@ static void Loop(BLOCK* b)
     }
     FindLoop(b);
 }
-static void CalculateLoopedBlocks(LOOP* l)
+static void CalculateLoopedBlocks(Loop* l)
 {
     if (l->type != LT_BLOCK)
     {
         LIST* l1 = l->contains;
         while (l1)
         {
-            CalculateLoopedBlocks((LOOP*)l1->data);
+            CalculateLoopedBlocks((Loop*)l1->data);
             l1 = l1->next;
         }
         l1 = l->contains;
         l->blocks = briggsAlloc(blockCount);
         while (l1)
         {
-            LOOP* lm = (LOOP*)l1->data;
+            Loop* lm = (Loop*)l1->data;
             if (lm->type == LT_BLOCK)
                 briggsSet(l->blocks, lm->entry->blocknum);
             else
@@ -384,13 +386,13 @@ static void CalculateLoopedBlocks(LOOP* l)
     }
 }
 /* finds all the successors to the loop */
-static void CalculateSuccessors(LOOP* lp)
+static void CalculateSuccessors(Loop* lp)
 {
     LIST* contains;
     contains = lp->contains;
     while (contains)
     {
-        LOOP* current = (LOOP*)contains->data;
+        Loop* current = (Loop*)contains->data;
         if (lp->type != LT_BLOCK)
             CalculateSuccessors(current);
         contains = contains->next;
@@ -398,7 +400,7 @@ static void CalculateSuccessors(LOOP* lp)
     contains = lp->contains;
     while (contains)
     {
-        LOOP* inner = (LOOP*)contains->data;
+        Loop* inner = (Loop*)contains->data;
         if (inner->type == LT_BLOCK)
         {
             BLOCKLIST* bl = inner->entry->succ;
@@ -435,38 +437,35 @@ static void CalculateSuccessors(LOOP* lp)
 void BuildLoopTree(void)
 {
     BLOCKLIST bl;
-    BLOCK* b;
+    Block* b;
     int i;
     QUAD* tail;
     bool skip = false;
-    /* this is padded, but, in a really really complex program it could get to be too small
-     */
-    loopArray = oAllocate<LOOP*>(blockCount * 4);
-    loopItems = briggsAlloc((blockCount)*4);
+    loopArray.clear();
     loopCount = 0;
+    loopItems = briggsAlloc((blockCount)*4);
+    loopArray.resize(blockCount);
     for (i = 0; i < blockCount; i++)
     {
         if (blockArray[i])
         {
             blockArray[i]->visiteddfst = false;
             blockArray[i]->loopParent = nullptr;
-            blockArray[i]->loopName = oAllocate<LOOP>();
+            blockArray[i]->loopName = oAllocate<Loop>();
             blockArray[i]->loopName->type = LT_BLOCK;
             blockArray[i]->loopName->entry = blockArray[i];
             blockArray[i]->loopName->loopnum = loopCount;
             blockArray[i]->loopGenerators = nullptr;
             loopArray[loopCount++] = blockArray[i]->loopName;
         }
-        //		else
-        //			loopCount++;
     }
-    Loop(blockArray[0]);
+    FindLoopOuter(blockArray[0]);
     //	CalculateSuccessors(loopArray[loopCount-1]);
 
     memset(&bl, 0, sizeof(bl));
     bl.block = blockArray[exitBlock];
     FindBody(&bl, blockArray[0], LT_ROOT);
-    CalculateLoopedBlocks(loopArray[loopCount - 1]);
+    CalculateLoopedBlocks(loopArray[loopCount-1]);
     //   if (cparams.prm_icdfile)
     //   {
     //       fprintf(icdFile, "; loop dump\n");
@@ -501,9 +500,9 @@ void BuildLoopTree(void)
         tail = tail->back;
     }
     if (loopCount >= blockCount * 4)
-        Utils::Fatal("internal error");
+        Utils::Fatal("Internal error - Loop Count");
 }
-bool isAncestor(LOOP* l1, LOOP* l2)
+bool isAncestor(Loop* l1, Loop* l2)
 {
     if (l1 == l2)
         return false;
@@ -515,7 +514,7 @@ bool isAncestor(LOOP* l1, LOOP* l2)
     }
     return false;
 }
-static LOOP* nearestAncestor(LOOP* l1, LOOP* l2)
+static Loop* nearestAncestor(Loop* l1, Loop* l2)
 {
     if (!l1)
         return l2;
@@ -530,9 +529,9 @@ static LOOP* nearestAncestor(LOOP* l1, LOOP* l2)
     return l1;
 }
 /* if loop we are interested in encloses loop variable is modified in */
-static bool isInvariant(int tnum, LOOP* l)
+static bool isInvariant(int tnum, Loop* l)
 {
-    LOOP* varl = tempInfo[tnum]->variantLoop;
+    Loop* varl = tempInfo[tnum]->variantLoop;
     while (varl)
     {
         if (varl == l)
@@ -543,7 +542,7 @@ static bool isInvariant(int tnum, LOOP* l)
     }
     return true;
 }
-static void CalculateLoopInvariants(BLOCK* b)
+static void CalculateLoopInvariants(Block* b)
 {
     BLOCKLIST* children = b->dominates;
     QUAD* head;
@@ -564,8 +563,8 @@ static void CalculateLoopInvariants(BLOCK* b)
         }
         else if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct)
         {
-            LOOP* varying = b->loopParent;
-            LOOP* t_varying;
+            Loop* varying = b->loopParent;
+            Loop* t_varying;
             int tnum;
             if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
             {
@@ -596,7 +595,7 @@ static void CalculateLoopInvariants(BLOCK* b)
 static BriggsSet* candidates;
 static std::stack<unsigned> inductionCandidateStack;
 
-static void PruneInductionCandidate(int tnum, LOOP* l)
+static void PruneInductionCandidate(int tnum, Loop* l)
 {
     if (tempInfo[tnum]->size >= ISZ_FLOAT)
     {
@@ -656,7 +655,7 @@ static void PruneInductionCandidate(int tnum, LOOP* l)
  * an induction set will be created for each loop.  These sets will
  * be identical
  */
-static void CalculateInductionCandidates(LOOP* l)
+static void CalculateInductionCandidates(Loop* l)
 {
     LIST *blocks, *p;
     int i;
@@ -671,7 +670,7 @@ static void CalculateInductionCandidates(LOOP* l)
 
     for (i = 0; i < l->blocks->top; i++)
     {
-        BLOCK* b = blockArray[l->blocks->data[i]];
+        Block* b = blockArray[l->blocks->data[i]];
         if (b)
         {
             QUAD* head = b->head;
@@ -816,7 +815,7 @@ static int max_dfs = 0;
 static std::stack<unsigned> strongStack;
 LIST* strongRegiondfs(int tnum)
 {
-    TEMP_INFO* t = tempInfo[tnum];
+    TempInfo* t = tempInfo[tnum];
     INSTRUCTIONLIST* u = t->instructionUses;
     LIST* rv = nullptr;
     t->temp = t->dfstOrder = max_dfs++;
@@ -850,7 +849,7 @@ LIST* strongRegiondfs(int tnum)
         }
         if (ux >= 0)
         {
-            TEMP_INFO* up = tempInfo[ux];
+            TempInfo* up = tempInfo[ux];
             if (!up->visiteddfst)
             {
                 LIST* l3 = strongRegiondfs(ux);
@@ -898,7 +897,7 @@ LIST* strongRegiondfs(int tnum)
  * each secondary layer is the induction set for the region
  * first element of list is the anchors
  */
-static LIST* strongRegions(LOOP* lp, ILIST** anchors)
+static LIST* strongRegions(Loop* lp, ILIST** anchors)
 {
     int i;
     QUAD* head;
@@ -941,9 +940,9 @@ void CalculateInduction(void)
     candidates = briggsAlloc(tempCount);
     CalculateLoopInvariants(blockArray[0]);
 
-    for (i = 0; i < loopCount; i++)
+    for (i = 0; i < loopArray.size(); i++)
     {
-        LOOP* lp = loopArray[i];
+        Loop* lp = loopArray[i];
         if (lp && lp->type == LT_SINGLE)
         {
             LIST* strongTemps;

@@ -664,7 +664,7 @@ static void CalculateFunctionFlags(void)
         tempInfo[j]->liveAcrossFunctionCall = false;
     for (i = 0; i < blockCount; i++)
     {
-        struct _block* blk = blockArray[i];
+        struct Block* blk = blockArray[i];
         if (blk && blk->head)
         {
             QUAD* tail = blk->tail;
@@ -753,7 +753,7 @@ static void CountInstructions(bool first)
     int i;
     for (i = 0; i < tempCount; i++)
     {
-        TEMP_INFO* t = tempInfo[i];
+        TempInfo* t = tempInfo[i];
         t->doGlobal = false;
     }
     instructionCount = 0;
@@ -925,7 +925,7 @@ static int fsizeFromISZ(int sz)
         n += 100;
     return n;
 }
-static void Build(BLOCK* b)
+static void Build(Block* b)
 {
     QUAD* head;
     BLOCKLIST* bl;
@@ -934,7 +934,7 @@ static void Build(BLOCK* b)
     {
         for (i = 0; i < tempCount; i++)
         {
-            TEMP_INFO* t = tempInfo[i];
+            TempInfo* t = tempInfo[i];
             t->workingMoves = nullptr;
             t->spillCost = 0;
             t->temp = 0;
@@ -956,7 +956,7 @@ static void Build(BLOCK* b)
                     if (tempInfo[u]->regClass && (tempInfo[u]->regClass == tempInfo[v]->regClass ||
                                                   fsizeFromISZ(tempInfo[u]->size) == fsizeFromISZ(tempInfo[v]->size)))
                     {
-                        TEMP_INFO* t;
+                        TempInfo* t;
                         setbit(workingMoves, head->index);
                         t = tempInfo[u];
                         if (!t->workingMoves)
@@ -1094,7 +1094,7 @@ static void MkWorklist(void)
     /* going backwatds to get spill temps first */
     for (i = 0; i < tempCount; i++)
     {
-        TEMP_INFO* t = tempInfo[i];
+        TempInfo* t = tempInfo[i];
         if (t->doGlobal && !t->precolored && t->ircinitial)
         {
             t->doGlobal = false;
@@ -2207,7 +2207,7 @@ static void KeepCoalescedNodes(void)
     for (i = 0; i < tempCount; i++)
         tempInfo[i]->partition = i;
 }
-static int LoopNesting(LOOP* loop)
+static int LoopNesting(Loop* loop)
 {
     unsigned rv = 1;
     while (loop)

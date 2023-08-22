@@ -1000,7 +1000,7 @@ static int floatsize(IMODE* im)
 int x86_examine_icode(QUAD* head)
 {
     fltexp = nullptr;
-    BLOCK* b = nullptr;
+    Block* b = nullptr;
     bool changed = false;
     QUAD* hold = head;
     uses_substack = false;

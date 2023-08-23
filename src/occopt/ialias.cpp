@@ -830,7 +830,7 @@ static void HandleAdd(QUAD* head)
                 else
                 {
                     // p + R
-                    if (head->dc.left->offset->type != se_labcon)  // needed for exports
+                    if (head->dc.left->offset->type != se_labcon && head->dc.left->offset->type != se_pc)  // needed for exports
                     {
                         ALIASNAME* nm = LookupMem(head->dc.left->offset->sp->imvalue);
                         ALIASADDRESS* aa = LookupAddress(nm, 0);
@@ -842,7 +842,7 @@ static void HandleAdd(QUAD* head)
             }
             else if (head->dc.right->mode == i_immed)
             {
-                if (!isintconst(head->dc.left->offset) && head->dc.left->offset->type != se_labcon)
+                if (!isintconst(head->dc.left->offset) && head->dc.left->offset->type != se_labcon && head->dc.left->offset->type != se_pc)
                 {
                     // p + C
                     ALIASNAME* nm = LookupMem(head->dc.left->offset->sp->imvalue);
@@ -851,7 +851,7 @@ static void HandleAdd(QUAD* head)
                     al->address = aa;
                     AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, al);
                 }
-                else if (!isintconst(head->dc.right->offset) && head->dc.right->offset->type != se_labcon)
+                else if (!isintconst(head->dc.right->offset) && head->dc.right->offset->type != se_labcon && head->dc.right->offset->type != se_pc )
                 {
                     // C + p
                     ALIASNAME* nm = LookupMem(head->dc.right->offset->sp->imvalue);
@@ -888,7 +888,7 @@ static void HandleAdd(QUAD* head)
                 else
                 {
                     // R + p
-                    if (head->dc.right->offset->type != se_labcon)  // needed for exports
+                    if (head->dc.right->offset->type != se_labcon && head->dc.right->offset->type != se_pc)  // needed for exports
                     {
                         ALIASNAME* nm = LookupMem(head->dc.right->offset->sp->imvalue);
                         ALIASADDRESS* aa = LookupAddress(nm, 0);

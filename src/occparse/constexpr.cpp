@@ -130,7 +130,7 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc, bo
             case ExpressionNode::atomic_:
             case ExpressionNode::dot_:
             case ExpressionNode::pointsto_:
-            case ExpressionNode::const_ruct_:
+            case ExpressionNode::construct_:
                 return false;
             case ExpressionNode::auto_:
                 if (!exp->v.sp->sb->constexpression &&

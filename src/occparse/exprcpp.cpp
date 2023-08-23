@@ -2336,7 +2336,7 @@ static bool noexceptExpression(EXPRESSION* node)
             rv = noexceptExpression(node->left);
             break;
         case ExpressionNode::atomic_:
-        case ExpressionNode::const_ruct_:
+        case ExpressionNode::construct_:
             break;
         case ExpressionNode::func_:
             fp = node->v.func;

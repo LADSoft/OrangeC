@@ -1356,7 +1356,7 @@ int opt0(EXPRESSION** node)
         return false;
     switch (ep->type)
     {
-        case ExpressionNode::const_ruct_:
+        case ExpressionNode::construct_:
             break;
         case ExpressionNode::l_sp_:
         case ExpressionNode::l_fp_:
@@ -2638,7 +2638,7 @@ int opt0(EXPRESSION** node)
                         }
                         if (find == (*tsl).end() && sym)
                         {
-                            if (sym->sb->storage_class == StorageClass::const_ant_)
+                            if (sym->sb->storage_class == StorageClass::constant_)
                             {
                                 optimize_for_constants(&sym->sb->init->front()->exp);
                                 *node = sym->sb->init->front()->exp;
@@ -3159,7 +3159,7 @@ int fold_const(EXPRESSION* node)
             if (node->left->type != ExpressionNode::func_ && node->left->type != ExpressionNode::funcret_)
                 *node = *node->left;
             break;
-        case ExpressionNode::const_ruct_: {
+        case ExpressionNode::construct_: {
             node->v.construct.tp = SynthesizeType(node->v.construct.tp, nullptr, false);
             LEXLIST* lex = SetAlternateLex(node->v.construct.deferred);
             if (isarithmetic(node->v.construct.tp))
@@ -3399,7 +3399,7 @@ int typedconsts(EXPRESSION* node1)
             }
             else if (node1->left->type == ExpressionNode::global_)
             {
-                if (node1->left->v.sp->sb->storage_class == StorageClass::const_ant_ && isintconst(node1->left->v.sp->sb->init->front()->exp))
+                if (node1->left->v.sp->sb->storage_class == StorageClass::constant_ && isintconst(node1->left->v.sp->sb->init->front()->exp))
                 {
                     optimize_for_constants(&node1->v.sp->sb->init->front()->exp);
                     *node1 = *node1->left->v.sp->sb->init->front()->exp;

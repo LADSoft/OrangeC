@@ -1927,7 +1927,7 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
         arg[(*count)++] = packedExp->v.sp;
         NormalizePacked(packedExp->v.sp->tp);
     }
-    else if (packedExp->type == ExpressionNode::const_ruct_)
+    else if (packedExp->type == ExpressionNode::construct_)
     {
         GatherPackedTypes(count, arg, packedExp->v.construct.tp);
     }
@@ -2087,7 +2087,7 @@ EXPRESSION* ReplicatePackedVars(int count, SYMBOL** arg, EXPRESSION* packedExp, 
                 }
             }
         }
-        else if (packedExp->type == ExpressionNode::const_ruct_)
+        else if (packedExp->type == ExpressionNode::construct_)
         {
             packedExp->v.construct.tp = ReplicatePackedTypes(count, arg, packedExp->v.construct.tp, index);
         }

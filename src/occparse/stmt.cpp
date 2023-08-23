@@ -2844,7 +2844,7 @@ static LEXLIST* asm_declare(LEXLIST* lex)
                         sym->sb->storage_class = StorageClass::external_;
                         break;
                     case Keyword::const_:
-                        sym->sb->storage_class = StorageClass::const_ant_;
+                        sym->sb->storage_class = StorageClass::constant_;
                         break;
                     default:
                         break;

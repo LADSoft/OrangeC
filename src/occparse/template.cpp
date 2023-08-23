@@ -1112,7 +1112,7 @@ std::list<TEMPLATEPARAMPAIR>** expandTemplateSelector(std::list<TEMPLATEPARAMPAI
                     if (!last)
                         last = templateParamPairListFactory.CreateList();
                     last->push_back(TEMPLATEPARAMPAIR(nullptr, Allocate<TEMPLATEPARAM>()));
-                    if (s->sb->storage_class == StorageClass::const_ant_ || s->sb->storage_class == StorageClass::constexpr_ ||
+                    if (s->sb->storage_class == StorageClass::constant_ || s->sb->storage_class == StorageClass::constexpr_ ||
                         s->sb->storage_class == StorageClass::enumconstant_)
                     {
                         (*lst)->back().second->type = last->back().second->type = Keyword::int_;
@@ -1184,7 +1184,7 @@ std::list<TEMPLATEPARAMPAIR>** expandTemplateSelector(std::list<TEMPLATEPARAMPAI
                             if (!last)
                                 last = templateParamPairListFactory.CreateList();
                             last->push_back(TEMPLATEPARAMPAIR(nullptr, Allocate<TEMPLATEPARAM>()));
-                            if (s->sb->storage_class == StorageClass::const_ant_ || s->sb->storage_class == StorageClass::constexpr_ ||
+                            if (s->sb->storage_class == StorageClass::constant_ || s->sb->storage_class == StorageClass::constexpr_ ||
                                 s->sb->storage_class == StorageClass::enumconstant_)
                             {
                                 (*lst)->back().second->type = last->back().second->type = Keyword::int_;
@@ -1323,7 +1323,7 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                 {
                     if (templateNestingCount)
                     {
-                        exp = exprNode(ExpressionNode::const_ruct_, nullptr, nullptr);
+                        exp = exprNode(ExpressionNode::construct_, nullptr, nullptr);
                         exp->v.construct.tp = tp;
                         lex = getDeferredData(lex, &exp->v.construct.deferred, true);
                     }
@@ -3829,7 +3829,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
         case ExpressionNode::trapcall_:
         case ExpressionNode::intcall_:
             return &stdvoid;
-        case ExpressionNode::const_ruct_:
+        case ExpressionNode::construct_:
             return exp->v.construct.tp;
         case ExpressionNode::funcret_:
             while (exp->type == ExpressionNode::funcret_)
@@ -10142,7 +10142,7 @@ static void FixIntSelectors(EXPRESSION** exp)
     if ((*exp)->right)
         FixIntSelectors(&(*exp)->right);
     if ((*exp)->type == ExpressionNode::templateselector_ ||
-        ((*exp)->type == ExpressionNode::const_ruct_ && (*exp)->v.construct.tp->type == BasicType::templateselector_))
+        ((*exp)->type == ExpressionNode::construct_ && (*exp)->v.construct.tp->type == BasicType::templateselector_))
     {
         std::list<TEMPLATEPARAMPAIR>* currentx;
         if ((*exp)->type == ExpressionNode::templateselector_)
@@ -10546,7 +10546,7 @@ std::list<TEMPLATEPARAMPAIR>* ResolveDeclTypes(SYMBOL* sp, std::list<TEMPLATEPAR
 static std::list<TEMPLATEPARAMPAIR>* ResolveConstructor(SYMBOL* sym, TEMPLATEPARAMPAIR* tpx)
 {
     std::list<TEMPLATEPARAMPAIR>* rv = nullptr;
-    if (tpx->second->type == Keyword::int_ && tpx->second->byNonType.dflt && tpx->second->byNonType.dflt->type == ExpressionNode::const_ruct_)
+    if (tpx->second->type == Keyword::int_ && tpx->second->byNonType.dflt && tpx->second->byNonType.dflt->type == ExpressionNode::construct_)
     {
         rv = templateParamPairListFactory.CreateList();
         rv->push_back(TEMPLATEPARAMPAIR{tpx->first, Allocate<TEMPLATEPARAM>()});
@@ -11655,7 +11655,7 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, std::list<TEMPLAT
             }
             exp = exp1;
         }
-        else if (exp->type == ExpressionNode::const_ruct_)
+        else if (exp->type == ExpressionNode::construct_)
         {
             EXPRESSION* exp1 = Allocate<EXPRESSION>();
             *exp1 = *exp;

@@ -1215,14 +1215,14 @@ static void dumpStaticInitializers(void)
         {
             SYMBOL* sym = (SYMBOL*)symListTail->data;
             if (sym->sb->storage_class == StorageClass::global_ || sym->sb->storage_class == StorageClass::static_ ||
-                sym->sb->storage_class == StorageClass::localstatic_ || sym->sb->storage_class == StorageClass::const_ant_)
+                sym->sb->storage_class == StorageClass::localstatic_ || sym->sb->storage_class == StorageClass::constant_)
             {
                 TYPE* tp = sym->tp;
                 TYPE* stp = tp;
                 int al;
                 while (isarray(stp))
                     stp = basetype(stp)->btp;
-                if ((IsConstWithArr(sym->tp) && !isvolatile(sym->tp)) || sym->sb->storage_class == StorageClass::const_ant_)
+                if ((IsConstWithArr(sym->tp) && !isvolatile(sym->tp)) || sym->sb->storage_class == StorageClass::constant_)
                 {
                     Optimizer::xconstseg();
                     sizep = &sconst;
@@ -1284,7 +1284,7 @@ static void dumpStaticInitializers(void)
                 sym->sb->offset = *sizep;
                 *sizep += basetype(tp)->size;
                 Optimizer::gen_strlab(Optimizer::SymbolManager::Get(sym));
-                if (sym->sb->storage_class == StorageClass::const_ant_)
+                if (sym->sb->storage_class == StorageClass::constant_)
                     Optimizer::put_label(sym->sb->label);
                 dumpInitGroup(sym, tp);
             }
@@ -4434,7 +4434,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                     if (sym->sb->storage_class != StorageClass::static_ && !Optimizer::cparams.prm_cplusplus && !funcsp)
                         insertInitSym(sym);
                     sym->sb->value.i = sym->sb->init->front()->exp->v.i;
-                    sym->sb->storage_class = StorageClass::const_ant_;
+                    sym->sb->storage_class = StorageClass::constant_;
                     Optimizer::SymbolManager::Get(sym)->i = sym->sb->value.i;
                     Optimizer::SymbolManager::Get(sym)->storage_class = Optimizer::scc_constant;
                 }
@@ -4445,7 +4445,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
         {
             if (sym->sb->storage_class != StorageClass::static_ && !Optimizer::cparams.prm_cplusplus && !funcsp)
                 insertInitSym(sym);
-            sym->sb->storage_class = StorageClass::const_ant_;
+            sym->sb->storage_class = StorageClass::constant_;
             Optimizer::SymbolManager::Get(sym)->i = sym->sb->value.i;
             Optimizer::SymbolManager::Get(sym)->storage_class = Optimizer::scc_constant;
         }

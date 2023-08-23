@@ -1868,7 +1868,7 @@ static bool ismem(EXPRESSION* exp)
         case ExpressionNode::pc_:
         case ExpressionNode::auto_:
         case ExpressionNode::threadlocal_:
-        case ExpressionNode::const_ruct_:
+        case ExpressionNode::construct_:
         case ExpressionNode::labcon_:
             return true;
         case ExpressionNode::thisref_:

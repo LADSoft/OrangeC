@@ -593,7 +593,7 @@ Optimizer::e_scc_type Optimizer::SymbolManager::Get(Parser::StorageClass storage
             return scc_ulabel;
         case StorageClass::overloads_:
             return scc_overloads;
-        case StorageClass::const_ant_:
+        case StorageClass::constant_:
             return scc_constant;
         case StorageClass::enumconstant_:
             return scc_enumconstant;

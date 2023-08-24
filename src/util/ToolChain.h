@@ -55,8 +55,8 @@ class ToolChain
     template <typename... Args>
     static int ToolInvoke(const std::string& exeName, const char* with, const char* fmt, const Args... arg)
     {
-        char buf[10000];
-        memset(buf, 0, sizeof(buf));
+        int size = snprintf(NULL, 0, fmt, arg...) + 260;
+        char *buf = (char *)calloc(sizeof(char), size);
         buf[0] = '"';
         strcpy(buf + 1, Utils::GetModuleName());
         char* p = (char*)strrchr(buf, '/');
@@ -83,7 +83,9 @@ class ToolChain
             if (with[0])
                 printf("   with %s", with);
         }
-        return mysystem(buf);
+        auto rv = mysystem(buf);
+        free(buf);
+        return rv;
     }
 
   private:

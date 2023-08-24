@@ -4431,8 +4431,11 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                 if ((sym->sb->init->front()->exp && isintconst(sym->sb->init->front()->exp) &&
                      (isint(sym->tp) || basetype(sym->tp)->type == BasicType::enum_)))
                 {
-                    if (sym->sb->storage_class != StorageClass::static_ && !Optimizer::cparams.prm_cplusplus && !funcsp)
+                    if ((sym->sb->storage_class != StorageClass::static_ && !Optimizer::cparams.prm_cplusplus && !funcsp) ||
+                        (storage_class_in == StorageClass::global_ && sym->sb->parentClass && Optimizer::cparams.prm_cplusplus && !(flags & _F_NOCONSTGEN)))
+                    {
                         insertInitSym(sym);
+                    }
                     sym->sb->value.i = sym->sb->init->front()->exp->v.i;
                     sym->sb->storage_class = StorageClass::constant_;
                     Optimizer::SymbolManager::Get(sym)->i = sym->sb->value.i;
@@ -4440,7 +4443,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                 }
             }
         }
-        else if (sym->sb->init && !inTemplate && sym->sb->init->front()->exp &&
+        else if (sym->  sb->init && !inTemplate && sym->sb->init->front()->exp &&
                  (sym->sb->constexpression || isint(sym->tp) || basetype(sym->tp)->type == BasicType::enum_))
         {
             if (sym->sb->storage_class != StorageClass::static_ && !Optimizer::cparams.prm_cplusplus && !funcsp)

@@ -357,6 +357,7 @@ typedef struct
 #define _F_INDECLTYPE 0x20000
 #define _F_INCONSTRUCTOR 0x40000
 #define _F_EXPLICIT 0x80000
+#define _F_NOCONSTGEN 0x100000
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2
 

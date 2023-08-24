@@ -75,6 +75,7 @@ QUAD* beforeJmp(QUAD* I, bool before)
             case i_coswitch:
             case i_goto:
             case i_cmpblock:
+            case i_computedgoto:
                 I = I->back;
                 if (before)
                     return I;
@@ -429,6 +430,7 @@ static void markLiveInstruction(BRIGGS_SET* live, QUAD* ins)
         case i_gosub:
         case i_label:
         case i_goto:
+        case i_computedgoto:
             ins->live = true;
             break;
         case i_assnblock:

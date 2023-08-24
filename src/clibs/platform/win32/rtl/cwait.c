@@ -1,9 +1,10 @@
 #include <errno.h>
 #include <windows.h>
+void __WaitForInputIdle(HANDLE hprocess);
 int cwait(int* status, int pid, int action)
 {
     DWORD rv;
-    WaitForInputIdle((HANDLE)pid, INFINITE);
+    __WaitForInputIdle((HANDLE)pid);
     if (WaitForSingleObject((HANDLE)pid, INFINITE))
     {
         errno = ECHILD;

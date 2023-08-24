@@ -580,7 +580,7 @@ Optimizer::QUAD* gen_icode_with_conflict(enum i_ops op, Optimizer::IMODE* res, O
     {
         case i_ret:
         case i_rett:
-        case i_directbranch:
+        case i_computedgoto:
         case i_gosub:
             flush_dag();
             break;
@@ -612,6 +612,10 @@ Optimizer::QUAD* gen_icode_with_conflict(enum i_ops op, Optimizer::IMODE* res, O
     }
     switch (op)
     {
+        case i_computedgoto:
+            flush_dag();
+            addblock(i_goto);
+            break;
         case i_ret:
         case i_rett:
             flush_dag();
@@ -619,7 +623,7 @@ Optimizer::QUAD* gen_icode_with_conflict(enum i_ops op, Optimizer::IMODE* res, O
         default:
             break;
     }
-    wasgoto = false;
+    wasgoto = op == i_computedgoto;
     return newQuad;
 }
 Optimizer::QUAD* gen_icode(enum i_ops op, Optimizer::IMODE* res, Optimizer::IMODE* left, Optimizer::IMODE* right)

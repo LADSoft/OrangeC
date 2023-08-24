@@ -22,6 +22,9 @@
  * 
  */
 
-#include "..\..\version.h"
+#include "delayimp.h"
 
-static char* RTLVersion = "LADSoft C Runtime Library Version " CLIB_STRING_VERSION " " LIBRARY_COPYRIGHT;
+FARPROC WINAPI __DliFailureHook2(unsigned notify, PDelayLoadInfo  pdli)
+{
+    return NULL;
+}

@@ -344,7 +344,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         cmd = r.Evaluate();
     }
     bool asapp = true;
-    if (cmd.find("bash.exe") != std::string::npos || cmd.find("sh.exe") != std::string::npos)
+    if (cmd.find("bash") != std::string::npos || cmd.find("sh") != std::string::npos)
     {
         cmd = "sh.exe -c ";
         // we couldn't simply set MAKE properly because they may change the shell in the script
@@ -358,6 +358,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
                 n = command1.find(v->GetValue());
             }
         }
+        asapp = false;
     }
     else
     {

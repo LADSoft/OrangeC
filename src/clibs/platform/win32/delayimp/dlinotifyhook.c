@@ -1,7 +1,7 @@
 /* Software License Agreement
  * 
  *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
- * 
+ * kk
  *     This file is part of the Orange C Compiler package.
  * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
@@ -21,7 +21,9 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
+#include "delayimp.h"
 
-#include "..\..\version.h"
-
-static char* RTLVersion = "LADSoft C Runtime Library Version " CLIB_STRING_VERSION " " LIBRARY_COPYRIGHT;
+WINAPI FARPROC __DliNotifyHook2(unsigned notify, PDelayLoadInfo  pdli)
+{
+    return NULL;
+}

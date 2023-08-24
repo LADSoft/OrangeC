@@ -322,6 +322,7 @@ void ProcessFunctions()
         {
             temporarySymbols = v->funcData->temporarySymbols;
             functionVariables = v->funcData->variables;
+            computedLabels = v->funcData->computedLabels;
             blockCount = v->funcData->blockCount;
             exitBlock = v->funcData->exitBlock;
             fastcallAlias = v->funcData->fastcallAlias;

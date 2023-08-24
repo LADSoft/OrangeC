@@ -43,6 +43,7 @@ extern int instantiatingClass;
 extern int parsingDefaultTemplateArgs;
 extern int inTemplateArgs;
 extern std::unordered_map<std::string, SYMBOL*, StringHash> classTemplateMap2;
+extern bool fullySpecialized;
 
 void templateInit(void);
 EXPRESSION* GetSymRef(EXPRESSION* n);

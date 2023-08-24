@@ -35,6 +35,27 @@
 
 extern char _RTL_DATA** _environ;
 
+void __WaitForInputIdle(HANDLE hProcess)
+{
+    typedef void WINAPI Func(HANDLE, UINT);
+    HMODULE aa = LoadLibrary("User32.dll");
+    if (aa)
+    {
+        Func* ptr = (Func*)GetProcAddress(aa, "WaitForInputIdle");
+        if (ptr)
+        {
+            ptr(hProcess, INFINITE);
+            FreeLibrary(aa);
+        }
+        else
+            _abort();
+    }
+    else
+    {
+        _abort();
+    }
+}
+
 static char* createenviron(char** env)
 {
     int len = 0;
@@ -70,13 +91,14 @@ int __ll_spawn(char* file, char* parms, char** env, int mode)
     PROCESS_INFORMATION pi;
     STARTUPINFO si;
     DWORD rv = -1;
-    char buf[1000], *block = createenviron(env);
+    char *buf, *block = createenviron(env);
     memset(&si, 0, sizeof(si));
     si.cb = sizeof(STARTUPINFO);
     si.dwFlags = STARTF_USESTDHANDLES;
     si.hStdInput = (HANDLE)__uiohandle(fileno(stdin));
     si.hStdOutput = (HANDLE)__uiohandle(fileno(stdout));
     si.hStdError = (HANDLE)__uiohandle(fileno(stderr));
+    buf = calloc(sizeof(char), 4 + strlen(file) + strlen(parms));
     sprintf(buf, "\"%s\" %s", file, parms);
     if (CreateProcess(file, buf, 0, 0, TRUE, NORMAL_PRIORITY_CLASS | (DETACHED_PROCESS * (mode == P_DETACH)), (LPVOID)block, 0, &si,
                       &pi))
@@ -84,7 +106,7 @@ int __ll_spawn(char* file, char* parms, char** env, int mode)
         rv = (DWORD)pi.hProcess;
         if (mode == P_WAIT || mode == P_OVERLAY)
         {
-            WaitForInputIdle(pi.hProcess, INFINITE);
+            __WaitForInputIdle(pi.hProcess);
             WaitForSingleObject(pi.hProcess, INFINITE);
             GetExitCodeProcess(pi.hProcess, &rv);
         }
@@ -93,11 +115,14 @@ int __ll_spawn(char* file, char* parms, char** env, int mode)
             CloseHandle(pi.hProcess);
             CloseHandle(pi.hThread);
         }
+        free(buf);
         free(block);
         return rv;
     }
     else
     {
+        errno= GetLastError();
+        free(buf);
         free(block);
         return -1;
     }

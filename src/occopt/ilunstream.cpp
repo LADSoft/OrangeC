@@ -610,6 +610,7 @@ static void UnstreamXParams()
     UnstreamString(prm_snkKeyFile);
     UnstreamString(prm_assemblyVersion);
     UnstreamString(prm_namespace_and_class);
+    UnstreamString(specifiedLibs);
     UnstreamStringList(inputFiles);
     UnstreamStringList(backendFiles);
     UnstreamStringList(libIncludes);
@@ -771,6 +772,10 @@ static FunctionData* UnstreamFunc()
     fd->instructionList = UnstreamInstructions(*fd);
     UnstreamTemps();
     UnstreamLoadCache(fd, fd->loadHash);
+    int n = UnstreamIndex();
+    for (int i = 0; i < n; i++)
+        fd->computedLabels.insert(UnstreamIndex());
+
     return fd;
 }
 static void UnstreamData()

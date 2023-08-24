@@ -256,7 +256,7 @@ int RunExternalFiles()
             Utils::StripExt(outName);
             strcat(outName, ".l");
             rv = ToolChain::ToolInvoke(
-                "olib.exe", Optimizer::cparams.verbosity ? with : nullptr, "%s %s +- @%s", 
+                "olib.exe", Optimizer::cparams.verbosity ? with : nullptr, "%s \"%s\" +- @%s", 
                 !Optimizer::showBanner ? "-!" : "", 
                 outName,
                 tempName.c_str());
@@ -292,6 +292,10 @@ int RunExternalFiles()
             {
                 fprintf(fil, " \"%s\"", (char*)liblist->data);
                 liblist = liblist->next;
+            }
+            for (auto&&s : Utils::split(Optimizer::specifiedLibs))
+            {
+                fprintf(fil, " \"-l%s\"", s.c_str());
             }
             if (Optimizer::cparams.prm_msvcrt)
                 fprintf(fil, " climp.l msvcrt.l ");

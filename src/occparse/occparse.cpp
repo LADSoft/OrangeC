@@ -639,6 +639,7 @@ int main(int argc, char* argv[])
                     Utils::AddExt(buffer, ".i");
                 }
                 strcpy(cppfile, buffer);
+
                 cppFile = fopen(buffer, "w");
                 if (!cppFile)
                 {
@@ -715,7 +716,7 @@ int main(int argc, char* argv[])
             inFile = inFile.substr(end + 1);
 
             std::string outFile;
-            if (MakeStubsOption.GetValue() || MakeStubsUser.GetValue())
+            if (!MakeStubsOutputFile.GetValue().empty())
             {
                 outFile = MakeStubsOutputFile.GetValue();
             }

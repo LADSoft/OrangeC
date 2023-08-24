@@ -3526,10 +3526,11 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             break;
         case ExpressionNode::labcon_:
             ap1 = Allocate<Optimizer::IMODE>();
-            if (node->adjustLabel)
+            if (node->computedLabel)
             {
-                node->adjustLabel = false;
+                node->computedLabel = false;
                 node->v.i += codeLabelOffset;
+                Optimizer::computedLabels.insert(node->v.i);
             }
             ap1->offset = Optimizer::SymbolManager::Get(node);
             ap1->mode = Optimizer::i_immed;

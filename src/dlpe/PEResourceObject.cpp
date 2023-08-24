@@ -109,9 +109,9 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
 
     nameSize = (nameSize + 1) & -2;
     initSize = size = dirCount * sizeof(Dir) + entryCount * sizeof(Entry) + dataCount * sizeof(DataEntry) + nameSize * 2 + dataSize;
-    data = std::make_unique<unsigned char[]>(initSize);
+    data = std::shared_ptr<unsigned char>(new unsigned char[initSize]);
     unsigned char* pdata = data.get();
-    memset(pdata, 0, initSize);
+    std::fill(pdata, pdata + initSize, 0);
     Dir* dir = (Dir*)pdata;
     unsigned short* name = (unsigned short*)(((char*)pdata) + dirCount * sizeof(Dir) + entryCount * sizeof(Entry));
     DataEntry* dataEntries = (DataEntry*)(((char*)name) + nameSize * 2);
@@ -157,7 +157,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
             dir = (Dir*)(subtypes + 1);
             subtypes->subdir_or_data = (unsigned char*)dataEntries - pdata;
             subtypes->rva_or_id = 0;
-            dataEntries->rva = (unsigned)(dataPos - pdata) + virtual_addr;
+            dataEntries->rva = RVA((unsigned)(dataPos - pdata));
             dataEntries->size = nameId.second.length;
             dataEntries->codepage = nameId.second.language;
             dataEntries++;
@@ -175,7 +175,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
             dir = (Dir*)(subtypes + 1);
             subtypes->subdir_or_data = (unsigned char*)dataEntries - pdata;
             subtypes->rva_or_id = 0;
-            dataEntries->rva = (unsigned)(dataPos - pdata) + virtual_addr;
+            dataEntries->rva = RVA((unsigned)(dataPos - pdata));
             dataEntries->size = number.second.length;
             dataEntries->codepage = number.second.language;
             dataEntries++;
@@ -211,7 +211,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
             dir = (Dir*)(subtypes + 1);
             subtypes->subdir_or_data = (unsigned char*)dataEntries - pdata;
             subtypes->rva_or_id = 0;
-            dataEntries->rva = (unsigned)(dataPos - pdata) + virtual_addr;
+            dataEntries->rva = RVA((unsigned)(dataPos - pdata));
             dataEntries->size = namedId.second.length;
             dataEntries->codepage = namedId.second.language;
             dataEntries++;
@@ -229,7 +229,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
             dir = (Dir*)(subtypes + 1);
             subtypes->subdir_or_data = (unsigned char*)dataEntries - pdata;
             subtypes->rva_or_id = 0;
-            dataEntries->rva = (unsigned)(dataPos - pdata) + virtual_addr;
+            dataEntries->rva = RVA((unsigned)(dataPos - pdata));
             dataEntries->size = number.second.length;
             dataEntries->codepage = number.second.language;
             dataEntries++;

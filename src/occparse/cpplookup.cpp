@@ -5844,8 +5844,12 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                             found1 = TemplateFunctionInstantiate(found1, false);
                         }
                     }
-                        
-                    if ((flags & _F_IS_NOTHROW) || (found1->sb->constexpression && (!templateNestingCount || instantiatingTemplate)))
+                      
+                    if (isautotype(basetype(found1->tp)->btp) && found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt && (!inSearchingFunctions || inTemplateArgs))
+                    {
+                        CompileInline(found1, false);
+                    }  
+                    else if ((flags & _F_IS_NOTHROW) || (found1->sb->constexpression && (!templateNestingCount || instantiatingTemplate)))
                     {
                         if (found1->sb->deferredNoexcept && (!found1->sb->constexpression || (templateNestingCount && !instantiatingTemplate)))
                         {

@@ -40,11 +40,8 @@ void PEFixupObject::Setup(ObjInt& endVa, ObjInt& endPhys)
             Utils::Fatal("Internal error");
     }
     raw_addr = endPhys;
-    // setup fixups for the rel branch import thunk table
-    for (int i = 0; i < importCount; i++)
-    {
-        SetThunk(i, 0);
-    }
+    for (auto t : thunkFixups)
+        fixups.insert(t);
     if (fixups.empty())
     {
         // for WINNT, he needs some reloc data even if it is empty...
@@ -52,7 +49,7 @@ void PEFixupObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         block.rva = 0;
         block.size = 12;
         block.data[0] = block.data[1] = 0;
-        data = std::make_unique<unsigned char[]>(block.size);
+        data = std::shared_ptr<unsigned char>(new unsigned char[block.size]);
         memcpy(data.get(), &block, block.size);
         size = initSize = block.size;
     }
@@ -74,8 +71,8 @@ void PEFixupObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         if (initSize & 2)
             initSize += 2;
         size = initSize;
-        data = std::make_unique<unsigned char[]>(initSize);
-        memset(data.get(), 0, initSize);
+        data = std::shared_ptr<unsigned char>(new unsigned char[initSize]);
+        std::fill(data.get(), data.get() + initSize, 0);
         // we relied on the set implementation to sort the fixups...
         int curSize = 0;
         Block* block = reinterpret_cast<Block*>(data.get());

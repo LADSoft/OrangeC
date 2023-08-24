@@ -54,6 +54,7 @@ class dlPeMain
         imageBase(0),
         importThunkVA(0),
         importCount(0),
+        imageBaseVA(0),
         heapCommit(0),
         heapSize(0),
         stackCommit(0),
@@ -78,7 +79,7 @@ class dlPeMain
   protected:
     void ReadValues();
     bool LoadImports(ObjFile* file);
-    bool ReadSections(const std::string& path);
+    bool LoadSections(const std::string& path, ObjInt& endVa, ObjInt& endPhys, ObjInt& headerSize);
     std::string GetOutputName(const char* infile) const;
     void ParseOutResourceFiles(CmdFiles& files);
     bool ParseOutDefFile(CmdFiles& files);
@@ -101,6 +102,9 @@ class dlPeMain
     static CmdSwitchBool Verbose;
     static CmdSwitchCombineString OutputDefFile;
     static CmdSwitchCombineString OutputImportLibrary;
+    static CmdSwitchCombineString DelayLoadDll;
+    static CmdSwitchBool DelayLoadBind;
+    static CmdSwitchBool DelayLoadUnload;
     static const char* usageText;
     static const char* helpText;
     ObjInt fileAlign;
@@ -108,6 +112,7 @@ class dlPeMain
     ObjInt imageBase;
     ObjInt importThunkVA;
     ObjInt importCount;
+    ObjInt imageBaseVA;
     ObjInt heapCommit;
     ObjInt heapSize;
     ObjInt stackCommit;
@@ -122,6 +127,7 @@ class dlPeMain
     std::unique_ptr<char[]> stubData;
     PEHeader header;
     ObjInt startAddress;
+    bool hasExports = false;
     std::unique_ptr<ObjFactory> factory;
     std::shared_ptr<PEObject> exportObject;
     static unsigned char defaultStubData[];

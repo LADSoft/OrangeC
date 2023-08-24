@@ -49,6 +49,9 @@ CmdSwitchBool dlPeMain::FlatExports(SwitchParser, 'f');
 CmdSwitchBool dlPeMain::Verbose(SwitchParser, 'y');
 CmdSwitchCombineString dlPeMain::OutputDefFile(SwitchParser, 0, 0, {"output-def"});
 CmdSwitchCombineString dlPeMain::OutputImportLibrary(SwitchParser, 0, 0, {"out-implib"});
+CmdSwitchCombineString dlPeMain::DelayLoadDll(SwitchParser, 0, ';', {"dln"});
+CmdSwitchBool dlPeMain::DelayLoadBind(SwitchParser, 0, 0, {"dlb"});
+CmdSwitchBool dlPeMain::DelayLoadUnload(SwitchParser, 0, 0, {"dlu"});
 
 time_t dlPeMain::timeStamp;
 
@@ -61,7 +64,7 @@ int dlPeMain::subsysMinor = 0;
 
 int dlPeMain::subsysOverride = 0;
 
-int dlPeMain::dllFlags = 0;  // 0x8140;
+int dlPeMain::dllFlags = 0x8140;
 
 unsigned char dlPeMain::defaultStubData[] = {
     0x4D, 0x5A, 0x6C, 0x00, 0x01, 0x00, 0x00, 0x00, 0x04, 0x00, 0x11, 0x00, 0xFF, 0xFF, 0x03, 0x00,
@@ -93,6 +96,9 @@ const char* dlPeMain::helpText =
     "\n"
     "--output-def filename    for DLL, output a .def file instead of a .lib\n"
     "--out-implib filename    for DLL, set the name of the import library\n"
+    " -dln dllname            add a DLL to the delay load table\n"
+    " -dlb                    create a delay load binding table\n"
+    " -dlu                    create a delay load unload table\n"
     "\n"
     "Available output file types:\n"
     "   CON - Windows console (default)\n"
@@ -195,6 +201,10 @@ void dlPeMain::ReadValues()
         {
             importCount = p->GetValue();
         }
+        else if (p->GetName() == "____imageBase")
+        {
+            imageBaseVA = p->GetValue();
+        }
         else if (p->GetName() == "OBJECTALIGN")
         {
             objectAlign = p->GetValue();
@@ -249,12 +259,10 @@ bool dlPeMain::LoadImports(ObjFile* file)
     {
         if (names.find((*it)->GetName()) == names.end())
             return false;
-        // point to its thunk...
-        //		(*it)->SetOffset(new ObjExpression(importThunkVA + 6 * (*it)->GetIndex()));
     }
     return true;
 }
-bool dlPeMain::ReadSections(const std::string& path)
+bool dlPeMain::LoadSections(const std::string& path, ObjInt& endVa, ObjInt& endPhys, ObjInt& headerSize)
 {
     ObjIeeeIndexManager iml;
     factory = std::make_unique<ObjFactory>(&iml);
@@ -279,23 +287,44 @@ bool dlPeMain::ReadSections(const std::string& path)
         if (LoadImports(file))
         {
             PEObject::SetFile(file);
+            PEObject::SetDelayLoadNames(DelayLoadDll.GetValue());
+            // order is important here, to get everything set up properly to be able to do the fixups
             for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
             {
                 objects.push_back(std::make_unique<PEDataObject>(file, *it));
                 (*it)->ResolveSymbols(factory.get());
             }
             if (file->ImportBegin() != file->ImportEnd())
-                objects.push_back(std::make_unique<PEImportObject>(objects));
+                objects.push_back(std::make_unique<PEImportObject>(objects, DelayLoadBind.GetValue(), DelayLoadUnload.GetValue()));
             if (file->ExportBegin() != file->ExportEnd())
             {
+                hasExports = true;
                 objects.push_back(std::make_unique<PEExportObject>(outputName, FlatExports.GetValue()));
                 exportObject = objects.back();
             }
+            size_t objectCount = objects.size() + 1 + !resources.empty() + !DebugFile.GetValue().empty(); 
+            endPhys = sizeof(PEHeader) + objectCount * PEObject::HeaderSize + stubSize;
+            endPhys = ObjectAlign(fileAlign, endPhys + fileAlign);  // extra space for optional PE header
+            headerSize = endPhys;
+            endVa = objects[0]->GetAddr();
+            if (endVa < endPhys)
+                Utils::Fatal("ObjectAlign too small");
+            for (auto& obj : objects)
+                obj->Setup(endVa, endPhys);
             objects.push_back(std::make_unique<PEFixupObject>());
+            for (auto& obj : objects)
+                obj->Patch();
+            objects.back()->Setup(endVa, endPhys);
             if (!resources.empty())
+            {
                 objects.push_back(std::make_unique<PEResourceObject>(resources));
+                objects.back()->Setup(endVa, endPhys);
+            }
             if (!DebugFile.GetValue().empty())
+            {
                 objects.push_back(std::make_unique<PEDebugObject>(DebugFile.GetValue(), imageBase));
+                objects.back()->Setup(endVa, endPhys);
+            }
             return true;
         }
         else
@@ -341,12 +370,21 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
 
     header.flags = PE_FILE_EXECUTABLE | PE_FILE_32BIT | PE_FILE_LOCAL_SYMBOLS_STRIPPED | PE_FILE_LINE_NUMBERS_STRIPPED |
                    PE_FILE_REVERSE_BITS_HIGH | PE_FILE_REVERSE_BITS_LOW;
+
     if (mode == DLL)
     {
         header.flags |= PE_FILE_LIBRARY;
     }
-    header.dll_flags = dllFlags;
-
+    if (hasExports)
+    {
+        // if the exe with exports or dll gets relocated we need these flags to force fixups to be applied
+        header.dll_flags = dllFlags;
+    }
+    else
+    {
+        // flag that entry point should always be called
+        header.dll_flags = 0;
+    }
     header.image_base = imageBase;
     header.file_align = fileAlign;
     header.object_align = objectAlign;
@@ -369,11 +407,6 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
         header.stack_size = stackSize;
         header.stack_commit = stackCommit;
     }
-    else
-    {
-        /* flag that entry point should always be called */
-        header.dll_flags = 0;
-    }
     header.num_objects = objects.size();
     header.entry_point = startAddress - imageBase;
 
@@ -382,39 +415,48 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
     {
         if (obj->GetName() == ".text")
         {
-            header.code_base = obj->GetAddr();
-            header.code_size = ObjectAlign(objectAlign, obj->GetSize());
+            auto val = obj->Regions()[0];
+            header.code_base = val.first;
+            header.code_size = ObjectAlign(objectAlign, val.second);
         }
         else if (obj->GetName() == ".data")
         {
-            header.data_base = obj->GetAddr();
-            header.data_size = ObjectAlign(objectAlign, obj->GetSize());
+            auto val = obj->Regions()[0];
+            header.data_base = val.first;
+            header.data_size = ObjectAlign(objectAlign, val.second);
             header.bss_size = 0;
         }
-        else if (obj->GetName() == ".idata")
+        else if (obj->GetName() == ".rdata")
         {
-            header.import_rva = obj->GetAddr();
-            header.import_size = obj->GetRawSize();
+            auto val = obj->Regions();
+            header.import_rva = val[0].first;
+            header.import_size = val[0].second;
+            header.delay_imports_rva = val[1].first;
+            header.delay_imports_size = val[1].second;
         }
         else if (obj->GetName() == ".edata")
         {
-            header.export_rva = obj->GetAddr();
-            header.export_size = obj->GetRawSize();
+            auto val = obj->Regions()[0];
+            header.export_rva = val.first;
+            header.export_size = val.second;
         }
         else if (obj->GetName() == ".reloc")
         {
-            header.fixup_rva = obj->GetAddr();
-            header.fixup_size = obj->GetRawSize();
+            auto val = obj->Regions()[0];
+            header.fixup_rva = val.first;
+            header.fixup_size = val.second;
         }
         else if (obj->GetName() == ".rsrc")
         {
-            header.resource_rva = obj->GetAddr();
-            header.resource_size = obj->GetRawSize();
+            auto val = obj->Regions()[0];
+            header.resource_rva = val.first;
+            header.resource_size = val.second;
         }
         else if (obj->GetName() == ".debug")
         {
-            header.debug_rva = obj->GetAddr();
-            header.debug_size = obj->GetRawSize();
+            auto val = obj->Regions()[0];
+            header.debug_rva = val.first;
+            header.debug_size = val.second;
         }
     }
 }
@@ -537,24 +579,11 @@ int dlPeMain::Run(int argc, char** argv)
     if (!LoadStub(files[0]))
         Utils::Fatal("Missing or invalid stub file");
 
+    ObjInt endPhys = 0, endVa = 0, headerSize = 0;
     outputName = GetOutputName(files[1].c_str());
-    if (!ReadSections(files[1]))
+    if (!LoadSections(files[1], endVa, endPhys, headerSize))
         Utils::Fatal("Invalid .rel file failed to read sections");
 
-    ObjInt endPhys = sizeof(PEHeader) + objects.size() * PEObject::HeaderSize + stubSize;
-    endPhys = ObjectAlign(fileAlign, endPhys + fileAlign);  // extra space for optional PE header
-    ObjInt headerSize = endPhys;
-    ObjInt endVa = objects[0]->GetAddr();
-    if (endVa < endPhys)
-        Utils::Fatal("ObjectAlign too small");
-    for (auto& obj : objects)
-    {
-        obj->Setup(endVa, endPhys);
-    }
-    for (auto& obj : objects)
-    {
-        obj->Fill();
-    }
     InitHeader(headerSize, endVa);
     std::fstream out(outputName, std::ios::out | std::ios::binary);
     if (!out.fail())
@@ -576,14 +605,14 @@ int dlPeMain::Run(int argc, char** argv)
         out.close();
         if (!out.fail())
         {
-            if (mode == DLL)
+            if (hasExports)
             {
                 std::string sverbose = Verbose.GetExists() ? "" : "/!";
                 std::string usesC = exportObject && static_cast<PEExportObject*>(exportObject.get())->ImportsNeedUnderscore() ? "/C" : "";
                 std::string implibName;
                 if (!OutputDefFile.GetValue().empty())
                 {
-                    implibName = Utils::QualifiedFile(OutputDefFile.GetValue().c_str(), ".def");
+                    implibName = OutputDefFile.GetValue();
                 }
                 else if (OutputImportLibrary.GetValue().empty())
                 {
@@ -591,7 +620,7 @@ int dlPeMain::Run(int argc, char** argv)
                 }
                 else
                 {
-                    implibName = Utils::QualifiedFile(OutputImportLibrary.GetValue().c_str(), ".l");
+                    implibName = OutputImportLibrary.GetValue();
                 }
                 return ToolChain::ToolInvoke("oimplib", Verbose.GetExists() ? "" : nullptr, "%s %s \"%s\" \"%s\"", usesC.c_str(),
                                          sverbose.c_str(), implibName.c_str(), outputName.c_str());

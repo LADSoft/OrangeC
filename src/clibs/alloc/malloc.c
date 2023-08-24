@@ -173,15 +173,15 @@ extern inline RPMALLOC_RESTRICT void* RPMALLOC_CDECL malloc(size_t size)
 { 
     __ll_enter_critical(); 
     int len = __size(size);
-    void * rv = __PAD(rpaligned_alloc(8, len), size);
+    void * rv = __PAD(rpaligned_alloc(8,len), size);
     __ll_exit_critical(); 
     return rv; 
 }
 extern inline RPMALLOC_RESTRICT void* RPMALLOC_CDECL calloc(size_t count, size_t size) 
 { 
     __ll_enter_critical();
-    int len = __size(size);
-    void * rv = __PAD(rpaligned_calloc(8, count, len), size * count);
+    int len = __size(size*count);
+    void * rv = __PAD(rpaligned_calloc(8, 1, len), size * count);
     __ll_exit_critical(); 
     return rv; 
 }
@@ -189,7 +189,7 @@ extern inline RPMALLOC_RESTRICT void* RPMALLOC_CDECL realloc(void* ptr, size_t s
 { 
     __ll_enter_critical();
     int len = __size(size);
-    void * rv = __PAD(rprealloc(__CHECK(ptr), len), size);
+    void * rv = __PAD(rpaligned_realloc(__CHECK(ptr), 8, len, 0, 0), size);
     __ll_exit_critical(); 
     return rv; 
 }
@@ -197,7 +197,7 @@ extern inline void* RPMALLOC_CDECL reallocf(void* ptr, size_t size)
 { 
     __ll_enter_critical();
     int len = __size(size);
-    void * rv = __PAD(rprealloc(__CHECK(ptr), len), size);
+    void * rv = __PAD(rpaligned_realloc(__CHECK(ptr), 8, len, 0, 0), size);
     __ll_exit_critical(); 
     return rv; 
 }

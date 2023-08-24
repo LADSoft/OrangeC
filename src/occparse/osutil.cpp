@@ -637,15 +637,7 @@ static void ParamTransfer(const char* name)
     {
         defines.push_back(DefValue{v.c_str(), 1});
     }
-    checks = Utils::split(prm_library.GetValue());
-    for (auto&& v : checks)
-    {
-        char buf[260];
-        strcpy(buf, v.c_str());
-        if (strlen(buf) < 2 || (strcmp(buf + strlen(buf) - 2, ".l") != 0 && strcmp(buf + strlen(buf) - 2, ".L") != 0))
-           strcat(buf, ".l");
-        InsertAnyFile(buf, 0, -1);
-    }
+    Optimizer::specifiedLibs = prm_library.GetValue();
     if (prm_libpath.GetExists())
     {
         switch (Optimizer::architecture)
@@ -773,9 +765,9 @@ void setglbdefs(void)
  */
 {
     char buf[256];
-    int major, temp, minor, build;
+    int major, minor, build;
     Optimizer::ARCH_DEFINES* a = Optimizer::chosenAssembler->defines;
-    sscanf(STRING_VERSION, "%d.%d.%d.%d", &major, &temp, &minor, &build);
+    sscanf(STRING_VERSION, "%d.%d.%d", &major, &minor, &build);
     Optimizer::my_sprintf(buf, "%d", major * 100 + minor);
     preProcessor->Define("__ORANGEC__", buf);
     Optimizer::my_sprintf(buf, "%d", major);
@@ -1276,7 +1268,7 @@ int ccinit(int argc, char* argv[])
 
     if (IsCompiler())
     {
-        if (prm_output.GetExists() && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue() && ! Optimizer::cparams.prm_cppfile)
+        if (prm_output.GetExists() && !Optimizer::cparams.prm_cppfile)
         {
             Optimizer::outputFileName = prm_output.GetValue();
             if (!Optimizer::cparams.prm_compileonly)

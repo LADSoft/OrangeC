@@ -91,6 +91,7 @@ struct FunctionData
     std::vector<Optimizer::SimpleSymbol*> variables;
     std::vector<IMODE*> imodeList;
     std::map<IMODE*, IMODE*> loadHash;
+    std::set<unsigned> computedLabels;
     TEMP_INFO** tempInfo;
     int fastcallAlias;
     int tempCount;
@@ -197,6 +198,7 @@ extern std::list<std::string> inputFiles;
 extern std::list<std::string> backendFiles;
 extern std::string prm_libPath;
 extern std::string prm_include;
+extern std::string specifiedLibs;
 extern std::list<std::string> libIncludes;
 extern std::list<std::string> toolArgs;
 extern const char* pinvoke_dll;
@@ -237,6 +239,8 @@ extern int registersAssigned;
 extern std::deque<BaseData*> baseData;
 
 extern bool syntaxOnly;
+
+extern std::set<unsigned> computedLabels;
 
 void InitIntermediate(void);
 void AddFunction(void);

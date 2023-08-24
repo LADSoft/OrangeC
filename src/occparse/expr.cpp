@@ -6076,7 +6076,7 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                     else
                     {
                         *exp = intNode(ExpressionNode::labcon_, GetLabelValue(lex, nullptr, nullptr));
-                        (*exp)->adjustLabel = true;
+                        (*exp)->computedLabel = true;
                         lex = getsym();
                     }
                     *tp = &stdpointer;
@@ -6600,7 +6600,7 @@ static LEXLIST* expression_sizeof(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
             paren = true;
             lex = getsym();
         }
-        if (!paren || !startOfType(lex, nullptr, false))
+        if (!startOfType(lex, nullptr, false))
         {
             if (paren)
             {

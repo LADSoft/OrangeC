@@ -508,11 +508,6 @@ static void StreamInstruction(QUAD* q)
         }
         else
         {
-            if (!strcmp(myfd->name->outputName,
-                        "@std@#unique_ptr.#__tree_node.#__value_type.#basic_string.c#char_traits.c~#allocator.c~~i~pv~#__tree_node_"
-                        "destructor.#allocator.#__tree_node.#__value_type.#basic_string.c#char_traits.c~#allocator.c~~i~pv~~~~@."
-                        "bdtr.qv"))
-                printf("hi");
             StreamIndex(reinterpret_cast<SimpleSymbol*>(q->runtimeData->runtimeSym)->fileIndex);
             StreamTextIndex(q->runtimeData->fileName);
             StreamTextIndex(q->runtimeData->varName);
@@ -607,6 +602,7 @@ static void StreamXParams()
     StreamString(prm_snkKeyFile);
     StreamString(prm_assemblyVersion);
     StreamString(prm_namespace_and_class);
+    StreamString(specifiedLibs);
     StreamStringList(inputFiles);
     StreamStringList(backendFiles);
     StreamStringList(libIncludes);
@@ -824,6 +820,9 @@ static void StreamFunc(FunctionData* fd)
     StreamInstructions(fd->instructionList);
     StreamTemps();
     StreamLoadCache(fd->loadHash);
+    StreamIndex(fd->computedLabels.size());
+    for (auto v : fd->computedLabels)
+        StreamIndex(v);
 }
 static void StreamData()
 {

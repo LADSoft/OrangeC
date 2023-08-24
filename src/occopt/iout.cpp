@@ -136,7 +136,7 @@ static void iop_asmgoto(Optimizer::QUAD* q) { oprintf(icdFile, "\tASMGOTO\tL_%d:
 /*-------------------------------------------------------------------------*/
 
 static void iop_goto(Optimizer::QUAD* q) { oprintf(icdFile, "\tGOTO\tL_%d:PC", q->dc.v.label); }
-static void iop_directbranch(Optimizer::QUAD* q) { putsingle(q, q->dc.left, "GOTO"); }
+static void iop_computedgoto(Optimizer::QUAD* q) { putsingle(q, q->dc.left, "GOTO"); }
 
 /*-------------------------------------------------------------------------*/
 
@@ -770,7 +770,7 @@ static void (*oplst[])(Optimizer::QUAD* q) = {
     iop_label,
     iop_asmgoto,
     iop_goto,
-    iop_directbranch,
+    iop_computedgoto,
     iop_gosub,
     iop_fargosub,
     iop_trap,

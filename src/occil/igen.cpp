@@ -67,7 +67,7 @@ static void iop_skipcompare(Optimizer::QUAD* q) {}
 
 static void iop_asmgoto(Optimizer::QUAD* q) {}
 /*-------------------------------------------------------------------------*/
-static void iop_directbranch(Optimizer::QUAD* q) { asm_goto(q); }
+static void iop_computedgoto(Optimizer::QUAD* q) { asm_goto(q); }
 
 /*-------------------------------------------------------------------------*/
 
@@ -194,7 +194,7 @@ static void (*oplst[])(Optimizer::QUAD* q) = {
     asm_label,
     iop_asmgoto,
     asm_goto,
-    iop_directbranch,
+    iop_computedgoto,
     asm_gosub,
     asm_fargosub,
     asm_trap,

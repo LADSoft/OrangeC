@@ -44,9 +44,9 @@ void PEDebugObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     }
     raw_addr = endPhys;
     size = initSize = fileName.size() + 2 + 32;
-    data = std::make_unique<unsigned char[]>(512);
+    data = std::shared_ptr<unsigned char>(new unsigned char[512]);
     unsigned char* pdata = data.get();
-    memset(pdata, 0, 512);
+    std::fill(pdata, pdata + 512, 0);
     pdata[0] = 'L';
     pdata[1] = 'S';
     pdata[2] = '1';

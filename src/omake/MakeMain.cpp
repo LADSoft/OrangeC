@@ -113,7 +113,7 @@ const char* MakeMain::builtinRules =
 "%.exe: %.o .__BUILTIN\n"
 "\t${CC} -o $@ ${LDFLAGS} $^ ${LOADLIBES} ${LDLIBS}\n"
 "%.c: %.y .__BUILTIN\n"
-"\tACC} ${YFLAGS} $<\n";
+"\t${YACC} ${YFLAGS} $<\n";
 
 
 int MakeMain::makeLevel;

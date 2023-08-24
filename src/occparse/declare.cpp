@@ -3794,6 +3794,8 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                 error(ERR_CONSTEXPR_NO_PARAM);
             }
             bool templType = inTemplateType;
+            if (fullySpecialized)
+                ++instantiatingTemplate;
             inTemplateType = !!templateNestingCount;
             if (MATCHKW(lex, Keyword::ellipse_))
             {
@@ -4038,6 +4040,8 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                         voiderror = true;
                 }
             }
+            if (fullySpecialized)
+                --instantiatingTemplate;
             inTemplateType = templType;
             if (!MATCHKW(lex, Keyword::comma_) && (!Optimizer::cparams.prm_cplusplus || !MATCHKW(lex, Keyword::ellipse_)))
                 break;
@@ -6933,7 +6937,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                         sp->sb->attribs.inheritable.linkage4 != Linkage::virtual_ && sp->sb->attribs.inheritable.linkage != Linkage::c_)
                                     {
                                         if (!sp->sb->parentNameSpace &&
-                                            (!sp->sb->parentClass || !sp->sb->parentClass->templateParams || !templateNestingCount) &&
+                                            (!sp->sb->parentClass || !sp->sb->parentClass->templateParams || !templateNestingCount || (sp->templateParams && sp->templateParams->size() == 1)) &&
                                             strcmp(sp->name, "main") != 0 && strcmp(sp->name, "WinMain") != 0)
                                         {
                                             sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;

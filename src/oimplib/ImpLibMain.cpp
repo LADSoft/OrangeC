@@ -138,7 +138,7 @@ void ImpLibMain::AddFile(LibManager& librarian, const char* arg)
                             defFile.SetFileName(inputFile);
                             librarian.ReplaceFile(*DefFileToObjFile(defFile));
                         }
-                        else if (ext == ".dll")
+                        else if (ext == ".dll" || ext == ".exe")
                         {
                             DLLExportReader dllFile(inputFile);
                             switch (dllFile.Read())
@@ -201,7 +201,7 @@ std::string ImpLibMain::GetInputFile(CmdFiles& files, bool& def)
         transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
         if (ext == ".def")
             def = true;
-        else if (ext != ".dll")
+        else if (ext != ".dll" && ext != ".exe")
             name = "";
     }
     if (name == "")
@@ -394,6 +394,10 @@ int ImpLibMain::HandleLibrary(const std::string& outputFile, CmdFiles& files)
 }
 int ImpLibMain::Run(int argc, char** argv)
 {
+    bool quiet = false;
+    for (int i=0; i < argc; i++)
+        if (!strcmp(argv[i], "-!") || !strcmp(argv[i], "/!") || !strcmp(argv[i], "--nologo"))
+            quiet = true;
     auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
     if (files.size() < 3)
         ToolChain::Usage(usageText);
@@ -440,6 +444,7 @@ int ImpLibMain::Run(int argc, char** argv)
             return 1;
         }
     }
-    std::cout << "Modifying " << outputFile << std::endl;
+    if (!quiet)
+        std::cout << "Modifying " << outputFile << std::endl;
     return HandleLibrary(outputFile, files);
 }

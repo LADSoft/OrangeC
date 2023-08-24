@@ -78,10 +78,11 @@ std::map<std::string, std::string> bePragma;
 std::list<MsilProperty> msilProperties;
 std::string prm_OutputDefFile;
 std::string prm_OutputImportLibraryFile;
-
 std::string prm_assemblerSpecifier;
 std::string outputFileName;
 std::string assemblerFileExtension;
+std::string specifiedLibs;
+std::set<unsigned> computedLabels;
 
 Optimizer::SimpleExpression* fltexp;
 
@@ -129,6 +130,7 @@ void InitIntermediate()
         typeSymbols.clear();
         typeSet	.clear();
         definedFunctions.clear();
+        computedLabels.clear();
     }
 }
 
@@ -166,6 +168,7 @@ void AddFunction()
         data->tempCount = tempCount;
         data->blockCount = blockCount;
         data->fastcallAlias = fastcallAlias;
+        data->computedLabels = std::move(computedLabels);
         val->funcData = data;
     }
 }

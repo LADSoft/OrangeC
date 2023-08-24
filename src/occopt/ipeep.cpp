@@ -207,7 +207,7 @@ void weed_goto(void)
                 head->dc.opcode != i_dbgblockend && head->dc.opcode != i_var && head->dc.opcode != i_label && !head->ignoreMe)
                 RemoveInstruction(head);
         }
-        else if (head->dc.opcode == i_goto)
+        else if (head->dc.opcode == i_goto || head->dc.opcode == i_computedgoto)
             killing = true;
         head = next;
     }

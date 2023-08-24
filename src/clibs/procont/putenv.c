@@ -34,12 +34,11 @@
 extern char _RTL_DATA** _environ;
 int _RTL_FUNC putenv(const char* name)
 {
-    wchar_t buf[260], *x = buf;
+    wchar_t *buf = calloc(sizeof(wchar_t), strlen(name)+1), *x = buf;
     const char *y = name;
     while (*y)
         *x++ = *y++;
-    *x= *y;
-    int rv = _wputenv(wcsdup(buf));
+    int rv = _wputenv(buf);
     if (rv)
         return rv;
     char **q = _environ, **p;

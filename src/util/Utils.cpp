@@ -154,7 +154,7 @@ std::string Utils::QualifiedFile(const char* path, const char* ext)
     char buf[260];
     Utils::StrCpy(buf, path);
     char* p = (char*)strrchr(buf, '.');
-    if (!p || (p != buf && p[-1] == '.') || p[1] == '\\')
+    if (!p || (p != buf && p[-1] == '.') || strchr(p, '\\') || strchr(p, '/'))
         p = buf + strlen(buf);
     Utils::StrCpy(p, sizeof(buf) - (p - buf), ext);
     return std::string(buf);
@@ -352,7 +352,7 @@ bool Utils::FileExists(const char* buffer)
     return access(buffer, 4) == 0;
 #endif
 }
-std::vector<std::string> Utils::split(std::string strToSplit, char delimeter)
+std::vector<std::string> Utils::split(const std::string& strToSplit, char delimeter)
 {
     std::stringstream ss(strToSplit);
     std::string item;

@@ -256,7 +256,7 @@ int RunExternalFiles()
             Utils::StripExt(outName);
             strcat(outName, ".l");
             rv = ToolChain::ToolInvoke(
-                "olib.exe", Optimizer::cparams.verbosity ? with : nullptr, "%s %s +- @%s", 
+                "olib.exe", Optimizer::cparams.verbosity ? with : nullptr, "%s \"%s\" +- @%s", 
                 !Optimizer::showBanner ? "-!" : "", 
                 outName,
                 tempName.c_str());

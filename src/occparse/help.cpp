@@ -1401,7 +1401,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                             local = true;
                             break;
                 */
-            case StorageClass::const_ant_:
+            case StorageClass::constant_:
                 return nullptr;
             default:
                 diag("convertInitToExpression: unknown sym type");

@@ -494,7 +494,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             case StorageClass::parameter_:
                 sym = lambda_capture(sym, cmNone, false);
                 break;
-            case StorageClass::const_ant_:
+            case StorageClass::constant_:
                 if ((flags & _F_AMPERSAND) && sym->sb->parent)
                     sym = lambda_capture(sym, cmNone, false);
                 break;
@@ -782,7 +782,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                     case StorageClass::enumconstant_:
                         *exp = intNode(ExpressionNode::c_i_, sym->sb->value.i);
                         break;
-                    case StorageClass::const_ant_:
+                    case StorageClass::constant_:
                         *exp = varNode(ExpressionNode::const_, sym);
                         break;
                     case StorageClass::auto_:
@@ -1012,7 +1012,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                 if (sym->sb && sym->sb->storage_class != StorageClass::overloads_)
                 {
                     if (!isstructured(*tp) && basetype(*tp)->type != BasicType::memberptr_ && !isfunction(*tp) &&
-                        sym->sb->storage_class != StorageClass::const_ant_ && sym->sb->storage_class != StorageClass::enumconstant_ &&
+                        sym->sb->storage_class != StorageClass::constant_ && sym->sb->storage_class != StorageClass::enumconstant_ &&
                         sym->tp->type != BasicType::void_)
                     {
                         if (!(*tp)->array || (*tp)->vla || (!(*tp)->msil && sym->sb->storage_class == StorageClass::parameter_))
@@ -1664,7 +1664,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                         }
                     }
                     bool structuredAlias = false;
-                    if (sp2->sb->storage_class == StorageClass::const_ant_)
+                    if (sp2->sb->storage_class == StorageClass::constant_)
                     {
                         *exp = varNode(ExpressionNode::const_, sp2);
                     }
@@ -1734,7 +1734,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                         (*exp)->bits = tpb->bits;
                         (*exp)->startbit = tpb->startbit;
                     }
-                    if (sp2->sb->storage_class != StorageClass::const_ant_ && sp2->sb->storage_class != StorageClass::enumconstant_)
+                    if (sp2->sb->storage_class != StorageClass::constant_ && sp2->sb->storage_class != StorageClass::enumconstant_)
                     {
                         deref(*tp, exp);
                     }

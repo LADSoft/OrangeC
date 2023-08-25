@@ -240,7 +240,7 @@ void dumpInlines(void)
                                 int n = PushTemplateNamespace(pc);
                                 lex = SetAlternateLex(origsym->sb->deferredCompile);
                                 sym->sb->init = nullptr;
-                                lex = initialize(lex, nullptr, sym, StorageClass::global_, true, false, 0);
+                                lex = initialize(lex, nullptr, sym, StorageClass::global_, true, false, _F_NOCONSTGEN);
                                 SetAlternateLex(nullptr);
                                 PopTemplateNamespace(n);
                                 dropStructureDeclaration();
@@ -778,7 +778,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case ExpressionNode::cpblk_:
         case ExpressionNode::dot_:
         case ExpressionNode::pointsto_:
-        case ExpressionNode::const_ruct_:
+        case ExpressionNode::construct_:
             break;
             /*		case ExpressionNode::array_: */
             temp->right = inlineexpr(node->right, nullptr);
@@ -1114,7 +1114,7 @@ static bool sideEffects(EXPRESSION* node)
         case ExpressionNode::const_:
         case ExpressionNode::auto_:
         case ExpressionNode::sizeof_:
-        case ExpressionNode::const_ruct_:
+        case ExpressionNode::construct_:
             rv = false;
             break;
         case ExpressionNode::l_sp_:

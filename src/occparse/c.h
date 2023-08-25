@@ -231,7 +231,7 @@ typedef struct
         blockassign_, bits_,
         imode_, x_p_, substack_, alloca_, cpblk_, initblk_, initobj_, sizeof_,
         loadstack_, savestack_, stmt_, atomic_, placeholder_, thisshim_, thisref_,
-        const_ruct_, literalclass_, templateparam_, templateselector_, packedempty_, sizeofellipse_,
+        construct_, literalclass_, templateparam_, templateselector_, packedempty_, sizeofellipse_,
         type_, pointsto_, dot_, select_,
         // stuff that can only appear temporarily in constexpr expressions
         cshimref_, cshimthis_, paramsubstitute_
@@ -256,7 +256,7 @@ typedef struct
     {
         none_, static_, localstatic_, auto_, register_, global_, external_, templateparam_,
         parameter_, catchvar_, type_, typedef_, member_, mutable_, cast_, defunc_, label_, ulabel_,
-        overloads_, const_ant_, enumconstant_, absolute_,
+        overloads_, constant_, enumconstant_, absolute_,
         friendlist_, const_, tconst_, classmember_, constexpr_,
         memberreg_, namespace_, namespace_alias_, temp_, virtual_
     };
@@ -357,6 +357,7 @@ typedef struct
 #define _F_INDECLTYPE 0x20000
 #define _F_INCONSTRUCTOR 0x40000
 #define _F_EXPLICIT 0x80000
+#define _F_NOCONSTGEN 0x100000
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2
 

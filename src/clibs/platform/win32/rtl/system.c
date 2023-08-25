@@ -36,7 +36,7 @@
 int _RTL_FUNC system(const char* string)
 {
     FILE* f;
-    char buf[4096], *a;
+    char *buf = malloc(strlen(string) + 1 + 20), *a;
     if (*string)
     {
         while (isspace(*string))
@@ -70,6 +70,8 @@ int _RTL_FUNC system(const char* string)
     buf[2] = 'C';
     buf[3] = ' ';
     strcpy(buf + 4, string);
-    return spawnlp(P_WAIT, a, a, buf, 0);
+    int rv = spawnlp(P_WAIT, a, a, buf, 0);
+    free(buf);
+    return rv;
 }
 

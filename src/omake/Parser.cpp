@@ -140,11 +140,28 @@ std::string Parser::RemoveComment(const std::string& line)
             if (!n || rv[n - 1] != '\\')
             {
                 rv.replace(n, rv.size() - n, "");
+                break;
             }
             else
             {
-                rv.replace(n, 1, "");
-                start = n + 1;
+                // the rules for this aren't documented very well BUT
+                // mingw32-make counts the number of '\\' characters before the '#'
+                // for even count remove half the characters + everything after that
+                // for odd count remove half the characters + 1 and leave the '#' and everything after it intact
+                int count = 0;
+                while (n > 0 && rv[n-1] == '\\')
+                    count++, n--;
+                n += count/2;
+                if (count % 2)
+                {
+                    rv.replace(n, count/2 + 1, "");
+                    start = n + 1;
+                }
+                else
+                {
+                    rv.replace(n, rv.size() - n, "");
+                    break;
+                }
             }
         }
     } while (n != std::string::npos);

@@ -154,7 +154,7 @@ std::string Utils::QualifiedFile(const char* path, const char* ext)
     char buf[260];
     Utils::StrCpy(buf, path);
     char* p = (char*)strrchr(buf, '.');
-    if (!p || (p != buf && p[-1] == '.') || p[1] == '\\')
+    if (!p || (p != buf && p[-1] == '.') || strchr(p, '\\') || strchr(p, '/'))
         p = buf + strlen(buf);
     Utils::StrCpy(p, sizeof(buf) - (p - buf), ext);
     return std::string(buf);

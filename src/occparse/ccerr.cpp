@@ -1637,7 +1637,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case ExpressionNode::sizeofellipse_:
         case ExpressionNode::initobj_:
         case ExpressionNode::sizeof_:
-        case ExpressionNode::const_ruct_:
+        case ExpressionNode::construct_:
             break;
         default:
             diag("assignmentUsages");
@@ -1851,7 +1851,7 @@ static int checkDefaultExpression(EXPRESSION* node)
         case ExpressionNode::templateselector_:
         case ExpressionNode::initobj_:
         case ExpressionNode::sizeof_:
-        case ExpressionNode::const_ruct_:
+        case ExpressionNode::construct_:
             break;
         default:
             diag("rv |= checkDefaultExpression");

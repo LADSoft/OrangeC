@@ -739,39 +739,41 @@ static void CalculateInductionCandidates(Loop* l)
                             if (head->temps & TEMP_ANS)
                             {
                                 int tnum = head->ans->offset->sp->i;
-                                INSTRUCTIONLIST* l = tempInfo[tnum]->instructionUses;
-                                while (l)
+                                auto uses1 = tempInfo[tnum]->instructionUses;
+                                if (uses1)
                                 {
-                                    if ((l->ins->temps & TEMP_ANS) && l->ins->ans->mode == i_ind)
+                                    for (auto uses : *uses1)
                                     {
-                                        if (tnum == l->ins->ans->offset->sp->i)
+                                        if ((uses->temps & TEMP_ANS) && uses->ans->mode == i_ind)
                                         {
-                                            tempInfo[tnum]->expressionRoot = true;
-                                        }
-                                    }
-                                    if (l->ins->temps & TEMP_LEFT)
-                                    {
-                                        if (tnum == l->ins->dc.left->offset->sp->i)
-                                        {
-                                            if (l->ins->dc.left->mode == i_ind)
+                                            if (tnum == uses->ans->offset->sp->i)
+                                            {
                                                 tempInfo[tnum]->expressionRoot = true;
-                                            else if (head->dc.opcode != i_not && head->dc.opcode != i_neg)
-                                                if (!matchesop(head->dc.opcode, l->ins->dc.opcode))
-                                                    tempInfo[tnum]->expressionRoot = true;
+                                            }
                                         }
-                                    }
-                                    if (l->ins->temps & TEMP_RIGHT)
-                                    {
-                                        if (tnum == l->ins->dc.right->offset->sp->i)
+                                        if (uses->temps & TEMP_LEFT)
                                         {
-                                            if (l->ins->dc.right->mode == i_ind)
-                                                tempInfo[tnum]->expressionRoot = true;
-                                            else if (head->dc.opcode != i_not && head->dc.opcode != i_neg)
-                                                if (!matchesop(head->dc.opcode, l->ins->dc.opcode))
+                                            if (tnum == uses->dc.left->offset->sp->i)
+                                            {
+                                                if (uses->dc.left->mode == i_ind)
                                                     tempInfo[tnum]->expressionRoot = true;
+                                                else if (head->dc.opcode != i_not && head->dc.opcode != i_neg)
+                                                    if (!matchesop(head->dc.opcode, uses->dc.opcode))
+                                                        tempInfo[tnum]->expressionRoot = true;
+                                            }
+                                        }
+                                        if (uses->temps & TEMP_RIGHT)
+                                        {
+                                            if (tnum == uses->dc.right->offset->sp->i)
+                                            {
+                                                if (uses->dc.right->mode == i_ind)
+                                                    tempInfo[tnum]->expressionRoot = true;
+                                                else if (head->dc.opcode != i_not && head->dc.opcode != i_neg)
+                                                    if (!matchesop(head->dc.opcode, uses->dc.opcode))
+                                                        tempInfo[tnum]->expressionRoot = true;
+                                            }
                                         }
                                     }
-                                    l = l->next;
                                 }
                             }
                         }
@@ -791,22 +793,24 @@ static void CalculateInductionCandidates(Loop* l)
         PruneInductionCandidate(tnum, l);
         if (!briggsTest(candidates, tnum))
         {
-            INSTRUCTIONLIST* li = tempInfo[tnum]->instructionUses;
-            while (li)
+            auto uses1 = tempInfo[tnum]->instructionUses;
+            if (uses1)
             {
-                if (briggsTest(l->blocks, li->ins->block->blocknum))
+                for (auto uses : *uses1)
                 {
-                    if (li->ins->temps & TEMP_ANS)
+                    if (briggsTest(l->blocks, uses->block->blocknum))
                     {
-                        int tnum = li->ins->ans->offset->sp->i;
-                        if (briggsTest(candidates, tnum))
+                        if (uses->temps & TEMP_ANS)
                         {
-                            if (!tempInfo[tnum]->onstack)
-                                inductionCandidateStack.push(tnum);
+                            int tnum = uses->ans->offset->sp->i;
+                            if (briggsTest(candidates, tnum))
+                            {
+                                if (!tempInfo[tnum]->onstack)
+                                    inductionCandidateStack.push(tnum);
+                            }
                         }
                     }
                 }
-                li = li->next;
             }
         }
     }
@@ -816,58 +820,60 @@ static std::stack<unsigned> strongStack;
 LIST* strongRegiondfs(int tnum)
 {
     TempInfo* t = tempInfo[tnum];
-    INSTRUCTIONLIST* u = t->instructionUses;
+    auto uses1 = t->instructionUses;
     LIST* rv = nullptr;
     t->temp = t->dfstOrder = max_dfs++;
     strongStack.push(tnum);
     t->visiteddfst = true;
     t->onstack = true;
-    while (u)
+    if (uses1)
     {
-        int ux = -1;
-        switch (u->ins->dc.opcode)
+        for (auto uses : *uses1)
         {
-            case i_phi: {
-                PHIDATA* pd = u->ins->dc.v.phi;
-                if (tempInfo[pd->T0]->size < ISZ_FLOAT)
-                    ux = pd->T0;
-            }
-            break;
-            case i_add:
-            case i_sub:
-            case i_assn:
-            case i_neg:
-                if (u->ins->temps & TEMP_ANS)
-                {
-                    ux = u->ins->ans->offset->sp->i;
-                    if (tempInfo[ux]->size >= ISZ_FLOAT)
-                        ux = -1;
+            int ux = -1;
+            switch (uses->dc.opcode)
+            {
+                case i_phi: {
+                    PHIDATA* pd = uses->dc.v.phi;
+                    if (tempInfo[pd->T0]->size < ISZ_FLOAT)
+                        ux = pd->T0;
                 }
                 break;
-            default:
-                break;
-        }
-        if (ux >= 0)
-        {
-            TempInfo* up = tempInfo[ux];
-            if (!up->visiteddfst)
+                case i_add:
+                case i_sub:
+                case i_assn:
+                case i_neg:
+                    if (uses->temps & TEMP_ANS)
+                    {
+                        ux = uses->ans->offset->sp->i;
+                        if (tempInfo[ux]->size >= ISZ_FLOAT)
+                            ux = -1;
+                    }
+                    break;
+                default:
+                    break;
+            }
+            if (ux >= 0)
             {
-                LIST* l3 = strongRegiondfs(ux);
-                if (up->temp < t->temp)
-                    t->temp = up->temp;
-                if (l3)
+                TempInfo* up = tempInfo[ux];
+                if (!up->visiteddfst)
                 {
-                    l3->next = rv;
-                    rv = l3;
+                    LIST* l3 = strongRegiondfs(ux);
+                    if (up->temp < t->temp)
+                        t->temp = up->temp;
+                    if (l3)
+                    {
+                        l3->next = rv;
+                        rv = l3;
+                    }
+                }
+                else if (up->onstack)
+                {
+                    if (up->dfstOrder < t->temp)
+                        t->temp = up->dfstOrder;
                 }
             }
-            else if (up->onstack)
-            {
-                if (up->dfstOrder < t->temp)
-                    t->temp = up->dfstOrder;
-            }
         }
-        u = u->next;
     }
     if (t->temp == t->dfstOrder)
     {

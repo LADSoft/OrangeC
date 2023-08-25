@@ -477,7 +477,10 @@ void TranslateToSSA(void)
         tempInfo[i]->postSSATemp = -1;
         tempInfo[i]->partition = i;
         tempInfo[i]->instructionDefines = nullptr;
-        tempInfo[i]->instructionUses = nullptr;
+        if (!tempInfo[i]->instructionUses)
+            tempInfo[i]->instructionUses = new InstructionList;
+        else
+            tempInfo[i]->instructionUses->clear();
         tempInfo[i]->renameStack = nullptr;
         tempInfo[i]->elimPredecessors = nullptr;
         tempInfo[i]->elimSuccessors = nullptr;

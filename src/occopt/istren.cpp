@@ -55,13 +55,15 @@ namespace Optimizer
 {
 static std::unordered_map<int, IMODE*> loadTemps;
 static std::unordered_map<QUAD*, IMODE*, OrangeC::Utils::fnv1a32_binary<DAGCOMPARE>, OrangeC::Utils::bin_eql<DAGCOMPARE>> hash;
-static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int match, ILIST* vars)
+static void ScanVarStrength(InstructionList *l, IMODE* multiplier, int tnum, int match, ILIST* vars)
 {
-    while (l)
+    if (!l)
+        return;
+    for (auto uses : *l)
     {
         IMODE* oldMult = multiplier;
         IMODE* ans = nullptr;
-        QUAD* head = l->ins;
+        QUAD* head = uses;
         switch (head->dc.opcode)
         {
             case i_mul:
@@ -193,7 +195,6 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
             tempInfo[ans->offset->sp->i]->strengthRename = s->strengthName;
         }
         multiplier = oldMult;
-        l = l->next;
     }
 }
 static void ScanStrength(void)

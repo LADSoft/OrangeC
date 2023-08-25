@@ -501,7 +501,7 @@ void ProcessOneInd(SimpleExpression* match, SimpleExpression** ofs1, SimpleExpre
                                     {
                                         QUAD* insz = tempInfo[ins->dc.left->offset->sp->i]->instructionDefines;
                                         if ((insz && insz->dc.opcode != i_assn) ||
-                                            ins->block == tempInfo[n]->instructionUses->ins->block)
+                                            ins->block == (*tempInfo[n]->instructionUses->begin())->block)
                                         {
                                             if (*ofs1 && (*ofs1)->sp->i == ins->ans->offset->sp->i)
                                                 *ofs1 = ins->dc.left->offset;

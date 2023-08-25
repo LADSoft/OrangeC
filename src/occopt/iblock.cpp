@@ -780,23 +780,17 @@ void gen_nodag(enum i_ops op, Optimizer::IMODE* res, Optimizer::IMODE* left, Opt
 }
 void RemoveFromUses(Optimizer::QUAD* ins, int tnum)
 {
-    INSTRUCTIONLIST** l = &tempInfo[tnum]->instructionUses;
-    while (*l)
+    auto s = tempInfo[tnum]->instructionUses;
+    if (s)
     {
-        if ((*l)->ins == ins)
-        {
-            (*l) = (*l)->next;
-            break;
-        }
-        l = &(*l)->next;
+        s->erase(ins);
     }
 }
 void InsertUses(Optimizer::QUAD* ins, int tnum)
 {
-    INSTRUCTIONLIST* l = oAllocate<INSTRUCTIONLIST>();
-    l->next = tempInfo[tnum]->instructionUses;
-    l->ins = ins;
-    tempInfo[tnum]->instructionUses = l;
+    if (!tempInfo[tnum]->instructionUses)
+        tempInfo[tnum]->instructionUses = new InstructionList;
+    tempInfo[tnum]->instructionUses->insert(ins);
 }
 void RemoveInstruction(Optimizer::QUAD* ins)
 {
@@ -872,7 +866,6 @@ void RemoveInstruction(Optimizer::QUAD* ins)
 }
 void InsertInstruction(Optimizer::QUAD* before, Optimizer::QUAD* ins)
 {
-    INSTRUCTIONLIST* l;
     ins->block = before->block;
     if (before->fwd && before->fwd->dc.opcode == i_skipcompare)
         if (before->fwd->dc.v.label)

@@ -97,14 +97,16 @@ bool variantThisLoop(Block* b, int tnum)
 }
 static bool usedThisLoop(Block* b, int tnum)
 {
-    INSTRUCTIONLIST* l = tempInfo[tnum]->instructionUses;
-    Loop* parent = b->loopParent;
-    while (l)
+    auto uses1 = tempInfo[tnum]->instructionUses;
+    if (uses1)
     {
-        Loop* thisLp = l->ins->block->loopParent;
-        if (parent == thisLp || isAncestor(parent, thisLp))
-            return true;
-        l = l->next;
+        Loop* parent = b->loopParent;
+        for (auto uses : *uses1)
+        {
+            Loop* thisLp = uses->block->loopParent;
+            if (parent == thisLp || isAncestor(parent, thisLp))
+                return true;
+        }
     }
     return false;
 }
@@ -576,12 +578,14 @@ void unmarkPreSSA(QUAD* ins)
 {
     if ((ins->temps & TEMP_ANS) && ins->ans->mode == i_direct)
     {
-        INSTRUCTIONLIST* il = tempInfo[ins->ans->offset->sp->i]->instructionUses;
+        auto uses1 = tempInfo[ins->ans->offset->sp->i]->instructionUses;
         tempInfo[ins->ans->offset->sp->i]->preSSATemp = -1;
-        while (il)
+        if (uses1)
         {
-            unmarkPreSSA(il->ins);
-            il = il->next;
+            for (auto uses : *uses1)
+            {
+                unmarkPreSSA(uses);
+            }
         }
     }
 }

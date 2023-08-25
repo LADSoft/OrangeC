@@ -27,6 +27,8 @@
  *
  * icode optimization structures
  */
+#include <set>
+
 #define DUMP_GCSE_INFO
 
 /* the int types can be negative, which means 'signed' vs 'unsigned' */
@@ -90,11 +92,7 @@ typedef struct _value_of
     enum vop type;
     IMODE* imode;
 } VALUEOF;
-typedef struct _ins_list
-{
-    struct _ins_list* next;
-    QUAD* ins;
-} INSTRUCTIONLIST;
+typedef std::set<QUAD*> InstructionList;
 typedef struct _im_list
 {
     struct _im_list* next;
@@ -247,7 +245,7 @@ struct TempInfo
     struct quad* instructionDefines;
     struct quad* storesUses;
     struct Block* blockDefines;
-    INSTRUCTIONLIST* instructionUses;
+    InstructionList* instructionUses;
     BITINT* conflicts;
     IMODE* spillVar;
     IMODE* spillAlias;

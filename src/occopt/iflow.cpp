@@ -874,7 +874,7 @@ static int gatherEdges(enum e_fgtype type, Block* parent, Block* in)
 {
     if (parent)
     {
-        unsigned bucket = hashfunc(parent->blocknum, in->blocknum);
+        long long bucket = hashfunc(parent->blocknum, in->blocknum);
         edgeHash[bucket] = type;
     }
     return true;
@@ -883,7 +883,6 @@ static void CalculateEdges(Block* b)
 {
     edgeHash.clear();
     WalkFlowgraph(b, gatherEdges, true);
-    edgeHash.clear();
 }
 enum e_fgtype getEdgeType(int first, int second)
 {

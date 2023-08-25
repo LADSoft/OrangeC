@@ -45,6 +45,8 @@ class MakeStubs
     {
     }
     void Run(std::ostream* out);
+  protected:
+    std::string Escape(const std::string& string);
 
   private:
     PreProcessor& preProcessor;

@@ -58,7 +58,7 @@ test: x264.exe
 #	fc /b test.cmpx q.mkv # seems like different cpus might have slight variations in how floating point is done?
 
 x264.exe: $(FILES)
-	olink /! /T:CON32 /c /m /o$@ @&&|
+	olink /! /T:CON32 /c /mx /o$@ @&&|
 c0xpe.o $(FILES) clwin.l climp.l
 |
 

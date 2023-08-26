@@ -1530,7 +1530,7 @@ int opt0(EXPRESSION** node)
                 auto exp = ep->left;
                 while (castvalue(exp))
                     exp = exp->left;
-                if (exp->type == ExpressionNode::add_)
+                if (exp->type == ExpressionNode::sub_)
                 {
                     if (!expressionHasSideEffects(ep))
                     {

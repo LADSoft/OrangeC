@@ -35,7 +35,7 @@ extern int _RTL_DATA _abterm;
 int __quick_exit;
 
 static int atexitval = 0;
-static void (*funclist[MAX_ATEXIT])(void);
+static void (*funclist[MAX_ATEXIT])(void) = { 0 };
 
 #pragma rundown __quickprocexit 225
 

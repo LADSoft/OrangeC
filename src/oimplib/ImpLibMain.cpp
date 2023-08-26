@@ -57,7 +57,7 @@ int main(int argc, char** argv)
 }
 
 CmdSwitchParser ImpLibMain::SwitchParser;
-CmdSwitchBool ImpLibMain::CDLLSwitch(SwitchParser, 'C', false);
+CmdSwitchString ImpLibMain::CDLLSwitch(SwitchParser, 'C', 0);
 CmdSwitchBool ImpLibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
 CmdSwitchOutput ImpLibMain::OutputFile(SwitchParser, 'o', ".a");
 const char* ImpLibMain::helpText =
@@ -129,7 +129,7 @@ void ImpLibMain::AddFile(LibManager& librarian, const char* arg)
                         transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
                         if (ext == ".def")
                         {
-                            DefFile defFile(inputFile);
+                            DefFile defFile(inputFile, CDLLSwitch.GetValue().size());
                             if (!defFile.Read())
                             {
                                 std::cout << "Def file '" << inputFile << "' is missing or in wrong format" << std::endl;
@@ -222,7 +222,7 @@ int ImpLibMain::HandleDefFile(const std::string& outputFile, CmdFiles& file)
     {
         // def to def is basically a copy operation lol...  but it will reformat
         // the file :)
-        DefFile defFile(inputFile);
+        DefFile defFile(inputFile, CDLLSwitch.GetValue().size());
         if (!defFile.Read())
             return 1;
         defFile.SetFileName(outputFile);
@@ -233,7 +233,7 @@ int ImpLibMain::HandleDefFile(const std::string& outputFile, CmdFiles& file)
         DLLExportReader dllFile(inputFile);
         if (dllFile.Read())
             return 1;
-        DefFile defFile(outputFile);
+        DefFile defFile(outputFile, CDLLSwitch.GetValue().size());
         int npos = inputFile.find_last_of(CmdFiles::DIR_SEP);
         if (npos == std::string::npos)
             npos = 0;
@@ -305,16 +305,20 @@ ObjFile* ImpLibMain::DllFileToObjFile(DLLExportReader& dll)
     ObjFile* obj = new ObjFile(name);
     for (auto&& exp : dll)
     {
-        CreateDLLImportEntry(obj, name.c_str(), exp->name.c_str(), exp.get());
+        if (CDLLSwitch.GetValue().empty())
+            CreateDLLImportEntry(obj, name.c_str(), exp->name.c_str(), exp.get());
         CreateDLLImportEntry(obj, name.c_str(), ("_" + exp->name).c_str(), exp.get());
-        int n = exp->name.find('@');
-        if (n != 0 && n != std::string::npos)
+        if (CDLLSwitch.GetValue().empty())
         {
-            auto id = exp->name.substr(0, n);
-            CreateDLLImportEntry(obj, name.c_str(), id.c_str(), exp.get());
-            if (id[0] == '_')
+            int n = exp->name.find('@');
+            if (n != 0 && n != std::string::npos)
             {
-               CreateDLLImportEntry(obj, name.c_str(), id.substr(1, id.size()-1).c_str(), exp.get());
+                auto id = exp->name.substr(0, n);
+                CreateDLLImportEntry(obj, name.c_str(), id.c_str(), exp.get());
+                if (id[0] == '_')
+                {
+                    CreateDLLImportEntry(obj, name.c_str(), id.substr(1, id.size()-1).c_str(), exp.get());
+                }
             }
         }
     }
@@ -330,7 +334,7 @@ int ImpLibMain::HandleObjFile(const std::string& outputFile, CmdFiles& files)
 
     if (def)
     {
-        DefFile defFile(inputFile);
+        DefFile defFile(inputFile, CDLLSwitch.GetValue().size());
         if (!defFile.Read())
             return 1;
         obj.reset(DefFileToObjFile(defFile));

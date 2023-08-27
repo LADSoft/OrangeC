@@ -85,6 +85,7 @@ void UpdateRootTypes(TYPE* tp);
 bool isDerivedFromTemplate(TYPE* tp);
 bool isautotype(TYPE* tp);
 bool isunsigned(TYPE* tp);
+bool isbitint(TYPE* tp);
 bool isint(TYPE* tp);
 bool isfloat(TYPE* tp);
 bool iscomplex(TYPE* tp);

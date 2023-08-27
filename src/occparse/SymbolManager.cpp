@@ -196,7 +196,10 @@ Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* 
             rv->type = Optimizer::se_ui;
             rv->i = reint(e);
             break;
-
+        case ExpressionNode::c_bitint_:
+        case ExpressionNode::c_ubitint_:
+            diag("SymbolManager::Get(), bitint constant being passed to backend");
+            break;
         case ExpressionNode::c_f_:
         case ExpressionNode::c_d_:
         case ExpressionNode::c_ld_:
@@ -493,6 +496,7 @@ Optimizer::st_type Optimizer::SymbolManager::Get(Parser::BasicType type)
         case BasicType::long_:
         case BasicType::long_long_:
         case BasicType::inative_:
+        case BasicType::bitint_:
             return st_i;
         case BasicType::unsigned_char_:
         case BasicType::unsigned_short_:
@@ -503,6 +507,7 @@ Optimizer::st_type Optimizer::SymbolManager::Get(Parser::BasicType type)
         case BasicType::unsigned_long_long_:
         case BasicType::char32_t_:
         case BasicType::unative_:
+        case BasicType::unsigned_bitint_:
             return st_ui;
         case BasicType::float_:
         case BasicType::double_:

@@ -382,6 +382,7 @@ static void StreamOperand(IMODE* im)
     StreamIndex(im->useindx);
     StreamIndex(im->size);
     StreamIndex(im->ptrsize);
+    StreamIndex(im->bitintbits);
     StreamIndex(im->startbit);
     StreamIndex(im->bits);
     StreamIndex(im->seg);

@@ -462,6 +462,7 @@ typedef struct _imode_
     SimpleExpression* vararg;
     RUNTIMEDATA* runtimeData; // this is a temporary, will be moved to the quad when it gets generated
     int scale; /* scale factor on the second temp reg */
+    int bitintbits;
     char useindx;
     char size;           /* size */
     char ptrsize;        /* ptr indirection size, either ISZ_ADDR or ISZ_FARPTR */

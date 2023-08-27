@@ -2432,6 +2432,7 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
     enum Linkage linkage = Linkage::none_;
     enum Linkage linkage2 = Linkage::none_;
     enum Linkage linkage3 = Linkage::none_;
+    int bitintbits = 0;
 
     *defd = false;
     while (KWTYPE(lex, TT_BASETYPE) || MATCHKW(lex, Keyword::decltype_))
@@ -2580,6 +2581,9 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                     case BasicType::inative_:
                         type = BasicType::unative_;
                         break;
+                    case BasicType::bitint_:
+                        type = BasicType::unsigned_bitint_;
+                        break;
                     default:
                         flagerror = true;
                         break;
@@ -2601,6 +2605,34 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                         flagerror = true;
                         break;
                 }
+                break;
+            case Keyword::bitint_:
+                switch (type)
+                { 
+                    case BasicType::unsigned_:
+                        int64 = true;
+                        type = BasicType::unsigned_bitint_;
+                        break;
+                    case BasicType::none_:
+                    case BasicType::signed_:
+                        int64 = true;
+                        type = BasicType::bitint_;
+                        break;
+                    default:
+                        flagerror = true;
+                        break;
+                }
+                needkw(&lex, Keyword::openpa_);
+                {
+                    TYPE*tp = nullptr;
+                    EXPRESSION*exp = nullptr;
+                    lex = optimized_expression(lex, funcsp, nullptr, &tp, &exp, false);
+                    if (!tp || !isint(tp) || !isintconst(exp))
+                        error(ERR_NEED_INTEGER_EXPRESSION);
+                    bitintbits = exp->v.i;
+                }
+                if (!MATCHKW(lex, Keyword::closepa_))
+                    needkw(&lex, Keyword::closepa_);
                 break;
             case Keyword::wchar_t_:
                 if (type == BasicType::none_)
@@ -3351,6 +3383,10 @@ exit:
     if (!tn)
     {
         tn = MakeType(type);
+        if (type == BasicType::bitint_ || type == BasicType::unsigned_bitint_)
+        {
+            tn->size = (bitintbits + Optimizer::chosenAssembler->arch->bitintunderlying - 1) / CHAR_BIT;
+        }
     }
     if (quals)
     {
@@ -4602,6 +4638,7 @@ static LEXLIST* getAfterType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** s
                     // error(ERR_BIT_STRUCT_MEMBER);
                     if ((*sp)->tp)
                     {
+                        // we aren't allowing _Bitint to participate as a bit field...
                         if (Optimizer::cparams.prm_ansi)
                         {
                             if ((*sp)->tp->type != BasicType::int_ && (*sp)->tp->type != BasicType::unsigned_ && (*sp)->tp->type != BasicType::bool_)

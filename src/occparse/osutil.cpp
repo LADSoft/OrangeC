@@ -833,6 +833,9 @@ void setglbdefs(void)
     else
         preProcessor->Define("__CHAR_SIGNED__", "1");
 
+    sprintf(buf, "%d", BITINTMAXWIDTH);
+    preProcessor->Define("__bitint_max_width", buf);
+
     sprintf(buf, "%d", getMaxAlign());
     preProcessor->Define("__MAX_ALIGN__", buf);
 

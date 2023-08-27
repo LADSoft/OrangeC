@@ -480,6 +480,14 @@ TYPE* typenum(char* buf, TYPE* tp)
         case BasicType::unative_:
             strcpy(buf, "native unsigned int");
             break;
+        case BasicType::bitint_:
+            strcpy(buf, "_Bitint");
+            sprintf(buf + strlen(buf), "(%d)", tp->bitintbits);
+            break;
+        case BasicType::unsigned_bitint_:
+            strcpy(buf, "unsigned _Bitint");
+            sprintf(buf + strlen(buf), "(%d)", tp->bitintbits);
+            break;
         case BasicType::void_:
             strcpy(buf, tn_void);
             break;

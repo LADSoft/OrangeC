@@ -1381,6 +1381,8 @@ int opt0(EXPRESSION** node)
         case ExpressionNode::l_ul_:
         case ExpressionNode::l_ll_:
         case ExpressionNode::l_ull_:
+        case ExpressionNode::l_bitint_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_f_:
         case ExpressionNode::l_d_:
         case ExpressionNode::l_ld_:
@@ -1440,6 +1442,8 @@ int opt0(EXPRESSION** node)
         case ExpressionNode::x_ul_:
         case ExpressionNode::x_i_:
         case ExpressionNode::x_ui_:
+        case ExpressionNode::x_bitint_:
+        case ExpressionNode::x_ubitint_:
         case ExpressionNode::x_inative_:
         case ExpressionNode::x_unative_:
         case ExpressionNode::x_ll_:
@@ -3051,6 +3055,8 @@ int fold_const(EXPRESSION* node)
         case ExpressionNode::l_uc_:
         case ExpressionNode::l_us_:
         case ExpressionNode::l_bool_:
+        case ExpressionNode::l_bitint_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_bit_:
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
@@ -3074,6 +3080,8 @@ int fold_const(EXPRESSION* node)
         case ExpressionNode::x_ul_:
         case ExpressionNode::x_i_:
         case ExpressionNode::x_ui_:
+        case ExpressionNode::x_bitint_:
+        case ExpressionNode::x_ubitint_:
         case ExpressionNode::x_inative_:
         case ExpressionNode::x_unative_:
         case ExpressionNode::x_p_:
@@ -3360,6 +3368,8 @@ int typedconsts(EXPRESSION* node1)
         case ExpressionNode::l_ref_:
         case ExpressionNode::l_i_:
         case ExpressionNode::l_ui_:
+        case ExpressionNode::l_bitint_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_inative_:
         case ExpressionNode::l_unative_:
         case ExpressionNode::l_l_:
@@ -3536,6 +3546,10 @@ int typedconsts(EXPRESSION* node1)
                 node1->type = ExpressionNode::c_ui_;
                 node1->left = nullptr;
             }
+            break;
+        case ExpressionNode::x_bitint_:
+        case ExpressionNode::x_ubitint_:
+            rv |= typedconsts(node1->left);
             break;
         case ExpressionNode::x_i_:
         case ExpressionNode::x_inative_:

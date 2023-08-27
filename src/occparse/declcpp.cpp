@@ -1669,6 +1669,9 @@ static bool hasPackedTemplate(TYPE* tp)
         case BasicType::unsigned_long_:
         case BasicType::long_:
             break;
+        case BasicType::bitint_:
+        case BasicType::unsigned_bitint_:
+            break;
         case BasicType::wchar_t_:
             break;
         case BasicType::unsigned_short_:

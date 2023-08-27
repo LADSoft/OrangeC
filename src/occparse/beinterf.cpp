@@ -98,6 +98,9 @@ int needsAtomicLockFromType(TYPE* tp)
             return 1;
         case BasicType::long_double_complex_:
             return 1;
+        case BasicType::bitint_:
+        case BasicType::unsigned_bitint_:
+            return 1;
         case BasicType::class_:
         case BasicType::struct_:
         case BasicType::union_:

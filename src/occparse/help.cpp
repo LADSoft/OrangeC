@@ -236,10 +236,20 @@ bool isunsigned(TYPE* tp)
             case BasicType::unsigned_long_:
             case BasicType::unsigned_long_long_:
             case BasicType::wchar_t_:
+            case BasicType::unsigned_bitint_:
                 return true;
             default:
                 return false;
         }
+    }
+    return false;
+}
+bool isbitint(TYPE* tp) 
+{
+    tp = basetype(tp);
+    if (tp)
+    {
+        return tp->type == BasicType::bitint_ || tp->type == BasicType::unsigned_bitint_;
     }
     return false;
 }
@@ -267,6 +277,8 @@ bool isint(TYPE* tp)
             case BasicType::wchar_t_:
             case BasicType::inative_:
             case BasicType::unative_:
+            case BasicType::bitint_:
+            case BasicType::unsigned_bitint_:
                 return true;
             case BasicType::templateparam_:
                 if (tp->templateParam->second->type == Keyword::int_)
@@ -741,6 +753,8 @@ bool isintconst(EXPRESSION* exp)
         case ExpressionNode::c_ul_:
         case ExpressionNode::c_ll_:
         case ExpressionNode::c_ull_:
+        case ExpressionNode::c_bitint_:
+        case ExpressionNode::c_ubitint_:
         case ExpressionNode::c_bit_:
         case ExpressionNode::c_bool_:
         case ExpressionNode::const_:
@@ -872,6 +886,12 @@ void deref(TYPE* tp, EXPRESSION** exp)
         case BasicType::unsigned_long_long_:
             en = ExpressionNode::l_ull_;
             break;
+        case BasicType::bitint_:
+            en = ExpressionNode::l_bitint_;
+            break;
+        case BasicType::unsigned_bitint_:
+            en = ExpressionNode::l_ubitint_;
+            break;
         case BasicType::float_:
             en = ExpressionNode::l_f_;
             break;
@@ -933,6 +953,7 @@ void deref(TYPE* tp, EXPRESSION** exp)
             break;
     }
     *exp = exprNode(en, *exp, nullptr);
+    (*exp)->v.b.bits = tp->bitintbits;
     if (en == ExpressionNode::l_object_)
         (*exp)->v.tp = tp;
 }
@@ -1001,6 +1022,12 @@ int sizeFromType(TYPE* tp)
             break;
         case BasicType::unsigned_long_long_:
             rv = ISZ_ULONGLONG;
+            break;
+        case BasicType::bitint_:
+            rv = -ISZ_BITINT;
+            break;
+        case BasicType::unsigned_bitint_:
+            rv = ISZ_BITINT;
             break;
         case BasicType::float_:
             rv = ISZ_FLOAT;
@@ -1126,6 +1153,12 @@ void cast(TYPE* tp, EXPRESSION** exp)
         case BasicType::unsigned_long_long_:
             en = ExpressionNode::x_ull_;
             break;
+        case BasicType::bitint_:
+            en = ExpressionNode::x_bitint_;
+            break;
+        case BasicType::unsigned_bitint_:
+            en = ExpressionNode::x_ubitint_;
+            break;
         case BasicType::float_:
             en = ExpressionNode::x_f_;
             break;
@@ -1174,6 +1207,7 @@ void cast(TYPE* tp, EXPRESSION** exp)
             break;
     }
     *exp = exprNode(en, *exp, nullptr);
+    (*exp)->v.b.bits = tp->bitintbits;
 }
 bool castvalue(EXPRESSION* exp)
 {
@@ -1196,6 +1230,8 @@ bool castvalue(EXPRESSION* exp)
         case ExpressionNode::x_ul_:
         case ExpressionNode::x_ll_:
         case ExpressionNode::x_ull_:
+        case ExpressionNode::x_bitint_:
+        case ExpressionNode::x_ubitint_:
         case ExpressionNode::x_f_:
         case ExpressionNode::x_d_:
         case ExpressionNode::x_ld_:
@@ -1243,6 +1279,8 @@ bool lvalue(EXPRESSION* exp)
         case ExpressionNode::l_ul_:
         case ExpressionNode::l_ll_:
         case ExpressionNode::l_ull_:
+        case ExpressionNode::l_bitint_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_f_:
         case ExpressionNode::l_d_:
         case ExpressionNode::l_ld_:
@@ -2148,12 +2186,23 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
             t1 = BasicType::unsigned_;
         if (t2 == BasicType::wchar_t_)
             t2 = BasicType::unsigned_;
-        if (t1 < BasicType::int_)
+        if (t1 < BasicType::int_ || ((t1 == BasicType::bitint_ || t1 == BasicType::unsigned_bitint_) && tp1->bitintbits < getSize(BasicType::int_) * CHAR_BIT))
             t1 = BasicType::int_;
-        if (t2 < BasicType::int_)
+        if (t2 < BasicType::int_ || ((t2 == BasicType::bitint_ || t2 == BasicType::unsigned_bitint_) &&
+                                     tp2->bitintbits < getSize(BasicType::int_) * CHAR_BIT))
             t2 = BasicType::int_;
         t1 = btmax(t1, t2);
-        rv = inttype(t1);
+        if (t1 == BasicType::bitint_ || t1 == BasicType::unsigned_bitint_)
+        {
+            rv = MakeType(t1);
+            int bits = tp1->bitintbits;
+            bits = bits > tp2->bitintbits ? bits : tp2->bitintbits;
+            rv->bitintbits = bits;
+        }
+        else
+        {
+            rv = inttype(t1);
+        }
         if (exp1 && rv->type != tp1->type && exp1)
             cast(rv, exp1);
         if (exp2 && rv->type != tp2->type && exp2)

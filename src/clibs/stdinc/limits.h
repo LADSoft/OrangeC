@@ -70,7 +70,7 @@
 #define _I64_MAX 9223372036854775807i64        /* maximum signed   __int64 value */
 #define _UI64_MAX 18446744073709551615ui64     /* maximum unsigned __int64 value */
 
-#define BITINT_MAXWIDTH 16384
+#define BITINT_MAXWIDTH __bitint_max_width;
 
 
 #define BOOL_WIDTH 1

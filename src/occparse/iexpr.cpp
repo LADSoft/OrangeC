@@ -348,6 +348,12 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
         case ExpressionNode::l_l_:
             siz1 = -ISZ_ULONG;
             break;
+        case ExpressionNode::l_bitint_:
+            siz1 = -ISZ_BITINT;
+            break;
+        case ExpressionNode::l_ubitint_:
+            siz1 = ISZ_BITINT;
+            break;
         case ExpressionNode::add_:
         case ExpressionNode::arrayadd_:
         case ExpressionNode::structadd_:
@@ -3700,6 +3706,8 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
         case ExpressionNode::l_ld_:
         case ExpressionNode::l_ll_:
         case ExpressionNode::l_ull_:
+        case ExpressionNode::l_bitint_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_fi_:
         case ExpressionNode::l_fc_:
         case ExpressionNode::l_di_:
@@ -4150,6 +4158,14 @@ int natural_size(EXPRESSION* node)
         case ExpressionNode::l_ui_:
         case ExpressionNode::x_ui_:
             return ISZ_UINT;
+        case ExpressionNode::c_bitint_:
+        case ExpressionNode::l_bitint_:
+        case ExpressionNode::x_bitint_:
+            return -ISZ_BITINT;
+        case ExpressionNode::c_ubitint_:
+        case ExpressionNode::l_ubitint_:
+        case ExpressionNode::x_ubitint_:
+            return ISZ_BITINT;
         case ExpressionNode::x_inative_:
         case ExpressionNode::l_inative_:
             return -ISZ_UNATIVE;

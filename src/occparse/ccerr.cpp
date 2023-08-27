@@ -1471,6 +1471,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case ExpressionNode::l_s_:
         case ExpressionNode::l_ul_:
         case ExpressionNode::l_l_:
+        case ExpressionNode::l_bitint_:
         case ExpressionNode::l_p_:
         case ExpressionNode::l_ref_:
         case ExpressionNode::l_i_:
@@ -1483,6 +1484,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case ExpressionNode::l_bit_:
         case ExpressionNode::l_ll_:
         case ExpressionNode::l_ull_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
             if (node->left->type == ExpressionNode::auto_)
@@ -1524,6 +1526,8 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case ExpressionNode::x_us_:
         case ExpressionNode::x_l_:
         case ExpressionNode::x_ul_:
+        case ExpressionNode::x_bitint_:
+        case ExpressionNode::x_ubitint_:
         case ExpressionNode::x_p_:
         case ExpressionNode::x_fp_:
         case ExpressionNode::x_sp_:
@@ -1708,6 +1712,7 @@ static int checkDefaultExpression(EXPRESSION* node)
         case ExpressionNode::l_s_:
         case ExpressionNode::l_ul_:
         case ExpressionNode::l_l_:
+        case ExpressionNode::l_bitint_:
         case ExpressionNode::l_p_:
         case ExpressionNode::l_ref_:
         case ExpressionNode::l_i_:
@@ -1720,6 +1725,7 @@ static int checkDefaultExpression(EXPRESSION* node)
         case ExpressionNode::l_bit_:
         case ExpressionNode::l_ll_:
         case ExpressionNode::l_ull_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
         case ExpressionNode::literalclass_:
@@ -1752,6 +1758,8 @@ static int checkDefaultExpression(EXPRESSION* node)
         case ExpressionNode::x_bit_:
         case ExpressionNode::x_s_:
         case ExpressionNode::x_us_:
+        case ExpressionNode::x_bitint_:
+        case ExpressionNode::x_ubitint_:
         case ExpressionNode::x_l_:
         case ExpressionNode::x_ul_:
         case ExpressionNode::x_p_:

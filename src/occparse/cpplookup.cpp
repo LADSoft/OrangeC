@@ -3883,6 +3883,52 @@ void getSingleConversionWrapped(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, 
     tpa->rref = rref;
     tpa->lref = lref;
 }
+void arg_compare_bitint(TYPE* tpp, TYPE* tpa, int *n, e_cvsrn* seq) 
+{ 
+    if (!isint(tpp) || !isint(tpa))
+    {
+        seq[(*n)++] = CV_NONE;
+    }
+    else
+    {
+        int tppb = 0, tpab = 0;
+        if (tpp->type == BasicType::bitint_ || tpp->type == BasicType::unsigned_bitint_)
+        {
+            tppb = tpp->bitintbits;
+        }
+        else
+        {
+            tppb = CHAR_BIT * getSize(tpp->type);
+        }
+        if (tpa->type == BasicType::bitint_ || tpa->type == BasicType::unsigned_bitint_)
+        {
+            tpab = tpa->bitintbits;
+        }
+        else
+        {
+            tpab = CHAR_BIT * getSize(tpp->type);
+        }
+        if (tppb == tpab)
+        {
+            if (tpp->type == tpa->type)
+            {
+                seq[(*n)++] = CV_IDENTITY;
+            }
+            else
+            {
+                seq[(*n)++] = CV_INTEGRALCONVERSION;
+            }
+        }
+        else if (tppb > tpab)
+        {
+            seq[(*n)++] = CV_INTEGRALPROMOTION;
+        }
+        else
+        {
+            seq[(*n)++] = CV_INTEGRALCONVERSION;
+        }
+    }
+}
 void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
                          bool allowUser, bool ref)
 {
@@ -4451,7 +4497,12 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, e_cvsrn
                     seq[(*n)++] = CV_NONE;
                 }
                 else if (isint(tpa))
-                    if (basetype(tpp)->type == BasicType::bool_)
+                    if (basetype(tpp)->type == BasicType::bitint_ || basetype(tpp)->type == BasicType::unsigned_bitint_
+                        || basetype(tpa)->type == BasicType::bitint_ || basetype(tpa)->type == BasicType::unsigned_bitint_)
+                    {
+                        arg_compare_bitint(tpp, tpa, n, seq);
+                    }
+                    else if (basetype(tpp)->type == BasicType::bool_)
                     {
                         seq[(*n)++] = CV_BOOLCONVERSION;
                     }
@@ -4460,8 +4511,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, e_cvsrn
                     {
                         seq[(*n)++] = CV_IDENTITY;
                     }
-                    else if ((basetype(tpp)->type == BasicType::int_ || basetype(tpp)->type == BasicType::unsigned_) &&
-                             basetype(tpa)->type < basetype(tpp)->type)
+                    else if (isbitint(tpp) || isbitint(tpa))
                     {
                         seq[(*n)++] = CV_INTEGRALPROMOTION;
                     }
@@ -4513,7 +4563,14 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, e_cvsrn
             }
             else if (!isenumconst)
             {
-                seq[(*n)++] = CV_IDENTITY;
+                if (isbitint(tpp))
+                {
+                    arg_compare_bitint(tpp, tpa, n, seq);
+                }
+                else
+                {
+                    seq[(*n)++] = CV_IDENTITY;
+                }
             }
         }
     }

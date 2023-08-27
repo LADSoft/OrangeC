@@ -26,6 +26,7 @@
  * keyword module
  */
 #include "compiler.h"
+#include "config.h"
 #include "math.h"
 #include <climits>
 #include "Utils.h"
@@ -71,6 +72,7 @@ static int nextFree;
 static const unsigned char* linePointer;
 static std::string currentLine;
 static int lastBrowseIndex;
+static unsigned char* bitIntBuffer;
 struct ParseHold
 {
     std::string currentLine;
@@ -127,6 +129,7 @@ KEYWORD keywords[] = {
     {"_Alignas", 8, Keyword::alignas_, KW_C1X, TT_CONTROL},
     {"_Alignof", 8, Keyword::alignof_, KW_C1X, TT_UNARY | TT_OPERATOR},
     {"_Atomic", 7, Keyword::atomic_, KW_C1X | KW_CPLUSPLUS | KW_C2X, TT_POINTERQUAL | TT_TYPEQUAL | TT_BASETYPE},
+    {"_BitInt", 7, Keyword::bitint_, KW_C2X, TT_BASETYPE | TT_INT | TT_BASE},
     {"_Bool", 5, Keyword::bool_, KW_C99 | KW_C1X, TT_BASETYPE | TT_BOOL},
     {"_CR0", 4, Keyword::CR0_, KW_NONANSI | KW_386, TT_VAR},
     {"_CR1", 4, Keyword::CR1_, KW_NONANSI | KW_386, TT_VAR},
@@ -1003,16 +1006,20 @@ static int radix36(char c)
         return c - 'A' + 10;
     return INT_MAX;
 }
-static long long getbase(int b, char** ptr)
+static long long getbase(int b, const unsigned char** ptr)
 {
     long long i;
-    char* s = *ptr;
+    const unsigned char* s = *ptr;
     int j;
     int errd = 0;
     i = 0;
+    while (**ptr == '\'')
+        (*ptr)++;
     while ((j = radix36(**ptr)) < b)
     {
         (*ptr)++;
+        while (**ptr == '\'')
+            (*ptr)++;
         if (i > (llminus1 - j) / b)
             if (!errd)
             {
@@ -1024,14 +1031,18 @@ static long long getbase(int b, char** ptr)
     return i;
 }
 
-static void getfloatingbase(int b, FPF* rval, char** ptr)
+static void getfloatingbase(int b, FPF* rval, const unsigned char** ptr)
 {
     int j;
     FPF temp, temp1;
     rval->SetZero(0);
+    while (**ptr == '\'')
+        (*ptr)++;
     while ((j = radix36(**ptr)) < b)
     {
         (*ptr)++;
+        while (**ptr == '\'')
+            (*ptr)++;
         temp = (unsigned long long)j;
         if (b == 10)
             rval->MultiplyPowTen(1);
@@ -1044,12 +1055,14 @@ static void getfloatingbase(int b, FPF* rval, char** ptr)
 /*
  *      getfrac - get fraction part of a floating number.
  */
-static int getfrac(int radix, char** ptr, FPF* rval)
+static int getfrac(int radix, const unsigned char** ptr, FPF* rval)
 {
     unsigned long long i = 0;
     int j, k = 0;
     FPF temp, temp1;
     int digits = 0;
+    while (**ptr == '\'')
+        (*ptr)++;
     while ((j = radix36(**ptr)) < radix)
     {
         i = radix * i + j;
@@ -1067,6 +1080,8 @@ static int getfrac(int radix, char** ptr, FPF* rval)
             i = 0;
         }
         (*ptr)++;
+        while (**ptr == '\'')
+            (*ptr)++;
     }
     temp = (unsigned long long)i;
     if (radix == 10)
@@ -1082,10 +1097,12 @@ static int getfrac(int radix, char** ptr, FPF* rval)
 /*
  *      getexp - get exponent part of floating number.
  */
-static int getexp(char** ptr)
+static int getexp(const unsigned char** ptr)
 {
     bool neg = false;
     int ival;
+    while (**ptr == '\'')
+        (*ptr)++;
     if (**ptr == '-')
     {
         neg = true;
@@ -1102,15 +1119,99 @@ static int getexp(char** ptr)
     return ival;
 }
 
-/*
+e_lexType getBitInt(const unsigned char *base, const unsigned char** ptr, int radix, long long* ival, unsigned char** bitintvalue)
+{
+    bool isunsigned = false;
+    if (tolower(**ptr) == 'u')
+    {
+        if (tolower((*ptr)[1]) != 'w' || tolower((*ptr)[2]) != 'b') return l_none;
+        *ptr += 3;
+        isunsigned = true;
+    }
+    else
+    {
+        if (tolower((*ptr)[0]) != 'w' || tolower((*ptr)[1]) != 'b')
+            return l_none;
+        *ptr += 2;
+    }
+    const int n = Optimizer::chosenAssembler->arch->bitintmax / CHAR_BIT;
+    if (!bitIntBuffer)
+        bitIntBuffer = new unsigned char[n];
+    memset(bitIntBuffer, 0, n);
+    while (**ptr == '\'')
+        (*ptr)++;
+    int c;
+    int bits = 0;
+    while ((c = radix36(*base)) < radix)
+    {
+        int shift = -1;
+        if (radix == 2)
+        {
+            shift = 1;
+        }
+        else if (radix == 8)
+        {
+            shift = 3;
+        }
+        else if (radix == 16)
+        {
+            shift = 4;
+        }
+        if (shift > 0)
+        {
+            unsigned char carry = c;
+            for (int i = 0; i < bits / CHAR_BIT + 2; i--)
+            {
+                int d = (bitIntBuffer[i] << shift) + carry;
+                bitIntBuffer[i] = d;
+                carry = d >> 8;
+            }
+            bits += shift;
+        }
+        else
+        {
+            unsigned char carry = c;
+            for (int i = 0; i < bits / CHAR_BIT + 2; i++)
+            {
+                int d = bitIntBuffer[i] * 10 + carry;
+                bitIntBuffer[i] =  d;
+                carry = d >> 8;
+            }
+            bits += 4; // conservative
+        }
+    }
+    int i;
+    for (i = n - 1; i >= 0; i--)
+    {
+        if (bitIntBuffer[i])
+            break;
+    }
+    c = bitIntBuffer[i];
+    i = (i + 1) * 8;
+    if (i)
+    {
+        while (--i)
+        {
+            if (c & (1 << i))
+                break;
+        }
+    }
+    if (i == 0)
+        i++;
+    if (!isunsigned)
+        i++;
+    *ival = i; // bit count
+    return isunsigned ? l_ubitint : l_bitint;
+}
+
+    /*
  *      getnum - get a number from input.
  *
  *      getnum handles all of the numeric input. it accepts
  *      decimal, octal, hexidecimal, and floating point numbers.
  */
-e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned char* suffix, FPF* rval, long long* ival)
+e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned char* suffix, FPF* rval, long long* ival, unsigned char ** bitintvalue)
 {
-    char buf[200], *p = buf;
     int radix = 10;
     int floatradix = 0;
     int frac = 0;
@@ -1143,23 +1244,24 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
         radix = 16;
         (*ptr)++;
     }
+    const unsigned char* base = *ptr;
     while (((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x) && **ptr == '\'') || radix36(**ptr) < radix ||
            (Optimizer::cparams.prm_assemble && radix36(**ptr) < 16))
     {
-        if (**ptr != '\'')
-            *p++ = **ptr;
         (*ptr)++;
+    }
+    if ((lastst = getBitInt(base, ptr, radix, ival, bitintvalue)) != l_none)
+    {
+        return lastst;
     }
     if (**ptr == '.')
     {
         hasdot = true;
         if (radix == 8)
             radix = 10;
-        *p++ = **ptr;
         (*ptr)++;
         while (radix36(**ptr) < radix)
         {
-            *p++ = **ptr;
             (*ptr)++;
         }
     }
@@ -1176,24 +1278,20 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
 
     if (floatradix)
     {
-        *p++ = **ptr;
         (*ptr)++;
         if (**ptr == '-' || **ptr == '+')
         {
-            *p++ = **ptr;
             (*ptr)++;
         }
         while (radix36(**ptr) < 10)
         {
-            *p++ = **ptr;
             (*ptr)++;
         }
     }
 
-    *p = 0;
     if (!floatradix && radix != 16 && Optimizer::cparams.prm_assemble)
     {
-        char* q = buf;
+        const unsigned char* q = base;
         while (*q && radix36(*q) < 10)
             q++;
         if (*q)
@@ -1212,7 +1310,7 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
             (*ptr)++;
         }
     }
-    p = buf;
+    const unsigned char *p = base;
     if (floatradix || hasdot)
     {
         getfloatingbase(radix, rval, &p);
@@ -1734,25 +1832,34 @@ LEXLIST* getsym(void)
             unsigned char suffix[256];
             const unsigned char* start = linePointer;
             const unsigned char* end = linePointer;
+            unsigned char* bitintValue;
             enum e_lexType tp;
             lex->data->suffix = nullptr;
-            if ((unsigned)(tp = getNumber(&linePointer, &end, suffix, &rval, &ival)) != (unsigned)INT_MIN)
+            if ((unsigned)(tp = getNumber(&linePointer, &end, suffix, &rval, &ival, &bitintValue)) != (unsigned)INT_MIN)
             {
-                if (tp < l_f)
+                if (tp == l_bitint || tp == l_ubitint)
                 {
-                    lex->data->value.i = ival;
+                    lex->data->value.b.bits = ival;
+                    lex->data->value.b.value = bitintValue;
                 }
                 else
                 {
-                    lex->data->value.f = Allocate<FPF>();
-                    *lex->data->value.f = rval;
-                }
-                if (suffix[0])
-                {
-                    lex->data->suffix = litlate((char*)suffix);
-                    memcpy(suffix, start, end - start);
-                    suffix[end - start] = 0;
-                    lex->data->litaslit = litlate((char*)suffix);
+                    if (tp < l_f)
+                    {
+                        lex->data->value.i = ival;
+                    }
+                    else
+                    {
+                        lex->data->value.f = Allocate<FPF>();
+                        *lex->data->value.f = rval;
+                    }
+                    if (suffix[0])
+                    {
+                        lex->data->suffix = litlate((char*)suffix);
+                        memcpy(suffix, start, end - start);
+                        suffix[end - start] = 0;
+                        lex->data->litaslit = litlate((char*)suffix);
+                    }
                 }
                 lex->data->type = tp;
             }

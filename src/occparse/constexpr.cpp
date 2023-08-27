@@ -155,6 +155,7 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc, bo
             case ExpressionNode::l_u32_:
             case ExpressionNode::l_s_:
             case ExpressionNode::l_ul_:
+            case ExpressionNode::l_bitint_:
             case ExpressionNode::l_l_:
             case ExpressionNode::l_p_:
             case ExpressionNode::l_ref_:
@@ -168,6 +169,7 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc, bo
             case ExpressionNode::l_bit_:
             case ExpressionNode::l_ll_:
             case ExpressionNode::l_ull_:
+            case ExpressionNode::l_ubitint_:
             case ExpressionNode::l_string_:
             case ExpressionNode::l_object_:
                 if (exp->left->type == ExpressionNode::auto_)

@@ -572,6 +572,8 @@ static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
         case ExpressionNode::l_bit_:
         case ExpressionNode::l_ll_:
         case ExpressionNode::l_ull_:
+        case ExpressionNode::l_bitint_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
         case ExpressionNode::literalclass_:
@@ -594,6 +596,8 @@ static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
         case ExpressionNode::x_ull_:
         case ExpressionNode::x_i_:
         case ExpressionNode::x_ui_:
+        case ExpressionNode::x_bitint_:
+        case ExpressionNode::x_ubitint_:
         case ExpressionNode::x_inative_:
         case ExpressionNode::x_unative_:
         case ExpressionNode::x_c_:

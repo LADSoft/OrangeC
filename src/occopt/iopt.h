@@ -64,6 +64,8 @@
 #define ISZ_CDOUBLE 25
 #define ISZ_CLDOUBLE 26
 
+#define ISZ_BITINT 50
+
 #define ISZ_TOVOIDSTAR 100
 #define ISZ_TOINT 101
 

@@ -2039,6 +2039,41 @@ static LEXLIST* expression_bracket(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
     *tp = PerformDeferredInitialization(*tp, funcsp);
     return lex;
 }
+static bool smallint(TYPE* tp)
+{
+    if (tp->type < BasicType::int_)
+    {
+        return true;
+    }
+    else if (isbitint(tp))
+    {
+        int sz = getSize(BasicType::int_) * CHAR_BIT;
+        return tp->bits < sz;
+    }
+    else
+    {
+        return false;
+    }
+}
+static bool largenum(TYPE* tp)
+{
+    if (tp->type > BasicType::int_)
+    {
+        if (isbitint(tp))
+        {
+            int sz = getSize(BasicType::int_) * CHAR_BIT;
+            return tp->bits > sz || (tp->bits == sz && tp->type == BasicType::unsigned_bitint_);
+        }
+        else
+        {
+            return true;
+        }
+    }
+    else
+    {
+        return false;
+    }
+}
 void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
 {
     std::list<INITLIST*>::iterator itp, itpe = itp;
@@ -2249,7 +2284,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                             }
                             else if (isarithmetic((*itp)->tp) && isarithmetic(decl->tp))
                             {
-                                if (basetype(decl->tp)->type != basetype((*itp)->tp)->type && basetype(decl->tp)->type > BasicType::int_)
+                                if (basetype(decl->tp)->type != basetype((*itp)->tp)->type && largenum(decl->tp))
                                 {
                                     cast(decl->tp, &(*itp)->exp);
                                 }
@@ -2267,7 +2302,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                 }
                 else if (isint((*itp)->tp))
                 {
-                    if (basetype((*itp)->tp)->type <= BasicType::int_)
+                    if (smallint((*itp)->tp))
                         dest = &stdint;
                     else if (!(Optimizer::architecture == ARCHITECTURE_MSIL))
                         cast((*itp)->tp, &(*itp)->exp);
@@ -5745,7 +5780,7 @@ static bool validate_checked_args(std::list<INITLIST*>* args)
                  tp = basetype(tp->btp);
              }
         }
-        if (!isint(tp) || tp->type == BasicType::char_ || tp->type == BasicType::bitint_ || tp->type == BasicType::bool_)
+        if (!isint(tp) || tp->type == BasicType::char_ || tp->type == BasicType::bitint_ || tp->type == BasicType::unsigned_bitint_ || tp->type == BasicType::bool_)
         {
              error(ERR_EXPECTED_VALID_CHECKED_MATH_TYPE);
              return false;
@@ -5869,6 +5904,12 @@ static int ___typeid_val(TYPE *tp)
             break;
         case BasicType::long_long_:
             id = -5;
+            break;
+        case BasicType::bitint_:
+            id = -(0x40000000 | tp->bitintbits);
+            break;
+        case BasicType::unsigned_bitint_:
+            id = 0x40000000 | tp->bitintbits;
             break;
         case BasicType::unsigned_char_:
             id = 1;
@@ -6384,6 +6425,22 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 (*exp)->type = ExpressionNode::c_ull_;
                 *tp = &stdunsignedlonglong;
             }
+            lex = getsym();
+            break;
+        case l_bitint:
+            *exp = exprNode(ExpressionNode::c_bitint_, nullptr, nullptr);
+            (*exp)->v.b.bits = lex->data->value.b.bits;
+            (*exp)->v.b.value = lex->data->value.b.value;
+            *tp = MakeType(BasicType::bitint_);
+            (*tp)->bitintbits = lex->data->value.b.bits;
+            lex = getsym();
+            break;
+        case l_ubitint:
+            *exp = exprNode(ExpressionNode::c_ubitint_, nullptr, nullptr);
+            (*exp)->v.b.bits = lex->data->value.b.bits;
+            (*exp)->v.b.value = lex->data->value.b.value;
+            *tp = MakeType(BasicType::unsigned_bitint_);
+            (*tp)->bitintbits = lex->data->value.b.bits;
             lex = getsym();
             break;
         case l_f:
@@ -7191,7 +7248,7 @@ LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EX
                     cast(atp, exp);
                     *tp = atp;
                 }
-                else if (basetype(*tp)->type < BasicType::int_)
+                else if (smallint(*tp))
                 {
                     cast(&stdint, exp);
                     *tp = &stdint;
@@ -7237,7 +7294,7 @@ LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EX
                     cast(atp, exp);
                     *tp = atp;
                 }
-                else if (basetype(*tp)->type < BasicType::int_)
+                else if (smallint(*tp))
                 {
                     cast(&stdint, exp);
                     *exp = exprNode(ExpressionNode::uminus_, *exp, nullptr);
@@ -7343,7 +7400,7 @@ LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EX
                     cast(atp, exp);
                     *tp = atp;
                 }
-                else if (basetype(*tp)->type < BasicType::int_)
+                else if (smallint(*tp))
                 {
                     cast(&stdint, exp);
                     *exp = exprNode(ExpressionNode::compl_, *exp, nullptr);
@@ -8085,7 +8142,7 @@ static LEXLIST* expression_add(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
                     cast(&stdinative, exp);
                 }
                 /*				*tp = tp1 = destSize(*tp, tp1, exp, &exp1, false, nullptr); */
-                if (basetype(tp1)->type < BasicType::int_)
+                if (smallint(tp1))
                     cast(&stdint, &exp1);
                 exp1 = exprNode(ExpressionNode::umul_, exp1, ns);
                 *exp = exprNode(kw == Keyword::plus_ ? ExpressionNode::add_ : ExpressionNode::sub_, *exp, exp1);
@@ -8109,7 +8166,7 @@ static LEXLIST* expression_add(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
             {
                 cast(&stdinative, &exp1);
             }
-            if (basetype(*tp)->type < BasicType::int_)
+            if (smallint(*tp))
                 cast(&stdint, exp);
             *exp = exprNode(ExpressionNode::umul_, *exp, ns);
             *exp = exprNode(ExpressionNode::add_, *exp, exp1);
@@ -8232,7 +8289,7 @@ static LEXLIST* expression_shift(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                     type = ExpressionNode::rsh_;
             else
                 type = ExpressionNode::lsh_;
-            if (basetype(*tp)->type < BasicType::int_)
+            if (smallint(*tp))
             {
                 *tp = &stdint;
                 cast(*tp, exp);
@@ -9766,11 +9823,11 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 break;
             case Keyword::asdivide_:
                 tp2 = destSize(*tp, tp1, nullptr, nullptr, false, nullptr);
-                op = isunsigned(*tp) && basetype(*tp)->type > BasicType::int_ ? ExpressionNode::udiv_ : ExpressionNode::div_;
+                op = isunsigned(*tp) && largenum(*tp) ? ExpressionNode::udiv_ : ExpressionNode::div_;
                 break;
             case Keyword::asmod_:
                 tp2 = destSize(*tp, tp1, nullptr, nullptr, false, nullptr);
-                op = isunsigned(*tp) && basetype(*tp)->type > BasicType::int_ ? ExpressionNode::umod_ : ExpressionNode::mod_;
+                op = isunsigned(*tp) && largenum(*tp) ? ExpressionNode::umod_ : ExpressionNode::mod_;
                 break;
             case Keyword::assign_:
                 op = ExpressionNode::assign_;
@@ -9964,6 +10021,9 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                         break;
                     case ExpressionNode::x_ll_:
                         exp2->type = ExpressionNode::x_ull_;
+                        break;
+                    case ExpressionNode::x_bitint_:
+                        exp2->type = ExpressionNode::x_ubitint_;
                         break;
                 }
                 if (castvalue(exp2->left))

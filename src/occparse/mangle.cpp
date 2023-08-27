@@ -799,6 +799,13 @@ char* mangleType(char* in, TYPE* tp, bool first)
                 case BasicType::int_:
                     *in++ = 'i';
                     break;
+                case BasicType::unsigned_bitint_:
+                    *in++ = 'u';
+                case BasicType::bitint_:
+                    *in++ = 'B';
+                    Optimizer::my_sprintf(in, "%d?", tp->bitintbits);
+                    in += strlen(in);
+                    break;
                 case BasicType::unative_:
                     *in++ = 'u';
                 case BasicType::inative_:

@@ -1104,6 +1104,39 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
             case BasicType::pointer_:
                 Optimizer::genaddress(i);
                 break;
+            case BasicType::bitint_:
+            case BasicType::unsigned_bitint_: {
+                // there are a couple of problems with this, first there is the problem if we change the underlying type
+                // second some architectures might need this to be big endian
+                // fixme: endianness
+                assert(Optimizer::chosenAssembler->arch->bitintunderlying == 32);
+                static const int words = (tp->bitintbits + Optimizer::chosenAssembler->arch->bitintunderlying - 1) / CHAR_BIT;
+                int max = 0;
+                unsigned char* src;
+                if (init->exp->type == ExpressionNode::c_bitint_ || init->exp->type == ExpressionNode::c_ubitint_)
+                {
+                    max = (init->exp->v.b.bits + Optimizer::chosenAssembler->arch->bitintunderlying - 1) / CHAR_BIT;
+                    src = init->exp->v.b.value;
+                }
+                else
+                {
+                    max = sizeof(long long);
+                    src = (unsigned char *) & i;
+                }
+                for (int i = 0; i < words && i < max; i++)
+                {
+                    Optimizer::genbyte(*src++);
+                }
+                if (i < words)
+                {
+                    auto fill = tp->type == BasicType::bitint_ && (src[-1] & 0x80000000) ? 0xff : 0;
+                    for (; i < words; i++)
+                    {
+                        Optimizer::genbyte(fill);
+                    }
+                }
+                break;
+            }
             case BasicType::far_:
             case BasicType::seg_:
             case BasicType::bit_:
@@ -1901,6 +1934,12 @@ enum ExpressionNode referenceTypeError(TYPE* tp, EXPRESSION* exp)
             break;
         case BasicType::unsigned_long_long_:
             en = ExpressionNode::l_ull_;
+            break;
+        case BasicType::bitint_:
+            en = ExpressionNode::l_bitint_;
+            break;
+        case BasicType::unsigned_bitint_:
+            en = ExpressionNode::l_ubitint_;
             break;
         case BasicType::float_:
             en = ExpressionNode::l_f_;
@@ -3826,6 +3865,8 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
         case BasicType::enum_:
         case BasicType::templateparam_:
         case BasicType::wchar_t_:
+        case BasicType::bitint_:
+        case BasicType::unsigned_bitint_:
             return initialize_arithmetic_type(lex, funcsp, offset, sc, tp, init, flags);
         case BasicType::lref_:
         case BasicType::rref_:

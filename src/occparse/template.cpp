@@ -3725,6 +3725,16 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
         case ExpressionNode::l_ui_:
         case ExpressionNode::sizeofellipse_:
             return &stdunsigned;
+        case ExpressionNode::x_bitint_: {
+            auto rv = MakeType(BasicType::bitint_);
+            rv->bitintbits = exp->v.b.bits;
+            return rv;
+        }
+        case ExpressionNode::x_ubitint_: {
+            auto rv = MakeType(BasicType::unsigned_bitint_);
+            rv->bitintbits = exp->v.b.bits;
+            return rv;
+        }
         case ExpressionNode::x_inative_:
         case ExpressionNode::l_inative_:
             return &stdinative;

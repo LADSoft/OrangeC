@@ -660,6 +660,8 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case ExpressionNode::l_ref_:
         case ExpressionNode::l_i_:
         case ExpressionNode::l_ui_:
+        case ExpressionNode::l_bitint_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_inative_:
         case ExpressionNode::l_unative_:
         case ExpressionNode::l_uc_:
@@ -717,6 +719,8 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case ExpressionNode::x_p_:
         case ExpressionNode::x_fp_:
         case ExpressionNode::x_sp_:
+        case ExpressionNode::x_bitint_:
+        case ExpressionNode::x_ubitint_:
         case ExpressionNode::trapcall_:
         case ExpressionNode::shiftby_:
             /*        case ExpressionNode::movebyref_: */
@@ -1148,6 +1152,8 @@ static bool sideEffects(EXPRESSION* node)
         case ExpressionNode::l_bit_:
         case ExpressionNode::l_ll_:
         case ExpressionNode::l_ull_:
+        case ExpressionNode::l_bitint_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
         case ExpressionNode::literalclass_:
@@ -1185,6 +1191,8 @@ static bool sideEffects(EXPRESSION* node)
         case ExpressionNode::x_p_:
         case ExpressionNode::x_fp_:
         case ExpressionNode::x_sp_:
+        case ExpressionNode::x_bitint_:
+        case ExpressionNode::x_ubitint_:
         case ExpressionNode::shiftby_:
         case ExpressionNode::x_string_:
         case ExpressionNode::x_object_:

@@ -21,6 +21,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
+#include "ctypes.h"
 
 namespace Parser
 {
@@ -38,6 +39,8 @@ namespace Parser
 #define CI_NEWA ((int)Keyword::complx_ + 1 + 3)
 #define CI_DELETEA ((int)Keyword::complx_ + 2 + 3)
 #define CI_LIT ((int)Keyword::complx_ + 3 + 3)
+
+#define BITINTMAXWIDTH ((1 << 24) - 1)
 
 #ifndef imax
 #    define imax(x, y) ((x) > (y) ? (x) : (y))
@@ -210,16 +213,16 @@ typedef struct
         c_u32_, c_l_, c_ul_, c_ll_, c_ull_, c_f_, c_d_, c_ld_,
         c_p_, c_sp_, c_fp_, c_fc_, c_dc_, c_ldc_,
         c_fi_, c_di_, c_ldi_, x_bool_, x_bit_,
-        c_string_,
+        c_string_, c_bitint_, c_ubitint_,
         x_i_, x_ui_, x_l_, x_ul_, x_inative_, x_unative_,
         x_ll_, x_ull_, x_f_, x_d_, x_ld_, x_fi_, x_di_, x_ldi_, x_fp_, x_sp_,
         x_fc_, x_dc_, x_ldc_, x_c_, x_uc_, x_wc_, x_u16_, x_u32_, x_s_, x_us_, x_label_,
-        x_string_, x_object_,
+        x_string_, x_object_, x_bitint_, x_ubitint_,
         l_bool_, l_c_, l_uc_, l_u16_, l_u32_, l_wc_, l_s_, l_us_, l_i_, l_ui_,
         l_inative_, l_unative_,
         l_l_, l_ul_, l_ll_, l_ull_, l_f_, l_d_, l_ld_, l_p_, l_ref_,
         l_fi_, l_di_, l_ldi_, l_fc_, l_dc_, l_ldc_, l_fp_, l_sp_, l_bit_,
-        l_string_, l_object_, msil_array_access_, msil_array_init_,
+        l_string_, l_object_, l_bitint_, l_ubitint_, msil_array_access_, msil_array_init_,
         nullptr_, memberptr_, mp_as_bool_, mp_compare_,
         trapcall_, func_, funcret_, intcall_,
         arraymul_, arraylsh_, arraydiv_, arrayadd_, structadd_, structelem_,
@@ -274,7 +277,7 @@ typedef struct
         wchar_t_, enum_, int_, inative_, char32_t_, unsigned_, unative_, long_, unsigned_long_, long_long_,
         unsigned_long_long_, float_, double_, long_double_, float__imaginary_,
         double__imaginary_, long_double_imaginary_, float__complex_,
-        double__complex_, long_double_complex_, bitint_,
+        double__complex_, long_double_complex_, bitint_,  unsigned_bitint_,
         /* end of basic types */
         void_, object_, string_,
         /* end of debug needs */
@@ -415,6 +418,11 @@ typedef struct expr
                 std::list<struct expr*>* left;
                 std::list<struct expr*>* right;
             } logicaldestructors;
+            struct
+            {
+                int bits;
+                unsigned char* value;
+            } b;
         };
         TEMPLATEPARAMPAIR* templateParam;
         std::vector<struct _templateSelector>* templateSelector;
@@ -476,6 +484,11 @@ struct u_val
             const char* a; /* string val */
             const LCHAR* w;
         } s;
+        union
+        {
+            int bits;
+            unsigned char* value;
+        } b;
         struct _defstruct* defs; /* macro definition */
         FPF* f;                  /* float val */
         _COMPLEX_S* c;
@@ -507,6 +520,7 @@ typedef struct typ
     int stringconst : 1;
     char bits;      /* -1 for not a bit val, else bit field len */
     char startbit;  /* start of bit field */
+    int bitintbits;
     struct sym* sp; /* pointer to a symbol which describes the type */
     /* local symbol tables */
     SymbolTable<struct sym>* syms; /* Symbol table for structs & functions */
@@ -1118,6 +1132,8 @@ enum e_lexType
     l_ul,
     l_ll,
     l_ull,
+    l_bitint,
+    l_ubitint,
     l_f,
     l_d,
     l_ld,

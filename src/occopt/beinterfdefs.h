@@ -285,6 +285,8 @@ typedef struct
     char libsasimports;               /* library functions should be genned as import calls */
     char retblockparamadjust;         /* Adjustment for retblock parameters */
     char eofScratchReg;                  /* register that can be used as scratch at end of function */
+    char bitintunderlying;            /* size of underlying type for bitint */
+    int bitintmax;                    /* max number of bits for bitint */
 } ARCH_CHARACTERISTICS;
 
 /* debugger characteristics */

@@ -373,7 +373,9 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     4,     /* minimum stack alignment */
     false, /* library functions should bes genned as import calls */
     4,     /* ret block param adjust for RTTI */
-    ECX    /* register that can be used as scratch at end of function */
+    ECX,    /* register that can be used as scratch at end of function */
+    32,            /* size of underlying type for bitint */
+    (1 << 20) - 1  /* max number of bits for bitint */
 };
 static ARCH_DEBUG dbgStruct[1];
 #if 0

@@ -244,7 +244,7 @@ void CmdSwitchFile::Dispatch(char* data)
 }
 char* CmdSwitchFile::GetStr(char* data)
 {
-    int size = strlen(data) + 1;
+    int size = 30000 + 1;
     char *buf = (char *)malloc(size), *p = buf;
     bool quote = false;
     while (isspace(*data))

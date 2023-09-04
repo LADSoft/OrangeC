@@ -281,12 +281,15 @@ void x86PreColor(QUAD* head) /* precolor an instruction */
             tempInfo[tr]->enode->sp->regmode = 2;
         }
     }
-    if (head->ans && head->ans->retval)
-        rvColor(head->ans);
-    if (head->dc.left && head->dc.left->retval)
-        rvColor(head->dc.left);
-    if (head->dc.right && head->dc.right->retval)
-        rvColor(head->dc.right);
+    if (head->dc.opcode != i_passthrough)
+    {
+        if (head->ans && head->ans->retval)
+            rvColor(head->ans);
+        if (head->dc.left && head->dc.left->retval)
+            rvColor(head->dc.left);
+        if (head->dc.right && head->dc.right->retval)
+            rvColor(head->dc.right);
+    }
 }
 static bool hasbp(SimpleExpression* expr)
 {

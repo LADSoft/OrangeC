@@ -4511,6 +4511,11 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, e_cvsrn
                     {
                         seq[(*n)++] = CV_IDENTITY;
                     }
+                    else if ((basetype(tpp)->type == BasicType::int_ || basetype(tpp)->type == BasicType::unsigned_) &&
+                             basetype(tpa)->type < basetype(tpp)->type)
+                    {
+                        seq[(*n)++] = CV_INTEGRALPROMOTION;
+                    }
                     else if (isbitint(tpp) || isbitint(tpa))
                     {
                         seq[(*n)++] = CV_INTEGRALPROMOTION;

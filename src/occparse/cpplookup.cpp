@@ -4465,10 +4465,6 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, e_cvsrn
                     {
                         seq[(*n)++] = CV_INTEGRALPROMOTION;
                     }
-                    else if (isbitint(tpp) || isbitint(tpa))
-                    {
-                        seq[(*n)++] = CV_INTEGRALPROMOTION;
-                    }
                     else if (isint(tpp))
                     {
                         // this next along with a change in the ranking takes care of the case where

@@ -2041,6 +2041,7 @@ static LEXLIST* expression_bracket(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
 }
 static bool smallint(TYPE* tp)
 {
+    tp = basetype(tp);
     if (tp->type < BasicType::int_)
     {
         return true;
@@ -2057,6 +2058,7 @@ static bool smallint(TYPE* tp)
 }
 static bool largenum(TYPE* tp)
 {
+    tp = basetype(tp);
     if (tp->type > BasicType::int_)
     {
         if (isbitint(tp))
@@ -2303,7 +2305,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                 }
                 else if (isint((*itp)->tp))
                 {
-                    if (smallint((*itp)->tp))
+                    if (basetype((*itp)->tp)->type <= BasicType::int_)
                         dest = &stdint;
                     else if (!(Optimizer::architecture == ARCHITECTURE_MSIL))
                         cast((*itp)->tp, &(*itp)->exp);

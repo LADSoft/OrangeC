@@ -385,7 +385,6 @@ static Optimizer::IMODE* UnstreamOperand()
     rv->useindx = UnstreamIndex();
     rv->size = UnstreamIndex();
     rv->ptrsize = UnstreamIndex();
-    rv->bitintbits = UnstreamIndex();
     rv->startbit = UnstreamIndex();
     rv->bits = UnstreamIndex();
     rv->seg = UnstreamIndex();

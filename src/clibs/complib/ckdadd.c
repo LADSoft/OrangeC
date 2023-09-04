@@ -31,7 +31,7 @@
 #include "_locale.h"
 #include "libp.h"
 
-_Bool __stdcall ___ckdadd(void* result, int result_type, void* left, int left_type, void* right, int right_type)
+_Bool __stdcall _RTL_FUNC ___ckdadd(void* result, int result_type, void* left, int left_type, void* right, int right_type)
 {
     unsigned int bleft[CKD_BUF_SIZE/sizeof(int)], bright[CKD_BUF_SIZE/sizeof(int)];
     ___ckd_set_value(bleft, left, left_type);

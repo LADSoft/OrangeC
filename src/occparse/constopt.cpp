@@ -77,7 +77,8 @@ static int isoptconst(EXPRESSION* en)
 {
     if (!en)
         return false;
-    return isintconst(en) || optimizerfloatconst(en);
+    return isintconst(en) || optimizerfloatconst(en) || en->type == ExpressionNode::c_bitint_ ||
+           en->type == ExpressionNode::c_ubitint_;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1478,6 +1479,20 @@ int opt0(EXPRESSION** node)
                 ep->unionoffset = ep->left->unionoffset;
                 ep->left = ep->right = nullptr;
             }
+            else if (ep->left->type == ExpressionNode::c_bitint_ || ep->left->type == ExpressionNode::c_ubitint_)
+            {
+                int sz = ep->left->v.b.bits + Optimizer::chosenAssembler->arch->bitintunderlying - 1;
+                sz /= Optimizer::chosenAssembler->arch->bitintunderlying;
+                sz *= Optimizer::chosenAssembler->arch->bitintunderlying;
+                sz /= CHAR_BIT;
+                ep->type = ep->left->type;
+                ep->v.b.bits = ep->left->v.b.bits;
+                ep->v.b.value = make_bitint(ep->v.b.bits, ep->left->v.b.value);
+                for (int i = 0; i < sz; i++)
+                {
+                    ep->v.b.value[i] = ~ep->v.b.value[i];
+                }
+            }
             return rv;
 
         case ExpressionNode::uminus_:
@@ -1486,6 +1501,24 @@ int opt0(EXPRESSION** node)
             {
                 *node = intNode(ep->left->type, -ep->left->v.i);
                 rv = true;
+            }
+            else if (ep->left->type == ExpressionNode::c_bitint_ || ep->left->type == ExpressionNode::c_ubitint_)
+            {
+                int sz = ep->left->v.b.bits + Optimizer::chosenAssembler->arch->bitintunderlying - 1;
+                sz /= Optimizer::chosenAssembler->arch->bitintunderlying;
+                sz *= Optimizer::chosenAssembler->arch->bitintunderlying;
+                sz /= CHAR_BIT;
+                ep->type = ep->left->type;
+                ep->v.b.bits = ep->left->v.b.bits;
+                ep->v.b.value = make_bitint(ep->v.b.bits, ep->left->v.b.value);
+                int carry = 0, c1 = 0;
+                for (int i = 0; i < sz; i++)
+                {
+                    if (!carry)
+                        c1 = ep->v.b.value[i] == 0 ? 0 : 1; 
+                    ep->v.b.value[i] = -ep->v.b.value[i] - carry;
+                    carry = carry ? 1 : c1;                    
+                }
             }
             else if (isfloatconst(ep->left))
             {
@@ -3548,8 +3581,26 @@ int typedconsts(EXPRESSION* node1)
             }
             break;
         case ExpressionNode::x_bitint_:
+            rv |= typedconsts(node1->left);
+            if (node1->left && isoptconst(node1->left))
+            {
+                auto value = rebitint(node1, node1->left);
+                node1->unionoffset = node1->left->unionoffset;
+                node1->type = ExpressionNode::c_bitint_;
+                node1->v.b.value = value;
+                node1->left = nullptr;
+            }
+            break;
         case ExpressionNode::x_ubitint_:
             rv |= typedconsts(node1->left);
+            if (node1->left && isoptconst(node1->left))
+            {
+                auto value = rebitint(node1, node1->left);
+                node1->unionoffset = node1->left->unionoffset;
+                node1->type = ExpressionNode::c_ubitint_;
+                node1->v.b.value = value;
+                node1->left = nullptr;
+            }
             break;
         case ExpressionNode::x_i_:
         case ExpressionNode::x_inative_:

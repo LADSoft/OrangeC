@@ -732,7 +732,7 @@ static void InitClasses(void)
     int i;
     for (i = 0; i < tempCount; i++)
     {
-        if (tempInfo[i]->inUse)
+        if (tempInfo[i]->inUse && abs(tempInfo[i]->size) != ISZ_BITINT)
         {
             if (!tempInfo[i]->liveAcrossFunctionCall)
             {

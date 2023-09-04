@@ -297,7 +297,7 @@ QUAD* ReCast(int size, QUAD* in, QUAD* newMode)
 {
     if (size)
     {
-        if (size <= ISZ_ULONGLONG || size == ISZ_ADDR)
+        if (size <= ISZ_ULONGLONG || size == ISZ_ADDR || size == ISZ_BITINT)
         {
             long long i;
             if (in->dc.opcode == i_icon)

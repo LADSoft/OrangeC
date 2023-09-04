@@ -825,15 +825,14 @@ void setglbdefs(void)
     preProcessor->Define("__STDC__", "1");
     preProcessor->Define("__STDC_ENDIAN_LITTLE__", "1");
     preProcessor->Define("__STDC_ENDIAN_BIG__", "2");
-    preProcessor->Define("__STDC_ENDIAN_NATIVE__", "__STDC_ENDIAN_LITTLE__");
-
+    preProcessor->Define("__STDC_ENDIAN_NATIVE__", Optimizer::chosenAssembler->arch->big_endian ? "__STDC_ENDIAN_BIG__" : "__STDC_ENDIAN_LITTLE__");
    
     if (prm_prmCharIsUnsigned.GetValue())
         preProcessor->Define("__CHAR_UNSIGNED__", "1");
     else
         preProcessor->Define("__CHAR_SIGNED__", "1");
 
-    sprintf(buf, "%d", BITINTMAXWIDTH);
+    sprintf(buf, "%d", Optimizer::chosenAssembler->arch->bitintmax);
     preProcessor->Define("__bitint_max_width", buf);
 
     sprintf(buf, "%d", getMaxAlign());

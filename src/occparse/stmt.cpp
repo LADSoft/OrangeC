@@ -2143,7 +2143,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
             SetLinkerNames(funcsp, funcsp->sb->attribs.inheritable.linkage);
             matchReturnTypes = true;
         }
-        if (isstructured(tp) || basetype(tp)->type == BasicType::memberptr_)
+        if (isstructured(tp) || isbitint(tp) || basetype(tp)->type == BasicType::memberptr_)
         {
             EXPRESSION* en = anonymousVar(StorageClass::parameter_, &stdpointer);
             SYMBOL* sp = en->v.sp;
@@ -2296,6 +2296,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                 else
                     MatchReturnTypes(funcsp, tp, tp1);
                 if (!comparetypes(tp, tp1, true) &&
+                    (!isbitint(tp) || !isbitint(tp1)) &&
                     ((Optimizer::architecture != ARCHITECTURE_MSIL) || !isstructured(tp) || !isconstzero(&stdint, returnexp)))
                 {
                     bool toErr = true;
@@ -2341,7 +2342,18 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                     if ((Optimizer::architecture != ARCHITECTURE_MSIL) ||
                         funcsp->sb->attribs.inheritable.linkage2 == Linkage::unmanaged_ || !msilManaged(funcsp))
                     {
-                        if (!isstructured(tp) || !basetype(tp)->sp->sb->structuredAliasType)
+                        if (isbitint(tp))
+                        {
+                            if (!comparetypes(tp, tp1, 0))
+                            {
+                                cast(tp, &returnexp);
+                            }
+                            returnexp = exprNode(ExpressionNode::blockassign_, en, returnexp);
+                            returnexp->size = tp;
+                            returnexp->altdata = (void*)(basetype(tp));
+
+                        }
+                        else if (!isstructured(tp) || !basetype(tp)->sp->sb->structuredAliasType)
                         {
                             returnexp = exprNode(ExpressionNode::blockassign_, en, returnexp);
                             returnexp->size = tp;
@@ -2447,7 +2459,8 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
         }
         else if (returnexp && returnexp->type == ExpressionNode::auto_ && returnexp->v.sp->sb->storage_class == StorageClass::auto_)
         {
-            if (!isstructured(basetype(funcsp->tp)->btp) && basetype(basetype(funcsp->tp)->btp)->type != BasicType::memberptr_)
+            if (!isstructured(basetype(funcsp->tp)->btp) && basetype(basetype(funcsp->tp)->btp)->type != BasicType::memberptr_ &&
+                !isbitint(basetype(funcsp->tp)->btp))
                 if (basetype(basetype(funcsp->tp)->btp)->type != BasicType::object_ &&
                     (!isarray(basetype(funcsp->tp)->btp) || !basetype(funcsp->tp)->btp->msil) &&
                     basetype(basetype(funcsp->tp)->btp)->type != BasicType::templateselector_)
@@ -2505,6 +2518,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
             else
             {
                 if (!isref(basetype(funcsp->tp)->btp) &&
+                    !isbitint(basetype(funcsp->tp)->btp) &&
                     (isarithmetic(basetype(funcsp->tp)->btp) ||
                      (ispointer(basetype(funcsp->tp)->btp) && !isarray(basetype(funcsp->tp)->btp))))
                     cast(returntype, &st->select);
@@ -3829,7 +3843,7 @@ static void assignParameterSizes(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
     }
     else
     {
-        if ((isstructured(basetype(funcsp->tp)->btp) && !basetype(basetype(funcsp->tp)->btp)->sp->sb->structuredAliasType) || basetype(basetype(funcsp->tp)->btp)->type == BasicType::memberptr_)
+        if ((isstructured(basetype(funcsp->tp)->btp) && !basetype(basetype(funcsp->tp)->btp)->sp->sb->structuredAliasType) || basetype(basetype(funcsp->tp)->btp)->type == BasicType::memberptr_ || isbitint(basetype(funcsp->tp)->btp))
         {
             // handle structured return values
             if (Optimizer::chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)

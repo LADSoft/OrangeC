@@ -803,7 +803,17 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
     }
     else if (im->mode == Optimizer::i_immed)
     {
-        if (im->size >= ISZ_CFLOAT)
+        if (abs(im->size) == ISZ_BITINT)
+        {
+            *apl = make_offset(im->offset);
+            if ((*apl)->mode == am_indisp)
+                *op = op_lea;
+            else
+                (*apl)->mode = am_immed;
+            if (im->size < ISZ_FLOAT)
+                (*apl)->length = im->size;
+        }
+        else if (im->size >= ISZ_CFLOAT)
         {
             *apl = beLocalAllocate<AMODE>();
             *aph = beLocalAllocate<AMODE>();
@@ -2442,7 +2452,12 @@ void asm_parm(Optimizer::QUAD* q) /* push a parameter*/
     getAmodes(q, &op, q->dc.left, &apl, &aph);
     if (q->dc.left->mode == Optimizer::i_immed)
     {
-        if (q->dc.left->size >= ISZ_CFLOAT)
+        if (abs(q->dc.left->size) == ISZ_BITINT)
+        {
+            gen_codes(op_push, ISZ_UINT, apl, 0);
+            pushlevel += 4;
+        }
+        else if (q->dc.left->size >= ISZ_CFLOAT)
         {
             int sz = 8;
             if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT || q->dc.left->size == ISZ_CFLOAT)

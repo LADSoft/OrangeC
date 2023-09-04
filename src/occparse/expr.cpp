@@ -2048,7 +2048,7 @@ static bool smallint(TYPE* tp)
     else if (isbitint(tp))
     {
         int sz = getSize(BasicType::int_) * CHAR_BIT;
-        return tp->bits < sz;
+        return tp->bitintbits < sz;
     }
     else
     {
@@ -2062,7 +2062,7 @@ static bool largenum(TYPE* tp)
         if (isbitint(tp))
         {
             int sz = getSize(BasicType::int_) * CHAR_BIT;
-            return tp->bits > sz || (tp->bits == sz && tp->type == BasicType::unsigned_bitint_);
+            return tp->bitintbits > sz || (tp->bitintbits == sz && tp->type == BasicType::unsigned_bitint_);
         }
         else
         {
@@ -2212,8 +2212,9 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                                             (*itp)->exp = exprNode(ExpressionNode::x_object_, (*itp)->exp, nullptr);
                                         }
                                     }
-                                    else if (basetype(decl->tp)->type != BasicType::memberptr_)
-                                        errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
+                                    if ((!isbitint((*itp)->tp) && !isint((*itp)->tp)) || (!isbitint(decl->tp) && !isint(decl->tp)))
+                                        if (basetype(decl->tp)->type != BasicType::memberptr_)
+                                            errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
                                 }
                                 else if (isstructured((*itp)->tp))
                                 {
@@ -4558,6 +4559,17 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                             funcparams->returnEXP->v.sp->sb->constexpression = true;
                     }
                 }
+                else if (isbitint(basetype(basetype(*tp)->btp)))
+                {
+                    if (!(flags & _F_SIZEOF))
+                    {
+                        funcparams->returnEXP = anonymousVar(StorageClass::auto_, basetype(*tp)->btp);
+                        funcparams->returnSP = funcparams->returnEXP->v.sp;
+                        if (theCurrentFunc && theCurrentFunc->sb->constexpression)
+                            funcparams->returnEXP->v.sp->sb->constexpression = true;
+                    }
+
+                }
                 funcparams->ascall = true;
                 funcparams->functp = *tp;
 
@@ -4598,7 +4610,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                 {
                     checkArgs(funcparams, funcsp);
                 }
-                if (funcparams->returnSP)
+                if (funcparams->returnSP && isstructured(funcparams->returnSP->tp))
                 {
                     SYMBOL* sym = basetype(funcparams->returnSP->tp)->sp;
                     if (sym->sb->templateLevel && sym->templateParams && !sym->sb->instantiated)
@@ -6433,6 +6445,10 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
             (*exp)->v.b.value = lex->data->value.b.value;
             *tp = MakeType(BasicType::bitint_);
             (*tp)->bitintbits = lex->data->value.b.bits;
+            (*tp)->size = lex->data->value.b.bits + Optimizer::chosenAssembler->arch->bitintunderlying - 1;
+            (*tp)->size /= Optimizer::chosenAssembler->arch->bitintunderlying;
+            (*tp)->size *= Optimizer::chosenAssembler->arch->bitintunderlying;
+            (*tp)->size /= CHAR_BIT;
             lex = getsym();
             break;
         case l_ubitint:
@@ -6441,6 +6457,10 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
             (*exp)->v.b.value = lex->data->value.b.value;
             *tp = MakeType(BasicType::unsigned_bitint_);
             (*tp)->bitintbits = lex->data->value.b.bits;
+            (*tp)->size = lex->data->value.b.bits + Optimizer::chosenAssembler->arch->bitintunderlying - 1;
+            (*tp)->size /= Optimizer::chosenAssembler->arch->bitintunderlying;
+            (*tp)->size *= Optimizer::chosenAssembler->arch->bitintunderlying;
+            (*tp)->size /= CHAR_BIT;
             lex = getsym();
             break;
         case l_f:
@@ -7409,7 +7429,8 @@ LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EX
                 else
                 {
                     *exp = exprNode(ExpressionNode::compl_, *exp, nullptr);
-                    cast(basetype(*tp), exp);
+                    if (!isbitint(*tp))
+                        cast(basetype(*tp), exp);
                 }
             }
             break;
@@ -8298,6 +8319,10 @@ static LEXLIST* expression_shift(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
             {
                 cast(&stdint, &exp1);
             } 
+            else if (isbitint(tp1))
+            {
+                cast(&stdint, &exp1);
+            }
             *exp = exprNode(type, *exp, exprNode(ExpressionNode::shiftby_, exp1, 0));
         }
     }
@@ -9926,6 +9951,37 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 }
             }
             *exp = exprNode(ExpressionNode::not__lvalue_, *exp, nullptr);
+        }
+        else if (isbitint(*tp))
+        {
+            EXPRESSION* exp2 = exp1;
+            if (((*exp)->type == ExpressionNode::not__lvalue_ ||
+                 ((*exp)->type == ExpressionNode::func_ && (!(*exp)->v.func->ascall || (*exp)->v.func->returnSP)) ||
+                 ((*exp)->type == ExpressionNode::void_) && !(flags & _F_SIZEOF)))
+                error(ERR_LVALUE);
+            if (lvalue(exp2))
+                exp2 = exp2->left;
+            if (exp2->type == ExpressionNode::func_ && exp2->v.func->returnSP && comparetypes(*tp, tp1, 0))
+            {
+                exp2->v.func->returnSP->sb->allocate = false;
+                exp2->v.func->returnEXP = *exp;
+                *exp = exp1;
+            }
+            else
+            {
+                if (!comparetypes(*tp, tp1, 0))
+                    cast(*tp, &exp1);
+                *exp = exprNode(ExpressionNode::blockassign_, *exp, exp1);
+                (*exp)->size = *tp;
+                (*exp)->altdata = (void*)(*tp);
+                if (isatomic(*tp))
+                {
+                    (*exp)->size = CopyType((*exp)->size);
+                    (*exp)->size->size -= ATOMIC_FLAG_SPACE;
+                }
+            }
+            *exp = exprNode(ExpressionNode::not__lvalue_, *exp, nullptr);
+
         }
         else
         {

@@ -574,7 +574,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
             return nullptr;
         }
     }
-    if (basetype(basetype(f->sp->tp)->btp)->type == BasicType::memberptr_)  // DAL FIXED
+    if (basetype(basetype(f->sp->tp)->btp)->type == BasicType::memberptr_ || isbitint(basetype(f->sp->tp)->btp))
     {
         return nullptr;
     }
@@ -585,6 +585,10 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
             return nullptr;
         }
         if (sp->tp->type == BasicType::ellipse_)
+        {
+            return nullptr;
+        }
+        if (isbitint(sp->tp))
         {
             return nullptr;
         }

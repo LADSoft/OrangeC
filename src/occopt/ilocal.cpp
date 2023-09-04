@@ -349,7 +349,7 @@ IMODE* InitTempOpt(int size1, int size2)
         tempInfo[t]->usedAsAddress = true;
         size2 = chosenAssembler->arch->compatibleAddrSize;
     }
-    if (size2 >= ISZ_FLOAT)
+    if (size2 >= ISZ_FLOAT && size2 != ISZ_BITINT)
         tempInfo[t]->usedAsFloat = true;
     tempInfo[t]->size = size2;
     return tempInfo[t]->enode->sp->imvalue;
@@ -392,7 +392,7 @@ static void InitTempInfo(void)
                         tempInfo[tnum]->usedAsAddress = true;
                         tempInfo[tnum]->size = chosenAssembler->arch->compatibleAddrSize;
                     }
-                    if (tempInfo[tnum]->size >= ISZ_FLOAT)
+                    if (tempInfo[tnum]->size >= ISZ_FLOAT && tempInfo[tnum]->size != ISZ_BITINT)
                         tempInfo[tnum]->usedAsFloat = true;
                 }
             }
@@ -414,7 +414,7 @@ static void InitTempInfo(void)
                         tempInfo[tnum]->usedAsAddress = true;
                         tempInfo[tnum]->size = chosenAssembler->arch->compatibleAddrSize;
                     }
-                    if (tempInfo[tnum]->size >= ISZ_FLOAT)
+                    if (tempInfo[tnum]->size >= ISZ_FLOAT && tempInfo[tnum]->size != ISZ_BITINT)
                         tempInfo[tnum]->usedAsFloat = true;
                 }
             }
@@ -436,7 +436,7 @@ static void InitTempInfo(void)
                         tempInfo[tnum]->usedAsAddress = true;
                         tempInfo[tnum]->size = chosenAssembler->arch->compatibleAddrSize;
                     }
-                    if (tempInfo[tnum]->size >= ISZ_FLOAT)
+                    if (tempInfo[tnum]->size >= ISZ_FLOAT && tempInfo[tnum]->size != ISZ_BITINT)
                         tempInfo[tnum]->usedAsFloat = true;
                 }
             }

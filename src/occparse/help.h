@@ -113,6 +113,7 @@ bool isfloatconst(EXPRESSION* exp);
 bool isimaginaryconst(EXPRESSION* exp);
 bool iscomplexconst(EXPRESSION* exp);
 EXPRESSION* anonymousVar(StorageClass storage_class, TYPE* tp);
+EXPRESSION* anonymousBits(StorageClass storageClass, bool issigned, int bits);
 void deref(TYPE* tp, EXPRESSION** exp);
 int sizeFromType(TYPE* tp);
 void cast(TYPE* tp, EXPRESSION** exp);

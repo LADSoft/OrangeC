@@ -255,7 +255,7 @@ void SetunMoveableTerms(void)
                         }
                         else
                         {
-                            if ((!chosenAssembler->arch->hasFloatRegs && head->ans->size >= ISZ_FLOAT) || head->ans->bits ||
+                            if ((!chosenAssembler->arch->hasFloatRegs && head->ans->size >= ISZ_FLOAT && head->ans->size != ISZ_BITINT) || head->ans->bits ||
                                 head->ans->vol)
                                 clearbit(unMoveableTerms, termMap[n]);
                             if (head->ans->offset->sp->loadTemp)

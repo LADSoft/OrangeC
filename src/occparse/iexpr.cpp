@@ -36,6 +36,8 @@
 #include "optmodules.h"
 #include "Utils.h"
 #include "istmt.h"
+#include "init.h"
+
 /*
  *      this module contains all of the code generation routines
  *      for evaluating expressions and conditions.
@@ -275,7 +277,297 @@ static Optimizer::IMODE* gen_bit_mask(Optimizer::IMODE* ap)
     ap->bits = ap->startbit = 0;
     return result;
 }
-/*-------------------------------------------------------------------------*/
+
+static int bitintbits(EXPRESSION* node) 
+{
+    while (node)
+    {
+        switch (node->type)
+        {
+            case ExpressionNode::l_bitint_:
+            case ExpressionNode::c_bitint_:
+            case ExpressionNode::x_bitint_:
+                return -node->v.b.bits;
+            case ExpressionNode::l_ubitint_:
+            case ExpressionNode::c_ubitint_:
+            case ExpressionNode::x_ubitint_:
+                return node->v.b.bits;
+            case ExpressionNode::func_:
+            {
+                if (node->v.func->returnSP && isbitint(node->v.func->returnSP->tp))
+                {
+                    return (node->v.func->returnSP->tp->type == BasicType::bitint_ ? -1 : 1) *
+                           node->v.func->returnSP->tp->bitintbits;
+                }
+                return 0;
+            }
+            case ExpressionNode::not_:
+                return 0;
+            default:
+                if (castvalue(node))
+                    return 0;
+                node = node->left;
+                break;
+        }
+    }
+    return 0;
+}
+static Optimizer::IMODE* bitint_unary(EXPRESSION* node) 
+{
+    static std::unordered_map<ExpressionNode, const char*> funcs = {{ExpressionNode::uminus_, "___biminus"},
+                                                              {ExpressionNode::compl_, "___bicompl"}
+    };
+    int b;
+    Optimizer::gen_icode(Optimizer::i_parm, nullptr, Optimizer::make_immed(ISZ_UINT, b = bitintbits(node->left)), nullptr);
+    auto left = gen_expr(nullptr, node->left,0, ISZ_ADDR); // address
+    Optimizer::gen_icode(Optimizer::i_parm, nullptr, left, nullptr);
+    auto ans1 = anonymousBits(StorageClass::auto_, node->left->type == ExpressionNode::l_ubitint_, abs(b));
+    auto ans = gen_expr(nullptr, ans1, 0, ISZ_ADDR);
+    Optimizer::gen_icode(Optimizer::i_parm, nullptr, ans, nullptr);
+    auto c = funcs[node->type];
+    if (c == nullptr)
+    {
+        diag("Invalid bitint unary math function");
+        return nullptr;
+    }
+    call_library(c, getSize(BasicType::pointer_) * 2 + getSize(BasicType::int_));
+    return ans;
+}
+static Optimizer::IMODE* bitint_binary(EXPRESSION* node) 
+{
+    static std::unordered_map<ExpressionNode, const char*> funcs = {{ExpressionNode::add_, "___biadd"},
+        {ExpressionNode::sub_, "___bisub"}, {ExpressionNode::and_, "___biand"}, {ExpressionNode::or_, "___bior"}, {
+            ExpressionNode::xor_, "___bixor"}, {ExpressionNode::mul_, "___bimul"}, {ExpressionNode::umul_, "___biumul"}, {
+            ExpressionNode::div_, "___bidiv"}, {ExpressionNode::udiv_, "___biudiv"}, {ExpressionNode::mod_,
+                                                                                  "___bimod"}, {ExpressionNode::umod_, "___biumod"},
+                                                                                  {ExpressionNode::lsh_, "___bilsh"},
+                                                                                  {ExpressionNode::rsh_, "___birsh"},
+                                                                                  {ExpressionNode::ursh_, "___biursh"}
+    };
+    auto c = funcs[node->type];
+    if (c == nullptr)
+    {
+        diag("Invalid bitint binary math function");
+        return nullptr;
+    }
+    switch (node->type)
+    {
+        case ExpressionNode::lsh_:
+        case ExpressionNode::rsh_:
+        case ExpressionNode::ursh_: {
+            int isz = natural_size(node->right);
+            auto right = gen_expr(nullptr, node->right, 0, ISZ_UINT);
+            Optimizer::gen_icode(Optimizer::i_parm, nullptr, right, nullptr);
+            int b;
+            Optimizer::gen_icode(Optimizer::i_parm, nullptr, Optimizer::make_immed(ISZ_UINT, b = bitintbits(node->left)), nullptr);
+            auto left = gen_expr(nullptr, node->left, 0, ISZ_ADDR);  // address
+            Optimizer::gen_icode(Optimizer::i_parm, nullptr, left, nullptr);
+            auto ans1 = anonymousBits(StorageClass::auto_, node->left->type == ExpressionNode::l_ubitint_, abs(b));
+            auto ans = gen_expr(nullptr, ans1, 0, ISZ_ADDR);
+            Optimizer::gen_icode(Optimizer::i_parm, nullptr, ans, nullptr);
+            call_library(c, getSize(BasicType::pointer_) * 2 + getSize(BasicType::int_) * 2);
+            return ans;
+        }
+        default: {
+            int b;
+            Optimizer::gen_icode(Optimizer::i_parm, nullptr, Optimizer::make_immed(ISZ_UINT, b = bitintbits(node->left)), nullptr);
+            auto right = gen_expr(nullptr, node->right, 0, ISZ_ADDR);  // address
+            Optimizer::gen_icode(Optimizer::i_parm, nullptr, right, nullptr);
+            auto left = gen_expr(nullptr, node->left, 0, ISZ_ADDR);  // address
+            Optimizer::gen_icode(Optimizer::i_parm, nullptr, left, nullptr);
+            auto ans1 = anonymousBits(StorageClass::auto_, node->left->type == ExpressionNode::l_ubitint_, abs(b));
+            auto ans = gen_expr(nullptr, ans1, 0, ISZ_ADDR);
+            Optimizer::gen_icode(Optimizer::i_parm, nullptr, ans, nullptr);
+            call_library(c, getSize(BasicType::pointer_) * 3 + getSize(BasicType::int_));
+            return ans;
+        }
+    }
+}
+static Optimizer::IMODE* bitint_compare(EXPRESSION* node, Optimizer::i_ops btype, int label) 
+{
+    const char* c = nullptr;
+    switch (node->type)
+    {
+        case ExpressionNode::eq_:
+        case ExpressionNode::ne_:
+        case ExpressionNode::lt_:
+        case ExpressionNode::ge_:
+        case ExpressionNode::le_:
+        case ExpressionNode::gt_:
+            c = "___bicompares";
+            break;
+        case ExpressionNode::ult_:
+        case ExpressionNode::uge_:
+        case ExpressionNode::ule_:
+        case ExpressionNode::ugt_:
+            c = "___bicompareu";
+            switch (btype)
+            {
+                case Optimizer::i_jbe:
+                    btype = Optimizer::i_jle;
+                    break;
+                case Optimizer::i_ja:
+                    btype = Optimizer::i_jg;
+                    break;
+                case Optimizer::i_jc:
+                    btype = Optimizer::i_jl;
+                    break;
+                case Optimizer::i_jnc:
+                    btype = Optimizer::i_jge;
+                    break;
+            }
+            break;
+        default:
+            diag("invalid bitint comparison");
+            return nullptr;
+    }
+    Optimizer::gen_icode(Optimizer::i_parm, nullptr, Optimizer::make_immed(ISZ_UINT, bitintbits(node->left)), nullptr);
+    auto right = gen_expr(nullptr, node->right, 0, ISZ_ADDR);  // address
+    Optimizer::gen_icode(Optimizer::i_parm, nullptr, right, nullptr);
+    auto left = gen_expr(nullptr, node->left, 0, ISZ_ADDR);  // address
+    Optimizer::gen_icode(Optimizer::i_parm, nullptr, left, nullptr);
+    auto imv = call_library(c, 2 * getSize(BasicType::pointer_) + getSize(BasicType::int_));
+    if (label >= 0)
+    {
+        gen_icgoto(btype, label, imv, Optimizer::make_immed(ISZ_UINT, 0));
+    }
+    else
+    {
+        auto im = Optimizer::tempreg(ISZ_UINT, 0);
+        Optimizer::gen_icode(btype, im, imv, nullptr);
+        imv = im;
+    }
+    return imv;
+}
+static Optimizer::IMODE* bitint_iszero(EXPRESSION* node, bool match, int label) 
+{
+    const char* c = "___biiszero"; 
+    Optimizer::gen_icode(Optimizer::i_parm, nullptr, Optimizer::make_immed(ISZ_UINT, bitintbits(node)), nullptr);
+    auto left = gen_expr(nullptr, node, 0, ISZ_ADDR);  // address
+    Optimizer::gen_icode(Optimizer::i_parm, nullptr, left, nullptr);
+    auto imv = call_library(c, 1 * getSize(BasicType::pointer_) + getSize(BasicType::int_));
+    if (label >= 0)
+    {
+        gen_icgoto(match ? Optimizer::i_je : Optimizer::i_jne, label, imv, Optimizer::make_immed(ISZ_UINT, 0));
+    }
+    else
+    {
+        auto im = Optimizer::tempreg(ISZ_UINT, 0);
+        Optimizer::gen_icode(match ? Optimizer::i_sete : Optimizer::i_setne, im, imv, Optimizer::make_immed(ISZ_UINT, 0));
+        imv = im;
+    }
+    return imv;
+}
+static Optimizer::IMODE* bitint_convert(EXPRESSION* node, int size) 
+{
+    auto sz = 0;
+    int isz = natural_size(node);
+    if (abs(isz) == ISZ_BITINT)
+    {
+        int isz1 = natural_size(node->left);
+        if (abs(isz1) == ISZ_BITINT)
+        {
+            Optimizer::gen_icode(Optimizer::i_parm, nullptr, Optimizer::make_immed(ISZ_UINT, bitintbits(node->left)), nullptr);
+            auto left = gen_expr(nullptr, node->left, 0, ISZ_ADDR);  // address
+            Optimizer::gen_icode(Optimizer::i_parm, nullptr, left, nullptr);
+            Optimizer::gen_icode(Optimizer::i_parm, nullptr, Optimizer::make_immed(ISZ_UINT, bitintbits(node)), nullptr);
+            auto ans1 = anonymousBits(StorageClass::auto_, node->left->type == ExpressionNode::l_ubitint_, node->v.b.bits);
+            auto ans = gen_expr(nullptr, ans1, 0, ISZ_ADDR);
+            Optimizer::gen_icode(Optimizer::i_parm, nullptr, ans, nullptr);
+            call_library("___biconvertb", getSize(BasicType::pointer_) * 2 + getSize(BasicType::int_) * 2);
+            return ans;
+
+        }
+        else
+        {
+            sz = Optimizer::sizeFromISZ(isz);
+            auto exp = node->left;
+            cast(&stdlonglong, &exp);
+            auto left = gen_expr(nullptr, exp, 0, ISZ_ULONGLONG);  // address
+            Optimizer::gen_icode(Optimizer::i_parm, nullptr, left, nullptr);
+            Optimizer::gen_icode(Optimizer::i_parm, nullptr, Optimizer::make_immed(ISZ_UINT, bitintbits(node)), nullptr);
+            auto ans1 = anonymousBits(StorageClass::auto_, node->left->type == ExpressionNode::l_ubitint_, abs(bitintbits(node)));
+            auto ans = gen_expr(nullptr, ans1, 0, ISZ_ADDR);
+            Optimizer::gen_icode(Optimizer::i_parm, nullptr, ans, nullptr);
+            call_library("___biconvertw", getSize(BasicType::pointer_) + getSize(BasicType::int_) + getSize(BasicType::long_long_));
+            return ans;
+
+        }
+    }
+    else
+    {
+        // isz1 == +-ISZ_BITINT
+        sz = Optimizer::sizeFromISZ(isz);
+        Optimizer::gen_icode(Optimizer::i_parm, nullptr, Optimizer::make_immed(ISZ_UINT, bitintbits(node->left)), nullptr);
+        Optimizer::gen_icode(Optimizer::i_parm, nullptr, Optimizer::make_immed(ISZ_UINT, sz * (isz < 0 ? -1 : 1)), nullptr);
+        auto left = gen_expr(nullptr, node->left, 0, ISZ_ADDR);  // address
+        Optimizer::gen_icode(Optimizer::i_parm, nullptr, left, nullptr);
+        int size = getSize(BasicType::pointer_) + getSize(BasicType::int_) * 2;
+
+        // this is call_library with a long long return result
+        Optimizer::IMODE* result, *ap1;
+        result = set_symbol("___biconvert", 1);
+        Optimizer::gen_icode(Optimizer::i_gosub, 0, result, 0);
+        ap1 = Optimizer::tempreg(isz < 0 ? -ISZ_ULONGLONG : ISZ_ULONGLONG, 0);
+        ap1->retval = true;
+        result = Optimizer::tempreg(ap1->size, 0);
+        gen_icode(Optimizer::i_assn, result, ap1, nullptr);
+        if (size != ap1->size)
+        {
+            ap1 = result;
+            result = Optimizer::tempreg(size, 0);
+            gen_icode(Optimizer::i_assn, result, ap1, nullptr);
+        }
+        Optimizer::gen_icode(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(size), Optimizer::make_parmadj(size));
+        return result;
+    }
+}
+static Optimizer::IMODE* bitint_assign(EXPRESSION* node) 
+{
+    auto bytes = bitintbits(node->right) + Optimizer::chosenAssembler->arch->bitintunderlying - 1;
+    bytes /= Optimizer::chosenAssembler->arch->bitintunderlying;
+    bytes *= Optimizer::chosenAssembler->arch->bitintunderlying;
+    bytes /= CHAR_BIT;
+    auto t6 = Optimizer::make_immed(ISZ_UINT, bytes);
+    auto left = gen_expr(nullptr, node->right, 0, ISZ_ADDR);  // address
+    auto ans = gen_expr(nullptr, node->left, 0, ISZ_ADDR);  // address
+    return ans;
+}
+static Optimizer::IMODE* make_bitint(EXPRESSION* node)
+{ 
+    auto var = anonymousBits(StorageClass::static_, natural_size(node) > 0, node->v.b.bits);
+    insertInitSym(var->v.sp);
+    initInsert(&var->v.sp->sb->init, var->v.sp->tp, node, 0, false);
+    auto im = Allocate<Optimizer::IMODE>();
+    im->mode = Optimizer::i_immed;
+    im->offset = Optimizer::SymbolManager::Get(var);
+    im->size = natural_size(node);
+
+    return im;
+}
+static int bitint_push(EXPRESSION* node)
+{
+    // constructor or other function creating a structure on the stack
+    int rv = abs(bitintbits(node)) + Optimizer::chosenAssembler->arch->bitintunderlying - 1;
+    rv /= Optimizer::chosenAssembler->arch->bitintunderlying;
+    rv *= Optimizer::chosenAssembler->arch->bitintunderlying;
+    rv /= CHAR_BIT;
+    if (rv % Optimizer::chosenAssembler->arch->stackalign)
+        rv = rv + Optimizer::chosenAssembler->arch->stackalign - rv % Optimizer::chosenAssembler->arch->stackalign;
+    Optimizer::IMODE* ap, *ap1, *ap2, *ap6;
+    Optimizer::gen_icode(Optimizer::i_parmstack, ap = Optimizer::tempreg(ISZ_ADDR, 0), Optimizer::make_immed(ISZ_UINT, rv),
+                         nullptr);
+
+    ap2 = gen_expr(nullptr, node, 0, ISZ_UINT);
+    ap1 = Optimizer::LookupLoadTemp(nullptr, ap2);
+    if (ap1 != ap2)
+        Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+    ap6 = Optimizer::make_immed(ISZ_UINT, rv);
+    Optimizer::gen_icode(Optimizer::i_assnblock, ap6, ap, ap2);
+    return rv;
+
+}
+    /*-------------------------------------------------------------------------*/
 
 Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
 /*
@@ -753,6 +1045,8 @@ Optimizer::IMODE* gen_unary(SYMBOL* funcsp, EXPRESSION* node, int flags, int siz
  *      generate code to evaluate a unary Keyword::minus_ or complement.
  */
 {
+    if (bitintbits(node->left))
+        return bitint_unary(node);
     Optimizer::IMODE *ap, *ap1;
     (void)flags;
     ap1 = gen_expr(funcsp, node->left, F_VOL, size);
@@ -776,6 +1070,8 @@ Optimizer::IMODE* gen_binary(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
  *      the addressing mode of the result.
  */
 {
+    if (bitintbits(node->left))
+        return bitint_binary(node);
     Optimizer::IMODE *ap, *ap1, *ap2, *ap3;
     int vol, rest, pragmas;
     (void)flags;
@@ -842,6 +1138,8 @@ static int ChooseMultiplier(unsigned d, int prec, unsigned long long* m, int* sh
 
 Optimizer::IMODE* gen_udivide(SYMBOL* funcsp, EXPRESSION* node, int flags, int size, Optimizer::i_ops op, bool mod)
 {
+    if (bitintbits(node->left))
+        return bitint_binary(node);
     int n = natural_size(node);
     if (!(Optimizer::chosenAssembler->arch->denyopts & DO_NOFASTDIV) &&
         (n == ISZ_UINT || n == -ISZ_UINT || n == ISZ_ULONG || n == -ISZ_ULONG) && isintconst(node->right))
@@ -954,6 +1252,8 @@ Optimizer::IMODE* gen_udivide(SYMBOL* funcsp, EXPRESSION* node, int flags, int s
 }
 Optimizer::IMODE* gen_sdivide(SYMBOL* funcsp, EXPRESSION* node, int flags, int size, Optimizer::i_ops op, bool mod)
 {
+    if (bitintbits(node->left))
+        return bitint_binary(node);
     int n = natural_size(node);
     if (!(Optimizer::chosenAssembler->arch->denyopts & DO_NOFASTDIV) && (n == ISZ_UINT || n == -ISZ_UINT) &&
         node->right->type == ExpressionNode::c_i_)
@@ -1419,6 +1719,8 @@ Optimizer::IMODE* gen_assign(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
  *      assignment size.
  */
 {
+    if (bitintbits(node->left))
+        return bitint_assign(node);
     Optimizer::IMODE *ap1, *ap2, *ap3, *ap4;
     EXPRESSION *enode, *temp;
     Optimizer::LIST *l2, *lp;
@@ -1728,6 +2030,8 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE* argtp, 
  *      push the operand expression onto the stack.
  */
 {
+    if (bitintbits(ep))
+        return bitint_push(ep);
     Optimizer::IMODE *ap, *ap3;
     int temp;
     int rv = 0;
@@ -2344,7 +2648,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     if ((Optimizer::architecture == ARCHITECTURE_MSIL) &&
         (f->sp->sb->attribs.inheritable.linkage2 != Linkage::unmanaged_ && msilManaged(f->sp)))
         managed = true;
-    if (f->returnEXP && managed && isstructured(basetype(f->functp)->btp))
+    if (f->returnEXP && managed && (isstructured(basetype(f->functp)->btp) || isbitint(basetype(f->functp)->btp)))
     {
         switch (f->returnEXP->type)
         {
@@ -2363,8 +2667,8 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         int v = Optimizer::sizeFromISZ(ISZ_ADDR);
         if (v % Optimizer::chosenAssembler->arch->stackalign)
             v = v + Optimizer::chosenAssembler->arch->stackalign - v % Optimizer::chosenAssembler->arch->stackalign;
-        if (isfunction(f->functp) &&
-            (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == BasicType::memberptr_))
+        if (isfunction(f->functp) && (isstructured(basetype(f->functp)->btp) || isbitint(basetype(f->functp)->btp) ||
+                                      basetype(basetype(f->functp)->btp)->type == BasicType::memberptr_))
         {
             if (f->returnEXP)
                 n += v;
@@ -2404,7 +2708,8 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     }
     if (f->sp->sb->attribs.inheritable.linkage == Linkage::pascal_)
     {
-        if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == BasicType::memberptr_)
+        if (isstructured(basetype(f->functp)->btp) || isbitint(basetype(f->functp)->btp) ||
+            basetype(basetype(f->functp)->btp)->type == BasicType::memberptr_)
         {
             if (f->returnEXP)
                 push_param(f->returnEXP, funcsp, nullptr, f->returnSP->tp, F_OBJECT);
@@ -2439,7 +2744,8 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         {
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
                 varargarray = CreateMsilVarargs(funcsp, f);
-            if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == BasicType::memberptr_)
+            if (isstructured(basetype(f->functp)->btp) || isbitint(basetype(f->functp)->btp) ||
+                basetype(basetype(f->functp)->btp)->type == BasicType::memberptr_)
             {
                 if (f->returnEXP && !managed)
                     push_param(f->returnEXP, funcsp, nullptr, f->returnSP->tp, 0);
@@ -2490,8 +2796,8 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         fastcallSize = MarkFastcall(f->sp, f->functp, !!f->thisptr);
         if (!(Optimizer::chosenAssembler->arch->preferopts & OPT_REVERSEPARAM))
         {
-            if (isfunction(f->functp) &&
-                (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == BasicType::memberptr_))
+            if (isfunction(f->functp) && (isstructured(basetype(f->functp)->btp) || isbitint(basetype(f->functp)->btp) ||
+                                          basetype(basetype(f->functp)->btp)->type == BasicType::memberptr_))
             {
                 if (f->returnEXP && !managed)
                     push_param(f->returnEXP, funcsp, nullptr, f->returnSP->tp, 0);
@@ -2593,7 +2899,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         Optimizer::gen_nodag(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(n),
             Optimizer::make_parmadj(!isvoid(basetype(f->functp)->btp)));
     }
-    if (f->returnEXP && managed && isfunction(f->functp) && isstructured(basetype(f->functp)->btp))
+    if (f->returnEXP && managed && isfunction(f->functp) && (isstructured(basetype(f->functp)->btp) || isbitint(basetype(f->functp)->btp)))
     {
         if (!(flags & F_INRETURN))
         {
@@ -2658,7 +2964,8 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             if (ap1 != ap)
                 gen_icode(Optimizer::i_assn, ap, ap1, nullptr);
         }
-        else if (!isstructured(basetype(f->functp)->btp) && basetype(f->functp)->btp->type != BasicType::memberptr_)
+        else if (!isstructured(basetype(f->functp)->btp) && basetype(f->functp)->btp->type != BasicType::memberptr_ &&
+                 !isbitint(basetype(f->functp)->btp))
         {
             Optimizer::IMODE *ap1, *ap2;
             int siz1 = sizeFromType(basetype(f->functp)->btp);
@@ -3127,66 +3434,6 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
     }
     return rv;
 }
-/*
-Optimizer::IMODE* doatomicFence(SYMBOL* funcsp, EXPRESSION* parent, EXPRESSION* node, Optimizer::IMODE* barrier)
-{
-    static Optimizer::LIST* lst;
-    int start = !barrier;
-    if (node && node->isatomic)
-    {
-        int afImmed = mo_seq_cst;
-        if (parent && parent->type == ExpressionNode::assign_)
-            afImmed |= 128;  // store
-        if (node->lockOffset)
-        {
-            Optimizer::LIST* cur;
-            Optimizer::IMODE *t, *q;
-            int n = node->lockOffset;
-            while (castvalue(node))
-                node = node->left;
-            if (lvalue(node))
-            {
-                node = node->left;
-            }
-            if (!start)
-            {
-                lst = lst->next;
-            }
-            cur = lst;
-            while (cur)
-            {
-                if (equalnode((EXPRESSION *)cur->data, node))
-                    break;
-                cur = cur->next;
-            }
-            if (!barrier)
-            {
-                q = gen_expr(funcsp, node, 0, ISZ_ADDR);
-                barrier = Optimizer::tempreg(ISZ_ADDR, 0);
-                Optimizer::gen_icode(Optimizer::i_add, barrier, q, Optimizer::make_immed(ISZ_UINT, n));
-            }
-            if (!cur)
-            {
-                Optimizer::gen_icode(Optimizer::i_atomic_flag_fence, nullptr, Optimizer::make_immed(ISZ_UINT, start ? afImmed :
--afImmed), barrier);
-            }
-            if (start)
-            {
-                cur = Allocate<Optimizer::LIST>();
-                cur->next = lst;
-                lst = cur;
-                cur->data = node;
-            }
-        }
-        else
-        {
-            Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, Optimizer::make_immed(ISZ_UINT, start ? afImmed :
--afImmed), nullptr); barrier = (Optimizer::IMODE*)-1;
-        }
-    }
-    return barrier;
-}
-*/
 /*-------------------------------------------------------------------------*/
 Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
 /*
@@ -3264,6 +3511,9 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
             rv = ap1;
             break;
+        case ExpressionNode::x_bitint_:
+        case ExpressionNode::x_ubitint_:
+            return bitint_convert(node, size);
         case ExpressionNode::x_wc_:
             siz1 = ISZ_WCHAR;
             goto castjoin;
@@ -3359,6 +3609,10 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
         case ExpressionNode::x_p_:
             siz1 = ISZ_ADDR;
         castjoin:
+            if (bitintbits(node->left))
+            {
+                return bitint_convert(node, size);
+            }
             ap3 = gen_expr(funcsp, node->left, flags & ~F_NOVALUE, natural_size(node->left));
             ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
             if (ap1 != ap3)
@@ -3553,6 +3807,18 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             ap2 = (Optimizer::IMODE*)node->left;
             rv = ap2; /* return reg */
             break;
+        case ExpressionNode::c_bitint_:
+        case ExpressionNode::c_ubitint_:
+            ap1 = make_bitint(node);
+            ap1->offset->unionoffset = node->unionoffset;
+            ap2 = Optimizer::LookupImmedTemp(ap1, ap1);
+            if (ap1 != ap2)
+            {
+                Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                ap1 = ap2;
+            }
+            rv = ap1;
+            break;
         case ExpressionNode::c_bool_:
         case ExpressionNode::c_c_:
         case ExpressionNode::c_i_:
@@ -3685,6 +3951,11 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             }
             rv = ap1;
             break;
+        case ExpressionNode::l_bitint_:
+        case ExpressionNode::l_ubitint_:
+            // take the address of the bitint, if it is actually used as an lref we will need the address
+            // to pass to some function somewhere...
+            return gen_expr(funcsp, node->left, 0, ISZ_ADDR);
         case ExpressionNode::l_bool_:
         case ExpressionNode::l_wc_:
         case ExpressionNode::l_c_:
@@ -3706,8 +3977,6 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
         case ExpressionNode::l_ld_:
         case ExpressionNode::l_ll_:
         case ExpressionNode::l_ull_:
-        case ExpressionNode::l_bitint_:
-        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_fi_:
         case ExpressionNode::l_fc_:
         case ExpressionNode::l_di_:
@@ -4345,6 +4614,11 @@ void gen_compare(EXPRESSION* node, SYMBOL* funcsp, Optimizer::i_ops btype, int l
  *      node.
  */
 {
+    if (bitintbits(node->left))
+    {
+        bitint_compare(node, btype, label);
+        return;
+    }
     Optimizer::IMODE *ap1, *ap2, *ap3;
     Optimizer::IMODE* barrier;
     int siz0, siz1, size;
@@ -4428,6 +4702,10 @@ void gen_compare(EXPRESSION* node, SYMBOL* funcsp, Optimizer::i_ops btype, int l
 
 Optimizer::IMODE* gen_set(EXPRESSION* node, SYMBOL* funcsp, Optimizer::i_ops btype)
 {
+    if (bitintbits(node->left))
+    {
+        return bitint_compare(node, btype, -1);
+    }
     Optimizer::IMODE *ap1, *ap2, *ap3;
     int siz0, siz1, size;
     siz0 = natural_size(node->left);
@@ -4466,6 +4744,10 @@ Optimizer::IMODE* gen_set(EXPRESSION* node, SYMBOL* funcsp, Optimizer::i_ops bty
 
 Optimizer::IMODE* defcond(EXPRESSION* node, SYMBOL* funcsp)
 {
+    if (bitintbits(node->left))
+    {
+        return bitint_iszero(node->left, true, -1);
+    }
     Optimizer::IMODE *ap1, *ap2, *ap3;
     int size = natural_size(node);
     ap3 = gen_expr(funcsp, node->left, 0, size);
@@ -4777,6 +5059,11 @@ void truejmp(EXPRESSION* node, SYMBOL* funcsp, int label)
             }
             break;
         default:
+            if (bitintbits(node))
+            {
+                bitint_iszero(node, false, label);
+                return;
+            }
             siz1 = natural_size(node);
             ap3 = gen_expr(funcsp, node, F_COMPARE, siz1);
             ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
@@ -4973,6 +5260,11 @@ void falsejmp(EXPRESSION* node, SYMBOL* funcsp, int label)
             Optimizer::gen_label(lab0);
             break;
         default:
+            if (bitintbits(node))
+            {
+                bitint_iszero(node, true, label);
+                return;
+            }
             siz1 = natural_size(node);
             ap3 = gen_expr(funcsp, node, F_COMPARE, siz1);
             ap = Optimizer::LookupLoadTemp(nullptr, ap3);

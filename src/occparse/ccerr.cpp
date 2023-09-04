@@ -1445,6 +1445,8 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case ExpressionNode::nullptr_:
         case ExpressionNode::memberptr_:
         case ExpressionNode::structelem_:
+        case ExpressionNode::c_bitint_:
+        case ExpressionNode::c_ubitint_:
             break;
         case ExpressionNode::global_:
         case ExpressionNode::pc_:

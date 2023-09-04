@@ -541,7 +541,7 @@ static void createConverter(SYMBOL* self)
         f->sp = caller;
         f->fcall = varNode(ExpressionNode::pc_, f->sp);
         f->functp = f->sp->tp;
-        if (isstructured(basetype(caller->tp)->btp))
+        if (isstructured(basetype(caller->tp)->btp) || isbitint(basetype(caller->tp)->btp))
         {
             f->returnEXP = intNode(ExpressionNode::c_i_, 0);
             f->returnSP = basetype(basetype(caller->tp)->btp)->sp;

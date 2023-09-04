@@ -885,7 +885,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
             im = init->exp->v.c->i;
             i = (long long)(f);
         }
-        else
+        else if (init->exp->type != ExpressionNode::c_bitint_ && init->exp->type != ExpressionNode::c_ubitint_)
         {
             EXPRESSION* exp = init->exp;
             while (castvalue(exp))
@@ -1110,12 +1110,18 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
                 // second some architectures might need this to be big endian
                 // fixme: endianness
                 assert(Optimizer::chosenAssembler->arch->bitintunderlying == 32);
-                static const int words = (tp->bitintbits + Optimizer::chosenAssembler->arch->bitintunderlying - 1) / CHAR_BIT;
+                int words = (tp->bitintbits + Optimizer::chosenAssembler->arch->bitintunderlying - 1);
+                words /= Optimizer::chosenAssembler->arch->bitintunderlying;
+                words *= Optimizer::chosenAssembler->arch->bitintunderlying;
+                words /= CHAR_BIT;
                 int max = 0;
                 unsigned char* src;
                 if (init->exp->type == ExpressionNode::c_bitint_ || init->exp->type == ExpressionNode::c_ubitint_)
                 {
-                    max = (init->exp->v.b.bits + Optimizer::chosenAssembler->arch->bitintunderlying - 1) / CHAR_BIT;
+                    max = (init->exp->v.b.bits + Optimizer::chosenAssembler->arch->bitintunderlying - 1);
+                    max /= Optimizer::chosenAssembler->arch->bitintunderlying;
+                    max *= Optimizer::chosenAssembler->arch->bitintunderlying;
+                    max /= CHAR_BIT;
                     src = init->exp->v.b.value;
                 }
                 else
@@ -1123,7 +1129,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
                     max = sizeof(long long);
                     src = (unsigned char *) & i;
                 }
-                for (int i = 0; i < words && i < max; i++)
+                for (i = 0; i < words && i < max; i++)
                 {
                     Optimizer::genbyte(*src++);
                 }
@@ -1135,6 +1141,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
                         Optimizer::genbyte(fill);
                     }
                 }
+                rv = words;
                 break;
             }
             case BasicType::far_:
@@ -1550,7 +1557,10 @@ static LEXLIST* initialize_arithmetic_type(LEXLIST* lex, SYMBOL* funcsp, int off
                 else if ((!isarithmetic(tp) && basetype(tp)->type != BasicType::enum_) ||
                          (sc != StorageClass::auto_ && sc != StorageClass::register_ && !isarithmeticconst(exp) && !msilConstant(exp) &&
                           !Optimizer::cparams.prm_cplusplus))
-                    error(ERR_CONSTANT_VALUE_EXPECTED);
+                    if (!isbitint(tp) || (exp->type != ExpressionNode::c_bitint_ && exp->type != ExpressionNode::c_ubitint_))
+                        error(ERR_CONSTANT_VALUE_EXPECTED);
+                    else
+                        checkscope(tp, itype);
                 else
                     checkscope(tp, itype);
                 if (!comparetypes(itype, tp, true))
@@ -3483,7 +3493,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                             exp2->v.func->ascall = true;
                             exp2->v.func->thisptr = exp1;
                             exp2->v.func->thistp = MakeType(BasicType::pointer_, tp1);
-                            if (isstructured(basetype(sym->tp)->btp))
+                            if (isstructured(basetype(sym->tp)->btp) || isbitint(basetype(sym->tp)->btp))
                             {
                                 if (basetype(basetype(sym->tp)->btp)->sp->sb->structuredAliasType)
                                 {

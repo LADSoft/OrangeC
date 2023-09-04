@@ -1303,7 +1303,7 @@ int x86_examine_icode(QUAD* head)
                             head->temps &= ~TEMP_LEFT;
                         }
                     }
-                    else if (head->dc.left->size >= ISZ_FLOAT &&
+                    else if (head->dc.left->size >= ISZ_FLOAT && head->dc.left->size != ISZ_BITINT &&
                              (head->ans->size == ISZ_ULONGLONG || head->ans->size == -ISZ_ULONGLONG))
                     {
                         QUAD* q = beLocalAllocate<QUAD>();
@@ -1354,7 +1354,8 @@ int x86_examine_icode(QUAD* head)
                             b->tail = head->fwd;
                         changed = true;
                     }
-                    else if (head->dc.left->size >= ISZ_FLOAT && (head->ans->size <= ISZ_ULONG && head->ans->size != ISZ_BOOLEAN))
+                    else if (head->dc.left->size >= ISZ_FLOAT && head->dc.left->size != ISZ_BITINT
+                             &&(head->ans->size <= ISZ_ULONG && head->ans->size != ISZ_BOOLEAN))
                     {
                         QUAD* q = beLocalAllocate<QUAD>();
                         IMODE* ret;
@@ -1439,6 +1440,7 @@ int x86_examine_icode(QUAD* head)
                         changed = true;
                     }
                     else if (head->ans->size >= ISZ_FLOAT &&
+                             head->ans->size != ISZ_BITINT &&
                              (head->dc.left->size == ISZ_UINT || head->dc.left->size == ISZ_ULONG ||
                               head->dc.left->size == ISZ_ULONGLONG || head->dc.left->size == -ISZ_ULONGLONG))
                     {
@@ -1483,7 +1485,7 @@ int x86_examine_icode(QUAD* head)
                         {
                             if (head->dc.left->mode != i_immed &&
                                 (head->dc.left->offset->type != se_tempref || head->dc.left->mode == i_ind ||
-                                 (szl >= ISZ_FLOAT && sza < ISZ_FLOAT)))
+                                 (szl >= ISZ_FLOAT && szl != ISZ_BITINT && sza < ISZ_FLOAT)))
                             {
                                 IMODE* temp;
                                 QUAD* q;
@@ -2370,7 +2372,7 @@ void x86InternalConflict(QUAD* head)
                 // can't do it for long longs in registers on this architecture, due to a dearth of registers...
                 // not doing it for ints in general to ease register pressure
                 // need to do it for floats for this architecture...
-                if (head->ans->size >= ISZ_FLOAT)
+                if (head->ans->size >= ISZ_FLOAT && head->ans->size != ISZ_BITINT)
                 {
                     int t1 = head->ans->offset->sp->i;
                     int t2 = head->dc.right->offset->sp->i;

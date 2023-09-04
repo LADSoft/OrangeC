@@ -41,6 +41,7 @@
 #include "constopt.h"
 #include "memory.h"
 #include "ifloatconv.h"
+#include "floatconv.h"
 #include "browse.h"
 #include "help.h"
 #include "expr.h"
@@ -1142,25 +1143,25 @@ e_lexType getBitInt(const unsigned char *base, const unsigned char** ptr, int ra
         (*ptr)++;
     int c;
     int bits = 0;
-    while ((c = radix36(*base)) < radix)
+    int shift = -1;
+    if (radix == 2)
     {
-        int shift = -1;
-        if (radix == 2)
-        {
-            shift = 1;
-        }
-        else if (radix == 8)
-        {
-            shift = 3;
-        }
-        else if (radix == 16)
-        {
-            shift = 4;
-        }
+        shift = 1;
+    }
+    else if (radix == 8)
+    {
+        shift = 3;
+    }
+    else if (radix == 16)
+    {
+        shift = 4;
+    }
+    while ((c = radix36(*base++)) < radix)
+    {
         if (shift > 0)
         {
             unsigned char carry = c;
-            for (int i = 0; i < bits / CHAR_BIT + 2; i--)
+            for (int i = 0; i < bits / CHAR_BIT + 2; i++)
             {
                 int d = (bitIntBuffer[i] << shift) + carry;
                 bitIntBuffer[i] = d;
@@ -1187,20 +1188,22 @@ e_lexType getBitInt(const unsigned char *base, const unsigned char** ptr, int ra
             break;
     }
     c = bitIntBuffer[i];
-    i = (i + 1) * 8;
-    if (i)
+    i = i * 8;
+    int j;
+    for (j = 7; j >= 0; j--)
     {
-        while (--i)
+        if (c & (1 << j))
         {
-            if (c & (1 << i))
-                break;
+            break;
         }
     }
-    if (i == 0)
+    i += j+1;
+    if (i <= 0)
         i++;
     if (!isunsigned)
         i++;
     *ival = i; // bit count
+    *bitintvalue = make_bitint(i, bitIntBuffer);
     return isunsigned ? l_ubitint : l_bitint;
 }
 

@@ -12,7 +12,7 @@
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
+ *     GNU General Public License for more details.return
  * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
@@ -492,7 +492,8 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
     if (stmt != 0 && stmt->select != 0 && (!(flags & F_NORETURNVALUE)  || expressionHasSideEffects(stmt->select) || HasIncDec()))
     {
         // the return type should NOT be an array at this point unless it is a managed one...
-        if (basetype(funcsp->tp)->btp && (isstructured(basetype(funcsp->tp)->btp) ||
+        if (basetype(funcsp->tp)->btp &&
+            (isstructured(basetype(funcsp->tp)->btp) || isbitint(basetype(funcsp->tp)->btp) ||
                                           (isarray(basetype(funcsp->tp)->btp) && (Optimizer::architecture == ARCHITECTURE_MSIL)) ||
                                           basetype(basetype(funcsp->tp)->btp)->type == BasicType::memberptr_))
         {

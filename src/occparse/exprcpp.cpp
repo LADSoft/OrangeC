@@ -466,7 +466,7 @@ bool cppCast(TYPE* src, TYPE** tp, EXPRESSION** exp)
                 params->functp = cst->tp;
                 params->sp = cst;
                 params->ascall = true;
-                if (isstructured(*tp))
+                if (isstructured(*tp) || isbitint(*tp))
                 {
                     EXPRESSION* ev = anonymousVar(StorageClass::auto_, *tp);
                     SYMBOL* av = ev->v.sp;

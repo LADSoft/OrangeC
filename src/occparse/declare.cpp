@@ -2583,6 +2583,18 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                         break;
                     case BasicType::bitint_:
                         type = BasicType::unsigned_bitint_;
+                        lex = getsym();
+                        needkw(&lex, Keyword::openpa_);
+                        {
+                            TYPE* tp = nullptr;
+                            EXPRESSION* exp = nullptr;
+                            lex = optimized_expression(lex, funcsp, nullptr, &tp, &exp, false);
+                            if (!tp || !isint(tp) || !isintconst(exp))
+                                error(ERR_NEED_INTEGER_EXPRESSION);
+                            bitintbits = exp->v.i;
+                        }
+                        if (!MATCHKW(lex, Keyword::closepa_))
+                            needkw(&lex, Keyword::closepa_);
                         break;
                     default:
                         flagerror = true;
@@ -2622,6 +2634,7 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                         flagerror = true;
                         break;
                 }
+                lex = getsym();
                 needkw(&lex, Keyword::openpa_);
                 {
                     TYPE*tp = nullptr;
@@ -3385,7 +3398,11 @@ exit:
         tn = MakeType(type);
         if (type == BasicType::bitint_ || type == BasicType::unsigned_bitint_)
         {
-            tn->size = (bitintbits + Optimizer::chosenAssembler->arch->bitintunderlying - 1) / CHAR_BIT;
+            tn->bitintbits = bitintbits;
+            tn->size = (bitintbits + Optimizer::chosenAssembler->arch->bitintunderlying - 1);
+            tn->size /= Optimizer::chosenAssembler->arch->bitintunderlying;
+            tn->size *= Optimizer::chosenAssembler->arch->bitintunderlying;
+            tn->size /= CHAR_BIT;
         }
     }
     if (quals)

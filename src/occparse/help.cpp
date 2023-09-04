@@ -753,8 +753,6 @@ bool isintconst(EXPRESSION* exp)
         case ExpressionNode::c_ul_:
         case ExpressionNode::c_ll_:
         case ExpressionNode::c_ull_:
-        case ExpressionNode::c_bitint_:
-        case ExpressionNode::c_ubitint_:
         case ExpressionNode::c_bit_:
         case ExpressionNode::c_bool_:
         case ExpressionNode::const_:
@@ -823,8 +821,18 @@ EXPRESSION* anonymousVar(StorageClass storage_class, TYPE* tp)
     SetLinkerNames(rv, Linkage::none_);
     return varNode(storage_class == StorageClass::auto_ || storage_class == StorageClass::parameter_ ? ExpressionNode::auto_ : ExpressionNode::global_, rv);
 }
-void deref(TYPE* tp, EXPRESSION** exp)
+EXPRESSION* anonymousBits(StorageClass storageClass, bool issigned, int bits)
 {
+    TYPE* tp = MakeType(issigned ? BasicType::bitint_ : BasicType::unsigned_bitint_);
+    tp->size = bits + Optimizer::chosenAssembler->arch->bitintunderlying - 1;
+    tp->size /= Optimizer::chosenAssembler->arch->bitintunderlying;
+    tp->size *= Optimizer::chosenAssembler->arch->bitintunderlying;
+    tp->size /= CHAR_BIT;
+    tp->bitintbits = bits;
+    return anonymousVar(storageClass, tp);
+}
+void deref(TYPE* tp, EXPRESSION** exp)
+    {
     enum ExpressionNode en = ExpressionNode::l_i_;
     tp = basetype(tp);
     switch ((tp->type == BasicType::enum_ && tp->btp) ? tp->btp->type : tp->type)
@@ -953,7 +961,8 @@ void deref(TYPE* tp, EXPRESSION** exp)
             break;
     }
     *exp = exprNode(en, *exp, nullptr);
-    (*exp)->v.b.bits = tp->bitintbits;
+    if (isbitint(tp))
+        (*exp)->v.b.bits = tp->bitintbits;
     if (en == ExpressionNode::l_object_)
         (*exp)->v.tp = tp;
 }
@@ -1740,7 +1749,8 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 }
                 else
                 {
-                    if (isarithmetic(initItem->basetp) || ispointer(initItem->basetp))
+                    if ((isarithmetic(initItem->basetp) || ispointer(initItem->basetp))
+                        && !isbitint(initItem->basetp))
                         cast(initItem->basetp, &exp);
                     if (exps)
                         exp = exprNode(ExpressionNode::assign_, exps, exp);
@@ -2203,9 +2213,9 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         {
             rv = inttype(t1);
         }
-        if (exp1 && rv->type != tp1->type && exp1)
+        if (exp1 && (rv->type != tp1->type || rv->bitintbits != tp1->bitintbits) && exp1)
             cast(rv, exp1);
-        if (exp2 && rv->type != tp2->type && exp2)
+        if (exp2 && (rv->type != tp2->type || rv->bitintbits != tp2->bitintbits) && exp2)
             cast(rv, exp2);
         if ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions)
         {

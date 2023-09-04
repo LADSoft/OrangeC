@@ -40,8 +40,6 @@ namespace Parser
 #define CI_DELETEA ((int)Keyword::complx_ + 2 + 3)
 #define CI_LIT ((int)Keyword::complx_ + 3 + 3)
 
-#define BITINTMAXWIDTH ((1 << 24) - 1)
-
 #ifndef imax
 #    define imax(x, y) ((x) > (y) ? (x) : (y))
 #    define imin(x, y) ((x) < (y) ? (x) : (y))
@@ -275,9 +273,9 @@ typedef struct
          */
         bit_, bool_, signed_char_, char_, unsigned_char_, short_, char16_t_, unsigned_short_,
         wchar_t_, enum_, int_, inative_, char32_t_, unsigned_, unative_, long_, unsigned_long_, long_long_,
-        unsigned_long_long_, float_, double_, long_double_, float__imaginary_,
+        unsigned_long_long_, bitint_,  unsigned_bitint_, float_, double_, long_double_, float__imaginary_,
         double__imaginary_, long_double_imaginary_, float__complex_,
-        double__complex_, long_double_complex_, bitint_,  unsigned_bitint_,
+        double__complex_, long_double_complex_,
         /* end of basic types */
         void_, object_, string_,
         /* end of debug needs */
@@ -418,12 +416,12 @@ typedef struct expr
                 std::list<struct expr*>* left;
                 std::list<struct expr*>* right;
             } logicaldestructors;
-            struct
-            {
-                int bits;
-                unsigned char* value;
-            } b;
         };
+        struct
+        {
+            int bits;
+            unsigned char* value;
+        } b;
         TEMPLATEPARAMPAIR* templateParam;
         std::vector<struct _templateSelector>* templateSelector;
     } v;
@@ -484,7 +482,7 @@ struct u_val
             const char* a; /* string val */
             const LCHAR* w;
         } s;
-        union
+        struct
         {
             int bits;
             unsigned char* value;

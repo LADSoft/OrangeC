@@ -183,7 +183,7 @@ bool comparetypes(TYPE* typ1, TYPE* typ2, int exact)
         return s1 == s2;
     }
     if (typ1->type == typ2->type || (!exact && isarithmetic(typ2) && isarithmetic(typ1)))
-        return true;
+        return typ1->bitintbits == typ2->bitintbits;
     if (isfunction(typ1) && isfunction(typ2) &&
         typ1->sp->sb->attribs.inheritable.linkage == typ2->sp->sb->attribs.inheritable.linkage)
         return true;

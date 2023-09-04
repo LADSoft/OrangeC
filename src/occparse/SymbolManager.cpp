@@ -638,7 +638,7 @@ unsigned long long Optimizer::SymbolManager::Key(struct Parser::sym* old)
     strcat(buf, old->sb->decoratedName ? old->sb->decoratedName : old->name);
     if (old->sb->storage_class == StorageClass::static_ && !old->sb->parent)
     {
-        my_sprintf(buf + strlen(buf), "%d", old->sb->uniqueID);
+        my_sprintf(buf + strlen(buf), ".%d", old->sb->uniqueID);
     }
     if (old->sb->storage_class == StorageClass::type_)
         strcat(buf, "#");

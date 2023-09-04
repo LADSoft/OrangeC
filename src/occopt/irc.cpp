@@ -78,22 +78,22 @@ static int* tempStack;
 static int tempStackcount;
 static unsigned long long regmask;
 static int localspill, spillcount;
-static unsigned short* simplifyWorklist;
+static unsigned* simplifyWorklist;
 static int simplifyBottom, simplifyTop;
-static BRIGGS_SET* freezeWorklist;
-static BRIGGS_SET* spillWorklist;
-static BRIGGS_SET* spilledNodes;
-static BITARRAY* coalescedNodes;
-static BITARRAY* stackedTemps;
-static BITARRAY *adjacent, *adjacent1;
-static BITARRAY* workingMoves;
-static BITARRAY* activeMoves;
-static BITARRAY* coalescedMoves;
-static BITARRAY* constrainedMoves;
-static BITARRAY* frozenMoves;
-static BITARRAY* tempMoves[2];
+static BriggsSet* freezeWorklist;
+static BriggsSet* spillWorklist;
+static BriggsSet* spilledNodes;
+static BITINT* coalescedNodes;
+static BITINT* stackedTemps;
+static BITINT *adjacent, *adjacent1;
+static BITINT* workingMoves;
+static BITINT* activeMoves;
+static BITINT* coalescedMoves;
+static BITINT* constrainedMoves;
+static BITINT* frozenMoves;
+static BITINT* tempMoves[2];
 static QUAD** instructionList;
-static BRIGGS_SET* spillProcessed;
+static BriggsSet* spillProcessed;
 static short* hiMoves;
 static SPILL* spillList;
 
@@ -128,9 +128,11 @@ static void InitRegAliases(ARCH_REGDESC* desc)
     for (i = 0; i < REG_MAX; i++)
     {
         int j;
-        desc[i].aliasBits = (BITARRAY*)calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
 #ifdef TESTBITS
-        desc[i].aliasBits->count = REG_MAX;
+        desc[i].aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT)*2 + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
+        *desc[i].aliasBits++ = REG_MAX;
+#else
+        desc[i].aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
 #endif
         setbit(desc[i].aliasBits, i);
         for (j = 0; j < desc[i].aliasCount; j++)
@@ -150,13 +152,17 @@ static void InitTree(ARCH_REGVERTEX* parent, ARCH_REGVERTEX* child)
     {
         c->vertex = child->index;
         c->index = classCount++;
-        c->aliasBits = (BITARRAY*)calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
 #ifdef TESTBITS
-        c->aliasBits->count = REG_MAX;
+        c->aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) *2 + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
+        *c->aliasBits++ = REG_MAX;
+#else
+        c->aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
 #endif
-        c->regBits = (BITARRAY*)calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
 #ifdef TESTBITS
-        c->regBits->count = REG_MAX;
+        c->regBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT)*2 + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
+        *c->regBits++ = REG_MAX;
+#else
+        c->regBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
 #endif
         for (i = 0; i < c->regCount; i++)
         {
@@ -164,7 +170,7 @@ static void InitTree(ARCH_REGVERTEX* parent, ARCH_REGVERTEX* child)
             setbit(c->regBits, c->regs[i]);
             for (j = 0; j < (REG_MAX + BITINTBITS - 1) / BITINTBITS; j++)
             {
-                bits(c->aliasBits)[j] |= bits(chosenAssembler->arch->regNames[c->regs[i]].aliasBits)[j];
+               c->aliasBits[j] |= chosenAssembler->arch->regNames[c->regs[i]].aliasBits[j];
             }
         }
         c = c->next;
@@ -203,7 +209,7 @@ static void LoadWorstCase(void)
                 for (m = 0; m < (REG_MAX + BITINTBITS - 1) / BITINTBITS; m++)
                 {
                     BITINT x =
-                        bits(classes[i]->regBits)[m] & bits(chosenAssembler->arch->regNames[classes[j]->regs[k]].aliasBits)[m];
+                        classes[i]->regBits[m] & chosenAssembler->arch->regNames[classes[j]->regs[k]].aliasBits[m];
                     int y;
                     for (y = 0; y < sizeof(BITINT); y++)
                     {
@@ -228,24 +234,26 @@ static void LoadAliases(ARCH_REGVERTEX* v)
         LoadAliases(v->left);
     if (v->right)
         LoadAliases(v->right);
-    v->aliasBits = (BITARRAY*)calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
 #ifdef TESTBITS
-    v->aliasBits->count = REG_MAX;
+    v->aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT)*2 + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
+    *v->aliasBits++ = REG_MAX;
+#else
+    v->aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
 #endif
     if (v->left)
     {
         for (i = 0; i < (REG_MAX + BITINTBITS - 1) / BITINTBITS; i++)
-            bits(v->aliasBits)[i] |= bits(v->left->aliasBits)[i];
+            v->aliasBits[i] |= v->left->aliasBits[i];
     }
     if (v->right)
     {
         for (i = 0; i < (REG_MAX + BITINTBITS - 1) / BITINTBITS; i++)
-            bits(v->aliasBits)[i] |= bits(v->right->aliasBits)[i];
+            v->aliasBits[i] |= v->right->aliasBits[i];
     }
     while (c)
     {
         for (i = 0; i < (REG_MAX + BITINTBITS - 1) / BITINTBITS; i++)
-            bits(v->aliasBits)[i] |= bits(c->aliasBits)[i];
+            v->aliasBits[i] |= c->aliasBits[i];
         c = c->next;
     }
 }
@@ -262,7 +270,7 @@ void LoadSaturationBounds(void)
             // this MIGHT be endian dependent...
             for (k = 0; k < (REG_MAX + BITINTBITS - 1) / BITINTBITS; k++)
             {
-                BITINT x = bits(classes[i]->regBits)[k] & bits(vertexes[j]->aliasBits)[k];
+                BITINT x = classes[i]->regBits[k] & vertexes[j]->aliasBits[k];
                 int y;
                 for (y = 0; y < sizeof(BITINT); y++)
                 {
@@ -650,13 +658,13 @@ void SqueezeInit(void)
 }
 static void CalculateFunctionFlags(void)
 {
-    BRIGGS_SET* exposed = briggsAlloct(tempCount);
+    BriggsSet* exposed = briggsAlloct(tempCount);
     int i, j;
     for (j = 0; j < tempCount; j++)
         tempInfo[j]->liveAcrossFunctionCall = false;
     for (i = 0; i < blockCount; i++)
     {
-        struct _block* blk = blockArray[i];
+        struct Block* blk = blockArray[i];
         if (blk && blk->head)
         {
             QUAD* tail = blk->tail;
@@ -745,7 +753,7 @@ static void CountInstructions(bool first)
     int i;
     for (i = 0; i < tempCount; i++)
     {
-        TEMP_INFO* t = tempInfo[i];
+        TempInfo* t = tempInfo[i];
         t->doGlobal = false;
     }
     instructionCount = 0;
@@ -917,7 +925,7 @@ static int fsizeFromISZ(int sz)
         n += 100;
     return n;
 }
-static void Build(BLOCK* b)
+static void Build(Block* b)
 {
     QUAD* head;
     BLOCKLIST* bl;
@@ -926,7 +934,7 @@ static void Build(BLOCK* b)
     {
         for (i = 0; i < tempCount; i++)
         {
-            TEMP_INFO* t = tempInfo[i];
+            TempInfo* t = tempInfo[i];
             t->workingMoves = nullptr;
             t->spillCost = 0;
             t->temp = 0;
@@ -948,7 +956,7 @@ static void Build(BLOCK* b)
                     if (tempInfo[u]->regClass && (tempInfo[u]->regClass == tempInfo[v]->regClass ||
                                                   fsizeFromISZ(tempInfo[u]->size) == fsizeFromISZ(tempInfo[v]->size)))
                     {
-                        TEMP_INFO* t;
+                        TempInfo* t;
                         setbit(workingMoves, head->index);
                         t = tempInfo[u];
                         if (!t->workingMoves)
@@ -1050,14 +1058,14 @@ static void Adjacent1(int n)
         }
     }
 }
-static BITARRAY* NodeMoves(int n, int index)
+static BITINT* NodeMoves(int n, int index)
 {
     if (tempInfo[n]->workingMoves)
     {
         int i;
-        BITARRAY* rv = tempMoves[index];
-        BITINT* p = bits(rv);
-        BITINT* w = bits(tempInfo[n]->workingMoves);
+        BITINT* rv = tempMoves[index];
+        BITINT* p = rv;
+        BITINT* w = tempInfo[n]->workingMoves;
         memset(p, 0, instructionByteCount * sizeof(BITINT));
         for (i = 0; i < instructionByteCount; i++)
         {
@@ -1070,12 +1078,12 @@ static BITARRAY* NodeMoves(int n, int index)
 }
 static bool MoveRelated(int n, int index)
 {
-    BITARRAY* data = NodeMoves(n, index);
+    BITINT* data = NodeMoves(n, index);
     if (data)
     {
         int i;
         for (i = 0; i < instructionByteCount; i++)
-            if (bits(data)[i])
+            if (data[i])
                 return true;
     }
     return false;
@@ -1086,7 +1094,7 @@ static void MkWorklist(void)
     /* going backwatds to get spill temps first */
     for (i = 0; i < tempCount; i++)
     {
-        TEMP_INFO* t = tempInfo[i];
+        TempInfo* t = tempInfo[i];
         if (t->doGlobal && !t->precolored && t->ircinitial)
         {
             t->doGlobal = false;
@@ -1114,13 +1122,13 @@ static void EnableMoves(BITINT* nodes, int index)
             for (t = i * BITINTBITS; t < i * BITINTBITS + BITINTBITS; t++)
                 if (isset(nodes, t))
                 {
-                    BITARRAY* nm = NodeMoves(t, index);
+                    BITINT* nm = NodeMoves(t, index);
                     int j;
                     if (nm)
                     {
                         for (j = 0; j < instructionByteCount; j++)
                         {
-                            if (bits(activeMoves)[j] & bits(nm)[j])
+                            if (activeMoves[j] & nm[j])
                             {
                                 int k;
                                 for (k = j * BITINTBITS; k < j * BITINTBITS + BITINTBITS; k++)
@@ -1200,7 +1208,7 @@ static int Combine(int u, int v)
     unsigned z;
     int max = (tempCount + BITINTBITS - 1) / BITINTBITS;
     bool losingHiDegreeNode;
-    BITARRAY *tu, *tv;
+    BITINT *tu, *tv;
     /*
     if (!tempInfo[v]->precolored && !tempInfo[u]->precolored)
         if (tempInfo[v]->neighbors > tempInfo[u]->neighbors)
@@ -1229,12 +1237,12 @@ static int Combine(int u, int v)
     }
     if (tempInfo[u]->precolored)
     {
-        BITARRAY* nm = tempInfo[v]->workingMoves;
+        BITINT* nm = tempInfo[v]->workingMoves;
         int j;
         for (j = 0; j < instructionByteCount; j++)
         {
             int z;
-            if ((z = bits(nm)[j]))
+            if ((z = nm[j]))
             {
                 int k;
                 int m = j * BITINTBITS;
@@ -1265,7 +1273,7 @@ static int Combine(int u, int v)
                 tempInfo[u]->workingMoves = tu = tallocbit(instructionCount);  // DAL this was modified....
             }
             for (i = 0; i < instructionByteCount; i++)
-                (bits(tu))[i] |= (bits(tv))[i];
+                tu[i] |= tv[i];
         }
     }
     losingHiDegreeNode = tempInfo[u]->squeeze >= tempInfo[u]->regCount && tempInfo[v]->squeeze >= tempInfo[v]->regCount;
@@ -1380,7 +1388,7 @@ static bool Coalesce(void)
     for (i = 0; i < instructionByteCount; i++)
     {
         BITINT x;
-        if ((x = (bits(workingMoves))[i]))
+        if ((x = workingMoves[i]))
         {
             int j;
             for (j = 0; x; j++, x >>= 1)
@@ -1449,14 +1457,14 @@ join:
 }
 static void FreezeMoves(int u)
 {
-    BITARRAY* nm;
+    BITINT* nm;
     int i;
     nm = NodeMoves(u, 0);
     if (nm)
     {
         for (i = 0; i < instructionByteCount; i++)
         {
-            if (bits(nm)[i])
+            if (nm[i])
             {
                 int j;
                 for (j = i * BITINTBITS; j < i * BITINTBITS + BITINTBITS; j++)
@@ -1782,7 +1790,7 @@ static void SpillColor(void)
 /* attempt to use the same spill var for any spilled variables
  * which are connected by an uncoalesced move
  */
-static void SpillCoalesce(BRIGGS_SET* C, BRIGGS_SET* S)
+static void SpillCoalesce(BriggsSet* C, BriggsSet* S)
 {
     typedef struct _move_
     {
@@ -1797,13 +1805,13 @@ static void SpillCoalesce(BRIGGS_SET* C, BRIGGS_SET* S)
     for (i = 0; i < S->top; i++)
     {
         int n = S->data[i];
-        BITARRAY* nm = tempInfo[n]->workingMoves;
+        BITINT* nm = tempInfo[n]->workingMoves;
         int j;
         if (nm)
         {
             for (j = 0; j < instructionByteCount; j++)
             {
-                if (bits(nm)[j] & ~bits(coalescedMoves)[j])
+                if (nm[j] & ~coalescedMoves[j])
                 {
                     int k;
                     for (k = j * BITINTBITS; k < j * BITINTBITS + BITINTBITS; k++)
@@ -1938,15 +1946,15 @@ static void SpillCoalesce(BRIGGS_SET* C, BRIGGS_SET* S)
         }
     }
 }
-static void InsertCandidates(int W, BRIGGS_SET* L)
+static void InsertCandidates(int W, BriggsSet* L)
 {
-    BITARRAY* moves = tempInfo[W]->workingMoves;
+    BITINT* moves = tempInfo[W]->workingMoves;
     int i;
     if (moves)
     {
         for (i = 0; i < instructionByteCount; i++)
         {
-            if (bits(moves)[i] & ~bits(coalescedMoves)[i])
+            if (moves[i] & ~coalescedMoves[i])
             {
                 int j;
                 for (j = i * BITINTBITS; j < i * BITINTBITS + BITINTBITS; j++)
@@ -2026,14 +2034,14 @@ static unsigned lscost(int size)
             return 1;
     }
 }
-static unsigned SpillPropagateSavings(int w, BRIGGS_SET* S)
+static unsigned SpillPropagateSavings(int w, BriggsSet* S)
 {
     unsigned savings = 0;
-    BITARRAY* moves = tempInfo[w]->workingMoves;
+    BITINT* moves = tempInfo[w]->workingMoves;
     int i;
     for (i = 0; i < instructionByteCount; i++)
     {
-        if (bits(moves)[i] & ~bits(coalescedMoves)[i])
+        if (moves[i] & ~coalescedMoves[i])
         {
             int j;
             for (j = i * BITINTBITS; j < i * BITINTBITS + BITINTBITS; j++)
@@ -2062,7 +2070,7 @@ static unsigned SpillPropagateSavings(int w, BRIGGS_SET* S)
     }
     return savings;
 }
-static void SpillPropagate(BRIGGS_SET* P, BRIGGS_SET* S, BRIGGS_SET* L, BRIGGS_SET* NP)
+static void SpillPropagate(BriggsSet* P, BriggsSet* S, BriggsSet* L, BriggsSet* NP)
 {
     int i;
     briggsClear(L);
@@ -2090,9 +2098,9 @@ static void SpillPropagate(BRIGGS_SET* P, BRIGGS_SET* S, BRIGGS_SET* L, BRIGGS_S
 }
 static void SpillPropagateAndCoalesce(void)
 {
-    BRIGGS_SET* P = briggsAlloct(tempCount);
-    BRIGGS_SET* np = briggsAlloct(tempCount);
-    BRIGGS_SET* L = briggsAlloct(tempCount);
+    BriggsSet* P = briggsAlloct(tempCount);
+    BriggsSet* np = briggsAlloct(tempCount);
+    BriggsSet* L = briggsAlloct(tempCount);
     int i;
     spillList = nullptr;
     spillProcessed = briggsAlloct(tempCount);
@@ -2199,7 +2207,7 @@ static void KeepCoalescedNodes(void)
     for (i = 0; i < tempCount; i++)
         tempInfo[i]->partition = i;
 }
-static int LoopNesting(LOOP* loop)
+static int LoopNesting(Loop* loop)
 {
     unsigned rv = 1;
     while (loop)
@@ -2248,10 +2256,9 @@ void Precolor(bool optimized)
 }
 void retemp(void)
 {
-    unsigned short map[65536];
+    unsigned* map = tAllocate<unsigned>(tempCount);
     int i, cur = 0;
     QUAD* head;
-    memset(map, 0, sizeof(map));
     for (i = 0; i < tempCount; i++)
     {
         tempInfo[i]->inUse = false;
@@ -2367,7 +2374,9 @@ void AllocateRegisters(QUAD* head)
         if (passes >= 100)
             break;
         tFree();
+        briggsFreet();
         cFree();
+        briggsFreec();
         for (i = 0; i < tempCount; i++)
         {
             if (!tempInfo[i]->precolored)
@@ -2382,7 +2391,7 @@ void AllocateRegisters(QUAD* head)
         CountInstructions(first);
         simplifyBottom = simplifyTop = 0;
         tempCount += 3000;
-        simplifyWorklist = tAllocate<unsigned short>(tempCount);
+        simplifyWorklist = tAllocate<unsigned>(tempCount);
         freezeWorklist = briggsAlloct(tempCount);
         spillWorklist = briggsAlloct(tempCount);
         spilledNodes = briggsAlloct(tempCount);
@@ -2454,8 +2463,11 @@ void AllocateRegisters(QUAD* head)
     if (passes >= 100)
         diag("register allocator failed");
     tFree();
+    briggsFreet();
     aFree();
+    briggsFreea();
     cFree();
+    briggsFreec();
     registersAssigned = true;
 }
 }  // namespace Optimizer

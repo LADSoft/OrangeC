@@ -38,7 +38,7 @@ void Prealloc(int pass)
 {
     int i;
     bool done = false;
-    BRIGGS_SET* eobGlobals;
+    BriggsSet* eobGlobals;
     liveVariables();
     globalVars = briggsAlloc(tempCount * 2 < 100 ? 100 : tempCount * 2);
     eobGlobals = briggsAlloc(tempCount * 2 < 100 ? 100 : tempCount * 2);

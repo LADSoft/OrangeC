@@ -50,8 +50,12 @@ int _RTL_FUNC _mkdir(const char* __path)
 }
 int _RTL_FUNC mkdir(const char* __path, int __amode) 
 { 
-    int rv = _mkdir(__path); 
+    wchar_t buf[260], *p = buf;
+    while (*__path)
+        *p++ = *__path++;
+    *p = *__path;
+    int rv = _wmkdir(buf); 
     if (!rv)
-        return __ll_chmod(__path, __amode);
+        return __ll_chmod(buf, __amode);
     return rv;
 }

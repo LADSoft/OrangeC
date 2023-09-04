@@ -34,6 +34,10 @@ DEL := del /Q
 COPY := copy
 endif
 
+export MKDIR
+export DEL
+export COPY
+
 all: mkapps
 
 BASEDIRS= ALLOC cmath COMPLIB IO locale MATH PROCONT stdbit stdlib STRING strings \

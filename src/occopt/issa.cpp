@@ -63,7 +63,7 @@ void SSAInit(void) { savedDag = nullptr; }
 /*
  * this is an internal calculation needed to locate where to put PHI nodes
  */
-static void DominancePrime(BLOCK* workList[], BRIGGS_SET* dest, BLOCKLIST* src)
+static void DominancePrime(Block* workList[], BriggsSet* dest, BLOCKLIST* src)
 {
     int top = 0;
     while (src)
@@ -77,7 +77,7 @@ static void DominancePrime(BLOCK* workList[], BRIGGS_SET* dest, BLOCKLIST* src)
     }
     while (top)
     {
-        BLOCK* b = workList[--top];
+        Block* b = workList[--top];
         BLOCKLIST* d = b->dominanceFrontier;
         while (d)
         {
@@ -93,7 +93,7 @@ static void DominancePrime(BLOCK* workList[], BRIGGS_SET* dest, BLOCKLIST* src)
 /*
  * insert a phi node
  */
-static void insertPhiOp(BLOCK* b, int tnum)
+static void insertPhiOp(Block* b, int tnum)
 {
     QUAD *q = Allocate<QUAD>(), *I;
     PHIDATA* phi = Allocate<PHIDATA>();
@@ -135,8 +135,8 @@ static void insertPhiOp(BLOCK* b, int tnum)
  */
 static void insertPhiNodes(void)
 {
-    BLOCK** workList = oAllocate<BLOCK*>(blockCount);
-    BRIGGS_SET* bset = briggsAlloc(blockCount);
+    Block** workList = oAllocate<Block*>(blockCount);
+    BriggsSet* bset = briggsAlloc(blockCount);
     BLOCKLIST* entry = oAllocate<BLOCKLIST>();
     int i, max = tempCount;
 
@@ -151,7 +151,7 @@ static void insertPhiNodes(void)
             DominancePrime(workList, bset, entry);
             for (j = 0; j < bset->top; j++)
             {
-                BLOCK* b = blockArray[bset->data[j]];
+                Block* b = blockArray[bset->data[j]];
                 if (b)
                 {
                     if (isset(b->liveIn, i))
@@ -171,7 +171,7 @@ static void insertPhiNodes(void)
  * not - it depends on the relationship of the links in the rename_hash
  * table to the push of the top level links at the beginning of each block
  */
-static IMODE* renameTemp(BLOCK* b, QUAD* head, IMODE* adr)
+static IMODE* renameTemp(Block* b, QUAD* head, IMODE* adr)
 {
     IMODE* im = nullptr;
     int tnum = adr->offset->sp->i;
@@ -180,7 +180,7 @@ static IMODE* renameTemp(BLOCK* b, QUAD* head, IMODE* adr)
     if (tempInfo[tnum]->renameStack)
     {
         int n = (int)tempInfo[tnum]->renameStack->data;
-        TEMP_INFO* t = tempInfo[n];
+        TempInfo* t = tempInfo[n];
         if (adr->mode == i_direct)
         {
             im = t->enode->sp->imvalue;
@@ -224,7 +224,7 @@ static IMODE* renameTemp(BLOCK* b, QUAD* head, IMODE* adr)
  * after the phi nodes are in place, we start renaming all related temps
  * accordingly
  */
-static void renameToPhi(BLOCK* b)
+static void renameToPhi(Block* b)
 {
     QUAD *head = b->head, *tail;
     BLOCKLIST* bl;
@@ -419,7 +419,7 @@ static void renameToPhi(BLOCK* b)
                     int tnum = tail->ans->offset->sp->i;
                     if (tempInfo[tnum]->renameStack)
                     {
-                        TEMP_INFO* t = tempInfo[(int)tempInfo[tnum]->renameStack->data];
+                        TempInfo* t = tempInfo[(int)tempInfo[tnum]->renameStack->data];
                         IMODE* im;
                         LIST* l;
                         tempInfo[tnum]->renameStack = tempInfo[tnum]->renameStack->next;
@@ -452,7 +452,7 @@ static void renameToPhi(BLOCK* b)
         while (q->dc.opcode == i_phi && q->back != b->tail)
         {
             PHIDATA* pd = q->dc.v.phi;
-            TEMP_INFO* t = tempInfo[pd->T0];
+            TempInfo* t = tempInfo[pd->T0];
             if (t->renameStack)
             {
                 pd->T0 = t->renameStack->data;
@@ -477,7 +477,10 @@ void TranslateToSSA(void)
         tempInfo[i]->postSSATemp = -1;
         tempInfo[i]->partition = i;
         tempInfo[i]->instructionDefines = nullptr;
-        tempInfo[i]->instructionUses = nullptr;
+        if (!tempInfo[i]->instructionUses)
+            tempInfo[i]->instructionUses = new InstructionList;
+        else
+            tempInfo[i]->instructionUses->clear();
         tempInfo[i]->renameStack = nullptr;
         tempInfo[i]->elimPredecessors = nullptr;
         tempInfo[i]->elimSuccessors = nullptr;
@@ -502,9 +505,10 @@ void TranslateToSSA(void)
     renameToPhi(blockArray[0]);
     AliasRundown();
     tFree();
+    briggsFreet();
 }
 
-static void findCopies(BRIGGS_SET* copies, bool all)
+static void findCopies(BriggsSet* copies, bool all)
 {
     QUAD* head = intermed_head;
     while (head)
@@ -564,7 +568,7 @@ static void convergeCriticals(void)
     for (i = exitBlock; i < blockCount; i++)
         if (blockArray[i] && blockArray[i]->critical && blockArray[i]->succ)
         {
-            BLOCK* b = blockArray[i]->succ->block;
+            Block* b = blockArray[i]->succ->block;
             BLOCKLIST* bl = b->pred;
             int c = 0;
             QUAD* head = b->head->fwd;
@@ -595,12 +599,12 @@ static void CheckCoalesce(int T0, int Ti)
     }
 }
 /* walks the loop tree to hit inner loops first */
-static void CoalesceTemps(LOOP* l, bool all)
+static void CoalesceTemps(Loop* l, bool all)
 {
     LIST* p = l->contains;
     while (p)
     {
-        LOOP* t = (LOOP*)p->data;
+        Loop* t = (Loop*)p->data;
         if (t->type != LT_BLOCK)
             CoalesceTemps(t, all);
         p = p->next;
@@ -608,7 +612,7 @@ static void CoalesceTemps(LOOP* l, bool all)
     p = l->contains;
     while (p)
     {
-        LOOP* t = (LOOP*)p->data;
+        Loop* t = (Loop*)p->data;
         if (t->type == LT_BLOCK)
         {
             if (!all || (t->entry->blocknum && !t->entry->critical))
@@ -691,7 +695,7 @@ static void CoalesceTemps(LOOP* l, bool all)
 static void partition(bool all)
 {
     int i;
-    BRIGGS_SET* copied = briggsAlloc(tempCount * 2);
+    BriggsSet* copied = briggsAlloc(tempCount * 2);
     findCopies(copied, all);
     // each temp was partitioned to itself when we allocated the temp
     // now handle critical edges
@@ -701,7 +705,9 @@ static void partition(bool all)
     {
         changed = false;
         CalculateConflictGraph(copied, false);
-        CoalesceTemps(loopArray[loopCount - 1], all);
+        CoalesceTemps(loopArray[loopCount-1], all);
+        cFree();
+        briggsFreec();
     }
 }
 static void returnToNormal(IMODE** adr, bool all)
@@ -710,7 +716,7 @@ static void returnToNormal(IMODE** adr, bool all)
     if ((*adr)->offset)
     {
         int tnum = (*adr)->offset->sp->i, T0p;
-        TEMP_INFO* t;
+        TempInfo* t;
         T0p = findPartition(tnum);
         t = tempInfo[T0p];
         if (t->preSSATemp >= 0 && (!all || tempInfo[t->preSSATemp]->enode->sp->pushedtotemp))
@@ -787,7 +793,7 @@ static void returnToNormal(IMODE** adr, bool all)
         if ((*adr)->offset2)
         {
             int tnum = (*adr)->offset2->sp->i, T0p;
-            TEMP_INFO* t;
+            TempInfo* t;
             T0p = findPartition(tnum);
             t = tempInfo[T0p];
             if (t->preSSATemp >= 0 && (!all || tempInfo[t->preSSATemp]->enode->sp->pushedtotemp))
@@ -810,7 +816,7 @@ static void returnToNormal(IMODE** adr, bool all)
     }
     (*adr) = im;
 }
-static void copyInstruction(BLOCK* blk, int dest, int src, bool all)
+static void copyInstruction(Block* blk, int dest, int src, bool all)
 {
     QUAD *q = Allocate<QUAD>(), *tail = blk->tail;
     IMODE *destim, *srcim;
@@ -825,7 +831,7 @@ static void copyInstruction(BLOCK* blk, int dest, int src, bool all)
     if (q->ans != q->dc.left)
         InsertInstruction(tail, q);
 }
-static void BuildAuxGraph(BLOCK* b, int which, BRIGGS_SET* nodes)
+static void BuildAuxGraph(Block* b, int which, BriggsSet* nodes)
 {
     QUAD* head = b->head;
     bool done = false;
@@ -876,7 +882,7 @@ static void BuildAuxGraph(BLOCK* b, int which, BRIGGS_SET* nodes)
             head = head->fwd;
     }
 }
-static void ElimForward(BRIGGS_SET* visited, ILIST** stack, int T)
+static void ElimForward(BriggsSet* visited, ILIST** stack, int T)
 {
     ILIST* l = tempInfo[T]->elimSuccessors;
     briggsSet(visited, T);
@@ -894,7 +900,7 @@ static void ElimForward(BRIGGS_SET* visited, ILIST** stack, int T)
     l->next = *stack;
     *stack = l;
 }
-static bool unvisitedPredecessor(BRIGGS_SET* visited, int T)
+static bool unvisitedPredecessor(BriggsSet* visited, int T)
 {
     ILIST* l = tempInfo[T]->elimPredecessors;
     while (l)
@@ -905,7 +911,7 @@ static bool unvisitedPredecessor(BRIGGS_SET* visited, int T)
     }
     return false;
 }
-static void ElimBackward(BRIGGS_SET* visited, BLOCK* pred, int T, bool all)
+static void ElimBackward(BriggsSet* visited, Block* pred, int T, bool all)
 {
     ILIST* l;
     briggsSet(visited, T);
@@ -921,7 +927,7 @@ static void ElimBackward(BRIGGS_SET* visited, BLOCK* pred, int T, bool all)
         l = l->next;
     }
 }
-static void CreateCopy(BRIGGS_SET* visited, BLOCK* pred, int T, bool all)
+static void CreateCopy(BriggsSet* visited, Block* pred, int T, bool all)
 {
     /* we are going to ignore copy instructions involving T
      * if T is not live at the end of the block
@@ -959,12 +965,12 @@ static void CreateCopy(BRIGGS_SET* visited, BLOCK* pred, int T, bool all)
         }
     }
 }
-static void EliminatePredecessors(BRIGGS_SET* nodes, BLOCK* pred, BLOCK* b, int which, bool all)
+static void EliminatePredecessors(BriggsSet* nodes, Block* pred, Block* b, int which, bool all)
 {
     BuildAuxGraph(b, which, nodes);
     if (nodes->top)
     {
-        BRIGGS_SET* visited = briggsAlloc(tempCount * 2);
+        BriggsSet* visited = briggsAlloc(tempCount * 2);
         ILIST* stack = nullptr;
         int i;
         for (i = 0; i < nodes->top; i++)
@@ -1001,7 +1007,7 @@ void TranslateFromSSA(bool all)
         return;
     int i;
     QUAD* head;
-    BRIGGS_SET* nodes;
+    BriggsSet* nodes;
     for (i = 0; i < tempCount; i++)
     {
         tempInfo[i]->temp = false;
@@ -1106,5 +1112,6 @@ void TranslateFromSSA(bool all)
             tempInfo[i]->postSSATemp = tempInfo[findPartition(i)]->postSSATemp;
     }
     cFree();
+    briggsFreec();
 }
 }  // namespace Optimizer

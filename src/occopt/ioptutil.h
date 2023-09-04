@@ -22,20 +22,53 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
+#include <unordered_set>
 
 namespace Optimizer
 {
-extern BITINT bittab[BITINTBITS];
 
+
+struct BriggsSet
+{
+    unsigned* indexes;
+    unsigned* data;
+    int size;
+    int top;
+};
+
+extern BITINT bittab[BITINTBITS];
+extern std::unordered_set<BITINT*> btab, cbtab, tbtab, sbtab, abtab, zbtab;
+
+//#define TESTBITS
+#    define allocbit(size) AllocBit(oAlloc, nullptr, size)
+#    define lallocbit(size) AllocBit(Alloc, &btab, size)
+#    define tallocbit(size) AllocBit(tAlloc, &tbtab, size)
+#    define sallocbit(size) AllocBit(sAlloc, &sbtab, size)
+#    define aallocbit(size) AllocBit(aAlloc, &abtab, size)
+#    define callocbit(size) AllocBit(cAlloc, &cbtab, size)
+#    define zallocbit(size) AllocBit(cAlloc, &zbtab, size)
+
+BITINT* AllocBit(void* Allocator(int), std::unordered_set<BITINT*>* tab, unsigned size);
+int isset(BITINT* array, unsigned bit);
+void setbit(BITINT* array, unsigned bit);
+void clearbit(BITINT* array, unsigned bit);
+void bitarrayClear(BITINT* array, unsigned size);
+void zfreebit(BITINT* array);
 void BitInit(void);
-BRIGGS_SET* briggsAlloc(int size);
-BRIGGS_SET* briggsAlloct(int size);
-BRIGGS_SET* briggsAllocc(int size);
-BRIGGS_SET* briggsAllocs(int size);
-BRIGGS_SET* briggsReAlloc(BRIGGS_SET* set, int size);
-int briggsSet(BRIGGS_SET* p, int index);
-int briggsReset(BRIGGS_SET* p, int index);
-int briggsTest(BRIGGS_SET* p, int index);
-int briggsUnion(BRIGGS_SET* s1, BRIGGS_SET* s2);
-int briggsIntersect(BRIGGS_SET* s1, BRIGGS_SET* s2);
+BriggsSet* briggsAlloc(unsigned size);
+BriggsSet* briggsAlloct(unsigned size);
+BriggsSet* briggsAllocc(unsigned size);
+BriggsSet* briggsAllocs(unsigned size);
+void briggsFree();
+void briggsFreet();
+void briggsFreec();
+void briggsFrees();
+void briggsFreea();
+void briggsFreez();
+
+void briggsClear(BriggsSet* p);
+int briggsSet(BriggsSet* p, unsigned index);
+int briggsReset(BriggsSet* p, unsigned index);
+int briggsTest(BriggsSet* p, unsigned index);
+int briggsUnion(BriggsSet* s1, BriggsSet* s2);
 }  // namespace Optimizer

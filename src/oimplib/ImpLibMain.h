@@ -75,7 +75,7 @@ class ImpLibMain
     CmdFiles replaceFiles;
 
     static CmdSwitchParser SwitchParser;
-    static CmdSwitchBool CDLLSwitch;
+    static CmdSwitchString CDLLSwitch;
     static CmdSwitchBool caseSensitiveSwitch;
     static CmdSwitchOutput OutputFile;
 

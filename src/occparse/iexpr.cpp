@@ -330,7 +330,7 @@ static Optimizer::IMODE* bitint_unary(EXPRESSION* node)
         diag("Invalid bitint unary math function");
         return nullptr;
     }
-    call_library(c, getSize(BasicType::pointer_) * 2 + getSize(BasicType::int_));
+    call_library(c, 0);
     return ans;
 }
 static Optimizer::IMODE* bitint_binary(EXPRESSION* node) 
@@ -365,7 +365,7 @@ static Optimizer::IMODE* bitint_binary(EXPRESSION* node)
             auto ans1 = anonymousBits(StorageClass::auto_, node->left->type == ExpressionNode::l_ubitint_, abs(b));
             auto ans = gen_expr(nullptr, ans1, 0, ISZ_ADDR);
             Optimizer::gen_icode(Optimizer::i_parm, nullptr, ans, nullptr);
-            call_library(c, getSize(BasicType::pointer_) * 2 + getSize(BasicType::int_) * 2);
+            call_library(c, 0);
             return ans;
         }
         default: {
@@ -378,7 +378,7 @@ static Optimizer::IMODE* bitint_binary(EXPRESSION* node)
             auto ans1 = anonymousBits(StorageClass::auto_, node->left->type == ExpressionNode::l_ubitint_, abs(b));
             auto ans = gen_expr(nullptr, ans1, 0, ISZ_ADDR);
             Optimizer::gen_icode(Optimizer::i_parm, nullptr, ans, nullptr);
-            call_library(c, getSize(BasicType::pointer_) * 3 + getSize(BasicType::int_));
+            call_library(c, 0);
             return ans;
         }
     }
@@ -426,7 +426,7 @@ static Optimizer::IMODE* bitint_compare(EXPRESSION* node, Optimizer::i_ops btype
     Optimizer::gen_icode(Optimizer::i_parm, nullptr, right, nullptr);
     auto left = gen_expr(nullptr, node->left, 0, ISZ_ADDR);  // address
     Optimizer::gen_icode(Optimizer::i_parm, nullptr, left, nullptr);
-    auto imv = call_library(c, 2 * getSize(BasicType::pointer_) + getSize(BasicType::int_));
+    auto imv = call_library(c, 0);
     if (label >= 0)
     {
         gen_icgoto(btype, label, imv, Optimizer::make_immed(ISZ_UINT, 0));
@@ -445,7 +445,7 @@ static Optimizer::IMODE* bitint_iszero(EXPRESSION* node, bool match, int label)
     Optimizer::gen_icode(Optimizer::i_parm, nullptr, Optimizer::make_immed(ISZ_UINT, bitintbits(node)), nullptr);
     auto left = gen_expr(nullptr, node, 0, ISZ_ADDR);  // address
     Optimizer::gen_icode(Optimizer::i_parm, nullptr, left, nullptr);
-    auto imv = call_library(c, 1 * getSize(BasicType::pointer_) + getSize(BasicType::int_));
+    auto imv = call_library(c, 0);
     if (label >= 0)
     {
         gen_icgoto(match ? Optimizer::i_je : Optimizer::i_jne, label, imv, Optimizer::make_immed(ISZ_UINT, 0));
@@ -474,13 +474,14 @@ static Optimizer::IMODE* bitint_convert(EXPRESSION* node, int size)
             auto ans1 = anonymousBits(StorageClass::auto_, node->left->type == ExpressionNode::l_ubitint_, node->v.b.bits);
             auto ans = gen_expr(nullptr, ans1, 0, ISZ_ADDR);
             Optimizer::gen_icode(Optimizer::i_parm, nullptr, ans, nullptr);
-            call_library("___biconvertb", getSize(BasicType::pointer_) * 2 + getSize(BasicType::int_) * 2);
+            call_library("___biconvertb", 0);
             return ans;
 
         }
         else
         {
-            sz = Optimizer::sizeFromISZ(isz);
+            sz = Optimizer::sizeFromISZ(isz1) * CHAR_BIT * (isz1 < 0 ? -1 : 1);
+            Optimizer::gen_icode(Optimizer::i_parm, nullptr, Optimizer::make_immed(ISZ_UINT, sz), nullptr);
             auto exp = node->left;
             cast(&stdlonglong, &exp);
             auto left = gen_expr(nullptr, exp, 0, ISZ_ULONGLONG);  // address
@@ -489,7 +490,7 @@ static Optimizer::IMODE* bitint_convert(EXPRESSION* node, int size)
             auto ans1 = anonymousBits(StorageClass::auto_, node->left->type == ExpressionNode::l_ubitint_, abs(bitintbits(node)));
             auto ans = gen_expr(nullptr, ans1, 0, ISZ_ADDR);
             Optimizer::gen_icode(Optimizer::i_parm, nullptr, ans, nullptr);
-            call_library("___biconvertw", getSize(BasicType::pointer_) + getSize(BasicType::int_) + getSize(BasicType::long_long_));
+            call_library("___biconvertw", 0);
             return ans;
 
         }
@@ -498,8 +499,8 @@ static Optimizer::IMODE* bitint_convert(EXPRESSION* node, int size)
     {
         // isz1 == +-ISZ_BITINT
         sz = Optimizer::sizeFromISZ(isz);
-        Optimizer::gen_icode(Optimizer::i_parm, nullptr, Optimizer::make_immed(ISZ_UINT, bitintbits(node->left)), nullptr);
         Optimizer::gen_icode(Optimizer::i_parm, nullptr, Optimizer::make_immed(ISZ_UINT, sz * (isz < 0 ? -1 : 1)), nullptr);
+        Optimizer::gen_icode(Optimizer::i_parm, nullptr, Optimizer::make_immed(ISZ_UINT, bitintbits(node->left)), nullptr);
         auto left = gen_expr(nullptr, node->left, 0, ISZ_ADDR);  // address
         Optimizer::gen_icode(Optimizer::i_parm, nullptr, left, nullptr);
         int size = getSize(BasicType::pointer_) + getSize(BasicType::int_) * 2;
@@ -518,7 +519,7 @@ static Optimizer::IMODE* bitint_convert(EXPRESSION* node, int size)
             result = Optimizer::tempreg(size, 0);
             gen_icode(Optimizer::i_assn, result, ap1, nullptr);
         }
-        Optimizer::gen_icode(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(size), Optimizer::make_parmadj(size));
+        Optimizer::gen_icode(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(0), Optimizer::make_parmadj(0));
         return result;
     }
 }

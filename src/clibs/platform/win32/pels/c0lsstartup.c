@@ -69,7 +69,7 @@ static void destroy(void)
 static void _dorundown(void);
 // in the follow, the args are ONLY valid for DLLs
 int __stdcall DllMain(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved);
-void __stdcall __import ___lsdllinit(void* tlsStart, void* tlsEnd, DWORD flags, void (*rundown)(void), unsigned* exceptBlock, HMODULE mainInst);
+void __stdcall __import ___lsdllinit(void* tlsStart, void* tlsEnd, DWORD flags, void (*rundown)(void), unsigned* exceptBlock);
 void __srproc(char*, char*, int);
 int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
 {
@@ -82,8 +82,7 @@ int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvRese
     quote = 0;
     if (!(flags & DLL) || fdwReason == DLL_PROCESS_ATTACH)
     {
-        hInst = GetModuleHandleA(0);
-        ___lsdllinit(_TLSINITSTART, _TLSINITEND, flags, _dorundown, exceptBlock, (flags & DLL) ? NULL : hInst);
+        ___lsdllinit(_TLSINITSTART, _TLSINITEND, flags, _dorundown, exceptBlock);
         if (flags & DLL)
         {
             if (!dllexists)
@@ -94,6 +93,7 @@ int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvRese
                 return 1;
             }
         }
+        hInst = GetModuleHandleA(0);
     }
     __srproc(INITSTART, INITEND, 1);
     if (flags & DLL)

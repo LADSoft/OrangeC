@@ -32,7 +32,7 @@ _memcmp:
     push	ebx
     mov		ecx,[ebp+16]
     sub		eax,eax
-    jecxz	x3
+    jecxz	x1
     mov		ebx,[ebp+8]
     mov		edx,[ebp+12]
     dec		edx
@@ -42,20 +42,13 @@ lp:
     inc		ebx
     sub		al,[edx]
     loopz	lp
-    jc          x2
     jnz		x1
     sub		eax,eax
-x3:
-    pop		ebx
-	pop     ebp
-    ret
-x2:
-    mov         eax,-1
     pop		ebx
 	pop     ebp
     ret
 x1:
-    mov         eax,1
+    movsx	eax,al
     pop		ebx
 	pop     ebp
     ret

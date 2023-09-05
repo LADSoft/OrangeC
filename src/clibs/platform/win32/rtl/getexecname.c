@@ -24,14 +24,11 @@
 
 #include <stdlib.h>
 #include <windows.h>
-extern HMODULE __mainHInst;
-
-
+static char path_lookup[MAX_PATH];
 
 const char* _RTL_FUNC getexecname(void)
 {
-    static char path_lookup[MAX_PATH];
-    int ret = GetModuleFileName(__mainHInst, path_lookup, MAX_PATH - 1);
+    int ret = GetModuleFileName(NULL, path_lookup, MAX_PATH - 1);
     if (ret == 0)
         return NULL;
     return path_lookup;

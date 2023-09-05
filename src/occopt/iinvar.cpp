@@ -104,13 +104,13 @@ static void keep(IMODE* l)
         }
     }
 }
-static bool IsAncestor(Block* b1, Block* b2)
+static bool IsAncestor(BLOCK* b1, BLOCK* b2)
 {
     bool rv = false;
     if (b1)
     {
-        Loop* lb1 = b1->loopParent;
-        Loop* temp = b2->loopParent->parent;
+        LOOP* lb1 = b1->loopParent;
+        LOOP* temp = b2->loopParent->parent;
         while (temp && !rv)
         {
             if (temp == lb1)
@@ -120,25 +120,7 @@ static bool IsAncestor(Block* b1, Block* b2)
     }
     return rv;
 }
-static bool Blocked(Block* one, Block* two)
-{
-    int i = one->blocknum;
-    while (i)
-    {
-        if (blockArray[i]->head->moveBarrier)
-            return true;
-        int j = two->blocknum;
-        while (j)
-        {
-            if (blockArray[j]->head->moveBarrier)
-                return true;
-            j = blockArray[j]->idom;
-        }
-        i = blockArray[i]->idom;
-    }
-    return false;
-}
-static void MoveTo(Block* dest, Block* src, QUAD* head)
+static void MoveTo(BLOCK* dest, BLOCK* src, QUAD* head)
 {
     QUAD* insert = beforeJmp(dest->tail, true);
     QUAD* head2 = Allocate<QUAD>();
@@ -161,9 +143,9 @@ static void MoveTo(Block* dest, Block* src, QUAD* head)
         head->invarKeep = true;
     }
 }
-static void MoveExpression(Block* b, QUAD* head, Block* pbl, Block* pbr)
+static void MoveExpression(BLOCK* b, QUAD* head, BLOCK* pbl, BLOCK* pbr)
 {
-    if (IsAncestor(pbl, b) && !Blocked(pbl, b))
+    if (IsAncestor(pbl, b))
     {
         if (pbr)
         {
@@ -185,7 +167,7 @@ static void MoveExpression(Block* b, QUAD* head, Block* pbl, Block* pbr)
         }
     }
 }
-static bool isPhiUsing(Loop* considering, int temp)
+static bool isPhiUsing(LOOP* considering, int temp)
 {
     bool rv = false;
     if (temp != -1 && considering)
@@ -199,7 +181,7 @@ static bool InvariantPhiUsing(QUAD* head)
     int ans = head->ans->offset->sp->i;
     bool rv = false;
     int left = -1, right = -1;
-    Loop* considering = head->block->loopParent;
+    LOOP* considering = head->block->loopParent;
     if (tempInfo[ans]->preSSATemp >= 0)
         rv = !tempInfo[tempInfo[ans]->preSSATemp]->enode->sp->pushedtotemp;
     if (head->temps & TEMP_LEFT)
@@ -216,7 +198,7 @@ static bool InvariantPhiUsing(QUAD* head)
     }
     return rv;
 }
-void ScanForInvariants(Block* b)
+void ScanForInvariants(BLOCK* b)
 {
     BLOCKLIST* bl = b->succ;
     QUAD* head = b->head;
@@ -230,17 +212,17 @@ void ScanForInvariants(Block* b)
             if (head->dc.opcode == i_phi)
             {
 
-                Loop* parent = head->block->inclusiveLoopParent;
+                LOOP* parent = head->block->inclusiveLoopParent;
                 struct _phiblock* pb;
                 if (!parent->invariantPhiList)
                 {
-                    Loop* last = parent->parent;
+                    LOOP* last = parent->parent;
                     while (last && !last->invariantPhiList)
                         last = last->parent;
 
                     parent->invariantPhiList = allocbit(tempCount);
                     if (last)
-                        memcpy(parent->invariantPhiList, last->invariantPhiList,
+                        memcpy(bits(parent->invariantPhiList), bits(last->invariantPhiList),
                                ((tempCount) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT));
                 }
                 pb = head->dc.v.phi->temps;
@@ -257,7 +239,7 @@ void ScanForInvariants(Block* b)
                 if (!tempInfo[head->ans->offset->sp->i]->inductionLoop && (head->temps & (TEMP_LEFT | TEMP_RIGHT)))
                 {
                     bool canMove = true;
-                    Block *pbl = nullptr, *pbr = nullptr;
+                    BLOCK *pbl = nullptr, *pbr = nullptr;
                     if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
                     {
                         pbl = tempInfo[head->dc.left->offset->sp->i]->blockDefines;
@@ -279,6 +261,35 @@ void ScanForInvariants(Block* b)
                             (!pbr || (pbr->preWalk != b->preWalk && pbr->nesting == b->nesting)))
                             MoveExpression(b, head, pbl, pbr);
                 }
+                /*
+                else if (head->dc.opcode == i_assn && head->dc.left->mode == i_immed)
+                {
+                    if (!isarithmeticconst(head->dc.left->offset))
+                    {
+                        LOOP *lp = b->loopParent;
+                        if (lp)
+                        {
+                            BLOCK *b1 = lp->entry;
+                            if (b1)
+                            {
+                                b1 = blockArray[b1->idom];
+                                if (b1 && b1 != b)
+                                {
+//									MoveTo(b1, b, head);
+                                }
+                            }
+                        }
+
+
+
+
+
+
+
+
+                    }
+                }
+                */
             }
         }
         head = next;

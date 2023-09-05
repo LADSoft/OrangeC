@@ -355,7 +355,7 @@ static void iop_assnblock(Optimizer::QUAD* q)
 {
     oputc('\t', icdFile);
     putamode(q, q->dc.left);
-    oprintf(icdFile, " Block= ");
+    oprintf(icdFile, " BLOCK= ");
     putamode(q, q->dc.right);
     oprintf(icdFile, "(");
     putamode(q, q->ans);
@@ -545,11 +545,11 @@ static void iop_parmblock(Optimizer::QUAD* q)
 static void iop_cppini(Optimizer::QUAD* q) { oprintf(icdFile, "\tCPPINI"); }
 
 /*-------------------------------------------------------------------------*/
-static void iop_dbgblock(Optimizer::QUAD* q) { oprintf(icdFile, "\tDBG Block START"); }
+static void iop_dbgblock(Optimizer::QUAD* q) { oprintf(icdFile, "\tDBG BLOCK START"); }
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_dbgblockend(Optimizer::QUAD* q) { oprintf(icdFile, "\tDBG Block END"); }
+static void iop_dbgblockend(Optimizer::QUAD* q) { oprintf(icdFile, "\tDBG BLOCK END"); }
 static void iop_block(Optimizer::QUAD* q) { oprintf(icdFile, "\tBLOCK %d", q->dc.v.label + 1); }
 
 /*-------------------------------------------------------------------------*/

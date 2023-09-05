@@ -56,7 +56,7 @@ int findPartition(int T0)
 }
 void insertConflict(int i, int j)
 {
-    TempInfo *ti, *tj;
+    TEMP_INFO *ti, *tj;
     int bucket;
     i = findPartition(i);
     j = findPartition(j);
@@ -96,10 +96,10 @@ bool isConflicting(int T0, int T1)
         return false;
     return !!isset(tempInfo[T0]->conflicts, T1);
 }
-void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
+void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
 {
     int i, j;
-    BriggsSet* live = briggsAllocc(tempCount);
+    BRIGGS_SET* live = briggsAllocc(tempCount);
     resetConflict();
     for (i = 0; i < blockCount; i++)
     {

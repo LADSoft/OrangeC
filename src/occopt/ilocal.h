@@ -27,13 +27,14 @@ void diag(const char* fmt, ...);
 
 namespace Optimizer
 {
+extern int tempSize;
 
-extern BriggsSet* killed;
+extern BRIGGS_SET* killed;
 extern int tempBottom, nextTemp;
 
 SimpleExpression* anonymousVar(enum e_scc_type storage_class, SimpleType* tp);
 IMODE* InitTempOpt(int size1, int size2);
-void insertDefines(QUAD* head, Block* b, int tnum);
+void insertDefines(QUAD* head, BLOCK* b, int tnum);
 void insertUses(QUAD* head, int dest);
 void definesInfo(void);
 void usesInfo(void);

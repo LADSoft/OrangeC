@@ -35,7 +35,6 @@
 #include "ilocal.h"
 #include "ireshape.h"
 #include "Utils.h"
-#include "ioptutil.h"
 #include <unordered_map>
 #include <deque>
 #include "FNV_hash.h"
@@ -55,15 +54,13 @@ namespace Optimizer
 {
 static std::unordered_map<int, IMODE*> loadTemps;
 static std::unordered_map<QUAD*, IMODE*, OrangeC::Utils::fnv1a32_binary<DAGCOMPARE>, OrangeC::Utils::bin_eql<DAGCOMPARE>> hash;
-static void ScanVarStrength(InstructionList *l, IMODE* multiplier, int tnum, int match, ILIST* vars)
+static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int match, ILIST* vars)
 {
-    if (!l)
-        return;
-    for (auto uses : *l)
+    while (l)
     {
         IMODE* oldMult = multiplier;
         IMODE* ans = nullptr;
-        QUAD* head = uses;
+        QUAD* head = l->ins;
         switch (head->dc.opcode)
         {
             case i_mul:
@@ -195,6 +192,7 @@ static void ScanVarStrength(InstructionList *l, IMODE* multiplier, int tnum, int
             tempInfo[ans->offset->sp->i]->strengthRename = s->strengthName;
         }
         multiplier = oldMult;
+        l = l->next;
     }
 }
 static void ScanStrength(void)
@@ -202,7 +200,7 @@ static void ScanStrength(void)
     int i;
     for (i = 0; i < loopCount; i++)
     {
-        Loop* lt = loopArray[i];
+        LOOP* lt = loopArray[i];
         if (lt->type != LT_BLOCK)
         {
             INDUCTION_LIST* sets = lt->inductionSets;
@@ -607,7 +605,7 @@ static void ReduceStrengthPhi(QUAD* head)
         }
     }
 }
-static void Sort(Block* b, QUAD* head, QUAD* tail)
+static void Sort(BLOCK* b, QUAD* head, QUAD* tail)
 {
     // the algorithm interleaves the addition sequences,
     // rather than rewrite it we are just going to sort them
@@ -662,7 +660,7 @@ static void Sort(Block* b, QUAD* head, QUAD* tail)
     if (b->tail == tail)
         b->tail = next->back;
 }
-static void ReduceStrength(Block* b)
+static void ReduceStrength(BLOCK* b)
 {
     BLOCKLIST* bl = b->dominates;
     QUAD* head;
@@ -726,7 +724,7 @@ void ReduceLoopStrength(void)
     ScanStrength();
     for (i = 0; i < blockCount; i++)
     {
-        Block* b = blockArray[i];
+        BLOCK* b = blockArray[i];
         if (b)
         {
             QUAD* head = b->head;
@@ -760,7 +758,7 @@ void ReduceLoopStrength(void)
     }
     for (i = 0; i < blockCount; i++)
     {
-        Block* b = blockArray[i];
+        BLOCK* b = blockArray[i];
         if (b)
         {
             QUAD* head = b->head;
@@ -775,6 +773,5 @@ void ReduceLoopStrength(void)
     }
     ReduceStrength(blockArray[0]);
     tFree();
-    briggsFreet();
 }
 }  // namespace Optimizer

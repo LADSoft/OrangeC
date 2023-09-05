@@ -25,8 +25,8 @@
 
 namespace Optimizer
 {
-extern std::vector<unsigned> termMap;
-extern std::vector<unsigned> termMapUp;
+extern unsigned short* termMap;
+extern unsigned short* termMapUp;
 extern unsigned termCount;
 
 void SetunMoveableTerms(void);

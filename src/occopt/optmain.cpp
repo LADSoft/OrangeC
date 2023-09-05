@@ -59,71 +59,6 @@
 #include "iloop.h"
 #include "localprotect.h"
 
-//#define x64_compiler
-#ifndef x64_compiler
-// this overloading of operator new/delete is a speed optimization
-// it basically caches small allocations for reuse
-// there are a lot of temporary containers created and maintained
-// and this keeps from having the full impact of new/delete any
-// time they are used
-// resulted in about a 20% speedup of the compiler on the worst files
-#define HASHBLKSIZE 128
-
-struct __preheader
-{
-    int size;
-    __preheader* link;
-};
-__preheader* dictionary[HASHBLKSIZE];
-void* operator new(size_t aa)
-{
-    if (!aa)
-        aa++;
-    int bb = (aa + 7) / 8;
-    if (bb < HASHBLKSIZE)
-    {
-        __preheader** x = dictionary + bb;
-        if (*x)
-        {
-            __preheader* rv = *x;
-            *x = rv->link;
-            return (void*)(rv + 1);
-        }
-    }
-    __preheader* rv;
-    while ((rv = (__preheader*)::malloc(bb * 8 + sizeof(__preheader))) == 0)
-    {
-        // If malloc fails and there is a new_handler,
-        // call it to try free up memory.
-        std::new_handler nh = std::get_new_handler();
-        if (nh)
-            nh();
-        else
-            throw std::bad_alloc();
-    }
-    rv->size = bb;
-    rv->link = nullptr;
-    return (void *)(rv + 1);
-}
-void operator delete(void* p)
-{
-    if (!p)
-        return;
-    __preheader* item = ((__preheader *)p)-1;
-    if (item->size < HASHBLKSIZE)
-    {
-        __preheader** x = dictionary + item->size;
-        item->link = *x;
-        *x = item;
-    }
-    else
-    {
-        free(item);
-    }
-}
-
-#endif
-
 int usingEsp;
 
 Optimizer::SimpleSymbol* currentFunction;
@@ -211,7 +146,7 @@ void examine_icode(QUAD* head)
             break;
     }
 }
-int PreRegAlloc(QUAD* tail, BriggsSet* globalVars, BriggsSet* eobGlobals, int pass)
+int PreRegAlloc(QUAD* tail, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int pass)
 {
     switch (architecture)
     {
@@ -225,8 +160,12 @@ int PreRegAlloc(QUAD* tail, BriggsSet* globalVars, BriggsSet* eobGlobals, int pa
 
 void CreateTempsAndBlocks(FunctionData* fd)
 {
-    blockArray.clear();
-    blockArray.resize(blockCount);
+    if (!blockArray || blockCount > blockMax)
+    {
+        free(blockArray);
+        blockMax = (blockCount + 999) /1000 * 1000;
+        blockArray = (BLOCK**)calloc(sizeof(BLOCK *), blockMax);
+    }
     for (auto im : fd->imodeList)
     {
         if (im->offset)

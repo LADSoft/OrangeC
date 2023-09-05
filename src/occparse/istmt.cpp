@@ -696,7 +696,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
             // only one return statement, label isn't needed
             // and get rid of the goto as well...
             Optimizer::QUAD* find = Optimizer::intermed_tail;
-            Optimizer::Block* b = find->block;
+            Optimizer::BLOCK* b = find->block;
             while (b == find->block && (find->dc.opcode == Optimizer::i_line || find->ignoreMe))
                 find = find->back;
             if (b == find->block && find->dc.opcode == Optimizer::i_goto && find->dc.v.label == retlab)
@@ -995,10 +995,10 @@ static Optimizer::IMODE* GetBucket(Optimizer::IMODE* mem)
     return nullptr;
 }
 /*-------------------------------------------------------------------------*/
-static void InsertParameterThunks(SYMBOL* funcsp, Optimizer::Block* b)
+static void InsertParameterThunks(SYMBOL* funcsp, Optimizer::BLOCK* b)
 {
     Optimizer::QUAD *old, *oldit;
-    Optimizer::Block* ocb = Optimizer::currentBlock;
+    Optimizer::BLOCK* ocb = Optimizer::currentBlock;
     old = b->head->fwd;
     while (old != b->tail && old->dc.opcode != Optimizer::i_label)
         old = old->fwd;

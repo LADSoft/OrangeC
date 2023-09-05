@@ -62,6 +62,7 @@ __time_t_64 _RTL_FUNC _mktime64(struct tm* timeptr)
 
     if (t.tm_isdst < 0)
         t.tm_isdst = _daylight;
+    days -= _daylight * 60 * 60;
     x = days - _timezone;
     t.tm_sec = x % 60;
     x /= 60;
@@ -89,8 +90,6 @@ __time_t_64 _RTL_FUNC _mktime64(struct tm* timeptr)
         i -= _monthdays[++t.tm_mon];
     t.tm_mday = i + _monthdays[t.tm_mon] + 1;
     *timeptr = t;
-    if (t.tm_isdst)
-        days -= 60 * 60;
     return days;
 }
 __time_t_32 _RTL_FUNC _mktime32(struct tm* timeptr)

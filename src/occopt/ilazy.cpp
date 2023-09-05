@@ -64,17 +64,25 @@
 
 namespace Optimizer
 {
-std::vector<unsigned> termMap;
-std::vector<unsigned> termMapUp;
+unsigned short* termMap;
+unsigned short* termMapUp;
 unsigned termCount;
 
-static Block **reverseOrder, **forwardOrder;
+static BLOCK **reverseOrder, **forwardOrder;
 static BITINT *tempBytes, *tempBytes2, *tempBytes3;
 static int fwdBlocks, reverseBlocks;
 static BITINT* unMoveableTerms;
 static BITINT* ocpTerms;
 
 typedef std::list<std::pair<QUAD*, QUAD*>> QuadPairList;
+
+static BITINT* allocate_bits(int size)
+{
+    if (cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY)
+        return lallocbit(size);
+    else
+        return aallocbit(size);
+}
 
 static void ormap(BITINT* dest, BITINT* src)
 {
@@ -146,9 +154,16 @@ static bool AnySet(BITINT* map)
 static void EnterGlobal(QUAD* head)
 {
     head->OCPTerms = termCount;
-    head->transparent = zallocbit(termCount);
+    head->dsafe = allocate_bits(termCount);
+    head->earliest = allocate_bits(termCount);
+    head->delay = allocate_bits(termCount);
+    head->latest = allocate_bits(termCount);
+    head->isolated = allocate_bits(termCount);
+    head->OCP = allocate_bits(termCount);
+    head->RO = allocate_bits(termCount);
+    head->uses = allocate_bits(termCount);
+    head->transparent = allocate_bits(termCount);
     setmap(head->transparent, true);
-    head->uses = zallocbit(termCount);
 }
 static void GatherGlobals(void)
 {
@@ -200,11 +215,11 @@ void SetunMoveableTerms(void)
     int i;
     // if they don't have floating point regs then don't move expressions involving
     // floating point
-    unMoveableTerms = zallocbit(termCount);
+    unMoveableTerms = allocate_bits(termCount);
     setmap(unMoveableTerms, true);
     for (i = 0; i < blockCount; i++)
     {
-        Block* b = blockArray[i];
+        BLOCK* b = blockArray[i];
         if (b)
         {
             QUAD* head;
@@ -292,18 +307,18 @@ void SetunMoveableTerms(void)
 static void CalculateUses(void)
 {
     int i, j;
-    Block* b;
+    BLOCK* b;
     QUAD *head, *tail;
     setmap(tempBytes, true);
     tail = intermed_tail;
-    while (!tail->uses)
+    while (!tail->OCP)
         tail = tail->back;
     while (tail)
     {
         bool first = true;
         head = tail;
         setmap(tail->uses, false);
-        while (head && (first || !head->uses))
+        while (head && (first || !head->OCP))
         {
             first = false;
             if (!head->ignoreMe)
@@ -349,11 +364,11 @@ static void CalculateTransparent(void)
     int i, j, k;
     QUAD *head = nullptr, *tail;
     tail = intermed_tail;
-    while (!tail->transparent)
+    while (!tail->OCP)
         tail = tail->back;
     while (tail)
     {
-        setmap(tail->transparent, !tail->moveBarrier);
+        setmap(tail->transparent, true);
         if (tail->dc.opcode == i_cmpxchgstrong || tail->dc.opcode == i_cmpxchgweak)
         {
             QUAD* next = tail->fwd;
@@ -370,7 +385,7 @@ static void CalculateTransparent(void)
             QUAD* next = tail->fwd;
             setmap(tempBytes3, false);
             AliasGosub(tail, tempBytes3, tail->transparent, n /** sizeof(BITINT)*/);
-            while (next && !next->transparent)
+            while (next && !next->OCP)
             {
                 if (next->dc.left && next->dc.left->retval && (next->temps & TEMP_ANS) && next->ans->mode == i_direct)
                 {
@@ -414,7 +429,7 @@ static void CalculateTransparent(void)
             andmap(tail->transparent, tempBytes);
         }
         head = tail->back;
-        while (head && !head->transparent)
+        while (head && !head->OCP)
         {
             if (!head->ignoreMe)
             {
@@ -425,7 +440,7 @@ static void CalculateTransparent(void)
                         int n = head->ans->offset->sp->i;
                         if (!tempInfo[n]->uses)
                         {
-                            tempInfo[n]->uses = aallocbit(termCount);
+                            tempInfo[n]->uses = allocate_bits(termCount);
                             AliasUses(tempInfo[n]->uses, head->dc.left, true);
                             AliasUses(tempInfo[n]->uses, head->dc.right, true);
                         }
@@ -445,7 +460,7 @@ static void CalculateTransparent(void)
         do
         {
             tail = tail->fwd;
-        } while (tail && !tail->transparent);
+        } while (tail && !tail->OCP);
         if (tail)
         {
             if (tail->ans && tail->dc.opcode != i_label)
@@ -478,50 +493,40 @@ static void CalculateTransparent(void)
 }
 static QUAD* previous(QUAD* tail)
 {
-    Block* b = tail->block;
+    BLOCK* b = tail->block;
     do
     {
         tail = tail->back;
-    } while (tail && !tail->transparent);
+    } while (tail && !tail->OCP);
     if (!tail || tail->block != b)
         return nullptr;
     return tail;
 }
 static QUAD* successor(QUAD* head)
 {
-    Block* b = head->block;
+    BLOCK* b = head->block;
     do
     {
         head = head->fwd;
-    } while (head && !head->transparent);
+    } while (head && !head->OCP);
     if (!head || head->block != b)
         return nullptr;
     return head;
 }
 static QUAD* First(QUAD* head)
 {
-    if (head->transparent)
+    if (head->OCP)
         return head;
     return successor(head);
 }
 static QUAD* Last(QUAD* tail)
 {
-    if (tail->transparent)
+    if (tail->OCP)
         return tail;
     return previous(tail);
 }
 static void CalculateDSafe(void)
 {
-    for (int i = 0; i < blockCount; i++)
-    {
-        Block* b = blockArray[i];
-        if (b)
-        {
-            for (auto head = b->head; head != b->tail->fwd; head = head->fwd)
-                if (head->OCPTerms)
-                    head->dsafe = zallocbit(termCount);
-        }
-    }
     int i;
     bool changed;
     do
@@ -529,7 +534,7 @@ static void CalculateDSafe(void)
         changed = false;
         for (i = 0; i < reverseBlocks; i++)
         {
-            Block* b = reverseOrder[i];
+            BLOCK* b = reverseOrder[i];
             if (b)
             {
                 QUAD* tail = Last(b->tail);
@@ -578,16 +583,6 @@ static void CalculateDSafe(void)
 }
 static void CalculateEarliest(void)
 {
-    for (int i = 0; i < blockCount; i++)
-    {
-        Block* b = blockArray[i];
-        if (b)
-        {
-            for (auto head = b->head; head != b->tail->fwd; head = head->fwd)
-                if (head->OCPTerms)
-                    head->earliest = zallocbit(termCount);
-        }
-    }
     int i;
     bool changed;
     setmap(blockArray[0]->head->earliest, true);
@@ -596,7 +591,7 @@ static void CalculateEarliest(void)
         changed = false;
         for (i = 0; i < fwdBlocks; i++)
         {
-            Block* b = forwardOrder[i];
+            BLOCK* b = forwardOrder[i];
             if (b)
             {
                 QUAD* head = First(b->head);
@@ -651,30 +646,9 @@ static void CalculateEarliest(void)
             }
         }
     } while (changed);
-    if (!(cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY))
-        for (int i = 0; i < blockCount; i++)
-        {
-            Block* b = blockArray[i];
-            if (b)
-            {
-                for (auto head = b->head; head != b->tail->fwd; head = head->fwd)
-                    if (head->OCPTerms)
-                        zfreebit(head->transparent);
-            }
-        }
 }
 static void CalculateDelay(void)
 {
-    for (int i = 0; i < blockCount; i++)
-    {
-        Block* b = blockArray[i];
-        if (b)
-        {
-            for (auto head = b->head; head != b->tail->fwd; head = head->fwd)
-                if (head->OCPTerms)
-                    head->delay = zallocbit(termCount);
-        }
-    }
     int i;
     bool changed;
     do
@@ -682,7 +656,7 @@ static void CalculateDelay(void)
         changed = false;
         for (i = 0; i < fwdBlocks; i++)
         {
-            Block* b = forwardOrder[i];
+            BLOCK* b = forwardOrder[i];
             if (b)
             {
                 QUAD* head = First(b->head);
@@ -736,38 +710,13 @@ static void CalculateDelay(void)
             }
         }
     } while (changed);
-    if (!(cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY))
-        for (int i = 0; i < blockCount; i++)
-        {
-            Block* b = blockArray[i];
-            if (b)
-            {
-                for (auto head = b->head; head != b->tail->fwd; head = head->fwd)
-                    if (head->OCPTerms)
-                    {
-                        zfreebit(head->dsafe);
-                        zfreebit(head->earliest);
-
-                    }
-            }
-        }
 }
 static void CalculateLatest(void)
 {
-    for (int i = 0; i < blockCount; i++)
-    {
-        Block* b = blockArray[i];
-        if (b)
-        {
-            for (auto head = b->head; head != b->tail->fwd; head = head->fwd)
-                if (head->OCPTerms)
-                    head->latest = zallocbit(termCount);
-        }
-    }
     int i;
     for (i = 0; i < reverseBlocks; i++)
     {
-        Block* b = reverseOrder[i];
+        BLOCK* b = reverseOrder[i];
         if (b)
         {
             QUAD* tail = Last(b->tail);
@@ -815,32 +764,9 @@ static void CalculateLatest(void)
                 diag("Empty block in latest");
         }
     }
-    if (!(cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY))
-        for (int i = 0; i < reverseBlocks; i++)
-        {
-            Block* b = reverseOrder[i];
-            if (b)
-            {
-                for (auto head = b->head; head != b->tail->fwd; head = head->fwd)
-                    if (head->OCPTerms)
-                    {
-                        zfreebit(head->delay);
-                    }
-            }
-        }
 }
 static void CalculateIsolated(void)
 {
-    for (int i = 0; i < reverseBlocks; i++)
-    {
-        Block* b = reverseOrder[i];
-        if (b)
-        {
-            for (auto head = b->head; head != b->tail->fwd; head = head->fwd)
-                if (head->OCPTerms)
-                    head->isolated = zallocbit(termCount);
-        }
-    }
     int i;
     bool changed;
     setmap(blockArray[exitBlock]->tail->isolated, true);
@@ -851,7 +777,7 @@ static void CalculateIsolated(void)
         changed = false;
         for (i = 0; i < reverseBlocks; i++)
         {
-            Block* b = reverseOrder[i];
+            BLOCK* b = reverseOrder[i];
             if (b && b->blocknum != exitBlock)
             {
                 QUAD* tail = Last(b->tail);
@@ -906,7 +832,7 @@ static void GatherTerms(void)
 {
     int i;
     QUAD* tail = intermed_tail;
-    while (tail && !tail->transparent)
+    while (tail && !tail->OCP)
         tail = tail->back;
     for (i = 0; i < tempCount; i++)
     {
@@ -916,7 +842,7 @@ static void GatherTerms(void)
     while (tail)
     {
         tail = tail->back;
-        while (tail && !tail->transparent)
+        while (tail && !tail->OCP)
         {
             if ((tail->temps & TEMP_ANS) && tail->ans->mode == i_direct)
             {
@@ -931,7 +857,7 @@ static void GatherTerms(void)
                         {
                             if (!tempInfo[l]->indTerms)
                             {
-                                tempInfo[l]->indTerms = aallocbit(termCount);
+                                tempInfo[l]->indTerms = allocate_bits(termCount);
                                 setmap(tempInfo[l]->indTerms, true);
                             }
                             if (tempInfo[n]->terms)
@@ -942,7 +868,7 @@ static void GatherTerms(void)
                         }
                         if (!tempInfo[l]->terms)
                         {
-                            tempInfo[l]->terms = aallocbit(termCount);
+                            tempInfo[l]->terms = allocate_bits(termCount);
                         }
                         if (tempInfo[l]->termClear)
                         {
@@ -964,7 +890,7 @@ static void GatherTerms(void)
                         int l = tail->dc.right->offset->sp->i;
                         if (!tempInfo[l]->terms)
                         {
-                            tempInfo[l]->terms = aallocbit(termCount);
+                            tempInfo[l]->terms = allocate_bits(termCount);
                         }
                         if (tempInfo[l]->termClear)
                         {
@@ -986,7 +912,7 @@ static void GatherTerms(void)
                 {
                     if (!loadTerms[tail->dc.left])
                     {
-                        loadTerms[tail->dc.left] = aallocbit(termCount);
+                        loadTerms[tail->dc.left] = allocate_bits(termCount);
                         setmap(loadTerms[tail->dc.left], true);
                     }
                     clearbit(loadTerms[tail->dc.left], termMap[n]);
@@ -1005,21 +931,21 @@ static void GatherTerms(void)
                 int l = tail->dc.left->offset->sp->i;
                 if (!tempInfo[l]->indTerms)
                 {
-                    tempInfo[l]->indTerms = aallocbit(termCount);
+                    tempInfo[l]->indTerms = allocate_bits(termCount);
                     setmap(tempInfo[l]->indTerms, true);
                 }
             }
         }
     }
     tail = intermed_tail;
-    while (tail && !tail->transparent)
+    while (tail && !tail->OCP)
         tail = tail->back;
     std::unordered_map<IMODE*, BITINT*> immediateTerms;
     // go through immediates and figure out which ind nodes they affect
     while (tail)
     {
         tail = tail->back;
-        while (tail && !tail->transparent)
+        while (tail && !tail->OCP)
         {
             if ((tail->temps & TEMP_ANS) && tail->ans->mode == i_direct)
             {
@@ -1032,7 +958,7 @@ static void GatherTerms(void)
                         {
                             if (!immediateTerms[tail->dc.left])
                             {
-                                immediateTerms[tail->dc.left] = aallocbit(termCount);
+                                immediateTerms[tail->dc.left] = allocate_bits(termCount);
                                 setmap(immediateTerms[tail->dc.left], true);
                             }
                             if (tempInfo[n]->indTerms)
@@ -1051,7 +977,7 @@ static void GatherTerms(void)
                 {
                     if (!immediateTerms[tail->dc.left])
                     {
-                        immediateTerms[tail->dc.left] = aallocbit(termCount);
+                        immediateTerms[tail->dc.left] = allocate_bits(termCount);
                         setmap(immediateTerms[tail->dc.left], true);
                     }
                     if (loadTerms[tail->ans])
@@ -1068,7 +994,7 @@ static void GatherTerms(void)
         }
     }
     tail = intermed_tail;
-    while (tail && !tail->transparent)
+    while (tail && !tail->OCP)
         tail = tail->back;
     while (tail)
     {
@@ -1112,7 +1038,7 @@ static void GatherTerms(void)
 static void CalculateOCPAndRO(void)
 {
     int i;
-    ocpTerms = zallocbit(termCount);
+    ocpTerms = allocate_bits(termCount);
     for (i = 0; i < fwdBlocks; i++)
     {
         if (forwardOrder[i])
@@ -1120,10 +1046,8 @@ static void CalculateOCPAndRO(void)
             QUAD* head = forwardOrder[i]->head;
             while (head != forwardOrder[i]->tail->fwd)
             {
-                if (head->transparent)
+                if (head->OCP)
                 {
-                    head->OCP = zallocbit(termCount);
-                    head->RO = zallocbit(termCount);
 
                     copymap(head->OCP, head->isolated);
                     complementmap(head->OCP);
@@ -1136,11 +1060,6 @@ static void CalculateOCPAndRO(void)
                     andmap(head->RO, head->uses);
                     andmap(head->RO, unMoveableTerms);
                     ormap(ocpTerms, head->RO);
-                    if (!(cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY))
-                    {
-                        zfreebit(head->isolated);
-                        zfreebit(head->latest);
-                    }
                 }
                 head = head->fwd;
             }
@@ -1379,11 +1298,8 @@ static void MoveExpressions(void)
         if (isset(ocpTerms, i))
         {
             int j;
-            int size = tempInfo[termMapUp[i]]->enode->sp->imvalue->size;;
-            // this is split into two lines as the fact that InitTempOpt could move 
-            // the underlying store for tempInfo confused the VC++ optimizer...
-            auto temp = InitTempOpt(size, size);
-            tempInfo[termMapUp[i]]->copy = temp;
+            int size = tempInfo[termMapUp[i]]->enode->sp->imvalue->size;
+            tempInfo[termMapUp[i]]->copy = InitTempOpt(size, size);
             for (j = 0; j < fwdBlocks; j++)
             {
 
@@ -1511,7 +1427,7 @@ static void PadBlocks(void)
     int i;
     for (i = 0; i < blockCount; i++)
     {
-        Block* b = blockArray[i];
+        BLOCK* b = blockArray[i];
         if (b && b->head == b->tail)
         {
             QUAD* ins = Allocate<QUAD>();
@@ -1520,7 +1436,7 @@ static void PadBlocks(void)
         }
     }
 }
-static int fgc(enum e_fgtype type, Block* parent, Block* b) { return true; }
+static int fgc(enum e_fgtype type, BLOCK* parent, BLOCK* b) { return true; }
 void SetGlobalTerms(void)
 {
     int i, j;
@@ -1535,10 +1451,8 @@ void SetGlobalTerms(void)
             if (tempInfo[i]->inUse)
                 termCount++;
     }
-    termMap.clear();
-    termMap.resize(tempCount);
-    termMapUp.clear();
-    termMapUp.resize(termCount);
+    termMap = Allocate<unsigned short>(tempCount);
+    termMapUp = Allocate<unsigned short>(termCount);
     for (i = 0, j = 0; i < tempCount; i++)
         if (tempInfo[i]->inUse || (cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY))
         {
@@ -1552,7 +1466,7 @@ void GlobalOptimization(void)
     QUAD* head = intermed_head;
     int i;
     PadBlocks();
-    forwardOrder = oAllocate<Block*>(blockCount);
+    forwardOrder = oAllocate<BLOCK*>(blockCount);
     fwdBlocks = 0;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
@@ -1560,7 +1474,7 @@ void GlobalOptimization(void)
     forwardOrder[fwdBlocks++] = blockArray[0];
     for (i = 0; i < fwdBlocks; i++)
     {
-        Block* b = forwardOrder[i];
+        BLOCK* b = forwardOrder[i];
         BLOCKLIST* bl = b->succ;
         while (bl)
         {
@@ -1572,7 +1486,7 @@ void GlobalOptimization(void)
             bl = bl->next;
         }
     }
-    reverseOrder = oAllocate<Block*>(blockCount);
+    reverseOrder = oAllocate<BLOCK*>(blockCount);
     reverseBlocks = 0;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
@@ -1580,7 +1494,7 @@ void GlobalOptimization(void)
     reverseOrder[reverseBlocks++] = blockArray[exitBlock];
     for (i = 0; i < reverseBlocks; i++)
     {
-        Block* b = reverseOrder[i];
+        BLOCK* b = reverseOrder[i];
         BLOCKLIST* bl = b->pred;
         while (bl)
         {
@@ -1594,15 +1508,14 @@ void GlobalOptimization(void)
     }
 
     definesInfo();
-    tempBytes = zallocbit(termCount);
-    tempBytes2 = zallocbit(termCount);
-    tempBytes3 = zallocbit(termCount);
+    tempBytes = allocate_bits(termCount);
+    tempBytes2 = allocate_bits(termCount);
+    tempBytes3 = allocate_bits(termCount);
     GatherGlobals();
     GatherTerms();
     CalculateUses();
     CalculateTransparent();
     SetunMoveableTerms();
-    AliasRundown();
     CalculateDSafe();
     CalculateEarliest();
     CalculateDelay();
@@ -1610,7 +1523,5 @@ void GlobalOptimization(void)
     CalculateIsolated();
     CalculateOCPAndRO();
     MoveExpressions();
-    if (!(cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY))
-        briggsFreez();
 }
 }  // namespace Optimizer

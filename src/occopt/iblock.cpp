@@ -49,16 +49,19 @@
 
 namespace Optimizer
 {
-std::vector<TempInfo*> tempInfo;
-std::vector<Block*> blockArray;
+TEMP_INFO** tempInfo;
+BLOCK** blockArray;
 
 Optimizer::QUAD *intermed_head, *intermed_tail;
 int blockCount;
 std::unordered_map<QUAD*, QUAD*, OrangeC::Utils::fnv1a32_binary<DAGCOMPARE>, OrangeC::Utils::bin_eql<DAGCOMPARE>> ins_hash;
 std::unordered_map<IMODE**, QUAD*, OrangeC::Utils::fnv1a32_binary<sizeof(IMODE*)>, OrangeC::Utils::bin_eql<sizeof(IMODE*)>>
     name_hash;
+short wasgoto = false;
 
-Block* currentBlock;
+BLOCK* currentBlock;
+
+int blockMax;
 
 void gen_nodag(enum i_ops op, Optimizer::IMODE* res, Optimizer::IMODE* left, Optimizer::IMODE* right);
 
@@ -224,6 +227,7 @@ int ToQuadConst(Optimizer::IMODE** im)
             rv->ans = tempreg(ISZ_UINT, 0);
             add_intermed(rv);
             ins_hash[rv] = rv;
+            wasgoto = false;
         }
         *im = (Optimizer::IMODE*)rv;
         return 1; /* it is now not a livein node any more*/
@@ -482,18 +486,22 @@ BLOCKLIST* newBlock(void)
 {
     if (blockCount == 0)
     {
-        blockArray.clear();
+        memset(blockArray, 0, sizeof(BLOCK*) * blockMax);
     }
-    if (blockCount >= blockArray.size())
-    {
-        blockArray.resize(blockCount + 1000);
-    }
-    Block* block = Allocate<Block>();
+    BLOCK* block = Allocate<BLOCK>();
     BLOCKLIST* list = Allocate<BLOCKLIST>();
     list->next = 0;
     list->block = block;
     block->blocknum = blockCount++;
-    blockArray[blockCount-1] = block;
+    if (blockCount >= blockMax)
+    {
+        BLOCK** newBlocks = (BLOCK**)calloc(sizeof(BLOCK*), blockMax + 1000);
+        memcpy(newBlocks, blockArray, sizeof(BLOCK*) * blockMax);
+        free(blockArray);
+        blockMax += 1000;
+        blockArray = newBlocks;
+    }
+    blockArray[block->blocknum] = block;
     currentBlock = block;
     return list;
 }
@@ -541,8 +549,9 @@ void gen_label(int labno)
     if (labno < 0)
         diag("gen_label: uncompensatedlabel");
     flush_dag();
-    if (intermed_tail->dc.opcode != i_block)
+    if (!wasgoto)
         addblock(i_label);
+    wasgoto = false;
     newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = i_label;
     newQuad->dc.v.label = labno;
@@ -604,8 +613,8 @@ Optimizer::QUAD* gen_icode_with_conflict(enum i_ops op, Optimizer::IMODE* res, O
     switch (op)
     {
         case i_computedgoto:
-            currentBlock->head->moveBarrier = true;
             flush_dag();
+            addblock(i_goto);
             break;
         case i_ret:
         case i_rett:
@@ -614,6 +623,7 @@ Optimizer::QUAD* gen_icode_with_conflict(enum i_ops op, Optimizer::IMODE* res, O
         default:
             break;
     }
+    wasgoto = op == i_computedgoto;
     return newQuad;
 }
 Optimizer::QUAD* gen_icode(enum i_ops op, Optimizer::IMODE* res, Optimizer::IMODE* left, Optimizer::IMODE* right)
@@ -639,6 +649,7 @@ void gen_iiconst(Optimizer::IMODE* res, long long val)
     newQuad->ans = res;
     newQuad->dc.left = left;
     add_dag(newQuad);
+    wasgoto = false;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -654,6 +665,7 @@ void gen_ifconst(Optimizer::IMODE* res, FPF val)
     newQuad->dc.v.f = val;
     newQuad->ans = res;
     add_dag(newQuad);
+    wasgoto = false;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -670,6 +682,8 @@ void gen_igoto(enum i_ops op, long label)
     newQuad->dc.left = newQuad->dc.right = newQuad->ans = 0;
     newQuad->dc.v.label = label;
     add_intermed(newQuad);
+    addblock(i_goto);
+    wasgoto = true;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -683,6 +697,7 @@ void gen_data(int val)
     newQuad->dc.left = newQuad->dc.right = newQuad->ans = 0;
     newQuad->dc.v.label = val;
     add_intermed(newQuad);
+    wasgoto = false;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -705,6 +720,7 @@ void gen_icgoto(enum i_ops op, long label, Optimizer::IMODE* left, Optimizer::IM
     add_dag(newQuad);
     flush_dag();
     addblock(op);
+    wasgoto = true;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -724,6 +740,8 @@ Optimizer::QUAD* gen_igosub(enum i_ops op, Optimizer::IMODE* left)
     newQuad->dc.v.label = 0;
     add_dag(newQuad);
     flush_dag();
+    /*     addblock(op); */
+    wasgoto = true;
     return intermed_tail;
 }
 
@@ -743,6 +761,7 @@ void gen_icode2(enum i_ops op, Optimizer::IMODE* res, Optimizer::IMODE* left, Op
     newQuad->ans = res;
     newQuad->dc.v.label = label;
     add_intermed(newQuad);
+    wasgoto = false;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -777,20 +796,27 @@ void gen_nodag(enum i_ops op, Optimizer::IMODE* res, Optimizer::IMODE* left, Opt
     newQuad->dc.right = right;
     newQuad->ans = res;
     add_intermed(newQuad);
+    wasgoto = false;
 }
 void RemoveFromUses(Optimizer::QUAD* ins, int tnum)
 {
-    auto s = tempInfo[tnum]->instructionUses;
-    if (s)
+    INSTRUCTIONLIST** l = &tempInfo[tnum]->instructionUses;
+    while (*l)
     {
-        s->erase(ins);
+        if ((*l)->ins == ins)
+        {
+            (*l) = (*l)->next;
+            break;
+        }
+        l = &(*l)->next;
     }
 }
 void InsertUses(Optimizer::QUAD* ins, int tnum)
 {
-    if (!tempInfo[tnum]->instructionUses)
-        tempInfo[tnum]->instructionUses = new InstructionList;
-    tempInfo[tnum]->instructionUses->insert(ins);
+    INSTRUCTIONLIST* l = oAllocate<INSTRUCTIONLIST>();
+    l->next = tempInfo[tnum]->instructionUses;
+    l->ins = ins;
+    tempInfo[tnum]->instructionUses = l;
 }
 void RemoveInstruction(Optimizer::QUAD* ins)
 {
@@ -866,6 +892,7 @@ void RemoveInstruction(Optimizer::QUAD* ins)
 }
 void InsertInstruction(Optimizer::QUAD* before, Optimizer::QUAD* ins)
 {
+    INSTRUCTIONLIST* l;
     ins->block = before->block;
     if (before->fwd && before->fwd->dc.opcode == i_skipcompare)
         if (before->fwd->dc.v.label)

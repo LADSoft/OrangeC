@@ -50,8 +50,6 @@ extern PASCAL struct defstr
 extern int _argc;
 extern char** _argv;
 extern char** _environ;
-HMODULE __mainHInst;
-
 char* _oscmd;
 char* _osenv;
 HINSTANCE __hInstance;

@@ -35,6 +35,7 @@ struct tm* _RTL_FUNC _gmtime64(const __time_t_64* time)
     __time_t_64 t = *time;
     int temp1;
 
+    t -= _daylight * 60 * 60;
     rv->tm_sec = t % 60;
     t /= 60;
     rv->tm_min = t % 60;

@@ -27,8 +27,6 @@
  *
  * icode optimization structures
  */
-#include <set>
-
 #define DUMP_GCSE_INFO
 
 /* the int types can be negative, which means 'signed' vs 'unsigned' */
@@ -67,18 +65,56 @@
 #define ISZ_TOVOIDSTAR 100
 #define ISZ_TOINT 101
 
+//#define TESTBITS
 #define BITINTBITS (8 * sizeof(BITINT))
 
 namespace Optimizer
 {
+#ifdef TESTBITS
+typedef struct _bitarray
+{
+    int count;
+    BITINT data[1];
+} BITARRAY;
+BITARRAY* allocbit(int size);
+BITARRAY* tallocbit(int size);
+BITARRAY* sallocbit(int size);
+BITARRAY* aallocbit(int size);
+BITARRAY* callocbit(int size);
+bool isset(BITARRAY* arr, int bit);
+void setbit(BITARRAY* arr, int bit);
+void clearbit(BITARRAY* arr, int bit);
+void bitarrayClear(BITARRAY* arr, int count);
 
+#    define bits(x) ((x)->data)
+#else
+typedef BITINT BITARRAY;
+
+#    define lallocbit(size) ((BITINT*)Alloc(((size) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT)))
+#    define allocbit(size) ((BITINT*)oAlloc(((size) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT)))
+#    define tallocbit(size) ((BITINT*)tAlloc(((size) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT)))
+#    define sallocbit(size) ((BITINT*)sAlloc(((size) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT)))
+#    define aallocbit(size) ((BITINT*)aAlloc(((size) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT)))
+#    define callocbit(size) ((BITINT*)cAlloc(((size) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT)))
+#    define isset(array, bit) ((array)[((unsigned)(bit)) / BITINTBITS] & bittab[((unsigned)(bit)) & (BITINTBITS - 1)])
+#    define setbit(array, bit) (array)[((unsigned)(bit)) / BITINTBITS] |= bittab[((unsigned)(bit)) & (BITINTBITS - 1)]
+#    define clearbit(array, bit) (array)[((unsigned)(bit)) / BITINTBITS] &= ~bittab[((unsigned)(bit)) & (BITINTBITS - 1)]
+#    define bitarrayClear(array, size) memset(array, 0, ((size) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT))
+#    define bits(x) (x)
+#endif
+#define briggsClear(data) ((data)->top = 0)
 /*
  * basic blocks are kept in this type of structure
  * and marked with an i_block inn the icode
  */
 #define BLOCKLIST_VISITED 1
-
-struct BriggsSet;
+typedef struct
+{
+    unsigned short* indexes;
+    unsigned short* data;
+    int size;
+    int top;
+} BRIGGS_SET;
 
 enum vop
 {
@@ -92,7 +128,11 @@ typedef struct _value_of
     enum vop type;
     IMODE* imode;
 } VALUEOF;
-typedef std::set<QUAD*> InstructionList;
+typedef struct _ins_list
+{
+    struct _ins_list* next;
+    QUAD* ins;
+} INSTRUCTIONLIST;
 typedef struct _im_list
 {
     struct _im_list* next;
@@ -134,22 +174,22 @@ enum e_lptype
     LT_ROOT,
     LT_BLOCK
 };
-struct Loop
+typedef struct _loop
 {
-    struct Loop* next;
+    struct _loop* next;
     enum e_lptype type;
     int loopnum;
-    struct Block* entry; /* will be the block for blocks */
-    struct Loop* parent;
+    struct _block* entry; /* will be the block for blocks */
+    struct _loop* parent;
     LIST* contains;
-    BITINT* invariantPhiList;
+    BITARRAY* invariantPhiList;
     struct _blocklist* successors;
     PRESSURE pressure;
     LIST* occurs;
-    BriggsSet* through;
-    BriggsSet* blocks;
+    BRIGGS_SET* through;
+    BRIGGS_SET* blocks;
     INDUCTION_LIST* inductionSets;
-};
+} LOOP;
 
 typedef struct copieshash
 {
@@ -236,7 +276,7 @@ typedef struct _normlist
     IMODE* value;
     int level;
 } NORMLIST;
-struct TempInfo
+typedef struct
 {
     ILIST* renameStack;
     LIST* bdefines;
@@ -244,8 +284,8 @@ struct TempInfo
     LIST* iuses;
     struct quad* instructionDefines;
     struct quad* storesUses;
-    struct Block* blockDefines;
-    InstructionList* instructionUses;
+    struct _block* blockDefines;
+    INSTRUCTIONLIST* instructionUses;
     BITINT* conflicts;
     IMODE* spillVar;
     IMODE* spillAlias;
@@ -258,7 +298,7 @@ struct TempInfo
     //	int limitUseCount;
     LIMIT_USES* limitUses;
     LIST* quietRegions;
-    Loop* variantLoop;
+    LOOP* variantLoop;
     VALUEOF value;
     RESHAPE_EXPRESSION expression;
     IMODE* inductionReplacement;
@@ -266,7 +306,7 @@ struct TempInfo
     LIST* loadsOut;
     LIST* storesIn;
     LIST* storesOut;
-    BITINT* workingMoves;
+    BITARRAY* workingMoves;
     USES_STRENGTH* sl;
     ALIASLIST* pointsto;
     BITINT* modifiedBy;
@@ -321,18 +361,18 @@ struct TempInfo
     unsigned ircinitial : 1;
     unsigned spilling : 1;
     char size;
-};
+} TEMP_INFO;
 
 typedef struct _exceedPressure
 {
     struct _exceedPressure* next;
-    Loop* l;
+    LOOP* l;
     int prio;
 } EXCEED_PRESSURE;
 
-struct Block
+struct _block
 {
-    int blocknum;
+    short blocknum;
     /*        short dfstnum; */
     int critical : 1;
     int dead : 1;
@@ -356,9 +396,9 @@ struct Block
     struct _blocklist* dominanceFrontier;
     struct _blocklist *pred, *succ;
     struct _blocklist* loopGenerators;
-    Loop* loopParent;
-    Loop* inclusiveLoopParent;
-    Loop* loopName;
+    LOOP* loopParent;
+    LOOP* inclusiveLoopParent;
+    LOOP* loopName;
 
     /*		struct _blocklist *defines; */
     BITINT* liveGen;
@@ -373,7 +413,7 @@ struct Block
 typedef struct _blocklist
 {
     struct _blocklist* next;
-    struct Block* block;
+    struct _block* block;
 } BLOCKLIST;
 
 enum e_fgtype
@@ -386,6 +426,8 @@ enum e_fgtype
     F_CROSSEDGE
 };
 /*------------------------------------------------------------------------- */
+
+typedef struct _block BLOCK;
 /*
  * common code elimination uses this to track
  * all the gotos branching to a given label

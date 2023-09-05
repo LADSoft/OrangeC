@@ -33,7 +33,8 @@ struct tm* _RTL_FUNC _localtime64(const __time_t_64* time)
     __time_t_64 t1 = *time;
     tzset();
     t1 -= _timezone;
-    t1 += _daylight * 60 * 60;
+    // the *2 is because gmtime adjusts for DST...
+    t1 += _daylight * 60 * 60 * 2;
     t = _gmtime64(&t1);
     t->tm_isdst = _daylight;
     return t;

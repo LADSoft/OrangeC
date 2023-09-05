@@ -34,7 +34,6 @@
 #include "memory.h"
 #include "ilocal.h"
 #include "ilive.h"
-#include "ioptutil.h"
 #include "FNV_hash.h"
 /* reshaping and loop induction strength reduction */
 
@@ -85,32 +84,30 @@ void DumpInvariants(void)
     }
 }
 #endif
-bool variantThisLoop(Block* b, int tnum)
+bool variantThisLoop(BLOCK* b, int tnum)
 {
     if (tempInfo[tnum]->instructionDefines)
     {
-        Loop* thisLp = b->loopParent;
-        Loop* variant = tempInfo[tnum]->variantLoop;
+        LOOP* thisLp = b->loopParent;
+        LOOP* variant = tempInfo[tnum]->variantLoop;
         return variant == thisLp || isAncestor(thisLp, variant);
     }
     return false;
 }
-static bool usedThisLoop(Block* b, int tnum)
+static bool usedThisLoop(BLOCK* b, int tnum)
 {
-    auto uses1 = tempInfo[tnum]->instructionUses;
-    if (uses1)
+    INSTRUCTIONLIST* l = tempInfo[tnum]->instructionUses;
+    LOOP* parent = b->loopParent;
+    while (l)
     {
-        Loop* parent = b->loopParent;
-        for (auto uses : *uses1)
-        {
-            Loop* thisLp = uses->block->loopParent;
-            if (parent == thisLp || isAncestor(parent, thisLp))
-                return true;
-        }
+        LOOP* thisLp = l->ins->block->loopParent;
+        if (parent == thisLp || isAncestor(parent, thisLp))
+            return true;
+        l = l->next;
     }
     return false;
 }
-static bool inductionThisLoop(Block* b, int tnum) { return tempInfo[tnum]->inductionLoop && variantThisLoop(b, tnum); }
+static bool inductionThisLoop(BLOCK* b, int tnum) { return tempInfo[tnum]->inductionLoop && variantThisLoop(b, tnum); }
 bool matchesop(enum i_ops one, enum i_ops two)
 {
     if (one == two)
@@ -246,7 +243,7 @@ static void CreateExpressionLists(void)
         {
             if (tempInfo[i]->enode->sizeFromType < ISZ_FLOAT)
             {
-                Loop* lp = tempInfo[i]->instructionDefines->block->loopParent;
+                LOOP* lp = tempInfo[i]->instructionDefines->block->loopParent;
                 /* if the prior of the entry is a critical block,
                  * then don't optimize the loop
                  */
@@ -413,7 +410,7 @@ static void replaceIM(IMODE** iml, IMODE* im)
         }
     }
 }
-static void CopyExpressionTree(enum i_ops op, Block* b, QUAD* insertBefore, IMODE** iml, IMODE** imr)
+static void CopyExpressionTree(enum i_ops op, BLOCK* b, QUAD* insertBefore, IMODE** iml, IMODE** imr)
 {
     if ((*iml) && (*iml)->offset->type == se_tempref)
     {
@@ -471,7 +468,7 @@ static void CopyExpressionTree(enum i_ops op, Block* b, QUAD* insertBefore, IMOD
         }
     }
 }
-static IMODE* InsertAddInstruction(Block* b, int size, QUAD* insertBefore, int flagsl, IMODE* iml, int flagsr, IMODE* imr)
+static IMODE* InsertAddInstruction(BLOCK* b, int size, QUAD* insertBefore, int flagsl, IMODE* iml, int flagsr, IMODE* imr)
 {
     QUAD *ins, *insn = nullptr, *insn2 = nullptr;
     IMODE* imrv;
@@ -521,7 +518,7 @@ static IMODE* InsertAddInstruction(Block* b, int size, QUAD* insertBefore, int f
         return ins->ans;
     }
 }
-static IMODE* InsertMulInstruction(Block* b, int size, QUAD* insertBefore, int flagsl, IMODE* iml, int flagsr, IMODE* imr)
+static IMODE* InsertMulInstruction(BLOCK* b, int size, QUAD* insertBefore, int flagsl, IMODE* iml, int flagsr, IMODE* imr)
 {
     QUAD *ins, *insn = nullptr;
     IMODE* imrv;
@@ -578,18 +575,16 @@ void unmarkPreSSA(QUAD* ins)
 {
     if ((ins->temps & TEMP_ANS) && ins->ans->mode == i_direct)
     {
-        auto uses1 = tempInfo[ins->ans->offset->sp->i]->instructionUses;
+        INSTRUCTIONLIST* il = tempInfo[ins->ans->offset->sp->i]->instructionUses;
         tempInfo[ins->ans->offset->sp->i]->preSSATemp = -1;
-        if (uses1)
+        while (il)
         {
-            for (auto uses : *uses1)
-            {
-                unmarkPreSSA(uses);
-            }
+            unmarkPreSSA(il->ins);
+            il = il->next;
         }
     }
 }
-static void RewriteAdd(Block* b, int tnum)
+static void RewriteAdd(BLOCK* b, int tnum)
 {
     RESHAPE_LIST* gather = tempInfo[tnum]->expression.list;
     IMODE *left = tempInfo[tnum]->expression.lastName, *right = nullptr;
@@ -682,7 +677,7 @@ static void RewriteAdd(Block* b, int tnum)
         ia->temps &= ~TEMP_RIGHT;
     }
 }
-static IMODE* RewriteDistributed(Block* b, int size, IMODE* im, QUAD* ia, RESHAPE_LIST* distrib, int flags)
+static IMODE* RewriteDistributed(BLOCK* b, int size, IMODE* im, QUAD* ia, RESHAPE_LIST* distrib, int flags)
 {
     IMODE* total = distrib->lastDistribName;
     RESHAPE_LIST* gather = distrib;
@@ -712,7 +707,7 @@ static IMODE* RewriteDistributed(Block* b, int size, IMODE* im, QUAD* ia, RESHAP
     }
     return total;
 }
-static void RewriteMul(Block* b, int tnum)
+static void RewriteMul(BLOCK* b, int tnum)
 {
     RESHAPE_LIST* gather = tempInfo[tnum]->expression.list;
     if (gather)
@@ -804,7 +799,7 @@ static void RewriteMul(Block* b, int tnum)
         }
     }
 }
-static void RewriteInvariantExpressions(Block* b)
+static void RewriteInvariantExpressions(BLOCK* b)
 {
     BLOCKLIST* bl = b->dominates;
     int i;
@@ -890,6 +885,5 @@ void Reshape(void)
     DumpInvariants();
 #endif
     tFree();
-    briggsFreet();
 }
 }  // namespace Optimizer

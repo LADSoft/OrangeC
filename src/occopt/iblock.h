@@ -27,16 +27,19 @@
 
 namespace Optimizer
 {
-extern std::vector<TempInfo*> tempInfo;
-extern std::vector<Block*> blockArray;
+extern TEMP_INFO** tempInfo;
+extern BLOCK** blockArray;
 
 extern QUAD *intermed_head, *intermed_tail;
 extern int blockCount;
 extern std::unordered_map<QUAD*, QUAD*, OrangeC::Utils::fnv1a32_binary<DAGCOMPARE>, OrangeC::Utils::bin_eql<DAGCOMPARE>> ins_hash;
 extern std::unordered_map<IMODE**, QUAD*, OrangeC::Utils::fnv1a32_binary<sizeof(IMODE*)>, OrangeC::Utils::bin_eql<sizeof(IMODE*)>>
     name_hash;
+extern short wasgoto;
 
-extern Block* currentBlock;
+extern BLOCK* currentBlock;
+
+extern int blockMax;
 
 void gen_nodag(enum i_ops op, IMODE* res, IMODE* left, IMODE* right);
 int equalimode(IMODE* ap1, IMODE* ap2);

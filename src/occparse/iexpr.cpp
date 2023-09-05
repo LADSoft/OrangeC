@@ -2197,7 +2197,7 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
                         q->fwd = tail;
                         q->back->fwd = q;
                         q->fwd->back = q;
-//                        q->genConflict = true;
+                        q->genConflict = true;
                     }
                     else
                     {

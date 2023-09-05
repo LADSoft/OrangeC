@@ -9954,37 +9954,6 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             }
             *exp = exprNode(ExpressionNode::not__lvalue_, *exp, nullptr);
         }
-        else if (isbitint(*tp))
-        {
-            EXPRESSION* exp2 = exp1;
-            if (((*exp)->type == ExpressionNode::not__lvalue_ ||
-                 ((*exp)->type == ExpressionNode::func_ && (!(*exp)->v.func->ascall || (*exp)->v.func->returnSP)) ||
-                 ((*exp)->type == ExpressionNode::void_) && !(flags & _F_SIZEOF)))
-                error(ERR_LVALUE);
-            if (lvalue(exp2))
-                exp2 = exp2->left;
-            if (exp2->type == ExpressionNode::func_ && exp2->v.func->returnSP && comparetypes(*tp, tp1, 0))
-            {
-                exp2->v.func->returnSP->sb->allocate = false;
-                exp2->v.func->returnEXP = *exp;
-                *exp = exp1;
-            }
-            else
-            {
-                if (!comparetypes(*tp, tp1, 0))
-                    cast(*tp, &exp1);
-                *exp = exprNode(ExpressionNode::blockassign_, *exp, exp1);
-                (*exp)->size = *tp;
-                (*exp)->altdata = (void*)(*tp);
-                if (isatomic(*tp))
-                {
-                    (*exp)->size = CopyType((*exp)->size);
-                    (*exp)->size->size -= ATOMIC_FLAG_SPACE;
-                }
-            }
-            *exp = exprNode(ExpressionNode::not__lvalue_, *exp, nullptr);
-
-        }
         else
         {
             if (kw == Keyword::assign_)
@@ -10025,7 +9994,16 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 // we want to optimize the as* operations for the backend
                 // but can't do the optimization for divisions
                 // otherwise it is fine for the processor we are on
-                if (kw == Keyword::asmod_ || kw == Keyword::asdivide_ || basetype(*tp)->type == BasicType::bool_)
+                if (isbitint(*tp))
+                {
+                    auto tp2 = destSize(*tp, tp1, &src, &exp1, false, nullptr);
+                    *exp = exprNode(op, src, exp1);
+                    if (!comparetypes(tp2, *tp, 0))
+                        cast(*tp, exp);
+                    *exp = exprNode(ExpressionNode::assign_, dest, *exp);
+
+                }
+                else if (kw == Keyword::asmod_ || kw == Keyword::asdivide_ || basetype(*tp)->type == BasicType::bool_)
                 {
                     int n = natural_size(*exp);
                     destSize(*tp, tp1, &src, &exp1, false, nullptr);

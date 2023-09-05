@@ -187,7 +187,7 @@ Optimizer::IMODE* call_library(const char* lib_name, int size)
     Optimizer::IMODE* result;
     result = set_symbol(lib_name, 1);
     Optimizer::gen_icode(Optimizer::i_gosub, 0, result, 0);
-    Optimizer::gen_icode(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(size), Optimizer::make_parmadj(size));
+    Optimizer::gen_icode(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(size < 0 ? 0 : size), Optimizer::make_parmadj(abs(size)));
     result = Optimizer::tempreg(ISZ_UINT, 0);
     result->retval = true;
     return result;

@@ -396,7 +396,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     char infunc[10000];
     const char* listerr;
     char nameb[265], *name = nameb;
-    if (Optimizer::cparams.prm_makestubs || inDeduceArgs || (templateNestingCount && ignoreErrtemplateNestingCount(err)))
+    if ((Optimizer::cparams.prm_makestubs && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue()) || inDeduceArgs || (templateNestingCount && ignoreErrtemplateNestingCount(err)))
         if (err != ERR_STATIC_ASSERT && err != ERR_DELETED_FUNCTION_REFERENCED && !(errors[err].level & CE_NOTE))
         {
             return false;

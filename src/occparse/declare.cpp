@@ -1651,7 +1651,7 @@ static LEXLIST* enumbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
 {
     long long enumval = 0;
     TYPE* unfixedType;
-    bool fixed = Optimizer::cparams.prm_cplusplus ? true : false;
+    bool fixed = Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x ? true : false;
     unfixedType = spi->tp->btp;
     if (!unfixedType)
         unfixedType = &stdint;
@@ -1670,7 +1670,7 @@ static LEXLIST* enumbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
             {
                 SYMBOL* sp;
                 TYPE* tp;
-                if (Optimizer::cparams.prm_cplusplus)
+                if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x)
                 {
                     tp = CopyType(fixedType ? fixedType : unfixedType);
                     tp->scoped = scoped;  // scoped the constants type as well for error checking
@@ -1720,7 +1720,7 @@ static LEXLIST* enumbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
 
                     if (tp && isintconst(exp))  // type is redefined to nullptr here, is this intentional?
                     {
-                        if (Optimizer::cparams.prm_cplusplus)
+                        if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x)
                         {
                             if (!fixedType)
                             {
@@ -1757,7 +1757,7 @@ static LEXLIST* enumbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
                     }
                 }
                 sp->sb->value.i = enumval++;
-                if (Optimizer::cparams.prm_cplusplus && spi->tp->btp)
+                if ((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x) && spi->tp->btp)
                 {
                     if (fixedType)
                     {
@@ -1863,7 +1863,7 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, StorageClass s
 
     strcpy(newName, tagname);
     lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
-    if (Optimizer::cparams.prm_cplusplus && KW(lex) == Keyword::colon_)
+    if ((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x) && KW(lex) == Keyword::colon_)
     {
         lex = getsym();
         lex = get_type_id(lex, &fixedType, funcsp, StorageClass::cast_, false, true, false);

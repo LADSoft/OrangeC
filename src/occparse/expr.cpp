@@ -9967,6 +9967,8 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                         int n = natural_size(*exp);
                         if (natural_size(exp1) != n)
                             cast((*tp), &exp1);
+                        else if (abs(n) == ISZ_BITINT && !comparetypes(*tp, tp1, false))
+                            cast((*tp), &exp1);
                     }
                     else if (isarray(*tp) && basetype(*tp)->msil)
                     {
@@ -9996,10 +9998,18 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 // otherwise it is fine for the processor we are on
                 if (isbitint(*tp))
                 {
-                    auto tp2 = destSize(*tp, tp1, &src, &exp1, false, nullptr);
-                    *exp = exprNode(op, src, exp1);
-                    if (!comparetypes(tp2, *tp, 0))
-                        cast(*tp, exp);
+                    if (kw == Keyword::asleftshift_ || kw == Keyword::asrightshift_)
+                    {
+                        cast(&stdint, &exp1);
+                        *exp = exprNode(op, src, exp1);
+                    }
+                    else
+                    {
+                        auto tp2 = destSize(*tp, tp1, &src, &exp1, false, nullptr);
+                        *exp = exprNode(op, src, exp1);
+                        if (!comparetypes(tp2, *tp, 0))
+                            cast(*tp, exp);
+                    }
                     *exp = exprNode(ExpressionNode::assign_, dest, *exp);
 
                 }

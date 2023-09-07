@@ -561,7 +561,6 @@ static int bitint_push(EXPRESSION* node)
     ap6 = Optimizer::make_immed(ISZ_UINT, rv);
     Optimizer::gen_icode(Optimizer::i_assnblock, ap6, ap, ap2);
     return rv;
-
 }
     /*-------------------------------------------------------------------------*/
 
@@ -2338,7 +2337,7 @@ static int sizeParam(INITLIST* a, SYMBOL* funcsp)
     int rv;
     if (isbitint(a->tp))
     {
-        rv = basetype(a->tp)->bitintbits;
+        rv = basetype(a->tp)->bitintbits + Optimizer::chosenAssembler->arch->bitintunderlying - 1;
         rv /= Optimizer::chosenAssembler->arch->bitintunderlying;
         rv *= Optimizer::chosenAssembler->arch->bitintunderlying;
         rv /= CHAR_BIT;

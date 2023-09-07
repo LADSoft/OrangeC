@@ -4432,7 +4432,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                      (isint(sym->tp) || basetype(sym->tp)->type == BasicType::enum_)))
                 {
                     if ((sym->sb->storage_class != StorageClass::static_ && !Optimizer::cparams.prm_cplusplus && !funcsp) ||
-                        (storage_class_in == StorageClass::global_ && sym->sb->parentClass && Optimizer::cparams.prm_cplusplus && !(flags & _F_NOCONSTGEN)))
+                        (storage_class_in == StorageClass::global_ && Optimizer::cparams.prm_cplusplus && !(flags & _F_NOCONSTGEN)))
                     {
                         insertInitSym(sym);
                     }

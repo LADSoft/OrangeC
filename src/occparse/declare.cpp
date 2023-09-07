@@ -1226,6 +1226,21 @@ static unsigned TypeCRC(SYMBOL* sp)
     }
     return crc;
 }
+static bool compareStructSyms(SymbolTable<SYMBOL>* left, SymbolTable<SYMBOL>* right)
+{
+    auto itl = left->begin();
+    auto itr = right->begin();
+    for (; itl != left->end() && itr != right->end(); ++itl, ++itr)
+    {
+        if ((*itl)->sb->offset != (*itr)->sb->offset)
+           return false;
+        if ((*itl)->tp->alignment != (*itr)->tp->alignment)
+           return false;
+        if (!comparetypes((*itl)->tp, (*itr)->tp, false))
+           return false;
+    }
+    return itl == left->end() && itr == right->end();
+}
 LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
                          bool* defd, SymbolTable<SYMBOL>* anonymousTable)
 {
@@ -1240,11 +1255,15 @@ LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
     if (sp->sb->attribs.inheritable.structAlign == 0)
         sp->sb->attribs.inheritable.structAlign = 1;
     structLevel++;
+    auto oldsyms = sp->tp->syms, oldtags = sp->tp->tags;
     if (hasBody)
     {
         if (sp->tp->syms || sp->tp->tags)
         {
-            preverrorsym(ERR_STRUCT_HAS_BODY, sp, sp->sb->declfile, sp->sb->declline);
+           if (Optimizer::cparams.c_dialect != Dialect::c2x)
+           {
+                preverrorsym(ERR_STRUCT_HAS_BODY, sp, sp->sb->declfile, sp->sb->declline);
+           }
         }
         sp->tp->syms = symbols.CreateSymbolTable();
         if (Optimizer::cparams.prm_cplusplus)
@@ -1272,6 +1291,16 @@ LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
         sp->sb->isfinal = isfinal;
         lex = structbody(lex, funcsp, sp, defaultAccess, anonymousTable);
         *defd = true;
+    }
+    if (hasBody && Optimizer::cparams.c_dialect == Dialect::c2x)
+    {
+        if (oldsyms)
+        {
+            if (!compareStructSyms(oldsyms, sp->tp->syms))
+            {
+                preverrorsym(ERR_STRUCT_HAS_BODY, sp, sp->sb->declfile, sp->sb->declline);
+            }
+        }
     }
     if (inTemplate && templateNestingCount == 1)
     {

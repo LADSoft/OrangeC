@@ -168,7 +168,7 @@ int InsertExternalFile(const char* name, bool primary)
 
 int RunExternalFiles()
 {
-    char args[1024];
+    char args[40000];
     const char* c0;
     char outName[260], *p;
     int rv;

@@ -1350,7 +1350,7 @@ static unsigned char* ParseUUID(LEXLIST** lex)
     return nullptr;
 }
 static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplate, bool asfriend, StorageClass storage_class,
-                           enum AccessLevel access, bool* defd, bool constexpression)
+                           Linkage linkage2_in, enum AccessLevel access, bool* defd, bool constexpression)
 {
     bool isfinal = false;
     SymbolTable<SYMBOL>* table = nullptr;
@@ -1367,7 +1367,7 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
     int realdeclline = lex->data->linedata->lineno;
     bool anonymous = false;
     unsigned char* uuid;
-    enum Linkage linkage1 = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
+    enum Linkage linkage1 = Linkage::none_, linkage2 = linkage2_in, linkage3 = Linkage::none_;
     *defd = false;
     switch (KW(lex))
     {
@@ -2811,7 +2811,7 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                 inTemplateType = false;
                 if (foundsigned || foundunsigned || type != BasicType::none_)
                     flagerror = true;
-                lex = declstruct(lex, funcsp, &tn, inTemplate, asfriend, storage_class, access, defd, constexpression);
+                lex = declstruct(lex, funcsp, &tn, inTemplate, asfriend, storage_class, *linkage2_in, access, defd, constexpression);
                 goto exit;
             case Keyword::enum_:
                 if (foundsigned || foundunsigned || type != BasicType::none_)

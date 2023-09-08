@@ -333,6 +333,8 @@ bool LoadFile(SharedMemory* optimizerMem)
     dbginit();
     outcode_file_init();
     Optimizer::oinit();
+    oa_ini();
+    o_peepini();
     omfInit();
     Optimizer::SelectBackendData();
     return rv;

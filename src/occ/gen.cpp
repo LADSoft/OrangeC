@@ -256,7 +256,14 @@ AMODE* moveFP(AMODE* apa, int sza, AMODE* apl, int szl)
     {
         if (apl->mode == am_immed)
         {
-            make_floatconst(apl, szl);
+            if (szl < ISZ_FLOAT)
+            {
+                apl = make_muldivval(apl);
+            }
+            else
+            {
+                make_floatconst(apl, szl);
+            }
         }
         if (szl < ISZ_FLOAT)
         {

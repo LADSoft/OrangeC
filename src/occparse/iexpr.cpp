@@ -3280,6 +3280,9 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                 }
                 av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
                 left = Optimizer::indnode(av, sz1);
+                auto temp = Optimizer::tempreg(right->size, 0);
+                Optimizer::gen_icode_with_conflict(Optimizer::i_assn, temp, right, nullptr, true);
+                right = temp;
                 barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
                 Optimizer::gen_icode_with_atomic(Optimizer::i_assn, left, right, nullptr);
                 gen_atomic_barrier(funcsp, node->v.ad, av, barrier);

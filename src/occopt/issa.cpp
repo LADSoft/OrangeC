@@ -524,7 +524,7 @@ static void findCopies(BriggsSet* copies, bool all)
                 pb = pb->next;
             }
         }
-        else if (head->dc.opcode == i_assn)
+        else if (head->dc.opcode == i_assn && !head->genConflict)
         {
             if ((head->temps == (TEMP_LEFT | TEMP_ANS)) && head->dc.left->mode == i_direct && head->ans->mode == i_direct &&
                 head->ans->size == head->dc.left->size && !head->dc.left->retval &&
@@ -622,7 +622,7 @@ static void CoalesceTemps(Loop* l, bool all)
                 QUAD* head = t->entry->head;
                 while (!done)
                 {
-                    if (head->dc.opcode == i_assn)
+                    if (head->dc.opcode == i_assn && !head->genConflict)
                     {
                         if (head->temps == (TEMP_LEFT | TEMP_ANS))
                         {
@@ -1037,7 +1037,7 @@ void TranslateFromSSA(bool all)
                     returnToNormal(&head->dc.right, all);
                 if (head->temps & TEMP_ANS)
                     returnToNormal(&head->ans, all);
-                if (head->dc.opcode == i_assn)
+                if (head->dc.opcode == i_assn && !head->genConflict)
                 {
                     /* remove an assignment to self */
                     if (head->temps == (TEMP_LEFT | TEMP_ANS) && head->dc.left->mode == i_direct && head->ans->mode == i_direct &&

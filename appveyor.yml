@@ -1,6 +1,6 @@
 version: '6.71.{BUILD}'
 
-image: Visual Studio 2019
+image: Visual Studio 2022
 
 install:
     - appveyor-retry choco install InnoSetup
@@ -9,7 +9,7 @@ install:
     - cd \
     - 7z x projects\orangec\src\cc386.zip *
     - set PATH=c:\orangec\bin;c:\cc386\bin;%PATH%;C:\Program Files (x86)\Inno Setup 6
-    - call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat"
+    - call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars32.bat"
     - set PATH=C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin;%PATH%
     - set ORANGEC=c:\ORANGEC
     - set LADSOFT_DEV=c:\cc386

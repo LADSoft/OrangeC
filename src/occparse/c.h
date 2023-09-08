@@ -140,7 +140,7 @@ private:
         case_, default_, enum_, volatile_, const_,
         trap_, interrupt_, fault_, absolute_, genword_,
         Complex_, restrict_, Imaginary_, I_, INF_, NAN_,
-        typeof_, Pragma_, atomic_, noreturn_, generic_, bitint_,
+        typeof_, typeof_unqual_, Pragma_, atomic_, noreturn_, generic_, bitint_,
         /* C++ */
         public_, private_, protected_, class_, friend_, namespace_,
         using_, this_, operator_, inline_, virtual_, try_, throw_,
@@ -660,6 +660,9 @@ struct attributes
         int constructorPriority;      // is a file-scope constructor, set the priority
         int destructorPriority;       // is a file-scope destructor, set the priority
         unsigned stackProtect : 1;    // explicit stackprotect
+        unsigned fallthrough : 1;     // fallthrough case
+        unsigned maybe_unused : 1;    // variable might be unused
+        unsigned nodiscard : 1;       // function return value should not be discarded
     } uninheritable;
 };
 /* symbols */

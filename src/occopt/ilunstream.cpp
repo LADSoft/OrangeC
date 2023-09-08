@@ -762,6 +762,7 @@ static FunctionData* UnstreamFunc()
     fd->blockCount = UnstreamIndex();
     fd->tempCount = UnstreamIndex();
     fd->exitBlock = UnstreamIndex();
+    fd->ellipsePos = UnstreamIndex();
     fd->fastcallAlias = UnstreamIndex();
     temps.clear();
     temps.resize(fd->tempCount);

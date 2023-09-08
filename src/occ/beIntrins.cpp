@@ -32,6 +32,11 @@
 #include "peep.h"
 #include "gen.h"
 #include "FNV_hash.h"
+#include "occ.h"
+#include "config.h"
+#include "beinterfdefs.h"
+#include "ioptimizer.h"
+
 namespace occx86
 {
 namespace Util = OrangeC::Utils;
@@ -213,6 +218,26 @@ bool handleBSWAP64()
 bool handlePAUSE()
 {
     gen_code(op_pause, nullptr, nullptr);
+    return true;
+}
+bool handleVASTART()
+{
+    AMODE* apcx= makedreg(ECX);
+    apcx->mode = am_indisp;
+    AMODE* ap = aimmed(currentFunction->ellipsePos + (usingEsp ? 0 : 4));
+    ap->preg = usingEsp ? ESP : EBP;
+    ap->mode = am_indisp;
+    gen_code(op_lea, makedreg(EAX), ap);
+    gen_code(op_mov, apcx, makedreg(EAX));
+    return true;
+}
+bool handleVAARG()
+{
+    AMODE* ap= makedreg(ECX);
+    ap->mode = am_indisp;
+    gen_code(op_mov, makedreg(EAX), ap);
+    gen_code(op_add, makedreg(EDX), makedreg(EAX));
+    gen_code(op_mov, ap, makedreg(EDX));
     return true;
 }
 // for __fastcall, first arg is in ECX, second arg is in EDX and third arg is in EAX

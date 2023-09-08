@@ -23,4 +23,6 @@ PROTO("unsigned short __fastcall__ __builtin_bswap16(unsigned short val);", __bu
 PROTO("unsigned __fastcall__ __builtin_bswap32(unsigned val);", __builtin_bswap32, handleBSWAP32)
 PROTO("unsigned __int64__  __fastcall__ __builtin_bswap64(unsigned __int64__ val);", __builtin_bswap64, handleBSWAP64)
 PROTO("void _mm_pause();", _mm_pause, handlePAUSE)
+PROTO("void *__fastcall__ __va_start__(void **list);", __va_start__, handleVASTART)
+PROTO("void *__fastcall__ __va_arg__(void **list, unsigned val);", __va_arg__, handleVAARG)
 #undef PROTO

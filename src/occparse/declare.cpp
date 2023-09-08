@@ -2831,6 +2831,8 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                     flagerror = true;
                 goto founddecltype;
             case Keyword::typeof_:
+            case Keyword::typeof_unqual_: {
+                auto kw = KW(lex);
                 type = BasicType::void_; /* won't really be used */
                 foundtypeof = true;
                 if (foundsomething)
@@ -2864,6 +2866,9 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                     error(ERR_IDENTIFIER_EXPECTED);
                     errskim(&lex, skim_semi_declare);
                 }
+                if (kw == Keyword::typeof_unqual_)
+                    tn = basetype(tn);
+            }
                 break;
             case Keyword::atomic_:
                 lex = getsym();
@@ -4151,7 +4156,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
             
         }
     }
-    else if (!Optimizer::cparams.prm_cplusplus && !(Optimizer::architecture == ARCHITECTURE_MSIL) && ISID(lex))
+    else if (!Optimizer::cparams.prm_cplusplus && Optimizer::cparams.c_dialect < Dialect::c2x && !(Optimizer::architecture == ARCHITECTURE_MSIL) && ISID(lex))
     {
         SYMBOL* spo = nullptr;
         sp->sb->oldstyle = true;
@@ -4323,7 +4328,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
         }
         skip(&lex, Keyword::closepa_);
     }
-    else if (Optimizer::cparams.prm_cplusplus || ((Optimizer::architecture == ARCHITECTURE_MSIL) &&
+    else if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x || ((Optimizer::architecture == ARCHITECTURE_MSIL) &&
                                                   Optimizer::cparams.msilAllowExtensions && !MATCHKW(lex, Keyword::closepa_) && *spin))
     {
         // () is a function

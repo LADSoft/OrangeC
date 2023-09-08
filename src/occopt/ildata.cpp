@@ -169,6 +169,7 @@ void AddFunction()
         data->blockCount = blockCount;
         data->fastcallAlias = fastcallAlias;
         data->computedLabels = std::move(computedLabels);
+        data->ellipsePos = currentFunction->ellipsePos;
         val->funcData = data;
     }
 }

@@ -97,6 +97,7 @@ struct FunctionData
     int tempCount;
     int blockCount;
     int exitBlock;
+    int ellipsePos;
     QUAD* instructionList;
     int setjmp_used : 1;
     int hasAssembly : 1;

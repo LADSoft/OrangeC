@@ -3369,7 +3369,6 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
             {
                 if (sym->tp->type == BasicType::ellipse_)
                 {
-
                     if (!isstructured(p->tp) && (p->tp->lref || p->tp->rref))
                         if (isfunction(p->tp))
                             p->exp = exprNode(ExpressionNode::l_ref_, p->exp, nullptr);

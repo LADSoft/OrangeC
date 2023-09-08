@@ -584,6 +584,8 @@ ERRLIST(ERR_EXPECTED_POINTER_FOR_CHECKED_MATH_RESULT, 521, "Expected modifiable 
         CE_ERROR)
 ERRLIST(ERR_EXPECTED_VALID_CHECKED_MATH_TYPE, 522, "Type for checked math must be an integer but not char, bool, or _BitInt",
         CE_ERROR)
+ERRLIST(ERR_VA_START_IN_VARIADIC_FUNCTION, 523, "va_start should only be used in variadic functions",
+        CE_WARNING)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

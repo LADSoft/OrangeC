@@ -185,6 +185,7 @@ struct SimpleSymbol
     LIST* syms;
     const char* msil;
     int templateLevel;
+    int ellipsePos;
     union
     {
         struct

@@ -2747,6 +2747,34 @@ void asm_parmadj(Optimizer::QUAD* q) /* adjust stack after function call */
             pushlevel -= 4;
         }
 }
+static bool bltin_gosub(Optimizer::QUAD* q)
+{
+    Optimizer::SimpleExpression* en = GetSymRef(q->dc.left->offset);
+
+    Optimizer::SimpleSymbol* sp = en->sp;
+    if (q->dc.left->mode == Optimizer::i_immed && sp->name[0] == '_')
+    {
+        if (!strcmp(sp->name, "__va_start__"))
+        {
+            auto ap = Allocate<AMODE>();
+            ap->preg = usingEsp ? ESP : EBP;
+            ap->mode = am_indisp;
+            ap->offset = Allocate<Optimizer::SimpleExpression>();
+            ap->offset->type = Optimizer::se_i;
+            ap->offset->i = Optimizer::chosenAssembler->arch->retblocksize;
+            gen_code(op_lea, makedreg(EAX), ap);
+            return true;
+        }
+        else if (!strcmp(sp->name, "__va_arg__"))
+        {
+            gen_code(op_pop, makedreg(EAX), 0);
+            gen_code(op_pop, makedreg(ECX), 0);
+            gen_code(op_add, makedreg(EAX), makedreg(ECX));
+            return true;
+        }
+    }
+    return false;
+}
 void asm_gosub(Optimizer::QUAD* q) /* normal gosub to an immediate label or through a var */
 {
     Optimizer::SimpleExpression* en = NULL;

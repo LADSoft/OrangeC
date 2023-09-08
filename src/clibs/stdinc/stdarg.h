@@ -45,21 +45,21 @@ typedef void* va_list;
 };
 #endif
 
-#ifdef __MSIL__
 
+#ifdef __MSIL__
 #    define va_start(ap, parmN) ap = __va_start__()
 #    define va_arg(ap, type) (*((type*)__va_arg__(ap, __va_typeof__(type))))
-#    define va_end(ap)
-
 #else
-
 #    define __sizeof__(x) ((sizeof(x) + sizeof(int) - 1) & ~(sizeof(int) - 1))
-
+#if __STDC_VERSION__ < 202311L
 #    define va_start(ap, parmN) ap = (va_list)((char*)(&parmN) + sizeof(parmN))
 #    define va_arg(ap, type) (*(type*)(((*(char**)&(ap)) += __sizeof__(type)) - (__sizeof__(type))))
-#    define va_end(ap)
-
+#else
+#    define va_start(ap, ...) __va_start__(&ap)
+#    define va_arg(ap, type) (*((type*)__va_arg__(&ap, __sizeof__(type))))
 #endif
+#endif
+#    define va_end(ap)
 
 #if __STDC_VERSION__ >= 199901L || __cplusplus >= 201103L
 #    define va_copy(ap_d, ap_s) (void)(ap_d = ap_s)

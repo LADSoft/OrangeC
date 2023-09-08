@@ -3846,10 +3846,13 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                 basisAttribs.uninheritable.stackProtect = true;
                                 break;
                             case 33: // fallthrough
+                                basisAttribs.uninheritable.fallthrough = true;                                
                                 break;
                             case 34: // maybe_unused
+                                basisAttribs.uninheritable.maybe_unused = true;
                                 break;
                             case 35: // nodiscard
+                                basisAttribs.uninheritable.nodiscard = true;
                                 break;
                         }
                     }

@@ -76,6 +76,7 @@ int inLoopOrConditional;
 int funcNesting;
 int funcLevel;
 int tryLevel;
+int ellipsePos;
 
 bool hasFuncCall;
 bool hasXCInfo;
@@ -84,6 +85,7 @@ int codeLabel;
 bool declareAndInitialize;
 bool functionCanThrow;
 int bodyIsDestructor;
+
 std::list<BLOCKDATA*> emptyBlockdata;
 
 std::stack<std::list<BLOCKDATA*>*> expressionStatements;
@@ -3522,7 +3524,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
         browse_startfunc(funcsp, funcsp->sb->declline);
         for (auto sp2 : *basetype(funcsp->tp)->syms)
         {
-            if (!Optimizer::cparams.prm_cplusplus && sp2->tp->type != BasicType::ellipse_ && !isvoid(sp2->tp) && sp2->sb->anonymous)
+            if (!Optimizer::cparams.prm_cplusplus && Optimizer::cparams.c_dialect < Dialect::c2x && sp2->tp->type != BasicType::ellipse_ && !isvoid(sp2->tp) && sp2->sb->anonymous)
                 errorarg(ERR_PARAMETER_MUST_HAVE_NAME, n, sp2, funcsp);
             sp2->sb->destructed = false;
             localNameSpace->front()->syms->Add(sp2);
@@ -3775,6 +3777,8 @@ void assignParam(SYMBOL* funcsp, int* base, SYMBOL* param)
 {
     TYPE* tp = basetype(param->tp);
     param->sb->parent = funcsp;
+    if (tp->type == BasicType::ellipse_)
+        ellipsePos = *base;
     if (tp->type == BasicType::void_)
         return;
     if (isstructured(tp) && !basetype(tp)->sp->sb->pureDest)
@@ -4109,6 +4113,8 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     int oldExpressionCount = expressions;
     int oldControlSequences = controlSequences;
     bool oldNoExcept = noExcept;
+    int oldEllipsePos = ellipsePos;
+    ellipsePos = 0;
     constexprfunctioninit(true);
     noExcept = true;
     expressions = 0;
@@ -4179,6 +4185,7 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
             }
             funcsp->sb->canThrow = functionCanThrow;
         }
+        Optimizer::SymbolManager::Get(funcsp)->ellipsePos = ellipsePos;
         if (expressions <= MAX_INLINE_EXPRESSIONS && !controlSequences)
         {
             funcsp->sb->simpleFunc = true;
@@ -4213,6 +4220,7 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
         handleInlines(funcsp);
     }
     constexprfunctioninit(false);
+    ellipsePos = oldEllipsePos;
     noExcept = oldNoExcept;
     controlSequences = oldControlSequences;
     expressions = oldExpressionCount;

@@ -43,9 +43,7 @@ void diag(const char* fmt, ...) {}
 
 namespace Optimizer
 {
-int tempSize;
-
-BRIGGS_SET* killed;
+BriggsSet* killed;
 int tempBottom, nextTemp;
 
 static void CalculateFastcall(SimpleSymbol* funcsp, std::vector<SimpleSymbol*>& functionVariables)
@@ -161,7 +159,10 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
             sym->imvalue = im;
         }
         else
-            sym->imvalue = tempreg(sym->tp->sizeFromType, false);
+        {
+            // if we get here the symbol wasn't used, so just bail
+            return;
+        }
     }
     tp = sym->tp;
 
@@ -314,20 +315,17 @@ static int AllocTempOpt(int size1)
         rv = tempreg(size1, false);
     }
     t = rv->offset->sp->i;
-    if (t >= tempSize)
+    if (t >= tempInfo.size())
     {
-        TEMP_INFO** temp = oAllocate<TEMP_INFO*>(tempSize + 1000);
-        memcpy(temp, tempInfo, sizeof(TEMP_INFO*) * tempSize);
-        tempSize += 1000;
-        tempInfo = temp;
+        tempInfo.resize(t + 1001);
     }
     if (!tempInfo[t])
     {
-        tempInfo[t] = oAllocate<TEMP_INFO>();
+        tempInfo[t] = oAllocate<TempInfo>();
     }
     else
     {
-        memset(tempInfo[t], 0, sizeof(TEMP_INFO));
+        memset(tempInfo[t], 0, sizeof(TempInfo));
     }
     tempInfo[t]->enode = rv->offset;
     nextTemp = t;
@@ -361,12 +359,12 @@ static void InitTempInfo(void)
     QUAD* head = intermed_head;
     int i;
     nextTemp = tempBottom = tempCount;
-    tempSize = tempCount + 1000;
-    tempInfo = oAllocate<TEMP_INFO*>(tempSize);
+    tempInfo.clear();
+    tempInfo.resize(tempCount);
 
     for (i = 0; i < tempCount; i++)
     {
-        tempInfo[i] = oAllocate<TEMP_INFO>();
+        tempInfo[i] = oAllocate<TempInfo>();
         tempInfo[i]->partition = i;
         tempInfo[i]->color = -1;
         tempInfo[i]->inUse = true;
@@ -446,7 +444,7 @@ static void InitTempInfo(void)
         head = head->fwd;
     }
 }
-void insertDefines(QUAD* head, BLOCK* b, int tnum)
+void insertDefines(QUAD* head, Block* b, int tnum)
 {
     LIST* l = oAllocate<LIST>();
     l->data = (void*)head;
@@ -473,7 +471,7 @@ void insertUses(QUAD* head, int dest)
 void definesInfo(void)
 {
     QUAD* head = intermed_head;
-    BLOCK* block = nullptr;
+    Block* block = nullptr;
     int i;
     for (i = 0; i < tempCount; i++)
     {

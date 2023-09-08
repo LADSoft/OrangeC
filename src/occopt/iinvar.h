@@ -32,6 +32,6 @@ static struct reflist
     QUAD* newVal;
 } * refs;
 
-void ScanForInvariants(BLOCK* b);
+void ScanForInvariants(Block* b);
 void MoveLoopInvariants(void);
 }  // namespace Optimizer

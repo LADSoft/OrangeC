@@ -170,7 +170,7 @@ typedef struct _regdesc
     int reg2live;
     int aliasCount;
     unsigned short aliases[32];
-    BITARRAY* aliasBits;
+    BITINT* aliasBits;
 } ARCH_REGDESC;
 
 typedef struct _regclass
@@ -181,8 +181,8 @@ typedef struct _regclass
     int vertex;
     int index;
     short* saturationBound;
-    BITARRAY* regBits;
-    BITARRAY* aliasBits;
+    BITINT* regBits;
+    BITINT* aliasBits;
 } ARCH_REGCLASS;
 
 typedef struct _regvertex
@@ -191,7 +191,7 @@ typedef struct _regvertex
     struct _regvertex *left, *right;
     int index;
     struct _regvertex* parent;
-    BITARRAY* aliasBits;
+    BITINT* aliasBits;
 } ARCH_REGVERTEX;
 
 enum e_pm
@@ -333,7 +333,7 @@ typedef struct _arch_gen
     void (*post_function_gen)(struct SimpleSymbol* funcsp, QUAD* list); /* called after function body is generated */
     void (*finalGen)(void);                                             /* end of code generation, lits have been dumped */
     void (*internalConflict)(QUAD* q);                                  /* enter a conflict for this instruction if necessary */
-    int (*preRegAlloc)(QUAD* ins, BRIGGS_SET* globals, BRIGGS_SET* eobGlobals,
+    int (*preRegAlloc)(QUAD* ins, BriggsSet* globals, BriggsSet* eobGlobals,
                        int pass);                                     /* allow access to the quad list before register allocation */
     void (*preColor)(QUAD* q);                                        /* precolor an instruction */
     void (*gen_strlab)(struct SimpleSymbol* sp);                      /* generate a named label */

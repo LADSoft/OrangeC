@@ -44,9 +44,9 @@
 #include "iflow.h"
 namespace Optimizer
 {
-static BRIGGS_SET* visited;
-static INSTRUCTIONLIST *insWorkHead, *insWorkTail, *listHolder;
-static BLOCKLIST *blockWorkHead, *blockWorkTail;
+static BriggsSet* visited;
+static std::deque<QUAD*> insWork;
+static std::deque<Block*> blockWork;
 
 #ifdef XXXXX
 IMODE* intconst(long long val) { return make_immed(ISZ_UINT, val); }
@@ -1409,9 +1409,8 @@ static bool eval(QUAD* q)
     }
     return rv;
 }
-static void pushBlock(BLOCK* block, BLOCK* source)
+static void pushBlock(Block* block, Block* source)
 {
-    BLOCKLIST* l1;
     BLOCKLIST **edgereached = &block->edgereached, *bl;
     while (*edgereached && source->blocknum > (*edgereached)->block->blocknum)
     {
@@ -1424,33 +1423,21 @@ static void pushBlock(BLOCK* block, BLOCK* source)
     bl->next = *edgereached;
     *edgereached = bl;
 
-    l1 = blockWorkHead;
-    while (l1)
+    bool found = false;
+    for (auto t : blockWork)
     {
-        if (block == l1->block)
+        if (block == t)
+        {
+            found = true;
             break;
-        l1 = l1->next;
+        }
     }
-    if (!l1)
+    if (!found)
     {
-        l1 = (BLOCKLIST*)listHolder;
-        if (l1)
-        {
-            listHolder = listHolder->next;
-        }
-        else
-        {
-            l1 = tAllocate<BLOCKLIST>();
-        }
-        l1->block = block;
-        l1->next = nullptr;
-        if (blockWorkHead)
-            blockWorkTail = blockWorkTail->next = l1;
-        else
-            blockWorkHead = blockWorkTail = l1;
+        blockWork.push_back(block);
     }
 }
-static bool evalBranch(QUAD* I, BLOCK* b)
+static bool evalBranch(QUAD* I, Block* b)
 {
     bool found = false;
     if (I->dc.left && I->dc.right)
@@ -1569,47 +1556,36 @@ static bool evalBranch(QUAD* I, BLOCK* b)
     }
     return found;
 }
-static bool emulInstruction(QUAD* head, BLOCK* b)
+static bool emulInstruction(QUAD* head, Block* b)
 {
     if (((head->temps & TEMP_ANS) || head->dc.opcode == i_phi) && head->dc.opcode != i_coswitch)
     {
         if (eval(head))
         {
             int tnum;
-            INSTRUCTIONLIST* uses;
             if (head->dc.opcode == i_phi)
                 tnum = head->dc.v.phi->T0;
             else
                 tnum = head->ans->offset->sp->i;
-            uses = tempInfo[tnum]->instructionUses;
-            while (uses)
+            InstructionList* uses1 = tempInfo[tnum]->instructionUses;
+            if (uses1)
             {
-                INSTRUCTIONLIST* l1 = insWorkHead;
-                while (l1)
+                for (auto uses : *uses1)
                 {
-                    if (l1->ins == uses->ins)
-                        break;
-                    l1 = l1->next;
-                }
-                if (!l1)
-                {
-                    l1 = listHolder;
-                    if (l1)
+                    bool found = false;
+                    for (auto t : insWork)
                     {
-                        listHolder = listHolder->next;
+                        if (t == uses)
+                        {
+                            found = true;
+                            break;
+                        }
                     }
-                    else
+                    if (!found)
                     {
-                        l1 = tAllocate<INSTRUCTIONLIST>();
+                        insWork.push_back(uses);
                     }
-                    l1->ins = uses->ins;
-                    l1->next = nullptr;
-                    if (insWorkHead)
-                        insWorkTail = insWorkTail->next = l1;
-                    else
-                        insWorkHead = insWorkTail = l1;
                 }
-                uses = uses->next;
             }
         }
         return false;
@@ -1617,7 +1593,7 @@ static bool emulInstruction(QUAD* head, BLOCK* b)
     else
         return evalBranch(head, b);
 }
-static void emulBlock(BLOCK* b)
+static void emulBlock(Block* b)
 {
     QUAD* head = b->head->fwd;
     bool br = false;
@@ -1647,19 +1623,21 @@ static void emulBlock(BLOCK* b)
 }
 static void iterateMark(int n)
 {
-    INSTRUCTIONLIST* uses = tempInfo[n]->instructionUses;
-    while (uses)
+    auto uses1 = tempInfo[n]->instructionUses;
+    if (uses1)
     {
-        if ((uses->ins->temps & TEMP_ANS) && uses->ins->ans->mode == i_direct)
+        for (auto uses : *uses1)
         {
-            if (!uses->ins->ans->offset->sp->pushedtotemp && uses->ins->ans->size != ISZ_ADDR)
+            if ((uses->temps & TEMP_ANS) && uses->ans->mode == i_direct)
             {
-                int t = uses->ins->ans->offset->sp->i;
-                tempInfo[t]->preSSATemp = -1;
-                iterateMark(t);
+                if (!uses->ans->offset->sp->pushedtotemp && uses->ans->size != ISZ_ADDR)
+                {
+                    int t = uses->ans->offset->sp->i;
+                    tempInfo[t]->preSSATemp = -1;
+                    iterateMark(t);
+                }
             }
         }
-        uses = uses->next;
     }
 }
 static void iterateConstants(void)
@@ -1669,47 +1647,40 @@ static void iterateConstants(void)
     {
         if (tempInfo[i]->value.type == vo_constant)
         {
-            INSTRUCTIONLIST* uses = tempInfo[i]->instructionUses;
-            //			QUAD *defines = tempInfo[i]->instructionDefines;
-            while (uses)
+            auto uses1 = tempInfo[i]->instructionUses;
+            if (uses1)
             {
-                if (uses->ins->dc.opcode != i_assn && (uses->ins->temps & TEMP_LEFT) && uses->ins->dc.left->mode == i_direct &&
-                    !uses->ins->fastcall)
+                for (auto uses : *uses1)
                 {
-                    int t = uses->ins->dc.left->offset->sp->i;
-                    if (t == i)
+                    if (uses->dc.opcode != i_assn && (uses->temps & TEMP_LEFT) && uses->dc.left->mode == i_direct &&
+                        !uses->fastcall)
                     {
-                        uses->ins->dc.left = tempInfo[i]->value.imode;
-                        uses->ins->temps &= ~TEMP_LEFT;
-                        iterateMark(t);
-                        ConstantFold(uses->ins, true);
+                        int t = uses->dc.left->offset->sp->i;
+                        if (t == i)
+                        {
+                            uses->dc.left = tempInfo[i]->value.imode;
+                            uses->temps &= ~TEMP_LEFT;
+                            iterateMark(t);
+                            ConstantFold(uses, true);
+                        }
+                    }
+                    if ((uses->temps & TEMP_RIGHT) && uses->dc.left->mode == i_direct)
+                    {
+                        int t = uses->dc.right->offset->sp->i;
+                        if (t == i)
+                        {
+                            uses->dc.right = tempInfo[i]->value.imode;
+                            uses->temps &= ~TEMP_RIGHT;
+                            iterateMark(t);
+                            ConstantFold(uses, true);
+                        }
                     }
                 }
-                if ((uses->ins->temps & TEMP_RIGHT) && uses->ins->dc.left->mode == i_direct)
-                {
-                    int t = uses->ins->dc.right->offset->sp->i;
-                    if (t == i)
-                    {
-                        uses->ins->dc.right = tempInfo[i]->value.imode;
-                        uses->ins->temps &= ~TEMP_RIGHT;
-                        iterateMark(t);
-                        ConstantFold(uses->ins, true);
-                    }
-                }
-                uses = uses->next;
             }
-            //			tempInfo[i]->instructionUses = nullptr;
-            //			if (defines == tempInfo[i]->blockDefines->tail)
-            //			{
-            //				tempInfo[i]->blockDefines->tail = defines->back;
-            //			}
-            /* we don't remove the definition because it may be used
-             * if it isnt the dead code analysis will get it later
-             */
         }
     }
 }
-static void removePhiEntry(BLOCK* b, int n)
+static void removePhiEntry(Block* b, int n)
 {
     QUAD* q = b->head;
     while ((q->dc.opcode == i_block || q->ignoreMe || q->dc.opcode == i_label) && q->back != b->tail)
@@ -1731,7 +1702,7 @@ static void removePhiEntry(BLOCK* b, int n)
         q = q->fwd;
     }
 }
-static void removeForward(BLOCK* start)
+static void removeForward(Block* start)
 {
     QUAD* tail = start->tail;
 
@@ -1800,7 +1771,7 @@ static void removeForward(BLOCK* start)
                 else
                     break;
                 {
-                    BLOCK* b = nullptr;
+                    Block* b = nullptr;
                     BLOCKLIST** succ = &tail->block->succ->next;
                     if (*succ)
                     {
@@ -1866,9 +1837,8 @@ void ConstantFlow(void)
     int i;
     QUAD* head;
     visited = briggsAlloc(blockCount);
-    insWorkHead = insWorkTail = nullptr;
-    listHolder = nullptr;
-    blockWorkHead = blockWorkTail = tAllocate<BLOCKLIST>();
+    insWork.clear();
+    blockWork.clear();
 
     /* value defaults to top */
     /* now reassign any temp which is a parameter to bottom */
@@ -1918,28 +1888,24 @@ void ConstantFlow(void)
         }
         head = head->fwd;
     }
-    blockWorkHead->block = blockArray[0]; /* first block */
+    blockWork.push_back(blockArray[0]);
 
     /* just keep evaluating instructions and blocks
      * until there is nothing left to evaluate
      */
-    while (insWorkHead || blockWorkHead)
+    while (!insWork.empty() && !blockWork.empty())
     {
-        while (insWorkHead)
+        while (!insWork.empty())
         {
-            INSTRUCTIONLIST* l = insWorkHead;
-            insWorkHead = insWorkHead->next;
-            l->next = listHolder;
-            listHolder = l;
-            emulInstruction(l->ins, l->ins->block);
+            auto ins = insWork.front();
+            insWork.pop_front();
+            emulInstruction(ins, ins->block);
         }
-        while (blockWorkHead)
+        while (!blockWork.empty())
         {
-            BLOCKLIST* l = blockWorkHead;
-            blockWorkHead = blockWorkHead->next;
-            l->next = (BLOCKLIST*)listHolder;
-            listHolder = (INSTRUCTIONLIST*)l;
-            emulBlock(l->block);
+            auto block = blockWork.front();
+            blockWork.pop_front();
+            emulBlock(block);
         }
     }
     iterateConstants();
@@ -1947,5 +1913,6 @@ void ConstantFlow(void)
         if (blockArray[i])
             removeForward(blockArray[i]);
     tFree();
+    briggsFreet();
 }
 }  // namespace Optimizer

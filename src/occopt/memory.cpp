@@ -90,6 +90,7 @@ static MEMBLK* galloc(MEMORY* arena, int size)
 }
 static void* memAlloc(MEMORY* arena, int size, bool clear = true)
 {
+    size = size ? size : 1;
     MEMBLK* selected = arena->block;
     void* rv;
     if (!selected || selected->left < size)

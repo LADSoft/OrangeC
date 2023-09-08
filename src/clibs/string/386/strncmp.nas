@@ -45,12 +45,20 @@ lp:
     or		al,al
     jz		x2
     sub		al,[ebx]
+    jc          x3
     loopz	lp
+    
 x1:
     movsx	eax,al
     pop	ebx
 	pop ebp
     ret
+x3:
+    mov         eax,-1
+    pop	ebx
+	pop ebp
+    ret
+
 x2:
     sub		al,[ebx]
     movsx	eax,al

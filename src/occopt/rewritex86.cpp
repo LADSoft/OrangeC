@@ -501,7 +501,7 @@ void ProcessOneInd(SimpleExpression* match, SimpleExpression** ofs1, SimpleExpre
                                     {
                                         QUAD* insz = tempInfo[ins->dc.left->offset->sp->i]->instructionDefines;
                                         if ((insz && insz->dc.opcode != i_assn) ||
-                                            ins->block == tempInfo[n]->instructionUses->ins->block)
+                                            ins->block == (*tempInfo[n]->instructionUses->begin())->block)
                                         {
                                             if (*ofs1 && (*ofs1)->sp->i == ins->ans->offset->sp->i)
                                                 *ofs1 = ins->dc.left->offset;
@@ -608,7 +608,7 @@ static bool twomem(IMODE* left, IMODE* right)
             return true;
     return false;
 }
-static void HandleAssn(QUAD* ins, BRIGGS_SET* globalVars)
+static void HandleAssn(QUAD* ins, BriggsSet* globalVars)
 {
     if ((ins->temps & (TEMP_LEFT | TEMP_RIGHT)) && ins->ans->size < ISZ_ULONGLONG && ins->ans->size > -ISZ_ULONGLONG)
     {
@@ -748,7 +748,7 @@ static void HandleAssn(QUAD* ins, BRIGGS_SET* globalVars)
     }
     */
 }
-int x86PreRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int pass)
+int x86PreRegAlloc(QUAD* ins, BriggsSet* globalVars, BriggsSet* eobGlobals, int pass)
 {
     IMODE* ind = nullptr;
     if (pass == 1)
@@ -1000,7 +1000,7 @@ static int floatsize(IMODE* im)
 int x86_examine_icode(QUAD* head)
 {
     fltexp = nullptr;
-    BLOCK* b = nullptr;
+    Block* b = nullptr;
     bool changed = false;
     QUAD* hold = head;
     uses_substack = false;

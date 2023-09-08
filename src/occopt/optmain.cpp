@@ -59,6 +59,7 @@
 #include "iloop.h"
 #include "localprotect.h"
 
+#if 0
 //#define x64_compiler
 #ifndef x64_compiler
 // this overloading of operator new/delete is a speed optimization
@@ -123,7 +124,7 @@ void operator delete(void* p)
 }
 
 #endif
-
+#endif
 int usingEsp;
 
 Optimizer::SimpleSymbol* currentFunction;

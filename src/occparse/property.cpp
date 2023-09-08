@@ -264,10 +264,12 @@ LEXLIST* initialize_property(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageC
 }
 TYPE* find_boxed_type(TYPE* in)
 {
-    static const char* typeNames[] = {"int8",   "Bool",  "Int8",   "Int8",   "UInt8",  "Int16",  "Int16",   "UInt16",
-                                      "UInt16", "Int32", "Int32",  "IntPtr", "Int32",  "UInt32", "UIntPtr", "Int32",
-                                      "UInt32", "Int64", "UInt64", "Single", "Double", "Double", "Single",  "Double",
-                                      "Double", "",      "",       "",       "",       "",       "",        "String"};
+    static const char* typeNames[] = {"int8",   "Bool",  "Int8",   "Int8",   "UInt8",  "Uint8",
+                                      "Int16",  "Int16",   "UInt16", "UInt16", 
+                                      "Int32", "Int32",  "IntPtr", "Int32",  "UInt32", "UIntPtr", "Int32", "UInt32", 
+                                      "Int64", "UInt64",  "",      "",       "Single", "Double",  "Double", 
+                                      "Single", "Double","Double",  
+                                      "",      "",       "",       "",        "", "String"};
     if (isarray(basetype(in)) && basetype(in)->msil)
     {
         SYMBOL* sym = search(globalNameSpace->front()->syms , "System");

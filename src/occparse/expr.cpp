@@ -2214,7 +2214,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                                             (*itp)->exp = exprNode(ExpressionNode::x_object_, (*itp)->exp, nullptr);
                                         }
                                     }
-                                    if ((!isbitint((*itp)->tp) && !isint((*itp)->tp)) || (!isbitint(decl->tp) && !isint(decl->tp)))
+                                    else if ((!isbitint((*itp)->tp) && !isint((*itp)->tp)) || (!isbitint(decl->tp) && !isint(decl->tp)))
                                         if (basetype(decl->tp)->type != BasicType::memberptr_)
                                             errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
                                 }

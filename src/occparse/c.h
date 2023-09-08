@@ -271,7 +271,7 @@ typedef struct
          * basic types, type comparisons (LOSTCONV) depends on the ordering,
          * and the debug info has a table indexed by type
          */
-        bit_, bool_, signed_char_, char_, unsigned_char_, short_, char16_t_, unsigned_short_,
+        bit_, bool_, signed_char_, char_, unsigned_char_, char8_t, short_, char16_t_, unsigned_short_,
         wchar_t_, enum_, int_, inative_, char32_t_, unsigned_, unative_, long_, unsigned_long_, long_long_,
         unsigned_long_long_, bitint_,  unsigned_bitint_, float_, double_, long_double_, float__imaginary_,
         double__imaginary_, long_double_imaginary_, float__complex_,

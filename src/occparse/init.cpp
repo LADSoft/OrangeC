@@ -1324,8 +1324,8 @@ static void dumpStaticInitializers(void)
                 sym->sb->offset = *sizep;
                 *sizep += basetype(tp)->size;
                 Optimizer::gen_strlab(Optimizer::SymbolManager::Get(sym));
-                if (sym->sb->storage_class == StorageClass::constant_)
-                    Optimizer::put_label(sym->sb->label);
+//                if (sym->sb->storage_class == StorageClass::constant_)
+//                    Optimizer::put_label(sym->sb->label);
                 dumpInitGroup(sym, tp);
             }
             symListTail = symListTail->next;

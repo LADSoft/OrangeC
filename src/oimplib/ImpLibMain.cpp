@@ -306,10 +306,9 @@ ObjFile* ImpLibMain::DllFileToObjFile(DLLExportReader& dll)
     for (auto&& exp : dll)
     {
         if (CDLLSwitch.GetValue().empty())
-            CreateDLLImportEntry(obj, name.c_str(), exp->name.c_str(), exp.get());
-        CreateDLLImportEntry(obj, name.c_str(), ("_" + exp->name).c_str(), exp.get());
-        if (CDLLSwitch.GetValue().empty())
         {
+            CreateDLLImportEntry(obj, name.c_str(), exp->name.c_str(), exp.get());
+            CreateDLLImportEntry(obj, name.c_str(), ("_" + exp->name).c_str(), exp.get());
             int n = exp->name.find('@');
             if (n != 0 && n != std::string::npos)
             {
@@ -320,6 +319,13 @@ ObjFile* ImpLibMain::DllFileToObjFile(DLLExportReader& dll)
                     CreateDLLImportEntry(obj, name.c_str(), id.substr(1, id.size()-1).c_str(), exp.get());
                 }
             }
+        }
+        else
+        {
+            if (exp->name[0] == '@')
+                CreateDLLImportEntry(obj, name.c_str(), exp->name.c_str(), exp.get());
+            else
+                CreateDLLImportEntry(obj, name.c_str(), ("_" + exp->name).c_str(), exp.get());
         }
     }
     return obj;

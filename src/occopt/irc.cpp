@@ -2361,7 +2361,6 @@ void AllocateRegisters(QUAD* head)
     int spills = 0;
     int passes = 0;
     (void)head;
-    liveVariables();
     retemp();
     accesses = 0;
     Prealloc(3);

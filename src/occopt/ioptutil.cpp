@@ -54,9 +54,9 @@ inline static void freex(std::list<BriggsSet*>& set, std::unordered_set<BITINT*>
         for (auto b : *bits)
         {
 #ifdef TESTBITS
-            delete ((BITINT*)b - 1);
+            delete[] ((BITINT*)b - 1);
 #else
-            delete b;
+            delete[] b;
 #endif
         }
         bits->clear();

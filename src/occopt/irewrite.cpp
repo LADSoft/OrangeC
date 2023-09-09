@@ -36,6 +36,7 @@ namespace Optimizer
 
 void Prealloc(int pass)
 {
+    int tempCountIn = tempCount;
     int i;
     bool done = false;
     BriggsSet* eobGlobals;
@@ -53,7 +54,7 @@ void Prealloc(int pass)
                 int j, k;
                 briggsClear(globalVars);
                 briggsClear(eobGlobals);
-                for (j = 0; j < (tempCount + BITINTBITS - 1) / BITINTBITS; j++, p++)
+                for (j = 0; j < (tempCountIn + BITINTBITS - 1) / BITINTBITS; j++, p++)
                     if (*p)
                         for (k = 0; k < BITINTBITS; k++)
                             if (*p & (1 << k))

@@ -74,7 +74,6 @@
 #include <cstdlib>
 #include <cstdio>
 
-#if 0
 //#define x64_compiler
 #ifndef x64_compiler
 // this overloading of operator new/delete is a speed optimization
@@ -138,7 +137,6 @@ void operator delete(void* p)
     }
 }
 
-#endif
 #endif
 using namespace DotNetPELib;
 PELib* peLib;

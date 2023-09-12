@@ -1559,6 +1559,7 @@ int opt0(EXPRESSION** node)
             rv |= opt0(&(ep->right));
             if (ep->right->type == ExpressionNode::structelem_ || ep->left->type == ExpressionNode::structadd_)
                 break;
+            if (ep->type == ExpressionNode::sub_)
             {
                 // this next will normalize expressions of the form:
                 // z = (a + 5) - a

@@ -4140,6 +4140,10 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
     {
         lex = getArgs(lex, funcsp, funcparams, Keyword::closepa_, true, flags);
     }
+    if (funcparams->sp && !strcmp(funcparams->sp->name, "construct1") && strstr(lex->data->errfile, "q.cpp"))
+    {
+        printf("hi");
+    }
     if (funcparams->astemplate && argumentNesting)
     {
         // if we hit a packed template param here, then this is going to be a candidate
@@ -4686,6 +4690,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
                     while (isref(*tp))
                         *tp = basetype(*tp)->btp;
                 }
+                GetAssignDestructors(&funcparams->destructors, *exp);
             }
             else if (templateNestingCount && !instantiatingTemplate && (*tp)->type == BasicType::aggregate_)
             {
@@ -8721,11 +8726,11 @@ void GetLogicalDestructors(std::list<struct expr*>** rv, EXPRESSION* cur)
         GetLogicalDestructors(rv, cur->right);
     }
 }
-static void GetAssignDestructors (std::list<EXPRESSION*> **rv, EXPRESSION *exp)
+void GetAssignDestructors (std::list<EXPRESSION*> **rv, EXPRESSION *exp)
 {
     while (castvalue(exp) || lvalue(exp) || exp->type == ExpressionNode::thisref_)
         exp = exp->left;
-    if (exp->type == ExpressionNode::assign_)
+    if (exp->type == ExpressionNode::assign_ || exp->type == ExpressionNode::structadd_)
     {
         GetAssignDestructors(rv, exp->right);
         GetAssignDestructors(rv, exp->left);
@@ -8742,6 +8747,13 @@ static void GetAssignDestructors (std::list<EXPRESSION*> **rv, EXPRESSION *exp)
                 (*rv)->insert((*rv)->end(), t->destructors->begin(), t->destructors->end());
                 t->destructors = nullptr;
             }
+        }
+        if (exp->v.func->destructors && &exp->v.func->destructors != rv)
+        {
+            if (!*rv)
+                *rv = exprListFactory.CreateList();
+            (*rv)->insert((*rv)->end(), exp->v.func->destructors->begin(), exp->v.func->destructors->end());
+            exp->v.func->destructors = nullptr;
         }
     }
 }
@@ -9977,6 +9989,8 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 }
 
                 *exp = exprNode(op, *exp, exp1);
+                // unallocated var for destructor
+                GetAssignDestructors(&(*exp)->v.logicaldestructors.left, *exp);
             }
             else
             {

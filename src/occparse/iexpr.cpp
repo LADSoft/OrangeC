@@ -1837,6 +1837,8 @@ Optimizer::IMODE* gen_assign(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
     {
         ap1 = gen_expr(funcsp, RemoveAutoIncDec(node->left), (flags & ~F_NOVALUE), natural_size(node->left));
     }
+    if (node->v.logicaldestructors.left)
+        DumpLogicalDestructors(funcsp, node->v.logicaldestructors.left);
     ap1->vol = node->left->isvolatile;
     ap1->restricted = node->left->isrestrict;
     return ap1;

@@ -7,9 +7,7 @@
  * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- * 
+ *     the Free Software Foundation, either version 3 of the License, ore
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -42,6 +40,7 @@ EXPRESSION* typeNode(TYPE* tp);
 EXPRESSION* intNode(ExpressionNode type, long long val);
 void checkauto(TYPE* tp1, int err);
 void GetLogicalDestructors(std::list<EXPRESSION*>**lst, EXPRESSION* cur);
+void GetAssignDestructors(std::list<EXPRESSION*>** rv, EXPRESSION* exp);
 void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp);
 TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr = false);
 LEXLIST* getInitList(LEXLIST* lex, SYMBOL* funcsp, std::list<INITLIST*>** owner);

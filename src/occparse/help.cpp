@@ -1493,10 +1493,13 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     {
                         exp->v.func->thisptr = exp1;
                     }
+                    GetAssignDestructors(&exp->v.func->destructors, exp);
                     exp = initItem->exp;
                 }
                 else
                 {
+                    if (exp->type == ExpressionNode::func_)
+                        GetAssignDestructors(&exp->v.func->destructors, exp);
                     exp = initItem->exp;
                 }
             }
@@ -1745,7 +1748,11 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 {
                     cast(initItem->basetp, &exp->right);
                     if (expsym)
+                    {
                         exp->right = exprNode(ExpressionNode::assign_, exps, exp->right);
+                        // unallocated var for destructor
+                        GetAssignDestructors(&exp->right->v.logicaldestructors.left, exp->right);
+                    }
                 }
                 else
                 {
@@ -1753,7 +1760,11 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         && !isbitint(initItem->basetp))
                         cast(initItem->basetp, &exp);
                     if (exps)
+                    {
                         exp = exprNode(ExpressionNode::assign_, exps, exp);
+                        // unallocated var for destructor
+                        GetAssignDestructors(&exp->v.logicaldestructors.left, exp);
+                    }
                 }
             }
             if (sym && sym->sb->init && isatomic(initItem->basetp) && needsAtomicLockFromType(initItem->basetp))

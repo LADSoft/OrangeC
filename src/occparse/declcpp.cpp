@@ -3532,9 +3532,6 @@ static const std::unordered_map<std::string, int, StringHash> gccStyleAttribName
     {"constructor", 30 },
     {"destructor", 31 },
     {"stack_protect", 32 },
-    {"fallthrough", 33 },
-    {"maybe_unused", 34},
-    {"nodiscard", 35},
 };
 #define DEFAULT_CONSTRUCTOR_PRIORITY 101
 #define DEFAULT_DESTRUCTOR_PRIORITY 101
@@ -3846,15 +3843,6 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                 break;
                             case 32: // stack-protect explicit  
                                 basisAttribs.uninheritable.stackProtect = true;
-                                break;
-                            case 33: // fallthrough
-                                basisAttribs.uninheritable.fallthrough = true;                                
-                                break;
-                            case 34: // maybe_unused
-                                basisAttribs.uninheritable.maybe_unused = true;
-                                break;
-                            case 35: // nodiscard
-                                basisAttribs.uninheritable.nodiscard = true;
                                 break;
                         }
                     }
@@ -4177,6 +4165,22 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                                     {
                                         *lex = getsym();
                                         special = true;
+                                    }
+                                    else if (stripped_ver == "fallthrough"s)
+                                    {
+                                        *lex = getsym();
+                                        basisAttribs.uninheritable.fallthrough = true;
+                                    }
+                                    else if (stripped_ver == "maybe_unused"s)
+                                    {
+                                        *lex = getsym();
+                                        basisAttribs.uninheritable.maybe_unused = true;
+
+                                    }
+                                    else if (stripped_ver == "nodiscard"s)
+                                    {
+                                        *lex = getsym();
+                                        basisAttribs.uninheritable.nodiscard = true;
                                     }
                                     else
                                     {

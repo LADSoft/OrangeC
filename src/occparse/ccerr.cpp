@@ -1297,7 +1297,7 @@ void checkUnused(SymbolTable<SYMBOL>* syms)
                     sp->sb->storage_class == StorageClass::parameter_)
                     errorsym(ERR_SYM_ASSIGNED_VALUE_NEVER_USED, sp);
             }
-            else
+            else if (!sp->sb->attribs.uninheritable.maybe_unused)
             {
                 if (sp->sb->storage_class == StorageClass::parameter_)
                     errorsym(ERR_UNUSED_PARAMETER, sp);
@@ -1343,7 +1343,8 @@ void findUnusedStatics(std::list<NAMESPACEVALUEDATA*>* nameSpace)
                 {
                     currentErrorLine = 0;
                     if (sp->sb->storage_class == StorageClass::static_ && !sp->sb->attribs.inheritable.used)
-                        errorsym(ERR_UNUSED_STATIC, sp);
+                        if (!sp->sb->attribs.uninheritable.maybe_unused)
+                            errorsym(ERR_UNUSED_STATIC, sp);
                     currentErrorLine = 0;
                     if (sp->sb->storage_class == StorageClass::global_ || sp->sb->storage_class == StorageClass::static_ ||
                         sp->sb->storage_class == StorageClass::localstatic_)

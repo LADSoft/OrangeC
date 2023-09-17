@@ -588,6 +588,10 @@ ERRLIST(ERR_VA_START_IN_VARIADIC_FUNCTION, 523, "va_start should only be used in
         CE_WARNING)
 ERRLIST(ERR_CONSTEXPR_MUST_BE_OBJECT, 524, "constexpr keyword cannot be used with functions",
         CE_ERROR)
+ERRLIST(ERR_RETURN_VALUE_NO_DISCARD, 525, "Return value may not be discarded",
+        CE_ERROR)
+ERRLIST(ERR_FALLTHROUGH, 526, "Switch case falls through",
+        CE_TRIVIALWARNING)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

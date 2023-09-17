@@ -1659,6 +1659,8 @@ static bool hasPackedTemplate(TYPE* tp)
         case BasicType::unsigned_:
         case BasicType::int_:
             break;
+        case BasicType::char8_t_:
+            break;
         case BasicType::char16_t_:
             break;
         case BasicType::char32_t_:
@@ -2880,8 +2882,8 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         {
                             tpl = basetype(tpl)->btp;
                             tpr = basetype(tpl);
-                            if (!isconst(tpl) || (tpr->type != BasicType::char_ && tpr->type != BasicType::wchar_t_ && tpr->type != BasicType::char16_t_ &&
-                                                    tpr->type != BasicType::char32_t_))
+                            if (!isconst(tpl) || (tpr->type != BasicType::char_ && tpr->type != BasicType::wchar_t_ && tpr->type != BasicType::char8_t_ && 
+                                                    tpr->type != BasicType::char16_t_ && tpr->type != BasicType::char32_t_))
                             {
                                 errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                             }
@@ -2892,8 +2894,8 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         // one arg
                         TYPE* tp = (*it)->tp;
                         if ((!ispointer(tp) || !isconst(basetype(tp)->btp) || basetype(basetype(tp)->btp)->type != BasicType::char_) &&
-                            tp->type != BasicType::unsigned_long_long_ && tp->type != BasicType::long_double_ && tp->type != BasicType::char_ &&
-                            tp->type != BasicType::wchar_t_ && tp->type != BasicType::char16_t_ && tp->type != BasicType::char32_t_)
+                            tp->type != BasicType::unsigned_long_long_ && tp->type != BasicType::long_double_ && tp->type != BasicType::char_ && tp->type != BasicType::wchar_t_ && tp->type != BasicType::char8_t_ &&
+                            tp->type != BasicType::char16_t_ && tp->type != BasicType::char32_t_)
                         {
                             errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                         }

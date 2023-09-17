@@ -50,6 +50,8 @@ extern TYPE stdunsignedlong;
 extern TYPE stdunsignedlonglong;
 extern TYPE stdconst;
 extern TYPE stdchar;
+extern TYPE stdchar8_t;
+extern TYPE stdchar8_tptr;
 extern TYPE stdchar16t;
 extern TYPE stdchar16tptr;
 extern TYPE stdchar32t;

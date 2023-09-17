@@ -62,6 +62,7 @@ TYPE stdunsignedlong = {BasicType::unsigned_long_, 4, 0, &stdunsignedlong};
 TYPE stdunsignedlonglong = {BasicType::unsigned_long_long_, 8, 0, &stdunsignedlonglong};
 TYPE stdconst = {BasicType::int_, 4, 0, &stdconst};
 TYPE stdchar = {BasicType::char_, 1, 0, &stdchar};
+TYPE stdchar8_t = {BasicType::char_, 1, 0, &stdchar};
 TYPE stdchar16t = {BasicType::char16_t_, 2, 0, &stdchar16t};
 TYPE stdchar16tptr = {BasicType::pointer_, 0, &stdchar16t, &stdchar16tptr};
 TYPE stdchar32t = {BasicType::char32_t_, 4, 0, &stdchar32t};
@@ -82,6 +83,7 @@ TYPE stdbool = {BasicType::bool_, 1, 0, &stdbool};
 TYPE stdwidechar = {BasicType::wchar_t_, 0, 0, &stdwidechar};
 TYPE stdwcharptr = {BasicType::pointer_, 0, &stdwidechar, &stdwcharptr};
 TYPE stdcharptr = {BasicType::pointer_, 0, &stdchar, &stdcharptr};
+TYPE stdchar8_tptr = {BasicType::pointer_, 0, &stdchar8_t, &stdchar8_tptr};
 
 int init_backend()
 {
@@ -158,8 +160,11 @@ int init_backend()
         stdbool.rootType = &stdbool;
         stdwidechar.rootType = &stdwidechar;
         stdwcharptr.rootType = &stdwcharptr;
+        stdchar8_tptr.rootType = &stdchar8_tptr;
         stdchar16tptr.rootType = &stdchar16tptr;
         stdchar32tptr.rootType = &stdchar32tptr;
+        if (Optimizer::cparams.c_dialect >= Dialect::c2x)
+            stdchar8_t.type = BasicType::char8_t_;
     }
     return rv;
 }

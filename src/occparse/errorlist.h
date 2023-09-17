@@ -586,6 +586,8 @@ ERRLIST(ERR_EXPECTED_VALID_CHECKED_MATH_TYPE, 522, "Type for checked math must b
         CE_ERROR)
 ERRLIST(ERR_VA_START_IN_VARIADIC_FUNCTION, 523, "va_start should only be used in variadic functions",
         CE_WARNING)
+ERRLIST(ERR_CONSTEXPR_MUST_BE_OBJECT, 524, "constexpr keyword cannot be used with functions",
+        CE_ERROR)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

@@ -42,6 +42,8 @@ int needsAtomicLockFromType(TYPE* tp)
     Optimizer::ARCH_SIZING* p = Optimizer::chosenAssembler->arch->type_needsLock;
     switch (basetype(tp)->type)
     {
+        case BasicType::char8_t_:
+            return 0;
         case BasicType::char16_t_:
             return 0;
         case BasicType::char32_t_:
@@ -116,6 +118,8 @@ static int basesize(Optimizer::ARCH_SIZING* p, TYPE* tp)
     tp = basetype(tp);
     switch (tp->type)
     {
+        case BasicType::char8_t_:
+            return 1;
         case BasicType::char16_t_:
             return 2;
         case BasicType::char32_t_:

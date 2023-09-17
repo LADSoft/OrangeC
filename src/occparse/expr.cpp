@@ -4906,6 +4906,12 @@ static LEXLIST* expression_string(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
         char name[512];
         switch (data->strtype)
         {
+            case l_u8str:
+                if (Optimizer::cparams.c_dialect >= Dialect::c2x)
+                    tpb = stdchar8_tptr.btp->type;
+                else
+                    tpb = stdcharptr.btp->type;
+                break;
             default:
             case l_astr:
                 tpb = stdcharptr.btp->type;
@@ -4977,6 +4983,12 @@ static LEXLIST* expression_string(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
         (*tp)->esize = intNode(ExpressionNode::c_i_, elems + 1);
         switch (data->strtype)
         {
+            case l_u8str:
+                if (Optimizer::cparams.c_dialect >= Dialect::c2x)
+                    (*tp)->btp = stdchar8_tptr.btp;
+                else
+                    (*tp)->btp = stdcharptr.btp;
+                break;
             default:
             case l_astr:
                 (*tp)->btp = stdcharptr.btp;
@@ -6501,6 +6513,7 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
         case l_ustr:
         case l_Ustr:
         case l_msilstr:
+        case l_u8str:
             lex = expression_string(lex, funcsp, tp, exp);
             break;
         case l_wchr:

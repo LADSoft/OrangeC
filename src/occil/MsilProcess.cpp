@@ -1337,6 +1337,7 @@ Type* GetStringType(int lab, int type)
     {
         case l_ustr:
         case l_astr:
+        case l_u8str:
             name = "int8_";
             break;
         case l_Ustr:

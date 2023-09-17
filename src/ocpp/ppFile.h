@@ -32,8 +32,8 @@
 #include "ppCond.h"
 #include "ppCommon.h"
 
-class ppDefine;
-class ppCtx;
+
+template <typename T, bool(isSymbolChar)(const char*, bool)>
 class ppFile : public InputFile
 {
 

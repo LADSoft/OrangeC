@@ -68,7 +68,7 @@ bool ppPragma::Check(kw token, const std::string& args)
 }
 void ppPragma::ParsePragma(const std::string& args)
 {
-    Tokenizer tk(args, &hash);
+    Tokenizer<kw> tk(args, &hash);
     const Token* id = tk.Next();
     if (id->IsIdentifier())
     {

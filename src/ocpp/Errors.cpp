@@ -32,7 +32,7 @@
 int Errors::maxErrors = 100;
 int Errors::errorCount;
 int Errors::warningCount;
-ppInclude* Errors::include;
+ppInclude<T, isSymbolChar>* Errors::include;
 bool Errors::showWarnings = true;
 bool Errors::showTrivialWarnings;
 bool Errors::warningsAsErrors;

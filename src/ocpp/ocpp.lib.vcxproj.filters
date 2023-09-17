@@ -137,5 +137,11 @@
     <ClInclude Include="ppCommon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ForwardDecls.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TokenizerSettings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -31,9 +31,12 @@
 #include "ppCommon.h"
 
 #include "ppExpr.h"
+template <typename T, bool(isSymbolChar)(const char*, bool)>
 class ppDefine;
+template <typename T, bool(isSymbolChar)(const char*, bool)>
 class ppCtx;
 
+template <typename T, bool(isSymbolChar)(const char*, bool)>
 class ppCond
 {
   public:

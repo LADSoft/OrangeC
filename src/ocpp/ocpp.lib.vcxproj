@@ -162,6 +162,7 @@
   <ItemGroup>
     <ClInclude Include="Errors.h" />
     <ClInclude Include="Floating.h" />
+    <ClInclude Include="ForwardDecls.h" />
     <ClInclude Include="InputFile.h" />
     <ClInclude Include="MakeStubs.h" />
     <ClInclude Include="PipeArbitrator.h" />
@@ -181,6 +182,7 @@
     <ClInclude Include="PreProcessor.h" />
     <ClInclude Include="SymbolTable.h" />
     <ClInclude Include="Token.h" />
+    <ClInclude Include="TokenizerSettings.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

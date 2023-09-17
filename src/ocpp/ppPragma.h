@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef ppPragma_h
@@ -36,12 +36,10 @@
 #include <vector>
 #include "Token.h"
 #include <functional>
+#include "ForwardDecls.h"
 #define STD_PRAGMA_FENV 1
 #define STD_PRAGMA_FCONTRACT 2
 #define STD_PRAGMA_CXLIMITED 4
-
-class ppInclude;
-class ppDefine;
 
 class Packing
 {
@@ -464,20 +462,20 @@ class ppPragma
     }
 
   protected:
-    void HandleSTDC(Tokenizer& tk);
-    void HandlePack(Tokenizer& tk);
-    void HandleError(Tokenizer& tk);
-    void HandleWarning(Tokenizer& tk);
-    void HandleSR(Tokenizer& tk, bool startup);
-    void HandleStartup(Tokenizer& tk) { HandleSR(tk, true); }
-    void HandleRundown(Tokenizer& tk) { HandleSR(tk, false); }
-    void HandleLibrary(Tokenizer& tk);
-    void HandleAlias(Tokenizer& tk);
-    void HandleFar(Tokenizer& tk);
-    void HandleOnce(Tokenizer& tk);
-    void HandleIgnoreGlobalInit(Tokenizer& tk);
-    void HandlePushPopMacro(Tokenizer& tk, bool push);
-    void HandleComment(Tokenizer& tk);
+    void HandleSTDC(Tokenizer<kw>& tk);
+    void HandlePack(Tokenizer<kw>& tk);
+    void HandleError(Tokenizer<kw>& tk);
+    void HandleWarning(Tokenizer<kw>& tk);
+    void HandleSR(Tokenizer<kw>& tk, bool startup);
+    void HandleStartup(Tokenizer<kw>& tk) { HandleSR(tk, true); }
+    void HandleRundown(Tokenizer<kw>& tk) { HandleSR(tk, false); }
+    void HandleLibrary(Tokenizer<kw>& tk);
+    void HandleAlias(Tokenizer<kw>& tk);
+    void HandleFar(Tokenizer<kw>& tk);
+    void HandleOnce(Tokenizer<kw>& tk);
+    void HandleIgnoreGlobalInit(Tokenizer<kw>& tk);
+    void HandlePushPopMacro(Tokenizer<kw>& tk, bool push);
+    void HandleComment(Tokenizer<kw>& tk);
 
   private:
     ppDefine* define;

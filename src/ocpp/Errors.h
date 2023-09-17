@@ -26,8 +26,7 @@
 #define Errors_H
 
 #include <string>
-
-class ppInclude;
+#include "ForwardDecls.h"
 
 class Errors
 {

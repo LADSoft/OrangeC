@@ -21,7 +21,9 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
-
+#ifndef _CRT_SECURE_NO_WARNINGS
+#    define _CRT_SECURE_NO_WARNINGS
+#endif
 #include "ppMain.h"
 #include "Utils.h"
 #include "ToolChain.h"

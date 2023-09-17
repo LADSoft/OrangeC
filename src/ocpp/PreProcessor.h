@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef PreProcessor_h
@@ -36,6 +36,7 @@
 #include "ppEmbed.h"
 #include "ppCommon.h"
 
+template <typename T, bool(isSymbolChar)(const char*, bool), void(embed_elements)(std::vector<embeder_size>) = nullptr>
 class PreProcessor
 {
   public:
@@ -104,6 +105,7 @@ class PreProcessor
     // this returns the state of the current input file, only means main file when no include files are opened.
     bool IsOpen() const { return include.IsOpen(); }
     void SetEmbedCallback(std::function<void(std::vector<embeder_size>)> embed_func) { ppEmbed.set_embed_function(embed_func); }
+
   private:
     bool trigraphs;
     char ppStart;

@@ -49,7 +49,7 @@ for:
           draft: false
           prerelease: false
           on:
-              branch: /v\d*\.\d*\.\d*\.\d*/
+              branch: /v\d*\.\d*\.\d*/
               APPVEYOR_REPO_TAG: true
 -
       matrix:

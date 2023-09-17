@@ -17,7 +17,7 @@ install:
 branches:
    only:
      - master
-     - /v\d*\.\d*\.\d*\.\d*/
+     - /v\d*\.\d*\.\d*/
 
 configuration:
      - MSVC THEN LIBCXX TEST

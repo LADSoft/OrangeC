@@ -1,6 +1,41 @@
 Release notes:
 
-version 6.0.71:
+version 6.0.72 (sep 17, 2023)
+    project: move appveyor image  to VS2022 version
+    project: choosing versioning to use the standard 3 integer versioning scheme instead of the windows 4 integer scheme (except in RC files)
+    occ: add various C23 functionality, including _BitInt
+    occ: fix backend bug where compiling multiple files on a single command line could result in bad behavior
+    occ: handle static const int properly when using it in a structure to export a const value
+    occ: handle extern const int properly when using it in a namespace to export a const value
+    occ: allow __declspec(__export__) to be placed before the 'struct' keyword
+    occ: fix various bugs in compiler related to buffers being too small to hold command lines
+    occ: fix command line help for fstack-protector flags
+    occ: when both creating dependencies and compiling files, don't elide the error display
+    occ: fix random bug when compiling assembly code in a C file
+    occ: handle escaping in make stubs properly
+    occ: rewrite optimizer for more efficient memory management
+    occ: trying to make a static library didn't work if the output file name had spaces in it
+    occ: fix a bug where casting a function name to a pointer then using it as an array crashed occ
+    occ: handle '.' character in directory names better
+    occ: handle the situation with computed gotos better
+    occ: support exporting functions in exe files
+    occ: fix pointer aliasing code to understand local static variables better
+    occ: fix bug where destructors could be called too soon in complex function trees
+    omake: handle escaping properly
+    omake: fix bug that inserted extra spaces on the SH command line
+    rtl: fix various bugs related to buffers being too small to hold command lines
+    rtl: fix getexecname() when using shared runtime library
+    rtl: fix some problems with stat and other time functions getting the 'dst' flag wrong on random occasions
+    rtl: replace rpmalloc with dlea allocator again
+    rtl: fix bug in exception handling: wrong data size calloced
+    rtl: fix lscrtl.dll import library to work properly again
+    rtl: update import records for kernel32 to the latest kernel
+    rtl: remove a printf from the C23 checked runtime library functions; improve linkage
+    rtl: fix bug that made 'atexit' not work reliably in shared runtime library
+    rtl: fix bugs in mkdir()
+    rtl: fix comparision used by memcmp to be unsigned
+
+version 6.0.71: (aug 11, 2023)
     add support for github actions with both linux and windows builds
     remove support for travis-ci builds
     remove support for broken BCC32 and RADSTUDIO builds

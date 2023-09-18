@@ -94,8 +94,8 @@ int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvRese
                 return 1;
             }
         }
+        __srproc(INITSTART, INITEND, 1);
     }
-    __srproc(INITSTART, INITEND, 1);
     if (flags & DLL)
     {
         rv = DllMain(hInst, fdwReason, lpvReserved) + 1;

@@ -53,6 +53,7 @@ unsigned _win32 = 0;
 jmp_buf __exitbranch, __abortbranch;
 static unsigned dllexists = 0;
 static int msvcrt_compat = 0;
+static int initted = 0;
 unsigned _isDLL = 1;
 void (*userRundown)();
 void PASCAL __xceptinit(int* block);
@@ -117,12 +118,15 @@ void __export __stdcall ___lsdllinit(void* tlsStart, void* tlsEnd, DWORD flags, 
         __srproc(EXITSTART, EXITEND, 0);
         ExitProcess(rv);
     }
-    _osenv = GetEnvironmentStrings();
-    _oscmd = GetCommandLine();
-    __hInstance = GetModuleHandle(0);
-    _llfpinit();
-    __threadinit();
-    __srproc(INITSTART, INITEND, 1);
+    if (!initted++)
+    {
+        _osenv = GetEnvironmentStrings();
+        _oscmd = GetCommandLine();
+        __hInstance = GetModuleHandle(0);
+        _llfpinit();
+        __threadinit();
+        __srproc(INITSTART, INITEND, 1);
+    }
 }
 void __export __getmainargs(int** pargc, char*** pargv, char*** penviron, int flags, void** newmode)
 {

@@ -373,7 +373,7 @@ ObjInt LinkRemapper::MapType(ObjFile* file, ObjType* type)
             sprintf(name, "T%d;%d;%s", type->GetSize(), GetTypeIndex(type->GetBaseType()), type->GetName().c_str());
             break;
         default:
-            break;
+            return 0;
     }
     RegisterType(file, type, name);
     return 0;

@@ -4140,10 +4140,6 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
     {
         lex = getArgs(lex, funcsp, funcparams, Keyword::closepa_, true, flags);
     }
-    if (funcparams->sp && !strcmp(funcparams->sp->name, "construct1") && strstr(lex->data->errfile, "q.cpp"))
-    {
-        printf("hi");
-    }
     if (funcparams->astemplate && argumentNesting)
     {
         // if we hit a packed template param here, then this is going to be a candidate

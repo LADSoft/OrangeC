@@ -1,5 +1,11 @@
 Release notes:
 
+version 6.0.73 (sep 23, 2023)
+    project: update sqlite3 to latest version
+    olink: fix bug with debug info for type information
+    occ: get rid of instrumentation
+    bug fixes for lscrtl.dll when used by multiple modules simultaneously
+
 version 6.0.72 (sep 17, 2023)
     project: move appveyor image  to VS2022 version
     project: choosing versioning to use the standard 3 integer versioning scheme instead of the windows 4 integer scheme (except in RC files)

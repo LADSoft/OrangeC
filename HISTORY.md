@@ -1,5 +1,11 @@
 # OrangeC Compiler And Tool Chain Release Notes
 
+## Version 6.0.73
+* project: update sqlite3 to latest version
+* olink: fix bug with debug info for type information
+* occ: get rid of instrumentation
+* bug fixes for lscrtl.dll when used by multiple modules simultaneously
+
 ## Version 6.0.72
 
 * project: move appveyor image  to VS2022 version
